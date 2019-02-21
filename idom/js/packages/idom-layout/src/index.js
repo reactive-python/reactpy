@@ -1,73 +1,58 @@
 import React, { useReducer, useEffect, useState, useMemo } from 'react';
 import produce from 'immer';
 
-function Layout(endpoint) {
+
+function Layout({ socket }) {
     const [root, setRoot] = useState(null);
     const [models, setModels] = useState({});
 
-    const sendMsg = useSocket(
-        endpoint,
-        {
-            header: {
-                status: 'ok',
-                type: 'handshake'
-            },
-            body: {
-                user: 'test',
-                pass: 'test'
-            }
-        },
-        function onMsg(msg) {
-            setModels(
-                produce(models, draftModels => {
-                    Object.assign(draftModels, msg.body.models);
-                })
-            );
-        }
-    );
+    socket.onmessage = event => {
+      const msg = JSON.parse(event.data);
+      setRoot(msg.header.root);
+      const newModels = { ...models, ...msg.body.models };
+      setModels(newModels);
+    }
 
-    if (root == null) {
+    const sendMsg = msg => { socket.send(JSON.stringify(msg)) }
+
+    if (root == null || !models.hasOwnProperty(root) ) {
         return <div />;
     } else {
-        return Element(models, id, event => {
+        return Element(models, root, event => {
             sendMsg({
-                header: {
-                    status: 'ok'
-                }
+                header: {},
+                body: { event: event }
             });
         });
     }
 }
 
+
 function Element(models, id, sendEvent) {
     const model = models[id];
 
-    const children = useMemo(
-        () => {
-            model.children.map(child => {
-                switch (child.type) {
-                    case 'ref':
-                        return Element(models[child.data]);
-                    case 'obj':
-                        return Element(child.data);
-                    case 'str':
-                        return child.data;
-                }
-            });
-        },
-        [model.children]
-    );
+    const children = model.children.map(child => {
+        switch (child.type) {
+            case 'ref':
+                return Element(models[child.data]);
+            case 'obj':
+                return Element(child.data);
+            case 'str':
+                return child.data;
+        }
+    });
 
     const attributes = Object.assign({}, model.attributes);
 
     Object.keys(model.eventHandlers).forEach(target => {
-        const [handler, eventName] = model.eventHandlers[key].split('_', 1);
+        const [handler, eventName] = model.eventHandlers[target].split('_');
         attributes[eventName] = event => {
-            sendEvent({
-                target: target,
-                hander: handler,
-                data: event
-            });
+          console.log(event);
+          sendEvent({
+              target: target,
+              handler: handler,
+              data: null
+          });
         };
     });
 
@@ -79,35 +64,5 @@ function Element(models, id, sendEvent) {
     }
 }
 
-function useSocket(uri, firstSend, onMsg) {
-    const [socket, setSocket] = useState(null);
-
-    useEffect(
-        () => {
-            ws = new WebSocket(uri);
-            ws.onopen = () => {
-                ws.send(JSON.stringify(firstSend));
-            };
-            ws.onmessage = event => {
-                onMsg(JSON.parse(event.data));
-            };
-            setSocket(ws);
-            return ws.close;
-        },
-        [uri, firstSend, onMsg]
-    );
-
-    function send(data) {
-        socket.send(JSON.stringify(data));
-    }
-
-    function setOnMsg(onMsg) {
-        socket.onmessage = event => {
-            onMsg(JSON.parse(event.data));
-        };
-    }
-
-    return [send, setOnMsg];
-}
 
 export default Layout;

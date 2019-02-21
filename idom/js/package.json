@@ -18,6 +18,7 @@
     "setup": "lerna exec -- yarn",
     "build:layout": "lerna exec --scope idom-layout -- babel src -d dist --ignore test.js,story.js",
     "start:client": "cd packages/idom-client && yarn start",
+    "restart:client": "yarn build:layout && yarn start:client",
     "format": "prettier --print-width 80 --tab-width 4 --single-quote --write 'packages/*/src/**/*.js'",
     "precommit": "lint-staged"
   },

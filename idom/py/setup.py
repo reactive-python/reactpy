@@ -34,7 +34,7 @@ root = os.path.join(here, package["name"])
 # Requirements
 # -----------------------------------------------------------------------------
 
-package["install_requires"] = ["websockets"]
+package["install_requires"] = ["sanic", "sanic_cors"]
 
 # -----------------------------------------------------------------------------
 # Library Version

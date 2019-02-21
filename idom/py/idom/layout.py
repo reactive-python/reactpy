@@ -23,6 +23,10 @@ class Element:
         self._state = {}
         self._layout = None
 
+    @property
+    def id(self):
+        return str(id(self))
+
     def mount(self, layout):
         self._layout = layout
 
@@ -58,10 +62,10 @@ class Layout:
 
     def __init__(self, root):
         self._changed = asyncio.Event()
-        self._root = id(root)
+        self._root = root.id
         self._state = {}
         self._updates = []
-        self._create_element_state(id(root), None)
+        self._create_element_state(root.id, None)
         self.update(root)
 
     @property
@@ -73,7 +77,7 @@ class Layout:
         self._changed.clear()
 
     async def handle(self, target, handler, data):
-        model_state = self._state[int(target)]
+        model_state = self._state[target]
         function = model_state["event_handlers"][handler]
         result = function(data)
         if inspect.isawaitable(result):
@@ -86,7 +90,7 @@ class Layout:
     async def render(self):
         changes = {}
         for element in self._updates:
-            parent = self._state[id(element)]["parent"]
+            parent = self._state[element.id]["parent"]
             async for eid, model in self._render_element(element, parent):
                 changes[eid] = model
         self._updates.clear()
@@ -96,7 +100,7 @@ class Layout:
         element.mount(self)
         model = await element.render()
 
-        eid = id(element)
+        eid = element.id
         if self._has_element_state(eid):
             self._reset_element_state(eid)
         else:
@@ -138,7 +142,7 @@ class Layout:
             children = [children]
         loaded_children = []
         for child in children:
-            if isinstance(c, dict):
+            if isinstance(child, dict):
                 child = {
                     "type": "obj",
                     "data": self._load_model(child, eid),
@@ -146,7 +150,7 @@ class Layout:
             elif isinstance(child, Element):
                 child = {
                     "type": "ref",
-                    "data": str(id(child)),
+                    "data": child.id,
                 }
             else:
                 child = {
@@ -184,7 +188,8 @@ class Layout:
     def _load_event_handlers(self, handlers, key):
         event_targets = {}
         for event, handler in handlers.items():
-            callback_key = "%s_%s" % (id(handler), event)
+            callback_id = str(id(handler))
+            callback_key = "%s_%s" % (callback_id, event)
             event_targets[key] = callback_key
-            self._state[key]["event_handlers"][callback_key] = handler
+            self._state[key]["event_handlers"][callback_id] = handler
         return event_targets
