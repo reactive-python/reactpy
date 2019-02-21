@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+from collections.abc import Mapping
 
 
 def element(function):
@@ -10,59 +11,40 @@ def element(function):
     return constructor
 
 
-class Element:
+class Events(Mapping):
 
-    __slots__ = (
-        "_function",
-        "_layout",
-        "_state",
-    )
+    __slots__ = ("_handlers")
 
-    def __init__(self, function):
-        self._function = function
-        self._state = {}
-        self._layout = None
+    def __init__(self):
+        self._handlers = {}
 
-    @property
-    def id(self):
-        return str(id(self))
+    def on(self, event):
+        event_name = "on" + event.title()
+        def setup(function):
+            self._handlers[event_name] = function
+            return function
+        return setup
 
-    def mount(self, layout):
-        self._layout = layout
+    def __len__(self):
+        return len(self._handlers)
 
-    def update(self, *args, **kwargs):
-        sig = inspect.signature(self._function)
-        bound = sig.bind_partial(None, *args, **kwargs).arguments
-        self._state.update(list(bound.items())[1:])
-        if self._layout is not None:
-            self._layout.update(self)
-        return self
+    def __iter__(self):
+        return iter(self._handlers)
 
-    async def render(self):
-        model = self._function(self, **self._state)
-        if inspect.isawaitable(model):
-            model = await model
-        return model
-
-    def _iter_elements(self, model):
-        if isinstance(model, dict):
-            if isinstance(model["children"], (list, tuple)):
-                for child in model.get("children", []):
-                    if isinstance(child, Element):
-                        yield child
-                    else:
-                        yield from self._inner_elements(child)
+    def __getitem__(self, key):
+        return self._handlers[key]
 
     def __repr__(self):
-        state = ", ".join("%s=%s" % i for i in self._state.items())
-        return "%s(%s)" % (self._function.__qualname__, state)
+        return repr(self._handlers)
 
 
 class Layout:
 
+    __slots__ = ("_changed", "_root", "_state", "_updates")
+
     def __init__(self, root):
         self._changed = asyncio.Event()
-        self._root = root.id
+        self._root = root
         self._state = {}
         self._updates = []
         self._create_element_state(root.id, None)
@@ -70,18 +52,22 @@ class Layout:
 
     @property
     def root(self):
-        return self._root
+        return self._root.id
 
     async def changed(self):
         await self._changed.wait()
         self._changed.clear()
 
     async def handle(self, target, handler, data):
-        model_state = self._state[target]
-        function = model_state["event_handlers"][handler]
-        result = function(data)
-        if inspect.isawaitable(result):
-            await result
+        try:
+            model_state = self._state[target]
+            function = model_state["event_handlers"][handler]
+        except KeyError:
+            pass
+        else:
+            result = function(**data)
+            if inspect.isawaitable(result):
+                await result
 
     def update(self, element):
         self._updates.append(element)
@@ -160,6 +146,18 @@ class Layout:
             loaded_children.append(child)
         return loaded_children
 
+    def _load_event_handlers(self, handlers, key):
+        event_targets = {}
+        for event, handler in handlers.items():
+            callback_id = str(id(handler))
+            params = "-".join(list(inspect.signature(handler).parameters))
+            callback_key = "%s_%s" % (callback_id, event)
+            if params:
+                callback_key += "-" + params
+            event_targets[key] = callback_key
+            self._state[key]["event_handlers"][callback_id] = handler
+        return event_targets
+
     def _has_element_state(self, eid):
         return eid in self._state
 
@@ -185,11 +183,53 @@ class Layout:
         for i in old["inner_elements"]:
             self._delete_element_state(i)
 
-    def _load_event_handlers(self, handlers, key):
-        event_targets = {}
-        for event, handler in handlers.items():
-            callback_id = str(id(handler))
-            callback_key = "%s_%s" % (callback_id, event)
-            event_targets[key] = callback_key
-            self._state[key]["event_handlers"][callback_id] = handler
-        return event_targets
+    def __repr__(self):
+        return "%s(%r)" % (type(self).__name__, self._root)
+
+
+class Element:
+
+    __slots__ = (
+        "_function",
+        "_layout",
+        "_state",
+    )
+
+    def __init__(self, function):
+        self._function = function
+        self._state = {}
+        self._layout = None
+
+    @property
+    def id(self):
+        return str(id(self))
+
+    def mount(self, layout):
+        self._layout = layout
+
+    def update(self, *args, **kwargs):
+        sig = inspect.signature(self._function)
+        bound = sig.bind_partial(None, *args, **kwargs).arguments
+        self._state.update(list(bound.items())[1:])
+        if self._layout is not None:
+            self._layout.update(self)
+        return self
+
+    async def render(self):
+        model = self._function(self, **self._state)
+        if inspect.isawaitable(model):
+            model = await model
+        return model
+
+    def _iter_elements(self, model):
+        if isinstance(model, dict):
+            if isinstance(model["children"], (list, tuple)):
+                for child in model.get("children", []):
+                    if isinstance(child, Element):
+                        yield child
+                    else:
+                        yield from self._inner_elements(child)
+
+    def __repr__(self):
+        state = ", ".join("%s=%s" % i for i in self._state.items())
+        return "%s(%s)" % (self._function.__qualname__, state)

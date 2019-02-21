@@ -4,39 +4,39 @@ import produce from 'immer';
 
 function Layout({ socket }) {
     const [root, setRoot] = useState(null);
-    const [models, setModels] = useState({});
+    const [allModels, setAllModels] = useState({});
 
     socket.onmessage = event => {
       const msg = JSON.parse(event.data);
       setRoot(msg.header.root);
-      const newModels = { ...models, ...msg.body.models };
-      setModels(newModels);
+      const newModels = { ...allModels, ...msg.body.models };
+      setAllModels(newModels);
     }
 
     const sendMsg = msg => { socket.send(JSON.stringify(msg)) }
+    const sendEvent = event => {
+        sendMsg({
+            header: {},
+            body: { event: event }
+        });
+    };
 
-    if (root == null || !models.hasOwnProperty(root) ) {
+    if (root == null || !allModels.hasOwnProperty(root) ) {
         return <div />;
     } else {
-        return Element(models, root, event => {
-            sendMsg({
-                header: {},
-                body: { event: event }
-            });
-        });
+        return Element(allModels, allModels[root], sendEvent);
     }
 }
 
 
-function Element(models, id, sendEvent) {
-    const model = models[id];
+function Element(allModels, model, sendEvent) {
 
     const children = model.children.map(child => {
         switch (child.type) {
             case 'ref':
-                return Element(models[child.data]);
+                return Element(allModels, allModels[child.data], sendEvent);
             case 'obj':
-                return Element(child.data);
+                return Element(allModels, child.data, sendEvent);
             case 'str':
                 return child.data;
         }
@@ -45,13 +45,18 @@ function Element(models, id, sendEvent) {
     const attributes = Object.assign({}, model.attributes);
 
     Object.keys(model.eventHandlers).forEach(target => {
-        const [handler, eventName] = model.eventHandlers[target].split('_');
+        const [handler, eventDef] = model.eventHandlers[target].split('_');
+        const eventParts = eventDef.split("-");
+        const eventName = eventParts.shift();
         attributes[eventName] = event => {
-          console.log(event);
+          const data = {};
+          eventParts.forEach(n => {
+            data[n] = event[n];
+          })
           sendEvent({
               target: target,
               handler: handler,
-              data: null
+              data: data
           });
         };
     });
