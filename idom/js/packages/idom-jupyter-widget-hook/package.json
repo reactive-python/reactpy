@@ -1,5 +1,5 @@
 {
-  "name": "idom-client",
+  "name": "idom-jupyter-widget-hook",
   "version": "0.1.0",
   "private": true,
   "scripts": {

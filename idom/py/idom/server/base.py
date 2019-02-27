@@ -1,6 +1,5 @@
 import abc
 import asyncio
-import json
 from multiprocessing import Process
 from sanic import Sanic
 from sanic_cors import CORS
@@ -66,9 +65,9 @@ class BaseServer(abc.ABC):
             daemon=True,
         ).start()
 
-    @handle("websocket", "/stream")
+    @handle("websocket", "/idom/stream")
     async def _stream(self, request, socket):
-        layout = self._make_layout()
+        layout = self._init_layout()
         await asyncio.gather(
             self._send_loop(socket, layout),
             self._recv_loop(socket, layout)
@@ -76,23 +75,17 @@ class BaseServer(abc.ABC):
 
     async def _send_loop(self, socket, layout):
         while True:
-            await layout.changed()
-            msg = await self._form_change_message(layout)
-            await socket.send(json.dumps(msg))
+            await self._send(socket, layout)
 
     async def _recv_loop(self, socket, layout):
         while True:
-            msg = json.loads(await socket.recv())
-            await self._load_event_message(layout, msg)
+            await self._recv(socket, layout)
 
     @abc.abstractmethod
-    def _make_layout(self):
-        pass
+    def _init_layout(self): ...
 
     @abc.abstractmethod
-    def _form_change_message(self, change):
-        pass
+    def _send(self, socket, layout): ...
 
     @abc.abstractmethod
-    def _load_event_message(self, msg):
-        pass
+    def _recv(self, socket, layout): ...

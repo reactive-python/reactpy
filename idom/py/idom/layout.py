@@ -1,3 +1,5 @@
+import uuid
+import json
 import asyncio
 import inspect
 from collections.abc import Mapping
@@ -24,6 +26,11 @@ class Events(Mapping):
             self._handlers[event_name] = function
             return function
         return setup
+
+    def copy(self):
+        new = Events()
+        new._handlers = self._handlers
+        return new
 
     def __len__(self):
         return len(self._handlers)
@@ -75,12 +82,14 @@ class Layout:
 
     async def render(self):
         changes = {}
+        update_ids = []
         for element in self._updates:
             parent = self._state[element.id]["parent"]
             async for eid, model in self._render_element(element, parent):
                 changes[eid] = model
+            update_ids.append(element.id)
         self._updates.clear()
-        return changes
+        return update_ids, changes
 
     async def _render_element(self, element, parent_eid):
         element.mount(self)
@@ -115,7 +124,7 @@ class Layout:
 
     def _load_model(self, model, eid):
         model = model.copy()
-        model["children"] = self._load_model_children(
+        children = model["children"] = self._load_model_children(
             model.setdefault("children", []), eid
         )
         model["eventHandlers"] = self._load_event_handlers(
@@ -191,6 +200,7 @@ class Element:
 
     __slots__ = (
         "_function",
+        "_id",
         "_layout",
         "_state",
     )
@@ -199,10 +209,11 @@ class Element:
         self._function = function
         self._state = {}
         self._layout = None
+        self._id = uuid.uuid4().hex
 
     @property
     def id(self):
-        return str(id(self))
+        return self._id
 
     def mount(self, layout):
         self._layout = layout
@@ -220,15 +231,6 @@ class Element:
         if inspect.isawaitable(model):
             model = await model
         return model
-
-    def _iter_elements(self, model):
-        if isinstance(model, dict):
-            if isinstance(model["children"], (list, tuple)):
-                for child in model.get("children", []):
-                    if isinstance(child, Element):
-                        yield child
-                    else:
-                        yield from self._inner_elements(child)
 
     def __repr__(self):
         state = ", ".join("%s=%s" % i for i in self._state.items())
