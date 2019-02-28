@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import Layout from "idom-layout";
+import './index.css'
 
 const uri = document.location.hostname + ":" + document.location.port;
 const url = (uri + document.location.pathname).split("/").slice(0, -1);
@@ -9,9 +10,9 @@ const secure = (document.location.protocol === "https:");
 
 let protocol
 if (secure) {
-  protocol = "wss:";
+    protocol = "wss:";
 } else {
-  protocol = "ws:";
+    protocol = "ws:";
 }
 let endpoint = protocol + '//' + url.join('/');
 

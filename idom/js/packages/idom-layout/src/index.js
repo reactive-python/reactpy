@@ -1,8 +1,14 @@
 import React, { useReducer, useEffect, useState, useMemo } from "react";
 import produce from "immer";
 
-const dynamicElements = {};
+const allUpdateTriggers = {};
 const allModels = {};
+
+function updateDynamicElement(elementId) {
+    if (allUpdateTriggers.hasOwnProperty(elementId)) {
+        allUpdateTriggers[elementId]();
+    }
+}
 
 function Layout({ endpoint }) {
     const socket = useMemo(() => {
@@ -15,14 +21,11 @@ function Layout({ endpoint }) {
 
     socket.onmessage = event => {
         const msg = JSON.parse(event.data);
-        Object.assign(allModels, msg.body.models)
-        msg.body.updateRoots.forEach(elementId => {
-            if (dynamicElements.hasOwnProperty(elementId)) {
-                dynamicElements[elementId]();
-            }
-        });
-        if (allModels.hasOwnProperty(msg.header.root) && msg.header.root != root) {
-            setRoot(msg.header.root);
+        Object.assign(allModels, msg.body.render.new)
+        msg.body.render.old.forEach(elementId => { delete allModels[elementId] });
+        msg.body.render.roots.forEach(updateDynamicElement);
+        if ( !root ) {
+            setRoot(msg.body.render.roots[0]);
         }
     };
 
@@ -36,16 +39,16 @@ function Layout({ endpoint }) {
         });
     };
 
-    if (!allModels.hasOwnProperty(root)) {
-        return <div />;
-    } else {
+    if ( root ){
         return <DynamicElement elementId={root} sendEvent={sendEvent}/>;
+    } else {
+        return <div />;
     }
 }
 
-function DynamicElement({ elementId, sendEvent}) {
-    dynamicElements[elementId] = useForceUpdate()
-    const model = allModels[elementId]
+function DynamicElement({ elementId, sendEvent }) {
+    allUpdateTriggers[elementId] = useForceUpdate();
+    const model = allModels[elementId];
     return <Element model={model} sendEvent={sendEvent}/>;
 }
 

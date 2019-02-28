@@ -20,21 +20,23 @@ class SimpleServer(BaseServer):
         return Layout(self._element(*self._args, **self._kwargs))
 
     async def _send(self, socket, layout):
-        await layout.changed()
-        updates, change = await layout.render()
-        msg = self._change_message(layout.root, updates, change)
+        roots, new, old = await layout.render()
+        msg = self._change_message(roots, new, old)
         await socket.send(json.dumps(msg))
 
     async def _recv(self, socket, layout):
         msg = json.loads(await socket.recv())
-        await layout.handle(**msg["body"]["event"])
+        await layout.apply(**msg["body"]["event"])
 
-    def _change_message(self, root, updates, change):
+    def _change_message(self, roots, new, old):
         return {
-            "header": {"root": root},
+            "header": {},
             "body": {
-                "models": change,
-                "updateRoots": updates,
+                "render": {
+                    "new": new,
+                    "old": old,
+                    "roots": roots,
+                }
             }
         }
 
@@ -43,5 +45,4 @@ class SimpleWebServer(SimpleServer):
 
     @handle("route", "/idom/client/<path:path>")
     async def client(self, request, path):
-        print(path)
         return await response.file(os.path.join(STATIC, "simple-client", *path.split("\n")))

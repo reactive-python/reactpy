@@ -21,7 +21,10 @@ class Events(Mapping):
         self._handlers = {}
 
     def on(self, event):
-        event_name = "on" + event.title()
+        event_name = "on" + "".join(
+            part[:1].upper() + part[1:]
+            for part in event.split("_")
+        )
         def setup(function):
             self._handlers[event_name] = function
             return function
@@ -47,25 +50,22 @@ class Events(Mapping):
 
 class Layout:
 
-    __slots__ = ("_changed", "_root", "_state", "_updates")
+    __slots__ = ("_update_event", "_update_queue", "_callback_queue", "_root", "_state")
 
     def __init__(self, root):
-        self._changed = asyncio.Event()
-        self._root = root
         self._state = {}
-        self._updates = []
+        self._root = root
+        self._update_queue = []
+        self._update_event = asyncio.Event()
+        self._callback_queue = []
         self._create_element_state(root.id, None)
-        self.update(root)
+        self._update(root)
 
     @property
     def root(self):
         return self._root.id
 
-    async def changed(self):
-        await self._changed.wait()
-        self._changed.clear()
-
-    async def handle(self, target, handler, data):
+    async def apply(self, target, handler, data):
         try:
             model_state = self._state[target]
             function = model_state["event_handlers"][handler]
@@ -76,24 +76,45 @@ class Layout:
             if inspect.isawaitable(result):
                 await result
 
-    def update(self, element):
-        self._updates.append(element)
-        self._changed.set()
-
     async def render(self):
-        changes = {}
-        update_ids = []
-        for element in self._updates:
+        roots, new = [], {}
+        # current element ids
+        current = set(self._state)
+        for element in (await self._updates()):
             parent = self._state[element.id]["parent"]
-            async for eid, model in self._render_element(element, parent):
-                changes[eid] = model
-            update_ids.append(element.id)
-        self._updates.clear()
-        return update_ids, changes
+            async for element_id, model in self._render_element(element, parent):
+                new[element_id] = model
+            roots.append(element.id)
+        callbacks = self._callback_queue[:]
+        self._callback_queue.clear()
+        for cb in callbacks:
+            result = cb()
+            if inspect.isawaitable(result):
+                await result
+        # all deleted element ids
+        old = list(current.difference(self._state))
+        return roots, new, old
+
+    def _callback(self, function):
+        self._callback_queue.append(function)
+
+    def _update(self, element):
+        self._update_queue.append(element)
+        self._update_event.set()
+
+    async def _updates(self):
+        await self._update_event.wait()
+        self._update_event.clear()
+        updates = self._update_queue[:]
+        self._update_queue.clear()
+        return updates
 
     async def _render_element(self, element, parent_eid):
-        element.mount(self)
+        element._mount(self)
         model = await element.render()
+
+        if isinstance(model, Element):
+            model = {"tagName": "div", "children": [model]}
 
         eid = element.id
         if self._has_element_state(eid):
@@ -192,9 +213,6 @@ class Layout:
         for i in old["inner_elements"]:
             self._delete_element_state(i)
 
-    def __repr__(self):
-        return "%s(%r)" % (type(self).__name__, self._root)
-
 
 class Element:
 
@@ -208,6 +226,9 @@ class Element:
     def __init__(self, function):
         self._function = function
         self._state = {}
+        for param in inspect.signature(function).parameters.values():
+            if param.default is not inspect.Parameter.empty:
+                self._state[param.name] = param.default
         self._layout = None
         self._id = uuid.uuid4().hex
 
@@ -215,15 +236,22 @@ class Element:
     def id(self):
         return self._id
 
-    def mount(self, layout):
-        self._layout = layout
+    def callback(self, function):
+        self._layout._callback(function)
 
-    def update(self, *args, **kwargs):
+    def set(self, *args, **kwargs):
         sig = inspect.signature(self._function)
         bound = sig.bind_partial(None, *args, **kwargs).arguments
         self._state.update(list(bound.items())[1:])
+        return self
+
+    def get(self, key):
+        return self._state[key]
+
+    def update(self, *args, **kwargs):
+        self.set(*args, **kwargs)
         if self._layout is not None:
-            self._layout.update(self)
+            self._layout._update(self)
         return self
 
     async def render(self):
@@ -231,6 +259,9 @@ class Element:
         if inspect.isawaitable(model):
             model = await model
         return model
+
+    def _mount(self, layout):
+        self._layout = layout
 
     def __repr__(self):
         state = ", ".join("%s=%s" % i for i in self._state.items())
