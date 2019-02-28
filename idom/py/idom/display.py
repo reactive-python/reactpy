@@ -1,12 +1,14 @@
 import os
 import uuid
 
+from typing import Any
+
 from .layout import Layout
 from .server import SimpleServer
 from .utils import STATIC
 
 
-def display(kind, *args, **kwargs):
+def display(kind: str, *args: Any, **kwargs: Any) -> Any:
     wtype = {"jupyter": JupyterWigdet}[kind]
     return wtype(*args, **kwargs)
 
@@ -14,9 +16,9 @@ def display(kind, *args, **kwargs):
 class JupyterWigdet:
 
     _shown = False
-    __slots__ = ("_url")
+    __slots__ = "_url"
 
-    def __init__(self, url):
+    def __init__(self, url: str):
         self._url = url
 
     def _script(self):
@@ -26,7 +28,7 @@ class JupyterWigdet:
                 with open(os.path.join(JS, filename), "r") as f:
                     return f.read()
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         """Rich HTML display output."""
         mount_id = uuid.uuid4().hex
         return f"""
