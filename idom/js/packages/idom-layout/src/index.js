@@ -1,5 +1,5 @@
 import React, { useReducer, useEffect, useState, useMemo } from "react";
-import produce from "immer";
+import $ from 'jquery';
 
 const allUpdateTriggers = {};
 const allModels = {};
@@ -67,13 +67,17 @@ function Element({ model, sendEvent }) {
     const attributes = Object.assign({}, model.attributes);
 
     Object.keys(model.eventHandlers).forEach(target => {
-        const [handler, eventDef] = model.eventHandlers[target].split("_");
-        const eventParts = eventDef.split("-");
-        const eventName = eventParts.shift();
+        const [handler, eventDef] = model.eventHandlers[target].split(/_(.+)/);
+        const eventDataSpec = eventDef.split("-");
+        const eventName = eventDataSpec.shift();
         attributes[eventName] = event => {
             const data = {};
-            eventParts.forEach(n => {
-                data[n] = event[n];
+            eventDataSpec.forEach(n => {
+                if ( event.hasOwnProperty(n) ) {
+                    data[n] = event[n];
+                } else {
+                    data[n] = event.target[n];
+                }
             });
             sendEvent({
                 target: target,

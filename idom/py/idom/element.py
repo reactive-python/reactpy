@@ -1,13 +1,27 @@
 import idom
 import uuid
 import inspect
+from functools import wraps
 
-from typing import List, Dict, Tuple, Callable, Iterator, Union, Any, Optional, TypeVar, Generic, Mapping
+from typing import (
+    List,
+    Dict,
+    Tuple,
+    Callable,
+    Iterator,
+    Union,
+    Any,
+    Optional,
+    TypeVar,
+    Generic,
+    Mapping,
+)
 
 from .utils import Bunch
 
 
 def element(function: Callable) -> Callable:
+    @wraps(function)
     def constructor(*args: Any, **kwargs: Any) -> Element:
         return Element(function).update(*args, **kwargs)
 
@@ -75,35 +89,6 @@ class Element:
         return "%s(%s)" % (self._function.__qualname__, state)
 
 
-class State:
-
-    __slots__ = ("_data")
-
-    def __init__(self, data: Mapping = None):
-        self._data: Dict[str, Any] = {}
-        self.update(data or {})
-
-    def get(self) -> Dict:
-        return self._data
-
-    def update(self, *args: Any, **kwargs: Any):
-        for k, v in dict(*args, **kwargs).items():
-            if isinstance(v, Context):
-                # we don't want this to be shared between sessions
-                v = v.copy()
-            if isinstance(self._data.get(k), Context):
-                self._data[k].current = v
-            else:
-                self._data[k] = v
-
-    def reset(self):
-        for k, v in tuple(self._data.items()):
-            if isinstance(v, Context):
-                v.reset()
-            else:
-                del self._data[k]
-
-
 CurrentContext = TypeVar("CurrentContext")
 
 
@@ -124,3 +109,36 @@ class Context(Generic[CurrentContext]):
 
     def copy(self) -> "Context":
         return Context(self._factory)
+
+    def __repr__(self):
+        return "Context(%r)" % self.current
+
+
+class State:
+
+    __slots__ = "_data"
+
+    def __init__(self, data: Mapping = None):
+        data = data or {}
+        for k, v in data.items():
+            if isinstance(v, Context):
+                # we don't want this to be shared between sessions
+                data[k] = v.copy()
+        self._data: Dict[str, Any] = data
+
+    def get(self) -> Dict:
+        return self._data
+
+    def update(self, *args: Any, **kwargs: Any):
+        for k, v in dict(*args, **kwargs).items():
+            if isinstance(self._data.get(k), Context):
+                self._data[k].current = v
+            else:
+                self._data[k] = v
+
+    def reset(self):
+        for k, v in tuple(self._data.items()):
+            if isinstance(v, Context):
+                v.reset()
+            else:
+                del self._data[k]

@@ -1,12 +1,13 @@
 import abc
 import sanic
 import asyncio
+from functools import partial, wraps
 from websockets import WebSocketCommonProtocol
 from multiprocessing import Process
-from sanic import Sanic
+from sanic import Sanic, Blueprint
 from sanic_cors import CORS
 
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, Tuple, Dict
 
 from idom import Layout
 
@@ -21,9 +22,10 @@ def handle(*args: Any, **kwargs: Any) -> Callable:
 
 class Handle:
 
-    __slots__ = ("_kind", "_args", "_kwargs", "_function", "_name")
+    __slots__ = ("_blueprint", "_kind", "_args", "_kwargs", "_function", "_name")
 
-    def __init__(self, kind: str, *args: Any, **kwargs: Any):
+    def __init__(self, blueprint: str, kind: str, *args: Any, **kwargs: Any):
+        self._blueprint = blueprint
         self._kind = kind
         self._args = args
         self._kwargs = kwargs
@@ -33,12 +35,13 @@ class Handle:
         cls._handles += (name,)
         self._name = name
 
-    def setup(self, obj: "BaseServer", app: Sanic):
+    def setup(self, obj: "BaseServer", app):
+        blueprint = app.blueprints[self._blueprint]
         if self._function is not None:
-            method = getattr(obj, self._name)
-            getattr(app, self._kind)(*self._args, **self._kwargs)(method)
+            method = wraps(self._function)(partial(self._function, obj))
+            getattr(blueprint, self._kind)(*self._args, **self._kwargs)(method)
         else:
-            getattr(app, self._kind)(*self._args, **self._kwargs)
+            getattr(blueprint, self._kind)(*self._args, **self._kwargs)
 
     def with_method(self, function) -> "Handle":
         self._function = function
@@ -55,19 +58,33 @@ class BaseServer(abc.ABC):
 
     _handles: Tuple[str, ...] = ()
 
+    def __init__(self):
+        self.app = Sanic()
+        self._blueprints: List[Blueprint] = []
+
+    def blueprint(self, bp: Blueprint):
+        self._blueprints.append(bp)
+        self.app.blueprint(bp)
+
     def run(self, *args: Any, cors: bool = False, **kwargs: Any):
-        app = self._app = Sanic()
+        if "idom" not in self.app.blueprints:
+            raise RuntimeError("The application must have a blueprint named 'idom'")
         if cors:
             CORS(app)
         for h in self._handles:
             handle = getattr(type(self), h)
-            handle.setup(self, app)
-        self._app.run(*args, **kwargs)
+            handle.setup(self, self.app)
+        # we have to reregister them since we changed the blueprints
+        for bp in self._blueprints:
+            self.app.blueprint(bp)
+        self.app.run(*args, **kwargs)
 
     def daemon(self, *args: Any, **kwargs: Any):
-        return Process(target=self.run, args=args, kwargs=kwargs, daemon=True).start()
+        proc = Process(target=self.run, args=args, kwargs=kwargs, daemon=True)
+        proc.start()
+        return proc
 
-    @handle("websocket", "/idom/stream")
+    @handle("idom", "websocket", "/stream")
     async def _stream(
         self, request: sanic.request.Request, socket: WebSocketCommonProtocol
     ):

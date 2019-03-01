@@ -5,11 +5,16 @@ from typing import Any, Callable, Dict, Optional
 from .utils import Bunch
 
 
+def snake_to_camel(string):
+    return "".join(part[:1].upper() + part[1:] for part in string.split("_"))
+
+
 def node(tag: str, *children: Any, **attributes: Any) -> "Node":
     if len(children) == 1:
         if isinstance(children[0], (list, tuple)):
             children = tuple(children[0])
-    event_handlers = attributes.pop("eventHandlers", {})
+    event_handlers = attributes.pop("eventHandlers", Events())
+    attributes.setdefault("style", {})
     return Node(
         {
             "tagName": tag,
@@ -40,9 +45,7 @@ class Events(Mapping):
         self._handlers = {}
 
     def on(self, event: str) -> Callable:
-        event_name = "on" + "".join(
-            part[:1].upper() + part[1:] for part in event.split("_")
-        )
+        event_name = "on" + snake_to_camel(event)
 
         def setup(function: Callable) -> Callable:
             self._handlers[event_name] = function

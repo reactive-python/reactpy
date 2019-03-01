@@ -1,7 +1,7 @@
 import os
 import json
 import pprint
-from sanic import response, request
+from sanic import response, request, Blueprint
 from websockets import WebSocketCommonProtocol
 
 from typing import List, Dict, Any
@@ -14,9 +14,11 @@ from .base import BaseServer, handle
 
 class SimpleServer(BaseServer):
     def __init__(self, element, *args, **kwargs):
+        super().__init__()
         self._element = element
         self._args = args
         self._kwargs = kwargs
+        self.blueprint(Blueprint("idom", url_prefix="/idom"))
 
     def _init_layout(self):
         return Layout(self._element(*self._args, **self._kwargs))
@@ -40,7 +42,7 @@ class SimpleServer(BaseServer):
 
 
 class SimpleWebServer(SimpleServer):
-    @handle("route", "/idom/client/<path:path>")
+    @handle("idom", "route", "/client/<path:path>")
     async def client(self, request: request.Request, path: str):
         return await response.file(
             os.path.join(STATIC, "simple-client", *path.split("\n"))

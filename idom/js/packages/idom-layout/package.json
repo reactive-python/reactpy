@@ -16,7 +16,8 @@
     "build-storybook": "build-storybook"
   },
   "dependencies": {
-    "immer": "^2.0.0",
+    "del-cli": "^1.1.0",
+    "jquery": "^3.3.1",
     "react": "^16.8.2",
     "react-dom": "^16.8.2"
   },
@@ -29,10 +30,10 @@
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-1": "^6.24.1",
     "css-loader": "^0.28.11",
-    "eslint": "^4.19.1",
-    "eslint-plugin-react": "^7.7.0",
     "enzyme": "^3.3.0",
     "enzyme-adapter-react-16": "^1.1.1",
+    "eslint": "^4.19.1",
+    "eslint-plugin-react": "^7.7.0",
     "file-loader": "^1.1.11",
     "glob-loader": "^0.3.0",
     "jest": "^20.0.4",
