@@ -1,11 +1,12 @@
 import abc
+import sanic
 import asyncio
 from websockets import WebSocketCommonProtocol
 from multiprocessing import Process
 from sanic import Sanic
 from sanic_cors import CORS
 
-from typing import Any, Callable
+from typing import Any, Callable, Tuple
 
 from idom import Layout
 
@@ -52,7 +53,7 @@ class Handle:
 
 class BaseServer(abc.ABC):
 
-    _handles = ()
+    _handles: Tuple[str, ...] = ()
 
     def run(self, *args: Any, cors: bool = False, **kwargs: Any):
         app = self._app = Sanic()
@@ -68,7 +69,7 @@ class BaseServer(abc.ABC):
 
     @handle("websocket", "/idom/stream")
     async def _stream(
-        self, request: sanic.request.Request, socket: websockets.WebSocketCommonProtocol
+        self, request: sanic.request.Request, socket: WebSocketCommonProtocol
     ):
         layout = self._init_layout()
         await asyncio.gather(

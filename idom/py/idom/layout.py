@@ -1,53 +1,26 @@
-import uuid
 import json
 import asyncio
 import inspect
 from collections.abc import Mapping
 
-from typing import List, Dict, Tuple, Callable, Iterator, Union, Any
+from typing import (
+    List,
+    Dict,
+    Tuple,
+    Callable,
+    Iterator,
+    Union,
+    Any,
+    Optional,
+    AsyncIterator,
+)
 
+from .element import Element
 
-def element(function: Callable) -> Callable:
-    def constructor(*args: Any, **kwargs: Any) -> Element:
-        return Element(function).update(*args, **kwargs)
-
-    return constructor
-
-
-class Events(Mapping):
-
-    __slots__ = "_handlers"
-
-    def __init__(self):
-        self._handlers = {}
-
-    def on(self, event: str) -> Callable:
-        event_name = "on" + "".join(
-            part[:1].upper() + part[1:] for part in event.split("_")
-        )
-
-        def setup(function: Callable) -> Callable:
-            self._handlers[event_name] = function
-            return function
-
-        return setup
-
-    def copy(self) -> "Events":
-        new = Events()
-        new._handlers = self._handlers
-        return new
-
-    def __len__(self):
-        return len(self._handlers)
-
-    def __iter__(self):
-        return iter(self._handlers)
-
-    def __getitem__(self, key):
-        return self._handlers[key]
-
-    def __repr__(self):
-        return repr(self._handlers)
+try:
+    import vdom
+except ImportError:
+    vdom = None
 
 
 class Layout:
@@ -103,18 +76,20 @@ class Layout:
     def _callback(self, function: Callable):
         self._callback_queue.append(function)
 
-    def _update(self, element: Element):
+    def _update(self, element: "Element"):
         self._update_queue.append(element)
         self._update_event.set()
 
-    async def _updates(self) -> List[Element]:
+    async def _updates(self) -> List["Element"]:
         await self._update_event.wait()
         self._update_event.clear()
         updates = self._update_queue[:]
         self._update_queue.clear()
         return updates
 
-    async def _render_element(self, element: Element, parent_eid: str):
+    async def _render_element(
+        self, element: "Element", parent_eid: str
+    ) -> AsyncIterator[Tuple[str, Dict]]:
         element._mount(self)
         model = await element.render()
 
@@ -130,26 +105,32 @@ class Layout:
         async for i, m in self._render_model(model, eid):
             yield i, m
 
-    async def _render_model(self, model: Dict, eid: str) -> Iterator[Tuple[str, Dict]]:
+    async def _render_model(
+        self, model: Mapping, eid: str
+    ) -> AsyncIterator[Tuple[str, Dict]]:
         index = 0
-        to_visit = [model]
+        to_visit: List[Union[Mapping, Element]] = [model]
         while index < len(to_visit):
             node = to_visit[index]
             if isinstance(node, Element):
                 async for i, m in self._render_element(node, eid):
                     yield i, m
-            elif isinstance(node, dict):
+            elif isinstance(node, Mapping):
                 if "children" in node:
                     value = node["children"]
                     if isinstance(value, (list, tuple)):
                         to_visit.extend(value)
-                    elif isinstance(value, (dict, Element)):
+                    elif isinstance(value, (Mapping, Element)):
                         to_visit.append(value)
+            elif vdom is not None and isinstance(node, vdom.VDOM):
+                to_visit.append(_from_vdom(node))
+            else:
+                raise TypeError("Cannot render %r" % node)
             index += 1
         yield eid, self._load_model(model, eid)
 
-    def _load_model(self, model: Dict, eid: str):
-        model = model.copy()
+    def _load_model(self, model: Mapping, eid: str):
+        model = dict(model)
         children = model["children"] = self._load_model_children(
             model.setdefault("children", []), eid
         )
@@ -165,7 +146,7 @@ class Layout:
             children = [children]
         loaded_children = []
         for child in children:
-            if isinstance(child, dict):
+            if isinstance(child, Mapping):
                 child = {"type": "obj", "data": self._load_model(child, eid)}
             elif isinstance(child, Element):
                 child = {"type": "ref", "data": child.id}
@@ -191,8 +172,8 @@ class Layout:
     def _has_element_state(self, eid: str) -> bool:
         return eid in self._state
 
-    def _create_element_state(self, eid: str, parent_eid: str):
-        if self._has_element_state(parent_eid):
+    def _create_element_state(self, eid: str, parent_eid: Optional[str]):
+        if parent_eid is not None and self._has_element_state(parent_eid):
             self._state[parent_eid]["inner_elements"].add(eid)
         self._state[eid] = {
             "parent": parent_eid,
@@ -214,50 +195,16 @@ class Layout:
             self._delete_element_state(i)
 
 
-class Element:
-
-    __slots__ = ("_function", "_id", "_layout", "_state")
-
-    def __init__(self, function: Callable):
-        self._function = function
-        self._state = {}
-        for param in inspect.signature(function).parameters.values():
-            if param.default is not inspect.Parameter.empty:
-                self._state[param.name] = param.default
-        self._layout = None
-        self._id = uuid.uuid4().hex
-
-    @property
-    def id(self) -> str:
-        return self._id
-
-    def callback(self, function: Callable):
-        self._layout._callback(function)
-
-    def set(self, *args, **kwargs) -> "Element":
-        sig = inspect.signature(self._function)
-        bound = sig.bind_partial(None, *args, **kwargs).arguments
-        self._state.update(list(bound.items())[1:])
-        return self
-
-    def get(self, key: str) -> Any:
-        return self._state[key]
-
-    def update(self, *args, **kwargs) -> "Element":
-        self.set(*args, **kwargs)
-        if self._layout is not None:
-            self._layout._update(self)
-        return self
-
-    async def render(self) -> Dict[str, Any]:
-        model = self._function(self, **self._state)
-        if inspect.isawaitable(model):
-            model = await model
-        return model
-
-    def _mount(self, layout: Layout):
-        self._layout = layout
-
-    def __repr__(self) -> str:
-        state = ", ".join("%s=%s" % i for i in self._state.items())
-        return "%s(%s)" % (self._function.__qualname__, state)
+def _from_vdom(node: vdom.VDOM):
+    data = {
+        "tagName": node.tag_name,
+        "children": node.children,
+        "attributes": node.attributes,
+    }
+    if node.style:
+        data["attributes"]["style"] = node.style
+    if node.event_handlers:
+        data["eventHandlers"] = node.event_handlers
+    if node.key:
+        data["key"] = node.key
+    return data

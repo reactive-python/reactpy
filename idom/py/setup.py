@@ -20,6 +20,7 @@ package = dict(
     url="https://github.com/rmorshea/idom",
     keywords=["web"],
     platforms="Linux, Mac OS X, Windows",
+    package_data={"idom": ["py.typed"]},
 )
 
 # -----------------------------------------------------------------------------
