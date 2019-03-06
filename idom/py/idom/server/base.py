@@ -3,7 +3,7 @@ import sanic
 import asyncio
 from functools import partial, wraps
 from websockets import WebSocketCommonProtocol
-from multiprocessing import Process
+from threading import Thread
 from sanic import Sanic, Blueprint
 from sanic_cors import CORS
 
@@ -67,22 +67,32 @@ class BaseServer(abc.ABC):
         self.app.blueprint(bp)
 
     def run(self, *args: Any, cors: bool = False, **kwargs: Any):
-        if "idom" not in self.app.blueprints:
-            raise RuntimeError("The application must have a blueprint named 'idom'")
+        self._setup_blueprints()
         if cors:
             CORS(app)
+        self.app.run(*args, **kwargs)
+
+    def daemon(self, *args: Any, **kwargs: Any):
+        def run():
+            self._setup_blueprints()
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            server = self.app.create_server(*args, **kwargs)
+            task = asyncio.ensure_future(server)
+            loop.run_forever()
+        thread = Thread(target=run)
+        thread.start()
+        return thread
+
+    def _setup_blueprints(self):
+        if "idom" not in self.app.blueprints:
+            raise RuntimeError("The application must have a blueprint named 'idom'")
         for h in self._handles:
             handle = getattr(type(self), h)
             handle.setup(self, self.app)
         # we have to reregister them since we changed the blueprints
         for bp in self._blueprints:
             self.app.blueprint(bp)
-        self.app.run(*args, **kwargs)
-
-    def daemon(self, *args: Any, **kwargs: Any):
-        proc = Process(target=self.run, args=args, kwargs=kwargs, daemon=True)
-        proc.start()
-        return proc
 
     @handle("idom", "websocket", "/stream")
     async def _stream(
