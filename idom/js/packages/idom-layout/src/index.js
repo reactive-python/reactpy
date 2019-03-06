@@ -1,5 +1,4 @@
 import React, { useReducer, useEffect, useState, useMemo } from "react";
-import $ from 'jquery';
 
 const allUpdateTriggers = {};
 const allModels = {};
@@ -11,20 +10,23 @@ function updateDynamicElement(elementId) {
 }
 
 function Layout({ endpoint }) {
-    const socket = useMemo(() => {
-        return new WebSocket(endpoint);
-      },
-      [endpoint]
+    const socket = useMemo(
+        () => {
+            return new WebSocket(endpoint);
+        },
+        [endpoint]
     );
 
     const [root, setRoot] = useState(null);
 
     socket.onmessage = event => {
         const msg = JSON.parse(event.data);
-        Object.assign(allModels, msg.body.render.new)
-        msg.body.render.old.forEach(elementId => { delete allModels[elementId] });
+        Object.assign(allModels, msg.body.render.new);
+        msg.body.render.old.forEach(elementId => {
+            delete allModels[elementId];
+        });
         msg.body.render.roots.forEach(updateDynamicElement);
-        if ( !root ) {
+        if (!root) {
             setRoot(msg.body.render.roots[0]);
         }
     };
@@ -39,8 +41,8 @@ function Layout({ endpoint }) {
         });
     };
 
-    if ( root ){
-        return <DynamicElement elementId={root} sendEvent={sendEvent}/>;
+    if (root) {
+        return <DynamicElement elementId={root} sendEvent={sendEvent} />;
     } else {
         return <div />;
     }
@@ -49,16 +51,21 @@ function Layout({ endpoint }) {
 function DynamicElement({ elementId, sendEvent }) {
     allUpdateTriggers[elementId] = useForceUpdate();
     const model = allModels[elementId];
-    return <Element model={model} sendEvent={sendEvent}/>;
+    return <Element model={model} sendEvent={sendEvent} />;
 }
 
 function Element({ model, sendEvent }) {
     const children = model.children.map(child => {
         switch (child.type) {
             case "ref":
-                return <DynamicElement elementId={child.data} sendEvent={sendEvent}/>;
+                return (
+                    <DynamicElement
+                        elementId={child.data}
+                        sendEvent={sendEvent}
+                    />
+                );
             case "obj":
-                return <Element model={child.data} sendEvent={sendEvent}/>;
+                return <Element model={child.data} sendEvent={sendEvent} />;
             case "str":
                 return child.data;
         }
@@ -67,21 +74,22 @@ function Element({ model, sendEvent }) {
     const attributes = Object.assign({}, model.attributes);
 
     Object.keys(model.eventHandlers).forEach(target => {
-        const [handler, eventDef] = model.eventHandlers[target].split(/_(.+)/);
-        const eventDataSpec = eventDef.split("-");
-        const eventName = eventDataSpec.shift();
+        const eventSpec = model.eventHandlers[target].split("_");
+        const [handlerId, eventName, eventProps] = eventSpec;
         attributes[eventName] = event => {
             const data = {};
-            eventDataSpec.forEach(n => {
-                if ( event.hasOwnProperty(n) ) {
-                    data[n] = event[n];
-                } else {
-                    data[n] = event.target[n];
+            eventProps.split(";").forEach(prop => {
+                const path = prop.split(".");
+                const firstProp = path.shift();
+                let value = event[firstProp];
+                for (let i = 0; i < path.length; i++) {
+                    value = value[path[i]];
                 }
+                data[prop] = value;
             });
             sendEvent({
                 target: target,
-                handler: handler,
+                handler: model.eventHandlers[target],
                 data: data
             });
         };
@@ -96,11 +104,11 @@ function Element({ model, sendEvent }) {
 }
 
 function useForceUpdate() {
-  const [ , setState ] = useState(true);
-  const forceUpdate = () => {
-    setState(state => !state);
-  };
-  return forceUpdate;
+    const [, setState] = useState(true);
+    const forceUpdate = () => {
+        setState(state => !state);
+    };
+    return forceUpdate;
 }
 
 export default Layout;

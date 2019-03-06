@@ -16,6 +16,7 @@ from typing import (
 )
 
 from .element import Element
+from .helpers import EventHandler
 
 try:
     import vdom
@@ -48,15 +49,9 @@ class Layout:
         return self._root.id
 
     async def apply(self, target: str, handler: str, data: dict):
-        try:
-            model_state = self._state[target]
-            function = model_state["event_handlers"][handler]
-        except KeyError:
-            pass
-        else:
-            result = function(**data)
-            if inspect.isawaitable(result):
-                await result
+        model_state = self._state[target]
+        event_handler = model_state["event_handlers"][handler]
+        await event_handler(data)
 
     async def render(self) -> Tuple[List[str], Dict[str, Dict], List[str]]:
         roots, new = [], {}
@@ -92,7 +87,7 @@ class Layout:
         return updates
 
     async def _render_element(
-        self, element: "Element", parent_eid: str
+        self, element: "Element", parent_element_id: str
     ) -> AsyncIterator[Tuple[str, Dict]]:
         try:
             element._mount(self)
@@ -101,26 +96,26 @@ class Layout:
             if isinstance(model, Element):
                 model = {"tagName": "div", "children": [model]}
 
-            eid = element.id
-            if self._has_element_state(eid):
-                self._reset_element_state(eid)
+            element_id = element.id
+            if self._has_element_state(element_id):
+                self._reset_element_state(element_id)
             else:
-                self._create_element_state(eid, parent_eid)
+                self._create_element_state(element_id, parent_element_id)
 
-            async for i, m in self._render_model(model, eid):
+            async for i, m in self._render_model(model, element_id):
                 yield i, m
         except Exception as error:
             raise RenderError(f"Failed to render {element}") from error
 
     async def _render_model(
-        self, model: Mapping, eid: str
+        self, model: Mapping, element_id: str
     ) -> AsyncIterator[Tuple[str, Dict]]:
         index = 0
         to_visit: List[Union[Mapping, Element]] = [model]
         while index < len(to_visit):
             node = to_visit[index]
             if isinstance(node, Element):
-                async for i, m in self._render_element(node, eid):
+                async for i, m in self._render_element(node, element_id):
                     yield i, m
             elif isinstance(node, Mapping):
                 if "children" in node:
@@ -132,27 +127,27 @@ class Layout:
             elif vdom is not None and isinstance(node, vdom.VDOM):
                 to_visit.append(_from_vdom(node))
             index += 1
-        yield eid, self._load_model(model, eid)
+        yield element_id, self._load_model(model, element_id)
 
-    def _load_model(self, model: Mapping, eid: str):
+    def _load_model(self, model: Mapping, element_id: str):
         model = dict(model)
         children = model["children"] = self._load_model_children(
-            model.setdefault("children", []), eid
+            model.setdefault("children", []), element_id
         )
         model["eventHandlers"] = self._load_event_handlers(
-            model.setdefault("eventHandlers", {}), eid
+            model.setdefault("eventHandlers", {}), element_id
         )
         return model
 
     def _load_model_children(
-        self, children: Union[List, Tuple], eid: str
+        self, children: Union[List, Tuple], element_id: str
     ) -> List[Dict]:
         if not isinstance(children, (list, tuple)):
             children = [children]
         loaded_children = []
         for child in children:
             if isinstance(child, Mapping):
-                child = {"type": "obj", "data": self._load_model(child, eid)}
+                child = {"type": "obj", "data": self._load_model(child, element_id)}
             elif isinstance(child, Element):
                 child = {"type": "ref", "data": child.id}
             else:
@@ -161,41 +156,38 @@ class Layout:
         return loaded_children
 
     def _load_event_handlers(
-        self, handlers: Dict[str, Callable], key: str
+        self, handlers: Dict[str, Callable], element_id: str
     ) -> Dict[str, str]:
         event_targets = {}
         for event, handler in handlers.items():
-            callback_id = str(id(handler))
-            params = "-".join(list(inspect.signature(handler).parameters))
-            callback_key = "%s_%s" % (callback_id, event)
-            if params:
-                callback_key += "-" + params
-            event_targets[key] = callback_key
-            self._state[key]["event_handlers"][callback_id] = handler
+            if not isinstance(handler, EventHandler):
+                handler = EventHandler(handler, event)
+            handler_specification = event_targets[element_id] = handler.serialize()
+            self._state[element_id]["event_handlers"][handler_specification] = handler
         return event_targets
 
-    def _has_element_state(self, eid: str) -> bool:
-        return eid in self._state
+    def _has_element_state(self, element_id: str) -> bool:
+        return element_id in self._state
 
-    def _create_element_state(self, eid: str, parent_eid: Optional[str]):
-        if parent_eid is not None and self._has_element_state(parent_eid):
-            self._state[parent_eid]["inner_elements"].add(eid)
-        self._state[eid] = {
-            "parent": parent_eid,
+    def _create_element_state(self, element_id: str, parent_element_id: Optional[str]):
+        if parent_element_id is not None and self._has_element_state(parent_element_id):
+            self._state[parent_element_id]["inner_elements"].add(element_id)
+        self._state[element_id] = {
+            "parent": parent_element_id,
             "inner_elements": set(),
             "event_handlers": {},
         }
 
-    def _reset_element_state(self, eid: str):
-        parent_eid = self._state[eid]["parent"]
-        self._delete_element_state(eid)
-        self._create_element_state(eid, parent_eid)
+    def _reset_element_state(self, element_id: str):
+        parent_element_id = self._state[element_id]["parent"]
+        self._delete_element_state(element_id)
+        self._create_element_state(element_id, parent_element_id)
 
-    def _delete_element_state(self, eid: str):
-        old = self._state.pop(eid)
-        parent_eid = old["parent"]
-        if self._has_element_state(parent_eid):
-            self._state[parent_eid]["inner_elements"].remove(eid)
+    def _delete_element_state(self, element_id: str):
+        old = self._state.pop(element_id)
+        parent_element_id = old["parent"]
+        if self._has_element_state(parent_element_id):
+            self._state[parent_element_id]["inner_elements"].remove(element_id)
         for i in old["inner_elements"]:
             self._delete_element_state(i)
 

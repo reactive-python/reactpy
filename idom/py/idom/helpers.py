@@ -1,4 +1,6 @@
+import inspect
 from collections.abc import Mapping
+import uuid
 
 from typing import Any, Callable, Dict, Optional
 
@@ -44,11 +46,11 @@ class Events(Mapping):
     def __init__(self):
         self._handlers = {}
 
-    def on(self, event: str) -> Callable:
+    def on(self, event: str, where: str = None) -> Callable:
         event_name = "on" + snake_to_camel(event)
 
         def setup(function: Callable) -> Callable:
-            self._handlers[event_name] = function
+            self._handlers[event_name] = EventHandler(function, event_name, where)
             return function
 
         return setup
@@ -69,3 +71,27 @@ class Events(Mapping):
 
     def __repr__(self):
         return repr(self._handlers)
+
+
+class EventHandler:
+
+    __slots__ = ("_handler", "_event_name", "_id", "_props_to_params")
+
+    def __init__(self, function: Callable, event_name: str, where: str = None):
+        self._handler = function
+        self._id = uuid.uuid1().hex
+        self._event_name = event_name
+        self._props_to_params: Dict[str, str] = {}
+        if where is not None:
+            for part in map(str.strip, where.split(",")):
+                target_key, source_prop = tuple(map(str.strip, part.split("=")))
+                self._props_to_params[source_prop] = target_key
+        for target_key in inspect.signature(function).parameters:
+            self._props_to_params.setdefault(target_key, target_key)
+
+    async def __call__(self, data):
+        data = {self._props_to_params[k]: v for k, v in data.items()}
+        return self._handler(**data)
+
+    def serialize(self):
+        return f"{self._id}_{self._event_name}_{';'.join(self._props_to_params.keys())}"
