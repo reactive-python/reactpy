@@ -4,7 +4,7 @@ import uuid
 
 from typing import Any, Callable, Dict, Optional
 
-from .utils import Bunch
+from .utils import Bunch, to_coroutine
 
 
 def snake_to_camel(string):
@@ -78,7 +78,7 @@ class EventHandler:
     __slots__ = ("_handler", "_event_name", "_id", "_props_to_params")
 
     def __init__(self, function: Callable, event_name: str, where: str = None):
-        self._handler = function
+        self._handler = to_coroutine(function)
         self._id = uuid.uuid1().hex
         self._event_name = event_name
         self._props_to_params: Dict[str, str] = {}
@@ -91,7 +91,7 @@ class EventHandler:
 
     async def __call__(self, data):
         data = {self._props_to_params[k]: v for k, v in data.items()}
-        return self._handler(**data)
+        return (await self._handler(**data))
 
     def serialize(self):
         return f"{self._id}_{self._event_name}_{';'.join(self._props_to_params.keys())}"

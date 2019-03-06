@@ -43,7 +43,7 @@ class Element:
 
     def __init__(self, function: Callable):
         self._function = function
-        self._state: State = State(_function_defaults(function))
+        self._state: State = State(self._initial_state())
         self._updates: List[Tuple[Tuple, Dict]] = []
         self._layout: Optional["idom.Layout"] = None
         self._rendered: bool = False
@@ -65,7 +65,7 @@ class Element:
             self._layout._update(self)
 
     def reset(self, *args: Any, **kwargs: Any):
-        self._state.update(_function_defaults(self._function))
+        self._state.reset(self._initial_state())
         self.update(*args, **kwargs)
 
     def callback(self, function: Callable):
@@ -91,9 +91,11 @@ class Element:
         self._state.update(parameters)
         return dict(parameters, **self._state.get())
 
-
     def _mount(self, layout: "idom.Layout"):
         self._layout = layout
+
+    def _initial_state(self):
+        return _function_defaults(self._function)
 
     def __repr__(self) -> str:
         state = ", ".join("%s=%s" % i for i in self._state.get().items())
@@ -119,7 +121,9 @@ class Ref(Generic[CurrentRef]):
         self.current = self._factory()
 
     def copy(self) -> "Ref":
-        return Ref(self._factory)
+        new = Ref(self._factory)
+        new.current = self.current
+        return new
 
     def __repr__(self) -> str:
         return "Ref(%r)" % self.current
@@ -143,13 +147,17 @@ class State:
     def update(self, change: Dict[str, Any]):
         for k, v in change.items():
             if isinstance(v, Ref):
-                msg = "Cannot pass reference %r to the stateful parameter %r."
-                raise TypeError(msg % (v, k))
+                v = v.current
             elif k in self._referent_state:
                 self._referent_state[k].current = v
             elif k in self._standard_state:
                 self._standard_state[k] = v
         self._complete_state = {**self._standard_state, **self._referent_state}
+
+    def reset(self, reinitialize: Dict[str, Any]):
+        for v in self._referent_state.values():
+            v.reset()
+        self.update(reinitialize)
 
     def get(self):
         return self._complete_state
