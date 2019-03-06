@@ -1,9 +1,21 @@
 import os
+import inspect
+from functools import wraps
 from collections.abc import Mapping
 
-from typing import Iterator, Tuple, Any
+from typing import Iterator, Tuple, Any, Callable
 
 STATIC = os.path.join(os.path.dirname(__file__), "static")
+
+
+def to_coroutine(function: Callable) -> Callable:
+    if inspect.iscoroutinefunction(function):
+        return function
+    else:
+        @wraps(function)
+        async def wrapper(*args, **kwargs):
+            return function(*args, **kwargs)
+        return wrapper
 
 
 class Bunch(Mapping):

@@ -23,26 +23,31 @@ from .utils import Bunch
 def element(function: Callable) -> Callable:
     @wraps(function)
     def constructor(*args: Any, **kwargs: Any) -> Element:
-        return Element(function).update(*args, **kwargs)
-
+        element = Element(function)
+        element.update(*args, **kwargs)
+        return element
     return constructor
 
 
 class Element:
     """An object for rending element models."""
 
-    __slots__ = ("_function", "_id", "_layout", "_state", "_rendered")
+    __slots__ = (
+        "_function",
+        "_id",
+        "_layout",
+        "_state",
+        "_updates",
+        "_rendered",
+    )
 
     def __init__(self, function: Callable):
         self._function = function
-        initial_state = {}
-        for param in inspect.signature(function).parameters.values():
-            if param.default is not inspect.Parameter.empty:
-                initial_state[param.name] = param.default
-        self._state: State = State(initial_state)
+        self._state: State = State(_function_defaults(function))
+        self._updates: List[Tuple[Tuple, Dict]] = []
         self._layout: Optional["idom.Layout"] = None
         self._rendered: bool = False
-        self._id = uuid.uuid4().hex
+        self._id = uuid.uuid1().hex
 
     @property
     def id(self) -> str:
@@ -53,33 +58,39 @@ class Element:
     def state(self) -> Bunch:
         return Bunch(self._state.get())
 
-    def reset(self, *args: Any, **kwargs: Any):
-        """Clear the element's state and render."""
-        self._state.reset()
-        self.update(*args, **kwargs)
-
-    def update(self, *args: Any, **kwargs: Any) -> "Element":
+    def update(self, *args: Any, **kwargs: Any):
         """Set the elemenet's state and re-render."""
-        sig = inspect.signature(self._function)
-        bound = sig.bind_partial(None, *args, **kwargs).arguments
-        self._state.update(list(bound.items())[1:])
-        if self._rendered and self._layout is not None:
+        self._updates.append((args, kwargs))
+        if self._layout is not None:
             self._layout._update(self)
-            self._rendered = False
-        return self
+
+    def reset(self, *args: Any, **kwargs: Any):
+        self._state.update(_function_defaults(self._function))
+        self.update(*args, **kwargs)
 
     def callback(self, function: Callable):
         """Register a callback that will be triggered after rending updates."""
         if self._layout is not None:
             self._layout._callback(function)
+        return function
 
     async def render(self) -> Dict[str, Any]:
         """Render the element's model."""
-        model = self._function(self, **self._state.get())
+        parameters = self._load_render_parameters()
+        model = self._function(**parameters)
         if inspect.isawaitable(model):
             model = await model
         self._rendered = True
         return model
+
+    def _load_render_parameters(self):
+        parameters = {}
+        for args, kwargs in self._updates:
+            sig = inspect.signature(self._function)
+            parameters.update(sig.bind_partial(self, *args, **kwargs).arguments)
+        self._state.update(parameters)
+        return dict(parameters, **self._state.get())
+
 
     def _mount(self, layout: "idom.Layout"):
         self._layout = layout
@@ -89,15 +100,15 @@ class Element:
         return "%s(%s)" % (self._function.__qualname__, state)
 
 
-CurrentContext = TypeVar("CurrentContext")
+CurrentRef = TypeVar("CurrentRef")
 
 
-class Context(Generic[CurrentContext]):
+class Ref(Generic[CurrentRef]):
 
     __slots__ = ("current", "_factory")
 
-    def __init__(self, value: CurrentContext = None):
-        self._factory: Callable[[], Optional[CurrentContext]]
+    def __init__(self, value: CurrentRef = None):
+        self._factory: Callable[[], Optional[CurrentRef]]
         if callable(value):
             self._factory = value
         else:
@@ -107,38 +118,46 @@ class Context(Generic[CurrentContext]):
     def reset(self):
         self.current = self._factory()
 
-    def copy(self) -> "Context":
-        return Context(self._factory)
+    def copy(self) -> "Ref":
+        return Ref(self._factory)
 
-    def __repr__(self):
-        return "Context(%r)" % self.current
+    def __repr__(self) -> str:
+        return "Ref(%r)" % self.current
 
 
 class State:
 
-    __slots__ = "_data"
+    __slots__ = ("_standard_state", "_referent_state", "_complete_state")
 
-    def __init__(self, data: Mapping = None):
-        data = data or {}
-        for k, v in data.items():
-            if isinstance(v, Context):
-                # we don't want this to be shared between sessions
-                data[k] = v.copy()
-        self._data: Dict[str, Any] = data
-
-    def get(self) -> Dict:
-        return self._data
-
-    def update(self, *args: Any, **kwargs: Any):
-        for k, v in dict(*args, **kwargs).items():
-            if isinstance(self._data.get(k), Context):
-                self._data[k].current = v
+    def __init__(self, initialize: Dict[str, Any]):
+        self._standard_state: Dict[str, Any] = {}
+        self._referent_state: Dict[str, Ref] = {}
+        self._complete_state: Dict[str, Any] = {}
+        for k, v in initialize.items():
+            if isinstance(v, Ref):
+                self._referent_state[k] = v.copy()
             else:
-                self._data[k] = v
+                self._standard_state[k] = v
+        self._complete_state = {**self._standard_state, **self._referent_state}
 
-    def reset(self):
-        for k, v in tuple(self._data.items()):
-            if isinstance(v, Context):
-                v.reset()
-            else:
-                del self._data[k]
+    def update(self, change: Dict[str, Any]):
+        for k, v in change.items():
+            if isinstance(v, Ref):
+                msg = "Cannot pass reference %r to the stateful parameter %r."
+                raise TypeError(msg % (v, k))
+            elif k in self._referent_state:
+                self._referent_state[k].current = v
+            elif k in self._standard_state:
+                self._standard_state[k] = v
+        self._complete_state = {**self._standard_state, **self._referent_state}
+
+    def get(self):
+        return self._complete_state
+
+
+def _function_defaults(function: Callable) -> Dict[str, Any]:
+    defaults = {}
+    for param in inspect.signature(function).parameters.values():
+        if param.default is not inspect.Parameter.empty:
+            defaults[param.name] = param.default
+    return defaults
