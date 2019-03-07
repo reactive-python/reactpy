@@ -5,7 +5,6 @@ from functools import partial, wraps
 from websockets import WebSocketCommonProtocol
 from threading import Thread
 from sanic import Sanic, Blueprint
-from sanic_cors import CORS
 
 from typing import Any, Callable, Tuple, Dict
 
@@ -68,8 +67,6 @@ class BaseServer(abc.ABC):
 
     def run(self, *args: Any, cors: bool = False, **kwargs: Any):
         self._setup_blueprints()
-        if cors:
-            CORS(app)
         self.app.run(*args, **kwargs)
 
     def daemon(self, *args: Any, **kwargs: Any):
