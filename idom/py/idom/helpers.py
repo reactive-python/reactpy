@@ -7,20 +7,19 @@ from typing import Any, Callable, Dict, Optional
 from .utils import Bunch, to_coroutine
 
 
-def snake_to_camel(string):
-    return "".join(part[:1].upper() + part[1:] for part in string.split("_"))
-
-
 def node(tag: str, *children: Any, **attributes: Any) -> "Node":
-    if len(children) == 1:
-        if isinstance(children[0], (list, tuple)):
-            children = tuple(children[0])
+    _children = []
+    for c in children:
+        if isinstance(c, (list, tuple)):
+            _children.extend(c)
+        else:
+            _children.append(c)
     event_handlers = attributes.pop("eventHandlers", Events())
     attributes.setdefault("style", {})
     return Node(
         {
             "tagName": tag,
-            "children": children,
+            "children": _children,
             "attributes": attributes,
             "eventHandlers": event_handlers,
         }
@@ -47,7 +46,7 @@ class Events(Mapping):
         self._handlers = {}
 
     def on(self, event: str, where: str = None) -> Callable:
-        event_name = "on" + snake_to_camel(event)
+        event_name = "on" + event[:1].upper() + event[1:]
 
         def setup(function: Callable) -> Callable:
             self._handlers[event_name] = EventHandler(function, event_name, where)
