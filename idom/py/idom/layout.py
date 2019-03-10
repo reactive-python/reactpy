@@ -193,7 +193,8 @@ class Layout:
             self._delete_element_state(i)
 
 
-def _from_vdom(node: vdom.VDOM):
+
+def _from_vdom(node: (vdom.VDOM if vdom else Any)):
     data = {
         "tagName": node.tag_name,
         "children": node.children,

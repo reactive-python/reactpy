@@ -36,8 +36,10 @@ class Bunch(Mapping):
         return self._data_[name]
 
     def __getattr__(self, name: Any) -> Any:
-        return self._data_[name]
+        try:
+            return self._data_[name]
+        except KeyError:
+            raise AttributeError(name)
 
     def __repr__(self):
-        items = ", ".join("%s=%r" % i for i in self._data_.items())
-        return "%s(%s)" % (type(self).__name__, items)
+        return repr(self._data_)
