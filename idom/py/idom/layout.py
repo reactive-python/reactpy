@@ -34,6 +34,7 @@ class Layout:
     __slots__ = ("_update_event", "_update_queue", "_callback_queue", "_root", "_state")
 
     def __init__(self, root: "Element"):
+
         if not isinstance(root, Element):
             raise TypeError("Expected an Element, not %r" % root)
         self._state: Dict[str, Dict] = {}
@@ -72,10 +73,10 @@ class Layout:
         old = list(current.difference(self._state))
         return roots, new, old
 
-    def _callback(self, function: Callable):
+    def element_callback(self, function: Callable):
         self._callback_queue.append(function)
 
-    def _update(self, element: "Element"):
+    def element_updated(self, element: "Element"):
         self._update_queue.append(element)
         self._update_event.set()
 
@@ -90,7 +91,7 @@ class Layout:
         self, element: "Element", parent_element_id: str
     ) -> AsyncIterator[Tuple[str, Dict]]:
         try:
-            element._mount(self)
+            element.mount(self)
             model = await element.render()
 
             if isinstance(model, Element):
