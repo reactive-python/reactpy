@@ -2,13 +2,13 @@ import inspect
 from collections.abc import Mapping
 import uuid
 
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, TypeVar, Generic, List
 
 from .utils import Bunch, to_coroutine
 
 
 def node(tag: str, *children: Any, **attributes: Any) -> "Node":
-    _children = []
+    _children: List[Any] = []
     for c in children:
         if isinstance(c, (list, tuple)):
             _children.extend(c)
@@ -54,11 +54,6 @@ class Events(Mapping):
 
         return setup
 
-    def copy(self) -> "Events":
-        new = Events()
-        new._handlers = self._handlers
-        return new
-
     def __len__(self):
         return len(self._handlers)
 
@@ -76,9 +71,9 @@ class EventHandler:
 
     __slots__ = ("_handler", "_event_name", "_id", "_props_to_params")
 
-    def __init__(self, function: Callable, event_name: str, where: str = None):
+    def __init__(self, function: Callable, event_name: str, where: str = None, target_id: str = None):
         self._handler = to_coroutine(function)
-        self._id = uuid.uuid1().hex
+        self._id = target_id or uuid.uuid1().hex
         self._event_name = event_name
         self._props_to_params: Dict[str, str] = {}
         if where is not None:
@@ -94,3 +89,56 @@ class EventHandler:
 
     def serialize(self):
         return f"{self._id}_{self._event_name}_{';'.join(self._props_to_params.keys())}"
+
+
+CurrentRef = TypeVar("CurrentRef")
+
+
+class Ref(Generic[CurrentRef]):
+    """Hold a reference to an object for the lifetime of an :class:`Element`.
+
+    References are useful when multiple elements need to share data. This is usually
+    discouraged, but can be useful in certain situations. For example, you might use
+    a reference to keep track of a user's selection from a list of options:
+
+    .. code-block:: python
+
+        def option_picker(handler, option_names):
+            selection = Ref(None)
+            options = [option(n, selection) for n in option_names]
+            return idom.node("div", options, picker(handler, selection))
+
+        def option(name, selection):
+            events = idom.Events()
+
+            @events.on("click")
+            def select():
+                # set the current selection to the option name
+                selection.current = name
+
+            return idom.node("button", eventHandlers=events)
+
+        def picker(handler, selection):
+            events = idom.Events()
+
+            @events.on("click")
+            def handle():
+                # passes the current option name to the handler
+                handler(selection.current)
+
+            return idom.node("button", "Use" eventHandlers=events)
+    """
+
+    __slots__ = ("current",)
+
+    def __init__(self, value: CurrentRef = None):
+        self.current = value
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, Ref):
+            return self.current == other.current
+        else:
+            return False
+
+    def __repr__(self) -> str:
+        return "Ref(%r)" % self.current

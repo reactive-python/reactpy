@@ -1,7 +1,9 @@
+import abc
 import idom
 import uuid
 import inspect
 from functools import wraps
+from weakref import WeakValueDictionary
 
 from typing import (
     List,
@@ -12,12 +14,10 @@ from typing import (
     Union,
     Any,
     Optional,
-    TypeVar,
-    Generic,
     Mapping,
 )
 
-from .utils import Bunch
+from .utils import Bunch, to_coroutine
 
 
 def element(function: Callable) -> Callable:
@@ -50,213 +50,67 @@ class Element:
     5. Go back to step **3**.
     """
 
+    _by_id = WeakValueDictionary()  # type: WeakValueDictionary[str, "Element"]
+
     __slots__ = (
+        "_dead",
         "_function",
+        "_function_signature",
         "_id",
         "_layout",
-        "_state",
-        "_updates",
+        "_update",
+        "__weakref__",
     )
 
+    @classmethod
+    def by_id(self, element_id: str) -> "Element":
+        return self._by_id[element_id]
+
     def __init__(self, function: Callable):
-        self._function = function
-        self._state: PartialState = PartialState(self._default_state())
-        self._updates: List[Tuple[Tuple, Dict]] = []
+        self._function = to_coroutine(function)
+        self._function_signature = inspect.signature(function)
+        self._update: Optional[Dict] = None
         self._layout: Optional["idom.Layout"] = None
         self._id = uuid.uuid1().hex
+        self._by_id[self._id] = self
+        self._dead: bool = False
 
     @property
     def id(self) -> str:
         """The unique ID of the element."""
         return self._id
 
-    @property
-    def state(self) -> Bunch:
-        return Bunch(self._state.get())
-
     def update(self, *args: Any, **kwargs: Any):
-        """Set the elemenet's state and re-render."""
+        """Schedule this element to render with new parameters."""
         if self._layout is not None:
-            if len(self._update) == 0:
-                # don't tell the layout to render multiple times
-                self._layout.element_updated(self)
-        self._updates.append((args, kwargs))
+            if self._update is None:
+                self._layout.update(self)
+        bound = self._function_signature.bind(None, *args, **kwargs)
+        self._update = dict(list(bound.arguments.items())[1:])
 
-    def reset(self, *args: Any, **kwargs: Any):
-        self._state.reset(self._default_state())
-        self.update(*args, **kwargs)
-
-    def callback(self, function: Callable):
-        """Register a callback that will be triggered after rending updates."""
+    def animate(self, function: Callable, loop=False):
+        """Schedule this function to run soon, and then render any updates."""
         if self._layout is not None:
-            self._layout.element_callback(function)
+            if self._update is None:
+                # animating and updating an element is redundant.
+                self._layout.animate(function)
         return function
 
     async def render(self) -> Dict[str, Any]:
         """Render the element's model."""
-        parameters = self._load_render_parameters()
-        model = self._function(**parameters)
-        if inspect.isawaitable(model):
-            model = await model
-        return model
-
-    def _load_render_parameters(self):
-        parameters = {}
-        for args, kwargs in self._updates:
-            sig = inspect.signature(self._function)
-            parameters.update(sig.bind_partial(self, *args, **kwargs).arguments)
-        self._state.update(parameters, strict=False)
-        return dict(parameters, **self._state.get())
+        if self._update is None:
+            raise RuntimeError(f"Rendered {self} twice.")
+        update = self._update
+        self._update = None
+        return (await self._function(self, **update))
 
     def mount(self, layout: "idom.Layout"):
-        self._layout = layout
+        if not self._dead:
+            self._layout = layout
 
-    def _default_state(self):
-        return _function_defaults(self._function)
-
-    def __repr__(self) -> str:
-        state = ", ".join("%s=%s" % i for i in self._state.get().items())
-        return "%s(%s)" % (self._function.__qualname__, state)
-
-
-CurrentRef = TypeVar("CurrentRef")
-
-
-class Ref(Generic[CurrentRef]):
-    """Hold a reference to an object for the lifetime of an :class:`Element`.
-
-    This might be useful to determine a user's selection from a list of options:
-
-    .. code-block:: python
-
-        @idom.element
-        def option_picker(self, handler, option_names):
-            selection = Ref(None)
-            options = [option(n, selection) for n in option_names]
-            return idom.node("div", options, picker(handler, selection))
-
-        def option(name, selection):
-            events = idom.Events()
-
-            @events.on("click")
-            def select():
-                # set the current selection to the option name
-                selection.current = name
-
-            return idom.node("button", eventHandlers=events)
-
-        def picker(handler, selection):
-            events = idom.Events()
-
-            @events.on("click")
-            def handle():
-                # passes the current option name to the handler
-                handler(selection.current)
-
-            return idom.node("button", "Use" eventHandlers=events)
-
-    """
-
-    __slots__ = ("current", "_factory")
-
-    def __init__(self, value: CurrentRef = None):
-        self._factory: Callable[[], Optional[CurrentRef]]
-        if callable(value):
-            self._factory = value
-        else:
-            self._factory = lambda: value
-        self.current = self._factory()
-
-    def reset(self):
-        self.current = self._factory()
-
-    def copy(self) -> "Ref":
-        new = Ref(self._factory)
-        new.current = self.current
-        return new
+    def unmount(self):
+        self._layout = None
+        self._dead = True
 
     def __repr__(self) -> str:
-        return "Ref(%r)" % self.current
-
-
-class PartialState:
-    """Holds state for a subset of fields (which may contain :class:`Ref` objects).
-
-    In short this means that no new keys are added to the state once it has been
-    initialized. A "strict" :meth:`PartialState.update` will raise a :class:`KeyError`
-    if you attempt to update a field which is not already present. You may set
-    ``strict=False`` when updating to silently ignore any unknown fields.
-
-    Parameters:
-        partial_state: Sets the initial state and what fields this state contains.
-
-    Notes:
-
-      Fields which contain :class:`Ref` objects are handled differently from those that don't
-
-      1. Upon initializing the state, references are :meth:`copied <Ref.copy>` in
-         order to avoid holding the same reference in two different :class:`Element`
-         states.
-
-      2. References are never replaced when updating, and no new references are ever
-         added to the state. This means that when a field containing a reference is
-         updated, only its :attr:`Ref.current` value is changed and when you attempt to
-         assign a :class:`Ref` to a field during an update its :attr:`Ref.current` field
-         will be used instead.
-
-      3. :meth:`PartialState.reset` calls :meth:`Ref.reset` on all references.
-    """
-
-    __slots__ = ("_all_keys", "_ref_keys", "_state")
-
-    def __init__(self, partial_state: Dict[str, Any]):
-        self._all_keys: Set[str] = set()
-        self._ref_keys: Set[str] = set()
-        self._state: Dict[str, Any] = {}
-        for k, v in partial_state.items():
-            self._all_keys.add(k)
-            if isinstance(v, Ref):
-                self._ref_keys.add(k)
-                # avoid holding the same ref in two different states
-                v = v.copy()
-            self._state[k] = v
-
-    def update(self, change: Dict[str, Any], strict=True):
-        """Update the current state.
-
-        Only fields that are already in the state will be updated. Doing a
-        "strict" update will raise if unknown fields are present in the ``change``.
-
-        Parameters:
-            change: New state to be adopted.
-            strict: Whether an error should be raised if ``change`` contains unknown keys.
-        """
-        for k, v in change.items():
-            if k in self._all_keys:
-                # New keys are never added to the state.
-                if isinstance(v, Ref):
-                    v = v.current
-                if k in self._ref_keys:
-                    self._state[k].current = v
-                else:
-                    self._state[k] = v
-            elif strict:
-                raise KeyError("Unknown key %r." % k)
-
-    def reset(self, reinitialize: Dict[str, Any]):
-        """Reset all :class:`Ref` objects and call :meth:`PartialState.update`."""
-        for k in self._ref_keys:
-            self._state[k].reset()
-        self.update(reinitialize)
-
-    def get(self):
-        """Get the current state."""
-        return self._state
-
-
-def _function_defaults(function: Callable) -> Dict[str, Any]:
-    defaults = {}
-    for param in inspect.signature(function).parameters.values():
-        if param.default is not inspect.Parameter.empty:
-            defaults[param.name] = param.default
-    return defaults
+        return "%s(%s)" % (self._function.__qualname__, self.id)
