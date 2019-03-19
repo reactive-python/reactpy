@@ -10,6 +10,7 @@ from typing import (
     Dict,
     Callable,
     Any,
+    Tuple,
     Optional,
 )
 
@@ -80,9 +81,9 @@ class Element:
         self._update: Dict[str, Any] = {}
         # initialize the element's cycles
         self._cycles: Dict[str, Cycle] = {}
-        for k, v in self._function_signature.parameters.items():
-            if isinstance(v, Cycle):
-                self._cycles[k] = v(self, k)
+        for name, param in self._function_signature.parameters.items():
+            if isinstance(param.default, Cycle._constructor):
+                self._cycles[name] = param.default(self, name)
         # save self to "by-ID" mapping
         Element._by_id[self._id] = self
 
@@ -164,22 +165,16 @@ class Cycle(abc.ABC):
 
     Notes:
         Subclasses of :class:`Cycle` should not overwrite ``__new__`` because
-        this has a special implementation. If you absolutely must overwrite it
-        ``__new__`` should return a :class:`~typing.Callable` of the form
-        ``(element, name) -> Cycle`` where ``element`` is the element to which
-        the new cycle will be bound, and ``name`` is the parameter name which
-        the cycle was defined under.
+        this has a special implementation. If you absolutely must overwrite it,
+        ``__new__`` is required to return a :class:`Cycle._constructor`.
     """
 
     def __new__(cls, *args: Any, **kwargs: Any) -> Callable[[Element, str], "Cycle"]:
-        s = super()
+        return cls._constructor(super().__new__(cls), args, kwargs)
 
-        def __init__(element: Element, name: str) -> Cycle:
-            self = s.__new__(cls)
-            self.__init__(element, name, *args, **kwargs)
-            return self
-
-        return __init__
+    def __init__(self, element: Element, name: str):
+        self._element = element
+        self._name = name
 
     def enter(self, update: Dict[str, Any]):
         """Called just before an element is rendered.
@@ -195,3 +190,14 @@ class Cycle(abc.ABC):
 
         This takes the same parameters as :meth:`object.__exit__`.
         """
+
+    class _constructor:
+
+        def __init__(self, cycle: "Cycle", args: Tuple[Any, ...], kwargs: Dict[str, Any]):
+            self._cycle = cycle
+            self._args = args
+            self._kwargs = kwargs
+
+        def __call__(self, element: Element, name: str):
+            self._cycle.__init__(element, name, *self._args, **self._kwargs)
+            return self._cycle

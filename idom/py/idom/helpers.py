@@ -271,6 +271,3 @@ class State(Cycle):
                 raise TypeError(f"{self.name} is a required argument of {self.element}")
         else:
             self.value = update[self.name]
-
-    def exit(self):
-        ...

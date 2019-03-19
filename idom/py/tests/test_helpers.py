@@ -98,3 +98,23 @@ def test_var_get():
     assert v.get() is idom.Var.empty
     v.set(1)
     assert v.get() == 1
+
+
+async def test_state_cycle():
+
+    states = []
+
+    @idom.element
+    def stateful_element(self, param=idom.State()):
+        states.append(param)
+
+    elmt = stateful_element(0)
+    await elmt.render()
+    elmt.update()
+    await elmt.render()
+    elmt.update(1)
+    await elmt.render()
+    elmt.update()
+    await elmt.render()
+
+    assert states == [0, 0, 1, 1]
