@@ -62,9 +62,10 @@ async def slideshow(self, index=0):
 ...
 ```
 
-The decorator indicates that the function or coroutine to follow defines a "stateful" element. The `slideshow` coroutine is responsible for building a DOM model. Every
-time we update the slideshow it will be called again to update that DOM model with
-any necessary changes.
+The decorator indicates that the function or coroutine to follow defines a "stateful"
+element. The `slideshow` coroutine is responsible for building a DOM model. Every time
+we update the slideshow it will be called again to update that DOM model with any
+necessary changes.
 
 As we mentioned, this is a "stateful" element which means that the first parameter of
 the function is an `Element` object. The other parameters with default values define

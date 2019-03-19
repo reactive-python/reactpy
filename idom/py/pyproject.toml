@@ -21,6 +21,8 @@ pytest-asyncio = "^0.10.0"
 mypy = "^0.670.0"
 jupyter = "^1.0"
 pre-commit = "^1.14"
+black = {version = "^18.3-alpha.0",allows-prereleases = true}
+flake8 = "^3.7"
 
 [build-system]
 requires = ["poetry>=0.12"]

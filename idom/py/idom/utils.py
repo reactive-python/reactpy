@@ -1,9 +1,8 @@
 import os
 import inspect
 from functools import wraps
-from collections.abc import Mapping
 
-from typing import Iterator, Tuple, Any, Callable
+from typing import Callable
 
 STATIC = os.path.join(os.path.dirname(__file__), "static")
 
@@ -12,34 +11,20 @@ def to_coroutine(function: Callable) -> Callable:
     if inspect.iscoroutinefunction(function):
         return function
     else:
+
         @wraps(function)
         async def wrapper(*args, **kwargs):
             return function(*args, **kwargs)
+
         return wrapper
 
 
-class Bunch(Mapping):
-    """An immutable mapping with attribute access."""
+class Sentinel:
 
-    __slots__ = "_data_"
+    __slots__ = ("__name",)
 
-    def __init__(self, data):
-        object.__setattr__(self, "_data_", data)
-
-    def __len__(self) -> int:
-        return len(self._data_)
-
-    def __iter__(self) -> Iterator[Tuple[Any, Any]]:
-        return iter(self._data_)
-
-    def __getitem__(self, name: Any) -> Any:
-        return self._data_[name]
-
-    def __getattr__(self, name: Any) -> Any:
-        try:
-            return self._data_[name]
-        except KeyError:
-            raise AttributeError(name)
+    def __init__(self, name):
+        self.__name = name
 
     def __repr__(self):
-        return repr(self._data_)
+        return self.__name

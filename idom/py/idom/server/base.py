@@ -6,7 +6,7 @@ from websockets import WebSocketCommonProtocol
 from threading import Thread
 from sanic import Sanic, Blueprint
 
-from typing import Any, Callable, Tuple, Dict
+from typing import Any, Callable, Tuple, List
 
 from idom import Layout
 
@@ -75,8 +75,9 @@ class BaseServer(abc.ABC):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             server = self.app.create_server(*args, **kwargs)
-            task = asyncio.ensure_future(server)
+            asyncio.ensure_future(server)
             loop.run_forever()
+
         thread = Thread(target=run)
         thread.start()
         return thread

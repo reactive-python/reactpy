@@ -1,6 +1,5 @@
 import os
 import json
-import pprint
 from sanic import response, request, Blueprint
 from websockets import WebSocketCommonProtocol
 

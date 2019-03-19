@@ -1,6 +1,4 @@
-import json
 import asyncio
-import inspect
 from collections.abc import Mapping
 
 from typing import (
@@ -8,7 +6,6 @@ from typing import (
     Dict,
     Tuple,
     Callable,
-    Iterator,
     Union,
     Any,
     Set,
@@ -141,7 +138,7 @@ class Layout:
 
     def _load_model(self, model: Mapping, element_id: str):
         model = dict(model)
-        children = model["children"] = self._load_model_children(
+        model["children"] = self._load_model_children(
             model.setdefault("children", []), element_id
         )
         model["eventHandlers"] = self._load_event_handlers(
