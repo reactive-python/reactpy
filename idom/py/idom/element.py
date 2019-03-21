@@ -16,7 +16,6 @@ from typing import (
     overload
 )
 
-from .bunch import StaticBunch
 from .utils import to_coroutine
 
 
@@ -103,13 +102,9 @@ class Element:
         self._state_parameters: List[str] = list(map(
             str.strip, (state_parameters or "").split(",")
         ))
-        self._update: Dict[str, Any] = {}
+        self._update: Optional[Dict[str, Any]] = None
         # save self to "by-ID" mapping
         Element._by_id[self._id] = self
-
-    @property
-    def state(self):
-        return StaticBunch(self._state)
 
     @property
     def id(self) -> str:
@@ -118,8 +113,10 @@ class Element:
 
     def update(self, *args: Any, **kwargs: Any):
         """Schedule this element to render with new parameters."""
-        if self._layout is not None:
-            if not self._update:
+        if self._update is None:
+            self._update = {}
+            # only tell layout to render on first update call
+            if self._layout is not None:
                 self._layout.update(self)
         bound = self._function_signature.bind_partial(None, *args, **kwargs)
         self._update.update(list(bound.arguments.items())[1:])
@@ -136,13 +133,17 @@ class Element:
         # load update and reset for next render
         update = self._update
 
+        if update is None:
+            raise RuntimeError(f"{self} cannot render again - no update occured.")
+
         for name in self._state_parameters:
             if name not in update:
-                update[name] = self._state[name]
+                if name in self._state:
+                    update[name] = self._state[name]
             else:
                 self._state[name] = update[name]
 
-        self._update = {}
+        self._update = None
 
         return (await self._function(self, **update))
 
