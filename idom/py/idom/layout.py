@@ -1,17 +1,7 @@
 import asyncio
 from collections.abc import Mapping
 
-from typing import (
-    List,
-    Dict,
-    Tuple,
-    Callable,
-    Union,
-    Any,
-    Set,
-    Optional,
-    AsyncIterator,
-)
+from typing import List, Dict, Tuple, Callable, Union, Any, Set, Optional, AsyncIterator
 
 from .element import Element
 from .helpers import EventHandler

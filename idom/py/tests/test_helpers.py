@@ -4,27 +4,33 @@ import idom
 from idom.helpers import EventHandler
 
 
-@pytest.mark.parametrize("actual, expected", [
-    (
-        idom.nodes.div(idom.nodes.div()),
-        {"tagName": "div", "children": [{"tagName": "div"}]}
-    ),
-    (
-        # lists and tuples passed to children are flattened
-        idom.nodes.div([idom.nodes.div(), 1], (idom.nodes.div(), 2)),
-        {"tagName": "div", "children": [{"tagName": "div"}, 1, {"tagName": "div"}, 2]}
-    ),
-    (
-        # keywords become attributes
-        idom.nodes.div(style={"backgroundColor": "blue"}),
-        {"tagName": "div", "attributes": {"style": {"backgroundColor": "blue"}}}
-    ),
-    (
-        # eventHandlers is popped from attributes and made a top level field
-        idom.nodes.div(eventHandlers=idom.Events()),
-        {"tagName": "div", "eventHandlers": idom.Events()}
-    ),
-])
+@pytest.mark.parametrize(
+    "actual, expected",
+    [
+        (
+            idom.nodes.div(idom.nodes.div()),
+            {"tagName": "div", "children": [{"tagName": "div"}]},
+        ),
+        (
+            # lists and tuples passed to children are flattened
+            idom.nodes.div([idom.nodes.div(), 1], (idom.nodes.div(), 2)),
+            {
+                "tagName": "div",
+                "children": [{"tagName": "div"}, 1, {"tagName": "div"}, 2],
+            },
+        ),
+        (
+            # keywords become attributes
+            idom.nodes.div(style={"backgroundColor": "blue"}),
+            {"tagName": "div", "attributes": {"style": {"backgroundColor": "blue"}}},
+        ),
+        (
+            # eventHandlers is popped from attributes and made a top level field
+            idom.nodes.div(eventHandlers=idom.Events()),
+            {"tagName": "div", "eventHandlers": idom.Events()},
+        ),
+    ],
+)
 def test_simple_node_construction(actual, expected):
     assert actual == expected
 

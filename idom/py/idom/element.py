@@ -1,20 +1,10 @@
-import sys
-import abc
 import idom
 import uuid
 import inspect
 from functools import wraps
 from weakref import WeakValueDictionary
 
-from typing import (
-    Dict,
-    Callable,
-    Any,
-    Tuple,
-    List,
-    Optional,
-    overload
-)
+from typing import Dict, Callable, Any, List, Optional, overload
 
 from .utils import to_coroutine
 
@@ -23,27 +13,33 @@ _ElementConstructor = Callable[..., "Element"]
 
 
 @overload
-def element(function: Callable) -> _ElementConstructor: ...
+def element(function: Callable) -> _ElementConstructor:
+    ...
 
 
 @overload
 def element(
-    *, state: Optional[str] = None,
-) -> Callable[[Callable], _ElementConstructor]: ...
+    *, state: Optional[str] = None
+) -> Callable[[Callable], _ElementConstructor]:
+    ...
 
 
-def element(function: Optional[Callable] = None, state: Optional[str] = None) -> Callable:
+def element(
+    function: Optional[Callable] = None, state: Optional[str] = None
+) -> Callable:
     """A decorator for defining an :class:`Element`.
 
     Parameters:
         function: The function that will render a :term:`VDOM` model.
     """
+
     def setup(func):
         @wraps(func)
         def constructor(*args: Any, **kwargs: Any) -> Element:
             element = Element(func, state)
             element.update(*args, **kwargs)
             return element
+
         return constructor
 
     if function is not None:
@@ -99,9 +95,9 @@ class Element:
         self._id = uuid.uuid1().hex
         self._layout: Optional["idom.Layout"] = None
         self._state: Dict[str, Any] = {}
-        self._state_parameters: List[str] = list(map(
-            str.strip, (state_parameters or "").split(",")
-        ))
+        self._state_parameters: List[str] = list(
+            map(str.strip, (state_parameters or "").split(","))
+        )
         self._update: Optional[Dict[str, Any]] = None
         # save self to "by-ID" mapping
         Element._by_id[self._id] = self
@@ -145,7 +141,7 @@ class Element:
 
         self._update = None
 
-        return (await self._function(self, **update))
+        return await self._function(self, **update)
 
     def mount(self, layout: "idom.Layout"):
         """Mount a layout to the element instance.
