@@ -5,7 +5,7 @@ import uuid
 from typing import Any, Callable, Dict, TypeVar, Generic, List
 
 from .bunch import DynamicBunch
-from .element import Element, Cycle
+from .element import Element
 from .utils import to_coroutine, Sentinel
 
 
@@ -254,20 +254,3 @@ class Var(Generic[VarReference]):
 
     def __repr__(self) -> str:
         return "Var(%r)" % self.get()
-
-
-class State(Cycle):
-    def __init__(self, element: Element, name: str, default: Callable = None):
-        self.element = element
-        self.name = name
-        if default is not None:
-            self.value = default()
-
-    def enter(self, update: Dict[str, Any]):
-        if self.name not in update:
-            try:
-                update[self.name] = self.value
-            except AttributeError:
-                raise TypeError(f"{self.name} is a required argument of {self.element}")
-        else:
-            self.value = update[self.name]

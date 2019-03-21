@@ -57,7 +57,6 @@ class Element:
     _by_id = WeakValueDictionary()  # type: WeakValueDictionary[str, "Element"]
 
     __slots__ = (
-        "_cycles",
         "_dead",
         "_function",
         "_function_signature",
@@ -79,11 +78,6 @@ class Element:
         self._id = uuid.uuid1().hex
         self._layout: Optional["idom.Layout"] = None
         self._update: Dict[str, Any] = {}
-        # initialize the element's cycles
-        self._cycles: Dict[str, Cycle] = {}
-        for name, param in self._function_signature.parameters.items():
-            if isinstance(param.default, Cycle._constructor):
-                self._cycles[name] = param.default(self, name)
         # save self to "by-ID" mapping
         Element._by_id[self._id] = self
 
@@ -111,18 +105,8 @@ class Element:
         """Render the element's :term:`VDOM` model."""
         # load update and reset for next render
         update = self._update
-        self._update = {}
-        # enter cycles
-        for k, c in self._cycles.items():
-            c.enter(update)
-        try:
-            # render the model
-            model = await self._function(self, **update)
-        finally:
-            # exit cycles
-            for c in self._cycles.values():
-                c.exit(*sys.exc_info())
-        # finally return it
+        self._update.clear()
+        model = await self._function(self, **update)
         return model
 
     def mount(self, layout: "idom.Layout"):
@@ -143,61 +127,3 @@ class Element:
 
     def __repr__(self) -> str:
         return "%s(%s)" % (self._function.__qualname__, self.id)
-
-
-class Cycle(abc.ABC):
-    """An abstract base class for hooking into the :class:`Element` lifecycle.
-
-    Cycles are added to elements by passing them as default arguments of an element's
-    rendering function:
-
-    .. code-block:: python
-
-        @idom.element
-        def my_element(self, my_cycle=MyCycle()): ...
-
-    Cycles will be triggered just before and just after an element is rendered. You
-    are able to hook into these events by defining either of the optional
-    :meth:`Element.enter` and :meth:`Element.exit` methods.
-
-    Examples:
-        See :class:`idom.helpers.State` to see how cycles can be used.
-
-    Notes:
-        Subclasses of :class:`Cycle` should not overwrite ``__new__`` because
-        this has a special implementation. If you absolutely must overwrite it,
-        ``__new__`` is required to return a :class:`Cycle._constructor`.
-    """
-
-    def __new__(cls, *args: Any, **kwargs: Any) -> Callable[[Element, str], "Cycle"]:
-        return cls._constructor(super().__new__(cls), args, kwargs)
-
-    def __init__(self, element: Element, name: str):
-        self._element = element
-        self._name = name
-
-    def enter(self, update: Dict[str, Any]):
-        """Called just before an element is rendered.
-
-        Parameters:
-            update:
-                The parameters which will be passed to the element. You are free to
-                modify these as you wish.
-        """
-
-    def exit(self, exception_type, exception_value, traceback):
-        """Called just after an element is rendered.
-
-        This takes the same parameters as :meth:`object.__exit__`.
-        """
-
-    class _constructor:
-
-        def __init__(self, cycle: "Cycle", args: Tuple[Any, ...], kwargs: Dict[str, Any]):
-            self._cycle = cycle
-            self._args = args
-            self._kwargs = kwargs
-
-        def __call__(self, element: Element, name: str):
-            self._cycle.__init__(element, name, *self._args, **self._kwargs)
-            return self._cycle
