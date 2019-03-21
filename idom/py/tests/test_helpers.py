@@ -4,6 +4,31 @@ import idom
 from idom.helpers import EventHandler
 
 
+@pytest.mark.parametrize("actual, expected", [
+    (
+        idom.nodes.div(idom.nodes.div()),
+        {"tagName": "div", "children": [{"tagName": "div"}]}
+    ),
+    (
+        # lists and tuples passed to children are flattened
+        idom.nodes.div([idom.nodes.div(), 1], (idom.nodes.div(), 2)),
+        {"tagName": "div", "children": [{"tagName": "div"}, 1, {"tagName": "div"}, 2]}
+    ),
+    (
+        # keywords become attributes
+        idom.nodes.div(style={"backgroundColor": "blue"}),
+        {"tagName": "div", "attributes": {"style": {"backgroundColor": "blue"}}}
+    ),
+    (
+        # eventHandlers is popped from attributes and made a top level field
+        idom.nodes.div(eventHandlers=idom.Events()),
+        {"tagName": "div", "eventHandlers": idom.Events()}
+    ),
+])
+def test_simple_node_construction(actual, expected):
+    assert actual == expected
+
+
 def test_simple_events():
     events = idom.Events()
 
@@ -52,33 +77,6 @@ def test_event_handler_variable_arguments_are_illegal():
         EventHandler(handler, "event")
 
 
-@pytest.mark.parametrize(
-    "actual, expected",
-    [
-        (
-            idom.node("div", "a-string", key="value"),
-            {
-                "tagName": "div",
-                "children": ["a-string"],
-                "eventHandlers": {},
-                "attributes": {"style": {}, "key": "value"},
-            },
-        ),
-        (
-            idom.node("div", [1, 2, 3], [4, 5, 6]),
-            {
-                "tagName": "div",
-                "children": [1, 2, 3, 4, 5, 6],
-                "eventHandlers": {},
-                "attributes": {"style": {}},
-            },
-        ),
-    ],
-)
-def test_node(actual, expected):
-    assert actual == expected
-
-
 def test_var_equivalence():
     r1 = idom.Var([1, 2, 3])
     r2 = idom.Var([1, 2, 3])
@@ -98,23 +96,3 @@ def test_var_get():
     assert v.get() is idom.Var.empty
     v.set(1)
     assert v.get() == 1
-
-
-async def test_state_cycle():
-
-    states = []
-
-    @idom.element
-    def stateful_element(self, param=idom.State()):
-        states.append(param)
-
-    elmt = stateful_element(0)
-    await elmt.render()
-    elmt.update()
-    await elmt.render()
-    elmt.update(1)
-    await elmt.render()
-    elmt.update()
-    await elmt.render()
-
-    assert states == [0, 0, 1, 1]

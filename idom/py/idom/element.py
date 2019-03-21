@@ -11,26 +11,46 @@ from typing import (
     Callable,
     Any,
     Tuple,
+    List,
     Optional,
+    overload
 )
 
+from .bunch import StaticBunch
 from .utils import to_coroutine
 
 
-def element(function: Callable) -> Callable:
+_ElementConstructor = Callable[..., "Element"]
+
+
+@overload
+def element(function: Callable) -> _ElementConstructor: ...
+
+
+@overload
+def element(
+    *, state: Optional[str] = None,
+) -> Callable[[Callable], _ElementConstructor]: ...
+
+
+def element(function: Optional[Callable] = None, state: Optional[str] = None) -> Callable:
     """A decorator for defining an :class:`Element`.
 
     Parameters:
         function: The function that will render a :term:`VDOM` model.
     """
+    def setup(func):
+        @wraps(func)
+        def constructor(*args: Any, **kwargs: Any) -> Element:
+            element = Element(func, state)
+            element.update(*args, **kwargs)
+            return element
+        return constructor
 
-    @wraps(function)
-    def constructor(*args: Any, **kwargs: Any) -> Element:
-        element = Element(function)
-        element.update(*args, **kwargs)
-        return element
-
-    return constructor
+    if function is not None:
+        return setup(function)
+    else:
+        return setup
 
 
 class Element:
@@ -62,6 +82,8 @@ class Element:
         "_function_signature",
         "_id",
         "_layout",
+        "_state",
+        "_state_parameters",
         "_update",
         "__weakref__",
     )
@@ -71,15 +93,23 @@ class Element:
         """Get an element instance given its :attr:`Element.id`."""
         return self._by_id[element_id]
 
-    def __init__(self, function: Callable):
+    def __init__(self, function: Callable, state_parameters: Optional[str]):
         self._dead: bool = False
         self._function = to_coroutine(function)
         self._function_signature = inspect.signature(function)
         self._id = uuid.uuid1().hex
         self._layout: Optional["idom.Layout"] = None
+        self._state: Dict[str, Any] = {}
+        self._state_parameters: List[str] = list(map(
+            str.strip, (state_parameters or "").split(",")
+        ))
         self._update: Dict[str, Any] = {}
         # save self to "by-ID" mapping
         Element._by_id[self._id] = self
+
+    @property
+    def state(self):
+        return StaticBunch(self._state)
 
     @property
     def id(self) -> str:
@@ -91,8 +121,8 @@ class Element:
         if self._layout is not None:
             if not self._update:
                 self._layout.update(self)
-        bound = self._function_signature.bind(None, *args, **kwargs)
-        self._update = dict(list(bound.arguments.items())[1:])
+        bound = self._function_signature.bind_partial(None, *args, **kwargs)
+        self._update.update(list(bound.arguments.items())[1:])
 
     def animate(self, function: Callable):
         """Schedule this function to run soon, and then render any updates it caused."""
@@ -105,9 +135,16 @@ class Element:
         """Render the element's :term:`VDOM` model."""
         # load update and reset for next render
         update = self._update
-        self._update.clear()
-        model = await self._function(self, **update)
-        return model
+
+        for name in self._state_parameters:
+            if name not in update:
+                update[name] = self._state[name]
+            else:
+                self._state[name] = update[name]
+
+        self._update = {}
+
+        return (await self._function(self, **update))
 
     def mount(self, layout: "idom.Layout"):
         """Mount a layout to the element instance.

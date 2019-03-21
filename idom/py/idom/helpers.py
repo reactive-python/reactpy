@@ -12,22 +12,40 @@ from .utils import to_coroutine, Sentinel
 EMPTY = Sentinel("EMPTY")
 
 
-def node(tag: str, *children: Any, **attributes: Any) -> DynamicBunch:
+def node(tag: str, *children, **attributes: Any) -> DynamicBunch:
     """A helper function for generating :term:`VDOM` dictionaries."""
-    _children: List[Any] = []
+    merged_children: List[Any] = []
+
     for c in children:
         if isinstance(c, (list, tuple)):
-            _children.extend(c)
+            merged_children.extend(c)
         else:
-            _children.append(c)
-    event_handlers = attributes.pop("eventHandlers", Events())
-    attributes.setdefault("style", {})
-    return DynamicBunch(
-        tagName=tag,
-        children=_children,
-        attributes=attributes,
-        eventHandlers=event_handlers,
-    )
+            merged_children.append(c)
+
+    model = DynamicBunch(tagName=tag)
+
+    if merged_children:
+        model.children = merged_children
+    if "eventHandlers" in attributes:
+        model.eventHandlers = attributes.pop("eventHandlers")
+    if attributes:
+        model.attributes = attributes
+
+    return model
+
+
+def node_constructor(tag, allow_children=True):
+    """Create a constructor for nodes with the given tag name."""
+
+    def constructor(*children, **attributes):
+        if not allow_children:
+            raise TypeError(f"{tag!r} nodes cannot have children.")
+        return node(tag, *children, **attributes)
+
+    constructor.__name__ = tag
+    qualname_prefix = constructor.__qualname__.rsplit(".", 1)[0]
+    constructor.__qualname__ = qualname_prefix + f".{tag}"
+    return constructor
 
 
 class Events(Mapping):

@@ -21,6 +21,9 @@ class StaticBunch(Mapping):
     def __repr__(self) -> str:
         return repr(self.__dict__)
 
+    def __setattr__(self, name, value):
+        raise TypeError("%r is immutable." % self)
+
 
 class DynamicBunch(MutableMapping, StaticBunch):
     """A mutable mapping with attribute access."""
@@ -30,3 +33,6 @@ class DynamicBunch(MutableMapping, StaticBunch):
 
     def __delitem__(self, name: str):
         del self.__dict__[name]
+
+    def __setattr__(self, name, value):
+        object.__setattr__(self, name, value)
