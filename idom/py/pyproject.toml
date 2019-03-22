@@ -23,6 +23,10 @@ jupyter = "^1.0"
 pre-commit = "^1.14"
 black = {version = "^18.3-alpha.0",allows-prereleases = true}
 flake8 = "^3.7"
+sphinx = "^1.8"
+sphinx-js = "^2.7"
+sphinx-autodoc-typehints = "^1.6"
+sphinx_rtd_theme = "^0.4.3"
 
 [build-system]
 requires = ["poetry>=0.12"]

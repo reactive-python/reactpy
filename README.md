@@ -6,7 +6,7 @@ Libraries for defining and controlling interactive webpages with Python 3.6 and 
 * [Javascript Documentation](https://github.com/rmorshea/idom/blob/master/idom/js/README.md)
 
 
-# Early Days
+## Early Days
 
 iDOM is still young. If you have ideas or find a bug, be sure to post an
 [issue](https://github.com/rmorshea/idom/issues)
@@ -14,7 +14,7 @@ or create a
 [pull request](https://github.com/rmorshea/idom/pulls). Thanks in advance!
 
 
-# At a Glance
+## At a Glance
 
 iDOM can be used to create a simple slideshow which changes whenever a user clicks an image.
 
@@ -35,7 +35,7 @@ async def slideshow(self, index=0):
 idom.SimpleWebServer(slideshow).daemon("localhost", 8765).join()
 ```
 
-Running this will server our slideshow to `"https://localhost:8765/idom/client/index.html"`
+Running this will serve our slideshow to `"https://localhost:8765/idom/client/index.html"`
 
 <img src='https://picsum.photos/800/300?random'/>
 
@@ -48,7 +48,7 @@ idom.display("jupyter", "https://localhost:8765/idom/stream")
 Every click will then cause the image to change (it won't here of course).
 
 
-# Breaking it Down
+## Breaking it Down
 
 That might have been a bit much to throw out at once. Let's break down each piece of the
 example above:
