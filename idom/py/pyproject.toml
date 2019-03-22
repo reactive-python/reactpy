@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "idom"
+version = "0.1.0"
+description = "Control the web with Python"
+authors = ["rmorshea <ryan.morshead@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/rmorshea/idom"
+include = [
+  "idom/static/*",
+  "idom/py.typed",
+]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+sanic = "^18.12"
+vdom = {version = "^0.6.0",optional = true}
+
+[tool.poetry.dev-dependencies]
+pytest = "^4.3"
+pytest-asyncio = "^0.10.0"
+mypy = "^0.670.0"
+jupyter = "^1.0"
+pre-commit = "^1.14"
+black = {version = "^18.3-alpha.0",allows-prereleases = true}
+flake8 = "^3.7"
+sphinx = "^1.8"
+sphinx-js = "^2.7"
+sphinx-autodoc-typehints = "^1.6"
+sphinx_rtd_theme = "^0.4.3"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

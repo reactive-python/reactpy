@@ -1,0 +1,25 @@
+{
+  "name": "lerna-workspaces-react-es6",
+  "description": "React ES6 template using Lerna and Yarn Workspaces",
+  "version": "1.0.0",
+  "private": true,
+  "author": "Naresh Bhatia",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nareshbhatia/lerna-workspaces-react-es6.git"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "setup": "lerna exec -- yarn",
+    "build": "lerna exec -- yarn build",
+    "format": "prettier --print-width 80 --tab-width 4 --double-quote --write 'packages/*/src/**/*.js'"
+  },
+  "devDependencies": {
+    "jsdoc": "^3.5.5",
+    "lerna": "^2.9.0",
+    "prettier": "^1.11.1"
+  }
+}
