@@ -55,45 +55,52 @@ function DynamicElement({ elementId, sendEvent }) {
 }
 
 function Element({ model, sendEvent }) {
-    const children = model.children.map(child => {
-        switch (child.type) {
-            case "ref":
-                return (
-                    <DynamicElement
-                        elementId={child.data}
-                        sendEvent={sendEvent}
-                    />
-                );
-            case "obj":
-                return <Element model={child.data} sendEvent={sendEvent} />;
-            case "str":
-                return child.data;
-        }
-    });
+    let children;
+    if (!model.children) {
+        children = [];
+    } else {
+        children = model.children.map(child => {
+            switch (child.type) {
+                case "ref":
+                    return (
+                        <DynamicElement
+                            elementId={child.data}
+                            sendEvent={sendEvent}
+                        />
+                    );
+                case "obj":
+                    return <Element model={child.data} sendEvent={sendEvent} />;
+                case "str":
+                    return child.data;
+            }
+        });
+    }
 
     const attributes = Object.assign({}, model.attributes);
 
-    Object.keys(model.eventHandlers).forEach(target => {
-        const eventSpec = model.eventHandlers[target].split("_");
-        const [handlerId, eventName, eventProps] = eventSpec;
-        attributes[eventName] = event => {
-            const data = {};
-            eventProps.split(";").forEach(prop => {
-                const path = prop.split(".");
-                const firstProp = path.shift();
-                let value = event[firstProp];
-                for (let i = 0; i < path.length; i++) {
-                    value = value[path[i]];
-                }
-                data[prop] = value;
-            });
-            sendEvent({
-                target: target,
-                handler: model.eventHandlers[target],
-                data: data
-            });
-        };
-    });
+    if (model.eventHandlers) {
+        Object.keys(model.eventHandlers).forEach(target => {
+            const eventSpec = model.eventHandlers[target].split("_");
+            const [handlerId, eventName, eventProps] = eventSpec;
+            attributes[eventName] = event => {
+                const data = {};
+                eventProps.split(";").forEach(prop => {
+                    const path = prop.split(".");
+                    const firstProp = path.shift();
+                    let value = event[firstProp];
+                    for (let i = 0; i < path.length; i++) {
+                        value = value[path[i]];
+                    }
+                    data[prop] = value;
+                });
+                sendEvent({
+                    target: target,
+                    handler: model.eventHandlers[target],
+                    data: data
+                });
+            };
+        });
+    }
 
     let Tag = model.tagName;
     if (children.length) {

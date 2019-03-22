@@ -1,12 +1,11 @@
 import idom
-import uuid
 import inspect
 from functools import wraps
 from weakref import WeakValueDictionary
 
 from typing import Dict, Callable, Any, List, Optional, overload
 
-from .utils import to_coroutine
+from .utils import to_coroutine, bound_id
 
 
 _ElementConstructor = Callable[..., "Element"]
@@ -73,9 +72,9 @@ class Element:
 
     __slots__ = (
         "_dead",
+        "_element_id",
         "_function",
         "_function_signature",
-        "_id",
         "_layout",
         "_state",
         "_state_parameters",
@@ -90,9 +89,9 @@ class Element:
 
     def __init__(self, function: Callable, state_parameters: Optional[str]):
         self._dead: bool = False
+        self._element_id = bound_id(self)
         self._function = to_coroutine(function)
         self._function_signature = inspect.signature(function)
-        self._id = uuid.uuid1().hex
         self._layout: Optional["idom.Layout"] = None
         self._state: Dict[str, Any] = {}
         self._state_parameters: List[str] = list(
@@ -100,18 +99,18 @@ class Element:
         )
         self._update: Optional[Dict[str, Any]] = None
         # save self to "by-ID" mapping
-        Element._by_id[self._id] = self
+        Element._by_id[self._element_id] = self
 
     @property
     def id(self) -> str:
         """The unique ID of the element."""
-        return self._id
+        return self._element_id
 
     def update(self, *args: Any, **kwargs: Any):
         """Schedule this element to render with new parameters."""
         if self._update is None:
-            self._update = {}
             # only tell layout to render on first update call
+            self._update = {}
             if self._layout is not None:
                 self._layout.update(self)
         bound = self._function_signature.bind_partial(None, *args, **kwargs)

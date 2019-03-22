@@ -17,4 +17,4 @@ if (secure) {
 let endpoint = protocol + "//" + url.join("/");
 
 const mount = document.getElementById("root");
-ReactDOM.render(<Layout endpoint={endpoint} />, mount);
+ReactDOM.render(<Layout endpoint={"ws://localhost:8765/idom/stream"} />, mount);

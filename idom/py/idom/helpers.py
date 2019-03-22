@@ -1,12 +1,10 @@
 import inspect
 from collections.abc import Mapping
-import uuid
 
 from typing import Any, Callable, Dict, TypeVar, Generic, List
 
 from .bunch import DynamicBunch
-from .element import Element
-from .utils import to_coroutine, Sentinel
+from .utils import to_coroutine, Sentinel, bound_id
 
 
 EMPTY = Sentinel("EMPTY")
@@ -158,6 +156,7 @@ class EventHandler:
         "_event_name",
         "_target_id",
         "_props_to_params",
+        "__weakref__",
     )
 
     def __init__(
@@ -169,7 +168,7 @@ class EventHandler:
     ):
         self._function = function
         self._handler = to_coroutine(function)
-        self._target_id = target_id or uuid.uuid1().hex
+        self._target_id = target_id or bound_id(self)
         self._event_name = event_name
         self._props_to_params: Dict[str, str] = {}
         for target_key, param in inspect.signature(function).parameters.items():

@@ -1,5 +1,7 @@
 import os
+import uuid
 import inspect
+from weakref import finalize
 from functools import wraps
 
 from typing import Callable
@@ -28,3 +30,15 @@ class Sentinel:
 
     def __repr__(self):
         return self.__name
+
+
+def bound_id(obj, size=10):
+    obj_id = uuid.uuid4().hex
+    while obj_id in _LOCAL_IDS:
+        obj_id = uuid.uuid4().hex
+    _LOCAL_IDS.add(obj_id)
+    finalize(obj, lambda oid=obj_id: _LOCAL_IDS.remove(oid))
+    return obj_id
+
+
+_LOCAL_IDS = set()

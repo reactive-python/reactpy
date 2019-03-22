@@ -128,12 +128,12 @@ class Layout:
 
     def _load_model(self, model: Mapping, element_id: str):
         model = dict(model)
-        model["children"] = self._load_model_children(
-            model.setdefault("children", []), element_id
-        )
-        model["eventHandlers"] = self._load_event_handlers(
-            model.setdefault("eventHandlers", {}), element_id
-        )
+        if "children" in model:
+            model["children"] = self._load_model_children(model["children"], element_id)
+        if "eventHandlers" in model:
+            model["eventHandlers"] = self._load_event_handlers(
+                model["eventHandlers"], element_id
+            )
         return model
 
     def _load_model_children(
