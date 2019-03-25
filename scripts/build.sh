@@ -1,4 +1,4 @@
-cd idom
+cd src
 
 # clean up possible old install
 if [ -d "py/idom/static" ]; then

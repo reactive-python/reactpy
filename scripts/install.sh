@@ -1,2 +1,2 @@
-cd idom/js && yarn && yarn setup && cd ../
-cd idompy && poetry install
+cd src/js && yarn && yarn setup && cd ../
+cd src/py && poetry install

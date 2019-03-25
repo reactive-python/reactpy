@@ -1,10 +1,11 @@
 dist: xenial
 language: python
 
-cache: pip
+cache: apt
 before_install:
+  - sudo apt update
   - sudo apt install curl
-  - sudo apt install npm
+  - sudo apt install nodejs npm
   - npm install -g yarn
   - sudo curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
 install:
@@ -23,20 +24,20 @@ matrix:
     - name: "flake8"
       python: 3.7
       env:
-        - WORK_DIR="idom/py"
+        - WORK_DIR="src/py"
         - TEST_CMD="flake8"
     - name: "python-3.6"
       python: 3.6
       env:
-        - WORK_DIR="idom/py"
+        - WORK_DIR="src/py"
         - TEST_CMD="pytest"
     - name: "python-3.7"
       python: 3.7
       env:
-        - WORK_DIR="idom/py"
+        - WORK_DIR="src/py"
         - TEST_CMD="pytest"
     - name: "python-3.8-dev"
       python: 3.8-dev
       env:
-        - WORK_DIR="idom/py"
+        - WORK_DIR="src/py"
         - TEST_CMD="pytest"

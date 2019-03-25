@@ -18,6 +18,7 @@ __all__ = [
     "Events",
     "Layout",
     "node",
+    "nodes",
     "SimpleServer",
     "SimpleWebServer",
     "State",
