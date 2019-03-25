@@ -8,6 +8,7 @@ before_install:
   - sudo apt install nodejs npm
   - npm install -g yarn
   - sudo curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
+  - source $HOME/.poetry/env
 install:
   - bash scripts/install.sh
   - bash scripts/build.sh

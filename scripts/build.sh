@@ -1,3 +1,5 @@
+set -e
+
 cd src
 
 # clean up possible old install
