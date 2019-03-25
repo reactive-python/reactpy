@@ -37,8 +37,3 @@ matrix:
       env:
         - WORK_DIR="src/py"
         - TEST_CMD="pytest"
-    - name: "python-3.8-dev"
-      python: 3.8-dev
-      env:
-        - WORK_DIR="src/py"
-        - TEST_CMD="pytest"

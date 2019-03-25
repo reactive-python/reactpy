@@ -1,5 +1,9 @@
 # iDOM
 
+<a href="https://travis-ci.org/rmorshea/fstr"><img alt="Build Status" src="https://travis-ci.org/rmorshea/fstr.svg?branch=master"></a>
+<a href="https://github.com/ambv/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
+<a href="https://github.com/rmorshea/fstr/blob/master/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-purple.svg"></a>
+
 Libraries for defining and controlling interactive webpages with Python 3.6 and above.
 
 * [Python Documentation](https://github.com/rmorshea/idom/blob/master/idom/py/README.md)
