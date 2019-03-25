@@ -1,0 +1,39 @@
+dist: xenial
+language: python
+
+cache: apt
+before_install:
+  - sudo apt update
+  - sudo apt install curl
+  - sudo apt install nodejs npm
+  - npm install -g yarn
+  - sudo curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
+  - source $HOME/.poetry/env
+install:
+  - bash scripts/install.sh
+  - bash scripts/build.sh
+
+script: cd $WORK_DIR && eval $TEST_CMD
+
+matrix:
+  include:
+    - name: "black"
+      python: 3.7
+      env:
+        - WORK_DIR="./"
+        - TEST_CMD="black --verbose ."
+    - name: "flake8"
+      python: 3.7
+      env:
+        - WORK_DIR="src/py"
+        - TEST_CMD="flake8"
+    - name: "python-3.6"
+      python: 3.6
+      env:
+        - WORK_DIR="src/py"
+        - TEST_CMD="pytest"
+    - name: "python-3.7"
+      python: 3.7
+      env:
+        - WORK_DIR="src/py"
+        - TEST_CMD="pytest"

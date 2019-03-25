@@ -1,6 +1,6 @@
 from collections.abc import Mapping, MutableMapping
 
-from typing import Iterator, Tuple, Any
+from typing import Iterator, Any
 
 
 class StaticBunch(Mapping):
