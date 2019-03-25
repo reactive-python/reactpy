@@ -1,3 +1,2 @@
-cd purly/py
-pip install .
-cd ../
+cd idom/js && yarn && yarn setup && cd ../
+cd idompy && poetry install
