@@ -6,8 +6,8 @@
 
 Libraries for defining and controlling interactive webpages with Python 3.6 and above.
 
-* [Python Documentation](https://github.com/rmorshea/idom/blob/master/idom/py/README.md)
-* [Javascript Documentation](https://github.com/rmorshea/idom/blob/master/idom/js/README.md)
+* [Python Documentation](https://github.com/rmorshea/idom/blob/master/src/py/README.md)
+* [Javascript Documentation](https://github.com/rmorshea/idom/blob/master/src/js/README.md)
 
 
 ## Early Days
