@@ -8,7 +8,7 @@ Libraries for defining and controlling interactive webpages with Python
     :maxdepth: 1
 
     install
-    libs/index
+    api
     glossary
 
 

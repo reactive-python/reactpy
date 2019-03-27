@@ -6,15 +6,13 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
-# -- Path setup --------------------------------------------------------------
+# -- Path Setup --------------------------------------------------------------
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-# autodo
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+
+here = os.path.dirname(__file__)
+project = os.path.join(here, "..", "..")
+init_file = os.path.join(project, "idom", "__init__.py")
 
 
 # -- Project information -----------------------------------------------------
@@ -23,10 +21,15 @@ project = "iDOM"
 copyright = "2019, Ryan Morshead"
 author = "Ryan Morshead"
 
-# The short X.Y version
-version = ""
-# The full version, including alpha/beta/rc tags
-release = "0.1.0"
+# find version from idom/__init__.py
+with open(init_file, "r") as f:
+    for line in f:
+        if line.startswith("__version__ = "):
+            release = eval(line.split("=", 1)[1].strip())
+            version = release.rsplit(".", 1)[0]
+            break
+    else:
+        raise RuntimeError(f"No '__version__' defined in {init_file}")
 
 
 # -- General configuration ---------------------------------------------------
@@ -43,10 +46,8 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.coverage",
     "sphinx.ext.viewcode",
-    "sphinx.ext.githubpages",
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",
-    "sphinx_js",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -77,12 +78,6 @@ exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
-
-# Path to javascript source
-js_source_path = "../idom/js/packages/idom-layout/src"
-
-# favicon location
-html_favicon = "favicon.ico"
 
 # -- Options for HTML output -------------------------------------------------
 
