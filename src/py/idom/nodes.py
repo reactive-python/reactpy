@@ -75,7 +75,7 @@ __all__ = [
     "meter",
     "output",
     "progress",
-    "input_",
+    "input",
     "button",
     "label",
     # Interactive elements
@@ -164,7 +164,7 @@ tr = node_constructor("tr")
 meter = node_constructor("meter")
 output = node_constructor("output")
 progress = node_constructor("progress")
-input_ = node_constructor("input", allow_children=False)
+input = node_constructor("input", allow_children=False)
 button = node_constructor("button")
 label = node_constructor("label")
 

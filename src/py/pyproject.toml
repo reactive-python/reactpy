@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "idom"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 description = "Control the web with Python"
 authors = ["rmorshea <ryan.morshead@gmail.com>"]
 license = "MIT"

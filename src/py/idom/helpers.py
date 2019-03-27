@@ -36,7 +36,7 @@ def node_constructor(tag, allow_children=True):
     """Create a constructor for nodes with the given tag name."""
 
     def constructor(*children, **attributes):
-        if not allow_children:
+        if not allow_children and children:
             raise TypeError(f"{tag!r} nodes cannot have children.")
         return node(tag, *children, **attributes)
 
