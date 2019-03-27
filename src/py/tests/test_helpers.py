@@ -1,7 +1,7 @@
 import pytest
 
 import idom
-from idom.helpers import EventHandler
+from idom.helpers import EventHandler, node_constructor
 
 
 @pytest.mark.parametrize(
@@ -33,6 +33,23 @@ from idom.helpers import EventHandler
 )
 def test_simple_node_construction(actual, expected):
     assert actual == expected
+
+
+def test_node_constructor_factory():
+    elmt = node_constructor("some-tag")
+
+    assert elmt(elmt(), data=1) == {
+        "tagName": "some-tag",
+        "children": [{"tagName": "some-tag"}],
+        "attributes": {"data": 1},
+    }
+
+    no_children = node_constructor("no-children", allow_children=False)
+
+    with pytest.raises(TypeError):
+        no_children(1, 2, 3)
+
+    assert no_children() == {"tagName": "no-children"}
 
 
 def test_simple_events():
