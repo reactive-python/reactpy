@@ -6,7 +6,7 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
-# -- Path Setup --------------------------------------------------------------
+# -- Path setup --------------------------------------------------------------
 
 import os
 
