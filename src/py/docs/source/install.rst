@@ -52,6 +52,7 @@ into the expected static file folder within ``src/py/idom/static``.
 .. Links
 .. =====
 
+.. _git: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 .. _Git Bash: https://gitforwindows.org/
 .. _PyPI: https://pypi.org/
 .. _pip: https://pypi.org/project/pip/
