@@ -16,5 +16,6 @@ cd ../../
 cd src/py
 
 poetry install
+pre-commit install
 
 cd ../../
