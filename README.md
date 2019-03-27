@@ -1,6 +1,11 @@
 # iDOM
 
-<a href="https://github.com/rmorshea/idom/blob/master/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-purple.svg"></a>
+<a href="https://travis-ci.com/rmorshea/idom">
+  <img alt="Build Status" src="https://travis-ci.com/rmorshea/idom.svg?branch=master">
+</a>
+<a href="https://github.com/rmorshea/idom/blob/master/LICENSE">
+  <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-purple.svg">
+</a>
 
 Libraries for defining and controlling interactive webpages with Python 3.6 and above.
 
