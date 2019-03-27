@@ -1,8 +1,5 @@
 # iDOM (Python)
 
-<a href="https://travis-ci.com/rmorshea/idom">
-  <img alt="Build Status" src="https://travis-ci.com/rmorshea/idom.svg?branch=master">
-</a>
 <a href='https://idom.readthedocs.io/en/latest/?badge=latest'>
   <img src='https://readthedocs.org/projects/idom/badge/?version=latest' alt='Documentation Status' />
 </a>
