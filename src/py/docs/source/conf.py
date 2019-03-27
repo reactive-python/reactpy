@@ -6,14 +6,15 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
-# -- Path setup --------------------------------------------------------------
+# -- Path Setup --------------------------------------------------------------
 
 import os
+import sys
 
 here = os.path.dirname(__file__)
-project = os.path.join(here, "..", "..")
+project = here.rsplit(os.path.sep, 2)[0]
 init_file = os.path.join(project, "idom", "__init__.py")
-
+sys.path.insert(0, project)
 
 # -- Project information -----------------------------------------------------
 
@@ -21,16 +22,10 @@ project = "iDOM"
 copyright = "2019, Ryan Morshead"
 author = "Ryan Morshead"
 
-# find version from idom/__init__.py
-with open(init_file, "r") as f:
-    for line in f:
-        if line.startswith("__version__ = "):
-            release = eval(line.split("=", 1)[1].strip())
-            version = release.rsplit(".", 1)[0]
-            break
-    else:
-        raise RuntimeError(f"No '__version__' defined in {init_file}")
+import idom  # noqa
 
+release = idom.__version__
+version = release.rsplit(".", 1)[0]
 
 # -- General configuration ---------------------------------------------------
 
