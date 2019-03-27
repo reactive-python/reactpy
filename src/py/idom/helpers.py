@@ -43,6 +43,7 @@ def node_constructor(tag, allow_children=True):
     constructor.__name__ = tag
     qualname_prefix = constructor.__qualname__.rsplit(".", 1)[0]
     constructor.__qualname__ = qualname_prefix + f".{tag}"
+    constructor.__doc__ = f"""Create a new ``<{tag}/>`` - returns :term:`VDOM`."""
     return constructor
 
 
