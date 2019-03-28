@@ -547,17 +547,6 @@ python-versions = "*"
 version = "1.4.2"
 
 [[package]]
-category = "dev"
-description = "(Soon to be) the fastest pure-Python PEG parser I could muster"
-name = "parsimonious"
-optional = false
-python-versions = "*"
-version = "0.7.0"
-
-[package.dependencies]
-six = "*"
-
-[[package]]
 category = "main"
 description = "A Python Parser"
 name = "parso"
@@ -878,21 +867,6 @@ Sphinx = ">=1.7"
 
 [[package]]
 category = "dev"
-description = "Support for using Sphinx on JSDoc-documented JS code"
-name = "sphinx-js"
-optional = false
-python-versions = "*"
-version = "2.7.1"
-
-[package.dependencies]
-Jinja2 = ">2.0,<3.0"
-Sphinx = "<2.0"
-docutils = "*"
-parsimonious = ">=0.7.0,<0.8.0"
-six = ">=1.9.0,<2.0"
-
-[[package]]
-category = "dev"
 description = "Read the Docs theme for Sphinx"
 name = "sphinx-rtd-theme"
 optional = false
@@ -1058,7 +1032,7 @@ python-versions = ">=2.7"
 version = "0.3.3"
 
 [metadata]
-content-hash = "ef04d53d784802bf0fea7dcd5f9e8db7ae944d969310277df7d33765f40c81be"
+content-hash = "432edb9383860cd38992b1a6ad4b95da7d42e12ebb977ac275b842012f087d14"
 python-versions = "^3.6"
 
 [metadata.hashes]
@@ -1113,7 +1087,6 @@ nodeenv = ["ad8259494cf1c9034539f6cced78a1da4840a4b157e23640bc4a0c0546b0cb7a"]
 notebook = ["18a98858c0331fb65a60f2ebb6439f8c0c4defd14ca363731b6cabc7f61624b4", "cc027a62be0f7756e0ef3d2d98458c4d7f4b3566449fb1a05891207f5bd9a1bf"]
 packaging = ["0c98a5d0be38ed775798ece1b9727178c4469d9c3b4ada66e8e6b7849f8732af", "9e1cbf8c12b1f1ce0bb5344b8d7ecf66a6f8a6e91bcb0c84593ed6d3ab5c4ab3"]
 pandocfilters = ["b3dd70e169bb5449e6bc6ff96aea89c5eea8c5f6ab5e207fc2f521a2cf4a0da9"]
-parsimonious = ["396d424f64f834f9463e81ba79a331661507a21f1ed7b644f7f6a744006fd938"]
 parso = ["4580328ae3f548b358f4901e38c0578229186835f0fa0846e47369796dd5bcc9", "68406ebd7eafe17f8e40e15a84b56848eccbf27d7c1feb89e93d8fca395706db"]
 pexpect = ["2a8e88259839571d1251d278476f3eec5db26deb73a70be5ed5dc5435e418aba", "3fbd41d4caf27fa4a377bfd16fef87271099463e6fa73e92a52f92dfee5d425b"]
 pickleshare = ["87683d47965c1da65cdacaf31c8441d12b8044cdec9aca500cd78fc2c683afca", "9649af414d74d4df115d5d718f82acb59c9d418196b7b4290ed47a12ce62df56"]
@@ -1143,7 +1116,6 @@ six = ["3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c", "d16a
 snowballstemmer = ["919f26a68b2c17a7634da993d91339e288964f93c274f1343e3bbbe2096e1128", "9f3bcd3c401c3e862ec0ebe6d2c069ebc012ce142cce209c098ccb5b09136e89"]
 sphinx = ["9f3e17c64b34afc653d7c5ec95766e03043cc6d80b0de224f59b6b6e19d37c3c", "c7658aab75c920288a8cf6f09f244c6cfdae30d82d803ac1634d9f223a80ca08"]
 sphinx-autodoc-typehints = ["19fe0b426b7c008181f67f816060da7f046bd8a42723f67a685d26d875bcefd7", "f9c06acfec80766fe8f542a6d6a042e751fcf6ce2e2711a7dc00d8b6daf8aa36"]
-sphinx-js = ["daa5a9da8f43aaeccf6cf696194d86a3a10c2e0210c392c15f95df2112fc6f6c"]
 sphinx-rtd-theme = ["00cf895504a7895ee433807c62094cf1e95f065843bf3acd17037c3e9a2becd4", "728607e34d60456d736cc7991fd236afb828b21b82f956c5ea75f94c8414040a"]
 sphinxcontrib-websupport = ["68ca7ff70785cbe1e7bccc71a48b5b6d965d79ca50629606c7861a21b206d9dd", "9de47f375baf1ea07cdb3436ff39d7a9c76042c10a769c52353ec46e4e8fc3b9"]
 terminado = ["55abf9ade563b8f9be1f34e4233c7b7bde726059947a593322e8a553cc4c067a", "65011551baff97f5414c67018e908110693143cfbaeb16831b743fe7cad8b927"]

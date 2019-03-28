@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "idom"
-version = "0.1.0"
+version = "0.1.1-alpha.1"
 description = "Control the web with Python"
 authors = ["rmorshea <ryan.morshead@gmail.com>"]
 license = "MIT"
@@ -24,7 +24,6 @@ pre-commit = "^1.14"
 black = {version = "^18.3-alpha.0",allows-prereleases = true}
 flake8 = "^3.7"
 sphinx = "^1.8"
-sphinx-js = "^2.7"
 sphinx-autodoc-typehints = "^1.6"
 sphinx_rtd_theme = "^0.4.3"
 

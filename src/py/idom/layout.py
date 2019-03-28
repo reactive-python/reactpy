@@ -78,8 +78,6 @@ class Layout:
 
         # all deleted element ids
         old: List[str] = list(current.difference(self._state))
-        for element_id in old:
-            Element.by_id(element_id).unmount()
 
         return roots, new, old
 
@@ -87,7 +85,9 @@ class Layout:
         self, element: "Element", parent_element_id: str
     ) -> AsyncIterator[Tuple[str, Dict]]:
         try:
-            element.mount(self)
+            if not element.mounted():
+                element.mount(self)
+
             model = await element.render()
 
             if isinstance(model, Element):
