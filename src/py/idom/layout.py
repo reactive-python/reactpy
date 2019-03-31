@@ -28,6 +28,7 @@ class Layout:
         "_render_semaphore",
         "_update_queue",
         "_animate_queue",
+        "_rendering",
         "_root",
         "_state",
     )
@@ -44,6 +45,7 @@ class Layout:
         self._render_semaphore = asyncio.Semaphore(1, loop=loop)
         self._animate_queue: List[Callable] = []
         self._create_element_state(root.id, None)
+        self._rendering = False
         self.update(root)
 
     @property
@@ -70,6 +72,11 @@ class Layout:
             self._render_semaphore.release()
 
     async def render(self) -> RenderType:
+        if self._rendering:
+            raise RuntimeError("Layout is already awaiting a render.")
+        else:
+            self._rendering = True
+
         await self._render_semaphore.acquire()
 
         # current element ids
@@ -95,6 +102,8 @@ class Layout:
 
         # all deleted element ids
         old: List[str] = list(current.difference(self._state))
+
+        self._rendering = False
 
         return roots, new, old
 
