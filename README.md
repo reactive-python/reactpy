@@ -39,7 +39,7 @@ async def slideshow(self, index=0):
     url = f"https://picsum.photos/800/300?image={index}"
     return idom.node("img", src=url, eventHandlers=events)
 
-idom.SimpleWebServer(slideshow).daemon("localhost", 8765).join()
+idom.StatelessServer(slideshow).daemon("localhost", 8765).join()
 ```
 
 Running this will serve our slideshow to `"https://localhost:8765/idom/client/index.html"`

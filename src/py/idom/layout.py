@@ -64,11 +64,19 @@ class Layout:
     def animate(self, function: Callable):
         self._animate_queue.append(to_coroutine(function))
         if self._render_semaphore.locked():
+            # We don't want to release more than once because
+            # all changes are renderer in one go. Multiple releases
+            # could cause another render even though there were no
+            # no updates from the last.
             self._render_semaphore.release()
 
     def update(self, element: "Element"):
         self._update_queue.append(element)
         if self._render_semaphore.locked():
+            # We don't want to release more than once because
+            # all changes are renderer in one go. Multiple releases
+            # could cause another render even though there were no
+            # no updates from the last.
             self._render_semaphore.release()
 
     async def render(self) -> RenderType:

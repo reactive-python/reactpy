@@ -62,7 +62,7 @@ class BaseServer:
         )
 
 
-class SimpleStatelessServer(BaseServer):
+class StatelessServer(BaseServer):
     def __init__(
         self, element_constructor: ElementConstructor, *args: Any, **kwargs: Any
     ):
@@ -88,7 +88,7 @@ class SimpleStatelessServer(BaseServer):
         await StatelessRenderer(layout).run(sock_send, sock_recv, None)
 
 
-class SimpleStatefulServer(SimpleStatelessServer):
+class StatefulServer(StatelessServer):
     def __init__(
         self, element_constructor: ElementConstructor, *args: Any, **kwargs: Any
     ):
