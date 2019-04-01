@@ -1,7 +1,6 @@
 import idom
 import inspect
 from functools import wraps
-from weakref import WeakValueDictionary
 
 from typing import Dict, Callable, Any, List, Optional, overload
 
@@ -68,8 +67,6 @@ class Element:
     5. Go back to step **3**.
     """
 
-    _by_id = WeakValueDictionary()  # type: WeakValueDictionary[str, "Element"]
-
     __slots__ = (
         "_dead",
         "_element_id",
@@ -82,11 +79,6 @@ class Element:
         "__weakref__",
     )
 
-    @classmethod
-    def by_id(self, element_id: str) -> "Element":
-        """Get an element instance given its :attr:`Element.id`."""
-        return self._by_id[element_id]
-
     def __init__(self, function: Callable, state_parameters: Optional[str]):
         self._dead: bool = False
         self._element_id = bound_id(self)
@@ -98,8 +90,6 @@ class Element:
             map(str.strip, (state_parameters or "").split(","))
         )
         self._update: Optional[Dict[str, Any]] = None
-        # save self to "by-ID" mapping
-        Element._by_id[self._element_id] = self
 
     @property
     def id(self) -> str:
@@ -145,18 +135,13 @@ class Element:
     def mount(self, layout: "idom.Layout"):
         """Mount a layout to the element instance.
 
-        Occurs just before rendering the element.
+        Occurs just before rendering the element for the **first** time.
         """
-        if not self._dead:
-            self._layout = layout
+        self._layout = layout
 
-    def unmount(self):
-        """Unmount a layout from the element instance.
-
-        Occurs when a parent element has re-rendered and its old children are deleted.
-        """
-        self._layout = None
-        self._dead = True
+    def mounted(self) -> bool:
+        """Whether or not this element is associated with a layout."""
+        return self._layout is not None
 
     def __repr__(self) -> str:
         return "%s(%s)" % (self._function.__qualname__, self.id)
