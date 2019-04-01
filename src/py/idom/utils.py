@@ -4,12 +4,12 @@ import inspect
 from weakref import finalize
 from functools import wraps
 
-from typing import Callable
+from typing import Callable, Set, Awaitable
 
 STATIC = os.path.join(os.path.dirname(__file__), "static")
 
 
-def to_coroutine(function: Callable) -> Callable:
+def to_coroutine(function: Callable) -> Callable[..., Awaitable]:
     if inspect.iscoroutinefunction(function):
         return function
     else:
@@ -41,4 +41,4 @@ def bound_id(obj, size=10):
     return obj_id
 
 
-_LOCAL_IDS = set()
+_LOCAL_IDS: Set[str] = set()

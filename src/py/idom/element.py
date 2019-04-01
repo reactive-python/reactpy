@@ -7,18 +7,16 @@ from typing import Dict, Callable, Any, List, Optional, overload
 from .utils import to_coroutine, bound_id
 
 
-_ElementConstructor = Callable[..., "Element"]
+ElementConstructor = Callable[..., "Element"]
 
 
 @overload
-def element(function: Callable) -> _ElementConstructor:
+def element(function: Callable) -> ElementConstructor:
     ...
 
 
 @overload
-def element(
-    *, state: Optional[str] = None
-) -> Callable[[Callable], _ElementConstructor]:
+def element(*, state: Optional[str] = None) -> Callable[[Callable], ElementConstructor]:
     ...
 
 
