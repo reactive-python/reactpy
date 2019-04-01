@@ -50,13 +50,15 @@ class StatefulRenderer(StatelessRenderer):
         super().__init__(layout)
         self._models: Dict[str, Dict] = {}
         self._contexts: Dict[str, Tuple[List[RenderType], asyncio.Event]] = {}
-        task = asyncio.ensure_future(self._render_loop(), loop=self._layout.loop)
-        finalize(self, lambda t: t.cancel(), task)
+        self._render_task = asyncio.ensure_future(
+            self._render_loop(), loop=self._layout.loop
+        )
+        finalize(self, lambda t: t.cancel(), self._render_task)
 
     async def run(self, send, recv, context: str):
         self._contexts[context] = ([], asyncio.Event())
         try:
-            await super().run(send, recv, context)
+            await asyncio.gather(super().run(send, recv, context), self._render_task)
         except Exception:
             del self._contexts[context]
             raise
