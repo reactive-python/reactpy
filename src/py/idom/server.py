@@ -10,7 +10,7 @@ from typing import TypeVar, Any
 
 from .element import ElementConstructor
 from .layout import Layout
-from .render import StatelessRenderer, StatefulRenderer
+from .render import SingleStateRenderer, SharedStateRenderer
 from .utils import STATIC
 
 
@@ -62,7 +62,7 @@ class BaseServer:
         )
 
 
-class StatelessServer(BaseServer):
+class SimpleServer(BaseServer):
     def __init__(
         self, element_constructor: ElementConstructor, *args: Any, **kwargs: Any
     ):
@@ -85,10 +85,10 @@ class StatelessServer(BaseServer):
             message = {"header": {}, "body": {"render": data}}
             await socket.send(json.dumps(message))
 
-        await StatelessRenderer(layout).run(sock_send, sock_recv, None)
+        await SingleStateRenderer(layout).run(sock_send, sock_recv, None)
 
 
-class StatefulServer(StatelessServer):
+class SharedServer(SimpleServer):
     def __init__(
         self, element_constructor: ElementConstructor, *args: Any, **kwargs: Any
     ):
@@ -97,7 +97,7 @@ class StatefulServer(StatelessServer):
 
     async def _setup_renderer(self, app, loop):
         root = self._element_constructor(*self._element_args, **self._element_kwargs)
-        self._renderer = StatefulRenderer(Layout(root, loop=loop))
+        self._renderer = SharedStateRenderer(Layout(root, loop=loop))
 
     async def _stream(self, request: request.Request, socket: WebSocketCommonProtocol):
         async def sock_recv():

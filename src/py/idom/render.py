@@ -36,7 +36,7 @@ class BaseRenderer(abc.ABC):
         ...
 
 
-class StatelessRenderer(BaseRenderer):
+class SingleStateRenderer(BaseRenderer):
     async def _outgoing(self, layout, context) -> Dict:
         roots, new, old = await layout.render()
         return {"roots": roots, "new": new, "old": old}
@@ -45,7 +45,7 @@ class StatelessRenderer(BaseRenderer):
         await layout.apply(**message)
 
 
-class StatefulRenderer(StatelessRenderer):
+class SharedStateRenderer(SingleStateRenderer):
     def __init__(self, layout):
         super().__init__(layout)
         self._models: Dict[str, Dict] = {}
