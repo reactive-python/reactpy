@@ -1,2 +1,10 @@
 # MyPy
 .mypy_cache
+
+# Jupyter Repo 2 Docker
+.local
+.ipython
+.cache
+.bash_history
+.python_history
+.jupyter
