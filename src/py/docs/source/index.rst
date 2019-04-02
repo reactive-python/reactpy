@@ -40,7 +40,7 @@ user clicks an image:
        url = f"https://picsum.photos/800/300?image={index}"
        return idom.node("img", src=url, eventHandlers=events)
 
-   idom.StatelessServer(Slideshow).daemon("localhost", 8765).join()
+   idom.SimpleServer(Slideshow).daemon("localhost", 8765).join()
 
 Running this will serve our slideshow to
 ``"https://localhost:8765/idom/client/index.html"``
@@ -113,14 +113,19 @@ and will respond to the ``events`` we defined earlier. Similarly to the ``events
 
 .. code-block:: python
 
-    idom.StatelessServer(Slideshow).daemon("localhost", 8765).join()
+    idom.SimpleServer(Slideshow).daemon("localhost", 8765).join()
+
+.. note::
+
+  The server is considered "simple" because
+  each client that connects will have their own view and state. Using a ``SharedServer``
+  instead would cause the views of all connecting clients to have a shared state.
 
 This sets up a simple web server which will display the layout of elements and update
-them when events occur over a websocket. The server is considered "stateless" because
-each client that connects to it will see a fresh view. To display the layout we can
-navigate to http://localhost:8765/idom/client/index.html or use ``idom.display()`` to show
-it in a Jupyter Notebook via a widget. The exact protocol for communicating DOM models
-over a network is not documented yet.
+them when events occur over a websocket. To display the layout we can navigate to
+http://localhost:8765/idom/client/index.html or use ``idom.display()`` to show it in a
+Jupyter Notebook via a widget. The exact protocol for communicating DOM models over a
+network is not documented yet.
 
 .. Links
 .. =====

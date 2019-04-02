@@ -4,8 +4,8 @@ from .bunch import StaticBunch, DynamicBunch
 from .element import element, Element
 from .layout import Layout
 from .helpers import Events, Var, node
-from .render import BaseRenderer, StatefulRenderer, StatelessRenderer
-from .server import BaseServer, StatefulServer, StatelessServer
+from .render import BaseRenderer, SharedStateRenderer, SingleStateRenderer
+from .server import BaseServer, SimpleServer, SharedServer
 from .display import display
 from . import nodes
 
@@ -21,10 +21,10 @@ __all__ = [
     "Layout",
     "node",
     "nodes",
-    "StatefulRenderer",
-    "StatelessRenderer",
-    "StatefulServer",
-    "StatelessServer",
+    "SharedStateRenderer",
+    "SingleStateRenderer",
+    "SimpleServer",
+    "SharedServer",
     "State",
     "StaticBunch",
     "Var",
