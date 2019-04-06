@@ -1,1 +1,1 @@
-jupyter-server-proxy
+git+https://github.com/rmorshea/jupyter-server-proxy.git@patch-1
