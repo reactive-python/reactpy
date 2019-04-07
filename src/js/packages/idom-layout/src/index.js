@@ -84,15 +84,17 @@ function Element({ model, sendEvent }) {
             const [handlerId, eventName, eventProps] = eventSpec;
             attributes[eventName] = event => {
                 const data = {};
-                eventProps.split(";").forEach(prop => {
-                    const path = prop.split(".");
-                    const firstProp = path.shift();
-                    let value = event[firstProp];
-                    for (let i = 0; i < path.length; i++) {
-                        value = value[path[i]];
-                    }
-                    data[prop] = value;
-                });
+                if (eventProps) {
+                    eventProps.split(";").forEach(prop => {
+                        const path = prop.split(".");
+                        const firstProp = path.shift();
+                        let value = event[firstProp];
+                        for (let i = 0; i < path.length; i++) {
+                            value = value[path[i]];
+                        }
+                        data[prop] = value;
+                    });
+                }
                 sendEvent({
                     target: target,
                     handler: model.eventHandlers[target],

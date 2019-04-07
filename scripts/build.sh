@@ -18,3 +18,5 @@ cp -r js/packages/idom-jupyter-widget-hook/build py/idom/static/jupyter-widget
 cp -r js/packages/idom-simple-client/build py/idom/static/simple-client
 
 cd ../
+
+cd ../
