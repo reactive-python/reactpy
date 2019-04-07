@@ -1,6 +1,8 @@
 iDOM
 ====
 
+Try it now with Binder! |launch-binder|
+
 Libraries for defining and controlling interactive webpages with Python
 3.6 and above.
 
@@ -135,3 +137,7 @@ network is not documented yet.
 .. _VDOM event specification: https://github.com/nteract/vdom/blob/master/docs/event-spec.md
 .. _VDOM mimetype specification: https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md
 .. _React events: https://reactjs.org/docs/events.html
+
+
+.. |launch-binder| image:: https://mybinder.org/badge_logo.svg
+ :target: https://mybinder.org/v2/gh/rmorshea/idom/master?filepath=examples%2Fintroduction.ipynb

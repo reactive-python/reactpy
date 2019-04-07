@@ -197,7 +197,13 @@ class EventHandler:
         return await self._handler(**data)
 
     def serialize(self):
-        return f"{self._target_id}_{self._event_name}_{';'.join(self._props_to_params.keys())}"
+        string = f"{self._target_id}_{self._event_name}"
+        if self._props_to_params:
+            string += f"_{';'.join(self._props_to_params.keys())}"
+        return string
+
+    def __repr__(self):
+        return repr(self.serialize())
 
     def __eq__(self, other):
         if isinstance(other, EventHandler):
