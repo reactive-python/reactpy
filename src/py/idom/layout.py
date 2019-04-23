@@ -57,15 +57,14 @@ class Layout:
         return self._root.id
 
     async def apply(self, target: str, handler: str, data: dict):
+        # It is possible for an element in the frontend to produce an event
+        # associated with a backend model that has been deleted. We only handle
+        # events if the element and the handler exist in the backend. Otherwise
+        # we just ignore the event.
         if target in self._state:
-            # It is possible for an element in the frontend to produce an event
-            # associated with a backend model that has been deleted. We only handle
-            # events if the element exists in the backend.
-            model_state = self._state[target]
-            # If the element exists but the handler doesn't then something went wrong.
-            # So we allow the potential KeyError.
-            event_handler = model_state["event_handlers"][handler]
-            await event_handler(data)
+            event_handler = self._state[target]["event_handlers"].get(handler)
+            if event_handler is not None:
+                await event_handler(data)
 
     def animate(self, function: Callable):
         self._animate_queue.append(to_coroutine(function))
