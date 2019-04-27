@@ -21,8 +21,6 @@ In order to work with iDOM's source code you'll to install:
 
 + Yarn_
 
-+ Poetry_
-
 + `Git Bash`_ (to run shell scripts on Windows)
 
 The source code for iDOM is hosted on GitHub so you'll need git_ to download it:
@@ -36,13 +34,7 @@ At this point you should be able to run an install script:
 
 .. code-block:: bash
 
-    bash scripts/install.sh
-
-Finally you'll need to build iDOM's client libraries:
-
-.. code-block:: bash
-
-    bash scripts/build.sh
+    pip install -e .
 
 Any time you modify a Javascript client library and want it to be served directly from
 ``idom.server`` you'll need to re-run this script to build your changes and copy them
@@ -56,5 +48,4 @@ into the expected static file folder within ``src/py/idom/static``.
 .. _Git Bash: https://gitforwindows.org/
 .. _PyPI: https://pypi.org/
 .. _pip: https://pypi.org/project/pip/
-.. _Poetry: https://poetry.eustace.io/
 .. _Yarn: https://yarnpkg.com/lang/en/docs/install
