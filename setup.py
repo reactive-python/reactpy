@@ -28,7 +28,11 @@ if sys.version_info < (3, 6) or sys.version_info >= (3, 7):
 # requirements
 # -----------------------------------------------------------------------------
 
-requirements = ["sanic==18.12"]
+requirements = []
+with open(os.path.join(here, "requirements", "prod.txt"), "r") as f:
+    for line in map(str.strip, f):
+        if not line.startswith("#"):
+            requirements.append(line)
 
 # -----------------------------------------------------------------------------
 # Library Version
