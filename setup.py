@@ -31,22 +31,9 @@ package = {
     "license": "MIT",
     "platforms": "Linux, Mac OS X, Windows",
     "keywords": ["interactive", "widgets", "DOM", "React"],
-    "classifiers": [
-        "Intended Audience :: Developers",
-        "Programming Language :: Python :: 3.6",
-    ],
     "include_package_data": True,
 }
 
-
-# -----------------------------------------------------------------------------
-# Python Version Check
-# -----------------------------------------------------------------------------
-
-if sys.version_info < (3, 6) or sys.version_info >= (3, 7):
-    error = "ERROR: %s requires Python version 3.6." % name
-    print(error, file=sys.stderr)
-    sys.exit(1)
 
 # -----------------------------------------------------------------------------
 # requirements
