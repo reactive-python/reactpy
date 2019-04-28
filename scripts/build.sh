@@ -2,6 +2,14 @@ set -e
 
 cd src
 
+# install JS dependencies
+cd js
+
+yarn
+yarn setup
+
+cd ../
+
 # clean up possible old install
 if [ -d "py/idom/static" ]; then
   rm -rf py/idom/static

@@ -2,43 +2,5 @@
 
 export JUPYTER_SERVER_URL
 jupyter serverextension enable --py jupyter_server_proxy --sys-prefix
-
-# Yarn
-# ====
-
 npm install -g yarn
-
-
-# Poetry
-# ======
-
-curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
-source $HOME/.poetry/env
-
-
-# Javascript
-# ==========
-
-cd src/js
-
-yarn
-yarn setup
-
-cd ../../
-
-
-# Build
-# =====
-
-bash scripts/build.sh
-
-
-# Python
-# ======
-
-cd src/py
-
-poetry build -f wheel
-pip install $(find dist/idom*)
-
-cd ../../
+pip install .
