@@ -12,3 +12,4 @@ repos:
     rev: v0.701
     hooks:
     - id: mypy
+    args: ["src/py/idom"]

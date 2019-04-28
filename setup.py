@@ -1,12 +1,11 @@
 from __future__ import print_function
 
-from distutils.core import setup
+from setuptools import setup
+from distutils.command.build import build  # type: ignore
+from distutils.command.sdist import sdist  # type: ignore
 import os
-from setuptools.command.develop import develop as DevelopCommand
-from setuptools.command.install import install as InstallCommand
 import sys
 import subprocess
-
 
 # the name of the project
 name = "idom"
@@ -14,6 +13,31 @@ name = "idom"
 # basic paths used to gather files
 here = os.path.abspath(os.path.dirname(__file__))
 root = os.path.join(here, "src", "py", name)
+
+
+# -----------------------------------------------------------------------------
+# Package Definition
+# -----------------------------------------------------------------------------
+
+package = {
+    "name": name,
+    "python_requires": ">=3.6,<4.0",
+    "packages": ["idom"],
+    "package_dir": {"idom": "src/py/idom"},
+    "description": "Control the web with Python",
+    "author": "Ryan Morshead",
+    "author_email": "ryan.morshead@gmail.com",
+    "url": "https://github.com/rmorshea/idom",
+    "license": "MIT",
+    "platforms": "Linux, Mac OS X, Windows",
+    "keywords": ["interactive", "widgets", "DOM", "React"],
+    "classifiers": [
+        "Intended Audience :: Developers",
+        "Programming Language :: Python :: 3.6",
+    ],
+    "include_package_data": True,
+}
+
 
 # -----------------------------------------------------------------------------
 # Python Version Check
@@ -33,6 +57,7 @@ with open(os.path.join(here, "requirements", "prod.txt"), "r") as f:
     for line in map(str.strip, f):
         if not line.startswith("#"):
             requirements.append(line)
+package["install_requires"] = requirements
 
 # -----------------------------------------------------------------------------
 # Library Version
@@ -44,8 +69,9 @@ with open(os.path.join(root, "__init__.py")) as f:
             version = eval(line.split("=", 1)[1])
             break
     else:
-        print("No version found in purly/__init__.py")
+        print("No version found in __init__.py")
         sys.exit(1)
+package["version"] = version
 
 # -----------------------------------------------------------------------------
 # Library Description
@@ -54,25 +80,29 @@ with open(os.path.join(root, "__init__.py")) as f:
 with open(os.path.join(here, "README.md")) as f:
     long_description = f.read()
 
+package["long_description"] = long_description
+package["long_description_content_type"] = "text/markdown"
+
 
 # ----------------------------------------------------------------------------
 # Build Javascript
 # ----------------------------------------------------------------------------
 
 
-class BuildStaticFiles:
-    def run(self):
-        command = ["bash", os.path.join(here, "scripts", "build.sh")]
-        subprocess.check_call(command, cwd=here)
-        super().run()
+def build_static_first(cls):
+    class Command(cls):
+        def run(self):
+            command = ["bash", os.path.join(here, "scripts", "build.sh")]
+            subprocess.check_call(command, cwd=here)
+            super().run()
+
+    return Command
 
 
-class CustomDevelopCommand(BuildStaticFiles, DevelopCommand):
-    """Post-installation for development mode."""
-
-
-class CustomInstallCommand(BuildStaticFiles, InstallCommand):
-    """Post-installation for installation mode."""
+package["cmdclass"] = {
+    "sdist": build_static_first(sdist),
+    "build": build_static_first(build),
+}
 
 
 # -----------------------------------------------------------------------------
@@ -80,26 +110,4 @@ class CustomInstallCommand(BuildStaticFiles, InstallCommand):
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    setup(
-        name=name,
-        version=version,
-        packages=["idom"],
-        package_dir={"": "src/py"},
-        cmdclass={"install": CustomInstallCommand, "develop": CustomDevelopCommand},
-        package_data={"src/py/idom": ["static/*"]},
-        description="Control the web with Python",
-        long_description=long_description,
-        long_description_content_type="text/markdown",
-        author="Ryan Morshead",
-        author_email="ryan.morshead@gmail.com",
-        url="https://github.com/rmorshea/idom",
-        license="MIT",
-        platforms="Linux, Mac OS X, Windows",
-        keywords=["interactive", "widgets", "DOM", "React"],
-        install_requires=requirements,
-        python_requires=">=3.6,<4.0",
-        classifiers=[
-            "Intended Audience :: Developers",
-            "Programming Language :: Python :: 3.6",
-        ],
-    )
+    setup(**package)
