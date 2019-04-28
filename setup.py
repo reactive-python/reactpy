@@ -3,6 +3,7 @@ from __future__ import print_function
 from setuptools import setup
 from distutils.command.build import build  # type: ignore
 from distutils.command.sdist import sdist  # type: ignore
+from setuptools.command.develop import develop  # type: ignore
 import os
 import sys
 import subprocess
@@ -89,6 +90,7 @@ def build_static_first(cls):
 package["cmdclass"] = {
     "sdist": build_static_first(sdist),
     "build": build_static_first(build),
+    "develop": build_static_first(develop),
 }
 
 
