@@ -30,6 +30,7 @@ MANIFEST
 .Python
 env/
 build/
+dist/
 develop-eggs/
 downloads/
 eggs/
