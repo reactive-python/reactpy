@@ -6,7 +6,7 @@ from threading import Thread
 import uuid
 from websockets import WebSocketCommonProtocol
 
-from typing import TypeVar, Any
+from typing import TypeVar, Any, Dict
 
 from .element import ElementConstructor
 from .layout import Layout
@@ -18,7 +18,7 @@ ServerSelf = TypeVar("ServerSelf", bound="BaseServer")
 
 
 class BaseServer:
-    def __init__(self):
+    def __init__(self) -> None:
         self.app = Sanic()
         self._handlers = {"route:_client": {"uri": "/client/<path:path>"}}
         self._config = {"idom_url_prefix": "/idom"}
@@ -31,12 +31,12 @@ class BaseServer:
                 self._config[k] = v
         return self
 
-    def run(self, *args, **kwargs):
+    def run(self, *args: Any, **kwargs: Any) -> None:
         self._setup_application()
         self.app.run(*args, **kwargs)
 
-    def daemon(self, *args, **kwargs):
-        def run():
+    def daemon(self, *args: Any, **kwargs: Any) -> Thread:
+        def run() -> None:
             self._setup_application()
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -48,7 +48,7 @@ class BaseServer:
         thread.start()
         return thread
 
-    def _setup_application(self):
+    def _setup_application(self) -> None:
         idom_url_prefix = self._config["idom_url_prefix"]
         for key, params in self._handlers.items():
             route_type, method = key.split(":")
@@ -56,7 +56,9 @@ class BaseServer:
                 params["uri"] = idom_url_prefix + params["uri"]
             getattr(self.app, route_type)(**params)(getattr(self, method))
 
-    async def _client(self, request: request.Request, path: str):
+    async def _client(
+        self, request: request.Request, path: str
+    ) -> response.HTTPResponse:
         return await response.file(
             os.path.join(STATIC, "simple-client", *path.split("\n"))
         )
@@ -72,16 +74,18 @@ class SimpleServer(BaseServer):
         self._element_kwargs = kwargs
         self._handlers["websocket:_stream"] = {"uri": "/stream"}
 
-    async def _stream(self, request: request.Request, socket: WebSocketCommonProtocol):
+    async def _stream(
+        self, request: request.Request, socket: WebSocketCommonProtocol
+    ) -> None:
         layout = Layout(
             self._element_constructor(*self._element_args, **self._element_kwargs)
         )
 
-        async def sock_recv():
+        async def sock_recv() -> Any:
             message = json.loads(await socket.recv())
             return message["body"]["event"]
 
-        async def sock_send(data):
+        async def sock_send(data: Dict[str, Any]) -> None:
             message = {"header": {}, "body": {"render": data}}
             await socket.send(json.dumps(message))
 
@@ -91,20 +95,24 @@ class SimpleServer(BaseServer):
 class SharedServer(SimpleServer):
     def __init__(
         self, element_constructor: ElementConstructor, *args: Any, **kwargs: Any
-    ):
+    ) -> None:
         super().__init__(element_constructor, *args, **kwargs)
         self._handlers["listener:_setup_renderer"] = {"event": "before_server_start"}
 
-    async def _setup_renderer(self, app, loop):
+    async def _setup_renderer(
+        self, app: Sanic, loop: asyncio.AbstractEventLoop
+    ) -> None:
         root = self._element_constructor(*self._element_args, **self._element_kwargs)
         self._renderer = SharedStateRenderer(Layout(root, loop=loop))
 
-    async def _stream(self, request: request.Request, socket: WebSocketCommonProtocol):
-        async def sock_recv():
+    async def _stream(
+        self, request: request.Request, socket: WebSocketCommonProtocol
+    ) -> None:
+        async def sock_recv() -> Any:
             message = json.loads(await socket.recv())
             return message["body"]["event"]
 
-        async def sock_send(data):
+        async def sock_send(data: Dict[str, Any]) -> None:
             message = {"header": {}, "body": {"render": data}}
             await socket.send(json.dumps(message))
 

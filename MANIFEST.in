@@ -1,1 +1,3 @@
 graft src/py/idom/static
+include src/py/idom/py.typed
+include src/py/LICENSE

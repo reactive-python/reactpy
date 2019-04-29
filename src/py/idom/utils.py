@@ -1,43 +1,33 @@
 import os
 import uuid
-import inspect
 from weakref import finalize
-from functools import wraps
 
-from typing import Callable, Set, Awaitable
+from typing import Set, Any
 
 STATIC = os.path.join(os.path.dirname(__file__), "static")
-
-
-def to_coroutine(function: Callable) -> Callable[..., Awaitable]:
-    if inspect.iscoroutinefunction(function):
-        return function
-    else:
-
-        @wraps(function)
-        async def wrapper(*args, **kwargs):
-            return function(*args, **kwargs)
-
-        return wrapper
 
 
 class Sentinel:
 
     __slots__ = ("__name",)
 
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         self.__name = name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__name
 
 
-def bound_id(obj, size=10):
+def bound_id(obj: Any, size: int = 10) -> str:
     obj_id = uuid.uuid4().hex
     while obj_id in _LOCAL_IDS:
         obj_id = uuid.uuid4().hex
     _LOCAL_IDS.add(obj_id)
-    finalize(obj, lambda oid=obj_id: _LOCAL_IDS.remove(oid))
+
+    def remove_obj_id() -> None:
+        _LOCAL_IDS.remove(obj_id)
+
+    finalize(obj, remove_obj_id)
     return obj_id
 
 

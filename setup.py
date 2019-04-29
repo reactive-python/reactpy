@@ -20,6 +20,7 @@ root = os.path.join(here, "src", "py", name)
 # Package Definition
 # -----------------------------------------------------------------------------
 
+
 package = {
     "name": name,
     "python_requires": ">=3.6,<4.0",
@@ -40,6 +41,7 @@ package = {
 # requirements
 # -----------------------------------------------------------------------------
 
+
 requirements = []
 with open(os.path.join(here, "requirements", "prod.txt"), "r") as f:
     for line in map(str.strip, f):
@@ -47,9 +49,11 @@ with open(os.path.join(here, "requirements", "prod.txt"), "r") as f:
             requirements.append(line)
 package["install_requires"] = requirements
 
+
 # -----------------------------------------------------------------------------
 # Library Version
 # -----------------------------------------------------------------------------
+
 
 with open(os.path.join(root, "__init__.py")) as f:
     for line in f.read().split("\n"):
@@ -61,9 +65,11 @@ with open(os.path.join(root, "__init__.py")) as f:
         sys.exit(1)
 package["version"] = version
 
+
 # -----------------------------------------------------------------------------
 # Library Description
 # -----------------------------------------------------------------------------
+
 
 with open(os.path.join(here, "README.md")) as f:
     long_description = f.read()
@@ -77,7 +83,7 @@ package["long_description_content_type"] = "text/markdown"
 # ----------------------------------------------------------------------------
 
 
-def build_static_first(cls):
+def build_javascript_first(cls):
     class Command(cls):
         def run(self):
             command = ["bash", os.path.join(here, "scripts", "build.sh")]
@@ -88,15 +94,16 @@ def build_static_first(cls):
 
 
 package["cmdclass"] = {
-    "sdist": build_static_first(sdist),
-    "build": build_static_first(build),
-    "develop": build_static_first(develop),
+    "sdist": build_javascript_first(sdist),
+    "build": build_javascript_first(build),
+    "develop": build_javascript_first(develop),
 }
 
 
 # -----------------------------------------------------------------------------
 # Install It
 # -----------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     setup(**package)

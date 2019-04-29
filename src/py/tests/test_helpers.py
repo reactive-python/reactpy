@@ -56,11 +56,11 @@ def test_simple_events():
     events = idom.Events()
 
     @events.on("Click")
-    def click_handler():
+    async def click_handler():
         pass
 
     @events.on("keyPress")
-    def key_press_handler():
+    async def key_press_handler():
         pass
 
     assert events == {"onClick": click_handler, "onKeyPress": key_press_handler}
@@ -78,7 +78,7 @@ def test_event_handler_serialization():
 
 
 async def test_event_handler_props_to_params_mapping():
-    def handler(key, value):
+    async def handler(key, value):
         return (key, value)
 
     event_handler = EventHandler(handler, "onKeyPress", "value=target.value")

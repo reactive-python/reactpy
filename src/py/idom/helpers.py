@@ -1,16 +1,25 @@
 import inspect
-from collections.abc import Mapping
 
-from typing import Any, Callable, Dict, TypeVar, Generic, List
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    TypeVar,
+    Generic,
+    List,
+    Iterator,
+    Optional,
+    Mapping,
+)
 
 from .bunch import DynamicBunch
-from .utils import to_coroutine, Sentinel, bound_id
+from .utils import Sentinel, bound_id
 
 
 EMPTY = Sentinel("EMPTY")
 
 
-def node(tag: str, *children, **attributes: Any) -> DynamicBunch:
+def node(tag: str, *children: Any, **attributes: Any) -> DynamicBunch:
     """A helper function for generating :term:`VDOM` dictionaries."""
     merged_children: List[Any] = []
 
@@ -32,10 +41,12 @@ def node(tag: str, *children, **attributes: Any) -> DynamicBunch:
     return model
 
 
-def node_constructor(tag, allow_children=True):
+def node_constructor(
+    tag: str, allow_children: bool = True
+) -> Callable[..., DynamicBunch]:
     """Create a constructor for nodes with the given tag name."""
 
-    def constructor(*children, **attributes):
+    def constructor(*children: Any, **attributes: Any) -> DynamicBunch:
         if not allow_children and children:
             raise TypeError(f"{tag!r} nodes cannot have children.")
         return node(tag, *children, **attributes)
@@ -47,18 +58,21 @@ def node_constructor(tag, allow_children=True):
     return constructor
 
 
-class Events(Mapping):
+_EHF = TypeVar("_EHF", bound=Callable[..., Any])  # event handler function
+
+
+class Events(Mapping[str, "EventHandler"]):
     """A container for event handlers.
 
     Assign this object to the ``"eventHandlers"`` field of an element model.
     """
 
-    __slots__ = "_handlers"
+    __slots__ = ("_handlers",)
 
-    def __init__(self):
-        self._handlers = {}
+    def __init__(self) -> None:
+        self._handlers: Dict[str, EventHandler] = {}
 
-    def on(self, event: str, where: str = None) -> Callable:
+    def on(self, event: str, where: Optional[str] = None) -> Callable[[_EHF], _EHF]:
         """A decorator for adding an event handler.
 
         Parameters:
@@ -107,22 +121,22 @@ class Events(Mapping):
         """
         event_name = "on" + event[:1].upper() + event[1:]
 
-        def setup(function: Callable) -> Callable:
+        def setup(function: _EHF) -> _EHF:
             self._handlers[event_name] = EventHandler(function, event_name, where)
             return function
 
         return setup
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._handlers)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self._handlers)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> "EventHandler":
         return self._handlers[key]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self._handlers)
 
 
@@ -162,13 +176,13 @@ class EventHandler:
 
     def __init__(
         self,
-        function: Callable,
+        function: _EHF,
         event_name: str,
-        where: str = None,
-        target_id: str = None,
-    ):
+        where: Optional[str] = None,
+        target_id: Optional[str] = None,
+    ) -> None:
         self._function = function
-        self._handler = to_coroutine(function)
+        self._handler = function
         self._target_id = target_id or bound_id(self)
         self._event_name = event_name
         self._props_to_params: Dict[str, str] = {}
@@ -192,35 +206,35 @@ class EventHandler:
                         f"Event handler {function} has no parameter {target_key!r}."
                     )
 
-    async def __call__(self, data):
+    async def __call__(self, data: Dict[str, Any]) -> Any:
         data = {self._props_to_params[k]: v for k, v in data.items()}
         return await self._handler(**data)
 
-    def serialize(self):
+    def serialize(self) -> str:
         string = f"{self._target_id}_{self._event_name}"
         if self._props_to_params:
             string += f"_{';'.join(self._props_to_params.keys())}"
         return string
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.serialize())
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, EventHandler):
             return (
                 self._function == other._function
-                and self._id == other._id
+                and self._target_id == other._target_id
                 and self._event_name == other._event_name
                 and self._props_to_params == other._props_to_params
             )
         else:
-            return other == self._function
+            return bool(other == self._function)
 
 
-VarReference = TypeVar("VarReference", bound=Any)
+_R = TypeVar("_R", bound=Any)  # Var reference
 
 
-class Var(Generic[VarReference]):
+class Var(Generic[_R]):
     """A variable for holding a reference to an object.
 
     Variables are useful when multiple elements need to share data. This is usually
@@ -259,20 +273,20 @@ class Var(Generic[VarReference]):
 
     empty = Sentinel("Var.empty")
 
-    def __init__(self, value: Any = empty):
-        self.__current = value
+    def __init__(self, value: Any = empty) -> None:
+        self.__current: _R = value
 
-    def set(self, new):
+    def set(self, new: _R) -> _R:
         old = self.__current
         self.__current = new
         return old
 
-    def get(self) -> VarReference:
+    def get(self) -> _R:
         return self.__current
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Var):
-            return self.get() == other.get()
+            return bool(self.get() == other.get())
         else:
             return False
 
