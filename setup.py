@@ -25,7 +25,7 @@ package = {
     "name": name,
     "python_requires": ">=3.6,<4.0",
     "packages": ["idom"],
-    "package_dir": {"idom": "src/py/idom"},
+    "package_dir": {"": "src/py"},
     "description": "Control the web with Python",
     "author": "Ryan Morshead",
     "author_email": "ryan.morshead@gmail.com",
