@@ -34,7 +34,7 @@ At this point you should be able to run an install script:
 
 .. code-block:: bash
 
-    pip install -e . -r requirements/dev.txt
+    pip install -e . -r requirements/dev.txt && pre-commit install
 
 Any time you modify a Javascript client library and want it to be served directly from
 ``idom.server`` you'll need to re-run this script to build your changes and copy them

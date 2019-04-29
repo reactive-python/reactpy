@@ -5,7 +5,7 @@ import idom
 
 async def test_simple_element():
     @idom.element
-    def simple_div(self):
+    async def simple_div(self):
         return idom.nodes.div()
 
     sd = simple_div()
@@ -22,7 +22,7 @@ async def test_simple_element():
 
 async def test_simple_parameterized_element():
     @idom.element
-    def simple_param_element(self, tag):
+    async def simple_param_element(self, tag):
         return idom.node(tag)
 
     spe = simple_param_element("div")
@@ -33,7 +33,7 @@ async def test_simple_parameterized_element():
 
 async def test_simple_stateful_element():
     @idom.element(state="tag")
-    def simple_stateful_element(self, tag):
+    async def simple_stateful_element(self, tag):
         return idom.node(tag)
 
     ssd = simple_stateful_element("div")

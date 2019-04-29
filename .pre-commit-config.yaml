@@ -4,12 +4,14 @@ repos:
     hooks:
     - id: black
       language_version: python3.6
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v1.2.3
+-   repo: https://github.com/PyCQA/flake8
+    rev: 3.7.7
     hooks:
     - id: flake8
+      args: ["--config=src/py/.flake8", "--exclude=src/js"]
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: v0.701
     hooks:
     - id: mypy
-    args: ["src/py/idom"]
+      args: ["--config-file", "src/py/mypy.ini", "--strict"]
+      exclude: src/py/tests/*|setup.py

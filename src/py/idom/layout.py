@@ -1,11 +1,21 @@
 import asyncio
-from collections.abc import Mapping
 
-from typing import List, Dict, Tuple, Callable, Union, Any, Set, Optional, AsyncIterator
+from typing import (
+    List,
+    Dict,
+    Tuple,
+    Callable,
+    Mapping,
+    Union,
+    Any,
+    Set,
+    Optional,
+    AsyncIterator,
+    Awaitable,
+)
 
 from .element import Element
 from .helpers import EventHandler
-from .utils import to_coroutine
 
 try:
     import vdom
@@ -13,7 +23,7 @@ except ImportError:
     vdom = None
 
 
-RenderType = Tuple[List[str], Dict[str, Dict], List[str]]
+RenderType = Tuple[List[str], Dict[str, Dict[str, Any]], List[str]]
 
 
 class RenderError(Exception):
@@ -33,30 +43,32 @@ class Layout:
         "_state",
     )
 
-    def __init__(self, root: "Element", loop: asyncio.AbstractEventLoop = None):
+    def __init__(
+        self, root: "Element", loop: Optional[asyncio.AbstractEventLoop] = None
+    ) -> None:
         if loop is None:
             loop = asyncio.get_event_loop()
         if not isinstance(root, Element):
             raise TypeError("Expected an Element, not %r" % root)
         self._loop = loop
-        self._state: Dict[str, Dict] = {}
+        self._state: Dict[str, Dict[str, Any]] = {}
         self._root = root
         self._update_queue: List[Element] = []
         self._render_semaphore = asyncio.Semaphore(1, loop=loop)
-        self._animate_queue: List[Callable] = []
+        self._animate_queue: List[Callable[[], Awaitable[None]]] = []
         self._create_element_state(root.id, None)
         self._rendering = False
         self.update(root)
 
     @property
-    def loop(self):
+    def loop(self) -> asyncio.AbstractEventLoop:
         return self._loop
 
     @property
     def root(self) -> str:
         return self._root.id
 
-    async def apply(self, target: str, handler: str, data: dict):
+    async def apply(self, target: str, handler: str, data: Dict[str, Any]) -> None:
         # It is possible for an element in the frontend to produce an event
         # associated with a backend model that has been deleted. We only handle
         # events if the element and the handler exist in the backend. Otherwise
@@ -66,8 +78,8 @@ class Layout:
             if event_handler is not None:
                 await event_handler(data)
 
-    def animate(self, function: Callable):
-        self._animate_queue.append(to_coroutine(function))
+    def animate(self, function: Callable[[], Awaitable[None]]) -> None:
+        self._animate_queue.append(function)
         if self._render_semaphore.locked():
             # We don't want to release more than once because
             # all changes are renderer in one go. Multiple releases
@@ -75,7 +87,7 @@ class Layout:
             # no updates from the last.
             self._render_semaphore.release()
 
-    def update(self, element: "Element"):
+    def update(self, element: "Element") -> None:
         self._update_queue.append(element)
         if self._render_semaphore.locked():
             # We don't want to release more than once because
@@ -102,7 +114,7 @@ class Layout:
         # root elements which updated
         roots: List[str] = []
         # all element updates
-        new: Dict[str, Dict] = {}
+        new: Dict[str, Dict[str, Any]] = {}
 
         updates = self._update_queue[:]
         self._update_queue.clear()
@@ -122,7 +134,7 @@ class Layout:
 
     async def _render_element(
         self, element: "Element", parent_element_id: str
-    ) -> AsyncIterator[Tuple[str, Dict]]:
+    ) -> AsyncIterator[Tuple[str, Dict[str, Any]]]:
         try:
             if not element.mounted():
                 element.mount(self)
@@ -144,10 +156,10 @@ class Layout:
             raise RenderError(f"Failed to render {element}") from error
 
     async def _render_model(
-        self, model: Mapping, element_id: str
-    ) -> AsyncIterator[Tuple[str, Dict]]:
+        self, model: Mapping[str, Any], element_id: str
+    ) -> AsyncIterator[Tuple[str, Dict[str, Any]]]:
         index = 0
-        to_visit: List[Union[Mapping, Element]] = [model]
+        to_visit: List[Union[Mapping[str, Any], Element]] = [model]
         while index < len(to_visit):
             node = to_visit[index]
             if isinstance(node, Element):
@@ -165,7 +177,7 @@ class Layout:
             index += 1
         yield element_id, self._load_model(model, element_id)
 
-    def _load_model(self, model: Mapping, element_id: str):
+    def _load_model(self, model: Mapping[str, Any], element_id: str) -> Dict[str, Any]:
         model = dict(model)
         if "children" in model:
             model["children"] = self._load_model_children(model["children"], element_id)
@@ -176,8 +188,8 @@ class Layout:
         return model
 
     def _load_model_children(
-        self, children: Union[List, Tuple], element_id: str
-    ) -> List[Dict]:
+        self, children: Union[List[Any], Tuple[Any, ...]], element_id: str
+    ) -> List[Dict[str, Any]]:
         if not isinstance(children, (list, tuple)):
             children = [children]
         loaded_children = []
@@ -192,20 +204,24 @@ class Layout:
         return loaded_children
 
     def _load_event_handlers(
-        self, handlers: Dict[str, Callable], element_id: str
+        self, handlers: Dict[str, Callable[..., Awaitable[None]]], element_id: str
     ) -> Dict[str, str]:
         event_targets = {}
         for event, handler in handlers.items():
             if not isinstance(handler, EventHandler):
-                handler = EventHandler(handler, event)
-            handler_specification = event_targets[element_id] = handler.serialize()
+                handler_specification = EventHandler(handler, event).serialize()
+            else:
+                handler_specification = handler.serialize()
+            event_targets[element_id] = handler_specification
             self._state[element_id]["event_handlers"][handler_specification] = handler
         return event_targets
 
     def _has_element_state(self, element_id: str) -> bool:
         return element_id in self._state
 
-    def _create_element_state(self, element_id: str, parent_element_id: Optional[str]):
+    def _create_element_state(
+        self, element_id: str, parent_element_id: Optional[str]
+    ) -> None:
         if parent_element_id is not None and self._has_element_state(parent_element_id):
             self._state[parent_element_id]["inner_elements"].add(element_id)
         self._state[element_id] = {
@@ -214,12 +230,12 @@ class Layout:
             "event_handlers": {},
         }
 
-    def _reset_element_state(self, element_id: str):
+    def _reset_element_state(self, element_id: str) -> None:
         parent_element_id = self._state[element_id]["parent"]
         self._delete_element_state(element_id)
         self._create_element_state(element_id, parent_element_id)
 
-    def _delete_element_state(self, element_id: str):
+    def _delete_element_state(self, element_id: str) -> None:
         old = self._state.pop(element_id)
         parent_element_id = old["parent"]
         if self._has_element_state(parent_element_id):
@@ -228,7 +244,7 @@ class Layout:
             self._delete_element_state(i)
 
 
-def _from_vdom(node: Any):
+def _from_vdom(node: Any) -> Dict[str, Any]:
     data = {
         "tagName": node.tag_name,
         "children": node.children,

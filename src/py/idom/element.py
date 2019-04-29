@@ -2,34 +2,44 @@ import idom
 import inspect
 from functools import wraps
 
-from typing import Dict, Callable, Any, List, Optional, overload
+from typing_extensions import Protocol
+from typing import Dict, Callable, Any, List, Optional, overload, Awaitable
 
-from .utils import to_coroutine, bound_id
+from .utils import bound_id
 
 
-ElementConstructor = Callable[..., "Element"]
+ElementConstructor = Callable[..., "Element"]  # Element constructor
+
+
+class _EF(Protocol):
+    """Element function."""
+
+    def __call__(
+        self, element: "Element", *args: Any, **kwargs: Any
+    ) -> Awaitable[Dict[str, Any]]:
+        ...
 
 
 @overload
-def element(function: Callable) -> ElementConstructor:
+def element(function: Callable[..., Any]) -> ElementConstructor:
     ...
 
 
 @overload
-def element(*, state: Optional[str] = None) -> Callable[[Callable], ElementConstructor]:
+def element(*, state: Optional[str] = None) -> Callable[[_EF], ElementConstructor]:
     ...
 
 
 def element(
-    function: Optional[Callable] = None, state: Optional[str] = None
-) -> Callable:
+    function: Optional[_EF] = None, state: Optional[str] = None
+) -> Callable[..., Any]:
     """A decorator for defining an :class:`Element`.
 
     Parameters:
         function: The function that will render a :term:`VDOM` model.
     """
 
-    def setup(func):
+    def setup(func: _EF) -> ElementConstructor:
         @wraps(func)
         def constructor(*args: Any, **kwargs: Any) -> Element:
             element = Element(func, state)
@@ -77,10 +87,10 @@ class Element:
         "__weakref__",
     )
 
-    def __init__(self, function: Callable, state_parameters: Optional[str]):
+    def __init__(self, function: _EF, state_parameters: Optional[str]):
         self._dead: bool = False
         self._element_id = bound_id(self)
-        self._function = to_coroutine(function)
+        self._function = function
         self._function_signature = inspect.signature(function)
         self._layout: Optional["idom.Layout"] = None
         self._state: Dict[str, Any] = {}
@@ -94,7 +104,7 @@ class Element:
         """The unique ID of the element."""
         return self._element_id
 
-    def update(self, *args: Any, **kwargs: Any):
+    def update(self, *args: Any, **kwargs: Any) -> None:
         """Schedule this element to render with new parameters."""
         if self._update is None:
             # only tell layout to render on first update call
@@ -104,7 +114,9 @@ class Element:
         bound = self._function_signature.bind_partial(None, *args, **kwargs)
         self._update.update(list(bound.arguments.items())[1:])
 
-    def animate(self, function: Callable):
+    def animate(
+        self, function: Callable[[], Awaitable[None]]
+    ) -> Callable[[], Awaitable[None]]:
         """Schedule this function to run soon, and then render any updates it caused."""
         if self._layout is not None:
             # animating and updating an element is redundant.
@@ -130,7 +142,7 @@ class Element:
 
         return await self._function(self, **update)
 
-    def mount(self, layout: "idom.Layout"):
+    def mount(self, layout: "idom.Layout") -> None:
         """Mount a layout to the element instance.
 
         Occurs just before rendering the element for the **first** time.
@@ -142,4 +154,8 @@ class Element:
         return self._layout is not None
 
     def __repr__(self) -> str:
-        return "%s(%s)" % (self._function.__qualname__, self.id)
+        qualname = getattr(self._function, "__qualname__", None)
+        if qualname is not None:
+            return "%s(%s)" % (qualname, self.id)
+        else:
+            return "%s(%r, %r)" % (type(self).__name__, self._function, self.id)
