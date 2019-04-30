@@ -86,7 +86,7 @@ package["long_description_content_type"] = "text/markdown"
 def build_javascript_first(cls):
     class Command(cls):
         def run(self):
-            command = ["bash", os.path.join(here, "scripts", "build.sh")]
+            command = ["sh", os.path.join(here, "scripts", "build.sh")]
             subprocess.check_call(command, cwd=here)
             super().run()
 
