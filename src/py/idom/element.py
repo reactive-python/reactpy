@@ -1,9 +1,11 @@
-import idom
+import abc
 import inspect
 from functools import wraps
 
 from typing_extensions import Protocol
 from typing import Dict, Callable, Any, List, Optional, overload, Awaitable
+
+import idom
 
 from .utils import bound_id
 
@@ -54,7 +56,39 @@ def element(
         return setup
 
 
-class Element:
+class AbstractElement(abc.ABC):
+
+    __slots__ = ["_element_id", "_layout"]
+
+    if not hasattr(abc.ABC, "__weakref__"):
+        __slots__.append("__weakref__")
+
+    def __init__(self) -> None:
+        self._layout: Optional["idom.Layout"] = None
+        self._element_id = bound_id(self)
+
+    @property
+    def id(self) -> str:
+        """The unique ID of the element."""
+        return self._element_id
+
+    @abc.abstractmethod
+    async def render(self) -> Dict[str, Any]:
+        ...
+
+    def mount(self, layout: "idom.Layout") -> None:
+        """Mount a layout to the element instance.
+
+        Occurs just before rendering the element for the **first** time.
+        """
+        self._layout = layout
+
+    def mounted(self) -> bool:
+        """Whether or not this element is associated with a layout."""
+        return self._layout is not None
+
+
+class Element(AbstractElement):
     """An object for rending element models.
 
     Rendering element objects is typically done by a :class:`idom.layout.Layout` which
@@ -76,20 +110,15 @@ class Element:
     """
 
     __slots__ = (
-        "_dead",
-        "_element_id",
         "_function",
         "_function_signature",
-        "_layout",
         "_state",
         "_state_parameters",
         "_update",
-        "__weakref__",
     )
 
     def __init__(self, function: _EF, state_parameters: Optional[str]):
-        self._dead: bool = False
-        self._element_id = bound_id(self)
+        super().__init__()
         self._function = function
         self._function_signature = inspect.signature(function)
         self._layout: Optional["idom.Layout"] = None
@@ -98,11 +127,6 @@ class Element:
             map(str.strip, (state_parameters or "").split(","))
         )
         self._update: Optional[Dict[str, Any]] = None
-
-    @property
-    def id(self) -> str:
-        """The unique ID of the element."""
-        return self._element_id
 
     def update(self, *args: Any, **kwargs: Any) -> None:
         """Schedule this element to render with new parameters."""
@@ -141,17 +165,6 @@ class Element:
         self._update = None
 
         return await self._function(self, **update)
-
-    def mount(self, layout: "idom.Layout") -> None:
-        """Mount a layout to the element instance.
-
-        Occurs just before rendering the element for the **first** time.
-        """
-        self._layout = layout
-
-    def mounted(self) -> bool:
-        """Whether or not this element is associated with a layout."""
-        return self._layout is not None
 
     def __repr__(self) -> str:
         qualname = getattr(self._function, "__qualname__", None)

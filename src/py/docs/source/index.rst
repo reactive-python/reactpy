@@ -36,7 +36,7 @@ user clicks an image:
        events = idom.Events()
 
        @events.on("click")
-       def change():
+       async def change():
            self.update(index + 1)
 
        url = f"https://picsum.photos/800/300?image={index}"
