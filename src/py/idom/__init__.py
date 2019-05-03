@@ -1,9 +1,9 @@
 __version__ = "0.1.2"
 
 from .bunch import StaticBunch, DynamicBunch
-from .element import element, Element
+from .element import element, Element, AbstractElement
 from .layout import Layout
-from .helpers import Events, Var, node
+from .helpers import Events, Var, node, Image, hotswap
 from .render import BaseRenderer, SharedStateRenderer, SingleStateRenderer
 from .server import BaseServer, SimpleServer, SharedServer
 from .display import display
@@ -11,6 +11,7 @@ from . import nodes
 
 
 __all__ = [
+    "AbstractElement",
     "BaseRenderer",
     "BaseServer",
     "display",
@@ -18,6 +19,8 @@ __all__ = [
     "element",
     "Element",
     "Events",
+    "hotswap",
+    "Image",
     "Layout",
     "node",
     "nodes",

@@ -107,15 +107,15 @@ def test_var_equivalence():
 
 
 def test_var_set():
-    v = idom.Var()
+    v = idom.Var(None)
     old_1 = v.set("new_1")
-    assert old_1 is idom.Var.empty
+    assert old_1 is None
     old_2 = v.set("new_2")
     assert old_2 == "new_1"
 
 
 def test_var_get():
-    v = idom.Var()
-    assert v.get() is idom.Var.empty
+    v = idom.Var(None)
+    assert v.get() is None
     v.set(1)
     assert v.get() == 1

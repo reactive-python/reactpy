@@ -49,6 +49,13 @@ with open(os.path.join(here, "requirements", "prod.txt"), "r") as f:
             requirements.append(line)
 package["install_requires"] = requirements
 
+package["extras_require"] = {"matplotlib": ["matplotlib"], "vdom": ["vdom"]}
+
+all_extras = set()
+for extras in package["extras_require"].values():
+    all_extras.update(extras)
+package["extras_require"]["all"] = all_extras
+
 
 # -----------------------------------------------------------------------------
 # Library Version
