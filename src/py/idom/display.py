@@ -3,7 +3,7 @@ import uuid
 
 from typing import Any
 
-from .utils import STATIC
+from .core import STATIC_DIRECTORY
 
 
 def display(kind: str, *args: Any, **kwargs: Any) -> Any:
@@ -20,7 +20,7 @@ class JupyterWigdet:
         self._url = url
 
     def _script(self) -> str:
-        JS = os.path.join(STATIC, "jupyter-widget", "static", "js")
+        JS = os.path.join(STATIC_DIRECTORY, "jupyter-widget", "static", "js")
         for filename in os.listdir(JS):
             if os.path.splitext(filename)[1] == ".js":
                 with open(os.path.join(JS, filename), "r") as f:

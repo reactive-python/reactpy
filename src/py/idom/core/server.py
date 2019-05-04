@@ -11,13 +11,13 @@ from typing import TypeVar, Any, Dict
 from .element import ElementConstructor
 from .layout import Layout
 from .render import SingleStateRenderer, SharedStateRenderer
-from .utils import STATIC
+from .utils import STATIC_DIRECTORY
 
 
-ServerSelf = TypeVar("ServerSelf", bound="BaseServer")
+ServerSelf = TypeVar("ServerSelf", bound="AbstractServer")
 
 
-class BaseServer:
+class AbstractServer:
     def __init__(self) -> None:
         self.app = Sanic()
         self._handlers = {"route:_client": {"uri": "/client/<path:path>"}}
@@ -60,11 +60,11 @@ class BaseServer:
         self, request: request.Request, path: str
     ) -> response.HTTPResponse:
         return await response.file(
-            os.path.join(STATIC, "simple-client", *path.split("\n"))
+            os.path.join(STATIC_DIRECTORY, "simple-client", *path.split("\n"))
         )
 
 
-class SimpleServer(BaseServer):
+class SimpleServer(AbstractServer):
     def __init__(
         self, element_constructor: ElementConstructor, *args: Any, **kwargs: Any
     ):
