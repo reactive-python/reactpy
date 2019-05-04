@@ -3,8 +3,8 @@ from io import BytesIO
 
 from typing import Any, Callable, Dict, TypeVar, Generic, List, Tuple, Optional, Union
 
+from idom.core import AbstractElement, ElementConstructor, Element, element
 from .bunch import DynamicBunch
-from .core import AbstractElement, ElementConstructor, Element, element
 
 
 def node(tag: str, *children: Any, **attributes: Any) -> DynamicBunch:
