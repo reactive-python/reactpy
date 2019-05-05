@@ -18,14 +18,14 @@ class Events(Mapping[str, "EventHandler"]):
     def __init__(self) -> None:
         self._handlers: Dict[str, EventHandler] = {}
 
-    def on(self, event: str, where: Optional[str] = None) -> Callable[[_EHF], _EHF]:
+    def on(self, event: str, using: Optional[str] = None) -> Callable[[_EHF], _EHF]:
         """A decorator for adding an event handler.
 
         Parameters:
             event:
                 The camel-case name of the event, the word "on" is automatically
                 prepended. So passing "keyDown" would refer to the event "onKeyDown".
-            where:
+            using:
                 A string defining what event attribute a parameter refers to if the
                 parameter name does not already refer to it directly. See the
                 :class:`EventHandler` class for more info.
@@ -58,7 +58,7 @@ class Events(Mapping[str, "EventHandler"]):
                 def input_element():
                     events = Events()
 
-                    @events.on("keyDown", where="value=target.value")
+                    @events.on("keyDown", using="value=target.value")
                     def handle_input_element_change(value)
                         # do something with the input's new value
                         ...
@@ -68,7 +68,7 @@ class Events(Mapping[str, "EventHandler"]):
         event_name = "on" + event[:1].upper() + event[1:]
 
         def setup(function: _EHF) -> _EHF:
-            self._handlers[event_name] = EventHandler(function, event_name, where)
+            self._handlers[event_name] = EventHandler(function, event_name, using)
             return function
 
         return setup
@@ -97,14 +97,14 @@ class EventHandler:
         function:
             The event handler function. Its parameters may indicate event attributes
             which should be sent back from the fronend unless otherwise specified by
-            the ``where`` parameter.
+            the ``using`` parameter.
         event_name:
             The camel case name of the event.
-        where:
-            A string defining what event attribute a parameter refers to if the
-            parameter name does not already refer to it directly. For example,
-            accessing the current value of an ``<input/>`` element might be done
-            by specifying ``where="param=target.value"``.
+        using:
+            A semi-colon seperated string defining what event attribute a parameter
+            refers to if the parameter name does not already refer to it directly. For
+            example, accessing the current value of an ``<input/>`` element might be
+            done by specifying ``using="param=target.value"``.
         target_id:
             A unique identifier for the event handler. This is generally used if
             an element has more than on event handler for the same event type. If
@@ -124,7 +124,7 @@ class EventHandler:
         self,
         function: _EHF,
         event_name: str,
-        where: Optional[str] = None,
+        using: Optional[str] = None,
         target_id: Optional[str] = None,
     ) -> None:
         self._function = function
@@ -141,8 +141,8 @@ class EventHandler:
                     f"Event handler {function} has variable keyword or positional arguments."
                 )
             self._props_to_params.setdefault(target_key, target_key)
-        if where is not None:
-            for part in map(str.strip, where.split(",")):
+        if using is not None:
+            for part in map(str.strip, using.split(";")):
                 target_key, source_prop = tuple(map(str.strip, part.split("=")))
                 self._props_to_params[source_prop] = target_key
                 try:
