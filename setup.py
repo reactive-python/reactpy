@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from setuptools import setup
+from setuptools import setup, find_packages
 from distutils.command.build import build  # type: ignore
 from distutils.command.sdist import sdist  # type: ignore
 from setuptools.command.develop import develop  # type: ignore
@@ -24,7 +24,7 @@ root = os.path.join(here, "src", "py", name)
 package = {
     "name": name,
     "python_requires": ">=3.6,<4.0",
-    "packages": ["idom"],
+    "packages": find_packages("src/py", exclude=["tests*"]),
     "package_dir": {"": "src/py"},
     "description": "Control the web with Python",
     "author": "Ryan Morshead",
