@@ -1,0 +1,16 @@
+# copied from prod.txt
+sanic>=18.12, <19.0
+typing-extensions==3.7.2, <4.0
+
+# copied from dev.txt
+pytest
+pytest-asyncio
+mypy
+jupyter
+pre-commit
+black
+flake8
+sphinx
+sphinx-autodoc-typehints
+sphinx-rtd-theme
+notebook
