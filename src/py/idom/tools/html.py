@@ -1,4 +1,4 @@
-from .helpers import node_constructor
+from .common import node_constructor
 
 __all__ = [
     # Content sectioning

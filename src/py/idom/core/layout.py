@@ -15,7 +15,7 @@ from typing import (
 )
 
 from .element import AbstractElement
-from .helpers import EventHandler
+from .events import EventHandler
 
 try:
     import vdom

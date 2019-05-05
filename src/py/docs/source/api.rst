@@ -28,6 +28,6 @@ Helpers
 Nodes
 -----
 
-.. automodule:: idom.nodes
+.. automodule:: idom.html
     :members:
     :undoc-members:

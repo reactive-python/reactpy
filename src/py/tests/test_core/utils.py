@@ -1,13 +1,10 @@
 from functools import wraps
 
-import idom
 
-
-class RenderHistory(idom.StaticBunch):
+class RenderHistory:
     def __init__(self):
-        classname = type(self).__name__
-        self.__dict__[f"_{classname}__counters"] = {}
-        self.__dict__[f"_{classname}__elements"] = set()
+        self.__counters = {}
+        self.__elements = set()
 
     def clear(self):
         for k in self.__dict__.items():
@@ -27,7 +24,7 @@ class RenderHistory(idom.StaticBunch):
                 if elmt.id not in self.__elements:
                     self.__elements.add(elmt.id)
                     self.__counters[name] += 1
-                    self.__dict__[f"{name}_{self.__counters[name]}"] = elmt
+                    setattr(self, f"{name}_{self.__counters[name]}", elmt)
                 return elmt
 
             return wrapper

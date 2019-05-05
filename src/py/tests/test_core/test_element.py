@@ -6,7 +6,7 @@ import idom
 async def test_simple_element():
     @idom.element
     async def simple_div(self):
-        return idom.nodes.div()
+        return idom.html.div()
 
     sd = simple_div()
 

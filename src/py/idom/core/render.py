@@ -9,7 +9,7 @@ from .layout import Layout, RenderType
 CoroutineFunction = Callable[..., Awaitable[Any]]
 
 
-class BaseRenderer(abc.ABC):
+class AbstractRenderer(abc.ABC):
     def __init__(self, layout: Layout) -> None:
         self._layout = layout
 
@@ -37,7 +37,7 @@ class BaseRenderer(abc.ABC):
         ...
 
 
-class SingleStateRenderer(BaseRenderer):
+class SingleStateRenderer(AbstractRenderer):
     async def _outgoing(self, layout: Layout, context: Any) -> Dict[str, Any]:
         roots, new, old = await layout.render()
         return {"roots": roots, "new": new, "old": old}
