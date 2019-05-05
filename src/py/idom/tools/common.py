@@ -46,21 +46,25 @@ def node_constructor(
     return constructor
 
 
-def hotswap() -> Tuple[Callable[[ElementConstructor], None], ElementConstructor]:
+def hotswap(
+    shared: bool = False
+) -> Tuple[Callable[[ElementConstructor], None], ElementConstructor]:
     current_root: Var[Optional[Element]] = Var(None)
     current_swap: Var[Callable[[], Any]] = Var(lambda: {"tagName": "div"})
 
     @element
     async def HotSwap(self: Element) -> Any:
-        current_root.set(self)
+        if shared:
+            current_root.set(self)
         make_element = current_swap.get()
         return make_element()
 
     def swap(element: ElementConstructor, *args: Any, **kwargs: Any) -> None:
         current_swap.set(lambda: element(*args, **kwargs))
-        hot = current_root.get()
-        if hot is not None:
-            hot.update()
+        if shared:
+            hot = current_root.get()
+            if hot is not None:
+                hot.update()
 
     return swap, HotSwap
 
