@@ -2,7 +2,7 @@ import pytest
 
 import idom
 from idom.core.events import EventHandler
-from idom.helpers import node_constructor
+from idom.tools.common import node_constructor
 
 
 @pytest.mark.parametrize(

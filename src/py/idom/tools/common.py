@@ -4,10 +4,10 @@ from io import BytesIO
 from typing import Any, Callable, Dict, TypeVar, Generic, List, Tuple, Optional, Union
 
 from idom.core import AbstractElement, ElementConstructor, Element, element
-from .bunch import DynamicBunch
+from .bunch import Bunch
 
 
-def node(tag: str, *children: Any, **attributes: Any) -> DynamicBunch:
+def node(tag: str, *children: Any, **attributes: Any) -> Bunch:
     """A helper function for generating :term:`VDOM` dictionaries."""
     merged_children: List[Any] = []
 
@@ -17,7 +17,7 @@ def node(tag: str, *children: Any, **attributes: Any) -> DynamicBunch:
         else:
             merged_children.append(c)
 
-    model = DynamicBunch(tagName=tag)
+    model = Bunch(tagName=tag)
 
     if merged_children:
         model.children = merged_children
@@ -29,12 +29,10 @@ def node(tag: str, *children: Any, **attributes: Any) -> DynamicBunch:
     return model
 
 
-def node_constructor(
-    tag: str, allow_children: bool = True
-) -> Callable[..., DynamicBunch]:
+def node_constructor(tag: str, allow_children: bool = True) -> Callable[..., Bunch]:
     """Create a constructor for nodes with the given tag name."""
 
-    def constructor(*children: Any, **attributes: Any) -> DynamicBunch:
+    def constructor(*children: Any, **attributes: Any) -> Bunch:
         if not allow_children and children:
             raise TypeError(f"{tag!r} nodes cannot have children.")
         return node(tag, *children, **attributes)

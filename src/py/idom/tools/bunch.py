@@ -1,10 +1,10 @@
-from typing import Mapping, MutableMapping
+from typing import MutableMapping
 
 from typing import Iterator, Any
 
 
-class StaticBunch(Mapping[str, Any]):
-    """An immutable mapping with attribute access."""
+class Bunch(MutableMapping[str, Any]):
+    """A mutable mapping with attribute access."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.__dict__.update(*args, **kwargs)
@@ -23,16 +23,6 @@ class StaticBunch(Mapping[str, Any]):
 
     def __repr__(self) -> str:
         return repr(self.__dict__)
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        raise TypeError("%r is immutable." % type(self).__name__)
-
-    def __delattr__(self, name: str) -> None:
-        raise TypeError("%r is immutable." % type(self).__name__)
-
-
-class DynamicBunch(MutableMapping[str, Any], StaticBunch):
-    """A mutable mapping with attribute access."""
 
     def __setitem__(self, name: str, value: Any) -> None:
         self.__dict__[name] = value

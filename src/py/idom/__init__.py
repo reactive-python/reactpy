@@ -1,7 +1,7 @@
 __version__ = "0.1.2"
 
 from .core import element, Element, Events, Layout, SimpleServer, SharedServer
-from .tools import StaticBunch, DynamicBunch, Var, node, Image, hotswap, display, html
+from .tools import Bunch, Var, node, Image, hotswap, display, html
 
 __all__ = [
     "element",
@@ -11,8 +11,7 @@ __all__ = [
     "Layout",
     "SimpleServer",
     "SharedServer",
-    "StaticBunch",
-    "DynamicBunch",
+    "Bunch",
     "Var",
     "node",
     "Image",
