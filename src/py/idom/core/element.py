@@ -87,6 +87,9 @@ class AbstractElement(abc.ABC):
         """Whether or not this element is associated with a layout."""
         return self._layout is not None
 
+    def unmount(self) -> None:
+        self._layout = None
+
 
 class Element(AbstractElement):
     """An object for rending element models.

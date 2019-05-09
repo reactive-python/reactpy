@@ -1,4 +1,5 @@
 import asyncio
+from weakref import ref
 
 from typing import (
     List,
@@ -56,7 +57,7 @@ class Layout:
         self._update_queue: List[AbstractElement] = []
         self._render_semaphore = asyncio.Semaphore(1, loop=loop)
         self._animate_queue: List[Callable[[], Awaitable[None]]] = []
-        self._create_element_state(root.id, None)
+        self._create_element_state(root, None)
         self._rendering = False
         self.update(root)
 
@@ -136,19 +137,16 @@ class Layout:
         self, element: "AbstractElement", parent_element_id: str
     ) -> AsyncIterator[Tuple[str, Dict[str, Any]]]:
         try:
-            if not element.mounted():
-                element.mount(self)
+            element_id = element.id
+            if self._has_element_state(element_id):
+                self._reset_element_state(element)
+            else:
+                self._create_element_state(element, parent_element_id)
 
             model = await element.render()
 
             if isinstance(model, AbstractElement):
                 model = {"tagName": "div", "children": [model]}
-
-            element_id = element.id
-            if self._has_element_state(element_id):
-                self._reset_element_state(element_id)
-            else:
-                self._create_element_state(element_id, parent_element_id)
 
             async for i, m in self._render_model(model, element_id):
                 yield i, m
@@ -220,20 +218,22 @@ class Layout:
         return element_id in self._state
 
     def _create_element_state(
-        self, element_id: str, parent_element_id: Optional[str]
+        self, element: AbstractElement, parent_element_id: Optional[str]
     ) -> None:
         if parent_element_id is not None and self._has_element_state(parent_element_id):
-            self._state[parent_element_id]["inner_elements"].add(element_id)
-        self._state[element_id] = {
+            self._state[parent_element_id]["inner_elements"].add(element.id)
+        self._state[element.id] = {
             "parent": parent_element_id,
             "inner_elements": set(),
             "event_handlers": {},
+            "element_ref": ref(element),
         }
+        element.mount(self)
 
-    def _reset_element_state(self, element_id: str) -> None:
-        parent_element_id = self._state[element_id]["parent"]
-        self._delete_element_state(element_id)
-        self._create_element_state(element_id, parent_element_id)
+    def _reset_element_state(self, element: AbstractElement) -> None:
+        parent_element_id = self._state[element.id]["parent"]
+        self._delete_element_state(element.id)
+        self._create_element_state(element, parent_element_id)
 
     def _delete_element_state(self, element_id: str) -> None:
         old = self._state.pop(element_id)
@@ -242,6 +242,9 @@ class Layout:
             self._state[parent_element_id]["inner_elements"].remove(element_id)
         for i in old["inner_elements"]:
             self._delete_element_state(i)
+        element = old["element_ref"]()
+        if element is not None:
+            element.unmount()
 
 
 def _from_vdom(node: Any) -> Dict[str, Any]:

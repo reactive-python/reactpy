@@ -49,16 +49,26 @@ def hotswap(
 ) -> Tuple[Callable[[ElementConstructor], None], ElementConstructor]:
     current_root: Var[Optional[Element]] = Var(None)
     current_swap: Var[Callable[[], Any]] = Var(lambda: {"tagName": "div"})
+    last_element: Var[Optional[Element]] = Var(None)
 
     @element
     async def HotSwap(self: Element) -> Any:
         if shared:
             current_root.set(self)
         make_element = current_swap.get()
-        return make_element()
+        element = make_element()
+        last_element.set(element)
+        return element
 
     def swap(element: ElementConstructor, *args: Any, **kwargs: Any) -> None:
+        last = last_element.get()
+        if last is not None:
+            # because the hotswap is done via side-effects there's no way for
+            # the layout to know to unmount the old element so we do it manually
+            last.unmount()
+
         current_swap.set(lambda: element(*args, **kwargs))
+
         if shared:
             hot = current_root.get()
             if hot is not None:
