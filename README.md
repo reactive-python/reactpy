@@ -7,21 +7,10 @@
   <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-purple.svg">
 </a>
 
-Libraries for defining and controlling interactive webpages with Python 3.6 and above.
+Libraries for creating and controlling interactive web pages with Python 3.6 and above.
 
 * [Python Documentation](https://idom.readthedocs.io/en/latest/)
 * [Javascript Documentation](https://github.com/rmorshea/idom/blob/master/src/js/README.md)
-
-Try it out now with binder!
-<a href="https://mybinder.org/v2/gh/rmorshea/idom/master?filepath=examples%2Fintroduction.ipynb">
-  <img alt="Binder"
-  src="https://mybinder.org/badge_logo.svg"
-  />
-</a>
-
-
-
-## Early Days
 
 iDOM is still young. If you have ideas or find a bug, be sure to post an
 [issue](https://github.com/rmorshea/idom/issues)
@@ -29,7 +18,27 @@ or create a
 [pull request](https://github.com/rmorshea/idom/pulls). Thanks in advance!
 
 
-## At a Glance
+<h3>
+  <a href="https://mybinder.org/v2/gh/rmorshea/idom/master?filepath=examples%2Fintroduction.ipynb">
+    Try it Now
+    <img alt="Binder" valign="bottom" height="25px"
+    src="https://mybinder.org/badge_logo.svg"
+    />
+  </a>
+</h3>
+
+Click the badge above to get started! It will take you to a [Jupyter Notebooks](https://jupyter.org/)
+hosted by [Binder](https://mybinder.org/) with some great examples.
+
+
+### Or Install it Now
+
+```bash
+pip install idom
+```
+
+
+# At a Glance
 
 iDOM can be used to create a simple slideshow which changes whenever a user clicks an image.
 
