@@ -39,7 +39,7 @@ class SanicServerExtension(AbstractServerExtension):
         self, request: request.Request, path: str
     ) -> response.HTTPResponse:
         return await response.file(
-            os.path.join(STATIC_DIRECTORY, "simple-client", *path.split("\n"))
+            os.path.join(STATIC_DIRECTORY, "simple-client", *path.split("/"))
         )
 
 
