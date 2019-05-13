@@ -1,6 +1,8 @@
 import abc
+import asyncio
 import inspect
 from functools import wraps
+import time
 
 from typing_extensions import Protocol
 from typing import Dict, Callable, Any, List, Optional, overload, Awaitable
@@ -91,6 +93,10 @@ class AbstractElement(abc.ABC):
         self._layout = None
 
 
+# type for animation function of element
+_AW = Callable[[], Awaitable[bool]]
+
+
 class Element(AbstractElement):
     """An object for rending element models.
 
@@ -141,14 +147,52 @@ class Element(AbstractElement):
         bound = self._function_signature.bind_partial(None, *args, **kwargs)
         self._update.update(list(bound.arguments.items())[1:])
 
+    @overload
     def animate(
-        self, function: Callable[[], Awaitable[None]]
-    ) -> Callable[[], Awaitable[None]]:
+        self, function: _AW, loop: bool = False, rate: Optional[float] = None
+    ) -> _AW:
+        ...
+
+    @overload
+    def animate(
+        self, *, loop: bool = False, rate: Optional[float] = None
+    ) -> Callable[[_AW], _AW]:
+        ...
+
+    def animate(
+        self,
+        function: Optional[_AW] = None,
+        loop: bool = True,
+        rate: Optional[float] = None,
+    ) -> Callable[..., Any]:
         """Schedule this function to run soon, and then render any updates it caused."""
-        if self._layout is not None:
-            # animating and updating an element is redundant.
-            self._layout.animate(function)
-        return function
+
+        def setup(function: _AW) -> _AW:
+            if self._layout is not None:
+
+                pacer: Optional[FramePacer]
+                if rate is not None:
+                    pacer = FramePacer(rate)
+                else:
+                    pacer = None
+
+                async def wrapper() -> None:
+                    if self._layout is not None:
+                        keep_looping = await function()
+                        if loop and keep_looping is not False:
+                            if self._layout is not None:
+                                self._layout.animate(wrapper)
+                                if pacer is not None:
+                                    await pacer.wait()
+
+                self._layout.animate(wrapper)
+
+            return function
+
+        if function is None:
+            return setup
+        else:
+            return setup(function)
 
     async def render(self) -> Dict[str, Any]:
         """Render the element's :term:`VDOM` model."""
@@ -175,3 +219,15 @@ class Element(AbstractElement):
             return "%s(%s)" % (qualname, self.id)
         else:
             return "%s(%r, %r)" % (type(self).__name__, self._function, self.id)
+
+
+class FramePacer:
+    """Simple utility for pacing frames in an animation loop."""
+
+    def __init__(self, rate: float):
+        self._rate = rate
+        self._last = time.time()
+
+    async def wait(self) -> None:
+        await asyncio.sleep(self._rate - (time.time() - self._last))
+        self._last = time.time()
