@@ -56,7 +56,8 @@ async def Slideshow(self, index=0):
     url = f"https://picsum.photos/800/300?image={index}"
     return idom.node("img", src=url, eventHandlers=events)
 
-idom.SimpleServer(Slideshow).daemon("localhost", 8765).join()
+server = idom.server.sanic.PerClientState(Slideshow)
+server.daemon("localhost", 8765).join()
 ```
 
 Running this will serve our slideshow to `"https://localhost:8765/idom/client/index.html"`
@@ -127,15 +128,31 @@ and will respond to the `events` we defined earlier. Similarly to the `events` o
 
 
 ```python
-idom.SimpleServer(Slideshow).daemon("localhost", 8765).join()
+server = idom.server.sanic.PerClientState(Slideshow)
+server.daemon("localhost", 8765).join()
 ```
 
 This sets up a simple web server which will display the layout of elements and update
-them when events occur over a websocket. The server is considered "stateless" because
-each client that connects to it will see a fresh view. If clients should see views with
-common state.
+them when events occur over a websocket. The server has "per client state" because
+each client that connects to it will see a fresh view of the layout. If clients should
+see views with a common state you can use the `SharedClientState` server.
 
 To display the layout we can
 navigate to http://localhost:8765/idom/client/index.html or use `idom.display()` to show
 it in a Jupyter Notebook via a widget. The exact protocol for communicating DOM models
 over a network is not documented yet.
+
+
+### Adding iDOM To Existing Applications
+
+If you want to add iDOM to an existing server you can register its routes instead:
+
+```python
+from sanic import Sanic
+
+app = Sanic()
+extension = idom.server.sanic.PerClientState(Slideshow)
+extension.register(app)
+
+app.run()
+```
