@@ -9,5 +9,5 @@ for name in ["sanic"]:
     except ImportError:
         pass
     else:
-        import_module("." + name)
+        import_module(__name__ + "." + name)
         __all__.append(name)
