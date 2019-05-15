@@ -1,10 +1,24 @@
 import inspect
-from typing import Mapping, Dict, TypeVar, Callable, Any, Optional, Iterator
+from weakref import proxy, CallableProxyType
+from functools import partial
+from typing import (
+    Mapping,
+    Dict,
+    Callable,
+    Any,
+    Optional,
+    Iterator,
+    Set,
+    List,
+    Tuple,
+    Awaitable,
+)
 
 from .utils import bound_id
+from .element import AbstractElement
 
 
-_EHF = TypeVar("_EHF", bound=Callable[..., Any])  # event handler function
+_EHF = Callable[..., Awaitable[Any]]  # event handler function
 
 
 class Events(Mapping[str, "EventHandler"]):
@@ -13,10 +27,13 @@ class Events(Mapping[str, "EventHandler"]):
     Assign this object to the ``"eventHandlers"`` field of an element model.
     """
 
-    __slots__ = ("_handlers",)
+    __slots__ = ("_handlers", "_bound")
 
-    def __init__(self) -> None:
+    def __init__(self, bound: Optional[AbstractElement] = None) -> None:
         self._handlers: Dict[str, EventHandler] = {}
+        self._bound: Optional[CallableProxyType] = None
+        if bound is not None:
+            self._bound = proxy(bound)
 
     def on(self, event: str, using: Optional[str] = None) -> Callable[[_EHF], _EHF]:
         """A decorator for adding an event handler.
@@ -68,10 +85,17 @@ class Events(Mapping[str, "EventHandler"]):
         event_name = "on" + event[:1].upper() + event[1:]
 
         def setup(function: _EHF) -> _EHF:
-            self._handlers[event_name] = EventHandler(function, event_name, using)
+            if self._bound is not None:
+                function = partial(function, self._bound)
+            if event_name not in self._handlers:
+                self._handlers[event_name] = EventHandler(event_name)
+            self._handlers[event_name].add(function, using)
             return function
 
         return setup
+
+    def __contains__(self, key: Any) -> bool:
+        return key in self._handlers
 
     def __len__(self) -> int:
         return len(self._handlers)
@@ -91,47 +115,39 @@ class EventHandler:
 
     Get a serialized reference to the handler via :meth:`EventHandler.serialize`.
 
-    The event handler object acts like a coroutine even if the given function was not.
+    The event handler object acts like a coroutine when called.
 
     Parameters:
-        function:
-            The event handler function. Its parameters may indicate event attributes
-            which should be sent back from the fronend unless otherwise specified by
-            the ``using`` parameter.
         event_name:
             The camel case name of the event.
-        using:
-            A semi-colon seperated string defining what event attribute a parameter
-            refers to if the parameter name does not already refer to it directly. For
-            example, accessing the current value of an ``<input/>`` element might be
-            done by specifying ``using="param=target.value"``.
         target_id:
             A unique identifier for the event handler. This is generally used if
             an element has more than on event handler for the same event type. If
             no ID is provided one will be generated automatically.
     """
 
-    __slots__ = (
-        "_function",
-        "_handler",
-        "_event_name",
-        "_target_id",
-        "_props_to_params",
-        "__weakref__",
-    )
+    __slots__ = ("_handler_info", "_target_id", "_event_name", "__weakref__")
 
-    def __init__(
-        self,
-        function: _EHF,
-        event_name: str,
-        using: Optional[str] = None,
-        target_id: Optional[str] = None,
-    ) -> None:
-        self._function = function
-        self._handler = function
+    def __init__(self, event_name: str, target_id: Optional[str] = None) -> None:
+        self._handler_info: List[Tuple[_EHF, Dict[str, str]]] = []
         self._target_id = target_id or bound_id(self)
         self._event_name = event_name
-        self._props_to_params: Dict[str, str] = {}
+
+    def add(self, function: _EHF, using: Optional[str] = None) -> "EventHandler":
+        """Add a callback to the event handler.
+
+        Parameters:
+            function:
+                The event handler function. Its parameters may indicate event attributes
+                which should be sent back from the fronend unless otherwise specified by
+                the ``using`` parameter.
+            using:
+                A semi-colon seperated string defining what event attribute a parameter
+                refers to if the parameter name does not already refer to it directly. For
+                example, accessing the current value of an ``<input/>`` element might be
+                done by specifying ``using="param=target.value"``.
+        """
+        props_to_params: Dict[str, str] = {}
         for target_key, param in inspect.signature(function).parameters.items():
             if param.kind in (
                 inspect.Parameter.VAR_POSITIONAL,
@@ -140,38 +156,58 @@ class EventHandler:
                 raise TypeError(
                     f"Event handler {function} has variable keyword or positional arguments."
                 )
-            self._props_to_params.setdefault(target_key, target_key)
+            if param.default is inspect.Parameter.empty:
+                props_to_params.setdefault(target_key, target_key)
         if using is not None:
             for part in map(str.strip, using.split(";")):
                 target_key, source_prop = tuple(map(str.strip, part.split("=")))
-                self._props_to_params[source_prop] = target_key
+                props_to_params[source_prop] = target_key
                 try:
-                    self._props_to_params.pop(target_key)
+                    props_to_params.pop(target_key)
                 except KeyError:
                     raise TypeError(
                         f"Event handler {function} has no parameter {target_key!r}."
                     )
+        self._handler_info.append((function, props_to_params))
+        return self
+
+    def remove(self, function: _EHF) -> None:
+        """Remove the function from the event handler.
+
+        Raises:
+            ValueError: if not found
+        """
+        for i, (f, _) in enumerate(self._handler_info):
+            if f == function:
+                del self._handler_info[i]
+                break
+        else:
+            raise ValueError(f"No handler {function} exists")
 
     async def __call__(self, data: Dict[str, Any]) -> Any:
-        data = {self._props_to_params[k]: v for k, v in data.items()}
-        return await self._handler(**data)
+        """Trigger all callbacks in the event handler."""
+        for handler, props_to_params in self._handler_info:
+            arguments = {}
+            for prop, param in props_to_params.items():
+                try:
+                    arguments[param] = data[prop]
+                except KeyError:
+                    raise ValueError(f"Event data has no {prop!r}")
+            await handler(**arguments)
 
     def serialize(self) -> str:
+        """Serialize the event handler."""
         string = f"{self._target_id}_{self._event_name}"
-        if self._props_to_params:
-            string += f"_{';'.join(self._props_to_params.keys())}"
+        props = self._all_props()
+        if props:
+            string += f"_{';'.join(props)}"
         return string
+
+    def _all_props(self) -> Set[str]:
+        all_props: Set[str] = set()
+        for _, props_to_params in self._handler_info:
+            all_props.update(props_to_params.keys())
+        return all_props
 
     def __repr__(self) -> str:
         return repr(self.serialize())
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, EventHandler):
-            return (
-                self._function == other._function
-                and self._target_id == other._target_id
-                and self._event_name == other._event_name
-                and self._props_to_params == other._props_to_params
-            )
-        else:
-            return bool(other == self._function)

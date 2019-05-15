@@ -71,13 +71,15 @@ __all__ = [
     "th",
     "thead",
     "tr",
-    # Forms (only read only aspects)
+    # Forms
     "meter",
     "output",
     "progress",
     "input",
     "button",
     "label",
+    "fieldset",
+    "legend",
     # Interactive elements
     "details",
     "dialog",
@@ -160,13 +162,15 @@ th = node_constructor("th")
 thead = node_constructor("thead")
 tr = node_constructor("tr")
 
-# Forms (only read only aspects)
+# Forms
 meter = node_constructor("meter")
 output = node_constructor("output")
 progress = node_constructor("progress")
 input = node_constructor("input", allow_children=False)
 button = node_constructor("button")
 label = node_constructor("label")
+fieldset = node_constructor("fieldset")
+legend = node_constructor("legend")
 
 # Interactive elements
 details = node_constructor("details")

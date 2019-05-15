@@ -60,14 +60,14 @@ server = idom.server.sanic.PerClientState(Slideshow)
 server.daemon("localhost", 8765).join()
 ```
 
-Running this will serve our slideshow to `"https://localhost:8765/idom/client/index.html"`
+Running this will serve our slideshow to `"https://localhost:8765/client/index.html"`
 
 <img src='https://picsum.photos/800/300?random'/>
 
 You could even display the same thing in a Jupyter notebook!
 
 ```python
-idom.display("jupyter", "https://localhost:8765/idom/stream")
+idom.display("jupyter", "https://localhost:8765/stream")
 ```
 
 Every click will then cause the image to change (it won't here of course).
@@ -138,7 +138,7 @@ each client that connects to it will see a fresh view of the layout. If clients 
 see views with a common state you can use the `SharedClientState` server.
 
 To display the layout we can
-navigate to http://localhost:8765/idom/client/index.html or use `idom.display()` to show
+navigate to http://localhost:8765/client/index.html or use `idom.display()` to show
 it in a Jupyter Notebook via a widget. The exact protocol for communicating DOM models
 over a network is not documented yet.
 
@@ -152,7 +152,7 @@ from sanic import Sanic
 
 app = Sanic()
 extension = idom.server.sanic.PerClientState(Slideshow)
-extension.register(app)
+extension.configure(url_prefix="/idom").register(app)
 
 app.run()
 ```

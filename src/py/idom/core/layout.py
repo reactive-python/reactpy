@@ -207,7 +207,7 @@ class Layout:
         event_targets = {}
         for event, handler in handlers.items():
             if not isinstance(handler, EventHandler):
-                handler_specification = EventHandler(handler, event).serialize()
+                handler_specification = EventHandler(event).add(handler).serialize()
             else:
                 handler_specification = handler.serialize()
             event_targets[element_id] = handler_specification
