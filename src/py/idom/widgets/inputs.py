@@ -9,6 +9,21 @@ _Callback = Callable[["Input", str], Awaitable[None]]
 
 
 class Input(AbstractElement):
+    """An input element.
+
+    Parameters:
+        type:
+            the kind of input element
+        value:
+            an initial value
+        label:
+            A label for the input. If given the ``<input/>`` in is wrapped inside a
+            ``<label/>`` element.
+        ignore_empty:
+            Whether or not to ignore updates where the value is ``''``.
+        attributes:
+            Attributes passed into the ``<input/>``.
+    """
 
     __slots__ = (
         "_type",
@@ -42,13 +57,16 @@ class Input(AbstractElement):
 
     @property
     def value(self) -> str:
+        """The current value of the input."""
         return self._value
 
     @property
     def events(self) -> Events:
+        """Events associated with the ``<input/>``"""
         return self._events
 
     def update(self, value: Any) -> None:
+        """Update the current value of the input."""
         value = str(value)
         self._set_value(value)
         self._update_layout()
