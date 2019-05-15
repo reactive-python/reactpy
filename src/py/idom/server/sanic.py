@@ -14,7 +14,7 @@ from .base import AbstractServerExtension, Config
 
 class SanicServerExtension(AbstractServerExtension):
     def _init_config(self, config: Config) -> None:
-        config.update(url_prefix="", webpage_route=False)
+        config.update(url_prefix="", webpage_route=True)
 
     def _default_application(self, config: Config) -> Sanic:
         return Sanic()
