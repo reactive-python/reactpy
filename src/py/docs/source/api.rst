@@ -7,27 +7,55 @@ API
 Element
 -------
 
-.. automodule:: idom.element
+.. automodule:: idom.core.element
     :members:
 
 
 Layout
 ------
 
-.. automodule:: idom.layout
+.. automodule:: idom.core.layout
     :members:
 
 
-Helpers
--------
+Server Base
+-----------
 
-.. automodule:: idom.helpers
+.. automodule:: idom.server.base
     :members:
 
 
-Nodes
------
+Sanic Servers
+-------------
 
-.. automodule:: idom.html
+.. automodule:: idom.server.sanic
+    :members:
+
+
+Common Widgets
+--------------
+
+.. automodule:: idom.widgets.common
+    :members:
+
+
+Display Utilities
+-----------------
+
+.. automodule:: idom.widgets.display
+    :members:
+
+
+Input Helper
+------------
+
+.. automodule:: idom.widgets.inputs
+    :members:
+
+
+HTML Nodes
+----------
+
+.. automodule:: idom.widgets.html
     :members:
     :undoc-members:

@@ -51,6 +51,37 @@ def node_constructor(
 def hotswap(
     shared: bool = False
 ) -> Tuple[Callable[[ElementConstructor], None], ElementConstructor]:
+    """Swap out elements from a layout on the fly.
+
+    Normally you can't change the element functions used to create a layout
+    in an imperative manner. However ``hotswap`` allows you to do this so
+    long as you set things up ahead of time.
+
+    Parameters:
+        shared: Whether or not all views of the layout should be udpated on a swap.
+
+    Example:
+        .. code-block:: python
+
+            show, element = idom.hotswap()
+            PerClientState(element).daemon("localhost", 8765)
+
+            @element
+            def DivOne(self):
+                return {"tagName": "div", "children": [1]}
+
+            show(DivOne)
+
+            # displaying the output now will show DivOne
+
+            @element
+            def DivTwo(self):
+                return {"tagName": "div", "children": [2]}
+
+            show(DivTwo)
+
+            # displaying the output now will show DivTwo
+    """
     current_root: Var[Optional[Element]] = Var(None)
     current_swap: Var[Callable[[], Any]] = Var(lambda: {"tagName": "div"})
     last_element: Var[Optional[Element]] = Var(None)
@@ -143,6 +174,13 @@ class Var(Generic[_R]):
 
 
 class Image(AbstractElement):
+    """An image element.
+
+    Parameters:
+        format: The format of the image source (e.g. png or svg)
+        value: The image source. If not given use :attr:`Image.io` instead.
+        attributes: Attributes assigned to the ``<image/>`` element.
+    """
 
     __slots__ = ("_source", "_format", "_buffer", "_attributes")
 
@@ -157,6 +195,7 @@ class Image(AbstractElement):
 
     @property
     def io(self) -> "BytesBuffer":
+        """A file-like interface for loading image source."""
         return self._buffer
 
     async def render(self) -> Dict[str, Any]:
@@ -171,6 +210,13 @@ class Image(AbstractElement):
 
 
 class BytesBuffer(BytesIO):
+    """Similar to :class:`BytesIO` but converts unicode to bytes automatically.
+
+    Parameters:
+        value: Initial value for the buffer.
+        close_callback: Called with the value of the buffer when it is closed.
+    """
+
     def __init__(
         self, value: Union[bytes, str], close_callback: Callable[[bytes], None]
     ) -> None:

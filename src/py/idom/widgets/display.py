@@ -7,11 +7,19 @@ from idom.core import STATIC_DIRECTORY
 
 
 def display(kind: str, *args: Any, **kwargs: Any) -> Any:
+    """Display an iDOM layout.
+
+    Parameters:
+        kind: how output should be displayed.
+        args: Positional arguments passed to the output method.
+        kwargs: Keyword arguments passed to the output method.
+    """
     wtype = {"jupyter": JupyterWigdet}[kind]
     return wtype(*args, **kwargs)
 
 
 class JupyterWigdet:
+    """Output for iDOM within a Jupyter Notebook."""
 
     _shown = False
     __slots__ = "_url"

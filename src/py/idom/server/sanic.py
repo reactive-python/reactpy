@@ -13,6 +13,8 @@ from .base import AbstractServerExtension, Config
 
 
 class SanicServerExtension(AbstractServerExtension):
+    """Base ``sanic`` extension."""
+
     def _init_config(self, config: Config) -> None:
         config.update(url_prefix="", webpage_route=True)
 
@@ -44,6 +46,8 @@ class SanicServerExtension(AbstractServerExtension):
 
 
 class PerClientState(SanicServerExtension):
+    """Each client view will have its own state."""
+
     def _setup_application(self, app: Sanic, config: Config) -> None:
         super()._setup_application(app, config)
         app.websocket(config["url_prefix"] + "/stream")(self._stream)
@@ -67,6 +71,8 @@ class PerClientState(SanicServerExtension):
 
 
 class SharedClientState(SanicServerExtension):
+    """All connected client views will have shared state."""
+
     def _setup_application(self, app: Sanic, config: Config) -> None:
         super()._setup_application(app, config)
         app.websocket(config["url_prefix"] + "/stream")(self._stream)
