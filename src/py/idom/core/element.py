@@ -5,7 +5,7 @@ from functools import wraps
 import time
 
 from typing_extensions import Protocol
-from typing import Dict, Callable, Any, List, Optional, overload, Awaitable
+from typing import Dict, Callable, Any, List, Optional, overload, Awaitable, Mapping
 
 import idom
 
@@ -75,7 +75,7 @@ class AbstractElement(abc.ABC):
         return self._element_id
 
     @abc.abstractmethod
-    async def render(self) -> Dict[str, Any]:
+    async def render(self) -> Mapping[str, Any]:
         ...
 
     def mount(self, layout: "idom.Layout") -> None:
@@ -91,6 +91,10 @@ class AbstractElement(abc.ABC):
 
     def unmount(self) -> None:
         self._layout = None
+
+    def _update_layout(self) -> None:
+        if self._layout is not None:
+            self._layout.update(self)
 
 
 # type for animation function of element
@@ -142,8 +146,7 @@ class Element(AbstractElement):
         if self._update is None:
             # only tell layout to render on first update call
             self._update = {}
-            if self._layout is not None:
-                self._layout.update(self)
+            self._update_layout()
         bound = self._function_signature.bind_partial(None, *args, **kwargs)
         self._update.update(list(bound.arguments.items())[1:])
 
@@ -194,7 +197,7 @@ class Element(AbstractElement):
         else:
             return setup(function)
 
-    async def render(self) -> Dict[str, Any]:
+    async def render(self) -> Mapping[str, Any]:
         """Render the element's :term:`VDOM` model."""
         # load update and reset for next render
         update = self._update

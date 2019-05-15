@@ -1,7 +1,7 @@
 __version__ = "0.2.0"
 
 from .core import element, Element, Events, Layout
-from .tools import Bunch, Var, node, Image, hotswap, display, html
+from .widgets import Var, node, Image, hotswap, display, html, Input
 from . import server
 
 __all__ = [
@@ -11,10 +11,10 @@ __all__ = [
     "html",
     "Layout",
     "server",
-    "Bunch",
     "Var",
     "node",
     "Image",
     "hotswap",
     "display",
+    "Input",
 ]

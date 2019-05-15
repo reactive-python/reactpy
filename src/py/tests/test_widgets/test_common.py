@@ -1,8 +1,7 @@
 import pytest
 
 import idom
-from idom.core.events import EventHandler
-from idom.tools.common import node_constructor
+from idom.widgets.common import node_constructor
 
 
 @pytest.mark.parametrize(
@@ -51,54 +50,6 @@ def test_node_constructor_factory():
         no_children(1, 2, 3)
 
     assert no_children() == {"tagName": "no-children"}
-
-
-def test_simple_events():
-    events = idom.Events()
-
-    @events.on("Click")
-    async def click_handler():
-        pass
-
-    @events.on("keyPress")
-    async def key_press_handler():
-        pass
-
-    assert events == {"onClick": click_handler, "onKeyPress": key_press_handler}
-
-    assert isinstance(events["onClick"], EventHandler)
-    assert isinstance(events["onKeyPress"], EventHandler)
-
-
-def test_event_handler_serialization():
-    def handler(key, value):
-        return (key, value)
-
-    event_handler = EventHandler(handler, "onKeyPress", "value=target.value", "uuid")
-    assert event_handler.serialize() == "uuid_onKeyPress_key;target.value"
-
-
-async def test_event_handler_props_to_params_mapping():
-    async def handler(key, value):
-        return (key, value)
-
-    event_handler = EventHandler(handler, "onKeyPress", "value=target.value")
-
-    assert await event_handler({"key": 1, "target.value": 2}) == (1, 2)
-
-
-def test_event_handler_variable_arguments_are_illegal():
-    def handler(*args):
-        pass
-
-    with pytest.raises(TypeError):
-        EventHandler(handler, "event")
-
-    def handler(**kwargs):
-        pass
-
-    with pytest.raises(TypeError):
-        EventHandler(handler, "event")
 
 
 def test_var_equivalence():

@@ -4,10 +4,9 @@ from io import BytesIO
 from typing import Any, Callable, Dict, TypeVar, Generic, List, Tuple, Optional, Union
 
 from idom.core import AbstractElement, ElementConstructor, Element, element
-from .bunch import Bunch
 
 
-def node(tag: str, *children: Any, **attributes: Any) -> Bunch:
+def node(tag: str, *children: Any, **attributes: Any) -> Dict[str, Any]:
     """A helper function for generating :term:`VDOM` dictionaries."""
     merged_children: List[Any] = []
 
@@ -17,22 +16,27 @@ def node(tag: str, *children: Any, **attributes: Any) -> Bunch:
         else:
             merged_children.append(c)
 
-    model = Bunch(tagName=tag)
+    model: Dict[str, Any] = {"tagName": tag}
 
     if merged_children:
-        model.children = merged_children
+        model["children"] = merged_children
     if "eventHandlers" in attributes:
-        model.eventHandlers = attributes.pop("eventHandlers")
+        model["eventHandlers"] = attributes.pop("eventHandlers")
     if attributes:
-        model.attributes = attributes
+        model["attributes"] = attributes
+        if "cls" in attributes:
+            # you can't use 'class' as a keyword
+            model["attributes"]["class"] = attributes.pop("cls")
 
     return model
 
 
-def node_constructor(tag: str, allow_children: bool = True) -> Callable[..., Bunch]:
+def node_constructor(
+    tag: str, allow_children: bool = True
+) -> Callable[..., Dict[str, Any]]:
     """Create a constructor for nodes with the given tag name."""
 
-    def constructor(*children: Any, **attributes: Any) -> Bunch:
+    def constructor(*children: Any, **attributes: Any) -> Dict[str, Any]:
         if not allow_children and children:
             raise TypeError(f"{tag!r} nodes cannot have children.")
         return node(tag, *children, **attributes)
@@ -142,13 +146,14 @@ class Image(AbstractElement):
 
     __slots__ = ("_source", "_format", "_buffer")
 
-    def __init__(self, format: str, value: str = ""):
+    def __init__(self, format: str, value: str = "", **attributes: Any) -> None:
         super().__init__()
         if format == "svg":
             format = "svg+xml"
         self._buffer = BytesBuffer(value.encode(), self._set_source)
         self._source = b""
         self._format = format
+        self._attributes = attributes
 
     @property
     def io(self) -> "BytesBuffer":
@@ -157,10 +162,9 @@ class Image(AbstractElement):
     async def render(self) -> Dict[str, Any]:
         self._buffer.close()
         source = b64encode(self._source).decode()
-        return {
-            "tagName": "img",
-            "attributes": {"src": f"data:image/{self._format};base64,{source}"},
-        }
+        attrs = self._attributes.copy()
+        attrs["src"] = f"data:image/{self._format};base64,{source}"
+        return {"tagName": "img", "attributes": attrs}
 
     def _set_source(self, value: bytes) -> None:
         self._source = value
