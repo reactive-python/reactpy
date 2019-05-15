@@ -38,10 +38,13 @@ async def test_event_handler_props_to_params_mapping():
     async def handler(key, value):
         calls.append((key, value))
 
-    event_handler = EventHandler("onKeyPress").add(handler, "value=target.value")
+    event_handler = EventHandler("onKeyPress")
+    # test you can register multiple handlers
+    event_handler.add(handler, "value=target.value")
+    event_handler.add(handler, "value=target.value")
 
     await event_handler({"key": 1, "target.value": 2})
-    assert calls[0] == (1, 2)
+    assert calls == [(1, 2), (1, 2)]
 
 
 def test_event_handler_variable_arguments_are_illegal():

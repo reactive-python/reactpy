@@ -144,7 +144,7 @@ class Var(Generic[_R]):
 
 class Image(AbstractElement):
 
-    __slots__ = ("_source", "_format", "_buffer")
+    __slots__ = ("_source", "_format", "_buffer", "_attributes")
 
     def __init__(self, format: str, value: str = "", **attributes: Any) -> None:
         super().__init__()

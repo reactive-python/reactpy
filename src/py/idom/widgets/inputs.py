@@ -10,7 +10,15 @@ _Callback = Callable[["Input", str], Awaitable[None]]
 
 class Input(AbstractElement):
 
-    __slots__ = ("_value", "_display_value", "_cast", "_callbacks", "_attributes")
+    __slots__ = (
+        "_type",
+        "_value",
+        "_display_value",
+        "_label",
+        "_ignore_empty",
+        "_events",
+        "_attributes",
+    )
 
     def __init__(
         self,
