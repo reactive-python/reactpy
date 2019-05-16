@@ -32,6 +32,13 @@ Sanic Servers
     :members:
 
 
+Useful Tools
+------------
+
+.. automodule:: idom.tools
+    :members:
+
+
 Common Widgets
 --------------
 

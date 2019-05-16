@@ -83,18 +83,21 @@ example above:
 async def Slideshow(self, index=0):
 ```
 
-The decorator indicates that the function or coroutine to follow defines an update-able
-element. The `Slideshow` coroutine is responsible for building a DOM model, and every
-time an update is triggered, it will be called with new parameters to recreate the model.
+The `idom.element` decorator indicates that the
+[asynchronous function](https://realpython.com/async-io-python/)
+to follow returns a data structure which represents a user interface or Document Object
+Model (DOM). We call this structural representation of the DOM a [Virtual DOM] (VDOM) - a
+term familiar to those who work with
+[ReactJS](https://reactjs.org/docs/faq-internals.html). In the case of `Slideshow` it
+will return a VDOM representing an image which, when clicked, will change.
 
 ```python
     events = idom.Events()
 ```
 
-Creates an object to which event handlers will be assigned. Adding `events` to a DOM
-model will given you the ability to respond to events that may be triggered when users
-interact with the image. Under the hood though, `events` is just a mapping which
-conforms to the
+`Events` creates an object to which event handlers will be assigned. Adding an `Events`
+object to a VDOM will given you the ability to respond when users interact with you
+interface. Under the hood though, `Events` is just a mapping that conforms to the
 [VDOM event specification](https://github.com/nteract/vdom/blob/master/docs/event-spec.md).
 
 ```python
@@ -103,9 +106,10 @@ conforms to the
         self.update(index + 1)
 ```
 
-By using the `idom.Events()` object we created above, we can register a function as an
-event handler. This handler will be called once a user clicks on the image. All supported
-events are listed [here](https://reactjs.org/docs/events.html).
+By using the `Events` object we created above, we can register a function as an event
+handler. In this case our handler is listening for `onClick` events and will be called
+once a user clicks on the image. All supported events are listed
+[here](https://reactjs.org/docs/events.html).
 
 You can add parameters to this handler which will allow you to access attributes of the
 JavaScript event which occurred in the browser. For example when a key is pressed in
@@ -121,7 +125,7 @@ be performed with new `*args` and `**kwargs`.
     return idom.node("img", src=url, eventHandlers=events)
 ```
 
-We return a model for an `<img/>` element which draws its image from https://picsum.photos
+We return a VDOM for an `<img/>` element which draws its image from https://picsum.photos
 and will respond to the `events` we defined earlier. Similarly to the `events` object
 `idom.node` returns a mapping which conforms to the
 [VDOM mimetype specification](https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md)
@@ -139,7 +143,7 @@ see views with a common state you can use the `SharedClientState` server.
 
 To display the layout we can
 navigate to http://localhost:8765/client/index.html or use `idom.display()` to show
-it in a Jupyter Notebook via a widget. The exact protocol for communicating DOM models
+it in a Jupyter Notebook via a widget. The exact protocol for communicating VDOM
 over a network is not documented yet.
 
 
