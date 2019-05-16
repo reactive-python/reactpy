@@ -50,24 +50,3 @@ def test_node_constructor_factory():
         no_children(1, 2, 3)
 
     assert no_children() == {"tagName": "no-children"}
-
-
-def test_var_equivalence():
-    r1 = idom.Var([1, 2, 3])
-    r2 = idom.Var([1, 2, 3])
-    assert r1 == r2
-
-
-def test_var_set():
-    v = idom.Var(None)
-    old_1 = v.set("new_1")
-    assert old_1 is None
-    old_2 = v.set("new_2")
-    assert old_2 == "new_1"
-
-
-def test_var_get():
-    v = idom.Var(None)
-    assert v.get() is None
-    v.set(1)
-    assert v.get() == 1
