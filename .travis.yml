@@ -7,7 +7,10 @@ before_install:
   - sudo apt install curl
   - sudo apt install nodejs npm
   - npm install -g yarn
+addons:
+  chrome: stable
 install:
+  # Install iDOM along with test requirements
   - pip install . -r requirements/test.txt
 
 script: cd $WORK_DIR && eval $TEST_CMD
@@ -33,7 +36,7 @@ matrix:
       python: 3.6
       env:
         - WORK_DIR="src/py"
-        - TEST_CMD="pytest"
+        - TEST_CMD="pytest --selenium-headless"
     - name: "python-3.7"
       python: 3.7
       env:

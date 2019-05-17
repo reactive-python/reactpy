@@ -6,3 +6,4 @@ flake8
 sphinx
 sphinx-autodoc-typehints
 sphinx-rtd-theme
+selenium

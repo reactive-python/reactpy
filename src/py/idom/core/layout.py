@@ -70,6 +70,7 @@ class Layout:
         return self._root.id
 
     async def apply(self, target: str, handler: str, data: Dict[str, Any]) -> None:
+        print("asd")
         # It is possible for an element in the frontend to produce an event
         # associated with a backend model that has been deleted. We only handle
         # events if the element and the handler exist in the backend. Otherwise
