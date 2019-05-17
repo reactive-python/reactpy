@@ -9,9 +9,9 @@ STATIC_DIRECTORY = os.path.join(os.path.dirname(__file__), "..", "static")
 
 
 def bound_id(obj: Any, size: int = 10) -> str:
-    obj_id = uuid.uuid4().hex
+    obj_id = uuid.uuid4().hex[:size]
     while obj_id in _LOCAL_IDS:
-        obj_id = uuid.uuid4().hex
+        obj_id = uuid.uuid4().hex[:size]
     _LOCAL_IDS.add(obj_id)
 
     def remove_obj_id() -> None:

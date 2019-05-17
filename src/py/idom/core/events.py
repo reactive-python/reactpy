@@ -133,6 +133,10 @@ class EventHandler:
         self._target_id = target_id or bound_id(self)
         self._event_name = event_name
 
+    @property
+    def id(self) -> str:
+        return self._target_id
+
     def add(self, function: _EHF, using: Optional[str] = None) -> "EventHandler":
         """Add a callback to the event handler.
 
@@ -195,13 +199,9 @@ class EventHandler:
                     raise ValueError(f"Event data has no {prop!r}")
             await handler(**arguments)
 
-    def serialize(self) -> str:
+    def serialize(self) -> Dict[str, Any]:
         """Serialize the event handler."""
-        string = f"{self._target_id}_{self._event_name}"
-        props = self._all_props()
-        if props:
-            string += f"_{';'.join(props)}"
-        return string
+        return {"target": self._target_id, "eventProps": list(self._all_props())}
 
     def _all_props(self) -> Set[str]:
         all_props: Set[str] = set()
@@ -210,4 +210,4 @@ class EventHandler:
         return all_props
 
     def __repr__(self) -> str:
-        return repr(self.serialize())
+        return f"{type(self).__name__}({self.serialize()})"
