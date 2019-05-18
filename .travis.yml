@@ -1,22 +1,43 @@
 dist: xenial
 language: python
-
 cache: apt
+
+addons:
+  chrome: stable
+
 before_install:
   - sudo apt update
   - sudo apt install curl
+  # javascript dependencies
   - sudo apt install nodejs npm
   - npm install -g yarn
-addons:
-  chrome: stable
+  # install chromebrowser
+  - wget -N http://chromedriver.storage.googleapis.com/2.38/chromedriver_linux64.zip -P ~/
+  - unzip ~/chromedriver_linux64.zip -d ~/
+  - rm ~/chromedriver_linux64.zip
+  - sudo mv -f ~/chromedriver /usr/bin/
+  - sudo chmod +x /usr/bin/chromedriver
+
 install:
   # Install iDOM along with test requirements
-  - pip install . -r requirements/test.txt
+  - python setup.py build
+  - python setup.py install
+  - pip install -r requirements/test.txt
 
 script: cd $WORK_DIR && eval $TEST_CMD
 
 matrix:
   include:
+    - name: "python-3.6"
+      python: 3.6
+      env:
+        - WORK_DIR="src/py"
+        - TEST_CMD="pytest tests --headless"
+    - name: "python-3.7"
+      python: 3.7
+      env:
+        - WORK_DIR="src/py"
+        - TEST_CMD="pytest tests --headless"
     - name: "black"
       python: 3.7
       env:
@@ -32,13 +53,3 @@ matrix:
       env:
         - WORK_DIR="src/py"
         - TEST_CMD="mypy idom"
-    - name: "python-3.6"
-      python: 3.6
-      env:
-        - WORK_DIR="src/py"
-        - TEST_CMD="pytest --selenium-headless"
-    - name: "python-3.7"
-      python: 3.7
-      env:
-        - WORK_DIR="src/py"
-        - TEST_CMD="pytest"
