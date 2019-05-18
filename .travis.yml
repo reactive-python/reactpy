@@ -31,25 +31,10 @@ matrix:
     - name: "python-3.6"
       python: 3.6
       env:
-        - WORK_DIR="src/py"
-        - TEST_CMD="pytest tests --headless"
+        - WORK_DIR="."
+        - TEST_CMD="bash scripts/test.sh"
     - name: "python-3.7"
       python: 3.7
       env:
-        - WORK_DIR="src/py"
-        - TEST_CMD="pytest tests --headless"
-    - name: "black"
-      python: 3.7
-      env:
-        - WORK_DIR="src/py"
-        - TEST_CMD="black --verbose --check ."
-    - name: "flake8"
-      python: 3.7
-      env:
-        - WORK_DIR="src/py"
-        - TEST_CMD="flake8"
-    - name: "mypy"
-      python: 3.7
-      env:
-        - WORK_DIR="src/py"
-        - TEST_CMD="mypy idom"
+        - WORK_DIR="."
+        - TEST_CMD="bash scripts/test.sh"
