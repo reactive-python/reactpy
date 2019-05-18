@@ -182,11 +182,12 @@ class Element(AbstractElement):
                 async def wrapper() -> None:
                     if self._layout is not None:
                         keep_looping = await function()
-                        if loop and keep_looping is not False:
-                            if self._layout is not None:
-                                self._layout.animate(wrapper)
-                                if pacer is not None:
-                                    await pacer.wait()
+                        if self._update is None:
+                            if loop and keep_looping is not False:
+                                if self._layout is not None:
+                                    self._layout.animate(wrapper)
+                                    if pacer is not None:
+                                        await pacer.wait()
 
                 self._layout.animate(wrapper)
 
