@@ -9,3 +9,4 @@ sphinx
 sphinx-autodoc-typehints
 sphinx-rtd-theme
 notebook
+selenium
