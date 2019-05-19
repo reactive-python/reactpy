@@ -1,13 +1,11 @@
-from base64 import b64encode
-from io import BytesIO
+from typing import Any, Callable, Dict, List, Tuple, Optional
 
-from typing import Any, Callable, Dict, TypeVar, Generic, List, Tuple, Optional, Union
-
-from idom.core import AbstractElement, ElementConstructor, Element, element
+import idom
+from idom.core import ElementConstructor, Element, element
 
 
 def node(tag: str, *children: Any, **attributes: Any) -> Dict[str, Any]:
-    """A helper function for generating :term:`VDOM` dictionaries."""
+    """A helper function for generating DOM model dictionaries."""
     merged_children: List[Any] = []
 
     for c in children:
@@ -82,9 +80,9 @@ def hotswap(
 
             # displaying the output now will show DivTwo
     """
-    current_root: Var[Optional[Element]] = Var(None)
-    current_swap: Var[Callable[[], Any]] = Var(lambda: {"tagName": "div"})
-    last_element: Var[Optional[Element]] = Var(None)
+    current_root: idom.Var[Optional[Element]] = idom.Var(None)
+    current_swap: idom.Var[Callable[[], Any]] = idom.Var(lambda: {"tagName": "div"})
+    last_element: idom.Var[Optional[Element]] = idom.Var(None)
 
     @element
     async def HotSwap(self: Element) -> Any:
@@ -110,129 +108,3 @@ def hotswap(
                 hot.update()
 
     return swap, HotSwap
-
-
-_R = TypeVar("_R", bound=Any)  # Var reference
-
-
-class Var(Generic[_R]):
-    """A variable for holding a reference to an object.
-
-    Variables are useful when multiple elements need to share data. This is usually
-    discouraged, but can be useful in certain situations. For example, you might use
-    a reference to keep track of a user's selection from a list of options:
-
-    .. code-block:: python
-
-        def option_picker(handler, option_names):
-            selection = Var()
-            options = [option(n, selection) for n in option_names]
-            return idom.node("div", options, picker(handler, selection))
-
-        def option(name, selection):
-            events = idom.Events()
-
-            @events.on("click")
-            def select():
-                # set the current selection to the option name
-                selection.set(name)
-
-            return idom.node("button", eventHandlers=events)
-
-        def picker(handler, selection):
-            events = idom.Events()
-
-            @events.on("click")
-            def handle():
-                # passes the current option name to the handler
-                handler(selection.get())
-
-            return idom.node("button", "Use" eventHandlers=events)
-    """
-
-    __slots__ = ("__current",)
-
-    def __init__(self, value: _R) -> None:
-        self.__current = value
-
-    def set(self, new: _R) -> _R:
-        old = self.__current
-        self.__current = new
-        return old
-
-    def get(self) -> _R:
-        return self.__current
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, Var):
-            return bool(self.get() == other.get())
-        else:
-            return False
-
-    def __repr__(self) -> str:
-        return "Var(%r)" % self.get()
-
-
-class Image(AbstractElement):
-    """An image element.
-
-    Parameters:
-        format: The format of the image source (e.g. png or svg)
-        value: The image source. If not given use :attr:`Image.io` instead.
-        attributes: Attributes assigned to the ``<image/>`` element.
-    """
-
-    __slots__ = ("_source", "_format", "_buffer", "_attributes")
-
-    def __init__(self, format: str, value: str = "", **attributes: Any) -> None:
-        super().__init__()
-        if format == "svg":
-            format = "svg+xml"
-        self._buffer = BytesBuffer(value.encode(), self._set_source)
-        self._source = b""
-        self._format = format
-        self._attributes = attributes
-
-    @property
-    def io(self) -> "BytesBuffer":
-        """A file-like interface for loading image source."""
-        return self._buffer
-
-    async def render(self) -> Dict[str, Any]:
-        self._buffer.close()
-        source = b64encode(self._source).decode()
-        attrs = self._attributes.copy()
-        attrs["src"] = f"data:image/{self._format};base64,{source}"
-        return {"tagName": "img", "attributes": attrs}
-
-    def _set_source(self, value: bytes) -> None:
-        self._source = value
-
-
-class BytesBuffer(BytesIO):
-    """Similar to :class:`BytesIO` but converts unicode to bytes automatically.
-
-    Parameters:
-        value: Initial value for the buffer.
-        close_callback: Called with the value of the buffer when it is closed.
-    """
-
-    def __init__(
-        self, value: Union[bytes, str], close_callback: Callable[[bytes], None]
-    ) -> None:
-        self._on_close_callback = close_callback
-        if isinstance(value, str):
-            super().__init__(value.encode())
-        else:
-            super().__init__(value)
-
-    def write(self, value: Union[bytes, str]) -> int:
-        if isinstance(value, str):
-            return super().write(value.encode())
-        else:
-            return super().write(value)
-
-    def close(self) -> None:
-        if not self.closed:
-            self._on_close_callback(self.getvalue())
-        super().close()

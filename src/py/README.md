@@ -7,7 +7,7 @@
   <img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg">
 </a>
 
-The server side of iDOM. This is where we create raw DOM models using Python and send
+The server side of iDOM. This is where we create raw VDOM using Python and send
 them to the client to be shown on-screen. iDOM requires Python 3.6 and above.
 
 

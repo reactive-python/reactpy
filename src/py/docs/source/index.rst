@@ -70,20 +70,22 @@ each piece of the example above:
    @idom.element
    async def Slideshow(self, index=0):
 
-The decorator indicates that the function or coroutine to follow defines
-an update-able element. The ``Slideshow`` coroutine is responsible for
-building a DOM model, and every time an update is triggered, it will be
-called with new parameters to recreate the model.
+The ``idom.element`` decorator indicates that the `asynchronous
+function`_ to follow returns a data structure which represents a user
+interface or Document Object Model (DOM). We call this structural
+representation of the DOM a [Virtual DOM] (VDOM) - a term familiar to
+those who work with `ReactJS`_. In the case of ``Slideshow`` it will
+return a VDOM representing an image which, when clicked, will change.
 
 .. code:: python
 
        events = idom.Events()
 
-Creates an object to which event handlers will be assigned. Adding
-``events`` to a DOM model will given you the ability to respond to
-events that may be triggered when users interact with the image. Under
-the hood though, ``events`` is just a mapping which conforms to the
-`VDOM event specification`_.
+``Events`` creates an object to which event handlers will be assigned.
+Adding an ``Events`` object to a VDOM will given you the ability to
+respond when users interact with you interface. Under the hood though,
+``Events`` is just a mapping that conforms to the `VDOM event
+specification`_.
 
 .. code:: python
 
@@ -137,6 +139,8 @@ network is not documented yet.
 .. _VDOM event specification: https://github.com/nteract/vdom/blob/master/docs/event-spec.md
 .. _VDOM mimetype specification: https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md
 .. _React events: https://reactjs.org/docs/events.html
+.. _asynchronous function: https://realpython.com/async-io-python/
+.. _ReactJS: https://reactjs.org/docs/faq-internals.html
 
 
 .. |launch-binder| image:: https://mybinder.org/badge_logo.svg

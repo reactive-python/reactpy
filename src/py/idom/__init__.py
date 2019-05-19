@@ -1,7 +1,8 @@
 __version__ = "0.3.0"
 
 from .core import element, Element, Events, Layout
-from .widgets import Var, node, Image, hotswap, display, html, Input
+from .widgets import node, Image, hotswap, display, html, Input
+from .tools import Var, html_to_vdom
 from . import server
 
 __all__ = [
@@ -17,4 +18,5 @@ __all__ = [
     "hotswap",
     "display",
     "Input",
+    "html_to_vdom",
 ]
