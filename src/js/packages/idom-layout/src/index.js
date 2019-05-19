@@ -79,25 +79,17 @@ function Element({ model, sendEvent }) {
     const attributes = Object.assign({}, model.attributes);
 
     if (model.eventHandlers) {
-        Object.keys(model.eventHandlers).forEach(target => {
-            const eventSpec = model.eventHandlers[target].split("_");
-            const [handlerId, eventName, eventProps] = eventSpec;
+        Object.keys(model.eventHandlers).forEach(eventName => {
+            const eventSpec = model.eventHandlers[eventName];
             attributes[eventName] = event => {
                 const data = {};
-                if (eventProps) {
-                    eventProps.split(";").forEach(prop => {
-                        const path = prop.split(".");
-                        const firstProp = path.shift();
-                        let value = event[firstProp];
-                        for (let i = 0; i < path.length; i++) {
-                            value = value[path[i]];
-                        }
-                        data[prop] = value;
+                if (eventSpec["eventProps"]) {
+                    eventSpec["eventProps"].forEach(prop => {
+                        data[prop] = getPathProperty(event, prop);
                     });
                 }
                 sendEvent({
-                    target: target,
-                    handler: model.eventHandlers[target],
+                    target: eventSpec["target"],
                     data: data
                 });
             };
@@ -119,5 +111,18 @@ function useForceUpdate() {
     };
     return forceUpdate;
 }
+
+
+function getPathProperty(obj, prop) {
+    // properties may be dot seperated strings
+    const path = prop.split(".");
+    const firstProp = path.shift();
+    let value = obj[firstProp];
+    for (let i = 0; i < path.length; i++) {
+        value = value[path[i]];
+    }
+    return value
+}
+
 
 export default Layout;

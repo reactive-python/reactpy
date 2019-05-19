@@ -26,10 +26,9 @@ def test_event_handler_serialization():
     event_handler = EventHandler("onKeyPress", "uuid").add(
         handler, "value=target.value"
     )
-    target, event, props = event_handler.serialize().split("_")
-    assert target == "uuid"
-    assert event == "onKeyPress"
-    assert set(props.split(";")) == {"key", "target.value"}
+    event_spec = event_handler.serialize()
+    assert event_spec["target"] == "uuid"
+    assert set(event_spec["eventProps"]) == {"key", "target.value"}
 
 
 async def test_event_handler_props_to_params_mapping():

@@ -65,7 +65,7 @@ class PerClientState(SanicServerExtension):
 
         async def sock_send(data: Dict[str, Any]) -> None:
             message = {"header": {}, "body": {"render": data}}
-            await socket.send(json.dumps(message))
+            await socket.send(json.dumps(message, separators=(",", ":")))
 
         await SingleStateRenderer(layout).run(sock_send, sock_recv, None)
 

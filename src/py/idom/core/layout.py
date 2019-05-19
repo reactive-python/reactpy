@@ -41,7 +41,8 @@ class Layout:
         "_animate_queue",
         "_rendering",
         "_root",
-        "_state",
+        "_event_handlers",
+        "_element_state",
     )
 
     def __init__(
@@ -52,7 +53,8 @@ class Layout:
         if not isinstance(root, AbstractElement):
             raise TypeError("Expected an AbstractElement, not %r" % root)
         self._loop = loop
-        self._state: Dict[str, Dict[str, Any]] = {}
+        self._element_state: Dict[str, Dict[str, Any]] = {}
+        self._event_handlers: Dict[str, EventHandler] = {}
         self._root = root
         self._update_queue: List[AbstractElement] = []
         self._render_semaphore = asyncio.Semaphore(1, loop=loop)
@@ -69,15 +71,13 @@ class Layout:
     def root(self) -> str:
         return self._root.id
 
-    async def apply(self, target: str, handler: str, data: Dict[str, Any]) -> None:
+    async def apply(self, target: str, data: Dict[str, Any]) -> None:
         # It is possible for an element in the frontend to produce an event
         # associated with a backend model that has been deleted. We only handle
         # events if the element and the handler exist in the backend. Otherwise
         # we just ignore the event.
-        if target in self._state:
-            event_handler = self._state[target]["event_handlers"].get(handler)
-            if event_handler is not None:
-                await event_handler(data)
+        if target in self._event_handlers:
+            await self._event_handlers[target](data)
 
     def animate(self, function: Callable[[], Awaitable[None]]) -> None:
         self._animate_queue.append(function)
@@ -106,7 +106,7 @@ class Layout:
         await self._render_semaphore.acquire()
 
         # current element ids
-        current: Set[str] = set(self._state)
+        current: Set[str] = set(self._element_state)
 
         callbacks = self._animate_queue[:]
         self._animate_queue.clear()
@@ -121,13 +121,13 @@ class Layout:
         self._update_queue.clear()
 
         for element in updates:
-            parent = self._state[element.id]["parent"]
+            parent = self._element_state[element.id]["parent"]
             async for element_id, model in self._render_element(element, parent):
                 new[element_id] = model
             roots.append(element.id)
 
         # all deleted element ids
-        old: List[str] = list(current.difference(self._state))
+        old: List[str] = list(current.difference(self._element_state))
 
         self._rendering = False
 
@@ -202,44 +202,51 @@ class Layout:
         return loaded_children
 
     def _load_event_handlers(
-        self, handlers: Dict[str, Callable[..., Awaitable[None]]], element_id: str
-    ) -> Dict[str, str]:
+        self,
+        handlers: Mapping[str, Union[EventHandler, Callable[..., Awaitable[None]]]],
+        element_id: str,
+    ) -> Dict[str, Dict[str, Any]]:
         event_targets = {}
         for event, handler in handlers.items():
+            handler_obj: EventHandler
             if not isinstance(handler, EventHandler):
-                handler_specification = EventHandler(event).add(handler).serialize()
+                handler_obj = EventHandler(event).add(handler)
             else:
-                handler_specification = handler.serialize()
-            event_targets[element_id] = handler_specification
-            self._state[element_id]["event_handlers"][handler_specification] = handler
+                handler_obj = handler
+            handler_spec = handler_obj.serialize()
+            event_targets[event] = handler_spec
+            self._event_handlers[handler_obj.id] = handler_obj
+            self._element_state[element_id]["event_handlers"].append(handler_obj.id)
         return event_targets
 
     def _has_element_state(self, element_id: str) -> bool:
-        return element_id in self._state
+        return element_id in self._element_state
 
     def _create_element_state(
         self, element: AbstractElement, parent_element_id: Optional[str]
     ) -> None:
         if parent_element_id is not None and self._has_element_state(parent_element_id):
-            self._state[parent_element_id]["inner_elements"].add(element.id)
-        self._state[element.id] = {
+            self._element_state[parent_element_id]["inner_elements"].add(element.id)
+        self._element_state[element.id] = {
             "parent": parent_element_id,
             "inner_elements": set(),
-            "event_handlers": {},
+            "event_handlers": [],
             "element_ref": ref(element),
         }
         element.mount(self)
 
     def _reset_element_state(self, element: AbstractElement) -> None:
-        parent_element_id = self._state[element.id]["parent"]
+        parent_element_id = self._element_state[element.id]["parent"]
         self._delete_element_state(element.id)
         self._create_element_state(element, parent_element_id)
 
     def _delete_element_state(self, element_id: str) -> None:
-        old = self._state.pop(element_id)
+        old = self._element_state.pop(element_id)
         parent_element_id = old["parent"]
         if self._has_element_state(parent_element_id):
-            self._state[parent_element_id]["inner_elements"].remove(element_id)
+            self._element_state[parent_element_id]["inner_elements"].remove(element_id)
+        for handler_id in old["event_handlers"]:
+            del self._event_handlers[handler_id]
         for i in old["inner_elements"]:
             self._delete_element_state(i)
         element = old["element_ref"]()
