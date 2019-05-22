@@ -20,11 +20,11 @@ def pytest_addoption(parser):
 def display(driver):
     _display, element = idom.hotswap()
     server = idom.server.sanic.PerClientState(element)
-    server.daemon("localhost", "8765")
+    server.daemon("localhost", "5678")
 
     def display(element):
         _display(element)
-        driver.get("http://localhost:8765/client/index.html")
+        driver.get("http://localhost:5678/client/index.html")
 
     time.sleep(1)  # wait for server start
     return display

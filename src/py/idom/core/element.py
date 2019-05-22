@@ -125,9 +125,10 @@ class Element(AbstractElement):
     __slots__ = (
         "_function",
         "_function_signature",
+        "_cross_update_state",
+        "_cross_update_parameters",
         "_state",
-        "_state_parameters",
-        "_update",
+        "_state_updated",
     )
 
     def __init__(self, function: _EF, state_parameters: Optional[str]):
@@ -135,20 +136,22 @@ class Element(AbstractElement):
         self._function = function
         self._function_signature = inspect.signature(function)
         self._layout: Optional["idom.Layout"] = None
-        self._state: Dict[str, Any] = {}
-        self._state_parameters: List[str] = list(
+        self._cross_update_state: Dict[str, Any] = {}
+        self._cross_update_parameters: List[str] = list(
             map(str.strip, (state_parameters or "").split(","))
         )
-        self._update: Optional[Dict[str, Any]] = None
+        self._state: Dict[str, Any] = {}
+        self._state_updated: bool = False
 
     def update(self, *args: Any, **kwargs: Any) -> None:
         """Schedule this element to render with new parameters."""
-        if self._update is None:
+        if not self._state_updated:
             # only tell layout to render on first update call
-            self._update = {}
+            self._state = {}
+            self._state_updated = True
             self._update_layout()
         bound = self._function_signature.bind_partial(None, *args, **kwargs)
-        self._update.update(list(bound.arguments.items())[1:])
+        self._state.update(list(bound.arguments.items())[1:])
 
     @overload
     def animate(
@@ -182,7 +185,7 @@ class Element(AbstractElement):
                 async def wrapper() -> None:
                     if self._layout is not None:
                         keep_looping = await function()
-                        if self._update is None:
+                        if not self._state_updated:
                             if loop and keep_looping is not False:
                                 if self._layout is not None:
                                     self._layout.animate(wrapper)
@@ -201,21 +204,21 @@ class Element(AbstractElement):
     async def render(self) -> Mapping[str, Any]:
         """Render the element's :term:`VDOM` model."""
         # load update and reset for next render
-        update = self._update
+        state = self._state
 
-        if update is None:
-            raise RuntimeError(f"{self} cannot render again - no update occured.")
+        if state is None:
+            raise RuntimeError(f"{self} cannot render - element has no state.")
 
-        for name in self._state_parameters:
-            if name not in update:
-                if name in self._state:
-                    update[name] = self._state[name]
+        for name in self._cross_update_parameters:
+            if name not in state:
+                if name in self._cross_update_state:
+                    state[name] = self._cross_update_state[name]
             else:
-                self._state[name] = update[name]
+                self._cross_update_state[name] = state[name]
 
-        self._update = None
+        self._state_updated = False
 
-        return await self._function(self, **update)
+        return await self._function(self, **state)
 
     def __repr__(self) -> str:
         qualname = getattr(self._function, "__qualname__", None)
