@@ -74,16 +74,19 @@ def test_animation(driver, display):
     @idom.element
     async def Counter(self, count=0):
         @self.animate
-        async def increment():
-            with count_confirmed:
-                count_confirmed.wait()
-            self.update(count + 1)
+        async def increment(stop):
+            if count < 5:
+                with count_confirmed:
+                    count_confirmed.wait()
+                self.update(count + 1)
+            else:
+                stop()
 
         return idom.html.p(f"Count: {count}", id=f"counter-{count}")
 
     display(Counter)
 
     for i in range(5):
-        driver.find_element_by_id(f"counter-{i}")
         with count_confirmed:
             count_confirmed.notify()
+        driver.find_element_by_id(f"counter-{i + 1}")

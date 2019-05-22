@@ -12,12 +12,9 @@ def test_drag_and_drop(driver, display):
 
     @idom.element
     async def Source(self):
-        events = idom.Events()
-
         return idom.html.div(
             draggable=True,
             style={"backgroundColor": "red", "height": "30px", "width": "30px"},
-            eventHandlers=events,
             id="source",
         )
 

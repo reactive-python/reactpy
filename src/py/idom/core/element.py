@@ -97,8 +97,10 @@ class AbstractElement(abc.ABC):
             self._layout.update(self)
 
 
+# animation stop callback
+_STP = Callable[[], None]
 # type for animation function of element
-_AW = Callable[[], Awaitable[bool]]
+_ANM = Callable[[_STP], Awaitable[bool]]
 
 
 class Element(AbstractElement):
@@ -129,6 +131,7 @@ class Element(AbstractElement):
         "_cross_update_parameters",
         "_state",
         "_state_updated",
+        "_stop_animation",
     )
 
     def __init__(self, function: _EF, state_parameters: Optional[str]):
@@ -142,6 +145,7 @@ class Element(AbstractElement):
         )
         self._state: Dict[str, Any] = {}
         self._state_updated: bool = False
+        self._stop_animation = False
 
     def update(self, *args: Any, **kwargs: Any) -> None:
         """Schedule this element to render with new parameters."""
@@ -154,26 +158,24 @@ class Element(AbstractElement):
         self._state.update(list(bound.arguments.items())[1:])
 
     @overload
-    def animate(
-        self, function: _AW, loop: bool = False, rate: Optional[float] = None
-    ) -> _AW:
+    def animate(self, function: _ANM, rate: Optional[float] = None) -> _ANM:
         ...
 
     @overload
-    def animate(
-        self, *, loop: bool = False, rate: Optional[float] = None
-    ) -> Callable[[_AW], _AW]:
+    def animate(self, *, rate: Optional[float] = None) -> Callable[[_ANM], _ANM]:
         ...
 
     def animate(
-        self,
-        function: Optional[_AW] = None,
-        loop: bool = True,
-        rate: Optional[float] = None,
+        self, function: Optional[_ANM] = None, rate: Optional[float] = None
     ) -> Callable[..., Any]:
         """Schedule this function to run soon, and then render any updates it caused."""
 
-        def setup(function: _AW) -> _AW:
+        def setup(function: _ANM) -> _ANM:
+            if self._stop_animation:
+                raise RuntimeError(
+                    "Cannot register a new animation hook - animation was stopped"
+                )
+
             if self._layout is not None:
 
                 pacer: Optional[FramePacer]
@@ -182,15 +184,17 @@ class Element(AbstractElement):
                 else:
                     pacer = None
 
+                def stop() -> None:
+                    self._stop_animation = True
+
                 async def wrapper() -> None:
                     if self._layout is not None:
-                        keep_looping = await function()
-                        if not self._state_updated:
-                            if loop and keep_looping is not False:
-                                if self._layout is not None:
-                                    self._layout.animate(wrapper)
-                                    if pacer is not None:
-                                        await pacer.wait()
+                        await function(stop)
+                        if not self._state_updated and not self._stop_animation:
+                            if self._layout is not None:
+                                self._layout.animate(wrapper)
+                                if pacer is not None:
+                                    await pacer.wait()
 
                 self._layout.animate(wrapper)
 

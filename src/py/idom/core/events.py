@@ -158,10 +158,10 @@ class EventHandler:
         return self._target_id
 
     def configure(
-        self, preventDefault: bool = False, stopPropogation: bool = False
+        self, preventDefault: bool = False, stopPropagation: bool = False
     ) -> "EventHandler":
         self._prevent_default = preventDefault
-        self._stop_propogation = stopPropogation
+        self._stop_propogation = stopPropagation
         return self
 
     def add(self, function: _EHF, using: Optional[str] = None) -> "EventHandler":
@@ -232,7 +232,7 @@ class EventHandler:
             "target": self._target_id,
             "eventProps": list(self._all_props()),
             "preventDefault": self._prevent_default,
-            "stopPropogation": self._stop_propogation,
+            "stopPropagation": self._stop_propogation,
         }
 
     def _all_props(self) -> Set[str]:
