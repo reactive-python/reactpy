@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+
 pytest src/py/tests --headless
 black --verbose --check src/py
 flake8 src/py

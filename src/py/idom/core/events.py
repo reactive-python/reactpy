@@ -35,7 +35,12 @@ class Events(Mapping[str, "EventHandler"]):
         if bound is not None:
             self._bound = proxy(bound)
 
-    def on(self, event: str, using: Optional[str] = None) -> Callable[[_EHF], _EHF]:
+    def on(
+        self,
+        event: str,
+        using: Optional[str] = None,
+        options: Optional[Dict[str, Any]] = None,
+    ) -> Callable[[_EHF], _EHF]:
         """A decorator for adding an event handler.
 
         Parameters:
@@ -46,6 +51,8 @@ class Events(Mapping[str, "EventHandler"]):
                 A string defining what event attribute a parameter refers to if the
                 parameter name does not already refer to it directly. See the
                 :class:`EventHandler` class for more info.
+            options:
+                See :meth:`EventHandler.configure` for more details.
 
         Returns:
             A decorator which accepts an event handler function as its first argument.
@@ -84,12 +91,17 @@ class Events(Mapping[str, "EventHandler"]):
         """
         event_name = "on" + event[:1].upper() + event[1:]
 
+        if event_name not in self._handlers:
+            handler = self._handlers[event_name] = EventHandler(event_name)
+        else:
+            handler = self._handlers[event_name]
+        if options is not None:
+            handler.configure(**options)
+
         def setup(function: _EHF) -> _EHF:
             if self._bound is not None:
                 function = partial(function, self._bound)
-            if event_name not in self._handlers:
-                self._handlers[event_name] = EventHandler(event_name)
-            self._handlers[event_name].add(function, using)
+            handler.add(function, using)
             return function
 
         return setup
@@ -126,16 +138,32 @@ class EventHandler:
             no ID is provided one will be generated automatically.
     """
 
-    __slots__ = ("_handler_info", "_target_id", "_event_name", "__weakref__")
+    __slots__ = (
+        "_handler_info",
+        "_target_id",
+        "_event_name",
+        "__weakref__",
+        "_prevent_default",
+        "_stop_propogation",
+    )
 
     def __init__(self, event_name: str, target_id: Optional[str] = None) -> None:
         self._handler_info: List[Tuple[_EHF, Dict[str, str]]] = []
         self._target_id = target_id or bound_id(self)
         self._event_name = event_name
+        self._prevent_default = False
+        self._stop_propogation = False
 
     @property
     def id(self) -> str:
         return self._target_id
+
+    def configure(
+        self, preventDefault: bool = False, stopPropagation: bool = False
+    ) -> "EventHandler":
+        self._prevent_default = preventDefault
+        self._stop_propogation = stopPropagation
+        return self
 
     def add(self, function: _EHF, using: Optional[str] = None) -> "EventHandler":
         """Add a callback to the event handler.
@@ -201,7 +229,12 @@ class EventHandler:
 
     def serialize(self) -> Dict[str, Any]:
         """Serialize the event handler."""
-        return {"target": self._target_id, "eventProps": list(self._all_props())}
+        return {
+            "target": self._target_id,
+            "eventProps": list(self._all_props()),
+            "preventDefault": self._prevent_default,
+            "stopPropagation": self._stop_propogation,
+        }
 
     def _all_props(self) -> Set[str]:
         all_props: Set[str] = set()

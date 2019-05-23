@@ -74,16 +74,90 @@ def test_animation(driver, display):
     @idom.element
     async def Counter(self, count=0):
         @self.animate
-        async def increment():
-            with count_confirmed:
-                count_confirmed.wait()
-            self.update(count + 1)
+        async def increment(stop):
+            if count < 5:
+                with count_confirmed:
+                    count_confirmed.wait()
+                self.update(count + 1)
+            else:
+                stop()
 
         return idom.html.p(f"Count: {count}", id=f"counter-{count}")
 
     display(Counter)
 
     for i in range(5):
-        driver.find_element_by_id(f"counter-{i}")
         with count_confirmed:
             count_confirmed.notify()
+        driver.find_element_by_id(f"counter-{i + 1}")
+
+
+def test_use_attribute_from_event_target(driver, display):
+    @idom.element
+    async def Input(self):
+        events = idom.Events()
+
+        @events.on("KeyDown", using="value=target.value")
+        async def on_key_down(value):
+            pass
+
+        return idom.html.input(eventHandlers=events, id="input")
+
+    display(Input)
+
+    inp = driver.find_element_by_id("input")
+    inp.send_keys("hello")
+    # the default action of updating the element's value did not take place
+    assert inp.get_attribute("value") == "hello"
+
+
+def test_can_prevent_event_default_operation(driver, display):
+    @idom.element
+    async def Input(self):
+        events = idom.Events()
+
+        @events.on(
+            "KeyDown", using="value=target.value", options={"preventDefault": True}
+        )
+        async def on_key_down(value):
+            pass
+
+        return idom.html.input(eventHandlers=events, id="input")
+
+    display(Input)
+
+    inp = driver.find_element_by_id("input")
+    inp.send_keys("hello")
+    # the default action of updating the element's value did not take place
+    assert inp.get_attribute("value") == ""
+
+
+def test_can_stop_event_propogation(driver, display):
+    @idom.element
+    async def DivInDiv(self):
+        inner_events = idom.Events()
+        inner_events.on("Click", options={"stopPropagation": True})
+
+        outer_events = idom.Events()
+
+        @outer_events.on("Click")
+        async def outer_click_is_not_triggered():
+            assert False
+
+        inner = idom.html.div(
+            style={"height": "30px", "width": "30px", "backgroundColor": "blue"},
+            eventHandlers=inner_events,
+            id="inner",
+        )
+        outer = idom.html.div(
+            inner,
+            style={"height": "35px", "width": "35px", "backgroundColor": "red"},
+            eventHandlers=outer_events,
+            id="outer",
+        )
+        return outer
+
+    display(DivInDiv)
+
+    inner = driver.find_element_by_id("inner")
+    inner.click()

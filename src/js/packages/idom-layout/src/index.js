@@ -82,16 +82,28 @@ function Element({ model, sendEvent }) {
         Object.keys(model.eventHandlers).forEach(eventName => {
             const eventSpec = model.eventHandlers[eventName];
             attributes[eventName] = event => {
-                const data = {};
-                if (eventSpec["eventProps"]) {
-                    eventSpec["eventProps"].forEach(prop => {
-                        data[prop] = getPathProperty(event, prop);
-                    });
+                if (eventSpec["preventDefault"]) {
+                    event.preventDefault();
                 }
-                sendEvent({
-                    target: eventSpec["target"],
-                    data: data
-                });
+                if (eventSpec["stopPropagation"]) {
+                    event.stopPropagation();
+                }
+                const sentEvent = new Promise(
+                    (resolve, reject) => {
+                        const data = {};
+                        if (eventSpec["eventProps"]) {
+                            eventSpec["eventProps"].forEach(prop => {
+                                data[prop] = getPathProperty(event, prop);
+                            });
+                        }
+                        const msg = {
+                            target: eventSpec["target"],
+                            data: data
+                        }
+                        sendEvent(msg);
+                        resolve(msg);
+                    }
+                );
             };
         });
     }
