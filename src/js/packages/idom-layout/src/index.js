@@ -85,8 +85,8 @@ function Element({ model, sendEvent }) {
                 if (eventSpec["preventDefault"]) {
                     event.preventDefault();
                 }
-                if (eventSpec["stopPropogation"]) {
-                    event.stopPropogation();
+                if (eventSpec["stopPropagation"]) {
+                    event.stopPropagation();
                 }
                 const sentEvent = new Promise(
                     (resolve, reject) => {
