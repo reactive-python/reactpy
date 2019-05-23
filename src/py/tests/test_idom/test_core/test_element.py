@@ -1,5 +1,3 @@
-import pytest
-
 import idom
 
 
@@ -11,10 +9,8 @@ async def test_simple_element():
     sd = simple_div()
 
     assert await sd.render() == {"tagName": "div"}
-
-    with pytest.raises(RuntimeError):
-        # no update was applied after the last render
-        assert await sd.render()
+    # can render more than once without update
+    assert await sd.render() == {"tagName": "div"}
 
     sd.update()
     assert await sd.render() == {"tagName": "div"}
