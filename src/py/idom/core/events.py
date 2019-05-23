@@ -91,15 +91,16 @@ class Events(Mapping[str, "EventHandler"]):
         """
         event_name = "on" + event[:1].upper() + event[1:]
 
+        if event_name not in self._handlers:
+            handler = self._handlers[event_name] = EventHandler(event_name)
+        else:
+            handler = self._handlers[event_name]
+        if options is not None:
+            handler.configure(**options)
+
         def setup(function: _EHF) -> _EHF:
             if self._bound is not None:
                 function = partial(function, self._bound)
-            if event_name not in self._handlers:
-                handler = self._handlers[event_name] = EventHandler(event_name)
-            else:
-                handler = self._handlers[event_name]
-            if options is not None:
-                handler.configure(**options)
             handler.add(function, using)
             return function
 

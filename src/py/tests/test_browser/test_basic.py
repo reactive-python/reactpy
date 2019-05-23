@@ -136,11 +136,9 @@ def test_can_stop_event_propogation(driver, display):
     @idom.element
     async def DivInDiv(self):
         inner_events = idom.Events()
-        outer_events = idom.Events()
+        inner_events.on("Click", options={"stopPropagation": True})
 
-        @inner_events.on("Click", options={"stopPropagation": True})
-        async def stop_propogation():
-            pass
+        outer_events = idom.Events()
 
         @outer_events.on("Click")
         async def outer_click_is_not_triggered():
