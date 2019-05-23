@@ -8,6 +8,22 @@ from selenium.webdriver.chrome.options import Options
 import idom
 
 
+# Default is an error because we want to know whether we are setting the last
+# error while testing. A refactor could miss the code path that catches serve
+# errors.
+default_error = NotImplementedError()
+last_server_error = idom.Var(default_error)
+
+
+class ServerWithErrorCatch(idom.server.sanic.PerClientState):
+    async def _stream(self, request, socket):
+        last_server_error.set(None)
+        try:
+            await super()._stream(request, socket)
+        except Exception as e:
+            last_server_error.set(e)
+
+
 def pytest_addoption(parser):
     parser.addoption(
         "--headless",
@@ -16,10 +32,24 @@ def pytest_addoption(parser):
     )
 
 
+@pytest.fixture
+def display(_display):
+    try:
+        yield _display
+    finally:
+        last_error = last_server_error.get()
+        if last_error is default_error:
+            raise NotImplementedError(
+                "Unable to check for server errors while testing."
+            )
+        elif last_error is not None:
+            raise last_error
+
+
 @pytest.fixture(scope="session")
-def display(driver):
+def _display(driver):
     _display, element = idom.hotswap()
-    server = idom.server.sanic.PerClientState(element)
+    server = ServerWithErrorCatch(element)
     server.daemon("localhost", "5678")
 
     def display(element):
