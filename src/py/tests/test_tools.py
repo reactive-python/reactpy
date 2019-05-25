@@ -50,7 +50,7 @@ def test_var_get():
     ],
 )
 def test_html_to_vdom(case):
-    assert html_to_vdom(case["source"]) == case["model"]
+    assert html_to_vdom(case["source"]) == [case["model"]]
 
 
 def test_html_to_vdom_transform():
@@ -60,20 +60,22 @@ def test_html_to_vdom_transform():
         if node["tagName"] == "a":
             node["attributes"]["style"] = {"color": "blue"}
 
-    assert html_to_vdom(source, make_links_blue) == {
-        "tagName": "p",
-        "children": [
-            "hello ",
-            {
-                "tagName": "a",
-                "children": ["world"],
-                "attributes": {"style": {"color": "blue"}},
-            },
-            " and ",
-            {
-                "tagName": "a",
-                "children": ["universe"],
-                "attributes": {"style": {"color": "blue"}},
-            },
-        ],
-    }
+    assert html_to_vdom(source, make_links_blue) == [
+        {
+            "tagName": "p",
+            "children": [
+                "hello ",
+                {
+                    "tagName": "a",
+                    "children": ["world"],
+                    "attributes": {"style": {"color": "blue"}},
+                },
+                " and ",
+                {
+                    "tagName": "a",
+                    "children": ["universe"],
+                    "attributes": {"style": {"color": "blue"}},
+                },
+            ],
+        }
+    ]

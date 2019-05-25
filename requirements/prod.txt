@@ -1,2 +1,2 @@
-sanic>=18.12, <19.0
-typing-extensions==3.7.2, <4.0
+sanic >=18.12, <19.0
+typing-extensions >=3.7.2, <4.0
