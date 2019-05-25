@@ -70,7 +70,7 @@ _ModelTransform = Callable[[_ModelOrStr], None]
 
 def html_to_vdom(
     source: str, transform: Optional[_ModelTransform] = None
-) -> Dict[str, Any]:
+) -> List[Dict[str, Any]]:
     """Transform HTML into a DOM model
 
     Parameters:
@@ -92,10 +92,10 @@ class HtmlParser(_HTMLParser):
         if transform is not None:
             self._transform = transform
 
-    def model(self) -> Dict[str, Any]:
+    def model(self) -> List[Dict[str, Any]]:
         root: Dict[str, Any] = self._node_stack[0]
-        first_child: Dict[str, Any] = root["children"][0]
-        return first_child
+        root_children: List[Dict[str, Any]] = root["children"]
+        return root_children
 
     def feed(self, data: str) -> None:
         self._node_stack.append(self._make_node("div", {}))
@@ -110,6 +110,7 @@ class HtmlParser(_HTMLParser):
         current = self._node_stack[-1]
         current["children"].append(new)
         self._node_stack.append(new)
+        print(self._node_stack[0])
 
     def handle_endtag(self, tag: str) -> None:
         node = self._node_stack.pop(-1)
