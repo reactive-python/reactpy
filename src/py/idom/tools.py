@@ -110,7 +110,6 @@ class HtmlParser(_HTMLParser):
         current = self._node_stack[-1]
         current["children"].append(new)
         self._node_stack.append(new)
-        print(self._node_stack[0])
 
     def handle_endtag(self, tag: str) -> None:
         node = self._node_stack.pop(-1)
