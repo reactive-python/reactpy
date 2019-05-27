@@ -110,7 +110,7 @@ class Layout:
 
         callbacks = self._animate_queue[:]
         self._animate_queue.clear()
-        await asyncio.gather(*[cb() for cb in callbacks])
+        asyncio.ensure_future(asyncio.gather(*[cb() for cb in callbacks]))
 
         # root elements which updated
         roots: List[str] = []

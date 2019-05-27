@@ -187,9 +187,9 @@ class Element(AbstractElement):
                         await function(stop)
                         if not self._state_updated and not self._stop_animation:
                             if self._layout is not None:
-                                self._layout.animate(wrapper)
                                 if pacer is not None:
                                     await pacer.wait()
+                                self._layout.animate(wrapper)
 
                 self._layout.animate(wrapper)
 
