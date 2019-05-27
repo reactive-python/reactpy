@@ -1,6 +1,6 @@
 from html.parser import HTMLParser as _HTMLParser
 
-from typing import List, Tuple, Any, Dict, Union, Optional, TypeVar, Generic, Callable
+from typing import List, Tuple, Any, Dict, TypeVar, Generic, Callable
 
 
 _R = TypeVar("_R", bound=Any)  # Var reference
@@ -41,18 +41,18 @@ class Var(Generic[_R]):
             return idom.node("button", "Use" eventHandlers=events)
     """
 
-    __slots__ = ("__current",)
+    __slots__ = ("_current",)
 
     def __init__(self, value: _R) -> None:
-        self.__current = value
+        self._current = value
 
     def set(self, new: _R) -> _R:
-        old = self.__current
-        self.__current = new
+        old = self._current
+        self._current = new
         return old
 
     def get(self) -> _R:
-        return self.__current
+        return self._current
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Var):
@@ -64,38 +64,46 @@ class Var(Generic[_R]):
         return "Var(%r)" % self.get()
 
 
-_ModelOrStr = Union[Dict[str, Any], str]
-_ModelTransform = Callable[[_ModelOrStr], None]
+_ModelTransform = Callable[[Dict[str, Any]], Any]
 
 
-def html_to_vdom(
-    source: str, transform: Optional[_ModelTransform] = None
-) -> List[Dict[str, Any]]:
+def html_to_vdom(source: str, *transforms: _ModelTransform) -> Dict[str, Any]:
     """Transform HTML into a DOM model
 
     Parameters:
         source:
             The raw HTML as a string
-        transform:
-            A function for transforming each model as it is created. For example,
-            you might use a transform function to add highlighting to a ``<code/>``
-            block.
+        transforms:
+            Functions of the form ``transform(old) -> new`` where ``old`` is a VDOM
+            dictionary which will be replaced by ``new``. You might use a transform
+            function to add highlighting to a ``<code/>`` block.
     """
-    parser = HtmlParser(transform)
+    parser = HtmlParser()
     parser.feed(source)
-    return parser.model()
+    root = parser.model()
+    to_visit = [root]
+    while to_visit:
+        node = to_visit.pop(0)
+        if isinstance(node, dict) and "children" in node:
+            transformed = []
+            for child in node["children"]:
+                if isinstance(child, dict):
+                    for t in transforms:
+                        child = t(child)
+                if child is not None:
+                    transformed.append(child)
+                    to_visit.append(child)
+            node["children"] = transformed
+            if "attributes" in node and not node["attributes"]:
+                del node["attributes"]
+            if "children" in node and not node["children"]:
+                del node["children"]
+    return root
 
 
 class HtmlParser(_HTMLParser):
-    def __init__(self, transform: Optional[_ModelTransform] = None):
-        super().__init__()
-        if transform is not None:
-            self._transform = transform
-
-    def model(self) -> List[Dict[str, Any]]:
-        root: Dict[str, Any] = self._node_stack[0]
-        root_children: List[Dict[str, Any]] = root["children"]
-        return root_children
+    def model(self) -> Dict[str, Any]:
+        return self._node_stack[0]
 
     def feed(self, data: str) -> None:
         self._node_stack.append(self._make_node("div", {}))
@@ -112,12 +120,7 @@ class HtmlParser(_HTMLParser):
         self._node_stack.append(new)
 
     def handle_endtag(self, tag: str) -> None:
-        node = self._node_stack.pop(-1)
-        self._transform(node)
-        if not node["attributes"]:
-            del node["attributes"]
-        if not node["children"]:
-            del node["children"]
+        del self._node_stack[-1]
 
     def handle_data(self, data: str) -> None:
         self._node_stack[-1]["children"].append(data)
@@ -134,7 +137,3 @@ class HtmlParser(_HTMLParser):
                     style_dict[camel_case_key] = v
                 attrs["style"] = style_dict
         return {"tagName": tag, "attributes": attrs, "children": []}
-
-    @staticmethod
-    def _transform(node: Dict[str, Any]) -> None:
-        ...
