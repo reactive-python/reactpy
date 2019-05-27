@@ -186,9 +186,11 @@ class Element(AbstractElement):
                     if self._layout is not None:
                         await function(stop)
                         if not self._state_updated and not self._stop_animation:
+                            if pacer is not None:
+                                await pacer.wait()
+                            # check layout again because this element could
+                            # have been unmounted after the last await
                             if self._layout is not None:
-                                if pacer is not None:
-                                    await pacer.wait()
                                 self._layout.animate(wrapper)
 
                 self._layout.animate(wrapper)
