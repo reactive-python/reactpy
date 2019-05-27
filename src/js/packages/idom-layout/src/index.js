@@ -51,7 +51,11 @@ function Layout({ endpoint }) {
 function DynamicElement({ elementId, sendEvent }) {
     allUpdateTriggers[elementId] = useForceUpdate();
     const model = allModels[elementId];
-    return <Element model={model} sendEvent={sendEvent} />;
+    if ( model ) {
+        return <Element model={model} sendEvent={sendEvent} />;
+    } else {
+        return <div/>;
+    }
 }
 
 function Element({ model, sendEvent }) {
