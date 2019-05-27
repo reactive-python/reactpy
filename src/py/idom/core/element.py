@@ -4,8 +4,7 @@ import inspect
 from functools import wraps
 import time
 
-from typing_extensions import Protocol
-from typing import Dict, Callable, Any, List, Optional, overload, Awaitable, Mapping
+from typing import Dict, Callable, Any, List, Optional, overload, Awaitable
 
 import idom
 
@@ -13,15 +12,7 @@ from .utils import bound_id
 
 
 ElementConstructor = Callable[..., "Element"]  # Element constructor
-
-
-class _EF(Protocol):
-    """Element function."""
-
-    def __call__(
-        self, element: "Element", *args: Any, **kwargs: Any
-    ) -> Awaitable[Dict[str, Any]]:
-        ...
+ElementRenderFunction = Callable[..., Awaitable[Any]]
 
 
 @overload
@@ -30,12 +21,14 @@ def element(function: Callable[..., Any]) -> ElementConstructor:
 
 
 @overload
-def element(*, state: Optional[str] = None) -> Callable[[_EF], ElementConstructor]:
+def element(
+    *, state: Optional[str] = None
+) -> Callable[[ElementRenderFunction], ElementConstructor]:
     ...
 
 
 def element(
-    function: Optional[_EF] = None, state: Optional[str] = None
+    function: Optional[ElementRenderFunction] = None, state: Optional[str] = None
 ) -> Callable[..., Any]:
     """A decorator for defining an :class:`Element`.
 
@@ -43,7 +36,7 @@ def element(
         function: The function that will render a :term:`VDOM` model.
     """
 
-    def setup(func: _EF) -> ElementConstructor:
+    def setup(func: ElementRenderFunction) -> ElementConstructor:
         @wraps(func)
         def constructor(*args: Any, **kwargs: Any) -> Element:
             element = Element(func, state)
@@ -75,7 +68,7 @@ class AbstractElement(abc.ABC):
         return self._element_id
 
     @abc.abstractmethod
-    async def render(self) -> Mapping[str, Any]:
+    async def render(self) -> Any:
         ...
 
     def mount(self, layout: "idom.Layout") -> None:
@@ -134,7 +127,9 @@ class Element(AbstractElement):
         "_stop_animation",
     )
 
-    def __init__(self, function: _EF, state_parameters: Optional[str]):
+    def __init__(
+        self, function: ElementRenderFunction, state_parameters: Optional[str]
+    ):
         super().__init__()
         self._function = function
         self._function_signature = inspect.signature(function)
@@ -205,7 +200,7 @@ class Element(AbstractElement):
         else:
             return setup(function)
 
-    async def render(self) -> Mapping[str, Any]:
+    async def render(self) -> Any:
         """Render the element's :term:`VDOM` model."""
         # load update and reset for next render
         state = self._state

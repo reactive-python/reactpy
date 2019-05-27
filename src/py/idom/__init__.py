@@ -1,4 +1,4 @@
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 
 from .core import element, Element, Events, Layout
 from .widgets import node, Image, hotswap, display, html, Input
