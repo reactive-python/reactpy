@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "jsdoc": "^3.5.5",
-    "lerna": "^2.9.0",
+    "lerna": "^3.13.0",
     "prettier": "^1.11.1"
   }
 }
