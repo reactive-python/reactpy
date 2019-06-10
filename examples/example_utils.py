@@ -1,26 +1,27 @@
 import os
-from typing import Mapping, Any
+from collections.abc import Mapping
 
 
-def idom_websocket_url(port: int) -> str:
-    """Returns the URL of the websocket
+def localhost(protocol, port):
+    """Returns the host URL.
 
     When examples are running on mybinder.org or in a container created by
     jupyter-repo2docker this is not simply "localhost" or "127.0.0.1".
     Instead we use a route produced by ``jupyter_server_proxy`` instead.
     """
     if "JUPYTERHUB_OAUTH_CALLBACK_URL" in os.environ:
+        protocol += "s"
+        form = protocol + "://hub.mybinder.org%s/proxy/%s"
         auth = os.environ["JUPYTERHUB_OAUTH_CALLBACK_URL"].rsplit("/", 1)[0]
-        return "/%s/proxy/%s" % (auth, port)
+        return form % (auth, port)
     elif "JUPYTER_SERVER_URL" in os.environ:
         return "%s/proxy/%s" % (os.environ["JUPYTER_SERVER_URL"], port)
     else:
-        return "ws://127.0.0.1:%s" % port
+        form = protocol + "://127.0.0.1:%s"
+        return form % port
 
 
-def pretty_dict_string(
-    value: Mapping[Any, Any], indent: int = 1, depth: int = 0
-) -> str:
+def pretty_dict_string(value, indent=1, depth=0):
     """Simple function for printing out nested mappings."""
 
     last_indent = " " * (indent * depth)
