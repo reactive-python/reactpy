@@ -95,7 +95,7 @@ def hotswap(
 
     def swap(element: ElementConstructor, *args: Any, **kwargs: Any) -> None:
         last = last_element.get()
-        if last is not None:
+        if isinstance(last, Element):
             # because the hotswap is done via side-effects there's no way for
             # the layout to know to unmount the old element so we do it manually
             last.unmount()

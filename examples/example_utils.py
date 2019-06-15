@@ -1,9 +1,9 @@
 import os
-from typing import Mapping, Any
+from typing import Mapping, Any, Optional
 
 
-def idom_websocket_url(port: int) -> str:
-    """Returns the URL of the websocket
+def example_uri_root(protocol: str, port: int) -> str:
+    """Returns the iDOM root URI for example notebooks
 
     When examples are running on mybinder.org or in a container created by
     jupyter-repo2docker this is not simply "localhost" or "127.0.0.1".
@@ -15,7 +15,15 @@ def idom_websocket_url(port: int) -> str:
     elif "JUPYTER_SERVER_URL" in os.environ:
         return "%s/proxy/%s" % (os.environ["JUPYTER_SERVER_URL"], port)
     else:
-        return "ws://127.0.0.1:%s" % port + "/stream"
+        return "%s://127.0.0.1:%s" % (protocol, port)
+
+
+class html_link:
+    def __init__(self, href: str, text: Optional[str] = None):
+        self.href, self.text = href, text
+
+    def _repr_html_(self) -> str:
+        return f"<a href='{self.href}' target='_blank'>{self.text or self.href}</a>"
 
 
 def pretty_dict_string(
