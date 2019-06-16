@@ -65,15 +65,18 @@ class Layout:
         return self._root.id
 
     async def trigger(self, target: str, data: Dict[str, Any]) -> None:
+        """Trigger an event handler
+
+        Parameters:
+            target: The ID of the event handler
+            data: Event data passed to the event handler.
+        """
         # It is possible for an element in the frontend to produce an event
         # associated with a backend model that has been deleted. We only handle
         # events if the element and the handler exist in the backend. Otherwise
         # we just ignore the event.
         if target in self._event_handlers:
             await self._event_handlers[target](data)
-
-    def animate(self, function: Callable[[], Awaitable[None]]) -> None:
-        asyncio.ensure_future(function(), loop=self.loop)
 
     def update(self, element: "AbstractElement") -> None:
         asyncio.ensure_future(self._render_to_queue(element), loop=self.loop)
@@ -201,10 +204,10 @@ class Layout:
 
     def _reset_element_state(self, element: AbstractElement) -> None:
         parent_element_id = self._element_state[element.id]["parent"]
-        self._delete_element_state(element.id)
+        self._delete_element_state(element.id, unmount=False)
         self._create_element_state(element, parent_element_id)
 
-    def _delete_element_state(self, element_id: str) -> None:
+    def _delete_element_state(self, element_id: str, unmount: bool = True) -> None:
         old = self._element_state.pop(element_id)
         parent_element_id = old["parent"]
         if self._has_element_state(parent_element_id):
@@ -212,9 +215,10 @@ class Layout:
         for handler_id in old["event_handlers"]:
             del self._event_handlers[handler_id]
         for i in old["inner_elements"]:
+            # don't pass on 'unmount' since that only applies to the root
             self._delete_element_state(i)
         element = old["element_ref"]()
-        if element is not None:
+        if element is not None and unmount:
             element.unmount()
 
 

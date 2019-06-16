@@ -36,7 +36,15 @@ def element(
     """A decorator for defining an :class:`Element`.
 
     Parameters:
-        function: The function that will render a :term:`VDOM` model.
+        function:
+            The function that will render a :term:`VDOM` model.
+        state:
+            A comma seperated string of function parameters that should be retained
+            across updates unless explicitely changed when calling :meth:`Element.update`.
+        run_in_executor:
+            Whether or not to run the given ``function`` in a background thread. This is
+            useful for long running and blocking operations that might prevent other
+            elements from rendering in the meantime.
     """
 
     def setup(func: ElementRenderFunction) -> ElementConstructor:
@@ -174,34 +182,23 @@ class Element(AbstractElement):
         """Schedule this function to run soon, and then render any updates it caused."""
 
         def setup(function: _ANM) -> _ANM:
-            if self._stop_animation:
-                raise RuntimeError(
-                    "Cannot register a new animation hook - animation was stopped"
-                )
+            pacer: Optional[FramePacer]
+            if rate is not None:
+                pacer = FramePacer(rate)
+            else:
+                pacer = None
 
-            if self._layout is not None:
+            def stop() -> None:
+                self._stop_animation = True
 
-                pacer: Optional[FramePacer]
-                if rate is not None:
-                    pacer = FramePacer(rate)
-                else:
-                    pacer = None
+            async def loop() -> None:
+                print(self._stop_animation, self._state_updated)
+                while not self._stop_animation and not self._state_updated:
+                    await function(stop)
+                    if pacer is not None:
+                        await pacer.wait()
 
-                def stop() -> None:
-                    self._stop_animation = True
-
-                async def wrapper() -> None:
-                    if self._layout is not None:
-                        await function(stop)
-                        if not self._state_updated and not self._stop_animation:
-                            if pacer is not None:
-                                await pacer.wait()
-                            # check layout again because this element could
-                            # have been unmounted after the last await
-                            if self._layout is not None:
-                                self._layout.animate(wrapper)
-
-                self._layout.animate(wrapper)
+            asyncio.ensure_future(loop())
 
             return function
 
@@ -235,6 +232,10 @@ class Element(AbstractElement):
             exe = None if self._run_in_executor is True else self._run_in_executor
             # run the function in a new thread so we don't block
             return await loop.run_in_executor(exe, self._render_in_executor, state)
+
+    def unmount(self) -> None:
+        self._stop_animation = True
+        super().unmount()
 
     def _render_in_executor(self, state: Dict[str, Any]) -> Any:
         # we need to set up the event loop since we'll be in a new thread
