@@ -135,7 +135,6 @@ class Element(AbstractElement):
         "_cross_update_parameters",
         "_state",
         "_state_updated",
-        "_stop_animation",
         "_run_in_executor",
     )
 
@@ -155,7 +154,7 @@ class Element(AbstractElement):
         )
         self._state: Dict[str, Any] = {}
         self._state_updated: bool = False
-        self._stop_animation = False
+        self._animation_future: Optional[asyncio.Future[None]] = None
         self._run_in_executor = run_in_executor
 
     def update(self, *args: Any, **kwargs: Any) -> None:
@@ -188,16 +187,14 @@ class Element(AbstractElement):
             else:
                 pacer = None
 
-            def stop() -> None:
-                self._stop_animation = True
-
             async def loop() -> None:
-                while not self._stop_animation and not self._state_updated:
-                    await function(stop)
+                while True:
+                    await function(self._stop_animation)
                     if pacer is not None:
                         await pacer.wait()
 
-            asyncio.ensure_future(loop())
+            # we store this future for later so we can cancel it
+            self._animation_future = asyncio.ensure_future(loop())
 
             return function
 
@@ -208,6 +205,9 @@ class Element(AbstractElement):
 
     async def render(self) -> Any:
         """Render the element's :term:`VDOM` model."""
+        # animations from the previous render should stop
+        self._stop_animation()
+
         # load update and reset for next render
         state = self._state
 
@@ -233,8 +233,12 @@ class Element(AbstractElement):
             return await loop.run_in_executor(exe, self._render_in_executor, state)
 
     def unmount(self) -> None:
-        self._stop_animation = True
+        self._stop_animation()
         super().unmount()
+
+    def _stop_animation(self) -> None:
+        if self._animation_future is not None:
+            self._animation_future.cancel()
 
     def _render_in_executor(self, state: Dict[str, Any]) -> Any:
         # we need to set up the event loop since we'll be in a new thread
