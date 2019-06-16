@@ -129,6 +129,7 @@ class Element(AbstractElement):
     """
 
     __slots__ = (
+        "_animation_future",
         "_function",
         "_function_signature",
         "_cross_update_state",
