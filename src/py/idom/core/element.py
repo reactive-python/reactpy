@@ -136,7 +136,7 @@ class Element(AbstractElement):
         "_state",
         "_state_updated",
         "_stop_animation",
-        "run_in_executor",
+        "_run_in_executor",
     )
 
     def __init__(
