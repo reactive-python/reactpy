@@ -192,7 +192,6 @@ class Element(AbstractElement):
                 self._stop_animation = True
 
             async def loop() -> None:
-                print(self._stop_animation, self._state_updated)
                 while not self._stop_animation and not self._state_updated:
                     await function(stop)
                     if pacer is not None:
