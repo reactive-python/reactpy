@@ -1,10 +1,11 @@
 import abc
 import asyncio
+from concurrent.futures import Executor
 import inspect
 from functools import wraps
 import time
 
-from typing import Dict, Callable, Any, List, Optional, overload, Awaitable
+from typing import Dict, Callable, Any, List, Optional, overload, Awaitable, Union
 
 import idom
 
@@ -22,13 +23,15 @@ def element(function: Callable[..., Any]) -> ElementConstructor:
 
 @overload
 def element(
-    *, state: Optional[str] = None
+    *, state: Optional[str] = None, run_in_executor: Union[bool, Executor] = False
 ) -> Callable[[ElementRenderFunction], ElementConstructor]:
     ...
 
 
 def element(
-    function: Optional[ElementRenderFunction] = None, state: Optional[str] = None
+    function: Optional[ElementRenderFunction] = None,
+    state: Optional[str] = None,
+    run_in_executor: Union[bool, Executor] = False,
 ) -> Callable[..., Any]:
     """A decorator for defining an :class:`Element`.
 
@@ -39,7 +42,7 @@ def element(
     def setup(func: ElementRenderFunction) -> ElementConstructor:
         @wraps(func)
         def constructor(*args: Any, **kwargs: Any) -> Element:
-            element = Element(func, state)
+            element = Element(func, state, run_in_executor)
             element.update(*args, **kwargs)
             return element
 
@@ -125,10 +128,14 @@ class Element(AbstractElement):
         "_state",
         "_state_updated",
         "_stop_animation",
+        "run_in_executor",
     )
 
     def __init__(
-        self, function: ElementRenderFunction, state_parameters: Optional[str]
+        self,
+        function: ElementRenderFunction,
+        state_parameters: Optional[str],
+        run_in_executor: Union[bool, Executor] = False,
     ):
         super().__init__()
         self._function = function
@@ -141,6 +148,7 @@ class Element(AbstractElement):
         self._state: Dict[str, Any] = {}
         self._state_updated: bool = False
         self._stop_animation = False
+        self._run_in_executor = run_in_executor
 
     def update(self, *args: Any, **kwargs: Any) -> None:
         """Schedule this element to render with new parameters."""
@@ -219,7 +227,24 @@ class Element(AbstractElement):
 
         self._state_updated = False
 
-        return await self._function(self, **state)
+        if self._run_in_executor is False:
+            return await self._function(self, **state)
+        else:
+            loop = asyncio.get_event_loop()
+            # use default executor if _run_in_executor was only given as True
+            exe = None if self._run_in_executor is True else self._run_in_executor
+            # run the function in a new thread so we don't block
+            return await loop.run_in_executor(exe, self._render_in_executor, state)
+
+    def _render_in_executor(self, state: Dict[str, Any]) -> Any:
+        # we need to set up the event loop since we'll be in a new thread
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            result = loop.run_until_complete(self._function(self, **state))
+        finally:
+            loop.close()
+        return result
 
     def __repr__(self) -> str:
         qualname = getattr(self._function, "__qualname__", None)
