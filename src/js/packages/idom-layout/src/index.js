@@ -41,9 +41,9 @@ function Layout({ endpoint }) {
         msg.body.render.old.forEach(elementId => {
             delete allModels[elementId];
         });
-        msg.body.render.roots.forEach(updateDynamicElement);
+        updateDynamicElement(msg.body.render.src)
         if (!root) {
-            setRoot(msg.body.render.roots[0]);
+            setRoot(msg.body.render.root);
         }
     };
 

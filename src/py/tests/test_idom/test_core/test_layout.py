@@ -11,15 +11,15 @@ async def test_simple_layout():
     element = simple_element("div")
     layout = idom.Layout(element)
 
-    roots, new, old = await layout.render()
-    assert roots == [element.id]
+    src, new, old = await layout.render()
+    assert src == element.id
     assert new == {element.id: {"tagName": "div"}}
     assert old == []
 
     element.update("table")
 
-    roots, new, old = await layout.render()
-    assert roots == [element.id]
+    src, new, old = await layout.render()
+    assert src == element.id
     assert new == {element.id: {"tagName": "table"}}
     assert old == []
 
@@ -40,9 +40,9 @@ async def test_nested_element_layout():
 
     layout = idom.Layout(parent_element())
 
-    roots, new, old = await layout.render()
+    src, new, old = await layout.render()
 
-    assert roots == [history.parent_1.id]
+    assert src == history.parent_1.id
     assert new == {
         history.parent_1.id: {
             "tagName": "div",
@@ -54,9 +54,9 @@ async def test_nested_element_layout():
 
     history.parent_1.update()
 
-    roots, new, old = await layout.render()
+    src, new, old = await layout.render()
 
-    assert roots == [history.parent_1.id]
+    assert src == history.parent_1.id
     assert new == {
         history.parent_1.id: {
             "tagName": "div",
