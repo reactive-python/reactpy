@@ -131,7 +131,7 @@ class HtmlParser(_HTMLParser):
             style = attrs["style"]
             if isinstance(style, str):
                 style_dict = {}
-                for k, v in (part.split(":", 1) for part in style.split(";")):
+                for k, v in (part.split(":", 1) for part in style.split(";") if part):
                     title_case_key = k.title().replace("-", "")
                     camel_case_key = title_case_key[:1].lower() + title_case_key[1:]
                     style_dict[camel_case_key] = v
