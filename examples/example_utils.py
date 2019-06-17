@@ -1,27 +1,34 @@
 import os
-from collections.abc import Mapping
+from typing import Mapping, Any, Optional
 
 
-def localhost(protocol, port):
-    """Returns the host URL.
+def example_uri_root(protocol: str, port: int) -> str:
+    """Returns the iDOM root URI for example notebooks
 
     When examples are running on mybinder.org or in a container created by
     jupyter-repo2docker this is not simply "localhost" or "127.0.0.1".
     Instead we use a route produced by ``jupyter_server_proxy`` instead.
     """
     if "JUPYTERHUB_OAUTH_CALLBACK_URL" in os.environ:
-        protocol += "s"
-        form = protocol + "://hub.mybinder.org%s/proxy/%s"
         auth = os.environ["JUPYTERHUB_OAUTH_CALLBACK_URL"].rsplit("/", 1)[0]
-        return form % (auth, port)
+        return "%s/proxy/%s" % (auth, port)
     elif "JUPYTER_SERVER_URL" in os.environ:
         return "%s/proxy/%s" % (os.environ["JUPYTER_SERVER_URL"], port)
     else:
-        form = protocol + "://127.0.0.1:%s"
-        return form % port
+        return "%s://127.0.0.1:%s" % (protocol, port)
 
 
-def pretty_dict_string(value, indent=1, depth=0):
+class html_link:
+    def __init__(self, href: str, text: Optional[str] = None):
+        self.href, self.text = href, text
+
+    def _repr_html_(self) -> str:
+        return f"<a href='{self.href}' target='_blank'>{self.text or self.href}</a>"
+
+
+def pretty_dict_string(
+    value: Mapping[Any, Any], indent: int = 1, depth: int = 0
+) -> str:
     """Simple function for printing out nested mappings."""
 
     last_indent = " " * (indent * depth)

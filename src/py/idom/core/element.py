@@ -1,10 +1,11 @@
 import abc
 import asyncio
+from concurrent.futures import Executor
 import inspect
 from functools import wraps
 import time
 
-from typing import Dict, Callable, Any, List, Optional, overload, Awaitable
+from typing import Dict, Callable, Any, List, Optional, overload, Awaitable, Union
 
 import idom
 
@@ -22,24 +23,34 @@ def element(function: Callable[..., Any]) -> ElementConstructor:
 
 @overload
 def element(
-    *, state: Optional[str] = None
+    *, state: Optional[str] = None, run_in_executor: Union[bool, Executor] = False
 ) -> Callable[[ElementRenderFunction], ElementConstructor]:
     ...
 
 
 def element(
-    function: Optional[ElementRenderFunction] = None, state: Optional[str] = None
+    function: Optional[ElementRenderFunction] = None,
+    state: Optional[str] = None,
+    run_in_executor: Union[bool, Executor] = False,
 ) -> Callable[..., Any]:
     """A decorator for defining an :class:`Element`.
 
     Parameters:
-        function: The function that will render a :term:`VDOM` model.
+        function:
+            The function that will render a :term:`VDOM` model.
+        state:
+            A comma seperated string of function parameters that should be retained
+            across updates unless explicitely changed when calling :meth:`Element.update`.
+        run_in_executor:
+            Whether or not to run the given ``function`` in a background thread. This is
+            useful for long running and blocking operations that might prevent other
+            elements from rendering in the meantime.
     """
 
     def setup(func: ElementRenderFunction) -> ElementConstructor:
         @wraps(func)
         def constructor(*args: Any, **kwargs: Any) -> Element:
-            element = Element(func, state)
+            element = Element(func, state, run_in_executor)
             element.update(*args, **kwargs)
             return element
 
@@ -71,7 +82,7 @@ class AbstractElement(abc.ABC):
     async def render(self) -> Any:
         ...
 
-    def mount(self, layout: "idom.Layout") -> None:
+    async def mount(self, layout: "idom.Layout") -> None:
         """Mount a layout to the element instance.
 
         Occurs just before rendering the element for the **first** time.
@@ -82,7 +93,7 @@ class AbstractElement(abc.ABC):
         """Whether or not this element is associated with a layout."""
         return self._layout is not None
 
-    def unmount(self) -> None:
+    async def unmount(self) -> None:
         self._layout = None
 
     def _update_layout(self) -> None:
@@ -118,17 +129,21 @@ class Element(AbstractElement):
     """
 
     __slots__ = (
+        "_animation_futures",
         "_function",
         "_function_signature",
         "_cross_update_state",
         "_cross_update_parameters",
         "_state",
         "_state_updated",
-        "_stop_animation",
+        "_run_in_executor",
     )
 
     def __init__(
-        self, function: ElementRenderFunction, state_parameters: Optional[str]
+        self,
+        function: ElementRenderFunction,
+        state_parameters: Optional[str],
+        run_in_executor: Union[bool, Executor] = False,
     ):
         super().__init__()
         self._function = function
@@ -140,7 +155,8 @@ class Element(AbstractElement):
         )
         self._state: Dict[str, Any] = {}
         self._state_updated: bool = False
-        self._stop_animation = False
+        self._animation_futures: List[asyncio.Future[None]] = []
+        self._run_in_executor = run_in_executor
 
     def update(self, *args: Any, **kwargs: Any) -> None:
         """Schedule this element to render with new parameters."""
@@ -148,52 +164,37 @@ class Element(AbstractElement):
             # only tell layout to render on first update call
             self._state = {}
             self._state_updated = True
+            self._cancel_animation()
             self._update_layout()
         bound = self._function_signature.bind_partial(None, *args, **kwargs)
         self._state.update(list(bound.arguments.items())[1:])
 
     @overload
-    def animate(self, function: _ANM, rate: Optional[float] = None) -> _ANM:
+    def animate(self, function: _ANM, rate: float = 0) -> _ANM:
         ...
 
     @overload
-    def animate(self, *, rate: Optional[float] = None) -> Callable[[_ANM], _ANM]:
+    def animate(self, *, rate: float = 0) -> Callable[[_ANM], _ANM]:
         ...
 
     def animate(
-        self, function: Optional[_ANM] = None, rate: Optional[float] = None
+        self, function: Optional[_ANM] = None, rate: float = 0
     ) -> Callable[..., Any]:
         """Schedule this function to run soon, and then render any updates it caused."""
 
         def setup(function: _ANM) -> _ANM:
-            if self._stop_animation:
-                raise RuntimeError(
-                    "Cannot register a new animation hook - animation was stopped"
-                )
+            pacer = FramePacer(rate)
 
-            if self._layout is not None:
+            async def animation() -> None:
+                while True:
+                    await function(future.cancel)
+                    # we need another await here in order to catch
+                    # a cancellation call (not sure why though)
+                    await pacer.wait()
 
-                pacer: Optional[FramePacer]
-                if rate is not None:
-                    pacer = FramePacer(rate)
-                else:
-                    pacer = None
-
-                def stop() -> None:
-                    self._stop_animation = True
-
-                async def wrapper() -> None:
-                    if self._layout is not None:
-                        await function(stop)
-                        if not self._state_updated and not self._stop_animation:
-                            if pacer is not None:
-                                await pacer.wait()
-                            # check layout again because this element could
-                            # have been unmounted after the last await
-                            if self._layout is not None:
-                                self._layout.animate(wrapper)
-
-                self._layout.animate(wrapper)
+            # we store this future for later so we can cancel it
+            future = asyncio.ensure_future(animation())
+            self._animation_futures.append(future)
 
             return function
 
@@ -204,6 +205,9 @@ class Element(AbstractElement):
 
     async def render(self) -> Any:
         """Render the element's :term:`VDOM` model."""
+        # animations from the previous render should stop
+        await self._stop_animation()
+
         # load update and reset for next render
         state = self._state
 
@@ -219,7 +223,41 @@ class Element(AbstractElement):
 
         self._state_updated = False
 
-        return await self._function(self, **state)
+        if self._run_in_executor is False:
+            return await self._function(self, **state)
+        else:
+            loop = asyncio.get_event_loop()
+            # use default executor if _run_in_executor was only given as True
+            exe = None if self._run_in_executor is True else self._run_in_executor
+            # run the function in a new thread so we don't block
+            return await loop.run_in_executor(exe, self._render_in_executor, state)
+
+    async def unmount(self) -> None:
+        await self._stop_animation()
+        await super().unmount()
+
+    def _cancel_animation(self) -> None:
+        for f in self._animation_futures:
+            f.cancel()
+
+    async def _stop_animation(self) -> None:
+        self._cancel_animation()
+        futures = self._animation_futures[:]
+        self._animation_futures.clear()
+        try:
+            await asyncio.gather(*futures)
+        except asyncio.CancelledError:
+            pass
+
+    def _render_in_executor(self, state: Dict[str, Any]) -> Any:
+        # we need to set up the event loop since we'll be in a new thread
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            result = loop.run_until_complete(self._function(self, **state))
+        finally:
+            loop.close()
+        return result
 
     def __repr__(self) -> str:
         qualname = getattr(self._function, "__qualname__", None)

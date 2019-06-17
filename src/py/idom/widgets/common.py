@@ -89,17 +89,15 @@ def hotswap(
         if shared:
             current_root.set(self)
         make_element = current_swap.get()
-        element = make_element()
-        last_element.set(element)
-        return element
-
-    def swap(element: ElementConstructor, *args: Any, **kwargs: Any) -> None:
-        last = last_element.get()
-        if last is not None:
+        new = make_element()
+        old = last_element.set(new)
+        if isinstance(old, Element):
             # because the hotswap is done via side-effects there's no way for
             # the layout to know to unmount the old element so we do it manually
-            last.unmount()
+            await old.unmount()
+        return new
 
+    def swap(element: ElementConstructor, *args: Any, **kwargs: Any) -> None:
         current_swap.set(lambda: element(*args, **kwargs))
 
         if shared:

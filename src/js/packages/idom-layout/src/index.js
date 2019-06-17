@@ -10,6 +10,22 @@ function updateDynamicElement(elementId) {
 }
 
 function Layout({ endpoint }) {
+    // handle relative endpoint URI
+    if ( endpoint.startsWith(".") || endpoint.startsWith("/") ) {
+        let loc = window.location;
+        let protocol;
+        if (loc.protocol === "https:") {
+            protocol = "wss:";
+        } else {
+            protocol = "ws:";
+        }
+        let new_uri = protocol + "//" + loc.host
+        if ( endpoint.startsWith(".") ) {
+            new_url += loc.pathname + "/"
+        }
+        endpoint =  new_uri + endpoint;
+    }
+
     const socket = useMemo(
         () => {
             return new WebSocket(endpoint);
@@ -25,9 +41,9 @@ function Layout({ endpoint }) {
         msg.body.render.old.forEach(elementId => {
             delete allModels[elementId];
         });
-        msg.body.render.roots.forEach(updateDynamicElement);
+        updateDynamicElement(msg.body.render.src)
         if (!root) {
-            setRoot(msg.body.render.roots[0]);
+            setRoot(msg.body.render.root);
         }
     };
 

@@ -10,6 +10,8 @@ from typing import (
     Union,
     Any,
     Set,
+    Generic,
+    TypeVar,
     Optional,
     AsyncIterator,
     Awaitable,
@@ -24,7 +26,11 @@ except ImportError:
     vdom = None
 
 
-RenderType = Tuple[List[str], Dict[str, Dict[str, Any]], List[str]]
+RenderBundle = Tuple[
+    str,  # element ID for the update's source
+    Dict[str, Dict[str, Any]],  # maps element IDs to new models
+    List[str],  # list element IDs that have been deleted
+]
 
 
 class RenderError(Exception):
@@ -36,10 +42,7 @@ class Layout:
 
     __slots__ = (
         "_loop",
-        "_render_semaphore",
-        "_update_queue",
-        "_animate_queue",
-        "_rendering",
+        "_rendering_queue",
         "_root",
         "_event_handlers",
         "_element_state",
@@ -56,11 +59,7 @@ class Layout:
         self._element_state: Dict[str, Dict[str, Any]] = {}
         self._event_handlers: Dict[str, EventHandler] = {}
         self._root = root
-        self._update_queue: List[AbstractElement] = []
-        self._render_semaphore = asyncio.Semaphore(1, loop=loop)
-        self._animate_queue: List[Callable[[], Awaitable[None]]] = []
-        self._create_element_state(root, None)
-        self._rendering = False
+        self._rendering_queue: FutureQueue[RenderBundle] = FutureQueue()
         self.update(root)
 
     @property
@@ -71,7 +70,13 @@ class Layout:
     def root(self) -> str:
         return self._root.id
 
-    async def apply(self, target: str, data: Dict[str, Any]) -> None:
+    async def trigger(self, target: str, data: Dict[str, Any]) -> None:
+        """Trigger an event handler
+
+        Parameters:
+            target: The ID of the event handler
+            data: Event data passed to the event handler.
+        """
         # It is possible for an element in the frontend to produce an event
         # associated with a backend model that has been deleted. We only handle
         # events if the element and the handler exist in the backend. Otherwise
@@ -79,69 +84,36 @@ class Layout:
         if target in self._event_handlers:
             await self._event_handlers[target](data)
 
-    def animate(self, function: Callable[[], Awaitable[None]]) -> None:
-        self._animate_queue.append(function)
-        if self._render_semaphore.locked():
-            # We don't want to release more than once because
-            # all changes are renderer in one go. Multiple releases
-            # could cause another render even though there were no
-            # no updates from the last.
-            self._render_semaphore.release()
-
     def update(self, element: "AbstractElement") -> None:
-        self._update_queue.append(element)
-        if self._render_semaphore.locked():
-            # We don't want to release more than once because
-            # all changes are renderer in one go. Multiple releases
-            # could cause another render even though there were no
-            # no updates from the last.
-            self._render_semaphore.release()
+        self._rendering_queue.put(self._render(element))
 
-    async def render(self) -> RenderType:
-        if self._rendering:
-            raise RuntimeError("Layout is already awaiting a render.")
-        else:
-            self._rendering = True
+    async def render(self) -> RenderBundle:
+        return await self._rendering_queue.get()
 
-        await self._render_semaphore.acquire()
-
+    async def _render(self, element: AbstractElement) -> RenderBundle:
         # current element ids
         current: Set[str] = set(self._element_state)
 
-        callbacks = self._animate_queue[:]
-        self._animate_queue.clear()
-        asyncio.ensure_future(asyncio.gather(*[cb() for cb in callbacks]))
-
-        # root elements which updated
-        roots: List[str] = []
         # all element updates
         new: Dict[str, Dict[str, Any]] = {}
 
-        updates = self._update_queue[:]
-        self._update_queue.clear()
-
-        for element in updates:
-            parent = self._element_state[element.id]["parent"]
-            async for element_id, model in self._render_element(element, parent):
-                new[element_id] = model
-            roots.append(element.id)
+        parent = self._element_parent(element)
+        async for element_id, model in self._render_element(element, parent):
+            new[element_id] = model
 
         # all deleted element ids
         old: List[str] = list(current.difference(self._element_state))
-
-        self._rendering = False
-
-        return roots, new, old
+        return element.id, new, old
 
     async def _render_element(
-        self, element: "AbstractElement", parent_element_id: str
+        self, element: "AbstractElement", parent_element_id: Optional[str]
     ) -> AsyncIterator[Tuple[str, Dict[str, Any]]]:
         try:
             element_id = element.id
             if self._has_element_state(element_id):
-                self._reset_element_state(element)
+                await self._reset_element_state(element)
             else:
-                self._create_element_state(element, parent_element_id)
+                await self._create_element_state(element, parent_element_id)
 
             model = await element.render()
 
@@ -222,7 +194,17 @@ class Layout:
     def _has_element_state(self, element_id: str) -> bool:
         return element_id in self._element_state
 
-    def _create_element_state(
+    def _element_parent(self, element: AbstractElement) -> Optional[str]:
+        try:
+            parent_id: str = self._element_state[element.id]["parent"]
+        except KeyError:
+            if element.id != self.root:
+                raise
+            return None
+        else:
+            return parent_id
+
+    async def _create_element_state(
         self, element: AbstractElement, parent_element_id: Optional[str]
     ) -> None:
         if parent_element_id is not None and self._has_element_state(parent_element_id):
@@ -233,14 +215,16 @@ class Layout:
             "event_handlers": [],
             "element_ref": ref(element),
         }
-        element.mount(self)
+        await element.mount(self)
 
-    def _reset_element_state(self, element: AbstractElement) -> None:
+    async def _reset_element_state(self, element: AbstractElement) -> None:
         parent_element_id = self._element_state[element.id]["parent"]
-        self._delete_element_state(element.id)
-        self._create_element_state(element, parent_element_id)
+        await self._delete_element_state(element.id, unmount=False)
+        await self._create_element_state(element, parent_element_id)
 
-    def _delete_element_state(self, element_id: str) -> None:
+    async def _delete_element_state(
+        self, element_id: str, unmount: bool = True
+    ) -> None:
         old = self._element_state.pop(element_id)
         parent_element_id = old["parent"]
         if self._has_element_state(parent_element_id):
@@ -248,10 +232,43 @@ class Layout:
         for handler_id in old["event_handlers"]:
             del self._event_handlers[handler_id]
         for i in old["inner_elements"]:
-            self._delete_element_state(i)
+            # don't pass on 'unmount' since that only applies to the root
+            await self._delete_element_state(i)
         element = old["element_ref"]()
-        if element is not None:
-            element.unmount()
+        if element is not None and unmount:
+            await element.unmount()
+
+
+# future queue type
+_FQT = TypeVar("_FQT")
+
+
+class FutureQueue(Generic[_FQT]):
+    """A queue which returns the result of futures as they complete."""
+
+    def __init__(self) -> None:
+        self._queue: asyncio.Queue["asyncio.Future[_FQT]"] = asyncio.Queue()
+
+    def put(self, awaitable: Awaitable[_FQT]) -> "asyncio.Future[_FQT]":
+        """Put an awaitable in the queue
+
+        The result will be returned by a call to :meth:`FutureQueue.get` only
+        when the awaitable has completed.
+        """
+
+        async def wrapper() -> _FQT:
+            try:
+                return await awaitable
+            finally:
+                self._queue.put_nowait(future)
+
+        future = asyncio.ensure_future(wrapper())
+        return future
+
+    async def get(self) -> _FQT:
+        """Get the result of a queued awaitable that has completed."""
+        future = await self._queue.get()
+        return await future
 
 
 def _from_vdom(node: Any) -> Dict[str, Any]:
