@@ -82,7 +82,7 @@ class AbstractElement(abc.ABC):
     async def render(self) -> Any:
         ...
 
-    def mount(self, layout: "idom.Layout") -> None:
+    async def mount(self, layout: "idom.Layout") -> None:
         """Mount a layout to the element instance.
 
         Occurs just before rendering the element for the **first** time.
@@ -93,7 +93,7 @@ class AbstractElement(abc.ABC):
         """Whether or not this element is associated with a layout."""
         return self._layout is not None
 
-    def unmount(self) -> None:
+    async def unmount(self) -> None:
         self._layout = None
 
     def _update_layout(self) -> None:
@@ -129,7 +129,7 @@ class Element(AbstractElement):
     """
 
     __slots__ = (
-        "_animation_future",
+        "_animation_futures",
         "_function",
         "_function_signature",
         "_cross_update_state",
@@ -155,7 +155,7 @@ class Element(AbstractElement):
         )
         self._state: Dict[str, Any] = {}
         self._state_updated: bool = False
-        self._animation_future: Optional[asyncio.Future[None]] = None
+        self._animation_futures: List[asyncio.Future[None]] = []
         self._run_in_executor = run_in_executor
 
     def update(self, *args: Any, **kwargs: Any) -> None:
@@ -164,38 +164,37 @@ class Element(AbstractElement):
             # only tell layout to render on first update call
             self._state = {}
             self._state_updated = True
+            self._cancel_animation()
             self._update_layout()
         bound = self._function_signature.bind_partial(None, *args, **kwargs)
         self._state.update(list(bound.arguments.items())[1:])
 
     @overload
-    def animate(self, function: _ANM, rate: Optional[float] = None) -> _ANM:
+    def animate(self, function: _ANM, rate: float = 0) -> _ANM:
         ...
 
     @overload
-    def animate(self, *, rate: Optional[float] = None) -> Callable[[_ANM], _ANM]:
+    def animate(self, *, rate: float = 0) -> Callable[[_ANM], _ANM]:
         ...
 
     def animate(
-        self, function: Optional[_ANM] = None, rate: Optional[float] = None
+        self, function: Optional[_ANM] = None, rate: float = 0
     ) -> Callable[..., Any]:
         """Schedule this function to run soon, and then render any updates it caused."""
 
         def setup(function: _ANM) -> _ANM:
-            pacer: Optional[FramePacer]
-            if rate is not None:
-                pacer = FramePacer(rate)
-            else:
-                pacer = None
+            pacer = FramePacer(rate)
 
-            async def loop() -> None:
+            async def animation() -> None:
                 while True:
-                    await function(self._stop_animation)
-                    if pacer is not None:
-                        await pacer.wait()
+                    await function(future.cancel)
+                    # we need another await here in order to catch
+                    # a cancellation call (not sure why though)
+                    await pacer.wait()
 
             # we store this future for later so we can cancel it
-            self._animation_future = asyncio.ensure_future(loop())
+            future = asyncio.ensure_future(animation())
+            self._animation_futures.append(future)
 
             return function
 
@@ -207,7 +206,7 @@ class Element(AbstractElement):
     async def render(self) -> Any:
         """Render the element's :term:`VDOM` model."""
         # animations from the previous render should stop
-        self._stop_animation()
+        await self._stop_animation()
 
         # load update and reset for next render
         state = self._state
@@ -233,13 +232,22 @@ class Element(AbstractElement):
             # run the function in a new thread so we don't block
             return await loop.run_in_executor(exe, self._render_in_executor, state)
 
-    def unmount(self) -> None:
-        self._stop_animation()
-        super().unmount()
+    async def unmount(self) -> None:
+        await self._stop_animation()
+        await super().unmount()
 
-    def _stop_animation(self) -> None:
-        if self._animation_future is not None:
-            self._animation_future.cancel()
+    def _cancel_animation(self) -> None:
+        for f in self._animation_futures:
+            f.cancel()
+
+    async def _stop_animation(self) -> None:
+        self._cancel_animation()
+        futures = self._animation_futures[:]
+        self._animation_futures.clear()
+        try:
+            await asyncio.gather(*futures)
+        except asyncio.CancelledError:
+            pass
 
     def _render_in_executor(self, state: Dict[str, Any]) -> Any:
         # we need to set up the event loop since we'll be in a new thread
