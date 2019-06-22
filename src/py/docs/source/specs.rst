@@ -1,0 +1,202 @@
+Specifications
+==============
+
+Describes various datastructures and protocols used to define and communicate virtual
+document object models (:term:`VDOM`). These specifications shouldn't be relied upon just
+yet as they have not yet been fully adopted by organizations like
+`Jupyter <https://jupyter.org>`_ and `Nteract <https://nteract.io>`_. Check out their
+VDOM specification
+`here <https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md>`_.
+
+
+HTML to VDOM
+::::::::::::
+
+A set of definitions that explain how ``idom`` creates a virtual representation of
+the document object model. We'll begin by looking at a bit of HTML that we'll convert
+into its VDOM representation:
+
+.. code-block:: html
+
+    <div>
+      Put your name here:
+      <input
+        type="text"
+        minlength="4"
+        maxlength="8"
+        onchange="a_python_callback(event.target.value)"
+      />
+    </div>
+
+.. note::
+
+  For context, the callback on the backend of the ``onchange`` event would looks like this:
+
+  .. code-block:: python
+
+      events = idom.Events()
+
+      @events.on("Change", using="new=target.value")
+      def handle_input_change_event(new):
+          ...
+
+We could use the :func:`idom.tools.html_to_vdom` utility to make this conversion for us,
+but we'll take this step by step in order to show exactly where each piece of the VDOM
+model comes from. To get started we'll convert the outer ``<div/>``:
+
+.. code-block:: python
+
+    {
+        "tagName": "div",
+        "children": [
+            "To perform an action",
+            ...
+        ],
+        "attributes": {},
+        "eventHandlers": {}
+    }
+
+.. note::
+
+    As we move though our converstion we'll be using ``...`` to fill in places that we
+    haven't converted yet.
+
+In this simple case, all we've done is take the name of the HTML element (``div`` in
+this case) and inserted it into the ``tagName`` field of a dictionary. Then we've taken
+the inner HTML and added to a list of children where the text ``"to perform an action"``
+has been made into a string, and the inner ``input`` (yet to be converted) will be
+expanded out into its own VDOM representation. Since the outer ``div`` is pretty simple
+there aren't any ``attributes`` or ``eventHandlers``.
+
+No we come to the inner ``input``. If we expand this out now we'll get the following:
+
+.. code-block:: python
+
+    {
+        "tagName": "div",
+        "children": [
+            "To perform an action",
+            {
+                "tagName": "input",
+                "children": [],
+                "attributes": {
+                    "type": "text",
+                    "minLength": 4,
+                    "maxLength": 8
+                },
+                "eventHandlers": ...
+            }
+        ],
+        "attributes": {},
+        "eventHandlers": {}
+    }
+
+Here we've had to add some attributes to our VDOM. Take note of the differing
+capitalization - instead of using all lowercase (an HTML convention) we've used
+`camelCase <https://en.wikipedia.org/wiki/Camel_case>`_ which is very common
+in JavaScript.
+
+Last, but not least we come to the ``eventHandlers`` for the ``input``:
+
+.. code-block:: python
+
+    {
+        "tagName": "div",
+        "children": [
+            "To perform an action",
+            {
+                "tagName": "input",
+                "children": [],
+                "attributes": {
+                    "type": "text",
+                    "minLength": 4,
+                    "maxLength": 8
+                },
+                "eventHandlers": {
+                    "onChange": {
+                      "target": "unique-id-of-a_python_callback",
+                      "eventProps": ["target.value"],
+                      "preventDefault": False,
+                      "stopPropagation": False
+                    }
+                }
+            }
+        ],
+        "attributes": {},
+        "eventHandlers": {}
+    }
+
+Again we've changed the all lowercase ``onchange`` into a cameCase ``onChange`` event
+type name. The various properties for the ``onChange`` handler are:
+
+- ``target``: the unique ID for a Python callback that exists in the backend.
+
+- ``eventProps``: A list of strings indicating the data that the Python callback requires.
+
+- ``preventDefault``: Stop the event's default action. More info
+  `here <https://developer.mozilla.org/en-US/docs/Web/API/Event/preventDefault>`__.
+
+- ``stopPropagration``: prevent the event from bubbling up through the DOM. More info
+  `here <https://developer.mozilla.org/en-US/docs/Web/API/Event/stopPropagation>`__.
+
+
+Communication Protocol
+::::::::::::::::::::::
+
+Instead of sending a complete representation of a VDOM view to the browser to be
+rendered, iDOM sends diffs in order to improve performance. This is done by flattening
+out the VDOM model into a mapping whose keys are unique IDs and whose values are models
+that can specify their children by referencing those IDs. For example, if we take the
+VDOM from above we could rewrite it as:
+
+.. code-block:: python
+
+    {
+      "2e9f417bd9": {
+        "tagName": "div",
+        "children": [
+          {"type": "str", "data": "To perform an action"},
+          {"type": "ref", "data": "2a4507c31c"}
+        ]
+      }
+      "2a4507c31c": {
+          "tagName": "input",
+          "children": [],
+          "attributes": {
+              "type": "text",
+              "minLength": 4,
+              "maxLength": 8
+          },
+          "eventHandlers": {
+              "onChange": {
+                "target": "unique-id-of-a_python_callback",
+                "eventProps": ["target.value"],
+                "preventDefault": False,
+                "stopPropagation": False
+              }
+          }
+      }
+    }
+
+Here we see that the ``children`` of our ``<div/>`` contain objects which specify types:
+
+- ``str``: text
+
+- ``obj``: VDOM
+
+- ``ref``: a string reference VDOM
+
+In particular, one of the ``div``'s children is a ``ref`` to a model with the ID
+``2a4507c31c``. This makes it very easy to swap out the model at that ID with something
+new. Instead of having to specify the path to a changed element you only need to indicate
+its ID. So when iDOM sends an update to the browser it just sends the subset of the greater
+model that changed by communicating those model IDs and their new representation.
+
+
+VDOM Diff Schema
+................
+
+To clearly describe a VDOM diff we've created a `JSON Schema <https://json-schema.org/>`_:
+
+.. literalinclude:: ./mimetype.json
+   :language: json
