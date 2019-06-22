@@ -1,32 +1,8 @@
-iDOM
-====
+Getting Started
+===============
 
-Try it now with Binder! |launch-binder|
-
-Libraries for defining and controlling interactive webpages with Python
-3.6 and above.
-
-.. toctree::
-    :maxdepth: 1
-
-    install
-    api
-    specs
-    glossary
-
-
-Early Days
-----------
-
-iDOM is still young. If you have ideas or find a bug, be sure to post an
-`issue`_ or create a `pull request`_. Thanks in advance!
-
-
-At a Glance
------------
-
-Let's use iDOM to create a simple slideshow which changes whenever a
-user clicks an image:
+Let's reexamine the example that you may have seen :ref:`at a glance <At a Glance>` on the
+homepage:
 
 .. code:: python
 
@@ -45,26 +21,7 @@ user clicks an image:
 
    idom.SimpleServer(Slideshow).daemon("localhost", 8765).join()
 
-Running this will serve our slideshow to
-``"https://localhost:8765/idom/client/index.html"``
-
-.. image:: https://picsum.photos/700/300?random
-
-You could even display the same thing in a Jupyter notebook!
-
-.. code:: python
-
-   idom.display("jupyter", "https://localhost:8765/idom/stream")
-
-Every click will then cause the image to change (it won’t here of
-course).
-
-
-Breaking it Down
-----------------
-
-That might have been a bit much to throw out at once. Let’s break down
-each piece of the example above:
+Since this may have been a lot to take in at once we'll break it down piece by piece:
 
 .. code:: python
 
@@ -135,14 +92,8 @@ network is not documented yet.
 .. Links
 .. =====
 
-.. _issue: https://github.com/rmorshea/idom/issues
-.. _pull request: https://github.com/rmorshea/idom/pulls
 .. _VDOM event specification: https://github.com/nteract/vdom/blob/master/docs/event-spec.md
 .. _VDOM mimetype specification: https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md
 .. _React events: https://reactjs.org/docs/events.html
 .. _asynchronous function: https://realpython.com/async-io-python/
 .. _ReactJS: https://reactjs.org/docs/faq-internals.html
-
-
-.. |launch-binder| image:: https://mybinder.org/badge_logo.svg
- :target: https://mybinder.org/v2/gh/rmorshea/idom/master?filepath=examples%2Fintroduction.ipynb

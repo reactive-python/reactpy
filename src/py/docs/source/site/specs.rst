@@ -1,6 +1,10 @@
 Specifications
 ==============
 
+.. contents::
+  :local:
+  :depth: 1
+
 Describes various datastructures and protocols used to define and communicate virtual
 document object models (:term:`VDOM`). These specifications shouldn't be relied upon just
 yet as they have not yet been fully adopted by organizations like
@@ -9,8 +13,8 @@ VDOM specification
 `here <https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md>`_.
 
 
-HTML to VDOM
-::::::::::::
+VDOM Mimetype
+-------------
 
 A set of definitions that explain how ``idom`` creates a virtual representation of
 the document object model. We'll begin by looking at a bit of HTML that we'll convert
@@ -61,7 +65,7 @@ model comes from. To get started we'll convert the outer ``<div/>``:
     As we move though our converstion we'll be using ``...`` to fill in places that we
     haven't converted yet.
 
-In this simple case, all we've done is take the name of the HTML element (``div`` in
+In this simple case, all we've::::::::::::: done is take the name of the HTML element (``div`` in
 this case) and inserted it into the ``tagName`` field of a dictionary. Then we've taken
 the inner HTML and added to a list of children where the text ``"to perform an action"``
 has been made into a string, and the inner ``input`` (yet to be converted) will be
@@ -73,7 +77,7 @@ No we come to the inner ``input``. If we expand this out now we'll get the follo
 .. code-block:: python
 
     {
-        "tagName": "div",
+        "tagName": "div",:::::::::::::
         "children": [
             "To perform an action",
             {
@@ -95,7 +99,7 @@ Here we've had to add some attributes to our VDOM. Take note of the differing
 capitalization - instead of using all lowercase (an HTML convention) we've used
 `camelCase <https://en.wikipedia.org/wiki/Camel_case>`_ which is very common
 in JavaScript.
-
+................
 Last, but not least we come to the ``eventHandlers`` for the ``input``:
 
 .. code-block:: python
@@ -140,8 +144,8 @@ type name. The various properties for the ``onChange`` handler are:
   `here <https://developer.mozilla.org/en-US/docs/Web/API/Event/stopPropagation>`__.
 
 
-Communication Protocol
-::::::::::::::::::::::
+Diffing with VDOM
+-----------------
 
 Instead of sending a complete representation of a VDOM view to the browser to be
 rendered, iDOM sends diffs in order to improve performance. This is done by flattening
@@ -164,7 +168,7 @@ VDOM from above we could rewrite it as:
           "children": [],
           "attributes": {
               "type": "text",
-              "minLength": 4,
+              "minLengt................h": 4,
               "maxLength": 8
           },
           "eventHandlers": {
@@ -178,7 +182,7 @@ VDOM from above we could rewrite it as:
       }
     }
 
-Here we see that the ``children`` of our ``<div/>`` contain objects which specify types:
+Here we see that the ``................children`` of our ``<div/>`` contain objects which specify types:
 
 - ``str``: text
 
@@ -194,7 +198,7 @@ model that changed by communicating those model IDs and their new representation
 
 
 VDOM Diff Schema
-................
+----------------
 
 To clearly describe a VDOM diff we've created a `JSON Schema <https://json-schema.org/>`_:
 

@@ -14,7 +14,7 @@
         "attributes": {"type": "object"},
         "eventHandlers": {"$ref": "#/definitions/eventHandlers"}
       }
-    }
+    },
     "eventHandlers": {
       "type": "object",
       "description": "maps an event type name to an event handler definition",
