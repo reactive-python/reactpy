@@ -1,5 +1,5 @@
-Install
-=======
+Installation
+============
 
 How to install iDOM.
 
@@ -30,15 +30,28 @@ The source code for iDOM is hosted on GitHub so you'll need git_ to download it:
     git clone https://github.com/rmorshea/idom.git
     cd idom
 
-At this point you should be able to run an install script:
+At this point you should be able to run this install command to:
+
+- Install an editable version of the Python code
+
+- Transpile the Javascript and copy it to ``src/py/idom/static``
+
+- Install some pre-commit hooks for Git
 
 .. code-block:: bash
 
     pip install -e . -r requirements/dev.txt && pre-commit install
 
 Any time you modify a Javascript client library and want it to be served directly from
-``idom.server`` you'll need to re-run this script to build your changes and copy them
-into the expected static file folder within ``src/py/idom/static``.
+``idom.server`` you'll need to transpile the Javascript again and copy it to the
+``src/py/idom/static`` folder. Don't worry though, you can do this by simply
+re-install iDOM via ``pip``:
+
+.. code-block:: bash
+
+    pip install -e .
+
+
 
 
 .. Links
