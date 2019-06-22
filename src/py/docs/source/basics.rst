@@ -6,20 +6,21 @@ homepage:
 
 .. code:: python
 
-   import idom
+    import idom
 
-   @idom.element
-   async def Slideshow(self, index=0):
-       events = idom.Events()
+    @idom.element
+    async def Slideshow(self, index=0):
+        events = idom.Events()
 
-       @events.on("click")
-       async def change():
-           self.update(index + 1)
+        @events.on("click")
+        async def change():
+            self.update(index + 1)
 
-       url = f"https://picsum.photos/800/300?image={index}"
-       return idom.node("img", src=url, eventHandlers=events)
+        url = f"https://picsum.photos/800/300?image={index}"
+        return idom.node("img", src=url, eventHandlers=events)
 
-   idom.SimpleServer(Slideshow).daemon("localhost", 8765).join()
+    server = idom.server.sanic.PerClientState(Slideshow)
+    server.daemon("localhost", 8765).join()
 
 Since this may have been a lot to take in at once we'll break it down piece by piece:
 
@@ -48,7 +49,7 @@ specification`_.
 .. code:: python
 
        @events.on("click")
-       def change():
+       async def change():
            self.update(index + 1)
 
 By using the ``idom.Events()`` object we created above, we can register
@@ -75,19 +76,16 @@ and will respond to the ``events`` we defined earlier. Similarly to the ``events
 
 .. code-block:: python
 
-    idom.SimpleServer(Slideshow).daemon("localhost", 8765).join()
-
-.. note::
-
-  The server is considered "simple" because
-  each client that connects will have their own view and state. Using a ``SharedServer``
-  instead would cause the views of all connecting clients to have a shared state.
+    server = idom.server.sanic.PerClientState(Slideshow)
+    server.daemon("localhost", 8765).join()
 
 This sets up a simple web server which will display the layout of elements and update
-them when events occur over a websocket. To display the layout we can navigate to
-http://localhost:8765/idom/client/index.html or use ``idom.display()`` to show it in a
-Jupyter Notebook via a widget. The exact protocol for communicating DOM models over a
-network is not documented yet.
+them when events occur over a websocket. The server has "per client state" because
+each client that connects to it will see a fresh view of the layout. If clients should
+see views with a common state you can use the ``SharedClientState`` server.
+
+To display the layout we can navigate to http://localhost:8765/client/index.html or
+use ``idom.display()`` to show it in a Jupyter Notebook via a widget.
 
 .. Links
 .. =====
