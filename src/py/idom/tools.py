@@ -1,6 +1,6 @@
 from html.parser import HTMLParser as _HTMLParser
 
-from typing import List, Tuple, Any, Dict, TypeVar, Generic, Callable
+from typing import List, Tuple, Any, Dict, TypeVar, Generic, Callable, Optional
 
 
 _R = TypeVar("_R", bound=Any)  # Var reference
@@ -113,7 +113,7 @@ class HtmlParser(_HTMLParser):
         self._node_stack: List[Dict[str, Any]] = []
         super().reset()
 
-    def handle_starttag(self, tag: str, attrs: List[Tuple[str, str]]) -> None:
+    def handle_starttag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]) -> None:
         new = self._make_node(tag, dict(attrs))
         current = self._node_stack[-1]
         current["children"].append(new)
