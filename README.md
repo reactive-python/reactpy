@@ -50,14 +50,12 @@ import idom
 
 @idom.element
 async def Slideshow(self, index=0):
-    events = idom.Events()
 
-    @events.on("click")
-    async def change():
+    async def next_image(event):
         self.update(index + 1)
 
     url = f"https://picsum.photos/800/300?image={index}"
-    return idom.node("img", src=url, eventHandlers=events)
+    return idom.node("img", src=url, onClick=next_image)
 
 server = idom.server.sanic.PerClientState(Slideshow)
 server.daemon("localhost", 8765).join()

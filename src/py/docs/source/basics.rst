@@ -10,14 +10,12 @@ homepage:
 
     @idom.element
     async def Slideshow(self, index=0):
-        events = idom.Events()
 
-        @events.on("click")
-        async def change():
+        async def next_image(event):
             self.update(index + 1)
 
         url = f"https://picsum.photos/800/300?image={index}"
-        return idom.node("img", src=url, eventHandlers=events)
+        return idom.node("img", src=url, onClick=next_image)
 
     server = idom.server.sanic.PerClientState(Slideshow)
     server.daemon("localhost", 8765).join()
@@ -38,37 +36,20 @@ return a VDOM representing an image which, when clicked, will change.
 
 .. code:: python
 
-       events = idom.Events()
-
-``Events`` creates an object to which event handlers will be assigned.
-Adding an ``Events`` object to a VDOM will given you the ability to
-respond when users interact with you interface. Under the hood though,
-``Events`` is just a mapping that conforms to the `VDOM event
-specification`_.
-
-.. code:: python
-
-       @events.on("click")
-       async def change():
+       async def next_image(event):
            self.update(index + 1)
 
-By using the ``idom.Events()`` object we created above, we can register
-a function as an event handler. This handler will be called once a user
-clicks on the image. All supported events are listed `here <React events>`_.
-
-You can add parameters to this handler which will allow you to access
-attributes of the JavaScript event which occurred in the browser. For
-example when a key is pressed in an ``<input/>`` element you can access
-the key’s name by adding a ``key`` parameter to the event handler.
-
-Inside the handler itself we update ``self`` which is out ``Slideshow``
-element. Calling ``self.update(*args, **kwargs)`` will schedule a new
-render of the ``Slideshow`` element to be performed with new parameters.
+In the next few lines of code this ``next_image`` coroutine will get
+stored as an event handler that responds when users click our image.
+Once triggered it will triggered it will cause us to re-render the
+next image in the slideshow. The ``event`` dictionary which the handler
+recieves when it is called contains information about the event occured.
+All supported events and the data they contain is listed `here <React events>`__.
 
 .. code-block:: python
 
         url = f"https://picsum.photos/800/300?image={index}"
-        return idom.node("img", src=url, eventHandlers=events)
+        return idom.node("img", src=url, onClick=change_image)
 
 We return a model for an ``<img/>`` element which draws its image from https://picsum.photos
 and will respond to the ``events`` we defined earlier. Similarly to the ``events`` object

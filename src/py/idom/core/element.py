@@ -17,7 +17,12 @@ ElementRenderFunction = Callable[..., Awaitable[Any]]
 
 
 @overload
-def element(function: Callable[..., Any]) -> ElementConstructor:
+def element(
+    function: Callable[..., Any],
+    *,
+    state: Optional[str] = None,
+    run_in_executor: Union[bool, Executor] = False,
+) -> ElementConstructor:
     ...
 
 

@@ -1,13 +1,23 @@
 __version__ = "0.4.2"
 
-from .core import element, Element, Events, Layout
-from .widgets import node, Image, hotswap, display, html, Input
-from .tools import Var, html_to_vdom
 from . import server
+
+from .core.element import element, Element
+from .core.events import event, Events
+from .core.layout import Layout
+
+from .widgets import html
+from .widgets.common import node, hotswap
+from .widgets.display import display
+from .widgets.inputs import Input
+
+from .tools import Var, html_to_vdom
+
 
 __all__ = [
     "element",
     "Element",
+    "event",
     "Events",
     "html",
     "Layout",

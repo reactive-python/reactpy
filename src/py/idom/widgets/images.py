@@ -3,7 +3,7 @@ from io import BytesIO
 
 from typing import Any, Dict, Union, Callable
 
-from idom.core import AbstractElement
+from idom.core.element import AbstractElement
 
 
 class Image(AbstractElement):
