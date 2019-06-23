@@ -20,15 +20,12 @@ def test_simple_click_event(driver, display):
 
     @idom.element
     async def Button(self):
-        events = idom.Events()
-
-        @events.on("Click")
-        async def on_click():
+        async def on_click(event):
             clicked.set(True)
             self.update()
 
         if not clicked.get():
-            return idom.html.button("Click Me!", eventHandlers=events, id="click")
+            return idom.html.button("Click Me!", onClick=on_click, id="click")
         else:
             return idom.html.p("Complete", id="complete")
 
@@ -46,16 +43,13 @@ def test_simple_input(driver, display):
 
     @idom.element
     async def Input(self):
-        events = idom.Events()
-
-        @events.on("Change", using="value=target.value")
-        async def on_change(value):
-            if value == "this is a test":
-                message.set(value)
+        async def on_change(event):
+            if event["value"] == "this is a test":
+                message.set(event["value"])
                 self.update()
 
         if message.get() is None:
-            return idom.html.input(id="input", eventHandlers=events)
+            return idom.html.input(id="input", onChange=on_change)
         else:
             return idom.html.p("Complete", id="complete")
 
@@ -94,37 +88,14 @@ def test_animation(driver, display):
         driver.find_element_by_id(f"counter-{i}")
 
 
-def test_use_attribute_from_event_target(driver, display):
-    @idom.element
-    async def Input(self):
-        events = idom.Events()
-
-        @events.on("KeyDown", using="value=target.value")
-        async def on_key_down(value):
-            pass
-
-        return idom.html.input(eventHandlers=events, id="input")
-
-    display(Input)
-
-    inp = driver.find_element_by_id("input")
-    inp.send_keys("hello")
-    # the default action of updating the element's value did not take place
-    assert inp.get_attribute("value") == "hello"
-
-
 def test_can_prevent_event_default_operation(driver, display):
     @idom.element
     async def Input(self):
-        events = idom.Events()
-
-        @events.on(
-            "KeyDown", using="value=target.value", options={"preventDefault": True}
-        )
+        @idom.event(prevent_default=True)
         async def on_key_down(value):
             pass
 
-        return idom.html.input(eventHandlers=events, id="input")
+        return idom.html.input(onKeyDown=on_key_down, id="input")
 
     display(Input)
 
@@ -138,11 +109,8 @@ def test_can_stop_event_propogation(driver, display):
     @idom.element
     async def DivInDiv(self):
         inner_events = idom.Events()
-        inner_events.on("Click", options={"stopPropagation": True})
+        inner_events.on("Click", stop_propagation=True)
 
-        outer_events = idom.Events()
-
-        @outer_events.on("Click")
         async def outer_click_is_not_triggered():
             assert False
 
@@ -154,7 +122,7 @@ def test_can_stop_event_propogation(driver, display):
         outer = idom.html.div(
             inner,
             style={"height": "35px", "width": "35px", "backgroundColor": "red"},
-            eventHandlers=outer_events,
+            onClick=outer_click_is_not_triggered,
             id="outer",
         )
         return outer

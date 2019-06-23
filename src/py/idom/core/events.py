@@ -21,10 +21,10 @@ EventHandlerFunction = Callable[..., Awaitable[Any]]  # event handler function
 
 def event(
     function: Optional[EventHandlerFunction] = None,
-    stopPropagation: bool = False,
-    preventDefault: bool = False,
+    stop_propagation: bool = False,
+    prevent_default: bool = False,
 ) -> Union["EventHandler", Callable[[EventHandlerFunction], "EventHandler"]]:
-    handler = EventHandler(stopPropagation, preventDefault)
+    handler = EventHandler(stop_propagation, prevent_default)
     if function is not None:
         handler.add(function)
         return handler
@@ -47,9 +47,10 @@ class Events(Mapping[str, "EventHandler"]):
             self._bound = proxy(bound)
 
     def on(
-        self, event: str, options: Optional[Dict[str, Any]] = None
+        self, event: str, stop_propagation: bool = False, prevent_default: bool = False
     ) -> Callable[[EventHandlerFunction], EventHandlerFunction]:
         """A decorator for adding an event handler.
+
         Parameters:
             event:
                 The camel-case name of the event, the word "on" is automatically
@@ -59,31 +60,28 @@ class Events(Mapping[str, "EventHandler"]):
             The parameters of the event handler function may indicate event attributes
             which should be sent back from the frontend. See :class:`EventHandler` for
             more info.
+
         Examples:
             Simple "onClick" event handler:
+
             .. code-block:: python
                 def clickable_element():
-                    my_button = Events()
+                    events = Events()
+
                     @events.on("click")
-                    def handler():
+                    def handler(event):
                         # do something on a click event
                         ...
+
                     return idom.node("button", "hello!", eventHandlers=events)
-            Getting an ``<input/>`` element's current value when it changes:
-            .. code-block:: python
-                def input_element():
-                    events = Events()
-                    @events.on("keyDown", properties="value=target.value")
-                    def handle_input_element_change(value)
-                        # do something with the input's new value
-                        ...
-                    return idon.node("input", "type here...", eventHandlers=events)
         """
         if not event.startswith("on"):
             event_name = "on" + event[:1].upper() + event[1:]
 
         if event_name not in self._handlers:
-            handler = self._handlers[event_name] = EventHandler()
+            handler = self._handlers[event_name] = EventHandler(
+                stop_propagation, prevent_default
+            )
         else:
             handler = self._handlers[event_name]
 
@@ -137,14 +135,14 @@ class EventHandler:
 
     def __init__(
         self,
-        stopPropagation: bool = False,
-        preventDefault: bool = False,
+        stop_propagation: bool = False,
+        prevent_default: bool = False,
         target_id: Optional[str] = None,
     ) -> None:
         self._handlers: List[EventHandlerFunction] = []
         self._target_id = target_id or bound_id(self)
-        self._prevent_default = preventDefault
-        self._stop_propogation = stopPropagation
+        self._stop_propogation = stop_propagation
+        self._prevent_default = prevent_default
 
     @property
     def id(self) -> str:
