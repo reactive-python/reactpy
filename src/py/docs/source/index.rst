@@ -31,20 +31,19 @@ user clicks an image:
 
 .. code:: python
 
-   import idom
+    import idom
 
-   @idom.element
-   async def Slideshow(self, index=0):
-       events = idom.Events()
+    @idom.element
+    async def Slideshow(self, index=0):
 
-       @events.on("click")
-       async def change():
-           self.update(index + 1)
+        async def next_image(event):
+            self.update(index + 1)
 
-       url = f"https://picsum.photos/800/300?image={index}"
-       return idom.node("img", src=url, eventHandlers=events)
+        url = f"https://picsum.photos/800/300?image={index}"
+        return idom.node("img", src=url, onChange=next_image)
 
-   idom.SimpleServer(Slideshow).daemon("localhost", 8765).join()
+    server = idom.server.sanic.PerClientState(Slideshow)
+    server.daemon("localhost", 8765).join()
 
 Running this will serve our slideshow to
 ``"https://localhost:8765/client/index.html"``

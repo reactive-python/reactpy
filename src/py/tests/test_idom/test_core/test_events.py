@@ -1,10 +1,8 @@
-import pytest
-
 import idom
 from idom.core.events import EventHandler
 
 
-def test_simple_events():
+def test_simple_events_object():
     events = idom.Events()
 
     @events.on("Click")
@@ -20,43 +18,36 @@ def test_simple_events():
 
 
 def test_event_handler_serialization():
-    def handler(key, value):
-        return (key, value)
+    assert EventHandler(target_id="uuid").serialize() == {
+        "target": "uuid",
+        "stopPropagation": False,
+        "preventDefault": False,
+    }
+    assert EventHandler(target_id="uuid", prevent_default=True).serialize() == {
+        "target": "uuid",
+        "stopPropagation": False,
+        "preventDefault": True,
+    }
+    assert EventHandler(target_id="uuid", stop_propagation=True).serialize() == {
+        "target": "uuid",
+        "stopPropagation": True,
+        "preventDefault": False,
+    }
 
-    event_handler = EventHandler("onKeyPress", "uuid").add(
-        handler, "value=target.value"
-    )
-    event_spec = event_handler.serialize()
-    assert event_spec["target"] == "uuid"
-    assert set(event_spec["eventProps"]) == {"key", "target.value"}
 
-
-async def test_event_handler_props_to_params_mapping():
+async def test_multiple_callbacks_per_event_handler():
     calls = []
 
-    async def handler(key, value):
-        calls.append((key, value))
+    event_handler = EventHandler()
 
-    event_handler = EventHandler("onKeyPress")
-    # test you can register multiple handlers
-    event_handler.add(handler, "value=target.value")
-    event_handler.add(handler, "value=target.value")
+    @event_handler.add
+    async def callback_1(event):
+        calls.append(1)
 
-    await event_handler({"key": 1, "target.value": 2})
-    assert calls == [(1, 2), (1, 2)]
+    @event_handler.add
+    async def callback_2(event):
+        calls.append(2)
 
+    await event_handler({})
 
-def test_event_handler_variable_arguments_are_illegal():
-    eh = EventHandler("event")
-
-    def handler(*args):
-        pass
-
-    with pytest.raises(TypeError):
-        eh.add(handler)
-
-    def handler(**kwargs):
-        pass
-
-    with pytest.raises(TypeError):
-        eh.add(handler)
+    assert calls == [1, 2]

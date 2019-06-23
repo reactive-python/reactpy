@@ -1,5 +1,5 @@
 from .element import element, Element, AbstractElement, ElementConstructor
-from .events import Events, EventHandler
+from .events import event, Events, EventHandler
 from .layout import Layout
 from .render import AbstractRenderer, SharedStateRenderer, SingleStateRenderer
 from .utils import STATIC_DIRECTORY
@@ -11,6 +11,7 @@ __all__ = [
     "Element",
     "EventHandler",
     "ElementConstructor",
+    "event",
     "Events",
     "Layout",
     "SharedStateRenderer",

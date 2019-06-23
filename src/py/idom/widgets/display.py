@@ -3,7 +3,7 @@ import uuid
 
 from typing import Any
 
-from idom.core import STATIC_DIRECTORY
+from idom.core.utils import STATIC_DIRECTORY
 
 
 def display(kind: str, *args: Any, **kwargs: Any) -> Any:

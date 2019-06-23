@@ -1,4 +1,5 @@
 import React, { useReducer, useEffect, useState, useMemo } from "react";
+import serializeEvent from "./event-to-object";
 
 const allUpdateTriggers = {};
 const allModels = {};
@@ -11,7 +12,7 @@ function updateDynamicElement(elementId) {
 
 function Layout({ endpoint }) {
     // handle relative endpoint URI
-    if ( endpoint.startsWith(".") || endpoint.startsWith("/") ) {
+    if (endpoint.startsWith(".") || endpoint.startsWith("/")) {
         let loc = window.location;
         let protocol;
         if (loc.protocol === "https:") {
@@ -19,11 +20,11 @@ function Layout({ endpoint }) {
         } else {
             protocol = "ws:";
         }
-        let new_uri = protocol + "//" + loc.host
-        if ( endpoint.startsWith(".") ) {
-            new_url += loc.pathname + "/"
+        let new_uri = protocol + "//" + loc.host;
+        if (endpoint.startsWith(".")) {
+            new_url += loc.pathname + "/";
         }
-        endpoint =  new_uri + endpoint;
+        endpoint = new_uri + endpoint;
     }
 
     const socket = useMemo(
@@ -41,7 +42,7 @@ function Layout({ endpoint }) {
         msg.body.render.old.forEach(elementId => {
             delete allModels[elementId];
         });
-        updateDynamicElement(msg.body.render.src)
+        updateDynamicElement(msg.body.render.src);
         if (!root) {
             setRoot(msg.body.render.root);
         }
@@ -67,10 +68,10 @@ function Layout({ endpoint }) {
 function DynamicElement({ elementId, sendEvent }) {
     allUpdateTriggers[elementId] = useForceUpdate();
     const model = allModels[elementId];
-    if ( model ) {
+    if (model) {
         return <Element model={model} sendEvent={sendEvent} />;
     } else {
-        return <div/>;
+        return <div />;
     }
 }
 
@@ -108,22 +109,14 @@ function Element({ model, sendEvent }) {
                 if (eventSpec["stopPropagation"]) {
                     event.stopPropagation();
                 }
-                const sentEvent = new Promise(
-                    (resolve, reject) => {
-                        const data = {};
-                        if (eventSpec["eventProps"]) {
-                            eventSpec["eventProps"].forEach(prop => {
-                                data[prop] = getPathProperty(event, prop);
-                            });
-                        }
-                        const msg = {
-                            target: eventSpec["target"],
-                            data: data
-                        }
-                        sendEvent(msg);
-                        resolve(msg);
-                    }
-                );
+                const sentEvent = new Promise((resolve, reject) => {
+                    const msg = {
+                        target: eventSpec["target"],
+                        data: serializeEvent(event)
+                    };
+                    sendEvent(msg);
+                    resolve(msg);
+                });
             };
         });
     }
@@ -144,7 +137,6 @@ function useForceUpdate() {
     return forceUpdate;
 }
 
-
 function getPathProperty(obj, prop) {
     // properties may be dot seperated strings
     const path = prop.split(".");
@@ -153,8 +145,7 @@ function getPathProperty(obj, prop) {
     for (let i = 0; i < path.length; i++) {
         value = value[path[i]];
     }
-    return value
+    return value;
 }
-
 
 export default Layout;

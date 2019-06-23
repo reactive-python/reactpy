@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, List, Tuple, Optional
 
 import idom
-from idom.core import ElementConstructor, Element, element
+from idom.core.element import ElementConstructor, Element, element
 
 
 def node(tag: str, *children: Any, **attributes: Any) -> Dict[str, Any]:

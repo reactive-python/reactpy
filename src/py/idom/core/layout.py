@@ -5,7 +5,6 @@ from typing import (
     List,
     Dict,
     Tuple,
-    Callable,
     Mapping,
     Union,
     Any,
@@ -151,10 +150,9 @@ class Layout:
         model = dict(model)
         if "children" in model:
             model["children"] = self._load_model_children(model["children"], element_id)
-        if "eventHandlers" in model:
-            model["eventHandlers"] = self._load_event_handlers(
-                model["eventHandlers"], element_id
-            )
+        handlers = self._load_event_handlers(model, element_id)
+        if handlers:
+            model["eventHandlers"] = handlers
         return model
 
     def _load_model_children(
@@ -174,21 +172,30 @@ class Layout:
         return loaded_children
 
     def _load_event_handlers(
-        self,
-        handlers: Mapping[str, Union[EventHandler, Callable[..., Awaitable[None]]]],
-        element_id: str,
+        self, model: Dict[str, Any], element_id: str
     ) -> Dict[str, Dict[str, Any]]:
+        # gather event handler from eventHandlers and attributes fields
+        handlers: Dict[str, EventHandler] = {}
+        if "eventHandlers" in model:
+            handlers.update(model["eventHandlers"])
+        if "attributes" in model:
+            attrs = model["attributes"]
+            for k, v in list(attrs.items()):
+                if callable(v):
+                    if not isinstance(v, EventHandler):
+                        h = handlers[k] = EventHandler()
+                        h.add(attrs.pop(k))
+                    else:
+                        h = attrs.pop(k)
+                        handlers[k] = h
+
         event_targets = {}
         for event, handler in handlers.items():
-            handler_obj: EventHandler
-            if not isinstance(handler, EventHandler):
-                handler_obj = EventHandler(event).add(handler)
-            else:
-                handler_obj = handler
-            handler_spec = handler_obj.serialize()
+            handler_spec = handler.serialize()
             event_targets[event] = handler_spec
-            self._event_handlers[handler_obj.id] = handler_obj
-            self._element_state[element_id]["event_handlers"].append(handler_obj.id)
+            self._event_handlers[handler.id] = handler
+            self._element_state[element_id]["event_handlers"].append(handler.id)
+
         return event_targets
 
     def _has_element_state(self, element_id: str) -> bool:

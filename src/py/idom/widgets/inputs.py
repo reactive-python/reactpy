@@ -1,6 +1,7 @@
 from typing import Callable, Awaitable, Any, Optional, Dict
 
-from idom.core import Events, AbstractElement
+from idom.core.events import Events
+from idom.core.element import AbstractElement
 
 from . import html
 
@@ -51,9 +52,9 @@ class Input(AbstractElement):
         self._events = Events(bound=self)
         self._attributes = attributes
 
-        @self._events.on("change", using="value=target.value")
-        async def on_change(self: "Input", value: str) -> None:
-            self.update(value)
+        @self._events.on("change")
+        async def on_change(self: "Input", event: Dict[str, Any]) -> None:
+            self.update(event["value"])
 
     @property
     def value(self) -> str:
