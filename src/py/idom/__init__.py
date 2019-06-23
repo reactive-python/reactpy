@@ -10,6 +10,7 @@ from .widgets import html
 from .widgets.common import node, hotswap
 from .widgets.display import display
 from .widgets.inputs import Input
+from .widgets.images import Image
 
 from .tools import Var, html_to_vdom
 
