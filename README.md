@@ -4,7 +4,7 @@
   <img alt="Build Status" src="https://travis-ci.com/rmorshea/idom.svg?branch=master"/>
 </a>
 <a href="https://pypi.python.org/pypi/idom">
-  <img alt="Version Info" src="https://img.shields.io/pypi/v/spectate.svg"/>
+  <img alt="Version Info" src="https://img.shields.io/pypi/v/idom.svg"/>
 </a>
 <a href="https://github.com/rmorshea/idom/blob/master/LICENSE"/>
   <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-purple.svg">
