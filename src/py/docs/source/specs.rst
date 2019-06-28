@@ -28,24 +28,32 @@ into its VDOM representation:
         type="text"
         minlength="4"
         maxlength="8"
-        onchange="a_python_callback(event.target.value)"
+        onchange="a_python_callback(event)"
       />
     </div>
 
 .. note::
 
-  For context, the callback on the backend of the ``onchange`` event would looks like this:
+  For context, the following Python code would generate this HTML:
 
   .. code-block:: python
 
-      events = idom.Events()
+      import idom
 
-      @events.on("Change", using="new=target.value")
-      def handle_input_change_event(new):
+      async def a_python_callback(new):
           ...
 
-We could use the :func:`idom.tools.html_to_vdom` utility to make this conversion for us,
-but we'll take this step by step in order to show exactly where each piece of the VDOM
+      name_input_view = idom.html.div(
+          "Put your name here: ",
+          idom.html.input(
+              type="text",
+              minLength=4,
+              maxLength=8,
+              onChange=a_python_callback,
+          )
+      )
+
+We'll take this step by step in order to show exactly where each piece of the VDOM
 model comes from. To get started we'll convert the outer ``<div/>``:
 
 .. code-block:: python
@@ -65,7 +73,7 @@ model comes from. To get started we'll convert the outer ``<div/>``:
     As we move though our converstion we'll be using ``...`` to fill in places that we
     haven't converted yet.
 
-In this simple case, all we've::::::::::::: done is take the name of the HTML element (``div`` in
+In this simple case, all we've done is take the name of the HTML element (``div`` in
 this case) and inserted it into the ``tagName`` field of a dictionary. Then we've taken
 the inner HTML and added to a list of children where the text ``"to perform an action"``
 has been made into a string, and the inner ``input`` (yet to be converted) will be
@@ -77,7 +85,7 @@ No we come to the inner ``input``. If we expand this out now we'll get the follo
 .. code-block:: python
 
     {
-        "tagName": "div",:::::::::::::
+        "tagName": "div",
         "children": [
             "To perform an action",
             {
@@ -99,7 +107,7 @@ Here we've had to add some attributes to our VDOM. Take note of the differing
 capitalization - instead of using all lowercase (an HTML convention) we've used
 `camelCase <https://en.wikipedia.org/wiki/Camel_case>`_ which is very common
 in JavaScript.
-................
+
 Last, but not least we come to the ``eventHandlers`` for the ``input``:
 
 .. code-block:: python
@@ -168,7 +176,7 @@ VDOM from above we could rewrite it as:
           "children": [],
           "attributes": {
               "type": "text",
-              "minLengt................h": 4,
+              "minLength": 4,
               "maxLength": 8
           },
           "eventHandlers": {
@@ -182,7 +190,7 @@ VDOM from above we could rewrite it as:
       }
     }
 
-Here we see that the ``................children`` of our ``<div/>`` contain objects which specify types:
+Here we see that the ``children`` of our ``<div/>`` contain objects which specify types:
 
 - ``str``: text
 

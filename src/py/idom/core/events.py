@@ -21,10 +21,31 @@ EventHandlerFunction = Callable[..., Awaitable[Any]]  # event handler function
 
 def event(
     function: Optional[EventHandlerFunction] = None,
-    stop_propagation: bool = False,
-    prevent_default: bool = False,
+    stopPropagation: bool = False,
+    preventDefault: bool = False,
 ) -> Union["EventHandler", Callable[[EventHandlerFunction], "EventHandler"]]:
-    handler = EventHandler(stop_propagation, prevent_default)
+    """Create an event handler function with extra functionality.
+
+    You're always free to add callbacks by assigning them to element callbacks.
+
+    .. code-block:: python
+
+        element = idom.html.button(onClick=my_callback)
+
+    However you may want the ability to prevent the default action associated
+    with the event from taking place, or stoping the event from propagating up
+    the DOM. This decorator allows you to add that functionality to your callbacks.
+
+    Parameters:
+        function:
+            A coroutine of the form ``async handler(event)`` where ``event`` is
+            a dictionary of event data.
+        stopPropagation:
+            Block the event from propagating further up the DOM.
+        preventDefault:
+            Stops the default actional associate with the event from taking place.
+    """
+    handler = EventHandler(stopPropagation, preventDefault)
     if function is not None:
         handler.add(function)
         return handler
@@ -47,7 +68,7 @@ class Events(Mapping[str, "EventHandler"]):
             self._bound = proxy(bound)
 
     def on(
-        self, event: str, stop_propagation: bool = False, prevent_default: bool = False
+        self, event: str, stopPropagation: bool = False, preventDefault: bool = False
     ) -> Callable[[EventHandlerFunction], EventHandlerFunction]:
         """A decorator for adding an event handler.
 
@@ -79,9 +100,8 @@ class Events(Mapping[str, "EventHandler"]):
             event_name = "on" + event[:1].upper() + event[1:]
 
         if event_name not in self._handlers:
-            handler = self._handlers[event_name] = EventHandler(
-                stop_propagation, prevent_default
-            )
+            handler = EventHandler(stopPropagation, preventDefault)
+            self._handlers[event_name] = handler
         else:
             handler = self._handlers[event_name]
 
