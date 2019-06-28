@@ -1,7 +1,7 @@
 Getting Started
 ===============
 
-Let's reexamine the example that you may have seen :ref:`at a glance <At a Glance>` on the
+Let's look at the example that you may have seen :ref:`at a glance <At a Glance>` on the
 homepage:
 
 .. code:: python
@@ -42,8 +42,8 @@ clicked, will change.
 In the lines of code which follow these we will store ``next_image`` as an event
 handler that responds when users click our image. Once triggered it will triggered it
 will cause us to render the next image in the slideshow. The ``event`` dictionary
-which the handler recieves when it is called contains information about the event
-occured. All supported events and the data they contain is listed
+that the handler recieves contains different information depending on they type
+of event that occured. All supported events and the data they contain is listed
 `here <React events>`__.
 
 .. code-block:: python
@@ -54,7 +54,7 @@ occured. All supported events and the data they contain is listed
 Finally we come the end the ``Slideshow`` body where we return a model for an ``<img/>``
 element that draws its image from https://picsum.photos. We've also been sure to add
 our ``next_image`` event handler as well so that when an ``onClick`` event occurs we
-can respond to it.
+can respond to it. The returned model conforms to the `VDOM mimetype specification`_.
 
 .. code-block:: python
 
