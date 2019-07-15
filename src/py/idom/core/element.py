@@ -192,13 +192,18 @@ class Element(AbstractElement):
 
             async def animation() -> None:
                 while True:
-                    await function(future.cancel)
+                    await function(cancel_animation_future)
                     # we need another await here in order to catch
                     # a cancellation call (not sure why though)
                     await pacer.wait()
 
             # we store this future for later so we can cancel it
             future = asyncio.ensure_future(animation())
+
+            # stops the animation loop.
+            def cancel_animation_future() -> None:
+                future.cancel()
+
             self._animation_futures.append(future)
 
             return function
