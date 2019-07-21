@@ -188,10 +188,10 @@ class EventHandler:
         """
         self._handlers.remove(function)
 
-    async def __call__(self, data: Dict[str, Any]) -> Any:
+    async def __call__(self, data: List[Any]) -> Any:
         """Trigger all callbacks in the event handler."""
         for handler in self._handlers:
-            await handler(data)
+            await handler(*data)
 
     def serialize(self) -> Dict[str, Any]:
         """Serialize the event handler."""

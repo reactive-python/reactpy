@@ -48,6 +48,6 @@ async def test_multiple_callbacks_per_event_handler():
     async def callback_2(event):
         calls.append(2)
 
-    await event_handler({})
+    await event_handler([{}])
 
     assert calls == [1, 2]

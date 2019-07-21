@@ -7,7 +7,7 @@ from .core.events import event, Events
 from .core.layout import Layout
 
 from .widgets import html
-from .widgets.common import node, hotswap
+from .widgets.common import node, hotswap, Package
 from .widgets.display import display
 from .widgets.inputs import Input
 from .widgets.images import Image
@@ -26,6 +26,7 @@ __all__ = [
     "Var",
     "node",
     "Image",
+    "Package",
     "hotswap",
     "display",
     "Input",

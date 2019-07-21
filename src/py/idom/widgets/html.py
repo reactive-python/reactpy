@@ -1,6 +1,8 @@
 from .common import node_constructor
 
 __all__ = [
+    # External sources
+    "link",
     # Content sectioning
     "style",
     "address",
@@ -87,6 +89,9 @@ __all__ = [
     "menuitem",
     "summary",
 ]
+
+# External sources
+link = node_constructor("link", allow_children=False)
 
 # Content sectioning
 style = node_constructor("style")

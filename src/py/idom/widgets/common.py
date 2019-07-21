@@ -1,10 +1,10 @@
 from typing import Any, Callable, Dict, List, Tuple, Optional
 
 import idom
-from idom.core.element import ElementConstructor, Element, element
+from idom.core.element import ElementConstructor, AbstractElement, Element, element
 
 
-def node(tag: str, *children: Any, **attributes: Any) -> Dict[str, Any]:
+def node(tag: Optional[str], *children: Any, **attributes: Any) -> Dict[str, Any]:
     """A helper function for generating DOM model dictionaries."""
     merged_children: List[Any] = []
 
@@ -18,8 +18,11 @@ def node(tag: str, *children: Any, **attributes: Any) -> Dict[str, Any]:
 
     if merged_children:
         model["children"] = merged_children
-    if "eventHandlers" in attributes:
-        model["eventHandlers"] = attributes.pop("eventHandlers")
+
+    for top_level_attr in ["eventHandlers", "importSource"]:
+        if top_level_attr in attributes:
+            model[top_level_attr] = attributes.pop(top_level_attr)
+
     if attributes:
         model["attributes"] = attributes
         if "cls" in attributes:
@@ -44,6 +47,79 @@ def node_constructor(
     constructor.__qualname__ = qualname_prefix + f".{tag}"
     constructor.__doc__ = f"""Create a new ``<{tag}/>`` - returns :term:`VDOM`."""
     return constructor
+
+
+class Package:
+    """Import a react library
+
+    Once imported, you can instantiate the library's components by calling them
+    via attribute-access. For example, Ant Design provides a date-picker interface
+    and an ``onChange`` callback which could be leveraged in the following way:
+
+    .. code-block:: python
+
+        antd = idom.Package("https://dev.jspm.io/antd")
+        # you'll often need to link to the css stylesheet for the library.
+        css = idom.html.link(rel="stylesheet", type="text/css", href="https://dev.jspm.io/antd/dist/antd.css")
+
+        @idom.element
+        async def AntDatePicker(self):
+
+            async def changed(moment, datestring):
+                print("CLIENT DATETIME:", moment)
+                print("PICKED DATETIME:", datestring)
+
+            picker = antd.DatePicker(onChange=changed, fallback="Loading...")
+            return idom.html.div(picker, css)
+    """
+
+    def __init__(self, pkg: str) -> None:
+        self.pkg = pkg
+
+    def __getattr__(self, tag: str) -> Callable[..., "PackageElement"]:
+        def constructor(
+            *children: Any, fallback: Optional[str] = None, **attributes: Any
+        ) -> "PackageElement":
+            return self(tag, *children, fallback=fallback, **attributes)
+
+        return constructor
+
+    def __call__(
+        self,
+        tag: Optional[str] = None,
+        *children: Any,
+        fallback: Optional[str] = None,
+        **attributes: Any,
+    ) -> "PackageElement":
+        return PackageElement(self, tag, children, attributes, fallback)
+
+
+class PackageElement(AbstractElement):
+    """A component from a React library.
+
+    You should probably use :class:`Package` to instantiate this element.
+    """
+
+    __slots__ = ("_package", "_tag", "_children", "_attributes", "_fallback")
+
+    def __init__(
+        self,
+        package: Package,
+        tag: Optional[str],
+        children: Tuple[Any, ...],
+        attributes: Dict[str, Any],
+        fallback: Optional[str],
+    ) -> None:
+        super().__init__()
+        self._package = package
+        self._tag = tag
+        self._children = children
+        self._attributes = attributes
+        self._fallback = fallback
+
+    async def render(self) -> Any:
+        source = {"package": self._package.pkg, "fallback": self._fallback}
+        return node(self._tag, importSource=source, *self._children, **self._attributes)
 
 
 def hotswap(
