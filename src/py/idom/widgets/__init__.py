@@ -1,7 +1,7 @@
-from .common import node, hotswap
+from .common import node, Package, hotswap
 from .display import display
 from .inputs import Input
 from .images import Image
 from . import html
 
-__all__ = ["display", "node", "Image", "hotswap", "html", "Input"]
+__all__ = ["display", "node", "Image", "hotswap", "html", "Input", "Package"]

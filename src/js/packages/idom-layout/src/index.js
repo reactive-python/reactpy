@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect, useState, useMemo } from "react";
+import React, { useReducer, useEffect, useState, useMemo, lazy, Suspense } from "react";
 import serializeEvent from "./event-to-object";
 
 const allUpdateTriggers = {};
@@ -76,11 +76,25 @@ function DynamicElement({ elementId, sendEvent }) {
 }
 
 function Element({ model, sendEvent }) {
-    let children;
-    if (!model.children) {
-        children = [];
+    const children = elementChildren(model, sendEvent);
+    const attributes = elementAttributes(model, sendEvent);
+    if (model.importSource) {
+        const lazy = lazyComponent(model);
+        return <Suspense fallback={ model.importSource.fallback }>{
+            React.createElement(lazy, attributes, children)
+        }</Suspense>;
+    } else if ( model.children && model.children.length ){
+        return React.createElement(model.tagName, attributes, children);
     } else {
-        children = model.children.map(child => {
+        return React.createElement(model.tagName, attributes);
+    }
+}
+
+function elementChildren(model, sendEvent) {
+    if (!model.children) {
+        return [];
+    } else {
+        return model.children.map(child => {
             switch (child.type) {
                 case "ref":
                     return (
@@ -96,23 +110,32 @@ function Element({ model, sendEvent }) {
             }
         });
     }
+}
 
+function elementAttributes(model, sendEvent) {
     const attributes = Object.assign({}, model.attributes);
 
     if (model.eventHandlers) {
         Object.keys(model.eventHandlers).forEach(eventName => {
             const eventSpec = model.eventHandlers[eventName];
-            attributes[eventName] = event => {
-                if (eventSpec["preventDefault"]) {
-                    event.preventDefault();
-                }
-                if (eventSpec["stopPropagation"]) {
-                    event.stopPropagation();
-                }
+            attributes[eventName] = function(event) {
+                const data = Array.from(arguments).map(value => {
+                    if (typeof value === "object" && value.nativeEvent) {
+                        if (eventSpec["preventDefault"]) {
+                            value.preventDefault();
+                        }
+                        if (eventSpec["stopPropagation"]) {
+                            value.stopPropagation();
+                        }
+                        return serializeEvent(value);
+                    } else {
+                        return value
+                    }
+                })
                 const sentEvent = new Promise((resolve, reject) => {
                     const msg = {
-                        target: eventSpec["target"],
-                        data: serializeEvent(event)
+                        data: data,
+                        target: eventSpec["target"]
                     };
                     sendEvent(msg);
                     resolve(msg);
@@ -121,12 +144,22 @@ function Element({ model, sendEvent }) {
         });
     }
 
-    let Tag = model.tagName;
-    if (children.length) {
-        return <Tag {...attributes}>{children}</Tag>;
-    } else {
-        return <Tag {...attributes} />;
-    }
+    return attributes;
+}
+
+function lazyComponent(model) {
+    return React.lazy(() => {
+        return eval(`import('${model.importSource.package}')`).then(pkg => {
+            if ( model.tagName ) {
+                if ( pkg.default ) {
+                    pkg = pkg.default;
+                }
+                return { default: pkg[model.tagName] };
+            } else {
+                return pkg;
+            }
+        });
+    });
 }
 
 function useForceUpdate() {

@@ -45,6 +45,7 @@ class Layout:
         "_root",
         "_event_handlers",
         "_element_state",
+        "__weakref__",
     )
 
     def __init__(
@@ -69,7 +70,7 @@ class Layout:
     def root(self) -> str:
         return self._root.id
 
-    async def trigger(self, target: str, data: Dict[str, Any]) -> None:
+    async def trigger(self, target: str, data: List[Any]) -> None:
         """Trigger an event handler
 
         Parameters:
