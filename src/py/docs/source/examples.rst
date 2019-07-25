@@ -7,7 +7,17 @@ You can find the following examples on binder |launch-binder|:
   :local:
   :depth: 1
 
-Depending on how you plan to use these examples you'll need different boilerplate code:
+Depending on how you plan to use these examples you'll need different boilerplate code.
+
+In all cases we define a ``show(element)`` function which will display the view. In a
+Jupyter Notebook it will appear in an output cell. If you're running ``idom`` as a
+webserver it will appear at http://localhost:8765/client/index.html.
+
+.. note::
+
+  The :ref:`Shared Client Views` example requires ``SharedClientState`` server instead
+  of the ``PerClientState`` server shown in the boilerplate below. Be sure to wwap it
+  out when you get there.
 
 
 **Jupyter Notebook (localhost)**
@@ -15,10 +25,12 @@ Depending on how you plan to use these examples you'll need different boilerplat
 .. code-block:: python
 
     import idom
-    mount, element = idom.hotswap()
-    PerClientState(element).daemon("localhost", 8765, access_log=False)
+    mount, root = idom.hotswap()
+    idom.server.sanic.PerClientState(root).daemon("localhost", 8765, access_log=False)
 
-    def show(element):
+    def show(element=None, *args, **kwargs):
+        if element is not None:
+            mount(element, *args, **kwargs)
         # make this the output of your cell
         return idom.display("jupyter", "ws://127.0.0.1:8765/stream")
 
@@ -26,6 +38,10 @@ Depending on how you plan to use these examples you'll need different boilerplat
 **Jupyter Notebook (binder.org)**
 
 .. code-block:: python
+
+    import idom
+    mount, root = idom.hotswap()
+    idom.server.sanic.PerClientState(root).daemon("localhost", 8765, access_log=False)
 
     def proxy_uri_root(protocol, port):
         if "JUPYTERHUB_OAUTH_CALLBACK_URL" in os.environ:
@@ -36,7 +52,9 @@ Depending on how you plan to use these examples you'll need different boilerplat
         else:
             raise RuntimeError("Unknown JupyterHub environment.")
 
-    def show(element):
+    def show(element=None, *args, **kwargs):
+        if element is not None:
+            mount(element, *args, **kwargs)
         # make this the output of your cell
         websocket_url = proxy_uri_root("ws", 8765) + "/stream"
         return idom.display("jupyter", websocket_url)
@@ -48,9 +66,9 @@ Depending on how you plan to use these examples you'll need different boilerplat
 
     import idom
 
-    def show(element):
+    def show(element, *args, **kwargs):
         # this is a blocking call so run this in `if __name__ == "__main__":`
-        PerClientState(element).run("localhost", 8765)
+        PerClientState(element, *args, **kwargs).run("localhost", 8765)
 
 
 To Do List
@@ -400,6 +418,44 @@ Import Javascript
             idom.html.link(rel="stylesheet", type="text/css", href="https://dev.jspm.io/antd/dist/antd.css"),
             antd.DatePicker(onChange=changed, fallback="Loading...")
         )
+
+
+Shared Client Views
+-------------------
+
+This example requires the ``SharedClientState`` server. Be sure to replace it in your
+boilerplate code before going further! Once you've done this we can just re-display our
+:ref:`Drag and Drop` example using the new server. No all we need to do is connect to
+the server with a couple clients to see that their views are synced.
+
+However, connecting to the server will be different depending on your environment:
+
+**Jupyter Notebook**
+
+.. code-block:: python
+
+    # Cell 1
+    ...  # boiler plate with SharedClientState server
+
+    # Cell 2
+    ...  # code from the Drag and Drop example
+
+    # Cell 3
+    display = show(DragAndDrop)
+
+    # Cell 4
+    display  # this is our first view
+
+    # Cell 5
+    display  # this is out second view
+
+
+**Local Python File**
+
+Replace the ``SharedClientState`` in your boilerplate, copy the :ref:`Drag and Drop`
+example code and run it. Now all you need to do is open up
+http://localhost:8765/client/index.html in two different windows and view
+them side-by-side.
 
 
 .. Links
