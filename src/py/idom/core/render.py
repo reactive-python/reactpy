@@ -51,9 +51,7 @@ class SharedStateRenderer(SingleStateRenderer):
         super().__init__(layout)
         self._models: Dict[str, Dict[str, Any]] = {}
         self._updates: Dict[str, asyncio.Queue[RenderBundle]] = {}
-        self._render_task = asyncio.ensure_future(
-            self._render_loop(), loop=self._layout.loop
-        )
+        self._render_task = asyncio.ensure_future(self._render_loop(), loop=layout.loop)
 
     async def run(
         self, send: CoroutineFunction, recv: CoroutineFunction, context: str
@@ -75,7 +73,7 @@ class SharedStateRenderer(SingleStateRenderer):
                 del self._models[old_id]
             # append updates to all other contexts
             for queue in self._updates.values():
-                queue.put((src, new, old))
+                await queue.put((src, new, old))
 
     async def _outgoing_loop(self, send: CoroutineFunction, context: str) -> None:
         if self._layout.root in self._models:
