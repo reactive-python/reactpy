@@ -8,7 +8,7 @@
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },
-  "dependencies": {
+  "peerDependencies": {
     "react": "^16.8.2",
     "react-dom": "^16.8.2"
   },

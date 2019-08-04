@@ -16,7 +16,9 @@
     "build-storybook": "build-storybook"
   },
   "dependencies": {
-    "del-cli": "^1.1.0",
+    "del-cli": "^1.1.0"
+  },
+  "peerDependencies": {
     "react": "^16.8.2",
     "react-dom": "^16.8.2"
   },
