@@ -154,7 +154,11 @@ function lazyComponent(model) {
                 if ( pkg.default ) {
                     pkg = pkg.default;
                 }
-                return { default: pkg[model.tagName] };
+                const toExport = { default: pkg };
+                model.tagName.split(".").forEach(part => {
+                    toExport.default = toExport.default[part];
+                })
+                return toExport;
             } else {
                 return pkg;
             }

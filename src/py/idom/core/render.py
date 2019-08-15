@@ -1,9 +1,10 @@
 import abc
 import asyncio
+from loguru import logger
 
 from typing import Callable, Awaitable, Dict, Any
 
-from .layout import Layout, RenderBundle
+from .layout import Layout, RenderBundle, RenderError
 
 
 CoroutineFunction = Callable[..., Awaitable[Any]]
@@ -39,7 +40,14 @@ class AbstractRenderer(abc.ABC):
 
 class SingleStateRenderer(AbstractRenderer):
     async def _outgoing(self, layout: Layout, context: Any) -> Dict[str, Any]:
-        src, new, old = await layout.render()
+        try:
+            src, new, old = await layout.render()
+        except RenderError as error:
+            if error.partial_render is None:
+                raise
+            logger.exception("Render failed")
+            src, new, old = error.partial_render
+
         return {"root": layout.root, "src": src, "new": new, "old": old}
 
     async def _incoming(self, layout: Layout, context: Any, message: Any) -> None:
@@ -65,7 +73,14 @@ class SharedStateRenderer(SingleStateRenderer):
 
     async def _render_loop(self) -> None:
         while True:
-            src, new, old = await self._layout.render()
+            try:
+                src, new, old = await self._layout.render()
+            except RenderError as error:
+                if error.partial_render is None:
+                    raise
+                logger.exception("Render failed")
+                src, new, old = error.partial_render
+
             # add new models to the overall state
             self._models.update(new)
             # remove old ones from the overall state
