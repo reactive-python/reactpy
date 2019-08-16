@@ -16,21 +16,21 @@
     "build-storybook": "build-storybook"
   },
   "dependencies": {
-    "del-cli": "^1.1.0"
+    "@babel/plugin-syntax-dynamic-import": "^7.2.0",
+    "@babel/standalone": "^7.5.5"
   },
   "peerDependencies": {
     "react": "^16.8.2",
     "react-dom": "^16.8.2"
   },
   "devDependencies": {
+    "@babel/cli": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "@babel/preset-react": "^7.0.0",
     "@storybook/react": "^3.4.1",
-    "babel-cli": "^6.26.0",
-    "babel-core": "^6.26.0",
     "babel-jest": "^20.0.3",
-    "babel-preset-env": "^1.6.1",
-    "babel-preset-react": "^6.24.1",
-    "babel-preset-stage-1": "^6.24.1",
     "css-loader": "^0.28.11",
+    "del-cli": "^2.0.0",
     "enzyme": "^3.3.0",
     "enzyme-adapter-react-16": "^1.1.1",
     "eslint": "^4.19.1",

@@ -1,4 +1,15 @@
-import React, { useReducer, useEffect, useState, useMemo, lazy, Suspense } from "react";
+import React, {
+    useReducer,
+    useEffect,
+    useState,
+    useMemo,
+    lazy,
+    Suspense
+} from "react";
+import {
+    transform as babelTransform
+} from "@babel/standalone";
+
 import serializeEvent from "./event-to-object";
 
 const allUpdateTriggers = {};
@@ -27,12 +38,9 @@ function Layout({ endpoint }) {
         endpoint = new_uri + endpoint;
     }
 
-    const socket = useMemo(
-        () => {
-            return new WebSocket(endpoint);
-        },
-        [endpoint]
-    );
+    const socket = useMemo(() => {
+        return new WebSocket(endpoint);
+    }, [endpoint]);
 
     const [root, setRoot] = useState(null);
 
@@ -80,10 +88,12 @@ function Element({ model, sendEvent }) {
     const attributes = elementAttributes(model, sendEvent);
     if (model.importSource) {
         const lazy = lazyComponent(model);
-        return <Suspense fallback={ model.importSource.fallback }>{
-            React.createElement(lazy, attributes, children)
-        }</Suspense>;
-    } else if ( model.children && model.children.length ){
+        return (
+            <Suspense fallback={model.importSource.fallback}>
+                {React.createElement(lazy, attributes, children)}
+            </Suspense>
+        );
+    } else if (model.children && model.children.length) {
         return React.createElement(model.tagName, attributes, children);
     } else {
         return React.createElement(model.tagName, attributes);
@@ -129,9 +139,9 @@ function elementAttributes(model, sendEvent) {
                         }
                         return serializeEvent(value);
                     } else {
-                        return value
+                        return value;
                     }
-                })
+                });
                 const sentEvent = new Promise((resolve, reject) => {
                     const msg = {
                         data: data,
@@ -149,19 +159,21 @@ function elementAttributes(model, sendEvent) {
 
 function lazyComponent(model) {
     return React.lazy(() => {
-        return eval(`import('${model.importSource.package}')`).then(pkg => {
-            if ( model.tagName ) {
-                if ( pkg.default ) {
-                    pkg = pkg.default;
-                }
-                const toExport = { default: pkg };
-                model.tagName.split(".").forEach(part => {
-                    toExport.default = toExport.default[part];
-                })
-                return toExport;
-            } else {
-                return pkg;
-            }
+        const options = {
+            presets: ["react"],
+            plugins: [require("@babel/plugin-syntax-dynamic-import")]
+        };
+        const code = babelTransform(model.importSource.source, options).code;
+        const result = evalInContext(code, { React: React });
+        // Allows the code to make components with dynamic imports that to return a
+        // promise. Non-dynamic code, is just wrapped in a promise so it works with
+        // React.lazy without any user code.
+        return Promise.resolve(result).then(pkg => {
+            const toExport = { default: pkg };
+            model.tagName.split(".").forEach(part => {
+                toExport.default = toExport.default[part];
+            });
+            return toExport;
         });
     });
 }
@@ -183,6 +195,12 @@ function getPathProperty(obj, prop) {
         value = value[path[i]];
     }
     return value;
+}
+
+function evalInContext(js, context) {
+    return function() {
+        return eval("let React = this.React;" + js);
+    }.call(context);
 }
 
 export default Layout;
