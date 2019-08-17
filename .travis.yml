@@ -9,6 +9,7 @@ before_install:
   - sudo apt update
   - sudo apt install curl
   # javascript dependencies
+  - wget -qO- https://deb.nodesource.com/setup_8.x | sudo bash -
   - sudo apt install nodejs npm
   - npm install -g yarn
   # install chromebrowser
