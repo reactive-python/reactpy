@@ -9,7 +9,8 @@ before_install:
   - sudo apt update
   - sudo apt install curl
   # javascript dependencies
-  - sudo apt install nodejs npm
+  - wget -qO- https://deb.nodesource.com/setup_8.x | sudo bash -
+  - sudo apt install nodejs
   - npm install -g yarn
   # install chromebrowser
   - wget -N http://chromedriver.storage.googleapis.com/2.38/chromedriver_linux64.zip -P ~/

@@ -49,7 +49,59 @@ def node_constructor(
     return constructor
 
 
-class Package:
+class Module:
+    def __init__(self, code: str) -> None:
+        super().__init__()
+        self._code = code
+
+    def __getattr__(self, tag: str) -> Callable[..., "ModuleElement"]:
+        def constructor(
+            *children: Any, fallback: Optional[str] = None, **attributes: Any
+        ) -> "ModuleElement":
+            return self(tag, *children, fallback=fallback, **attributes)
+
+        return constructor
+
+    def __call__(
+        self,
+        tag: Optional[str] = None,
+        *children: Any,
+        fallback: Optional[str] = None,
+        **attributes: Any,
+    ) -> "ModuleElement":
+        return ModuleElement(self._code, tag, children, attributes, fallback)
+
+
+class ModuleElement(AbstractElement):
+    def __init__(
+        self,
+        code: str,
+        tag: Optional[str],
+        children: Tuple[Any, ...],
+        attributes: Dict[str, Any],
+        fallback: Optional[str],
+    ) -> None:
+        super().__init__()
+        self._code = code
+        self._tag = tag
+        self._children = children
+        self._attributes = attributes
+        self._fallback = fallback
+
+    async def render(self) -> Any:
+        return {
+            "tagName": self._tag,
+            "children": self._children,
+            "attributes": self._attributes,
+            "importSource": {
+                "id": hex(hash(self._code)),
+                "source": self._code,
+                "fallback": None,
+            },
+        }
+
+
+class Import:
     """Import a react library
 
     Once imported, you can instantiate the library's components by calling them
@@ -74,12 +126,12 @@ class Package:
     """
 
     def __init__(self, pkg: str) -> None:
-        self.pkg = pkg
+        self._pkg = pkg
 
-    def __getattr__(self, tag: str) -> Callable[..., "PackageElement"]:
+    def __getattr__(self, tag: str) -> Callable[..., "ImportElement"]:
         def constructor(
             *children: Any, fallback: Optional[str] = None, **attributes: Any
-        ) -> "PackageElement":
+        ) -> "ImportElement":
             return self(tag, *children, fallback=fallback, **attributes)
 
         return constructor
@@ -90,11 +142,11 @@ class Package:
         *children: Any,
         fallback: Optional[str] = None,
         **attributes: Any,
-    ) -> "PackageElement":
-        return PackageElement(self, tag, children, attributes, fallback)
+    ) -> "ImportElement":
+        return ImportElement(self._pkg, tag, children, attributes, fallback)
 
 
-class PackageElement(AbstractElement):
+class ImportElement(AbstractElement):
     """A component from a React library.
 
     You should probably use :class:`Package` to instantiate this element.
@@ -104,7 +156,7 @@ class PackageElement(AbstractElement):
 
     def __init__(
         self,
-        package: Package,
+        package: str,
         tag: Optional[str],
         children: Tuple[Any, ...],
         attributes: Dict[str, Any],
@@ -118,7 +170,11 @@ class PackageElement(AbstractElement):
         self._fallback = fallback
 
     async def render(self) -> Any:
-        source = {"package": self._package.pkg, "fallback": self._fallback}
+        source = {
+            "id": hex(hash(self._package)),
+            "source": f"import('{self._package}').then(pkg => pkg.default);",
+            "fallback": self._fallback,
+        }
         return node(self._tag, importSource=source, *self._children, **self._attributes)
 
 

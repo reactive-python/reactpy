@@ -7,7 +7,7 @@ cd src
 # install JS dependencies
 cd js
 
-yarn
+yarn --ignore-engines
 yarn setup
 
 cd ../
