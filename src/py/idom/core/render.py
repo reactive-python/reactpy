@@ -7,25 +7,24 @@ from typing import Callable, Awaitable, Dict, Any
 from .layout import Layout, RenderBundle, RenderError
 
 
-CoroutineFunction = Callable[..., Awaitable[Any]]
+SendCoroutine = Callable[[Any], Awaitable[None]]
+RecvCoroutine = Callable[[], Awaitable[Any]]
 
 
 class AbstractRenderer(abc.ABC):
     def __init__(self, layout: Layout) -> None:
         self._layout = layout
 
-    async def run(
-        self, send: CoroutineFunction, recv: CoroutineFunction, context: Any
-    ) -> None:
+    async def run(self, send: SendCoroutine, recv: RecvCoroutine, context: Any) -> None:
         await asyncio.gather(
             self._outgoing_loop(send, context), self._incoming_loop(recv, context)
         )
 
-    async def _outgoing_loop(self, send: CoroutineFunction, context: Any) -> None:
+    async def _outgoing_loop(self, send: SendCoroutine, context: Any) -> None:
         while True:
             await send(await self._outgoing(self._layout, context))
 
-    async def _incoming_loop(self, recv: CoroutineFunction, context: Any) -> None:
+    async def _incoming_loop(self, recv: RecvCoroutine, context: Any) -> None:
         while True:
             await self._incoming(self._layout, context, await recv())
 
@@ -61,9 +60,7 @@ class SharedStateRenderer(SingleStateRenderer):
         self._updates: Dict[str, asyncio.Queue[RenderBundle]] = {}
         self._render_task = asyncio.ensure_future(self._render_loop(), loop=layout.loop)
 
-    async def run(
-        self, send: CoroutineFunction, recv: CoroutineFunction, context: str
-    ) -> None:
+    async def run(self, send: SendCoroutine, recv: RecvCoroutine, context: str) -> None:
         self._updates[context] = asyncio.Queue()
         try:
             await asyncio.gather(super().run(send, recv, context), self._render_task)
@@ -90,7 +87,7 @@ class SharedStateRenderer(SingleStateRenderer):
             for queue in self._updates.values():
                 await queue.put((src, new, old))
 
-    async def _outgoing_loop(self, send: CoroutineFunction, context: str) -> None:
+    async def _outgoing_loop(self, send: SendCoroutine, context: str) -> None:
         if self._layout.root in self._models:
             await send(
                 {
