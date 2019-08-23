@@ -6,9 +6,7 @@ import React, {
     lazy,
     Suspense
 } from "react";
-import {
-    transform as babelTransform
-} from "@babel/standalone";
+import { transform as babelTransform } from "@babel/standalone";
 
 import serializeEvent from "./event-to-object";
 
@@ -159,22 +157,36 @@ function elementAttributes(model, sendEvent) {
 
 function lazyComponent(model) {
     return React.lazy(() => {
-        const options = {
-            presets: ["react"],
-            plugins: [require("@babel/plugin-syntax-dynamic-import")]
-        };
-        const code = babelTransform(model.importSource.source, options).code;
-        const result = evalInContext(code, { React: React });
-        // Allows the code to make components with dynamic imports that to return a
-        // promise. Non-dynamic code, is just wrapped in a promise so it works with
-        // React.lazy without any user code.
-        return Promise.resolve(result).then(pkg => {
-            const toExport = { default: pkg };
-            model.tagName.split(".").forEach(part => {
-                toExport.default = toExport.default[part];
+        try {
+            const result = evalInContext(model.importSource.source);
+            // Allows the code to make components with dynamic imports that to return a
+            // promise. Non-dynamic code, is just wrapped in a promise so it works with
+            // React.lazy without any user code.
+            return Promise.resolve(result).then(pkg => {
+                const toExport = { default: pkg };
+                model.tagName.split(".").forEach(part => {
+                    toExport.default = toExport.default[part];
+                });
+                const Component = toExport.default;
+                function Catch(props) {
+                    return (
+                        <ErrorBoundary>
+                            <Component {...props} />
+                        </ErrorBoundary>
+                    );
+                }
+                return { default: Catch };
             });
-            return toExport;
-        });
+        } catch (error) {
+            function Error() {
+                return (
+                    <pre>
+                        <code>{error.message}</code>
+                    </pre>
+                );
+            }
+            return Promise.resolve({ default: Error });
+        }
     });
 }
 
@@ -197,10 +209,45 @@ function getPathProperty(obj, prop) {
     return value;
 }
 
-function evalInContext(js, context) {
+function evalInContext(jsx) {
+    const transform = babelTransform(
+        "() => {let React = this.React;" + jsx + "}",
+        {
+            presets: ["react"],
+            plugins: [require("@babel/plugin-syntax-dynamic-import")]
+        }
+    );
     return function() {
-        return eval("let React = this.React;" + js);
-    }.call(context);
+        return eval(transform.code)();
+    }.call({
+        React: React
+    });
+}
+
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            error: null
+        };
+    }
+    componentDidCatch(error, info) {
+        this.setState({
+            error: error.message
+        });
+        console.log("error: ", error);
+        console.log("info: ", info);
+    }
+    render() {
+        if (this.state.error) {
+            return (
+                <pre>
+                    <code>{this.state.error}</code>
+                </pre>
+            );
+        }
+        return this.props.children;
+    }
 }
 
 export default Layout;
