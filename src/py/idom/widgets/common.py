@@ -172,7 +172,7 @@ class ImportElement(AbstractElement):
     async def render(self) -> Any:
         source = {
             "id": hex(hash(self._package)),
-            "source": f"import('{self._package}').then(pkg => pkg.default);",
+            "source": f"return import('{self._package}').then(pkg => pkg.default);",
             "fallback": self._fallback,
         }
         return node(self._tag, importSource=source, *self._children, **self._attributes)
