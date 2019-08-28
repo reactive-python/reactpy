@@ -18,3 +18,7 @@ dist
 *.mypy_cache
 __pycache__/
 *.py[cod]
+
+# --- IDE ---
+.idea
+.vscode

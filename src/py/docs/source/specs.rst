@@ -1,22 +1,23 @@
 Specifications
 ==============
 
+Describes various data structures and protocols used to define and communicate virtual
+document object models (:term:`VDOM`). The definitions to below follow in the footsteps
+of `a specification <https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md>`_
+created by `Nteract <https://nteract.io>`_ and which was built into
+`JupyterLab <https://jupyterlab.readthedocs.io/en/stable/>`_. While iDOM's specification
+for VDOM is fairly well established, it should not be relied until it's been fully
+adopted by the aforementioned organizations.
+
 .. contents::
   :local:
   :depth: 1
-
-Describes various datastructures and protocols used to define and communicate virtual
-document object models (:term:`VDOM`). These specifications shouldn't be relied upon just
-yet as they have not yet been fully adopted by organizations like
-`Jupyter <https://jupyter.org>`_ and `Nteract <https://nteract.io>`_. Check out their
-VDOM specification
-`here <https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md>`_.
 
 
 VDOM Mimetype
 -------------
 
-A set of definitions that explain how ``idom`` creates a virtual representation of
+A set of definitions that explain how iDOM creates a virtual representation of
 the document object model. We'll begin by looking at a bit of HTML that we'll convert
 into its VDOM representation:
 
@@ -70,7 +71,7 @@ model comes from. To get started we'll convert the outer ``<div/>``:
 
 .. note::
 
-    As we move though our converstion we'll be using ``...`` to fill in places that we
+    As we move though our conversation we'll be using ``...`` to fill in places that we
     haven't converted yet.
 
 In this simple case, all we've done is take the name of the HTML element (``div`` in

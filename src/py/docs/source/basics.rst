@@ -1,10 +1,10 @@
 Getting Started
 ===============
 
-Let's look at the example that you may have seen :ref:`at a glance <At a Glance>` on the
-homepage:
+Let's look at the example that you may have seen
+:ref:`at a glance <At a Glance>` on the homepage:
 
-.. code:: python
+.. code-block::
 
     import idom
 
@@ -20,33 +20,45 @@ homepage:
     server = idom.server.sanic.PerClientState(Slideshow)
     server.daemon("localhost", 8765).join()
 
-Since this may have been a lot to take in at once we'll break it down piece by piece:
+Since it's likely a lot to take in at once we'll break it down piece by piece:
 
-.. code:: python
+.. code-block::
 
    @idom.element
    async def Slideshow(self, index=0):
 
 The ``idom.element`` decorator indicates that the `asynchronous function`_ to follow
-returns a data structure which depcits a user interface, or in more technical terms a
+returns a data structure which depicts a user interface, or in more technical terms a
 Document Object Model (DOM). We call this structural representation of the DOM a
 `Virtual DOM <VDOM React>`_ (VDOM) - a term familiar to those who work with `ReactJS`_.
 In the case of ``Slideshow`` it will return a VDOM representing an image which, when
 clicked, will change.
 
-.. code:: python
+A key thing to note here though is the use of ``self`` as a parameter to ``Slideshow``.
+Similarly to how ``self`` refers to the current instance of class when used as a
+parameter of its methods, ``self`` in the context of an
+:func:`idom.element <idom.core.element.element>`
+decorated coroutines refers to the current :class:`Element <idom.core.element.Element>`
+instance.
+
+.. code-block::
 
        async def next_image(event):
            self.update(index + 1)
 
-In the lines of code which follow these we will store ``next_image`` as an event
-handler that responds when users click our image. Once triggered it will triggered it
-will cause us to render the next image in the slideshow. The ``event`` dictionary
-that the handler recieves contains different information depending on they type
-of event that occured. All supported events and the data they contain is listed
-`here <React events>`__.
+The coroutine above uses the reference to the current element instance in ``self`` to
+:meth:`update() <idom.core.element.Element.update>` to our view of the slideshow. The
+effect of calling this update method is to schedule a re-render of of our ``Slideshow``
+using the newly incremented index.
 
-.. code-block:: python
+.. note::
+
+    Coroutines like ``next_image`` which respond to user interactions recieve an
+    ``event`` dictionary that contains different information depending on they type
+    of event that occured. All supported events and the data they contain is listed
+    `here <React events>`__.
+
+.. code-block::
 
         url = f"https://picsum.photos/800/300?image={index}"
         return idom.node("img", src=url, onClick=change_image)
@@ -56,7 +68,7 @@ element that draws its image from https://picsum.photos. We've also been sure to
 our ``next_image`` event handler as well so that when an ``onClick`` event occurs we
 can respond to it. The returned model conforms to the `VDOM mimetype specification`_.
 
-.. code-block:: python
+.. code-block::
 
     server = idom.server.sanic.PerClientState(Slideshow)
     server.daemon("localhost", 8765).join()

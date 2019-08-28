@@ -4,18 +4,25 @@ from loguru import logger
 
 from typing import Callable, Awaitable, Dict, Any
 
-from .layout import Layout, RenderBundle, RenderError
+from .layout import Layout, LayoutUpdate, LayoutEvent, RenderError
 
 
 SendCoroutine = Callable[[Any], Awaitable[None]]
-RecvCoroutine = Callable[[], Awaitable[Any]]
+RecvCoroutine = Callable[[], Awaitable[LayoutEvent]]
 
 
 class AbstractRenderer(abc.ABC):
+    """A base class for implementing :class:`~idom.core.layout.Layout` renderers."""
+
     def __init__(self, layout: Layout) -> None:
         self._layout = layout
 
     async def run(self, send: SendCoroutine, recv: RecvCoroutine, context: Any) -> None:
+        """Start an unending loop which will drive the layout.
+
+        This will call :meth:`Layout.render` and :meth:`Layout.trigger` to render
+        new models and execute events respectively.
+        """
         await asyncio.gather(
             self._outgoing_loop(send, context), self._incoming_loop(recv, context)
         )
@@ -38,6 +45,13 @@ class AbstractRenderer(abc.ABC):
 
 
 class SingleStateRenderer(AbstractRenderer):
+    """Each client of the renderer will get its own model.
+
+    ..note::
+        The ``context`` parameter of :meth:`SingleStateRenderer.run` should just
+        be ``None`` since it's not used.
+    """
+
     async def _outgoing(self, layout: Layout, context: Any) -> Dict[str, Any]:
         try:
             src, new, old = await layout.render()
@@ -49,15 +63,21 @@ class SingleStateRenderer(AbstractRenderer):
 
         return {"root": layout.root, "src": src, "new": new, "old": old}
 
-    async def _incoming(self, layout: Layout, context: Any, message: Any) -> None:
-        await layout.trigger(**message)
+    async def _incoming(self, layout: Layout, context: Any, event: LayoutEvent) -> None:
+        await layout.trigger(event)
 
 
 class SharedStateRenderer(SingleStateRenderer):
+    """Each client of the renderer shares the same model.
+
+    The client's ID is indicated by the ``context`` argument of
+    :meth:`SharedStateRenderer.run`
+    """
+
     def __init__(self, layout: Layout) -> None:
         super().__init__(layout)
         self._models: Dict[str, Dict[str, Any]] = {}
-        self._updates: Dict[str, asyncio.Queue[RenderBundle]] = {}
+        self._updates: Dict[str, asyncio.Queue[LayoutUpdate]] = {}
         self._render_task = asyncio.ensure_future(self._render_loop(), loop=layout.loop)
 
     async def run(self, send: SendCoroutine, recv: RecvCoroutine, context: str) -> None:
@@ -85,7 +105,7 @@ class SharedStateRenderer(SingleStateRenderer):
                 del self._models[old_id]
             # append updates to all other contexts
             for queue in self._updates.values():
-                await queue.put((src, new, old))
+                await queue.put(LayoutUpdate(src, new, old))
 
     async def _outgoing_loop(self, send: SendCoroutine, context: str) -> None:
         if self._layout.root in self._models:

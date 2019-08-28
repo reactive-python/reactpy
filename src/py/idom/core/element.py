@@ -85,6 +85,7 @@ class AbstractElement(abc.ABC):
 
     @abc.abstractmethod
     async def render(self) -> Any:
+        """Return the model for the element."""
         ...
 
     async def mount(self, layout: "idom.Layout") -> None:
@@ -94,11 +95,11 @@ class AbstractElement(abc.ABC):
         """
         self._layout = layout
 
-    def mounted(self) -> bool:
-        """Whether or not this element is associated with a layout."""
-        return self._layout is not None
-
     async def unmount(self) -> None:
+        """Unmount the current layout from the element instance.
+
+        Occurs just before the element is removed from view.
+        """
         self._layout = None
 
     def _update_layout(self) -> None:

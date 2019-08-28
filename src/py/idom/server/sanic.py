@@ -13,7 +13,7 @@ from idom.core.render import (
     SendCoroutine,
     RecvCoroutine,
 )
-from idom.core.layout import Layout
+from idom.core.layout import Layout, LayoutEvent
 from idom.core.utils import STATIC_DIRECTORY
 
 from .base import AbstractServerExtension, Config
@@ -48,9 +48,10 @@ class SanicServerExtension(AbstractServerExtension):
     async def _stream(
         self, request: request.Request, socket: WebSocketCommonProtocol
     ) -> None:
-        async def sock_recv() -> Any:
+        async def sock_recv() -> LayoutEvent:
             message = json.loads(await socket.recv())
-            return message["body"]["event"]
+            event = message["body"]["event"]
+            return LayoutEvent(event["target"], event["data"])
 
         async def sock_send(data: Dict[str, Any]) -> None:
             message = {"header": {}, "body": {"render": data}}

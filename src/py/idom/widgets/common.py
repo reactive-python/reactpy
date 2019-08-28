@@ -50,6 +50,8 @@ def node_constructor(
 
 
 class Module:
+    """An interface for creating React Components that you can use in your layouts."""
+
     def __init__(self, code: str) -> None:
         super().__init__()
         self._code = code
@@ -73,6 +75,8 @@ class Module:
 
 
 class ModuleElement(AbstractElement):
+    """An element created by :class:`Module` which refers to a React component."""
+
     def __init__(
         self,
         code: str,
