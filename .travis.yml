@@ -23,7 +23,7 @@ install:
   # Install iDOM along with test requirements
   - python setup.py build
   - python setup.py install
-  - pip install -r requirements/test.txt
+  - pip install -r requirements.txt
 
 script: cd $WORK_DIR && eval $TEST_CMD
 
