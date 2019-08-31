@@ -23,6 +23,7 @@ def event(
     function: Optional[EventHandlerFunction] = None,
     stopPropagation: bool = False,
     preventDefault: bool = False,
+    target_id: Optional[str] = None,
 ) -> Union["EventHandler", Callable[[EventHandlerFunction], "EventHandler"]]:
     """Create an event handler function with extra functionality.
 
@@ -44,8 +45,12 @@ def event(
             Block the event from propagating further up the DOM.
         preventDefault:
             Stops the default actional associate with the event from taking place.
+        target_id:
+            Sets the ID used to identify this handler in the resulting VDOM which
+            is usually just automatically generated. This parameter is used when
+            testing.
     """
-    handler = EventHandler(stopPropagation, preventDefault)
+    handler = EventHandler(stopPropagation, preventDefault, target_id=target_id)
     if function is not None:
         handler.add(function)
         return handler
@@ -166,6 +171,7 @@ class EventHandler:
 
     @property
     def id(self) -> str:
+        """ID of the event handler."""
         return self._target_id
 
     def add(self, function: EventHandlerFunction) -> "EventHandler":

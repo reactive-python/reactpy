@@ -12,8 +12,8 @@ Config = Dict[str, Any]
 class AbstractServerExtension(abc.ABC):
     """Base class for all iDOM server implementations.
 
-    It is assumed that iDOM will be used inconjuction with some server library
-    (e.g. ``sanic`` or ``tornado``) so these server implementations should work
+    It is assumed that iDOM will be used in conjuction with some async-enabled server
+    library (e.g. ``sanic`` or ``tornado``) so these server implementations should work
     standalone and as an extension to an existing application.
 
     Standalone usage:

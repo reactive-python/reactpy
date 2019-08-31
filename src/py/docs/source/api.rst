@@ -1,6 +1,10 @@
 API
 ===
 
+.. contents::
+  :local:
+  :depth: 1
+
 .. module:: idom
 
 
@@ -15,6 +19,13 @@ Layout
 ------
 
 .. automodule:: idom.core.layout
+    :members:
+
+
+Renderer
+--------
+
+.. automodule:: idom.core.render
     :members:
 
 

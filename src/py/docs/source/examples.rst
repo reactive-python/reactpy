@@ -7,11 +7,12 @@ You can find the following examples on binder |launch-binder|:
   :local:
   :depth: 1
 
-Depending on how you plan to use these examples you'll need different boilerplate code.
+Depending on how you plan to use these examples you'll need different
+boilerplate code.
 
-In all cases we define a ``show(element)`` function which will display the view. In a
-Jupyter Notebook it will appear in an output cell. If you're running ``idom`` as a
-webserver it will appear at http://localhost:8765/client/index.html.
+In all cases we define a ``show(element)`` function which will display the
+view. In a Jupyter Notebook it will appear in an output cell. If you're running
+``idom`` as a webserver it will appear at http://localhost:8765/client/index.html.
 
 .. note::
 
@@ -22,7 +23,7 @@ webserver it will appear at http://localhost:8765/client/index.html.
 
 **Jupyter Notebook (localhost)**
 
-.. code-block:: python
+.. code-block::
 
     import idom
     mount, root = idom.hotswap()
@@ -37,7 +38,7 @@ webserver it will appear at http://localhost:8765/client/index.html.
 
 **Jupyter Notebook (binder.org)**
 
-.. code-block:: python
+.. code-block::
 
     import idom
     mount, root = idom.hotswap()
@@ -62,7 +63,7 @@ webserver it will appear at http://localhost:8765/client/index.html.
 
 **Local Python File**
 
-.. code-block:: python
+.. code-block::
 
     import idom
 
@@ -74,7 +75,7 @@ webserver it will appear at http://localhost:8765/client/index.html.
 To Do List
 ----------
 
-.. code-block:: python
+.. code-block::
 
     @idom.element
     async def Todo(self):
@@ -113,7 +114,7 @@ To Do List
 Drag and Drop
 -------------
 
-.. code-block:: python
+.. code-block::
 
     @idom.element
     async def DragDropBoxes(self):
@@ -192,7 +193,7 @@ Drag and Drop
 The Game Snake
 --------------
 
-.. code-block:: python
+.. code-block::
 
     import enum
     import time
@@ -333,7 +334,7 @@ The Game Snake
 Plotting with Matplotlib
 ------------------------
 
-.. code-block:: python
+.. code-block::
 
     import time
     import asyncio
@@ -403,7 +404,7 @@ Plotting with Matplotlib
 Import Javascript
 -----------------
 
-.. code-block:: python
+.. code-block::
 
     antd = idom.Package("https://dev.jspm.io/antd")
 
@@ -432,7 +433,7 @@ However, connecting to the server will be different depending on your environmen
 
 **Jupyter Notebook**
 
-.. code-block:: python
+.. code-block::
 
     # Cell 1
     ...  # boiler plate with SharedClientState server

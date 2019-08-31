@@ -1,15 +1,3 @@
-# copied from prod.txt
-sanic >=18.12, <19.0
-
-# copied from dev.txt
-pytest
-pytest-asyncio
-mypy
-jupyter
-pre-commit
-black
-flake8
 sphinx
 sphinx-autodoc-typehints
 sphinx-rtd-theme
-notebook

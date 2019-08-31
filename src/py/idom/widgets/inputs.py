@@ -18,7 +18,7 @@ class Input(AbstractElement):
         value:
             an initial value
         label:
-            A label for the input. If given the ``<input/>`` in is wrapped inside a
+            A label for the input. If the ``<input/>`` is wrapped inside a
             ``<label/>`` element.
         ignore_empty:
             Whether or not to ignore updates where the value is ``''``.
