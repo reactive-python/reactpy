@@ -65,11 +65,12 @@ master_doc = "index"
 # Usually you set "language" from the command line for these cases.
 language = None
 
-# order autodoc members by their order in the source
-autodoc_member_order = "bysource"
-
-# show base classes for autodoc
-autodoc_default_flags = ["show-inheritance", "inherited-members"]
+# autodoc options
+autodoc_default_options = {
+    "member-order": "bysource",
+    "show-inheritance": True,
+    "inherited-members": True,
+}
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -78,6 +79,9 @@ autodoc_default_flags = ["show-inheritance", "inherited-members"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
+
+# set default highlight language
+highlight_language = "python3"
 
 # -- Options for HTML output -------------------------------------------------
 
