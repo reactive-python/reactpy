@@ -1,9 +1,3 @@
-pytest
-pytest-asyncio
-mypy
 jupyter
 pre-commit
-black
-flake8
 notebook
-selenium
