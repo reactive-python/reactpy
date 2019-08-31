@@ -79,9 +79,6 @@ autodoc_default_flags = ["show-inheritance", "inherited-members"]
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
-# The default language to highlight source code in.
-highlight_language = "python3"
-
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
