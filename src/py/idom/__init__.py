@@ -1,4 +1,4 @@
-__version__ = "0.5.1-a.3"
+__version__ = "0.6.0-a.1"
 
 from . import server
 
