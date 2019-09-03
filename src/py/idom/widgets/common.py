@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, List, Tuple, Optional
 
-import idom
 from idom.core.element import ElementConstructor, AbstractElement, Element, element
+from idom.tools import Var
 
 
 def node(tag: Optional[str], *children: Any, **attributes: Any) -> Dict[str, Any]:
@@ -216,9 +216,9 @@ def hotswap(
 
             # displaying the output now will show DivTwo
     """
-    current_root: idom.Var[Optional[Element]] = idom.Var(None)
-    current_swap: idom.Var[Callable[[], Any]] = idom.Var(lambda: {"tagName": "div"})
-    last_element: idom.Var[Optional[Element]] = idom.Var(None)
+    current_root: Var[Optional[Element]] = Var(None)
+    current_swap: Var[Callable[[], Any]] = Var(lambda: {"tagName": "div"})
+    last_element: Var[Optional[Element]] = Var(None)
 
     @element
     async def HotSwap(self: Element) -> Any:

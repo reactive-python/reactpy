@@ -252,11 +252,11 @@ Layout Renderer
 
 An :class:`~idom.core.render.AbstractRenderer` implementation is a relatively thin layer
 of logic around a :class:`~idom.core.layout.Layout` which drives the triggering of
-events and layout updates by scheduling an asynchronous loop that will run forever.
-To run the loop the renderer's :meth:`~idom.core.render.AbstractRenderer.run` method
-accepts two callbacks, one is a "send" callback to which the renderer passes updates,
-while the other is "receive" callback that's called by the renderer to events it should
-execute.
+events and layout updates by scheduling an asynchronous loop that will run forever -
+effectively animating the model. To run the loop the renderer's
+:meth:`~idom.core.render.AbstractRenderer.run` method accepts two callbacks, one is a
+"send" callback to which the renderer passes updates, while the other is "receive"
+callback that's called by the renderer to events it should execute.
 
 .. code-block::
 
@@ -301,6 +301,78 @@ execute.
     the :class:`~idom.core.render.SingleStateRenderer` it doesn't require any
     context. On the other hand the :class:`~idom.core.render.SharedStateRenderer`
     requires a client ID as its piece of contextual information.
+
+
+Layout Server
+-------------
+
+The :ref:`Renderer <Layout Renderer>` allows you to animate the layout, but we still
+need to get the models on the screen, and one of the last steps in that journey is to
+send them over the wire. To do that you need an
+:class:`~idom.server.base.AbstractRenderServer` implementation. Right now we have a
+builtin subclass that relies on :mod:`sanic`, an async enabled web server. In principle
+though, the base server class is capable of working with any other async enabled server
+framework. Potential candidates range from newer frameworks like
+`vibora <https://vibora.io/>`__ and
+`aiohttp <https://aiohttp.readthedocs.io/en/stable/>`__ to older ones that are
+starting to add support for asyncio like
+`tornado <https://www.tornadoweb.org/en/stable/asyncio.html>`__.
+
+.. note::
+    If using or implementing a bridge between iDOM and these servers interests you post
+    an `issue <https://github.com/rmorshea/idom/issues>`__.
+
+In the case of our :class:`~idom.server.sanic.SanicRenderServer` types we have one
+implementation per builtin :ref:`Renderer <Layout Renderer>`:
+
+- :class:`idom.server.sanic.PerClientState`
+
+- :class:`idom.server.sanic.SharedClientState`
+
+The main thing to understand about server implementations is that they can function in
+two ways - as a standalone application or as extension to an existing one.
+
+
+Standalone Server Usage
+.......................
+
+The implementation constructs a default application that's used to server the renders of
+the model:
+
+.. code-block:: python
+
+    import idom
+    from idom.server.sanic import PerClientState
+
+    @idom.element
+    def View(self):
+        return idom.html.h1("Hello World")
+
+    app = PerClientState(View)
+    app.run("localhost", 5000)
+
+
+Server Extension Usage
+......................
+
+The implementation registers hooks into the application to server the model once run:
+
+.. code-block:: python
+
+    import idom
+    from idom.server.sanic import PerClientState
+    from sanic import Sanic
+
+    app = Sanic()
+
+    @idom.element
+    def View(self):
+        return idom.html.h1("Hello World")
+
+    per_client_state = PerClientState(View)
+    per_client_state.register(app)
+
+    app.run("localhost", 5000)
 
 
 .. _pure functions: https://en.wikipedia.org/wiki/Pure_function

@@ -13,13 +13,13 @@ from idom.core.render import (
     SendCoroutine,
     RecvCoroutine,
 )
-from idom.core.layout import Layout, LayoutEvent
+from idom.core.layout import LayoutEvent
 from idom.core.utils import STATIC_DIRECTORY
 
-from .base import AbstractServerExtension, Config
+from .base import AbstractRenderServer, Config
 
 
-class SanicServerExtension(AbstractServerExtension):
+class SanicRenderServer(AbstractRenderServer):
     """Base ``sanic`` extension."""
 
     def _init_config(self, config: Config) -> None:
@@ -70,16 +70,19 @@ class SanicServerExtension(AbstractServerExtension):
         )
 
 
-class PerClientState(SanicServerExtension):
+class PerClientState(SanicRenderServer):
     """Each client view will have its own state."""
 
+    _renderer_type = SingleStateRenderer
+
     async def _run_renderer(self, send: SendCoroutine, recv: RecvCoroutine) -> None:
-        element = self._element_constructor(*self._element_args, **self._element_kwargs)
-        await SingleStateRenderer(Layout(element)).run(send, recv, None)
+        await self._make_renderer().run(send, recv, None)
 
 
-class SharedClientState(SanicServerExtension):
+class SharedClientState(SanicRenderServer):
     """All connected client views will have shared state."""
+
+    _renderer_type = SharedStateRenderer
 
     def _setup_application(self, app: Sanic, config: Config) -> None:
         super()._setup_application(app, config)
@@ -88,7 +91,7 @@ class SharedClientState(SanicServerExtension):
     async def _setup_renderer(
         self, app: Sanic, loop: asyncio.AbstractEventLoop
     ) -> None:
-        self._renderer = SharedStateRenderer(Layout(self._create_element(), loop=loop))
+        self._renderer = self._make_renderer(loop)
 
     async def _run_renderer(self, send: SendCoroutine, recv: RecvCoroutine) -> None:
         await self._renderer.run(send, recv, uuid.uuid4().hex)

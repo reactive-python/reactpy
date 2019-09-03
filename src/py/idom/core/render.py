@@ -4,7 +4,7 @@ from loguru import logger
 
 from typing import Callable, Awaitable, Dict, Any
 
-from .layout import Layout, LayoutUpdate, LayoutEvent, RenderError
+from .layout import LayoutUpdate, LayoutEvent, RenderError, AbstractLayout
 
 
 SendCoroutine = Callable[[Any], Awaitable[None]]
@@ -14,14 +14,14 @@ RecvCoroutine = Callable[[], Awaitable[LayoutEvent]]
 class AbstractRenderer(abc.ABC):
     """A base class for implementing :class:`~idom.core.layout.Layout` renderers."""
 
-    def __init__(self, layout: Layout) -> None:
+    def __init__(self, layout: AbstractLayout) -> None:
         self._layout = layout
 
     async def run(self, send: SendCoroutine, recv: RecvCoroutine, context: Any) -> None:
         """Start an unending loop which will drive the layout.
 
-        This will call :meth:`Layout.render` and :meth:`Layout.trigger` to render
-        new models and execute events respectively.
+        This will call :meth:`AbstractLayout.render` and :meth:`AbstractLayout.trigger`
+        to render new models and execute events respectively.
         """
         await asyncio.gather(
             self._outgoing_loop(send, context), self._incoming_loop(recv, context)
@@ -36,11 +36,13 @@ class AbstractRenderer(abc.ABC):
             await self._incoming(self._layout, context, await recv())
 
     @abc.abstractmethod
-    def _outgoing(self, layout: Layout, context: Any) -> Any:
+    def _outgoing(self, layout: AbstractLayout, context: Any) -> Any:
         ...
 
     @abc.abstractmethod
-    def _incoming(self, layout: Layout, context: Any, message: Any) -> Awaitable[None]:
+    def _incoming(
+        self, layout: AbstractLayout, context: Any, message: Any
+    ) -> Awaitable[None]:
         ...
 
 
@@ -52,7 +54,7 @@ class SingleStateRenderer(AbstractRenderer):
         be ``None`` since it's not used.
     """
 
-    async def _outgoing(self, layout: Layout, context: Any) -> Dict[str, Any]:
+    async def _outgoing(self, layout: AbstractLayout, context: Any) -> Dict[str, Any]:
         try:
             src, new, old = await layout.render()
         except RenderError as error:
@@ -63,7 +65,9 @@ class SingleStateRenderer(AbstractRenderer):
 
         return {"root": layout.root, "src": src, "new": new, "old": old}
 
-    async def _incoming(self, layout: Layout, context: Any, event: LayoutEvent) -> None:
+    async def _incoming(
+        self, layout: AbstractLayout, context: Any, event: LayoutEvent
+    ) -> None:
         await layout.trigger(event)
 
 
@@ -74,7 +78,7 @@ class SharedStateRenderer(SingleStateRenderer):
     :meth:`SharedStateRenderer.run`
     """
 
-    def __init__(self, layout: Layout) -> None:
+    def __init__(self, layout: AbstractLayout) -> None:
         super().__init__(layout)
         self._models: Dict[str, Dict[str, Any]] = {}
         self._updates: Dict[str, asyncio.Queue[LayoutUpdate]] = {}
@@ -119,7 +123,7 @@ class SharedStateRenderer(SingleStateRenderer):
             )
         await super()._outgoing_loop(send, context)
 
-    async def _outgoing(self, layout: Layout, context: str) -> Dict[str, Any]:
+    async def _outgoing(self, layout: AbstractLayout, context: str) -> Dict[str, Any]:
         src, new, old = await self._updates[context].get()
         return {"root": layout.root, "src": src, "new": new, "old": old}
 
