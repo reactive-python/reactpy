@@ -5,15 +5,26 @@ import inspect
 from functools import wraps
 import time
 
-from typing import Dict, Callable, Any, List, Optional, overload, Awaitable, Union
-
-import idom
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Callable,
+    Any,
+    List,
+    Optional,
+    overload,
+    Awaitable,
+    Union,
+)
 
 from .utils import bound_id
 
 
 ElementConstructor = Callable[..., "Element"]  # Element constructor
 ElementRenderFunction = Callable[..., Awaitable[Any]]
+
+if TYPE_CHECKING:
+    from .layout import AbstractLayout
 
 
 @overload
@@ -75,7 +86,7 @@ class AbstractElement(abc.ABC):
         __slots__.append("__weakref__")
 
     def __init__(self) -> None:
-        self._layout: Optional["idom.Layout"] = None
+        self._layout: Optional["AbstractLayout"] = None
         self._element_id = bound_id(self)
 
     @property
@@ -88,7 +99,7 @@ class AbstractElement(abc.ABC):
         """Return the model for the element."""
         ...
 
-    async def mount(self, layout: "idom.Layout") -> None:
+    async def mount(self, layout: "AbstractLayout") -> None:
         """Mount a layout to the element instance.
 
         Occurs just before rendering the element for the **first** time.
@@ -116,10 +127,10 @@ _ANM = Callable[[_STP], Awaitable[bool]]
 class Element(AbstractElement):
     """An object for rending element models.
 
-    Rendering element objects is typically done by a :class:`idom.layout.Layout` which
+    Rendering element objects is typically done by a :class:`idom.core.layout.Layout` which
     will :meth:`Element.mount` itself to the element instance the first time it is rendered.
     From there an element instance will communicate its needs to the layout. For example
-    when an element wants to re-render it will call :meth:`idom.layout.Layout.element_updated`.
+    when an element wants to re-render it will call :meth:`idom.core.layout.Layout.element_updated`.
 
     The lifecycle of an element typically goes in this order:
 
@@ -154,7 +165,7 @@ class Element(AbstractElement):
         super().__init__()
         self._function = function
         self._function_signature = inspect.signature(function)
-        self._layout: Optional["idom.Layout"] = None
+        self._layout: Optional["AbstractLayout"] = None
         self._cross_update_state: Dict[str, Any] = {}
         self._cross_update_parameters: List[str] = list(
             map(str.strip, (state_parameters or "").split(","))
