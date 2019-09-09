@@ -89,14 +89,14 @@ function getPathProperty(obj, prop) {
 
 function evalInContext(jsx) {
     const transform = babelTransform(
-        "() => {let React = this.React;" + jsx + "}",
+        "const React = this.React;\n" + jsx,
         {
             presets: ["react"],
             plugins: [require("@babel/plugin-syntax-dynamic-import")]
         }
     );
     return function() {
-        return eval(transform.code)();
+        return eval(transform.code);
     }.call({
         React: React
     });

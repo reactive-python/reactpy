@@ -1,4 +1,4 @@
-__version__ = "0.6.0-a.3"
+__version__ = "0.6.0-a.4"
 
 from . import server
 
@@ -7,7 +7,7 @@ from .core.events import event, Events
 from .core.layout import Layout
 
 from .widgets import html
-from .widgets.common import node, hotswap, Import, Module
+from .widgets.common import node, hotswap, Eval, Import
 from .widgets.display import display
 from .widgets.inputs import Input
 from .widgets.images import Image
@@ -26,7 +26,7 @@ __all__ = [
     "Var",
     "node",
     "Image",
-    "Module",
+    "Eval",
     "Import",
     "hotswap",
     "display",

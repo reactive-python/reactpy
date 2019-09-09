@@ -49,17 +49,17 @@ def node_constructor(
     return constructor
 
 
-class Module:
+class Eval:
     """An interface for creating React Components that you can use in your layouts."""
 
     def __init__(self, code: str) -> None:
         super().__init__()
         self._code = code
 
-    def __getattr__(self, tag: str) -> Callable[..., "ModuleElement"]:
+    def __getattr__(self, tag: str) -> Callable[..., "EvalElement"]:
         def constructor(
             *children: Any, fallback: Optional[str] = None, **attributes: Any
-        ) -> "ModuleElement":
+        ) -> "EvalElement":
             return self(tag, *children, fallback=fallback, **attributes)
 
         return constructor
@@ -70,12 +70,12 @@ class Module:
         *children: Any,
         fallback: Optional[str] = None,
         **attributes: Any,
-    ) -> "ModuleElement":
-        return ModuleElement(self._code, tag, children, attributes, fallback)
+    ) -> "EvalElement":
+        return EvalElement(self._code, tag, children, attributes, fallback)
 
 
-class ModuleElement(AbstractElement):
-    """An element created by :class:`Module` which refers to a React component."""
+class EvalElement(AbstractElement):
+    """An element created by :class:`Eval` which refers to a React component."""
 
     def __init__(
         self,
@@ -97,11 +97,7 @@ class ModuleElement(AbstractElement):
             "tagName": self._tag,
             "children": self._children,
             "attributes": self._attributes,
-            "importSource": {
-                "id": hex(hash(self._code)),
-                "source": self._code,
-                "fallback": None,
-            },
+            "importSource": {"source": self._code, "fallback": None},
         }
 
 
@@ -132,10 +128,10 @@ class Import:
     def __init__(self, pkg: str) -> None:
         self._pkg = pkg
 
-    def __getattr__(self, tag: str) -> Callable[..., "ImportElement"]:
+    def __getattr__(self, tag: str) -> Callable[..., "EvalElement"]:
         def constructor(
             *children: Any, fallback: Optional[str] = None, **attributes: Any
-        ) -> "ImportElement":
+        ) -> "EvalElement":
             return self(tag, *children, fallback=fallback, **attributes)
 
         return constructor
@@ -146,43 +142,15 @@ class Import:
         *children: Any,
         fallback: Optional[str] = None,
         **attributes: Any,
-    ) -> "ImportElement":
-        return ImportElement(self._pkg, tag, children, attributes, fallback)
+    ) -> "EvalElement":
+        if self._pkg.startswith("/"):
+            url = self._pkg
+        else:
+            url = f"https://dev.jspm.io/{self._pkg}"
 
+        code = f"import('{url}').then(pkg => pkg.default);"
 
-class ImportElement(AbstractElement):
-    """A component from a React library.
-
-    You should probably use :class:`Package` to instantiate this element.
-    """
-
-    __slots__ = ("_package", "_tag", "_children", "_attributes", "_fallback")
-
-    def __init__(
-        self,
-        package: str,
-        tag: Optional[str],
-        children: Tuple[Any, ...],
-        attributes: Dict[str, Any],
-        fallback: Optional[str],
-    ) -> None:
-        super().__init__()
-        self._package = package
-        self._tag = tag
-        self._children = children
-        self._attributes = attributes
-        self._fallback = fallback
-
-    async def render(self) -> Any:
-        source = {
-            "id": hex(hash(self._package)),
-            "source": f"""
-                return import('https://dev.jspm.io/{self._package}')
-                .then(pkg => pkg.default);
-            """,
-            "fallback": self._fallback,
-        }
-        return node(self._tag, importSource=source, *self._children, **self._attributes)
+        return EvalElement(code, tag, children, attributes, fallback)
 
 
 def hotswap(
