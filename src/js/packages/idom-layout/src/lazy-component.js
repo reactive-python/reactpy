@@ -8,9 +8,20 @@ function lazyComponent(model) {
             // Allows the code to make components with dynamic imports that to return a
             // promise. Non-dynamic code, is just wrapped in a promise so it works with
             // React.lazy without any user code.
-            return Promise.resolve(result).then(pkg => {
-                return resolvePackage(pkg, model.tagName);
-            });
+            return Promise.resolve(result).then(
+                pkg => {
+                    return resolvePackage(pkg, model.tagName);
+                },
+                error => {
+                    function Catch() {
+                        return (
+                            <pre>
+                                <code>{error.message}</code>
+                            </pre>
+                        );
+                    }
+                    return {default: Catch};
+                });
         } catch (error) {
             function Error() {
                 return (
@@ -27,7 +38,7 @@ function lazyComponent(model) {
 function resolvePackage(pkg, path) {
     let Resolution;
     try {
-        const Component = getPathProperty(pkg, path);
+        const Component = (path ? getPathProperty(pkg, path): pkg);
 
         switch (typeof Component) {
             case "string":
