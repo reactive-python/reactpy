@@ -3,12 +3,11 @@ import React, {
     useEffect,
     useState,
     useMemo,
-    lazy,
     Suspense
 } from "react";
-import { transform as babelTransform } from "@babel/standalone";
 
 import serializeEvent from "./event-to-object";
+import lazyComponent from "./lazy-component";
 
 const allUpdateTriggers = {};
 const allModels = {};
@@ -154,100 +153,12 @@ function elementAttributes(model, sendEvent) {
 
     return attributes;
 }
-
-function lazyComponent(model) {
-    return React.lazy(() => {
-        try {
-            const result = evalInContext(model.importSource.source);
-            // Allows the code to make components with dynamic imports that to return a
-            // promise. Non-dynamic code, is just wrapped in a promise so it works with
-            // React.lazy without any user code.
-            return Promise.resolve(result).then(pkg => {
-                const toExport = { default: pkg };
-                model.tagName.split(".").forEach(part => {
-                    toExport.default = toExport.default[part];
-                });
-                const Component = toExport.default;
-                function Catch(props) {
-                    return (
-                        <ErrorBoundary>
-                            <Component {...props} />
-                        </ErrorBoundary>
-                    );
-                }
-                return { default: Catch };
-            });
-        } catch (error) {
-            function Error() {
-                return (
-                    <pre>
-                        <code>{error.message}</code>
-                    </pre>
-                );
-            }
-            return Promise.resolve({ default: Error });
-        }
-    });
-}
-
 function useForceUpdate() {
     const [, setState] = useState(true);
     const forceUpdate = () => {
         setState(state => !state);
     };
     return forceUpdate;
-}
-
-function getPathProperty(obj, prop) {
-    // properties may be dot seperated strings
-    const path = prop.split(".");
-    const firstProp = path.shift();
-    let value = obj[firstProp];
-    for (let i = 0; i < path.length; i++) {
-        value = value[path[i]];
-    }
-    return value;
-}
-
-function evalInContext(jsx) {
-    const transform = babelTransform(
-        "() => {let React = this.React;" + jsx + "}",
-        {
-            presets: ["react"],
-            plugins: [require("@babel/plugin-syntax-dynamic-import")]
-        }
-    );
-    return function() {
-        return eval(transform.code)();
-    }.call({
-        React: React
-    });
-}
-
-class ErrorBoundary extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            error: null
-        };
-    }
-    componentDidCatch(error, info) {
-        this.setState({
-            error: error.message
-        });
-        console.log("error: ", error);
-        console.log("info: ", info);
-    }
-    render() {
-        if (this.state.error) {
-            return (
-                <pre>
-                    <code>{this.state.error}</code>
-                </pre>
-            );
-        }
-        return this.props.children;
-    }
 }
 
 export default Layout;
