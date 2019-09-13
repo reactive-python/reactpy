@@ -1,7 +1,7 @@
 Core Concepts
 =============
 
-This section covers core features of iDOM that are used in making
+This section covers core features of IDOM that are used in making
 interactive interfaces.
 
 .. contents::
@@ -17,7 +17,7 @@ we manage state, and the first tool in encouraging its proper curation is the
 usage of `pure functions`_. The benefit of a pure function is that there's no
 state, and state that's not there won't be causing bugs.
 
-With iDOM the core of your application will be built on the back of basic
+With IDOM the core of your application will be built on the back of basic
 functions and coroutines that return :term:`VDOM` models and which do so without
 `side effects`_. We call these kinds of model rendering functions
 :term:`Pure Elements <Pure Element>`. There are two ways to create Pure Elements:
@@ -126,7 +126,7 @@ want to define a :term:`Class Element` by creating a subclass of
 :class:`~idom.core.element.AbstractElement`. This is most useful if
 your element needs an interface which allows you to do more than just
 :meth:`~idom.core.element.Element.update` it. You'll find this strategy is used
-to implement some of the common iDOM widgets like
+to implement some of the common IDOM widgets like
 :class:`~idom.widgets.inputs.Input` and
 :class:`~idom.widgets.images.Image`.
 
@@ -319,7 +319,7 @@ starting to add support for asyncio like
 `tornado <https://www.tornadoweb.org/en/stable/asyncio.html>`__.
 
 .. note::
-    If using or implementing a bridge between iDOM and these servers interests you post
+    If using or implementing a bridge between IDOM and these servers interests you post
     an `issue <https://github.com/rmorshea/idom/issues>`__.
 
 In the case of our :class:`~idom.server.sanic.SanicRenderServer` types we have one

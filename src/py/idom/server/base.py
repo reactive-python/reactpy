@@ -13,9 +13,9 @@ Config = Dict[str, Any]
 
 
 class AbstractRenderServer(abc.ABC):
-    """Base class for all iDOM server application and extension implementations.
+    """Base class for all IDOM server application and extension implementations.
 
-    It is assumed that iDOM will be used in conjuction with some async-enabled server
+    It is assumed that IDOM will be used in conjuction with some async-enabled server
     library (e.g. ``sanic`` or ``tornado``) so these server implementations should work
     standalone and as an extension to an existing application.
 

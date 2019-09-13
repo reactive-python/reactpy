@@ -20,10 +20,9 @@ before_install:
   - sudo chmod +x /usr/bin/chromedriver
 
 install:
-  # Install iDOM along with test requirements
+  # Install IDOM along with test requirements
   - pip install -r requirements.txt
-  - python setup.py build
-  - python setup.py install
+  - pip install -e .
 
 script: cd $WORK_DIR && eval $TEST_CMD
 

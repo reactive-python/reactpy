@@ -18,7 +18,7 @@ sys.path.insert(0, project)
 
 # -- Project information -----------------------------------------------------
 
-project = "iDOM"
+project = "IDOM"
 copyright = "2019, Ryan Morshead"
 author = "Ryan Morshead"
 
@@ -114,7 +114,7 @@ html_static_path = ["_static"]
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "iDOMdoc"
+htmlhelp_basename = "IDOMdoc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -138,7 +138,7 @@ htmlhelp_basename = "iDOMdoc"
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, "iDOM.tex", "iDOM Documentation", "Ryan Morshead", "manual")
+    (master_doc, "IDOM.tex", "IDOM Documentation", "Ryan Morshead", "manual")
 ]
 
 
@@ -146,7 +146,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "idom", "iDOM Documentation", [author], 1)]
+man_pages = [(master_doc, "idom", "IDOM Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -157,10 +157,10 @@ man_pages = [(master_doc, "idom", "iDOM Documentation", [author], 1)]
 texinfo_documents = [
     (
         master_doc,
-        "iDOM",
-        "iDOM Documentation",
+        "IDOM",
+        "IDOM Documentation",
         author,
-        "iDOM",
+        "IDOM",
         "One line description of project.",
         "Miscellaneous",
     )

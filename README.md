@@ -1,4 +1,4 @@
-# iDOM
+# IDOM
 
 <a href="https://travis-ci.com/rmorshea/idom">
   <img alt="Build Status" src="https://travis-ci.com/rmorshea/idom.svg?branch=master"/>
@@ -15,7 +15,7 @@ Libraries for creating and controlling interactive web pages with Python 3.6 and
 * [Python Documentation](https://idom.readthedocs.io/en/latest/)
 * [Javascript Documentation](https://github.com/rmorshea/idom/blob/master/src/js/README.md)
 
-iDOM is still young. If you have ideas or find a bug, be sure to post an
+IDOM is still young. If you have ideas or find a bug, be sure to post an
 [issue](https://github.com/rmorshea/idom/issues)
 or create a
 [pull request](https://github.com/rmorshea/idom/pulls). Thanks in advance!
@@ -43,7 +43,7 @@ pip install idom
 
 # At a Glance
 
-iDOM can be used to create a simple slideshow which changes whenever a user clicks an image.
+IDOM can be used to create a simple slideshow which changes whenever a user clicks an image.
 
 ```python
 import idom

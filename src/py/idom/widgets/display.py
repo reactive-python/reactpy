@@ -7,7 +7,7 @@ from idom.core.utils import STATIC_DIRECTORY
 
 
 def display(kind: str, *args: Any, **kwargs: Any) -> Any:
-    """Display an iDOM layout.
+    """Display an IDOM layout.
 
     Parameters:
         kind: how output should be displayed.
@@ -19,7 +19,7 @@ def display(kind: str, *args: Any, **kwargs: Any) -> Any:
 
 
 class JupyterWigdet:
-    """Output for iDOM within a Jupyter Notebook."""
+    """Output for IDOM within a Jupyter Notebook."""
 
     _shown = False
     __slots__ = "_url"

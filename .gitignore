@@ -14,10 +14,13 @@ MANIFEST
 build
 dist
 *.egg-info
-*.pytest_cache
-*.mypy_cache
 __pycache__/
 *.py[cod]
+
+# -- Python Tests ---
+*.coverage
+*.pytest_cache
+*.mypy_cache
 
 # --- IDE ---
 .idea
