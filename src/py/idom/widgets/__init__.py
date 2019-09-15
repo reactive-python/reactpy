@@ -1,4 +1,4 @@
-from .common import node, Eval, Import, hotswap
+from .common import Eval, Import, hotswap
 from .display import display
 from .inputs import Input
 from .images import Image

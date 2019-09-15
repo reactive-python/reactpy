@@ -16,6 +16,10 @@ from .utils import bound_id
 from .element import AbstractElement
 
 
+EventsMapping = Union[
+    Dict[str, "EventHandlerFunction"], Dict[str, "EventHandler"], "Events"
+]
+
 EventHandlerFunction = Callable[..., Awaitable[Any]]  # event handler function
 
 

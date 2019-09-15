@@ -1,4 +1,4 @@
-from .common import node_constructor
+from idom.core.vdom import node_constructor
 
 __all__ = [
     # External sources

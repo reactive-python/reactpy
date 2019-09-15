@@ -1,52 +1,8 @@
-from typing import Any, Callable, Dict, List, Tuple, Optional
+from typing import Any, Callable, Dict, Tuple, Optional
 
 from idom.core.element import ElementConstructor, AbstractElement, Element, element
+from idom.core.vdom import VdomDict
 from idom.tools import Var
-
-
-def node(tag: Optional[str], *children: Any, **attributes: Any) -> Dict[str, Any]:
-    """A helper function for generating DOM model dictionaries."""
-    merged_children: List[Any] = []
-
-    for c in children:
-        if isinstance(c, (list, tuple)):
-            merged_children.extend(c)
-        else:
-            merged_children.append(c)
-
-    model: Dict[str, Any] = {"tagName": tag}
-
-    if merged_children:
-        model["children"] = merged_children
-
-    for top_level_attr in ["eventHandlers", "importSource"]:
-        if top_level_attr in attributes:
-            model[top_level_attr] = attributes.pop(top_level_attr)
-
-    if attributes:
-        model["attributes"] = attributes
-        if "cls" in attributes:
-            # you can't use 'class' as a keyword
-            model["attributes"]["class"] = attributes.pop("cls")
-
-    return model
-
-
-def node_constructor(
-    tag: str, allow_children: bool = True
-) -> Callable[..., Dict[str, Any]]:
-    """Create a constructor for nodes with the given tag name."""
-
-    def constructor(*children: Any, **attributes: Any) -> Dict[str, Any]:
-        if not allow_children and children:
-            raise TypeError(f"{tag!r} nodes cannot have children.")
-        return node(tag, *children, **attributes)
-
-    constructor.__name__ = tag
-    qualname_prefix = constructor.__qualname__.rsplit(".", 1)[0]
-    constructor.__qualname__ = qualname_prefix + f".{tag}"
-    constructor.__doc__ = f"""Create a new ``<{tag}/>`` - returns :term:`VDOM`."""
-    return constructor
 
 
 class Eval:
@@ -92,7 +48,7 @@ class EvalElement(AbstractElement):
         self._attributes = attributes
         self._fallback = fallback
 
-    async def render(self) -> Any:
+    async def render(self) -> VdomDict:
         return {
             "tagName": self._tag,
             "children": self._children,

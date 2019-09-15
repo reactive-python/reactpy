@@ -31,7 +31,7 @@ async def test_nested_element_layout():
     @history.track("parent")
     @idom.element
     async def parent_element(self):
-        return idom.html.div(child_element())
+        return idom.html.div([child_element()])
 
     @history.track("child")
     @idom.element

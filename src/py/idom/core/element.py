@@ -4,7 +4,6 @@ from concurrent.futures import Executor
 import inspect
 from functools import wraps
 import time
-
 from typing import (
     TYPE_CHECKING,
     Dict,
@@ -20,11 +19,13 @@ from typing import (
 from .utils import bound_id
 
 
-ElementConstructor = Callable[..., "Element"]  # Element constructor
-ElementRenderFunction = Callable[..., Awaitable[Any]]
-
 if TYPE_CHECKING:
     from .layout import AbstractLayout
+    from .vdom import VdomDict  # noqa
+
+
+ElementConstructor = Callable[..., "Element"]
+ElementRenderFunction = Callable[..., Awaitable["VdomDict"]]
 
 
 @overload

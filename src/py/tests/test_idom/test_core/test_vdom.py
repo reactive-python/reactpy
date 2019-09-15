@@ -1,14 +1,22 @@
 import pytest
 
 import idom
-from idom.widgets.common import node_constructor
+from idom.core.vdom import node_constructor
+
+
+fake_events = idom.Events()
+
+
+@fake_events.on("Click")
+async def handler(event):
+    pass
 
 
 @pytest.mark.parametrize(
     "actual, expected",
     [
         (
-            idom.html.div(idom.html.div()),
+            idom.html.div([idom.html.div()]),
             {"tagName": "div", "children": [{"tagName": "div"}]},
         ),
         (
@@ -21,24 +29,24 @@ from idom.widgets.common import node_constructor
         ),
         (
             # keywords become attributes
-            idom.html.div(style={"backgroundColor": "blue"}),
+            idom.html.div({"style": {"backgroundColor": "blue"}}),
             {"tagName": "div", "attributes": {"style": {"backgroundColor": "blue"}}},
         ),
         (
-            # eventHandlers is popped from attributes and made a top level field
-            idom.html.div(eventHandlers=idom.Events()),
-            {"tagName": "div", "eventHandlers": idom.Events()},
+            idom.html.div(event_handlers=fake_events),
+            {"tagName": "div", "eventHandlers": fake_events},
         ),
     ],
 )
 def test_simple_node_construction(actual, expected):
+    print(actual, expected)
     assert actual == expected
 
 
 def test_node_constructor_factory():
     elmt = node_constructor("some-tag")
 
-    assert elmt(elmt(), data=1) == {
+    assert elmt([elmt()], {"data": 1}) == {
         "tagName": "some-tag",
         "children": [{"tagName": "some-tag"}],
         "attributes": {"data": 1},

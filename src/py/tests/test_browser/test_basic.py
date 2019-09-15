@@ -8,7 +8,7 @@ from threading import Condition
 def test_simple_hello_world(driver, display):
     @idom.element
     async def Hello(self):
-        return idom.html.p("Hello World", id="hello")
+        return idom.html.p(["Hello World"], {"id": "hello"})
 
     display(Hello)
 
@@ -25,9 +25,9 @@ def test_simple_click_event(driver, display):
             self.update()
 
         if not clicked.get():
-            return idom.html.button("Click Me!", onClick=on_click, id="click")
+            return idom.html.button(["Click Me!"], {"onClick": on_click, "id": "click"})
         else:
-            return idom.html.p("Complete", id="complete")
+            return idom.html.p(["Complete"], {"id": "complete"})
 
     display(Button)
 
@@ -49,9 +49,9 @@ def test_simple_input(driver, display):
                 self.update()
 
         if message.get() is None:
-            return idom.html.input(id="input", onChange=on_change)
+            return idom.html.input({"id": "input", "onChange": on_change})
         else:
-            return idom.html.p("Complete", id="complete")
+            return idom.html.p(["Complete"], {"id": "complete"})
 
     display(Input)
 
@@ -78,7 +78,7 @@ def test_animation(driver, display):
             else:
                 stop()
 
-        return idom.html.p(f"Count: {count}", id=f"counter-{count}")
+        return idom.html.p([f"Count: {count}"], {"id": f"counter-{count}"})
 
     display(Counter)
 
@@ -95,7 +95,7 @@ def test_can_prevent_event_default_operation(driver, display):
         async def on_key_down(value):
             pass
 
-        return idom.html.input(onKeyDown=on_key_down, id="input")
+        return idom.html.input({"onKeyDown": on_key_down, "id": "input"})
 
     display(Input)
 
@@ -115,15 +115,19 @@ def test_can_stop_event_propogation(driver, display):
             assert False
 
         inner = idom.html.div(
-            style={"height": "30px", "width": "30px", "backgroundColor": "blue"},
-            eventHandlers=inner_events,
-            id="inner",
+            {
+                "style": {"height": "30px", "width": "30px", "backgroundColor": "blue"},
+                "id": "inner",
+            },
+            event_handlers=inner_events,
         )
         outer = idom.html.div(
-            inner,
-            style={"height": "35px", "width": "35px", "backgroundColor": "red"},
-            onClick=outer_click_is_not_triggered,
-            id="outer",
+            [inner],
+            {
+                "style": {"height": "35px", "width": "35px", "backgroundColor": "red"},
+                "onClick": outer_click_is_not_triggered,
+                "id": "outer",
+            },
         )
         return outer
 
