@@ -1,6 +1,9 @@
 IDOM |release|
 ==============
 
+.. image:: static/idom-logo.png
+    :height: 300px
+
 Libraries for defining and controlling interactive webpages with Python
 3.6 and above.
 

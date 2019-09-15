@@ -1,4 +1,11 @@
-# IDOM
+<h1>
+  IDOM
+  <img
+    alt="Logo"
+    style="height: 1.5rem"
+    src="https://raw.githubusercontent.com/rmorshea/idom/master/src/py/docs/source/static/idom-logo-black.png"
+  />
+</h1>
 
 <a href="https://travis-ci.com/rmorshea/idom">
   <img alt="Build Status" src="https://travis-ci.com/rmorshea/idom.svg?branch=master"/>
