@@ -1,13 +1,13 @@
-# iDOM (Javascript)
+# IDOM (Javascript)
 
-The client side of iDOM. This is where raw DOM models are consumed and then turned
+The client side of IDOM. This is where raw DOM models are consumed and then turned
 into images on the screen. All libraries require React `16.8.2` (the one with
 [hooks](https://reactjs.org/docs/hooks-intro.html)
 ).
 
 # Early Days
 
-iDOM is still young. If you have ideas or find a bug, be sure to post an
+IDOM is still young. If you have ideas or find a bug, be sure to post an
 [issue](https://github.com/rmorshea/idom/issues)
 or create a
 [pull request](https://github.com/rmorshea/idom/pulls).

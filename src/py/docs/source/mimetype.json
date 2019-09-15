@@ -29,50 +29,53 @@
           "description": "An identifier for the callback function",
           "pattern": "^[a-zA-Z0-9]*$"
         },
-        "eventProps": {
-          "description": "a list of event properties that should be sent back",
-          "type": "array",
-          "items": {"type": "string"},
-        },
         "stopPropagation": {"type": "boolean"},
         "preventDefault": {"type": "boolean"}
+      }
+    },
+    "importSource": {
+      "type": "object",
+      "properties": {
+        "source": {"type": "string"},
+        "fallback": {"$ref": "#/definitions/vdomChild"}
       }
     },
     "vdomChildren": {
       "type": "array",
       "description": "a list of strings, VDOM, or model references",
-      "items": {
-        "type": "object",
-        "oneOf": [
-          {
-            "if": {
-              "description": "a string",
-              "properties": {"type": {"const": "str"}}
-            },
-            "then": {
-              "properties": {"data": {"type": "string"}}
-            }
+      "items": {"$ref": "#/definitions/vdomChild"}
+    },
+    "vdomChild": {
+      "type": "object",
+      "oneOf": [
+        {
+          "if": {
+            "description": "a string",
+            "properties": {"type": {"const": "str"}}
           },
-          {
-            "if": {
-              "description": "a VDOM object",
-              "properties": {"type": {"const": "obj"}}
-            },
-            "then": {
-              "properties": {"data": {"$ref": "#/"}}
-            }
-          },
-          {
-            "if": {
-              "description": "a model reference",
-              "properties": {"type": {"const": "ref"}}
-            },
-            "then": {
-              "properties": {"data": {"type": "string"}}
-            }
+          "then": {
+            "properties": {"data": {"type": "string"}}
           }
-        ]
-      }
+        },
+        {
+          "if": {
+            "description": "a VDOM object",
+            "properties": {"type": {"const": "obj"}}
+          },
+          "then": {
+            "properties": {"data": {"$ref": "#/"}}
+          }
+        },
+        {
+          "if": {
+            "description": "a model reference",
+            "properties": {"type": {"const": "ref"}}
+          },
+          "then": {
+            "properties": {"data": {"type": "string"}}
+          }
+        }
+      ]
     }
   }
 }

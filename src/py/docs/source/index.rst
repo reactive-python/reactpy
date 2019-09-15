@@ -1,5 +1,8 @@
-iDOM |release|
+IDOM |release|
 ==============
+
+.. image:: static/idom-logo.png
+    :height: 300px
 
 Libraries for defining and controlling interactive webpages with Python
 3.6 and above.
@@ -21,20 +24,20 @@ Try it Now!
 
 - In a Jupyter Notebook - |launch-binder|
 
-- With an online editor - `iDOM Sandbox`_
+- With an online editor - `IDOM Sandbox`_
 
 
 Early Days
 ----------
 
-iDOM is still young. If you have ideas or find a bug, be sure to post an
+IDOM is still young. If you have ideas or find a bug, be sure to post an
 `issue`_ or create a `pull request`_. Thanks in advance!
 
 
 At a Glance
 -----------
 
-Let's use iDOM to create a simple slideshow which changes whenever a
+Let's use IDOM to create a simple slideshow which changes whenever a
 user clicks an image:
 
 .. code-block::
@@ -73,6 +76,6 @@ course).
 
 .. _issue: https://github.com/rmorshea/idom/issues
 .. _pull request: https://github.com/rmorshea/idom/pulls
-.. _iDOM Sandbox: https://idom-sandbox.herokuapp.com
+.. _IDOM Sandbox: https://idom-sandbox.herokuapp.com
 .. |launch-binder| image:: https://mybinder.org/badge_logo.svg
    :target: https://mybinder.org/v2/gh/rmorshea/idom/master?filepath=examples%2Fintroduction.ipynb

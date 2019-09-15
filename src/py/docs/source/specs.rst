@@ -5,7 +5,7 @@ Describes various data structures and protocols used to define and communicate v
 document object models (:term:`VDOM`). The definitions to below follow in the footsteps
 of `a specification <https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md>`_
 created by `Nteract <https://nteract.io>`_ and which was built into
-`JupyterLab <https://jupyterlab.readthedocs.io/en/stable/>`_. While iDOM's specification
+`JupyterLab <https://jupyterlab.readthedocs.io/en/stable/>`_. While IDOM's specification
 for VDOM is fairly well established, it should not be relied until it's been fully
 adopted by the aforementioned organizations.
 
@@ -17,7 +17,7 @@ adopted by the aforementioned organizations.
 VDOM Mimetype
 -------------
 
-A set of definitions that explain how iDOM creates a virtual representation of
+A set of definitions that explain how IDOM creates a virtual representation of
 the document object model. We'll begin by looking at a bit of HTML that we'll convert
 into its VDOM representation:
 
@@ -157,7 +157,7 @@ Diffing with VDOM
 -----------------
 
 Instead of sending a complete representation of a VDOM view to the browser to be
-rendered, iDOM sends diffs in order to improve performance. This is done by flattening
+rendered, IDOM sends diffs in order to improve performance. This is done by flattening
 out the VDOM model into a mapping whose keys are unique IDs and whose values are models
 that can specify their children by referencing those IDs. For example, if we take the
 VDOM from above we could rewrite it as:
@@ -183,7 +183,6 @@ VDOM from above we could rewrite it as:
           "eventHandlers": {
               "onChange": {
                 "target": "unique-id-of-a_python_callback",
-                "eventProps": ["target.value"],
                 "preventDefault": False,
                 "stopPropagation": False
               }
@@ -202,7 +201,7 @@ Here we see that the ``children`` of our ``<div/>`` contain objects which specif
 In particular, one of the ``div``'s children is a ``ref`` to a model with the ID
 ``2a4507c31c``. This makes it very easy to swap out the model at that ID with something
 new. Instead of having to specify the path to a changed element you only need to indicate
-its ID. So when iDOM sends an update to the browser it just sends the subset of the greater
+its ID. So when IDOM sends an update to the browser it just sends the subset of the greater
 model that changed by communicating those model IDs and their new representation.
 
 

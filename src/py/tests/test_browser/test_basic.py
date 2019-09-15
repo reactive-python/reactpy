@@ -1,6 +1,6 @@
 import idom
 
-# The iDOM server is running in a seperate thread so asyncio
+# The IDOM server is running in a seperate thread so asyncio
 # can't help us with synchronization problems here
 from threading import Condition
 

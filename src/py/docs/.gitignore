@@ -1,2 +1,4 @@
 build
+
+# VS Code RST extension builds here by default
 source/_build

@@ -3,7 +3,7 @@ from typing import Mapping, Any, Optional
 
 
 def example_uri_root(protocol: str, port: int) -> str:
-    """Returns the iDOM root URI for example notebooks
+    """Returns the IDOM root URI for example notebooks
 
     When examples are running on mybinder.org or in a container created by
     jupyter-repo2docker this is not simply "localhost" or "127.0.0.1".
