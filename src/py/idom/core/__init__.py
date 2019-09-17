@@ -3,7 +3,7 @@ from .events import event, Events, EventHandler
 from .layout import Layout, AbstractLayout
 from .render import AbstractRenderer, SharedStateRenderer, SingleStateRenderer
 from .utils import STATIC_DIRECTORY
-from .vdom import node
+from .vdom import vdom
 
 __all__ = [
     "AbstractElement",
@@ -16,7 +16,7 @@ __all__ = [
     "event",
     "Events",
     "Layout",
-    "node",
+    "vdom",
     "SharedStateRenderer",
     "SingleStateRenderer",
     "STATIC_DIRECTORY",

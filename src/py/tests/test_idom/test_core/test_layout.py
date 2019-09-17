@@ -6,7 +6,7 @@ from .utils import RenderHistory
 async def test_simple_layout():
     @idom.element
     async def simple_element(self, tag):
-        return idom.node(tag)
+        return idom.vdom(tag)
 
     element = simple_element("div")
     layout = idom.Layout(element)

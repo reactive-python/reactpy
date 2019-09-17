@@ -27,7 +27,7 @@ functions and coroutines that return :term:`VDOM` models and which do so without
 .. code-block::
 
     def ClickMe():
-        return idom.html.button("Click me!")
+        return idom.html.button(["Click me!"])
 
 2. But an :func:`idom.element <idom.core.element.element>` decorated coroutine gives you
    the ability to update your element when responding to events. The coroutine's first
@@ -46,8 +46,8 @@ functions and coroutines that return :term:`VDOM` models and which do so without
             self.update(count=count + 1)
 
         return idom.html.button(
-            f"Click count: {count}",
-            onClick=increment,
+            {"onClick": increment},
+            [f"Click count: {count}"],
         )
 
 .. note::
@@ -87,8 +87,8 @@ In short this means that instead of writing the following:
             self.update(event_list=event_list)
 
         return idom.html.div(
-            idom.html.button("Click me!"),
-            idom.html.p(*list(map(str, event_list))),
+            idom.html.button(["Click me!"]),
+            idom.html.p(map(str, event_list)),
         )
 
 You can instead using the ``state`` keyword to make things a little simpler:
@@ -106,8 +106,8 @@ You can instead using the ``state`` keyword to make things a little simpler:
             self.update()
 
         return idom.html.div(
-            idom.html.button("Click me!"),
-            idom.html.p(*list(map(str, event_list))),
+            idom.html.button(["Click me!"]),
+            idom.html.p(map(str, event_list)),
         )
 
 .. note::
@@ -156,8 +156,8 @@ quickly reimplement the ``ClickCount`` example from the :ref:`Pure Elements` sec
                 self._update_layout()
 
             return idom.html.button(
-                f"You clicked {self._count} times",
-                onClick=increment,
+                {"onClick": increment},
+                [f"You clicked {self._count} times"],
             )
 
 .. note::
@@ -189,8 +189,8 @@ ever be removed from the model. Then you'll just need to call and await a
             self.update(count=count + 1)
 
         return idom.html.button(
-            f"Click count: {count}",
-            onClick=increment,
+            {"onClick": increment},
+            [f"Click count: {count}"],
         )
 
     click_count = ClickCounter(0)
@@ -275,8 +275,8 @@ callback that's called by the renderer to events it should execute.
             self.update(count=count + 1)
 
         return idom.html.button(
-            f"Click count: {count}",
-            onClick=increment,
+            {"onClick": increment},
+            [f"Click count: {count}"],
         )
 
     layout = idom.Layout(ClickCount(0))
@@ -346,7 +346,7 @@ the model:
 
     @idom.element
     def View(self):
-        return idom.html.h1("Hello World")
+        return idom.html.h1(["Hello World"])
 
     app = PerClientState(View)
     app.run("localhost", 5000)
@@ -367,7 +367,7 @@ The implementation registers hooks into the application to server the model once
 
     @idom.element
     def View(self):
-        return idom.html.h1("Hello World")
+        return idom.html.h1(["Hello World"])
 
     per_client_state = PerClientState(View)
     per_client_state.register(app)

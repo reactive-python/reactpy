@@ -15,7 +15,7 @@ Let's look at the example that you may have seen
             self.update(index + 1)
 
         url = f"https://picsum.photos/800/300?image={index}"
-        return idom.node("img", src=url, onClick=next_image)
+        return idom.html.img({"src": url, "onChange": next_image})
 
     server = idom.server.sanic.PerClientState(Slideshow)
     server.daemon("localhost", 8765).join()
@@ -61,7 +61,7 @@ using the newly incremented index.
 .. code-block::
 
         url = f"https://picsum.photos/800/300?image={index}"
-        return idom.node("img", src=url, onClick=change_image)
+        return idom.html.img({"src": url, "onChange": next_image})
 
 Finally we come the end the ``Slideshow`` body where we return a model for an ``<img/>``
 element that draws its image from https://picsum.photos. We've also been sure to add

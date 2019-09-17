@@ -45,13 +45,15 @@ into its VDOM representation:
           ...
 
       name_input_view = idom.html.div(
-          "Put your name here: ",
           idom.html.input(
-              type="text",
-              minLength=4,
-              maxLength=8,
-              onChange=a_python_callback,
-          )
+              {
+                  "type": "text",
+                  "minLength": 4,
+                  "maxLength": 8,
+                  "onChange": a_python_callback,
+              }
+          ),
+          ["Put your name here: "],
       )
 
 We'll take this step by step in order to show exactly where each piece of the VDOM

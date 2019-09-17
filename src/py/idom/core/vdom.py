@@ -1,4 +1,4 @@
-from typing import Optional, Iterable, Any, Dict, List, Tuple, Union
+from typing import Optional, Iterable, Any, Dict, List, Tuple, Union, Mapping
 
 from mypy_extensions import TypedDict
 from typing_extensions import Protocol
@@ -20,27 +20,46 @@ class VdomDict(TypedDict, total=False):
 
 
 _TagArg = Optional[str]
-_ChildrenOrAttributesArg = Union[Dict[str, Any], Iterable[Any]]
+_AttributesAndChildrenArg = Union[Mapping[str, Any], Iterable[Any]]
 _EventHandlersArg = Optional[EventsMapping]
 _ImportSourceArg = Optional[ImportSourceDict]
 
 
-def node(
+def vdom(
     tag: _TagArg,
-    *args: _ChildrenOrAttributesArg,
+    *attributes_and_children: _AttributesAndChildrenArg,
     event_handlers: _EventHandlersArg = None,
     import_source: _ImportSourceArg = None,
 ) -> VdomDict:
-    """A helper function for generating DOM model dictionaries."""
+    """A helper function for creating VDOM dictionaries.
+
+    Parameters:
+        tag:
+            The type of element (e.g. 'div', 'h1', 'img')
+        attributes_and_children:
+            Attribute mappings followed by iterables of children for the element.
+            The attributes **must** precede the children, though you may pass multiple
+            sets of attributes, or children which will be merged into their respective
+            parts of the model.
+        event_handlers:
+            Maps event types to coroutines that are responsible for hanling those events.
+        import_source:
+            (subject to change) specifies javascript that, when evaluated returns a
+            React component.
+    """
     model: VdomDict = {"tagName": tag}
     attributes: Dict[str, Any] = {}
     children: List[Any] = []
 
-    for argument in args:
+    began_children = False
+    for argument in attributes_and_children:
         if isinstance(argument, dict):
+            if began_children:
+                raise ValueError("Attribute dictionaries should precede child lists.")
             attributes.update(argument)
         else:
             children.extend(argument)
+            began_children = True
 
     if attributes:
         model["attributes"] = attributes
@@ -57,26 +76,33 @@ def node(
     return model
 
 
-class _NodeConstructor(Protocol):
+class _VdomConstructor(Protocol):
     def __call__(
         self,
-        *args: _ChildrenOrAttributesArg,
+        *args: _AttributesAndChildrenArg,
         event_handlers: _EventHandlersArg = None,
         import_source: _ImportSourceArg = None,
     ) -> VdomDict:
         ...
 
 
-def node_constructor(tag: str, allow_children: bool = True) -> _NodeConstructor:
-    """Create a constructor for nodes with the given tag name."""
+def make_vdom_constructor(tag: str, allow_children: bool = True) -> _VdomConstructor:
+    """Return a constructor for VDOM dictionaries with the given tag name.
+
+    The resulting callable will have the same interface as :func:`vdom` but without its
+    first ``tag`` argument.
+    """
 
     def constructor(
-        *args: _ChildrenOrAttributesArg,
+        *attributes_and_children: _AttributesAndChildrenArg,
         event_handlers: _EventHandlersArg = None,
         import_source: _ImportSourceArg = None,
     ) -> VdomDict:
-        model = node(
-            tag, *args, event_handlers=event_handlers, import_source=import_source
+        model = vdom(
+            tag,
+            *attributes_and_children,
+            event_handlers=event_handlers,
+            import_source=import_source,
         )
         if not allow_children and "children" in model:
             raise TypeError(f"{tag!r} nodes cannot have children.")

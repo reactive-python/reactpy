@@ -103,7 +103,7 @@ class Events(Mapping[str, "EventHandler"]):
                         # do something on a click event
                         ...
 
-                    return idom.node("button", "hello!", eventHandlers=events)
+                    return idom.vdom("button", "hello!", eventHandlers=events)
         """
         if not event.startswith("on"):
             event_name = "on" + event[:1].upper() + event[1:]

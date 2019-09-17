@@ -8,7 +8,7 @@ from threading import Condition
 def test_simple_hello_world(driver, display):
     @idom.element
     async def Hello(self):
-        return idom.html.p(["Hello World"], {"id": "hello"})
+        return idom.html.p({"id": "hello"}, ["Hello World"])
 
     display(Hello)
 
@@ -25,9 +25,9 @@ def test_simple_click_event(driver, display):
             self.update()
 
         if not clicked.get():
-            return idom.html.button(["Click Me!"], {"onClick": on_click, "id": "click"})
+            return idom.html.button({"onClick": on_click, "id": "click"}, ["Click Me!"])
         else:
-            return idom.html.p(["Complete"], {"id": "complete"})
+            return idom.html.p({"id": "complete"}, ["Complete"])
 
     display(Button)
 
@@ -51,7 +51,7 @@ def test_simple_input(driver, display):
         if message.get() is None:
             return idom.html.input({"id": "input", "onChange": on_change})
         else:
-            return idom.html.p(["Complete"], {"id": "complete"})
+            return idom.html.p({"id": "complete"}, ["Complete"])
 
     display(Input)
 
@@ -78,7 +78,7 @@ def test_animation(driver, display):
             else:
                 stop()
 
-        return idom.html.p([f"Count: {count}"], {"id": f"counter-{count}"})
+        return idom.html.p({"id": f"counter-{count}"}, [f"Count: {count}"])
 
     display(Counter)
 
@@ -122,12 +122,12 @@ def test_can_stop_event_propogation(driver, display):
             event_handlers=inner_events,
         )
         outer = idom.html.div(
-            [inner],
             {
                 "style": {"height": "35px", "width": "35px", "backgroundColor": "red"},
                 "onClick": outer_click_is_not_triggered,
                 "id": "outer",
             },
+            [inner],
         )
         return outer
 
