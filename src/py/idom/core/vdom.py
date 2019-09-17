@@ -67,10 +67,10 @@ def vdom(
     if children:
         model["children"] = children
 
-    if event_handlers:
+    if event_handlers is not None:
         model["eventHandlers"] = event_handlers
 
-    if import_source:
+    if import_source is not None:
         model["importSource"] = import_source
 
     return model
