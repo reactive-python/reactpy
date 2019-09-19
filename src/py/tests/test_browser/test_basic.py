@@ -91,7 +91,7 @@ def test_animation(driver, display):
 def test_can_prevent_event_default_operation(driver, display):
     @idom.element
     async def Input(self):
-        @idom.event(preventDefault=True)
+        @idom.event(prevent_default=True)
         async def on_key_down(value):
             pass
 
@@ -109,7 +109,7 @@ def test_can_stop_event_propogation(driver, display):
     @idom.element
     async def DivInDiv(self):
         inner_events = idom.Events()
-        inner_events.on("Click", stopPropagation=True)
+        inner_events.on("Click", stop_propagation=True)
 
         async def outer_click_is_not_triggered():
             assert False

@@ -28,10 +28,10 @@ class JupyterWigdet:
         self._url = url
 
     def _script(self) -> str:
-        JS = os.path.join(STATIC_DIRECTORY, "jupyter-widget", "static", "js")
-        for filename in os.listdir(JS):
+        js = os.path.join(STATIC_DIRECTORY, "jupyter-widget", "static", "js")
+        for filename in os.listdir(js):
             if os.path.splitext(filename)[1] == ".js":
-                with open(os.path.join(JS, filename), "r") as f:
+                with open(os.path.join(js, filename), "r") as f:
                     return f.read()
         else:
             raise ValueError("Failed to find script.")
