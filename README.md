@@ -55,7 +55,7 @@ async def Slideshow(self, index=0):
         self.update(index + 1)
 
     url = f"https://picsum.photos/800/300?image={index}"
-    return idom.node("img", src=url, onClick=next_image)
+    return idom.html.img({"src": url, "onClick": next_image})
 
 server = idom.server.sanic.PerClientState(Slideshow)
 server.daemon("localhost", 8765).join()

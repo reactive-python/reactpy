@@ -1,107 +1,43 @@
-from typing import Any, Callable, Dict, List, Tuple, Optional
+from typing import Any, Callable, Tuple, Optional
 
 from idom.core.element import ElementConstructor, AbstractElement, Element, element
+from idom.core.vdom import VdomDict, vdom
 from idom.tools import Var
-
-
-def node(tag: Optional[str], *children: Any, **attributes: Any) -> Dict[str, Any]:
-    """A helper function for generating DOM model dictionaries."""
-    merged_children: List[Any] = []
-
-    for c in children:
-        if isinstance(c, (list, tuple)):
-            merged_children.extend(c)
-        else:
-            merged_children.append(c)
-
-    model: Dict[str, Any] = {"tagName": tag}
-
-    if merged_children:
-        model["children"] = merged_children
-
-    for top_level_attr in ["eventHandlers", "importSource"]:
-        if top_level_attr in attributes:
-            model[top_level_attr] = attributes.pop(top_level_attr)
-
-    if attributes:
-        model["attributes"] = attributes
-        if "cls" in attributes:
-            # you can't use 'class' as a keyword
-            model["attributes"]["class"] = attributes.pop("cls")
-
-    return model
-
-
-def node_constructor(
-    tag: str, allow_children: bool = True
-) -> Callable[..., Dict[str, Any]]:
-    """Create a constructor for nodes with the given tag name."""
-
-    def constructor(*children: Any, **attributes: Any) -> Dict[str, Any]:
-        if not allow_children and children:
-            raise TypeError(f"{tag!r} nodes cannot have children.")
-        return node(tag, *children, **attributes)
-
-    constructor.__name__ = tag
-    qualname_prefix = constructor.__qualname__.rsplit(".", 1)[0]
-    constructor.__qualname__ = qualname_prefix + f".{tag}"
-    constructor.__doc__ = f"""Create a new ``<{tag}/>`` - returns :term:`VDOM`."""
-    return constructor
 
 
 class Eval:
     """An interface for creating React Components that you can use in your layouts."""
 
-    def __init__(self, code: str) -> None:
+    def __init__(self, code: str, fallback: Optional[str] = None) -> None:
         super().__init__()
         self._code = code
+        self._fallback = fallback
 
     def __getattr__(self, tag: str) -> Callable[..., "EvalElement"]:
-        def constructor(
-            *children: Any, fallback: Optional[str] = None, **attributes: Any
-        ) -> "EvalElement":
-            return self(tag, *children, fallback=fallback, **attributes)
+        def constructor(*args: Any, **kwargs: Any) -> "EvalElement":
+            return self(tag, *args, **kwargs)
 
         return constructor
 
-    def __call__(
-        self,
-        tag: Optional[str] = None,
-        *children: Any,
-        fallback: Optional[str] = None,
-        **attributes: Any,
-    ) -> "EvalElement":
-        return EvalElement(self._code, tag, children, attributes, fallback)
+    def __call__(self, *args: Any, **kwargs: Any) -> "EvalElement":
+        return EvalElement(self._code, self._fallback, vdom(*args, **kwargs))
 
 
 class EvalElement(AbstractElement):
     """An element created by :class:`Eval` which refers to a React component."""
 
-    def __init__(
-        self,
-        code: str,
-        tag: Optional[str],
-        children: Tuple[Any, ...],
-        attributes: Dict[str, Any],
-        fallback: Optional[str],
-    ) -> None:
+    def __init__(self, code: str, fallback: Optional[str], model: VdomDict) -> None:
         super().__init__()
-        self._code = code
-        self._tag = tag
-        self._children = children
-        self._attributes = attributes
-        self._fallback = fallback
+        if "importSource" in model:
+            raise ValueError("Model already has an import source")
+        model["importSource"] = {"source": code, "fallback": fallback}
+        self._model = model
 
-    async def render(self) -> Any:
-        return {
-            "tagName": self._tag,
-            "children": self._children,
-            "attributes": self._attributes,
-            "importSource": {"source": self._code, "fallback": None},
-        }
+    async def render(self) -> VdomDict:
+        return self._model
 
 
-class Import:
+class Import(Eval):
     """Import a react library
 
     Once imported, you can instantiate the library's components by calling them
@@ -125,32 +61,13 @@ class Import:
             return idom.html.div(picker, css)
     """
 
-    def __init__(self, pkg: str) -> None:
-        self._pkg = pkg
-
-    def __getattr__(self, tag: str) -> Callable[..., "EvalElement"]:
-        def constructor(
-            *children: Any, fallback: Optional[str] = None, **attributes: Any
-        ) -> "EvalElement":
-            return self(tag, *children, fallback=fallback, **attributes)
-
-        return constructor
-
-    def __call__(
-        self,
-        tag: Optional[str] = None,
-        *children: Any,
-        fallback: Optional[str] = None,
-        **attributes: Any,
-    ) -> "EvalElement":
-        if self._pkg.startswith("/"):
-            url = self._pkg
+    def __init__(self, pkg: str, fallback: Optional[str] = None) -> None:
+        if pkg.startswith("/"):
+            url = pkg
         else:
-            url = f"https://dev.jspm.io/{self._pkg}"
-
+            url = f"https://dev.jspm.io/{pkg}"
         code = f"import('{url}').then(pkg => pkg.default);"
-
-        return EvalElement(code, tag, children, attributes, fallback)
+        super().__init__(code, fallback)
 
 
 def hotswap(

@@ -6,7 +6,7 @@ from .utils import RenderHistory
 async def test_simple_layout():
     @idom.element
     async def simple_element(self, tag):
-        return idom.node(tag)
+        return idom.vdom(tag)
 
     element = simple_element("div")
     layout = idom.Layout(element)
@@ -31,7 +31,7 @@ async def test_nested_element_layout():
     @history.track("parent")
     @idom.element
     async def parent_element(self):
-        return idom.html.div(child_element())
+        return idom.html.div([child_element()])
 
     @history.track("child")
     @idom.element

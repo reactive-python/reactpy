@@ -19,7 +19,7 @@ async def test_simple_element():
 async def test_simple_parameterized_element():
     @idom.element
     async def simple_param_element(self, tag):
-        return idom.node(tag)
+        return idom.vdom(tag)
 
     spe = simple_param_element("div")
     assert await spe.render() == {"tagName": "div"}
@@ -30,7 +30,7 @@ async def test_simple_parameterized_element():
 async def test_simple_stateful_element():
     @idom.element(state="tag")
     async def simple_stateful_element(self, tag):
-        return idom.node(tag)
+        return idom.vdom(tag)
 
     ssd = simple_stateful_element("div")
     assert await ssd.render() == {"tagName": "div"}
