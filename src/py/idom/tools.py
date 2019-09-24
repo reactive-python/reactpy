@@ -18,7 +18,7 @@ class Var(Generic[_R]):
         def option_picker(handler, option_names):
             selection = Var()
             options = [option(n, selection) for n in option_names]
-            return idom.node("div", options, picker(handler, selection))
+            return idom.vdom("div", options, picker(handler, selection))
 
         def option(name, selection):
             events = idom.Events()
@@ -28,7 +28,7 @@ class Var(Generic[_R]):
                 # set the current selection to the option name
                 selection.set(name)
 
-            return idom.node("button", eventHandlers=events)
+            return idom.vdom("button", eventHandlers=events)
 
         def picker(handler, selection):
             events = idom.Events()
@@ -38,7 +38,7 @@ class Var(Generic[_R]):
                 # passes the current option name to the handler
                 handler(selection.get())
 
-            return idom.node("button", "Use" eventHandlers=events)
+            return idom.vdom("button", "Use" eventHandlers=events)
     """
 
     __slots__ = ("_current",)
@@ -106,7 +106,7 @@ class HtmlParser(_HTMLParser):
         return self._node_stack[0]
 
     def feed(self, data: str) -> None:
-        self._node_stack.append(self._make_node("div", {}))
+        self._node_stack.append(self._make_vdom("div", {}))
         super().feed(data)
 
     def reset(self) -> None:
@@ -114,7 +114,7 @@ class HtmlParser(_HTMLParser):
         super().reset()
 
     def handle_starttag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]) -> None:
-        new = self._make_node(tag, dict(attrs))
+        new = self._make_vdom(tag, dict(attrs))
         current = self._node_stack[-1]
         current["children"].append(new)
         self._node_stack.append(new)
@@ -126,7 +126,7 @@ class HtmlParser(_HTMLParser):
         self._node_stack[-1]["children"].append(data)
 
     @staticmethod
-    def _make_node(tag: str, attrs: Dict[str, Any]) -> Dict[str, Any]:
+    def _make_vdom(tag: str, attrs: Dict[str, Any]) -> Dict[str, Any]:
         if "style" in attrs:
             style = attrs["style"]
             if isinstance(style, str):

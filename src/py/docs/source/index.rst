@@ -51,7 +51,7 @@ user clicks an image:
             self.update(index + 1)
 
         url = f"https://picsum.photos/800/300?image={index}"
-        return idom.node("img", src=url, onChange=next_image)
+        return idom.html.img({"src": url, "onChange": next_image})
 
     server = idom.server.sanic.PerClientState(Slideshow)
     server.daemon("localhost", 8765).join()

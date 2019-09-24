@@ -2,6 +2,7 @@ from typing import Callable, Awaitable, Any, Optional, Dict
 
 from idom.core.events import Events
 from idom.core.element import AbstractElement
+from idom.core.vdom import VdomDict
 
 from . import html
 
@@ -72,24 +73,16 @@ class Input(AbstractElement):
         self._set_value(value)
         self._update_layout()
 
-    async def render(self) -> Dict[str, Any]:
+    async def render(self) -> VdomDict:
+        input_element = html.input(
+            self._attributes,
+            {"type": self._type, "value": self._display_value},
+            event_handlers=self._events,
+        )
         if self._label is not None:
-            return html.label(
-                self._label,
-                html.input(
-                    type=self._type,
-                    value=self._display_value,
-                    eventHandlers=self._events,
-                    **self._attributes,
-                ),
-            )
+            return html.label([self._label, input_element])
         else:
-            return html.input(
-                type=self._type,
-                value=self._display_value,
-                eventHandlers=self._events,
-                **self._attributes,
-            )
+            return input_element
 
     def _set_value(self, value: str) -> None:
         self._display_value = value
