@@ -1,6 +1,7 @@
 __version__ = "0.6.0-a.4"
 
 from . import server
+from . import codec
 
 from .core.element import element, Element
 from .core.events import event, Events
@@ -17,6 +18,7 @@ from .tools import Var, html_to_vdom
 
 
 __all__ = [
+    "codec",
     "element",
     "Element",
     "event",

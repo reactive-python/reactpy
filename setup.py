@@ -1,6 +1,9 @@
 from __future__ import print_function
 
+import shutil
 from setuptools import setup, find_packages
+from distutils.sysconfig import get_python_lib
+from distutils.command.install import install  # type: ignore
 from distutils.command.build import build  # type: ignore
 from distutils.command.sdist import sdist  # type: ignore
 from setuptools.command.develop import develop  # type: ignore
@@ -49,7 +52,11 @@ with open(os.path.join(here, "requirements", "prod.txt"), "r") as f:
             requirements.append(line)
 package["install_requires"] = requirements
 
-package["extras_require"] = {"matplotlib": ["matplotlib"], "vdom": ["vdom"]}
+package["extras_require"] = {
+    "matplotlib": ["matplotlib"],
+    "vdom": ["vdom"],
+    "jupyter": ["ipykernel"],
+}
 
 all_extras = set()
 for extras in package["extras_require"].values():
@@ -100,10 +107,22 @@ def build_javascript_first(cls):
     return Command
 
 
+def add_pth_file(cls):
+    class Command(cls):
+        def run(self):
+            python_lib = get_python_lib()
+            pth_file = os.path.join("src", "py", "idom.pth")
+            shutil.copy(pth_file, python_lib)
+            super().run()
+
+    return Command
+
+
 package["cmdclass"] = {
+    "install": add_pth_file(install),
     "sdist": build_javascript_first(sdist),
     "build": build_javascript_first(build),
-    "develop": build_javascript_first(develop),
+    "develop": add_pth_file(build_javascript_first(develop)),
 }
 
 
