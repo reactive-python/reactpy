@@ -39,6 +39,7 @@ class IdomStreamReader(utf_8.StreamReader):
             )
         except Exception:
             traceback.print_exc()
+            raise
 
 
 def search_function(encoding: str) -> Optional[codecs.CodecInfo]:
