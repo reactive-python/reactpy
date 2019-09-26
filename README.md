@@ -72,3 +72,29 @@ idom.display("jupyter", "https://localhost:8765/stream")
 ```
 
 Every click will then cause the image to change (it won't here of course).
+
+
+# Experimental Python Language Extension
+
+IDOM also provides an optional extension to the Python language for writing HTML with an
+[fstring](https://www.python.org/dev/peps/pep-0498/)-like template syntax:
+
+```python
+# coding=html
+import idom
+
+size = "30px"
+text = "Hello!"
+
+model = html"""
+<div height={size} width={size} >
+    <p>{text}</p>
+</div>
+"""
+
+assert model == {
+    "tagName": "div",
+    "attributes": {"height": "30px", "width": "30px"},
+    "children": ["\n    ", {"tagName": "p", "children": ["Hello!"]}, "\n"],
+}
+```

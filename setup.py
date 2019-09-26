@@ -1,9 +1,6 @@
 from __future__ import print_function
 
-import shutil
 from setuptools import setup, find_packages
-from distutils.sysconfig import get_python_lib
-from distutils.command.install import install  # type: ignore
 from distutils.command.build import build  # type: ignore
 from distutils.command.sdist import sdist  # type: ignore
 from setuptools.command.develop import develop  # type: ignore
@@ -28,6 +25,7 @@ package = {
     "name": name,
     "python_requires": ">=3.6,<4.0",
     "packages": find_packages("src/py", exclude=["tests*"]),
+    "entry_points": {"console_scripts": ["idom=idom.cli:main"]},
     "package_dir": {"": "src/py"},
     "description": "Control the web with Python",
     "author": "Ryan Morshead",
@@ -41,7 +39,7 @@ package = {
 
 
 # -----------------------------------------------------------------------------
-# requirements
+# Requirements
 # -----------------------------------------------------------------------------
 
 
@@ -55,7 +53,7 @@ package["install_requires"] = requirements
 package["extras_require"] = {
     "matplotlib": ["matplotlib"],
     "vdom": ["vdom"],
-    "jupyter": ["ipykernel"],
+    "ipython": ["ipython"],
 }
 
 all_extras = set()
@@ -107,22 +105,10 @@ def build_javascript_first(cls):
     return Command
 
 
-def add_pth_file(cls):
-    class Command(cls):
-        def run(self):
-            python_lib = get_python_lib()
-            pth_file = os.path.join("src", "py", "idom.pth")
-            shutil.copy(pth_file, python_lib)
-            super().run()
-
-    return Command
-
-
 package["cmdclass"] = {
-    "install": add_pth_file(install),
     "sdist": build_javascript_first(sdist),
     "build": build_javascript_first(build),
-    "develop": add_pth_file(build_javascript_first(develop)),
+    "develop": build_javascript_first(develop),
 }
 
 

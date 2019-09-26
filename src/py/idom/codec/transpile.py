@@ -1,15 +1,44 @@
-from html.parser import HTMLParser as _HtmlParser
+from html.parser import HTMLParser
 from io import StringIO
-from typing import Any, Callable, Tuple, Optional, Sequence, List
+from typing import Tuple, Optional, Sequence, List
+
+# we need to import these because HTMLParser makes tags and attributes lowercase by
+# default which we don't want - as a result we reimplement `HTMLParser.parse_starttag`
+# without that behavior.
+from html.parser import tagfind_tolerant, attrfind_tolerant, unescape  # type: ignore
+
+from .utils import split_fstr_style_exprs, transform_string
 
 
 def transpile_html_templates(text: str) -> str:
-    return _transform_string(
-        text.strip(), _transpile_html_templates, TemplateTranspiler()
-    )
+    return transform_string(text, _transpile_html_templates, _TemplateTranspiler())
 
 
-class TemplateTranspiler(_HtmlParser):
+def _transpile_html_templates(
+    text: str, index: int, transpiler: "_TemplateTranspiler"
+) -> Tuple[int, Optional[str]]:
+    if text[index : index + 4] != "html":
+        return index + 1, None
+
+    index += 4
+
+    for str_char in ('"""', '"', "'''", "'"):
+        # characters open a string
+        if text[index : index + len(str_char)] == str_char:
+            break
+    else:
+        return index + 1, None
+
+    for forward_index in range(index + 1, len(text)):
+        if text[forward_index : forward_index + len(str_char)] == str_char:
+            template = text[index + len(str_char) : forward_index]
+            py_code = transpiler.transpile(template.strip())
+            return forward_index + len(str_char), py_code
+
+    return forward_index + len(str_char), None
+
+
+class _TemplateTranspiler(HTMLParser):
     def transpile(self, text: str) -> str:
         self._feed(text)
         code = self._read_code()
@@ -58,13 +87,63 @@ class TemplateTranspiler(_HtmlParser):
         self.handle_starttag(tag, attrs)
         self.handle_endtag(tag)
 
+    def parse_starttag(self, i: int) -> int:
+        self.__starttag_text = None
+        endpos = self.check_for_whole_start_tag(i)  # type: ignore
+        if endpos < 0:
+            return endpos  # type: ignore
+        rawdata = self.rawdata  # type: ignore
+        self.__starttag_text = rawdata[i:endpos]
+
+        # Now parse the data between i+1 and j into a tag and attrs
+        attrs = []
+        match = tagfind_tolerant.match(rawdata, i + 1)
+        assert match, "unexpected call to parse_starttag()"
+        k = match.end()
+        self.lasttag = tag = match.group(1)
+        while k < endpos:
+            m = attrfind_tolerant.match(rawdata, k)
+            if not m:
+                break
+            attrname, rest, attrvalue = m.group(1, 2, 3)
+            if not rest:
+                attrvalue = None
+            elif (
+                attrvalue[:1] == "'" == attrvalue[-1:]
+                or attrvalue[:1] == '"' == attrvalue[-1:]
+            ):
+                attrvalue = attrvalue[1:-1]
+            if attrvalue:
+                attrvalue = unescape(attrvalue)
+            attrs.append((attrname, attrvalue))
+            k = m.end()
+
+        end = rawdata[k:endpos].strip()
+        if end not in (">", "/>"):
+            lineno, offset = self.getpos()
+            if "\n" in self.__starttag_text:
+                lineno = lineno + self.__starttag_text.count("\n")
+                offset = len(self.__starttag_text) - self.__starttag_text.rfind("\n")
+            else:
+                offset = offset + len(self.__starttag_text)
+            self.handle_data(rawdata[i:endpos])
+            return endpos  # type: ignore
+        if end.endswith("/>"):
+            # XHTML-style empty tag: <span attr="value" />
+            self.handle_startendtag(tag, attrs)
+        else:
+            self.handle_starttag(tag, attrs)
+            if tag in self.CDATA_CONTENT_ELEMENTS:  # type: ignore
+                self.set_cdata_mode(tag)  # type: ignore
+        return endpos  # type: ignore
+
     def _write(self, text: str) -> None:
         self._cursor += self._code.write(text)
         self._code.seek(self._cursor)
 
     def _load_exprs(self, text: str) -> str:
         parts: List[str] = []
-        for is_expr, string in _split_fstr_style_exprs(text):
+        for is_expr, string in split_fstr_style_exprs(text):
             if string:
                 if is_expr:
                     parts.append(f"{{{len(self._exprs)}}}")
@@ -80,140 +159,3 @@ class TemplateTranspiler(_HtmlParser):
             return repr(text)
         else:
             return result
-
-
-def _transpile_html_templates(
-    text: str, index: int, transpiler: TemplateTranspiler
-) -> Tuple[int, Optional[str]]:
-    if text[index : index + 4] != "html":
-        return index + 1, None
-
-    index += 4
-
-    for str_char in ('"""', '"', "'''", "'"):
-        # characters open a string
-        if text[index : index + len(str_char)] == str_char:
-            break
-    else:
-        return index + 1, None
-
-    for forward_index in range(index + 1, len(text)):
-        if text[forward_index : forward_index + len(str_char)] == str_char:
-            template = text[index + len(str_char) : forward_index]
-            py_code = transpiler.transpile(template.strip())
-            return forward_index + len(str_char), py_code
-
-    return forward_index + len(str_char), None
-
-
-def _split_fstr_style_exprs(string: str) -> List[Tuple[bool, str]]:
-    result = []
-    last = stop = 0
-    for start, stop in _expr_starts_and_stops(str(string)):
-        # outside expression
-        result.append((False, string[last : start - 1]))
-        # inside expression
-        result.append((True, string[start:stop]))
-        last = stop + 1
-    result.append((False, string[last:]))
-    return result
-
-
-def _expr_starts_and_stops(string: str) -> List[Tuple[int, int]]:  # noqa: C901
-    index = 0
-    brace_depth = 0
-    paren_depth = 0
-    expression_starts = []
-    expression_stops = []
-    in_single_quote = False
-    in_double_quote = False
-    in_triple_quote = False
-    in_quotes = False
-    in_expression = False
-
-    while index < len(string):
-        char = string[index]
-        if brace_depth > 0:
-            if char == "'" and not in_double_quote:
-                if string[index + 1 : index + 3] == "''":
-                    in_triple_quote = not in_triple_quote
-                elif not in_triple_quote:
-                    in_single_quote = not in_single_quote
-            elif char == '"' and not in_single_quote:
-                if string[index + 1 : index + 3] == '""':
-                    in_triple_quote = not in_triple_quote
-                elif not in_triple_quote:
-                    in_double_quote = not in_double_quote
-            in_quotes = in_double_quote or in_single_quote or in_triple_quote
-        if char == "{":
-            if brace_depth > 0:
-                if not in_quotes:
-                    # increment open count to verify ballanced braces at end
-                    brace_depth += 1
-            else:
-                j = 0
-                for j, c in enumerate(string[index + 1 :]):
-                    if c != "{":
-                        break
-                index += j
-                if j % 2 == 0:
-                    # encountered odd number of open braces
-                    expression_starts.append(index + 1)
-                    brace_depth += 1
-                    in_expression = True
-        elif char == "}" and not in_quotes:
-            if brace_depth > 1:
-                brace_depth -= 1
-            elif brace_depth == 1:
-                j = 0
-                for j, c in enumerate(string[index + 1 :] + " "):
-                    if c != "}":
-                        break
-                if j % 2 == 0:
-                    # encountered odd number of open braces
-                    expression_stops.append(index)
-                    brace_depth -= 1
-                    in_expression = False
-                index += j
-        elif in_expression:
-            if char == "(":
-                paren_depth += 1
-            elif char == ")":
-                paren_depth -= 1
-                if paren_depth < 0:
-                    msg = "Mismatched parentheses in f-string"
-                    _raise_syntax_error(string, msg, index + 1)
-        index += 1
-
-    if brace_depth:
-        offset = len(string) + 1
-        _raise_syntax_error(string, "Mismatched braces in f-string.", offset)
-
-    return list(zip(expression_starts, expression_stops))
-
-
-def _raise_syntax_error(template: str, message: str, offset: int = 1) -> None:
-    info = ("idom", 1, offset, template)
-    raise SyntaxError(message, info)
-
-
-def _transform_string(
-    string: str,
-    transform: Callable[[str, int, Any], Tuple[int, Optional[str]]],
-    state: Any = None,
-) -> str:
-    index = 0
-    changes = []
-
-    # find changes to make
-    while index < len(string):
-        next_index, new = transform(string, index, state)
-        if new is not None:
-            changes.append((index, next_index, new))
-        index = next_index
-
-    # apply changes
-    for start, stop, new in reversed(changes):
-        string = string[:start] + new + string[stop:]
-
-    return string
