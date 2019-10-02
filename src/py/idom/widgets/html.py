@@ -1,185 +1,104 @@
-from idom.core.vdom import make_vdom_constructor
+from idom.core.vdom import vdom, make_vdom_constructor
 
-__all__ = [
-    # External sources
-    "link",
-    # Content sectioning
-    "style",
-    "address",
-    "article",
-    "aside",
-    "footer",
-    "h1",
-    "h2",
-    "h3",
-    "h4",
-    "h5",
-    "h6",
-    "header",
-    "hgroup",
-    "nav",
-    "section",
-    # Text content
-    "blockquote",
-    "blockquote",
-    "dd",
-    "div",
-    "dl",
-    "dt",
-    "figcaption",
-    "figure",
-    "hr",
-    "li",
-    "ol",
-    "p",
-    "pre",
-    "ul",
-    # Inline text semantics
-    "a",
-    "abbr",
-    "b",
-    "br",
-    "cite",
-    "code",
-    "data",
-    "em",
-    "i",
-    "kbd",
-    "mark",
-    "q",
-    "s",
-    "samp",
-    "small",
-    "span",
-    "strong",
-    "sub",
-    "sup",
-    "time",
-    "u",
-    "var",
-    # Image and video
-    "img",
-    "audio",
-    "video",
-    "source",
-    # Table content
-    "caption",
-    "col",
-    "colgroup",
-    "table",
-    "tbody",
-    "td",
-    "tfoot",
-    "th",
-    "thead",
-    "tr",
-    # Forms
-    "meter",
-    "output",
-    "progress",
-    "input",
-    "button",
-    "label",
-    "fieldset",
-    "legend",
-    # Interactive elements
-    "details",
-    "dialog",
-    "menu",
-    "menuitem",
-    "summary",
-]
 
-# External sources
-link = make_vdom_constructor("link", allow_children=False)
+class Html:
 
-# Content sectioning
-style = make_vdom_constructor("style")
-address = make_vdom_constructor("address")
-article = make_vdom_constructor("article")
-aside = make_vdom_constructor("aside")
-footer = make_vdom_constructor("footer")
-h1 = make_vdom_constructor("h1")
-h2 = make_vdom_constructor("h2")
-h3 = make_vdom_constructor("h3")
-h4 = make_vdom_constructor("h4")
-h5 = make_vdom_constructor("h5")
-h6 = make_vdom_constructor("h6")
-header = make_vdom_constructor("header")
-hgroup = make_vdom_constructor("hgroup")
-nav = make_vdom_constructor("nav")
-section = make_vdom_constructor("section")
+    __call__ = staticmethod(vdom)
 
-# Text content
-blockquote = make_vdom_constructor("blockquote")
-dd = make_vdom_constructor("dd")
-div = make_vdom_constructor("div")
-dl = make_vdom_constructor("dl")
-dt = make_vdom_constructor("dt")
-figcaption = make_vdom_constructor("figcaption")
-figure = make_vdom_constructor("figure")
-hr = make_vdom_constructor("hr", allow_children=False)
-li = make_vdom_constructor("li")
-ol = make_vdom_constructor("ol")
-p = make_vdom_constructor("p")
-pre = make_vdom_constructor("pre")
-ul = make_vdom_constructor("ul")
+    def __init__(self) -> None:
+        # External sources
+        self.link = make_vdom_constructor("link", allow_children=False)
 
-# Inline text semantics
-a = make_vdom_constructor("a")
-abbr = make_vdom_constructor("abbr")
-b = make_vdom_constructor("b")
-br = make_vdom_constructor("br", allow_children=False)
-cite = make_vdom_constructor("cite")
-code = make_vdom_constructor("code")
-data = make_vdom_constructor("data")
-em = make_vdom_constructor("em")
-i = make_vdom_constructor("i")
-kbd = make_vdom_constructor("kbd")
-mark = make_vdom_constructor("mark")
-q = make_vdom_constructor("q")
-s = make_vdom_constructor("s")
-samp = make_vdom_constructor("samp")
-small = make_vdom_constructor("small")
-span = make_vdom_constructor("span")
-strong = make_vdom_constructor("strong")
-sub = make_vdom_constructor("sub")
-sup = make_vdom_constructor("sup")
-time = make_vdom_constructor("time")
-u = make_vdom_constructor("u")
-var = make_vdom_constructor("var")
+        # Content sectioning
+        self.style = make_vdom_constructor("style")
+        self.address = make_vdom_constructor("address")
+        self.article = make_vdom_constructor("article")
+        self.aside = make_vdom_constructor("aside")
+        self.footer = make_vdom_constructor("footer")
+        self.h1 = make_vdom_constructor("h1")
+        self.h2 = make_vdom_constructor("h2")
+        self.h3 = make_vdom_constructor("h3")
+        self.h4 = make_vdom_constructor("h4")
+        self.h5 = make_vdom_constructor("h5")
+        self.h6 = make_vdom_constructor("h6")
+        self.header = make_vdom_constructor("header")
+        self.hgroup = make_vdom_constructor("hgroup")
+        self.nav = make_vdom_constructor("nav")
+        self.section = make_vdom_constructor("section")
 
-# Image and video
-img = make_vdom_constructor("img", allow_children=False)
-audio = make_vdom_constructor("audio")
-video = make_vdom_constructor("video")
-source = make_vdom_constructor("source", allow_children=False)
+        # Text content
+        self.blockquote = make_vdom_constructor("blockquote")
+        self.dd = make_vdom_constructor("dd")
+        self.div = make_vdom_constructor("div")
+        self.dl = make_vdom_constructor("dl")
+        self.dt = make_vdom_constructor("dt")
+        self.figcaption = make_vdom_constructor("figcaption")
+        self.figure = make_vdom_constructor("figure")
+        self.hr = make_vdom_constructor("hr", allow_children=False)
+        self.li = make_vdom_constructor("li")
+        self.ol = make_vdom_constructor("ol")
+        self.p = make_vdom_constructor("p")
+        self.pre = make_vdom_constructor("pre")
+        self.ul = make_vdom_constructor("ul")
 
-# Table content
-caption = make_vdom_constructor("caption")
-col = make_vdom_constructor("col")
-colgroup = make_vdom_constructor("colgroup")
-table = make_vdom_constructor("table")
-tbody = make_vdom_constructor("tbody")
-td = make_vdom_constructor("td")
-tfoot = make_vdom_constructor("tfoot")
-th = make_vdom_constructor("th")
-thead = make_vdom_constructor("thead")
-tr = make_vdom_constructor("tr")
+        # Inline text semantics
+        self.a = make_vdom_constructor("a")
+        self.abbr = make_vdom_constructor("abbr")
+        self.b = make_vdom_constructor("b")
+        self.br = make_vdom_constructor("br", allow_children=False)
+        self.cite = make_vdom_constructor("cite")
+        self.code = make_vdom_constructor("code")
+        self.data = make_vdom_constructor("data")
+        self.em = make_vdom_constructor("em")
+        self.i = make_vdom_constructor("i")
+        self.kbd = make_vdom_constructor("kbd")
+        self.mark = make_vdom_constructor("mark")
+        self.q = make_vdom_constructor("q")
+        self.s = make_vdom_constructor("s")
+        self.samp = make_vdom_constructor("samp")
+        self.small = make_vdom_constructor("small")
+        self.span = make_vdom_constructor("span")
+        self.strong = make_vdom_constructor("strong")
+        self.sub = make_vdom_constructor("sub")
+        self.sup = make_vdom_constructor("sup")
+        self.time = make_vdom_constructor("time")
+        self.u = make_vdom_constructor("u")
+        self.var = make_vdom_constructor("var")
 
-# Forms
-meter = make_vdom_constructor("meter")
-output = make_vdom_constructor("output")
-progress = make_vdom_constructor("progress")
-input = make_vdom_constructor("input", allow_children=False)
-button = make_vdom_constructor("button")
-label = make_vdom_constructor("label")
-fieldset = make_vdom_constructor("fieldset")
-legend = make_vdom_constructor("legend")
+        # Image and video
+        self.img = make_vdom_constructor("img", allow_children=False)
+        self.audio = make_vdom_constructor("audio")
+        self.video = make_vdom_constructor("video")
+        self.source = make_vdom_constructor("source", allow_children=False)
 
-# Interactive elements
-details = make_vdom_constructor("details")
-dialog = make_vdom_constructor("dialog")
-menu = make_vdom_constructor("menu")
-menuitem = make_vdom_constructor("menuitem")
-summary = make_vdom_constructor("summary")
+        # Table content
+        self.caption = make_vdom_constructor("caption")
+        self.col = make_vdom_constructor("col")
+        self.colgroup = make_vdom_constructor("colgroup")
+        self.table = make_vdom_constructor("table")
+        self.tbody = make_vdom_constructor("tbody")
+        self.td = make_vdom_constructor("td")
+        self.tfoot = make_vdom_constructor("tfoot")
+        self.th = make_vdom_constructor("th")
+        self.thead = make_vdom_constructor("thead")
+        self.tr = make_vdom_constructor("tr")
+
+        # Forms
+        self.meter = make_vdom_constructor("meter")
+        self.output = make_vdom_constructor("output")
+        self.progress = make_vdom_constructor("progress")
+        self.input = make_vdom_constructor("input", allow_children=False)
+        self.button = make_vdom_constructor("button")
+        self.label = make_vdom_constructor("label")
+        self.fieldset = make_vdom_constructor("fieldset")
+        self.legend = make_vdom_constructor("legend")
+
+        # Interactive elements
+        self.details = make_vdom_constructor("details")
+        self.dialog = make_vdom_constructor("dialog")
+        self.menu = make_vdom_constructor("menu")
+        self.menuitem = make_vdom_constructor("menuitem")
+        self.summary = make_vdom_constructor("summary")
+
+
+html = Html()

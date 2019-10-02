@@ -7,7 +7,7 @@ from typing import Tuple, Optional, Sequence, List
 # without that behavior.
 from html.parser import tagfind_tolerant, attrfind_tolerant, unescape  # type: ignore
 
-from .utils import split_fstr_style_exprs, transform_string
+from .utils import split_fstr_style_exprs, split_str_positional_format, transform_string
 
 
 def transpile_html_templates(text: str) -> str:
@@ -66,7 +66,7 @@ class _TemplateTranspiler(HTMLParser):
     def handle_starttag(
         self, tag: str, attrs: Sequence[Tuple[str, Optional[str]]]
     ) -> None:
-        self._write(f"idom.vdom({self._substitute_exprs(tag)}, " + "{")
+        self._write(f"html({self._substitute_exprs(tag)}, " + "{")
         subbed_attrs = [
             (
                 self._substitute_exprs(k),
@@ -78,7 +78,14 @@ class _TemplateTranspiler(HTMLParser):
         self._write("}, [")
 
     def handle_data(self, data: str) -> None:
-        self._write(self._substitute_exprs(data) + ", ")
+        parts = []
+        for is_expr, string in split_str_positional_format(data):
+            if is_expr:
+                parts.append(self._substitute_exprs(string))
+            else:
+                # no formating took place
+                parts.append(repr(string))
+        self._write(", ".join(parts))
 
     def handle_endtag(self, tag: str) -> None:
         self._write("]), ")
@@ -144,12 +151,11 @@ class _TemplateTranspiler(HTMLParser):
     def _load_exprs(self, text: str) -> str:
         parts: List[str] = []
         for is_expr, string in split_fstr_style_exprs(text):
-            if string:
-                if is_expr:
-                    parts.append(f"{{{len(self._exprs)}}}")
-                    self._exprs.append(string)
-                else:
-                    parts.append(string)
+            if is_expr:
+                parts.append(f"{{{len(self._exprs)}}}")
+                self._exprs.append(string)
+            else:
+                parts.append(string)
         return "".join(parts)
 
     def _substitute_exprs(self, text: str) -> str:
@@ -158,4 +164,5 @@ class _TemplateTranspiler(HTMLParser):
             # no formating took place
             return repr(text)
         else:
-            return result
+            # template syntax could be used inside the expression too
+            return transpile_html_templates(result)

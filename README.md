@@ -81,7 +81,7 @@ IDOM also provides an optional extension to the Python language for writing HTML
 
 ```python
 # coding=html
-import idom
+from idom import html
 
 size = "30px"
 text = "Hello!"

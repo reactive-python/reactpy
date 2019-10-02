@@ -1,3 +1,4 @@
+import re
 from typing import Callable, Any, Optional, Tuple, List
 
 
@@ -40,6 +41,25 @@ def transform_string(
     return string
 
 
+_str_positional_formats = re.compile(r"[^\{]?(\{\d+\})[^\}]?")
+
+
+def split_str_positional_format(string: str) -> List[Tuple[bool, str]]:
+    result = []
+    last = 0
+    for match in _str_positional_formats.finditer(string):
+        start, stop = match.span(1)
+        if last != start:
+            # outside expression
+            result.append((False, string[last:start]))
+        # inside expression
+        result.append((True, string[start:stop]))
+        last = stop
+    if last != len(string):
+        result.append((False, string[last:]))
+    return result
+
+
 def split_fstr_style_exprs(string: str) -> List[Tuple[bool, str]]:
     """Split string on f-string style expressions.
 
@@ -53,12 +73,14 @@ def split_fstr_style_exprs(string: str) -> List[Tuple[bool, str]]:
     result = []
     last = stop = 0
     for start, stop in _expr_starts_and_stops(str(string)):
-        # outside expression
-        result.append((False, string[last : start - 1]))
+        if last != start:
+            # outside expression
+            result.append((False, string[last : start - 1]))
         # inside expression
         result.append((True, string[start:stop]))
         last = stop + 1
-    result.append((False, string[last:]))
+    if last != len(string):
+        result.append((False, string[last:]))
     return result
 
 
