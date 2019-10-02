@@ -1,4 +1,4 @@
-from idom.core.vdom import vdom, make_vdom_constructor
+from idom.core.vdom import vdom, make_vdom_constructor, VdomDictConstructor
 
 
 class Html:
@@ -99,6 +99,9 @@ class Html:
         self.menu = make_vdom_constructor("menu")
         self.menuitem = make_vdom_constructor("menuitem")
         self.summary = make_vdom_constructor("summary")
+
+    def __getattr__(self, tag: str) -> VdomDictConstructor:
+        return make_vdom_constructor(tag)
 
 
 html = Html()
