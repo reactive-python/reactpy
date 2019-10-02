@@ -4,11 +4,16 @@ repos:
     hooks:
     - id: black
       language_version: python3.6
+      args:
+            - --exclude=(\.eggs|\.git|\.hg|\.mypy
+                  _cache|\.nox|\.tox|\.venv|_build|buck-
+                  out|build|dist|src/py/tests/.*html_coding\.py)
+            - --include
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.7.7
     hooks:
     - id: flake8
-      args: ["--config=src/py/.flake8", "--exclude=src/js"]
+      args: ["--config=src/py/.flake8"]
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: v0.720
     hooks:
