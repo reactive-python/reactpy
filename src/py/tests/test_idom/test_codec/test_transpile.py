@@ -31,3 +31,20 @@ from idom.codec.transpile import transpile_html_templates
 def test_transpile_html_templates(code, model, local):
     to_transpile = "html" + repr(code)  # add template prefix indicator
     assert eval(transpile_html_templates(to_transpile), globals(), local) == model
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        "'html'",
+        "'''html'''",
+        '"html"',
+        '"""html"""',
+        "'html' + x 'html'",
+        """ 'html' + x + "html" """,
+        """ 'html"' """,
+        """ "html'" """,
+    ],
+)
+def test_what_not_to_transpile(code):
+    assert transpile_html_templates(code) == code

@@ -1,6 +1,7 @@
 from html.parser import HTMLParser
 from io import StringIO
 from typing import Tuple, Optional, Sequence, List
+from typing_extensions import TypedDict
 
 # we need to import these because HTMLParser makes tags and attributes lowercase by
 # default which we don't want - as a result we reimplement `HTMLParser.parse_starttag`
@@ -10,32 +11,58 @@ from html.parser import tagfind_tolerant, attrfind_tolerant, unescape  # type: i
 from .utils import split_fstr_style_exprs, split_str_positional_format, transform_string
 
 
+class _TranspilerState(TypedDict):
+    in_string: Optional[str]
+    transpiler: "_TemplateTranspiler"
+
+
 def transpile_html_templates(text: str) -> str:
-    return transform_string(text, _transpile_html_templates, _TemplateTranspiler())
+    state = {"in_string": None, "transpiler": _TemplateTranspiler()}
+    return transform_string(text, _transpile_html_templates, state)
 
 
 def _transpile_html_templates(
-    text: str, index: int, transpiler: "_TemplateTranspiler"
-) -> Tuple[int, Optional[str]]:
-    if text[index : index + 4] != "html":
-        return index + 1, None
-
-    index += 4
-
-    for str_char in ('"""', '"', "'''", "'"):
-        # characters open a string
-        if text[index : index + len(str_char)] == str_char:
-            break
+    text: str, index: int, state: _TranspilerState
+) -> Tuple[int, Optional[slice], str]:
+    str_char = _find_str_char(text, index)
+    if str_char is not None:
+        if state["in_string"] == str_char:
+            # we're closing a string
+            state["in_string"] = None
+            return index + len(str_char), None, ""
+        else:
+            # we're opening a string
+            state["in_string"] = str_char
     else:
-        return index + 1, None
+        return index + 1, None, ""
 
-    for forward_index in range(index + 1, len(text)):
+    if text[index - 4 : index] != "html":
+        return index + len(str_char), None, ""
+    else:
+        slice_start = index - 4
+
+    index += len(str_char)
+
+    if not index < len(text):
+        # end of string reached
+        return index, None, ""
+
+    for forward_index in range(index, len(text)):
         if text[forward_index : forward_index + len(str_char)] == str_char:
-            template = text[index + len(str_char) : forward_index]
-            py_code = transpiler.transpile(template.strip())
-            return forward_index + len(str_char), py_code
+            template = text[index:forward_index]
+            py_code = state["transpiler"].transpile(template.strip())
+            slice_stop = forward_index + len(str_char)
+            return slice_stop, slice(slice_start, slice_stop), py_code
 
-    return forward_index + len(str_char), None
+    return forward_index + len(str_char), None, ""
+
+
+def _find_str_char(text: str, index: int) -> Optional[str]:
+    for str_char in ('"""', "'''", '"', "'"):
+        if text[index : index + len(str_char)] == str_char:
+            return str_char
+    else:
+        return None
 
 
 class _TemplateTranspiler(HTMLParser):

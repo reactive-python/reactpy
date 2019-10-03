@@ -4,7 +4,7 @@ from typing import Callable, Any, Optional, Tuple, List
 
 def transform_string(
     string: str,
-    transform: Callable[[str, int, Any], Tuple[int, Optional[str]]],
+    transform: Callable[[str, int, Any], Tuple[int, Optional[slice], str]],
     state: Any = None,
 ) -> str:
     """Apply a transformation function to a string and return the result.
@@ -17,10 +17,9 @@ def transform_string(
             ``(text, string, state)`` where ``string`` and ``state`` are the same
             as from :func:`transform_string` and ``index`` is the current position
             within the ``string``. The function should return a tuple of the form
-            ``(next_index, replacement)`` where ``next_index`` is the next index
-            to jump to in the ``string`` and ``replacement`` is a string that should
-            replace the section of ``string`` from ``index`` to ``next_index``. If
-            ``replacement`` is None, then the section is not altered.
+            ``(next_index, slice, replacement)`` where ``next_index`` is the next index
+            to jump to in the ``string`` and ``slice`` (if not ``None``) is where the
+            ``replacement`` string should be assigned.
         state:
             An object useful in keeping track of transformation state.
     """
@@ -29,14 +28,16 @@ def transform_string(
 
     # find changes to make
     while index < len(string):
-        next_index, new = transform(string, index, state)
-        if new is not None:
-            changes.append((index, next_index, new))
+        next_index, new_slice, new_str = transform(string, index, state)
+        if new_slice is not None:
+            changes.append((new_slice, new_str))
+        elif new_str:
+            raise ValueError("Returned replacement %r with no slice" % new_str)
         index = next_index
 
     # apply changes
-    for start, stop, new in reversed(changes):
-        string = string[:start] + new + string[stop:]
+    for slc, new in reversed(changes):
+        string = string[:slc.start] + new + string[slc.stop:]
 
     return string
 
