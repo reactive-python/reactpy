@@ -1,7 +1,8 @@
 __version__ = "0.6.0-a.4"
 
+import htm_pyx  # noqa
+
 from . import server
-from . import codec
 
 from .core.element import element, Element
 from .core.events import event, Events

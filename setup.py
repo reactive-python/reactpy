@@ -25,7 +25,6 @@ package = {
     "name": name,
     "python_requires": ">=3.6,<4.0",
     "packages": find_packages("src/py", exclude=["tests*"]),
-    "entry_points": {"console_scripts": ["idom=idom.cli:main"]},
     "package_dir": {"": "src/py"},
     "description": "Control the web with Python",
     "author": "Ryan Morshead",
