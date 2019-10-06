@@ -16,13 +16,17 @@ from .utils import bound_id
 from .element import AbstractElement
 
 
+EventsMapping = Union[
+    Dict[str, "EventHandlerFunction"], Dict[str, "EventHandler"], "Events"
+]
+
 EventHandlerFunction = Callable[..., Awaitable[Any]]  # event handler function
 
 
 def event(
     function: Optional[EventHandlerFunction] = None,
-    stopPropagation: bool = False,
-    preventDefault: bool = False,
+    stop_propagation: bool = False,
+    prevent_default: bool = False,
     target_id: Optional[str] = None,
 ) -> Union["EventHandler", Callable[[EventHandlerFunction], "EventHandler"]]:
     """Create an event handler function with extra functionality.
@@ -41,16 +45,16 @@ def event(
         function:
             A coroutine of the form ``async handler(event)`` where ``event`` is
             a dictionary of event data.
-        stopPropagation:
+        stop_propagation:
             Block the event from propagating further up the DOM.
-        preventDefault:
+        prevent_default:
             Stops the default actional associate with the event from taking place.
         target_id:
             Sets the ID used to identify this handler in the resulting VDOM which
             is usually just automatically generated. This parameter is used when
             testing.
     """
-    handler = EventHandler(stopPropagation, preventDefault, target_id=target_id)
+    handler = EventHandler(stop_propagation, prevent_default, target_id=target_id)
     if function is not None:
         handler.add(function)
         return handler
@@ -73,7 +77,7 @@ class Events(Mapping[str, "EventHandler"]):
             self._bound = proxy(bound)
 
     def on(
-        self, event: str, stopPropagation: bool = False, preventDefault: bool = False
+        self, event: str, stop_propagation: bool = False, prevent_default: bool = False
     ) -> Callable[[EventHandlerFunction], EventHandlerFunction]:
         """A decorator for adding an event handler.
 
@@ -81,6 +85,11 @@ class Events(Mapping[str, "EventHandler"]):
             event:
                 The camel-case name of the event, the word "on" is automatically
                 prepended. So passing "keyDown" would refer to the event "onKeyDown".
+            stop_propagation:
+                Block the event from propagating further up the DOM.
+            prevent_default:
+                Stops the default actional associate with the event from taking place.
+
         Returns:
             A decorator which accepts an event handler function as its first argument.
             The parameters of the event handler function may indicate event attributes
@@ -99,13 +108,13 @@ class Events(Mapping[str, "EventHandler"]):
                         # do something on a click event
                         ...
 
-                    return idom.node("button", "hello!", eventHandlers=events)
+                    return idom.vdom("button", "hello!", eventHandlers=events)
         """
         if not event.startswith("on"):
             event_name = "on" + event[:1].upper() + event[1:]
 
         if event_name not in self._handlers:
-            handler = EventHandler(stopPropagation, preventDefault)
+            handler = EventHandler(stop_propagation, prevent_default)
             self._handlers[event_name] = handler
         else:
             handler = self._handlers[event_name]

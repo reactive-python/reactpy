@@ -4,4 +4,5 @@ pytest-cov
 mypy
 black
 flake8
+pep8-naming
 selenium

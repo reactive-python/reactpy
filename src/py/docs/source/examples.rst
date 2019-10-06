@@ -106,7 +106,7 @@ To Do List
             delete_button = idom.html.td(idom.html.button("x"), onClick=remove)
             tasks.append(idom.html.tr(task_text, delete_button))
 
-        return idom.node("table", tasks)
+        return idom.vdom("table", tasks)
 
     show(Todo)
 
