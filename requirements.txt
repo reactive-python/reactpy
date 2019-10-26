@@ -2,3 +2,4 @@
 -r requirements/dev.txt
 -r requirements/docs.txt
 -r requirements/test.txt
+-r requirements/extras.txt

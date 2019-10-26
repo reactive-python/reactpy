@@ -34,6 +34,7 @@ package = {
     "platforms": "Linux, Mac OS X, Windows",
     "keywords": ["interactive", "widgets", "DOM", "React"],
     "include_package_data": True,
+    "zip_safe": False,
 }
 
 
@@ -49,12 +50,23 @@ with open(os.path.join(here, "requirements", "prod.txt"), "r") as f:
             requirements.append(line)
 package["install_requires"] = requirements
 
-package["extras_require"] = {"matplotlib": ["matplotlib"], "vdom": ["vdom"]}
-
-all_extras = set()
-for extras in package["extras_require"].values():
-    all_extras.update(extras)
-package["extras_require"]["all"] = all_extras
+_current_extra_section = None
+extra_requirements = {"all": []}
+extra_requirements_path = os.path.join(here, "requirements", "extras.txt")
+with open(extra_requirements_path, "r") as f:
+    for line in map(str.strip, f):
+        if line.startswith("#") and line[1:].strip().startswith("extra="):
+            _current_extra_section = line.split("=", 1)[1]
+            if _current_extra_section == "all":
+                raise ValueError("%r uses the reserved extra name 'all'")
+            extra_requirements[_current_extra_section] = []
+        elif _current_extra_section is not None:
+            extra_requirements[_current_extra_section].append(line)
+            extra_requirements["all"].append(line)
+        elif line:
+            msg = "No '# extra=<name>' header before requirements in %r"
+            raise ValueError(msg % extra_requirements_path)
+package["extras_require"] = extra_requirements
 
 
 # -----------------------------------------------------------------------------

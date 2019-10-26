@@ -32,7 +32,6 @@ def vdom(
     import_source: _ImportSourceArg = None,
 ) -> VdomDict:
     """A helper function for creating VDOM dictionaries.
-
     Parameters:
         tag:
             The type of element (e.g. 'div', 'h1', 'img')
@@ -76,7 +75,7 @@ def vdom(
     return model
 
 
-class _VdomConstructor(Protocol):
+class VdomDictConstructor(Protocol):
     def __call__(
         self,
         *args: _AttributesAndChildrenArg,
@@ -86,9 +85,8 @@ class _VdomConstructor(Protocol):
         ...
 
 
-def make_vdom_constructor(tag: str, allow_children: bool = True) -> _VdomConstructor:
+def make_vdom_constructor(tag: str, allow_children: bool = True) -> VdomDictConstructor:
     """Return a constructor for VDOM dictionaries with the given tag name.
-
     The resulting callable will have the same interface as :func:`vdom` but without its
     first ``tag`` argument.
     """

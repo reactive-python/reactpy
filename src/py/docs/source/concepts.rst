@@ -313,7 +313,7 @@ send them over the wire. To do that you need an
 builtin subclass that relies on :mod:`sanic`, an async enabled web server. In principle
 though, the base server class is capable of working with any other async enabled server
 framework. Potential candidates range from newer frameworks like
-`vibora <https://vibora.io/>`__ and
+`vibora <https://vibora.io/>`__, `starlette <https://www.starlette.io/>`__, and
 `aiohttp <https://aiohttp.readthedocs.io/en/stable/>`__ to older ones that are
 starting to add support for asyncio like
 `tornado <https://www.tornadoweb.org/en/stable/asyncio.html>`__.

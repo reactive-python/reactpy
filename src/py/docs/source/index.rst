@@ -15,6 +15,7 @@ Libraries for defining and controlling interactive webpages with Python
     concepts
     examples
     specs
+    extras
     glossary
     api
 

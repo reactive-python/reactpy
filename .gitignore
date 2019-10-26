@@ -17,6 +17,9 @@ dist
 __pycache__/
 *.py[cod]
 
+# --- PyEnv ---
+.python-version
+
 # -- Python Tests ---
 *.coverage
 *.pytest_cache

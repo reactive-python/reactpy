@@ -4,7 +4,7 @@ from idom.core.events import Events
 from idom.core.element import AbstractElement
 from idom.core.vdom import VdomDict
 
-from . import html
+from .html import html
 
 
 _Callback = Callable[["Input", str], Awaitable[None]]
