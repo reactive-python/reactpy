@@ -1,7 +1,6 @@
 import ast
-from typing import Optional
+from typing import Optional, List, Union, Any, Tuple
 
-import tagged
 import htm
 from pyalect import DialectError, Dialect
 
@@ -28,64 +27,143 @@ class HtmlDialectNodeTransformer(ast.NodeTransformer):
     def visit_Call(self, node: ast.Call) -> Optional[ast.AST]:
         if isinstance(node.func, ast.Name):
             if node.func.id == "html":
-                if not (
-                    node.keywords
-                    or len(node.args) != 1
-                    or not isinstance(node.args[0], ast.Str)
+                if (
+                    not node.keywords
+                    and len(node.args) == 1
+                    and isinstance(node.args[0], ast.JoinedStr)
                 ):
-                    htm_string = node.args[0].s
                     try:
-                        expr = self._make_htm_expr(htm_string)
+                        new_node = self._transform_string(node.args[0])
                     except htm.ParseError as error:
                         raise DialectError(str(error), self.filename, node.lineno)
-                    new_node = ast.parse(expr).body[0].value  # type: ignore
-                    copied: ast.Call = ast.copy_location(new_node, node)
-                    return self.generic_visit(copied)
+                    return self.generic_visit(
+                        ast.fix_missing_locations(ast.copy_location(new_node, node))
+                    )
         return node
 
-    @staticmethod
-    def _make_htm_expr(text: str) -> str:
-        src = ""
-        is_first_child = False
-        strings, exprs = tagged.split(text)
-        for op_type, *data in htm.htm_parse(strings):
-            if op_type == "OPEN":
-                if is_first_child:
-                    src += "}, ["
-                is_first_child = True
-                src += "html("
-                value, tag = data
-                src += (exprs[tag] if value else repr(tag)) + ", {"
-            elif op_type == "CLOSE":
-                if is_first_child:
-                    is_first_child = False
-                    src += "}, ["
-                src += "])"
-            elif op_type == "SPREAD":
-                value, item = data
-                src += "**" + (exprs[item] if value else item) + ", "
-            elif op_type == "PROP_SINGLE":
-                attr, value, item = data
-                src += (
-                    repr(attr) + ": (" + (exprs[item] if value else repr(item)) + "), "
-                )
-            elif op_type == "PROP_MULTI":
-                attr, items = data
-                src += (
-                    repr(attr)
-                    + ": ("
-                    + "+".join(
-                        repr(value) if is_text else "str(%s)" % exprs[value]
-                        for (is_text, value) in items
-                    )
-                    + "), "
-                )
-            elif op_type == "CHILD":
-                if is_first_child:
-                    is_first_child = False
-                    src += "}, ["
-                value, item = data
-                src += (exprs[item] if value else repr(item)) + ", "
+    def _transform_string(self, node: ast.JoinedStr) -> ast.Call:
+        htm_strings: List[str] = []
+        exp_nodes: List[ast.AST] = []
+        for inner_node in node.values:
+            if isinstance(inner_node, ast.Str):
+                htm_strings.append(inner_node.s)
+            elif isinstance(inner_node, ast.FormattedValue):
+                if len(htm_strings) == len(exp_nodes):
+                    htm_strings.append("")
+                if inner_node.conversion != -1 or inner_node.format_spec:
+                    exp_nodes.append(ast.JoinedStr([inner_node]))
+                else:
+                    exp_nodes.append(inner_node.value)
+
+        call_stack = _HtmlCallStack()
+        for op_type, *data in htm.htm_parse(htm_strings):
+            getattr(self, f"_transform_htm_{op_type.lower()}")(
+                exp_nodes, call_stack, *data
+            )
+        return call_stack.finish()
+
+    def _transform_htm_open(
+        self,
+        exp_nodes: List[ast.AST],
+        call_stack: "_HtmlCallStack",
+        is_index: bool,
+        tag_or_index: Union[str, int],
+    ) -> None:
+        if isinstance(tag_or_index, int):
+            call_stack.begin_child(exp_nodes[tag_or_index])
+        else:
+            call_stack.begin_child(ast.Str(tag_or_index))
+
+    def _transform_htm_close(
+        self, exp_nodes: List[ast.AST], call_stack: "_HtmlCallStack"
+    ) -> None:
+        call_stack.end_child()
+
+    def _transform_htm_spread(
+        self, exp_nodes: List[ast.AST], call_stack: "_HtmlCallStack", _: Any, index: int
+    ) -> None:
+        call_stack.add_attributes(None, exp_nodes[index])
+
+    def _transform_htm_prop_single(
+        self,
+        exp_nodes: List[ast.AST],
+        call_stack: "_HtmlCallStack",
+        attr: str,
+        is_index: bool,
+        value_or_index: Union[str, int],
+    ) -> None:
+        if isinstance(value_or_index, bool):
+            const = ast.NameConstant(value_or_index)
+            call_stack.add_attributes(ast.Str(attr), const)
+        elif isinstance(value_or_index, int):
+            call_stack.add_attributes(ast.Str(attr), exp_nodes[value_or_index])
+        else:
+            call_stack.add_attributes(ast.Str(attr), ast.Str(value_or_index))
+
+    def _transform_htm_prop_multi(
+        self,
+        exp_nodes: List[ast.AST],
+        call_stack: "_HtmlCallStack",
+        attr: str,
+        items: Tuple[Tuple[bool, Union[str, int]]],
+    ) -> None:
+        op_root = current_op = ast.BinOp(None, None, None)
+        for _, value_or_index in items:
+            if isinstance(value_or_index, str):
+                current_op.right = ast.BinOp(ast.Str(value_or_index), ast.Add(), None)
             else:
-                raise BaseException("unknown op")
-        return src
+                current_op.right = ast.BinOp(exp_nodes[value_or_index], ast.Add(), None)
+            last_op = current_op
+            current_op = current_op.right
+        last_op.right = current_op.left
+        call_stack.add_attributes(ast.Str(attr), op_root.right)
+
+    def _transform_htm_child(
+        self,
+        exp_nodes: List[ast.AST],
+        call_stack: "_HtmlCallStack",
+        is_index: bool,
+        child_or_index: Union[str, int],
+    ) -> None:
+        if isinstance(child_or_index, int):
+            call_stack.add_child(exp_nodes[child_or_index])
+        else:
+            call_stack.add_child(ast.Str(child_or_index))
+
+
+class _HtmlCallStack:
+    def __init__(self) -> None:
+        self._root = self._new(ast.Str())
+        self._stack: List[ast.Call] = [self._root]
+
+    def begin_child(self, tag: ast.AST) -> None:
+        new = self._new(tag)
+        last = self._stack[-1]
+        children = last.args[2].elts  # type: ignore
+        children.append(new)
+        self._stack.append(new)
+
+    def add_child(self, child: ast.AST) -> None:
+        current = self._stack[-1]
+        children = current.args[2].elts  # type: ignore
+        children.append(child)
+
+    def add_attributes(self, key: Optional[ast.Str], value: ast.AST) -> None:
+        current = self._stack[-1]
+        attributes: ast.Dict = current.args[1]  # type: ignore
+        attributes.keys.append(key)  # type: ignore
+        attributes.values.append(value)  # type: ignore
+
+    def end_child(self) -> None:
+        self._stack.pop(-1)
+
+    def finish(self) -> ast.Call:
+        root = self._root
+        self._root = self._new(ast.Str())
+        self._stack.clear()
+        return root.args[2].elts[0]  # type: ignore
+
+    @staticmethod
+    def _new(tag: ast.AST) -> ast.Call:
+        args = [tag, ast.Dict([], []), ast.List([], ast.Load())]
+        return ast.Call(ast.Name("html", ast.Load()), args, [])

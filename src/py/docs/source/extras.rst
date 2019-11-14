@@ -40,7 +40,7 @@ IDOM includes a transpiler for writing JSX-like syntax in a normal Python file!
 
     message = "hello world!"
     attrs = {"height": "10px", "width": "10px"}
-    model = html("<div ...{attrs}><p>{message}</p></div>")
+    model = html(f"<div ...{attrs}><p>{message}</p></div>")
 
     assert model == {
         "tagName": "div",
@@ -54,7 +54,7 @@ With Jupyter and IPython support:
 
     %%dialect html
     from idom import html
-    assert html("<div/>") == {"tagName": "div"}
+    assert html(f"<div/>") == {"tagName": "div"}
 
 That you can install with ``pip``:
 
