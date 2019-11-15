@@ -71,7 +71,7 @@ class Import(Eval):
 
 
 def hotswap(
-    shared: bool = False
+    shared: bool = False,
 ) -> Tuple[Callable[[ElementConstructor], None], ElementConstructor]:
     """Swap out elements from a layout on the fly.
 

@@ -77,3 +77,8 @@ HTML Nodes
 .. automodule:: idom.widgets.html
     :members:
     :undoc-members:
+
+Dialect
+-------
+
+.. automodule:: idom.dialect

@@ -7,7 +7,7 @@ from .core.events import event, Events
 from .core.layout import Layout
 from .core.vdom import vdom
 
-from .widgets import html
+from .widgets.html import html
 from .widgets.common import hotswap, Eval, Import
 from .widgets.display import display
 from .widgets.inputs import Input
@@ -15,12 +15,26 @@ from .widgets.images import Image
 
 from .tools import Var, html_to_vdom
 
+try:
+    import pyalect
+    import tagged
+    import htm
+except ImportError:
+    pass
+else:
+    from . import dialect
+
+    del pyalect
+    del tagged
+    del htm
+
 
 __all__ = [
     "element",
     "Element",
     "event",
     "Events",
+    "dialect",
     "html",
     "Layout",
     "server",
