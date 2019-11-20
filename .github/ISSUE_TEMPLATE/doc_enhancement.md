@@ -1,5 +1,5 @@
 ---
-name: Bad Documentation
+name: Doc Enhancement
 about: Describe this issue template's purpose here.
 title: Doc Enhancement
 labels: docs
@@ -7,7 +7,7 @@ assignees: rmorshea
 
 ---
 
-**Describe what's wrong with the documentation**
+**Describe what's missing from, or wrong with the documentation**
 Is something missing, worded poorly, or flat out wrong? Tells us about it here.
 
 **Screenshots**
