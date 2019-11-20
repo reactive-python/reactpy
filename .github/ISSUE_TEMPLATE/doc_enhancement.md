@@ -1,5 +1,5 @@
 ---
-name: Doc Enhancement
+name: Doc enhancement
 about: Documentation needs to be fixed or added
 title: Doc Enhancement
 labels: docs
