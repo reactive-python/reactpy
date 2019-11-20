@@ -1,13 +1,13 @@
 ---
 name: Doc Enhancement
-about: Describe this issue template's purpose here.
+about: Documentation needs to be fixed or added
 title: Doc Enhancement
 labels: docs
 assignees: rmorshea
 
 ---
 
-**Describe what's missing from, or wrong with the documentation**
+**Describe what documentation needs to be fixed or added**
 Is something missing, worded poorly, or flat out wrong? Tells us about it here.
 
 **Screenshots**
