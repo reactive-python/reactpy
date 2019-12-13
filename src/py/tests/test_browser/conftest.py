@@ -16,10 +16,10 @@ last_server_error = idom.Var(default_error)
 
 
 class ServerWithErrorCatch(idom.server.sanic.PerClientState):
-    async def _stream(self, request, socket):
+    async def _stream_route(self, request, socket):
         last_server_error.set(None)
         try:
-            await super()._stream(request, socket)
+            await super()._stream_route(request, socket)
         except Exception as e:
             last_server_error.set(e)
 

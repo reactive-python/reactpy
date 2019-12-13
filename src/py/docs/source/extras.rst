@@ -14,6 +14,16 @@ To install **all** features simply run
     pip install idom[all]
 
 
+Sanic Layout Server
+-------------------
+
+At the moment this is the only supported :ref:`Layout Server` available for IDOM:
+
+.. code-block:: bash
+
+    pip install idom[sanic]
+
+
 Compatibility with Nteract's VDOM
 ---------------------------------
 
@@ -108,7 +118,7 @@ imported with a ``# dialect=html`` header comment get transpiled just before the
 executed. This is accomplished by using Pyalect_ to hook a transpiler into Pythons
 import system. The :class:`~idom.dialect.HtmlDialectTranspiler` which implements
 Pyalect_'s :class:`~pyalect.dialect.Transpiler` interface using some tooling from
-htm.js_.
+htm.py_.
 
 
 .. Links
@@ -116,4 +126,3 @@ htm.js_.
 
 .. _Pyalect: https://pyalect.readthedocs.io/en/latest/
 .. _htm.py: https://github.com/jviide/htm.py
-.. _htm.js: https://github.com/developit/htm

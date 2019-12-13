@@ -1,5 +1,6 @@
 # --- Jupyter ---
 *.ipynb_checkpoints
+*Untitled*.ipynb
 
 # --- Jupyter Repo 2 Docker ---
 .local

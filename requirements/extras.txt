@@ -1,3 +1,7 @@
+# extra=sanic
+sanic >=19.9.0, <20.0
+sanic-cors >=0.9.9, <1.0
+
 # extra=matplotlib
 matplotlib
 

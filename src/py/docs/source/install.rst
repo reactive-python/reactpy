@@ -5,9 +5,9 @@ IDOM is on PyPI_ so all you need to do is use pip_ to install a **stable** versi
 
 .. code-block:: bash
 
-    pip install idom
+    pip install idom[stable]
 
-To setup up extra features:
+To setup up all extra features:
 
 .. code-block:: bash
 

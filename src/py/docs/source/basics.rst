@@ -30,9 +30,11 @@ Since it's likely a lot to take in at once we'll break it down piece by piece:
 The ``idom.element`` decorator indicates that the `asynchronous function`_ to follow
 returns a data structure which depicts a user interface, or in more technical terms a
 Document Object Model (DOM). We call this structural representation of the DOM a
-`Virtual DOM <VDOM React>`_ (VDOM) - a term familiar to those who work with `ReactJS`_.
+`Virtual DOM`__ (VDOM) - a term familiar to those who work with `ReactJS`_.
 In the case of ``Slideshow`` it will return a VDOM representing an image which, when
 clicked, will change.
+
+__ https://reactjs.org/docs/faq-internals.html#what-is-the-virtual-dom
 
 A key thing to note here though is the use of ``self`` as a parameter to ``Slideshow``.
 Similarly to how ``self`` refers to the current instance of class when used as a
@@ -56,7 +58,9 @@ using the newly incremented index.
     Coroutines like ``next_image`` which respond to user interactions recieve an
     ``event`` dictionary that contains different information depending on they type
     of event that occured. All supported events and the data they contain is listed
-    `here <React events>`__.
+    `here`__.
+
+__ https://reactjs.org/docs/events.html
 
 .. code-block::
 
@@ -87,7 +91,5 @@ use ``idom.display()`` to show it in a Jupyter Notebook via a widget.
 
 .. _VDOM event specification: https://github.com/nteract/vdom/blob/master/docs/event-spec.md
 .. _VDOM mimetype specification: https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md
-.. _VDOM React: https://reactjs.org/docs/faq-internals.html#what-is-the-virtual-dom
-.. _React events: https://reactjs.org/docs/events.html
 .. _asynchronous function: https://realpython.com/async-io-python/
 .. _ReactJS: https://reactjs.org/docs/faq-internals.html

@@ -87,7 +87,11 @@ class SharedStateRenderer(SingleStateRenderer):
     async def run(self, send: SendCoroutine, recv: RecvCoroutine, context: str) -> None:
         self._updates[context] = asyncio.Queue()
         try:
-            await asyncio.gather(super().run(send, recv, context), self._render_task)
+            await asyncio.gather(
+                super().run(send, recv, context),
+                # not sure why `Future[None]` isn't allowed here
+                self._render_task,  # type: ignore
+            )
         except Exception:
             del self._updates[context]
             raise
