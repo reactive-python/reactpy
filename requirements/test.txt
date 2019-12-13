@@ -1,7 +1,7 @@
 pytest==5.2.2
 pytest-asyncio
 pytest-cov
-mypy
+mypy>=0.750
 black
 flake8
 pep8-naming

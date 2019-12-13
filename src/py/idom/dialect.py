@@ -151,7 +151,7 @@ class _HtmlCallStack:
     def add_attributes(self, key: Optional[ast.Str], value: ast.AST) -> None:
         current = self._stack[-1]
         attributes: ast.Dict = current.args[1]  # type: ignore
-        attributes.keys.append(key)  # type: ignore
+        attributes.keys.append(key)
         attributes.values.append(value)  # type: ignore
 
     def end_child(self) -> None:

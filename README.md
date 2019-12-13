@@ -37,7 +37,7 @@ hosted by [Binder](https://mybinder.org/) with some great examples.
 ### Or Install it Now
 
 ```bash
-pip install idom
+pip install idom[sanic]
 ```
 
 

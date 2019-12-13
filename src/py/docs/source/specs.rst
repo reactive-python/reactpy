@@ -35,7 +35,7 @@ into its VDOM representation:
 
 .. note::
 
-  For context, the following Python code would generate this HTML:
+  For context, the following Python code would generate the HTML above:
 
   .. code-block:: python
 
@@ -130,7 +130,6 @@ Last, but not least we come to the ``eventHandlers`` for the ``input``:
                 "eventHandlers": {
                     "onChange": {
                       "target": "unique-id-of-a_python_callback",
-                      "eventProps": ["target.value"],
                       "preventDefault": False,
                       "stopPropagation": False
                     }
@@ -145,8 +144,6 @@ Again we've changed the all lowercase ``onchange`` into a cameCase ``onChange`` 
 type name. The various properties for the ``onChange`` handler are:
 
 - ``target``: the unique ID for a Python callback that exists in the backend.
-
-- ``eventProps``: A list of strings indicating the data that the Python callback requires.
 
 - ``preventDefault``: Stop the event's default action. More info
   `here <https://developer.mozilla.org/en-US/docs/Web/API/Event/preventDefault>`__.

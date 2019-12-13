@@ -1,32 +1,29 @@
 import React from "react";
-import { transform as babelTransform } from "@babel/standalone";
 
 function lazyComponent(model) {
     return React.lazy(() => {
         try {
-            const result = evalInContext(model.importSource.source);
-            // Allows the code to make components with dynamic imports that to return a
-            // promise. Non-dynamic code, is just wrapped in a promise so it works with
-            // React.lazy without any user code.
-            return Promise.resolve(result).then(
+            return eval(`import('${model.importSource.source}')`).then(
                 pkg => {
+                    pkg = pkg.default ? pkg.default : pkg;
                     return resolvePackage(pkg, model.tagName);
                 },
                 error => {
                     function Catch() {
                         return (
                             <pre>
-                                <code>{error.message}</code>
+                                <code>{error.stack}</code>
                             </pre>
                         );
                     }
-                    return {default: Catch};
-                });
+                    return { default: Catch };
+                }
+            );
         } catch (error) {
             function Error() {
                 return (
                     <pre>
-                        <code>{error.message}</code>
+                        <code>{error.stack}</code>
                     </pre>
                 );
             }
@@ -38,7 +35,7 @@ function lazyComponent(model) {
 function resolvePackage(pkg, path) {
     let Resolution;
     try {
-        const Component = (path ? getPathProperty(pkg, path): pkg);
+        const Component = path ? getPathProperty(pkg, path) : pkg;
 
         switch (typeof Component) {
             case "string":
@@ -87,21 +84,6 @@ function getPathProperty(obj, prop) {
     return value;
 }
 
-function evalInContext(jsx) {
-    const transform = babelTransform(
-        "const React = this.React;\n" + jsx,
-        {
-            presets: ["react"],
-            plugins: [require("@babel/plugin-syntax-dynamic-import")]
-        }
-    );
-    return function() {
-        return eval(transform.code);
-    }.call({
-        React: React
-    });
-}
-
 class ErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
@@ -120,7 +102,7 @@ class ErrorBoundary extends React.Component {
         if (this.state.error) {
             return (
                 <pre>
-                    <code>{this.state.error}</code>
+                    <code>{this.state.error.stack}</code>
                 </pre>
             );
         }

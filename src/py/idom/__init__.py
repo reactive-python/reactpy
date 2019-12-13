@@ -1,4 +1,4 @@
-__version__ = "0.6.0-a.4"
+__version__ = "0.6.0"
 
 from . import server
 
@@ -8,7 +8,7 @@ from .core.layout import Layout
 from .core.vdom import vdom
 
 from .widgets.html import html
-from .widgets.common import hotswap, Eval, Import
+from .widgets.common import hotswap, Import
 from .widgets.display import display
 from .widgets.inputs import Input
 from .widgets.images import Image
@@ -41,7 +41,6 @@ __all__ = [
     "Var",
     "vdom",
     "Image",
-    "Eval",
     "Import",
     "hotswap",
     "display",

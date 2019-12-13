@@ -1,43 +1,11 @@
 from typing import Any, Callable, Tuple, Optional
 
-from idom.core.element import ElementConstructor, AbstractElement, Element, element
-from idom.core.vdom import VdomDict, vdom
+from idom.core.element import ElementConstructor, Element, element
+from idom.core.vdom import VdomDict, ImportSourceDict, vdom
 from idom.tools import Var
 
 
-class Eval:
-    """An interface for creating React Components that you can use in your layouts."""
-
-    def __init__(self, code: str, fallback: Optional[str] = None) -> None:
-        super().__init__()
-        self._code = code
-        self._fallback = fallback
-
-    def __getattr__(self, tag: str) -> Callable[..., "EvalElement"]:
-        def constructor(*args: Any, **kwargs: Any) -> "EvalElement":
-            return self(tag, *args, **kwargs)
-
-        return constructor
-
-    def __call__(self, *args: Any, **kwargs: Any) -> "EvalElement":
-        return EvalElement(self._code, self._fallback, vdom(*args, **kwargs))
-
-
-class EvalElement(AbstractElement):
-    """An element created by :class:`Eval` which refers to a React component."""
-
-    def __init__(self, code: str, fallback: Optional[str], model: VdomDict) -> None:
-        super().__init__()
-        if "importSource" in model:
-            raise ValueError("Model already has an import source")
-        model["importSource"] = {"source": code, "fallback": fallback}
-        self._model = model
-
-    async def render(self) -> VdomDict:
-        return self._model
-
-
-class Import(Eval):
+class Import:
     """Import a react library
 
     Once imported, you can instantiate the library's components by calling them
@@ -46,7 +14,7 @@ class Import(Eval):
 
     .. code-block:: python
 
-        antd = idom.Package("https://dev.jspm.io/antd")
+        antd = idom.Import("https://dev.jspm.io/antd")
         # you'll often need to link to the css stylesheet for the library.
         css = idom.html.link(rel="stylesheet", type="text/css", href="https://dev.jspm.io/antd/dist/antd.css")
 
@@ -61,13 +29,24 @@ class Import(Eval):
             return idom.html.div(picker, css)
     """
 
-    def __init__(self, pkg: str, fallback: Optional[str] = None) -> None:
-        if pkg.startswith("/"):
-            url = pkg
-        else:
-            url = f"https://dev.jspm.io/{pkg}"
-        code = f"import('{url}').then(pkg => pkg.default);"
-        super().__init__(code, fallback)
+    def __init__(self, package: str, fallback: Optional[str] = None) -> None:
+        self._package = package
+        self._fallback = fallback
+
+    def __getattr__(self, tag: str) -> Callable[..., VdomDict]:
+        """Attribute is a constructor for a VDOM dict with that tagName."""
+
+        def constructor(*args: Any, **kwargs: Any) -> VdomDict:
+            return self(tag, *args, **kwargs)
+
+        return constructor
+
+    def __call__(self, *args: Any, **kwargs: Any) -> VdomDict:
+        import_source = ImportSourceDict(source=self._package, fallback=self._fallback)
+        return vdom(import_source=import_source, *args, **kwargs)
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self._package!r})"
 
 
 def hotswap(
