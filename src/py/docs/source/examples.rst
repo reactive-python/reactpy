@@ -406,7 +406,7 @@ Import Javascript
 
 .. code-block::
 
-    antd = idom.Package("https://dev.jspm.io/antd")
+    antd = idom.Import("https://dev.jspm.io/antd")
 
     @idom.element
     async def AntDatePicker(self):
