@@ -7,9 +7,7 @@ addons:
 
 before_install:
   - sudo apt update
-  - sudo apt install curl
   # javascript dependencies
-  - wget -qO- https://deb.nodesource.com/setup_8.x | sudo bash -
   - sudo apt install nodejs
   - npm install -g yarn
   # install chromebrowser
@@ -38,3 +36,17 @@ matrix:
       env:
         - WORK_DIR="."
         - TEST_CMD="bash scripts/test.sh"
+
+before_deploy:
+  - sudo apt update
+  # javascript dependencies
+  - wget -qO- https://deb.nodesource.com/setup_8.x | sudo bash -
+  - sudo apt install nodejs
+  - npm install -g yarn
+
+deploy:
+  provider: pypi
+  user: __token__
+  password: pypi-AgEIcHlwaS5vcmcCJGM2NzBiZjA0LWI5NjQtNGQyNC1iNTgwLWQ3NTU2NDZkNzUzYQACNXsicGVybWlzc2lvbnMiOiB7InByb2plY3RzIjogWyJpZG9tIl19LCAidmVyc2lvbiI6IDF9AAAGIIQbTkSreodRG-A84aRolpSasKBj_m1LgNroUXXRrSxa
+  on:
+    tags: true
