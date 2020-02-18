@@ -8,12 +8,11 @@ repos:
     rev: 3.7.9
     hooks:
     - id: flake8
-      args: ["--config=src/py/.flake8", "--exclude=src/js"]
 -   repo: local
     hooks:
     -   id: mypy
         name: mypy
         language: system
-        entry: mypy --config-file src/py/mypy.ini
+        entry: mypy src/py
         types: [python]
         exclude: src/py/tests/*|setup.py

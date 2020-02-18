@@ -168,7 +168,7 @@ texinfo_documents = [
 
 # -- Options for Sphinx-Autodoc-Typehints output -------------------------------------------------
 
-set_type_checking_flag = True
+set_type_checking_flag = False
 
 # -- Options for Epub output -------------------------------------------------
 
