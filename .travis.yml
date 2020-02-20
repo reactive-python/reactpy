@@ -1,5 +1,10 @@
 dist: xenial
 language: python
+
+python:
+  - 3.6
+  - 3.7
+
 cache: apt
 
 addons:
@@ -22,20 +27,8 @@ install:
   - pip install -r requirements.txt
   - pip install -e .[all]
 
-script: cd $WORK_DIR && eval $TEST_CMD
-
-matrix:
-  include:
-    - name: "python-3.6"
-      python: 3.6
-      env:
-        - WORK_DIR="."
-        - TEST_CMD="bash scripts/test.sh"
-    - name: "python-3.7"
-      python: 3.7
-      env:
-        - WORK_DIR="."
-        - TEST_CMD="bash scripts/test.sh"
+script:
+  - bash scripts/test.sh
 
 before_deploy:
   - sudo apt update
@@ -46,7 +39,7 @@ before_deploy:
 deploy:
   provider: pypi
   user: $PYPI_USER
-  password: $ PYPI_PASS
+  password: $PYPI_PASS
   distributions: "bdist_wheel"
   on:
     repo: rmorshea/idom
