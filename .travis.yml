@@ -33,6 +33,11 @@ install:
 script:
   - bash scripts/test.sh
 
+branches:
+  only:
+  - master
+  - /^\d+\.\d+(\.\d+)?(-\S*)?$/
+
 before_deploy:
   - sudo apt update
   # javascript dependencies
