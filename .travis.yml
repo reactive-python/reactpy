@@ -46,8 +46,6 @@ before_deploy:
 
 deploy:
   provider: pypi
-  user: $PYPI_USER
-  password: $PYPI_PASS
   distributions: "bdist_wheel"
   on:
     repo: rmorshea/idom
