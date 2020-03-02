@@ -6,7 +6,6 @@ python:
   - 3.7
   - 3.8
   - 3.8-dev
-  - nightly
 
 cache: apt
 
@@ -36,14 +35,12 @@ script:
 jobs:
   include:
   - stage: deploy
-    before_deploy:
+    if: tag IS present AND repo = rmorshea/idom
+    python: 3.6
+    script:
     - sudo apt update
     # javascript dependencies
     - sudo apt install nodejs
     - npm install -g yarn
-    deploy:
-      provider: pypi
-      distributions: "bdist_wheel"
-      on:
-        repo: rmorshea/idom
-        tags: true
+    - python setup.py bdist_wheel
+    - twine upload dist/* -u $PYPI_USERNAME -p $PYPI_PASSWORD
