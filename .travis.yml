@@ -14,39 +14,36 @@ addons:
   chrome: stable
 
 before_install:
-  - sudo apt update
-  # javascript dependencies
-  - sudo apt install nodejs
-  - npm install -g yarn
-  # install chromebrowser
-  - wget -N http://chromedriver.storage.googleapis.com/2.38/chromedriver_linux64.zip -P ~/
-  - unzip ~/chromedriver_linux64.zip -d ~/
-  - rm ~/chromedriver_linux64.zip
-  - sudo mv -f ~/chromedriver /usr/bin/
-  - sudo chmod +x /usr/bin/chromedriver
+- sudo apt update
+# javascript dependencies
+- sudo apt install nodejs
+- npm install -g yarn
+# install chromebrowser
+- wget -N http://chromedriver.storage.googleapis.com/2.38/chromedriver_linux64.zip -P ~/
+- unzip ~/chromedriver_linux64.zip -d ~/
+- rm ~/chromedriver_linux64.zip
+- sudo mv -f ~/chromedriver /usr/bin/
+- sudo chmod +x /usr/bin/chromedriver
 
 install:
-  # Install IDOM along with test requirements
-  - pip install -r requirements.txt
-  - pip install -e .[all]
+# Install IDOM along with test requirements
+- pip install -r requirements.txt
+- pip install -e .[all]
 
 script:
-  - bash scripts/test.sh
+- bash scripts/test.sh
 
-branches:
-  only:
-  - master
-  - /^\d+\.\d+(\.\d+)?(-\S*)?$/
-
-before_deploy:
-  - sudo apt update
-  # javascript dependencies
-  - sudo apt install nodejs
-  - npm install -g yarn
-
-deploy:
-  provider: pypi
-  distributions: "bdist_wheel"
-  on:
-    repo: rmorshea/idom
-    tags: true
+jobs:
+  include:
+  - stage: deploy
+    before_deploy:
+    - sudo apt update
+    # javascript dependencies
+    - sudo apt install nodejs
+    - npm install -g yarn
+    deploy:
+      provider: pypi
+      distributions: "bdist_wheel"
+      on:
+        repo: rmorshea/idom
+        tags: true
