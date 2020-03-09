@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><title>Snowpack - Simple Example</title></head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+        import React from "../js/web_modules/react.js";
+        import ReactDOM from "../js/web_modules/react-dom";
+        import Layout from "../js/index.js";
+
+        const uri = document.location.hostname + ":" + document.location.port;
+        const url = (uri + document.location.pathname).split("/").slice(0, -1);
+        url[url.length - 1] = "stream";
+        const secure = document.location.protocol === "https:";
+
+        let protocol;
+        if (secure) {
+            protocol = "wss:";
+        } else {
+            protocol = "ws:";
+        }
+        let endpoint = protocol + "//" + url.join("/");
+
+        const mount = document.getElementById("root");
+        ReactDOM.render(React.createElement(Layout, {"endpoint": endpoint}), mount);
+    </script>
+  </body>
+</html>
