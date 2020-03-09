@@ -1,0 +1,17 @@
+{
+  "name": "idom-layout",
+  "description": "A client for IDOM",
+  "version": "0.1.0",
+  "author": "Ryan Morshead",
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": {},
+  "devDependencies": {
+    "snowpack": "^1.5.2"
+  },
+  "dependencies": {
+    "htm": "^3.0.3",
+    "react": "npm:@pika/react@^16.13.1",
+    "react-dom": "npm:@pika/react-dom@^16.13.1"
+  }
+}
