@@ -7,7 +7,7 @@
   "main": "index.js",
   "scripts": {},
   "devDependencies": {
-    "snowpack": "^1.5.2"
+    "snowpack": "^1.6.0"
   },
   "dependencies": {
     "htm": "^3.0.3",

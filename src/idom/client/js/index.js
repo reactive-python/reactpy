@@ -4,8 +4,8 @@ import React, {
     useState,
     useMemo,
     Suspense
-} from "./web_modules/react.js";
-import htm from './web_modules/htm.js'
+} from "../web_modules/react.js";
+import htm from '../web_modules/htm.js'
 import serializeEvent from "./event-to-object.js";
 
 const html = htm.bind(React.createElement);

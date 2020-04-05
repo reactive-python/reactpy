@@ -1,9 +1,6 @@
-import os
 import uuid
 
 from typing import Any
-
-from idom.core.utils import STATIC_DIRECTORY
 
 
 def display(kind: str, *args: Any, **kwargs: Any) -> Any:
@@ -23,26 +20,28 @@ class JupyterWigdet:
 
     _shown = False
     __slots__ = "_url"
+    _script = """
+    import React from '{url}/web-modules/react.js';
+    import ReactDOM from '{url}/web-modules/react-dom.js';
+    import Layout from '{url}/js/idom-layout';
+
+    function IdomWidgetMount(endpoint, mountId) {
+        const mount = document.getElementById(mountId);
+        const element = React.createElement(Layout, {{endpoint: endpoint}})
+        ReactDOM.render(element, mount);
+    };
+    """
 
     def __init__(self, url: str) -> None:
         self._url = url
-
-    def _script(self) -> str:
-        js = os.path.join(STATIC_DIRECTORY, "jupyter-widget", "static", "js")
-        for filename in os.listdir(js):
-            if os.path.splitext(filename)[1] == ".js":
-                with open(os.path.join(js, filename), "r") as f:
-                    return f.read()
-        else:
-            raise ValueError("Failed to find script.")
 
     def _repr_html_(self) -> str:
         """Rich HTML display output."""
         mount_id = uuid.uuid4().hex
         return f"""
         <div id="{mount_id}"/>
-        {'' if JupyterWigdet._shown else '<script>' + self._script() + '</script>'}
-        <script>window.iDomWidgetMount("{self._url}", "{mount_id}")</script>
+        {'' if JupyterWigdet._shown else '<script>' + self._script + '</script>'}
+        <script>window.IdomWidgetMount("{self._url}", "{mount_id}")</script>
         """
 
     def __repr__(self) -> str:

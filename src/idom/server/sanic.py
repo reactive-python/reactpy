@@ -1,6 +1,5 @@
 import asyncio
 import json
-from pathlib import Path
 import uuid
 
 from typing import Tuple, Any, Dict, Union
@@ -17,7 +16,7 @@ from idom.core.render import (
     RecvCoroutine,
 )
 from idom.core.layout import LayoutEvent
-from idom.core.utils import STATIC_DIRECTORY
+from idom.client import CLIENT_DIR
 
 from .base import AbstractRenderServer
 
@@ -102,9 +101,9 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
     async def _client_route(
         self, request: request.Request, path: str
     ) -> response.HTTPResponse:
-        client_path = Path(STATIC_DIRECTORY).joinpath("simple-client", *path.split("/"))
-        if client_path.exists():
-            return await response.file_stream(str(client_path))
+        abs_path = CLIENT_DIR.joinpath(*path.split("/"))
+        if abs_path.exists():
+            return await response.file_stream(str(abs_path))
         return response.text(f"Could not find: {path!r}", status=404)
 
 
