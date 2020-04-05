@@ -1,11 +1,7 @@
-import os
 import uuid
 from weakref import finalize
 
 from typing import Set, Any
-
-
-STATIC_DIRECTORY = os.path.join(os.path.dirname(__file__), "..", "static")
 
 
 def bound_id(obj: Any, size: int = 10) -> str:

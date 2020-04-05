@@ -3,7 +3,7 @@ from __future__ import print_function
 from setuptools import setup, find_packages
 from distutils.command.build import build  # type: ignore
 from distutils.command.sdist import sdist  # type: ignore
-from setuptools.command.develop import develop  # type: ignore
+from setuptools.command.develop import develop
 import os
 import sys
 import subprocess
@@ -13,7 +13,7 @@ name = "idom"
 
 # basic paths used to gather files
 here = os.path.abspath(os.path.dirname(__file__))
-root = os.path.join(here, "src", "py", name)
+root = os.path.join(here, "src", name)
 
 
 # -----------------------------------------------------------------------------
@@ -24,8 +24,8 @@ root = os.path.join(here, "src", "py", name)
 package = {
     "name": name,
     "python_requires": ">=3.6,<4.0",
-    "packages": find_packages("src/py", exclude=["tests*"]),
-    "package_dir": {"": "src/py"},
+    "packages": find_packages("src", exclude=["tests*"]),
+    "package_dir": {"": "src"},
     "description": "Control the web with Python",
     "author": "Ryan Morshead",
     "author_email": "ryan.morshead@gmail.com",
@@ -51,7 +51,7 @@ with open(os.path.join(here, "requirements", "prod.txt"), "r") as f:
 package["install_requires"] = requirements
 
 _current_extra_section = None
-extra_requirements = {"all": []}
+extra_requirements = {"all": []}  # type: ignore
 extra_requirements_path = os.path.join(here, "requirements", "extras.txt")
 with open(extra_requirements_path, "r") as f:
     for line in map(str.strip, f):

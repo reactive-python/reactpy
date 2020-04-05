@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head><title>Snowpack - Simple Example</title></head>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Snowpack - Simple Example</title>
+  </head>
   <body>
     <div id="app"></div>
     <script type="module">
-        import React from "../js/web_modules/react.js";
-        import ReactDOM from "../js/web_modules/react-dom";
+        import React from "../web_modules/react.js";
+        import ReactDOM from "../web_modules/react-dom.js";
         import Layout from "../js/index.js";
 
         const uri = document.location.hostname + ":" + document.location.port;
-        const url = (uri + document.location.pathname).split("/").slice(0, -1);
+        const url = (uri + document.location.pathname).split("/").slice(0, -2);
         url[url.length - 1] = "stream";
         const secure = document.location.protocol === "https:";
 
@@ -21,7 +24,7 @@
         }
         let endpoint = protocol + "//" + url.join("/");
 
-        const mount = document.getElementById("root");
+        const mount = document.getElementById("app");
         ReactDOM.render(React.createElement(Layout, {"endpoint": endpoint}), mount);
     </script>
   </body>
