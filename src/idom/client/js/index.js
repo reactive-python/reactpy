@@ -6,7 +6,10 @@ import {
   useMemo,
 } from "../web_modules/preact/hooks.js";
 import htm from "../web_modules/htm.js";
+import { Suspense } from "../web_modules/preact/compat.js";
+
 import serializeEvent from "./event-to-object.js";
+import lazyComponent from "./lazy-component.js";
 
 const html = htm.bind(h);
 
@@ -87,8 +90,8 @@ function Element({ model, sendEvent }) {
   if (model.importSource) {
     const lazy = lazyComponent(model);
     return html`
-      <Suspense fallback="{model.importSource.fallback}">
-        {React.createElement(lazy, attributes, children)}
+      <Suspense fallback="${model.importSource.fallback}">
+        ${h(lazy, attributes, children)}
       </Suspense>
     `;
   } else if (model.children && model.children.length) {
@@ -109,7 +112,10 @@ function elementChildren(model, sendEvent) {
             <${DynamicElement} elementId=${child.data} sendEvent=${sendEvent} />
           `;
         case "obj":
-          return html`<${Element} model=${child.data} sendEvent=${sendEvent} />`;
+          return html`<${Element}
+            model=${child.data}
+            sendEvent=${sendEvent}
+          />`;
         case "str":
           return child.data;
       }
