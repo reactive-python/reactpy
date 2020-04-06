@@ -1,9 +1,9 @@
 function serializeEvent(event) {
   const data = {};
-  if (event.target.hasOwnProperty("value")) {
+  if ("value" in event.target) {
     data.value = event.target.value;
   }
-  if (eventTransforms.hasOwnProperty(event.type)) {
+  if (event.type in eventTransforms) {
     Object.assign(data, eventTransforms[event.type](event));
   }
   return data;

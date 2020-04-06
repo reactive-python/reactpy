@@ -6,7 +6,7 @@
   "license": "MIT",
   "main": "index.js",
   "scripts": {
-    "snowpack": "./node-modules/.bin/snowpack",
+    "snowpack": "./node_modules/.bin/snowpack",
     "lint": "./node_modules/.bin/prettier --write ."
   },
   "devDependencies": {
@@ -21,7 +21,8 @@
     "webDependencies": [
       "htm",
       "preact",
-      "preact/hooks"
+      "preact/hooks",
+      "preact/compat"
     ]
   }
 }
