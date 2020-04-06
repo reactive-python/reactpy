@@ -5,13 +5,23 @@
   "author": "Ryan Morshead",
   "license": "MIT",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "snowpack": "./node-modules/.bin/snowpack",
+    "lint": "./node_modules/.bin/prettier --write ."
+  },
   "devDependencies": {
+    "prettier": "2.0.3",
     "snowpack": "^1.6.0"
   },
   "dependencies": {
     "htm": "^3.0.3",
-    "react": "npm:@pika/react@^16.13.1",
-    "react-dom": "npm:@pika/react-dom@^16.13.1"
+    "preact": "^10.3.4"
+  },
+  "snowpack": {
+    "webDependencies": [
+      "htm",
+      "preact",
+      "preact/hooks"
+    ]
   }
 }
