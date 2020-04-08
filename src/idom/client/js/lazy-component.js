@@ -10,7 +10,7 @@ function lazyComponent(model) {
       (pkg) => {
         pkg = pkg.default ? pkg.default : pkg;
         const cmpt = model.tagName ? getPathProperty(pkg, model.tagName) : pkg;
-        return {default: cmpt};
+        return { default: cmpt };
       },
       (error) => {
         function Catch() {
