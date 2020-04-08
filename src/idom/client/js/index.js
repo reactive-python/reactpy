@@ -13,15 +13,6 @@ import lazyComponent from "./lazy-component.js";
 
 const html = htm.bind(h);
 
-const allUpdateTriggers = {};
-const allModels = {};
-
-function updateDynamicElement(elementId) {
-  if (allUpdateTriggers.hasOwnProperty(elementId)) {
-    allUpdateTriggers[elementId]();
-  }
-}
-
 function Layout({ endpoint }) {
   // handle relative endpoint URI
   if (endpoint.startsWith(".") || endpoint.startsWith("/")) {
@@ -43,18 +34,13 @@ function Layout({ endpoint }) {
     return new WebSocket(endpoint);
   }, [endpoint]);
 
-  const [root, setRoot] = useState(null);
+  const [modelState, setModelState] = useState({ root: null, models: {} });
 
   socket.onmessage = (event) => {
     const msg = JSON.parse(event.data);
-    Object.assign(allModels, msg.body.render.new);
-    msg.body.render.old.forEach((elementId) => {
-      delete allModels[elementId];
-    });
-    updateDynamicElement(msg.body.render.src);
-    if (!root) {
-      setRoot(msg.body.render.root);
-    }
+    const newModels = { ...modelState.models, ...msg.body.render.new };
+    msg.body.render.old.forEach((elementId) => delete newModels[elementId]);
+    setModelState({ root: msg.body.render.root, models: newModels });
   };
 
   const sendMsg = (msg) => {
@@ -67,25 +53,19 @@ function Layout({ endpoint }) {
     });
   };
 
-  if (root) {
-    return html`<${DynamicElement} elementId=${root} sendEvent=${sendEvent} />`;
+  if (modelState.root) {
+    return html`<${Element}
+      modelState=${modelState}
+      model=${modelState.models[modelState.root]}
+      sendEvent=${sendEvent}
+    />`;
   } else {
     return html`<div />`;
   }
 }
 
-function DynamicElement({ elementId, sendEvent }) {
-  allUpdateTriggers[elementId] = useForceUpdate();
-  const model = allModels[elementId];
-  if (model) {
-    return html`<${Element} model=${model} sendEvent=${sendEvent} />`;
-  } else {
-    return html`<div />`;
-  }
-}
-
-function Element({ model, sendEvent }) {
-  const children = elementChildren(model, sendEvent);
+function Element({ modelState, model, sendEvent }) {
+  const children = elementChildren(modelState, model, sendEvent);
   const attributes = elementAttributes(model, sendEvent);
   if (model.importSource) {
     const lazy = lazyComponent(model);
@@ -95,13 +75,13 @@ function Element({ model, sendEvent }) {
       </Suspense>
     `;
   } else if (model.children && model.children.length) {
-    return h(model.tagName, attributes, children);
+    return html`<${model.tagName} ...${attributes}>${children}<//>`;
   } else {
-    return h(model.tagName, attributes);
+    return html`<${model.tagName} ...${attributes} />`;
   }
 }
 
-function elementChildren(model, sendEvent) {
+function elementChildren(modelState, model, sendEvent) {
   if (!model.children) {
     return [];
   } else {
@@ -109,13 +89,20 @@ function elementChildren(model, sendEvent) {
       switch (child.type) {
         case "ref":
           return html`
-            <${DynamicElement} elementId=${child.data} sendEvent=${sendEvent} />
+            <${Element}
+              modelState=${modelState}
+              model=${modelState.models[child.data]}
+              sendEvent=${sendEvent}
+            />
           `;
         case "obj":
-          return html`<${Element}
-            model=${child.data}
-            sendEvent=${sendEvent}
-          />`;
+          return html`
+            <${Element}
+              modelState=${modelState}
+              model=${child.data}
+              sendEvent=${sendEvent}
+            />
+          `;
         case "str":
           return child.data;
       }
@@ -156,13 +143,6 @@ function elementAttributes(model, sendEvent) {
   }
 
   return attributes;
-}
-function useForceUpdate() {
-  const [, setState] = useState(true);
-  const forceUpdate = () => {
-    setState((state) => !state);
-  };
-  return forceUpdate;
 }
 
 export default Layout;
