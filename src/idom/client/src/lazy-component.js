@@ -1,8 +1,7 @@
-import { h, Component } from "../web_modules/preact.js";
 import htm from "../web_modules/htm.js";
-import { lazy } from "../web_modules/preact/compat.js";
+import React, { lazy } from "../web_modules/react.js";
 
-const html = htm.bind(h);
+const html = htm.bind(React.createElement);
 
 function lazyComponent(model) {
   return lazy(() => {

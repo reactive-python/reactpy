@@ -6,23 +6,18 @@
   "license": "MIT",
   "main": "index.js",
   "scripts": {
-    "snowpack": "./node_modules/.bin/snowpack",
-    "lint": "./node_modules/.bin/prettier --write ."
+    "it": "./node_modules/.bin/npx",
+    "snowpack": "npm run it -- snowpack --include 'src/**/*.js'",
+    "lint": "npm run it -- prettier --write ."
   },
   "devDependencies": {
+    "npx": "^10.2.2",
     "prettier": "2.0.3",
     "snowpack": "^1.6.0"
   },
   "dependencies": {
     "htm": "^3.0.3",
-    "preact": "^10.3.4"
-  },
-  "snowpack": {
-    "webDependencies": [
-      "htm",
-      "preact",
-      "preact/hooks",
-      "preact/compat"
-    ]
+    "react": "npm:@pika/react@^16.13.1",
+    "react-dom": "npm:@pika/react-dom@^16.13.1"
   }
 }
