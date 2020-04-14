@@ -1,17 +1,16 @@
-import { h } from "../web_modules/preact.js";
-import {
-  useReducer,
+import React, {
   useEffect,
   useState,
   useMemo,
-} from "../web_modules/preact/hooks.js";
+  Suspense,
+} from "../web_modules/react.js";
+import ReactDOM from "../web_modules/react-dom.js";
 import htm from "../web_modules/htm.js";
-import { Suspense } from "../web_modules/preact/compat.js";
 
 import serializeEvent from "./event-to-object.js";
 import lazyComponent from "./lazy-component.js";
 
-const html = htm.bind(h);
+const html = htm.bind(React.createElement);
 
 function Layout({ endpoint }) {
   // handle relative endpoint URI
@@ -68,11 +67,11 @@ function Element({ modelState, model, sendEvent }) {
   const children = elementChildren(modelState, model, sendEvent);
   const attributes = elementAttributes(model, sendEvent);
   if (model.importSource) {
-    const lazy = lazyComponent(model);
+    const cmpt = lazyComponent(model);
     return html`
-      <Suspense fallback="${model.importSource.fallback}">
-        ${h(lazy, attributes, children)}
-      </Suspense>
+      <${Suspense} fallback="${model.importSource.fallback}">
+        <${cmpt} ...${attributes}>${children}<//>
+      <//>
     `;
   } else if (model.children && model.children.length) {
     return html`<${model.tagName} ...${attributes}>${children}<//>`;
@@ -145,4 +144,10 @@ function elementAttributes(model, sendEvent) {
   return attributes;
 }
 
+function renderLayout(mountElement, endpoint) {
+  const cmpt = html`<$Layout endpoint=${endpoint} />`;
+  return ReactDOM.render(cmpt, mountElement);
+}
+
 export default Layout;
+export { renderLayout };
