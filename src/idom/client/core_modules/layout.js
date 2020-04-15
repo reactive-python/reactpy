@@ -52,7 +52,7 @@ function Layout({ endpoint }) {
     });
   };
 
-  if (modelState.root) {
+  if (modelState.root && modelState.root) {
     return html`<${Element}
       modelState=${modelState}
       model=${modelState.models[modelState.root]}
@@ -64,6 +64,7 @@ function Layout({ endpoint }) {
 }
 
 function Element({ modelState, model, sendEvent }) {
+  console.log(model)
   const children = elementChildren(modelState, model, sendEvent);
   const attributes = elementAttributes(model, sendEvent);
   if (model.importSource) {
@@ -145,7 +146,7 @@ function elementAttributes(model, sendEvent) {
 }
 
 function renderLayout(mountElement, endpoint) {
-  const cmpt = html`<$Layout endpoint=${endpoint} />`;
+  const cmpt = html`<${Layout} endpoint=${endpoint} />`;
   return ReactDOM.render(cmpt, mountElement);
 }
 

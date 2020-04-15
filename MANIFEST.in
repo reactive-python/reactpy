@@ -1,3 +1,5 @@
-graft src/py/idom/static
-include src/py/idom/py.typed
-include src/py/LICENSE
+graft src/idom/client/
+prune src/idom/client/node_modules
+
+include src/idom/py.typed
+include LICENSE
