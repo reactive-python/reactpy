@@ -1,8 +1,16 @@
-from typing import Any, Callable, Tuple, Optional
+from typing import Any, Callable, Tuple, Optional, Union
 
+from idom import client
 from idom.core.element import ElementConstructor, Element, element
 from idom.core.vdom import VdomDict, ImportSourceDict, vdom
 from idom.tools import Var
+
+
+def module(name: str, source: Any, raw: bool = False) -> "Import":
+    if not raw:
+        with open(str(source), "r") as f:
+            source = f.read()
+    return Import(client.define_module(name, source))
 
 
 class Import:
@@ -14,7 +22,7 @@ class Import:
 
     .. code-block:: python
 
-        antd = idom.Import("https://dev.jspm.io/antd")
+        antd = idom.Import("antd")
         # you'll often need to link to the css stylesheet for the library.
         css = idom.html.link(rel="stylesheet", type="text/css", href="https://dev.jspm.io/antd/dist/antd.css")
 
@@ -29,7 +37,22 @@ class Import:
             return idom.html.div(picker, css)
     """
 
-    def __init__(self, package: str, fallback: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        package: str,
+        fallback: Optional[str] = None,
+        install: Union[str, bool] = False,
+    ) -> None:
+        if install is not False:
+            if not client.import_path(package):
+                if isinstance(install, str):
+                    client.install(f"{install} {package}")
+                else:
+                    client.install(f"{package} {package}")
+            new_import_path = client.import_path(package)
+            if new_import_path is None:
+                raise ValueError(f"Unexpectedly failed to find install of {package}")
+            package = new_import_path
         self._package = package
         self._fallback = fallback
 

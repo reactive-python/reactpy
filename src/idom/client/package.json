@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "author": "Ryan Morshead",
   "license": "MIT",
-  "main": "index.js",
+  "main": "core_modules/layout.js",
   "scripts": {
     "it": "./node_modules/.bin/npx",
-    "snowpack": "npm run it -- snowpack --include 'src/**/*.js'",
+    "snowpack": "npm run it -- snowpack",
     "lint": "npm run it -- prettier --write ."
   },
   "devDependencies": {
@@ -19,5 +19,11 @@
     "htm": "^3.0.3",
     "react": "npm:@pika/react@^16.13.1",
     "react-dom": "npm:@pika/react-dom@^16.13.1"
+  },
+  "snowpack": {
+    "installOptions": {
+      "include": "modules/**/*.js",
+      "clean": true
+    }
   }
 }
