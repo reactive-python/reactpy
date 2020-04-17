@@ -64,7 +64,6 @@ function Layout({ endpoint }) {
 }
 
 function Element({ modelState, model, sendEvent }) {
-  console.log(model)
   const children = elementChildren(modelState, model, sendEvent);
   const attributes = elementAttributes(model, sendEvent);
   if (model.importSource) {

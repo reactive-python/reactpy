@@ -23,15 +23,15 @@ def import_path(name: str) -> Optional[str]:
 
 
 def define_module(name: str, source: str) -> str:
-    path = CLIENT_DIR / "web_modules"
-    for n in name.split("/"):
+    path = CLIENT_DIR
+    for n in ["etc_modules"] + name.split("/"):
         if not path.exists():
             path.mkdir()
         path /= n
     module = path.with_suffix(".js")
     with module.open("w+") as f:
         f.write(source)
-    return _web_module(name)
+    return _etc_module(name)
 
 
 def install(*dependencies: str) -> None:
@@ -98,3 +98,7 @@ def _run_subprocess(args: List[str], cwd: Union[str, Path]):
 
 def _web_module(name: str) -> str:
     return f"../web_modules/{name}.js"
+
+
+def _etc_module(name: str) -> str:
+    return f"../etc_modules/{name}.js"
