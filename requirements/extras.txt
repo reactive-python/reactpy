@@ -1,5 +1,5 @@
 # extra=sanic
-sanic >=19.12.0, <20.0
+sanic <19.12.0
 sanic-cors >=0.9.9, <1.0
 
 # extra=matplotlib

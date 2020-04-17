@@ -1,6 +1,7 @@
 import uuid
-
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
+from IPython import display as _ipy_display
 
 
 def display(kind: str, *args: Any, **kwargs: Any) -> Any:
@@ -18,31 +19,52 @@ def display(kind: str, *args: Any, **kwargs: Any) -> Any:
 class JupyterWigdet:
     """Output for IDOM within a Jupyter Notebook."""
 
-    _shown = False
-    __slots__ = "_url"
-    _script = """
-    import React from '{url}/web-modules/react.js';
-    import ReactDOM from '{url}/web-modules/react-dom.js';
-    import Layout from '{url}/js/idom-layout';
+    _idom_server_exists_displayed = False
+    __slots__ = ("_ws", "_http")
 
-    function IdomWidgetMount(endpoint, mountId) {
-        const mount = document.getElementById(mountId);
-        const element = React.createElement(Layout, {{endpoint: endpoint}})
-        ReactDOM.render(element, mount);
-    };
-    """
+    def __init__(self, url: str, secure=True) -> None:
+        uri = urlunsplit(("",) + urlsplit(url)[1:])
+        if uri.endswith("/"):
+            uri = uri[:-1]
+        if secure:
+            ws_proto = "wss"
+            http_proto = "https"
+        else:
+            ws_proto = "ws"
+            http_proto = "http"
+        self._ws = ws_proto + ":" + uri
+        self._http = http_proto + ":" + uri
+        if not type(self)._idom_server_exists_displayed:
+            _ipy_display.display_html(
+                "<script>document.idomServerExists = true;</script>", raw=True,
+            )
+            _ipy_display.clear_output(wait=True)
+            type(self)._idom_server_exists_displayed = True
 
-    def __init__(self, url: str) -> None:
-        self._url = url
+    def _script(self, mount_id):
+        return f"""
+        <script type="module">
+            // we want to avoid making this request (in case of CORS)
+            // unless we know an IDOM server is expected to respond
+            if (document.idomServerExists) {{
+                import("{self._http}/client/core_modules/layout.js").then(
+                    module => {{
+                        module.renderLayout(
+                            document.getElementById("{mount_id}"), "{self._ws}/stream"
+                        )
+                    }}
+                )
+            }}
+        </script>
+        """
 
     def _repr_html_(self) -> str:
         """Rich HTML display output."""
         mount_id = uuid.uuid4().hex
         return f"""
         <div id="{mount_id}"/>
-        {'' if JupyterWigdet._shown else '<script>' + self._script + '</script>'}
-        <script>window.IdomWidgetMount("{self._url}", "{mount_id}")</script>
+        {self._script(mount_id)}
         """
 
     def __repr__(self) -> str:
-        return "%s(%r)" % (type(self).__name__, self._url)
+        return "%s(%r)" % (type(self).__name__, self._http)
