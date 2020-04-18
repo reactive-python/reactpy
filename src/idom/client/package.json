@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "author": "Ryan Morshead",
   "license": "MIT",
+  "repository": {
+    "url": "https://github.com/rmorshea/idom"
+  },
   "main": "core_modules/layout.js",
   "scripts": {
     "it": "./node_modules/.bin/npx",
@@ -13,6 +16,7 @@
   "devDependencies": {
     "npx": "^10.2.2",
     "prettier": "2.0.3",
+    "rollup": "^1.20.0",
     "snowpack": "^1.6.0"
   },
   "dependencies": {

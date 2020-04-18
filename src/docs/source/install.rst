@@ -40,7 +40,7 @@ In order to work with IDOM's source code you'll need to install:
 
 - git_
 
-- Yarn_
+- npm_
 
 You'll begin by copy the source from GitHub onto your computer using Git:
 
@@ -53,7 +53,7 @@ At this point you should be able to run this install command to:
 
 - Install an editable version of the Python code
 
-- Transpile the Javascript and copy it to ``src/py/idom/static``
+- Download, build, and install Javascript dependencies
 
 - Install some pre-commit hooks for Git
 
@@ -61,14 +61,14 @@ At this point you should be able to run this install command to:
 
     pip install -e . -r requirements.txt && pre-commit install
 
-If you modify a Javascript library you'll need to re-run this command:
+Since we're using native ES modules for our Javascript, you should usually be able to
+refresh your browser page to see your latest changes to the client. However if you
+modify any dependencies you can run standard ``npm`` commands to install them or
+simply run the following to re-evaluate the ``package.json``:
 
 .. code-block:: bash
 
     pip install -e .
-
-This will transpile the Javascript again and copy it to the
-``src/py/idom/static`` folder.
 
 
 Running The Test
@@ -97,13 +97,13 @@ run:
 
 .. code-block:: bash
 
-    pytest src/py/tests
+    pytest src/tests
 
 If you prefer to run the tests using a headless browser:
 
 .. code-block:: bash
 
-    pytest src/py/tests --headless
+    pytest src/tests --headless
 
 .. Links
 .. =====
@@ -112,8 +112,8 @@ If you prefer to run the tests using a headless browser:
 .. _ChromeDriver: https://chromedriver.chromium.org/downloads
 .. _git: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 .. _Git Bash: https://gitforwindows.org/
+.. _npm: https://www.npmjs.com/get-npm
 .. _PyPI: https://pypi.org/project/idom
 .. _pip: https://pypi.org/project/pip/
 .. _PyTest: pytest <https://docs.pytest.org
 .. _Selenium: https://www.seleniumhq.org/
-.. _Yarn: https://yarnpkg.com/lang/en/docs/install
