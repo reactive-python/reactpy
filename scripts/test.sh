@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-pytest src/py/tests --headless --cov=idom --cov-fail-under=82 --reruns 3
+pytest src/tests --headless --cov=idom --cov-fail-under=82 --reruns 1
 black --verbose --check src/py
-flake8 src/py
-mypy src/py/idom
-sphinx-build -b html src/py/docs/source src/py/docs/build
+flake8 src/
+mypy src/idom
+sphinx-build -b html src/docs/source src/docs/build

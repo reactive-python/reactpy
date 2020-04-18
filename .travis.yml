@@ -16,7 +16,6 @@ before_install:
 - sudo apt update
 # javascript dependencies
 - sudo apt install nodejs
-- npm install -g yarn
 # install chromebrowser
 - wget -N http://chromedriver.storage.googleapis.com/2.38/chromedriver_linux64.zip -P ~/
 - unzip ~/chromedriver_linux64.zip -d ~/
