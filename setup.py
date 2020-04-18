@@ -50,18 +50,20 @@ with open(os.path.join(here, "requirements", "prod.txt"), "r") as f:
             requirements.append(line)
 package["install_requires"] = requirements
 
-_current_extra_section = None
+_current_extras = []
 extra_requirements = {"all": []}  # type: ignore
 extra_requirements_path = os.path.join(here, "requirements", "extras.txt")
 with open(extra_requirements_path, "r") as f:
     for line in map(str.strip, f):
         if line.startswith("#") and line[1:].strip().startswith("extra="):
-            _current_extra_section = line.split("=", 1)[1]
-            if _current_extra_section == "all":
+            _current_extras = [e.strip() for e in line.split("=", 1)[1].split(",")]
+            if "all" in _current_extras:
                 raise ValueError("%r uses the reserved extra name 'all'")
-            extra_requirements[_current_extra_section] = []
-        elif _current_extra_section is not None:
-            extra_requirements[_current_extra_section].append(line)
+            for e in _current_extras:
+                extra_requirements[e] = []
+        elif _current_extras:
+            for e in _current_extras:
+                extra_requirements[e].append(line)
             extra_requirements["all"].append(line)
         elif line:
             msg = "No '# extra=<name>' header before requirements in %r"

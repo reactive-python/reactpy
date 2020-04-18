@@ -6,6 +6,7 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
 
 import idom
+from idom.server.sanic import PerClientState
 
 
 # Default is an error because we want to know whether we are setting the last
@@ -15,7 +16,7 @@ default_error = NotImplementedError()
 last_server_error = idom.Var(default_error)
 
 
-class ServerWithErrorCatch(idom.server.sanic.PerClientState):
+class ServerWithErrorCatch(PerClientState):
     async def _stream_route(self, request, socket):
         last_server_error.set(None)
         try:
@@ -50,7 +51,7 @@ def display(_display):
 def _display(driver):
     _display, element = idom.hotswap()
     server = ServerWithErrorCatch(element)
-    server.daemon("localhost", "5678")
+    server.daemon("localhost", "5678", debug=True)
 
     def display(element):
         _display(element)

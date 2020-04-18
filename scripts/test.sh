@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-pytest src/tests --headless --cov=idom --cov-fail-under=82 --reruns 1
+pytest src/tests --headless --cov=idom --cov-fail-under=82 -vv
 black --verbose --check src/py
 flake8 src/
 mypy src/idom
