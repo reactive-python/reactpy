@@ -12,15 +12,20 @@ function lazyComponent(model) {
         return { default: cmpt };
       },
       (error) => {
-        function Catch() {
-          return html`
-            <pre>
-              <code>${error.stack}</code>
-            </pre
-            >
-          `;
+        if (!error.stack) {
+          throw error;
+        } else {
+          return {
+            default: function Catch() {
+              return html`
+              <pre>
+                <code>${error.stack}</code>
+              </pre
+              >
+            `;
+            }
+          };
         }
-        return { default: Catch };
       }
     );
   });
