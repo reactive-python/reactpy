@@ -1,4 +1,4 @@
-jupyter
+jupyterlab
 pre-commit
 notebook
 twine

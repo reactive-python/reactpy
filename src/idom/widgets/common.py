@@ -1,3 +1,4 @@
+import inspect
 from typing import Any, Callable, Tuple, Optional, Union
 
 from idom import client
@@ -6,10 +7,12 @@ from idom.core.vdom import VdomDict, ImportSourceDict, vdom
 from idom.tools import Var
 
 
-def module(name: str, source: Any, raw: bool = False) -> "Import":
+def import_module(name: str, source: Any, raw: bool = False) -> "Import":
     if not raw:
         with open(str(source), "r") as f:
             source = f.read()
+    else:
+        source = inspect.cleandoc(source)
     return Import(client.define_module(name, source))
 
 
@@ -43,13 +46,13 @@ class Import:
         fallback: Optional[str] = None,
         install: Union[str, bool] = False,
     ) -> None:
-        if install is not False:
-            if not client.import_path(package):
+        if install:
+            if not client.module_exists("web_modules", package):
                 if isinstance(install, str):
                     client.install(f"{install} {package}")
                 else:
                     client.install(f"{package} {package}")
-            new_import_path = client.import_path(package)
+            new_import_path = client.import_path("web_modules", package)
             if new_import_path is None:
                 raise ValueError(f"Unexpectedly failed to find install of {package}")
             package = new_import_path

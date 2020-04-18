@@ -11,6 +11,8 @@
 .jupyter
 
 # --- Python ---
+.venv
+venv
 MANIFEST
 build
 dist

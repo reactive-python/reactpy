@@ -5,15 +5,14 @@ import htm from "../web_modules/htm.js";
 const html = htm.bind(React.createElement);
 
 const data = [
-  {quarter: 1, earnings: 13000},
-  {quarter: 2, earnings: 16500},
-  {quarter: 3, earnings: 14250},
-  {quarter: 4, earnings: 19000}
+  { quarter: 1, earnings: 13000 },
+  { quarter: 2, earnings: 16500 },
+  { quarter: 3, earnings: 14250 },
+  { quarter: 4, earnings: 19000 }
 ];
 
-class Chart extends React.Component {
-  render() {
-    return html`
+function Chart() {
+  return html`
       <${VictoryChart} domainPadding=20>
         <${VictoryAxis}
           tickValues=${[1, 2, 3, 4]}
@@ -30,7 +29,6 @@ class Chart extends React.Component {
         />
       </${VictoryChart}>
     `
-  }
 }
 
-export default {Chart: Chart}
+export default { Chart: Chart }

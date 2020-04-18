@@ -22,7 +22,7 @@
   },
   "snowpack": {
     "installOptions": {
-      "include": "modules/**/*.js",
+      "include": "core_modules/**/*.js",
       "clean": true
     }
   }
