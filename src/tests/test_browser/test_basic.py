@@ -1,8 +1,6 @@
 import idom
 
-# The IDOM server is running in a seperate thread so asyncio
-# can't help us with synchronization problems here
-from threading import Condition
+from queue import Queue
 
 
 def test_simple_hello_world(driver, display):
@@ -63,18 +61,17 @@ def test_simple_input(driver, display):
 
 
 def test_animation(driver, display):
-    count_confirmed = Condition()
+    count_queue = Queue()
 
     @idom.element
-    async def Counter(self, count=0):
+    async def Counter(self):
 
-        with count_confirmed:
-            count_confirmed.wait()
+        count = count_queue.get()
 
         @self.animate
         async def increment(stop):
             if count < 5:
-                self.update(count + 1)
+                self.update()
             else:
                 stop()
 
@@ -83,8 +80,7 @@ def test_animation(driver, display):
     display(Counter)
 
     for i in range(6):
-        with count_confirmed:
-            count_confirmed.notify()
+        count_queue.put(i)
         driver.find_element_by_id(f"counter-{i}")
 
 
