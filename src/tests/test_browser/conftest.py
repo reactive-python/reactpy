@@ -71,8 +71,8 @@ def driver(pytestconfig):
     driver = Chrome(options=chrome_options)
 
     driver.set_window_size(1080, 800)
-    driver.set_page_load_timeout(5)
-    driver.implicitly_wait(5)
+    driver.set_page_load_timeout(3)
+    driver.implicitly_wait(3)
 
     try:
         yield driver
