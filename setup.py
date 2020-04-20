@@ -13,7 +13,7 @@ name = "idom"
 
 # basic paths used to gather files
 here = os.path.abspath(os.path.dirname(__file__))
-root = os.path.join(here, "src", name)
+root = os.path.join(here, name)
 
 
 # -----------------------------------------------------------------------------
@@ -23,9 +23,8 @@ root = os.path.join(here, "src", name)
 
 package = {
     "name": name,
-    "python_requires": ">=3.6,<4.0",
-    "packages": find_packages("src", exclude=["tests*"]),
-    "package_dir": {"": "src"},
+    "python_requires": ">=3.6",
+    "packages": find_packages(exclude=["tests*"]),
     "description": "Control the web with Python",
     "author": "Ryan Morshead",
     "author_email": "ryan.morshead@gmail.com",

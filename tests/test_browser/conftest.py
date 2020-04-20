@@ -25,12 +25,11 @@ class ServerWithErrorCatch(PerClientState):
             last_server_error.set(e)
 
 
-def pytest_addoption(parser):
-    parser.addoption(
-        "--headless",
-        action="store_true",
-        help="Whether to run browser tests in headless mode.",
-    )
+@pytest.fixture(scope="package", autouse=True)
+def fresh_client():
+    idom.client.restore()
+    yield
+    idom.client.restore()
 
 
 @pytest.fixture
@@ -51,11 +50,12 @@ def display(_display):
 def _display(driver):
     _display, element = idom.hotswap()
     server = ServerWithErrorCatch(element)
-    server.daemon("localhost", "5678", debug=True)
+    host, port = "127.0.0.1", 5555
+    server.daemon(host, port, debug=True)
 
     def display(element):
         _display(element)
-        driver.get("http://localhost:5678/client/index.html")
+        driver.get(f"http://{host}:{port}/client/index.html")
 
     time.sleep(1)  # wait for server start
     return display
@@ -65,7 +65,7 @@ def _display(driver):
 def driver(pytestconfig):
     chrome_options = Options()
 
-    if pytestconfig.option.headless:
+    if getattr(pytestconfig.option, "headless", False):
         chrome_options.headless = True
 
     driver = Chrome(options=chrome_options)

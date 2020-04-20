@@ -11,12 +11,12 @@ class ImportSourceDict(TypedDict):
     fallback: Any
 
 
-class VdomDict(TypedDict, total=False):
-    tagName: Optional[str]
-    children: Union[List[Any], Tuple[Any, ...]]
-    attributes: Dict[str, Any]
-    eventHandlers: EventsMapping
-    importSource: ImportSourceDict
+class VdomDict(TypedDict, total=False):  # fmt: off
+    tagName: Optional[str]  # noqa
+    children: Union[List[Any], Tuple[Any, ...]]  # noqa
+    attributes: Dict[str, Any]  # noqa
+    eventHandlers: EventsMapping  # noqa
+    importSource: ImportSourceDict  # noqa
 
 
 _TagArg = Optional[str]
