@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-pytest src/tests --headless --cov=idom --cov-fail-under=82 -vv
-black --verbose --check src/py
-flake8 src/
-mypy src/idom
-sphinx-build -b html src/docs/source src/docs/build
+pytest --headless -vv
+black . --check --exclude idom/client/node_modules/.*
+flake8 idom
+mypy idom
+sphinx-build -b html docs/source docs/build

@@ -29,9 +29,7 @@ before_install:
 install:
 # Install IDOM along with test requirements
 - pip install -r requirements.txt
-- python setup.py build
 - pip install -e .[all]
-- ls src/idom/client
 
 script:
 - bash scripts/test.sh

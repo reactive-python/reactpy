@@ -49,9 +49,9 @@ class Import:
         if install:
             if not client.module_exists("web_modules", package):
                 if isinstance(install, str):
-                    client.install(f"{install} {package}")
+                    client.install({install: package})
                 else:
-                    client.install(f"{package} {package}")
+                    client.install({package: package})
             new_import_path = client.import_path("web_modules", package)
             if new_import_path is None:
                 raise ValueError(f"Unexpectedly failed to find install of {package}")

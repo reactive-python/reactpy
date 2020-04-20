@@ -4,7 +4,7 @@ import subprocess
 from loguru import logger
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict
 
 
 CLIENT_DIR = Path(__file__).parent
@@ -15,56 +15,59 @@ WEB_MODULES = CLIENT_DIR / "web_modules"
 ETC_MODULES = CLIENT_DIR / "etc_modules"
 
 
-def import_path(prefix: str, name: str) -> Optional[str]:
+def import_path(prefix: str, name: str) -> str:
+    path = f"../{prefix}/{name}.js"
     if not module_exists(prefix, name):
-        raise ValueError(f"Module '{_module_js_path(prefix, name)}' does not exist.")
-    return _module_js_path(prefix, name)
+        raise ValueError(f"Module '{path}' does not exist.")
+    return path
 
 
 def define_module(name: str, source: str) -> str:
     path = _create_module_os_path(ETC_MODULES, name)
     with path.open("w+") as f:
         f.write(source)
-    return _module_js_path("etc_modules", name)
+    return import_path("etc_modules", name)
 
 
 def delete_module(prefix: str, name: str) -> None:
-    if not module_exists(prefix, name):
-        raise ValueError(f"Module '{_module_js_path(prefix, name)}' does not exist.")
-    return None
+    path = _find_module_os_path(prefix, name)
+    if path is None:
+        raise ValueError(f"Module '{import_path(prefix, name)}' does not exist.")
+    _delete_os_paths(path)
 
 
 def module_exists(prefix: Union[str, Path], name: str) -> bool:
     return _find_module_os_path(prefix, name) is not None
 
 
-def install(*dependencies: str) -> None:
+def install(dependencies: Dict[str, str]) -> None:
     pkg = _package_json()
 
     npm_install = []
-    for dep in dependencies:
-        install_spec, *import_paths = dep.split(" ")
-        if not import_paths:
-            raise ValueError(
-                "Expected a space seperated string where an installation "
-                f"spec is followed by at least on import path, not '{dep}'"
-            )
-        pkg["snowpack"]["webDependencies"].extend(import_paths)
-        npm_install.append(install_spec)
+    for dep, import_paths in dependencies.items():
+        npm_install.append(dep)
+        pkg["snowpack"]["webDependencies"].extend(import_paths.split())
 
     with TemporaryDirectory() as tempdir:
-        with (Path(tempdir) / "package.json").open("w+") as f:
+        tempdir_path = Path(tempdir)
+
+        if NODE_MODULES.exists():
+            shutil.copytree(
+                NODE_MODULES, tempdir_path / NODE_MODULES.name, symlinks=True
+            )
+
+        with (tempdir_path / "package.json").open("w+") as f:
             json.dump(pkg, f)
 
         _run_subprocess(["npm", "install"], tempdir)
-        if npm_install:
-            _run_subprocess(["npm", "install"] + npm_install, tempdir)
+        _run_subprocess(["npm", "install"] + npm_install, tempdir)
         _run_subprocess(["npm", "run", "snowpack"], tempdir)
 
 
 def restore() -> None:
     _delete_os_paths(WEB_MODULES, NODE_MODULES, ETC_MODULES)
-    install()
+    _run_subprocess(["npm", "install"], CLIENT_DIR)
+    _run_subprocess(["npm", "run", "snowpack"], CLIENT_DIR)
 
 
 def _package_json():
@@ -91,12 +94,9 @@ def _run_subprocess(args: List[str], cwd: Union[str, Path]):
             args, cwd=cwd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
     except subprocess.CalledProcessError as error:
-        logger.error(error.stderr.decode())
+        if error.stderr is not None:
+            logger.error(error.stderr.decode())
         raise
-
-
-def _module_js_path(prefix: str, name: str) -> str:
-    return f"../{prefix}/{name}.js"
 
 
 def _find_module_os_path(prefix: Union[str, Path], name: str) -> Optional[Path]:
