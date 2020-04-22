@@ -29,10 +29,7 @@ function Layout({ endpoint }) {
     endpoint = new_uri + endpoint;
   }
 
-  const socket = useMemo(() => {
-    return new WebSocket(endpoint);
-  }, [endpoint]);
-
+  const socket = useMemo(() => new WebSocket(endpoint), [endpoint]);
   const [modelState, setModelState] = useState({ root: null, models: {} });
 
   socket.onmessage = (event) => {
@@ -52,7 +49,7 @@ function Layout({ endpoint }) {
     });
   };
 
-  if (modelState.root && modelState.root) {
+  if (modelState.root && modelState.models[modelState.root]) {
     return html`<${Element}
       modelState=${modelState}
       model=${modelState.models[modelState.root]}
@@ -115,7 +112,7 @@ function elementAttributes(model, sendEvent) {
   if (model.eventHandlers) {
     Object.keys(model.eventHandlers).forEach((eventName) => {
       const eventSpec = model.eventHandlers[eventName];
-      attributes[eventName] = function (event) {
+      attributes[eventName] = function eventHandler(event) {
         const data = Array.from(arguments).map((value) => {
           if (typeof value === "object" && value.nativeEvent) {
             if (eventSpec["preventDefault"]) {

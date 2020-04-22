@@ -41,7 +41,7 @@ def vdom(
             sets of attributes, or children which will be merged into their respective
             parts of the model.
         event_handlers:
-            Maps event types to coroutines that are responsible for hanling those events.
+            Maps event types to coroutines that are responsible for handling those events.
         import_source:
             (subject to change) specifies javascript that, when evaluated returns a
             React component.

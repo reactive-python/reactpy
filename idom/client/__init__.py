@@ -12,7 +12,7 @@ CLIENT_DIR = Path(__file__).parent
 CORE_MODULES = CLIENT_DIR / "core_modules"
 NODE_MODULES = CLIENT_DIR / "node_modules"
 WEB_MODULES = CLIENT_DIR / "web_modules"
-ETC_MODULES = CLIENT_DIR / "etc_modules"
+USER_MODULES = CLIENT_DIR / "user_modules"
 
 
 def import_path(prefix: str, name: str) -> str:
@@ -23,10 +23,10 @@ def import_path(prefix: str, name: str) -> str:
 
 
 def define_module(name: str, source: str) -> str:
-    path = _create_module_os_path(ETC_MODULES, name)
+    path = _create_module_os_path(USER_MODULES, name)
     with path.open("w+") as f:
         f.write(source)
-    return import_path("etc_modules", name)
+    return import_path("user_modules", name)
 
 
 def delete_module(prefix: str, name: str) -> None:
@@ -65,7 +65,7 @@ def install(dependencies: Dict[str, str]) -> None:
 
 
 def restore() -> None:
-    _delete_os_paths(WEB_MODULES, NODE_MODULES, ETC_MODULES)
+    _delete_os_paths(WEB_MODULES, NODE_MODULES, USER_MODULES)
     _run_subprocess(["npm", "install"], CLIENT_DIR)
     _run_subprocess(["npm", "run", "snowpack"], CLIENT_DIR)
 

@@ -36,8 +36,10 @@ def test_custom_module(driver, display, victory):
 
     driver.find_element_by_class_name("VictoryContainer")
 
-    assert client.module_exists("etc_modules", "my_chart")
-    assert client.import_path("etc_modules", "my_chart") == "../etc_modules/my_chart.js"
+    assert client.module_exists("user_modules", "my_chart")
+    assert (
+        client.import_path("user_modules", "my_chart") == "../user_modules/my_chart.js"
+    )
 
 
 def test_delete_module(victory):
