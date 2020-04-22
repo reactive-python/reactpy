@@ -2,5 +2,4 @@
 
 export JUPYTER_SERVER_URL
 jupyter serverextension enable --py jupyter_server_proxy --sys-prefix
-npm install -g yarn
 pip install .[all]
