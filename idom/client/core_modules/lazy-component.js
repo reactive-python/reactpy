@@ -15,15 +15,17 @@ function lazyComponent(model) {
         if (!error.stack) {
           throw error;
         } else {
+          console.log(error);
           return {
             default: function Catch() {
               return html`
-              <pre>
-                <code>${error.stack}</code>
-              </pre
-              >
-            `;
-            }
+                <pre>
+                  <h1>Error</h1>
+                  <code>${[error.stack, error.message]}</code>
+                </pre
+                >
+              `;
+            },
           };
         }
       }

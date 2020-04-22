@@ -19,7 +19,6 @@ def display(kind: str, *args: Any, **kwargs: Any) -> Any:
 class JupyterWigdet:
     """Output for IDOM within a Jupyter Notebook."""
 
-    _idom_server_exists_displayed = False
     __slots__ = ("_ws", "_http")
 
     def __init__(self, url: str, secure=True) -> None:
@@ -34,12 +33,9 @@ class JupyterWigdet:
             http_proto = "http"
         self._ws = ws_proto + ":" + uri
         self._http = http_proto + ":" + uri
-        if not type(self)._idom_server_exists_displayed:
-            _ipy_display.display_html(
-                "<script>document.idomServerExists = true;</script>", raw=True,
-            )
-            _ipy_display.clear_output(wait=True)
-            type(self)._idom_server_exists_displayed = True
+        _ipy_display.display_html(
+            "<script>document.idomServerExists = true;</script>", raw=True,
+        )
 
     def _script(self, mount_id):
         return f"""
@@ -60,9 +56,9 @@ class JupyterWigdet:
 
     def _repr_html_(self) -> str:
         """Rich HTML display output."""
-        mount_id = uuid.uuid4().hex
+        mount_id = "idom-" + uuid.uuid4().hex
         return f"""
-        <div id="{mount_id}"/>
+        <div id="{mount_id}" class="idom-widget"/>
         {self._script(mount_id)}
         """
 

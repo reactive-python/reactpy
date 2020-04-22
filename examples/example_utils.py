@@ -18,9 +18,19 @@ def example_uri_root(protocol: str, port: int) -> str:
         return "%s://127.0.0.1:%s" % (protocol, port)
 
 
-class html_link:
+def is_on_jupyterhub() -> bool:
+    return (
+        "JUPYTER_SERVER_URL" in os.environ
+        or "JUPYTERHUB_OAUTH_CALLBACK_URL" in os.environ
+    )
+
+
+class HtmlLink:
     def __init__(self, href: str, text: Optional[str] = None):
         self.href, self.text = href, text
+
+    def __str__(self) -> str:
+        return self.href
 
     def _repr_html_(self) -> str:
         return f"<a href='{self.href}' target='_blank'>{self.text or self.href}</a>"

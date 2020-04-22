@@ -11,7 +11,7 @@
   "scripts": {
     "it": "./node_modules/.bin/npx",
     "snowpack": "npm run it -- snowpack",
-    "lint": "npm run it -- prettier --write ."
+    "lint": "npm run it -- prettier --write ./core_modules"
   },
   "devDependencies": {
     "npx": "^10.2.2",
