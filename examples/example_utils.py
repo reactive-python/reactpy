@@ -1,39 +1,45 @@
 import os
-from typing import Mapping, Any, Optional
+from IPython import display
+from typing import Mapping, Any, Optional, Callable, Tuple, Type
+
+from idom.server.base import AbstractRenderServer
+from idom.server import imperative_server_mount
 
 
-def example_uri_root(protocol: str, port: int) -> str:
-    """Returns the IDOM root URI for example notebooks
-
-    When examples are running on mybinder.org or in a container created by
-    jupyter-repo2docker this is not simply "localhost" or "127.0.0.1".
-    Instead we use a route produced by ``jupyter_server_proxy`` instead.
-    """
-    if "JUPYTERHUB_OAUTH_CALLBACK_URL" in os.environ:
-        auth = os.environ["JUPYTERHUB_OAUTH_CALLBACK_URL"].rsplit("/", 1)[0]
-        return "%s/proxy/%s" % (auth, port)
-    elif "JUPYTER_SERVER_URL" in os.environ:
-        return "%s/proxy/%s" % (os.environ["JUPYTER_SERVER_URL"], port)
-    else:
-        return "%s://127.0.0.1:%s" % (protocol, port)
-
-
-def is_on_jupyterhub() -> bool:
-    return (
-        "JUPYTER_SERVER_URL" in os.environ
-        or "JUPYTERHUB_OAUTH_CALLBACK_URL" in os.environ
+def setup_example_server(
+    server: Type[AbstractRenderServer], host: str, port: int
+) -> Tuple[str, AbstractRenderServer, Callable[..., Any]]:
+    server_instance, mount = imperative_server_mount(
+        server, host, port, {"access_log": False}, {"cors": True},
     )
 
+    localhost_idom_path = f"http://{host}:{port}"
+    jupyterhub_idom_path = path_to_jupyterhub_proxy(port)
 
-class HtmlLink:
-    def __init__(self, href: str, text: Optional[str] = None):
-        self.href, self.text = href, text
+    path_to_idom = jupyterhub_idom_path or localhost_idom_path
 
-    def __str__(self) -> str:
-        return self.href
+    return path_to_idom, server_instance, mount
 
-    def _repr_html_(self) -> str:
-        return f"<a href='{self.href}' target='_blank'>{self.text or self.href}</a>"
+
+def path_to_jupyterhub_proxy(port: int) -> Optional[str]:
+    """If running on Jupyterhub return the path from the host's root to a proxy server
+
+    This is used when examples are running on mybinder.org or in a container created by
+    jupyter-repo2docker. For this to work a ``jupyter_server_proxy`` must have been
+    instantiated.
+    """
+    if "JUPYTERHUB_OAUTH_CALLBACK_URL" in os.environ:
+        url = os.environ["JUPYTERHUB_OAUTH_CALLBACK_URL"].rsplit("/", 1)[0]
+        return f"{url}/proxy/{port}"
+    elif "JUPYTER_SERVER_URL" in os.environ:
+        return f"{os.environ['JUPYTER_SERVER_URL']}/proxy/{port}"
+    else:
+        return None
+
+
+def display_href(href: str) -> None:
+    display.display_html(f"<a href='{href}' target='_blank'>{href}</a>", raw=True)
+    return None
 
 
 def pretty_dict_string(
