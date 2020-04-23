@@ -1,35 +1,44 @@
 dist: xenial
 language: python
+
 python:
   - 3.6
   - 3.7
   - 3.8
   - 3.8-dev
+
 cache: apt
+
 addons:
   chrome: stable
+
 before_install:
-  - sudo apt update
-  - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
-  - nvm install 10.16.3
-  - nvm use 10.16.3
-  - npm --version
-  - wget -N http://chromedriver.storage.googleapis.com/2.38/chromedriver_linux64.zip
-    -P ~/
-  - unzip ~/chromedriver_linux64.zip -d ~/
-  - rm ~/chromedriver_linux64.zip
-  - sudo mv -f ~/chromedriver /usr/bin/
-  - sudo chmod +x /usr/bin/chromedriver
+- sudo apt update
+# javascript dependencies
+- curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
+- nvm install 10.16.3
+- nvm use 10.16.3
+- npm --version
+# install chromebrowser
+- wget -N http://chromedriver.storage.googleapis.com/2.38/chromedriver_linux64.zip -P ~/
+- unzip ~/chromedriver_linux64.zip -d ~/
+- rm ~/chromedriver_linux64.zip
+- sudo mv -f ~/chromedriver /usr/bin/
+- sudo chmod +x /usr/bin/chromedriver
+
 install:
-  - pip install -r requirements.txt
-  - python setup.py build
-  - pip install .[all]
+# Install IDOM along with test requirements
+- pip install -r requirements.txt
+- pip install -e .[all]
+
 script:
-  - bash scripts/test.sh
-deploy:
-  provider: pypi
-  on:
-    tags: true
-  user: __token__
-  password:
-    secure: dpqXuLuCHKGDiu8NOv3YjKGRXj1s0HLT4+9X6vslqXBhMpB3a4IqkWmxwEq5u9Ch4Hg4pFP08zCOYDIu3bCC/7HCU8dYe8Klv1ReO63+nTF2ffQr3x/FefmzSMZfwCE2NPjEix2jypqYuGQ+1/HXGacMp9Uoa1XYhaZwo+6ggkUPVqF9Lgaae2WSJmvM9D4GeOz6p0oehDZgH8jQi8byiHeeik0CTkzwvBxL6ylMowanYiG2/St5R+iMrZNMLYvm6zS9oxJhorXUM91SuxzILy/7BWMo4iMEIuzMk5I2m9qTM311lF7Cgs5lVtxz6vH/vIPp70uuvpT1tV/TgKU78pu+ucnkH4Yy7DqXXJTl4fB23RoU8damwtZBQrIcD2kAbnrhby3myXOIh7t/z2d9LPW3+VoUd9d2Lk1dYHUmuz6fbVKEmJSaS1WTbf0AMroS56uicx4TI0M1fcg84kvFO0UZQ3l2Wy15sLAzn04FuV/P/q3L00TMsFSPwNXg3ckqJWEWe9nrfi57bfcjuX/GGVC+RvX+6e6hczBzJsQjZI9FCIhKdbmwvIxvijeq6dQzJyT8ABjL0YImZcbb0WjfHWqTYV0k2aXXeg2Lnu1OCX4EOt2FYlZCn6KcWEpRO7ZglKxFGfnBMEFcaCIC1fLvTTm5+JLw6COPgFJCm7HWUGo=
+- bash scripts/test.sh
+
+jobs:
+  include:
+  - stage: deploy
+    if: tag IS present AND repo = rmorshea/idom
+    python: 3.6
+    script:
+    - python setup.py bdist_wheel
+    - twine upload dist/* -u $PYPI_USERNAME -p $PYPI_PASSWORD
