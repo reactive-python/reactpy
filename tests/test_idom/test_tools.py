@@ -5,9 +5,13 @@ from idom.tools import html_to_vdom
 
 
 def test_var_equivalence():
-    r1 = idom.Var([1, 2, 3])
-    r2 = idom.Var([1, 2, 3])
-    assert r1 == r2
+    assert idom.Var([1, 2, 3]) == idom.Var([1, 2, 3])
+    assert idom.Var([1, 2, 3]) != idom.Var([1, 2])
+    assert idom.Var([1, 2, 3]) != [1, 2, 3]
+
+
+def test_var_repr():
+    assert repr(idom.Var([1, 2, 3])) == "Var([1, 2, 3])"
 
 
 def test_var_set():

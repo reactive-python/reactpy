@@ -105,7 +105,7 @@ While ``your_module.py`` should contain the following:
 
     # dialect=html
     from idom import html
-    assert html("<div/>") == {"tagName": "div"}
+    assert html(f"<div/>") == {"tagName": "div"}
 
 And that's it!
 

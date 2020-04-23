@@ -20,34 +20,32 @@ def test_install(driver, display, victory):
 
     driver.find_element_by_class_name("VictoryContainer")
 
-    assert client.module_exists("web_modules", "victory")
-    assert client.import_path("web_modules", "victory") == "../web_modules/victory.js"
+    assert client.module_exists("victory")
+    assert client.import_path("victory") == "../web_modules/victory.js"
 
 
 def test_raise_on_missing_import_path():
     with pytest.raises(ValueError, match="does not exist"):
-        client.import_path("web_modules", "module/that/does/not/exist")
+        client.import_path("module/that/does/not/exist")
 
 
 def test_custom_module(driver, display, victory):
-    my_chart = define_module("my_chart", HERE / "my_chart.js")
+    my_chart = define_module("my/chart", HERE / "my_chart.js")
+
+    assert client.module_exists("my/chart")
+    assert client.import_path("my/chart") == "../web_modules/my/chart.js"
 
     display(my_chart.Chart)
 
     driver.find_element_by_class_name("VictoryContainer")
 
-    assert client.module_exists("user_modules", "my_chart")
-    assert (
-        client.import_path("user_modules", "my_chart") == "../user_modules/my_chart.js"
-    )
-
 
 def test_delete_module(victory):
-    client.delete_module("web_modules", "victory")
-    assert not client.module_exists("web_modules", "victory")
+    client.delete_module("victory")
+    assert not client.module_exists("victory")
 
     with pytest.raises(ValueError, match="does not exist"):
-        client.delete_module("web_modules", "victory")
+        client.delete_module("victory")
 
 
 called_process_error = CalledProcessError(1, "failing-cmd")

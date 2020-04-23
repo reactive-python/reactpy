@@ -13,7 +13,7 @@ __all__ = []
 for name in ["sanic"]:
     try:
         import_module(name)
-    except ImportError:
+    except ImportError:  # pragma: no cover
         pass
     else:
         import_module(__name__ + "." + name)
