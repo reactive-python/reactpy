@@ -2,4 +2,5 @@
 
 export JUPYTER_SERVER_URL
 jupyter serverextension enable --py jupyter_server_proxy --sys-prefix
+python setup.py build
 pip install .[all]
