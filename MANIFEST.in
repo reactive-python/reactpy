@@ -1,6 +1,7 @@
-graft src/idom/client/core_modules
-graft src/idom/client/web_modules
-include src/idom/client/index.html
+graft idom/client/core_modules
+graft idom/client/web_modules
+include idom/client/index.html
+include idom/client/package.json
 
-include src/idom/py.typed
+include idom/py.typed
 include LICENSE
