@@ -5,9 +5,6 @@ sanic-cors >=0.9.9, <1.0
 # extra=matplotlib
 matplotlib
 
-# extra=vdom
-vdom
-
 # extra=dialect
 htm
 pyalect

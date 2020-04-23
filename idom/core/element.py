@@ -16,8 +16,6 @@ from typing import (
     Union,
 )
 
-from .utils import bound_id
-
 
 if TYPE_CHECKING:
     from .layout import AbstractLayout
@@ -65,6 +63,10 @@ def element(
     """
 
     def setup(func: ElementRenderFunction) -> ElementConstructor:
+
+        if not inspect.iscoroutinefunction(func):
+            raise TypeError(f"Expected a coroutine function, not {func}")
+
         @wraps(func)
         def constructor(*args: Any, **kwargs: Any) -> Element:
             element = Element(func, state, run_in_executor)
@@ -81,19 +83,18 @@ def element(
 
 class AbstractElement(abc.ABC):
 
-    __slots__ = ["_element_id", "_layout"]
+    __slots__ = ["_layout"]
 
     if not hasattr(abc.ABC, "__weakref__"):
         __slots__.append("__weakref__")
 
     def __init__(self) -> None:
         self._layout: Optional["AbstractLayout"] = None
-        self._element_id = bound_id(self)
 
     @property
     def id(self) -> str:
         """The unique ID of the element."""
-        return self._element_id
+        return str(id(self))
 
     @abc.abstractmethod
     async def render(self) -> Any:

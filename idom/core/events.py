@@ -11,8 +11,6 @@ from typing import (
     Awaitable,
     Union,
 )
-
-from .utils import bound_id
 from .element import AbstractElement
 
 
@@ -174,7 +172,7 @@ class EventHandler:
         target_id: Optional[str] = None,
     ) -> None:
         self._handlers: List[EventHandlerFunction] = []
-        self._target_id = target_id or bound_id(self)
+        self._target_id = target_id or str(id(self))
         self._stop_propogation = stop_propagation
         self._prevent_default = prevent_default
 
