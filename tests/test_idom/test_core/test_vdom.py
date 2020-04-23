@@ -76,7 +76,7 @@ def test_make_vdom_constructor():
 
     no_children = make_vdom_constructor("no-children", allow_children=False)
 
-    with pytest.raises(TypeError):
-        no_children(1, 2, 3)
+    with pytest.raises(TypeError, match="cannot have children"):
+        no_children([1, 2, 3])
 
     assert no_children() == {"tagName": "no-children"}

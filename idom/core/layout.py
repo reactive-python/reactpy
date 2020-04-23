@@ -21,11 +21,6 @@ from typing import (
 from .element import AbstractElement
 from .events import EventHandler
 
-try:
-    import vdom
-except ImportError:
-    vdom = None
-
 
 class LayoutUpdate(NamedTuple):
     """An object describing an update to a :class:`Layout`"""
@@ -61,7 +56,7 @@ class AbstractLayout(abc.ABC):
 
     __slots__ = ["_loop", "_root"]
 
-    if not hasattr(abc.ABC, "__weakref__"):
+    if not hasattr(abc.ABC, "__weakref__"):  # pragma: no cover
         __slots__.append("__weakref__")
 
     def __init__(
@@ -192,8 +187,6 @@ class Layout(AbstractLayout):
                         to_visit.extend(value)
                     elif isinstance(value, (Mapping, AbstractElement)):
                         to_visit.append(value)
-            elif vdom is not None and isinstance(node, vdom.VDOM):
-                to_visit.append(_from_vdom(node))
             index += 1
         yield element_id, self._load_model(model, element_id)
 
@@ -327,18 +320,3 @@ class FutureQueue(Generic[_FQT]):
         """Get the result of a queued awaitable that has completed."""
         future = await self._queue.get()
         return await future
-
-
-def _from_vdom(node: Any) -> Dict[str, Any]:
-    data = {
-        "tagName": node.tag_name,
-        "children": node.children,
-        "attributes": node.attributes,
-    }
-    if node.style:
-        data["attributes"]["style"] = node.style
-    if node.event_handlers:
-        data["eventHandlers"] = node.event_handlers
-    if node.key:
-        data["key"] = node.key
-    return data

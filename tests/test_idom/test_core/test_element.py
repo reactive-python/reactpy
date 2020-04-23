@@ -1,4 +1,13 @@
+import pytest
 import idom
+
+
+def test_element_function_is_coroutine():
+    with pytest.raises(TypeError, match="Expected a coroutine function"):
+
+        @idom.element
+        def non_coroutine_func(self):
+            pass
 
 
 async def test_simple_element():
