@@ -17,7 +17,7 @@ from typing import (
 )
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .layout import AbstractLayout
     from .vdom import VdomDict  # noqa
 

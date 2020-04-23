@@ -12,32 +12,31 @@ CLIENT_DIR = Path(__file__).parent
 CORE_MODULES = CLIENT_DIR / "core_modules"
 NODE_MODULES = CLIENT_DIR / "node_modules"
 WEB_MODULES = CLIENT_DIR / "web_modules"
-USER_MODULES = CLIENT_DIR / "user_modules"
 
 
-def import_path(prefix: str, name: str) -> str:
-    path = f"../{prefix}/{name}.js"
-    if not module_exists(prefix, name):
+def import_path(name: str) -> str:
+    path = f"../{WEB_MODULES.name}/{name}.js"
+    if not module_exists(name):
         raise ValueError(f"Module '{path}' does not exist.")
     return path
 
 
 def define_module(name: str, source: str) -> str:
-    path = _create_module_os_path(USER_MODULES, name)
+    path = _create_web_module_os_path(name)
     with path.open("w+") as f:
         f.write(source)
-    return import_path("user_modules", name)
+    return import_path(name)
 
 
-def delete_module(prefix: str, name: str) -> None:
-    path = _find_module_os_path(prefix, name)
+def delete_module(name: str) -> None:
+    path = _find_web_module_os_path(name)
     if path is None:
-        raise ValueError(f"Module '{import_path(prefix, name)}' does not exist.")
+        raise ValueError(f"Module '{name}' does not exist.")
     _delete_os_paths(path)
 
 
-def module_exists(prefix: Union[str, Path], name: str) -> bool:
-    return _find_module_os_path(prefix, name) is not None
+def module_exists(name: str) -> bool:
+    return _find_web_module_os_path(name) is not None
 
 
 def install(dependencies: Dict[str, str]) -> None:
@@ -65,7 +64,7 @@ def install(dependencies: Dict[str, str]) -> None:
 
 
 def restore() -> None:
-    _delete_os_paths(WEB_MODULES, NODE_MODULES, USER_MODULES)
+    _delete_os_paths(WEB_MODULES, NODE_MODULES)
     _run_subprocess(["npm", "install"], CLIENT_DIR)
     _run_subprocess(["npm", "run", "snowpack"], CLIENT_DIR)
 
@@ -99,11 +98,8 @@ def _run_subprocess(args: List[str], cwd: Union[str, Path]):
         raise
 
 
-def _find_module_os_path(prefix: Union[str, Path], name: str) -> Optional[Path]:
-    if isinstance(prefix, str):
-        path = CLIENT_DIR / prefix
-    else:
-        path = prefix
+def _find_web_module_os_path(name: str) -> Optional[Path]:
+    path = WEB_MODULES
     for name_part in name.split("/"):
         if not path.is_dir():
             return None
@@ -114,11 +110,8 @@ def _find_module_os_path(prefix: Union[str, Path], name: str) -> Optional[Path]:
     return full_path
 
 
-def _create_module_os_path(prefix: Union[str, Path], name: str) -> Path:
-    if isinstance(prefix, str):
-        path = CLIENT_DIR / prefix
-    else:
-        path = prefix
+def _create_web_module_os_path(name: str) -> Path:
+    path = WEB_MODULES
     for n in name.split("/"):
         if not path.exists():
             path.mkdir()

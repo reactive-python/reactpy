@@ -1,6 +1,6 @@
-import React from '../web_modules/react.js';
-import { VictoryBar, VictoryChart, VictoryAxis } from '../web_modules/victory.js';
-import htm from "../web_modules/htm.js";
+import React from "../react.js";
+import { VictoryBar, VictoryChart, VictoryAxis } from "../victory.js";
+import htm from "../htm.js";
 
 const html = htm.bind(React.createElement);
 
@@ -8,7 +8,7 @@ const data = [
   { quarter: 1, earnings: 13000 },
   { quarter: 2, earnings: 16500 },
   { quarter: 3, earnings: 14250 },
-  { quarter: 4, earnings: 19000 }
+  { quarter: 4, earnings: 19000 },
 ];
 
 function Chart() {
@@ -20,7 +20,7 @@ function Chart() {
         />
         <${VictoryAxis}
           dependentAxis
-          tickFormat=${(x) => (`$${x / 1000}k`)}
+          tickFormat=${(x) => `$${x / 1000}k`}
         />
         <${VictoryBar}
           data=${data}
@@ -28,7 +28,7 @@ function Chart() {
           y="earnings"
         />
       </${VictoryChart}>
-    `
+    `;
 }
 
-export default { Chart: Chart }
+export default { Chart: Chart };

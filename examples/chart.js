@@ -1,11 +1,6 @@
-import React from "../web_modules/react.js";
-import {
-  VictoryBar,
-  VictoryChart,
-  VictoryTheme,
-  Bar,
-} from "../web_modules/victory.js";
-import htm from "../web_modules/htm.js";
+import React from "./react.js";
+import { VictoryBar, VictoryChart, VictoryTheme, Bar } from "./victory.js";
+import htm from "./htm.js";
 
 const html = htm.bind(React.createElement);
 

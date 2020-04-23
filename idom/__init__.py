@@ -15,11 +15,12 @@ from .widgets.images import Image
 
 from .tools import Var, html_to_vdom
 
+# try to automatically setup the dialect's import hook
 try:
     import pyalect
     import tagged
     import htm
-except ImportError:
+except ImportError:  # pragma: no cover
     pass
 else:
     from . import dialect

@@ -1,15 +1,20 @@
 repos:
--   repo: https://github.com/ambv/black
+  - repo: https://github.com/ambv/black
     rev: stable
     hooks:
-    - id: black
-      language_version: python3.6
--   repo: https://github.com/PyCQA/flake8
+      - id: black
+        language_version: python3.6
+  - repo: https://github.com/PyCQA/flake8
     rev: 3.7.9
     hooks:
-    - id: flake8
--   repo: https://github.com/pre-commit/mirrors-mypy
+      - id: flake8
+  - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v0.761
     hooks:
-    -   id: mypy
+      - id: mypy
         additional_dependencies: [pyalect]
+  - repo: https://github.com/kynan/nbstripout
+    rev: master
+    hooks:
+      - id: nbstripout
+        files: ".ipynb"
