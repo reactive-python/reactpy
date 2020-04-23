@@ -1,6 +1,7 @@
 import uuid
+import json
 from typing import Any
-from urllib.parse import urlsplit, urlunsplit
+from urllib.parse import urlparse
 from IPython import display as _ipy_display
 
 
@@ -19,20 +20,17 @@ def display(kind: str, *args: Any, **kwargs: Any) -> Any:
 class JupyterWigdet:
     """Output for IDOM within a Jupyter Notebook."""
 
-    __slots__ = ("_ws", "_http")
+    __slots__ = ("_location", "_path")
 
-    def __init__(self, url: str, secure=True) -> None:
-        uri = urlunsplit(("",) + urlsplit(url)[1:])
-        if uri.endswith("/"):
-            uri = uri[:-1]
-        if secure:
-            ws_proto = "wss"
-            http_proto = "https"
+    def __init__(self, url: str) -> None:
+        parsed_url = urlparse(url)
+        if not parsed_url.netloc:
+            self._location = "window.location"
         else:
-            ws_proto = "ws"
-            http_proto = "http"
-        self._ws = ws_proto + ":" + uri
-        self._http = http_proto + ":" + uri
+            self._location = json.dumps(
+                {"host": parsed_url.netloc, "protocol": parsed_url.scheme + ":"}
+            )
+        self._path = parsed_url.path
         _ipy_display.display_html(
             "<script>document.idomServerExists = true;</script>", raw=True,
         )
@@ -43,13 +41,18 @@ class JupyterWigdet:
             // we want to avoid making this request (in case of CORS)
             // unless we know an IDOM server is expected to respond
             if (document.idomServerExists) {{
-                import("{self._http}/client/core_modules/layout.js").then(
-                    module => {{
-                        module.renderLayout(
-                            document.getElementById("{mount_id}"), "{self._ws}/stream"
-                        )
+                const loc = {self._location};
+                const idom_url = "//" + loc.host + "{self._path}";
+                const http_proto = loc.protocol;
+                const ws_proto = (http_proto === "https:") ? "wss:" : "ws:";
+                import(http_proto + idom_url + "/client/core_modules/layout.js").then(
+                    (module) => {{
+                    module.renderLayout(
+                        document.getElementById("{mount_id}"),
+                        ws_proto + idom_url + "/stream"
+                    );
                     }}
-                )
+                );
             }}
         </script>
         """
@@ -63,4 +66,4 @@ class JupyterWigdet:
         """
 
     def __repr__(self) -> str:
-        return "%s(%r)" % (type(self).__name__, self._http)
+        return "%s(%r)" % (type(self).__name__, self._path)

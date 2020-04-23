@@ -56,7 +56,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
             app.route("/favicon.ico")(
                 lambda r: response.redirect("/client/favicon.ico")
             )
-        app.route(url_prefix + "/")(lambda r: response.redirect("/client/index.html"))
+        app.route(url_prefix + "/")(lambda r: response.redirect("./client/index.html"))
         app.websocket(url_prefix + "/stream")(self._stream_route)
 
     def _run_application(
