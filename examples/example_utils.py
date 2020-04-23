@@ -7,16 +7,15 @@ from idom.server import imperative_server_mount
 
 
 def setup_example_server(
-    server: Type[AbstractRenderServer], host: str, port: int
+    server: Type[AbstractRenderServer], host: str, port: int, shared: bool = False,
 ) -> Tuple[str, AbstractRenderServer, Callable[..., Any]]:
-    server_instance, mount = imperative_server_mount(
-        server, host, port, {"access_log": False}, {"cors": True},
-    )
-
     localhost_idom_path = f"http://{host}:{port}"
     jupyterhub_idom_path = path_to_jupyterhub_proxy(port)
-
     path_to_idom = jupyterhub_idom_path or localhost_idom_path
+
+    server_instance, mount = imperative_server_mount(
+        server, host, port, shared, {"cors": True}, {"access_log": False}
+    )
 
     return path_to_idom, server_instance, mount
 
