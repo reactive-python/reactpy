@@ -4,7 +4,7 @@ from unittest import mock
 
 import pytest
 
-from idom.widgets import Import, import_module
+from idom.widgets import Import, define_module
 from idom import client
 
 HERE = Path(__file__).parent
@@ -30,7 +30,7 @@ def test_raise_on_missing_import_path():
 
 
 def test_custom_module(driver, display, victory):
-    my_chart = import_module("my_chart", HERE / "my_chart.js")
+    my_chart = define_module("my_chart", HERE / "my_chart.js")
 
     display(my_chart.Chart)
 
