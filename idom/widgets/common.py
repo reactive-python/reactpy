@@ -7,7 +7,23 @@ from idom.core.vdom import VdomDict, ImportSourceDict, vdom
 from idom.tools import Var
 
 
-def import_module(name: str, source: Any, raw: bool = False) -> "Import":
+def define_module(name: str, source: Any, raw: bool = False) -> "Import":
+    """Add a module to the client
+
+    Parameters:
+        name:
+            What the module will be named (excluding the ``.js`` file extension). This
+            matters if you want to import this module from another later since this will
+            be the filename the module is saved under.
+        source:
+            The module's source.
+        raw:
+            If false, then ``source`` should be a file path to the module's source.
+            If true, this should be the literal source code for the module.
+
+    Returns:
+        An :class:`Import` element for the newly defined module.
+    """
     if not raw:
         with open(str(source), "r") as f:
             source = f.read()
