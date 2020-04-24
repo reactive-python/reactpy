@@ -2,7 +2,6 @@ import uuid
 import json
 from typing import Any
 from urllib.parse import urlparse
-from IPython import display as _ipy_display
 
 
 def display(kind: str, *args: Any, **kwargs: Any) -> Any:
@@ -31,29 +30,26 @@ class JupyterWigdet:
                 {"host": parsed_url.netloc, "protocol": parsed_url.scheme + ":"}
             )
         self._path = parsed_url.path
-        _ipy_display.display_html(
-            "<script>document.idomServerExists = true;</script>", raw=True,
-        )
 
     def _script(self, mount_id):
         return f"""
         <script type="module">
+            const loc = {self._location};
+            const idom_url = "//" + loc.host + "{self._path}";
+            const http_proto = loc.protocol;
+            const ws_proto = (http_proto === "https:") ? "wss:" : "ws:";
             // we want to avoid making this request (in case of CORS)
             // unless we know an IDOM server is expected to respond
-            if (document.idomServerExists) {{
-                const loc = {self._location};
-                const idom_url = "//" + loc.host + "{self._path}";
-                const http_proto = loc.protocol;
-                const ws_proto = (http_proto === "https:") ? "wss:" : "ws:";
+            fetch(http_proto + idom_url, {{mode: "no-cors"}}).then(rsp => {{
                 import(http_proto + idom_url + "/client/core_modules/layout.js").then(
                     (module) => {{
-                    module.renderLayout(
-                        document.getElementById("{mount_id}"),
-                        ws_proto + idom_url + "/stream"
-                    );
+                        module.renderLayout(
+                            document.getElementById("{mount_id}"),
+                            ws_proto + idom_url + "/stream"
+                        );
                     }}
                 );
-            }}
+            }});
         </script>
         """
 
