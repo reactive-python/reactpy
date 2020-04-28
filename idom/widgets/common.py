@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Callable, Tuple, Optional, Union
+from typing import Any, Callable, Tuple, Optional, Union, Dict
 
 from idom import client
 from idom.core.element import ElementConstructor, Element, element
@@ -96,8 +96,8 @@ def hotswap(
 ) -> Tuple[Callable[[ElementConstructor], None], ElementConstructor]:
     """Swap out elements from a layout on the fly.
 
-    Normally you can't change the element functions used to create a layout
-    in an imperative manner. However ``hotswap`` allows you to do this so
+    Since you can't change the element functions used to create a layout
+    in an imperative manner, you can use ``hotswap`` to do this so
     long as you set things up ahead of time.
 
     Parameters:
@@ -106,10 +106,12 @@ def hotswap(
     Example:
         .. code-block:: python
 
-            show, element = idom.hotswap()
-            PerClientState(element).daemon("localhost", 8765)
+            import idom
 
-            @element
+            show, root = idom.hotswap()
+            PerClientState(root).daemon("localhost", 8765)
+
+            @idom.element
             def DivOne(self):
                 return {"tagName": "div", "children": [1]}
 
@@ -117,7 +119,7 @@ def hotswap(
 
             # displaying the output now will show DivOne
 
-            @element
+            @idom.element
             def DivTwo(self):
                 return {"tagName": "div", "children": [2]}
 
@@ -142,12 +144,61 @@ def hotswap(
             await old.unmount()
         return new
 
-    def swap(element: ElementConstructor, *args: Any, **kwargs: Any) -> None:
-        current_swap.set(lambda: element(*args, **kwargs))
-
+    def swap(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> None:
+        current_swap.set(lambda: constructor(*args, **kwargs))
         if shared:
             hot = current_root.get()
             if hot is not None:
                 hot.update()
 
     return swap, HotSwap
+
+
+def multiview():
+    """Dynamically add elements to a layout on the fly
+
+    Since you can't change the element functions used to create a layout
+    in an imperative manner, you can use ``multiview`` to do this so
+    long as you set things up ahead of time.
+
+    Returns:
+        A function for adding views and the root of the dynamic view
+
+    Examples:
+
+        .. code-block::
+
+            import idom
+
+            define, root = idom.widgets.multiview()
+
+            @element
+            def Hello(self, phrase):
+                return idom.html.h1(["hello " + phrase])
+
+            add_hello = define(Hello)
+            hello_world_view_id = add_hello("world")
+
+        Displaying ``root`` with the parameter ``view_id=hello_world_view_id`` will show
+        the message 'hello world'. Usually though this is achieved by connecting to the
+        socket serving up the VDOM with a query parameter for view ID. This allow many
+        views to be added and then displayed dynamically in, for example, a Jupyter
+        Notebook where one might want multiple active views which can all be interacted
+        with at the same time.
+
+        Refer to :func:`idom.server.imperative_server_mount` for a reference usage.
+    """
+    next_view_id: Var[int] = Var(0)
+    views: Dict[str, ElementConstructor] = {}
+
+    def mount(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> str:
+        view_id = next_view_id.get()
+        views[str(view_id)] = lambda: constructor(*args, **kwargs)
+        next_view_id.set(view_id + 1)
+        return str(view_id)
+
+    @element
+    async def MultiView(self: Element, view_id: str) -> Any:
+        return views[view_id]()
+
+    return mount, MultiView

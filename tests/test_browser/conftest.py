@@ -6,7 +6,7 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
 
 import idom
-from idom.server import imperative_server_mount
+from idom.server import hotswap_server
 from idom.server.sanic import PerClientState
 
 
@@ -50,7 +50,7 @@ def display(_display):
 @pytest.fixture(scope="session")
 def _display(driver):
     host, port = "127.0.0.1", 5000
-    server, mount = imperative_server_mount(
+    mount, server = hotswap_server(
         ServerWithErrorCatch, host, port, run_options={"debug": True}
     )
 
