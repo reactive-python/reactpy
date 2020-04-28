@@ -1,23 +1,12 @@
 import os
 from IPython import display
-from typing import Mapping, Any, Optional, Callable, Tuple, Type
-
-from idom.server.base import AbstractRenderServer
-from idom.server import imperative_server_mount
+from typing import Mapping, Any, Optional
 
 
-def setup_example_server(
-    server: Type[AbstractRenderServer], host: str, port: int, shared: bool = False,
-) -> Tuple[str, AbstractRenderServer, Callable[..., Any]]:
+def example_server_url(host: str, port: int) -> str:
     localhost_idom_path = f"http://{host}:{port}"
     jupyterhub_idom_path = path_to_jupyterhub_proxy(port)
-    path_to_idom = jupyterhub_idom_path or localhost_idom_path
-
-    server_instance, mount = imperative_server_mount(
-        server, host, port, shared, {"cors": True}, {"access_log": False}
-    )
-
-    return path_to_idom, server_instance, mount
+    return jupyterhub_idom_path or localhost_idom_path
 
 
 def path_to_jupyterhub_proxy(port: int) -> Optional[str]:

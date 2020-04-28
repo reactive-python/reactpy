@@ -5,7 +5,11 @@ from threading import Thread
 
 from idom.core.element import ElementConstructor, AbstractElement
 from idom.core.layout import AbstractLayout, Layout
-from idom.core.render import AbstractRenderer
+from idom.core.render import (
+    AbstractRenderer,
+    SendCoroutine,
+    RecvCoroutine,
+)
 
 
 _App = TypeVar("_App", bound=Any)
@@ -89,7 +93,17 @@ class AbstractRenderServer(Generic[_App, _Config]):
     def _run_application(
         self, app: _App, config: _Config, args: Tuple[Any, ...], kwargs: Dict[str, Any]
     ) -> Any:
-        ...
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def _run_renderer(
+        self,
+        send: SendCoroutine,
+        recv: RecvCoroutine,
+        parameters: Dict[str, Any],
+        loop: Optional[AbstractEventLoop] = None,
+    ) -> None:
+        raise NotImplementedError()
 
     def _update_config(self, old: _Config, new: _Config) -> _Config:
         """Return the new configuration options
@@ -101,14 +115,16 @@ class AbstractRenderServer(Generic[_App, _Config]):
         return new
 
     def _make_renderer(
-        self, loop: Optional[AbstractEventLoop] = None
+        self, parameters: Dict[str, Any], loop: Optional[AbstractEventLoop] = None,
     ) -> AbstractRenderer:
-        return self._renderer_type(self._make_layout(loop))
+        return self._renderer_type(self._make_layout(parameters, loop))
 
-    def _make_layout(self, loop: Optional[AbstractEventLoop] = None) -> AbstractLayout:
-        return self._layout_type(self._make_root_element(), loop)
+    def _make_layout(
+        self, parameters: Dict[str, Any], loop: Optional[AbstractEventLoop] = None,
+    ) -> AbstractLayout:
+        return self._layout_type(self._make_root_element(parameters), loop)
 
-    def _make_root_element(self) -> AbstractElement:
+    def _make_root_element(self, parameters: Dict[str, Any]) -> AbstractElement:
         return self._root_element_constructor(
-            *self._root_element_args, **self._root_element_kwargs
+            *self._root_element_args, **{**self._root_element_kwargs, **parameters}
         )

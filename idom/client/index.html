@@ -21,7 +21,8 @@
       } else {
         protocol = "ws:";
       }
-      let endpoint = protocol + "//" + url.join("/");
+
+      let endpoint = protocol + "//" + url.join("/") + window.location.search;
 
       renderLayout(document.getElementById("app"), endpoint);
     </script>

@@ -1,7 +1,7 @@
 import uuid
 import json
-from typing import Any
-from urllib.parse import urlparse
+from typing import Any, Optional, Dict
+from urllib.parse import urlparse, urlencode
 
 
 def display(kind: str, *args: Any, **kwargs: Any) -> Any:
@@ -19,23 +19,24 @@ def display(kind: str, *args: Any, **kwargs: Any) -> Any:
 class JupyterWigdet:
     """Output for IDOM within a Jupyter Notebook."""
 
-    __slots__ = ("_location", "_path")
+    __slots__ = ("location", "path", "query")
 
-    def __init__(self, url: str) -> None:
+    def __init__(self, url: str, query: Optional[Dict[str, Any]] = None) -> None:
         parsed_url = urlparse(url)
         if not parsed_url.netloc:
-            self._location = "window.location"
+            self.location = "window.location"
         else:
-            self._location = json.dumps(
+            self.location = json.dumps(
                 {"host": parsed_url.netloc, "protocol": parsed_url.scheme + ":"}
             )
-        self._path = parsed_url.path
+        self.path = parsed_url.path
+        self.query = urlencode(query or {})
 
     def _script(self, mount_id):
         return f"""
         <script type="module">
-            const loc = {self._location};
-            const idom_url = "//" + loc.host + "{self._path}";
+            const loc = {self.location};
+            const idom_url = "//" + loc.host + "{self.path}";
             const http_proto = loc.protocol;
             const ws_proto = (http_proto === "https:") ? "wss:" : "ws:";
             // we want to avoid making this request (in case of CORS)
@@ -45,7 +46,7 @@ class JupyterWigdet:
                     (module) => {{
                         module.renderLayout(
                             document.getElementById("{mount_id}"),
-                            ws_proto + idom_url + "/stream"
+                            ws_proto + idom_url + "/stream?{self.query}"
                         );
                     }}
                 );
@@ -62,4 +63,4 @@ class JupyterWigdet:
         """
 
     def __repr__(self) -> str:
-        return "%s(%r)" % (type(self).__name__, self._path)
+        return "%s(%r)" % (type(self).__name__, self.path)

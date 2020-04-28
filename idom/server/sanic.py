@@ -2,7 +2,7 @@ import asyncio
 import json
 import uuid
 
-from typing import Tuple, Any, Dict, Union
+from typing import Tuple, Any, Dict, Union, Optional
 
 from sanic import Sanic, request, response
 from sanic_cors import CORS
@@ -29,9 +29,6 @@ class Config(TypedDict, total=False):
 
 class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
     """Base ``sanic`` extension."""
-
-    async def _run_renderer(self, send: SendCoroutine, recv: RecvCoroutine) -> None:
-        raise NotImplementedError()
 
     def _init_config(self) -> Config:
         return Config(cors=False, url_prefix="", webpage_route=True)
@@ -105,7 +102,8 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
             message = {"header": {}, "body": {"render": data}}
             await socket.send(json.dumps(message, separators=(",", ":")))
 
-        await self._run_renderer(sock_send, sock_recv)
+        param_dict = {k: request.args.get(k) for k in request.args}
+        await self._run_renderer(sock_send, sock_recv, param_dict)
 
     async def _client_route(
         self, request: request.Request, path: str
@@ -121,8 +119,14 @@ class PerClientState(SanicRenderServer):
 
     _renderer_type = SingleStateRenderer
 
-    async def _run_renderer(self, send: SendCoroutine, recv: RecvCoroutine) -> None:
-        await self._make_renderer().run(send, recv, None)
+    async def _run_renderer(
+        self,
+        send: SendCoroutine,
+        recv: RecvCoroutine,
+        parameters: Dict[str, Any],
+        loop: Optional[asyncio.AbstractEventLoop] = None,
+    ) -> None:
+        await self._make_renderer(parameters, loop).run(send, recv, None)
 
 
 class SharedClientState(SanicRenderServer):
@@ -137,7 +141,16 @@ class SharedClientState(SanicRenderServer):
     async def _setup_renderer(
         self, app: Sanic, loop: asyncio.AbstractEventLoop
     ) -> None:
-        self._renderer = self._make_renderer(loop)
+        self._renderer = self._make_renderer({}, loop)
 
-    async def _run_renderer(self, send: SendCoroutine, recv: RecvCoroutine) -> None:
+    async def _run_renderer(
+        self,
+        send: SendCoroutine,
+        recv: RecvCoroutine,
+        parameters: Dict[str, Any],
+        loop: Optional[asyncio.AbstractEventLoop] = None,
+    ) -> None:
+        if parameters:
+            msg = f"SharedClientState server does not support per-client view parameters {parameters}"
+            raise ValueError(msg)
         await self._renderer.run(send, recv, uuid.uuid4().hex)
