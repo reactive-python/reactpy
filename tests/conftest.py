@@ -58,10 +58,10 @@ def fresh_client():
 
 
 @pytest.fixture
-def display(driver, server, mount, host, port, last_server_error):
+def display(driver_get, server, mount, host, port, last_server_error):
     def display(element, query=""):
         mount(element)
-        driver.get(f"http://{host}:{port}/client/index.html")
+        driver_get(query)
 
     try:
         yield display
@@ -72,6 +72,14 @@ def display(driver, server, mount, host, port, last_server_error):
             raise NotImplementedError(msg)
         elif last_error is not None:
             raise last_error
+
+
+@pytest.fixture
+def driver_get(driver, host, port):
+    def get(query=""):
+        driver.get(f"http://{host}:{port}/client/index.html?{query}")
+
+    return get
 
 
 @pytest.fixture(scope="session")
