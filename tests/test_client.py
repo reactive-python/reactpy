@@ -15,6 +15,7 @@ def victory():
     yield Import("victory", install=True)
 
 
+@pytest.mark.slow
 def test_install(driver, display, victory):
     display(victory.VictoryBar)
 
@@ -29,6 +30,7 @@ def test_raise_on_missing_import_path():
         client.import_path("module/that/does/not/exist")
 
 
+@pytest.mark.slow
 def test_custom_module(driver, display, victory):
     my_chart = define_module("my/chart", HERE / "my_chart.js")
 
@@ -40,6 +42,7 @@ def test_custom_module(driver, display, victory):
     driver.find_element_by_class_name("VictoryContainer")
 
 
+@pytest.mark.slow
 def test_delete_module(victory):
     client.delete_module("victory")
     assert not client.module_exists("victory")

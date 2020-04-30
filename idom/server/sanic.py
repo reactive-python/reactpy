@@ -30,6 +30,9 @@ class Config(TypedDict, total=False):
 class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
     """Base ``sanic`` extension."""
 
+    def stop(self) -> None:
+        self.application.stop()
+
     def _init_config(self) -> Config:
         return Config(cors=False, url_prefix="", webpage_route=True)
 
