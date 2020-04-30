@@ -50,13 +50,6 @@ def caplog(_caplog):
     logger.remove(handler_id)
 
 
-@pytest.fixture(scope="session", autouse=True)
-def fresh_client():
-    idom.client.restore()
-    yield
-    idom.client.restore()
-
-
 @pytest.fixture
 def display(driver_get, server, mount, host, port, last_server_error):
     def display(element, query=""):
@@ -83,7 +76,7 @@ def driver_get(driver, host, port):
 
 
 @pytest.fixture(scope="session")
-def driver(pytestconfig):
+def driver(pytestconfig, fresh_client):
     chrome_options = Options()
 
     if getattr(pytestconfig.option, "headless", False):
@@ -153,3 +146,10 @@ def last_server_error():
 def _clean_last_server_error(last_server_error):
     last_server_error.set(default_error)
     yield
+
+
+@pytest.fixture(scope="session")
+def fresh_client():
+    idom.client.restore()
+    yield
+    idom.client.restore()

@@ -11,6 +11,10 @@ SendCoroutine = Callable[[Any], Awaitable[None]]
 RecvCoroutine = Callable[[], Awaitable[LayoutEvent]]
 
 
+class StopRendering(Exception):
+    """Raised to gracefully stop :meth:`AbstractRenderer.run`"""
+
+
 class AbstractRenderer(abc.ABC):
     """A base class for implementing :class:`~idom.core.layout.Layout` renderers."""
 
@@ -23,9 +27,23 @@ class AbstractRenderer(abc.ABC):
         This will call :meth:`AbstractLayout.render` and :meth:`AbstractLayout.trigger`
         to render new models and execute events respectively.
         """
+        self._running = True
+        try:
+            await self._run(send, recv, context)
+        except StopRendering:
+            return None
+        finally:
+            await self._stop()
+
+    async def _run(
+        self, send: SendCoroutine, recv: RecvCoroutine, context: Any
+    ) -> None:
         await asyncio.gather(
             self._outgoing_loop(send, context), self._incoming_loop(recv, context)
         )
+
+    async def _stop(self) -> None:
+        pass
 
     async def _outgoing_loop(self, send: SendCoroutine, context: Any) -> None:
         while True:
@@ -58,6 +76,7 @@ class SingleStateRenderer(AbstractRenderer):
         try:
             src, new, old = await layout.render()
         except RenderError as error:
+            raise
             if error.partial_render is None:
                 raise
             logger.exception("Render failed")
@@ -84,10 +103,12 @@ class SharedStateRenderer(SingleStateRenderer):
         self._updates: Dict[str, asyncio.Queue[LayoutUpdate]] = {}
         self._render_task = asyncio.ensure_future(self._render_loop(), loop=layout.loop)
 
-    async def run(self, send: SendCoroutine, recv: RecvCoroutine, context: str) -> None:
+    async def _run(
+        self, send: SendCoroutine, recv: RecvCoroutine, context: str
+    ) -> None:
         self._updates[context] = asyncio.Queue()
         try:
-            await asyncio.gather(super().run(send, recv, context), self._render_task)
+            await asyncio.gather(super()._run(send, recv, context), self._render_task)
         except Exception:
             del self._updates[context]
             raise
@@ -127,5 +148,5 @@ class SharedStateRenderer(SingleStateRenderer):
         src, new, old = await self._updates[context].get()
         return {"root": layout.root, "src": src, "new": new, "old": old}
 
-    def __del__(self) -> None:
+    async def _stop(self) -> None:
         self._render_task.cancel()
