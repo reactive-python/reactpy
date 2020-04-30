@@ -49,8 +49,7 @@ def multiview_server(
     """
     mount, element = multiview()
     server_instance = server(element)
-    if server_options:
-        server_instance.configure(server_options)
+    server_instance.configure(server_options)
     server_instance.daemon(host, port, **(run_options or {}))
     return mount, server_instance
 
@@ -81,7 +80,6 @@ def hotswap_server(
     """
     mount, element = hotswap(shared=True)
     server_instance = server(element)
-    if server_options:
-        server_instance.configure(server_options)
+    server_instance.configure(server_options)
     server_instance.daemon(host, port, **(run_options or {}))
     return mount, server_instance

@@ -71,10 +71,16 @@ class AbstractRenderServer(Generic[_App, _Config]):
         self._app = app
         return self
 
-    def configure(self: _Self, config: _Config) -> _Self:
+    def configure(self: _Self, config: Optional[_Config] = None) -> _Self:
         """Configure this extension."""
-        self._config = self._update_config(self._config, config)
+        if config is not None:
+            self._config = self._update_config(self._config, config)
         return self
+
+    @abc.abstractmethod
+    def stop(self) -> None:
+        """Stop the running application"""
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def _init_config(self) -> _Config:
