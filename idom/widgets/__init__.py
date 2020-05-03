@@ -1,17 +1,17 @@
-from .common import Import, define_module, hotswap, multiview
+from .utils import Module, Import, hotswap, multiview
 from .display import display
-from .inputs import Input
-from .images import Image
+from .image import Image
 from .html import html
+from .input import Input
 
 __all__ = [
     "display",
     "node",
     "Image",
-    "define_module",
     "hotswap",
     "multiview",
     "html",
-    "Input",
+    "Module",
     "Import",
+    "Input",
 ]

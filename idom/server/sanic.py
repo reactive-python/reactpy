@@ -2,7 +2,7 @@ import asyncio
 import json
 import uuid
 
-from typing import Tuple, Any, Dict, Union, Optional
+from typing import Tuple, Any, Dict, Union, Optional, cast
 
 from sanic import Sanic, request, response
 from sanic_cors import CORS
@@ -136,15 +136,17 @@ class SharedClientState(SanicRenderServer):
     """All connected client views will have shared state."""
 
     _renderer_type = SharedStateRenderer
+    _renderer: SharedStateRenderer
 
     def _setup_application(self, app: Sanic, config: Config) -> None:
         super()._setup_application(app, config)
-        app.listener("before_server_start")(self._setup_renderer)
+        app.listener("before_server_start")(self._activate_renderer)
 
-    async def _setup_renderer(
+    async def _activate_renderer(
         self, app: Sanic, loop: asyncio.AbstractEventLoop
     ) -> None:
-        self._renderer = self._make_renderer({}, loop)
+        self._renderer = cast(SharedStateRenderer, self._make_renderer({}, loop))
+        await self._renderer.start()
 
     async def _run_renderer(
         self,
@@ -156,4 +158,4 @@ class SharedClientState(SanicRenderServer):
         if parameters:
             msg = f"SharedClientState server does not support per-client view parameters {parameters}"
             raise ValueError(msg)
-        await self._renderer.run(send, recv, uuid.uuid4().hex)
+        await self._renderer.run(send, recv, uuid.uuid4().hex, join=True)

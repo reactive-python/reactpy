@@ -14,6 +14,7 @@ from typing import (
     overload,
     Awaitable,
     Union,
+    overload,
 )
 
 
@@ -115,7 +116,11 @@ class AbstractElement(abc.ABC):
         """
         self._layout = None
 
-    def _update_layout(self) -> None:
+    # FIXME: https://github.com/python/mypy/issues/5876
+    update: Callable[..., Any]
+
+    def update(self) -> None:  # type: ignore
+        """Schedule this element to be rendered again soon."""
         if self._layout is not None:
             self._layout.update(self)
 
@@ -184,7 +189,7 @@ class Element(AbstractElement):
             self._state = {}
             self._state_updated = True
             self._cancel_animation()
-            self._update_layout()
+            super().update()
         bound = self._function_signature.bind_partial(None, *args, **kwargs)
         self._state.update(list(bound.arguments.items())[1:])
 

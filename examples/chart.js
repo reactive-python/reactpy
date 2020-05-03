@@ -13,13 +13,7 @@ export default {
         domainPadding=${20}
       >
         <${VictoryBar}
-          data=${[
-            { x: 1, y: 2 },
-            { x: 2, y: 4 },
-            { x: 3, y: 7 },
-            { x: 4, y: 3 },
-            { x: 5, y: 5 },
-          ]}
+          data=${props.data}
           dataComponent=${html`
             <${Bar}
               events=${{

@@ -19,11 +19,10 @@ async def test_render_error_without_partial_render_raises():
     renderer = SingleStateRenderer(bad_layout)
 
     async def send(data):
-        return None
+        raise StopRendering()
 
     async def recv():
-        while True:
-            await asyncio.sleep(1)
+        raise StopRendering()
 
     with pytest.raises(RenderError, match="no partial render"):
         await renderer.run(send, recv, None)
@@ -54,8 +53,6 @@ async def test_shared_state_renderer():
         element_id = data["root"]
         element_data = data["new"][element_id]
         data_sent_2.append(element_data["attributes"]["count"])
-        if done.is_set():
-            raise ValueError(data_sent_2)
 
     async def recv_2():
         await done.wait()
@@ -69,10 +66,10 @@ async def test_shared_state_renderer():
 
         return idom.html.div({"anEvent": an_event, "count": count})
 
-    renderer = SharedStateRenderer(Layout(Clickable()))
+    async with SharedStateRenderer(Layout(Clickable())) as renderer:
+        await renderer.run(send_1, recv_1, "1")
+        await renderer.run(send_2, recv_2, "2")
 
-    await asyncio.gather(
-        renderer.run(send_1, recv_1, "1"), renderer.run(send_2, recv_2, "2"),
-    )
-
-    assert data_sent_2 == [0, 1, 2, 3, 4]
+    # There's an extra 0 here since the render has to be sure that all
+    # views get the current model state the first time they connect.
+    assert data_sent_2 == [0, 0, 1, 2, 3, 4]

@@ -2,6 +2,8 @@ import idom
 
 from queue import Queue
 
+from .driver_utils import send_keys
+
 
 def test_simple_hello_world(driver, display):
     @idom.element
@@ -131,3 +133,32 @@ def test_can_stop_event_propogation(driver, display):
 
     inner = driver.find_element_by_id("inner")
     inner.click()
+
+
+def test_input(driver, driver_wait, display, driver_get):
+    inp = idom.Input("text", "initial-value", {"id": "inp"})
+
+    display(lambda: inp)
+
+    client_inp = driver.find_element_by_id("inp")
+    assert client_inp.get_attribute("value") == "initial-value"
+
+    client_inp.clear()
+    send_keys(client_inp, "new-value-1")
+    driver_wait.until(lambda dvr: inp.value == "new-value-1")
+
+    client_inp.clear()
+    send_keys(client_inp, "new-value-2")
+    driver_wait.until(lambda dvr: client_inp.get_attribute("value") == "new-value-2")
+
+
+def test_image(driver, driver_wait, display):
+    src = """
+    <svg width="400" height="110" xmlns="http://www.w3.org/2000/svg">
+      <rect width="300" height="100" style="fill:rgb(0,0,255);" />
+    </svg>
+    """
+    img = idom.Image("svg", src, {"id": "a-circle"})
+    display(img)
+    client_img = driver.find_element_by_id("a-circle")
+    assert img.base64_source in client_img.get_attribute("src")

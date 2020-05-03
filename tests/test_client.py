@@ -4,7 +4,7 @@ from unittest import mock
 
 import pytest
 
-from idom.widgets import Import, define_module
+from idom import Module
 from idom import client
 
 HERE = Path(__file__).parent
@@ -12,43 +12,44 @@ HERE = Path(__file__).parent
 
 @pytest.fixture
 def victory():
-    yield Import("victory", install=True)
+    yield Module("victory", install=True)
 
 
 @pytest.mark.slow
 def test_install(driver, display, victory):
-    display(victory.VictoryBar)
+    display(victory.Import("VictoryBar"))
 
     driver.find_element_by_class_name("VictoryContainer")
 
-    assert client.module_exists("victory")
-    assert client.import_path("victory") == "../web_modules/victory.js"
+    assert client.web_module_exists("victory")
+    assert client.web_module("victory") == "../web_modules/victory.js"
 
 
 def test_raise_on_missing_import_path():
     with pytest.raises(ValueError, match="does not exist"):
-        client.import_path("module/that/does/not/exist")
+        client.web_module("module/that/does/not/exist")
 
 
 @pytest.mark.slow
 def test_custom_module(driver, display, victory):
-    my_chart = define_module("my/chart", HERE / "my_chart.js")
+    with open(HERE / "my_chart.js") as f:
+        my_chart = Module("my/chart", source=f)
 
-    assert client.module_exists("my/chart")
-    assert client.import_path("my/chart") == "../web_modules/my/chart.js"
+    assert client.web_module_exists("my/chart")
+    assert client.web_module("my/chart") == "../web_modules/my/chart.js"
 
-    display(my_chart.Chart)
+    display(my_chart.Import("Chart"))
 
     driver.find_element_by_class_name("VictoryContainer")
 
 
 @pytest.mark.slow
 def test_delete_module(victory):
-    client.delete_module("victory")
-    assert not client.module_exists("victory")
+    victory.delete()
+    assert not client.web_module_exists("victory")
 
     with pytest.raises(ValueError, match="does not exist"):
-        client.delete_module("victory")
+        victory.delete()
 
 
 called_process_error = CalledProcessError(1, "failing-cmd")

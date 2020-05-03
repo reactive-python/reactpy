@@ -7,11 +7,11 @@ from .core.events import event, Events
 from .core.layout import Layout
 from .core.vdom import vdom
 
+from .widgets.input import Input
 from .widgets.html import html
-from .widgets.common import hotswap, Import
+from .widgets.utils import Module, Import, hotswap, multiview
 from .widgets.display import display
-from .widgets.inputs import Input
-from .widgets.images import Image
+from .widgets.image import Image
 
 from .tools import Var, html_to_vdom
 
@@ -42,8 +42,10 @@ __all__ = [
     "Var",
     "vdom",
     "Image",
+    "Module",
     "Import",
     "hotswap",
+    "multiview",
     "display",
     "Input",
     "html_to_vdom",

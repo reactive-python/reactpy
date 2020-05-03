@@ -14,29 +14,40 @@ NODE_MODULES = CLIENT_DIR / "node_modules"
 WEB_MODULES = CLIENT_DIR / "web_modules"
 
 
-def import_path(name: str) -> str:
-    path = f"../{WEB_MODULES.name}/{name}.js"
-    if not module_exists(name):
+def core_module(name: str) -> str:
+    path = f"../{CORE_MODULES.name}/{name}.js"
+    if not core_module_exists(name):
         raise ValueError(f"Module '{path}' does not exist.")
     return path
 
 
-def define_module(name: str, source: str) -> str:
+def core_module_exists(name: str) -> bool:
+    return _find_module_os_path(CORE_MODULES, name) is not None
+
+
+def web_module(name: str) -> str:
+    path = f"../{WEB_MODULES.name}/{name}.js"
+    if not web_module_exists(name):
+        raise ValueError(f"Module '{path}' does not exist.")
+    return path
+
+
+def web_module_exists(name: str) -> bool:
+    return _find_module_os_path(WEB_MODULES, name) is not None
+
+
+def define_web_module(name: str, source: str) -> str:
     path = _create_web_module_os_path(name)
     with path.open("w+") as f:
         f.write(source)
-    return import_path(name)
+    return web_module(name)
 
 
-def delete_module(name: str) -> None:
-    path = _find_web_module_os_path(name)
+def delete_web_module(name: str) -> None:
+    path = _find_module_os_path(WEB_MODULES, name)
     if path is None:
         raise ValueError(f"Module '{name}' does not exist.")
     _delete_os_paths(path)
-
-
-def module_exists(name: str) -> bool:
-    return _find_web_module_os_path(name) is not None
 
 
 def install(dependencies: Dict[str, str]) -> None:
@@ -98,8 +109,7 @@ def _run_subprocess(args: List[str], cwd: Union[str, Path]):
         raise
 
 
-def _find_web_module_os_path(name: str) -> Optional[Path]:
-    path = WEB_MODULES
+def _find_module_os_path(path: Path, name: str) -> Optional[Path]:
     for name_part in name.split("/"):
         if not path.is_dir():
             return None
