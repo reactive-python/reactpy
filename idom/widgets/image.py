@@ -1,7 +1,7 @@
 from base64 import b64encode
 from io import BytesIO
 
-from typing import Any, Dict, Union, Callable
+from typing import Any, Dict, Union, Optional
 
 from idom.core.element import AbstractElement
 
@@ -15,31 +15,36 @@ class Image(AbstractElement):
         attributes: Attributes assigned to the ``<image/>`` element.
     """
 
-    __slots__ = ("_source", "_format", "_buffer", "_attributes")
+    __slots__ = ("_format", "_buffer", "_attributes", "_final_source")
 
-    def __init__(self, format: str, value: str = "", **attributes: Any) -> None:
+    def __init__(
+        self, format: str, value: str = "", attributes: Optional[Dict[str, Any]] = None
+    ) -> None:
         super().__init__()
         if format == "svg":
             format = "svg+xml"
-        self._buffer = BytesBuffer(value.encode(), self._set_source)
-        self._source = b""
+        self._buffer = BytesBuffer(value)
         self._format = format
-        self._attributes = attributes
+        self._attributes = attributes or {}
 
     @property
     def io(self) -> "BytesBuffer":
-        """A file-like interface for loading image source."""
+        """A file-like interface for write the image source."""
         return self._buffer
 
-    async def render(self) -> Dict[str, Any]:
-        self._buffer.close()
-        source = b64encode(self._source).decode()
-        attrs = self._attributes.copy()
-        attrs["src"] = f"data:image/{self._format};base64,{source}"
-        return {"tagName": "img", "attributes": attrs}
+    @property
+    def source(self) -> bytes:
+        return self.io.getvalue().strip()
 
-    def _set_source(self, value: bytes) -> None:
-        self._source = value
+    @property
+    def base64_source(self) -> str:
+        return b64encode(self.source).decode()
+
+    async def render(self) -> Dict[str, Any]:
+        src = self.base64_source
+        attrs = self._attributes.copy()
+        attrs["src"] = f"data:image/{self._format};base64,{src}"
+        return {"tagName": "img", "attributes": attrs}
 
 
 class BytesBuffer(BytesIO):
@@ -50,10 +55,7 @@ class BytesBuffer(BytesIO):
         close_callback: Called with the value of the buffer when it is closed.
     """
 
-    def __init__(
-        self, value: Union[bytes, str], close_callback: Callable[[bytes], None]
-    ) -> None:
-        self._on_close_callback = close_callback
+    def __init__(self, value: Union[bytes, str]) -> None:
         if isinstance(value, str):
             super().__init__(value.encode())
         else:
@@ -64,8 +66,3 @@ class BytesBuffer(BytesIO):
             return super().write(value.encode())
         else:
             return super().write(value)
-
-    def close(self) -> None:
-        if not self.closed:
-            self._on_close_callback(self.getvalue())
-        super().close()

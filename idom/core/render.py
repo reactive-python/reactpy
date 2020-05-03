@@ -1,10 +1,19 @@
 import abc
 import asyncio
+from anyio import create_task_group
+from anyio.exceptions import ExceptionGroup
 from loguru import logger
 
-from typing import Callable, Awaitable, Dict, Any
+from types import TracebackType
+from typing import Callable, Awaitable, Dict, Any, Optional, Type
 
-from .layout import LayoutUpdate, LayoutEvent, RenderError, AbstractLayout
+from .layout import (
+    LayoutUpdate,
+    LayoutEvent,
+    RenderError,
+    AbstractLayout,
+    AbstractLayout,
+)
 
 
 SendCoroutine = Callable[[Any], Awaitable[None]]
@@ -21,46 +30,47 @@ class AbstractRenderer(abc.ABC):
     def __init__(self, layout: AbstractLayout) -> None:
         self._layout = layout
 
+    @property
+    def layout(self) -> AbstractLayout:
+        return self._layout
+
+    @property
+    def loop(self) -> asyncio.AbstractEventLoop:
+        return self._layout.loop
+
     async def run(self, send: SendCoroutine, recv: RecvCoroutine, context: Any) -> None:
         """Start an unending loop which will drive the layout.
 
         This will call :meth:`AbstractLayout.render` and :meth:`AbstractLayout.trigger`
         to render new models and execute events respectively.
         """
-        self._running = True
         try:
-            await self._run(send, recv, context)
+            async with create_task_group() as group:
+                await group.spawn(self._outgoing_loop, send, context)
+                await group.spawn(self._incoming_loop, recv, context)
+        except ExceptionGroup as error:
+            for exc in error.exceptions:
+                if not isinstance(exc, StopRendering):
+                    raise exc
         except StopRendering:
             return None
-        finally:
-            await self._stop()
-
-    async def _run(
-        self, send: SendCoroutine, recv: RecvCoroutine, context: Any
-    ) -> None:
-        await asyncio.gather(
-            self._outgoing_loop(send, context), self._incoming_loop(recv, context)
-        )
-
-    async def _stop(self) -> None:
-        pass
 
     async def _outgoing_loop(self, send: SendCoroutine, context: Any) -> None:
         while True:
-            await send(await self._outgoing(self._layout, context))
+            await send(await self._outgoing(self.layout, context))
 
     async def _incoming_loop(self, recv: RecvCoroutine, context: Any) -> None:
         while True:
-            await self._incoming(self._layout, context, await recv())
+            await self._incoming(self.layout, context, await recv())
 
     @abc.abstractmethod
-    def _outgoing(self, layout: AbstractLayout, context: Any) -> Any:
+    async def _outgoing(self, layout: AbstractLayout, context: Any) -> Any:
         ...
 
     @abc.abstractmethod
-    def _incoming(
+    async def _incoming(
         self, layout: AbstractLayout, context: Any, message: Any
-    ) -> Awaitable[None]:
+    ) -> None:
         ...
 
 
@@ -76,7 +86,6 @@ class SingleStateRenderer(AbstractRenderer):
         try:
             src, new, old = await layout.render()
         except RenderError as error:
-            raise
             if error.partial_render is None:
                 raise
             logger.exception("Render failed")
@@ -88,6 +97,7 @@ class SingleStateRenderer(AbstractRenderer):
         self, layout: AbstractLayout, context: Any, event: LayoutEvent
     ) -> None:
         await layout.trigger(event)
+        return None
 
 
 class SharedStateRenderer(SingleStateRenderer):
@@ -97,21 +107,54 @@ class SharedStateRenderer(SingleStateRenderer):
     :meth:`SharedStateRenderer.run`
     """
 
+    _render_task: asyncio.Task
+    _join_event: asyncio.Event
+
     def __init__(self, layout: AbstractLayout) -> None:
         super().__init__(layout)
         self._models: Dict[str, Dict[str, Any]] = {}
         self._updates: Dict[str, asyncio.Queue[LayoutUpdate]] = {}
-        self._render_task = asyncio.ensure_future(self._render_loop(), loop=layout.loop)
+        self._task_group = create_task_group()
+        self._joining = False
 
-    async def _run(
-        self, send: SendCoroutine, recv: RecvCoroutine, context: str
+    async def start(self):
+        await self.__aenter__()
+
+    async def join(self):
+        await self.__aexit__(None, None, None)
+
+    async def __aenter__(self):
+        if hasattr(self, "_join_event"):
+            raise RuntimeError("Renderer already active")
+        self._join_event = asyncio.Event()
+
+        await self._task_group.__aenter__()
+        self._render_task = asyncio.ensure_future(self._render_loop(), loop=self.loop)
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
+        if not self._joining:
+            self._joining = True
+            try:
+                await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+            finally:
+                self._render_task.cancel()
+                self._join_event.set()
+        else:
+            await self._join_event.wait()
+
+    async def run(
+        self, send: SendCoroutine, recv: RecvCoroutine, context: str, join: bool = False
     ) -> None:
         self._updates[context] = asyncio.Queue()
-        try:
-            await asyncio.gather(super()._run(send, recv, context), self._render_task)
-        except Exception:
-            del self._updates[context]
-            raise
+        await self._task_group.spawn(super().run, send, recv, context)
+        if join:
+            self.join()
 
     async def _render_loop(self) -> None:
         while True:
@@ -147,6 +190,3 @@ class SharedStateRenderer(SingleStateRenderer):
     async def _outgoing(self, layout: AbstractLayout, context: str) -> Dict[str, Any]:
         src, new, old = await self._updates[context].get()
         return {"root": layout.root, "src": src, "new": new, "old": old}
-
-    async def _stop(self) -> None:
-        self._render_task.cancel()

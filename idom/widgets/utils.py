@@ -1,94 +1,95 @@
-import inspect
-from typing import Any, Callable, Tuple, Optional, Union, Dict
+from typing import Any, Callable, Tuple, Optional, Dict, Union, IO
 
 from idom import client
 from idom.core.element import ElementConstructor, Element, element
-from idom.core.vdom import VdomDict, ImportSourceDict, vdom
+from idom.core.vdom import VdomDict, ImportSourceDict, make_vdom_constructor
 from idom.tools import Var
 
 
-def define_module(name: str, source: Any, raw: bool = False) -> "Import":
-    """Add a module to the client
+class Module:
+    """A Javascript module
 
     Parameters:
         name:
-            What the module will be named (excluding the ``.js`` file extension). This
-            matters if you want to import this module from another later since this will
-            be the filename the module is saved under.
+            The module's name. If ``install`` or ``source`` are provided omit the ``.js``
+            file extension. Otherwise this is the exact import path and could be anything
+            including a URL.
+        install:
+            If a string, then the dependency string used to install a module with
+            the given ``name`` (e.g. ``my-module@1.2.3``). If ``True`` then the given
+            ``name`` will be used as the dependency string.
         source:
-            The module's source.
-        raw:
-            If false, then ``source`` should be a file path to the module's source.
-            If true, this should be the literal source code for the module.
+            Create a module of the given name using the given source code.
 
     Returns:
         An :class:`Import` element for the newly defined module.
     """
-    if not raw:
-        with open(str(source), "r") as f:
-            source = f.read()
-    else:
-        source = inspect.cleandoc(source)
-    return Import(client.define_module(name, source))
 
-
-class Import:
-    """Import a react library
-
-    Once imported, you can instantiate the library's components by calling them
-    via attribute-access. For example, Ant Design provides a date-picker interface
-    and an ``onChange`` callback which could be leveraged in the following way:
-
-    .. code-block:: python
-
-        antd = idom.Import("antd")
-        # you'll often need to link to the css stylesheet for the library.
-        css = idom.html.link(rel="stylesheet", type="text/css", href="https://dev.jspm.io/antd/dist/antd.css")
-
-        @idom.element
-        async def AntDatePicker(self):
-
-            async def changed(moment, datestring):
-                print("CLIENT DATETIME:", moment)
-                print("PICKED DATETIME:", datestring)
-
-            picker = antd.DatePicker(onChange=changed, fallback="Loading...")
-            return idom.html.div(picker, css)
-    """
+    __slots__ = "_module"
 
     def __init__(
         self,
-        package: str,
-        fallback: Optional[str] = None,
-        install: Union[str, bool] = False,
+        name: str,
+        install: Union[bool, str] = False,
+        source: Optional[IO] = None,
+        replace: bool = False,
     ) -> None:
-        if install:
-            if not client.module_exists(package):
-                if isinstance(install, str):
-                    client.install({install: package})
-                else:
-                    client.install({package: package})
-            new_import_path = client.import_path(package)
-            if new_import_path is None:
-                raise ValueError(f"Unexpectedly failed to find install of {package}")
-            package = new_import_path
-        self._package = package
-        self._fallback = fallback
+        if install and source:
+            raise ValueError("Both 'install' and 'source' were given.")
+        elif (install or source) and not replace and client.web_module_exists(name):
+            self._module = client.web_module(name)
+        elif source is not None:
+            client.define_web_module(name, source.read())
+            self._module = client.web_module(name)
+        elif isinstance(install, str):
+            client.install({install: name})
+            self._module = client.web_module(name)
+        elif install is True:
+            client.install({name: name})
+            self._module = client.web_module(name)
+        else:
+            self._module = name
 
-    def __getattr__(self, tag: str) -> Callable[..., VdomDict]:
-        """Attribute is a constructor for a VDOM dict with that tagName."""
+    def Import(self, name: str, *args, **kwargs) -> "Import":
+        return Import(self._module, name, *args, **kwargs)
 
-        def constructor(*args: Any, **kwargs: Any) -> VdomDict:
-            return self(tag, *args, **kwargs)
+    def delete(self) -> None:
+        client.delete_web_module(self._module)
 
-        return constructor
 
-    def __call__(self, *args: Any, **kwargs: Any) -> VdomDict:
-        import_source = ImportSourceDict(source=self._package, fallback=self._fallback)
-        return vdom(import_source=import_source, *args, **kwargs)
+class Import:
+    """Import a react module
+
+    Once imported, you can instantiate the library's components by calling them
+    via attribute-access.
+
+    Examples:
+
+        .. code-block:: python
+
+            victory = idom.Import("victory", "VictoryBar" install=True)
+            style = {"parent": {"width": "500px"}}
+            victory.VictoryBar({"style": style}, fallback="loading...")
+    """
+
+    __slots__ = ("_constructor", "_import_source")
+
+    def __init__(
+        self,
+        module: str,
+        name: str,
+        has_children: bool = True,
+        fallback: Optional[str] = "",
+    ) -> None:
+        self._constructor = make_vdom_constructor(name, has_children)
+        self._import_source = ImportSourceDict(source=module, fallback=fallback)
+
+    def __call__(self, *args: Any, **kwargs: Any,) -> VdomDict:
+        return self._constructor(import_source=self._import_source, *args, **kwargs)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self._package!r})"
+        items = ", ".join(f"{k}={v!r}" for k, v in self._import_source.items())
+        return f"{type(self).__name__}({items})"
 
 
 def hotswap(

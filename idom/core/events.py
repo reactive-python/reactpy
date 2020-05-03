@@ -1,5 +1,3 @@
-from weakref import proxy, CallableProxyType
-from functools import partial
 from typing import (
     Mapping,
     Dict,
@@ -11,7 +9,6 @@ from typing import (
     Awaitable,
     Union,
 )
-from .element import AbstractElement
 
 
 EventsMapping = Union[
@@ -66,13 +63,10 @@ class Events(Mapping[str, "EventHandler"]):
     Assign this object to the ``"eventHandlers"`` field of an element model.
     """
 
-    __slots__ = ("_handlers", "_bound")
+    __slots__ = "_handlers"
 
-    def __init__(self, bound: Optional[AbstractElement] = None) -> None:
+    def __init__(self) -> None:
         self._handlers: Dict[str, EventHandler] = {}
-        self._bound: Optional[CallableProxyType] = None
-        if bound is not None:
-            self._bound = proxy(bound)
 
     def on(
         self, event: str, stop_propagation: bool = False, prevent_default: bool = False
@@ -118,8 +112,6 @@ class Events(Mapping[str, "EventHandler"]):
             handler = self._handlers[event_name]
 
         def setup(function: EventHandlerFunction) -> EventHandlerFunction:
-            if self._bound is not None:
-                function = partial(function, self._bound)
             handler.add(function)
             return function
 

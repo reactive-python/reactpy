@@ -2,7 +2,7 @@ from importlib import import_module
 from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar
 
 from idom.core.element import ElementConstructor
-from idom.widgets.common import multiview, hotswap
+from idom.widgets.utils import multiview, hotswap
 
 from .base import AbstractRenderServer
 
