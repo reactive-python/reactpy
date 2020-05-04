@@ -25,7 +25,7 @@ class Module:
         An :class:`Import` element for the newly defined module.
     """
 
-    __slots__ = "_module"
+    __slots__ = ("_module", "_name", "_installed")
 
     def __init__(
         self,
@@ -34,27 +34,51 @@ class Module:
         source: Optional[IO] = None,
         replace: bool = False,
     ) -> None:
+        self._installed = False
         if install and source:
             raise ValueError("Both 'install' and 'source' were given.")
         elif (install or source) and not replace and client.web_module_exists(name):
             self._module = client.web_module(name)
+            self._installed = True
+            self._name = name
         elif source is not None:
             client.define_web_module(name, source.read())
             self._module = client.web_module(name)
+            self._installed = True
+            self._name = name
         elif isinstance(install, str):
             client.install({install: name})
             self._module = client.web_module(name)
+            self._installed = True
+            self._name = name
         elif install is True:
             client.install({name: name})
             self._module = client.web_module(name)
+            self._installed = True
+            self._name = name
         else:
             self._module = name
+
+    @property
+    def name(self) -> str:
+        if not self._installed:
+            raise ValueError("Module is not installed locally")
+        return self._name
+
+    @property
+    def url(self) -> str:
+        return self._module
 
     def Import(self, name: str, *args, **kwargs) -> "Import":
         return Import(self._module, name, *args, **kwargs)
 
     def delete(self) -> None:
+        if not self._installed:
+            raise ValueError("Module is not installed locally")
         client.delete_web_module(self._module)
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"{type(self).__name__}({self._module!r})"
 
 
 class Import:
@@ -87,7 +111,7 @@ class Import:
     def __call__(self, *args: Any, **kwargs: Any,) -> VdomDict:
         return self._constructor(import_source=self._import_source, *args, **kwargs)
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         items = ", ".join(f"{k}={v!r}" for k, v in self._import_source.items())
         return f"{type(self).__name__}({items})"
 

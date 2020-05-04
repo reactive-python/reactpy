@@ -33,10 +33,10 @@ class Input(Generic[_InputType], AbstractElement):
     """
 
     __slots__ = (
+        "_type",
         "_value",
         "_cast",
         "_display_value",
-        "_label",
         "_ignore_empty",
         "_events",
         "_attributes",
@@ -48,26 +48,23 @@ class Input(Generic[_InputType], AbstractElement):
         value: _InputType = "",  # type: ignore
         attributes: Optional[Dict[str, Any]] = None,
         cast: Callable[[str], _InputType] = _pass_through,
-        label: Optional[str] = None,
         ignore_empty: bool = True,
     ) -> None:
         super().__init__()
+        self._type = type
         self._value = value
         self._display_value = str(value)
         self._cast = cast
-        self._label = label
         self._ignore_empty = ignore_empty
         self._events = Events()
         self._attributes = attributes or {}
-        self._attributes["type"] = type
         self_ref = ref(self)
 
         @self._events.on("change")
         async def on_change(event: Dict[str, Any]) -> None:
             self_deref = self_ref()
             if self_deref is not None:
-                value = self_deref._cast(event["value"])
-                self_deref.update(value)
+                self_deref._set_str_value(event["value"])
 
     @property
     def value(self) -> _InputType:
@@ -86,22 +83,27 @@ class Input(Generic[_InputType], AbstractElement):
     def update(self, value: _InputType) -> None:
         """Update the current value of the input."""
         self._set_value(value)
-        super().update()
 
     async def render(self) -> VdomDict:
         input_element = html.input(
-            self.attributes, {"value": self._display_value}, event_handlers=self.events,
+            self.attributes,
+            {"type": self._type, "value": self._display_value},
+            event_handlers=self.events,
         )
-        if self._label is not None:
-            return html.label([self._label, input_element])
-        else:
-            return input_element
+        return input_element
+
+    def _set_str_value(self, value: str) -> None:
+        self._display_value = value
+        super().update()
+        print(value)
+        if not value and self._ignore_empty:
+            return
+        self._value = self._cast(value)
 
     def _set_value(self, value: _InputType) -> None:
         self._display_value = str(value)
-        if self._ignore_empty and not value:
-            return
         self._value = value
+        super().update()
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return f"{type(self).__name__}({self.value!r})"

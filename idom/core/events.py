@@ -129,7 +129,7 @@ class Events(Mapping[str, "EventHandler"]):
     def __getitem__(self, key: str) -> "EventHandler":
         return self._handlers[key]
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return repr(self._handlers)
 
 
@@ -193,11 +193,6 @@ class EventHandler:
         """
         self._handlers.remove(function)
 
-    async def __call__(self, data: List[Any]) -> Any:
-        """Trigger all callbacks in the event handler."""
-        for handler in self._handlers:
-            await handler(*data)
-
     def serialize(self) -> Dict[str, Any]:
         """Serialize the event handler."""
         return {
@@ -206,5 +201,13 @@ class EventHandler:
             "stopPropagation": self._stop_propogation,
         }
 
-    def __repr__(self) -> str:
+    async def __call__(self, data: List[Any]) -> Any:
+        """Trigger all callbacks in the event handler."""
+        for handler in self._handlers:
+            await handler(*data)
+
+    def __contains__(self, function: Any) -> bool:
+        return function in self._handlers
+
+    def __repr__(self) -> str:  # pragma: no cover
         return f"{type(self).__name__}({self.serialize()})"
