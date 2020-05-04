@@ -15,6 +15,9 @@ def test_simple_events_object():
 
     assert isinstance(events["onClick"], EventHandler)
     assert isinstance(events["onKeyPress"], EventHandler)
+    assert "onClick" in events
+    assert "onKeyPress" in events
+    assert len(events) == 2
 
 
 def test_event_handler_serialization():
@@ -51,3 +54,14 @@ async def test_multiple_callbacks_per_event_handler():
     await event_handler([{}])
 
     assert calls == [1, 2]
+
+
+def test_remove_event_handlers():
+    def my_callback(event):
+        ...
+
+    events = EventHandler()
+    events.add(my_callback)
+    assert my_callback in events
+    events.remove(my_callback)
+    assert my_callback not in events

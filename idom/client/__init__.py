@@ -14,22 +14,15 @@ NODE_MODULES = CLIENT_DIR / "node_modules"
 WEB_MODULES = CLIENT_DIR / "web_modules"
 
 
-def core_module(name: str) -> str:
-    path = f"../{CORE_MODULES.name}/{name}.js"
-    if not core_module_exists(name):
-        raise ValueError(f"Module '{path}' does not exist.")
-    return path
-
-
-def core_module_exists(name: str) -> bool:
-    return _find_module_os_path(CORE_MODULES, name) is not None
-
-
 def web_module(name: str) -> str:
     path = f"../{WEB_MODULES.name}/{name}.js"
     if not web_module_exists(name):
         raise ValueError(f"Module '{path}' does not exist.")
     return path
+
+
+def web_module_path(name: str) -> Optional[Path]:
+    return _find_module_os_path(WEB_MODULES, name)
 
 
 def web_module_exists(name: str) -> bool:
