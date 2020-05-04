@@ -108,13 +108,14 @@ class SharedStateRenderer(SingleStateRenderer):
     """
 
     _render_task: asyncio.Task
-    _join_event: asyncio.Event
 
     def __init__(self, layout: AbstractLayout) -> None:
         super().__init__(layout)
         self._models: Dict[str, Dict[str, Any]] = {}
         self._updates: Dict[str, asyncio.Queue[LayoutUpdate]] = {}
         self._task_group = create_task_group()
+        self._join_event = asyncio.Event()
+        self._active = False
         self._joining = False
 
     async def start(self):
@@ -124,10 +125,9 @@ class SharedStateRenderer(SingleStateRenderer):
         await self.__aexit__(None, None, None)
 
     async def __aenter__(self):
-        if hasattr(self, "_join_event"):
+        if self._active:
             raise RuntimeError("Renderer already active")
-        self._join_event = asyncio.Event()
-
+        self._active = True
         await self._task_group.__aenter__()
         self._render_task = asyncio.ensure_future(self._render_loop(), loop=self.loop)
         return self
@@ -138,15 +138,20 @@ class SharedStateRenderer(SingleStateRenderer):
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> None:
-        if not self._joining:
-            self._joining = True
-            try:
-                await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
-            finally:
-                self._render_task.cancel()
-                self._join_event.set()
-        else:
-            await self._join_event.wait()
+        try:
+            if not self._joining:
+                self._joining = True
+                try:
+                    await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+                finally:
+                    self._render_task.cancel()
+                    self._join_event.set()
+                    self._join_event.clear()
+            else:
+                await self._join_event.wait()
+        finally:
+            self._active = False
+            self._joining = False
 
     async def run(
         self, send: SendCoroutine, recv: RecvCoroutine, context: str, join: bool = False
@@ -154,7 +159,7 @@ class SharedStateRenderer(SingleStateRenderer):
         self._updates[context] = asyncio.Queue()
         await self._task_group.spawn(super().run, send, recv, context)
         if join:
-            self.join()
+            await self.join()
 
     async def _render_loop(self) -> None:
         while True:
