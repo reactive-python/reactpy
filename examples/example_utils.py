@@ -14,7 +14,7 @@ def path_to_jupyterhub_proxy(port: int) -> Optional[str]:
 
     This is used when examples are running on mybinder.org or in a container created by
     jupyter-repo2docker. For this to work a ``jupyter_server_proxy`` must have been
-    instantiated.
+    instantiated. See https://github.com/jupyterhub/jupyter-server-proxy
     """
     if "JUPYTERHUB_OAUTH_CALLBACK_URL" in os.environ:
         url = os.environ["JUPYTERHUB_OAUTH_CALLBACK_URL"].rsplit("/", 1)[0]

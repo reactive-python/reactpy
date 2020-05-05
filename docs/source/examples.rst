@@ -1,7 +1,7 @@
 Examples
 ========
 
-You can find the following examples on binder |launch-binder|:
+You can find the following examples and more on binder |launch-binder|:
 
 .. contents::
   :local:
@@ -10,7 +10,7 @@ You can find the following examples on binder |launch-binder|:
 Depending on how you plan to use these examples you'll need different
 boilerplate code.
 
-In all cases we define a ``show(element)`` function which will display the
+In all cases we define a ``display(element)`` function which will display the
 view. In a Jupyter Notebook it will appear in an output cell. If you're running
 ``idom`` as a webserver it will appear at http://localhost:8765/client/index.html.
 
@@ -25,51 +25,90 @@ view. In a Jupyter Notebook it will appear in an output cell. If you're running
 
 .. code-block::
 
-    import idom
-    mount, root = idom.hotswap()
-    idom.server.sanic.PerClientState(root).daemon("localhost", 8765, access_log=False)
+    from idom.server import multiview_server
+    from idom.server.sanic import PerClientState
 
-    def show(element=None, *args, **kwargs):
-        if element is not None:
-            mount(element, *args, **kwargs)
-        # make this the output of your cell
-        return idom.display("jupyter", "ws://127.0.0.1:8765/stream")
+    host, port = "127.0.0.1", 8765
+    mount, server = multiview_server(PerClientState, host, port, {"cors": True}, {"access_log": False})
+    server_url = f"http://{host}:{port}"
+
+    def display(element, *args, **kwargs):
+        view_id = mount(element, *args, **kwargs)
+        return idom.display("jupyter", server_url, {"view_id": view_id})
 
 
 **Jupyter Notebook (binder.org)**
 
 .. code-block::
 
-    import idom
-    mount, root = idom.hotswap()
-    idom.server.sanic.PerClientState(root).daemon("localhost", 8765, access_log=False)
+    import os
+    from typing import Mapping, Any, Optional
 
-    def proxy_uri_root(protocol, port):
+    from idom.server import multiview_server
+    from idom.server.sanic import PerClientState
+
+
+    def example_server_url(host: str, port: int) -> str:
+        localhost_idom_path = f"http://{host}:{port}"
+        jupyterhub_idom_path = path_to_jupyterhub_proxy(port)
+        return jupyterhub_idom_path or localhost_idom_path
+
+
+    def path_to_jupyterhub_proxy(port: int) -> Optional[str]:
+        """If running on Jupyterhub return the path from the host's root to a proxy server
+
+        This is used when examples are running on mybinder.org or in a container created by
+        jupyter-repo2docker. For this to work a ``jupyter_server_proxy`` must have been
+        instantiated. See https://github.com/jupyterhub/jupyter-server-proxy
+        """
         if "JUPYTERHUB_OAUTH_CALLBACK_URL" in os.environ:
-            auth = os.environ["JUPYTERHUB_OAUTH_CALLBACK_URL"].rsplit("/", 1)[0]
-            return "%s/proxy/%s" % (auth, port)
+            url = os.environ["JUPYTERHUB_OAUTH_CALLBACK_URL"].rsplit("/", 1)[0]
+            return f"{url}/proxy/{port}"
         elif "JUPYTER_SERVER_URL" in os.environ:
-            return "%s/proxy/%s" % (os.environ["JUPYTER_SERVER_URL"], port)
+            return f"{os.environ['JUPYTER_SERVER_URL']}/proxy/{port}"
         else:
-            raise RuntimeError("Unknown JupyterHub environment.")
+            return None
 
-    def show(element=None, *args, **kwargs):
-        if element is not None:
-            mount(element, *args, **kwargs)
-        # make this the output of your cell
-        websocket_url = proxy_uri_root("ws", 8765) + "/stream"
-        return idom.display("jupyter", websocket_url)
+    host, port = "127.0.0.1", 8765
+    mount, server = multiview_server(PerClientState, host, port, {"cors": True}, {"access_log": False})
+    server_url = example_server_url(host, port)
+
+    def display(element, *args, **kwargs):
+        view_id = mount(element, *args, **kwargs)
+        print(f"View ID: {view_id}")
+        return idom.display("jupyter", server_url, {"view_id": view_id})
 
 
 **Local Python File**
 
 .. code-block::
 
-    import idom
+    from idom.server.sanic import PerClientState
 
-    def show(element, *args, **kwargs):
-        # this is a blocking call so run this in `if __name__ == "__main__":`
-        PerClientState(element, *args, **kwargs).run("localhost", 8765)
+    def display(element, *args, **kwargs):
+        PerClientState(element, *args, **kwargs).run("127.0.0.1", 8765)
+
+    # define your element here...
+
+    if __name__ == "__main__":
+        display(...)  # pass in the element here
+
+
+Slideshow
+---------
+
+.. code-block::
+
+    @idom.element
+    async def Slideshow(self, index=0):
+
+        async def update_image(event):
+            self.update(index + 1)
+
+        url = f"https://picsum.photos/800/300?image={index}"
+        return idom.html.img({"src": url, "onClick": update_image})
+
+    display(Slideshow)
 
 
 To Do List
@@ -86,10 +125,10 @@ To Do List
                 items.append(event["value"])
                 task_list.update(items)
 
-        task_input = idom.html.input(onKeyDown=add_new_task)
+        task_input = idom.html.input({"onKeyDown": add_new_task})
         task_list = TaskList(items)
 
-        return idom.html.div(task_input, task_list)
+        return idom.html.div([task_input, task_list])
 
 
     @idom.element
@@ -102,13 +141,13 @@ To Do List
                 del items[index]
                 self.update(items)
 
-            task_text = idom.html.td(idom.html.p(text))
-            delete_button = idom.html.td(idom.html.button("x"), onClick=remove)
-            tasks.append(idom.html.tr(task_text, delete_button))
+            task_text = idom.html.td([idom.html.p([text])])
+            delete_button = idom.html.td({"onClick": remove}, [idom.html.button(["x"])])
+            tasks.append(idom.html.tr([task_text, delete_button]))
 
-        return idom.vdom("table", tasks)
+        return idom.html.table(tasks)
 
-    show(Todo)
+    display(Todo)
 
 
 Drag and Drop
@@ -127,33 +166,33 @@ Drag and Drop
 
         last_owner.set(h1)
 
-        style = idom.html.style("""
+        style = idom.html.style(["""
         .holder {
-          height: 150px;
-          width: 150px;
-          margin: 20px;
-          display: inline-block;
+        height: 150px;
+        width: 150px;
+        margin: 20px;
+        display: inline-block;
         }
         .holder-filled {
-          border: solid 10px black;
-          background-color: black;
+        border: solid 10px black;
+        background-color: black;
         }
         .holder-hover {
-          border: dotted 5px black;
+        border: dotted 5px black;
         }
         .holder-empty {
-          border: solid 5px black;
-          background-color: white;
+        border: solid 5px black;
+        background-color: white;
         }
-        """)
+        """])
 
-        return idom.html.div(style, h1, h2, h3)
+        return idom.html.div([style, h1, h2, h3])
 
 
     @idom.element(state="last_owner, last_hover")
     async def Holder(self, kind, last_owner, last_hover):
 
-        @idom.event(preventDefault=True, stopPropagation=True)
+        @idom.event(prevent_default=True, stop_propagation=True)
         async def hover(event):
             if kind != "hover":
                 self.update("hover")
@@ -177,17 +216,17 @@ Drag and Drop
                 old.update("empty")
             self.update("filled")
 
-        return idom.html.div(
-            draggable=(kind == "filled"),
-            onDragStart=start,
-            onDragOver=hover,
-            onDragEnd=end,
-            onDragLeave=leave,
-            onDrop=dropped,
-            cls=f"holder-{kind} holder",
-        )
+        return idom.html.div({
+            "draggable": (kind == "filled"),
+            "onDragStart": start,
+            "onDragOver": hover,
+            "onDragEnd": end,
+            "onDragLeave": leave,
+            "onDrop": dropped,
+            "class": f"holder-{kind} holder",
+        })
 
-    show(DragDropBoxes)
+    display(DragDropBoxes)
 
 
 The Game Snake
@@ -201,11 +240,11 @@ The Game Snake
     import asyncio
 
 
-    class WASD(enum.Enum):
-        w = (-1, 0)
-        a = (0, -1)
-        s = (1, 0)
-        d = (0, 1)
+    class Directions(enum.Enum):
+        ArrowUp = (-1, 0)
+        ArrowLeft = (0, -1)
+        ArrowDown = (1, 0)
+        ArrowRight = (0, 1)
 
 
     class GameState:
@@ -213,8 +252,8 @@ The Game Snake
         def __init__(self, grid_size, block_size):
             self.snake = []
             self.grid = Grid(grid_size, block_size)
-            self.new_direction = idom.Var(WASD.d)
-            self.old_direction = idom.Var(WASD.d)
+            self.new_direction = idom.Var(Directions.ArrowRight)
+            self.old_direction = idom.Var(Directions.ArrowRight)
             self.food = idom.Var(None)
             self.won = idom.Var(False)
             self.lost = idom.Var(False)
@@ -226,10 +265,10 @@ The Game Snake
 
         grid_events = game.grid["eventHandlers"]
 
-        @grid_events.on("KeyDown")
+        @grid_events.on("KeyDown", prevent_default=True)
         async def direction_change(event):
-            if hasattr(WASD, event["key"]):
-                game.new_direction.set(WASD[event["key"]])
+            if hasattr(Directions, event["key"]):
+                game.new_direction.set(Directions[event["key"]])
 
         game.snake.extend(
             [
@@ -295,31 +334,37 @@ The Game Snake
 
     def Grid(grid_size, block_size):
         return idom.html.div(
+            {
+                "style": {
+                    "height": f"{block_size * grid_size}px",
+                    "width": f"{block_size * grid_size}px",
+                },
+
+                "tabIndex": -1,
+            },
             [
                 idom.html.div(
-                    [Block("white", block_size) for i in range(grid_size)],
-                    style={"height": block_size},
+                    {"style": {"height": block_size}},
+                    [Block("white", block_size) for i in range(grid_size)]
                 )
                 for i in range(grid_size)
             ],
-            style={
-                "height": f"{block_size * grid_size}px",
-                "width": f"{block_size * grid_size}px",
-            },
-            eventHandlers=idom.Events(),
-            tabIndex=-1,
+            event_handlers=idom.Events(),
+
         )
 
 
     @idom.element(state="block_size")
     async def Block(self, color, block_size):
         return idom.html.div(
-            style={
-                "height": f"{block_size}px",
-                "width": f"{block_size}px",
-                "backgroundColor": color,
-                "display": "inline-block",
-                "border": "1px solid white",
+            {
+                "style": {
+                    "height": f"{block_size}px",
+                    "width": f"{block_size}px",
+                    "backgroundColor": color,
+                    "display": "inline-block",
+                    "border": "1px solid white",
+                }
             }
         )
 
@@ -328,7 +373,8 @@ The Game Snake
         x, y = point
         return grid["children"][x]["children"][y]
 
-    show(GameView)
+
+    display(GameView, 7, 50)
 
 
 Plotting with Matplotlib
@@ -339,6 +385,8 @@ Plotting with Matplotlib
     import time
     import asyncio
     import random
+
+    from matplotlib import pyplot as plt
 
 
     @idom.element
@@ -362,13 +410,13 @@ Plotting with Matplotlib
             y.append(y[-1] + diff)
             plot.update(x, y)
 
-        style = idom.html.style("""
+        style = idom.html.style(["""
         .linked-inputs {margin-bottom: 20px}
         .linked-inputs input {width: 48%;float: left}
         .linked-inputs input + input {margin-left: 4%}
-        """)
+        """])
 
-        return idom.html.div(style, plot, mu_inputs, sigma_inputs, style={"width": "60%"})
+        return idom.html.div({"style": {"width": "60%"}}, [style, plot, mu_inputs, sigma_inputs])
 
 
     @idom.element(run_in_executor=True)
@@ -385,51 +433,107 @@ Plotting with Matplotlib
         var = idom.Var(value)
 
         inputs = []
-        for t in types:
-            inp = idom.Input(t, value, **attributes)
+        for tp in types:
+            inp = idom.Input(tp, value, attributes, cast=float)
 
             @inp.events.on("change")
-            async def on_change(inp, event):
+            async def on_change(event, inp=inp):
                 for i in inputs:
                     i.update(inp.value)
                 var.set(inp.value)
 
             inputs.append(inp)
 
-        fs = idom.html.fieldset(idom.html.legend(label), *inputs, cls="linked-inputs")
+        fs = idom.html.fieldset({"class": "linked-inputs"}, [idom.html.legend(label)], inputs)
 
         return var, fs
 
 
-Import Javascript
------------------
+    print("Try clicking the plot! 📈")
+
+    display(RandomWalk)
+
+
+Install Javascript Modules
+--------------------------
 
 .. code-block::
 
-    antd = idom.Import("https://dev.jspm.io/antd")
+    victory = idom.Module("victory", install=True)
+    VictoryBar = victory.Import("VictoryBar")
 
-    @idom.element
-    async def AntDatePicker(self):
+    display(VictoryBar, {"style": {"parent": {"width": "500px"}}})
 
-        async def changed(moment, datestring):
-            print("CLIENT DATETIME:", moment)
-            print("PICKED DATETIME:", datestring)
 
-        return idom.html.div(
-            idom.html.link(rel="stylesheet", type="text/css", href="https://dev.jspm.io/antd/dist/antd.css"),
-            antd.DatePicker(onChange=changed, fallback="Loading...")
-        )
+Define Javascript Modules
+-------------------------
+
+Assuming you already installed ``victory`` as in the :ref:`Install Javascript Modules` section:
+
+.. code-block::
+
+    with open("chart.js") as f:
+        ClickableChart = idom.Module("chart", source=f).Import("ClickableChart")
+
+    async def handle_event(event):
+        print(event)
+
+    data = [
+        {"x": 1, "y": 2},
+        {"x": 2, "y": 4},
+        {"x": 3, "y": 7},
+        {"x": 4, "y": 3},
+        {"x": 5, "y": 5},
+    ]
+
+    display(
+        ClickableChart,
+        {"data": data, "onClick": handle_event, "style": {"parent": {"width": "500px"}}}
+    )
+
+Source of ``chart.js``:
+
+.. code-block:: javascript
+
+    import React from "./react.js";
+    import { VictoryBar, VictoryChart, VictoryTheme, Bar } from "./victory.js";
+    import htm from "./htm.js";
+
+    const html = htm.bind(React.createElement);
+
+    export default {
+      ClickableChart: function ClickableChart(props) {
+        return html`
+          <${VictoryChart}
+            theme=${VictoryTheme.material}
+            style=${props.style}
+            domainPadding=${20}
+          >
+            <${VictoryBar}
+              data=${props.data}
+              dataComponent=${html`
+                <${Bar}
+                  events=${{
+                    onClick: props.onClick,
+                  }}
+                />
+              `}
+            />
+          <//>
+        `;
+      },
+    };
 
 
 Shared Client Views
 -------------------
 
-This example requires the ``SharedClientState`` server. Be sure to replace it in your
-boilerplate code before going further! Once you've done this we can just re-display our
-:ref:`Drag and Drop` example using the new server. No all we need to do is connect to
-the server with a couple clients to see that their views are synced.
-
-However, connecting to the server will be different depending on your environment:
+This example requires the :ref:`idom.server.sanic.SharedClientState` server. Be sure to
+replace it in your boilerplate code before going further! Once you've done this we can
+just re-display our :ref:`Slideshow` example using the new server. Now all we need to do
+is connect to the server with a couple clients to see that their views are synced. This
+can be done by navigating to the server URL in seperate browser tabs. Likewise if you're
+using a Jupyter Notebook you would display it in multiple cells like this:
 
 **Jupyter Notebook**
 
@@ -439,24 +543,16 @@ However, connecting to the server will be different depending on your environmen
     ...  # boiler plate with SharedClientState server
 
     # Cell 2
-    ...  # code from the Drag and Drop example
+    ...  # code from the Slideshow example
 
     # Cell 3
-    display = show(DragAndDrop)
+    widget = display(Slideshow)
 
     # Cell 4
-    display  # this is our first view
+    widget  # this is our first view
 
     # Cell 5
-    display  # this is out second view
-
-
-**Local Python File**
-
-Replace the ``SharedClientState`` in your boilerplate, copy the :ref:`Drag and Drop`
-example code and run it. Now all you need to do is open up
-http://localhost:8765/client/index.html in two different windows and view
-them side-by-side.
+    widget  # this is out second view
 
 
 .. Links
