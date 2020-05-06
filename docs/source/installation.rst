@@ -1,0 +1,120 @@
+Installation
+============
+
+.. list-table::
+    :header-rows: 1
+
+    *   - What
+        - How To Install
+
+    *   - The Core Library
+        - IDOM is on PyPI_ - use  pip_ to install a **stable** version:
+
+          .. code-block:: bash
+
+              pip install idom[stable]
+
+    *   - Javascript Packages
+        - To allow IDOM to install Javascript libraries you'll need npm_.
+
+    *   - Extra Features
+
+        - To install *specific* features see :ref:`Extra Features`, but to install all of them:
+
+          .. code-block:: bash
+
+              # all extra features
+              pip install idom[all]
+
+    *   - Pre Release
+        - This may be unstable or subject to breaking changes
+
+          .. code-block:: bash
+
+              pip install idom --pre
+
+
+Development Version
+-------------------
+
+In order to work with IDOM's source code you'll need to install:
+
+- git_
+
+- npm_
+
+You'll begin by copy the source from GitHub onto your computer using Git:
+
+.. code-block:: bash
+
+    git clone https://github.com/rmorshea/idom.git
+    cd idom
+
+At this point you should be able to run this install command to:
+
+- Install an editable version of the Python code
+
+- Download, build, and install Javascript dependencies
+
+- Install some pre-commit hooks for Git
+
+.. code-block:: bash
+
+    pip install -e . -r requirements.txt && pre-commit install
+
+Since we're using native ES modules for our Javascript, you should usually be able to
+refresh your browser page to see your latest changes to the client. However if you
+modify any dependencies you can run standard ``npm`` commands to install them or
+simply run the following to re-evaluate the ``package.json``:
+
+.. code-block:: bash
+
+    pip install -e .
+
+
+Running The Test
+----------------
+
+The test suite for IDOM covers:
+
+1. Server-side Python code using PyTest_
+
+2. The end-to-end application using Selenium_
+
+3. (Coming soon...) Client side Javascript code
+
+To run the full suite of tests you'll need to install:
+
+- `Google Chrome`_
+
+- ChromeDriver_.
+
+.. warning::
+
+    Be sure the version of `Google Chrome`_ and ChromeDriver_ you install are compatible.
+
+Once you've installed the aforementined browser and web driver you should be able to
+run:
+
+.. code-block:: bash
+
+    pytest src/tests
+
+If you prefer to run the tests using a headless browser:
+
+.. code-block:: bash
+
+    pytest src/tests --headless
+
+.. Links
+.. =====
+
+.. _Google Chrome: https://www.google.com/chrome/
+.. _ChromeDriver: https://chromedriver.chromium.org/downloads
+.. _git: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
+.. _Git Bash: https://gitforwindows.org/
+.. _npm: https://www.npmjs.com/get-npm
+.. _PyPI: https://pypi.org/project/idom
+.. _pip: https://pypi.org/project/pip/
+.. _PyTest: pytest <https://docs.pytest.org
+.. _Selenium: https://www.seleniumhq.org/
