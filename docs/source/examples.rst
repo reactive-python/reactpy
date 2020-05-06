@@ -7,6 +7,10 @@ You can find the following examples and more on binder |launch-binder|:
   :local:
   :depth: 1
 
+
+Display Function
+----------------
+
 Depending on how you plan to use these examples you'll need different
 boilerplate code.
 
