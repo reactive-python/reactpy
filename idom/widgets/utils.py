@@ -31,7 +31,7 @@ class Module:
         self,
         name: str,
         install: Union[bool, str] = False,
-        source: Optional[IO] = None,
+        source: Optional[IO[str]] = None,
         replace: bool = False,
     ) -> None:
         self._installed = False
@@ -69,7 +69,7 @@ class Module:
     def url(self) -> str:
         return self._module
 
-    def Import(self, name: str, *args, **kwargs) -> "Import":
+    def Import(self, name: str, *args: Any, **kwargs: Any) -> "Import":
         return Import(self._module, name, *args, **kwargs)
 
     def delete(self) -> None:
@@ -179,7 +179,7 @@ def hotswap(
     return swap, HotSwap
 
 
-def multiview():
+def multiview() -> Tuple[Callable[[ElementConstructor], str], ElementConstructor]:
     """Dynamically add elements to a layout on the fly
 
     Since you can't change the element functions used to create a layout
@@ -216,14 +216,14 @@ def multiview():
     next_view_id: Var[int] = Var(0)
     views: Dict[str, ElementConstructor] = {}
 
+    @element
+    async def MultiView(self: Element, view_id: str) -> Any:
+        return views[view_id]()
+
     def mount(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> str:
         view_id = next_view_id.get()
         views[str(view_id)] = lambda: constructor(*args, **kwargs)
         next_view_id.set(view_id + 1)
         return str(view_id)
-
-    @element
-    async def MultiView(self: Element, view_id: str) -> Any:
-        return views[view_id]()
 
     return mount, MultiView

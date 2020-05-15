@@ -5,7 +5,7 @@ from anyio.exceptions import ExceptionGroup
 from loguru import logger
 
 from types import TracebackType
-from typing import Callable, Awaitable, Dict, Any, Optional, Type
+from typing import Callable, Awaitable, Dict, Any, Optional, Type, Union
 
 from .layout import (
     LayoutUpdate,
@@ -107,7 +107,7 @@ class SharedStateRenderer(SingleStateRenderer):
     :meth:`SharedStateRenderer.run`
     """
 
-    _render_task: asyncio.Task
+    _render_task: "Union[asyncio.Task[Any], asyncio.Future[Any]]"
 
     def __init__(self, layout: AbstractLayout) -> None:
         super().__init__(layout)
@@ -118,13 +118,15 @@ class SharedStateRenderer(SingleStateRenderer):
         self._active = False
         self._joining = False
 
-    async def start(self):
+    async def start(self) -> None:
         await self.__aenter__()
+        return None
 
-    async def join(self):
+    async def join(self) -> None:
         await self.__aexit__(None, None, None)
+        return None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "SingleStateRenderer":
         if self._active:
             raise RuntimeError("Renderer already active")
         self._active = True
@@ -152,6 +154,7 @@ class SharedStateRenderer(SingleStateRenderer):
         finally:
             self._active = False
             self._joining = False
+        return None
 
     async def run(
         self, send: SendCoroutine, recv: RecvCoroutine, context: str, join: bool = False

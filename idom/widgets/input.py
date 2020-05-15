@@ -95,7 +95,6 @@ class Input(Generic[_InputType], AbstractElement):
     def _set_str_value(self, value: str) -> None:
         self._display_value = value
         super().update()
-        print(value)
         if not value and self._ignore_empty:
             return
         self._value = self._cast(value)

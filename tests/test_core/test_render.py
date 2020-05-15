@@ -70,6 +70,4 @@ async def test_shared_state_renderer():
         await renderer.run(send_1, recv_1, "1")
         await renderer.run(send_2, recv_2, "2")
 
-    # There's an extra 0 here since the render has to be sure that all
-    # views get the current model state the first time they connect.
-    assert data_sent_2 == [0, 0, 1, 2, 3, 4]
+    assert data_sent_2 == [0, 1, 2, 3, 4]

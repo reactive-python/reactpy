@@ -32,7 +32,7 @@ class JupyterWigdet:
         self.path = parsed_url.path
         self.query = urlencode(query or {})
 
-    def _script(self, mount_id):
+    def _script(self, mount_id: str) -> str:
         return f"""
         <script type="module">
             const loc = {self.location};

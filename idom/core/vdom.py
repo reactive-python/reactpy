@@ -11,15 +11,22 @@ class ImportSourceDict(TypedDict):
     fallback: Any
 
 
-class VdomDict(TypedDict, total=False):  # fmt: off
-    tagName: Optional[str]  # noqa
+class _VdomDictOptional(TypedDict, total=False):
     children: Union[List[Any], Tuple[Any, ...]]  # noqa
     attributes: Dict[str, Any]  # noqa
     eventHandlers: EventsMapping  # noqa
     importSource: ImportSourceDict  # noqa
 
 
-_TagArg = Optional[str]
+class _VdomDictRequired(TypedDict, total=True):
+    tagName: str  # noqa
+
+
+class VdomDict(_VdomDictRequired, _VdomDictOptional):
+    """A VDOM dictionary"""
+
+
+_TagArg = str
 _AttributesAndChildrenArg = Union[Mapping[str, Any], Iterable[Any]]
 _EventHandlersArg = Optional[EventsMapping]
 _ImportSourceArg = Optional[ImportSourceDict]
@@ -52,12 +59,15 @@ def vdom(
 
     began_children = False
     for argument in attributes_and_children:
-        if isinstance(argument, dict):
+        if isinstance(argument, dict) and "tagName" not in argument:
             if began_children:
                 raise ValueError("Attribute dictionaries should precede child lists.")
             attributes.update(argument)
-        else:
+        elif isinstance(argument, (list, tuple)):
             children.extend(argument)
+            began_children = True
+        else:
+            children.append(argument)
             began_children = True
 
     if attributes:
@@ -112,3 +122,6 @@ def make_vdom_constructor(tag: str, allow_children: bool = True) -> VdomDictCons
     constructor.__doc__ = f"""Create a new ``<{tag}/>`` - returns :term:`VDOM`."""
 
     return constructor
+
+
+00

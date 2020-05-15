@@ -3,10 +3,10 @@ Javascript Modules
 
 .. note::
 
-    This is recent feature of IDOM. If you have a problem following this tutorial
+    This is a recent feature of IDOM. If you have a problem following this tutorial
     `post an issue <https://github.com/rmorshea/idom/issues>`__.
 
-While IDOM is a great tool for displaying HTML and respond to browser events with
+While IDOM is a great tool for displaying HTML and responding to browser events with
 pure Python, there are other projects which already allow you to do this inside
 `Jupyter Notebooks <https://ipywidgets.readthedocs.io/en/latest/examples/Widget%20Basics.html>`__
 or in
@@ -14,34 +14,42 @@ or in
 The real power of IDOM comes from its ability to seemlessly leverage the existing
 ecosystem of
 `React components <https://reactjs.org/docs/components-and-props.html>`__.
+
 So long as your library of interest is an
 `ES Module <https://hacks.mozilla.org/2018/03/es-modules-a-cartoon-deep-dive/>`__
 you could install using
 `Snowpack <https://www.snowpack.dev/>`__
-you can use it with IDOM (we're working to support non-standard packages too) [GH-166]_.
+you can use it with IDOM
 You can even define your own Javascript modules which use these third party Javascript
 packages.
 
+.. note::
+
+    We're working to support non-standard packages too [GH166]_.
 
 Installing React Components
 ---------------------------
 
-.. note::
+Before you start:
 
-    - Be sure that you've installed `npm <https://www.npmjs.com/get-npm>`__.
+- Be sure that you've installed `npm <https://www.npmjs.com/get-npm>`__.
 
-    - We're assuming the presence of a :ref:`Display Function` for our examples.
+- We're assuming the presence of a :ref:`Display Function` for our examples.
 
 Once you've done this you can get started right away. In this example we'll be using a
 charting library for React called `Victory <https://formidable.com/open-source/victory/>`__.
 Installing it in IDOM is quite simple. Just create a :class:`~idom.widgets.utils.Module`,
-tell it what to install and specify ``install=True`` (we're working on a CLI for this) [GH-167]_:
+tell it what to install and specify ``install=True``.
 
 .. code-block::
 
     import idom
     # this may take a minute to download and install
     victory = idom.Module(name="victory", install=True)
+
+.. note::
+
+    We're working on a CLI for this [GH167]_
 
 You can install a specific version using ``install="victory@34.1.3`` or any other
 standard javascript dependency specifier. Alternatively, if you need to access a module
