@@ -27,7 +27,7 @@ class VdomDict(_VdomDictRequired, _VdomDictOptional):
 
 
 _TagArg = str
-_AttributesAndChildrenArg = Union[Mapping[str, Any], Iterable[Any]]
+_AttributesAndChildrenArg = Union[Mapping[str, Any], str, Iterable[Any], Any]
 _EventHandlersArg = Optional[EventsMapping]
 _ImportSourceArg = Optional[ImportSourceDict]
 
@@ -59,11 +59,15 @@ def vdom(
 
     began_children = False
     for argument in attributes_and_children:
-        if isinstance(argument, dict) and "tagName" not in argument:
-            if began_children:
-                raise ValueError("Attribute dictionaries should precede child lists.")
-            attributes.update(argument)
-        elif isinstance(argument, (list, tuple)):
+        if isinstance(argument, Mapping):
+            if "tagName" not in argument:
+                if began_children:
+                    raise ValueError("Attribute dictionaries should precede children.")
+                attributes.update(argument)
+            else:
+                children.append(argument)
+                began_children = True
+        elif not isinstance(argument, str) and isinstance(argument, Iterable):
             children.extend(argument)
             began_children = True
         else:

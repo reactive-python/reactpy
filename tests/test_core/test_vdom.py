@@ -68,6 +68,14 @@ async def handler(event):
             idom.vdom("div", {"tagName": "div"}),
             {"tagName": "div", "children": [{"tagName": "div"}]},
         ),
+        (
+            idom.vdom("div", (i for i in range(3))),
+            {"tagName": "div", "children": [0, 1, 2]},
+        ),
+        (
+            idom.vdom("div", map(lambda x: x ** 2, [1, 2, 3])),
+            {"tagName": "div", "children": [1, 4, 9]},
+        ),
     ],
 )
 def test_simple_node_construction(actual, expected):
