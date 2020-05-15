@@ -5,7 +5,6 @@ from distutils.command.build import build  # type: ignore
 from distutils.command.sdist import sdist  # type: ignore
 from setuptools.command.develop import develop
 import os
-import sys
 import subprocess
 
 # the name of the project
@@ -34,6 +33,8 @@ package = {
     "keywords": ["interactive", "widgets", "DOM", "React"],
     "include_package_data": True,
     "zip_safe": False,
+    "setup_requires": ["setuptools_scm"],
+    "use_scm_version": True,
 }
 
 
@@ -68,22 +69,6 @@ with open(extra_requirements_path, "r") as f:
             msg = "No '# extra=<name>' header before requirements in %r"
             raise ValueError(msg % extra_requirements_path)
 package["extras_require"] = extra_requirements
-
-
-# -----------------------------------------------------------------------------
-# Library Version
-# -----------------------------------------------------------------------------
-
-
-with open(os.path.join(root, "__init__.py")) as f:
-    for line in f.read().split("\n"):
-        if line.startswith("__version__ = "):
-            version = eval(line.split("=", 1)[1])
-            break
-    else:
-        print("No version found in __init__.py")
-        sys.exit(1)
-package["version"] = version
 
 
 # -----------------------------------------------------------------------------
