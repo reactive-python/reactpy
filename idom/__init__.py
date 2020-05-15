@@ -1,4 +1,7 @@
-__version__ = "0.7.0"
+from pkg_resources import (
+    get_distribution as _get_distribution,
+    DistributionNotFound as _DistributionNotFound,
+)
 
 from . import server
 
@@ -14,6 +17,12 @@ from .widgets.display import display
 from .widgets.image import Image
 
 from .tools import Var, html_to_vdom
+
+try:
+    __version__ = _get_distribution(__name__).version
+except _DistributionNotFound:
+    # package is not installed
+    pass
 
 # try to automatically setup the dialect's import hook
 try:

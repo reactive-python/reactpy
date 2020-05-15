@@ -3,3 +3,4 @@ pre-commit
 notebook
 twine
 wheel
+setuptools_scm
