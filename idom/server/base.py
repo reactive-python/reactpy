@@ -1,5 +1,5 @@
 import abc
-from asyncio import AbstractEventLoop
+from asyncio import AbstractEventLoop, new_event_loop, set_event_loop, get_event_loop
 from typing import TypeVar, Dict, Any, Tuple, Type, Optional, Generic, TypeVar
 from threading import Thread
 
@@ -30,6 +30,7 @@ class AbstractRenderServer(Generic[_App, _Config]):
         :meth:`AbstractServerExtension.register`
     """
 
+    _loop: AbstractEventLoop
     _renderer_type: Type[AbstractRenderer]
     _layout_type: Type[AbstractLayout] = Layout
 
@@ -44,6 +45,10 @@ class AbstractRenderServer(Generic[_App, _Config]):
         self._config = self._init_config()
 
     @property
+    def loop(self) -> AbstractEventLoop:
+        return self._loop
+
+    @property
     def application(self) -> _App:
         if self._app is None:
             raise RuntimeError("No application registered.")
@@ -51,6 +56,7 @@ class AbstractRenderServer(Generic[_App, _Config]):
 
     def run(self, *args: Any, **kwargs: Any) -> Any:
         """Run as a standalone application."""
+        self._loop = get_event_loop()
         if self._app is None:
             app = self._default_application(self._config)
             self.register(app)
@@ -61,7 +67,13 @@ class AbstractRenderServer(Generic[_App, _Config]):
     def daemon(self, *args: Any, **kwargs: Any) -> Thread:
         """Run the standalone application in a seperate thread."""
         self._daemonized = True
-        thread = Thread(target=self.run, args=args, kwargs=kwargs, daemon=True)
+
+        def run_in_thread() -> None:
+            set_event_loop(new_event_loop())
+            self.run(*args, **kwargs)
+            return None
+
+        thread = Thread(target=run_in_thread, daemon=True)
         thread.start()
         return thread
 

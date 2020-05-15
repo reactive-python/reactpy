@@ -1,7 +1,6 @@
 import logging
 import inspect
 import time
-from socket import socket
 from typing import Callable, Any, Type, Tuple, Iterator, Iterable, Union
 
 from loguru import logger
@@ -17,7 +16,7 @@ import pyalect.builtins.pytest  # noqa
 
 import idom
 from idom.core import ElementConstructor, AbstractElement
-from idom.server import hotswap_server, AbstractRenderServer
+from idom.server import hotswap_server, AbstractRenderServer, find_available_port
 from idom.server.sanic import PerClientState
 
 
@@ -164,7 +163,9 @@ def mount_and_server(
 
     The ``mount`` and ``server`` fixtures use this.
     """
-    return hotswap_server(server_type, host, port, run_options={"debug": True})
+    return hotswap_server(
+        server_type, host, port, run_options={"debug": True}, sync_views=False
+    )
 
 
 @pytest.fixture(scope="module")
@@ -191,9 +192,7 @@ def host() -> str:
 @pytest.fixture(scope="module")
 def port(host: str) -> int:
     """The port for the IDOM server setup by ``mount_and_server``"""
-    sock = socket()
-    sock.bind((host, 0))
-    return sock.getsockname()[1]
+    return find_available_port(host)
 
 
 @pytest.fixture(scope="session")

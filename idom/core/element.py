@@ -86,7 +86,7 @@ class AbstractElement(abc.ABC):
 
     __slots__ = ["_layout"]
 
-    if not hasattr(abc.ABC, "__weakref__"):
+    if not hasattr(abc.ABC, "__weakref__"):  # pragma: no cover
         __slots__.append("__weakref__")
 
     def __init__(self) -> None:
@@ -211,10 +211,8 @@ class Element(AbstractElement):
 
             async def animation() -> None:
                 while True:
-                    await function(cancel_animation_future)
-                    # we need another await here in order to catch
-                    # a cancellation call (not sure why though)
                     await pacer.wait()
+                    await function(cancel_animation_future)
 
             # we store this future for later so we can cancel it
             future = asyncio.ensure_future(animation())
@@ -240,14 +238,13 @@ class Element(AbstractElement):
         # load update and reset for next render
         state = self._state
 
-        if state is None:
-            raise RuntimeError(f"{self} cannot render - element has no state.")
-
         for name in self._cross_update_parameters:
             if name not in state:
+                # carry state across update calls implicitely
                 if name in self._cross_update_state:
                     state[name] = self._cross_update_state[name]
             else:
+                # cross-update state parameter was set explicitely
                 self._cross_update_state[name] = state[name]
 
         self._state_updated = False
@@ -289,15 +286,15 @@ class Element(AbstractElement):
         return result
 
     def __repr__(self) -> str:
-        qualname = getattr(self._function, "__qualname__", None)
-        if qualname is not None:
-            return "%s(%s)" % (qualname, self.id)
-        else:
-            return "%s(%r, %r)" % (type(self).__name__, self._function, self.id)
+        total_state = {**self._cross_update_state, **self._state}
+        state = ", ".join(f"{k}={v!r}" for k, v in total_state.items())
+        return f"{self._function.__qualname__}({self.id}, {state})"
 
 
 class FramePacer:
     """Simple utility for pacing frames in an animation loop."""
+
+    __slots__ = "_rate", "_last"
 
     def __init__(self, rate: float):
         self._rate = rate

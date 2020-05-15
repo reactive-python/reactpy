@@ -65,3 +65,27 @@ def test_remove_event_handlers():
     assert my_callback in events
     events.remove(my_callback)
     assert my_callback not in events
+
+
+def test_simple_click_event(driver, display):
+    clicked = idom.Var(False)
+
+    @idom.element
+    async def Button(self):
+        async def on_click(event):
+            clicked.set(True)
+            self.update()
+
+        if not clicked.get():
+            return idom.html.button({"onClick": on_click, "id": "click"}, ["Click Me!"])
+        else:
+            return idom.html.p({"id": "complete"}, ["Complete"])
+
+    display(Button)
+
+    button = driver.find_element_by_id("click")
+    button.click()
+    driver.find_element_by_id("complete")
+
+    # we care what happens in the final delete when there's no value
+    assert clicked.get()

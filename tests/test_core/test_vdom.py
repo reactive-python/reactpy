@@ -54,6 +54,20 @@ async def handler(event):
             idom.vdom("div", event_handlers=fake_events),
             {"tagName": "div", "eventHandlers": fake_events},
         ),
+        (
+            idom.vdom("div", idom.html.h1("hello"), idom.html.h2("world")),
+            {
+                "tagName": "div",
+                "children": [
+                    {"tagName": "h1", "children": ["hello"]},
+                    {"tagName": "h2", "children": ["world"]},
+                ],
+            },
+        ),
+        (
+            idom.vdom("div", {"tagName": "div"}),
+            {"tagName": "div", "children": [{"tagName": "div"}]},
+        ),
     ],
 )
 def test_simple_node_construction(actual, expected):

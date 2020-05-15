@@ -106,7 +106,7 @@ class Layout(AbstractLayout):
         super().__init__(root, loop)
         self._element_state: Dict[str, Dict[str, Any]] = {}
         self._event_handlers: Dict[str, EventHandler] = {}
-        self._rendering_queue: FutureQueue[LayoutUpdate] = FutureQueue()
+        self._rendering_queue: FutureQueue[LayoutUpdate] = FutureQueue(self.loop)
         self.update(root)
 
     async def trigger(self, event: LayoutEvent) -> None:
@@ -297,24 +297,27 @@ _FQT = TypeVar("_FQT")
 class FutureQueue(Generic[_FQT]):
     """A queue which returns the result of futures as they complete."""
 
-    def __init__(self) -> None:
-        self._queue: asyncio.Queue["asyncio.Future[_FQT]"] = asyncio.Queue()
+    def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
+        self._loop = loop
+        self._queue: asyncio.Queue[Awaitable[_FQT]] = asyncio.Queue(loop=self._loop)
 
-    def put(self, awaitable: Awaitable[_FQT]) -> "asyncio.Future[_FQT]":
+    def put(self, awaitable: Awaitable[_FQT]) -> None:
         """Put an awaitable in the queue
 
         The result will be returned by a call to :meth:`FutureQueue.get` only
         when the awaitable has completed.
         """
 
-        async def wrapper() -> _FQT:
+        async def wrapper() -> None:
+            future = asyncio.ensure_future(awaitable)
             try:
-                return await awaitable
+                await future
             finally:
-                self._queue.put_nowait(future)
+                await self._queue.put(future)
+            return None
 
-        future = asyncio.ensure_future(wrapper())
-        return future
+        asyncio.run_coroutine_threadsafe(wrapper(), self._loop)
+        return None
 
     async def get(self) -> _FQT:
         """Get the result of a queued awaitable that has completed."""

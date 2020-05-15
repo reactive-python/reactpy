@@ -4,7 +4,7 @@ import subprocess
 from loguru import logger
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional, List, Union, Dict
+from typing import Optional, List, Union, Dict, Any
 
 
 CLIENT_DIR = Path(__file__).parent
@@ -73,7 +73,7 @@ def restore() -> None:
     _run_subprocess(["npm", "run", "snowpack"], CLIENT_DIR)
 
 
-def _package_json():
+def _package_json() -> Dict[str, Any]:
     with (CLIENT_DIR / "package.json").open("r") as f:
         dependencies = json.load(f)["dependencies"]
 
@@ -91,7 +91,7 @@ def _package_json():
     }
 
 
-def _run_subprocess(args: List[str], cwd: Union[str, Path]):
+def _run_subprocess(args: List[str], cwd: Union[str, Path]) -> None:
     try:
         subprocess.run(
             args, cwd=cwd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
@@ -100,6 +100,7 @@ def _run_subprocess(args: List[str], cwd: Union[str, Path]):
         if error.stderr is not None:
             logger.error(error.stderr.decode())
         raise
+    return None
 
 
 def _find_module_os_path(path: Path, name: str) -> Optional[Path]:

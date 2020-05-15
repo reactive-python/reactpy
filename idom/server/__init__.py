@@ -1,5 +1,6 @@
 from importlib import import_module
-from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar
+from socket import socket
+from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar, cast
 
 from idom.core.element import ElementConstructor
 from idom.widgets.utils import multiview, hotswap
@@ -23,13 +24,20 @@ for name in ["sanic"]:
 _S = TypeVar("_S", bound=AbstractRenderServer[Any, Any])
 
 
+def find_available_port(host: str) -> int:
+    """Get a port that's available for the given host"""
+    sock = socket()
+    sock.bind((host, 0))
+    return cast(int, sock.getsockname()[1])
+
+
 def multiview_server(
     server: Type[_S],
     host: str,
     port: int,
     server_options: Optional[Any] = None,
     run_options: Optional[Dict[str, Any]] = None,
-) -> Tuple[Callable[[ElementConstructor], int], _S]:
+) -> Tuple[Callable[[ElementConstructor], str], _S]:
     """Set up a server where views can be dynamically added.
 
     In other words this allows the user to work with IDOM in an imperative manner.
@@ -60,6 +68,7 @@ def hotswap_server(
     port: int,
     server_options: Optional[Any] = None,
     run_options: Optional[Dict[str, Any]] = None,
+    sync_views: bool = True,
 ) -> Tuple[Callable[[ElementConstructor], None], _S]:
     """Set up a server where views can be dynamically swapped out.
 
@@ -73,12 +82,13 @@ def hotswap_server(
         port: The server port number
         server_options: Value passed to :meth:`AbstractRenderServer.configure`
         run_options: Keyword args passed to :meth:`AbstractRenderServer.daemon`
+        sync_views: Whether to update all displays with newly mounted elements
 
     Returns:
         The server instance and a function for swapping views.
         See :func:`idom.widgets.common.hotswap` for details.
     """
-    mount, element = hotswap(shared=True)
+    mount, element = hotswap(shared=sync_views)
     server_instance = server(element)
     server_instance.configure(server_options)
     server_instance.daemon(host, port, **(run_options or {}))

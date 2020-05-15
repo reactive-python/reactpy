@@ -57,8 +57,8 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
                 lambda r: response.redirect("/client/favicon.ico")
             )
 
-        @app.route(url_prefix + "/")
-        def redirect_to_index(request):
+        @app.route(url_prefix + "/")  # type: ignore
+        def redirect_to_index(request: request.Request) -> response.HTTPResponse:
             return response.redirect(app.url_for("_client_route", path="index.html"))
 
         app.websocket(url_prefix + "/stream")(self._stream_route)
@@ -71,7 +71,6 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
         else:
             # copied from:
             # https://github.com/huge-success/sanic/blob/master/examples/run_async_advanced.py
-            asyncio.set_event_loop(asyncio.new_event_loop())
             serv_coro = app.create_server(*args, **kwargs, return_asyncio_server=True)
             loop = asyncio.get_event_loop()
             serv_task = asyncio.ensure_future(serv_coro, loop=loop)
