@@ -3,6 +3,7 @@ import inspect
 import time
 from typing import Callable, Any, Type, Tuple, Iterator, Iterable, Union
 
+import sanic
 from loguru import logger
 import pytest
 from _pytest.logging import caplog as _caplog, LogCaptureFixture  # noqa
@@ -63,21 +64,30 @@ def caplog(_caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
 
 @pytest.fixture
 def display(
+    driver: Chrome,
     driver_get: Callable[[str], None],
     server: AbstractRenderServer,
     mount: Callable[..., None],
     host: str,
     port: int,
+    display_id: idom.Var[int],
     last_server_error: idom.Var[Exception],
 ) -> Iterator[Callable[[Union[ElementConstructor, AbstractElement], str], None]]:
     """A function for displaying an element using the current web driver."""
 
-    def display(element: Union[ElementConstructor, AbstractElement], query=""):
-        if not callable(element):
-            mount(lambda: element)
-        else:
-            mount(element)
+    def display(
+        element: Union[ElementConstructor, AbstractElement],
+        query: str = "",
+        check_mount: bool = True,
+    ):
+        d_id = display_id.set(display_id.value + 1)
+        display_attrs = {"id": f"display-{d_id}"}
+        element_constructor = element if callable(element) else lambda: element
+        mount(lambda: idom.html.div(display_attrs, element_constructor()))
         driver_get(query)
+        if check_mount:
+            # Ensure element was actually mounted.
+            driver.find_element_by_id(f"display-{d_id}")
 
     try:
         yield display
@@ -108,6 +118,11 @@ def driver_get(driver: Chrome, host: str, port: int) -> Callable[[str], None]:
 def driver_wait(driver: Chrome, driver_timeout: float) -> WebDriverWait:
     """A :class:`WebDriverWait` object for the current web driver"""
     return WebDriverWait(driver, driver_timeout)
+
+
+@pytest.fixture(scope="session")
+def display_id() -> idom.Var[int]:
+    return idom.Var(0)
 
 
 @pytest.fixture(scope="session")
@@ -157,6 +172,7 @@ def server(
 
 @pytest.fixture(scope="module")
 def mount_and_server(
+    application: sanic.Sanic,
     server_type: Type[AbstractRenderServer],
     host: str,
     port: int,
@@ -166,14 +182,21 @@ def mount_and_server(
 
     The ``mount`` and ``server`` fixtures use this.
     """
-    return hotswap_server(
+    mount, server = hotswap_server(
         server_type,
         host,
         port,
         server_options={"cors": True, "last_server_error": last_server_error},
         run_options={"debug": True},
         sync_views=False,
+        app=application,
     )
+    return mount, server
+
+
+@pytest.fixture(scope="module")
+def application():
+    return sanic.Sanic()
 
 
 class ServerWithErrorCatch(PerClientState):

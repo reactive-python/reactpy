@@ -41,18 +41,18 @@ class Var(Generic[_R]):
             return idom.vdom("button", "Use" eventHandlers=events)
     """
 
-    __slots__ = ("_current",)
+    __slots__ = ("value",)
 
     def __init__(self, value: _R) -> None:
-        self._current = value
+        self.value = value
 
     def set(self, new: _R) -> _R:
-        old = self._current
-        self._current = new
+        old = self.value
+        self.value = new
         return old
 
     def get(self) -> _R:
-        return self._current
+        return self.value
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Var):

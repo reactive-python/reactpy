@@ -9,21 +9,15 @@ import idom
 from idom.server import find_available_port
 from idom.widgets.jupyter import JupyterDisplay
 
-from tests.conftest import ServerWithErrorCatch
-
 
 @pytest.fixture(scope="module")
-def server_type():
-    class ServerWithJupyterWidgetClient(ServerWithErrorCatch):
-        def _setup_application(self, app, config):
-            super()._setup_application(app, config)
+def application(application):
+    @application.route("/__test_jupyter_widget_client__")
+    async def jupyter_widget_client(request):
+        widget = JupyterDisplay()
+        return response.html(widget._repr_html_())
 
-            @app.route("/__test_jupyter_widget_client__")
-            async def jupyter_widget_client(request):
-                widget = JupyterDisplay()
-                return response.html(widget._repr_html_())
-
-    return ServerWithJupyterWidgetClient
+    return application
 
 
 def test_jupyter_display_repr():

@@ -37,6 +37,7 @@ def multiview_server(
     port: int,
     server_options: Optional[Any] = None,
     run_options: Optional[Dict[str, Any]] = None,
+    app: Optional[Any] = None,
 ) -> Tuple[Callable[[ElementConstructor], str], _S]:
     """Set up a server where views can be dynamically added.
 
@@ -50,6 +51,7 @@ def multiview_server(
         port: The server port number
         server_options: Value passed to :meth:`AbstractRenderServer.configure`
         run_options: Keyword args passed to :meth:`AbstractRenderServer.daemon`
+        app: Optionally provide a prexisting application to register to
 
     Returns:
         The server instance and a function for adding views.
@@ -58,6 +60,8 @@ def multiview_server(
     mount, element = multiview()
     server_instance = server(element)
     server_instance.configure(server_options)
+    if app is not None:
+        server_instance.register(app)
     server_instance.daemon(host, port, **(run_options or {}))
     return mount, server_instance
 
@@ -69,6 +73,7 @@ def hotswap_server(
     server_options: Optional[Any] = None,
     run_options: Optional[Dict[str, Any]] = None,
     sync_views: bool = True,
+    app: Optional[Any] = None,
 ) -> Tuple[Callable[[ElementConstructor], None], _S]:
     """Set up a server where views can be dynamically swapped out.
 
@@ -83,6 +88,7 @@ def hotswap_server(
         server_options: Value passed to :meth:`AbstractRenderServer.configure`
         run_options: Keyword args passed to :meth:`AbstractRenderServer.daemon`
         sync_views: Whether to update all displays with newly mounted elements
+        app: Optionally provide a prexisting application to register to
 
     Returns:
         The server instance and a function for swapping views.
@@ -91,5 +97,7 @@ def hotswap_server(
     mount, element = hotswap(shared=sync_views)
     server_instance = server(element)
     server_instance.configure(server_options)
+    if app is not None:
+        server_instance.register(app)
     server_instance.daemon(host, port, **(run_options or {}))
     return mount, server_instance

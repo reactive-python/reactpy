@@ -54,7 +54,7 @@ class AbstractRenderServer(Generic[_App, _Config]):
             raise RuntimeError("No application registered.")
         return self._app
 
-    def run(self, *args: Any, **kwargs: Any) -> Any:
+    def run(self, *args: Any, **kwargs: Any) -> None:
         """Run as a standalone application."""
         self._loop = get_event_loop()
         if self._app is None:
@@ -70,14 +70,13 @@ class AbstractRenderServer(Generic[_App, _Config]):
 
         def run_in_thread() -> None:
             set_event_loop(new_event_loop())
-            self.run(*args, **kwargs)
-            return None
+            return self.run(*args, **kwargs)
 
         thread = Thread(target=run_in_thread, daemon=True)
         thread.start()
         return thread
 
-    def register(self: _Self, app: _App) -> _Self:
+    def register(self: _Self, app: Optional[_App]) -> _Self:
         """Register this as an extension."""
         self._setup_application(app, self._config)
         self._app = app
@@ -110,7 +109,7 @@ class AbstractRenderServer(Generic[_App, _Config]):
     @abc.abstractmethod
     def _run_application(
         self, app: _App, config: _Config, args: Tuple[Any, ...], kwargs: Dict[str, Any]
-    ) -> Any:
+    ) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -123,14 +122,14 @@ class AbstractRenderServer(Generic[_App, _Config]):
     ) -> None:
         raise NotImplementedError()
 
-    def _update_config(self, old: _Config, new: _Config) -> _Config:
+    def _update_config(self, old: _Config, new: _Config) -> _Config:  # pragma: no cover
         """Return the new configuration options
 
         Parameters:
             old: The existing configuration options
             new: The new configuration options
         """
-        return new
+        raise NotImplementedError()
 
     def _make_renderer(
         self, parameters: Dict[str, Any], loop: Optional[AbstractEventLoop] = None,
