@@ -157,29 +157,39 @@ def server(
 
 @pytest.fixture(scope="module")
 def mount_and_server(
-    server_type: Type[AbstractRenderServer], host: str, port: int
+    server_type: Type[AbstractRenderServer],
+    host: str,
+    port: int,
+    last_server_error: idom.Var[Exception],
 ) -> Tuple[Callable[..., None], AbstractRenderServer]:
     """An IDOM layout mount function and server as a tuple
 
     The ``mount`` and ``server`` fixtures use this.
     """
     return hotswap_server(
-        server_type, host, port, run_options={"debug": True}, sync_views=False
+        server_type,
+        host,
+        port,
+        server_options={"cors": True, "last_server_error": last_server_error},
+        run_options={"debug": True},
+        sync_views=False,
     )
 
 
+class ServerWithErrorCatch(PerClientState):
+    """A per-client-state server that updates the ``last_server_error`` fixture"""
+
+    async def _stream_route(self, request, socket):
+        self._config["last_server_error"].set(None)
+        try:
+            await super()._stream_route(request, socket)
+        except Exception as e:
+            self._config["last_server_error"].set(e)
+
+
 @pytest.fixture(scope="module")
-def server_type(last_server_error: idom.Var[Exception]) -> Type[AbstractRenderServer]:
+def server_type() -> Type[AbstractRenderServer]:
     """The type of server the ``mount_and_server`` fixture will use to initialize a server"""
-
-    class ServerWithErrorCatch(PerClientState):
-        async def _stream_route(self, request, socket):
-            last_server_error.set(None)
-            try:
-                await super()._stream_route(request, socket)
-            except Exception as e:
-                last_server_error.set(e)
-
     return ServerWithErrorCatch
 
 

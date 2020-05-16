@@ -4,24 +4,12 @@ from typing import Any, Optional, Dict
 from urllib.parse import urlparse, urlencode
 
 
-def display(kind: str, *args: Any, **kwargs: Any) -> Any:
-    """Display an IDOM layout.
-
-    Parameters:
-        kind: how output should be displayed.
-        args: Positional arguments passed to the output method.
-        kwargs: Keyword arguments passed to the output method.
-    """
-    wtype = {"jupyter": JupyterWigdet}[kind]
-    return wtype(*args, **kwargs)
-
-
-class JupyterWigdet:
+class JupyterDisplay:
     """Output for IDOM within a Jupyter Notebook."""
 
     __slots__ = ("location", "path", "query")
 
-    def __init__(self, url: str, query: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, url: str = "", query: Optional[Dict[str, Any]] = None) -> None:
         parsed_url = urlparse(url)
         if not parsed_url.netloc:
             self.location = "window.location"
@@ -63,4 +51,4 @@ class JupyterWigdet:
         """
 
     def __repr__(self) -> str:
-        return "%s(%r)" % (type(self).__name__, self.path)
+        return f"{type(self).__name__}({self.location}, path={self.path!r})"

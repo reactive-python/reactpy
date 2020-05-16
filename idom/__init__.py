@@ -13,14 +13,14 @@ from .core.vdom import vdom
 from .widgets.input import Input
 from .widgets.html import html
 from .widgets.utils import Module, Import, hotswap, multiview
-from .widgets.display import display
+from .widgets.jupyter import JupyterDisplay
 from .widgets.image import Image
 
 from .tools import Var, html_to_vdom
 
 try:
     __version__ = _get_distribution(__name__).version
-except _DistributionNotFound:
+except _DistributionNotFound:  # pragma: no cover
     # package is not installed
     pass
 
@@ -55,7 +55,7 @@ __all__ = [
     "Import",
     "hotswap",
     "multiview",
-    "display",
+    "JupyterDisplay",
     "Input",
     "html_to_vdom",
 ]

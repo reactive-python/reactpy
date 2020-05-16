@@ -6,3 +6,4 @@ black
 flake8
 pep8-naming
 selenium
+flask
