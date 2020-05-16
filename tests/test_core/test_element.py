@@ -116,7 +116,8 @@ def test_animation(driver, display):
 
         return idom.html.p({"id": f"counter-{count}"}, [f"Count: {count}"])
 
-    display(Counter)
+    # no check mount because the element won't display till we put something in the queue
+    display(Counter, check_mount=False)
 
     for i in range(6):
         count_queue.put(i)
