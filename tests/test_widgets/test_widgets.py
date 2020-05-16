@@ -6,7 +6,7 @@ import pytest
 import idom
 from selenium.webdriver.common.keys import Keys
 
-from .driver_utils import send_keys
+from tests.driver_utils import send_keys
 
 
 def test_input(driver, driver_wait, display):

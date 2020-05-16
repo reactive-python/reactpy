@@ -5,8 +5,16 @@ from idom.server import multiview_server
 
 
 @pytest.fixture(scope="module")
-def mount_and_server(server_type, host, port):
-    return multiview_server(server_type, host, port, run_options={"debug": True})
+def mount_and_server(
+    server_type, host, port, last_server_error,
+):
+    return multiview_server(
+        server_type,
+        host,
+        port,
+        server_options={"last_server_error": last_server_error},
+        run_options={"debug": True},
+    )
 
 
 def test_multiview_server(driver_get, driver, mount, server):
