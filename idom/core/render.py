@@ -2,7 +2,7 @@ import abc
 import asyncio
 from anyio import create_task_group
 from anyio.exceptions import ExceptionGroup
-from loguru import logger
+
 
 from types import TracebackType
 from typing import Callable, Awaitable, Dict, Any, Optional, Type, Union
@@ -10,7 +10,6 @@ from typing import Callable, Awaitable, Dict, Any, Optional, Type, Union
 from .layout import (
     LayoutUpdate,
     LayoutEvent,
-    RenderError,
     AbstractLayout,
     AbstractLayout,
 )
@@ -83,14 +82,7 @@ class SingleStateRenderer(AbstractRenderer):
     """
 
     async def _outgoing(self, layout: AbstractLayout, context: Any) -> Dict[str, Any]:
-        try:
-            src, new, old = await layout.render()
-        except RenderError as error:
-            if error.partial_render is None:
-                raise
-            logger.exception("Render failed")
-            src, new, old = error.partial_render
-
+        src, new, old, error = await layout.render()
         return {"root": layout.root, "src": src, "new": new, "old": old}
 
     async def _incoming(
@@ -115,7 +107,6 @@ class SharedStateRenderer(SingleStateRenderer):
         self._updates: Dict[str, asyncio.Queue[LayoutUpdate]] = {}
         self._task_group = create_task_group()
         self._join_event = asyncio.Event()
-        self._active = False
         self._joining = False
 
     async def start(self) -> None:
@@ -127,9 +118,6 @@ class SharedStateRenderer(SingleStateRenderer):
         return None
 
     async def __aenter__(self) -> "SingleStateRenderer":
-        if self._active:
-            raise RuntimeError("Renderer already active")
-        self._active = True
         await self._task_group.__aenter__()
         self._render_task = asyncio.ensure_future(self._render_loop(), loop=self.loop)
         return self
@@ -152,7 +140,6 @@ class SharedStateRenderer(SingleStateRenderer):
             else:
                 await self._join_event.wait()
         finally:
-            self._active = False
             self._joining = False
         return None
 
@@ -166,14 +153,7 @@ class SharedStateRenderer(SingleStateRenderer):
 
     async def _render_loop(self) -> None:
         while True:
-            try:
-                src, new, old = await self._layout.render()
-            except RenderError as error:
-                if error.partial_render is None:
-                    raise
-                logger.exception("Render failed")
-                src, new, old = error.partial_render
-
+            src, new, old, error = await self._layout.render()
             # add new models to the overall state
             self._models.update(new)
             # remove old ones from the overall state
@@ -181,7 +161,7 @@ class SharedStateRenderer(SingleStateRenderer):
                 del self._models[old_id]
             # append updates to all other contexts
             for queue in self._updates.values():
-                await queue.put(LayoutUpdate(src, new, old))
+                await queue.put(LayoutUpdate(src, new, old, error))
 
     async def _outgoing_loop(self, send: SendCoroutine, context: str) -> None:
         if self._layout.root in self._models:
@@ -196,5 +176,5 @@ class SharedStateRenderer(SingleStateRenderer):
         await super()._outgoing_loop(send, context)
 
     async def _outgoing(self, layout: AbstractLayout, context: str) -> Dict[str, Any]:
-        src, new, old = await self._updates[context].get()
+        src, new, old, error = await self._updates[context].get()
         return {"root": layout.root, "src": src, "new": new, "old": old}

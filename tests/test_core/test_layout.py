@@ -1,7 +1,7 @@
 import pytest
 
 import idom
-from idom.core.layout import RenderError, LayoutUpdate
+from idom.core.layout import LayoutUpdate
 
 from .utils import RenderHistory
 
@@ -30,14 +30,14 @@ async def test_simple_layout():
     element = simple_element("div")
     layout = idom.Layout(element)
 
-    src, new, old = await layout.render()
+    src, new, old, error = await layout.render()
     assert src == element.id
     assert new == {element.id: {"tagName": "div"}}
     assert old == []
 
     element.update("table")
 
-    src, new, old = await layout.render()
+    src, new, old, error = await layout.render()
     assert src == element.id
     assert new == {element.id: {"tagName": "table"}}
     assert old == []
@@ -59,7 +59,7 @@ async def test_nested_element_layout():
 
     layout = idom.Layout(parent_element())
 
-    src, new, old = await layout.render()
+    src, new, old, error = await layout.render()
 
     assert src == history.parent_1.id
     assert new == {
@@ -73,7 +73,7 @@ async def test_nested_element_layout():
 
     history.parent_1.update()
 
-    src, new, old = await layout.render()
+    src, new, old, error = await layout.render()
 
     assert src == history.parent_1.id
     assert new == {
@@ -105,12 +105,10 @@ async def test_layout_render_error_has_partial_update():
 
     layout = idom.Layout(main())
 
-    try:
-        await layout.render()
-    except RenderError as e:
-        error = e
+    update = await layout.render()
+    assert isinstance(update.error, ValueError)
 
-    assert error.partial_render == LayoutUpdate(
+    assert update == LayoutUpdate(
         src=history.main_1.id,
         new={
             history.ok_child_1.id: {
@@ -119,6 +117,7 @@ async def test_layout_render_error_has_partial_update():
             }
         },
         old=[],
+        error=update.error,
     )
 
 
@@ -150,6 +149,7 @@ async def test_render_raw_vdom_dict_with_single_element_object_as_children():
             },
         },
         old=[],
+        error=None,
     )
 
 
