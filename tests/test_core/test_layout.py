@@ -20,6 +20,8 @@ async def test_layout_has_event_loop(event_loop):
 
     layout = idom.Layout(my_element())
     assert layout.loop is event_loop
+    # await the render since creating the layout schedules a render task
+    await layout.render()
 
 
 async def test_simple_layout():

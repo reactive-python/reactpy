@@ -1,8 +1,10 @@
 import asyncio
 
+import pytest
+
 import idom
 from idom.core.layout import Layout, LayoutEvent
-from idom.core.render import SharedStateRenderer, StopRendering
+from idom.core.render import SharedStateRenderer, StopRendering, AbstractRenderer
 
 
 async def test_shared_state_renderer():
@@ -48,3 +50,27 @@ async def test_shared_state_renderer():
         await renderer.run(send_2, recv_2, "2")
 
     assert data_sent_2 == [0, 1, 2, 3, 4]
+
+
+async def test_renderer_run_does_not_supress_non_stop_rendering_errors():
+    class RendererWithBug(AbstractRenderer):
+        async def _outgoing(self, layout, context):
+            raise ValueError("this is a bug")
+
+        async def _incoming(self, layout, context, message):
+            raise ValueError("this is a bug")
+
+    @idom.element
+    async def AnyElement(self):
+        pass
+
+    renderer = RendererWithBug(idom.Layout(AnyElement()))
+
+    async def send(data):
+        pass
+
+    async def recv():
+        return {}
+
+    with pytest.raises(ValueError, match="this is a bug"):
+        await renderer.run(send, recv, None)

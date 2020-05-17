@@ -292,7 +292,7 @@ class FutureQueue(Generic[_FQT]):
 
     def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
         self._loop = loop
-        self._queue: asyncio.Queue[Awaitable[_FQT]] = asyncio.Queue(loop=self._loop)
+        self._queue: asyncio.Queue[asyncio.Future[_FQT]] = asyncio.Queue(loop=loop)
 
     def put(self, awaitable: Awaitable[_FQT]) -> None:
         """Put an awaitable in the queue
