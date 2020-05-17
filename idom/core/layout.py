@@ -1,7 +1,6 @@
 import abc
 import asyncio
 from weakref import ref
-
 from typing import (
     List,
     Dict,
@@ -18,6 +17,8 @@ from typing import (
     Awaitable,
 )
 
+from loguru import logger
+
 from .element import AbstractElement
 from .events import EventHandler
 
@@ -27,10 +28,15 @@ class LayoutUpdate(NamedTuple):
 
     src: str
     """element ID for the update's source"""
+
     new: Dict[str, Dict[str, Any]]
     """maps element IDs to new models"""
+
     old: List[str]
     """element IDs that have been deleted"""
+
+    error: Optional[Exception]
+    """An error which may or may not have occured while rendering"""
 
 
 class LayoutEvent(NamedTuple):
@@ -38,12 +44,6 @@ class LayoutEvent(NamedTuple):
     """The ID of the event handler."""
     data: List[Any]
     """A list of event data passed to the event handler."""
-
-
-class RenderError(Exception):
-    """An error occured while rendering element models."""
-
-    partial_render: Optional[LayoutUpdate] = None
 
 
 class AbstractLayout(abc.ABC):
@@ -131,21 +131,17 @@ class Layout(AbstractLayout):
         new: Dict[str, Dict[str, Any]] = {}
 
         parent = self._element_parent(element)
-        render_error: Optional[RenderError] = None
+        render_error: Optional[Exception] = None
         try:
             async for element_id, model in self._render_element(element, parent):
                 new[element_id] = model
-        except RenderError as error:
+        except Exception as error:
+            logger.exception(f"Failed to render {element}")
             render_error = error
-            raise
         finally:
             # all deleted element ids
             old: List[str] = list(current.difference(self._element_state))
-            update = LayoutUpdate(element.id, new, old)
-
-            # save the partial render
-            if render_error is not None:
-                render_error.partial_render = update
+            update = LayoutUpdate(element.id, new, old, render_error)
 
         # render bundle
         return update
@@ -153,22 +149,19 @@ class Layout(AbstractLayout):
     async def _render_element(
         self, element: "AbstractElement", parent_element_id: Optional[str]
     ) -> AsyncIterator[Tuple[str, Dict[str, Any]]]:
-        try:
-            element_id = element.id
-            if self._has_element_state(element_id):
-                await self._reset_element_state(element)
-            else:
-                await self._create_element_state(element, parent_element_id)
+        element_id = element.id
+        if self._has_element_state(element_id):
+            await self._reset_element_state(element)
+        else:
+            await self._create_element_state(element, parent_element_id)
 
-            model = await element.render()
+        model = await element.render()
 
-            if isinstance(model, AbstractElement):
-                model = {"tagName": "div", "children": [model]}
+        if isinstance(model, AbstractElement):
+            model = {"tagName": "div", "children": [model]}
 
-            async for i, m in self._render_model(model, element_id):
-                yield i, m
-        except Exception as error:
-            raise RenderError(f"Failed to render {element}") from error
+        async for i, m in self._render_model(model, element_id):
+            yield i, m
 
     async def _render_model(
         self, model: Mapping[str, Any], element_id: str

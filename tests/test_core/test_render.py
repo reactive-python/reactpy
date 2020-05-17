@@ -1,31 +1,8 @@
 import asyncio
-import pytest
 
 import idom
-from idom.core.layout import Layout, RenderError, LayoutEvent
-from idom.core.render import SingleStateRenderer, SharedStateRenderer, StopRendering
-
-
-async def test_render_error_without_partial_render_raises():
-    class LayoutWithBadRenderError(Layout):
-        async def render(self):
-            raise RenderError("no partial render")
-
-    @idom.element
-    async def pass_element(self):
-        return idom.html.div()
-
-    bad_layout = LayoutWithBadRenderError(pass_element())
-    renderer = SingleStateRenderer(bad_layout)
-
-    async def send(data):
-        raise StopRendering()
-
-    async def recv():
-        raise StopRendering()
-
-    with pytest.raises(RenderError, match="no partial render"):
-        await renderer.run(send, recv, None)
+from idom.core.layout import Layout, LayoutEvent
+from idom.core.render import SharedStateRenderer, StopRendering
 
 
 async def test_shared_state_renderer():
