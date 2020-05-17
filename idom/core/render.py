@@ -1,7 +1,6 @@
 import abc
 import asyncio
 from anyio import create_task_group
-from anyio.exceptions import ExceptionGroup
 
 
 from types import TracebackType
@@ -44,13 +43,9 @@ class AbstractRenderer(abc.ABC):
         to render new models and execute events respectively.
         """
         try:
-            async with create_task_group() as group:
-                await group.spawn(self._outgoing_loop, send, context)
-                await group.spawn(self._incoming_loop, recv, context)
-        except ExceptionGroup as error:
-            for exc in error.exceptions:
-                if not isinstance(exc, StopRendering):
-                    raise exc
+            await asyncio.gather(
+                self._outgoing_loop(send, context), self._incoming_loop(recv, context)
+            )
         except StopRendering:
             return None
 
