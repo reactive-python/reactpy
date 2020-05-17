@@ -12,14 +12,12 @@
 
 Libraries for creating and controlling interactive web pages with Python 3.6 and above.
 
-* [Python Documentation](https://idom.readthedocs.io/en/latest/)
-* [Javascript Documentation](https://github.com/rmorshea/idom/blob/master/src/js/README.md)
+**Be sure to [read the Documentation](https://idom.readthedocs.io/en/latest/)**
 
 IDOM is still young. If you have ideas or find a bug, be sure to post an
 [issue](https://github.com/rmorshea/idom/issues)
 or create a
 [pull request](https://github.com/rmorshea/idom/pulls). Thanks in advance!
-
 
 <h3>
   <a href="https://mybinder.org/v2/gh/rmorshea/idom/master?filepath=examples%2Fintroduction.ipynb">
@@ -33,13 +31,11 @@ or create a
 Click the badge above to get started! It will take you to a [Jupyter Notebooks](https://jupyter.org/)
 hosted by [Binder](https://mybinder.org/) with some great examples.
 
-
 ### Or Install it Now
 
 ```bash
-pip install idom[sanic]
+pip install idom[stable]
 ```
-
 
 # At a Glance
 
