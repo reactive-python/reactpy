@@ -42,12 +42,22 @@ class AbstractRenderer(abc.ABC):
         This will call :meth:`AbstractLayout.render` and :meth:`AbstractLayout.trigger`
         to render new models and execute events respectively.
         """
+        done, pending = await asyncio.wait(
+            [self._outgoing_loop(send, context), self._incoming_loop(recv, context)],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+
+        if pending:
+            for task in pending:
+                task.cancel()
+            await asyncio.wait(pending, return_when=asyncio.ALL_COMPLETED)
+
         try:
-            await asyncio.gather(
-                self._outgoing_loop(send, context), self._incoming_loop(recv, context)
-            )
+            await asyncio.gather(*done)
         except StopRendering:
-            return None
+            pass
+
+        return None
 
     async def _outgoing_loop(self, send: SendCoroutine, context: Any) -> None:
         while True:
