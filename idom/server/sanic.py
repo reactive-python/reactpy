@@ -116,7 +116,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
         return response.text(f"Could not find: {path!r}", status=404)
 
 
-class PerClientState(SanicRenderServer):
+class PerClientStateServer(SanicRenderServer):
     """Each client view will have its own state."""
 
     _renderer_type = SingleStateRenderer
@@ -131,7 +131,7 @@ class PerClientState(SanicRenderServer):
         await self._make_renderer(parameters, loop).run(send, recv, None)
 
 
-class SharedClientState(SanicRenderServer):
+class SharedClientStateServer(SanicRenderServer):
     """All connected client views will have shared state."""
 
     _renderer_type = SharedStateRenderer

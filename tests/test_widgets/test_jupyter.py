@@ -27,12 +27,13 @@ def test_jupyter_display_repr():
     )
 
 
-def test_cross_origin_jupyter_display(server, driver, driver_wait, mount, host, port):
+def test_cross_origin_jupyter_display(server, driver, driver_wait, mount, server_url):
     clicked = idom.Var(False)
 
     # we use flask here just because its easier to set up in a thread
     flask_host = "127.0.0.1"
     flask_port = find_available_port(flask_host)
+    flask_server_url = f"http://{flask_host}:{flask_port}/"
 
     @idom.element
     async def SimpleButton(self):
@@ -51,7 +52,7 @@ def test_cross_origin_jupyter_display(server, driver, driver_wait, mount, host, 
 
         @flask_app.route("/")
         def widget():
-            widget = JupyterDisplay(f"http://{host}:{port}")
+            widget = JupyterDisplay(server_url)
             return widget._repr_html_()
 
         @flask_app.route("/shutdown")
@@ -68,17 +69,17 @@ def test_cross_origin_jupyter_display(server, driver, driver_wait, mount, host, 
     mount(SimpleButton)
 
     # switch to flask widget view
-    driver.get(f"http://{flask_host}:{flask_port}/")
+    driver.get(flask_server_url)
 
     client_button = driver.find_element_by_id("simple-button")
     client_button.click()
 
     driver_wait.until(lambda d: clicked.get())
 
-    driver.get(f"http://{flask_host}:{flask_port}/shutdown")
+    driver.get(f"{flask_server_url}/shutdown")
 
 
-def test_same_origin_jupyter_display(driver, driver_wait, mount, host, port):
+def test_same_origin_jupyter_display(driver, driver_wait, mount, server_url):
     clicked = idom.Var(False)
 
     @idom.element
@@ -92,7 +93,7 @@ def test_same_origin_jupyter_display(driver, driver_wait, mount, host, port):
         )
 
     mount(SimpleButton)
-    driver.get(f"http://{host}:{port}/__test_jupyter_widget_client__")
+    driver.get(f"{server_url}/__test_jupyter_widget_client__")
 
     client_button = driver.find_element_by_id("simple-button")
     client_button.click()
