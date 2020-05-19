@@ -33,3 +33,6 @@ install:
 
 script:
   - bash scripts/test.sh
+
+after_success:
+  - codecov
