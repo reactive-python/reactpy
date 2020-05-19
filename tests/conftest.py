@@ -125,13 +125,13 @@ def display_id() -> idom.Var[int]:
     return idom.Var(0)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def driver(create_driver: Callable[[], Chrome]) -> Chrome:
     """A Selenium web driver"""
     return create_driver()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def create_driver(pytestconfig: Config, fresh_client: None, driver_timeout: float):
     """A Selenium web driver"""
     created_drivers = []

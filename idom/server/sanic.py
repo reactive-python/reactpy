@@ -4,7 +4,7 @@ import uuid
 
 from typing import Tuple, Any, Dict, Union, Optional, cast
 
-from sanic import Sanic, request, response
+from sanic import Blueprint, Sanic, request, response
 from sanic_cors import CORS
 from mypy_extensions import TypedDict
 from websockets import WebSocketCommonProtocol
@@ -23,7 +23,7 @@ from .base import AbstractRenderServer
 
 class Config(TypedDict, total=False):
     cors: Union[bool, Dict[str, Any]]
-    url_prefix: str
+    url_prefix: Optional[str]
     webpage_route: bool
 
 
@@ -34,7 +34,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
         self.application.stop()
 
     def _init_config(self) -> Config:
-        return Config(cors=False, url_prefix="", webpage_route=True)
+        return Config(cors=False, url_prefix=None, webpage_route=True)
 
     def _update_config(self, old: Config, new: Config) -> Config:
         old.update(new)
@@ -45,23 +45,54 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
 
     def _setup_application(self, app: Sanic, config: Config) -> None:
         cors_config = config["cors"]
-        if isinstance(cors_config, dict):
-            CORS(app, **cors_config)
-        elif cors_config:
-            CORS(app)
-        url_prefix = config["url_prefix"]
+        if cors_config:
+            cors_params = cors_config if isinstance(cors_config, dict) else {}
+            CORS(app, **cors_params)
+
+        bp = Blueprint(f"idom_renderer_{id(self)}", url_prefix=config["url_prefix"])
+        self._setup_blueprint_routes(bp, config)
+        app.blueprint(bp)
+
+    def _setup_blueprint_routes(self, blueprint: Blueprint, config: Config) -> None:
+        """Add routes to the application blueprint"""
+
+        @blueprint.websocket("/stream")  # type: ignore
+        async def model_stream(
+            request: request.Request, socket: WebSocketCommonProtocol
+        ) -> None:
+            async def sock_recv() -> LayoutEvent:
+                message = json.loads(await socket.recv())
+                event = message["body"]["event"]
+                return LayoutEvent(event["target"], event["data"])
+
+            async def sock_send(data: Dict[str, Any]) -> None:
+                message = {"header": {}, "body": {"render": data}}
+                await socket.send(json.dumps(message, separators=(",", ":")))
+
+            param_dict = {k: request.args.get(k) for k in request.args}
+            await self._run_renderer(sock_send, sock_recv, param_dict)
+
+        def handler_name(function: Any) -> str:
+            return f"{blueprint.name}.{function.__name__}"
+
         if config["webpage_route"]:
-            app.route(url_prefix + "/client/<path:path>")(self._client_route)
-        if url_prefix:
-            app.route("/favicon.ico")(
-                lambda r: response.redirect("/client/favicon.ico")
-            )
 
-        @app.route(url_prefix + "/")  # type: ignore
-        def redirect_to_index(request: request.Request) -> response.HTTPResponse:
-            return response.redirect(app.url_for("_client_route", path="index.html"))
+            @blueprint.route("/client/<path:path>")  # type: ignore
+            async def client_files(
+                request: request.Request, path: str
+            ) -> response.HTTPResponse:
+                abs_path = CLIENT_DIR.joinpath(*path.split("/"))
+                return (
+                    (await response.file_stream(str(abs_path)))
+                    if abs_path.exists()
+                    else response.text(f"Could not find: {path!r}", status=404)
+                )
 
-        app.websocket(url_prefix + "/stream")(self._stream_route)
+            @blueprint.route("/")  # type: ignore
+            def redirect_to_index(request: request.Request) -> response.HTTPResponse:
+                return response.redirect(
+                    request.app.url_for(handler_name(client_files), path="index.html")
+                )
 
     def _run_application(
         self, app: Sanic, config: Config, args: Tuple[Any, ...], kwargs: Dict[str, Any]
@@ -91,29 +122,6 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
                 for connection in server.connections:
                     connection.close_if_idle()
                 server.after_stop()
-
-    async def _stream_route(
-        self, request: request.Request, socket: WebSocketCommonProtocol
-    ) -> None:
-        async def sock_recv() -> LayoutEvent:
-            message = json.loads(await socket.recv())
-            event = message["body"]["event"]
-            return LayoutEvent(event["target"], event["data"])
-
-        async def sock_send(data: Dict[str, Any]) -> None:
-            message = {"header": {}, "body": {"render": data}}
-            await socket.send(json.dumps(message, separators=(",", ":")))
-
-        param_dict = {k: request.args.get(k) for k in request.args}
-        await self._run_renderer(sock_send, sock_recv, param_dict)
-
-    async def _client_route(
-        self, request: request.Request, path: str
-    ) -> response.HTTPResponse:
-        abs_path = CLIENT_DIR.joinpath(*path.split("/"))
-        if abs_path.exists():
-            return await response.file_stream(str(abs_path))
-        return response.text(f"Could not find: {path!r}", status=404)
 
 
 class PerClientStateServer(SanicRenderServer):
