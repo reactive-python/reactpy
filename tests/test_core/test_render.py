@@ -1,10 +1,11 @@
 import asyncio
 
 import pytest
+from anyio.exceptions import ExceptionGroup
 
 import idom
 from idom.core.layout import Layout, LayoutEvent
-from idom.core.render import SharedStateRenderer, StopRendering, AbstractRenderer
+from idom.core.render import SharedStateRenderer, AbstractRenderer
 
 
 async def test_shared_state_renderer():
@@ -23,7 +24,7 @@ async def test_shared_state_renderer():
 
         if element_data["attributes"]["count"] == 4:
             done.set()
-            raise StopRendering()
+            raise asyncio.CancelledError()
 
         target = element_data["eventHandlers"]["anEvent"]["target"]
         return LayoutEvent(target=target, data=[])
@@ -35,7 +36,7 @@ async def test_shared_state_renderer():
 
     async def recv_2():
         await done.wait()
-        raise StopRendering()
+        raise asyncio.CancelledError()
 
     @idom.element
     async def Clickable(self, count=0):
@@ -72,5 +73,5 @@ async def test_renderer_run_does_not_supress_non_stop_rendering_errors():
     async def recv():
         return {}
 
-    with pytest.raises(ValueError, match="this is a bug"):
+    with pytest.raises(ExceptionGroup, match="this is a bug"):
         await renderer.run(send, recv, None)
