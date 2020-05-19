@@ -3,6 +3,9 @@
 <a href="https://travis-ci.com/rmorshea/idom">
   <img alt="Build Status" src="https://travis-ci.com/rmorshea/idom.svg?branch=master"/>
 </a>
+<a href="https://codecov.io/gh/rmorshea/idom">
+  <img alt="Code Coverage" src="https://codecov.io/gh/rmorshea/idom/branch/master/graph/badge.svg" />
+</a>
 <a href="https://pypi.python.org/pypi/idom">
   <img alt="Version Info" src="https://img.shields.io/pypi/v/idom.svg"/>
 </a>
