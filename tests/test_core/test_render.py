@@ -21,13 +21,11 @@ async def test_shared_state_renderer():
 
         element_id = sent["root"]
         element_data = sent["new"][element_id]
-
         if element_data["attributes"]["count"] == 4:
             done.set()
             raise asyncio.CancelledError()
 
-        target = element_data["eventHandlers"]["anEvent"]["target"]
-        return LayoutEvent(target=target, data=[])
+        return LayoutEvent(target="an-event", data=[])
 
     async def send_2(data):
         element_id = data["root"]
@@ -40,7 +38,7 @@ async def test_shared_state_renderer():
 
     @idom.element
     async def Clickable(self, count=0):
-        @idom.event
+        @idom.event(target_id="an-event")
         async def an_event():
             self.update(count=count + 1)
 

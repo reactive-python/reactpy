@@ -45,7 +45,11 @@ def test_shared_client_state(create_driver, mount, server_url):
             {"onClick": incr_on_click, "id": "incr-button"}, "click to increment"
         )
 
-        return idom.html.div(button, idom.html.div({"id": f"count-is-{count}"}, count))
+        return idom.html.div(button, Counter(count))
+
+    @idom.element
+    async def Counter(self, count):
+        return idom.html.div({"id": f"count-is-{count}"}, count)
 
     mount(IncrCounter)
 
@@ -67,3 +71,16 @@ def test_shared_client_state(create_driver, mount, server_url):
 
     driver_1.find_element_by_id("count-is-2")
     driver_2.find_element_by_id("count-is-2")
+
+
+def test_shared_client_state_server_does_not_support_per_client_parameters(
+    driver_get, server_url, last_server_error
+):
+    driver_get("per_client_param=1")
+
+    error = last_server_error.get()
+
+    assert error is not None
+
+    with pytest.raises(ValueError, match="does not support per-client view parameters"):
+        raise error
