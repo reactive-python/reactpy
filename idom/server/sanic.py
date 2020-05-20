@@ -16,7 +16,7 @@ from idom.core.render import (
     RecvCoroutine,
 )
 from idom.core.layout import LayoutEvent
-from idom.client import CLIENT_DIR
+from idom.client.manage import STATIC_DIR
 
 from .base import AbstractRenderServer
 
@@ -81,10 +81,11 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
             async def client_files(
                 request: request.Request, path: str
             ) -> response.HTTPResponse:
-                abs_path = CLIENT_DIR.joinpath(*path.split("/"))
+                file_extensions = [".html", ".js", ".json"]
+                abs_path = STATIC_DIR.joinpath(*path.split("/"))
                 return (
                     (await response.file_stream(str(abs_path)))
-                    if abs_path.exists()
+                    if abs_path.exists() and abs_path.suffix in file_extensions
                     else response.text(f"Could not find: {path!r}", status=404)
                 )
 

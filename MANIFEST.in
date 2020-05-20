@@ -1,8 +1,4 @@
-graft idom/client/core_modules
-graft idom/client/web_modules
-include idom/client/index.html
-include idom/client/favicon.ico
-include idom/client/package.json
-
+graft idom/client/static/
+prune idom/client/static/node_modules
 include idom/py.typed
 include LICENSE

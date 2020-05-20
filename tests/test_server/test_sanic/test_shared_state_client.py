@@ -1,3 +1,7 @@
+from threading import Event
+from weakref import finalize
+
+
 import pytest
 
 import idom
@@ -34,6 +38,7 @@ def mount_and_server(
 def test_shared_client_state(create_driver, mount, server_url):
     driver_1 = create_driver()
     driver_2 = create_driver()
+    was_garbage_collected = Event()
 
     @idom.element
     async def IncrCounter(self, count=0):
@@ -49,6 +54,7 @@ def test_shared_client_state(create_driver, mount, server_url):
 
     @idom.element
     async def Counter(self, count):
+        finalize(self, was_garbage_collected.set())
         return idom.html.div({"id": f"count-is-{count}"}, count)
 
     mount(IncrCounter)
@@ -71,6 +77,8 @@ def test_shared_client_state(create_driver, mount, server_url):
 
     driver_1.find_element_by_id("count-is-2")
     driver_2.find_element_by_id("count-is-2")
+
+    assert was_garbage_collected.wait()
 
 
 def test_shared_client_state_server_does_not_support_per_client_parameters(
