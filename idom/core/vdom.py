@@ -1,9 +1,10 @@
-from typing import Optional, Iterable, Any, Dict, List, Tuple, Union, Mapping
+from typing import Optional, Iterable, Any, Dict, List, Tuple, Union, Mapping, Callable
 
 from mypy_extensions import TypedDict
 from typing_extensions import Protocol
 
 from .events import EventsMapping
+from .element import AbstractElement
 
 
 class ImportSourceDict(TypedDict):
@@ -27,9 +28,25 @@ class VdomDict(_VdomDictRequired, _VdomDictOptional):
 
 
 _TagArg = str
+_ComponentFunc = Callable[..., Union[VdomDict, AbstractElement]]
 _AttributesAndChildrenArg = Union[Mapping[str, Any], str, Iterable[Any], Any]
 _EventHandlersArg = Optional[EventsMapping]
 _ImportSourceArg = Optional[ImportSourceDict]
+
+
+def component(
+    tag: Union[_TagArg, _ComponentFunc],
+    *attributes_and_children: _AttributesAndChildrenArg,
+) -> Union[VdomDict, AbstractElement]:
+    if isinstance(tag, str):
+        return vdom(tag, *attributes_and_children)
+
+    attributes, children = _coalesce_attributes_and_children(attributes_and_children)
+
+    if children:
+        return tag(children=children, **attributes)
+    else:
+        return tag(**attributes)
 
 
 def vdom(
@@ -54,25 +71,8 @@ def vdom(
             React component.
     """
     model: VdomDict = {"tagName": tag}
-    attributes: Dict[str, Any] = {}
-    children: List[Any] = []
 
-    began_children = False
-    for argument in attributes_and_children:
-        if isinstance(argument, Mapping):
-            if "tagName" not in argument:
-                if began_children:
-                    raise ValueError("Attribute dictionaries should precede children.")
-                attributes.update(argument)
-            else:
-                children.append(argument)
-                began_children = True
-        elif not isinstance(argument, str) and isinstance(argument, Iterable):
-            children.extend(argument)
-            began_children = True
-        else:
-            children.append(argument)
-            began_children = True
+    attributes, children = _coalesce_attributes_and_children(attributes_and_children)
 
     if attributes:
         model["attributes"] = attributes
@@ -128,4 +128,27 @@ def make_vdom_constructor(tag: str, allow_children: bool = True) -> VdomDictCons
     return constructor
 
 
-00
+def _coalesce_attributes_and_children(
+    attributes_and_children: _AttributesAndChildrenArg,
+) -> Tuple[Dict[str, Any], List[Any]]:
+    attributes: Dict[str, Any] = {}
+    children: List[Any] = []
+
+    began_children = False
+    for argument in attributes_and_children:
+        if isinstance(argument, Mapping):
+            if "tagName" not in argument:
+                if began_children:
+                    raise ValueError("Attribute dictionaries should precede children.")
+                attributes.update(argument)
+            else:
+                children.append(argument)
+                began_children = True
+        elif not isinstance(argument, str) and isinstance(argument, Iterable):
+            children.extend(argument)
+            began_children = True
+        else:
+            children.append(argument)
+            began_children = True
+
+    return attributes, children

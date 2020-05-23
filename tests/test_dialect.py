@@ -202,6 +202,37 @@ test_comments = make_html_dialect_test(
 )
 
 
+test_component = make_html_dialect_test(
+    (
+        'html(f"<{MyComponentWithChildren}>hello<//>")',
+        {"MyComponentWithChildren": lambda children: html.div(children + ["world"])},
+        {"tagName": "div", "children": ["hello", "world"]},
+    ),
+    (
+        'html(f"<{MyComponentWithAttributes} x=2 y=3 />")',
+        {
+            "MyComponentWithAttributes": lambda x, y: html.div(
+                {"x": int(x) * 2, "y": int(y) * 2}
+            )
+        },
+        {"tagName": "div", "attributes": {"x": 4, "y": 6}},
+    ),
+    (
+        'html(f"<{MyComponentWithAttributesAndChildren} x=2 y=3>hello<//>")',
+        {
+            "MyComponentWithAttributesAndChildren": lambda x, y, children: html.div(
+                {"x": int(x) * 2, "y": int(y) * 2}, children + ["world"]
+            )
+        },
+        {
+            "tagName": "div",
+            "attributes": {"x": 4, "y": 6},
+            "children": ["hello", "world"],
+        },
+    ),
+)
+
+
 def test_tag_errors():
     with pytest.raises(DialectError, match="no token found"):
         apply_dialects('html(f"< >")', "html")
