@@ -1,9 +1,9 @@
-from idom.core.vdom import vdom, make_vdom_constructor, VdomDictConstructor
+from idom.core.vdom import component, make_vdom_constructor, VdomDictConstructor
 
 
 class Html:
 
-    __call__ = staticmethod(vdom)
+    __call__ = staticmethod(component)
 
     def __init__(self) -> None:
         # External sources
