@@ -24,20 +24,6 @@ At the moment this is the only supported :ref:`Layout Server` available for IDOM
     pip install idom[sanic]
 
 
-Compatibility with Nteract's VDOM
----------------------------------
-
-As described in the :ref:`Specifications` section, IDOM implements a specification for
-:term:`VDOM` defined by `Nteract <https://nteract.io>`_'s
-`vdom <https://github.com/nteract/vdom>`_ package. As a result IDOM is compatible with
-all its features (though VDOM does not support all features of IDOM yet). If you've
-already installed ``vdom`` then you're all set! If you'd like to try it out just run:
-
-.. code-block:: bash
-
-    pip install idom[vdom]
-
-
 Python Language Extension
 -------------------------
 
