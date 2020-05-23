@@ -330,7 +330,7 @@ implementation per builtin :ref:`Renderer <Layout Renderer>`:
 - :class:`idom.server.sanic.SharedClientState`
 
 The main thing to understand about server implementations is that they can function in
-two ways - as a standalone application or as extension to an existing application.
+two ways - as a standalone application or as an extension to an existing application.
 
 
 Standalone Server Usage
