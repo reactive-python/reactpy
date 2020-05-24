@@ -24,7 +24,8 @@ from .base import AbstractRenderServer
 class Config(TypedDict, total=False):
     cors: Union[bool, Dict[str, Any]]
     url_prefix: Optional[str]
-    webpage_route: bool
+    server_static_files: bool
+    redirect_root_to_index: bool
 
 
 class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
@@ -34,7 +35,12 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
         self.application.stop()
 
     def _init_config(self) -> Config:
-        return Config(cors=False, url_prefix=None, webpage_route=True)
+        return Config(
+            cors=False,
+            url_prefix=None,
+            server_static_files=True,
+            redirect_root_to_index=True,
+        )
 
     def _update_config(self, old: Config, new: Config) -> Config:
         old.update(new)
@@ -75,7 +81,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
         def handler_name(function: Any) -> str:
             return f"{blueprint.name}.{function.__name__}"
 
-        if config["webpage_route"]:
+        if config["server_static_files"]:
 
             @blueprint.route("/client/<path:path>")  # type: ignore
             async def client_files(
@@ -88,6 +94,8 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
                     if abs_path.exists() and abs_path.suffix in file_extensions
                     else response.text(f"Could not find: {path!r}", status=404)
                 )
+
+        if config["redirect_root_to_index"]:
 
             @blueprint.route("/")  # type: ignore
             def redirect_to_index(request: request.Request) -> response.HTTPResponse:
