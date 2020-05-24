@@ -1,9 +1,8 @@
 from importlib import import_module
 from socket import socket
-from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar, cast
+from typing import Any, Dict, Optional, Tuple, Type, TypeVar, cast
 
-from idom.core.element import ElementConstructor
-from idom.widgets.utils import multiview, hotswap
+from idom.widgets.utils import multiview, hotswap, MultiViewMount, MountFunc
 
 from .base import AbstractRenderServer
 
@@ -38,7 +37,7 @@ def multiview_server(
     server_options: Optional[Any] = None,
     run_options: Optional[Dict[str, Any]] = None,
     app: Optional[Any] = None,
-) -> Tuple[Callable[[ElementConstructor], str], _S]:
+) -> Tuple[MultiViewMount, _S]:
     """Set up a server where views can be dynamically added.
 
     In other words this allows the user to work with IDOM in an imperative manner.
@@ -74,7 +73,7 @@ def hotswap_server(
     run_options: Optional[Dict[str, Any]] = None,
     sync_views: bool = True,
     app: Optional[Any] = None,
-) -> Tuple[Callable[[ElementConstructor], None], _S]:
+) -> Tuple[MountFunc, _S]:
     """Set up a server where views can be dynamically swapped out.
 
     In other words this allows the user to work with IDOM in an imperative manner.

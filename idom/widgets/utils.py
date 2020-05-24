@@ -1,5 +1,7 @@
 from typing import Any, Callable, Tuple, Optional, Dict, Union, IO
 
+from typing_extensions import Protocol
+
 from idom import client
 from idom.core.element import ElementConstructor, Element, element
 from idom.core.vdom import VdomDict, ImportSourceDict, make_vdom_constructor
@@ -116,9 +118,16 @@ class Import:
         return f"{type(self).__name__}({items})"
 
 
-def hotswap(
-    shared: bool = False,
-) -> Tuple[Callable[[ElementConstructor], None], ElementConstructor]:
+class MountFunc(Protocol):
+    """Function for mounting views"""
+
+    def __call__(
+        self, constructor: ElementConstructor, *args: Any, **kwargs: Any
+    ) -> None:
+        ...
+
+
+def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
     """Swap out elements from a layout on the fly.
 
     Since you can't change the element functions used to create a layout
@@ -179,7 +188,7 @@ def hotswap(
     return swap, HotSwap
 
 
-def multiview() -> Tuple[Callable[[ElementConstructor], str], ElementConstructor]:
+def multiview() -> Tuple["MultiViewMount", ElementConstructor]:
     """Dynamically add elements to a layout on the fly
 
     Since you can't change the element functions used to create a layout
@@ -213,17 +222,42 @@ def multiview() -> Tuple[Callable[[ElementConstructor], str], ElementConstructor
 
         Refer to :func:`idom.server.imperative_server_mount` for a reference usage.
     """
-    next_view_id: Var[int] = Var(0)
     views: Dict[str, ElementConstructor] = {}
 
     @element
     async def MultiView(self: Element, view_id: str) -> Any:
         return views[view_id]()
 
-    def mount(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> str:
-        view_id = next_view_id.get()
-        views[str(view_id)] = lambda: constructor(*args, **kwargs)
-        next_view_id.set(view_id + 1)
-        return str(view_id)
+    return MultiViewMount(views), MultiView
 
-    return mount, MultiView
+
+class MultiViewMount:
+
+    __slots__ = "_next_auto_id", "_views"
+
+    def __init__(self, views: Dict[str, ElementConstructor]):
+        self._next_auto_id = 0
+        self._views = views
+
+    def __getattr__(self, view_id: str) -> MountFunc:
+        def mount(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> None:
+            self._add_view(view_id, constructor, args, kwargs)
+
+        return mount
+
+    def __call__(
+        self, constructor: ElementConstructor, *args: Any, **kwargs: Any
+    ) -> str:
+        self._next_auto_id += 1
+        view_id = str(self._next_auto_id)
+        self._add_view(view_id, constructor, args, kwargs)
+        return view_id
+
+    def _add_view(
+        self,
+        view_id: str,
+        constructor: ElementConstructor,
+        args: Tuple[Any, ...],
+        kwargs: Dict[str, Any],
+    ) -> None:
+        self._views[view_id] = lambda: constructor(*args, **kwargs)
