@@ -6,7 +6,21 @@ WORKDIR app/
 RUN curl -sL https://deb.nodesource.com/setup_14.x  | bash -
 RUN apt-get install -yq nodejs build-essential
 
-ADD ./ ./
+ADD docs ./docs
+ADD idom ./idom
+ADD scripts ./scripts
+ADD requirements ./requirements
+ADD setup.py ./
+ADD setup.cfg ./
+ADD MANIFEST.in ./
+ADD README.md ./
+ADD idom/client/static/favicon.ico ./
+
+# install Git so we can get repo metadata
+RUN apt-get install git
+RUN git init
+RUN git remote add origin https://github.com/rmorshea/idom
+RUN git fetch --all --tags
 
 # Install IDOM
 RUN pip install -r requirements/docs.txt

@@ -1,6 +1,7 @@
 import time
 import asyncio
 import random
+import gc
 
 from matplotlib import pyplot as plt
 
@@ -50,9 +51,12 @@ async def RandomWalk(self):
 async def Plot(self, x, y):
     fig, axes = plt.subplots()
     axes.plot(x, y)
-    img = idom.Image("svg")
-    fig.savefig(img.io, format="svg")
+    img = idom.Image("png")
+    fig.savefig(img.io, format="png")
     plt.close(fig)
+    # Figures are slow to be garbage collected so we
+    # do a deep cleaning here to reduce memory usage
+    gc.collect(2)
     return img
 
 

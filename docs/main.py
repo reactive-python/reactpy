@@ -1,14 +1,22 @@
-from pathlib import Path
+import os
 import sys
+from pathlib import Path
 from pathlib import Path
 
 from sanic import Sanic
+from sanic import response
 
 from idom.widgets.utils import multiview
 from idom.server.sanic import PerClientStateServer
 
 app = Sanic(__name__)
 app.static("/docs", "./docs/build")
+
+
+@app.route("/")
+async def forward_to_index(request):
+    return response.redirect("/docs/index.html")
+
 
 mount, element = multiview()
 
@@ -30,6 +38,11 @@ for file in widgets.iterdir():
             },
         )
 
-PerClientStateServer(element).configure({}).register(app)
+PerClientStateServer(element).configure({"redirect_root_to_index": False}).register(app)
 
-app.run("0.0.0.0", 80)
+if __name__ == "__main__":
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000)),
+        workers=int(os.environ.get("WEB_CONCURRENCY", 1)),
+    )
