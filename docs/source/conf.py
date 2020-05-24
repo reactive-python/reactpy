@@ -8,13 +8,17 @@
 
 # -- Path Setup --------------------------------------------------------------
 
-import os
 import sys
+from pathlib import Path
 
-here = os.path.dirname(__file__)
-project = here.rsplit(os.path.sep, 2)[0]
-init_file = os.path.join(project, "idom", "__init__.py")
-sys.path.insert(0, project)
+here = Path(__file__).parent
+
+# project path
+sys.path.insert(0, str(here.parent.parent))
+
+# extension path
+sys.path.insert(0, str(here / "exts"))
+
 
 # -- Project information -----------------------------------------------------
 
@@ -44,6 +48,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autosectionlabel",
     "sphinx_autodoc_typehints",
+    "interactive_widget",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
