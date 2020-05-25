@@ -17,8 +17,16 @@ class IteractiveWidget(Directive):
             raw(
                 "",
                 f"""
-                <div style="margin-bottom:25px">
-                    <div id="{container_id}" />
+                <style>
+                .interactive-widget {{
+                    margin-bottom: 25px;
+                    padding: 12px;
+                    background: #f8f8f8;
+                    border: 1px solid #e1e4e5
+                }}
+                </style>
+                <div>
+                    <div id="{container_id}" class="interactive-widget" style="" />
                     <script async type="module">
                         import {{ renderLayout }} from "/client/core_modules/layout.js";
                         const loc = window.location;

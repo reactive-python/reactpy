@@ -22,3 +22,4 @@ echo ""
 echo "Sphinx"
 echo "======"
 sphinx-build -b html docs/source docs/build
+sphinx-build -b doctest docs/source docs/build
