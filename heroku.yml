@@ -1,3 +1,5 @@
 build:
   docker:
-    web: Dockerfile.docs
+    web: docs/docker/prod.dockerfile
+  config:
+    GIT_BRANCH: interactive-docs

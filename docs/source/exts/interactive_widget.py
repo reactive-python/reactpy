@@ -19,7 +19,7 @@ class IteractiveWidget(Directive):
                 f"""
                 <div style="margin-bottom:25px">
                     <div id="{container_id}" />
-                    <script type="module">
+                    <script async type="module">
                         import {{ renderLayout }} from "/client/core_modules/layout.js";
                         const loc = window.location;
                         const idom_url = "//" + loc.host;

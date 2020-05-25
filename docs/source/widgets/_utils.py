@@ -7,7 +7,8 @@ def click_to_start(element):
     """Simple tool used to block animating widgets from displaying until clicked"""
 
     @wraps(element)
-    def wrapper(*args, **kwargs):
+    @idom.element
+    async def wrapper(self, *args, **kwargs):
         async def start_on_click(event):
             alt.update(show=True)
 

@@ -6,6 +6,8 @@ WORKDIR app/
 RUN curl -sL https://deb.nodesource.com/setup_14.x  | bash -
 RUN apt-get install -yq nodejs build-essential
 
+# Add files
+ADD .git ./.git
 ADD docs ./docs
 ADD idom ./idom
 ADD scripts ./scripts
@@ -16,12 +18,6 @@ ADD MANIFEST.in ./
 ADD README.md ./
 ADD idom/client/static/favicon.ico ./
 
-# install Git so we can get repo metadata
-RUN apt-get install git
-RUN git init
-RUN git remote add origin https://github.com/rmorshea/idom
-RUN git fetch --all --tags
-
 # Install IDOM
 RUN pip install -r requirements/docs.txt
 RUN pip install .[all]
@@ -29,6 +25,7 @@ RUN pip install .[all]
 # Build the documentation
 RUN sphinx-build -b html docs/source docs/build
 
-EXPOSE 80
+ENV PORT 5000
+EXPOSE 5000
 
 CMD python docs/main.py
