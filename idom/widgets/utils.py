@@ -240,8 +240,9 @@ class MultiViewMount:
         self._views = views
 
     def __getattr__(self, view_id: str) -> MountFunc:
-        def mount(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> None:
+        def mount(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> str:
             self._add_view(view_id, constructor, args, kwargs)
+            return view_id
 
         return mount
 

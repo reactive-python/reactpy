@@ -19,11 +19,11 @@ def mount_and_server(
 
 
 def test_multiview_server(driver_get, driver, mount, server):
-    view_id_1 = mount(lambda: idom.html.h1({"id": "element1"}, ["e1"]))
-    view_id_2 = mount(lambda: idom.html.h1({"id": "element2"}, ["e2"]))
+    manual_id = mount.manually_set_id(lambda: idom.html.h1({"id": "element1"}, ["e1"]))
+    auto_view_id = mount(lambda: idom.html.h1({"id": "element2"}, ["e2"]))
 
-    driver_get(f"view_id={view_id_1}")
+    driver_get(f"view_id={manual_id}")
     driver.find_element_by_id("element1")
 
-    driver_get(f"view_id={view_id_2}")
+    driver_get(f"view_id={auto_view_id}")
     driver.find_element_by_id("element2")
