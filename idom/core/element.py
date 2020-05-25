@@ -14,6 +14,7 @@ from typing import (
     overload,
     Awaitable,
     Union,
+    Tuple,
     overload,
 )
 
@@ -131,6 +132,22 @@ _STP = Callable[[], None]
 _ANM = Callable[[_STP], Awaitable[bool]]
 
 
+def _extract_signature(
+    function: Callable[..., Any]
+) -> Tuple[inspect.Signature, Optional[str], Optional[str]]:
+    sig = inspect.signature(function)
+    var_positional: Optional[str] = None
+    var_keyword: Optional[str] = None
+
+    for param in sig.parameters.values():
+        if param.kind is inspect.Parameter.VAR_POSITIONAL:
+            var_positional = param.name
+        elif param.kind is inspect.Parameter.VAR_KEYWORD:
+            var_keyword = param.name
+
+    return sig, var_positional, var_keyword
+
+
 class Element(AbstractElement):
     """An object for rending element models.
 
@@ -156,6 +173,8 @@ class Element(AbstractElement):
         "_animation_futures",
         "_function",
         "_function_signature",
+        "_function_var_positional_param",
+        "_function_var_keyword_param",
         "_cross_update_state",
         "_cross_update_parameters",
         "_state",
@@ -171,7 +190,10 @@ class Element(AbstractElement):
     ):
         super().__init__()
         self._function = function
-        self._function_signature = inspect.signature(function)
+        signature, var_positional, var_keyword = _extract_signature(function)
+        self._function_signature = signature
+        self._function_var_positional_param = var_positional
+        self._function_var_keyword_param = var_keyword
         self._layout: Optional["AbstractLayout"] = None
         self._cross_update_state: Dict[str, Any] = {}
         self._cross_update_parameters: List[str] = list(
@@ -250,7 +272,7 @@ class Element(AbstractElement):
         self._state_updated = False
 
         if self._run_in_executor is False:
-            return await self._function(self, **state)
+            return await self._run_function(state)
         else:
             loop = asyncio.get_event_loop()
             # use default executor if _run_in_executor was only given as True
@@ -280,10 +302,18 @@ class Element(AbstractElement):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            result = loop.run_until_complete(self._function(self, **state))
+            result = loop.run_until_complete(self._run_function(state))
         finally:
             loop.close()
         return result
+
+    async def _run_function(self, state: Dict[str, Any]) -> Any:
+        args, kwargs = (), state.copy()
+        if self._function_var_positional_param is not None:
+            args = kwargs.pop(self._function_var_positional_param, ())
+        if self._function_var_keyword_param is not None:
+            kwargs.update(kwargs.pop(self._function_var_keyword_param, {}))
+        return await self._function(self, *args, **kwargs)
 
     def __repr__(self) -> str:
         total_state = {**self._cross_update_state, **self._state}

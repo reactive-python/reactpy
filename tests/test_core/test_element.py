@@ -50,6 +50,20 @@ async def test_simple_parameterized_element():
     assert await spe.render() == {"tagName": "img"}
 
 
+async def test_element_with_var_args():
+    @idom.element
+    async def element_with_var_args_and_kwargs(self, *args, **kwargs):
+        return idom.html.div(kwargs, args)
+
+    element = element_with_var_args_and_kwargs("hello", "world", myAttr=1)
+
+    assert (await element.render()) == {
+        "tagName": "div",
+        "attributes": {"myAttr": 1},
+        "children": ["hello", "world"],
+    }
+
+
 async def test_simple_stateful_element():
     @idom.element(state="tag")
     async def simple_stateful_element(self, tag):
