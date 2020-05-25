@@ -41,11 +41,8 @@ charting library for React called `Victory <https://formidable.com/open-source/v
 Installing it in IDOM is quite simple. Just create a :class:`~idom.widgets.utils.Module`,
 tell it what to install and specify ``install=True``.
 
-.. code-block::
-
-    import idom
-    # this may take a minute to download and install
-    victory = idom.Module(name="victory", install=True)
+.. literalinclude:: widgets/victory_chart.py
+    :lines: 1-4
 
 .. note::
 
@@ -56,21 +53,17 @@ standard javascript dependency specifier. Alternatively, if you need to access a
 in a subfolder of your desired Javascript package, you can provide ``name="path/to/module"``
 and ``install"my-package"``.
 
-With that out of the way can import a component from Victory:
+With that out of the way you can import a component from Victory:
 
-.. code-block::
+.. literalinclude:: widgets/victory_chart.py
+    :lines: 6
 
-    VictoryBar = victory.Import("VictoryBar")
+Using the ``VictoryBar`` chart component it's simple as displaying it:
 
-Using the ``VictoryBar`` chart component is as simple as displaying it:
+.. literalinclude:: widgets/victory_chart.py
+    :lines: 8
 
-.. code-block::
-
-    display(VictoryBar)
-
-The output should look something like this:
-
-.. image:: ./static/victory_bar_default_chart.png
+.. interactive-widget:: victory_chart
 
 
 Passing Props To Components
@@ -85,46 +78,9 @@ component from the
 framework. We'll register callbacks and pass props to the ``<Button/>`` just as you
 would for any other element in IDOM:
 
-.. code-block::
+.. literalinclude:: widgets/primary_secondary_buttons.py
 
-    import idom
-
-    semantic_ui = idom.Module("semantic-ui-react", install=True)
-    Button = semantic_ui.Import("Button")
-
-    semantic_ui_style = idom.html.link(
-        {
-            "rel": "stylesheet",
-            "href": "//cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css",
-        }
-    )
-
-    @idom.element
-    async def PrimarySecondaryButtons(self):
-
-        async def on_click_primary(event, info):
-            print("Primary Clicked:")
-            print(event)
-            print(info)
-
-        async def on_click_secondary(event, info):
-            print("Secondary Clicked:")
-            print(event)
-            print(info)
-
-        return idom.html.div(
-            [
-                semantic_ui_style,
-                Button({"primary": True, "onClick": on_click_primary}, ["Primary"]),
-                Button({"secondary": True, "onClick": on_click_secondary}, ["Secondary"]),
-            ]
-        )
-
-    display(PrimarySecondaryButtons)
-
-Which should produce the following output when interacted with:
-
-.. image:: ./static/primary_secondary_buttons.png
+.. interactive-widget:: primary_secondary_buttons
 
 
 Defining Your Own Modules
@@ -132,68 +88,20 @@ Defining Your Own Modules
 
 While it's probably best to create
 `a real package <https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry>`__
-for your Javascript, if you're just experimenting it might be easiest to just quickly
+for your Javascript, if you're just experimenting it might be easiest to quickly
 hook in a module of your own making on the fly. As before, we'll be using a
 :class:`~idom.widgets.utils.Module`, however this time we'll pass it a ``source``
-parameter which is a file-like object. In this example we'll use Victory again, but
-this time we'll add a callback to it. Unfortunately we can't just pass it in
+parameter which is a file-like object. In the following example we'll use Victory again,
+but this time we'll add a callback to it. Unfortunately we can't just pass it in
 :ref:`like we did before <Passing Props To Components>` because Victory's event API
 is a bit more complex so we've implemented a quick wrapper for it in a file ``chart.js``.
 
-.. code-block:: javascript
-
-    import React from "./react.js";
-    import { VictoryBar, VictoryChart, VictoryTheme, Bar } from "./victory.js";
-    import htm from "./htm.js";
-
-    const html = htm.bind(React.createElement);
-
-    export default {
-      ClickableChart: function ClickableChart(props) {
-        return html`
-          <${VictoryChart}
-            theme=${VictoryTheme.material}
-            style=${{"style": {"parent": {"width": "500px"}}}}
-            domainPadding=${20}
-          >
-            <${VictoryBar}
-              data=${props.data}
-              dataComponent=${html`
-                <${Bar}
-                  events=${{
-                    onClick: props.onClick,
-                  }}
-                />
-              `}
-            />
-          <//>
-        `;
-      },
-    };
+.. literalinclude:: widgets/custom_chart.js
 
 Which we can read in as a ``source`` to :class:`~idom.widgets.utils.Module`:
 
-.. code-block::
+.. literalinclude:: widgets/custom_chart.py
 
-    with open("chart.js") as f:
-        ClickableChart = idom.Module("chart", source=f).Import("ClickableChart")
+Click the bars to trigger an event 👇
 
-    async def handle_event(event):
-        print(event)
-
-    data = [
-        {"x": 1, "y": 2},
-        {"x": 2, "y": 4},
-        {"x": 3, "y": 7},
-        {"x": 4, "y": 3},
-        {"x": 5, "y": 5},
-    ]
-
-    display(
-        ClickableChart,
-        {"data": data, "onClick": handle_event}
-    )
-
-The above usag should then produce the following output when you click the bars in the chart:
-
-.. image:: ./static/custom_victory_chart.png
+.. interactive-widget:: custom_chart

@@ -21,8 +21,15 @@ class IteractiveWidget(Directive):
                 .interactive-widget {{
                     margin-bottom: 25px;
                     padding: 12px;
-                    background: #f8f8f8;
-                    border: 1px solid #e1e4e5
+                    background-color: #fcfcfc;
+                    border: 1px solid #e1e4e5;
+                    -webkit-transition: 0.2s ease-out;
+                    -moz-transition: 0.2s ease-out;
+                    -o-transition: 0.2s ease-out;
+                    transition: 0.2s ease-out;
+                }}
+                .interactive-widget:hover, .interactive-widget:focus-within {{
+                    border: 1px solid #2980B9;
                 }}
                 </style>
                 <div>

@@ -64,7 +64,7 @@ def install(dependencies: Dict[str, str]) -> None:
         with (tempdir_path / "package.json").open("w+") as f:
             json.dump(pkg, f)
 
-        with Spinner("Installing"):
+        with Spinner(f"Installing: {','.join(dependencies)}"):
             _run_subprocess(["npm", "install"], tempdir)
             _run_subprocess(["npm", "install"] + npm_install, tempdir)
             _run_subprocess(["npm", "run", "snowpack"], tempdir)
