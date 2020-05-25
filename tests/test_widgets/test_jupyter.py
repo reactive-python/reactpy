@@ -22,7 +22,7 @@ def application(application):
 
 def test_jupyter_display_repr():
     assert (
-        repr(JupyterDisplay(f"http://localhost:5000"))
+        repr(JupyterDisplay("http://localhost:5000"))
         == """JupyterDisplay({"host": "localhost:5000", "protocol": "http:"}, path='')"""
     )
 
