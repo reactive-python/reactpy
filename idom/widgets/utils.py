@@ -49,12 +49,12 @@ class Module:
             self._installed = True
             self._name = name
         elif isinstance(install, str):
-            client.install({install: name})
+            client.install([install], [name])
             self._module = client.web_module(name)
             self._installed = True
             self._name = name
         elif install is True:
-            client.install({name: name})
+            client.install(name)
             self._module = client.web_module(name)
             self._installed = True
             self._name = name
@@ -77,7 +77,7 @@ class Module:
     def delete(self) -> None:
         if not self._installed:
             raise ValueError("Module is not installed locally")
-        client.delete_web_module(self._module)
+        client.delete_web_modules([self._module])
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"{type(self).__name__}({self._module!r})"
