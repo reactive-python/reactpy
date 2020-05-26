@@ -63,13 +63,13 @@ async def test_renderer_run_does_not_supress_non_stop_rendering_errors():
     async def AnyElement(self):
         pass
 
-    renderer = RendererWithBug(idom.Layout(AnyElement()))
+    async with RendererWithBug(idom.Layout(AnyElement())) as renderer:
 
-    async def send(data):
-        pass
+        async def send(data):
+            pass
 
-    async def recv():
-        return {}
+        async def recv():
+            return {}
 
-    with pytest.raises(ExceptionGroup, match="this is a bug"):
-        await renderer.run(send, recv, None)
+        with pytest.raises(ExceptionGroup, match="this is a bug"):
+            await renderer.run(send, recv, None)
