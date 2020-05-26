@@ -137,7 +137,8 @@ class PerClientStateServer(SanicRenderServer):
         parameters: Dict[str, Any],
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
-        await self._make_renderer(parameters, loop).run(send, recv, None)
+        async with self._make_renderer(parameters, loop) as renderer:
+            await renderer.run(send, recv, None)
 
 
 class SharedClientStateServer(SanicRenderServer):
@@ -147,14 +148,21 @@ class SharedClientStateServer(SanicRenderServer):
     _renderer: SharedStateRenderer
 
     def _setup_application(self, app: Sanic, config: Config) -> None:
-        super()._setup_application(app, config)
         app.listener("before_server_start")(self._activate_renderer)
+        app.listener("before_server_stop")(self._deactivate_renderer)
+        super()._setup_application(app, config)
 
     async def _activate_renderer(
         self, app: Sanic, loop: asyncio.AbstractEventLoop
     ) -> None:
         self._renderer = cast(SharedStateRenderer, self._make_renderer({}, loop))
-        await self._renderer.start()
+        await self._renderer.__aenter__()
+
+    async def _deactivate_renderer(
+        self, app: Sanic, loop: asyncio.AbstractEventLoop
+    ) -> None:  # pragma: no cover
+        # this doesn't seem to get triffered during testing for some reason
+        await self._renderer.__aexit__(None, None, None)
 
     async def _run_renderer(
         self,
