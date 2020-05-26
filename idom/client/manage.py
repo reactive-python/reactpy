@@ -4,7 +4,7 @@ import subprocess
 from loguru import logger
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional, List, Union, Dict, Any
+from typing import Optional, List, Union, Dict, Any, Sequence
 
 from .utils import Spinner
 
@@ -28,7 +28,7 @@ def web_module_path(name: str) -> Optional[Path]:
 
 
 def web_module_exists(name: str) -> bool:
-    return _find_module_os_path(WEB_MODULES, name) is not None
+    return web_module_path(name) is not None
 
 
 def define_web_module(name: str, source: str) -> str:
@@ -38,20 +38,38 @@ def define_web_module(name: str, source: str) -> str:
     return web_module(name)
 
 
-def delete_web_module(name: str) -> None:
-    path = _find_module_os_path(WEB_MODULES, name)
-    if path is None:
-        raise ValueError(f"Module '{name}' does not exist.")
-    _delete_os_paths(path)
+def delete_web_modules(names: Sequence[str], skip_missing: bool = False) -> None:
+    paths = []
+    for n in _to_list_of_str(names):
+        p = web_module_path(n)
+        if p is not None:
+            paths.append(p)
+        elif not skip_missing:
+            raise ValueError(f"Module '{n}' does not exist.")
+    for p in paths:
+        _delete_os_paths(p)
 
 
-def install(dependencies: Dict[str, str]) -> None:
+def install(
+    packages: Sequence[str], exports: Sequence[str] = (), force: bool = False
+) -> None:
+    package_list = _to_list_of_str(packages)
+    export_list = _to_list_of_str(exports)
+
+    for pkg in package_list:
+        at_count = pkg.count("@")
+        if pkg.startswith("@") and at_count == 1:
+            export_list.append(pkg)
+        else:
+            # this works even if there are no @ symbols
+            export_list.append(pkg.rsplit("@", 1)[0])
+
+    if force:
+        for exp in export_list:
+            delete_web_modules(exp, skip_missing=True)
+
     pkg = _package_json()
-
-    npm_install = []
-    for dep, import_paths in dependencies.items():
-        npm_install.append(dep)
-        pkg["snowpack"]["webDependencies"].extend(import_paths.split())
+    pkg["snowpack"]["webDependencies"].extend(export_list)
 
     with TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
@@ -64,9 +82,9 @@ def install(dependencies: Dict[str, str]) -> None:
         with (tempdir_path / "package.json").open("w+") as f:
             json.dump(pkg, f)
 
-        with Spinner(f"Installing: {','.join(dependencies)}"):
+        with Spinner(f"Installing: {', '.join(package_list)}"):
             _run_subprocess(["npm", "install"], tempdir)
-            _run_subprocess(["npm", "install"] + npm_install, tempdir)
+            _run_subprocess(["npm", "install"] + package_list, tempdir)
             _run_subprocess(["npm", "run", "snowpack"], tempdir)
 
 
@@ -132,3 +150,7 @@ def _delete_os_paths(*paths: Path) -> None:
             p.unlink()
         elif p.is_dir():
             shutil.rmtree(p)
+
+
+def _to_list_of_str(value: Sequence[str]) -> List[str]:
+    return [value] if isinstance(value, str) else list(value)
