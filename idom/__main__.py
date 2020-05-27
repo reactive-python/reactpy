@@ -3,7 +3,7 @@ import argparse
 from functools import wraps
 from typing import TypeVar, Callable, Any
 
-from idom.client.manage import install, delete_web_modules
+from idom.client.manage import install, delete_web_modules, installed
 
 
 _Func = TypeVar("_Func", bound=Callable[..., Any])
@@ -11,14 +11,14 @@ _Func = TypeVar("_Func", bound=Callable[..., Any])
 
 def _exit_gracefully(function: _Func) -> _Func:
     @wraps(function)
-    def wrapper(*args, print=print, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return function(*args, **kwargs)
         except Exit as error:
             print(f"ERROR: {error}")
             sys.exit(1)
 
-    return wrapper
+    return wrapper  # type: ignore
 
 
 class Exit(Exception):
@@ -26,9 +26,9 @@ class Exit(Exception):
 
 
 @_exit_gracefully
-def main(*args: str):
+def main(*args: str) -> None:
     cli = argparse.ArgumentParser()
-    cli.add_argument("command", choices=["install", "uninstall"])
+    cli.add_argument("command", choices=["install", "uninstall", "installed"])
     cli.add_argument(
         "dependencies", nargs="*", type=str,
     )
@@ -39,7 +39,7 @@ def main(*args: str):
 
     parsed = cli.parse_args(args or sys.argv[1:])
 
-    if parsed.command == "uninstall":
+    if parsed.command in ("uninstall", "installed"):
         if parsed.exports:
             raise Exit("uninstall does not support the '--exports' option")
         if parsed.force:
@@ -47,8 +47,12 @@ def main(*args: str):
 
     if parsed.command == "install":
         install(parsed.dependencies, parsed.exports, parsed.force)
-    else:
+    elif parsed.command == "uninstall":
         delete_web_modules(parsed.dependencies)
+    else:
+        print("Installed:")
+        for name in installed():
+            print("-", name)
 
 
 if __name__ == "__main__":  # pragma: no cover

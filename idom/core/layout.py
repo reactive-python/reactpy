@@ -348,7 +348,7 @@ class FutureQueue(Generic[_FQT]):
         future = await self._done.get()
         return await future
 
-    async def cancel(self):
+    async def cancel(self) -> None:
         for f in self._pending.values():
             f.cancel()
         if self._pending:

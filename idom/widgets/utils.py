@@ -123,7 +123,7 @@ class MountFunc(Protocol):
 
     def __call__(
         self, constructor: ElementConstructor, *args: Any, **kwargs: Any
-    ) -> None:
+    ) -> Any:
         ...
 
 

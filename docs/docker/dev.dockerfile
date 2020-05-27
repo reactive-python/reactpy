@@ -20,7 +20,8 @@ ADD idom/client/static/favicon.ico ./
 
 # Install IDOM
 RUN pip install -r requirements/docs.txt
-RUN pip install .[all]
+RUN pip install -e .[all]
+RUN python -m idom install victory semantic-ui-react
 
 # Build the documentation
 RUN sphinx-build -b html docs/source docs/build

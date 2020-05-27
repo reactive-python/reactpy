@@ -9,14 +9,15 @@ RUN apt-get install git
 
 # clone repository
 ARG GIT_REPO=https://github.com/rmorshea/idom
-ARG GIT_BRANCH=master
+ARG GIT_BRANCH=interactive-docs
 RUN git clone $GIT_REPO
 WORKDIR /idom
 RUN git checkout $GIT_BRANCH
 
 # Install IDOM
 RUN pip install -r requirements/docs.txt
-RUN pip install .[all]
+RUN pip install -e .[all]
+RUN idom install victory semantic-ui-react
 
 # Build the documentation
 RUN sphinx-build -b html docs/source docs/build

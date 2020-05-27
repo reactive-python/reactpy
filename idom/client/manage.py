@@ -24,7 +24,8 @@ def web_module(name: str) -> str:
 
 
 def web_module_path(name: str) -> Optional[Path]:
-    return _find_module_os_path(WEB_MODULES, name)
+    path = _create_web_module_os_path(name).with_suffix(".js")
+    return path if path.is_file() else None
 
 
 def web_module_exists(name: str) -> bool:
@@ -32,7 +33,7 @@ def web_module_exists(name: str) -> bool:
 
 
 def define_web_module(name: str, source: str) -> str:
-    path = _create_web_module_os_path(name)
+    path = _create_web_module_os_path(name).with_suffix(".js")
     with path.open("w+") as f:
         f.write(source)
     return web_module(name)
@@ -41,13 +42,28 @@ def define_web_module(name: str, source: str) -> str:
 def delete_web_modules(names: Sequence[str], skip_missing: bool = False) -> None:
     paths = []
     for n in _to_list_of_str(names):
-        p = web_module_path(n)
-        if p is not None:
-            paths.append(p)
-        elif not skip_missing:
+        exists = False
+        path = _create_web_module_os_path(n)
+        js_path = path.with_suffix(".js")
+        if path.is_dir():
+            paths.append(path)
+            exists = True
+        if js_path.is_file():
+            paths.append(js_path)
+            exists = True
+        if not exists and not skip_missing:
             raise ValueError(f"Module '{n}' does not exist.")
     for p in paths:
         _delete_os_paths(p)
+
+
+def installed() -> List[str]:
+    names: List[str] = []
+    for path in WEB_MODULES.rglob("*"):
+        if path.is_file() and path.suffix == ".js":
+            rel_path = path.relative_to(WEB_MODULES)
+            names.append(str(rel_path.with_suffix("")))
+    return list(sorted(names))
 
 
 def install(
@@ -68,8 +84,8 @@ def install(
         for exp in export_list:
             delete_web_modules(exp, skip_missing=True)
 
-    pkg = _package_json()
-    pkg["snowpack"]["webDependencies"].extend(export_list)
+    package_json = _package_json()
+    package_json["snowpack"]["webDependencies"].extend(export_list)
 
     with TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
@@ -80,7 +96,7 @@ def install(
             )
 
         with (tempdir_path / "package.json").open("w+") as f:
-            json.dump(pkg, f)
+            json.dump(package_json, f)
 
         with Spinner(f"Installing: {', '.join(package_list)}"):
             _run_subprocess(["npm", "install"], tempdir)
@@ -124,24 +140,13 @@ def _run_subprocess(args: List[str], cwd: Union[str, Path]) -> None:
     return None
 
 
-def _find_module_os_path(path: Path, name: str) -> Optional[Path]:
-    for name_part in name.split("/"):
-        if not path.is_dir():
-            return None
-        path /= name_part
-    full_path = path.with_suffix(".js")
-    if not full_path.is_file():
-        return None
-    return full_path
-
-
 def _create_web_module_os_path(name: str) -> Path:
     path = WEB_MODULES
     for n in name.split("/"):
         if not path.exists():
             path.mkdir()
         path /= n
-    return path.with_suffix(".js")
+    return path
 
 
 def _delete_os_paths(*paths: Path) -> None:
@@ -149,6 +154,7 @@ def _delete_os_paths(*paths: Path) -> None:
         if p.is_file():
             p.unlink()
         elif p.is_dir():
+            print(p)
             shutil.rmtree(p)
 
 

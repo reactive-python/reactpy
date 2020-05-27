@@ -4,8 +4,8 @@ from types import TracebackType
 from typing import TypeVar, Any, Type, Callable, Optional
 
 
-_Self = TypeVar("_Self")
-_Func = TypeVar("_Func")
+_Self = TypeVar("_Self", bound="AsyncOpenClose")
+_Func = TypeVar("_Func", bound=Any)
 
 
 def must_by_open(
@@ -16,7 +16,7 @@ def must_by_open(
         if inspect.iscoroutinefunction(method):
 
             @wraps(method)
-            async def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+            async def wrapper(self: AsyncOpenClose, *args: Any, **kwargs: Any) -> Any:
                 if self.closed:
                     raise if_closed(f"{self} is closed")
                 elif not self.opened:
@@ -26,14 +26,14 @@ def must_by_open(
         else:
 
             @wraps(method)
-            def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+            def wrapper(self: AsyncOpenClose, *args: Any, **kwargs: Any) -> Any:
                 if self.closed:
                     raise if_closed(f"{self} is closed")
                 elif not self.opened:
                     raise if_not_open(f"{self} is not open")
                 return method(self, *args, **kwargs)
 
-        return wrapper
+        return wrapper  # type: ignore
 
     return setup
 
@@ -42,7 +42,7 @@ class AsyncOpenClose:
 
     __slots__ = "_opened", "_closed"
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._opened = self._closed = False
 
     @property
