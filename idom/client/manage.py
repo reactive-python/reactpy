@@ -105,9 +105,10 @@ def install(
 
 
 def restore() -> None:
-    _delete_os_paths(WEB_MODULES, NODE_MODULES)
-    _run_subprocess(["npm", "install"], STATIC_DIR)
-    _run_subprocess(["npm", "run", "snowpack"], STATIC_DIR)
+    with Spinner("Restoring"):
+        _delete_os_paths(WEB_MODULES, NODE_MODULES)
+        _run_subprocess(["npm", "install"], STATIC_DIR)
+        _run_subprocess(["npm", "run", "snowpack"], STATIC_DIR)
 
 
 def _package_json() -> Dict[str, Any]:
@@ -154,7 +155,6 @@ def _delete_os_paths(*paths: Path) -> None:
         if p.is_file():
             p.unlink()
         elif p.is_dir():
-            print(p)
             shutil.rmtree(p)
 
 
