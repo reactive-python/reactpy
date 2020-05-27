@@ -7,7 +7,7 @@ from tests.test_client.utils import assert_file_is_touched
 
 
 @pytest.mark.slow
-def test_simple_console_install(capsys):
+def test_simple_install(capsys):
     client.delete_web_modules("jquery", skip_missing=True)
 
     main("install", "jquery")
@@ -25,7 +25,7 @@ def test_simple_console_install(capsys):
 
 
 @pytest.mark.slow
-def test_console_install_with_exports(capsys):
+def test_install_with_exports(capsys):
     client.delete_web_modules(["preact", "preact/hooks"], skip_missing=True)
 
     main("install", "preact", "--exports", "preact/hooks")
@@ -43,13 +43,25 @@ def test_console_install_with_exports(capsys):
     assert "- preact/hooks" not in captured.out
 
 
-def test_bad_options_for_uninstall(capsys):
-    with pytest.raises(SystemExit):
-        main("uninstall", "--exports", "x")
-    captured = capsys.readouterr()
-    assert captured.out == "ERROR: uninstall does not support the '--exports' option\n"
+@pytest.mark.slow
+def test_restore(capsys):
+    main("restore")
+    assert client.installed() == ["htm", "react", "react-dom"]
 
+
+@pytest.mark.parametrize(
+    "args, error",
+    [
+        (("uninstall", "x", "--exports"), ValueError("does not support exports")),
+        (("uninstall", "x", "--force"), ValueError("does not support force")),
+        (("installed", "--exports"), ValueError("does not support exports")),
+        (("installed", "--force"), ValueError("does not support force")),
+        (("restore", "--exports"), ValueError("does not support exports")),
+        (("restore", "--force"), ValueError("does not support force")),
+    ],
+)
+def test_bad_options(capsys, args, error):
+    with pytest.raises(type(error), match=str(error)):
+        main("--debug", *args)
     with pytest.raises(SystemExit):
-        main("uninstall", "--force")
-    captured = capsys.readouterr()
-    assert captured.out == "ERROR: uninstall does not support the '--force' option\n"
+        main(*args)
