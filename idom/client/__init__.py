@@ -5,6 +5,7 @@ from .manage import (
     define_web_module,
     delete_web_modules,
     install,
+    installed,
     restore,
 )
 
@@ -15,5 +16,6 @@ __all__ = [
     "define_web_module",
     "delete_web_modules",
     "install",
+    "installed",
     "restore",
 ]

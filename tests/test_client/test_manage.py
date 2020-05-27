@@ -13,9 +13,13 @@ def test_install():
     client.delete_web_modules(["jquery"], skip_missing=True)
     client.install("jquery")
     assert client.web_module_exists("jquery")
+    assert "jquery" in client.installed()
     with assert_file_is_touched(client.web_module_path("jquery")):
         client.install("jquery", force=True)
+    assert "jquery" in client.installed()
     client.delete_web_modules("jquery")
+    assert not client.web_module_exists("jquery")
+    assert "jquery" not in client.installed()
 
 
 @pytest.mark.slow
