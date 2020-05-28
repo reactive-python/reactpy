@@ -54,7 +54,7 @@ def test_shared_client_state(create_driver, mount, server_url):
 
     @idom.element
     async def Counter(self, count):
-        finalize(self, was_garbage_collected.set())
+        finalize(self, was_garbage_collected.set)
         return idom.html.div({"id": f"count-is-{count}"}, count)
 
     mount(IncrCounter)
