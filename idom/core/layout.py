@@ -1,6 +1,5 @@
 import abc
 import asyncio
-from weakref import ref
 from typing import (
     List,
     Dict,
@@ -18,6 +17,7 @@ from typing import (
     TypeVar,
 )
 
+from mypy_extensions import TypedDict
 from loguru import logger
 
 from .element import AbstractElement
@@ -102,6 +102,13 @@ class AbstractLayout(AsyncOpenClose, abc.ABC):
         """
 
 
+class _ElementState(TypedDict):
+    parent: str
+    inner_elements: Set[str]
+    event_handlers: Dict[str, EventHandler]
+    element: AbstractElement
+
+
 class Layout(AbstractLayout):
 
     __slots__ = (
@@ -115,7 +122,7 @@ class Layout(AbstractLayout):
         self, root: "AbstractElement", loop: Optional[asyncio.AbstractEventLoop] = None
     ) -> None:
         super().__init__(root, loop)
-        self._element_state: Dict[str, Dict[str, Any]] = {}
+        self._element_state: Dict[str, _ElementState] = {}
         self._event_handlers: Dict[str, EventHandler] = {}
         self._rendering_queue: FutureQueue[LayoutUpdate] = FutureQueue(self.loop)
         self._root = root
@@ -285,7 +292,7 @@ class Layout(AbstractLayout):
             "parent": parent_element_id,
             "inner_elements": set(),
             "event_handlers": [],
-            "element_ref": ref(element),
+            "element": element,
         }
         await element.mount(self)
 
@@ -306,8 +313,8 @@ class Layout(AbstractLayout):
         for i in old["inner_elements"]:
             # don't pass on 'unmount' since that only applies to the root
             await self._delete_element_state(i)
-        element = old["element_ref"]()
-        if element is not None and unmount:
+        element = old["element"]
+        if unmount:
             await element.unmount()
 
 
