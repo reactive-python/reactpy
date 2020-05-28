@@ -1,7 +1,6 @@
 import sys
 import argparse
-from collections import defaultdict
-from typing import TypeVar, Callable, Any
+from typing import TypeVar, Callable, Any, DefaultDict, Dict
 
 from idom.client.manage import install, delete_web_modules, installed, restore
 
@@ -34,14 +33,14 @@ def main(*args: str) -> None:
         sys.exit(1)
 
 
-ARG_REQUIREMENTS = {
+ARG_REQUIREMENTS: Dict[str, Dict[str, Any]] = {
     "installed restore uninstall": {"exports": None, "force": False},
     "installed restore": {"dependencies": []},
 }
 
 
 def run(args: argparse.Namespace) -> None:
-    requirements = defaultdict(dict)
+    requirements: DefaultDict[str, Dict[str, Any]] = DefaultDict(dict)
     for cmd, reqs in ARG_REQUIREMENTS.items():
         for c in cmd.split():
             requirements[c].update(reqs)
