@@ -73,3 +73,37 @@ async def test_renderer_run_does_not_supress_non_stop_rendering_errors():
 
         with pytest.raises(ExceptionGroup, match="this is a bug"):
             await renderer.run(send, recv, None)
+
+
+async def test_shared_state_renderer_deletes_old_elements():
+    sent = []
+    target_id = "some-id"
+
+    async def send(data):
+        if len(sent) == 2:
+            raise asyncio.CancelledError()
+        sent.append(data)
+
+    async def recv():
+        await asyncio.sleep(0)
+        return LayoutEvent(target_id, [])
+
+    @idom.element
+    async def Outer(self):
+        @idom.event(target_id=target_id)
+        async def an_event():
+            self.update()
+
+        return idom.html.div({"onEvent": an_event}, Inner())
+
+    @idom.element
+    async def Inner(self):
+        return idom.html.div()
+
+    layout = Layout(Outer())
+    async with SharedStateRenderer(layout) as renderer:
+        await renderer.run(send, recv, "1")
+
+    root = sent[0]["new"][layout.root]
+    first_inner_id = root["children"][0]["data"]
+    assert sent[1]["old"] == [first_inner_id]
