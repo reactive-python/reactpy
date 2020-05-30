@@ -2,6 +2,7 @@ import abc
 import asyncio
 from concurrent.futures import Executor
 import inspect
+from uuid import uuid4
 from functools import wraps
 import time
 from typing import (
@@ -85,18 +86,21 @@ def element(
 
 class AbstractElement(abc.ABC):
 
-    __slots__ = ["_layout"]
+    __slots__ = ["_layout", "_id"]
 
     if not hasattr(abc.ABC, "__weakref__"):  # pragma: no cover
         __slots__.append("__weakref__")
 
     def __init__(self) -> None:
         self._layout: Optional["AbstractLayout"] = None
+        # we can't use `id(self)` because IDs are regularly re-used and the layout
+        # relies on unique IDs to determine which elements have been deleted
+        self._id = uuid4().hex
 
     @property
     def id(self) -> str:
         """The unique ID of the element."""
-        return str(id(self))
+        return self._id
 
     @abc.abstractmethod
     async def render(self) -> Any:

@@ -126,8 +126,6 @@ class Layout(AbstractLayout):
         self._event_handlers: Dict[str, EventHandler] = {}
         self._rendering_queue: FutureQueue[LayoutUpdate] = FutureQueue(self.loop)
         self._root = root
-        self._opened = False
-        self._closed = False
 
     async def open(self) -> None:
         await super().open()
@@ -137,6 +135,7 @@ class Layout(AbstractLayout):
     async def close(self) -> None:
         await self._rendering_queue.cancel()
         await super().close()
+        await self._delete_element_state(self.root)
         return None
 
     @must_by_open(asyncio.CancelledError)
