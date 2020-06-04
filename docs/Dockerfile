@@ -27,6 +27,4 @@ RUN python -m idom install victory semantic-ui-react
 RUN sphinx-build -b html docs/source docs/build
 
 ENV PORT 5000
-EXPOSE 5000
-
 CMD python docs/main.py
