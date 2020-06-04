@@ -15,44 +15,68 @@ CORE_MODULES = STATIC_DIR / "core_modules"
 NODE_MODULES = STATIC_DIR / "node_modules"
 WEB_MODULES = STATIC_DIR / "web_modules"
 
+STATIC_SHIMS: Dict[str, Path] = {}
 
-def web_module(name: str) -> str:
+
+def find_path(url_path: str) -> Optional[Path]:
+    url_path = url_path.strip("/")
+
+    builtin_path = STATIC_DIR.joinpath(*url_path.split("/"))
+    if builtin_path.exists():
+        return builtin_path
+
+    return STATIC_SHIMS.get(url_path)
+
+
+def web_module_path(name: str) -> Optional[Path]:
+    return find_path(f"web_modules/{name}.js")
+
+
+def web_module_url(name: str) -> str:
     path = f"../{WEB_MODULES.name}/{name}.js"
     if not web_module_exists(name):
         raise ValueError(f"Module '{path}' does not exist.")
     return path
 
 
-def web_module_path(name: str) -> Optional[Path]:
-    path = _create_web_module_os_path(name).with_suffix(".js")
-    return path if path.is_file() else None
-
-
 def web_module_exists(name: str) -> bool:
-    return web_module_path(name) is not None
+    return find_path(f"web_modules/{name}.js") is not None
 
 
-def define_web_module(name: str, source: str) -> str:
-    path = _create_web_module_os_path(name).with_suffix(".js")
-    with path.open("w+") as f:
-        f.write(source)
-    return web_module(name)
+def register_web_module(name: str, source: Union[str, Path]) -> str:
+    source_path = source if isinstance(source, Path) else Path(source)
+    if web_module_exists(name):
+        raise ValueError(f"Web module {name} already exists")
+    if not source_path.is_file():
+        raise ValueError(f"Web modules source {source} does not exist or is not a file")
+    STATIC_SHIMS[f"web_modules/{name}.js"] = source
+    return web_module_url(name)
 
 
 def delete_web_modules(names: Sequence[str], skip_missing: bool = False) -> None:
     paths = []
-    for n in _to_list_of_str(names):
+    for name in _to_list_of_str(names):
         exists = False
-        path = _create_web_module_os_path(n)
-        js_path = path.with_suffix(".js")
-        if path.is_dir():
+
+        dir_name = f"web_modules/{name}"
+        js_name = f"web_modules/{name}.js"
+        path = find_path(dir_name)
+        js_path = find_path(js_name)
+
+        if path is not None:
             paths.append(path)
             exists = True
-        if js_path.is_file():
+
+        if js_name in STATIC_SHIMS:
+            del STATIC_SHIMS[js_name]
+            exists = True
+        elif js_path is not None:
             paths.append(js_path)
             exists = True
+
         if not exists and not skip_missing:
-            raise ValueError(f"Module '{n}' does not exist.")
+            raise ValueError(f"Module '{name}' does not exist.")
+
     for p in paths:
         _delete_os_paths(p)
 
@@ -109,6 +133,7 @@ def restore() -> None:
         _delete_os_paths(WEB_MODULES, NODE_MODULES)
         _run_subprocess(["npm", "install"], STATIC_DIR)
         _run_subprocess(["npm", "run", "snowpack"], STATIC_DIR)
+    STATIC_SHIMS.clear()
 
 
 def _package_json() -> Dict[str, Any]:
@@ -139,15 +164,6 @@ def _run_subprocess(args: List[str], cwd: Union[str, Path]) -> None:
             logger.error(error.stderr.decode())
         raise
     return None
-
-
-def _create_web_module_os_path(name: str) -> Path:
-    path = WEB_MODULES
-    for n in name.split("/"):
-        if not path.exists():
-            path.mkdir()
-        path /= n
-    return path
 
 
 def _delete_os_paths(*paths: Path) -> None:

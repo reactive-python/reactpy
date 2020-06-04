@@ -1,4 +1,3 @@
-from io import StringIO
 from pathlib import Path
 
 import pytest
@@ -12,7 +11,7 @@ HERE = Path(__file__).parent
 
 def test_module_cannot_have_source_and_install():
     with pytest.raises(ValueError, match=r"Both .* were given."):
-        idom.Module("something", install="something", source=StringIO())
+        idom.Module("something", install="something", source=HERE / "something.js")
 
 
 @pytest.fixture
@@ -27,7 +26,7 @@ def test_install(driver, display, victory):
     driver.find_element_by_class_name("VictoryContainer")
 
     assert client.web_module_exists("victory")
-    assert client.web_module("victory") == "../web_modules/victory.js"
+    assert client.web_module_url("victory") == "../web_modules/victory.js"
 
 
 @pytest.mark.slow
@@ -41,15 +40,18 @@ def test_delete_module(victory):
 
 @pytest.mark.slow
 def test_custom_module(driver, display, victory):
-    with open(HERE / "my_chart.js") as f:
-        my_chart = Module("my/chart", source=f)
+    my_chart = Module("my/chart", source=HERE / "my_chart.js")
 
     assert client.web_module_exists("my/chart")
-    assert client.web_module("my/chart") == "../web_modules/my/chart.js"
+    assert client.web_module_url("my/chart") == "../web_modules/my/chart.js"
 
     display(my_chart.Import("Chart"))
 
     driver.find_element_by_class_name("VictoryContainer")
+
+    my_chart.delete()
+
+    assert not client.web_module_exists("my/chart")
 
 
 def test_module_deletion():
