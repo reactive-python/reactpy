@@ -1,4 +1,5 @@
-from typing import Any, Callable, Tuple, Optional, Dict, Union, IO
+from pathlib import Path
+from typing import Any, Callable, Tuple, Optional, Dict, Union
 
 from typing_extensions import Protocol
 
@@ -33,29 +34,28 @@ class Module:
         self,
         name: str,
         install: Union[bool, str] = False,
-        source: Optional[IO[str]] = None,
+        source: Optional[Union[str, Path]] = None,
         replace: bool = False,
     ) -> None:
         self._installed = False
         if install and source:
             raise ValueError("Both 'install' and 'source' were given.")
         elif (install or source) and not replace and client.web_module_exists(name):
-            self._module = client.web_module(name)
+            self._module = client.web_module_url(name)
             self._installed = True
             self._name = name
         elif source is not None:
-            client.define_web_module(name, source.read())
-            self._module = client.web_module(name)
+            self._module = client.register_web_module(name, source)
             self._installed = True
             self._name = name
         elif isinstance(install, str):
             client.install([install], [name])
-            self._module = client.web_module(name)
+            self._module = client.web_module_url(name)
             self._installed = True
             self._name = name
         elif install is True:
             client.install(name)
-            self._module = client.web_module(name)
+            self._module = client.web_module_url(name)
             self._installed = True
             self._name = name
         else:
@@ -77,7 +77,7 @@ class Module:
     def delete(self) -> None:
         if not self._installed:
             raise ValueError("Module is not installed locally")
-        client.delete_web_modules([self._module])
+        client.delete_web_modules([self._name])
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"{type(self).__name__}({self._module!r})"
