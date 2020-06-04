@@ -9,8 +9,8 @@ _Func = TypeVar("_Func", bound=Any)
 
 
 def must_by_open(
-    if_closed: Type[Exception] = RuntimeError,
-    if_not_open: Type[Exception] = RuntimeError,
+    if_closed: Type[BaseException] = RuntimeError,
+    if_not_open: Type[BaseException] = RuntimeError,
 ) -> Callable[[_Func], _Func]:
     def setup(method: _Func) -> _Func:
         if inspect.iscoroutinefunction(method):
