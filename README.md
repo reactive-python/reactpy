@@ -1,8 +1,5 @@
 # IDOM
 
-<a href="https://travis-ci.com/rmorshea/idom">
-  <img alt="Build Status" src="https://travis-ci.com/rmorshea/idom.svg?branch=master"/>
-</a>
 <a href="https://codecov.io/gh/rmorshea/idom">
   <img alt="Code Coverage" src="https://codecov.io/gh/rmorshea/idom/branch/master/graph/badge.svg" />
 </a>
@@ -15,7 +12,7 @@
 
 Libraries for creating and controlling interactive web pages with Python 3.6 and above.
 
-**Be sure to [read the Documentation](https://idom.readthedocs.io/en/latest/)**
+**Be sure to [read the Documentation](https://idom-docs.herokuapp.com)**
 
 IDOM is still young. If you have ideas or find a bug, be sure to post an
 [issue](https://github.com/rmorshea/idom/issues)
