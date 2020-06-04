@@ -103,9 +103,9 @@ class AbstractLayout(AsyncOpenClose, abc.ABC):
 
 
 class _ElementState(TypedDict):
-    parent: str
+    parent: Optional[str]
     inner_elements: Set[str]
-    event_handlers: Dict[str, EventHandler]
+    event_handlers: List[str]
     element: AbstractElement
 
 
@@ -274,7 +274,7 @@ class Layout(AbstractLayout):
 
     def _element_parent(self, element: AbstractElement) -> Optional[str]:
         try:
-            parent_id: str = self._element_state[element.id]["parent"]
+            parent_id = self._element_state[element.id]["parent"]
         except KeyError:
             if element.id != self.root:
                 raise
@@ -305,7 +305,7 @@ class Layout(AbstractLayout):
     ) -> None:
         old = self._element_state.pop(element_id)
         parent_element_id = old["parent"]
-        if self._has_element_state(parent_element_id):
+        if parent_element_id is not None and self._has_element_state(parent_element_id):
             self._element_state[parent_element_id]["inner_elements"].remove(element_id)
         for handler_id in old["event_handlers"]:
             del self._event_handlers[handler_id]

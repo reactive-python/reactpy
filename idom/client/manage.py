@@ -49,7 +49,7 @@ def register_web_module(name: str, source: Union[str, Path]) -> str:
         raise ValueError(f"Web module {name} already exists")
     if not source_path.is_file():
         raise ValueError(f"Web modules source {source} does not exist or is not a file")
-    STATIC_SHIMS[f"web_modules/{name}.js"] = source
+    STATIC_SHIMS[f"web_modules/{name}.js"] = source_path
     return web_module_url(name)
 
 
