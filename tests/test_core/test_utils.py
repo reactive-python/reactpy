@@ -1,67 +1,52 @@
 import pytest
 
-import idom
-from idom.core.utils import AsyncOpenClose, must_by_open
+from idom.core.utils import HasAsyncResources, async_resource
 
 
-async def test_async_open_close():
-    open_method_triggered = idom.Var(False)
-    close_method_triggered = idom.Var(False)
+async def test_simple_async_resource():
+    class MyResources(HasAsyncResources):
 
-    class MyResource(AsyncOpenClose):
-        async def open(self):
-            await super().open()
-            open_method_triggered.set(True)
+        before = False
+        after = False
 
-        async def close(self):
-            await super().close()
-            close_method_triggered.set(True)
+        @async_resource
+        async def x(self):
+            self.before = True
+            yield 1
+            self.after = True
 
-    resource = MyResource()
-
-    assert not open_method_triggered.value
-    assert not close_method_triggered.value
-    assert not resource.opened
-    assert not resource.closed
-
-    async with resource:
-        assert open_method_triggered.value
-        assert not close_method_triggered.value
-        assert resource.opened
-        assert not resource.closed
-
-    assert close_method_triggered.value
-    assert not resource.opened
-    assert resource.closed
-
-    with pytest.raises(RuntimeError, match="is closed"):
-        await resource.open()
-
-
-async def test_must_by_open():
-    class MyResource(AsyncOpenClose):
-        @must_by_open()
-        async def coro_must_by_open_when_called(self):
-            pass
-
-        @must_by_open()
-        def method_must_by_open_when_called(self):
-            pass
-
-    resource = MyResource()
+    my_resources = MyResources()
 
     with pytest.raises(RuntimeError, match="is not open"):
-        await resource.coro_must_by_open_when_called()
+        my_resources.x
+
+    assert not my_resources.before
+    async with my_resources:
+        assert my_resources.before
+        assert my_resources.x == 1
+        assert not my_resources.after
+    assert my_resources.after
 
     with pytest.raises(RuntimeError, match="is not open"):
-        resource.method_must_by_open_when_called()
+        my_resources.x
 
-    async with resource:
-        await resource.coro_must_by_open_when_called()
-        resource.method_must_by_open_when_called()
 
-    with pytest.raises(RuntimeError, match="is closed"):
-        await resource.coro_must_by_open_when_called()
+async def test_resource_opens_only_once():
+    class MyResources(HasAsyncResources):
+        pass
 
-    with pytest.raises(RuntimeError, match="is closed"):
-        resource.method_must_by_open_when_called()
+    with pytest.raises(RuntimeError, match="is already open"):
+        async with MyResources() as rsrc:
+            async with rsrc:
+                pass
+
+
+async def test_unexpected_resource_close_before_open():
+    class MyResources(HasAsyncResources):
+        @async_resource
+        async def x(self):
+            yield 1
+
+    with pytest.raises(RuntimeError, match="is not open"):
+        rsrc = MyResources()
+        await MyResources.x.close(rsrc, None, None, None)

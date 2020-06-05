@@ -1,9 +1,8 @@
-import sys
 import abc
 import asyncio
-from anyio import create_task_group
+from anyio import create_task_group, TaskGroup  # type: ignore
 
-from typing import Callable, Awaitable, Dict, Any, Union, TypeVar
+from typing import Callable, Awaitable, Dict, Any, TypeVar, AsyncIterator
 
 from .layout import (
     LayoutUpdate,
@@ -11,7 +10,7 @@ from .layout import (
     AbstractLayout,
     AbstractLayout,
 )
-from .utils import AsyncOpenClose, must_by_open
+from .utils import HasAsyncResources, async_resource
 
 _Self = TypeVar("_Self")
 SendCoroutine = Callable[[Any], Awaitable[None]]
@@ -22,41 +21,31 @@ class StopRendering(Exception):
     """Raised to gracefully stop :meth:`AbstractRenderer.run`"""
 
 
-class AbstractRenderer(AsyncOpenClose, abc.ABC):
+class AbstractRenderer(HasAsyncResources, abc.ABC):
     """A base class for implementing :class:`~idom.core.layout.Layout` renderers."""
 
     def __init__(self, layout: AbstractLayout) -> None:
         super().__init__()
         self._layout = layout
 
-    @property
-    def layout(self) -> AbstractLayout:
-        return self._layout
+    @async_resource
+    async def layout(self) -> AsyncIterator[AbstractLayout]:
+        async with self._layout as layout:
+            yield layout
 
-    @property
-    def loop(self) -> asyncio.AbstractEventLoop:
-        return self._layout.loop
+    @async_resource
+    async def task_group(self) -> AsyncIterator[TaskGroup]:
+        async with create_task_group() as group:
+            yield group
 
-    async def open(self) -> None:
-        await super().open()
-        await self.layout.open()
-        return None
-
-    async def close(self) -> None:
-        await self.layout.close()
-        await super().close()
-        return None
-
-    @must_by_open()
     async def run(self, send: SendCoroutine, recv: RecvCoroutine, context: Any) -> None:
         """Start an unending loop which will drive the layout.
 
         This will call :meth:`AbstractLayouTaskGroupTaskGroupt.render` and :meth:`AbstractLayout.trigger`
         to render new models and execute events respectively.
         """
-        async with create_task_group() as group:
-            await group.spawn(self._outgoing_loop, send, context)
-            await group.spawn(self._incoming_loop, recv, context)
+        await self.task_group.spawn(self._outgoing_loop, send, context)
+        await self.task_group.spawn(self._incoming_loop, recv, context)
         return None
 
     async def _outgoing_loop(self, send: SendCoroutine, context: Any) -> None:
@@ -104,44 +93,28 @@ class SharedStateRenderer(SingleStateRenderer):
     :meth:`SharedStateRenderer.run`
     """
 
-    _render_task: "Union[asyncio.Task[Any], asyncio.Future[Any]]"
-
     def __init__(self, layout: AbstractLayout) -> None:
         super().__init__(layout)
-        self.task_group = create_task_group()
         self._models: Dict[str, Dict[str, Any]] = {}
         self._updates: Dict[str, asyncio.Queue[LayoutUpdate]] = {}
-        self._join_event = asyncio.Event()
-        self._joining = False
+
+    @async_resource
+    async def task_group(self) -> AsyncIterator[TaskGroup]:
+        async with create_task_group() as group:
+            await group.spawn(self._render_loop)
+            yield group
 
     async def run(
         self, send: SendCoroutine, recv: RecvCoroutine, context: str, join: bool = False
     ) -> None:
         self._updates[context] = asyncio.Queue()
-        await self.task_group.spawn(super().run, send, recv, context)
+        await super().run(send, recv, context)
         if join:
             await self._join_event.wait()
 
-    async def open(self) -> None:
-        await super().open()
-        await self.task_group.__aenter__()
-        self._render_task = asyncio.ensure_future(self._render_loop(), loop=self.loop)
-        return None
-
-    async def close(self) -> None:
-        try:
-            try:
-                await self.task_group.__aexit__(*sys.exc_info())
-            finally:
-                self._render_task.cancel()
-            await super().close()
-        finally:
-            self._join_event.set()
-        return None
-
     async def _render_loop(self) -> None:
         while True:
-            src, new, old, error = await self._layout.render()
+            src, new, old, error = await self.layout.render()
             # add new models to the overall state
             self._models.update(new)
             # remove old ones from the overall state
@@ -152,11 +125,11 @@ class SharedStateRenderer(SingleStateRenderer):
                 await queue.put(LayoutUpdate(src, new, old, error))
 
     async def _outgoing_loop(self, send: SendCoroutine, context: str) -> None:
-        if self._layout.root in self._models:
+        if self.layout.root in self._models:
             await send(
                 {
-                    "root": self._layout.root,
-                    "src": self._layout.root,
+                    "root": self.layout.root,
+                    "src": self.layout.root,
                     "new": self._models,
                     "old": [],
                 }
@@ -166,3 +139,11 @@ class SharedStateRenderer(SingleStateRenderer):
     async def _outgoing(self, layout: AbstractLayout, context: str) -> Dict[str, Any]:
         src, new, old, error = await self._updates[context].get()
         return {"root": layout.root, "src": src, "new": new, "old": old}
+
+    @async_resource
+    async def _join_event(self) -> AsyncIterator[asyncio.Event]:
+        event = asyncio.Event()
+        try:
+            yield event
+        finally:
+            event.set()
