@@ -16,10 +16,7 @@ from typing import (
 )
 
 if sys.version_info >= (3, 7):  # pragma: no cover
-    from contextlib import (
-        asynccontextmanager,
-        AsyncExitStack,
-    )  # noqa
+    from contextlib import asynccontextmanager, AsyncExitStack  # noqa
 else:  # pragma: no cover
     from async_generator import asynccontextmanager
     from async_exit_stack import AsyncExitStack

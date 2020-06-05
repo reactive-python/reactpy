@@ -6,7 +6,6 @@ python:
   - 3.6
   - 3.7
   - 3.8
-  - 3.8-dev
 
 cache: apt
 
@@ -27,12 +26,10 @@ before_install:
   - sudo chmod +x /usr/bin/chromedriver
 
 install:
-  - pip install -r requirements.txt
-  - python setup.py build
-  - pip install .[all]
+  - pip install -r requirements/ci.txt
 
 script:
-  - bash scripts/test.sh
+  - tox
 
 after_success:
   - codecov

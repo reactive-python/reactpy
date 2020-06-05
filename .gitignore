@@ -16,9 +16,11 @@ venv
 MANIFEST
 build
 dist
+.eggs
 *.egg-info
 __pycache__/
 *.py[cod]
+.tox
 
 # --- PyEnv ---
 .python-version

@@ -4,3 +4,4 @@ notebook
 twine
 wheel
 setuptools_scm
+-r tox.txt
