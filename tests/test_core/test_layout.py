@@ -188,14 +188,16 @@ async def test_element_parents_must_exist_unless_is_root():
     async def Child(self):
         return idom.html.div()
 
-    async with idom.Layout(Main()) as layout:
-        await layout.render()
-
-    assert layout._element_parent(history.main_1) is None
-
     @idom.element
     async def element_not_in_layout(self):
         ...
 
-    with pytest.raises(KeyError):
-        layout._element_parent(element_not_in_layout())
+    async with idom.Layout(Main()) as layout:
+        await layout.render()
+
+        state = layout._element_state
+
+        with pytest.raises(KeyError):
+            layout._element_parent(element_not_in_layout())
+
+    assert not state
