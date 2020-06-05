@@ -22,7 +22,7 @@ try:
     __version__ = _get_distribution(__name__).version
 except _DistributionNotFound:  # pragma: no cover
     # package is not installed
-    pass
+    __version__ = "0.0.0"
 
 # try to automatically setup the dialect's import hook
 try:
