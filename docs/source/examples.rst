@@ -20,8 +20,8 @@ view. In a Jupyter Notebook it will appear in an output cell. If you're running
 
 .. note::
 
-  The :ref:`Shared Client Views` example requires ``SharedClientState`` server instead
-  of the ``PerClientState`` server shown in the boilerplate below. Be sure to wwap it
+  The :ref:`Shared Client Views` example requires ``SharedClientStateServer`` server instead
+  of the ``PerClientStateServer`` server shown in the boilerplate below. Be sure to wwap it
   out when you get there.
 
 
@@ -30,15 +30,19 @@ view. In a Jupyter Notebook it will appear in an output cell. If you're running
 .. code-block::
 
     from idom.server import multiview_server
-    from idom.server.sanic import PerClientState
+    from idom.server.sanic import PerClientStateServer
 
     host, port = "127.0.0.1", 8765
-    mount, server = multiview_server(PerClientState, host, port, {"cors": True}, {"access_log": False})
+    mount, server = multiview_server(
+        PerClientStateServer, host, port, {"cors": True}, {"access_log": False}
+    )
     server_url = f"http://{host}:{port}"
+
 
     def display(element, *args, **kwargs):
         view_id = mount(element, *args, **kwargs)
         return idom.JupyterDisplay("jupyter", server_url, {"view_id": view_id})
+
 
 
 **Jupyter Notebook (binder.org)**
@@ -49,7 +53,7 @@ view. In a Jupyter Notebook it will appear in an output cell. If you're running
     from typing import Mapping, Any, Optional
 
     from idom.server import multiview_server
-    from idom.server.sanic import PerClientState
+    from idom.server.sanic import PerClientStateServer
 
 
     def example_server_url(host: str, port: int) -> str:
@@ -73,9 +77,13 @@ view. In a Jupyter Notebook it will appear in an output cell. If you're running
         else:
             return None
 
+
     host, port = "127.0.0.1", 8765
-    mount, server = multiview_server(PerClientState, host, port, {"cors": True}, {"access_log": False})
+    mount, server = multiview_server(
+        PerClientStateServer, host, port, {"cors": True}, {"access_log": False}
+    )
     server_url = example_server_url(host, port)
+
 
     def display(element, *args, **kwargs):
         view_id = mount(element, *args, **kwargs)
@@ -87,15 +95,19 @@ view. In a Jupyter Notebook it will appear in an output cell. If you're running
 
 .. code-block::
 
-    from idom.server.sanic import PerClientState
+    import idom
+    from idom.server.sanic import PerClientStateServer
 
     def display(element, *args, **kwargs):
-        PerClientState(element, *args, **kwargs).run("127.0.0.1", 8765)
+        PerClientStateServer(element, *args, **kwargs).run("127.0.0.1", 8765)
 
-    # define your element here...
+    @idom.element
+    async def Main(self):
+        # define your element here
+        ...
 
     if __name__ == "__main__":
-        display(...)  # pass in the element here
+        display(Main)
 
 
 Slideshow
