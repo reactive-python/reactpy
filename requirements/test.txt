@@ -1,11 +1,7 @@
-pytest>=5.4.0
+pytest
 pytest-asyncio
 pytest-cov
 pytest-mock
-mypy>=0.750
-black
-flake8
-pep8-naming
-selenium
 flask
-codecov
+selenium
+ipython

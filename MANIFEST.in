@@ -2,3 +2,7 @@ graft idom/client/static/
 prune idom/client/static/node_modules
 include idom/py.typed
 include LICENSE
+include requirements/prod.txt
+include requirements/extras.txt
+include README.md
+include scripts/build.sh

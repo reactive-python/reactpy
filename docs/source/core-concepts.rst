@@ -134,11 +134,9 @@ ever be removed from the model. Then you'll just need to call and await a
 
         return idom.html.button({"onClick": increment}, [f"Click count: {count}"])
 
-
     click_count = ClickCount(0)
-    layout = idom.Layout(click_count)
-    update = await layout.render()
-
+    async with idom.Layout(click_count) as layout:
+        update = await layout.render()
 
     assert update.src == click_count.id
     assert update.new == {
@@ -174,13 +172,17 @@ method. Then we just have to re-render the layout and see what changed:
 
     from idom.core.layout import LayoutEvent
 
-    event_handler_id = update.new[click_count.id]["eventHandlers"]["onClick"]["target"]
-    dummy_event = LayoutEvent(event_handler_id, [{}])
+    click_count = ClickCount(0)
+    async with idom.Layout(click_count) as layout:
+        first_udpate = await layout.render()  # same as above
 
-    await layout.trigger(dummy_event)
+        event_handler_id = first_udpate.new[click_count.id]["eventHandlers"]["onClick"]["target"]
+        dummy_event = LayoutEvent(event_handler_id, [{}])
 
-    new_update = await layout.render()
-    assert new_update.new[click_count.id]["children"][0]["data"] == "Click count: 1"
+        await layout.trigger(dummy_event)
+        second_update = await layout.render()
+
+    assert second_update.new[click_count.id]["children"][0]["data"] == "Click count: 1"
 
 
 Layout Renderer
@@ -201,7 +203,6 @@ callback that's called by the renderer to events it should execute.
     from idom.core import SingleStateRenderer, EventHandler
     from idom.core.layout import LayoutEvent
 
-    layout = idom.Layout(ClickCount(0))
     sent_updates = []
 
 
@@ -224,11 +225,9 @@ callback that's called by the renderer to events it should execute.
         return event
 
 
-    renderer = SingleStateRenderer(layout)
-
-    context = None  # see note below
-
-    await renderer.run(send, recv, context)
+    async with SingleStateRenderer(idom.Layout(ClickCount(0))) as renderer:
+        context = None  # see note below
+        await renderer.run(send, recv, context)
 
     assert len(sent_updates) == 5
 
