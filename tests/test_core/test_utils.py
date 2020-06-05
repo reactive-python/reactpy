@@ -20,6 +20,9 @@ async def test_simple_async_resource():
     with pytest.raises(RuntimeError, match="is not open"):
         my_resources.x
 
+    with pytest.raises(RuntimeError, match="is not open"):
+        await my_resources.__aexit__(None, None, None)
+
     assert not my_resources.before
     async with my_resources:
         assert my_resources.before
@@ -39,14 +42,3 @@ async def test_resource_opens_only_once():
         async with MyResources() as rsrc:
             async with rsrc:
                 pass
-
-
-async def test_unexpected_resource_close_before_open():
-    class MyResources(HasAsyncResources):
-        @async_resource
-        async def x(self):
-            yield 1
-
-    with pytest.raises(RuntimeError, match="is not open"):
-        rsrc = MyResources()
-        await MyResources.x.close(rsrc, None, None, None)

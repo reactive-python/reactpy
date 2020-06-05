@@ -111,10 +111,7 @@ class _ElementState(TypedDict):
 
 class Layout(AbstractLayout):
 
-    __slots__ = (
-        "_event_handlers",
-        "_root",
-    )
+    __slots__ = "_event_handlers", "_root"
 
     def __init__(
         self, root: "AbstractElement", loop: Optional[asyncio.AbstractEventLoop] = None

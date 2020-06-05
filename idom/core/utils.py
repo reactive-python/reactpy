@@ -1,3 +1,5 @@
+import sys
+
 from typing import (
     TypeVar,
     Any,
@@ -13,15 +15,18 @@ from typing import (
     overload,
 )
 
-try:
-    from contextlib import asynccontextmanager, AbstractAsyncContextManager  # noqa
-except ImportError:  # pragma: no cover
-    from async_generator import asynccontextmanager  # type: ignore
+if sys.version_info >= (3, 7):  # pragma: no cover
+    from contextlib import (
+        asynccontextmanager,
+        AsyncExitStack,
+    )  # noqa
+else:  # pragma: no cover
+    from async_generator import asynccontextmanager
+    from async_exit_stack import AsyncExitStack
 
 
 _Rsrc = TypeVar("_Rsrc")
 _Self = TypeVar("_Self", bound="HasAsyncResources")
-_ResourceState = Dict[str, Tuple["AbstractAsyncContextManager[Any]", Any]]
 
 
 def async_resource(
@@ -34,11 +39,11 @@ def async_resource(
 class HasAsyncResources:
 
     _async_resource_names: Tuple[str, ...] = ()
-    __slots__ = "_open", "_async_resource_state"
+    __slots__ = "_async_resource_state", "_async_exit_stack"
 
     def __init__(self) -> None:
-        self._async_resource_state: _ResourceState = {}
-        self._open = False
+        self._async_resource_state: Dict[str, Any] = {}
+        self._async_exit_stack: Optional[AsyncExitStack] = None
 
     def __init_subclass__(cls: Type["HasAsyncResources"]) -> None:
         for k, v in list(cls.__dict__.items()):
@@ -47,20 +52,24 @@ class HasAsyncResources:
         return None
 
     async def __aenter__(self: _Self) -> _Self:
-        if self._open:
+        if self._async_exit_stack is not None:
             raise RuntimeError(f"{self} is already open")
-        self._open = True
+
+        self._async_exit_stack = await AsyncExitStack().__aenter__()
+
         for rsrc_name in self._async_resource_names:
             rsrc: AsyncResource[Any] = getattr(type(self), rsrc_name)
-            await rsrc.open(self)
+            await self._async_exit_stack.enter_async_context(rsrc.context(self))
+
         return self
 
-    async def __aexit__(self, *exc: Any) -> None:
-        for rsrc_name in reversed(self._async_resource_names):
-            rsrc: AsyncResource[Any] = getattr(type(self), rsrc_name)
-            await rsrc.close(self, *exc)
-        self._open = False
-        return None
+    async def __aexit__(self, *exc: Any) -> bool:
+        if self._async_exit_stack is None:
+            raise RuntimeError(f"{self} is not open")
+
+        result = await self._async_exit_stack.__aexit__(*exc)
+        self._async_exit_stack = None
+        return result
 
 
 class AsyncResource(Generic[_Rsrc]):
@@ -70,23 +79,15 @@ class AsyncResource(Generic[_Rsrc]):
     def __init__(self, method: Callable[[Any], AsyncIterator[_Rsrc]],) -> None:
         self._context_manager = asynccontextmanager(method)
 
-    async def open(self, obj: HasAsyncResources) -> None:
-        context = self._context_manager(obj)
-        value = await context.__aenter__()
-        obj._async_resource_state[self._name] = (context, value)
-        return None
-
-    async def close(self, obj: HasAsyncResources, *exc: Any) -> None:
+    @asynccontextmanager
+    async def context(self, obj: HasAsyncResources) -> AsyncIterator[None]:
         try:
-            context, _ = obj._async_resource_state[self._name]
-        except KeyError:
-            raise RuntimeError(f"{self} is not open")
-
-        await context.__aexit__(*exc)
-
-        del obj._async_resource_state[self._name]
-
-        return None
+            async with self._context_manager(obj) as value:
+                obj._async_resource_state[self._name] = value
+                yield None
+        finally:
+            if self._name in obj._async_resource_state:
+                del obj._async_resource_state[self._name]
 
     def __set_name__(self, cls: Type[HasAsyncResources], name: str) -> None:
         self._name = name
@@ -108,6 +109,6 @@ class AsyncResource(Generic[_Rsrc]):
             return self
         else:
             try:
-                return cast(_Rsrc, obj._async_resource_state[self._name][1])
+                return cast(_Rsrc, obj._async_resource_state[self._name])
             except KeyError:
                 raise RuntimeError(f"Resource {self._name!r} of {obj} is not open")
