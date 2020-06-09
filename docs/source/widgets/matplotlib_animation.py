@@ -1,7 +1,6 @@
 import time
 import asyncio
 import random
-import gc
 
 from matplotlib import pyplot as plt
 
@@ -9,7 +8,9 @@ import idom
 
 
 @idom.element
-async def RandomWalk(self):
+async def RandomWalk(self, timeout=20):
+    start = time.time()
+
     x, y = [0] * 50, [0] * 50
     plot = Plot(x, y)
 
@@ -29,6 +30,9 @@ async def RandomWalk(self):
         y.append(y[-1] + diff)
         plot.update(x, y)
 
+        if (time.time() - start) > timeout:
+            stop()
+
     style = idom.html.style(
         [
             """
@@ -39,8 +43,14 @@ async def RandomWalk(self):
         ]
     )
 
+    async def restart(event):
+        self.update()
+
+    restart_button = idom.html.button({"onClick": restart}, "Run It Again ♻️")
+
     return idom.html.div(
-        {"style": {"width": "60%"}}, [style, plot, mu_inputs, sigma_inputs],
+        {"style": {"width": "60%"}},
+        [restart_button, style, plot, mu_inputs, sigma_inputs],
     )
 
 
@@ -51,9 +61,6 @@ async def Plot(self, x, y):
     img = idom.Image("png")
     fig.savefig(img.io, format="png")
     plt.close(fig)
-    # Figures are slow to be garbage collected so we
-    # do a deep cleaning here to reduce memory usage
-    gc.collect(2)
     return img
 
 
