@@ -10,15 +10,20 @@ Let's look at the example that you may have seen
 
     @idom.element
     async def Slideshow(self, index=0):
-
         async def next_image(event):
             self.update(index + 1)
 
-        url = f"https://picsum.photos/800/300?image={index}"
-        return idom.html.img({"src": url, "onChange": next_image})
+        return idom.html.img(
+            {
+                "src": f"https://picsum.photos/800/300?image={index}",
+                "style": {"cursor": "pointer"},
+                "onClick": next_image,
+            }
+        )
 
-    server = idom.server.sanic.PerClientState(Slideshow)
-    server.daemon("localhost", 8765).join()
+    host, port = "localhost", 8765
+    server = idom.server.sanic.PerClientStateServer(Slideshow)
+    server.run(host, port)
 
 Since it's likely a lot to take in at once we'll break it down piece by piece:
 
@@ -64,8 +69,13 @@ __ https://reactjs.org/docs/events.html
 
 .. code-block::
 
-        url = f"https://picsum.photos/800/300?image={index}"
-        return idom.html.img({"src": url, "onChange": next_image})
+        return idom.html.img(
+            {
+                "src": f"https://picsum.photos/800/300?image={index}",
+                "style": {"cursor": "pointer"},
+                "onClick": next_image,
+            }
+        )
 
 Finally we come the end the ``Slideshow`` body where we return a model for an ``<img/>``
 element that draws its image from https://picsum.photos. We've also been sure to add
@@ -74,8 +84,9 @@ can respond to it. The returned model conforms to the `VDOM mimetype specificati
 
 .. code-block::
 
-    server = idom.server.sanic.PerClientState(Slideshow)
-    server.daemon("localhost", 8765).join()
+    host, port = "localhost", 8765
+    server = idom.server.sanic.PerClientStateServer(Slideshow)
+    server.run(host, port)
 
 These last steps prepare a simple web server that will send the layout of elements
 defined in our ``Slideshow`` to the browser and receive any incoming events from the

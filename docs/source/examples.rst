@@ -165,7 +165,20 @@ Try interacting with the sliders 📈
 Install Javascript Modules
 --------------------------
 
+Simply install your javascript library of choice using the ``idom`` CLI:
+
+.. code-block:: bash
+
+    idom install victory
+
+Then import the module with :class:`idom.widgets.utils.Module`:
+
 .. literalinclude:: widgets/victory_chart.py
+
+.. note::
+
+    It's possible to install the module at runtime by specifying ``install=True``.
+    However this is generally discouraged.
 
 .. interactive-widget:: victory_chart
 
@@ -184,6 +197,7 @@ Click the bars to trigger an event 👇
 Source of ``chart.js``:
 
 .. literalinclude:: widgets/custom_chart.js
+    :language: javascript
 
 
 Shared Client Views

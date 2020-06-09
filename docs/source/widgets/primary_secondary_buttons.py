@@ -1,6 +1,6 @@
 import idom
 
-semantic_ui = idom.Module("semantic-ui-react", install=True)
+semantic_ui = idom.Module("semantic-ui-react")
 Button = semantic_ui.Import("Button")
 
 semantic_ui_style = idom.html.link(
@@ -20,7 +20,6 @@ def pre_seperated(*args):
 @idom.element
 async def PrimarySecondaryButtons(self, message=None, event=None, info=None):
     async def on_click_primary(event, info):
-
         self.update("Primary Clicked:", event, info)
 
     async def on_click_secondary(event, info):

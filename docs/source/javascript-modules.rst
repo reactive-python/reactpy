@@ -37,33 +37,31 @@ Before you start:
 - We're assuming the presence of a :ref:`Display Function` for our examples.
 
 Once you've done this you can get started right away. In this example we'll be using a
-charting library for React called `Victory <https://formidable.com/open-source/victory/>`__.
-Installing it in IDOM is quite simple. Just create a :class:`~idom.widgets.utils.Module`,
-tell it what to install and specify ``install=True``.
+charting library for React called `Victory <https://formidable.com/open-source/victory/>`__
+which can be installed using the ``idom`` CLI:
+
+.. code-block:: bash
+
+    idom install victory
+
+Any standard javascript dependency specifier is allowed here. Also, if you need to
+access modules within a subfolder of your desired package you must explicitely state
+those submodules using the ``--exports`` option:
+
+.. code-block:: bash
+
+    idom install my-package@1.2.3 --exports my-package/with-a-submodule
+
+Once the package has been succesfully installed, you can import and display the component:
 
 .. literalinclude:: widgets/victory_chart.py
-    :lines: 1-4
+
+.. interactive-widget:: victory_chart
 
 .. note::
 
-    We're working on a CLI for this [GH167]_
-
-You can install a specific version using ``install="victory@34.1.3`` or any other
-standard javascript dependency specifier. Alternatively, if you need to access a module
-in a subfolder of your desired Javascript package, you can provide ``name="path/to/module"``
-and ``install"my-package"``.
-
-With that out of the way you can import a component from Victory:
-
-.. literalinclude:: widgets/victory_chart.py
-    :lines: 6
-
-Using the ``VictoryBar`` chart component it's simple as displaying it:
-
-.. literalinclude:: widgets/victory_chart.py
-    :lines: 8
-
-.. interactive-widget:: victory_chart
+    Even though it's generally discouraged, you can install packages at runtime using the
+    ``install`` parameter of a :class:`~idom.widgets.utils.Module`.
 
 
 Passing Props To Components
@@ -97,6 +95,7 @@ but this time we'll add a callback to it. Unfortunately we can't just pass it in
 is a bit more complex so we've implemented a quick wrapper for it in a file ``chart.js``.
 
 .. literalinclude:: widgets/custom_chart.js
+    :language: javascript
 
 Which we can read in as a ``source`` to :class:`~idom.widgets.utils.Module`:
 

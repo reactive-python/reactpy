@@ -30,6 +30,11 @@ def test_install(driver, display, victory):
 
 
 @pytest.mark.slow
+def test_reference_pre_installed_module(victory):
+    assert victory.url == idom.Module("victory").url
+
+
+@pytest.mark.slow
 def test_delete_module(victory):
     victory.delete()
     assert not client.web_module_exists("victory")

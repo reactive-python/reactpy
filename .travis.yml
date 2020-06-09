@@ -7,13 +7,12 @@ python:
   - 3.7
   - 3.8
 
-cache: apt
-
 addons:
   chrome: stable
+  apt:
+    update: true
 
 before_install:
-  - sudo apt update
   - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
   - nvm install 10.16.3
   - nvm use 10.16.3
@@ -29,7 +28,7 @@ install:
   - pip install -r requirements/ci.txt
 
 script:
-  - tox
+  - tox -- --headless
 
 after_success:
   - codecov

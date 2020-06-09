@@ -7,10 +7,7 @@ from matplotlib import pyplot as plt
 
 import idom
 
-from _utils import click_to_start
 
-
-@click_to_start
 @idom.element
 async def RandomWalk(self):
     x, y = [0] * 50, [0] * 50
