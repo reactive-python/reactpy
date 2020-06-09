@@ -1,7 +1,6 @@
 import idom
 
-# this may take a moment to download and install
-victory = idom.Module("victory", install=True)
+victory = idom.Module("victory")
 
 VictoryBar = victory.Import("VictoryBar")
 

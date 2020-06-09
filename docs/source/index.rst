@@ -50,29 +50,36 @@ user clicks an image:
 
     @idom.element
     async def Slideshow(self, index=0):
-
         async def next_image(event):
             self.update(index + 1)
 
-        url = f"https://picsum.photos/800/300?image={index}"
-        return idom.html.img({"src": url, "onChange": next_image})
+        return idom.html.img(
+            {
+                "src": f"https://picsum.photos/800/300?image={index}",
+                "style": {"cursor": "pointer"},
+                "onClick": next_image,
+            }
+        )
 
-    server = idom.server.sanic.PerClientState(Slideshow)
-    server.daemon("localhost", 8765).join()
+    host, port = "localhost", 8765
+    server = idom.server.sanic.PerClientStateServer(Slideshow)
+    server.run(host, port)
 
-Running this will serve our slideshow to
-``"https://localhost:8765/client/index.html"``
+Running this will serve our slideshow to ``"https://localhost:8765"``. You can try out
+a working example by enabling the widget below - clicking the image should cause it to
+change 🖱️
 
-.. image:: https://picsum.photos/700/300?random
+.. interactive-widget:: slideshow
 
-You could even display the same thing in a Jupyter notebook!
+.. note::
 
-.. code-block::
+    You can display the same thing in a Jupyter Notebook using widgets!
 
-   idom.display("jupyter", "https://localhost:8765/stream")
+    .. code-block::
 
-Every click will then cause the image to change (it won’t here of
-course).
+        idom.JupyterDisplay(f"https://{host}:{port}")
+
+    For info on working with IDOM in Jupyter see some :ref:`examples <Display Function>`.
 
 
 .. Links

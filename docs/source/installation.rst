@@ -15,11 +15,17 @@ Installation
               pip install idom[stable]
 
     *   - Javascript Packages
-        - To allow IDOM to install Javascript libraries you'll need npm_.
+        - Installing Javascript packages with IDOM requires npm_.
+
+          .. code-block::
+
+              idom install some-js-package
+
+          For more info see the :ref:`Javascript Modules` section.
 
     *   - Extra Features
 
-        - To install *specific* features see :ref:`Extra Features`, but to install all of them:
+        - To install **specific** features see :ref:`Extra Features`, but to install all of them:
 
           .. code-block:: bash
 
@@ -75,13 +81,13 @@ simply run the following to re-evaluate the ``package.json``:
 Running The Test
 ----------------
 
-The test suite for IDOM covers:
+The test suite for IDOM is executed using Tox_ and covers:
 
 1. Server-side Python code using PyTest_
 
 2. The end-to-end application using Selenium_
 
-3. (Coming soon...) Client side Javascript code
+3. (Coming soon...) Client side Javascript code [GH195]_
 
 To run the full suite of tests you'll need to install:
 
@@ -98,19 +104,41 @@ run:
 
 .. code-block:: bash
 
-    pytest src/tests
+    tox --factor py38
+
+.. note::
+
+    You can substitute ``py38`` for your prefered Python version, however only
+    a subset of the tests are configured to run on versions besides 3.8
+
 
 If you prefer to run the tests using a headless browser:
 
 .. code-block:: bash
 
-    pytest src/tests --headless
+    tox --factor py38 -- --headless
+
+
+Building The Documentation
+--------------------------
+
+Building the documentation as it's is deployed in production requires Docker_. Once you've
+installed ``docker`` you'll need to build and then run a container with the service:
+
+.. code-block:: bash
+
+    docker build . --file docs/Dockerfile --tag idom-docs:latest
+    docker run -p 5000:5000 -e DEBUG=true -it idom-docs:latest
+
+You should then navigate to http://127.0.0.1:5000 to see the documentation.
+
 
 .. Links
 .. =====
 
 .. _Google Chrome: https://www.google.com/chrome/
 .. _ChromeDriver: https://chromedriver.chromium.org/downloads
+.. _Docker: https://docs.docker.com/get-docker/
 .. _git: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 .. _Git Bash: https://gitforwindows.org/
 .. _npm: https://www.npmjs.com/get-npm
@@ -118,3 +146,4 @@ If you prefer to run the tests using a headless browser:
 .. _pip: https://pypi.org/project/pip/
 .. _PyTest: pytest <https://docs.pytest.org
 .. _Selenium: https://www.seleniumhq.org/
+.. _Tox: https://tox.readthedocs.io/en/latest/

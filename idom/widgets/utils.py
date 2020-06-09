@@ -58,6 +58,8 @@ class Module:
             self._module = client.web_module_url(name)
             self._installed = True
             self._name = name
+        elif client.web_module_exists(name):
+            self._module = client.web_module_url(name)
         else:
             self._module = name
 

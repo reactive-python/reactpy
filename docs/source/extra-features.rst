@@ -7,7 +7,13 @@ Optionally installable features of IDOM.
   :local:
   :depth: 1
 
-To install **all** features simply run
+To install a **stable** set of features for IDOM simply run.
+
+.. code-block::
+
+    pip install idom[stable]
+
+To install **all** extra features run
 
 .. code-block::
 

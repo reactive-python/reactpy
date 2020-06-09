@@ -5,8 +5,6 @@ import asyncio
 
 import idom
 
-from _utils import click_to_start
-
 
 class Directions(enum.Enum):
     ArrowUp = (-1, 0)
@@ -26,7 +24,6 @@ class GameState:
         self.lost = idom.Var(False)
 
 
-@click_to_start
 @idom.element(state="grid_size, block_size")
 async def GameView(self, grid_size, block_size):
     game = GameState(grid_size, block_size)

@@ -18,32 +18,69 @@ class IteractiveWidget(Directive):
                 "",
                 f"""
                 <style>
-                .interactive-widget {{
-                    margin-bottom: 25px;
-                    padding: 12px;
-                    background-color: #fcfcfc;
+                .interactive {{
                     border: 1px solid #e1e4e5;
                     -webkit-transition: 0.2s ease-out;
                     -moz-transition: 0.2s ease-out;
                     -o-transition: 0.2s ease-out;
                     transition: 0.2s ease-out;
                 }}
-                .interactive-widget:hover, .interactive-widget:focus-within {{
+                .interactive:hover, .interactive-widget:focus-within {{
                     border: 1px solid #2980B9;
+                }}
+                .widget-container {{
+                    margin-bottom: 25px;
+                    padding: 15px;
+                    background-color: #fcfcfc;
+                    min-height: 75px;
+                }}
+                .center-content {{
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }}
+                .enable-widget-button {{
+                    padding: 10px;
                 }}
                 </style>
                 <div>
-                    <div id="{container_id}" class="interactive-widget" style="" />
+                    <div id="{container_id}" class="interactive widget-container center-content" style="" />
                     <script async type="module">
-                        import {{ renderLayout }} from "/client/core_modules/layout.js";
                         const loc = window.location;
                         const idom_url = "//" + loc.host;
                         const http_proto = loc.protocol;
-                        const ws_proto = (http_proto === "https:") ? "wss:" : "ws:";
-                        renderLayout(
-                            document.getElementById("{container_id}"),
-                            ws_proto + idom_url + "/stream?view_id={view_id}"
-                        );
+                        const ws_proto = http_proto === "https:" ? "wss:" : "ws:";
+
+                        const mount = document.getElementById("{container_id}");
+                        const enableWidgetButton = document.createElement("button");
+                        enableWidgetButton.innerHTML = "⚡ Enable Widget ⚡";
+                        enableWidgetButton.setAttribute("class", "enable-widget-button")
+
+                        enableWidgetButton.addEventListener("click", () => {{
+                            import("/client/core_modules/layout.js").then((layout) => {{
+                                fadeOutAndThen(enableWidgetButton, () => {{
+                                    mount.removeChild(enableWidgetButton);
+                                    mount.setAttribute("class", "interactive widget-container");
+                                    layout.renderLayout(mount, ws_proto + idom_url + "/stream?view_id={view_id}");
+                                }});
+                            }});
+                        }});
+
+                        function fadeOutAndThen(element, callback) {{
+                            var op = 1;  // initial opacity
+                            var timer = setInterval(function () {{
+                                if ( op < 0.001 ) {{
+                                    clearInterval(timer);
+                                    element.style.display = "none";
+                                    callback();
+                                }}
+                                element.style.opacity = op;
+                                element.style.filter = 'alpha(opacity=' + op * 100 + ")";
+                                op -= op * 0.5;
+                            }}, 50);
+                        }}
+
+                        mount.appendChild(enableWidgetButton);
                     </script>
                 </div>
                 """,

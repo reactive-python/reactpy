@@ -47,4 +47,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=int(os.environ.get("PORT", 5000)),
         workers=int(os.environ.get("WEB_CONCURRENCY", 1)),
+        debug={"true": True, "false": False}[os.environ.get("DEBUG", "False").lower()],
     )
