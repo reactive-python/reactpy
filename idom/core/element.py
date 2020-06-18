@@ -1,5 +1,6 @@
 import abc
 import asyncio
+from threading import current_thread
 from concurrent.futures import Executor
 import inspect
 from uuid import uuid4
@@ -31,24 +32,20 @@ ElementRenderFunction = Callable[..., Awaitable["VdomDict"]]
 
 @overload
 def element(
-    function: Callable[..., Any],
-    *,
-    state: Optional[str] = None,
-    run_in_executor: Union[bool, Executor] = False,
+    function: Callable[..., Any], *, run_in_executor: Union[bool, Executor] = False,
 ) -> ElementConstructor:
     ...
 
 
 @overload
 def element(
-    *, state: Optional[str] = None, run_in_executor: Union[bool, Executor] = False
+    *, run_in_executor: Union[bool, Executor] = False
 ) -> Callable[[ElementRenderFunction], ElementConstructor]:
     ...
 
 
 def element(
     function: Optional[ElementRenderFunction] = None,
-    state: Optional[str] = None,
     run_in_executor: Union[bool, Executor] = False,
 ) -> Callable[..., Any]:
     """A decorator for defining an :class:`Element`.
@@ -72,7 +69,7 @@ def element(
 
         @wraps(func)
         def constructor(*args: Any, **kwargs: Any) -> Element:
-            element = Element(func, state, run_in_executor)
+            element = Element(func, args, kwargs, run_in_executor)
             element.update(*args, **kwargs)
             return element
 
@@ -173,51 +170,48 @@ class Element(AbstractElement):
     5. Go back to step **3**.
     """
 
+    _currently_rendering: Dict[str, "Element"] = {}
+
     __slots__ = (
         "_animation_futures",
         "_function",
-        "_function_signature",
-        "_function_var_positional_param",
-        "_function_var_keyword_param",
-        "_cross_update_state",
-        "_cross_update_parameters",
-        "_state",
-        "_state_updated",
+        "_args",
+        "_kwargs",
+        "_will_update",
         "_run_in_executor",
+        "_next_hook_id",
     )
+
+    @classmethod
+    def currently_rendering(cls):
+        return cls._currently_rendering[current_thread()]
 
     def __init__(
         self,
         function: ElementRenderFunction,
-        state_parameters: Optional[str],
+        args: Tuple[Any, ...],
+        kwargs: Dict[str, Any],
         run_in_executor: Union[bool, Executor] = False,
     ):
         super().__init__()
         self._function = function
-        signature, var_positional, var_keyword = _extract_signature(function)
-        self._function_signature = signature
-        self._function_var_positional_param = var_positional
-        self._function_var_keyword_param = var_keyword
+        self._args = args
+        self._kwargs = kwargs
         self._layout: Optional["AbstractLayout"] = None
-        self._cross_update_state: Dict[str, Any] = {}
-        self._cross_update_parameters: List[str] = list(
-            map(str.strip, (state_parameters or "").split(","))
-        )
-        self._state: Dict[str, Any] = {}
-        self._state_updated: bool = False
+        self._will_update: bool = False
         self._animation_futures: List[asyncio.Future[None]] = []
         self._run_in_executor = run_in_executor
+        self._next_hook_id = 0
 
-    def update(self, *args: Any, **kwargs: Any) -> None:
+    def next_hook_id(self):
+        self._next_hook_id += 1
+        return f"{self.id}-{self._next_hook_id}"
+
+    def update(self) -> None:
         """Schedule this element to render with new parameters."""
-        if not self._state_updated:
+        if not self._will_update:
             # only tell layout to render on first update call
-            self._state = {}
-            self._state_updated = True
-            self._cancel_animation()
             super().update()
-        bound = self._function_signature.bind_partial(None, *args, **kwargs)
-        self._state.update(list(bound.arguments.items())[1:])
 
     @overload
     def animate(self, function: _ANM, rate: float = 0) -> _ANM:
@@ -262,27 +256,16 @@ class Element(AbstractElement):
         await self._stop_animation()
 
         # load update and reset for next render
-        state = self._state
-
-        for name in self._cross_update_parameters:
-            if name not in state:
-                # carry state across update calls implicitely
-                if name in self._cross_update_state:
-                    state[name] = self._cross_update_state[name]
-            else:
-                # cross-update state parameter was set explicitely
-                self._cross_update_state[name] = state[name]
-
-        self._state_updated = False
+        self._will_update = False
 
         if self._run_in_executor is False:
-            return await self._run_function(state)
+            return await self._run_function()
         else:
             loop = asyncio.get_event_loop()
             # use default executor if _run_in_executor was only given as True
             exe = None if self._run_in_executor is True else self._run_in_executor
             # run the function in a new thread so we don't block
-            return await loop.run_in_executor(exe, self._render_in_executor, state)
+            return await loop.run_in_executor(exe, self._render_in_executor)
 
     async def unmount(self) -> None:
         await self._stop_animation()
@@ -301,28 +284,26 @@ class Element(AbstractElement):
         except asyncio.CancelledError:
             pass
 
-    def _render_in_executor(self, state: Dict[str, Any]) -> Any:
+    def _render_in_executor(self) -> Any:
         # we need to set up the event loop since we'll be in a new thread
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            result = loop.run_until_complete(self._run_function(state))
+            result = loop.run_until_complete(self._run_function())
         finally:
             loop.close()
         return result
 
-    async def _run_function(self, state: Dict[str, Any]) -> Any:
-        args, kwargs = (), state.copy()
-        if self._function_var_positional_param is not None:
-            args = kwargs.pop(self._function_var_positional_param, ())
-        if self._function_var_keyword_param is not None:
-            kwargs.update(kwargs.pop(self._function_var_keyword_param, {}))
-        return await self._function(self, *args, **kwargs)
+    async def _run_function(self) -> Any:
+        type(self)._currently_rendering[current_thread()] = self
+        self._next_hook_id = 0
+        try:
+            return await self._function(*self._args, **self._kwargs)
+        finally:
+            del type(self)._currently_rendering[current_thread()]
 
     def __repr__(self) -> str:
-        total_state = {**self._cross_update_state, **self._state}
-        state = ", ".join(f"{k}={v!r}" for k, v in total_state.items())
-        return f"{self._function.__qualname__}({self.id}, {state})"
+        return f"{self._function.__qualname__}({self.id})"
 
 
 class FramePacer:
