@@ -23,6 +23,7 @@ from loguru import logger
 from .element import AbstractElement
 from .events import EventHandler
 from .utils import HasAsyncResources, async_resource
+from .hooks import HookDispatcher
 
 
 _Self = TypeVar("_Self")
@@ -106,12 +107,11 @@ class _ElementState(TypedDict):
     parent: Optional[str]
     inner_elements: Set[str]
     event_handlers: List[str]
-    element: AbstractElement
 
 
 class Layout(AbstractLayout):
 
-    __slots__ = "_event_handlers", "_root"
+    __slots__ = "_event_handlers", "_root", "_hook_dispatcher"
 
     def __init__(
         self, root: "AbstractElement", loop: Optional[asyncio.AbstractEventLoop] = None
@@ -119,6 +119,7 @@ class Layout(AbstractLayout):
         super().__init__(root, loop)
         self._event_handlers: Dict[str, EventHandler] = {}
         self._root = root
+        self._hook_dispatcher = HookDispatcher(self)
 
     def update(self, element: "AbstractElement") -> None:
         self._rendering_queue.put(self._render(element))
@@ -184,7 +185,7 @@ class Layout(AbstractLayout):
         else:
             await self._create_element_state(element, parent_element_id)
 
-        model = await element.render()
+        model = await self._hook_dispatcher.render(element)
 
         if isinstance(model, AbstractElement):
             model = {"tagName": "div", "children": [model]}
@@ -286,9 +287,7 @@ class Layout(AbstractLayout):
             "parent": parent_element_id,
             "inner_elements": set(),
             "event_handlers": [],
-            "element": element,
         }
-        await element.mount(self)
 
     async def _reset_element_state(self, element: AbstractElement) -> None:
         parent_element_id = self._element_state[element.id]["parent"]
@@ -307,9 +306,6 @@ class Layout(AbstractLayout):
         for i in old["inner_elements"]:
             # don't pass on 'unmount' since that only applies to the root
             await self._delete_element_state(i)
-        element = old["element"]
-        if unmount:
-            await element.unmount()
 
 
 # future queue type

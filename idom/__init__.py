@@ -9,6 +9,7 @@ from .core.element import element, Element
 from .core.events import event, Events
 from .core.layout import Layout
 from .core.vdom import vdom
+from .core import hooks
 
 from .widgets.input import Input
 from .widgets.html import html
@@ -46,6 +47,7 @@ __all__ = [
     "Events",
     "dialect",
     "html",
+    "hooks",
     "Layout",
     "server",
     "Var",

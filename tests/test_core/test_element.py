@@ -8,12 +8,12 @@ import idom
 
 def test_element_repr():
     @idom.element
-    async def MyElement(self, a):
+    async def MyElement(a):
         pass
 
     m_e = MyElement(1)
 
-    assert repr(m_e) == f"test_element_repr.<locals>.MyElement({m_e.id}, a=1)"
+    assert repr(m_e) == f"test_element_repr.<locals>.MyElement({m_e.id})"
 
 
 def test_element_function_is_coroutine():
@@ -32,27 +32,20 @@ async def test_simple_element():
     sd = simple_div()
 
     assert await sd.render() == {"tagName": "div"}
-    # can render more than once without update
-    assert await sd.render() == {"tagName": "div"}
-
-    sd.update()
-    assert await sd.render() == {"tagName": "div"}
 
 
 async def test_simple_parameterized_element():
     @idom.element
-    async def simple_param_element(self, tag):
+    async def simple_param_element(tag):
         return idom.vdom(tag)
 
     spe = simple_param_element("div")
     assert await spe.render() == {"tagName": "div"}
-    spe.update("img")
-    assert await spe.render() == {"tagName": "img"}
 
 
 async def test_element_with_var_args():
     @idom.element
-    async def element_with_var_args_and_kwargs(self, *args, **kwargs):
+    async def element_with_var_args_and_kwargs(*args, **kwargs):
         return idom.html.div(kwargs, args)
 
     element = element_with_var_args_and_kwargs("hello", "world", myAttr=1)
@@ -65,18 +58,17 @@ async def test_element_with_var_args():
 
 
 async def test_simple_stateful_element():
-    @idom.element(state="tag")
-    async def simple_stateful_element(self, tag):
-        return idom.vdom(tag)
+    @idom.element
+    async def simple_stateful_element():
+        index, set_index = idom.use_state(0)
+        set_index(index + 1)
+        return idom.html.div(index)
 
-    ssd = simple_stateful_element("div")
-    assert await ssd.render() == {"tagName": "div"}
-    ssd.update()
-    assert await ssd.render() == {"tagName": "div"}
-    ssd.update("img")
-    assert await ssd.render() == {"tagName": "img"}
-    ssd.update()
-    assert await ssd.render() == {"tagName": "img"}
+    ssd = simple_stateful_element()
+
+    assert await ssd.render() == {"tagName": "div", "children": [1]}
+    assert await ssd.render() == {"tagName": "div", "children": [2]}
+    assert await ssd.render() == {"tagName": "div", "children": [3]}
 
 
 def test_simple_hello_world(driver, display):
@@ -90,16 +82,20 @@ def test_simple_hello_world(driver, display):
 
 
 def test_simple_input(driver, display):
-    message = idom.Var(None)
+    message_var = idom.Var(None)
 
     @idom.element
-    async def Input(self):
+    async def Input(message=None):
+        message, set_message = idom.use_state(message)
+        message_var.set(message)
+
+        print(message)
+
         async def on_change(event):
             if event["value"] == "this is a test":
-                message.set(event["value"])
-                self.update()
+                set_message(event["value"])
 
-        if message.get() is None:
+        if message is None:
             return idom.html.input({"id": "input", "onChange": on_change})
         else:
             return idom.html.p({"id": "complete"}, ["Complete"])
@@ -110,7 +106,7 @@ def test_simple_input(driver, display):
     button.send_keys("this is a test")
     driver.find_element_by_id("complete")
 
-    assert message.get() == "this is a test"
+    assert message_var.get() == "this is a test"
 
 
 def test_animation(driver, display):
@@ -148,7 +144,7 @@ def test_run_in_executor(driver, display):
         return CounterOnClick()
 
     @idom.element(run_in_executor=True)
-    async def CounterOnClick(self, count=0):
+    async def CounterOnClick(count=0):
         count_thread.set(current_thread())
 
         @idom.event
@@ -224,7 +220,7 @@ def test_can_stop_event_propogation(driver, display):
 
 def test_animation_rate(driver, display):
     @idom.element
-    async def Counter(self, count=0):
+    async def Counter(count=0):
         @self.animate(rate=0.1)
         async def increment(stop):
             if count < 5:
