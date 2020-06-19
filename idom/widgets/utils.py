@@ -3,8 +3,9 @@ from typing import Any, Callable, Tuple, Optional, Dict, Union
 
 from typing_extensions import Protocol
 
+from idom.core import hooks
 from idom import client
-from idom.core.element import ElementConstructor, Element, element
+from idom.core.element import ElementConstructor, element
 from idom.core.vdom import VdomDict, ImportSourceDict, make_vdom_constructor
 from idom.tools import Var
 
@@ -163,29 +164,22 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
 
             # displaying the output now will show DivTwo
     """
-    current_root: Var[Optional[Element]] = Var(None)
-    current_swap: Var[Callable[[], Any]] = Var(lambda: {"tagName": "div"})
-    last_element: Var[Optional[Element]] = Var(None)
+    update_trigger: Var[Callable[[], None]] = Var(lambda: None)
+    element_constructor: Var[Callable[[], Any]] = Var(lambda: {"tagName": "div"})
 
     @element
-    async def HotSwap(self: Element) -> Any:
+    async def HotSwap() -> Any:
+        update = hooks.use_update()
         if shared:
-            current_root.set(self)
-        make_element = current_swap.get()
-        new = make_element()
-        old = last_element.set(new)
-        if isinstance(old, Element):
-            # because the hotswap is done via side-effects there's no way for
-            # the layout to know to unmount the old element so we do it manually
-            await old.unmount()
-        return new
+            update_trigger.set(update)
+        make_element = element_constructor.get()
+        return make_element()
 
     def swap(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> None:
-        current_swap.set(lambda: constructor(*args, **kwargs))
+        element_constructor.set(lambda: constructor(*args, **kwargs))
         if shared:
-            hot = current_root.get()
-            if hot is not None:
-                hot.update()
+            update = update_trigger.get()
+            update()
 
     return swap, HotSwap
 
@@ -227,7 +221,7 @@ def multiview() -> Tuple["MultiViewMount", ElementConstructor]:
     views: Dict[str, ElementConstructor] = {}
 
     @element
-    async def MultiView(self: Element, view_id: str) -> Any:
+    async def MultiView(view_id: str) -> Any:
         return views[view_id]()
 
     return MultiViewMount(views), MultiView

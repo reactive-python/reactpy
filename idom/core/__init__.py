@@ -14,6 +14,7 @@ __all__ = [
     "ElementConstructor",
     "event",
     "Events",
+    "hooks",
     "Layout",
     "vdom",
     "SharedStateRenderer",
