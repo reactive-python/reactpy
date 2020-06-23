@@ -37,10 +37,12 @@ async def test_shared_state_renderer():
         raise asyncio.CancelledError()
 
     @idom.element
-    async def Clickable(self, count=0):
+    async def Clickable(count=0):
+        count, set_count = idom.hooks.use_state(count)
+
         @idom.event(target_id="an-event")
         async def an_event():
-            self.update(count=count + 1)
+            set_count(count + 1)
 
         return idom.html.div({"anEvent": an_event, "count": count})
 
@@ -60,7 +62,7 @@ async def test_renderer_run_does_not_supress_non_stop_rendering_errors():
             raise ValueError("this is a bug")
 
     @idom.element
-    async def AnyElement(self):
+    async def AnyElement():
         return idom.html.div()
 
     async def send(data):
@@ -84,19 +86,24 @@ async def test_shared_state_renderer_deletes_old_elements():
         sent.append(data)
 
     async def recv():
+        # If we don't sleep here recv callback will clog the event loop.
+        # In practice this isn't a problem because you'll usually be awaiting
+        # something here that would take the place of sleep()
         await asyncio.sleep(0)
         return LayoutEvent(target_id, [])
 
     @idom.element
-    async def Outer(self):
+    async def Outer():
+        update = idom.hooks.use_update()
+
         @idom.event(target_id=target_id)
         async def an_event():
-            self.update()
+            update()
 
         return idom.html.div({"onEvent": an_event}, Inner())
 
     @idom.element
-    async def Inner(self):
+    async def Inner():
         return idom.html.div()
 
     layout = Layout(Outer())

@@ -1,4 +1,5 @@
 import idom
+from idom import hooks
 from idom.core.events import EventHandler
 
 
@@ -67,14 +68,33 @@ def test_remove_event_handlers():
     assert my_callback not in events
 
 
+def test_can_prevent_event_default_operation(driver, display):
+    @idom.element
+    async def Input():
+        @idom.event(prevent_default=True)
+        async def on_key_down(value):
+            pass
+
+        return idom.html.input({"onKeyDown": on_key_down, "id": "input"})
+
+    display(Input)
+
+    inp = driver.find_element_by_id("input")
+    inp.send_keys("hello")
+    # the default action of updating the element's value did not take place
+    assert inp.get_attribute("value") == ""
+
+
 def test_simple_click_event(driver, display):
     clicked = idom.Var(False)
 
     @idom.element
-    async def Button(self):
+    async def Button():
+        update = hooks.use_update()
+
         async def on_click(event):
             clicked.set(True)
-            self.update()
+            update()
 
         if not clicked.get():
             return idom.html.button({"onClick": on_click, "id": "click"}, ["Click Me!"])
@@ -89,3 +109,35 @@ def test_simple_click_event(driver, display):
 
     # we care what happens in the final delete when there's no value
     assert clicked.get()
+
+
+def test_can_stop_event_propogation(driver, display):
+    @idom.element
+    async def DivInDiv():
+        inner_events = idom.Events()
+        inner_events.on("Click", stop_propagation=True)
+
+        async def outer_click_is_not_triggered():
+            assert False
+
+        inner = idom.html.div(
+            {
+                "style": {"height": "30px", "width": "30px", "backgroundColor": "blue"},
+                "id": "inner",
+            },
+            event_handlers=inner_events,
+        )
+        outer = idom.html.div(
+            {
+                "style": {"height": "35px", "width": "35px", "backgroundColor": "red"},
+                "onClick": outer_click_is_not_triggered,
+                "id": "outer",
+            },
+            [inner],
+        )
+        return outer
+
+    display(DivInDiv)
+
+    inner = driver.find_element_by_id("inner")
+    inner.click()
