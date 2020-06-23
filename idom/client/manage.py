@@ -74,7 +74,7 @@ def delete_web_modules(names: Sequence[str], skip_missing: bool = False) -> None
             paths.append(js_path)
             exists = True
 
-        if not exists and not skip_missing:
+        if not (exists or skip_missing):
             raise ValueError(f"Module '{name}' does not exist.")
 
     for p in paths:

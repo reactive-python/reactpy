@@ -37,10 +37,10 @@ def pretty_dict_string(
 
     last_indent = " " * (indent * depth)
     depth += 1
-    this_indent = " " * (indent * depth)
-
     if isinstance(value, Mapping):
         s = "{\n"
+
+        this_indent = " " * (indent * depth)
 
         for k in value:
             v = value[k]

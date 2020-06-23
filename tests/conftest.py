@@ -29,9 +29,10 @@ default_error = NotImplementedError()
 
 def pytest_collection_modifyitems(items: Iterable[Any]) -> None:
     for item in items:
-        if isinstance(item, pytest.Function):
-            if inspect.iscoroutinefunction(item.function):
-                item.add_marker(pytest.mark.asyncio)
+        if isinstance(item, pytest.Function) and inspect.iscoroutinefunction(
+            item.function
+        ):
+            item.add_marker(pytest.mark.asyncio)
         if "driver" in item.fixturenames:
             item.add_marker("slow")
 

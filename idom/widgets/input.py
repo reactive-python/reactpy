@@ -85,12 +85,11 @@ class Input(Generic[_InputType], AbstractElement):
         self._set_value(value)
 
     async def render(self) -> VdomDict:
-        input_element = html.input(
+        return html.input(
             self.attributes,
             {"type": self._type, "value": self._display_value},
             event_handlers=self.events,
         )
-        return input_element
 
     def _set_str_value(self, value: str) -> None:
         self._display_value = value

@@ -195,10 +195,9 @@ class Layout(AbstractLayout):
     async def _render_model(
         self, model: Mapping[str, Any], element_id: str
     ) -> AsyncIterator[Tuple[str, Dict[str, Any]]]:
-        index = 0
         to_visit: List[Union[Mapping[str, Any], AbstractElement]] = [model]
-        while index < len(to_visit):
-            node = to_visit[index]
+        for item in to_visit:
+            node = item
             if isinstance(node, AbstractElement):
                 async for i, m in self._render_element(node, element_id):
                     yield i, m
@@ -209,7 +208,6 @@ class Layout(AbstractLayout):
                         to_visit.extend(value)
                     elif isinstance(value, (Mapping, AbstractElement)):
                         to_visit.append(value)
-            index += 1
         yield element_id, self._load_model(model, element_id)
 
     def _load_model(self, model: Mapping[str, Any], element_id: str) -> Dict[str, Any]:

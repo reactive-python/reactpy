@@ -25,20 +25,22 @@ class HtmlDialectNodeTransformer(ast.NodeTransformer):
         self.filename = filename
 
     def visit_Call(self, node: ast.Call) -> Optional[ast.AST]:
-        if isinstance(node.func, ast.Name):
-            if node.func.id == "html":
-                if (
-                    not node.keywords
-                    and len(node.args) == 1
-                    and isinstance(node.args[0], ast.JoinedStr)
-                ):
-                    try:
-                        new_node = self._transform_string(node.args[0])
-                    except htm.ParseError as error:
-                        raise DialectError(str(error), self.filename, node.lineno)
-                    return self.generic_visit(
-                        ast.fix_missing_locations(ast.copy_location(new_node, node))
-                    )
+        if (
+            isinstance(node.func, ast.Name)
+            and node.func.id == "html"
+            and (
+                not node.keywords
+                and len(node.args) == 1
+                and isinstance(node.args[0], ast.JoinedStr)
+            )
+        ):
+            try:
+                new_node = self._transform_string(node.args[0])
+            except htm.ParseError as error:
+                raise DialectError(str(error), self.filename, node.lineno)
+            return self.generic_visit(
+                ast.fix_missing_locations(ast.copy_location(new_node, node))
+            )
         return node
 
     def _transform_string(self, node: ast.JoinedStr) -> ast.Call:

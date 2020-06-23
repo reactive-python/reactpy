@@ -27,7 +27,7 @@ widgets = here / "source" / "widgets"
 sys.path.insert(0, str(widgets))
 
 for file in widgets.iterdir():
-    if not file.is_file() or not file.suffix == ".py" or file.stem.startswith("_"):
+    if not file.is_file() or file.suffix != ".py" or file.stem.startswith("_"):
         continue
 
     with file.open() as f:

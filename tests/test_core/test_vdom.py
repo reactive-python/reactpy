@@ -12,31 +12,24 @@ async def handler(event):
     pass
 
 
-@pytest.mark.parametrize(
-    "actual, expected",
-    [
-        (
+@pytest.mark.parametrize("actual, expected", [(
             idom.vdom("div", [idom.vdom("div")]),
             {"tagName": "div", "children": [{"tagName": "div"}]},
-        ),
-        (
+        ), (
             idom.vdom("div", {"style": {"backgroundColor": "red"}}),
             {"tagName": "div", "attributes": {"style": {"backgroundColor": "red"}}},
-        ),
-        (
+        ), (
             # multiple iterables of children are merged
             idom.vdom("div", [idom.vdom("div"), 1], (idom.vdom("div"), 2)),
             {
                 "tagName": "div",
                 "children": [{"tagName": "div"}, 1, {"tagName": "div"}, 2],
             },
-        ),
-        (
+        ), (
             # multiple dictionaries of attributes are merged
             idom.vdom("div", {"width": "30px"}, {"height": "20px"}),
             {"tagName": "div", "attributes": {"width": "30px", "height": "20px"}},
-        ),
-        (
+        ), (
             idom.vdom(
                 "div",
                 {"width": "30px"},
@@ -49,12 +42,10 @@ async def handler(event):
                 "children": [{"tagName": "div"}, 1, {"tagName": "div"}, 2],
                 "attributes": {"width": "30px", "height": "20px"},
             },
-        ),
-        (
+        ), (
             idom.vdom("div", event_handlers=fake_events),
             {"tagName": "div", "eventHandlers": fake_events},
-        ),
-        (
+        ), (
             idom.vdom("div", idom.html.h1("hello"), idom.html.h2("world")),
             {
                 "tagName": "div",
@@ -63,21 +54,13 @@ async def handler(event):
                     {"tagName": "h2", "children": ["world"]},
                 ],
             },
-        ),
-        (
+        ), (
             idom.vdom("div", {"tagName": "div"}),
             {"tagName": "div", "children": [{"tagName": "div"}]},
-        ),
-        (
-            idom.vdom("div", (i for i in range(3))),
-            {"tagName": "div", "children": [0, 1, 2]},
-        ),
-        (
+        ), (idom.vdom("div", iter(range(3))), {"tagName": "div", "children": [0, 1, 2]}), (
             idom.vdom("div", map(lambda x: x ** 2, [1, 2, 3])),
             {"tagName": "div", "children": [1, 4, 9]},
-        ),
-    ],
-)
+        )])
 def test_simple_node_construction(actual, expected):
     assert actual == expected
 
