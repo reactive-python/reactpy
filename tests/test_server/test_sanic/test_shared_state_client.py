@@ -41,10 +41,12 @@ def test_shared_client_state(create_driver, mount, server_url):
     was_garbage_collected = Event()
 
     @idom.element
-    async def IncrCounter(self, count=0):
+    async def IncrCounter(count=0):
+        count, set_count = idom.hooks.use_state(count)
+
         @idom.event
         async def incr_on_click(event):
-            self.update(count + 1)
+            set_count(count + 1)
 
         button = idom.html.button(
             {"onClick": incr_on_click, "id": "incr-button"}, "click to increment"
@@ -53,8 +55,11 @@ def test_shared_client_state(create_driver, mount, server_url):
         return idom.html.div(button, Counter(count))
 
     @idom.element
-    async def Counter(self, count):
-        finalize(self, was_garbage_collected.set)
+    async def Counter(count):
+        finalize(
+            idom.hooks.current_hook_dispatcher().get_element(),
+            was_garbage_collected.set,
+        )
         return idom.html.div({"id": f"count-is-{count}"}, count)
 
     mount(IncrCounter)
