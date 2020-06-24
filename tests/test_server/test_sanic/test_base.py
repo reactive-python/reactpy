@@ -24,10 +24,10 @@ def test_serve_has_loop_attribute(server):
 
 def test_no_application_until_running():
     @idom.element
-    async def AnElement(self):
+    async def AnyElement():
         pass
 
-    server = idom.server.sanic.PerClientStateServer(AnElement)
+    server = idom.server.sanic.PerClientStateServer(AnyElement)
 
     with pytest.raises(RuntimeError, match="No application"):
         server.application

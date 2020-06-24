@@ -1,6 +1,13 @@
 import time
 
+import pytest
+
 import idom
+
+
+def test_cannot_access_current_hook_dispatch_if_none_active():
+    with pytest.raises(RuntimeError, "No hook dispatcher is active"):
+        idom.hooks.current_hook_dispatcher()
 
 
 async def test_simple_stateful_element():

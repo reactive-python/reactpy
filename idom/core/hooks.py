@@ -17,7 +17,7 @@ from typing import (
     TYPE_CHECKING,
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .element import AbstractElement
     from .layout import AbstractLayout
 
@@ -26,14 +26,14 @@ _UseState = TypeVar("_UseState")
 
 
 def use_state(default: _UseState) -> Tuple[_UseState, Callable[[_UseState], None]]:
-    layout, element, data, is_first_usage = use_hook(dict)
+    update, data, is_first_usage = current_hook_dispatcher().use_state(dict)
 
     if is_first_usage:
         data["value"] = default
 
     def set_state(new: _UseState) -> None:
         data["value"] = new
-        layout.update(element)
+        update()
 
     return data["value"], set_state
 
@@ -42,8 +42,12 @@ _AnimFunc = Callable[[], Awaitable[None]]
 
 
 async def use_rate_limit(rate: float = 0) -> None:
-    layout, element, limiter, _ = use_hook(_FramePacer, rate)
+    _, limiter, _ = current_hook_dispatcher().use_state(_FramePacer, rate)
     await limiter.wait()
+
+
+def use_update() -> Callable[[], None]:
+    return current_hook_dispatcher().get_update()
 
 
 class _FramePacer:
@@ -63,30 +67,23 @@ class _FramePacer:
 _HookData = TypeVar("_HookData")
 
 
-def use_hook(
-    data_type: Type[_HookData], *args: Any, **kwargs: Any
-) -> Tuple["AbstractLayout", "AbstractElement", _HookData, bool]:
-    return current_hook_dispatcher().use_hook(data_type, args, kwargs)
-
-
-def use_update() -> Callable[[], None]:
-    return current_hook_dispatcher().use_update()
-
-
 def current_hook_dispatcher() -> "HookDispatcher":
-    dispatcher = HookDispatcher.current()
+    dispatcher = HookDispatcher.current_dispatcher()
+
     if dispatcher is None:
         raise RuntimeError(
             "No hook dispatcher is active. "
             "Did you render your element using a Layout, "
             "or call a hook outside an Element's render method?"
         )
+
+    # return a proxy to avoid accidentally holding references to dispatcher
     return dispatcher
 
 
 class HookDispatcher:
 
-    _dispatchers: Dict[int, "HookDispatcher"] = WeakValueDictionary()
+    _current_dispatchers: Dict[int, "HookDispatcher"] = WeakValueDictionary()
 
     __slots__ = (
         "_layout",
@@ -101,8 +98,8 @@ class HookDispatcher:
         self._element_state: Dict[str, _HookState] = defaultdict(_HookState)
 
     @classmethod
-    def current(cls) -> Optional["HookDispatcher"]:
-        return cls._dispatchers.get(get_ident())
+    def current_dispatcher(cls) -> Optional["HookDispatcher"]:
+        return cls._current_dispatchers.get(get_ident())
 
     @coroutine
     def render(self, element: "AbstractElement") -> Iterator[None]:
@@ -119,7 +116,7 @@ class HookDispatcher:
 
         try:
             while True:
-                self._set_current()
+                self._set_current_dispatcher()
                 self._current_element = element
                 try:
                     yield next(gen)
@@ -127,37 +124,34 @@ class HookDispatcher:
                     return error.value
                 finally:
                     self._current_element = None
-                    self._unset_current()
+                    self._unset_current_dispatcher()
         finally:
             self._element_state[eid].reset_hook_id()
 
-    def use_hook(
-        self, data_type: Type[_HookData], args: Tuple[Any, ...], kwargs: Dict[str, Any]
-    ) -> Tuple["AbstractLayout", "AbstractElement", _HookData, bool]:
-        element = self._current_element
-        assert element is not None
-
+    def use_state(
+        self, _data_type_: Type[_HookData], *args: Any, **kwargs: Any
+    ) -> Tuple[Callable[[], None], _HookData, bool]:
+        element = self.get_element()
         hook_state = self._element_state[element.id]
-        data, is_first_usage = hook_state.use_hook_data(data_type, args, kwargs)
+        data, is_first_usage = hook_state.use_hook_data(_data_type_, args, kwargs)
+        return self.get_update(), data, is_first_usage
 
-        return self._layout, element, data, is_first_usage
+    def get_update(self) -> Callable[[], None]:
+        element = self.get_element()
+        layout = self._layout
+        return lambda: layout.update(element)
 
-    def use_update(self) -> Callable[[], None]:
+    def get_element(self) -> "AbstractElement":
         element = self._current_element
         assert element is not None
-        layout = self._layout
+        return element
 
-        def update() -> None:
-            layout.update(element)
-
-        return update
-
-    def _set_current(self):
-        self.__class__._dispatchers[get_ident()] = self
+    def _set_current_dispatcher(self):
+        self.__class__._current_dispatchers[get_ident()] = self
 
     @classmethod
-    def _unset_current(cls):
-        del cls._dispatchers[get_ident()]
+    def _unset_current_dispatcher(cls):
+        del cls._current_dispatchers[get_ident()]
 
 
 class _HookState:
@@ -166,7 +160,7 @@ class _HookState:
 
     def __init__(self):
         self._next_hook_id = 0
-        self._hook_data = {}
+        self._hook_data: Dict[int, Any] = {}
 
     def use_hook_data(
         self, data_type: Type[_HookData], args: Tuple[Any, ...], kwargs: Dict[str, Any]

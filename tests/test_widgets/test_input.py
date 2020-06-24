@@ -26,7 +26,7 @@ def test_input(driver, driver_wait, display):
 
 def test_input_server_side_update(driver, driver_wait, display):
     @idom.element
-    async def UpdateImmediately(self):
+    async def UpdateImmediately():
         inp = idom.Input("text", "initial-value", {"id": "inp"})
         inp.update("new-value")
         return inp
