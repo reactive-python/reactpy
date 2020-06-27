@@ -6,7 +6,7 @@ import idom
 
 
 def test_cannot_access_current_hook_dispatch_if_none_active():
-    with pytest.raises(RuntimeError, "No hook dispatcher is active"):
+    with pytest.raises(RuntimeError, match="No hook dispatcher is active"):
         idom.hooks.current_hook_dispatcher()
 
 
@@ -65,7 +65,7 @@ def test_rate_limit(driver, display):
     async def Counter():
         count, set_count = idom.hooks.use_state(0)
 
-        await idom.hooks.use_rate_limit(0.1)
+        await idom.hooks.use_frame_rate(0.1)
 
         if count < 5:
             set_count(count + 1)
