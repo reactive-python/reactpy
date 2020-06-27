@@ -164,22 +164,30 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
 
             # displaying the output now will show DivTwo
     """
-    update_trigger: Var[Callable[[], None]] = Var(lambda: None)
-    element_constructor: Var[Callable[[], Any]] = Var(lambda: {"tagName": "div"})
+    current_constructor: Var[Callable[[], Any]] = Var(lambda: {"tagName": "div"})
 
-    @element
-    async def HotSwap() -> Any:
-        update = hooks.use_update()
-        if shared:
-            update_trigger.set(update)
-        make_element = element_constructor.get()
-        return make_element()
+    if shared:
+        update_hook: Var[Callable[[], None]] = Var(lambda: None)
 
-    def swap(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> None:
-        element_constructor.set(lambda: constructor(*args, **kwargs))
-        if shared:
-            update = update_trigger.get()
-            update()
+        @element
+        async def HotSwap() -> Any:
+            update_hook.set(hooks.dispatch_hook().update)
+            return current_constructor.value()
+
+        def swap(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> None:
+            current_constructor.set(lambda: constructor(*args, **kwargs))
+            update_hook.value()
+            return None
+
+    else:
+
+        @element
+        async def HotSwap() -> Any:
+            return current_constructor.value()
+
+        def swap(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> None:
+            current_constructor.set(lambda: constructor(*args, **kwargs))
+            return None
 
     return swap, HotSwap
 
@@ -235,12 +243,15 @@ class MultiViewMount:
         self._next_auto_id = 0
         self._views = views
 
-    def __getattr__(self, view_id: str) -> MountFunc:
+    def __getitem__(self, view_id: str) -> MountFunc:
         def mount(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> str:
             self._add_view(view_id, constructor, args, kwargs)
             return view_id
 
         return mount
+
+    def __getattr__(self, view_id: str) -> MountFunc:
+        return self[view_id]
 
     def __call__(
         self, constructor: ElementConstructor, *args: Any, **kwargs: Any

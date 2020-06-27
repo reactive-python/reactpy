@@ -90,11 +90,11 @@ def test_simple_click_event(driver, display):
 
     @idom.element
     async def Button():
-        update = hooks.use_update()
+        hook = hooks.dispatch_hook()
 
         async def on_click(event):
             clicked.set(True)
-            update()
+            hook.update()
 
         if not clicked.get():
             return idom.html.button({"onClick": on_click, "id": "click"}, ["Click Me!"])
