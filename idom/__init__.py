@@ -3,21 +3,20 @@ from pkg_resources import (
     DistributionNotFound as _DistributionNotFound,
 )
 
-from . import server
-
 from .core.element import element, Element
 from .core.events import event, Events
 from .core.layout import Layout
-from .core.vdom import vdom
+from .core.vdom import vdom, VdomDict
 from .core import hooks
 
-from .widgets.input import Input
 from .widgets.html import html
 from .widgets.utils import Module, Import, hotswap, multiview
 from .widgets.jupyter import JupyterDisplay
-from .widgets.image import Image
 
 from .tools import Var, html_to_vdom
+
+from . import server
+from . import widgets
 
 try:
     __version__ = _get_distribution(__name__).version
@@ -52,12 +51,12 @@ __all__ = [
     "server",
     "Var",
     "vdom",
-    "Image",
     "Module",
     "Import",
     "hotswap",
     "multiview",
     "JupyterDisplay",
-    "Input",
     "html_to_vdom",
+    "VdomDict",
+    "widgets",
 ]

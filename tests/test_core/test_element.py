@@ -4,12 +4,13 @@ import idom
 
 def test_element_repr():
     @idom.element
-    async def MyElement(a):
+    async def MyElement(a, *b, **c):
         pass
 
-    m_e = MyElement(1)
+    m_e = MyElement(1, 2, 3, x=4, y=5)
 
-    assert repr(m_e) == f"test_element_repr.<locals>.MyElement({m_e.id})"
+    expected = f"test_element_repr.<locals>.MyElement({m_e.id}, a=1, b=(2, 3), c={{'x': 4, 'y': 5}})"
+    assert repr(m_e) == expected
 
 
 def test_element_function_is_coroutine():

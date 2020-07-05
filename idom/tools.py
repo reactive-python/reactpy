@@ -41,7 +41,7 @@ class Var(Generic[_R]):
             return idom.vdom("button", "Use" eventHandlers=events)
     """
 
-    __slots__ = ("value",)
+    __slots__ = "value"
 
     def __init__(self, value: _R) -> None:
         self.value = value

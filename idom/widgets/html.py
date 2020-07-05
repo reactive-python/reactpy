@@ -1,4 +1,62 @@
+from base64 import b64encode
+from typing import Any, Dict, Union, Optional, Callable
+
+import idom
 from idom.core.vdom import component, make_vdom_constructor, VdomDictConstructor
+
+
+def image(
+    format: str,
+    value: Union[str, bytes] = "",
+    attributes: Optional[Dict[str, Any]] = None,
+) -> idom.VdomDict:
+    if format == "svg":
+        format = "svg+xml"
+
+    if isinstance(value, str):
+        bytes_value = value.encode()
+    else:
+        bytes_value = value
+
+    base64_value = b64encode(bytes_value).decode()
+    src = f"data:image/{format};base64,{base64_value}"
+
+    if attributes is None:
+        return {"tagName": "img", "attributes": {"src": src}}
+    else:
+        return {"tagName": "img", "attributes": {"src": src, **attributes}}
+
+
+@idom.element
+async def Input(
+    type: str,
+    value: str = "",
+    attributes: Optional[Dict[str, Any]] = None,
+    callback: Optional[Callable[[str], None]] = None,
+    ignore_empty: bool = True,
+):
+    attrs = attributes or {}
+    value, set_value = idom.hooks.use_state(value)
+
+    events = idom.Events()
+
+    if callback is not None:
+
+        @events.on("change")
+        async def on_change(event):
+            value = event["value"]
+            set_value(value)
+            if not value and ignore_empty:
+                return
+            callback(value)
+
+    else:
+
+        @events.on("change")
+        async def on_change(event):
+            set_value(event["value"])
+
+    return html.input({"type": type, "value": value, **attrs}, event_handlers=events)
 
 
 class Html:
