@@ -33,10 +33,10 @@ def element(function: ElementRenderFunction) -> Callable[..., Any]:
 
 class AbstractElement(abc.ABC):
 
-    __slots__ = (
-        "_id",
-        "__weakref__",
-    )
+    __slots__ = ["_id"]
+
+    if not hasattr(abc.ABC, "__weakref__"):  # pragma: no cover
+        __slots__.append("__weakref__")
 
     def __init__(self) -> None:
         # we can't use `id(self)` because IDs are regularly re-used and the layout
@@ -94,4 +94,10 @@ class Element(AbstractElement):
         return await self._function(*self._args, **self._kwargs)
 
     def __repr__(self) -> str:
-        return f"{self._function.__qualname__}({self.id})"
+        sig = inspect.signature(self._function)
+        args = sig.bind(*self._args, **self._kwargs).arguments
+        items = ", ".join(f"{k}={v!r}" for k, v in args.items())
+        if items:
+            return f"{self._function.__qualname__}({self.id}, {items})"
+        else:
+            return f"{self._function.__qualname__}({self.id})"
