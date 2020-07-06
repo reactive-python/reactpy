@@ -94,11 +94,11 @@ async def test_shared_state_renderer_deletes_old_elements():
 
     @idom.element
     async def Outer():
-        hook = idom.hooks.dispatch_hook()
+        update = idom.hooks.dispatch_hook().create_update_callback()
 
         @idom.event(target_id=target_id)
         async def an_event():
-            hook.update()
+            update()
 
         return idom.html.div({"onEvent": an_event}, Inner())
 

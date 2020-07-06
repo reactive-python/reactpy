@@ -2,7 +2,7 @@ import time
 import asyncio
 from threading import get_ident as get_thread_id
 from types import coroutine
-from weakref import WeakValueDictionary, finalize
+from weakref import WeakValueDictionary, finalize, ref, ReferenceType
 from typing import (
     Dict,
     Any,
@@ -25,16 +25,17 @@ _UseState = TypeVar("_UseState")
 
 def use_state(default: _UseState) -> Tuple[_UseState, Callable[[_UseState], None]]:
     hook = dispatch_hook()
-    data = hook.use_state(dict)
+    state = hook.use_state(dict)
+    update = hook.create_update_callback()
 
-    if "value" not in data:
-        data["value"] = default
+    if "value" not in state:
+        state["value"] = default
 
     def set_state(new: _UseState) -> None:
-        data["value"] = new
-        hook.update()
+        state["value"] = new
+        update()
 
-    return data["value"], set_state
+    return state["value"], set_state
 
 
 _AnimFunc = Callable[[], Awaitable[None]]
@@ -81,25 +82,30 @@ def current_hook_dispatcher() -> "HookDispatcher":
 
 class Hook:
 
-    __slots__ = "layout", "element", "_next_state_id", "_state"
+    __slots__ = "_layout", "_element", "_next_state_id", "_state"
 
-    def __init__(self, layout: "AbstractLayout", element: "AbstractElement") -> None:
-        self.layout = layout
-        self.element = element
+    def __init__(
+        self, layout: "AbstractLayout", element: "ReferenceType[AbstractElement]"
+    ) -> None:
+        self._layout = layout
+        self._element = element
         self._next_state_id = 0
         self._state: Dict[int, Any] = {}
 
     def reset(self) -> None:
         self._next_state_id = 0
 
-    def update(self) -> None:
-        self.layout.update(self.element)
+    def create_update_callback(self):
+        element = self._element()  # deref to keep element alive
+        if element is None:
+            raise RuntimeError(f"Element for hook {self} no longer exists.")
+        return lambda: self._layout.update(element)
 
     def use_state(
         self,
         _constructor_: Callable[..., _HookData],
         *args: Tuple[Any, ...],
-        **kwargs: Dict[str, Any]
+        **kwargs: Dict[str, Any],
     ) -> _HookData:
         state_id = self._next_state_id
         self._next_state_id += 1
@@ -116,16 +122,11 @@ class HookDispatcher:
 
     _current_dispatchers: Dict[int, "HookDispatcher"] = WeakValueDictionary()
 
-    __slots__ = (
-        "_hooks",
-        "_layout",
-        "_current_element",
-        "__weakref__",
-    )
+    __slots__ = "_hooks", "_layout", "_current_element", "__weakref__"
 
     def __init__(self, layout: "AbstractLayout") -> None:
         self._layout = layout
-        self._current_element: Optional["AbstractElement"] = None
+        self._current_element: Optional[AbstractElement] = None
         self._hooks: Dict[str, Hook] = {}
 
     @classmethod
@@ -134,9 +135,11 @@ class HookDispatcher:
 
     def dispatch_hook(self) -> Hook:
         element = self._current_element
+        if element is None:
+            raise RuntimeError("Dispatcher is not rendering any element.")
         element_id = element.id
         if element_id not in self._hooks:
-            hook = self._hooks[element_id] = Hook(self._layout, element)
+            hook = self._hooks[element_id] = Hook(self._layout, ref(element))
         else:
             hook = self._hooks[element_id]
         return hook
