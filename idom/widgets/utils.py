@@ -171,7 +171,7 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
 
         @element
         async def HotSwap() -> Any:
-            update_hook.set(hooks.dispatch_hook().update)
+            update_hook.set(hooks.dispatch_hook().create_update_callback())
             return current_constructor.value()
 
         def swap(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> None:

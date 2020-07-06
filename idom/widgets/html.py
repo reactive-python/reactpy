@@ -21,10 +21,7 @@ def image(
     base64_value = b64encode(bytes_value).decode()
     src = f"data:image/{format};base64,{base64_value}"
 
-    if attributes is None:
-        return {"tagName": "img", "attributes": {"src": src}}
-    else:
-        return {"tagName": "img", "attributes": {"src": src, **attributes}}
+    return {"tagName": "img", "attributes": {"src": src, **(attributes or {})}}
 
 
 @idom.element
