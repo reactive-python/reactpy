@@ -2,14 +2,19 @@ from base64 import b64encode
 from typing import Any, Dict, Union, Optional, Callable
 
 import idom
-from idom.core.vdom import component, make_vdom_constructor, VdomDictConstructor
+from idom.core.vdom import (
+    component,
+    make_vdom_constructor,
+    VdomDictConstructor,
+    VdomDict,
+)
 
 
 def image(
     format: str,
     value: Union[str, bytes] = "",
     attributes: Optional[Dict[str, Any]] = None,
-) -> idom.VdomDict:
+) -> VdomDict:
     if format == "svg":
         format = "svg+xml"
 
@@ -31,7 +36,7 @@ async def Input(
     attributes: Optional[Dict[str, Any]] = None,
     callback: Optional[Callable[[str], None]] = None,
     ignore_empty: bool = True,
-):
+) -> VdomDict:
     attrs = attributes or {}
     value, set_value = idom.hooks.use_state(value)
 
@@ -40,17 +45,18 @@ async def Input(
     if callback is not None:
 
         @events.on("change")
-        async def on_change(event):
+        async def on_change(event: Dict[str, Any]) -> None:
             value = event["value"]
             set_value(value)
             if not value and ignore_empty:
                 return
-            callback(value)
+            # BUG: addressed by https://github.com/python/mypy/issues/2608
+            callback(value)  # type: ignore
 
     else:
 
         @events.on("change")
-        async def on_change(event):
+        async def on_change(event: Dict[str, Any]) -> None:
             set_value(event["value"])
 
     return html.input({"type": type, "value": value, **attrs}, event_handlers=events)
