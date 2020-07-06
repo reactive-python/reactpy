@@ -25,7 +25,7 @@ _UseState = TypeVar("_UseState")
 
 def use_state(default: _UseState) -> Tuple[_UseState, Callable[[_UseState], None]]:
     hook = dispatch_hook()
-    state = hook.use_state(dict)
+    state: Dict[str, Any] = hook.use_state(dict)
     update = hook.create_update_callback()
 
     if "value" not in state:
@@ -95,17 +95,16 @@ class Hook:
     def reset(self) -> None:
         self._next_state_id = 0
 
-    def create_update_callback(self):
+    def create_update_callback(self) -> Callable[[], None]:
         element = self._element()  # deref to keep element alive
-        if element is None:
+        if element is not None:
+            # BUG: addressed by https://github.com/python/mypy/issues/2608
+            return lambda: self._layout.update(element)  # type: ignore
+        else:
             raise RuntimeError(f"Element for hook {self} no longer exists.")
-        return lambda: self._layout.update(element)
 
     def use_state(
-        self,
-        _constructor_: Callable[..., _HookData],
-        *args: Tuple[Any, ...],
-        **kwargs: Dict[str, Any],
+        self, _constructor_: Callable[..., _HookData], *args: Any, **kwargs: Any,
     ) -> _HookData:
         state_id = self._next_state_id
         self._next_state_id += 1
@@ -120,7 +119,7 @@ class Hook:
 
 class HookDispatcher:
 
-    _current_dispatchers: Dict[int, "HookDispatcher"] = WeakValueDictionary()
+    _current_dispatchers: "WeakValueDictionary[int, HookDispatcher]" = WeakValueDictionary()
 
     __slots__ = "_hooks", "_layout", "_current_element", "__weakref__"
 
@@ -172,9 +171,9 @@ class HookDispatcher:
             if element_id in self._hooks:
                 self._hooks[element_id].reset()
 
-    def _set_current_dispatcher(self):
+    def _set_current_dispatcher(self) -> None:
         self.__class__._current_dispatchers[get_thread_id()] = self
 
     @classmethod
-    def _unset_current_dispatcher(cls):
+    def _unset_current_dispatcher(cls) -> None:
         del cls._current_dispatchers[get_thread_id()]
