@@ -49,7 +49,7 @@ class AbstractElement(abc.ABC):
         return self._id
 
     @abc.abstractmethod
-    async def render(self) -> VdomDict:
+    async def render(self) -> "VdomDict":
         """Render the element's :term:`VDOM` model."""
 
 

@@ -6,7 +6,6 @@ from weakref import WeakValueDictionary, finalize, ref, ReferenceType
 from typing import (
     Dict,
     Any,
-    Awaitable,
     Iterator,
     TypeVar,
     Callable,
@@ -38,14 +37,30 @@ def use_state(default: _UseState) -> Tuple[_UseState, Callable[[_UseState], None
     return state["value"], set_state
 
 
-_AnimFunc = Callable[[], Awaitable[None]]
+_MemoValue = TypeVar("_MemoValue")
+
+
+def use_memo(
+    function: Callable[..., _MemoValue], *args: Any, **kwargs: Any
+) -> _MemoValue:
+    hook = dispatch_hook()
+    cache: Dict[int, _MemoValue] = hook.use_state(dict)
+
+    key = hash((args, tuple(kwargs.items())))
+    if key in cache:
+        result = cache[key]
+    else:
+        cache.clear()
+        result = cache[key] = function(*args, **kwargs)
+
+    return result
 
 
 async def use_frame_rate(rate: float = 0) -> None:
-    await dispatch_hook().use_state(_FramePacer, rate).wait()
+    await dispatch_hook().use_state(FramePacer, rate).wait()
 
 
-class _FramePacer:
+class FramePacer:
     """Simple utility for pacing frames in an animation loop."""
 
     __slots__ = "_rate", "_last"
@@ -82,18 +97,20 @@ def current_hook_dispatcher() -> "HookDispatcher":
 
 class Hook:
 
-    __slots__ = "_layout", "_element", "_next_state_id", "_state"
+    __slots__ = "_layout", "_element", "_current_state_index", "_state", "_finalized"
 
     def __init__(
         self, layout: "AbstractLayout", element: "ReferenceType[AbstractElement]"
     ) -> None:
         self._layout = layout
         self._element = element
-        self._next_state_id = 0
-        self._state: Dict[int, Any] = {}
+        self._current_state_index = 0
+        self._state: Tuple[Any, ...] = ()
+        self._finalized = False
 
     def reset(self) -> None:
-        self._next_state_id = 0
+        self._current_state_index = 0
+        self._finalized = True
 
     def create_update_callback(self) -> Callable[[], None]:
         element = self._element()  # deref to keep element alive
@@ -104,17 +121,17 @@ class Hook:
             raise RuntimeError(f"Element for hook {self} no longer exists.")
 
     def use_state(
-        self, _constructor_: Callable[..., _HookData], *args: Any, **kwargs: Any,
+        self, _function_: Callable[..., _HookData], *args: Any, **kwargs: Any
     ) -> _HookData:
-        state_id = self._next_state_id
-        self._next_state_id += 1
-
-        if state_id not in self._state:
-            data = self._state[state_id] = _constructor_(*args, **kwargs)
+        if not self._finalized:
+            # since we're not intialized yet we're just appending state
+            result = _function_(*args, **kwargs)
+            self._state += (result,)
         else:
-            data = self._state[state_id]
-
-        return data
+            # once finalized we iterate over each succesively used piece of state
+            result = self._state[self._current_state_index]
+            self._current_state_index += 1
+        return result
 
 
 class HookDispatcher:
