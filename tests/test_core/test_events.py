@@ -21,6 +21,24 @@ def test_simple_events_object():
     assert len(events) == 2
 
 
+async def test_register_multiple_handlers_to_same_event():
+    events = idom.Events()
+
+    calls = []
+
+    @events.on("change")
+    async def handler_1():
+        calls.append(1)
+
+    @events.on("change")
+    async def handler_2():
+        calls.append(2)
+
+    await events["onChange"]([])
+
+    assert calls == [1, 2]
+
+
 def test_event_handler_serialization():
     assert EventHandler(target_id="uuid").serialize() == {
         "target": "uuid",

@@ -33,9 +33,7 @@ def test_image_from_bytes(driver, driver_wait, display):
 
 def test_input_callback(driver, driver_wait, display):
     inp_var = idom.Var(None)
-    inp = idom.widgets.Input(
-        "text", "initial-value", {"id": "inp"}, callback=inp_var.set,
-    )
+    inp = idom.widgets.Input(inp_var.set, "text", "initial-value", {"id": "inp"})
 
     display(inp)
 
@@ -51,20 +49,6 @@ def test_input_callback(driver, driver_wait, display):
     driver_wait.until(lambda dvr: client_inp.get_attribute("value") == "new-value-2")
 
 
-def test_input_server_side_update(driver, driver_wait, display):
-    @idom.element
-    async def UpdateImmediately():
-        value, set_value = idom.hooks.use_state("initial-value")
-        inp = idom.widgets.Input("text", value, {"id": "inp"})
-        set_value("new-value")
-        return inp
-
-    display(UpdateImmediately)
-
-    client_inp = driver.find_element_by_id("inp")
-    driver_wait.until(lambda drv: client_inp.get_attribute("value") == "new-value")
-
-
 def test_input_ignore_empty(driver, driver_wait, display):
     # ignore empty since that's an invalid float
     inp_ingore_var = idom.Var("1")
@@ -74,17 +58,17 @@ def test_input_ignore_empty(driver, driver_wait, display):
     async def InputWrapper():
         return idom.html.div(
             idom.widgets.Input(
+                inp_ingore_var.set,
                 "number",
                 inp_ingore_var.value,
                 {"id": "inp-ignore"},
-                callback=inp_ingore_var.set,
                 ignore_empty=True,
             ),
             idom.widgets.Input(
+                inp_not_ignore_var.set,
                 "number",
                 inp_not_ignore_var.value,
                 {"id": "inp-not-ignore"},
-                callback=inp_not_ignore_var.set,
                 ignore_empty=False,
             ),
         )

@@ -31,10 +31,10 @@ def image(
 
 @idom.element
 async def Input(
+    callback: Callable[[str], None],
     type: str,
     value: str = "",
     attributes: Optional[Dict[str, Any]] = None,
-    callback: Optional[Callable[[str], None]] = None,
     ignore_empty: bool = True,
 ) -> VdomDict:
     attrs = attributes or {}
@@ -42,22 +42,13 @@ async def Input(
 
     events = idom.Events()
 
-    if callback is not None:
-
-        @events.on("change")
-        async def on_change(event: Dict[str, Any]) -> None:
-            value = event["value"]
-            set_value(value)
-            if not value and ignore_empty:
-                return
-            # BUG: addressed by https://github.com/python/mypy/issues/2608
-            callback(value)  # type: ignore
-
-    else:
-
-        @events.on("change")
-        async def on_change(event: Dict[str, Any]) -> None:
-            set_value(event["value"])
+    @events.on("change")
+    async def on_change(event: Dict[str, Any]) -> None:
+        value = event["value"]
+        set_value(value)
+        if not value and ignore_empty:
+            return
+        callback(value)
 
     return html.input({"type": type, "value": value, **attrs}, event_handlers=events)
 
