@@ -2,6 +2,7 @@ import time
 import asyncio
 from threading import get_ident as get_thread_id
 from types import coroutine
+from functools import lru_cache
 from weakref import WeakValueDictionary, finalize, ref, ReferenceType
 from typing import (
     Dict,
@@ -54,6 +55,15 @@ def use_memo(
         result = cache[key] = function(*args, **kwargs)
 
     return result
+
+
+_LruFunc = TypeVar("_LruFunc")
+
+
+def use_lru_cache(
+    function: _LruFunc, maxsize: Optional[int] = 128, typed: bool = False
+) -> _LruFunc:
+    return dispatch_hook().use_state(lru_cache(maxsize, typed), function)
 
 
 async def use_frame_rate(rate: float = 0) -> None:
@@ -152,7 +162,7 @@ class HookDispatcher:
     def dispatch_hook(self) -> Hook:
         element = self._current_element
         if element is None:
-            raise RuntimeError("Dispatcher is not rendering any element.")
+            raise RuntimeError(f"Hook dispatcher {self} is not rendering any element")
         element_id = element.id
         if element_id not in self._hooks:
             hook = self._hooks[element_id] = Hook(self._layout, ref(element))

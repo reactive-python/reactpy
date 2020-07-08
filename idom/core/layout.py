@@ -111,14 +111,13 @@ class _ElementState(TypedDict):
 
 class Layout(AbstractLayout):
 
-    __slots__ = "_event_handlers", "_root", "_hook_dispatcher"
+    __slots__ = "_event_handlers", "_hook_dispatcher"
 
     def __init__(
         self, root: "AbstractElement", loop: Optional[asyncio.AbstractEventLoop] = None
     ) -> None:
         super().__init__(root, loop)
         self._event_handlers: Dict[str, EventHandler] = {}
-        self._root = root
         self._hook_dispatcher = HookDispatcher(self)
 
     def update(self, element: "AbstractElement") -> None:
