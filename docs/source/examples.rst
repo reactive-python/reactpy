@@ -41,7 +41,7 @@ view. In a Jupyter Notebook it will appear in an output cell. If you're running
 
     def display(element, *args, **kwargs):
         view_id = mount(element, *args, **kwargs)
-        return idom.JupyterDisplay("jupyter", server_url, {"view_id": view_id})
+        return idom.JupyterDisplay(server_url, {"view_id": view_id})
 
 
 
