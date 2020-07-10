@@ -1,7 +1,57 @@
 import uuid
 import json
-from typing import Any, Optional, Dict
+import os
+from weakref import finalize
+from typing import Any, Optional, Any, Optional, Dict, Callable
 from urllib.parse import urlparse, urlencode
+
+import idom
+from idom.server import find_available_port, multiview_server
+from idom.server.sanic import PerClientStateServer
+
+
+def init_display(
+    host: str,
+    server_options: Optional[Any] = None,
+    run_options: Optional[Dict[str, Any]] = None,
+) -> Callable[..., "JupyterDisplay"]:
+    host, port = "127.0.0.1", find_available_port(host)
+    server_options = server_options or {"cors": True}
+    run_options = run_options or {"access_log": False}
+    multiview_mount, _ = multiview_server(
+        PerClientStateServer, host, port, server_options, run_options
+    )
+    server_url = _find_server_url(host, port)
+
+    def display(element, *args, **kwargs):
+        view_id = multiview_mount(element, *args, **kwargs)
+        widget = idom.JupyterDisplay(server_url, {"view_id": view_id})
+        finalize(widget, multiview_mount.remove, view_id)
+        return widget
+
+    return display
+
+
+def _find_server_url(host: str, port: int) -> str:
+    localhost_idom_path = f"http://{host}:{port}"
+    jupyterhub_idom_path = _path_to_jupyterhub_proxy(port)
+    return jupyterhub_idom_path or localhost_idom_path
+
+
+def _path_to_jupyterhub_proxy(port: int) -> Optional[str]:
+    """If running on Jupyterhub return the path from the host's root to a proxy server
+
+    This is used when examples are running on mybinder.org or in a container created by
+    jupyter-repo2docker. For this to work a ``jupyter_server_proxy`` must have been
+    instantiated. See https://github.com/jupyterhub/jupyter-server-proxy
+    """
+    if "JUPYTERHUB_OAUTH_CALLBACK_URL" in os.environ:
+        url = os.environ["JUPYTERHUB_OAUTH_CALLBACK_URL"].rsplit("/", 1)[0]
+        return f"{url}/proxy/{port}"
+    elif "JUPYTER_SERVER_URL" in os.environ:
+        return f"{os.environ['JUPYTER_SERVER_URL']}/proxy/{port}"
+    else:
+        return None
 
 
 class JupyterDisplay:

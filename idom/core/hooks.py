@@ -28,20 +28,23 @@ class Shared(Generic[_StateType]):
     __slots__ = "_callbacks", "_value"
 
     def __init__(self, value: _StateType) -> None:
-        self._callbacks: Dict[str, Callable[[], None]] = {}
+        self._callbacks: Dict[str, Callable[[_StateType], None]] = {}
         self._value = value
 
 
 def use_state(
-    value: Union[_StateType, Shared[_StateType]]
+    value: Union[_StateType, Shared[_StateType]],
+    should_update: Callable[[_StateType], bool] = lambda value: True,
 ) -> Tuple[_StateType, Callable[[_StateType], None]]:
     if not isinstance(value, Shared):
-        return _use_state(value)
+        return _use_state(value, should_update)
     else:
-        return _use_shared_state(value)
+        return _use_shared_state(value, should_update)
 
 
-def _use_state(value: _StateType) -> Tuple[_StateType, Callable[[_StateType], None]]:
+def _use_state(
+    value: _StateType, should_update: Callable[[_StateType], bool] = lambda value: True
+) -> Tuple[_StateType, Callable[[_StateType], None]]:
     hook = dispatch_hook()
     state: Dict[str, Any] = hook.use_state(dict)
     update = hook.create_update_callback()
@@ -51,22 +54,27 @@ def _use_state(value: _StateType) -> Tuple[_StateType, Callable[[_StateType], No
 
     def set_state(new: _StateType) -> None:
         state["value"] = new
-        update()
+        if should_update(new):
+            update()
 
     return state["value"], set_state
 
 
 def _use_shared_state(
     shared: Shared[_StateType],
+    should_update: Callable[[_StateType], bool] = lambda value: True,
 ) -> [_StateType, Callable[[_StateType], None]]:
     hook = dispatch_hook()
-    shared._callbacks[hook.element.id] = hook.create_update_callback()
+    update = hook.create_update_callback()
     hook.on_unmount(shared._callbacks.pop, hook.element.id, None)
+    shared._callbacks[hook.element.id] = (
+        lambda value: update() if should_update(value) else None
+    )
 
     def set_state(new: _StateType) -> None:
         shared._value = new
         for cb in shared._callbacks.values():
-            cb()
+            cb(new)
 
     return shared._value, set_state
 
