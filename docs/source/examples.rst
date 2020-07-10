@@ -25,72 +25,6 @@ view. In a Jupyter Notebook it will appear in an output cell. If you're running
   out when you get there.
 
 
-**Jupyter Notebook (localhost)**
-
-.. code-block::
-
-    from idom.server import multiview_server
-    from idom.server.sanic import PerClientStateServer
-
-    host, port = "127.0.0.1", 8765
-    mount, server = multiview_server(
-        PerClientStateServer, host, port, {"cors": True}, {"access_log": False}
-    )
-    server_url = f"http://{host}:{port}"
-
-
-    def display(element, *args, **kwargs):
-        view_id = mount(element, *args, **kwargs)
-        return idom.JupyterDisplay(server_url, {"view_id": view_id})
-
-
-
-**Jupyter Notebook (binder.org)**
-
-.. code-block::
-
-    import os
-    from typing import Mapping, Any, Optional
-
-    from idom.server import multiview_server
-    from idom.server.sanic import PerClientStateServer
-
-
-    def example_server_url(host: str, port: int) -> str:
-        localhost_idom_path = f"http://{host}:{port}"
-        jupyterhub_idom_path = path_to_jupyterhub_proxy(port)
-        return jupyterhub_idom_path or localhost_idom_path
-
-
-    def path_to_jupyterhub_proxy(port: int) -> Optional[str]:
-        """If running on Jupyterhub return the path from the host's root to a proxy server
-
-        This is used when examples are running on mybinder.org or in a container created by
-        jupyter-repo2docker. For this to work a ``jupyter_server_proxy`` must have been
-        instantiated. See https://github.com/jupyterhub/jupyter-server-proxy
-        """
-        if "JUPYTERHUB_OAUTH_CALLBACK_URL" in os.environ:
-            url = os.environ["JUPYTERHUB_OAUTH_CALLBACK_URL"].rsplit("/", 1)[0]
-            return f"{url}/proxy/{port}"
-        elif "JUPYTER_SERVER_URL" in os.environ:
-            return f"{os.environ['JUPYTER_SERVER_URL']}/proxy/{port}"
-        else:
-            return None
-
-
-    host, port = "127.0.0.1", 8765
-    mount, server = multiview_server(
-        PerClientStateServer, host, port, {"cors": True}, {"access_log": False}
-    )
-    server_url = example_server_url(host, port)
-
-
-    def display(element, *args, **kwargs):
-        view_id = mount(element, *args, **kwargs)
-        print(f"View ID: {view_id}")
-        return idom.JupyterDisplay("jupyter", server_url, {"view_id": view_id})
-
-
 **Local Python File**
 
 .. code-block::
@@ -108,6 +42,28 @@ view. In a Jupyter Notebook it will appear in an output cell. If you're running
 
     if __name__ == "__main__":
         display(Main)
+
+
+**Jupyter Notebook**
+
+.. code-block::
+
+    from idom.widgets.jupyter import init_display
+    display = init_display("127.0.0.1")
+
+    @idom.element
+    async def MyElement():
+        # define your element here
+        ...
+
+    jupyter_widget = display(MyElement)
+
+.. note::
+
+    The ``init_display`` function checks environment variables to try and infer whether
+    it's in a Jupyterhub instance (e.g. mybinder.org) and if so, assumes the presence of a
+    `jupyter_server_proxy <https://github.com/jupyterhub/jupyter-server-proxy>`_. If this
+    doesn't work please `post an issue <https://github.com/rmorshea/idom/issues>`_.
 
 
 Slideshow

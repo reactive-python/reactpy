@@ -243,6 +243,9 @@ class MultiViewMount:
         self._next_auto_id = 0
         self._views = views
 
+    def remove(self, view_id: str) -> None:
+        del self._views[view_id]
+
     def __getitem__(self, view_id: str) -> MountFunc:
         def mount(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> str:
             self._add_view(view_id, constructor, args, kwargs)
