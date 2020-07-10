@@ -2,15 +2,10 @@ import idom
 
 
 @idom.element
-async def DragDropBoxes(self):
-    last_owner = idom.Var(None)
-    last_hover = idom.Var(None)
+async def DragDropBoxes(number_of_boxes=3):
+    shared_current_index = idom.hooks.Shared(0)
 
-    h1 = Holder("filled", last_owner, last_hover)
-    h2 = Holder("empty", last_owner, last_hover)
-    h3 = Holder("empty", last_owner, last_hover)
-
-    last_owner.set(h1)
+    boxes = [Holder(i, shared_current_index) for i in range(number_of_boxes)]
 
     style = idom.html.style(
         [
@@ -36,44 +31,46 @@ async def DragDropBoxes(self):
         ]
     )
 
-    return idom.html.div([style, h1, h2, h3])
+    return idom.html.div(style, boxes)
 
 
-@idom.element(state="last_owner, last_hover")
-async def Holder(self, kind, last_owner, last_hover):
+@idom.element
+async def Holder(index, shared_current_index):
+    current_index, set_current_index = idom.hooks.use_state(shared_current_index)
+
+    hovered, set_hovered = idom.hooks.use_state(False)
+
+    if current_index == index:
+        state = "filled"
+    elif hovered:
+        state = "hover"
+    else:
+        state = "empty"
+
     @idom.event(prevent_default=True, stop_propagation=True)
-    async def hover(event):
-        if kind != "hover":
-            self.update("hover")
-            old = last_hover.set(self)
-            if old is not None and old is not self:
-                old.update("empty")
+    async def on_hover(event):
+        if not hovered:
+            set_hovered(True)
 
-    async def start(event):
-        last_hover.set(self)
-        self.update("hover")
+    async def on_start(event):
+        set_hovered(True)
+        set_current_index(None)
 
-    async def end(event):
-        last_owner.get().update("filled")
+    async def on_leave(event):
+        if hovered:
+            set_hovered(False)
 
-    async def leave(event):
-        self.update("empty")
-
-    async def dropped(event):
-        if last_owner.get() is not self:
-            old = last_owner.set(self)
-            old.update("empty")
-        self.update("filled")
+    async def on_drop(event):
+        set_current_index(index)
 
     return idom.html.div(
         {
-            "draggable": (kind == "filled"),
-            "onDragStart": start,
-            "onDragOver": hover,
-            "onDragEnd": end,
-            "onDragLeave": leave,
-            "onDrop": dropped,
-            "class": f"holder-{kind} holder",
+            "draggable": (state == "filled"),
+            "onDragStart": on_start,
+            "onDragOver": on_hover,
+            "onDragLeave": on_leave,
+            "onDrop": on_drop,
+            "class": f"holder-{state} holder",
         }
     )
 
