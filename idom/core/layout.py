@@ -23,7 +23,7 @@ from loguru import logger
 from .element import AbstractElement
 from .events import EventHandler
 from .utils import HasAsyncResources, async_resource
-from .hooks import HookDispatcher
+from ._hooks import HookDispatcher
 
 
 _Self = TypeVar("_Self")

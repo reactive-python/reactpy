@@ -7,11 +7,6 @@ import pytest
 import idom
 
 
-def test_cannot_access_current_hook_dispatch_if_none_active():
-    with pytest.raises(RuntimeError, match="No hook dispatcher is active"):
-        idom.hooks.current_hook_dispatcher()
-
-
 async def test_simple_stateful_element():
     @idom.element
     async def simple_stateful_element():
@@ -267,7 +262,7 @@ def test_cannot_create_update_callback_after_element_is_garbage_collected():
 
     element = SomeElement()
 
-    hook = idom.hooks.Hook(idom.Layout(element), ref(element))
+    hook = idom.core._hooks.Hook(idom.Layout(element), ref(element))
 
     # cause garbage collection
     del hook._layout
@@ -283,7 +278,7 @@ def test_hook_dispatcher_cannot_dispatch_hook_when_not_rendering():
     async def SomeElement():
         ...
 
-    hook_dispatcher = idom.hooks.HookDispatcher(idom.Layout(SomeElement()))
+    hook_dispatcher = idom.core._hooks.HookDispatcher(idom.Layout(SomeElement()))
 
     with pytest.raises(
         RuntimeError, match=r"Hook dispatcher .* is not rendering any element"

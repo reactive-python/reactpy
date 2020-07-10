@@ -15,6 +15,13 @@ Element
     :members:
 
 
+Hooks
+-----
+
+.. automodule:: idom.core.hooks
+    :members:
+
+
 Layout
 ------
 

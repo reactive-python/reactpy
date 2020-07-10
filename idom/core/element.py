@@ -1,9 +1,8 @@
 import abc
-from concurrent.futures import Executor
 import inspect
 from uuid import uuid4
 from functools import wraps
-from typing import TYPE_CHECKING, Dict, Callable, Any, Awaitable, Union, Tuple
+from typing import TYPE_CHECKING, Dict, Callable, Any, Awaitable, Tuple
 
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -83,7 +82,6 @@ class Element(AbstractElement):
         function: ElementRenderFunction,
         args: Tuple[Any, ...],
         kwargs: Dict[str, Any],
-        run_in_executor: Union[bool, Executor] = False,
     ) -> None:
         super().__init__()
         self._function = function
