@@ -62,6 +62,34 @@ def test_simple_input(driver, display):
     assert message_var.get() == "this is a test"
 
 
+def test_use_update(driver, display, driver_wait):
+    var = idom.Var(0)
+
+    @idom.element
+    async def SideEffectCounter():
+        var.value += 1
+        update = idom.hooks.use_update()
+
+        async def on_click(event):
+            update()
+
+        return idom.html.button(
+            {"onClick": on_click, "id": "button", "count": var.value},
+            f"Click count: {var.value}",
+        )
+
+    display(SideEffectCounter)
+
+    client_button = driver.find_element_by_id("button")
+    driver_wait.until(lambda dvr: client_button.get_attribute("count") == "1")
+
+    client_button.click()
+    driver_wait.until(lambda dvr: client_button.get_attribute("count") == "2")
+
+    client_button.click()
+    driver_wait.until(lambda dvr: client_button.get_attribute("count") == "3")
+
+
 def test_rate_limit(driver, display):
     @idom.element
     async def Counter():
@@ -176,6 +204,60 @@ def test_use_lru_cache(display, driver, driver_wait):
     center_client_button.click()  # cache state: [center, right]
 
     driver_wait.until(lambda drv: calls == ["left", "center", "right", "center"])
+
+
+def test_use_shared_state(driver, driver_wait, display):
+    @idom.element
+    async def Outer():
+        shared_count = idom.hooks.Shared(0)
+        reset = idom.hooks.use_update()
+
+        async def on_click(event):
+            reset()
+
+        return idom.html.div(
+            idom.html.button({"onClick": on_click, "id": "reset-button"}, "reset"),
+            Inner(shared_count, "button-1"),
+            Inner(shared_count, "button-2"),
+        )
+
+    @idom.element
+    async def Inner(shared_count, button_id):
+        count, set_count = idom.hooks.use_state(shared_count)
+
+        async def on_click(event):
+            set_count(count + 1)
+
+        return idom.html.button(
+            {"onClick": on_click, "id": button_id, "count": count},
+            f"Current click count: {count}",
+        )
+
+    display(Outer)
+
+    client_reset_button = driver.find_element_by_id("reset-button")
+    client_button_1 = driver.find_element_by_id("button-1")
+    client_button_2 = driver.find_element_by_id("button-2")
+
+    client_button_1.click()
+    assert driver_wait.until(lambda dvr: client_button_1.get_attribute("count") == "1")
+    assert driver_wait.until(lambda dvr: client_button_2.get_attribute("count") == "1")
+
+    client_button_2.click()
+    assert driver_wait.until(lambda dvr: client_button_1.get_attribute("count") == "2")
+    assert driver_wait.until(lambda dvr: client_button_2.get_attribute("count") == "2")
+
+    client_reset_button.click()
+    assert driver_wait.until(lambda dvr: client_button_1.get_attribute("count") == "0")
+    assert driver_wait.until(lambda dvr: client_button_2.get_attribute("count") == "0")
+
+    client_button_1.click()
+    assert driver_wait.until(lambda dvr: client_button_1.get_attribute("count") == "1")
+    assert driver_wait.until(lambda dvr: client_button_2.get_attribute("count") == "1")
+
+    client_button_2.click()
+    assert driver_wait.until(lambda dvr: client_button_1.get_attribute("count") == "2")
+    assert driver_wait.until(lambda dvr: client_button_2.get_attribute("count") == "2")
 
 
 def test_cannot_create_update_callback_after_element_is_garbage_collected():

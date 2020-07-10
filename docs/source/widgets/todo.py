@@ -3,34 +3,27 @@ import idom
 
 @idom.element
 async def Todo(self):
-    items = []
+    items, set_items = idom.hooks.use_state([])
 
-    async def add_new_task(event):
+    async def add_task(event):
         if event["key"] == "Enter":
-            items.append(event["value"])
-            task_list.update(items)
+            set_items(items + [event["value"]])
 
-    task_input = idom.html.input({"onKeyDown": add_new_task})
-    task_list = TaskList(items)
-
-    return idom.html.div(task_input, task_list)
-
-
-@idom.element
-async def TaskList(self, items):
     tasks = []
 
     for index, text in enumerate(items):
 
-        async def remove(event, index=index):
-            del items[index]
-            self.update(items)
+        async def remove_task(event, index=index):
+            set_items(items[:index] + items[index + 1 :])
 
         task_text = idom.html.td(idom.html.p(text))
         delete_button = idom.html.td({"onClick": remove}, idom.html.button(["x"]))
         tasks.append(idom.html.tr(task_text, delete_button))
 
-    return idom.html.table(tasks)
+    task_input = idom.html.input({"onKeyDown": add_new_task})
+    task_table = idom.html.table(tasks)
+
+    return idom.html.div(task_input, task_table)
 
 
 display(Todo)

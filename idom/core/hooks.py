@@ -12,6 +12,8 @@ from typing import (
     Callable,
     Tuple,
     Optional,
+    Union,
+    Generic,
     TYPE_CHECKING,
 )
 
@@ -20,22 +22,60 @@ if TYPE_CHECKING:  # pragma: no cover
     from .layout import AbstractLayout
 
 
-_UseState = TypeVar("_UseState")
+def use_update() -> Callable[[], None]:
+    hook = dispatch_hook()
+    return hook.create_update_callback()
 
 
-def use_state(default: _UseState) -> Tuple[_UseState, Callable[[_UseState], None]]:
+_StateType = TypeVar("_StateType")
+
+
+class Shared(Generic[_StateType]):
+
+    __slots__ = "_callbacks", "_value"
+
+    def __init__(self, value: _StateType) -> None:
+        self._callbacks: Dict[str, Callable[[], None]] = {}
+        self._value = value
+
+
+def use_state(
+    value: Union[_StateType, Shared[_StateType]]
+) -> Tuple[_StateType, Callable[[_StateType], None]]:
+    if not isinstance(value, Shared):
+        return _use_state(value)
+    else:
+        return _use_shared_state(value)
+
+
+def _use_state(value: _StateType) -> Tuple[_StateType, Callable[[_StateType], None]]:
     hook = dispatch_hook()
     state: Dict[str, Any] = hook.use_state(dict)
     update = hook.create_update_callback()
 
     if "value" not in state:
-        state["value"] = default
+        state["value"] = value
 
-    def set_state(new: _UseState) -> None:
+    def set_state(new: _StateType) -> None:
         state["value"] = new
         update()
 
     return state["value"], set_state
+
+
+def _use_shared_state(
+    shared: Shared[_StateType],
+) -> [_StateType, Callable[[_StateType], None]]:
+    hook = dispatch_hook()
+    shared._callbacks[hook.element.id] = hook.create_update_callback()
+    hook.on_unmount(shared._callbacks.pop, hook.element.id, None)
+
+    def set_state(new: _StateType) -> None:
+        shared._value = new
+        for cb in shared._callbacks.values():
+            cb()
+
+    return shared._value, set_state
 
 
 _MemoValue = TypeVar("_MemoValue")
@@ -118,6 +158,10 @@ class Hook:
         self._state: Tuple[Any, ...] = ()
         self._finalized = False
 
+    @property
+    def element(self) -> "AbstractElement":
+        return self._element()
+
     def reset(self) -> None:
         self._current_state_index = 0
         self._finalized = True
@@ -130,6 +174,12 @@ class Hook:
         else:
             raise RuntimeError(f"Element for hook {self} no longer exists.")
 
+    def on_unmount(
+        self, _function_: Callable[..., None], *args: Any, **kwargs: Any
+    ) -> None:
+        if not self._finalized:
+            finalize(self._element(), _function_, *args, **kwargs)
+
     def use_state(
         self, _function_: Callable[..., _HookData], *args: Any, **kwargs: Any
     ) -> _HookData:
@@ -140,7 +190,7 @@ class Hook:
         else:
             # once finalized we iterate over each succesively used piece of state
             result = self._state[self._current_state_index]
-            self._current_state_index += 1
+        self._current_state_index += 1
         return result
 
 
