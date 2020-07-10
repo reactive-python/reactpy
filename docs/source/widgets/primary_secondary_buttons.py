@@ -18,19 +18,23 @@ def pre_seperated(*args):
 
 
 @idom.element
-async def PrimarySecondaryButtons(self, message=None, event=None, info=None):
+async def PrimarySecondaryButtons(self):
+    state, set_state = idom.hooks.use_state(
+        {"message": None, "event": None, "info": None}
+    )
+
     async def on_click_primary(event, info):
-        self.update("Primary Clicked:", event, info)
+        set_state({"message": "Primary Clicked:", "event": event, "info": info})
 
     async def on_click_secondary(event, info):
-        self.update("Secondary Clicked:", event, info)
+        set_state({"message": "Secondary Clicked:", "event": event, "info": info})
 
     return idom.html.div(
         [
             semantic_ui_style,
             Button({"primary": True, "onClick": on_click_primary}, ["Primary"]),
             Button({"secondary": True, "onClick": on_click_secondary}, ["Secondary"]),
-            pre_seperated(message, event, info),
+            pre_seperated(state["message"], state["event"], state["info"]),
         ]
     )
 
