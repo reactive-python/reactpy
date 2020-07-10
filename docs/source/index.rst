@@ -49,9 +49,11 @@ user clicks an image:
     import idom
 
     @idom.element
-    async def Slideshow(self, index=0):
+    async def Slideshow():
+        index, set_index = idom.hooks.use_state(0)
+
         async def next_image(event):
-            self.update(index + 1)
+            set_index(index + 1)
 
         return idom.html.img(
             {
