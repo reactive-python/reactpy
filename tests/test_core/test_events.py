@@ -108,7 +108,7 @@ def test_simple_click_event(driver, display):
 
     @idom.element
     async def Button():
-        update = hooks.dispatch_hook().create_update_callback()
+        update = hooks.dispatch_hook().use_update()
 
         async def on_click(event):
             clicked.set(True)

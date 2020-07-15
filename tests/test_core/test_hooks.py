@@ -218,7 +218,7 @@ def test_use_shared_state(driver, driver_wait, display):
 
     @idom.element
     async def Inner(shared_count, button_id):
-        count, set_count = idom.hooks.use_state(shared_count)
+        count, set_count = idom.hooks.use_shared(shared_count)
 
         async def on_click(event):
             set_count(count + 1)
@@ -255,7 +255,11 @@ def test_use_shared_state(driver, driver_wait, display):
     assert driver_wait.until(lambda dvr: client_button_2.get_attribute("count") == "2")
 
 
-def test_cannot_create_update_callback_after_element_is_garbage_collected():
+def test_use_shared_should_update():
+    assert False, "Not implemented yet"
+
+
+def test_cannot_use_update_after_element_is_garbage_collected():
     @idom.element
     async def SomeElement():
         ...
@@ -270,7 +274,7 @@ def test_cannot_create_update_callback_after_element_is_garbage_collected():
     gc.collect()
 
     with pytest.raises(RuntimeError, match=r"Element for hook .* no longer exists"):
-        hook.create_update_callback()
+        hook.use_update()
 
 
 def test_hook_dispatcher_cannot_dispatch_hook_when_not_rendering():
