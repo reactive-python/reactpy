@@ -57,7 +57,7 @@ def _path_to_jupyterhub_proxy(port: int) -> Optional[str]:
 class JupyterDisplay:
     """Output for IDOM within a Jupyter Notebook."""
 
-    __slots__ = ("location", "path", "query")
+    __slots__ = ("location", "path", "query", "__weakref__")
 
     def __init__(self, url: str = "", query: Optional[Dict[str, Any]] = None) -> None:
         parsed_url = urlparse(url)

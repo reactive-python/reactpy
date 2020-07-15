@@ -1,82 +1,56 @@
 import time
 import asyncio
 from functools import lru_cache
-from typing import (
-    Dict,
-    Any,
-    TypeVar,
-    Callable,
-    Tuple,
-    Optional,
-    Union,
-    Generic,
-)
+from typing import Dict, Any, TypeVar, Callable, Tuple, Optional, Type
 
-from ._hooks import dispatch_hook
+from ._hooks import dispatch_hook, CreateContext, Context
+
+
+__all__ = [
+    "use_update",
+    "use_state",
+    "use_context",
+    "use_memo",
+    "use_lru_cache",
+    "use_frame_rate",
+    "CreateContext",
+    "Context",
+]
 
 
 def use_update() -> Callable[[], None]:
-    hook = dispatch_hook()
-    return hook.create_update_callback()
+    return dispatch_hook().use_update()
 
 
 _StateType = TypeVar("_StateType")
 
 
-class Shared(Generic[_StateType]):
-
-    __slots__ = "_callbacks", "_value"
-
-    def __init__(self, value: _StateType) -> None:
-        self._callbacks: Dict[str, Callable[[_StateType], None]] = {}
-        self._value = value
-
-
-def use_state(
-    value: Union[_StateType, Shared[_StateType]],
-    should_update: Callable[[_StateType], bool] = lambda value: True,
-) -> Tuple[_StateType, Callable[[_StateType], None]]:
-    if not isinstance(value, Shared):
-        return _use_state(value, should_update)
-    else:
-        return _use_shared_state(value, should_update)
-
-
-def _use_state(
-    value: _StateType, should_update: Callable[[_StateType], bool] = lambda value: True
-) -> Tuple[_StateType, Callable[[_StateType], None]]:
+def use_state(value: _StateType) -> Tuple[_StateType, Callable[[_StateType], None]]:
     hook = dispatch_hook()
     state: Dict[str, Any] = hook.use_state(dict)
-    update = hook.create_update_callback()
+    update = hook.use_update()
 
     if "value" not in state:
         state["value"] = value
 
     def set_state(new: _StateType) -> None:
-        state["value"] = new
-        if should_update(new):
+        old = state["value"]
+        if new is not old:
+            state["value"] = new
             update()
 
     return state["value"], set_state
 
 
-def _use_shared_state(
-    shared: Shared[_StateType],
-    should_update: Callable[[_StateType], bool] = lambda value: True,
-) -> [_StateType, Callable[[_StateType], None]]:
-    hook = dispatch_hook()
-    update = hook.create_update_callback()
-    hook.on_unmount(shared._callbacks.pop, hook.element.id, None)
-    shared._callbacks[hook.element.id] = (
-        lambda value: update() if should_update(value) else None
-    )
+def _new_is_not_old(new: _StateType, old: _StateType) -> bool:
+    return new is not old
 
-    def set_state(new: _StateType) -> None:
-        shared._value = new
-        for cb in shared._callbacks.values():
-            cb(new)
 
-    return shared._value, set_state
+def use_context(
+    context_type: Type[Context[_StateType]],
+    should_update: Callable[[_StateType, _StateType], bool] = _new_is_not_old,
+) -> Tuple[_StateType, Callable[[_StateType], None]]:
+    return dispatch_hook().use_context(context_type, should_update)
 
 
 _MemoValue = TypeVar("_MemoValue")

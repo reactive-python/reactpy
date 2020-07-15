@@ -184,13 +184,11 @@ class Layout(AbstractLayout):
         else:
             await self._create_element_state(element, parent_element_id)
 
-        model = await self._hook_dispatcher.render(element)
-
-        if isinstance(model, AbstractElement):
-            model = {"tagName": "div", "children": [model]}
-
-        async for i, m in self._render_model(model, element_id):
-            yield i, m
+        async with self._hook_dispatcher.render(element) as model:
+            if isinstance(model, AbstractElement):
+                model = {"tagName": "div", "children": [model]}
+            async for i, m in self._render_model(model, element_id):
+                yield i, m
 
     async def _render_model(
         self, model: Mapping[str, Any], element_id: str
