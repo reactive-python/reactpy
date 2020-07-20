@@ -277,7 +277,7 @@ def test_cannot_use_update_after_element_is_garbage_collected():
         hook.use_update()
 
 
-def test_hook_dispatcher_cannot_dispatch_hook_when_not_rendering():
+def test_hook_dispatcher_cannot_current_hook_when_not_rendering():
     @idom.element
     async def SomeElement():
         ...
@@ -287,4 +287,4 @@ def test_hook_dispatcher_cannot_dispatch_hook_when_not_rendering():
     with pytest.raises(
         RuntimeError, match=r"Hook dispatcher .* is not rendering any element"
     ):
-        hook_dispatcher.dispatch_hook()
+        hook_dispatcher.current_hook()

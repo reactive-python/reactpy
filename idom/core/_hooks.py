@@ -27,7 +27,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from .vdom import VdomDict
 
 
-def dispatch_hook() -> "Hook":
+def current_hook() -> "Hook":
     dispatcher = HookDispatcher.current_dispatcher()
 
     if dispatcher is None:
@@ -37,7 +37,7 @@ def dispatch_hook() -> "Hook":
             "or call a hook outside an Element's render method?"
         )
 
-    return dispatcher.dispatch_hook()
+    return dispatcher.current_hook()
 
 
 _ContextData = TypeVar("_ContextData", bound=Optional[Any])
@@ -206,7 +206,7 @@ class HookDispatcher:
     def current_dispatcher(cls) -> Optional["HookDispatcher"]:
         return cls._current_dispatchers.get(get_thread_id())
 
-    def dispatch_hook(self) -> Hook:
+    def current_hook(self) -> Hook:
         element = self._current_element
         if element is None:
             raise RuntimeError(f"Hook dispatcher {self} is not rendering any element")
