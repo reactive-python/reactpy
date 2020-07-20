@@ -59,9 +59,11 @@ def _use_shared(
     hook = current_hook()
     element_id = hook.element().id
     update = hook.use_update()
+
     hook.use_finalizer(shared._callbacks.pop, element_id, None)
+    old = shared._value
     shared._callbacks[element_id] = (
-        lambda value: update() if should_update(shared._value, value) else None
+        lambda new: update() if should_update(new, old) else None
     )
 
     def set_state(new: _StateType) -> None:

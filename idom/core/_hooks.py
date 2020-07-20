@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from threading import get_ident as get_thread_id
 from types import coroutine
 from weakref import WeakValueDictionary, finalize, ref, ReferenceType
@@ -28,16 +29,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 def current_hook() -> "Hook":
-    dispatcher = HookDispatcher.current_dispatcher()
-
-    if dispatcher is None:
-        raise RuntimeError(
-            "No hook dispatcher is active. "
-            "Did you render your element using a Layout, "
-            "or call a hook outside an Element's render method?"
-        )
-
-    return dispatcher.current_hook()
+    return current_hook_dispatcher().current_hook()
 
 
 _ContextData = TypeVar("_ContextData", bound=Optional[Any])
@@ -120,10 +112,12 @@ class Hook:
             raise RuntimeError(f"Element for hook {self} no longer exists.")
         return element
 
-    async def element_did_render(self) -> None:
+    @contextmanager
+    def enter(self) -> Iterator[None]:
         self._current_state_index = 0
-        self._has_rendered = True
         self._did_update = False
+        yield
+        self._has_rendered = True
 
     def use_update(self) -> Callable[[], None]:
         element = self.element()  # deref to keep element alive
@@ -184,9 +178,23 @@ class Hook:
         return result
 
 
-class HookDispatcher:
+_current_dispatchers: "WeakValueDictionary[int, HookDispatcher]" = WeakValueDictionary()
 
-    _current_dispatchers: "WeakValueDictionary[int, HookDispatcher]" = WeakValueDictionary()
+
+def current_hook_dispatcher() -> "HookDispatcher":
+    dispatcher = _current_dispatchers.get(get_thread_id())
+
+    if dispatcher is None:
+        raise RuntimeError(
+            "No hook dispatcher is active. "
+            "Did you render your element using a Layout, "
+            "or call a hook outside an Element's render method?"
+        )
+
+    return dispatcher
+
+
+class HookDispatcher:
 
     __slots__ = (
         "_hooks",
@@ -202,17 +210,22 @@ class HookDispatcher:
         self._current_element: Optional[AbstractElement] = None
         self._hooks: Dict[str, Hook] = {}
 
-    @classmethod
-    def current_dispatcher(cls) -> Optional["HookDispatcher"]:
-        return cls._current_dispatchers.get(get_thread_id())
+    async def unmount(self, element_id: str) -> None:
+        hook = self._hooks.get(element_id)
+        if hook is not None:
+            self._hooks.umount()
 
     def current_hook(self) -> Hook:
         element = self._current_element
         if element is None:
             raise RuntimeError(f"Hook dispatcher {self} is not rendering any element")
+        return self.get_hook(element)
+
+    def get_hook(self, element: "AbstractElement") -> Hook:
         element_id = element.id
         if element_id not in self._hooks:
             hook = self._hooks[element_id] = Hook(self, self._layout, ref(element))
+            finalize(element, self._hooks.pop, element_id, None)
         else:
             hook = self._hooks[element_id]
         return hook
@@ -224,28 +237,13 @@ class HookDispatcher:
 
     @asynccontextmanager
     async def render(self, element: "AbstractElement") -> AsyncIterator[Any]:
-        element_id = element.id
-        if element_id not in self._hooks:
-            finalize(element, self._hooks.pop, element_id, None)
-
-        context_type: Optional[Type[Context[Any]]]
         if isinstance(element, ContextProvider):
-            context = element._context
-            context_type = type(context)
-            if context_type in self._active_contexts:
-                msg = f"Context {type(context)} has already been activated"
-                raise RuntimeError(msg)
-            self._active_contexts[context_type] = context
+            with self._activate_context_provider(element):
+                with self.get_hook(element).enter():
+                    yield await self._render(element)
         else:
-            context_type = None
-
-        try:
-            yield await self._render(element)
-        finally:
-            if element_id in self._hooks:
-                await self._hooks[element_id].element_did_render()
-            if context_type is not None:
-                del self._active_contexts[context_type]
+            with self.get_hook(element).enter():
+                yield await self._render(element)
 
     @coroutine
     def _render(self, element: "AbstractElement") -> Iterator[None]:
@@ -256,7 +254,7 @@ class HookDispatcher:
         """
         gen = element.render().__await__()
         while True:
-            self._set_current_dispatcher()
+            _current_dispatchers[get_thread_id()] = self
             self._current_element = element
             try:
                 yield next(gen)
@@ -264,11 +262,19 @@ class HookDispatcher:
                 return error.value
             finally:
                 self._current_element = None
-                self._unset_current_dispatcher()
+                del _current_dispatchers[get_thread_id()]
 
-    def _set_current_dispatcher(self) -> None:
-        self.__class__._current_dispatchers[get_thread_id()] = self
-
-    @classmethod
-    def _unset_current_dispatcher(cls) -> None:
-        del cls._current_dispatchers[get_thread_id()]
+    @contextmanager
+    def _activate_context_provider(
+        self, context_provider: ContextProvider
+    ) -> Iterator[None]:
+        context = context_provider._context
+        context_type = type(context)
+        if context_type in self._active_contexts:
+            msg = f"Context {type(context)} has already been activated"
+            raise RuntimeError(msg)
+        self._active_contexts[context_type] = context
+        try:
+            yield
+        finally:
+            del self._active_contexts[context_type]

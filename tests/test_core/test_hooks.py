@@ -1,6 +1,5 @@
 import gc
 import time
-from weakref import ref
 
 import pytest
 
@@ -218,7 +217,7 @@ def test_use_shared_state(driver, driver_wait, display):
 
     @idom.element
     async def Inner(shared_count, button_id):
-        count, set_count = idom.hooks.use_shared(shared_count)
+        count, set_count = idom.hooks.use_state(shared_count)
 
         async def on_click(event):
             set_count(count + 1)
@@ -266,25 +265,13 @@ def test_cannot_use_update_after_element_is_garbage_collected():
 
     element = SomeElement()
 
-    hook = idom.core._hooks.Hook(idom.Layout(element), ref(element))
+    hook = idom.core._hooks.HookDispatcher(idom.Layout(element)).get_hook(element)
 
     # cause garbage collection
+    del hook._dispatcher
     del hook._layout
     del element
     gc.collect()
 
     with pytest.raises(RuntimeError, match=r"Element for hook .* no longer exists"):
         hook.use_update()
-
-
-def test_hook_dispatcher_cannot_current_hook_when_not_rendering():
-    @idom.element
-    async def SomeElement():
-        ...
-
-    hook_dispatcher = idom.core._hooks.HookDispatcher(idom.Layout(SomeElement()))
-
-    with pytest.raises(
-        RuntimeError, match=r"Hook dispatcher .* is not rendering any element"
-    ):
-        hook_dispatcher.current_hook()
