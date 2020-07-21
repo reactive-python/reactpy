@@ -12,7 +12,7 @@ from typing import (
 
 
 EventsMapping = Union[
-    Dict[str, "EventHandlerFunction"], Dict[str, "EventHandler"], "Events"
+    Dict[str, Union["EventHandlerFunction", "EventHandler"]], "Events"
 ]
 
 EventHandlerFunction = Callable[..., Awaitable[Any]]  # event handler function

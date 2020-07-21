@@ -23,6 +23,7 @@ from loguru import logger
 from .element import AbstractElement
 from .events import EventHandler
 from .utils import HasAsyncResources, async_resource
+from .vdom import VdomDict
 from ._hooks import HookDispatcher
 
 
@@ -103,12 +104,6 @@ class AbstractLayout(HasAsyncResources, abc.ABC):
         """
 
 
-class _ElementState(TypedDict):
-    parent: Optional[str]
-    inner_elements: Set[str]
-    event_handlers: List[str]
-
-
 class Layout(AbstractLayout):
 
     __slots__ = "_event_handlers", "_hook_dispatcher"
@@ -117,50 +112,51 @@ class Layout(AbstractLayout):
         self, root: "AbstractElement", loop: Optional[asyncio.AbstractEventLoop] = None
     ) -> None:
         super().__init__(root, loop)
-        self._event_handlers: Dict[str, EventHandler] = {}
         self._hook_dispatcher = HookDispatcher(self)
 
     def update(self, element: "AbstractElement") -> None:
-        self._rendering_queue.put(self._render(element))
+        self._rendering_queue.put(self._render_layout_update(element))
 
     async def trigger(self, event: LayoutEvent) -> None:
         # It is possible for an element in the frontend to produce an event
         # associated with a backend model that has been deleted. We only handle
         # events if the element and the handler exist in the backend. Otherwise
         # we just ignore the event.
-        if event.target in self._event_handlers:
-            await self._event_handlers[event.target](event.data)
+        handler = self._state_manager.get_event_handler(event.target)
+        if handler is not None:
+            await handler(event.data)
 
     async def render(self) -> LayoutUpdate:
         return await self._rendering_queue.get()
 
     @async_resource
-    async def _element_state(self) -> AsyncIterator[Dict[str, _ElementState]]:
+    async def _state_manager(self) -> AsyncIterator[Dict[str, "StateManager"]]:
+        sm = StateManager(self)
         try:
-            yield {}
+            yield sm
         finally:
-            await self._delete_element_state(self._root.id)
+            await sm.delete_element_state(self._root.id)
 
     @async_resource
     async def _rendering_queue(self) -> AsyncIterator["FutureQueue[LayoutUpdate]"]:
         queue: FutureQueue[LayoutUpdate] = FutureQueue()
-        queue.put(self._render(self._root))
+        queue.put(self._render_layout_update(self._root))
         try:
             yield queue
         finally:
             await queue.cancel()
 
-    async def _render(self, element: AbstractElement) -> LayoutUpdate:
+    async def _render_layout_update(self, element: AbstractElement) -> LayoutUpdate:
         # current element ids
-        current: Set[str] = set(self._element_state)
+        element_ids_pre_render = self._state_manager.get_element_ids_in_layout()
 
         # all element updates
         new: Dict[str, Dict[str, Any]] = {}
 
-        parent = self._element_parent(element)
+        parent = self._state_manager.get_parent_element_id(element)
         render_error: Optional[Exception] = None
         try:
-            async for element_id, model in self._render_element(element, parent):
+            async for element_id, model in self._render_layout_subtree(element, parent):
                 new[element_id] = model
         except asyncio.CancelledError:
             raise  # we don't want to supress cancellations
@@ -168,49 +164,73 @@ class Layout(AbstractLayout):
             logger.exception(f"Failed to render {element}")
             render_error = error
         finally:
-            # all deleted element ids
-            old: List[str] = list(current.difference(self._element_state))
-            update = LayoutUpdate(element.id, new, old, render_error)
+            element_ids_post_render = self._state_manager.get_element_ids_in_layout()
+            update = LayoutUpdate(
+                element.id,
+                new,
+                list(element_ids_pre_render.difference(element_ids_post_render)),
+                render_error,
+            )
 
         # render bundle
         return update
 
-    async def _render_element(
+    async def _render_layout_subtree(
         self, element: "AbstractElement", parent_element_id: Optional[str]
     ) -> AsyncIterator[Tuple[str, Dict[str, Any]]]:
         element_id = element.id
-        if self._has_element_state(element_id):
-            await self._reset_element_state(element)
+        if self._state_manager.has_element_state(element_id):
+            await self._state_manager.reset_element_state(element)
         else:
-            await self._create_element_state(element, parent_element_id)
+            await self._state_manager.create_element_state(element, parent_element_id)
 
         async with self._hook_dispatcher.render(element) as model:
             if isinstance(model, AbstractElement):
                 model = {"tagName": "div", "children": [model]}
-            async for i, m in self._render_model(model, element_id):
-                yield i, m
 
-    async def _render_model(
-        self, model: Mapping[str, Any], element_id: str
-    ) -> AsyncIterator[Tuple[str, Dict[str, Any]]]:
-        index = 0
-        to_visit: List[Union[Mapping[str, Any], AbstractElement]] = [model]
-        while index < len(to_visit):
-            node = to_visit[index]
-            if isinstance(node, AbstractElement):
-                async for i, m in self._render_element(node, element_id):
-                    yield i, m
-            elif isinstance(node, Mapping):
-                if "children" in node:
-                    value = node["children"]
-                    if isinstance(value, (list, tuple)):
-                        to_visit.extend(value)
-                    elif isinstance(value, (Mapping, AbstractElement)):
-                        to_visit.append(value)
-            index += 1
-        yield element_id, self._load_model(model, element_id)
+            index = 0
+            to_visit: List[Union[Mapping[str, Any], AbstractElement]] = [model]
+            while index < len(to_visit):
+                visited_model = to_visit[index]
+                if isinstance(visited_model, AbstractElement):
+                    async for i, m in self._render_layout_subtree(
+                        visited_model, element_id
+                    ):
+                        yield i, m
+                elif isinstance(visited_model, Mapping):
+                    if "children" in visited_model:
+                        value = visited_model["children"]
+                        if isinstance(value, (list, tuple)):
+                            to_visit.extend(value)
+                        elif isinstance(value, (Mapping, AbstractElement)):
+                            to_visit.append(value)
+                index += 1
 
-    def _load_model(self, model: Mapping[str, Any], element_id: str) -> Dict[str, Any]:
+            yield element_id, self._state_manager.load_model_state(model, element_id)
+
+
+class _ElementState(TypedDict):
+    parent: Optional[str]
+    inner_elements: Set[str]
+    event_handlers: List[str]
+
+
+class StateManager:
+
+    __slots__ = "_layout", "_element_state", "_event_handlers"
+
+    def __init__(self, layout: Layout) -> None:
+        self._layout = layout
+        self._element_state: Dict[str, _ElementState] = {}
+        self._event_handlers: Dict[str, EventHandler] = {}
+
+    def get_element_ids_in_layout(self) -> Set[str]:
+        return set(self._element_state)
+
+    def get_event_handler(self, target: str) -> Optional[EventHandler]:
+        return self._event_handlers.get(target)
+
+    def load_model_state(self, model: VdomDict, element_id: str) -> VdomDict:
         model = dict(model)
         if "children" in model:
             model["children"] = self._load_model_children(model["children"], element_id)
@@ -218,6 +238,46 @@ class Layout(AbstractLayout):
         if handlers:
             model["eventHandlers"] = handlers
         return model
+
+    def has_element_state(self, element_id: str) -> bool:
+        return element_id in self._element_state
+
+    def get_parent_element_id(self, element: AbstractElement) -> Optional[str]:
+        try:
+            parent_id = self._element_state[element.id]["parent"]
+        except KeyError:
+            if element.id != self._layout.root:
+                raise
+            return None
+        else:
+            return parent_id
+
+    async def create_element_state(
+        self, element: AbstractElement, parent_element_id: Optional[str]
+    ) -> None:
+        if parent_element_id is not None and self.has_element_state(parent_element_id):
+            self._element_state[parent_element_id]["inner_elements"].add(element.id)
+        self._element_state[element.id] = {
+            "parent": parent_element_id,
+            "inner_elements": set(),
+            "event_handlers": [],
+        }
+
+    async def reset_element_state(self, element: AbstractElement) -> None:
+        parent_element_id = self._element_state[element.id]["parent"]
+        await self.delete_element_state(element.id, unmount=False)
+        await self.create_element_state(element, parent_element_id)
+
+    async def delete_element_state(self, element_id: str, unmount: bool = True) -> None:
+        old = self._element_state.pop(element_id)
+        parent_element_id = old["parent"]
+        if parent_element_id is not None and self.has_element_state(parent_element_id):
+            self._element_state[parent_element_id]["inner_elements"].remove(element_id)
+        for handler_id in old["event_handlers"]:
+            del self._event_handlers[handler_id]
+        for i in old["inner_elements"]:
+            # don't pass on 'unmount' since that only applies to the root
+            await self.delete_element_state(i)
 
     def _load_model_children(
         self, children: Union[List[Any], Tuple[Any, ...]], element_id: str
@@ -227,7 +287,10 @@ class Layout(AbstractLayout):
         loaded_children = []
         for child in children:
             if isinstance(child, Mapping):
-                child = {"type": "obj", "data": self._load_model(child, element_id)}
+                child = {
+                    "type": "obj",
+                    "data": self.load_model_state(child, element_id),
+                }
             elif isinstance(child, AbstractElement):
                 child = {"type": "ref", "data": child.id}
             else:
@@ -236,7 +299,7 @@ class Layout(AbstractLayout):
         return loaded_children
 
     def _load_event_handlers(
-        self, model: Dict[str, Any], element_id: str
+        self, model: VdomDict, element_id: str
     ) -> Dict[str, Dict[str, Any]]:
         # gather event handler from eventHandlers and attributes fields
         handlers: Dict[str, EventHandler] = {}
@@ -261,48 +324,6 @@ class Layout(AbstractLayout):
             self._element_state[element_id]["event_handlers"].append(handler.id)
 
         return event_targets
-
-    def _has_element_state(self, element_id: str) -> bool:
-        return element_id in self._element_state
-
-    def _element_parent(self, element: AbstractElement) -> Optional[str]:
-        try:
-            parent_id = self._element_state[element.id]["parent"]
-        except KeyError:
-            if element.id != self.root:
-                raise
-            return None
-        else:
-            return parent_id
-
-    async def _create_element_state(
-        self, element: AbstractElement, parent_element_id: Optional[str]
-    ) -> None:
-        if parent_element_id is not None and self._has_element_state(parent_element_id):
-            self._element_state[parent_element_id]["inner_elements"].add(element.id)
-        self._element_state[element.id] = {
-            "parent": parent_element_id,
-            "inner_elements": set(),
-            "event_handlers": [],
-        }
-
-    async def _reset_element_state(self, element: AbstractElement) -> None:
-        parent_element_id = self._element_state[element.id]["parent"]
-        await self._delete_element_state(element.id, unmount=False)
-        await self._create_element_state(element, parent_element_id)
-
-    async def _delete_element_state(
-        self, element_id: str, unmount: bool = True
-    ) -> None:
-        old = self._element_state.pop(element_id)
-        parent_element_id = old["parent"]
-        if parent_element_id is not None and self._has_element_state(parent_element_id):
-            self._element_state[parent_element_id]["inner_elements"].remove(element_id)
-        for handler_id in old["event_handlers"]:
-            del self._event_handlers[handler_id]
-        for i in old["inner_elements"]:
-            # don't pass on 'unmount' since that only applies to the root
-            await self._delete_element_state(i)
 
 
 # future queue type
