@@ -177,31 +177,3 @@ async def test_render_raw_vdom_dict_with_single_element_object_as_children():
         old=[],
         error=None,
     )
-
-
-async def test_element_parents_must_exist_unless_is_root():
-    history = RenderHistory()
-
-    @history.track("main")
-    @idom.element
-    async def Main():
-        return Child()
-
-    @history.track("child")
-    @idom.element
-    async def Child():
-        return idom.html.div()
-
-    @idom.element
-    async def element_not_in_layout():
-        ...
-
-    async with idom.Layout(Main()) as layout:
-        await layout.render()
-
-        state = layout._element_state
-
-        with pytest.raises(KeyError):
-            layout._element_parent(element_not_in_layout())
-
-    assert not state
