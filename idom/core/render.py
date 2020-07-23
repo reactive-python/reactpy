@@ -76,7 +76,7 @@ class SingleStateRenderer(AbstractRenderer):
     """
 
     async def _outgoing(self, layout: AbstractLayout, context: Any) -> Dict[str, Any]:
-        src, new, old, error = await layout.render()
+        src, new, old = await layout.render()
         return {"root": layout.root, "src": src, "new": new, "old": old}
 
     async def _incoming(
@@ -114,7 +114,7 @@ class SharedStateRenderer(SingleStateRenderer):
 
     async def _render_loop(self) -> None:
         while True:
-            src, new, old, error = await self.layout.render()
+            src, new, old = await self.layout.render()
             # add new models to the overall state
             self._models.update(new)
             # remove old ones from the overall state
@@ -122,7 +122,7 @@ class SharedStateRenderer(SingleStateRenderer):
                 del self._models[old_id]
             # append updates to all other contexts
             for queue in self._updates.values():
-                await queue.put(LayoutUpdate(src, new, old, error))
+                await queue.put(LayoutUpdate(src, new, old))
 
     async def _outgoing_loop(self, send: SendCoroutine, context: str) -> None:
         if self.layout.root in self._models:
@@ -137,7 +137,7 @@ class SharedStateRenderer(SingleStateRenderer):
         await super()._outgoing_loop(send, context)
 
     async def _outgoing(self, layout: AbstractLayout, context: str) -> Dict[str, Any]:
-        src, new, old, error = await self._updates[context].get()
+        src, new, old = await self._updates[context].get()
         return {"root": layout.root, "src": src, "new": new, "old": old}
 
     @async_resource

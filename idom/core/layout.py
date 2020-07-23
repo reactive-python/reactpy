@@ -6,7 +6,6 @@ from typing import (
     Tuple,
     Mapping,
     NamedTuple,
-    Union,
     Any,
     Set,
     Generic,
@@ -41,9 +40,6 @@ class LayoutUpdate(NamedTuple):
 
     old: List[str]
     """element IDs that have been deleted"""
-
-    error: Optional[Exception]
-    """An error which may or may not have occured while rendering"""
 
 
 class LayoutEvent(NamedTuple):
@@ -154,30 +150,21 @@ class Layout(AbstractLayout):
         new: Dict[str, Dict[str, Any]] = {}
 
         parent = self._state_manager.get_parent_element_id(element)
-        render_error: Optional[Exception] = None
-        try:
-            async for element_id, model in self._render_layout_subtree(element, parent):
-                new[element_id] = model
-        except asyncio.CancelledError:
-            raise  # we don't want to supress cancellations
-        except Exception as error:
-            logger.exception(f"Failed to render {element}")
-            render_error = error
-        finally:
-            element_ids_post_render = self._state_manager.get_element_ids_in_layout()
-            update = LayoutUpdate(
-                element.id,
-                new,
-                list(element_ids_pre_render.difference(element_ids_post_render)),
-                render_error,
-            )
 
-        # render bundle
-        return update
+        async for element_id, model in self._render_layout_subtree(element, parent):
+            new[element_id] = model
+
+        element_ids_post_render = self._state_manager.get_element_ids_in_layout()
+
+        return LayoutUpdate(
+            element.id,
+            new,
+            list(element_ids_pre_render.difference(element_ids_post_render)),
+        )
 
     async def _render_layout_subtree(
         self, element: "AbstractElement", parent_element_id: Optional[str]
-    ) -> AsyncIterator[Tuple[str, Dict[str, Any]]]:
+    ) -> Tuple[Tuple[str, Dict[str, Any]]]:
         element_id = element.id
         if self._state_manager.has_element_state(element_id):
             await self._state_manager.reset_element_state(element)
@@ -185,28 +172,34 @@ class Layout(AbstractLayout):
             await self._state_manager.create_element_state(element, parent_element_id)
 
         async with self._hook_dispatcher.render(element) as model:
+
             if isinstance(model, AbstractElement):
                 model = {"tagName": "div", "children": [model]}
 
-            index = 0
-            to_visit: List[Union[Mapping[str, Any], AbstractElement]] = [model]
-            while index < len(to_visit):
-                visited_model = to_visit[index]
-                if isinstance(visited_model, AbstractElement):
-                    async for i, m in self._render_layout_subtree(
-                        visited_model, element_id
-                    ):
-                        yield i, m
-                elif isinstance(visited_model, Mapping):
-                    if "children" in visited_model:
-                        value = visited_model["children"]
-                        if isinstance(value, (list, tuple)):
-                            to_visit.extend(value)
-                        elif isinstance(value, (Mapping, AbstractElement)):
-                            to_visit.append(value)
-                index += 1
+            model_resolution = _resolve_model(model)
 
-            yield element_id, self._state_manager.load_model_state(model, element_id)
+            yield element_id, model_resolution.resolved_model
+
+            self._state_manager._element_state[element.id]["event_handlers"] = [
+                h.id for h in model_resolution.event_handlers
+            ]
+            self._state_manager._event_handlers.update(
+                {h.id: h for h in model_resolution.event_handlers}
+            )
+
+            for inner_element in model_resolution.child_elements:
+                try:
+                    subtree = self._render_layout_subtree(inner_element, element_id)
+                    async for i, m in subtree:
+                        yield i, m
+                except asyncio.CancelledError:
+                    raise  # we don't want to supress cancellations
+                except Exception as error:
+                    logger.exception(f"Failed to render {inner_element}")
+                    yield inner_element.id, {
+                        "tagName": "div",
+                        "attributes": {"__error__": str(error)},
+                    }
 
 
 class _ElementState(TypedDict):
@@ -229,15 +222,6 @@ class StateManager:
 
     def get_event_handler(self, target: str) -> Optional[EventHandler]:
         return self._event_handlers.get(target)
-
-    def load_model_state(self, model: VdomDict, element_id: str) -> VdomDict:
-        model = dict(model)
-        if "children" in model:
-            model["children"] = self._load_model_children(model["children"], element_id)
-        handlers = self._load_event_handlers(model, element_id)
-        if handlers:
-            model["eventHandlers"] = handlers
-        return model
 
     def has_element_state(self, element_id: str) -> bool:
         return element_id in self._element_state
@@ -279,51 +263,100 @@ class StateManager:
             # don't pass on 'unmount' since that only applies to the root
             await self.delete_element_state(i)
 
-    def _load_model_children(
-        self, children: Union[List[Any], Tuple[Any, ...]], element_id: str
-    ) -> List[Dict[str, Any]]:
-        if not isinstance(children, (list, tuple)):
-            children = [children]
-        loaded_children = []
-        for child in children:
-            if isinstance(child, Mapping):
-                child = {
-                    "type": "obj",
-                    "data": self.load_model_state(child, element_id),
-                }
-            elif isinstance(child, AbstractElement):
-                child = {"type": "ref", "data": child.id}
-            else:
-                child = {"type": "str", "data": str(child)}
-            loaded_children.append(child)
-        return loaded_children
 
-    def _load_event_handlers(
-        self, model: VdomDict, element_id: str
-    ) -> Dict[str, Dict[str, Any]]:
-        # gather event handler from eventHandlers and attributes fields
-        handlers: Dict[str, EventHandler] = {}
-        if "eventHandlers" in model:
-            handlers.update(model["eventHandlers"])
-        if "attributes" in model:
-            attrs = model["attributes"]
-            for k, v in list(attrs.items()):
-                if callable(v):
-                    if not isinstance(v, EventHandler):
-                        h = handlers[k] = EventHandler()
-                        h.add(attrs.pop(k))
-                    else:
-                        h = attrs.pop(k)
-                        handlers[k] = h
+class _ModelResolution(NamedTuple):
+    resolved_model: Dict[str, Any]
+    event_handlers: List[EventHandler]
+    child_elements: List[AbstractElement]
 
-        event_targets = {}
-        for event, handler in handlers.items():
-            handler_spec = handler.serialize()
-            event_targets[event] = handler_spec
-            self._event_handlers[handler.id] = handler
-            self._element_state[element_id]["event_handlers"].append(handler.id)
 
-        return event_targets
+def _resolve_model(model: VdomDict) -> _ModelResolution:
+    resolved_model: Dict[str, Any] = dict(model)
+
+    event_handler_resolution = _resolve_model_event_handlers(model)
+    if event_handler_resolution.event_targets:
+        resolved_model["eventHandlers"] = event_handler_resolution.event_targets
+    event_handlers = event_handler_resolution.event_handlers
+
+    if "children" in model:
+        child_resolution = _resolve_model_children(model["children"])
+        resolved_model["children"] = child_resolution.resolved_models
+        event_handlers += child_resolution.event_handlers
+        child_elements = child_resolution.child_elements
+    else:
+        child_elements = []
+
+    return _ModelResolution(
+        resolved_model=resolved_model,
+        event_handlers=event_handlers,
+        child_elements=child_elements,
+    )
+
+
+_ResolvedChild = Dict[str, Dict[str, str]]
+
+
+class _ChildResolution(NamedTuple):
+    resolved_models: List[Dict[str, Dict[str, str]]]
+    event_handlers: List[EventHandler]
+    child_elements: List[AbstractElement]
+
+
+def _resolve_model_children(children: List[Any]) -> _ChildResolution:
+    if not isinstance(children, (list, tuple)):
+        children = [children]
+
+    resolved_models: List[_ResolvedChild] = []
+    event_handlers: List[EventHandler] = []
+    child_elements: List[EventHandler] = []
+
+    for child in children:
+        if isinstance(child, Mapping):
+            inner_resolution = _resolve_model(child)
+            resolved_child = {"type": "obj", "data": inner_resolution.resolved_model}
+            event_handlers += inner_resolution.event_handlers
+            child_elements += inner_resolution.child_elements
+        elif isinstance(child, AbstractElement):
+            resolved_child = {"type": "ref", "data": child.id}
+            child_elements.append(child)
+        else:
+            resolved_child = {"type": "str", "data": str(child)}
+        resolved_models.append(resolved_child)
+
+    return _ChildResolution(
+        resolved_models=resolved_models,
+        event_handlers=event_handlers,
+        child_elements=child_elements,
+    )
+
+
+_EventTargets = Dict[str, str]
+
+
+class _EventHandlerResolution(NamedTuple):
+    event_targets: Dict[str, str]
+    event_handlers: List[EventHandler]
+
+
+def _resolve_model_event_handlers(model: VdomDict) -> _EventHandlerResolution:
+    handlers: Dict[str, EventHandler] = {}
+    if "eventHandlers" in model:
+        handlers.update(model["eventHandlers"])
+    if "attributes" in model:
+        attrs = model["attributes"]
+        for k, v in list(attrs.items()):
+            if callable(v):
+                if not isinstance(v, EventHandler):
+                    h = handlers[k] = EventHandler()
+                    h.add(attrs.pop(k))
+                else:
+                    h = attrs.pop(k)
+                    handlers[k] = h
+
+    return _EventHandlerResolution(
+        event_targets={e: h.serialize() for e, h in handlers.items()},
+        event_handlers=list(handlers.values()),
+    )
 
 
 # future queue type
