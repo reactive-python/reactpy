@@ -18,7 +18,7 @@ def test_layout_expects_abstract_element():
 async def test_layout_has_event_loop(event_loop):
     @idom.element
     async def MyElement():
-        ...
+        return idom.html.div()
 
     async with idom.Layout(MyElement()) as layout:
         assert layout.loop is event_loop
@@ -55,14 +55,14 @@ async def test_simple_layout():
     element = SimpleElement("div")
     async with idom.Layout(element) as layout:
 
-        src, new, old, error = await layout.render()
+        src, new, old = await layout.render()
         assert src == element.id
         assert new == {element.id: {"tagName": "div"}}
         assert old == []
 
         set_state_hook.value("table")
 
-        src, new, old, error = await layout.render()
+        src, new, old = await layout.render()
         assert src == element.id
         assert new == {element.id: {"tagName": "table"}}
         assert old == []
@@ -84,7 +84,7 @@ async def test_nested_element_layout():
 
     async with idom.Layout(Parent()) as layout:
 
-        src, new, old, error = await layout.render()
+        src, new, old = await layout.render()
 
         assert src == history.parent_1.id
         assert new == {
@@ -98,7 +98,7 @@ async def test_nested_element_layout():
 
         layout.update(history.parent_1)
 
-        src, new, old, error = await layout.render()
+        src, new, old = await layout.render()
 
         assert src == history.parent_1.id
         assert new == {
@@ -117,13 +117,14 @@ async def test_layout_render_error_has_partial_update():
     @history.track("main")
     @idom.element
     async def Main():
-        return idom.html.div([OkChild(), BadChild()])
+        return idom.html.div([OkChild(), BadChild(), OkChild()])
 
     @history.track("ok_child")
     @idom.element
     async def OkChild():
         return idom.html.div(["hello"])
 
+    @history.track("bad_child")
     @idom.element
     async def BadChild():
         raise ValueError("Something went wrong :(")
@@ -131,18 +132,32 @@ async def test_layout_render_error_has_partial_update():
     async with idom.Layout(Main()) as layout:
 
         update = await layout.render()
-        assert isinstance(update.error, ValueError)
 
         assert update == LayoutUpdate(
             src=history.main_1.id,
             new={
+                history.main_1.id: {
+                    "tagName": "div",
+                    "children": [
+                        {"type": "ref", "data": history.ok_child_1.id},
+                        {"type": "ref", "data": history.bad_child_1.id},
+                        {"type": "ref", "data": history.ok_child_2.id},
+                    ],
+                },
                 history.ok_child_1.id: {
                     "tagName": "div",
                     "children": [{"type": "str", "data": "hello"}],
-                }
+                },
+                history.bad_child_1.id: {
+                    "tagName": "div",
+                    "attributes": {"__error__": "Something went wrong :("},
+                },
+                history.ok_child_2.id: {
+                    "tagName": "div",
+                    "children": [{"type": "str", "data": "hello"}],
+                },
             },
             old=[],
-            error=update.error,
         )
 
 
@@ -175,5 +190,5 @@ async def test_render_raw_vdom_dict_with_single_element_object_as_children():
             },
         },
         old=[],
-        error=None,
     )
+
