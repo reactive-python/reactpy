@@ -1,8 +1,3 @@
-import gc
-import time
-
-import pytest
-
 import idom
 
 
@@ -82,27 +77,6 @@ def test_use_update(driver, display, driver_wait):
 
     client_button.click()
     driver_wait.until(lambda dvr: client_button.get_attribute("count") == "3")
-
-
-def test_rate_limit(driver, display):
-    @idom.element
-    async def Counter():
-        count, set_count = idom.hooks.use_state(0)
-
-        await idom.hooks.use_frame_rate(0.1)
-
-        if count < 5:
-            set_count(count + 1)
-
-        return idom.html.p({"id": f"counter-{count}"}, [f"Count: {count}"])
-
-    start = time.time()
-    display(Counter)
-    driver.find_element_by_id("counter-5")
-    stop = time.time()
-
-    elapsed = stop - start
-    assert elapsed > 0.5
 
 
 def test_use_memo(display, driver, driver_wait):
@@ -256,22 +230,3 @@ def test_use_shared_state(driver, driver_wait, display):
 
 def test_use_shared_should_update():
     assert False, "Not implemented yet"
-
-
-def test_cannot_use_update_after_element_is_garbage_collected():
-    @idom.element
-    async def SomeElement():
-        ...
-
-    element = SomeElement()
-
-    hook = idom.core._hooks.HookDispatcher(idom.Layout(element)).get_hook(element)
-
-    # cause garbage collection
-    del hook._dispatcher
-    del hook._layout
-    del element
-    gc.collect()
-
-    with pytest.raises(RuntimeError, match=r"Element for hook .* no longer exists"):
-        hook.use_update()
