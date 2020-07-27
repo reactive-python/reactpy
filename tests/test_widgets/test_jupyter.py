@@ -59,6 +59,7 @@ def test_cross_origin_jupyter_display(server, driver, driver_wait, mount, server
         def shutdown():
             stop = flask.request.environ.get("werkzeug.server.shutdown")
             stop()
+            return "shutting down..."
 
         flask_app.run(host=flask_host, port=flask_port, debug=False)
 
@@ -77,6 +78,7 @@ def test_cross_origin_jupyter_display(server, driver, driver_wait, mount, server
     driver_wait.until(lambda d: clicked.get())
 
     driver.get(f"{flask_server_url}/shutdown")
+    thread.join()
 
 
 def test_same_origin_jupyter_display(driver, driver_wait, mount, server_url):

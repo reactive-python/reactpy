@@ -111,7 +111,7 @@ class _LayoutState(TypedDict):
 
 class Layout(AbstractLayout):
 
-    __slots__ = "_global_layout_state", "_root_element_state"
+    __slots__ = "_global_layout_state"
 
     def __init__(
         self, root: "AbstractElement", loop: Optional[asyncio.AbstractEventLoop] = None
@@ -141,7 +141,6 @@ class Layout(AbstractLayout):
     @async_resource
     async def _rendering_queue(self) -> AsyncIterator["FutureQueue[LayoutUpdate]"]:
         queue: FutureQueue[LayoutUpdate] = FutureQueue()
-        queue.put(self._render_layout_update(self._root))
         try:
             yield queue
         finally:
@@ -191,17 +190,18 @@ class ElementState:
         self._element = element
         self._event_handler_ids: Set[str] = set()
         self._child_state_managers: List[ElementState] = []
-        self._life_cycle_hook = LifeCycleHook(self)
-
-    @property
-    def element_id(self):
-        return self._element.id
+        self._life_cycle_hook = LifeCycleHook(element, self.update)
 
     def update(self):
         self._layout_state["schedule_element_render"](self._element)
 
     async def render(self) -> AsyncIterator[Tuple[str, Any]]:
-        model_resolution = _resolve_model(await self._render())
+        model = await self._render()
+
+        if isinstance(model, AbstractElement):
+            model = {"tagName": "div", "children": [model]}
+
+        model_resolution = _resolve_model(model)
 
         self._event_handler_ids.clear()
         for handler_id in self._event_handler_ids:

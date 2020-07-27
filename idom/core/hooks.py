@@ -10,11 +10,9 @@ from typing import (
     Generic,
     Union,
     List,
-    TYPE_CHECKING,
 )
 
-if TYPE_CHECKING:
-    from .layout import ElementState
+from .element import AbstractElement
 
 
 __all__ = [
@@ -139,8 +137,8 @@ def current_hook() -> "LifeCycleHook":
 class LifeCycleHook:
 
     __slots__ = (
-        "_element_id",
-        "_element_state",
+        "_element",
+        "_schedule_render",
         "_current_state_index",
         "_state",
         "_did_update",
@@ -148,9 +146,11 @@ class LifeCycleHook:
         "_finalizers",
     )
 
-    def __init__(self, element_state: "ElementState"):
-        self._element_state = element_state
-        self._element_id = element_state.element_id
+    def __init__(
+        self, element: AbstractElement, schedule_render: Callable[[], None]
+    ) -> None:
+        self._element = element
+        self._schedule_render = schedule_render
         self._current_state_index = 0
         self._state: Tuple[Any, ...] = ()
         self._finalizers: List[Callable[[], None]] = []
@@ -159,13 +159,13 @@ class LifeCycleHook:
 
     @property
     def element_id(self):
-        return self._element_id
+        return self._element.id
 
     def use_update(self):
         def update() -> None:
             if not self._did_update:
                 self._did_update = True
-                self._element_state.update()
+                self._schedule_render()
             return None
 
         return update
