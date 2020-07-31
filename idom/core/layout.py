@@ -105,6 +105,9 @@ class AbstractLayout(HasAsyncResources, abc.ABC):
             event: Event data passed to the event handler.
         """
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self._root})"
+
 
 class _LayoutState(TypedDict):
     event_handlers: Dict[str, EventHandler]
@@ -202,46 +205,49 @@ class ElementState:
         )
 
     async def render(self) -> AsyncIterator[Tuple[str, Any, Optional[Exception]]]:
-        model = await self._render()
+        try:
+            self._life_cycle_hook.element_will_render()
 
-        if isinstance(model, AbstractElement):
-            model = {"tagName": "div", "children": [model]}
+            model = await self._render()
 
-        model_resolution = _resolve_model(model)
+            if isinstance(model, AbstractElement):
+                model = {"tagName": "div", "children": [model]}
 
-        self._event_handler_ids.clear()
-        for handler_id in self._event_handler_ids:
-            del self._layout_state[handler_id]
-        for child_state in self._child_state_managers:
-            child_state.unmount()
-        self._child_state_managers.clear()
+            model_resolution = _resolve_model(model)
 
-        for event_handler in model_resolution.event_handlers:
-            self._event_handler_ids.add(event_handler.id)
-            self._layout_state["event_handlers"][event_handler.id] = event_handler
+            self._event_handler_ids.clear()
+            for handler_id in self._event_handler_ids:
+                del self._layout_state[handler_id]
+            for child_state in self._child_state_managers:
+                child_state.unmount()
+            self._child_state_managers.clear()
 
-        yield self._element.id, model_resolution.resolved_model, None
+            for event_handler in model_resolution.event_handlers:
+                self._event_handler_ids.add(event_handler.id)
+                self._layout_state["event_handlers"][event_handler.id] = event_handler
 
-        for child_element in model_resolution.child_elements:
-            child_state = self._create_child_state(child_element)
-            try:
+            yield self._element.id, model_resolution.resolved_model, None
+
+            for child_element in model_resolution.child_elements:
+                child_state = self._create_child_state(child_element)
                 async for inner_id, inner_model, inner_err in child_state.render():
                     yield inner_id, inner_model, inner_err
-            except asyncio.CancelledError:
-                raise  # we don't want to supress cancellations
-            except Exception as error:
-                logger.exception(f"Failed to render {child_element.id}")
-                yield child_element.id, {"tagName": "div"}, error
 
-        self._life_cycle_hook.element_did_render()
+            self._life_cycle_hook.element_did_render()
+        except asyncio.CancelledError:
+            raise  # we don't want to supress cancellations
+        except Exception as error:
+            # logging here instead of raising allows us to return partial renders
+            logger.exception(f"Failed to render {self._element.id}")
+            yield self._element.id, {"tagName": "div"}, error
 
     def unmount(self):
         element_id = self._element.id
-        del self._layout_state["element_states"][element_id]
         for handler_id in self._event_handler_ids:
             del self._layout_state["event_handlers"][handler_id]
         for state in self._child_state_managers:
             state.unmount()
+        del self._layout_state["element_states"][element_id]
         self._life_cycle_hook.element_will_unmount()
 
     @coroutine
