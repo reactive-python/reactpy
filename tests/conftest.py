@@ -51,7 +51,7 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def caplog(_caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
     class PropogateHandler(logging.Handler):
         def emit(self, record):
@@ -60,6 +60,7 @@ def caplog(_caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
     handler_id = logger.add(PropogateHandler(), format="{message}")
     yield _caplog
     logger.remove(handler_id)
+    assert not _caplog.record_tuples
 
 
 @pytest.fixture

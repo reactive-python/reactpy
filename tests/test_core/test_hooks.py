@@ -99,7 +99,11 @@ def test_use_memo(display, driver, driver_wait):
 
     @idom.element
     async def ComponentWithMemo():
-        location, set_location = idom.hooks.use_state("left")
+        location, set_location = idom.hooks.use_state(
+            "left",
+            # force update every time
+            should_update=lambda new, old: True,
+        )
 
         @idom.hooks.use_memo(location)
         def count():
@@ -297,60 +301,3 @@ def test_use_shared_should_update(driver, driver_wait, display):
     driver_wait.until(
         lambda d: client_view_2.get_attribute("innerHTML") == "message for view-2"
     )
-
-
-def test_use_finalize(driver, driver_wait, display):
-    finalize_trigger_count = 0
-    render_count = 0
-
-    @idom.element
-    async def OnOffButtons():
-        state, set_state = idom.hooks.use_state("off")
-
-        async def set_on(event):
-            # we don't check if state is True to force render with same value
-            set_state("on")
-
-        async def set_off(event):
-            # we don't check if state is False to force render with same value
-            set_state("off")
-
-        return idom.html.div(
-            idom.html.button({"onClick": set_on, "id": "on-button"}, "on"),
-            idom.html.button({"onClick": set_off, "id": "off-button"}, "off"),
-            ShowStateWithFinalizer(state),
-        )
-
-    @idom.element
-    async def ShowStateWithFinalizer(state):
-        nonlocal render_count
-        render_count += 1
-
-        @idom.hooks.use_finalize(state)
-        def on_unmount():
-            nonlocal finalize_trigger_count
-            finalize_trigger_count += 1
-
-        return idom.html.p(
-            f"state is {state}", f"unmount trigger count is {finalize_trigger_count}"
-        )
-
-    display(OnOffButtons)
-
-    client_on_button = driver.find_element_by_id("on-button")
-    client_off_button = driver.find_element_by_id("off-button")
-
-    client_on_button.click()
-
-    finalize_trigger_count == 1
-    render_count == 1
-
-    client_on_button.click()
-
-    finalize_trigger_count == 1
-    render_count == 2
-
-    client_off_button.click()
-
-    finalize_trigger_count == 2
-    render_count == 3

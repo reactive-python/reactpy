@@ -9,7 +9,6 @@ from typing import (
     Optional,
     Generic,
     Union,
-    List,
 )
 
 from .element import AbstractElement
@@ -95,17 +94,6 @@ def _use_state(
     return state["value"], set_state
 
 
-def use_finalize(*args: Any) -> Callable[[Callable[[], None]], None]:
-    hook = current_hook()
-
-    def use_setup(function: Callable[..., None]) -> None:
-        memo_args = use_memo(*args)
-        hook.use_finalize(function, *memo_args)
-        return None
-
-    return use_setup
-
-
 _MemoValue = TypeVar("_MemoValue")
 
 
@@ -160,7 +148,6 @@ class LifeCycleHook:
         "_state",
         "_did_update",
         "_has_rendered",
-        "_finalizers",
         "__weakref__",
     )
 
@@ -173,7 +160,6 @@ class LifeCycleHook:
         self._schedule_render = schedule_render
         self._current_state_index = 0
         self._state: Tuple[Any, ...] = ()
-        self._finalizers: List[Callable[[], None]] = []
         self._did_update = False
         self._has_rendered = False
 
@@ -203,14 +189,6 @@ class LifeCycleHook:
         self._current_state_index += 1
         return result
 
-    def use_finalize(
-        self, _function_: Callable[..., None], *args: Any, **kwargs: Any
-    ) -> None:
-        if not args and not kwargs:
-            self._finalizers.append(_function_)
-        else:
-            self._finalizers.append(lambda: _function_(*args, **kwargs))
-
     def set_current(self):
         _current_life_cycle_hook[get_thread_id()] = self
 
@@ -218,12 +196,12 @@ class LifeCycleHook:
         # use an assert here for debug purposes since this should never be False
         assert _current_life_cycle_hook.pop(get_thread_id()) is self
 
-    def element_did_render(self) -> None:
+    def element_will_render(self) -> None:
         self._did_update = False
         self._current_state_index = 0
+
+    def element_did_render(self) -> None:
         self._has_rendered = True
-        self._finalizers.clear()
 
     def element_will_unmount(self) -> None:
-        for func in self._finalizers:
-            func()
+        ...
