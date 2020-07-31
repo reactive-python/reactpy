@@ -1,25 +1,40 @@
+import pytest
+
 import idom
+
+
+async def test_must_be_rendering_in_layout_to_use_hooks():
+    @idom.element
+    async def SimpleElementWithHook():
+        idom.hooks.use_state(None)
+        return idom.html.div()
+
+    with pytest.raises(RuntimeError, match="No life cycle hook is active"):
+        await SimpleElementWithHook().render()
+
+    async with idom.Layout(SimpleElementWithHook()) as layout:
+        await layout.render()
 
 
 async def test_simple_stateful_element():
     @idom.element
-    async def simple_stateful_element():
+    async def SimpleStatefulElement():
         index, set_index = idom.hooks.use_state(0)
         set_index(index + 1)
         return idom.html.div(index)
 
-    ssd = simple_stateful_element()
+    sse = SimpleStatefulElement()
 
-    async with idom.Layout(ssd) as layout:
-        assert (await layout.render()).new[ssd.id] == {
+    async with idom.Layout(sse) as layout:
+        assert (await layout.render()).new[sse.id] == {
             "tagName": "div",
             "children": [{"data": "0", "type": "str"}],
         }
-        assert (await layout.render()).new[ssd.id] == {
+        assert (await layout.render()).new[sse.id] == {
             "tagName": "div",
             "children": [{"data": "1", "type": "str"}],
         }
-        assert (await layout.render()).new[ssd.id] == {
+        assert (await layout.render()).new[sse.id] == {
             "tagName": "div",
             "children": [{"data": "2", "type": "str"}],
         }
@@ -82,15 +97,15 @@ def test_use_update(driver, display, driver_wait):
 def test_use_memo(display, driver, driver_wait):
     trigger_count = 0
 
-    def function_to_memoize(some_value):
-        nonlocal trigger_count
-        trigger_count += 1
-        return trigger_count
-
     @idom.element
     async def ComponentWithMemo():
         location, set_location = idom.hooks.use_state("left")
-        count = idom.hooks.use_memo(function_to_memoize, location)
+
+        @idom.hooks.use_memo(location)
+        def count():
+            nonlocal trigger_count
+            trigger_count += 1
+            return trigger_count
 
         async def on_left_button_click(event):
             set_location("left")
@@ -228,5 +243,114 @@ def test_use_shared_state(driver, driver_wait, display):
     assert driver_wait.until(lambda dvr: client_button_2.get_attribute("count") == "2")
 
 
-def test_use_shared_should_update():
-    assert False, "Not implemented yet"
+def test_use_shared_should_update(driver, driver_wait, display):
+    @idom.element
+    async def MessageInput():
+        shared_message = idom.hooks.Shared("initial message")
+
+        async def on_change(event):
+            shared_message.update(event["value"])
+
+        return idom.html.div(
+            idom.html.input({"onChange": on_change, "id": "message-input"}),
+            MessageView(shared_message, "view-1"),
+            MessageView(shared_message, "view-2"),
+        )
+
+    @idom.element
+    async def MessageView(shared_message, view_id):
+        message, set_message = idom.hooks.use_state(
+            shared_message,
+            should_update=lambda new, old: new == f"message for {view_id}",
+        )
+        return idom.html.p({"id": view_id}, message)
+
+    display(MessageInput)
+
+    client_message_input = driver.find_element_by_id("message-input")
+    client_view_1 = driver.find_element_by_id("view-1")
+    client_view_2 = driver.find_element_by_id("view-2")
+
+    driver_wait.until(
+        lambda d: client_view_1.get_attribute("innerHTML") == "initial message"
+    )
+    driver_wait.until(
+        lambda d: client_view_2.get_attribute("innerHTML") == "initial message"
+    )
+
+    client_message_input.send_keys("message for view-1")
+    client_message_input.clear()
+
+    driver_wait.until(
+        lambda d: client_view_1.get_attribute("innerHTML") == "message for view-1"
+    )
+    driver_wait.until(
+        lambda d: client_view_2.get_attribute("innerHTML") == "initial message"
+    )
+
+    client_message_input.send_keys("message for view-2")
+    client_message_input.clear()
+
+    driver_wait.until(
+        lambda d: client_view_1.get_attribute("innerHTML") == "message for view-1"
+    )
+    driver_wait.until(
+        lambda d: client_view_2.get_attribute("innerHTML") == "message for view-2"
+    )
+
+
+def test_use_finalize(driver, driver_wait, display):
+    finalize_trigger_count = 0
+    render_count = 0
+
+    @idom.element
+    async def OnOffButtons():
+        state, set_state = idom.hooks.use_state("off")
+
+        async def set_on(event):
+            # we don't check if state is True to force render with same value
+            set_state("on")
+
+        async def set_off(event):
+            # we don't check if state is False to force render with same value
+            set_state("off")
+
+        return idom.html.div(
+            idom.html.button({"onClick": set_on, "id": "on-button"}, "on"),
+            idom.html.button({"onClick": set_off, "id": "off-button"}, "off"),
+            ShowStateWithFinalizer(state),
+        )
+
+    @idom.element
+    async def ShowStateWithFinalizer(state):
+        nonlocal render_count
+        render_count += 1
+
+        @idom.hooks.use_finalize(state)
+        def on_unmount():
+            nonlocal finalize_trigger_count
+            finalize_trigger_count += 1
+
+        return idom.html.p(
+            f"state is {state}", f"unmount trigger count is {finalize_trigger_count}"
+        )
+
+    display(OnOffButtons)
+
+    client_on_button = driver.find_element_by_id("on-button")
+    client_off_button = driver.find_element_by_id("off-button")
+
+    client_on_button.click()
+
+    finalize_trigger_count == 1
+    render_count == 1
+
+    client_on_button.click()
+
+    finalize_trigger_count == 1
+    render_count == 2
+
+    client_off_button.click()
+
+    finalize_trigger_count == 2
+    render_count == 3
