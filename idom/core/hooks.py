@@ -64,7 +64,7 @@ def _use_shared(
     hook = current_hook()
     update = hook.use_update()
 
-    hook.use_finalizer(shared._callbacks.pop, hook.element_id, None)
+    hook.use_finalize(shared._callbacks.pop, hook.element_id, None)
     old = shared._value
     shared._callbacks[hook.element_id] = (
         lambda new: update() if should_update(new, old) else None
@@ -95,23 +95,35 @@ def _use_state(
     return state["value"], set_state
 
 
+def use_finalize(*args: Any) -> Callable[[Callable[[], None]], None]:
+    hook = current_hook()
+
+    def use_setup(function: Callable[..., None]) -> None:
+        memo_args = use_memo(*args)
+        hook.use_finalize(function, *memo_args)
+        return None
+
+    return use_setup
+
+
 _MemoValue = TypeVar("_MemoValue")
 
 
-def use_memo(
-    function: Callable[..., _MemoValue], *args: Any, **kwargs: Any
-) -> _MemoValue:
-    hook = current_hook()
-    cache: Dict[int, _MemoValue] = hook.use_state(dict)
+def use_memo(*args: Any) -> Callable[[Callable[[], _MemoValue]], _MemoValue]:
+    def use_setup(function: Callable[[], _MemoValue]) -> _MemoValue:
+        hook = current_hook()
+        cache: Dict[int, _MemoValue] = hook.use_state(dict)
 
-    key = hash((args, tuple(kwargs.items())))
-    if key in cache:
-        result = cache[key]
-    else:
-        cache.clear()
-        result = cache[key] = function(*args, **kwargs)
+        key = hash(args)
+        if key in cache:
+            result = cache[key]
+        else:
+            cache.clear()
+            result = cache[key] = function()
 
-    return result
+        return result
+
+    return use_setup
 
 
 _LruFunc = TypeVar("_LruFunc")
@@ -124,6 +136,11 @@ def use_lru_cache(
 
 
 _current_life_cycle_hook: Dict[int, "LifeCycleHook"] = {}
+
+
+def current_element() -> AbstractElement:
+    # this is primarilly used for testing
+    return current_hook()._element
 
 
 def current_hook() -> "LifeCycleHook":
@@ -144,10 +161,13 @@ class LifeCycleHook:
         "_did_update",
         "_has_rendered",
         "_finalizers",
+        "__weakref__",
     )
 
     def __init__(
-        self, element: AbstractElement, schedule_render: Callable[[], None]
+        self,
+        element: AbstractElement,
+        schedule_render: Callable[[AbstractElement], None],
     ) -> None:
         self._element = element
         self._schedule_render = schedule_render
@@ -165,7 +185,7 @@ class LifeCycleHook:
         def update() -> None:
             if not self._did_update:
                 self._did_update = True
-                self._schedule_render()
+                self._schedule_render(self._element)
             return None
 
         return update
@@ -183,10 +203,13 @@ class LifeCycleHook:
         self._current_state_index += 1
         return result
 
-    def use_finalizer(
+    def use_finalize(
         self, _function_: Callable[..., None], *args: Any, **kwargs: Any
     ) -> None:
-        self._finalizers.append(lambda: _function_(*args, **kwargs))
+        if not args and not kwargs:
+            self._finalizers.append(_function_)
+        else:
+            self._finalizers.append(lambda: _function_(*args, **kwargs))
 
     def set_current(self):
         _current_life_cycle_hook[get_thread_id()] = self

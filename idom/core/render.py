@@ -76,8 +76,14 @@ class SingleStateRenderer(AbstractRenderer):
     """
 
     async def _outgoing(self, layout: AbstractLayout, context: Any) -> Dict[str, Any]:
-        src, new, old = await layout.render()
-        return {"root": layout.root, "src": src, "new": new, "old": old}
+        src, new, old, errors = await layout.render()
+        return {
+            "root": layout.root,
+            "src": src,
+            "new": new,
+            "old": old,
+            "errors": [str(e) for e in errors],
+        }
 
     async def _incoming(
         self, layout: AbstractLayout, context: Any, event: LayoutEvent
@@ -114,15 +120,15 @@ class SharedStateRenderer(SingleStateRenderer):
 
     async def _render_loop(self) -> None:
         while True:
-            src, new, old = await self.layout.render()
+            change = await self.layout.render()
             # add new models to the overall state
-            self._models.update(new)
+            self._models.update(change.new)
             # remove old ones from the overall state
-            for old_id in old:
+            for old_id in change.old:
                 del self._models[old_id]
             # append updates to all other contexts
             for queue in self._updates.values():
-                await queue.put(LayoutUpdate(src, new, old))
+                await queue.put(change)
 
     async def _outgoing_loop(self, send: SendCoroutine, context: str) -> None:
         if self.layout.root in self._models:
@@ -137,8 +143,14 @@ class SharedStateRenderer(SingleStateRenderer):
         await super()._outgoing_loop(send, context)
 
     async def _outgoing(self, layout: AbstractLayout, context: str) -> Dict[str, Any]:
-        src, new, old = await self._updates[context].get()
-        return {"root": layout.root, "src": src, "new": new, "old": old}
+        src, new, old, errors = await self._updates[context].get()
+        return {
+            "root": layout.root,
+            "src": src,
+            "new": new,
+            "old": old,
+            "errors": [str(e) for e in errors],
+        }
 
     @async_resource
     async def _join_event(self) -> AsyncIterator[asyncio.Event]:

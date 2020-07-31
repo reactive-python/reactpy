@@ -44,6 +44,9 @@ class LayoutUpdate(NamedTuple):
     old: List[str]
     """element IDs that have been deleted"""
 
+    errors: List[Exception]
+    """A list of errors that occured while rendering"""
+
 
 class LayoutEvent(NamedTuple):
     target: str
@@ -141,6 +144,7 @@ class Layout(AbstractLayout):
     @async_resource
     async def _rendering_queue(self) -> AsyncIterator["FutureQueue[LayoutUpdate]"]:
         queue: FutureQueue[LayoutUpdate] = FutureQueue()
+        queue.put(self._render_layout_update(self._root))
         try:
             yield queue
         finally:
@@ -149,7 +153,6 @@ class Layout(AbstractLayout):
     @async_resource
     async def _root_element_state(self):
         root_state = ElementState(self._global_layout_state, self._root)
-        root_state.update()
         try:
             yield root_state
         finally:
@@ -160,10 +163,13 @@ class Layout(AbstractLayout):
         element_ids_pre_render = set(self._global_layout_state["element_states"])
 
         # all element updates
+        errors = []
         new: Dict[str, Dict[str, Any]] = {}
         element_state = self._global_layout_state["element_states"][element.id]
-        async for element_id, model in element_state.render():
+        async for element_id, model, error in element_state.render():
             new[element_id] = model
+            if error is not None:
+                errors.append(error)
 
         element_ids_post_render = set(self._global_layout_state["element_states"])
 
@@ -171,6 +177,7 @@ class Layout(AbstractLayout):
             element.id,
             new,
             list(element_ids_pre_render.difference(element_ids_post_render)),
+            errors,
         )
 
 
@@ -190,12 +197,11 @@ class ElementState:
         self._element = element
         self._event_handler_ids: Set[str] = set()
         self._child_state_managers: List[ElementState] = []
-        self._life_cycle_hook = LifeCycleHook(element, self.update)
+        self._life_cycle_hook = LifeCycleHook(
+            element, self._layout_state["schedule_element_render"],
+        )
 
-    def update(self):
-        self._layout_state["schedule_element_render"](self._element)
-
-    async def render(self) -> AsyncIterator[Tuple[str, Any]]:
+    async def render(self) -> AsyncIterator[Tuple[str, Any, Optional[Exception]]]:
         model = await self._render()
 
         if isinstance(model, AbstractElement):
@@ -214,21 +220,18 @@ class ElementState:
             self._event_handler_ids.add(event_handler.id)
             self._layout_state["event_handlers"][event_handler.id] = event_handler
 
-        yield self._element.id, model_resolution.resolved_model
+        yield self._element.id, model_resolution.resolved_model, None
 
         for child_element in model_resolution.child_elements:
+            child_state = self._create_child_state(child_element)
             try:
-                child_state = self._create_child_state(child_element)
-                async for e_id, e_model in child_state.render():
-                    yield e_id, e_model
+                async for inner_id, inner_model, inner_err in child_state.render():
+                    yield inner_id, inner_model, inner_err
             except asyncio.CancelledError:
                 raise  # we don't want to supress cancellations
             except Exception as error:
                 logger.exception(f"Failed to render {child_element.id}")
-                yield child_element.id, {
-                    "tagName": "div",
-                    "attributes": {"__error__": str(error)},
-                }
+                yield child_element.id, {"tagName": "div"}, error
 
         self._life_cycle_hook.element_did_render()
 
@@ -262,6 +265,9 @@ class ElementState:
         state = ElementState(self._layout_state, element)
         self._child_state_managers.append(state)
         return state
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self._element})"
 
 
 class _ModelResolution(NamedTuple):
