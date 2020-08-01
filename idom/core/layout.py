@@ -109,7 +109,7 @@ class AbstractLayout(HasAsyncResources, abc.ABC):
         return f"{type(self).__name__}({self._root})"
 
 
-class _LayoutState(TypedDict):
+class LayoutState(TypedDict):
     event_handlers: Dict[str, EventHandler]
     element_states: Dict[str, "ElementState"]
     schedule_element_render: Callable[[AbstractElement], None]
@@ -123,7 +123,7 @@ class Layout(AbstractLayout):
         self, root: "AbstractElement", loop: Optional[asyncio.AbstractEventLoop] = None
     ) -> None:
         super().__init__(root, loop)
-        self._global_layout_state: _LayoutState = {
+        self._global_layout_state: LayoutState = {
             "event_handlers": {},
             "element_states": {},
             "schedule_element_render": self.update,
@@ -194,7 +194,7 @@ class ElementState:
         "_life_cycle_hook",
     )
 
-    def __init__(self, layout_state: "_LayoutState", element: AbstractElement) -> None:
+    def __init__(self, layout_state: "LayoutState", element: AbstractElement) -> None:
         layout_state["element_states"][element.id] = self
         self._layout_state = layout_state
         self._element = element
@@ -215,9 +215,11 @@ class ElementState:
 
             model_resolution = _resolve_model(model)
 
-            self._event_handler_ids.clear()
+            layout_event_handlers = self._layout_state["event_handlers"]
             for handler_id in self._event_handler_ids:
-                del self._layout_state[handler_id]
+                del layout_event_handlers[handler_id]
+            self._event_handler_ids.clear()
+
             for child_state in self._child_state_managers:
                 child_state.unmount()
             self._child_state_managers.clear()

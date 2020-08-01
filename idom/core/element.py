@@ -96,6 +96,6 @@ class Element(AbstractElement):
         args = sig.bind(*self._args, **self._kwargs).arguments
         items = ", ".join(f"{k}={v!r}" for k, v in args.items())
         if items:
-            return f"{self._function.__qualname__}({self.id}, {items})"
+            return f"{self._function.__name__}({self.id}, {items})"
         else:
-            return f"{self._function.__qualname__}({self.id})"
+            return f"{self._function.__name__}({self.id})"
