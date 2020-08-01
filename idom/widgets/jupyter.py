@@ -15,13 +15,31 @@ def init_display(
     server_options: Optional[Any] = None,
     run_options: Optional[Dict[str, Any]] = None,
 ) -> Callable[..., "JupyterDisplay"]:
+    """Initialize an IDOM server and return a function for displaying IDOM in Jupyter
+
+    .. note::
+
+        If running on JupyterHub we attempt to infer the URL of the initialized server
+        using `available environment variables <jupyterhub-envvars>`_. For this to work
+        though we assume the presence of a ``jupyter_server_proxy`` (see
+        `here <jupyter-server-proxy>`_ for more info on the proxy).
+
+    .. jupyterhub-envvars: https://github.com/jupyterhub/jupyterhub/blob/e5a6119505f89a293447ce4e727c4bd15e86b145/docs/source/reference/services.md#launching-a-hub-managedservice
+    .. jupyter-server-proxy: https://github.com/jupyterhub/jupyter-server-proxy
+    """
     host, port = "127.0.0.1", find_available_port(host)
     server_options = server_options or {"cors": True}
     run_options = run_options or {"access_log": False}
     multiview_mount, _ = multiview_server(
         PerClientStateServer, host, port, server_options, run_options
     )
-    server_url = _find_server_url(host, port)
+
+    if "JUPYTERHUB_SERVICE_PREFIX" in os.environ:
+        # Use this if we're running on a Jupyter instance managed by JupyterHub
+        server_url = f"{os.environ['JUPYTERHUB_SERVICE_PREFIX']}/proxy/{port}"
+    else:
+        # Otherwise assume we're running locally (this might not be correct though...)
+        server_url = f"http://{host}:{port}"
 
     def display(element, *args, **kwargs):
         view_id = multiview_mount(element, *args, **kwargs)
@@ -30,28 +48,6 @@ def init_display(
         return widget
 
     return display
-
-
-def _find_server_url(host: str, port: int) -> str:
-    localhost_idom_path = f"http://{host}:{port}"
-    jupyterhub_idom_path = _path_to_jupyterhub_proxy(port)
-    return jupyterhub_idom_path or localhost_idom_path
-
-
-def _path_to_jupyterhub_proxy(port: int) -> Optional[str]:
-    """If running on Jupyterhub return the path from the host's root to a proxy server
-
-    This is used when examples are running on mybinder.org or in a container created by
-    jupyter-repo2docker. For this to work a ``jupyter_server_proxy`` must have been
-    instantiated. See https://github.com/jupyterhub/jupyter-server-proxy
-    """
-    if "JUPYTERHUB_OAUTH_CALLBACK_URL" in os.environ:
-        url = os.environ["JUPYTERHUB_OAUTH_CALLBACK_URL"].rsplit("/", 1)[0]
-        return f"{url}/proxy/{port}"
-    elif "JUPYTER_SERVER_URL" in os.environ:
-        return f"{os.environ['JUPYTER_SERVER_URL']}/proxy/{port}"
-    else:
-        return None
 
 
 class JupyterDisplay:

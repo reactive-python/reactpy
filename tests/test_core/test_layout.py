@@ -10,6 +10,16 @@ from idom.core.layout import LayoutUpdate
 from .utils import RenderHistory
 
 
+def test_layout_repr():
+    @idom.element
+    async def MyElement():
+        ...
+
+    my_element = MyElement()
+    layout = idom.Layout(my_element)
+    assert str(layout) == f"Layout(MyElement({my_element.id}))"
+
+
 def test_layout_expects_abstract_element():
     with pytest.raises(TypeError, match="Expected an AbstractElement"):
         idom.Layout(None)

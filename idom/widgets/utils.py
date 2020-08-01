@@ -253,9 +253,6 @@ class MultiViewMount:
 
         return mount
 
-    def __getattr__(self, view_id: str) -> MountFunc:
-        return self[view_id]
-
     def __call__(
         self, constructor: ElementConstructor, *args: Any, **kwargs: Any
     ) -> str:

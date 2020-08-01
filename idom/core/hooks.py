@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Generic,
     Union,
+    List,
 )
 
 from .element import AbstractElement
@@ -148,6 +149,7 @@ class LifeCycleHook:
         "_state",
         "_did_update",
         "_has_rendered",
+        "_finalizers",
         "__weakref__",
     )
 
@@ -160,6 +162,7 @@ class LifeCycleHook:
         self._schedule_render = schedule_render
         self._current_state_index = 0
         self._state: Tuple[Any, ...] = ()
+        self._finalizers: List[Callable[[], None]] = []
         self._did_update = False
         self._has_rendered = False
 
@@ -189,6 +192,14 @@ class LifeCycleHook:
         self._current_state_index += 1
         return result
 
+    def use_finalize(
+        self, _function_: Callable[..., None], *args: Any, **kwargs: Any
+    ) -> None:
+        if not args and not kwargs:
+            self._finalizers.append(_function_)
+        else:
+            self._finalizers.append(lambda: _function_(*args, **kwargs))
+
     def set_current(self):
         _current_life_cycle_hook[get_thread_id()] = self
 
@@ -199,6 +210,7 @@ class LifeCycleHook:
     def element_will_render(self) -> None:
         self._did_update = False
         self._current_state_index = 0
+        self._finalizers.clear()
 
     def element_did_render(self) -> None:
         self._has_rendered = True
