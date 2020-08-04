@@ -1,6 +1,7 @@
 from functools import lru_cache
 from threading import get_ident as get_thread_id
 from typing import (
+    cast,
     Dict,
     Any,
     TypeVar,
@@ -60,7 +61,7 @@ def use_state(
 
 def _use_shared(
     shared: Shared[_StateType], should_update: Callable[[_StateType, _StateType], bool],
-) -> [_StateType, Callable[[_StateType], None]]:
+) -> Tuple[_StateType, Callable[[_StateType], None]]:
     hook = current_hook()
     update = hook.use_update()
 
@@ -121,7 +122,7 @@ _LruFunc = TypeVar("_LruFunc")
 def use_lru_cache(
     function: _LruFunc, maxsize: Optional[int] = 128, typed: bool = False
 ) -> _LruFunc:
-    return current_hook().use_state(lru_cache(maxsize, typed), function)
+    return cast(_LruFunc, current_hook().use_state(lru_cache(maxsize, typed), function))
 
 
 _current_life_cycle_hook: Dict[int, "LifeCycleHook"] = {}
@@ -162,15 +163,15 @@ class LifeCycleHook:
         self._schedule_render = schedule_render
         self._current_state_index = 0
         self._state: Tuple[Any, ...] = ()
-        self._finalizers: List[Callable[[], None]] = []
+        self._finalizers: List[Callable[[], Any]] = []
         self._did_update = False
         self._has_rendered = False
 
     @property
-    def element_id(self):
+    def element_id(self) -> str:
         return self._element.id
 
-    def use_update(self):
+    def use_update(self) -> Callable[[], None]:
         def update() -> None:
             if not self._did_update:
                 self._did_update = True
@@ -193,17 +194,18 @@ class LifeCycleHook:
         return result
 
     def use_finalize(
-        self, _function_: Callable[..., None], *args: Any, **kwargs: Any
+        self, _function_: Callable[..., Any], *args: Any, **kwargs: Any
     ) -> None:
         if not args and not kwargs:
             self._finalizers.append(_function_)
         else:
             self._finalizers.append(lambda: _function_(*args, **kwargs))
+        return None
 
-    def set_current(self):
+    def set_current(self) -> None:
         _current_life_cycle_hook[get_thread_id()] = self
 
-    def unset_current(self):
+    def unset_current(self) -> None:
         # use an assert here for debug purposes since this should never be False
         assert _current_life_cycle_hook.pop(get_thread_id()) is self
 
@@ -216,4 +218,5 @@ class LifeCycleHook:
         self._has_rendered = True
 
     def element_will_unmount(self) -> None:
-        ...
+        for func in self._finalizers:
+            func()
