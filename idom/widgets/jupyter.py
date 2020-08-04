@@ -1,3 +1,4 @@
+from idom.core.element import ElementConstructor
 import uuid
 import json
 import os
@@ -5,7 +6,6 @@ from weakref import finalize
 from typing import Any, Optional, Any, Optional, Dict, Callable
 from urllib.parse import urlparse, urlencode
 
-import idom
 from idom.server import find_available_port, multiview_server
 from idom.server.sanic import PerClientStateServer
 
@@ -41,9 +41,11 @@ def init_display(
         # Otherwise assume we're running locally (this might not be correct though...)
         server_url = f"http://{host}:{port}"
 
-    def display(element, *args, **kwargs):
+    def display(
+        element: ElementConstructor, *args: Any, **kwargs: Any
+    ) -> JupyterDisplay:
         view_id = multiview_mount(element, *args, **kwargs)
-        widget = idom.JupyterDisplay(server_url, {"view_id": view_id})
+        widget = JupyterDisplay(server_url, {"view_id": view_id})
         finalize(widget, multiview_mount.remove, view_id)
         return widget
 

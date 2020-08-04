@@ -17,6 +17,7 @@ from typing import (
     Awaitable,
     TypeVar,
     Callable,
+    Union,
 )
 
 from mypy_extensions import TypedDict
@@ -25,7 +26,6 @@ from loguru import logger
 from .element import AbstractElement
 from .events import EventHandler
 from .utils import HasAsyncResources, async_resource
-from .vdom import VdomDict
 from .hooks import LifeCycleHook
 
 
@@ -154,7 +154,7 @@ class Layout(AbstractLayout):
             await queue.cancel()
 
     @async_resource
-    async def _root_element_state(self):
+    async def _root_element_state(self) -> AsyncIterator["ElementState"]:
         root_state = ElementState(self._global_layout_state, self._root)
         try:
             yield root_state
@@ -208,7 +208,8 @@ class ElementState:
         try:
             self._life_cycle_hook.element_will_render()
 
-            model = await self._render()
+            # BUG: https://github.com/python/mypy/issues/9256
+            model = await self._render()  # type: ignore
 
             if isinstance(model, AbstractElement):
                 model = {"tagName": "div", "children": [model]}
@@ -243,7 +244,7 @@ class ElementState:
             logger.exception(f"Failed to render {self._element.id}")
             yield self._element.id, {"tagName": "div"}, error
 
-    def unmount(self):
+    def unmount(self) -> None:
         element_id = self._element.id
         for handler_id in self._event_handler_ids:
             del self._layout_state["event_handlers"][handler_id]
@@ -284,7 +285,7 @@ class _ModelResolution(NamedTuple):
     child_elements: List[AbstractElement]
 
 
-def _resolve_model(model: VdomDict) -> _ModelResolution:
+def _resolve_model(model: Mapping[str, Any]) -> _ModelResolution:
     resolved_model: Dict[str, Any] = dict(model)
 
     event_handler_resolution = _resolve_model_event_handlers(model)
@@ -307,24 +308,29 @@ def _resolve_model(model: VdomDict) -> _ModelResolution:
     )
 
 
-_ResolvedChild = Dict[str, Dict[str, str]]
+class _ResolvedChild(TypedDict):
+    type: str
+    data: Any
 
 
 class _ChildResolution(NamedTuple):
-    resolved_models: List[Dict[str, Dict[str, str]]]
+    resolved_models: List[_ResolvedChild]
     event_handlers: List[EventHandler]
     child_elements: List[AbstractElement]
 
 
-def _resolve_model_children(children: List[Any]) -> _ChildResolution:
+def _resolve_model_children(
+    children: Union[List[Any], Tuple[Any, ...]]
+) -> _ChildResolution:
     if not isinstance(children, (list, tuple)):
         children = [children]
 
     resolved_models: List[_ResolvedChild] = []
     event_handlers: List[EventHandler] = []
-    child_elements: List[EventHandler] = []
+    child_elements: List[AbstractElement] = []
 
     for child in children:
+        resolved_child: _ResolvedChild
         if isinstance(child, Mapping):
             inner_resolution = _resolve_model(child)
             resolved_child = {"type": "obj", "data": inner_resolution.resolved_model}
@@ -348,11 +354,11 @@ _EventTargets = Dict[str, str]
 
 
 class _EventHandlerResolution(NamedTuple):
-    event_targets: Dict[str, str]
+    event_targets: Dict[str, Dict[str, str]]
     event_handlers: List[EventHandler]
 
 
-def _resolve_model_event_handlers(model: VdomDict) -> _EventHandlerResolution:
+def _resolve_model_event_handlers(model: Mapping[str, Any]) -> _EventHandlerResolution:
     handlers: Dict[str, EventHandler] = {}
     if "eventHandlers" in model:
         handlers.update(model["eventHandlers"])
