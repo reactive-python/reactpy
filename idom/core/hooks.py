@@ -1,3 +1,5 @@
+import asyncio
+import time
 from functools import lru_cache
 from threading import get_ident as get_thread_id
 from typing import (
@@ -7,6 +9,7 @@ from typing import (
     TypeVar,
     Callable,
     Tuple,
+    Awaitable,
     Optional,
     Generic,
     Union,
@@ -50,7 +53,7 @@ def _new_is_not_old(old: _StateType, new: _StateType) -> bool:
 
 
 def use_state(
-    value: Union[_StateType, Shared[_StateType]],
+    value: Union[_StateType, Callable[[], _StateType], Shared[_StateType]],
     should_update: Callable[[_StateType, _StateType], bool] = _new_is_not_old,
 ) -> Tuple[_StateType, Callable[[_StateType], None]]:
     if isinstance(value, Shared):
@@ -78,14 +81,18 @@ def _use_shared(
 
 
 def _use_state(
-    value: _StateType, should_update: Callable[[_StateType, _StateType], bool],
+    value: Union[_StateType, Callable[[], _StateType]],
+    should_update: Callable[[_StateType, _StateType], bool],
 ) -> Tuple[_StateType, Callable[[_StateType], None]]:
     hook = current_hook()
     state: Dict[str, Any] = hook.use_state(dict)
     update = hook.use_update()
 
     if "value" not in state:
-        state["value"] = value
+        if callable(value):
+            state["value"] = value()
+        else:
+            state["value"] = value
 
     def set_state(new: _StateType) -> None:
         old = state["value"]
@@ -94,6 +101,46 @@ def _use_state(
             update()
 
     return state["value"], set_state
+
+
+class _Interval:
+    """Simple utility for pacing frames in an animation loop."""
+
+    __slots__ = "_rate", "_last"
+
+    def __init__(self, rate: float):
+        self._rate = rate
+        self._last = time.time()
+
+    async def wait(self) -> None:
+        await asyncio.sleep(self._rate - (time.time() - self._last))
+        self._last = time.time()
+
+
+async def use_interval(rate: float) -> None:
+    interval = use_state(_Interval(rate))[0]
+    await interval.wait()
+
+
+_AnimFunc = Callable[[], Awaitable[None]]
+
+
+def use_animation(rate: float) -> Callable[[_AnimFunc], None]:
+    hook = current_hook()
+    interval = _Interval()
+
+    def setup(function: _AnimFunc) -> None:
+        async def animation():
+            while True:
+                await interval.wait()
+                await function()
+
+        future = asyncio.ensure_future(animation())
+        hook.use_finalize(future.cancel)
+
+        return None
+
+    return setup
 
 
 _MemoValue = TypeVar("_MemoValue")
