@@ -40,6 +40,67 @@ async def test_simple_stateful_element():
         }
 
 
+def test_use_state_with_constructor(driver, display, driver_wait):
+    constructor_call_count = idom.Var(0)
+
+    def make_default():
+        constructor_call_count.value += 1
+        return 0
+
+    @idom.element
+    async def Outer():
+        update = idom.hooks.use_update()
+
+        async def on_click(event):
+            update()
+
+        return idom.html.div(
+            idom.html.button(
+                {"onClick": on_click, "id": "outer"}, "update outer (rerun constructor)"
+            ),
+            Inner(),
+        )
+
+    @idom.element
+    async def Inner():
+        count, set_count = idom.hooks.use_state(make_default)
+
+        async def on_click(event):
+            set_count(count + 1)
+
+        return idom.html.div(
+            idom.html.button(
+                {"onClick": on_click, "id": "inner"},
+                "update inner with state constructor",
+            ),
+            idom.html.p({"id": "count-view"}, count),
+        )
+
+    display(Outer)
+
+    outer = driver.find_element_by_id("outer")
+    inner = driver.find_element_by_id("inner")
+    count = driver.find_element_by_id("count-view")
+
+    assert constructor_call_count.value == 1
+    assert count.get_attribute("innerHTML") == "0"
+
+    inner.click()
+
+    assert constructor_call_count.value == 1
+    assert count.get_attribute("innerHTML") == "1"
+
+    outer.click()
+
+    assert constructor_call_count.value == 2
+    assert count.get_attribute("innerHTML") == "0"
+
+    inner.click()
+
+    assert constructor_call_count.value == 2
+    assert count.get_attribute("innerHTML") == "1"
+
+
 def test_simple_input(driver, display):
     message_var = idom.Var(None)
 
