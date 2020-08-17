@@ -16,12 +16,8 @@ from typing import (
     AsyncIterator,
     Awaitable,
     TypeVar,
-    Callable,
     Union,
 )
-
-from mypy_extensions import TypedDict
-from loguru import logger
 
 from .element import AbstractElement
 from .events import EventHandler
@@ -109,274 +105,182 @@ class AbstractLayout(HasAsyncResources, abc.ABC):
         return f"{type(self).__name__}({self._root})"
 
 
-class LayoutState(TypedDict):
-    event_handlers: Dict[str, EventHandler]
-    element_states: Dict[str, "ElementState"]
-    schedule_element_render: Callable[[AbstractElement], None]
+class ElementState(NamedTuple):
+    model: Dict[str, Any]
+    element_obj: AbstractElement
+    event_handler_ids: Set[str]
+    child_elements_ids: List[str]
+    life_cycle_hook: LifeCycleHook
 
 
 class Layout(AbstractLayout):
 
-    __slots__ = "_global_layout_state"
+    __slots__ = "_event_handlers"
 
     def __init__(
         self, root: "AbstractElement", loop: Optional[asyncio.AbstractEventLoop] = None
     ) -> None:
         super().__init__(root, loop)
-        self._global_layout_state: LayoutState = {
-            "event_handlers": {},
-            "element_states": {},
-            "schedule_element_render": self.update,
-        }
+        self._event_handlers: Dict[str, EventHandler] = {}
 
     def update(self, element: "AbstractElement") -> None:
-        self._rendering_queue.put(self._render_layout_update(element))
+        self._rendering_queue.put(self._render_element(element))
 
     async def trigger(self, event: LayoutEvent) -> None:
         # It is possible for an element in the frontend to produce an event
         # associated with a backend model that has been deleted. We only handle
         # events if the element and the handler exist in the backend. Otherwise
         # we just ignore the event.
-        handler = self._global_layout_state["event_handlers"].get(event.target)
+        handler = self._event_handlers.get(event.target)
         if handler is not None:
             await handler(event.data)
 
-    async def render(self) -> LayoutUpdate:
-        return await self._rendering_queue.get()
+    async def render(self) -> Dict[str, Any]:
+        await self._rendering_queue.get()
+        return self._element_states[self._root.id].model
 
     @async_resource
     async def _rendering_queue(self) -> AsyncIterator["FutureQueue[LayoutUpdate]"]:
         queue: FutureQueue[LayoutUpdate] = FutureQueue()
-        queue.put(self._render_layout_update(self._root))
+        queue.put(self._render_element(self._root))
         try:
             yield queue
         finally:
             await queue.cancel()
 
     @async_resource
-    async def _root_element_state(self) -> AsyncIterator["ElementState"]:
-        root_state = ElementState(self._global_layout_state, self._root)
+    async def _element_states(self) -> AsyncIterator[ElementState]:
+        root_element_state = self._create_element_state(self._root)
         try:
-            yield root_state
+            yield {self._root.id: root_element_state}
         finally:
-            root_state.unmount()
+            self._unmount_element_state(root_element_state)
 
-    async def _render_layout_update(self, element: AbstractElement) -> LayoutUpdate:
-        # current element ids
-        element_ids_pre_render = set(self._global_layout_state["element_states"])
+    async def _render_element(self, element: AbstractElement) -> Dict[str, Any]:
+        if element.id not in self._element_states:
+            self._element_states[element.id] = self._create_element_state(element)
 
-        # all element updates
-        errors = []
-        new: Dict[str, Dict[str, Any]] = {}
-        element_state = self._global_layout_state["element_states"][element.id]
-        async for element_id, model, error in element_state.render():
-            new[element_id] = model
-            if error is not None:
-                errors.append(error)
+        element_state = self._element_states[element.id]
 
-        element_ids_post_render = set(self._global_layout_state["element_states"])
+        element_state.life_cycle_hook.element_will_render()
 
-        return LayoutUpdate(
-            element.id,
-            new,
-            list(element_ids_pre_render.difference(element_ids_post_render)),
-            errors,
+        self._clear_element_state_event_handlers(element_state)
+        self._unmount_element_state_children(element_state)
+
+        # BUG: https://github.com/python/mypy/issues/9256
+        raw_model = await _render_with_life_cycle_hook(element_state)  # type: ignore
+
+        if isinstance(raw_model, AbstractElement):
+            raw_model = {"tagName": "div", "children": [raw_model]}
+
+        resolved_model = await self._render_model(element_state, raw_model)
+        element_state.model.clear()
+        element_state.model.update(resolved_model)
+
+        element_state.life_cycle_hook.element_did_render()
+
+        # We need to return the model from the `element_state` so that the model
+        # between all `ElementState` objects within a `Layout` are shared.
+        return element_state.model
+
+    def _create_element_state(self, element: AbstractElement) -> ElementState:
+        return ElementState(
+            model={},
+            element_obj=element,
+            event_handler_ids=set(),
+            child_elements_ids=[],
+            life_cycle_hook=LifeCycleHook(element, self.update),
         )
 
+    async def _render_model(
+        self, element_state: ElementState, model: Mapping[str, Any]
+    ) -> Dict[str, Any]:
+        model: Dict[str, Any] = dict(model)
 
-class ElementState:
+        model["eventHandlers"] = self._render_model_event_handlers(element_state, model)
 
-    __slots__ = (
-        "_layout_state",
-        "_element",
-        "_event_handler_ids",
-        "_child_state_managers",
-        "_life_cycle_hook",
-    )
+        if "children" in model:
+            model["children"] = await self._render_model_children(
+                element_state, model["children"]
+            )
 
-    def __init__(self, layout_state: "LayoutState", element: AbstractElement) -> None:
-        layout_state["element_states"][element.id] = self
-        self._layout_state = layout_state
-        self._element = element
-        self._event_handler_ids: Set[str] = set()
-        self._child_state_managers: List[ElementState] = []
-        self._life_cycle_hook = LifeCycleHook(
-            element, self._layout_state["schedule_element_render"],
-        )
+        return model
 
-    async def render(self) -> AsyncIterator[Tuple[str, Any, Optional[Exception]]]:
+    async def _render_model_children(
+        self, element_state: ElementState, children: Union[List[Any], Tuple[Any, ...]]
+    ) -> List[Any]:
+        resolved_children: List[Any] = []
+        for child in children if isinstance(children, (list, tuple)) else [children]:
+            if isinstance(child, Mapping):
+                resolved_children.append(await self._render_model(element_state, child))
+            elif isinstance(child, AbstractElement):
+                element_state.child_elements_ids.append(child.id)
+                resolved_children.append(await self._render_element(child))
+            else:
+                resolved_children.append(str(child))
+        return resolved_children
+
+    def _render_model_event_handlers(
+        self, element_state: ElementState, model: Mapping[str, Any]
+    ) -> Dict[str, str]:
+        handlers: Dict[str, EventHandler] = {}
+        if "eventHandlers" in model:
+            handlers.update(model["eventHandlers"])
+        if "attributes" in model:
+            attrs = model["attributes"]
+            for k, v in list(attrs.items()):
+                if callable(v):
+                    if not isinstance(v, EventHandler):
+                        h = handlers[k] = EventHandler()
+                        h.add(attrs.pop(k))
+                    else:
+                        h = attrs.pop(k)
+                        handlers[k] = h
+
+        event_handlers_by_id = {h.id: h for h in handlers.values()}
+        element_state.event_handler_ids.clear()
+        element_state.event_handler_ids.update(event_handlers_by_id)
+        self._event_handlers.update(event_handlers_by_id)
+
+        return {e: h.serialize() for e, h in handlers.items()}
+
+    def _reset_element_state(self, element_state: ElementState) -> None:
+        self._clear_element_state_event_handlers(element_state)
+        self._unmount_element_state_children(element_state)
+
+    def _unmount_element_state(self, element_state: ElementState) -> None:
+        element_state.life_cycle_hook.element_will_unmount()
+        self._clear_element_state_event_handlers(element_state)
+        self._unmount_element_state_children(element_state)
+        del self._element_states[element_state.element_obj.id]
+
+    def _clear_element_state_event_handlers(self, element_state: ElementState) -> None:
+        for handler_id in element_state.event_handler_ids:
+            del self._event_handlers[handler_id]
+        element_state.event_handler_ids.clear()
+
+    def _unmount_element_state_children(self, element_state: ElementState) -> None:
+        for e_id in element_state.child_elements_ids:
+            self._unmount_element_state(self._element_states[e_id])
+        element_state.child_elements_ids.clear()
+
+
+@coroutine
+def _render_with_life_cycle_hook(element_state: ElementState) -> Iterator[None]:
+    """Render an element which may use hooks.
+
+    We use a coroutine here because we need to know when control is yielded
+    back to the event loop since it might switch to render a different element.
+    """
+    gen = element_state.element_obj.render().__await__()
+    while True:
+        element_state.life_cycle_hook.set_current()
         try:
-            self._life_cycle_hook.element_will_render()
-
-            # BUG: https://github.com/python/mypy/issues/9256
-            model = await self._render()  # type: ignore
-
-            if isinstance(model, AbstractElement):
-                model = {"tagName": "div", "children": [model]}
-
-            model_resolution = _resolve_model(model)
-
-            layout_event_handlers = self._layout_state["event_handlers"]
-            for handler_id in self._event_handler_ids:
-                del layout_event_handlers[handler_id]
-            self._event_handler_ids.clear()
-
-            for child_state in self._child_state_managers:
-                child_state.unmount()
-            self._child_state_managers.clear()
-
-            for event_handler in model_resolution.event_handlers:
-                self._event_handler_ids.add(event_handler.id)
-                self._layout_state["event_handlers"][event_handler.id] = event_handler
-
-            yield self._element.id, model_resolution.resolved_model, None
-
-            for child_element in model_resolution.child_elements:
-                child_state = self._create_child_state(child_element)
-                async for inner_id, inner_model, inner_err in child_state.render():
-                    yield inner_id, inner_model, inner_err
-
-            self._life_cycle_hook.element_did_render()
-        except asyncio.CancelledError:
-            raise  # we don't want to supress cancellations
-        except Exception as error:
-            # logging here instead of raising allows us to return partial renders
-            logger.exception(f"Failed to render {self._element.id}")
-            yield self._element.id, {"tagName": "div"}, error
-
-    def unmount(self) -> None:
-        element_id = self._element.id
-        for handler_id in self._event_handler_ids:
-            del self._layout_state["event_handlers"][handler_id]
-        for state in self._child_state_managers:
-            state.unmount()
-        del self._layout_state["element_states"][element_id]
-        self._life_cycle_hook.element_will_unmount()
-
-    @coroutine
-    def _render(self) -> Iterator[None]:
-        """Render an element which may use hooks.
-
-        We use a coroutine here because we need to know when control is yielded
-        back to the event loop since it might switch to render a different element.
-        """
-        gen = self._element.render().__await__()
-        while True:
-            self._life_cycle_hook.set_current()
-            try:
-                yield next(gen)
-            except StopIteration as error:
-                return error.value
-            finally:
-                self._life_cycle_hook.unset_current()
-
-    def _create_child_state(self, element: AbstractElement) -> "ElementState":
-        state = ElementState(self._layout_state, element)
-        self._child_state_managers.append(state)
-        return state
-
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}({self._element})"
-
-
-class _ModelResolution(NamedTuple):
-    resolved_model: Dict[str, Any]
-    event_handlers: List[EventHandler]
-    child_elements: List[AbstractElement]
-
-
-def _resolve_model(model: Mapping[str, Any]) -> _ModelResolution:
-    resolved_model: Dict[str, Any] = dict(model)
-
-    event_handler_resolution = _resolve_model_event_handlers(model)
-    if event_handler_resolution.event_targets:
-        resolved_model["eventHandlers"] = event_handler_resolution.event_targets
-    event_handlers = event_handler_resolution.event_handlers
-
-    if "children" in model:
-        child_resolution = _resolve_model_children(model["children"])
-        resolved_model["children"] = child_resolution.resolved_models
-        event_handlers += child_resolution.event_handlers
-        child_elements = child_resolution.child_elements
-    else:
-        child_elements = []
-
-    return _ModelResolution(
-        resolved_model=resolved_model,
-        event_handlers=event_handlers,
-        child_elements=child_elements,
-    )
-
-
-class _ResolvedChild(TypedDict):
-    type: str
-    data: Any
-
-
-class _ChildResolution(NamedTuple):
-    resolved_models: List[_ResolvedChild]
-    event_handlers: List[EventHandler]
-    child_elements: List[AbstractElement]
-
-
-def _resolve_model_children(
-    children: Union[List[Any], Tuple[Any, ...]]
-) -> _ChildResolution:
-    if not isinstance(children, (list, tuple)):
-        children = [children]
-
-    resolved_models: List[_ResolvedChild] = []
-    event_handlers: List[EventHandler] = []
-    child_elements: List[AbstractElement] = []
-
-    for child in children:
-        resolved_child: _ResolvedChild
-        if isinstance(child, Mapping):
-            inner_resolution = _resolve_model(child)
-            resolved_child = {"type": "obj", "data": inner_resolution.resolved_model}
-            event_handlers += inner_resolution.event_handlers
-            child_elements += inner_resolution.child_elements
-        elif isinstance(child, AbstractElement):
-            resolved_child = {"type": "ref", "data": child.id}
-            child_elements.append(child)
-        else:
-            resolved_child = {"type": "str", "data": str(child)}
-        resolved_models.append(resolved_child)
-
-    return _ChildResolution(
-        resolved_models=resolved_models,
-        event_handlers=event_handlers,
-        child_elements=child_elements,
-    )
-
-
-_EventTargets = Dict[str, str]
-
-
-class _EventHandlerResolution(NamedTuple):
-    event_targets: Dict[str, Dict[str, str]]
-    event_handlers: List[EventHandler]
-
-
-def _resolve_model_event_handlers(model: Mapping[str, Any]) -> _EventHandlerResolution:
-    handlers: Dict[str, EventHandler] = {}
-    if "eventHandlers" in model:
-        handlers.update(model["eventHandlers"])
-    if "attributes" in model:
-        attrs = model["attributes"]
-        for k, v in list(attrs.items()):
-            if callable(v):
-                if not isinstance(v, EventHandler):
-                    h = handlers[k] = EventHandler()
-                    h.add(attrs.pop(k))
-                else:
-                    h = attrs.pop(k)
-                    handlers[k] = h
-
-    return _EventHandlerResolution(
-        event_targets={e: h.serialize() for e, h in handlers.items()},
-        event_handlers=list(handlers.values()),
-    )
+            yield next(gen)
+        except StopIteration as error:
+            return error.value
+        finally:
+            element_state.life_cycle_hook.unset_current()
 
 
 # future queue type

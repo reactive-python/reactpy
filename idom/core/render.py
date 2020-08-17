@@ -1,18 +1,18 @@
 import abc
 import asyncio
-from anyio import create_task_group, TaskGroup  # type: ignore
+import json
+from typing import Callable, Awaitable, Dict, Any, AsyncIterator
 
-from typing import Callable, Awaitable, Dict, Any, TypeVar, AsyncIterator
+from anyio import create_task_group, TaskGroup  # type: ignore
+from diff_match_patch import diff
 
 from .layout import (
-    LayoutUpdate,
     LayoutEvent,
     AbstractLayout,
     AbstractLayout,
 )
 from .utils import HasAsyncResources, async_resource
 
-_Self = TypeVar("_Self")
 SendCoroutine = Callable[[Any], Awaitable[None]]
 RecvCoroutine = Callable[[], Awaitable[LayoutEvent]]
 
@@ -75,15 +75,20 @@ class SingleStateRenderer(AbstractRenderer):
         be ``None`` since it's not used.
     """
 
-    async def _outgoing(self, layout: AbstractLayout, context: Any) -> Dict[str, Any]:
-        src, new, old, errors = await layout.render()
-        return {
-            "root": layout.root,
-            "src": src,
-            "new": new,
-            "old": old,
-            "errors": [str(e) for e in errors],
-        }
+    def __init__(self, layout: AbstractLayout) -> None:
+        super().__init__(layout)
+        self._current_model_as_json = ""
+
+    async def _outgoing(self, layout: AbstractLayout, context: Any) -> str:
+        new_current_model_as_json = json.dumps(await layout.render())
+        patch = diff(
+            self._current_model_as_json,
+            new_current_model_as_json,
+            as_patch=True,
+            timelimit=0,
+        )
+        self._current_model_as_json = new_current_model_as_json
+        return patch
 
     async def _incoming(
         self, layout: AbstractLayout, context: Any, event: LayoutEvent
@@ -101,8 +106,7 @@ class SharedStateRenderer(SingleStateRenderer):
 
     def __init__(self, layout: AbstractLayout) -> None:
         super().__init__(layout)
-        self._models: Dict[str, Dict[str, Any]] = {}
-        self._updates: Dict[str, asyncio.Queue[LayoutUpdate]] = {}
+        self._update_queues: Dict[str, asyncio.Queue[str]] = {}
 
     @async_resource
     async def task_group(self) -> AsyncIterator[TaskGroup]:
@@ -120,37 +124,16 @@ class SharedStateRenderer(SingleStateRenderer):
 
     async def _render_loop(self) -> None:
         while True:
-            change = await self.layout.render()
-            # add new models to the overall state
-            self._models.update(change.new)
-            # remove old ones from the overall state
-            for old_id in change.old:
-                del self._models[old_id]
+            patch = await super()._outgoing(self.layout, None)
             # append updates to all other contexts
-            for queue in self._updates.values():
-                await queue.put(change)
+            for queue in self._update_queues.values():
+                await queue.put(patch)
 
     async def _outgoing_loop(self, send: SendCoroutine, context: str) -> None:
-        if self.layout.root in self._models:
-            await send(
-                {
-                    "root": self.layout.root,
-                    "src": self.layout.root,
-                    "new": self._models,
-                    "old": [],
-                }
-            )
         await super()._outgoing_loop(send, context)
 
-    async def _outgoing(self, layout: AbstractLayout, context: str) -> Dict[str, Any]:
-        src, new, old, errors = await self._updates[context].get()
-        return {
-            "root": layout.root,
-            "src": src,
-            "new": new,
-            "old": old,
-            "errors": [str(e) for e in errors],
-        }
+    async def _outgoing(self, layout: AbstractLayout, context: str) -> str:
+        return await self._updates[context].get()
 
     @async_resource
     async def _join_event(self) -> AsyncIterator[asyncio.Event]:

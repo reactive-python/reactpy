@@ -71,12 +71,8 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
                 event = message["body"]["event"]
                 return LayoutEvent(event["target"], event["data"])
 
-            async def sock_send(data: Dict[str, Any]) -> None:
-                message = {"header": {}, "body": {"render": data}}
-                await socket.send(json.dumps(message, separators=(",", ":")))
-
             param_dict = {k: request.args.get(k) for k in request.args}
-            await self._run_renderer(sock_send, sock_recv, param_dict)
+            await self._run_renderer(socket.send, sock_recv, param_dict)
 
         def handler_name(function: Any) -> str:
             return f"{blueprint.name}.{function.__name__}"
