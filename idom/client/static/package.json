@@ -16,13 +16,14 @@
   "devDependencies": {
     "npx": "^10.2.2",
     "prettier": "2.0.3",
-    "rollup": "^2.0.0",
     "snowpack": "^1.6.0"
   },
   "dependencies": {
+    "diff-match-patch": "^1.0.5",
     "htm": "^3.0.3",
     "react": "npm:@pika/react@^16.13.1",
-    "react-dom": "npm:@pika/react-dom@^16.13.1"
+    "react-dom": "npm:@pika/react-dom@^16.13.1",
+    "rollup": "^1.32.1"
   },
   "snowpack": {
     "installOptions": {

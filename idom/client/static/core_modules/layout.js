@@ -4,10 +4,12 @@ import React, {
   useMemo,
   Suspense,
 } from "../web_modules/react.js";
+
 import ReactDOM from "../web_modules/react-dom.js";
 import htm from "../web_modules/htm.js";
 
 import serializeEvent from "./event-to-object.js";
+import applyPatchText from "./diff.js";
 
 const html = htm.bind(React.createElement);
 const alreadyImported = {};
@@ -35,13 +37,10 @@ export default function Layout({ endpoint }) {
   }
 
   const socket = useMemo(() => new WebSocket(endpoint), [endpoint]);
-  const [modelState, setModelState] = useState({ root: null, models: {} });
+  const [modelJSON, setModelJSON] = useState("");
 
   socket.onmessage = (event) => {
-    const msg = JSON.parse(event.data);
-    const newModels = { ...modelState.models, ...msg.body.render.new };
-    msg.body.render.old.forEach((elementId) => delete newModels[elementId]);
-    setModelState({ root: msg.body.render.root, models: newModels });
+    setModelJSON(applyPatchText(event.data, modelJSON));
   };
 
   const sendMsg = (msg) => {
@@ -53,26 +52,23 @@ export default function Layout({ endpoint }) {
       body: { event: event },
     });
   };
-  if (modelState.root && modelState.models[modelState.root]) {
+
+  if (modelJSON && modelJSON != "{}") {
+    const model = JSON.parse(modelJSON);
     return html`<${Element}
-      modelState=${modelState}
       sendEvent=${sendEvent}
-      model=${modelState.models[modelState.root]}
+      model=${JSON.parse(modelJSON)}
     />`;
-  } else {
-    return html`<div />`;
   }
+
+  return html`<div />`;
 }
 
-function Element({ modelState, sendEvent, model }) {
+function Element({ sendEvent, model }) {
   if (model.importSource) {
-    return html`<${LazyElement}
-      modelState=${modelState}
-      sendEvent=${sendEvent}
-      model=${model}
-    />`;
+    return html`<${LazyElement} sendEvent=${sendEvent} model=${model} />`;
   } else {
-    const children = elementChildren(modelState, sendEvent, model);
+    const children = elementChildren(sendEvent, model);
     const attributes = elementAttributes(sendEvent, model);
     if (model.children && model.children.length) {
       return html`<${model.tagName} ...${attributes}>${children}<//>`;
@@ -82,11 +78,11 @@ function Element({ modelState, sendEvent, model }) {
   }
 }
 
-function LazyElement({ modelState, sendEvent, model }) {
+function LazyElement({ sendEvent, model }) {
   const module = useLazyModule(model.importSource.source);
   if (module) {
     const cmpt = getPathProperty(module, model.tagName);
-    const children = elementChildren(modelState, sendEvent, model);
+    const children = elementChildren(sendEvent, model);
     const attributes = elementAttributes(sendEvent, model);
     return html`<${cmpt} ...${attributes}>${children}<//>`;
   } else {
@@ -94,30 +90,16 @@ function LazyElement({ modelState, sendEvent, model }) {
   }
 }
 
-function elementChildren(modelState, sendEvent, model) {
+function elementChildren(sendEvent, model) {
   if (!model.children) {
     return [];
   } else {
     return model.children.map((child) => {
-      switch (child.type) {
-        case "ref":
-          return html`
-            <${Element}
-              modelState=${modelState}
-              model=${modelState.models[child.data]}
-              sendEvent=${sendEvent}
-            />
-          `;
-        case "obj":
-          return html`
-            <${Element}
-              modelState=${modelState}
-              model=${child.data}
-              sendEvent=${sendEvent}
-            />
-          `;
-        case "str":
-          return child.data;
+      switch (typeof child) {
+        case "object":
+          return html` <${Element} model=${child} sendEvent=${sendEvent} /> `;
+        case "string":
+          return child;
       }
     });
   }
