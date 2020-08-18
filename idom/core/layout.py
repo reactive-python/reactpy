@@ -19,6 +19,8 @@ from typing import (
     Union,
 )
 
+from jsonpatch import make_patch
+
 from .element import AbstractElement
 from .events import EventHandler
 from .utils import HasAsyncResources, async_resource
@@ -31,17 +33,8 @@ _Self = TypeVar("_Self")
 class LayoutUpdate(NamedTuple):
     """An object describing an update to a :class:`Layout`"""
 
-    src: str
-    """element ID for the update's source"""
-
-    new: Dict[str, Dict[str, Any]]
-    """maps element IDs to new models"""
-
-    old: List[str]
-    """element IDs that have been deleted"""
-
-    errors: List[Exception]
-    """A list of errors that occured while rendering"""
+    path: str
+    changes: List[Dict[str, Any]]
 
 
 class LayoutEvent(NamedTuple):
@@ -107,6 +100,7 @@ class AbstractLayout(HasAsyncResources, abc.ABC):
 
 class ElementState(NamedTuple):
     model: Dict[str, Any]
+    path: List[int]
     element_obj: AbstractElement
     event_handler_ids: Set[str]
     child_elements_ids: List[str]
@@ -124,7 +118,7 @@ class Layout(AbstractLayout):
         self._event_handlers: Dict[str, EventHandler] = {}
 
     def update(self, element: "AbstractElement") -> None:
-        self._rendering_queue.put(self._render_element(element))
+        self._rendering_queue.put(self._create_layout_update(element))
 
     async def trigger(self, event: LayoutEvent) -> None:
         # It is possible for an element in the frontend to produce an event
@@ -136,13 +130,12 @@ class Layout(AbstractLayout):
             await handler(event.data)
 
     async def render(self) -> Dict[str, Any]:
-        await self._rendering_queue.get()
-        return self._element_states[self._root.id].model
+        return await self._rendering_queue.get()
 
     @async_resource
     async def _rendering_queue(self) -> AsyncIterator["FutureQueue[LayoutUpdate]"]:
         queue: FutureQueue[LayoutUpdate] = FutureQueue()
-        queue.put(self._render_element(self._root))
+        queue.put(self._create_layout_update(self._root))
         try:
             yield queue
         finally:
@@ -150,18 +143,20 @@ class Layout(AbstractLayout):
 
     @async_resource
     async def _element_states(self) -> AsyncIterator[ElementState]:
-        root_element_state = self._create_element_state(self._root)
+        root_element_state = self._create_element_state(self._root, "")
         try:
             yield {self._root.id: root_element_state}
         finally:
             self._unmount_element_state(root_element_state)
 
-    async def _render_element(self, element: AbstractElement) -> Dict[str, Any]:
-        if element.id not in self._element_states:
-            self._element_states[element.id] = self._create_element_state(element)
-
+    async def _create_layout_update(self, element: AbstractElement) -> LayoutUpdate:
         element_state = self._element_states[element.id]
+        old_model = element_state.model.copy()  # we copy because it will be mutated
+        new_model = await self._render_element(element_state)
+        changes = make_patch(old_model, new_model).patch
+        return element_state.path, changes
 
+    async def _render_element(self, element_state: ElementState) -> Dict[str, Any]:
         element_state.life_cycle_hook.element_will_render()
 
         self._clear_element_state_event_handlers(element_state)
@@ -183,15 +178,6 @@ class Layout(AbstractLayout):
         # between all `ElementState` objects within a `Layout` are shared.
         return element_state.model
 
-    def _create_element_state(self, element: AbstractElement) -> ElementState:
-        return ElementState(
-            model={},
-            element_obj=element,
-            event_handler_ids=set(),
-            child_elements_ids=[],
-            life_cycle_hook=LifeCycleHook(element, self.update),
-        )
-
     async def _render_model(
         self, element_state: ElementState, model: Mapping[str, Any]
     ) -> Dict[str, Any]:
@@ -210,12 +196,17 @@ class Layout(AbstractLayout):
         self, element_state: ElementState, children: Union[List[Any], Tuple[Any, ...]]
     ) -> List[Any]:
         resolved_children: List[Any] = []
-        for child in children if isinstance(children, (list, tuple)) else [children]:
+        for index, child in enumerate(
+            children if isinstance(children, (list, tuple)) else [children]
+        ):
             if isinstance(child, Mapping):
                 resolved_children.append(await self._render_model(element_state, child))
             elif isinstance(child, AbstractElement):
+                child_path = f"{element_state.path}/children/{index}"
+                child_state = self._create_element_state(child, child_path)
+                self._element_states[child.id] = child_state
+                resolved_children.append(await self._render_element(child_state))
                 element_state.child_elements_ids.append(child.id)
-                resolved_children.append(await self._render_element(child))
             else:
                 resolved_children.append(str(child))
         return resolved_children
@@ -243,6 +234,18 @@ class Layout(AbstractLayout):
         self._event_handlers.update(event_handlers_by_id)
 
         return {e: h.serialize() for e, h in handlers.items()}
+
+    def _create_element_state(
+        self, element: AbstractElement, path: str
+    ) -> ElementState:
+        return ElementState(
+            model={},
+            path=path,
+            element_obj=element,
+            event_handler_ids=set(),
+            child_elements_ids=[],
+            life_cycle_hook=LifeCycleHook(element, self.update),
+        )
 
     def _reset_element_state(self, element_state: ElementState) -> None:
         self._clear_element_state_event_handlers(element_state)

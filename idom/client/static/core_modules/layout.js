@@ -7,9 +7,9 @@ import React, {
 
 import ReactDOM from "../web_modules/react-dom.js";
 import htm from "../web_modules/htm.js";
+import * as jsonpatch from "../web_modules/fast-json-patch.js";
 
 import serializeEvent from "./event-to-object.js";
-import applyPatchText from "./diff.js";
 
 const html = htm.bind(React.createElement);
 const alreadyImported = {};
@@ -37,10 +37,21 @@ export default function Layout({ endpoint }) {
   }
 
   const socket = useMemo(() => new WebSocket(endpoint), [endpoint]);
-  const [modelJSON, setModelJSON] = useState("");
+  const [state, setState] = useState({ model: {} });
 
   socket.onmessage = (event) => {
-    setModelJSON(applyPatchText(event.data, modelJSON));
+    const [pathPrefix, patch] = JSON.parse(event.data);
+    setState({
+      model: jsonpatch.applyPatch(
+        state.model,
+        patch.map((op) => {
+          op.path = pathPrefix + op.path;
+          return op;
+        }),
+        undefined,
+        false
+      ).newDocument,
+    });
   };
 
   const sendMsg = (msg) => {
@@ -53,15 +64,11 @@ export default function Layout({ endpoint }) {
     });
   };
 
-  if (modelJSON && modelJSON != "{}") {
-    const model = JSON.parse(modelJSON);
-    return html`<${Element}
-      sendEvent=${sendEvent}
-      model=${JSON.parse(modelJSON)}
-    />`;
+  if (state.model.tagName) {
+    return html`<${Element} sendEvent=${sendEvent} model=${state.model} />`;
+  } else {
+    return html`<div />`;
   }
-
-  return html`<div />`;
 }
 
 function Element({ sendEvent, model }) {
