@@ -66,13 +66,16 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
         async def model_stream(
             request: request.Request, socket: WebSocketCommonProtocol
         ) -> None:
+            async def sock_send(value: Any) -> None:
+                await socket.send(json.dumps(value))
+
             async def sock_recv() -> LayoutEvent:
                 message = json.loads(await socket.recv())
                 event = message["body"]["event"]
                 return LayoutEvent(event["target"], event["data"])
 
             param_dict = {k: request.args.get(k) for k in request.args}
-            await self._run_renderer(socket.send, sock_recv, param_dict)
+            await self._run_renderer(sock_send, sock_recv, param_dict)
 
         def handler_name(function: Any) -> str:
             return f"{blueprint.name}.{function.__name__}"

@@ -19,16 +19,9 @@
     "snowpack": "^1.6.0"
   },
   "dependencies": {
-    "diff-match-patch": "^1.0.5",
+    "fast-json-patch": "^3.0.0-1",
     "htm": "^3.0.3",
     "react": "npm:@pika/react@^16.13.1",
-    "react-dom": "npm:@pika/react-dom@^16.13.1",
-    "rollup": "^1.32.1"
-  },
-  "snowpack": {
-    "installOptions": {
-      "include": "core_modules/**/*.js",
-      "clean": true
-    }
+    "react-dom": "npm:@pika/react-dom@^16.13.1"
   }
 }

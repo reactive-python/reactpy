@@ -1,13 +1,12 @@
 import abc
 import asyncio
-import json
 from typing import Callable, Awaitable, Dict, Any, AsyncIterator
 
 from anyio import create_task_group, TaskGroup  # type: ignore
-from diff_match_patch import diff
 
 from .layout import (
     LayoutEvent,
+    LayoutUpdate,
     AbstractLayout,
     AbstractLayout,
 )
@@ -79,16 +78,8 @@ class SingleStateRenderer(AbstractRenderer):
         super().__init__(layout)
         self._current_model_as_json = ""
 
-    async def _outgoing(self, layout: AbstractLayout, context: Any) -> str:
-        new_current_model_as_json = json.dumps(await layout.render())
-        patch = diff(
-            self._current_model_as_json,
-            new_current_model_as_json,
-            as_patch=True,
-            timelimit=0,
-        )
-        self._current_model_as_json = new_current_model_as_json
-        return patch
+    async def _outgoing(self, layout: AbstractLayout, context: Any) -> LayoutUpdate:
+        return await layout.render()
 
     async def _incoming(
         self, layout: AbstractLayout, context: Any, event: LayoutEvent
@@ -106,7 +97,7 @@ class SharedStateRenderer(SingleStateRenderer):
 
     def __init__(self, layout: AbstractLayout) -> None:
         super().__init__(layout)
-        self._update_queues: Dict[str, asyncio.Queue[str]] = {}
+        self._update_queues: Dict[str, asyncio.Queue[LayoutUpdate]] = {}
 
     @async_resource
     async def task_group(self) -> AsyncIterator[TaskGroup]:
@@ -124,15 +115,12 @@ class SharedStateRenderer(SingleStateRenderer):
 
     async def _render_loop(self) -> None:
         while True:
-            patch = await super()._outgoing(self.layout, None)
+            update = await super()._outgoing(self.layout, None)
             # append updates to all other contexts
             for queue in self._update_queues.values():
-                await queue.put(patch)
+                await queue.put(update)
 
-    async def _outgoing_loop(self, send: SendCoroutine, context: str) -> None:
-        await super()._outgoing_loop(send, context)
-
-    async def _outgoing(self, layout: AbstractLayout, context: str) -> str:
+    async def _outgoing(self, layout: AbstractLayout, context: str) -> LayoutUpdate:
         return await self._updates[context].get()
 
     @async_resource
