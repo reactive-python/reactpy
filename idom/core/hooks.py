@@ -1,5 +1,6 @@
 import asyncio
 import time
+import inspect
 from functools import lru_cache
 from threading import get_ident as get_thread_id
 from typing import (
@@ -68,11 +69,15 @@ def _use_shared(
     hook = current_hook()
     update = hook.use_update()
 
-    hook.use_finalize(shared._callbacks.pop, hook.element_id, None)
     old = shared._value
-    shared._callbacks[hook.element_id] = (
-        lambda new: update() if should_update(new, old) else None
-    )
+
+    def add_callback(cleanup):
+        shared._callbacks[hook.element_id] = (
+            lambda new: update() if should_update(new, old) else None
+        )
+        cleanup(shared._callbacks.pop, hook.element_id, None)
+
+    use_effect(add_callback)
 
     def set_state(new: _StateType) -> None:
         shared.update(new)
@@ -94,13 +99,27 @@ def _use_state(
         else:
             state["value"] = value
 
+    # old should be the value at the time the hook was run
+    old = state["value"]
+
     def set_state(new: _StateType) -> None:
-        old = state["value"]
         if should_update(new, old):
             state["value"] = new
             update()
 
     return state["value"], set_state
+
+
+class Ref(Generic[_StateType]):
+
+    __slots__ = "current"
+
+    def __init__(self, value: _StateType) -> None:
+        self.current = value
+
+
+def use_ref(value: _StateType) -> Ref[_StateType]:
+    return use_state(Ref(value))[0]
 
 
 class _Interval:
@@ -117,30 +136,38 @@ class _Interval:
         self._last = time.time()
 
 
-async def use_interval(rate: float) -> None:
+def use_interval(rate: float) -> Awaitable[None]:
     interval = use_state(_Interval(rate))[0]
-    await interval.wait()
+    return interval.wait()
 
 
-_AnimFunc = Callable[[], Awaitable[None]]
+_EffectCoro = Callable[[], Awaitable[None]]
+_EffectFunc = Callable[[Callable[..., None]], None]
+_Effect = TypeVar("_Effect", bound=Union[_EffectCoro, _EffectFunc])
 
 
-def use_animation(rate: float) -> Callable[[_AnimFunc], None]:
+def use_effect(function: _Effect) -> _Effect:
     hook = current_hook()
-    interval = _Interval()
 
-    def setup(function: _AnimFunc) -> None:
-        async def animation():
-            while True:
-                await interval.wait()
-                await function()
+    if inspect.iscoroutinefunction(function):
 
-        future = asyncio.ensure_future(animation())
-        hook.use_finalize(future.cancel)
+        def effect() -> None:
+            future = asyncio.ensure_future(function())
+            hook.use_will_render_effect(future.cancel)
+            hook.use_will_unmount_effect(future.cancel)
 
-        return None
+    else:
 
-    return setup
+        def effect() -> None:
+            def clean(_function_, *args, **kwargs):
+                hook.use_will_render_effect(_function_, *args, **kwargs)
+                hook.use_will_unmount_effect(_function_, *args, **kwargs)
+
+            function(clean)
+
+    hook.use_did_render_effect(effect)
+
+    return function
 
 
 _MemoValue = TypeVar("_MemoValue")
@@ -192,12 +219,16 @@ class LifeCycleHook:
 
     __slots__ = (
         "_element",
-        "_schedule_render",
+        "_schedule_render_callback",
+        "_schedule_render_later",
         "_current_state_index",
         "_state",
-        "_did_update",
-        "_has_rendered",
-        "_finalizers",
+        "_render_is_scheduled",
+        "_rendered_atleast_once",
+        "_is_rendering",
+        "_will_unmount_effects",
+        "_will_render_effects",
+        "_did_render_effects",
         "__weakref__",
     )
 
@@ -207,12 +238,16 @@ class LifeCycleHook:
         schedule_render: Callable[[AbstractElement], None],
     ) -> None:
         self._element = element
-        self._schedule_render = schedule_render
+        self._schedule_render_callback = schedule_render
+        self._schedule_render_later = False
+        self._render_is_scheduled = False
+        self._is_rendering = False
+        self._rendered_atleast_once = False
         self._current_state_index = 0
         self._state: Tuple[Any, ...] = ()
-        self._finalizers: List[Callable[[], Any]] = []
-        self._did_update = False
-        self._has_rendered = False
+        self._will_render_effects: List[Callable[[], Any]] = []
+        self._did_render_effects: List[Callable[[], Any]] = []
+        self._will_unmount_effects: List[Callable[[], Any]] = []
 
     @property
     def element_id(self) -> str:
@@ -220,9 +255,10 @@ class LifeCycleHook:
 
     def use_update(self) -> Callable[[], None]:
         def update() -> None:
-            if not self._did_update:
-                self._did_update = True
-                self._schedule_render(self._element)
+            if self._is_rendering:
+                self._schedule_render_later = True
+            elif not self._render_is_scheduled:
+                self._schedule_render()
             return None
 
         return update
@@ -230,7 +266,7 @@ class LifeCycleHook:
     def use_state(
         self, _function_: Callable[..., _StateType], *args: Any, **kwargs: Any
     ) -> _StateType:
-        if not self._has_rendered:
+        if not self._rendered_atleast_once:
             # since we're not intialized yet we're just appending state
             result = _function_(*args, **kwargs)
             self._state += (result,)
@@ -240,30 +276,65 @@ class LifeCycleHook:
         self._current_state_index += 1
         return result
 
-    def use_finalize(
+    def use_will_render_effect(
         self, _function_: Callable[..., Any], *args: Any, **kwargs: Any
     ) -> None:
         if not args and not kwargs:
-            self._finalizers.append(_function_)
+            self._will_render_effects.append(_function_)
         else:
-            self._finalizers.append(lambda: _function_(*args, **kwargs))
+            self._will_render_effects.append(lambda: _function_(*args, **kwargs))
+        return None
+
+    def use_did_render_effect(
+        self, _function_: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> None:
+        if not args and not kwargs:
+            self._did_render_effects.append(_function_)
+        else:
+            self._did_render_effects.append(lambda: _function_(*args, **kwargs))
+        return None
+
+    def use_will_unmount_effect(
+        self, _function_: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> None:
+        if not args and not kwargs:
+            self._will_unmount_effects.append(_function_)
+        else:
+            self._will_unmount_effects.append(lambda: _function_(*args, **kwargs))
         return None
 
     def set_current(self) -> None:
         _current_life_cycle_hook[get_thread_id()] = self
 
     def unset_current(self) -> None:
-        # use an assert here for debug purposes since this should never be False
-        assert _current_life_cycle_hook.pop(get_thread_id()) is self
+        _current_life_cycle_hook.pop(get_thread_id(), None)
 
     def element_will_render(self) -> None:
-        self._did_update = False
-        self._current_state_index = 0
-        self._finalizers.clear()
+        self._render_is_scheduled = False
+        self._is_rendering = True
+
+        for effect in self._will_render_effects:
+            effect()
+
+        self._will_render_effects.clear()
+        self._will_unmount_effects.clear()
 
     def element_did_render(self) -> None:
-        self._has_rendered = True
+        for effect in self._did_render_effects:
+            effect()
+        self._did_render_effects.clear()
+
+        self._is_rendering = False
+        if self._schedule_render_later:
+            self._schedule_render()
+        self._rendered_atleast_once = True
+        self._current_state_index = 0
 
     def element_will_unmount(self) -> None:
-        for func in self._finalizers:
-            func()
+        for effect in self._will_unmount_effects:
+            effect()
+        self._will_unmount_effects.clear()
+
+    def _schedule_render(self) -> None:
+        self._render_is_scheduled = True
+        self._schedule_render_callback(self._element)

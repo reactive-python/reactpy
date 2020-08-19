@@ -19,11 +19,12 @@ from typing import (
     Union,
 )
 
+from loguru import logger
 from jsonpatch import make_patch
 
 from .element import AbstractElement
 from .events import EventHandler
-from .utils import HasAsyncResources, async_resource
+from .utils import HasAsyncResources, async_resource, CannotAccessResource
 from .hooks import LifeCycleHook
 
 
@@ -118,7 +119,10 @@ class Layout(AbstractLayout):
         self._event_handlers: Dict[str, EventHandler] = {}
 
     def update(self, element: "AbstractElement") -> None:
-        self._rendering_queue.put(self._create_layout_update(element))
+        try:
+            self._rendering_queue.put(self._create_layout_update(element))
+        except CannotAccessResource:
+            logger.info(f"Did not update {element} - resources of {self} are closed")
 
     async def trigger(self, event: LayoutEvent) -> None:
         # It is possible for an element in the frontend to produce an event
