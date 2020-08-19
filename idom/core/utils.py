@@ -33,6 +33,10 @@ def async_resource(
     return AsyncResource(method)
 
 
+class CannotAccessResource(RuntimeError):
+    """When a resource of :class:`HasAsyncResources` object is incorrectly accessed"""
+
+
 class HasAsyncResources:
 
     _async_resource_names: Tuple[str, ...] = ()
@@ -50,7 +54,7 @@ class HasAsyncResources:
 
     async def __aenter__(self: _Self) -> _Self:
         if self._async_exit_stack is not None:
-            raise RuntimeError(f"{self} is already open")
+            raise CannotAccessResource(f"{self} is already open")
 
         self._async_exit_stack = await AsyncExitStack().__aenter__()
 
@@ -62,7 +66,7 @@ class HasAsyncResources:
 
     async def __aexit__(self, *exc: Any) -> bool:
         if self._async_exit_stack is None:
-            raise RuntimeError(f"{self} is not open")
+            raise CannotAccessResource(f"{self} is not open")
 
         result = await self._async_exit_stack.__aexit__(*exc)
         self._async_exit_stack = None
@@ -108,4 +112,6 @@ class AsyncResource(Generic[_Rsrc]):
             try:
                 return cast(_Rsrc, obj._async_resource_state[self._name])
             except KeyError:
-                raise RuntimeError(f"Resource {self._name!r} of {obj} is not open")
+                raise CannotAccessResource(
+                    f"Resource {self._name!r} of {obj} is not open"
+                )
