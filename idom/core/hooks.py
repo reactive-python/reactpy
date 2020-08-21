@@ -1,5 +1,4 @@
 import asyncio
-import time
 import inspect
 from functools import lru_cache
 from threading import get_ident as get_thread_id
@@ -120,25 +119,6 @@ class Ref(Generic[_StateType]):
 
 def use_ref(value: _StateType) -> Ref[_StateType]:
     return use_state(Ref(value))[0]
-
-
-class _Interval:
-    """Simple utility for pacing frames in an animation loop."""
-
-    __slots__ = "_rate", "_last"
-
-    def __init__(self, rate: float):
-        self._rate = rate
-        self._last = time.time()
-
-    async def wait(self) -> None:
-        await asyncio.sleep(self._rate - (time.time() - self._last))
-        self._last = time.time()
-
-
-def use_interval(rate: float) -> Awaitable[None]:
-    interval = use_state(_Interval(rate))[0]
-    return interval.wait()
 
 
 _EffectCoro = Callable[[], Awaitable[None]]

@@ -9,9 +9,11 @@ Let's look at the example that you may have seen
     import idom
 
     @idom.element
-    async def Slideshow(self, index=0):
+    async def Slideshow():
+        index, set_index = idom.hooks.use_state(0)
+
         async def next_image(event):
-            self.update(index + 1)
+            set_index(index + 1)
 
         return idom.html.img(
             {
@@ -30,37 +32,52 @@ Since it's likely a lot to take in at once we'll break it down piece by piece:
 .. code-block::
 
    @idom.element
-   async def Slideshow(self, index=0):
+   async def Slideshow():
 
-The ``idom.element`` decorator indicates that the `asynchronous function`_ to follow
-returns a data structure which depicts a user interface, or in more technical terms a
-Document Object Model (DOM). We call this structural representation of the DOM a
-`Virtual DOM`__ (VDOM) - a term familiar to those who work with `ReactJS`_.
-In the case of ``Slideshow`` it will return a VDOM representing an image which, when
-clicked, will change.
+The ``idom.element`` decorator creates an :ref:`Element <Stateful Element>` constructor
+whose render function is defined by the `asynchronous function`_ below it. To create
+an :class:`idom.core.element.Element` instance we call ``Slideshow()`` with the same
+arguments as its render function. The render function of an Element returns a data
+structure that depicts a user interface, or in more technical terms a Document Object
+Model (DOM). We call this structural representation of the DOM a `Virtual DOM`__ (VDOM)
+- a term familiar to those who work with `ReactJS`_. In the case of ``Slideshow`` it
+will return a VDOM representing an image which, when clicked, will change.
 
 __ https://reactjs.org/docs/faq-internals.html#what-is-the-virtual-dom
 
-A key thing to note here though is the use of ``self`` as a parameter to ``Slideshow``.
-Similarly to how ``self`` refers to the current instance of class when used as a
-parameter of its methods, ``self`` in the context of an
-:func:`idom.element <idom.core.element.element>`
-decorated coroutines refers to the current :class:`Element <idom.core.element.Element>`
-instance.
-
 .. code-block::
 
-       async def next_image(event):
-           self.update(index + 1)
+       index, set_index = idom.hooks.use_state(0)
 
-The coroutine above uses the reference to the current element instance in ``self`` to
-:meth:`update() <idom.core.element.Element.update>` to our view of the slideshow. The
-effect of calling this update method is to schedule a re-render of of our ``Slideshow``
-using the newly incremented index.
+The :func:`~idom.core.hooks.use_state` function is a :ref:`Hook <Life Cycle Hooks>`.
+Calling a Hook inside an Element's render function (one decorated by ``idom.element``)
+adds some local state to it. IDOM will preserve the state added by Hooks between calls
+to the Element's render function.
+
+The ``use_state`` hook returns two values - the *current* state value and a function
+that let's you update that value. In the case of ``Slideshow`` the value of the
+``use_state`` hook determines which image is show to the user, while its update function
+allow us to change it.The one required argument of ``use_state`` is the *initial* state
+value.
 
 .. note::
 
-    Coroutines like ``next_image`` which respond to user interactions recieve an
+    The Hook design pattern has been lifted directly from `React Hooks`_.
+
+.. code-block::
+
+        async def next_image(event):
+            set_index(index + 1)
+
+The coroutine above will get added as an event handler to the resulting view. Whe it
+responds to an event it will use the update function returned by the ``use_state`` Hook
+to change which image is shown to the user. Calling the update function will schedule
+the Element to be re-rendered. That is, the Element's render function will be called
+again, and its new result will be displayed.
+
+.. note::
+
+    Even handlers like ``next_image`` which respond to user interactions recieve an
     ``event`` dictionary that contains different information depending on they type
     of event that occured. All supported events and the data they contain is listed
     `here`__.
@@ -78,9 +95,11 @@ __ https://reactjs.org/docs/events.html
         )
 
 Finally we come the end the ``Slideshow`` body where we return a model for an ``<img/>``
-element that draws its image from https://picsum.photos. We've also been sure to add
-our ``next_image`` event handler as well so that when an ``onClick`` event occurs we
-can respond to it. The returned model conforms to the `VDOM mimetype specification`_.
+element that draws its image from https://picsum.photos. Our ``next_image`` event
+handler has been added to the image so that when an ``onClick`` event occurs we can
+respond to it. We've also added a little bit of CSS styling to the image so that when
+the cursor hoverse over the image it will become a pointer so it appears clickable. The
+returned model conforms to the `VDOM mimetype specification`_.
 
 .. code-block::
 
@@ -104,3 +123,4 @@ use ``idom.display()`` to show it in a Jupyter Notebook via a widget.
 .. _VDOM mimetype specification: https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md
 .. _asynchronous function: https://realpython.com/async-io-python/
 .. _ReactJS: https://reactjs.org/docs/faq-internals.html
+.. _React Hooks: https://reactjs.org/docs/hooks-overview.html
