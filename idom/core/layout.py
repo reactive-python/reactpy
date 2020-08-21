@@ -280,14 +280,16 @@ def _render_with_life_cycle_hook(element_state: ElementState) -> Iterator[None]:
     back to the event loop since it might switch to render a different element.
     """
     gen = element_state.element_obj.render().__await__()
-    while True:
-        element_state.life_cycle_hook.set_current()
-        try:
-            yield next(gen)
-        except StopIteration as error:
-            return error.value
-        finally:
+    try:
+        while True:
+            element_state.life_cycle_hook.set_current()
+            value = next(gen)
             element_state.life_cycle_hook.unset_current()
+            yield value
+    except StopIteration as error:
+        return error.value
+    finally:
+        element_state.life_cycle_hook.unset_current()
 
 
 # future queue type

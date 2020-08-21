@@ -13,6 +13,7 @@ from typing import (
     Optional,
     Generic,
     Union,
+    NamedTuple,
     List,
 )
 
@@ -133,32 +134,46 @@ def use_effect(function: _Effect) -> _Effect:
 
         def effect() -> None:
             future = asyncio.ensure_future(function())
-            hook.use_will_render_effect(future.cancel)
-            hook.use_will_unmount_effect(future.cancel)
+            hook.use_effect(future.cancel, "will_render", "will_unmount")
 
     else:
 
         def effect() -> None:
             def clean(_function_, *args, **kwargs):
-                hook.use_will_render_effect(_function_, *args, **kwargs)
-                hook.use_will_unmount_effect(_function_, *args, **kwargs)
+                hook.use_effect(
+                    lambda: _function_(*args, **kwargs), "will_render", "will_unmount"
+                )
 
             function(clean)
 
-    hook.use_did_render_effect(effect)
+    hook.use_effect(effect, "did_render")
 
     return function
+
+
+_ActionType = TypeVar("_ActionType")
+
+
+def use_reducer(
+    reducer: Callable[[_StateType, _ActionType], _StateType], state: _StateType,
+) -> Tuple[_StateType, Callable[[_ActionType], None]]:
+    state, set_state = use_state(state)
+
+    def dispatch(action: _ActionType) -> None:
+        set_state(reducer(state, action))
+
+    return state, dispatch
 
 
 _MemoValue = TypeVar("_MemoValue")
 
 
-def use_memo(*args: Any) -> Callable[[Callable[[], _MemoValue]], _MemoValue]:
+def use_memo(*dependencies: Any) -> Callable[[Callable[[], _MemoValue]], _MemoValue]:
     def use_setup(function: Callable[[], _MemoValue]) -> _MemoValue:
         hook = current_hook()
         cache: Dict[int, _MemoValue] = hook.use_state(dict)
 
-        key = hash(args)
+        key = hash(dependencies)
         if key in cache:
             result = cache[key]
         else:
@@ -166,6 +181,16 @@ def use_memo(*args: Any) -> Callable[[Callable[[], _MemoValue]], _MemoValue]:
             result = cache[key] = function()
 
         return result
+
+    return use_setup
+
+
+_CallbackFunc = TypeVar("_CallbackFunc", bound=Callable[..., Any])
+
+
+def use_callback(*dependencies):
+    def use_setup(function: _CallbackFunc) -> _CallbackFunc:
+        return use_memo(dependencies)(lambda: function)
 
     return use_setup
 
@@ -188,6 +213,7 @@ def current_element() -> AbstractElement:
 
 
 def current_hook() -> "LifeCycleHook":
+    """Get the current :class:`LifeCycleHook`"""
     try:
         return _current_life_cycle_hook[get_thread_id()]
     except KeyError as error:
@@ -195,7 +221,18 @@ def current_hook() -> "LifeCycleHook":
         raise RuntimeError(msg) from error
 
 
+class _EventEffects(NamedTuple):
+    will_render: List[Callable[[], Any]]
+    did_render: List[Callable[[], Any]]
+    will_unmount: List[Callable[[], Any]]
+
+
 class LifeCycleHook:
+    """Defines the life cycle of a layout element.
+
+    Elements can request access to their own life cycle events and state, while layouts
+    drive the life cycle forward by triggering events.
+    """
 
     __slots__ = (
         "_element",
@@ -206,9 +243,9 @@ class LifeCycleHook:
         "_render_is_scheduled",
         "_rendered_atleast_once",
         "_is_rendering",
-        "_will_unmount_effects",
-        "_will_render_effects",
-        "_did_render_effects",
+        "_event_effects.will_unmount",
+        "_event_effects.will_render",
+        "_event_effects.did_render",
         "__weakref__",
     )
 
@@ -225,23 +262,18 @@ class LifeCycleHook:
         self._rendered_atleast_once = False
         self._current_state_index = 0
         self._state: Tuple[Any, ...] = ()
-        self._will_render_effects: List[Callable[[], Any]] = []
-        self._did_render_effects: List[Callable[[], Any]] = []
-        self._will_unmount_effects: List[Callable[[], Any]] = []
+        self._event_effects = _EventEffects([], [], [])
 
     @property
     def element_id(self) -> str:
         return self._element.id
 
-    def use_update(self) -> Callable[[], None]:
-        def update() -> None:
-            if self._is_rendering:
-                self._schedule_render_later = True
-            elif not self._render_is_scheduled:
-                self._schedule_render()
-            return None
-
-        return update
+    def schedule_render(self) -> None:
+        if self._is_rendering:
+            self._schedule_render_later = True
+        elif not self._render_is_scheduled:
+            self._schedule_render()
+        return None
 
     def use_state(
         self, _function_: Callable[..., _StateType], *args: Any, **kwargs: Any
@@ -256,53 +288,26 @@ class LifeCycleHook:
         self._current_state_index += 1
         return result
 
-    def use_will_render_effect(
-        self, _function_: Callable[..., Any], *args: Any, **kwargs: Any
-    ) -> None:
-        if not args and not kwargs:
-            self._will_render_effects.append(_function_)
-        else:
-            self._will_render_effects.append(lambda: _function_(*args, **kwargs))
-        return None
-
-    def use_did_render_effect(
-        self, _function_: Callable[..., Any], *args: Any, **kwargs: Any
-    ) -> None:
-        if not args and not kwargs:
-            self._did_render_effects.append(_function_)
-        else:
-            self._did_render_effects.append(lambda: _function_(*args, **kwargs))
-        return None
-
-    def use_will_unmount_effect(
-        self, _function_: Callable[..., Any], *args: Any, **kwargs: Any
-    ) -> None:
-        if not args and not kwargs:
-            self._will_unmount_effects.append(_function_)
-        else:
-            self._will_unmount_effects.append(lambda: _function_(*args, **kwargs))
-        return None
-
-    def set_current(self) -> None:
-        _current_life_cycle_hook[get_thread_id()] = self
-
-    def unset_current(self) -> None:
-        _current_life_cycle_hook.pop(get_thread_id(), None)
+    def use_effect(self, function: Callable[[], None], *events) -> None:
+        for e in events:
+            getattr(self._event_effects, e).append(function)
 
     def element_will_render(self) -> None:
+        """The element is about to render"""
         self._render_is_scheduled = False
         self._is_rendering = True
 
-        for effect in self._will_render_effects:
+        for effect in self._event_effects.will_render:
             effect()
 
-        self._will_render_effects.clear()
-        self._will_unmount_effects.clear()
+        self._event_effects.will_render.clear()
+        self._event_effects.will_unmount.clear()
 
     def element_did_render(self) -> None:
-        for effect in self._did_render_effects:
+        """The element completed a render"""
+        for effect in self._event_effects.did_render:
             effect()
-        self._did_render_effects.clear()
+        self._event_effects.did_render.clear()
 
         self._is_rendering = False
         if self._schedule_render_later:
@@ -311,9 +316,24 @@ class LifeCycleHook:
         self._current_state_index = 0
 
     def element_will_unmount(self) -> None:
-        for effect in self._will_unmount_effects:
+        """The element is about to be removed from the layout"""
+        for effect in self._event_effects.will_unmount:
             effect()
-        self._will_unmount_effects.clear()
+        self._event_effects.will_unmount.clear()
+
+    def set_current(self) -> None:
+        """Set this hook as the active hook in this thread
+
+        This method is called by a layout before entering the render method
+        of this hook's associated element.
+        """
+        _current_life_cycle_hook[get_thread_id()] = self
+
+    def unset_current(self) -> None:
+        """Unset this hook as the active hook in this thread"""
+        # this assertion should never fail - primarilly useful for debug
+        assert _current_life_cycle_hook[get_thread_id()] is self
+        del _current_life_cycle_hook[get_thread_id()]
 
     def _schedule_render(self) -> None:
         self._render_is_scheduled = True
