@@ -12,16 +12,17 @@ interactive interfaces.
 Pure Elements
 -------------
 
-As in most programming paradigms, so many of the problems come down to how
-we manage state, and the first tool in encouraging its proper curation is the
-usage of `pure functions`_. The benefit of a pure function is that there's no
-state, and state that's not there won't be causing bugs.
+As in most programming paradigms, so many of the problems come down to how we manage
+state, and the first tool in encouraging its proper curation is the usage of
+`pure functions`_. The benefit of a pure function is that there's no state. Similar to
+the addage "the best code is no code at all," we make the related claim that "the best
+way to manage state is to have no state at all."
 
-With IDOM the core of your application will be built on the back of basic
-functions and coroutines that return :term:`VDOM` models and which do so without
+With IDOM the core of your application will be built on the back of basic functions and
+coroutines that return :term:`VDOM` models and which do so without state and without
 `side effects`_. We call these kinds of model rendering functions
-:term:`Pure Elements <Pure Element>`. For example, one might want a function
-which accepted a list of strings and turned it into a series of paragraph elements:
+:term:`Pure Elements <Pure Element>`. For example, one might want a function which
+accepted a list of strings and turned it into a series of paragraph elements:
 
 .. code-block::
 
