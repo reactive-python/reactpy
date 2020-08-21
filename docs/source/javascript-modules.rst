@@ -54,7 +54,7 @@ those submodules using the ``--exports`` option:
 
 Once the package has been succesfully installed, you can import and display the component:
 
-.. literalinclude:: widgets/victory_chart.py
+.. literalinclude:: examples/victory_chart.py
 
 .. interactive-widget:: victory_chart
 
@@ -76,7 +76,7 @@ component from the
 framework. We'll register callbacks and pass props to the ``<Button/>`` just as you
 would for any other element in IDOM:
 
-.. literalinclude:: widgets/primary_secondary_buttons.py
+.. literalinclude:: examples/primary_secondary_buttons.py
 
 .. interactive-widget:: primary_secondary_buttons
 
@@ -94,12 +94,12 @@ but this time we'll add a callback to it. Unfortunately we can't just pass it in
 :ref:`like we did before <Passing Props To Components>` because Victory's event API
 is a bit more complex so we've implemented a quick wrapper for it in a file ``chart.js``.
 
-.. literalinclude:: widgets/custom_chart.js
+.. literalinclude:: examples/custom_chart.js
     :language: javascript
 
 Which we can read in as a ``source`` to :class:`~idom.widgets.utils.Module`:
 
-.. literalinclude:: widgets/custom_chart.py
+.. literalinclude:: examples/custom_chart.py
 
 Click the bars to trigger an event 👇
 

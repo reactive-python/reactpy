@@ -1,10 +1,9 @@
-import webbrowser
 import asyncio
 import enum
 import random
+import time
 
 import idom
-from idom.server.sanic import PerClientStateServer
 
 
 class GameState(enum.Enum):
@@ -22,7 +21,7 @@ async def GameView(grid_size, block_scale):
         return GameLoop(grid_size, block_scale, set_game_state)
 
     async def start_playing(event):
-        set_game_state(GameState.playing)
+        set_game_state(GameState.play)
 
     if game_state == GameState.won:
         await asyncio.sleep(1)
@@ -81,11 +80,14 @@ async def GameLoop(grid_size, block_scale, set_game_state):
         assign_grid_block_color(grid, snake[-1], "yellow")
         set_game_state(GameState.won)
 
-    interval = idom.hooks.use_interval(0.5)
+    interval = use_interval(0.5)
 
     @idom.hooks.use_effect
     async def animate():
-        await interval
+        try:
+            await interval
+        except Exception as e:
+            print(e)
 
         new_snake_head = (
             # grid wraps due to mod op here
@@ -102,6 +104,16 @@ async def GameLoop(grid_size, block_scale, set_game_state):
         set_snake(new_snake)
 
     return grid
+
+
+def use_interval(rate):
+    last_usage_time = idom.hooks.use_ref(time.time())
+
+    async def interval():
+        await asyncio.sleep(rate - (time.time() - last_usage_time.current))
+        last_usage_time.current = time.time()
+
+    return interval()
 
 
 def use_snake_food(grid_size, current_snake):
@@ -149,6 +161,4 @@ def assign_grid_block_color(grid, point, color):
     block["attributes"]["style"]["backgroundColor"] = color
 
 
-thread = PerClientStateServer(GameView, 4, 50).daemon("localhost", 8765)
-webbrowser.open("http://localhost:8765/")
-thread.join()
+display(GameView)

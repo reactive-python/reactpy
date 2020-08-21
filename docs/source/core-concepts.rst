@@ -20,90 +20,19 @@ state, and state that's not there won't be causing bugs.
 With IDOM the core of your application will be built on the back of basic
 functions and coroutines that return :term:`VDOM` models and which do so without
 `side effects`_. We call these kinds of model rendering functions
-:term:`Pure Elements <Pure Element>`. There are two ways to create Pure Elements:
-
-1. The most straightforward way is to use a standard function or coroutine
+:term:`Pure Elements <Pure Element>`. For example, one might want a function
+which accepted a list of strings and turned it into a series of paragraph elements:
 
 .. code-block::
 
-    def ClickMe():
-        return idom.html.button(["Click me!"])
-
-2. But an :func:`idom.element <idom.core.element.element>` decorated coroutine gives you
-   the ability to update your element when responding to events. The coroutine's first
-   positional argument is an :class:`~idom.core.element.Element` object with an
-   :meth:`~idom.core.element.Element.update` method that will schedule the
-   coroutine to be re-run with the given arguments.
-
-.. literalinclude:: widgets/click_count.py
-
-.. interactive-widget:: click_count
-
-.. note::
-
-    :func:`idom.element <idom.core.element.element>` turns the decorated function into
-    a factory for :class:`~idom.core.element.Element` objects.
+    def Paragraphs(list_of_text):
+        return idom.html.div([idom.html.p(text) for text in list_of_text])
 
 
 Stateful Elements
 -----------------
 
-Sometimes, when all else fails, you really do need to keep track of some state. The
-simplest way to do this is by adding it to a :ref:`Pure Element <Pure Elements>`
-via the :func:`@idom.element <idom.core.element.element>` decorator. By passing the
-decorator a string of comma separated parameter names to its ``state`` keyword you can
-indicate that those parameters should be retained across updates unless explicitly
-changed.
-
-Normally when you call :meth:`Element.update <idom.core.element.Element.update>` you
-need to pass it all the arguments that are required by your coroutine. For example, in
-the ``ClickCount`` coroutine above we have to explicitly call update with the new
-``count``. But if you use the ``state`` keyword, whatever parameter names you specify
-there don't need to be explicitly passed because the parameter's last value will be
-reused in the next call. This is typically most useful if your element has many
-parameters which remain the same each time it's updated. The following example just
-demonstrates this with a single parameter though:
-
-.. literalinclude:: widgets/click_history.py
-    :emphasize-lines: 14
-
-.. interactive-widget:: click_history
-
-.. note::
-
-    Why not just use a default argument ``event_list=[]`` instead? Since default
-    arguments are evalauted *once* when the function is defined, they get shared across
-    calls. This is one of Python's
-    `common pitfalls <https://docs.python-guide.org/writing/gotchas/#mutable-default-arguments>`__.
-
-
-Class Elements
---------------
-
-If neither :ref:`Pure Elements` or :ref:`Stateful Elements` meet your needs you might
-want to define a :term:`Class Element` by creating a subclass of
-:class:`~idom.core.element.AbstractElement`. This is most useful if
-your element needs an interface which allows you to do more than just
-:meth:`~idom.core.element.Element.update` it. You'll find this strategy is used
-to implement some of the common IDOM widgets like
-:class:`~idom.widgets.inputs.Input` and
-:class:`~idom.widgets.images.Image`.
-
-To create a Class Element, you'll need to subclass
-:class:`~idom.core.element.AbstractElement`. Doing so is quite straighforward since the
-only thing we're required to implement is a
-:meth:`~idom.core.element.AbstractElement.render` method. In fact we'll just
-quickly reimplement the ``ClickCount`` example from the :ref:`Pure Elements` section:
-
-.. literalinclude:: widgets/class_click_count.py
-    :emphasize-lines: 15
-
-.. interactive-widget:: class_click_count
-
-.. note::
-
-    ``self._update_layout()`` schedules a re-render of the element -
-    this is what :meth:`Element.update <idom.core.element.Element.update>` uses
+...
 
 
 Element Layout
@@ -119,47 +48,7 @@ ever be removed from the model. Then you'll just need to call and await a
 
 .. testcode::
 
-    import idom
-    import asyncio
-
-    event_handler_id = "123456"
-
-
-    @idom.element
-    async def ClickCount(self, count):
-
-        @idom.event(target_id=event_handler_id)  # a trick to hard code the handler ID
-        async def increment(event):
-            self.update(count=count + 1)
-
-        return idom.html.button({"onClick": increment}, [f"Click count: {count}"])
-
-    click_count = ClickCount(0)
-    async with idom.Layout(click_count) as layout:
-        update = await layout.render()
-
-    assert update.src == click_count.id
-    assert update.new == {
-        click_count.id: {
-            "tagName": "button",
-            "children": [
-                {
-                "type": "str",
-                "data": "Click count: 0"
-                }
-            ],
-            "attributes": {},
-            "eventHandlers": {
-                "onClick": {
-                "target": event_handler_id,
-                "preventDefault": False,
-                "stopPropagation": False
-                }
-            }
-        }
-    }
-    assert update.old == []
-    assert update.error is None
+    ...
 
 The layout also handles the triggering event handlers. Normally this is done
 automatically by a :ref:`Renderer <Layout Renderer>`, but for now we'll do this
@@ -170,20 +59,7 @@ method. Then we just have to re-render the layout and see what changed:
 
 .. testcode::
 
-    from idom.core.layout import LayoutEvent
-
-    click_count = ClickCount(0)
-    async with idom.Layout(click_count) as layout:
-        first_udpate = await layout.render()  # same as above
-
-        event_handler_id = first_udpate.new[click_count.id]["eventHandlers"]["onClick"]["target"]
-        dummy_event = LayoutEvent(event_handler_id, [{}])
-
-        await layout.trigger(dummy_event)
-        second_update = await layout.render()
-
-    assert second_update.new[click_count.id]["children"][0]["data"] == "Click count: 1"
-
+    ...
 
 Layout Renderer
 ---------------

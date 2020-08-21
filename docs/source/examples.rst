@@ -69,7 +69,7 @@ view. In a Jupyter Notebook it will appear in an output cell. If you're running
 Slideshow
 ---------
 
-.. literalinclude:: widgets/slideshow.py
+.. literalinclude:: examples/slideshow.py
 
 Try clicking the image 🖱️
 
@@ -79,7 +79,7 @@ Try clicking the image 🖱️
 To Do List
 ----------
 
-.. literalinclude:: widgets/todo.py
+.. literalinclude:: examples/todo.py
 
 Try typing in the text box and pressing 'Enter' 📋
 
@@ -89,7 +89,7 @@ Try typing in the text box and pressing 'Enter' 📋
 Drag and Drop
 -------------
 
-.. literalinclude:: widgets/drag_and_drop.py
+.. literalinclude:: examples/drag_and_drop.py
 
 Click and drag the black box onto the white one 👆
 
@@ -99,7 +99,7 @@ Click and drag the black box onto the white one 👆
 The Game Snake
 --------------
 
-.. literalinclude:: widgets/snake.py
+.. literalinclude:: examples/snake.py
 
 Click to start playing and use the arrow keys to move 🎮
 
@@ -111,7 +111,7 @@ Slow internet may cause inconsistent frame pacing 😅
 Plotting with Matplotlib
 ------------------------
 
-.. literalinclude:: widgets/matplotlib_animation.py
+.. literalinclude:: examples/matplotlib_animation.py
 
 Try interacting with the sliders 📈
 
@@ -129,7 +129,7 @@ Simply install your javascript library of choice using the ``idom`` CLI:
 
 Then import the module with :class:`idom.widgets.utils.Module`:
 
-.. literalinclude:: widgets/victory_chart.py
+.. literalinclude:: examples/victory_chart.py
 
 .. note::
 
@@ -144,7 +144,7 @@ Define Javascript Modules
 
 Assuming you already installed ``victory`` as in the :ref:`Install Javascript Modules` section:
 
-.. literalinclude:: widgets/custom_chart.py
+.. literalinclude:: examples/custom_chart.py
 
 Click the bars to trigger an event 👇
 
@@ -152,7 +152,7 @@ Click the bars to trigger an event 👇
 
 Source of ``chart.js``:
 
-.. literalinclude:: widgets/custom_chart.js
+.. literalinclude:: examples/custom_chart.js
     :language: javascript
 
 
