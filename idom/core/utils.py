@@ -77,7 +77,10 @@ class AsyncResource(Generic[_Rsrc]):
 
     __slots__ = "_context_manager", "_name"
 
-    def __init__(self, method: Callable[[Any], AsyncIterator[_Rsrc]],) -> None:
+    def __init__(
+        self,
+        method: Callable[[Any], AsyncIterator[_Rsrc]],
+    ) -> None:
         self._context_manager = asynccontextmanager(method)
 
     @asynccontextmanager

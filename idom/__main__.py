@@ -14,10 +14,15 @@ def main(*args: str) -> None:
         "command", choices=["install", "uninstall", "installed", "restore"]
     )
     cli.add_argument(
-        "dependencies", nargs="*", type=str,
+        "dependencies",
+        nargs="*",
+        type=str,
     )
     cli.add_argument(
-        "--exports", nargs="*", type=str, default=None,
+        "--exports",
+        nargs="*",
+        type=str,
+        default=None,
     )
     cli.add_argument("--force", action="store_true")
     cli.add_argument("--debug", action="store_true")
