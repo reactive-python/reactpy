@@ -35,79 +35,37 @@ def use_update() -> Callable[[], None]:
 _StateType = TypeVar("_StateType")
 
 
-class Shared(Generic[_StateType]):
-
-    __slots__ = "_callbacks", "_value"
-
-    def __init__(self, value: _StateType) -> None:
-        self._callbacks: Dict[str, Callable[[_StateType], None]] = {}
-        self._value = value
-
-    def update(self, value: _StateType) -> None:
-        self._value = value
-        for cb in self._callbacks.values():
-            cb(value)
-
-
-def _new_is_not_old(old: _StateType, new: _StateType) -> bool:
-    return new is not old
+class _State:
+    __slots__ = "current"
 
 
 def use_state(
-    value: Union[_StateType, Callable[[], _StateType], Shared[_StateType]],
-    should_update: Callable[[_StateType, _StateType], bool] = _new_is_not_old,
-) -> Tuple[_StateType, Callable[[_StateType], None]]:
-    if isinstance(value, Shared):
-        return _use_shared(value, should_update)
-    else:
-        return _use_state(value, should_update)
-
-
-def _use_shared(
-    shared: Shared[_StateType], should_update: Callable[[_StateType, _StateType], bool],
-) -> Tuple[_StateType, Callable[[_StateType], None]]:
-    hook = current_hook()
-    update = hook.use_update()
-
-    old = shared._value
-
-    def add_callback(cleanup):
-        shared._callbacks[hook.element_id] = (
-            lambda new: update() if should_update(new, old) else None
-        )
-        cleanup(shared._callbacks.pop, hook.element_id, None)
-
-    use_effect(add_callback)
-
-    def set_state(new: _StateType) -> None:
-        shared.update(new)
-
-    return shared._value, set_state
-
-
-def _use_state(
     value: Union[_StateType, Callable[[], _StateType]],
-    should_update: Callable[[_StateType, _StateType], bool],
-) -> Tuple[_StateType, Callable[[_StateType], None]]:
+) -> Tuple[
+    _StateType, Callable[[Union[_StateType, Callable[[_StateType], _StateType]]], None]
+]:
     hook = current_hook()
-    state: Dict[str, Any] = hook.use_state(dict)
+    state: Dict[str, Any] = hook.use_state(_State)
     update = hook.use_update()
 
-    if "value" not in state:
+    try:
+        current = state.current
+    except AttributeError:
         if callable(value):
-            state["value"] = value()
+            current = state.current = value()
         else:
-            state["value"] = value
+            current = state.current = value
 
-    # old should be the value at the time the hook was run
-    old = state["value"]
-
-    def set_state(new: _StateType) -> None:
-        if should_update(new, old):
-            state["value"] = new
+    def set_state(new: Union[_StateType, Callable[[_StateType], _StateType]]) -> None:
+        if callable(new):
+            next_state = new(current)
+        else:
+            next_state = new
+        if next_state is not current:
+            state.current = next_state
             update()
 
-    return state["value"], set_state
+    return current, set_state
 
 
 class Ref(Generic[_StateType]):
@@ -243,9 +201,7 @@ class LifeCycleHook:
         "_render_is_scheduled",
         "_rendered_atleast_once",
         "_is_rendering",
-        "_event_effects.will_unmount",
-        "_event_effects.will_render",
-        "_event_effects.did_render",
+        "_event_effects",
         "__weakref__",
     )
 
