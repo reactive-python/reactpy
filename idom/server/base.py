@@ -132,12 +132,16 @@ class AbstractRenderServer(Generic[_App, _Config]):
         raise NotImplementedError()
 
     def _make_renderer(
-        self, parameters: Dict[str, Any], loop: Optional[AbstractEventLoop] = None,
+        self,
+        parameters: Dict[str, Any],
+        loop: Optional[AbstractEventLoop] = None,
     ) -> AbstractRenderer:
         return self._renderer_type(self._make_layout(parameters, loop))
 
     def _make_layout(
-        self, parameters: Dict[str, Any], loop: Optional[AbstractEventLoop] = None,
+        self,
+        parameters: Dict[str, Any],
+        loop: Optional[AbstractEventLoop] = None,
     ) -> AbstractLayout:
         return self._layout_type(self._make_root_element(parameters), loop)
 

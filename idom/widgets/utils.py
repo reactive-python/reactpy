@@ -113,7 +113,11 @@ class Import:
         self._constructor = make_vdom_constructor(name, has_children)
         self._import_source = ImportSourceDict(source=module, fallback=fallback)
 
-    def __call__(self, *args: Any, **kwargs: Any,) -> VdomDict:
+    def __call__(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> VdomDict:
         return self._constructor(import_source=self._import_source, *args, **kwargs)
 
     def __repr__(self) -> str:  # pragma: no cover

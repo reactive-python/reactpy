@@ -113,7 +113,8 @@ _ActionType = TypeVar("_ActionType")
 
 
 def use_reducer(
-    reducer: Callable[[_StateType, _ActionType], _StateType], state: _StateType,
+    reducer: Callable[[_StateType, _ActionType], _StateType],
+    state: _StateType,
 ) -> Tuple[_StateType, Callable[[_ActionType], None]]:
     state, set_state = use_state(state)
 
