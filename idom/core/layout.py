@@ -28,9 +28,6 @@ from .utils import HasAsyncResources, async_resource, CannotAccessResource
 from .hooks import LifeCycleHook
 
 
-_Self = TypeVar("_Self")
-
-
 class LayoutUpdate(NamedTuple):
     """An object describing an update to a :class:`Layout`"""
 

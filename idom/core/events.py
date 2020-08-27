@@ -1,3 +1,4 @@
+import asyncio
 from typing import (
     Mapping,
     Dict,
@@ -6,24 +7,19 @@ from typing import (
     Optional,
     Iterator,
     List,
-    Awaitable,
     Union,
 )
 
 
-EventsMapping = Union[
-    Dict[str, Union["EventHandlerFunction", "EventHandler"]], "Events"
-]
-
-EventHandlerFunction = Callable[..., Awaitable[Any]]  # event handler function
+EventsMapping = Union[Dict[str, Union["Callable[..., Any]", "EventHandler"]], "Events"]
 
 
 def event(
-    function: Optional[EventHandlerFunction] = None,
+    function: Optional[Callable[..., Any]] = None,
     stop_propagation: bool = False,
     prevent_default: bool = False,
     target_id: Optional[str] = None,
-) -> Union["EventHandler", Callable[[EventHandlerFunction], "EventHandler"]]:
+) -> Union["EventHandler", Callable[[Callable[..., Any]], "EventHandler"]]:
     """Create an event handler function with extra functionality.
 
     You're always free to add callbacks by assigning them to element callbacks.
@@ -70,7 +66,7 @@ class Events(Mapping[str, "EventHandler"]):
 
     def on(
         self, event: str, stop_propagation: bool = False, prevent_default: bool = False
-    ) -> Callable[[EventHandlerFunction], EventHandlerFunction]:
+    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         """A decorator for adding an event handler.
 
         Parameters:
@@ -103,15 +99,15 @@ class Events(Mapping[str, "EventHandler"]):
                     return idom.vdom("button", "hello!", eventHandlers=events)
         """
         if not event.startswith("on"):
-            event_name = "on" + event[:1].upper() + event[1:]
+            event = "on" + event[:1].upper() + event[1:]
 
-        if event_name not in self._handlers:
+        if event not in self._handlers:
             handler = EventHandler(stop_propagation, prevent_default)
-            self._handlers[event_name] = handler
+            self._handlers[event] = handler
         else:
-            handler = self._handlers[event_name]
+            handler = self._handlers[event]
 
-        def setup(function: EventHandlerFunction) -> EventHandlerFunction:
+        def setup(function: Callable[..., Any]) -> Callable[..., Any]:
             handler.add(function)
             return function
 
@@ -163,7 +159,7 @@ class EventHandler:
         prevent_default: bool = False,
         target_id: Optional[str] = None,
     ) -> None:
-        self._handlers: List[EventHandlerFunction] = []
+        self._handlers: List[Callable[..., Any]] = []
         self._target_id = target_id or str(id(self))
         self._stop_propogation = stop_propagation
         self._prevent_default = prevent_default
@@ -173,7 +169,7 @@ class EventHandler:
         """ID of the event handler."""
         return self._target_id
 
-    def add(self, function: EventHandlerFunction) -> "EventHandler":
+    def add(self, function: Callable[..., Any]) -> "EventHandler":
         """Add a callback to the event handler.
 
         Parameters:
@@ -182,10 +178,12 @@ class EventHandler:
                 which should be sent back from the fronend unless otherwise specified by
                 the ``properties`` parameter.
         """
+        if not asyncio.iscoroutinefunction(function):
+            function = asyncio.coroutine(function)
         self._handlers.append(function)
         return self
 
-    def remove(self, function: EventHandlerFunction) -> None:
+    def remove(self, function: Callable[..., Any]) -> None:
         """Remove the function from the event handler.
 
         Raises:
