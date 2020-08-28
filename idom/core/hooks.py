@@ -3,6 +3,7 @@ import inspect
 from functools import lru_cache
 from threading import get_ident as get_thread_id
 from typing import (
+    Sequence,
     cast,
     Dict,
     Any,
@@ -15,6 +16,7 @@ from typing import (
     Union,
     NamedTuple,
     List,
+    overload,
 )
 
 from .element import AbstractElement
@@ -29,7 +31,7 @@ __all__ = [
 
 
 def use_update() -> Callable[[], None]:
-    return current_hook().use_update()
+    return current_hook().schedule_render
 
 
 _StateType = TypeVar("_StateType")
@@ -46,7 +48,7 @@ def use_state(
 ]:
     hook = current_hook()
     state: Dict[str, Any] = hook.use_state(_State)
-    update = hook.use_update()
+    update = use_update()
 
     try:
         current = state.current
@@ -82,31 +84,64 @@ def use_ref(value: _StateType) -> Ref[_StateType]:
 
 _EffectCoro = Callable[[], Awaitable[None]]
 _EffectFunc = Callable[[Callable[..., None]], None]
-_Effect = TypeVar("_Effect", bound=Union[_EffectCoro, _EffectFunc])
+_Effect = Union[_EffectCoro, _EffectFunc]
 
 
-def use_effect(function: _Effect) -> _Effect:
-    hook = current_hook()
+@overload
+def use_effect(
+    function: None, args: Optional[Sequence[Any]]
+) -> Callable[[_Effect], None]:
+    ...
 
-    if inspect.iscoroutinefunction(function):
 
-        def effect() -> None:
-            future = asyncio.ensure_future(function())
-            hook.use_effect(future.cancel, "will_render", "will_unmount")
+@overload
+def use_effect(function: _Effect, args: Optional[Sequence[Any]]) -> None:
+    ...
 
+
+def use_effect(
+    function: Optional[_Effect] = None,
+    args: Optional[Sequence[Any]] = None,
+) -> Optional[Callable[[_Effect], None]]:
+    memoize = use_memo(args=args)
+
+    def setup(function: _Effect) -> None:
+        def _register_effect() -> None:
+            hook = current_hook()
+
+            if inspect.iscoroutinefunction(function):
+
+                def effect() -> None:
+                    future = asyncio.ensure_future(function())
+
+                    def clean():
+                        if future.done():
+                            future.result()
+                        else:
+                            future.cancel()
+
+                    hook.use_effect(clean, "will_render", "will_unmount")
+
+            else:
+
+                def effect() -> None:
+                    def clean(_function_, *args, **kwargs):
+                        hook.use_effect(
+                            lambda: _function_(*args, **kwargs),
+                            "will_render",
+                            "will_unmount",
+                        )
+
+                    function(clean)
+
+            return hook.use_effect(effect, "did_render")
+
+        return memoize(_register_effect)
+
+    if function is not None:
+        return setup(function)
     else:
-
-        def effect() -> None:
-            def clean(_function_, *args, **kwargs):
-                hook.use_effect(
-                    lambda: _function_(*args, **kwargs), "will_render", "will_unmount"
-                )
-
-            function(clean)
-
-    hook.use_effect(effect, "did_render")
-
-    return function
+        return setup
 
 
 _ActionType = TypeVar("_ActionType")
@@ -127,29 +162,72 @@ def use_reducer(
 _MemoValue = TypeVar("_MemoValue")
 
 
-def use_memo(*dependencies: Any) -> Callable[[Callable[[], _MemoValue]], _MemoValue]:
-    def use_setup(function: Callable[[], _MemoValue]) -> _MemoValue:
-        hook = current_hook()
-        cache: Dict[int, _MemoValue] = hook.use_state(dict)
+@overload
+def use_memo(
+    function: None, args: Optional[Sequence[Any]]
+) -> Callable[[Callable[[], _MemoValue]], _MemoValue]:
+    ...
 
-        key = hash(dependencies)
-        if key in cache:
-            result = cache[key]
-        else:
-            cache.clear()
-            result = cache[key] = function()
 
-        return result
+@overload
+def use_memo(
+    function: Callable[[], _MemoValue], args: Optional[Sequence[Any]]
+) -> _MemoValue:
+    ...
 
-    return use_setup
+
+def use_memo(
+    function: Optional[Callable[[], _MemoValue]] = None,
+    args: Optional[Sequence[Any]] = None,
+) -> Union[_MemoValue, Callable[[Callable[[], _MemoValue]], _MemoValue]]:
+    hook = current_hook()
+    cache: Dict[int, _MemoValue] = hook.use_state(dict)
+
+    if not args:
+
+        def setup(function: Callable[[], _MemoValue]) -> _MemoValue:
+            return function()
+
+    else:
+
+        def setup(function: Callable[[], _MemoValue]) -> _MemoValue:
+            key = hash(tuple(args))
+            if key in cache:
+                result = cache[key]
+            else:
+                cache.clear()
+                result = cache[key] = function()
+            return result
+
+    if function is not None:
+        return setup(function)
+    else:
+        return setup
 
 
 _CallbackFunc = TypeVar("_CallbackFunc", bound=Callable[..., Any])
 
 
-def use_callback(*dependencies):
+@overload
+def use_callback(
+    function: None, args: Optional[Sequence[Any]]
+) -> Callable[[_Effect], None]:
+    ...
+
+
+@overload
+def use_callback(function: _CallbackFunc, args: Optional[Sequence[Any]]) -> None:
+    ...
+
+
+def use_callback(
+    function: Optional[_CallbackFunc] = None,
+    args: Optional[Sequence[Any]] = None,
+) -> Optional[Callable[[_CallbackFunc], None]]:
+    memoize = use_memo(args=args)
+
     def use_setup(function: _CallbackFunc) -> _CallbackFunc:
-        return use_memo(dependencies)(lambda: function)
+        return memoize(lambda: function)
 
     return use_setup
 
@@ -164,11 +242,6 @@ def use_lru_cache(
 
 
 _current_life_cycle_hook: Dict[int, "LifeCycleHook"] = {}
-
-
-def current_element() -> AbstractElement:
-    # this is primarilly used for testing
-    return current_hook()._element
 
 
 def current_hook() -> "LifeCycleHook":
@@ -194,7 +267,7 @@ class LifeCycleHook:
     """
 
     __slots__ = (
-        "_element",
+        "element",
         "_schedule_render_callback",
         "_schedule_render_later",
         "_current_state_index",
@@ -211,7 +284,7 @@ class LifeCycleHook:
         element: AbstractElement,
         schedule_render: Callable[[AbstractElement], None],
     ) -> None:
-        self._element = element
+        self.element = element
         self._schedule_render_callback = schedule_render
         self._schedule_render_later = False
         self._render_is_scheduled = False
@@ -220,10 +293,6 @@ class LifeCycleHook:
         self._current_state_index = 0
         self._state: Tuple[Any, ...] = ()
         self._event_effects = _EventEffects([], [], [])
-
-    @property
-    def element_id(self) -> str:
-        return self._element.id
 
     def schedule_render(self) -> None:
         if self._is_rendering:
@@ -294,4 +363,4 @@ class LifeCycleHook:
 
     def _schedule_render(self) -> None:
         self._render_is_scheduled = True
-        self._schedule_render_callback(self._element)
+        self._schedule_render_callback(self.element)
