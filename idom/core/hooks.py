@@ -1,16 +1,11 @@
-import asyncio
-import inspect
-from functools import lru_cache
 from threading import get_ident as get_thread_id
 from typing import (
     Sequence,
-    cast,
     Dict,
     Any,
     TypeVar,
     Callable,
     Tuple,
-    Awaitable,
     Optional,
     Generic,
     Union,
@@ -25,8 +20,10 @@ from .element import AbstractElement
 __all__ = [
     "use_update",
     "use_state",
+    "use_effect",
+    "use_ref",
     "use_memo",
-    "use_lru_cache",
+    "use_callback",
 ]
 
 
@@ -71,72 +68,61 @@ def use_state(
 
 
 class Ref(Generic[_StateType]):
+    """Hold a reference to a value
+
+    This is used in imperative code to mutate the state of this object in order to
+    incur side effects. Generally refs should be avoided if possible, but sometimes
+    they are required.
+
+    The constructor for a :class:`Ref` does not accept any arguments. To initialize one
+    with a starting value use the :meth:`Ref.init` method.
+    """
 
     __slots__ = "current"
 
-    def __init__(self, value: _StateType) -> None:
-        self.current = value
+    current: _StateType
+
+    @classmethod
+    def init(cls, value):
+        ref = cls()
+        ref.current = value
+        return ref
 
 
 def use_ref(value: _StateType) -> Ref[_StateType]:
-    return use_state(Ref(value))[0]
+    return use_state(lambda: Ref.init(value))[0]
 
 
-_EffectCoro = Callable[[], Awaitable[None]]
-_EffectFunc = Callable[[Callable[..., None]], None]
-_Effect = Union[_EffectCoro, _EffectFunc]
+_EffectCleanFunc = Callable[[], None]
+_EffectApplyFunc = Callable[[], Optional[_EffectCleanFunc]]
 
 
 @overload
 def use_effect(
     function: None, args: Optional[Sequence[Any]]
-) -> Callable[[_Effect], None]:
+) -> Callable[[_EffectApplyFunc], None]:
     ...
 
 
 @overload
-def use_effect(function: _Effect, args: Optional[Sequence[Any]]) -> None:
+def use_effect(function: _EffectApplyFunc, args: Optional[Sequence[Any]]) -> None:
     ...
 
 
 def use_effect(
-    function: Optional[_Effect] = None,
+    function: Optional[_EffectApplyFunc] = None,
     args: Optional[Sequence[Any]] = None,
-) -> Optional[Callable[[_Effect], None]]:
+) -> Optional[Callable[[_EffectApplyFunc], None]]:
+    hook = current_hook()
     memoize = use_memo(args=args)
 
-    def setup(function: _Effect) -> None:
-        def _register_effect() -> None:
-            hook = current_hook()
+    def setup(function: _EffectApplyFunc) -> None:
+        def effect() -> None:
+            clean = function()
+            if clean is not None:
+                hook.add_effect("will_render will_unmount", clean)
 
-            if inspect.iscoroutinefunction(function):
-
-                def effect() -> None:
-                    future = asyncio.ensure_future(function())
-
-                    def clean():
-                        if future.done():
-                            future.result()
-                        else:
-                            future.cancel()
-
-                    hook.use_effect(clean, "will_render", "will_unmount")
-
-            else:
-
-                def effect() -> None:
-                    def clean(_function_, *args, **kwargs):
-                        hook.use_effect(
-                            lambda: _function_(*args, **kwargs),
-                            "will_render",
-                            "will_unmount",
-                        )
-
-                    function(clean)
-
-            return hook.use_effect(effect, "did_render")
-
-        return memoize(_register_effect)
+        return memoize(lambda: hook.add_effect("did_render", effect))
 
     if function is not None:
         return setup(function)
@@ -180,24 +166,34 @@ def use_memo(
     function: Optional[Callable[[], _MemoValue]] = None,
     args: Optional[Sequence[Any]] = None,
 ) -> Union[_MemoValue, Callable[[Callable[[], _MemoValue]], _MemoValue]]:
-    hook = current_hook()
-    cache: Dict[int, _MemoValue] = hook.use_state(dict)
+    args_ref = use_ref(None)
+    value_ref: Ref[_MemoValue] = use_state(Ref)
 
-    if not args:
+    try:
+        value_ref.current
+    except AttributeError:
+        changed = True
+    else:
+        if (
+            args is None
+            or len(args_ref.current) != args
+            or any(current is not new for current, new in zip(args_ref.current, args))
+        ):
+            args_ref.current = args
+            changed = True
+        else:
+            changed = False
+
+    if changed:
 
         def setup(function: Callable[[], _MemoValue]) -> _MemoValue:
-            return function()
+            current_value = value_ref.current = function()
+            return current_value
 
     else:
 
         def setup(function: Callable[[], _MemoValue]) -> _MemoValue:
-            key = hash(tuple(args))
-            if key in cache:
-                result = cache[key]
-            else:
-                cache.clear()
-                result = cache[key] = function()
-            return result
+            return value_ref.current
 
     if function is not None:
         return setup(function)
@@ -211,7 +207,7 @@ _CallbackFunc = TypeVar("_CallbackFunc", bound=Callable[..., Any])
 @overload
 def use_callback(
     function: None, args: Optional[Sequence[Any]]
-) -> Callable[[_Effect], None]:
+) -> Callable[[_CallbackFunc], None]:
     ...
 
 
@@ -226,19 +222,13 @@ def use_callback(
 ) -> Optional[Callable[[_CallbackFunc], None]]:
     memoize = use_memo(args=args)
 
-    def use_setup(function: _CallbackFunc) -> _CallbackFunc:
+    def setup(function: _CallbackFunc) -> _CallbackFunc:
         return memoize(lambda: function)
 
-    return use_setup
-
-
-_LruFunc = TypeVar("_LruFunc")
-
-
-def use_lru_cache(
-    function: _LruFunc, maxsize: Optional[int] = 128, typed: bool = False
-) -> _LruFunc:
-    return cast(_LruFunc, current_hook().use_state(lru_cache(maxsize, typed), function))
+    if function is not None:
+        return setup(function)
+    else:
+        return setup
 
 
 _current_life_cycle_hook: Dict[int, "LifeCycleHook"] = {}
@@ -314,8 +304,8 @@ class LifeCycleHook:
         self._current_state_index += 1
         return result
 
-    def use_effect(self, function: Callable[[], None], *events) -> None:
-        for e in events:
+    def add_effect(self, events: str, function: Callable[[], None]) -> None:
+        for e in events.split():
             getattr(self._event_effects, e).append(function)
 
     def element_will_render(self) -> None:
