@@ -45,63 +45,37 @@ def use_state(
     Returns:
         A tuple containing the current state and a function to update it.
     """
-    hook = current_hook()
-    state: Ref[_StateType] = hook.use_state(Ref)
+    current_state = _use_const(lambda: _CurrentState(initial_value))
+    return current_state.value, current_state.dispatch
 
-    try:
-        current = state.current
-    except AttributeError:
+
+class _CurrentState(Generic[_StateType]):
+
+    __slots__ = "value", "dispatch"
+
+    def __init__(
+        self,
+        initial_value: Union[_StateType, Callable[[], _StateType]],
+    ) -> None:
         if callable(initial_value):
-            current = state.current = initial_value()
+            self.value = initial_value()
         else:
-            current = state.current = initial_value
+            self.value = initial_value
 
-    def set_state(new: Union[_StateType, Callable[[_StateType], _StateType]]) -> None:
-        if callable(new):
-            next_state = new(current)
-        else:
-            next_state = new
-        if next_state is not current:
-            state.current = next_state
-            hook.schedule_render()
+        hook = current_hook()
 
-    return current, set_state
+        def dispatch(
+            new: Union[_StateType, Callable[[_StateType], _StateType]]
+        ) -> None:
+            if callable(new):
+                next_value = new(self.current)
+            else:
+                next_value = new
+            if next_value is not self.value:
+                self.value = next_value
+                hook.schedule_render()
 
-
-class Ref(Generic[_StateType]):
-    """Hold a reference to a value
-
-    This is used in imperative code to mutate the state of this object in order to
-    incur side effects. Generally refs should be avoided if possible, but sometimes
-    they are required.
-
-    The constructor for a :class:`Ref` does not accept any arguments. To initialize a
-    :class:`Ref` with a starting value use the :meth:`Ref.init` method.
-    """
-
-    __slots__ = "current"
-
-    current: _StateType
-    """The value currently assigned to the reference"""
-
-    @classmethod
-    def init(cls, value):
-        """Return a reference with an initial value"""
-        ref = cls()
-        ref.current = value
-        return ref
-
-
-def use_ref(initial_value: _StateType) -> Ref[_StateType]:
-    """See the full :ref:`use_state` docs for details
-
-    Parameters:
-        initial_value: The value initially assigned to the reference.
-
-    Returns:
-        A :class:`Ref` object.
-    """
-    return use_state(lambda: Ref.init(initial_value))[0]
+        self.dispatch = dispatch
 
 
 _EffectCleanFunc = Callable[[], None]
@@ -173,76 +147,17 @@ def use_reducer(
         A tuple containing the current state and a function to change it with an action
     """
     state, set_state = use_state(initial_value)
+    return state, _use_const(lambda: _create_dispatcher(reducer, set_state))
 
+
+def _create_dispatcher(
+    reducer: Callable[[_StateType, _ActionType], _StateType],
+    set_state: Callable[[_StateType], None],
+) -> Callable[[_ActionType], None]:
     def dispatch(action: _ActionType) -> None:
-        set_state(reducer(state, action))
+        set_state(lambda last_state: reducer(last_state, action))
 
-    return state, dispatch
-
-
-_MemoValue = TypeVar("_MemoValue")
-
-
-@overload
-def use_memo(
-    function: None, args: Optional[Sequence[Any]]
-) -> Callable[[Callable[[], _MemoValue]], _MemoValue]:
-    ...
-
-
-@overload
-def use_memo(
-    function: Callable[[], _MemoValue], args: Optional[Sequence[Any]]
-) -> _MemoValue:
-    ...
-
-
-def use_memo(
-    function: Optional[Callable[[], _MemoValue]] = None,
-    args: Optional[Sequence[Any]] = None,
-) -> Union[_MemoValue, Callable[[Callable[[], _MemoValue]], _MemoValue]]:
-    """See the full :ref:`use_memo` docs for details
-
-    Parameters:
-        function: The function to be memoized.
-        args: The ``function`` will be recomputed when these args change.
-
-    Returns:
-        The current state
-    """
-    args_ref = use_ref(None)
-    value_ref: Ref[_MemoValue] = use_state(Ref)
-
-    try:
-        value_ref.current
-    except AttributeError:
-        changed = True
-    else:
-        if (
-            args is None
-            or len(args_ref.current) != args
-            or any(current is not new for current, new in zip(args_ref.current, args))
-        ):
-            args_ref.current = args
-            changed = True
-        else:
-            changed = False
-
-    if changed:
-
-        def setup(function: Callable[[], _MemoValue]) -> _MemoValue:
-            current_value = value_ref.current = function()
-            return current_value
-
-    else:
-
-        def setup(function: Callable[[], _MemoValue]) -> _MemoValue:
-            return value_ref.current
-
-    if function is not None:
-        return setup(function)
-    else:
-        return setup
+    return dispatch
 
 
 _CallbackFunc = TypeVar("_CallbackFunc", bound=Callable[..., Any])
@@ -282,6 +197,111 @@ def use_callback(
         return setup(function)
     else:
         return setup
+
+
+_MemoValue = TypeVar("_MemoValue")
+
+
+@overload
+def use_memo(
+    function: None, args: Optional[Sequence[Any]]
+) -> Callable[[Callable[[], _MemoValue]], _MemoValue]:
+    ...
+
+
+@overload
+def use_memo(
+    function: Callable[[], _MemoValue], args: Optional[Sequence[Any]]
+) -> _MemoValue:
+    ...
+
+
+def use_memo(
+    function: Optional[Callable[[], _MemoValue]] = None,
+    args: Optional[Sequence[Any]] = None,
+) -> Union[_MemoValue, Callable[[Callable[[], _MemoValue]], _MemoValue]]:
+    """See the full :ref:`use_memo` docs for details
+
+    Parameters:
+        function: The function to be memoized.
+        args: The ``function`` will be recomputed when these args change.
+
+    Returns:
+        The current state
+    """
+    args_ref = use_ref(None)
+    value_ref: Ref[_MemoValue] = _use_const(Ref)
+
+    try:
+        value_ref.current
+    except AttributeError:
+        changed = True
+    else:
+        if (
+            args is None
+            or len(args_ref.current) != args
+            or any(current is not new for current, new in zip(args_ref.current, args))
+        ):
+            args_ref.current = args
+            changed = True
+        else:
+            changed = False
+
+    if changed:
+
+        def setup(function: Callable[[], _MemoValue]) -> _MemoValue:
+            current_value = value_ref.current = function()
+            return current_value
+
+    else:
+
+        def setup(function: Callable[[], _MemoValue]) -> _MemoValue:
+            return value_ref.current
+
+    if function is not None:
+        return setup(function)
+    else:
+        return setup
+
+
+class Ref(Generic[_StateType]):
+    """Hold a reference to a value
+
+    This is used in imperative code to mutate the state of this object in order to
+    incur side effects. Generally refs should be avoided if possible, but sometimes
+    they are required.
+
+    The constructor for a :class:`Ref` does not accept any arguments. To initialize a
+    :class:`Ref` with a starting value use the :meth:`Ref.init` method.
+    """
+
+    __slots__ = "current"
+
+    current: _StateType
+    """The value currently assigned to the reference"""
+
+    @classmethod
+    def init(cls, value):
+        """Return a reference with an initial value"""
+        ref = cls()
+        ref.current = value
+        return ref
+
+
+def use_ref(initial_value: _StateType) -> Ref[_StateType]:
+    """See the full :ref:`use_state` docs for details
+
+    Parameters:
+        initial_value: The value initially assigned to the reference.
+
+    Returns:
+        A :class:`Ref` object.
+    """
+    return _use_const(lambda: Ref.init(initial_value))
+
+
+def _use_const(function: Callable[[], _StateType]) -> _StateType:
+    return current_hook().use_state(function)
 
 
 _current_life_cycle_hook: Dict[int, "LifeCycleHook"] = {}
@@ -344,12 +364,10 @@ class LifeCycleHook:
             self._schedule_render()
         return None
 
-    def use_state(
-        self, _function_: Callable[..., _StateType], *args: Any, **kwargs: Any
-    ) -> _StateType:
+    def use_state(self, function: Callable[[], _StateType]) -> _StateType:
         if not self._rendered_atleast_once:
             # since we're not intialized yet we're just appending state
-            result = _function_(*args, **kwargs)
+            result = function()
             self._state += (result,)
         else:
             # once finalized we iterate over each succesively used piece of state
