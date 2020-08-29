@@ -43,10 +43,10 @@ async def GameView(grid_size, block_scale):
 
 
 class Direction(enum.Enum):
-    ArrowUp = (-1, 0)
-    ArrowLeft = (0, -1)
-    ArrowDown = (1, 0)
-    ArrowRight = (0, 1)
+    ArrowUp = (0, -1)
+    ArrowLeft = (-1, 0)
+    ArrowDown = (0, 1)
+    ArrowRight = (1, 0)
 
 
 @idom.element
@@ -80,14 +80,11 @@ async def GameLoop(grid_size, block_scale, set_game_state):
         assign_grid_block_color(grid, snake[-1], "yellow")
         set_game_state(GameState.won)
 
-    interval = use_interval(0.5)
+    interval = use_interval(0.3)
 
-    @idom.hooks.use_effect
+    @use_async_effect
     async def animate():
-        try:
-            await interval
-        except Exception as e:
-            print(e)
+        await interval
 
         new_snake_head = (
             # grid wraps due to mod op here
@@ -106,12 +103,20 @@ async def GameLoop(grid_size, block_scale, set_game_state):
     return grid
 
 
+def use_async_effect(function):
+    def ensure_effect_future():
+        future = asyncio.ensure_future(function())
+        return future.cancel
+
+    idom.hooks.use_effect(ensure_effect_future)
+
+
 def use_interval(rate):
-    last_usage_time = idom.hooks.use_ref(time.time())
+    usage_time = idom.hooks.use_ref(time.time())
 
     async def interval():
-        await asyncio.sleep(rate - (time.time() - last_usage_time.current))
-        last_usage_time.current = time.time()
+        await asyncio.sleep(rate - (time.time() - usage_time.current))
+        usage_time.current = time.time()
 
     return interval()
 
@@ -130,10 +135,21 @@ def use_snake_food(grid_size, current_snake):
 
 def create_grid(grid_size, block_scale):
     return idom.html.div(
-        {"style": {"height": "100%", "width": "100%"}, "tabIndex": -1},
+        {
+            "style": {
+                "height": f"{block_scale * grid_size}px",
+                "width": f"{block_scale * grid_size}px",
+                "cursor": "pointer",
+                "display": "grid",
+                "grid-gap": 0,
+                "grid-template-columns": f"repeat({grid_size}, {block_scale}px)",
+                "grid-template-rows": f"repeat({grid_size}, {block_scale}px)",
+            },
+            "tabIndex": -1,
+        },
         [
             idom.html.div(
-                {"style": {"height": block_scale}},
+                {"style": {"height": f"{block_scale}px"}},
                 [create_grid_block("black", block_scale) for i in range(grid_size)],
             )
             for i in range(grid_size)
@@ -148,8 +164,7 @@ def create_grid_block(color, block_scale):
                 "height": f"{block_scale}px",
                 "width": f"{block_scale}px",
                 "backgroundColor": color,
-                "display": "inline-block",
-                "border": "1px solid grey",
+                "outline": "1px solid grey",
             }
         }
     )
@@ -161,4 +176,4 @@ def assign_grid_block_color(grid, point, color):
     block["attributes"]["style"]["backgroundColor"] = color
 
 
-display(GameView, 8, 50)
+display(GameView, 6, 50)

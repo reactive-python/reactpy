@@ -152,62 +152,14 @@ type name. The various properties for the ``onChange`` handler are:
   `here <https://developer.mozilla.org/en-US/docs/Web/API/Event/stopPropagation>`__.
 
 
-Diffing with VDOM
------------------
-
-Instead of sending a complete representation of a VDOM view to the browser to be
-rendered, IDOM sends diffs in order to improve performance. This is done by flattening
-out the VDOM model into a mapping whose keys are unique IDs and whose values are models
-that can specify their children by referencing those IDs. For example, if we take the
-VDOM from above we could rewrite it as:
-
-.. code-block:: python
-
-    {
-      "2e9f417bd9": {
-        "tagName": "div",
-        "children": [
-          {"type": "str", "data": "To perform an action"},
-          {"type": "ref", "data": "2a4507c31c"}
-        ]
-      }
-      "2a4507c31c": {
-          "tagName": "input",
-          "children": [],
-          "attributes": {
-              "type": "text",
-              "minLength": 4,
-              "maxLength": 8
-          },
-          "eventHandlers": {
-              "onChange": {
-                "target": "unique-id-of-a_python_callback",
-                "preventDefault": False,
-                "stopPropagation": False
-              }
-          }
-      }
-    }
-
-Here we see that the ``children`` of our ``<div/>`` contain objects which specify types:
-
-- ``str``: text
-
-- ``obj``: VDOM
-
-- ``ref``: a string reference VDOM
-
-In particular, one of the ``div``'s children is a ``ref`` to a model with the ID
-``2a4507c31c``. This makes it very easy to swap out the model at that ID with something
-new. Instead of having to specify the path to a changed element you only need to indicate
-its ID. So when IDOM sends an update to the browser it just sends the subset of the greater
-model that changed by communicating those model IDs and their new representation.
-
-
-VDOM Diff Schema
-----------------
-
-To clearly describe a VDOM diff we've created a `JSON Schema <https://json-schema.org/>`_:
+To clearly describe the VDOM schema we've created a `JSON Schema <https://json-schema.org/>`_:
 
 .. literalinclude:: ./mimetype.json
    :language: json
+
+
+
+JSON Patch
+----------
+
+Under construction...

@@ -23,10 +23,10 @@ async def forward_to_index(request):
 mount, element = multiview()
 
 here = Path(__file__).parent
-widgets = here / "source" / "widgets"
-sys.path.insert(0, str(widgets))
+examples_dir = here / "source" / "examples"
+sys.path.insert(0, str(examples_dir))
 
-for file in widgets.iterdir():
+for file in examples_dir.iterdir():
     if not file.is_file() or not file.suffix == ".py" or file.stem.startswith("_"):
         continue
 
@@ -34,7 +34,7 @@ for file in widgets.iterdir():
         exec(
             f.read(),
             {
-                "display": getattr(mount, file.stem),
+                "display": mount[file.stem],
                 "__file__": str(file),
                 "__name__": f"widgets.{file.stem}",
             },
