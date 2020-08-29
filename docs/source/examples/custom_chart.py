@@ -22,7 +22,8 @@ data = [
 async def ShowChartClicks():
     shared_last_event = idom.hooks.Shared({})
     idom.html.div(
-        CustomChart(shared_last_event), LastEventView(shared_last_event),
+        ClickableChart(shared_last_event),
+        LastEventView(shared_last_event),
     )
 
 
