@@ -2,9 +2,9 @@ Life Cycle Hooks
 ================
 
 Hooks are functions that allow you to "hook into" the life cycle events and state of
-Elements. Their usage should always follow the :ref:`Rules of Hooks`. For most use cases
-the :ref:`Basic Hooks` should be enough, however the remaining :ref:`Supplementary Hooks`
-should fulfill less common scenarios.
+Elements. Their usage should always follow the :ref:`**Rules of Hooks**`. For most use
+cases the :ref:`**Basic Hooks**` should be enough, however the remaining
+:ref:`**Supplementary Hooks**` should fulfill less common scenarios.
 
 .. contents::
   :local:
@@ -13,6 +13,8 @@ should fulfill less common scenarios.
 
 **Basic Hooks**
 ---------------
+
+Common hooks that should fulfill a majority of use cases.
 
 
 use_state
@@ -37,14 +39,18 @@ re-render of the element where ``use_state`` was initially called. During these
 subsiquent re-renders the ``state`` returned by ``use_state`` will take on the value
 of ``new_state``.
 
+.. note::
+
+    The identity of ``set_state`` is guaranteed to be preserved across renders. This
+    means it can safely be omited from dependency lists in :ref:`use_effect` or
+    :ref:`use_callback`.
+
 
 Functional Updates
 ..................
 
 If the new state is computed from the previous state, you can pass a function which
-accepts a single argument (the previous state) and returns the next state. This is
-generally most useful if you want to perform the same kind of update logic in multiple
-elements since you can factor out that logic into a reusabe function. Consider this
+accepts a single argument (the previous state) and returns the next state. Consider this
 simple use case of a counter where we've pulled out logic for incrementing and
 decrementing the count:
 
@@ -55,9 +61,8 @@ decrementing the count:
 We use the functional form for the "+" and "-" buttons since the next ``count`` depends
 on the previous value, while for the "Reset" button we simple assign the
 ``initial_count`` since it's independent of the prior ``count``. This is a trivial
-example, but it demonstrates how to deal with sharing more complex state logic between
-components since the ``incr`` and ``decr`` functions have been factored out and could
-be reused.
+example, but it demonstrates how complex state logic can be factored out into well
+defined and potentially reuseable functions.
 
 
 Lazy Initial State
@@ -154,35 +159,52 @@ Now a new connection will only be estalished if a new ``url`` is provided.
 **Supplementary Hooks**
 -----------------------
 
+Hooks that fulfill some less common, but still important use cases using variations of
+the :ref:`**Basic Hooks**`.
+
+
+use_reducer
+-----------
+
+.. code-block::
+
+    state, dispatch_action = use_reducer(reducer, initial_state)
+
+An alternative to :ref:`use_state`. Instead of assigning a new state, you specify an
+action which will transition the previous state into the next state. The behavior of
+this transition is defined by a reducer function of the form
+``(current_state, action) -> new_state``. The ``use_reducer`` hook then returns
+the current state and a ``dispatch_action`` function to transition to the next
+state via a given action.
+
+``use_reducer`` is generally prefered to ``use_state`` if logic for transitioning from
+one state to the next is especially complex, involves nested data structures.
+
+Under construction...
+
+use_callback
+------------
+
+Under construction...
+
 
 use_memo
 --------
 
-under construction...
+Under construction...
 
 
 use_ref
 -------
 
-under construction...
+Under construction...
 
-
-use_lru_cache
--------------
-
-under construction...
-
-
-use_update
-----------
-
-under construction...
 
 
 **Rules of Hooks**
 ------------------
 
-under construction...
+Under construction...
 
 
 .. links
