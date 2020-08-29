@@ -20,9 +20,10 @@ from .element import AbstractElement
 __all__ = [
     "use_state",
     "use_effect",
+    "use_reducer",
+    "use_callback",
     "use_ref",
     "use_memo",
-    "use_callback",
 ]
 
 
@@ -199,27 +200,24 @@ def use_callback(
         return setup
 
 
-_MemoValue = TypeVar("_MemoValue")
-
-
 @overload
 def use_memo(
     function: None, args: Optional[Sequence[Any]]
-) -> Callable[[Callable[[], _MemoValue]], _MemoValue]:
+) -> Callable[[Callable[[], _StateType]], _StateType]:
     ...
 
 
 @overload
 def use_memo(
-    function: Callable[[], _MemoValue], args: Optional[Sequence[Any]]
-) -> _MemoValue:
+    function: Callable[[], _StateType], args: Optional[Sequence[Any]]
+) -> _StateType:
     ...
 
 
 def use_memo(
-    function: Optional[Callable[[], _MemoValue]] = None,
+    function: Optional[Callable[[], _StateType]] = None,
     args: Optional[Sequence[Any]] = None,
-) -> Union[_MemoValue, Callable[[Callable[[], _MemoValue]], _MemoValue]]:
+) -> Union[_StateType, Callable[[Callable[[], _StateType]], _StateType]]:
     """See the full :ref:`use_memo` docs for details
 
     Parameters:
@@ -229,39 +227,53 @@ def use_memo(
     Returns:
         The current state
     """
-    args_ref = use_ref(None)
-    value_ref: Ref[_MemoValue] = _use_const(Ref)
+    memo = _use_const(_Memo)
 
-    try:
-        value_ref.current
-    except AttributeError:
+    if memo.empty():
+        # we need to initialize on the first run
+        changed = True
+    elif (
+        args is None
+        or len(memo.args) != args
+        or any(current is not new for current, new in zip(memo.args, args))
+    ):
+        memo.args = args
         changed = True
     else:
-        if (
-            args is None
-            or len(args_ref.current) != args
-            or any(current is not new for current, new in zip(args_ref.current, args))
-        ):
-            args_ref.current = args
-            changed = True
-        else:
-            changed = False
+        changed = False
 
     if changed:
 
-        def setup(function: Callable[[], _MemoValue]) -> _MemoValue:
-            current_value = value_ref.current = function()
+        def setup(function: Callable[[], _StateType]) -> _StateType:
+            current_value = memo.value = function()
             return current_value
 
     else:
 
-        def setup(function: Callable[[], _MemoValue]) -> _MemoValue:
-            return value_ref.current
+        def setup(function: Callable[[], _StateType]) -> _StateType:
+            return memo.value
 
     if function is not None:
         return setup(function)
     else:
         return setup
+
+
+class _Memo(Generic[_StateType]):
+    """Simple object for storing memoization data"""
+
+    __slots__ = "value", "args"
+
+    value: _StateType
+    args: Tuple[Any, ...]
+
+    def empty(self) -> bool:
+        try:
+            self.value
+        except AttributeError:
+            return True
+        else:
+            return False
 
 
 class Ref(Generic[_StateType]):
@@ -270,22 +282,12 @@ class Ref(Generic[_StateType]):
     This is used in imperative code to mutate the state of this object in order to
     incur side effects. Generally refs should be avoided if possible, but sometimes
     they are required.
-
-    The constructor for a :class:`Ref` does not accept any arguments. To initialize a
-    :class:`Ref` with a starting value use the :meth:`Ref.init` method.
     """
 
     __slots__ = "current"
 
-    current: _StateType
-    """The value currently assigned to the reference"""
-
-    @classmethod
-    def init(cls, value):
-        """Return a reference with an initial value"""
-        ref = cls()
-        ref.current = value
-        return ref
+    def __init__(self, initial_value: _StateType) -> None:
+        self.current = initial_value
 
 
 def use_ref(initial_value: _StateType) -> Ref[_StateType]:
@@ -297,7 +299,7 @@ def use_ref(initial_value: _StateType) -> Ref[_StateType]:
     Returns:
         A :class:`Ref` object.
     """
-    return _use_const(lambda: Ref.init(initial_value))
+    return _use_const(lambda: Ref(initial_value))
 
 
 def _use_const(function: Callable[[], _StateType]) -> _StateType:
