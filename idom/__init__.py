@@ -13,7 +13,7 @@ from .widgets.html import html
 from .widgets.utils import Module, Import, hotswap, multiview
 from .widgets.jupyter import JupyterDisplay
 
-from .tools import Var, html_to_vdom
+from .utils import Ref, html_to_vdom
 
 from . import server
 from . import widgets
@@ -49,7 +49,7 @@ __all__ = [
     "hooks",
     "Layout",
     "server",
-    "Var",
+    "Ref",
     "vdom",
     "Module",
     "Import",

@@ -14,6 +14,8 @@ from typing import (
     overload,
 )
 
+from idom.utils import Ref
+
 from .element import AbstractElement
 
 
@@ -274,23 +276,6 @@ class _Memo(Generic[_StateType]):
             return True
         else:
             return False
-
-
-class Ref(Generic[_StateType]):
-    """Hold a reference to a value
-
-    This is used in imperative code to mutate the state of this object in order to
-    incur side effects. Generally refs should be avoided if possible, but sometimes
-    they are required.
-
-    Attributes:
-        current: The present value.
-    """
-
-    __slots__ = "current"
-
-    def __init__(self, initial_value: _StateType) -> None:
-        self.current = initial_value
 
 
 def use_ref(initial_value: _StateType) -> Ref[_StateType]:
