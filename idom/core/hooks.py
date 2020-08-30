@@ -69,7 +69,7 @@ class _CurrentState(Generic[_StateType]):
             new: Union[_StateType, Callable[[_StateType], _StateType]]
         ) -> None:
             if callable(new):
-                next_value = new(self.current)
+                next_value = new(self.value)
             else:
                 next_value = new
             if next_value is not self.value:
@@ -282,6 +282,9 @@ class Ref(Generic[_StateType]):
     This is used in imperative code to mutate the state of this object in order to
     incur side effects. Generally refs should be avoided if possible, but sometimes
     they are required.
+
+    Attributes:
+        current: The present value.
     """
 
     __slots__ = "current"

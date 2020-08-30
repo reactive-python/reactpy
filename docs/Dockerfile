@@ -7,18 +7,22 @@ WORKDIR app/
 RUN curl -sL https://deb.nodesource.com/setup_14.x  | bash -
 RUN apt-get install -yq nodejs build-essential
 
+# Upgrad PIP
+# ----------
+RUN pip install --upgrade pip
+
 # Install IDOM
 # ------------
+ADD requirements ./requirements
 ADD .git ./.git
 ADD idom ./idom
 ADD scripts ./scripts
-ADD requirements ./requirements
 ADD setup.py ./
 ADD setup.cfg ./
 ADD MANIFEST.in ./
 ADD README.md ./
 ADD idom/client/static/favicon.ico ./
-RUN pip install -r requirements/docs.txt
+
 RUN pip install -e .[all]
 RUN python -m idom install victory semantic-ui-react
 
@@ -26,6 +30,8 @@ RUN python -m idom install victory semantic-ui-react
 # --------------
 ADD docs/main.py ./docs/
 ADD docs/source ./docs/source
+
+RUN pip install -r requirements/docs.txt
 RUN sphinx-build -b html docs/source docs/build
 
 # Define Entrypoint

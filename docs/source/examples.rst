@@ -99,13 +99,13 @@ Click and drag the black box onto the white one 👆
 The Game Snake
 --------------
 
-.. literalinclude:: examples/snake.py
+.. literalinclude:: examples/snake_game.py
 
 Click to start playing and use the arrow keys to move 🎮
 
 Slow internet may cause inconsistent frame pacing 😅
 
-.. interactive-widget:: snake
+.. interactive-widget:: snake_game
 
 
 Plotting with Matplotlib
