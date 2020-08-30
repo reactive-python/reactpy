@@ -1,67 +1,32 @@
 from html.parser import HTMLParser as _HTMLParser
 
-from typing import List, Tuple, Any, Dict, TypeVar, Generic, Callable, Optional
+from typing import List, Tuple, Any, Dict, Callable, Optional, Generic, TypeVar
 
 
-_R = TypeVar("_R", bound=Any)  # Var reference
+_Current = TypeVar("_Current")
 
 
-class Var(Generic[_R]):
-    """A variable for holding a reference to an object.
+class Ref(Generic[_Current]):
+    """Hold a reference to a value
 
-    Variables are useful when multiple elements need to share data. This is usually
-    discouraged, but can be useful in certain situations. For example, you might use
-    a reference to keep track of a user's selection from a list of options:
+    This is used in imperative code to mutate the state of this object in order to
+    incur side effects. Generally refs should be avoided if possible, but sometimes
+    they are required.
 
-    .. code-block:: python
+    Attributes:
+        current: The present value.
 
-        def option_picker(handler, option_names):
-            selection = Var()
-            options = [option(n, selection) for n in option_names]
-            return idom.vdom("div", options, picker(handler, selection))
-
-        def option(name, selection):
-            events = idom.Events()
-
-            @events.on("click")
-            def select():
-                # set the current selection to the option name
-                selection.set(name)
-
-            return idom.vdom("button", eventHandlers=events)
-
-        def picker(handler, selection):
-            events = idom.Events()
-
-            @events.on("click")
-            def handle():
-                # passes the current option name to the handler
-                handler(selection.get())
-
-            return idom.vdom("button", "Use" eventHandlers=events)
+    Notes:
+        You can compare the contents for two ``Ref`` objects using the ``==`` operator.
     """
 
-    __slots__ = ("value",)
+    __slots__ = "current"
 
-    def __init__(self, value: _R) -> None:
-        self.value = value
-
-    def set(self, new: _R) -> _R:
-        old = self.value
-        self.value = new
-        return old
-
-    def get(self) -> _R:
-        return self.value
+    def __init__(self, initial_value: _Current) -> None:
+        self.current = initial_value
 
     def __eq__(self, other: Any) -> bool:
-        if isinstance(other, Var):
-            return bool(self.get() == other.get())
-        else:
-            return False
-
-    def __repr__(self) -> str:
-        return "Var(%r)" % self.get()
+        return isinstance(other, Ref) and (other.current == self.current)
 
 
 _ModelTransform = Callable[[Dict[str, Any]], Any]
@@ -75,8 +40,8 @@ def html_to_vdom(source: str, *transforms: _ModelTransform) -> Dict[str, Any]:
             The raw HTML as a string
         transforms:
             Functions of the form ``transform(old) -> new`` where ``old`` is a VDOM
-            dictionary which will be replaced by ``new``. You might use a transform
-            function to add highlighting to a ``<code/>`` block.
+            dictionary which will be replaced by ``new``. For example, you could use a
+            transform function to add highlighting to a ``<code/>`` block.
     """
     parser = HtmlParser()
     parser.feed(source)

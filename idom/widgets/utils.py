@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable, Tuple, Optional, Dict, Union
+from typing import Any, Callable, Tuple, Optional, Dict, Union, Set
 
 from typing_extensions import Protocol
 
@@ -7,7 +7,7 @@ from idom.core import hooks
 from idom import client
 from idom.core.element import ElementConstructor, element
 from idom.core.vdom import VdomDict, ImportSourceDict, make_vdom_constructor
-from idom.tools import Var
+from idom.utils import Ref
 
 
 class Module:
@@ -134,6 +134,9 @@ class MountFunc(Protocol):
         ...
 
 
+_FuncArgsKwargs = Tuple[Callable[..., Any], Tuple[Any, ...], Dict[str, Any]]
+
+
 def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
     """Swap out elements from a layout on the fly.
 
@@ -168,29 +171,41 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
 
             # displaying the output now will show DivTwo
     """
-    current_constructor: Var[Callable[[], Any]] = Var(lambda: {"tagName": "div"})
+    constructor_and_arguments: Ref[_FuncArgsKwargs] = Ref(lambda: {"tagName": "div"})
 
     if shared:
-        update_hook: Var[Callable[[], None]] = Var(lambda: None)
+        set_state_callbacks: Set[Callable[[_FuncArgsKwargs], None]] = Set()
 
         @element
         async def HotSwap() -> Any:
-            update_hook.set(hooks.use_update())
-            return current_constructor.value()
+            # new displays will adopt the latest constructor and arguments
+            (f, a, kw), set_state = hooks.use_state(constructor_and_arguments.current)
 
-        def swap(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> None:
-            current_constructor.set(lambda: constructor(*args, **kwargs))
-            update_hook.value()
+            def add_callback():
+                set_state_callbacks.add(set_state)
+                return lambda: set_state_callbacks.remove(swap)
+
+            hooks.use_effect(add_callback)
+
+            return f(*a, **kw)
+
+        def swap(_func_: ElementConstructor, *args: Any, **kwargs: Any) -> None:
+            constructor_and_arguments.current = (_func_, args, kwargs)
+
+            for set_state in set_state_callbacks:
+                set_state(constructor_and_arguments.current)
+
             return None
 
     else:
 
         @element
         async def HotSwap() -> Any:
-            return current_constructor.value()
+            func, args, kwargs = constructor_and_arguments.current
+            return func(*args, **kwargs)
 
-        def swap(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> None:
-            current_constructor.set(lambda: constructor(*args, **kwargs))
+        def swap(_func_: ElementConstructor, *args: Any, **kwargs: Any) -> None:
+            constructor_and_arguments.current = (_func_, args, kwargs)
             return None
 
     return swap, HotSwap
