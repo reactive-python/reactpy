@@ -1,7 +1,7 @@
 import pytest
 
 import idom
-from idom.tools import html_to_vdom
+from idom.utils import html_to_vdom
 
 
 def test_var_equivalence():

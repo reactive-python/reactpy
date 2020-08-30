@@ -216,7 +216,7 @@ async def test_elements_are_garbage_collected():
 
     @idom.element
     async def Outer():
-        element = idom.hooks.current_element()
+        element = idom.hooks.current_hook().element
         live_elements.add(element.id)
         finalize(element, live_elements.remove, element.id)
 
@@ -230,7 +230,7 @@ async def test_elements_are_garbage_collected():
 
     @idom.element
     async def Inner():
-        element = idom.hooks.current_element()
+        element = idom.hooks.current_hook().element
         live_elements.add(element.id)
         finalize(element, live_elements.remove, element.id)
         return idom.html.div()
