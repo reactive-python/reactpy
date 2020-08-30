@@ -51,7 +51,9 @@ class Direction(enum.Enum):
 
 @idom.element
 async def GameLoop(grid_size, block_scale, set_game_state):
+    # we `use_ref` here to capture the latest direction press without any delay
     direction = idom.hooks.use_ref(Direction.ArrowRight.value)
+
     snake, set_snake = idom.hooks.use_state([(grid_size // 2 - 1, grid_size // 2 - 1)])
     food, set_food = use_snake_food(grid_size, snake)
 
@@ -80,7 +82,7 @@ async def GameLoop(grid_size, block_scale, set_game_state):
         assign_grid_block_color(grid, snake[-1], "yellow")
         set_game_state(GameState.won)
 
-    interval = use_interval(0.3)
+    interval = use_interval(0.4)
 
     @use_async_effect
     async def animate():

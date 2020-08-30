@@ -1,11 +1,11 @@
 import idom
 
 
-def incr(last_count):
+def increment(last_count):
     return last_count + 1
 
 
-def decr(last_count):
+def decrement(last_count):
     return last_count - 1
 
 
@@ -15,8 +15,8 @@ async def Counter(initial_count):
     return idom.html.div(
         f"Count: {count}",
         idom.html.button({"onClick": lambda event: set_count(initial_count)}, "Reset"),
-        idom.html.button({"onClick": lambda event: set_count(incr)}, "+"),
-        idom.html.button({"onClick": lambda event: set_count(decr)}, "-"),
+        idom.html.button({"onClick": lambda event: set_count(increment)}, "+"),
+        idom.html.button({"onClick": lambda event: set_count(decrement)}, "-"),
     )
 
 
