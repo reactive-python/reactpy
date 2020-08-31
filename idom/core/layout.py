@@ -9,13 +9,9 @@ from typing import (
     NamedTuple,
     Any,
     Set,
-    Generic,
-    TypeVar,
     Optional,
     Iterator,
     AsyncIterator,
-    Awaitable,
-    TypeVar,
     Union,
 )
 
@@ -107,17 +103,19 @@ class ElementState(NamedTuple):
 
 class Layout(AbstractLayout):
 
-    __slots__ = "_event_handlers"
+    __slots__ = "_event_handlers", "_rendering_queue"
 
     def __init__(
         self, root: "AbstractElement", loop: Optional[asyncio.AbstractEventLoop] = None
     ) -> None:
         super().__init__(root, loop)
         self._event_handlers: Dict[str, EventHandler] = {}
+        self._rendering_queue = _ElementQueue()
+        self._rendering_queue.put(self._root)
 
     def update(self, element: "AbstractElement") -> None:
         try:
-            self._rendering_queue.put(self._create_layout_update(element))
+            self._rendering_queue.put(element)
         except CannotAccessResource:
             logger.info(f"Did not update {element} - resources of {self} are closed")
 
@@ -131,16 +129,10 @@ class Layout(AbstractLayout):
             await handler(event.data)
 
     async def render(self) -> Dict[str, Any]:
-        return await self._rendering_queue.get()
-
-    @async_resource
-    async def _rendering_queue(self) -> AsyncIterator["FutureQueue[LayoutUpdate]"]:
-        queue: FutureQueue[LayoutUpdate] = FutureQueue()
-        queue.put(self._create_layout_update(self._root))
-        try:
-            yield queue
-        finally:
-            await queue.cancel()
+        while True:
+            element = await self._rendering_queue.get()
+            if element.id in self._element_states:
+                return await self._create_layout_update(element)
 
     @async_resource
     async def _element_states(self) -> AsyncIterator[ElementState]:
@@ -289,47 +281,21 @@ def _render_with_life_cycle_hook(element_state: ElementState) -> Iterator[None]:
         element_state.life_cycle_hook.unset_current()
 
 
-# future queue type
-_FQT = TypeVar("_FQT")
+class _ElementQueue:
 
+    __slots__ = "_queue", "_pending"
 
-class FutureQueue(Generic[_FQT]):
-    """A queue which returns the result of futures as they complete."""
+    def __init__(self):
+        self._queue = asyncio.Queue()
+        self._pending = set()
 
-    def __init__(self) -> None:
-        self._loop = asyncio.get_event_loop()
-        self._pending: Dict[int, asyncio.Future[_FQT]] = {}
-        self._done: asyncio.Queue[asyncio.Future[_FQT]] = asyncio.Queue()
-
-    def put(self, awaitable: Awaitable[_FQT]) -> None:
-        """Put an awaitable in the queue
-
-        The result will be returned by a call to :meth:`FutureQueue.get` only
-        when the awaitable has completed.
-        """
-
-        async def wrapper() -> None:
-            future = asyncio.ensure_future(awaitable)
-            self._pending[id(future)] = future
-            try:
-                await future
-            finally:
-                del self._pending[id(future)]
-                await self._done.put(future)
-            return None
-
-        asyncio.run_coroutine_threadsafe(wrapper(), self._loop)
+    def put(self, element: AbstractElement) -> None:
+        if element.id not in self._pending:
+            self._pending.add(element.id)
+            self._queue.put_nowait(element)
         return None
 
-    async def get(self) -> _FQT:
-        """Get the result of a queued awaitable that has completed."""
-        future = await self._done.get()
-        return await future
-
-    async def cancel(self) -> None:
-        for f in self._pending.values():
-            f.cancel()
-        if self._pending:
-            await asyncio.wait(
-                list(self._pending.values()), return_when=asyncio.ALL_COMPLETED
-            )
+    async def get(self) -> AbstractElement:
+        element = await self._queue.get()
+        self._pending.remove(element.id)
+        return element
