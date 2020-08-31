@@ -108,6 +108,16 @@ Slow internet may cause inconsistent frame pacing 😅
 .. interactive-widget:: snake_game
 
 
+Matplotlib Plot
+---------------
+
+.. literalinclude:: examples/matplotlib_plot.py
+
+Pick the polynomial coefficients (seperate each coefficient by a space) 🔢:
+
+.. interactive-widget:: matplotlib_plot
+
+
 Simple Dashboard
 ----------------
 
