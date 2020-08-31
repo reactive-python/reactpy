@@ -35,6 +35,7 @@ async def Input(
     type: str,
     value: str = "",
     attributes: Optional[Dict[str, Any]] = None,
+    cast: Optional[Callable[[str], Any]] = None,
     ignore_empty: bool = True,
 ) -> VdomDict:
     attrs = attributes or {}
@@ -48,7 +49,7 @@ async def Input(
         set_value(value)
         if not value and ignore_empty:
             return
-        callback(value)
+        callback(value if cast is None else cast(value))
 
     return html.input({"type": type, "value": value, **attrs}, event_handlers=events)
 

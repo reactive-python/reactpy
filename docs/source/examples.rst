@@ -108,14 +108,14 @@ Slow internet may cause inconsistent frame pacing 😅
 .. interactive-widget:: snake_game
 
 
-Plotting with Matplotlib
-------------------------
+Simple Dashboard
+----------------
 
-.. literalinclude:: examples/matplotlib_animation.py
+.. literalinclude:: examples/simple_dashboard.py
 
 Try interacting with the sliders 📈
 
-.. interactive-widget:: matplotlib_animation
+.. interactive-widget:: simple_dashboard
 
 
 Install Javascript Modules
