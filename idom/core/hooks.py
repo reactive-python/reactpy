@@ -325,7 +325,6 @@ class LifeCycleHook:
         "_schedule_render_later",
         "_current_state_index",
         "_state",
-        "_render_is_scheduled",
         "_rendered_atleast_once",
         "_is_rendering",
         "_event_effects",
@@ -340,7 +339,6 @@ class LifeCycleHook:
         self.element = element
         self._schedule_render_callback = schedule_render
         self._schedule_render_later = False
-        self._render_is_scheduled = False
         self._is_rendering = False
         self._rendered_atleast_once = False
         self._current_state_index = 0
@@ -350,7 +348,7 @@ class LifeCycleHook:
     def schedule_render(self) -> None:
         if self._is_rendering:
             self._schedule_render_later = True
-        elif not self._render_is_scheduled:
+        else:
             self._schedule_render()
         return None
 
@@ -371,7 +369,6 @@ class LifeCycleHook:
 
     def element_will_render(self) -> None:
         """The element is about to render"""
-        self._render_is_scheduled = False
         self._is_rendering = True
 
         for effect in self._event_effects.will_render:
@@ -413,5 +410,4 @@ class LifeCycleHook:
         del _current_life_cycle_hook[get_thread_id()]
 
     def _schedule_render(self) -> None:
-        self._render_is_scheduled = True
         self._schedule_render_callback(self.element)
