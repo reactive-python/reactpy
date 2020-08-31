@@ -150,22 +150,25 @@ class Layout(AbstractLayout):
         return element_state.path, changes
 
     async def _render_element(self, element_state: ElementState) -> Dict[str, Any]:
-        element_state.life_cycle_hook.element_will_render()
+        try:
+            element_state.life_cycle_hook.element_will_render()
 
-        self._clear_element_state_event_handlers(element_state)
-        self._unmount_element_state_children(element_state)
+            self._clear_element_state_event_handlers(element_state)
+            self._unmount_element_state_children(element_state)
 
-        # BUG: https://github.com/python/mypy/issues/9256
-        raw_model = await _render_with_life_cycle_hook(element_state)  # type: ignore
+            # BUG: https://github.com/python/mypy/issues/9256
+            raw_model = await _render_with_life_cycle_hook(element_state)  # type: ignore
 
-        if isinstance(raw_model, AbstractElement):
-            raw_model = {"tagName": "div", "children": [raw_model]}
+            if isinstance(raw_model, AbstractElement):
+                raw_model = {"tagName": "div", "children": [raw_model]}
 
-        resolved_model = await self._render_model(element_state, raw_model)
-        element_state.model.clear()
-        element_state.model.update(resolved_model)
+            resolved_model = await self._render_model(element_state, raw_model)
+            element_state.model.clear()
+            element_state.model.update(resolved_model)
 
-        element_state.life_cycle_hook.element_did_render()
+            element_state.life_cycle_hook.element_did_render()
+        except Exception:
+            logger.exception(f"Failed to render {element_state.element_obj}")
 
         # We need to return the model from the `element_state` so that the model
         # between all `ElementState` objects within a `Layout` are shared.
