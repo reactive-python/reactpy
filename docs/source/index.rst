@@ -12,9 +12,9 @@ Libraries for defining and controlling interactive webpages with Python
 
     installation
     getting-started
+    core-concepts
     life-cycle-hooks
     javascript-modules
-    core-concepts
     how-it-works
     specifications
     extra-features

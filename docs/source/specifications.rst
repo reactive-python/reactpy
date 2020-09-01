@@ -162,4 +162,9 @@ To clearly describe the VDOM schema we've created a `JSON Schema <https://json-s
 JSON Patch
 ----------
 
-Under construction...
+Updates to VDOM modules are sent using the `JSON Patch`_ specification.
+
+... this section is still under construction :)
+
+
+.. _JSON Patch:: http://jsonpatch.com/

@@ -76,6 +76,14 @@ Try clicking the image 🖱️
 .. interactive-widget:: slideshow
 
 
+Click Counter
+-------------
+
+.. literalinclude:: examples/click_count.py
+
+.. interactive-widget:: click_count
+
+
 To Do List
 ----------
 
