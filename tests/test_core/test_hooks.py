@@ -136,12 +136,93 @@ def test_use_state_with_constructor(driver, display, driver_wait):
     assert count.get_attribute("innerHTML") == "1"
 
 
-def test_set_state_with_reducer_instead_of_value():
-    assert False
+def test_set_state_with_reducer_instead_of_value(driver, display):
+    def increment(count):
+        return count + 1
+
+    @idom.element
+    async def Counter():
+        count, set_count = idom.hooks.use_state(0)
+        return idom.html.button(
+            {
+                "id": "counter",
+                "onClick": lambda event: set_count(increment),
+            },
+            f"Count: {count}",
+        )
+
+    display(Counter)
+
+    client_counter = driver.find_element_by_id("counter")
+
+    for i in range(3):
+        assert client_counter.get_attribute("innerHTML") == f"Count: {i}"
+        client_counter.click()
 
 
-def test_set_state_checks_identity_not_equality():
-    assert False
+def test_set_state_checks_identity_not_equality(driver, display, driver_wait):
+    r_1 = idom.Ref("value")
+    r_2 = idom.Ref("value")
+
+    # refs are equal but not identical
+    assert r_1 == r_2
+    assert r_1 is not r_2
+
+    render_count = idom.Ref(0)
+    event_count = idom.Ref(0)
+
+    def event_count_tracker(function):
+        def tracker(*args, **kwargs):
+            event_count.current += 1
+            return function(*args, **kwargs)
+
+        return tracker
+
+    @idom.element
+    async def TestElement():
+        state, set_state = idom.hooks.use_state(r_1)
+
+        render_count.current += 1
+        return idom.html.div(
+            idom.html.button(
+                {
+                    "id": "r_1",
+                    "onClick": event_count_tracker(lambda event: set_state(r_1)),
+                },
+                "r_1",
+            ),
+            idom.html.button(
+                {
+                    "id": "r_2",
+                    "onClick": event_count_tracker(lambda event: set_state(r_2)),
+                },
+                "r_2",
+            ),
+            f"Last state: {'r_1' if state is r_1 else 'r_2'}",
+        )
+
+    display(TestElement)
+
+    client_r_1_button = driver.find_element_by_id("r_1")
+    client_r_2_button = driver.find_element_by_id("r_2")
+
+    assert render_count.current == 1
+    assert event_count.current == 0
+
+    client_r_1_button.click()
+
+    driver_wait.until(lambda d: event_count.current == 1)
+    assert render_count.current == 1
+
+    client_r_2_button.click()
+
+    driver_wait.until(lambda d: event_count.current == 2)
+    assert render_count.current == 2
+
+    client_r_2_button.click()
+
+    driver_wait.until(lambda d: event_count.current == 3)
+    assert render_count.current == 2
 
 
 def test_simple_input_with_use_state(driver, display):
