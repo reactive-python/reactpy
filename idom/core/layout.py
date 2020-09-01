@@ -147,7 +147,7 @@ class Layout(AbstractLayout):
         old_model = element_state.model.copy()  # we copy because it will be mutated
         new_model = await self._render_element(element_state)
         changes = make_patch(old_model, new_model).patch
-        return element_state.path, changes
+        return LayoutUpdate(path=element_state.path, changes=changes)
 
     async def _render_element(self, element_state: ElementState) -> Dict[str, Any]:
         try:

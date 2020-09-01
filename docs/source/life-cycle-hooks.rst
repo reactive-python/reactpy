@@ -8,8 +8,8 @@ cases the :ref:`**Basic Hooks**` should be enough, however the remaining
 
 .. note::
 
-    At the moment not all of React's built-in hooks have been implemented. In the
-    future they will be added as the need arises.
+    Not all of React's built-in hooks have been implemented. In the future they will be
+    added, but if you have a particular need for a missing hook post an issue [GH203]_.
 
 .. contents::
   :local:
@@ -290,3 +290,4 @@ Under construction...
 .. _side effects: https://en.wikipedia.org/wiki/Side_effect_(computer_science)
 .. _memoization: https://en.wikipedia.org/wiki/Memoization
 .. _premature optimization: https://en.wikiquote.org/wiki/Donald_Knuth#Computer_Programming_as_an_Art_(1974)
+.. _gh issues: https://github.com/idom-team/idom/issues
