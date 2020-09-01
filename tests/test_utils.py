@@ -4,29 +4,22 @@ import idom
 from idom.utils import html_to_vdom
 
 
-def test_var_equivalence():
-    assert idom.Var([1, 2, 3]) == idom.Var([1, 2, 3])
-    assert idom.Var([1, 2, 3]) != idom.Var([1, 2])
-    assert idom.Var([1, 2, 3]) != [1, 2, 3]
+def test_basic_ref_behavior():
+    r = idom.Ref(None)
+    r.set("new_1")
+    assert r.current == "new_1"
+    r.current = "new_2"
+    assert r.current == "new_2"
 
 
-def test_var_repr():
-    assert repr(idom.Var([1, 2, 3])) == "Var([1, 2, 3])"
+def test_ref_equivalence():
+    assert idom.Ref([1, 2, 3]) == idom.Ref([1, 2, 3])
+    assert idom.Ref([1, 2, 3]) != idom.Ref([1, 2])
+    assert idom.Ref([1, 2, 3]) != [1, 2, 3]
 
 
-def test_var_set():
-    v = idom.Var(None)
-    old_1 = v.set("new_1")
-    assert old_1 is None
-    old_2 = v.set("new_2")
-    assert old_2 == "new_1"
-
-
-def test_var_get():
-    v = idom.Var(None)
-    assert v.get() is None
-    v.set(1)
-    assert v.get() == 1
+def test_ref_repr():
+    assert repr(idom.Ref([1, 2, 3])) == "Ref([1, 2, 3])"
 
 
 @pytest.mark.parametrize(

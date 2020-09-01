@@ -32,6 +32,9 @@ class Ref(Generic[_Current]):
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Ref) and (other.current == self.current)
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.current})"
+
 
 _ModelTransform = Callable[[Dict[str, Any]], Any]
 

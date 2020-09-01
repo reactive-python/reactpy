@@ -56,7 +56,7 @@ async def test_layout_cancels_renders_on_close():
 
 
 async def test_simple_layout():
-    set_state_hook = idom.Var(None)
+    set_state_hook = idom.Ref(None)
 
     @idom.element
     async def SimpleElement(tag):
@@ -73,7 +73,7 @@ async def test_simple_layout():
         assert old == []
         assert errors == []
 
-        set_state_hook.value("table")
+        set_state_hook.current("table")
 
         src, new, old, errors = await layout.render()
         assert src == element.id

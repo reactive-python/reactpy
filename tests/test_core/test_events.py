@@ -104,7 +104,7 @@ def test_can_prevent_event_default_operation(driver, display):
 
 
 def test_simple_click_event(driver, display):
-    clicked = idom.Var(False)
+    clicked = idom.Ref(False)
 
     @idom.element
     async def Button():

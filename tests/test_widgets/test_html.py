@@ -32,8 +32,8 @@ def test_image_from_bytes(driver, driver_wait, display):
 
 
 def test_input_callback(driver, driver_wait, display):
-    inp_var = idom.Var(None)
-    inp = idom.widgets.Input(inp_var.set, "text", "initial-value", {"id": "inp"})
+    inp_ref = idom.Ref(None)
+    inp = idom.widgets.Input(inp_ref.set, "text", "initial-value", {"id": "inp"})
 
     display(inp)
 
@@ -42,7 +42,7 @@ def test_input_callback(driver, driver_wait, display):
 
     client_inp.clear()
     send_keys(client_inp, "new-value-1")
-    driver_wait.until(lambda dvr: inp_var.value == "new-value-1")
+    driver_wait.until(lambda dvr: inp_ref.current == "new-value-1")
 
     client_inp.clear()
     send_keys(client_inp, "new-value-2")
@@ -51,23 +51,23 @@ def test_input_callback(driver, driver_wait, display):
 
 def test_input_ignore_empty(driver, driver_wait, display):
     # ignore empty since that's an invalid float
-    inp_ingore_var = idom.Var("1")
-    inp_not_ignore_var = idom.Var("1")
+    inp_ingore_ref = idom.Ref("1")
+    inp_not_ignore_ref = idom.Ref("1")
 
     @idom.element
     async def InputWrapper():
         return idom.html.div(
             idom.widgets.Input(
-                inp_ingore_var.set,
+                inp_ingore_ref.set,
                 "number",
-                inp_ingore_var.value,
+                inp_ingore_ref.current,
                 {"id": "inp-ignore"},
                 ignore_empty=True,
             ),
             idom.widgets.Input(
-                inp_not_ignore_var.set,
+                inp_not_ignore_ref.set,
                 "number",
-                inp_not_ignore_var.value,
+                inp_not_ignore_ref.current,
                 {"id": "inp-not-ignore"},
                 ignore_empty=False,
             ),
@@ -90,6 +90,6 @@ def test_input_ignore_empty(driver, driver_wait, display):
     driver_wait.until(lambda drv: client_inp_not_ignore.get_attribute("value") == "")
 
     # ignored empty value on change
-    assert inp_ingore_var.value == "1"
+    assert inp_ingore_ref.current == "1"
     # did not ignore empty value on change
-    assert inp_not_ignore_var.value == ""
+    assert inp_not_ignore_ref.current == ""

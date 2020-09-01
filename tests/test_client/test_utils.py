@@ -85,17 +85,17 @@ def test_spinner_is_running_in_notebook(mocker):
 
 def test_spinner_display_terminal(capsys):
     done = Event()
-    display_count = idom.Var(0)
+    display_count = idom.Ref(0)
 
     class MySpinner(Spinner):
         def _display_terminal(self, frame, text):
-            if display_count.value < 3 or frame in (
+            if display_count.current < 3 or frame in (
                 self.success_frame,
                 self.failure_frame,
                 None,
             ):
                 super()._display_terminal(frame, text)
-                display_count.value += 1
+                display_count.current += 1
             else:
                 done.set()
 
@@ -117,17 +117,17 @@ def test_spinner_display_terminal(capsys):
 
 def test_spinner_display_notebook(mocker):
     done = Event()
-    display_count = idom.Var(0)
+    display_count = idom.Ref(0)
 
     class MySpinner(Spinner):
         def _display_notebook(self, frame, text):
-            if display_count.value < 3 or frame in (
+            if display_count.current < 3 or frame in (
                 self.success_frame,
                 self.failure_frame,
                 None,
             ):
                 super()._display_notebook(frame, text)
-                display_count.value += 1
+                display_count.current += 1
             else:
                 done.set()
 
