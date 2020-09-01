@@ -71,8 +71,8 @@ def display(
     mount: Callable[..., None],
     host: str,
     port: int,
-    display_id: idom.Var[int],
-    last_server_error: idom.Var[Exception],
+    display_id: idom.Ref[int],
+    last_server_error: idom.Ref[Exception],
 ) -> Iterator[Callable[[Union[ElementConstructor, AbstractElement], str], None]]:
     """A function for displaying an element using the current web driver."""
 
@@ -81,7 +81,8 @@ def display(
         query: str = "",
         check_mount: bool = True,
     ):
-        d_id = display_id.set(display_id.value + 1)
+        d_id = display_id.current
+        display_id.current += 1
         display_attrs = {"id": f"display-{d_id}"}
         element_constructor = element if callable(element) else lambda: element
         mount(lambda: idom.html.div(display_attrs, element_constructor()))
@@ -93,7 +94,7 @@ def display(
     try:
         yield display
     finally:
-        last_error = last_server_error.get()
+        last_error = last_server_error.current
         if last_error is default_error:
             msg = f"The server {server} never ran or did not set the 'last_server_error' fixture."
             raise NotImplementedError(msg)
@@ -122,8 +123,8 @@ def driver_wait(driver: Chrome, driver_timeout: float) -> WebDriverWait:
 
 
 @pytest.fixture(scope="session")
-def display_id() -> idom.Var[int]:
-    return idom.Var(0)
+def display_id() -> idom.Ref[int]:
+    return idom.Ref(0)
 
 
 @pytest.fixture(scope="module")
@@ -190,7 +191,7 @@ def mount_and_server(
     fixturized_server_type: Type[AbstractRenderServer],
     host: str,
     port: int,
-    last_server_error: idom.Var[Exception],
+    last_server_error: idom.Ref[Exception],
 ) -> Tuple[Callable[..., None], AbstractRenderServer]:
     """An IDOM layout mount function and server as a tuple
 
@@ -254,8 +255,8 @@ def port(host: str) -> int:
 
 @pytest.fixture(scope="session")
 def last_server_error():
-    """A ``Var`` containing the last server error. This must be populated by ``server_type``"""
-    return idom.Var(default_error)
+    """A ``Ref`` containing the last server error. This must be populated by ``server_type``"""
+    return idom.Ref(default_error)
 
 
 @pytest.fixture(autouse=True)

@@ -28,7 +28,7 @@ def test_jupyter_display_repr():
 
 
 def test_cross_origin_jupyter_display(server, driver, driver_wait, mount, server_url):
-    clicked = idom.Var(False)
+    clicked = idom.Ref(False)
 
     # we use flask here just because its easier to set up in a thread
     flask_host = "127.0.0.1"
@@ -75,14 +75,14 @@ def test_cross_origin_jupyter_display(server, driver, driver_wait, mount, server
     client_button = driver.find_element_by_id("simple-button")
     client_button.click()
 
-    driver_wait.until(lambda d: clicked.get())
+    driver_wait.until(lambda d: clicked.current)
 
     driver.get(f"{flask_server_url}/shutdown")
     thread.join()
 
 
 def test_same_origin_jupyter_display(driver, driver_wait, mount, server_url):
-    clicked = idom.Var(False)
+    clicked = idom.Ref(False)
 
     @idom.element
     async def SimpleButton():
@@ -100,4 +100,4 @@ def test_same_origin_jupyter_display(driver, driver_wait, mount, server_url):
     client_button = driver.find_element_by_id("simple-button")
     client_button.click()
 
-    driver_wait.until(lambda d: clicked.get())
+    driver_wait.until(lambda d: clicked.current)

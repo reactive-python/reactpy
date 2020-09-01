@@ -91,17 +91,17 @@ def test_shared_hostwap(driver, display):
 
     @idom.element
     async def ButtonSwapsDivs():
-        count = idom.Var(0)
+        count = idom.Ref(0)
 
         @idom.event
         async def on_click(event):
-            count.value += 1
-            mount(idom.html.div, {"id": f"hotswap-{count.value}"}, count.value)
+            count.current += 1
+            mount(idom.html.div, {"id": f"hotswap-{count.current}"}, count.current)
 
         incr = idom.html.button({"onClick": on_click, "id": "incr-button"}, "incr")
 
         mount, make_hostswap = idom.widgets.hotswap(shared=True)
-        mount(idom.html.div, {"id": f"hotswap-{count.value}"}, count.value)
+        mount(idom.html.div, {"id": f"hotswap-{count.current}"}, count.current)
         hotswap_view = make_hostswap()
 
         return idom.html.div(incr, hotswap_view)
