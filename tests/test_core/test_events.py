@@ -76,6 +76,15 @@ async def test_multiple_callbacks_per_event_handler():
 
 
 def test_remove_event_handlers():
+    async def my_coro_callback(event):
+        ...
+
+    events = EventHandler()
+    events.add(my_coro_callback)
+    assert my_coro_callback in events
+    events.remove(my_coro_callback)
+    assert my_coro_callback not in events
+
     def my_callback(event):
         ...
 
@@ -108,13 +117,13 @@ def test_simple_click_event(driver, display):
 
     @idom.element
     async def Button():
-        update = hooks.current_hook().use_update()
+        hook = hooks.current_hook()
 
         async def on_click(event):
-            clicked.set(True)
-            update()
+            clicked.current = True
+            hook.schedule_render()
 
-        if not clicked.get():
+        if not clicked.current:
             return idom.html.button({"onClick": on_click, "id": "click"}, ["Click Me!"])
         else:
             return idom.html.p({"id": "complete"}, ["Complete"])
@@ -126,7 +135,7 @@ def test_simple_click_event(driver, display):
     driver.find_element_by_id("complete")
 
     # we care what happens in the final delete when there's no value
-    assert clicked.get()
+    assert clicked.current
 
 
 def test_can_stop_event_propogation(driver, display):

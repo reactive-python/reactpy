@@ -189,7 +189,11 @@ class EventHandler:
         Raises:
             ValueError: if not found
         """
-        self._handlers.remove(function)
+        index = self._get_handler_index(function)
+        if index is not None:
+            del self._handlers[index]
+        else:
+            raise ValueError(f"{self} does not contain {function}")
 
     def serialize(self) -> Dict[str, Any]:
         """Serialize the event handler."""
@@ -205,7 +209,20 @@ class EventHandler:
             await handler(*data)
 
     def __contains__(self, function: Any) -> bool:
-        return function in self._handlers
+        return self._get_handler_index(function) is not None
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"{type(self).__name__}({self.serialize()})"
+
+    def _get_handler_index(self, function: Callable[..., Any]) -> Optional[int]:
+        if asyncio.iscoroutinefunction(function):
+            try:
+                return self._handlers.index(function)
+            except ValueError:
+                return None
+        else:
+            for i, h in enumerate(self._handlers):
+                if h.__wrapped__ == function:
+                    return i
+            else:
+                return None
