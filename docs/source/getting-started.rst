@@ -8,6 +8,7 @@ Let's look at the example that you may have seen
 
     import idom
 
+
     @idom.element
     async def Slideshow():
         index, set_index = idom.hooks.use_state(0)
@@ -22,6 +23,7 @@ Let's look at the example that you may have seen
                 "onClick": next_image,
             }
         )
+
 
     host, port = "localhost", 8765
     server = idom.server.sanic.PerClientStateServer(Slideshow)

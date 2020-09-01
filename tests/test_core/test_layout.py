@@ -252,3 +252,7 @@ async def test_elements_are_garbage_collected():
     del layout
     gc.collect()
     assert not live_elements
+
+
+def test_double_updated_element_is_not_double_rendered():
+    assert False
