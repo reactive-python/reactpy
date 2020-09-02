@@ -7,8 +7,8 @@ from anyio import create_task_group, TaskGroup  # type: ignore
 from .layout import (
     LayoutEvent,
     LayoutUpdate,
-    AbstractLayout,
-    AbstractLayout,
+    Layout,
+    Layout,
 )
 from .utils import HasAsyncResources, async_resource
 
@@ -23,12 +23,12 @@ class StopRendering(Exception):
 class AbstractRenderer(HasAsyncResources, abc.ABC):
     """A base class for implementing :class:`~idom.core.layout.Layout` renderers."""
 
-    def __init__(self, layout: AbstractLayout) -> None:
+    def __init__(self, layout: Layout) -> None:
         super().__init__()
         self._layout = layout
 
     @async_resource
-    async def layout(self) -> AsyncIterator[AbstractLayout]:
+    async def layout(self) -> AsyncIterator[Layout]:
         async with self._layout as layout:
             yield layout
 
@@ -40,7 +40,7 @@ class AbstractRenderer(HasAsyncResources, abc.ABC):
     async def run(self, send: SendCoroutine, recv: RecvCoroutine, context: Any) -> None:
         """Start an unending loop which will drive the layout.
 
-        This will call :meth:`AbstractLayouTaskGroupTaskGroupt.render` and :meth:`AbstractLayout.trigger`
+        This will call :meth:`AbstractLayouTaskGroupTaskGroupt.render` and :meth:`Layout.dispatch`
         to render new models and execute events respectively.
         """
         await self.task_group.spawn(self._outgoing_loop, send, context)
@@ -56,13 +56,11 @@ class AbstractRenderer(HasAsyncResources, abc.ABC):
             await self._incoming(self.layout, context, await recv())
 
     @abc.abstractmethod
-    async def _outgoing(self, layout: AbstractLayout, context: Any) -> Any:
+    async def _outgoing(self, layout: Layout, context: Any) -> Any:
         ...
 
     @abc.abstractmethod
-    async def _incoming(
-        self, layout: AbstractLayout, context: Any, message: Any
-    ) -> None:
+    async def _incoming(self, layout: Layout, context: Any, message: Any) -> None:
         ...
 
 
@@ -74,17 +72,15 @@ class SingleStateRenderer(AbstractRenderer):
         be ``None`` since it's not used.
     """
 
-    def __init__(self, layout: AbstractLayout) -> None:
+    def __init__(self, layout: Layout) -> None:
         super().__init__(layout)
         self._current_model_as_json = ""
 
-    async def _outgoing(self, layout: AbstractLayout, context: Any) -> LayoutUpdate:
+    async def _outgoing(self, layout: Layout, context: Any) -> LayoutUpdate:
         return await layout.render()
 
-    async def _incoming(
-        self, layout: AbstractLayout, context: Any, event: LayoutEvent
-    ) -> None:
-        await layout.trigger(event)
+    async def _incoming(self, layout: Layout, context: Any, event: LayoutEvent) -> None:
+        await layout.dispatch(event)
         return None
 
 
@@ -95,7 +91,7 @@ class SharedStateRenderer(SingleStateRenderer):
     :meth:`SharedStateRenderer.run`
     """
 
-    def __init__(self, layout: AbstractLayout) -> None:
+    def __init__(self, layout: Layout) -> None:
         super().__init__(layout)
         self._update_queues: Dict[str, asyncio.Queue[LayoutUpdate]] = {}
 
@@ -120,7 +116,7 @@ class SharedStateRenderer(SingleStateRenderer):
             for queue in self._update_queues.values():
                 await queue.put(update)
 
-    async def _outgoing(self, layout: AbstractLayout, context: str) -> LayoutUpdate:
+    async def _outgoing(self, layout: Layout, context: str) -> LayoutUpdate:
         return await self._updates[context].get()
 
     @async_resource

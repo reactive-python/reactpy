@@ -4,7 +4,7 @@ from typing import TypeVar, Dict, Any, Tuple, Type, Optional, Generic, TypeVar
 from threading import Thread
 
 from idom.core.element import ElementConstructor, AbstractElement
-from idom.core.layout import AbstractLayout, Layout
+from idom.core.layout import Layout, Layout
 from idom.core.render import (
     AbstractRenderer,
     SendCoroutine,
@@ -32,7 +32,7 @@ class AbstractRenderServer(Generic[_App, _Config]):
 
     _loop: AbstractEventLoop
     _renderer_type: Type[AbstractRenderer]
-    _layout_type: Type[AbstractLayout] = Layout
+    _layout_type: Type[Layout] = Layout
 
     def __init__(
         self, constructor: ElementConstructor, *args: Any, **kwargs: Any
@@ -142,7 +142,7 @@ class AbstractRenderServer(Generic[_App, _Config]):
         self,
         parameters: Dict[str, Any],
         loop: Optional[AbstractEventLoop] = None,
-    ) -> AbstractLayout:
+    ) -> Layout:
         return self._layout_type(self._make_root_element(parameters), loop)
 
     def _make_root_element(self, parameters: Dict[str, Any]) -> AbstractElement:
