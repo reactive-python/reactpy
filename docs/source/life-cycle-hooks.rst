@@ -79,7 +79,7 @@ first render of an element, but will be disregarded in all following renders:
 
 .. code-block::
 
-    state, set_state = use_state(lambda: some_expensive_computation(*args, **kwargs))
+    state, set_state = use_state(lambda: some_expensive_computation(a, b, c))
 
 
 Skipping Updates
