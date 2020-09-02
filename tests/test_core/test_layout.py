@@ -1,14 +1,12 @@
+import asyncio
 import gc
 from weakref import finalize
 
 import pytest
 
 import idom
-from idom.core.layout import LayoutUpdate
 
-from tests.general_utils import assert_unordered_equal
-
-from .utils import HookCatcher
+from tests.general_utils import assert_unordered_equal, HookCatcher
 
 
 def test_layout_repr():
@@ -40,13 +38,7 @@ async def test_simple_layout():
         path, changes = await layout.render()
 
         assert path == ""
-        assert_unordered_equal(
-            changes,
-            [
-                {"op": "add", "path": "/eventHandlers", "value": {}},
-                {"op": "add", "path": "/tagName", "value": "div"},
-            ],
-        )
+        assert changes == [{"op": "add", "path": "/tagName", "value": "div"}]
 
         set_state_hook.current("table")
         path, changes = await layout.render()
@@ -77,16 +69,12 @@ async def test_nested_element_layout():
         assert_unordered_equal(
             changes,
             [
-                {"op": "add", "path": "/tagName", "value": "div"},
                 {
                     "op": "add",
                     "path": "/children",
-                    "value": [
-                        "0",
-                        {"children": ["0"], "eventHandlers": {}, "tagName": "div"},
-                    ],
+                    "value": ["0", {"tagName": "div", "children": ["0"]}],
                 },
-                {"op": "add", "path": "/eventHandlers", "value": {}},
+                {"op": "add", "path": "/tagName", "value": "div"},
             ],
         )
 
@@ -104,93 +92,67 @@ async def test_nested_element_layout():
 
 
 async def test_layout_render_error_has_partial_update():
-    history = RenderHistory()
-
-    @history.track("main")
     @idom.element
     async def Main():
         return idom.html.div([OkChild(), BadChild(), OkChild()])
 
-    @history.track("ok_child")
     @idom.element
     async def OkChild():
         return idom.html.div(["hello"])
 
-    @history.track("bad_child")
     @idom.element
     async def BadChild():
         raise ValueError("Something went wrong :(")
 
     async with idom.Layout(Main()) as layout:
-
-        src, new, old, errors = await layout.render()
-
-        assert src == history.main_1.id
-
-        assert new == {
-            history.main_1.id: {
-                "tagName": "div",
-                "children": [
-                    {"type": "ref", "data": history.ok_child_1.id},
-                    {"type": "ref", "data": history.bad_child_1.id},
-                    {"type": "ref", "data": history.ok_child_2.id},
-                ],
-            },
-            history.ok_child_1.id: {
-                "tagName": "div",
-                "children": [{"type": "str", "data": "hello"}],
-            },
-            history.bad_child_1.id: {"tagName": "div"},
-            history.ok_child_2.id: {
-                "tagName": "div",
-                "children": [{"type": "str", "data": "hello"}],
-            },
-        }
-
-        assert old == []
-
-        assert len(errors) == 1
-        assert isinstance(errors[0], ValueError)
-        assert str(errors[0]) == "Something went wrong :("
+        patch = await layout.render()
+        assert_unordered_equal(
+            patch.changes,
+            [
+                {
+                    "op": "add",
+                    "path": "/children",
+                    "value": [
+                        {"tagName": "div", "children": ["hello"]},
+                        {"tagName": "div", "__error__": "Something went wrong :("},
+                        {"tagName": "div", "children": ["hello"]},
+                    ],
+                },
+                {"op": "add", "path": "/tagName", "value": "div"},
+            ],
+        )
 
 
 async def test_render_raw_vdom_dict_with_single_element_object_as_children():
-    history = RenderHistory()
-
-    @history.track("main")
     @idom.element
     async def Main():
         return {"tagName": "div", "children": Child()}
 
-    @history.track("child")
     @idom.element
     async def Child():
         return {"tagName": "div", "children": {"tagName": "h1"}}
 
     async with idom.Layout(Main()) as layout:
-        render = await layout.render()
-
-    assert render == LayoutUpdate(
-        src=history.main_1.id,
-        new={
-            history.child_1.id: {
-                "tagName": "div",
-                "children": [{"type": "obj", "data": {"tagName": "h1"}}],
-            },
-            history.main_1.id: {
-                "tagName": "div",
-                "children": [{"type": "ref", "data": history.child_1.id}],
-            },
-        },
-        old=[],
-        errors=[],
-    )
+        patch = await layout.render()
+        assert_unordered_equal(
+            patch.changes,
+            [
+                {
+                    "op": "add",
+                    "path": "/children",
+                    "value": [{"tagName": "div", "children": [{"tagName": "h1"}]}],
+                },
+                {"op": "add", "path": "/tagName", "value": "div"},
+            ],
+        )
 
 
 async def test_elements_are_garbage_collected():
     live_elements = set()
+    outer_element_hook = HookCatcher()
 
     @idom.element
+    @outer_element_hook.capture
     async def Outer():
         element = idom.hooks.current_hook().element
         live_elements.add(element.id)
@@ -213,22 +175,54 @@ async def test_elements_are_garbage_collected():
 
     async with idom.Layout(Outer()) as layout:
         await layout.render()
+
         assert len(live_elements) == 2
+
         last_live_elements = live_elements.copy()
         # The existing `Outer` element rerenders. A new `Inner` element is created and
         # the the old `Inner` element should be deleted. Thus there should be one
         # changed element in the set of `live_elements` the old `Inner` deleted and new
         # `Inner` added.
-        await layout.dispatch(idom.core.layout.LayoutEvent("force-update", []))
+        outer_element_hook.schedule_render()
         await layout.render()
+
         assert len(live_elements - last_live_elements) == 1
 
     # The layout still holds a reference to the root so that's
     # only deleted once we release a reference to it.
     del layout
+    # the hook also contains a reference to the root element
+    del outer_element_hook
+
     gc.collect()
     assert not live_elements
 
 
-def test_double_updated_element_is_not_double_rendered():
-    assert False
+async def test_double_updated_element_is_not_double_rendered():
+    hook = HookCatcher()
+    run_count = idom.Ref(0)
+
+    @idom.element
+    @hook.capture
+    async def AnElement():
+        run_count.current += 1
+        return idom.html.div()
+
+    async with idom.Layout(AnElement()) as layout:
+        await layout.render()
+
+        assert run_count.current == 1
+
+        hook.schedule_render()
+        hook.schedule_render()
+
+        await layout.render()
+        try:
+            asyncio.wait_for(
+                [layout.render()],
+                timeout=0.1,  # this should have been plenty of time
+            )
+        except asyncio.CancelledError:
+            pass  # the render should still be rendering since we only update once
+
+        assert run_count.current == 2

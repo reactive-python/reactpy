@@ -2,9 +2,7 @@ import pytest
 
 import idom
 
-from tests.general_utils import assert_unordered_equal
-
-from .utils import HookCatcher
+from tests.general_utils import assert_unordered_equal, HookCatcher
 
 
 async def test_must_be_rendering_in_layout_to_use_hooks():
@@ -390,6 +388,14 @@ async def test_use_effect_memoization():
         await layout.render()
 
         assert effect_run_count.current == 2
+
+
+def test_error_in_effect_is_gracefully_handled():
+    assert False
+
+
+def test_error_in_effect_cleanup_is_gracefully_handled():
+    assert False
 
 
 async def test_use_reducer():

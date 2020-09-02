@@ -135,8 +135,9 @@ class Layout(HasAsyncResources):
             resolved_model = await self._render_model(element_state, raw_model)
             element_state.model.clear()
             element_state.model.update(resolved_model)
-        except Exception:
+        except Exception as error:
             logger.exception(f"Failed to render {element_state.element_obj}")
+            element_state.model.update({"tagName": "div", "__error__": str(error)})
 
         # We need to return the model from the `element_state` so that the model
         # between all `ElementState` objects within a `Layout` are shared.
@@ -147,7 +148,9 @@ class Layout(HasAsyncResources):
     ) -> Dict[str, Any]:
         model: Dict[str, Any] = dict(model)
 
-        model["eventHandlers"] = self._render_model_event_handlers(element_state, model)
+        event_handlers = self._render_model_event_handlers(element_state, model)
+        if event_handlers:
+            model["eventHandlers"] = event_handlers
 
         if "children" in model:
             model["children"] = await self._render_model_children(
