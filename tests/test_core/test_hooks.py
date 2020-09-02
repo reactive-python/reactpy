@@ -390,12 +390,63 @@ async def test_use_effect_memoization():
         assert effect_run_count.current == 2
 
 
-def test_use_reducer():
-    assert False
+async def test_use_reducer():
+    saved_count = idom.Ref(None)
+    saved_dispatch = idom.Ref(None)
+
+    def reducer(count, action):
+        if action == "increment":
+            return count + 1
+        elif action == "decrement":
+            return count - 1
+        else:
+            raise ValueError(f"Unknown action '{action}'")
+
+    @idom.element
+    async def Counter(initial_count):
+        saved_count.current, saved_dispatch.current = idom.hooks.use_reducer(
+            reducer, initial_count
+        )
+        return idom.html.div()
+
+    async with idom.Layout(Counter(0)) as layout:
+        await layout.render()
+
+        assert saved_count.current == 0
+
+        saved_dispatch.current("increment")
+        await layout.render()
+
+        assert saved_count.current == 1
+
+        saved_dispatch.current("decrement")
+        await layout.render()
+
+        assert saved_count.current == 0
 
 
-def test_use_reducer_dispatch_callback_identity_is_preserved():
-    assert False
+async def test_use_reducer_dispatch_callback_identity_is_preserved():
+    saved_dispatchers = []
+
+    def reducer(count, action):
+        if action == "increment":
+            return count + 1
+        else:
+            raise ValueError(f"Unknown action '{action}'")
+
+    @idom.element
+    async def ElementWithUseReduce():
+        saved_dispatchers.append(idom.hooks.use_reducer(reducer, 0)[1])
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithUseReduce()) as layout:
+        for _ in range(3):
+            await layout.render()
+            saved_dispatchers[-1]("increment")
+
+    first_dispatch = saved_dispatchers[0]
+    for d in saved_dispatchers[1:]:
+        assert first_dispatch is d
 
 
 def test_use_callback_identity():
@@ -406,52 +457,8 @@ def test_use_callback_memoization():
     assert False
 
 
-def test_use_memo(display, driver, driver_wait):
-    trigger_count = 0
-
-    # use constants to ensure identity comparison works as expected
-    left_const = "left"
-    right_const = "right"
-
-    @idom.element
-    async def ComponentWithMemo():
-        location, set_location = idom.hooks.use_state(left_const)
-
-        @idom.hooks.use_memo(args=location)
-        def count():
-            nonlocal trigger_count
-            trigger_count += 1
-            return trigger_count
-
-        async def on_left_button_click(event):
-            set_location(left_const)
-
-        async def on_right_button_click(event):
-            set_location(right_const)
-
-        return idom.html.div(
-            idom.html.button(
-                {"onClick": on_left_button_click, "id": "left-button"}, "left button"
-            ),
-            idom.html.button(
-                {"onClick": on_right_button_click, "id": "right-button"}, "right button"
-            ),
-            f"Memo trigger count: {count}",
-        )
-
-    display(ComponentWithMemo)  # initial render triggers: yes
-
-    left_client_button = driver.find_element_by_id("left-button")
-    right_client_button = driver.find_element_by_id("right-button")
-
-    right_client_button.click()  # trigger: yes
-    right_client_button.click()  # trigger: no
-    right_client_button.click()  # trigger: no
-    left_client_button.click()  # trigger: yes
-    left_client_button.click()  # trigger: no
-    right_client_button.click()  # trigger: yes
-
-    driver_wait.until(lambda drv: trigger_count == 4)
+def test_use_memo():
+    assert False
 
 
 def test_use_memo_always_runs_if_args_are_none():
