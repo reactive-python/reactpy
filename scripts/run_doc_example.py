@@ -14,13 +14,18 @@ for file in examples_dir.iterdir():
 
 
 def main():
-    ex_name = sys.argv[1]
+    try:
+        ex_name = sys.argv[1]
+    except IndexError:
+        print("No example argument given. Choose from:")
+        _print_available_options()
+        return
+
     example_file = examples_dir / (ex_name + ".py")
 
     if not example_file.exists():
         print(f"No example {ex_name!r} exists. Choose from:")
-        for found_example_file in examples_dir.glob("*.py"):
-            print("-", found_example_file.stem)
+        _print_available_options()
         return
 
     mount, element = hotswap()
@@ -37,6 +42,11 @@ def main():
         )
 
     server.run("127.0.0.1", 5000)
+
+
+def _print_available_options():
+    for found_example_file in examples_dir.glob("*.py"):
+        print("-", found_example_file.stem)
 
 
 if __name__ == "__main__":
