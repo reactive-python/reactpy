@@ -171,10 +171,12 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
 
             # displaying the output now will show DivTwo
     """
-    constructor_and_arguments: Ref[_FuncArgsKwargs] = Ref(lambda: {"tagName": "div"})
+    constructor_and_arguments: Ref[_FuncArgsKwargs] = Ref(
+        (lambda: {"tagName": "div"}, (), {})
+    )
 
     if shared:
-        set_state_callbacks: Set[Callable[[_FuncArgsKwargs], None]] = Set()
+        set_state_callbacks: Set[Callable[[_FuncArgsKwargs], None]] = set()
 
         @element
         async def HotSwap() -> Any:
@@ -183,17 +185,17 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
 
             def add_callback():
                 set_state_callbacks.add(set_state)
-                return lambda: set_state_callbacks.remove(swap)
+                return lambda: set_state_callbacks.remove(set_state)
 
             hooks.use_effect(add_callback)
 
             return f(*a, **kw)
 
         def swap(_func_: ElementConstructor, *args: Any, **kwargs: Any) -> None:
-            constructor_and_arguments.current = (_func_, args, kwargs)
+            f_a_kw = constructor_and_arguments.current = (_func_, args, kwargs)
 
             for set_state in set_state_callbacks:
-                set_state(constructor_and_arguments.current)
+                set_state(f_a_kw)
 
             return None
 
@@ -288,3 +290,36 @@ class MultiViewMount:
         kwargs: Dict[str, Any],
     ) -> None:
         self._views[view_id] = lambda: constructor(*args, **kwargs)
+
+
+{
+    "tagName": "div",
+    "children": [
+        {
+            "tagName": "div",
+            "children": [
+                {
+                    "tagName": "button",
+                    "attributes": {"id": "incr-button"},
+                    "children": ["click to increment"],
+                    "eventHandlers": {
+                        "onClick": {
+                            "target": "139775953392160",
+                            "preventDefault": False,
+                            "stopPropagation": False,
+                        }
+                    },
+                },
+                {
+                    "tagName": "div",
+                    "attributes": {"id": "count-is-1"},
+                    "children": ["1"],
+                },
+            ],
+        }
+    ],
+}
+[
+    {"path": "/children/1/attributes/id", "op": "replace", "value": "count-is-1"},
+    {"path": "/children/1/children/0", "op": "replace", "value": "1"},
+]

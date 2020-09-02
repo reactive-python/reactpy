@@ -93,7 +93,7 @@ def test_shared_client_state_server_does_not_support_per_client_parameters(
 ):
     driver_get("per_client_param=1")
 
-    error = last_server_error.get()
+    error = last_server_error.current
 
     assert error is not None
 

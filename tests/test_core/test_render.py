@@ -1,4 +1,16 @@
 import asyncio
+from tests.general_utils import assert_unordered_equal
+
+import pytest
+from anyio.exceptions import ExceptionGroup
+
+import idom
+from idom.core.layout import Layout, LayoutEvent
+from idom.core.render import SharedStateRenderer, AbstractRenderer
+
+
+import asyncio
+from asyncio.exceptions import CancelledError
 
 import pytest
 from anyio.exceptions import ExceptionGroup
@@ -10,37 +22,35 @@ from idom.core.render import SharedStateRenderer, AbstractRenderer
 
 async def test_shared_state_renderer():
     done = asyncio.Event()
-    data_sent_1 = asyncio.Queue()
-    data_sent_2 = []
+    changes_1 = []
+    changes_2 = []
+    target_id = "an-event"
 
-    async def send_1(data):
-        await data_sent_1.put(data)
+    events_to_inject = [LayoutEvent(target=target_id, data=[])] * 4
+
+    async def send_1(patch):
+        changes_1.append(patch.changes)
 
     async def recv_1():
-        sent = await data_sent_1.get()
-
-        element_id = sent["root"]
-        element_data = sent["new"][element_id]
-        if element_data["attributes"]["count"] == 4:
+        await asyncio.sleep(0)
+        try:
+            return events_to_inject.pop(0)
+        except IndexError:
             done.set()
-            raise asyncio.CancelledError()
+            raise CancelledError()
 
-        return LayoutEvent(target="an-event", data=[])
-
-    async def send_2(data):
-        element_id = data["root"]
-        element_data = data["new"][element_id]
-        data_sent_2.append(element_data["attributes"]["count"])
+    async def send_2(patch):
+        changes_2.append(patch.changes)
 
     async def recv_2():
         await done.wait()
-        raise asyncio.CancelledError()
+        raise CancelledError()
 
     @idom.element
-    async def Clickable(count=0):
-        count, set_count = idom.hooks.use_state(count)
+    async def Clickable():
+        count, set_count = idom.hooks.use_state(0)
 
-        @idom.event(target_id="an-event")
+        @idom.event(target_id=target_id)
         async def an_event():
             set_count(count + 1)
 
@@ -50,7 +60,54 @@ async def test_shared_state_renderer():
         await renderer.run(send_1, recv_1, "1")
         await renderer.run(send_2, recv_2, "2")
 
-    assert data_sent_2 == [0, 1, 2, 3, 4]
+    expected_changes = [
+        [
+            {
+                "op": "add",
+                "path": "/eventHandlers",
+                "value": {
+                    "anEvent": {
+                        "target": "an-event",
+                        "preventDefault": False,
+                        "stopPropagation": False,
+                    }
+                },
+            },
+            {"op": "add", "path": "/attributes", "value": {"count": 0}},
+            {"op": "add", "path": "/tagName", "value": "div"},
+        ],
+        [{"op": "replace", "path": "/attributes/count", "value": 1}],
+        [{"op": "replace", "path": "/attributes/count", "value": 2}],
+        [{"op": "replace", "path": "/attributes/count", "value": 3}],
+    ]
+
+    for c_2, expected_c in zip(changes_2, expected_changes):
+        assert_unordered_equal(c_2, expected_c)
+
+    assert changes_1 == changes_2
+
+
+async def test_renderer_run_does_not_supress_non_cancel_errors():
+    class RendererWithBug(AbstractRenderer):
+        async def _outgoing(self, layout, context):
+            raise ValueError("this is a bug")
+
+        async def _incoming(self, layout, context, message):
+            raise ValueError("this is a bug")
+
+    @idom.element
+    async def AnyElement():
+        return idom.html.div()
+
+    async def send(data):
+        pass
+
+    async def recv():
+        return {}
+
+    with pytest.raises(ExceptionGroup, match="this is a bug"):
+        async with RendererWithBug(idom.Layout(AnyElement())) as renderer:
+            await renderer.run(send, recv, None)
 
 
 async def test_renderer_run_does_not_supress_non_stop_rendering_errors():
@@ -74,42 +131,3 @@ async def test_renderer_run_does_not_supress_non_stop_rendering_errors():
     with pytest.raises(ExceptionGroup, match="this is a bug"):
         async with RendererWithBug(idom.Layout(AnyElement())) as renderer:
             await renderer.run(send, recv, None)
-
-
-async def test_shared_state_renderer_deletes_old_elements():
-    sent = []
-    target_id = "some-id"
-
-    async def send(data):
-        if len(sent) == 2:
-            raise asyncio.CancelledError()
-        sent.append(data)
-
-    async def recv():
-        # If we don't sleep here recv callback will clog the event loop.
-        # In practice this isn't a problem because you'll usually be awaiting
-        # something here that would take the place of sleep()
-        await asyncio.sleep(0)
-        return LayoutEvent(target_id, [])
-
-    @idom.element
-    async def Outer():
-        hook = idom.hooks.current_hook()
-
-        @idom.event(target_id=target_id)
-        async def an_event():
-            hook.schedule_render()
-
-        return idom.html.div({"onEvent": an_event}, Inner())
-
-    @idom.element
-    async def Inner():
-        return idom.html.div()
-
-    layout = Layout(Outer())
-    async with SharedStateRenderer(layout) as renderer:
-        await renderer.run(send, recv, "1")
-
-    root = sent[0]["new"][layout.root]
-    first_inner_id = root["children"][0]["data"]
-    assert sent[1]["old"] == [first_inner_id]

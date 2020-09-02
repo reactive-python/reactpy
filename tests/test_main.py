@@ -46,7 +46,7 @@ def test_install_with_exports(capsys):
 @pytest.mark.slow
 def test_restore(capsys):
     main("restore")
-    assert client.installed() == ["htm", "react", "react-dom"]
+    assert client.installed() == ["fast-json-patch", "htm", "react", "react-dom"]
 
 
 @pytest.mark.parametrize(
