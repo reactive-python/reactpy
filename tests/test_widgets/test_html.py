@@ -33,7 +33,12 @@ def test_image_from_bytes(driver, driver_wait, display):
 
 def test_input_callback(driver, driver_wait, display):
     inp_ref = idom.Ref(None)
-    inp = idom.widgets.Input(inp_ref.set, "text", "initial-value", {"id": "inp"})
+    inp = idom.widgets.Input(
+        lambda value: setattr(inp_ref, "current", value),
+        "text",
+        "initial-value",
+        {"id": "inp"},
+    )
 
     display(inp)
 
@@ -58,14 +63,14 @@ def test_input_ignore_empty(driver, driver_wait, display):
     async def InputWrapper():
         return idom.html.div(
             idom.widgets.Input(
-                inp_ingore_ref.set,
+                lambda value: setattr(inp_ingore_ref, "current", value),
                 "number",
                 inp_ingore_ref.current,
                 {"id": "inp-ignore"},
                 ignore_empty=True,
             ),
             idom.widgets.Input(
-                inp_not_ignore_ref.set,
+                lambda value: setattr(inp_not_ignore_ref, "current", value),
                 "number",
                 inp_not_ignore_ref.current,
                 {"id": "inp-not-ignore"},

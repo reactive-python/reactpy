@@ -34,7 +34,6 @@ async def test_simple_stateful_element():
             patch_1.changes,
             [
                 {"op": "add", "path": "/children", "value": ["0"]},
-                {"op": "add", "path": "/eventHandlers", "value": {}},
                 {"op": "add", "path": "/tagName", "value": "div"},
             ],
         )

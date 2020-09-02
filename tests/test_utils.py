@@ -5,10 +5,9 @@ from idom.utils import html_to_vdom
 
 
 def test_basic_ref_behavior():
-    r = idom.Ref(None)
-    assert r.current == "new_1"
-    r.current = "new_2"
-    assert r.current == "new_2"
+    r = idom.Ref(1)
+    r.current = 2
+    assert r.current == 2
 
 
 def test_ref_equivalence():
