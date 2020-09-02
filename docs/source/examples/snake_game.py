@@ -108,7 +108,14 @@ async def GameLoop(grid_size, block_scale, set_game_state):
 def use_async_effect(function):
     def ensure_effect_future():
         future = asyncio.ensure_future(function())
-        return future.cancel
+
+        def cleanup():
+            if future.done():
+                future.result()
+            else:
+                future.cancel()
+
+        return cleanup
 
     idom.hooks.use_effect(ensure_effect_future)
 
@@ -120,7 +127,7 @@ def use_interval(rate):
         await asyncio.sleep(rate - (time.time() - usage_time.current))
         usage_time.current = time.time()
 
-    return interval()
+    return asyncio.ensure_future(interval())
 
 
 def use_snake_food(grid_size, current_snake):
