@@ -73,7 +73,7 @@ ever be removed from the model. Then you'll just need to call and await a
 The layout also handles the triggering event handlers. Normally this is done
 automatically by a :ref:`Renderer <Layout Renderer>`, but for now we'll to it manually.
 To do use we can use a trick to hard-code the ``event_handler_id`` so we can pass it,
-and a fake event, to the layout's :meth:`~idom.core.layout.Layout.trigger` method. Then
+and a fake event, to the layout's :meth:`~idom.core.layout.Layout.dispatch` method. Then
 we just have to re-render the layout and see what changed:
 
 .. testcode::
@@ -102,7 +102,7 @@ we just have to re-render the layout and see what changed:
         patch_1 = await layout.render()
 
         fake_event = LayoutEvent(event_handler_id, [{}])
-        await layout.trigger(fake_event)
+        await layout.dispatch(fake_event)
         patch_2 = await layout.render()
 
         for change in patch_2.changes:

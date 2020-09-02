@@ -243,7 +243,7 @@ async def test_elements_are_garbage_collected():
         # the the old `Inner` element should be deleted. Thus there should be one
         # changed element in the set of `live_elements` the old `Inner` deleted and new
         # `Inner` added.
-        await layout.trigger(idom.core.layout.LayoutEvent("force-update", []))
+        await layout.dispatch(idom.core.layout.LayoutEvent("force-update", []))
         await layout.render()
         assert len(live_elements - last_live_elements) == 1
 

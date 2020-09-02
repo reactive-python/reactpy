@@ -1,12 +1,12 @@
 from .element import element, Element, AbstractElement, ElementConstructor
 from .events import event, Events, EventHandler
-from .layout import Layout, AbstractLayout
+from .layout import Layout, Layout
 from .render import AbstractRenderer, SharedStateRenderer, SingleStateRenderer
 from .vdom import vdom
 
 __all__ = [
     "AbstractElement",
-    "AbstractLayout",
+    "Layout",
     "AbstractRenderer",
     "element",
     "Element",
