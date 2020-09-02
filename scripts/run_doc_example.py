@@ -13,9 +13,15 @@ for file in examples_dir.iterdir():
         continue
 
 
-if __name__ == "__main__":
+def main():
     ex_name = sys.argv[1]
     example_file = examples_dir / (ex_name + ".py")
+
+    if not example_file.exists():
+        print(f"No example {ex_name!r} exists. Choose from:")
+        for found_example_file in examples_dir.glob("*.py"):
+            print("-", found_example_file.stem)
+        return
 
     mount, element = hotswap()
     server = PerClientStateServer(element)
@@ -31,3 +37,7 @@ if __name__ == "__main__":
         )
 
     server.run("127.0.0.1", 5000)
+
+
+if __name__ == "__main__":
+    main()
