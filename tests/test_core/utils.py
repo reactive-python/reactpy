@@ -1,32 +1,20 @@
 from functools import wraps
 
 
-class RenderHistory:
-    def __init__(self):
-        self.__counters = {}
-        self.__elements = set()
+import idom
 
-    def clear(self):
-        for k in self.__dict__.items():
-            if not k.startswith("_"):
-                del self.__dict__[k]
 
-    def track(self, name):
-        if name.startswith("_"):
-            raise ValueError(f"Name {name!r} startswith '_'.")
+class HookCatcher:
 
-        self.__counters[name] = 0
+    current: idom.hooks.LifeCycleHook
 
-        def setup(element_function):
-            @wraps(element_function)
-            def wrapper(*args, **kwargs):
-                elmt = element_function(*args, **kwargs)
-                if elmt.id not in self.__elements:
-                    self.__elements.add(elmt.id)
-                    self.__counters[name] += 1
-                    setattr(self, f"{name}_{self.__counters[name]}", elmt)
-                return elmt
+    def capture(self, render_function):
+        @wraps(render_function)
+        async def wrapper(*args, **kwargs):
+            self.current = idom.hooks.current_hook()
+            return await render_function(*args, **kwargs)
 
-            return wrapper
+        return wrapper
 
-        return setup
+    def schedule_render(self) -> None:
+        self.current.schedule_render()

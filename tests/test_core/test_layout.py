@@ -1,5 +1,4 @@
 import gc
-import asyncio
 from weakref import finalize
 
 import pytest
@@ -7,7 +6,9 @@ import pytest
 import idom
 from idom.core.layout import LayoutUpdate
 
-from .utils import RenderHistory
+from tests.general_utils import assert_unordered_equal
+
+from .utils import HookCatcher
 
 
 def test_layout_repr():
@@ -27,104 +28,79 @@ def test_layout_expects_abstract_element():
         idom.Layout(idom.html.div())
 
 
-async def test_layout_has_event_loop(event_loop):
-    @idom.element
-    async def MyElement():
-        return idom.html.div()
-
-    async with idom.Layout(MyElement()) as layout:
-        assert layout.loop is event_loop
-        # await the render since creating the layout schedules a render task
-        await layout.render()
-
-
-async def test_layout_cancels_renders_on_close():
-    event_that_is_never_set = asyncio.Event()
-    render_is_cancelled = asyncio.Event()
-
-    @idom.element
-    async def MyElement():
-        try:
-            await event_that_is_never_set.wait()
-        finally:
-            render_is_cancelled.set()
-
-    async with idom.Layout(MyElement()):
-        await asyncio.sleep(0.1)
-
-    await render_is_cancelled.wait()
-
-
 async def test_simple_layout():
     set_state_hook = idom.Ref(None)
 
     @idom.element
-    async def SimpleElement(tag):
-        tag, set_tag = idom.hooks.use_state(tag)
-        set_state_hook.current = set_tag
+    async def SimpleElement():
+        tag, set_state_hook.current = idom.hooks.use_state("div")
         return idom.vdom(tag)
 
-    element = SimpleElement("div")
-    async with idom.Layout(element) as layout:
+    async with idom.Layout(SimpleElement()) as layout:
+        path, changes = await layout.render()
 
-        src, new, old, errors = await layout.render()
-        assert src == element.id
-        assert new == {element.id: {"tagName": "div"}}
-        assert old == []
-        assert errors == []
+        assert path == ""
+        assert_unordered_equal(
+            changes,
+            [
+                {"op": "add", "path": "/eventHandlers", "value": {}},
+                {"op": "add", "path": "/tagName", "value": "div"},
+            ],
+        )
 
         set_state_hook.current("table")
+        path, changes = await layout.render()
 
-        src, new, old, errors = await layout.render()
-        assert src == element.id
-        assert new == {element.id: {"tagName": "table"}}
-        assert old == []
-        assert errors == []
+        assert path == ""
+        assert changes == [{"op": "replace", "path": "/tagName", "value": "table"}]
 
 
 async def test_nested_element_layout():
+    parent_set_state = idom.Ref(None)
+    child_set_state = idom.Ref(None)
 
-    history = RenderHistory()
-
-    @history.track("parent")
     @idom.element
     async def Parent():
-        return idom.html.div([Child()])
+        state, parent_set_state.current = idom.hooks.use_state(0)
+        return idom.html.div(state, Child())
 
-    @history.track("child")
     @idom.element
     async def Child():
-        return idom.html.div()
+        state, child_set_state.current = idom.hooks.use_state(0)
+        return idom.html.div(state)
 
     async with idom.Layout(Parent()) as layout:
 
-        src, new, old, errors = await layout.render()
+        path, changes = await layout.render()
 
-        assert src == history.parent_1.id
-        assert new == {
-            history.parent_1.id: {
-                "tagName": "div",
-                "children": [{"data": history.child_1.id, "type": "ref"}],
-            },
-            history.child_1.id: {"tagName": "div"},
-        }
-        assert old == []
-        assert errors == []
+        assert path == ""
+        assert_unordered_equal(
+            changes,
+            [
+                {"op": "add", "path": "/tagName", "value": "div"},
+                {
+                    "op": "add",
+                    "path": "/children",
+                    "value": [
+                        "0",
+                        {"children": ["0"], "eventHandlers": {}, "tagName": "div"},
+                    ],
+                },
+                {"op": "add", "path": "/eventHandlers", "value": {}},
+            ],
+        )
 
-        layout.update(history.parent_1)
+        parent_set_state.current(1)
+        path, changes = await layout.render()
 
-        src, new, old, errors = await layout.render()
+        assert path == ""
+        assert changes == [{"op": "replace", "path": "/children/0", "value": "1"}]
 
-        assert src == history.parent_1.id
-        assert new == {
-            history.parent_1.id: {
-                "tagName": "div",
-                "children": [{"data": history.child_2.id, "type": "ref"}],
-            },
-            history.child_2.id: {"tagName": "div"},
-        }
-        assert old == [history.child_1.id]
-        assert errors == []
+        child_set_state.current(1)
+        path, changes = await layout.render()
+
+        assert path == "/children/1"
+        assert changes == [{"op": "replace", "path": "/children/0", "value": "1"}]
 
 
 async def test_layout_render_error_has_partial_update():
@@ -220,11 +196,11 @@ async def test_elements_are_garbage_collected():
         live_elements.add(element.id)
         finalize(element, live_elements.remove, element.id)
 
-        update = idom.hooks.use_update()
+        hook = idom.hooks.current_hook()
 
         @idom.event(target_id="force-update")
         async def force_update():
-            update()
+            hook.schedule_render()
 
         return idom.html.div({"onEvent": force_update}, Inner())
 

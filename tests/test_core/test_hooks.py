@@ -4,6 +4,8 @@ import idom
 
 from tests.general_utils import assert_unordered_equal
 
+from .utils import HookCatcher
+
 
 async def test_must_be_rendering_in_layout_to_use_hooks():
     @idom.element
@@ -284,13 +286,13 @@ async def test_use_effect_callback_occurs_after_full_render_is_complete():
 
 
 async def test_use_effect_cleanup_occurs_on_will_render():
-    element_hook = idom.Ref(None)
+    element_hook = HookCatcher()
     cleanup_triggered = idom.Ref(False)
     cleanup_triggered_before_next_render = idom.Ref(False)
 
     @idom.element
+    @element_hook.capture
     async def ElementWithEffect():
-        element_hook.current = idom.hooks.current_hook()
         if cleanup_triggered.current:
             cleanup_triggered_before_next_render.current = True
 
@@ -308,7 +310,7 @@ async def test_use_effect_cleanup_occurs_on_will_render():
 
         assert not cleanup_triggered.current
 
-        element_hook.current.schedule_render()
+        element_hook.schedule_render()
         await layout.render()
 
         assert cleanup_triggered.current
@@ -316,13 +318,13 @@ async def test_use_effect_cleanup_occurs_on_will_render():
 
 
 async def test_use_effect_cleanup_occurs_on_will_unmount():
-    outer_element_hook = idom.Ref(None)
+    outer_element_hook = HookCatcher()
     cleanup_triggered = idom.Ref(False)
     cleanup_triggered_before_next_render = idom.Ref(False)
 
     @idom.element
+    @outer_element_hook.capture
     async def OuterElement():
-        outer_element_hook.current = idom.hooks.current_hook()
         if cleanup_triggered.current:
             cleanup_triggered_before_next_render.current = True
         return ElementWithEffect()
@@ -343,7 +345,7 @@ async def test_use_effect_cleanup_occurs_on_will_unmount():
 
         assert not cleanup_triggered.current
 
-        outer_element_hook.current.schedule_render()
+        outer_element_hook.schedule_render()
         await layout.render()
 
         assert cleanup_triggered.current
@@ -351,7 +353,7 @@ async def test_use_effect_cleanup_occurs_on_will_unmount():
 
 
 async def test_use_effect_memoization():
-    element_hook = idom.Ref(None)
+    element_hook = HookCatcher()
     set_state_callback = idom.Ref(None)
     effect_run_count = idom.Ref(0)
 
@@ -359,8 +361,8 @@ async def test_use_effect_memoization():
     second_value = 2
 
     @idom.element
+    @element_hook.capture
     async def ElementWithMemoizedEffect():
-        element_hook.current = idom.hooks.current_hook()
         state, set_state_callback.current = idom.hooks.use_state(first_value)
 
         @idom.hooks.use_effect(args=[state])
@@ -374,7 +376,7 @@ async def test_use_effect_memoization():
 
         assert effect_run_count.current == 1
 
-        element_hook.current.schedule_render()
+        element_hook.schedule_render()
         await layout.render()
 
         assert effect_run_count.current == 1
@@ -384,7 +386,7 @@ async def test_use_effect_memoization():
 
         assert effect_run_count.current == 2
 
-        element_hook.current.schedule_render()
+        element_hook.schedule_render()
         await layout.render()
 
         assert effect_run_count.current == 2
