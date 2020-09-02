@@ -101,22 +101,36 @@ class Layout(HasAsyncResources):
         try:
             yield {self._root.id: root_element_state}
         finally:
-            self._unmount_element_state(root_element_state)
+            self._delete_element_state(root_element_state)
 
     async def _create_layout_update(self, element: AbstractElement) -> LayoutUpdate:
         element_state = self._element_states[element.id]
+
+        element_state.life_cycle_hook.element_will_render()
+
+        for state in self._iter_element_states_from_root(
+            element_state,
+            include_root=False,
+        ):
+            state.life_cycle_hook.element_will_unmount()
+
+        self._clear_element_state_event_handlers(element_state)
+        self._delete_element_state_children(element_state)
+
         old_model = element_state.model.copy()  # we copy because it will be mutated
         new_model = await self._render_element(element_state)
         changes = make_patch(old_model, new_model).patch
+
+        for state in self._iter_element_states_from_root(
+            element_state,
+            include_root=True,
+        ):
+            state.life_cycle_hook.element_did_render()
+
         return LayoutUpdate(path=element_state.path, changes=changes)
 
     async def _render_element(self, element_state: ElementState) -> Dict[str, Any]:
         try:
-            element_state.life_cycle_hook.element_will_render()
-
-            self._clear_element_state_event_handlers(element_state)
-            self._unmount_element_state_children(element_state)
-
             # BUG: https://github.com/python/mypy/issues/9256
             raw_model = await _render_with_life_cycle_hook(element_state)  # type: ignore
 
@@ -126,8 +140,6 @@ class Layout(HasAsyncResources):
             resolved_model = await self._render_model(element_state, raw_model)
             element_state.model.clear()
             element_state.model.update(resolved_model)
-
-            element_state.life_cycle_hook.element_did_render()
         except Exception:
             logger.exception(f"Failed to render {element_state.element_obj}")
 
@@ -206,12 +218,11 @@ class Layout(HasAsyncResources):
 
     def _reset_element_state(self, element_state: ElementState) -> None:
         self._clear_element_state_event_handlers(element_state)
-        self._unmount_element_state_children(element_state)
+        self._delete_element_state_children(element_state)
 
-    def _unmount_element_state(self, element_state: ElementState) -> None:
-        element_state.life_cycle_hook.element_will_unmount()
+    def _delete_element_state(self, element_state: ElementState) -> None:
         self._clear_element_state_event_handlers(element_state)
-        self._unmount_element_state_children(element_state)
+        self._delete_element_state_children(element_state)
         del self._element_states[element_state.element_obj.id]
 
     def _clear_element_state_event_handlers(self, element_state: ElementState) -> None:
@@ -219,10 +230,30 @@ class Layout(HasAsyncResources):
             del self._event_handlers[handler_id]
         element_state.event_handler_ids.clear()
 
-    def _unmount_element_state_children(self, element_state: ElementState) -> None:
+    def _delete_element_state_children(self, element_state: ElementState) -> None:
         for e_id in element_state.child_elements_ids:
-            self._unmount_element_state(self._element_states[e_id])
+            self._delete_element_state(self._element_states[e_id])
         element_state.child_elements_ids.clear()
+
+    def _iter_element_states_from_root(
+        self,
+        root_element_state: ElementState,
+        include_root: bool,
+    ) -> Iterator[ElementState]:
+        if include_root:
+            pending = [root_element_state]
+        else:
+            pending = [
+                self._element_states[i] for i in root_element_state.child_elements_ids
+            ]
+
+        while pending:
+            visited_element_state = pending.pop(0)
+            yield visited_element_state
+            pending.extend(
+                self._element_states[i]
+                for i in visited_element_state.child_elements_ids
+            )
 
 
 @coroutine

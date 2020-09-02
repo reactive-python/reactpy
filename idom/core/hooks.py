@@ -14,6 +14,8 @@ from typing import (
     overload,
 )
 
+from loguru import logger
+
 from idom.utils import Ref
 
 from .element import AbstractElement
@@ -373,7 +375,11 @@ class LifeCycleHook:
         self._is_rendering = True
 
         for effect in self._event_effects.will_render:
-            effect()
+            try:
+                effect()
+            except Exception:
+                msg = f"Pre-render effect {effect} failed for {self.element}"
+                logger.exception(msg)
 
         self._event_effects.will_render.clear()
         self._event_effects.will_unmount.clear()
@@ -381,7 +387,12 @@ class LifeCycleHook:
     def element_did_render(self) -> None:
         """The element completed a render"""
         for effect in self._event_effects.did_render:
-            effect()
+            try:
+                effect()
+            except Exception:
+                msg = f"Post-render effect {effect} failed for {self.element}"
+                logger.exception(msg)
+
         self._event_effects.did_render.clear()
 
         self._is_rendering = False
@@ -393,7 +404,12 @@ class LifeCycleHook:
     def element_will_unmount(self) -> None:
         """The element is about to be removed from the layout"""
         for effect in self._event_effects.will_unmount:
-            effect()
+            try:
+                effect()
+            except Exception:
+                msg = f"Pre-unmount effect {effect} failed for {self.element}"
+                logger.exception(msg)
+
         self._event_effects.will_unmount.clear()
 
     def set_current(self) -> None:
