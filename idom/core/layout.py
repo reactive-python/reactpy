@@ -49,7 +49,7 @@ class ElementState(NamedTuple):
 
 class Layout(HasAsyncResources):
 
-    __slots__ = ["_root", "_event_handlers"]
+    __slots__ = ["root", "_event_handlers"]
 
     if not hasattr(abc.ABC, "__weakref__"):  # pragma: no cover
         __slots__.append("__weakref__")
@@ -60,13 +60,8 @@ class Layout(HasAsyncResources):
         super().__init__()
         if not isinstance(root, AbstractElement):
             raise TypeError("Expected an AbstractElement, not %r" % root)
-        self._root = root
+        self.root = root
         self._event_handlers: Dict[str, EventHandler] = {}
-
-    @property
-    def root(self) -> str:
-        """Id of the root element."""
-        return self._root.id
 
     def update(self, element: "AbstractElement") -> None:
         try:
@@ -92,14 +87,14 @@ class Layout(HasAsyncResources):
     @async_resource
     async def _rendering_queue(self) -> AsyncIterator["_ElementQueue"]:
         queue = _ElementQueue()
-        queue.put(self._root)
+        queue.put(self.root)
         yield queue
 
     @async_resource
     async def _element_states(self) -> AsyncIterator[ElementState]:
-        root_element_state = self._create_element_state(self._root, "")
+        root_element_state = self._create_element_state(self.root, "")
         try:
-            yield {self._root.id: root_element_state}
+            yield {self.root.id: root_element_state}
         finally:
             self._delete_element_state(root_element_state)
 
@@ -254,6 +249,9 @@ class Layout(HasAsyncResources):
                 self._element_states[i]
                 for i in visited_element_state.child_elements_ids
             )
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.root})"
 
 
 @coroutine
