@@ -39,7 +39,7 @@ def test_cross_origin_jupyter_display(server, driver, driver_wait, mount, server
     async def SimpleButton():
         @idom.event
         async def on_click(event):
-            clicked.set(True)
+            clicked.current = True
 
         return idom.html.button(
             {"id": "simple-button", "onClick": on_click}, "click me cross origin"
@@ -88,7 +88,7 @@ def test_same_origin_jupyter_display(driver, driver_wait, mount, server_url):
     async def SimpleButton():
         @idom.event
         async def on_click(event):
-            clicked.set(True)
+            clicked.current = True
 
         return idom.html.button(
             {"id": "simple-button", "onClick": on_click}, "click me same origin"

@@ -61,7 +61,7 @@ async def test_simple_layout():
     @idom.element
     async def SimpleElement(tag):
         tag, set_tag = idom.hooks.use_state(tag)
-        set_state_hook.set(set_tag)
+        set_state_hook.current = set_tag
         return idom.vdom(tag)
 
     element = SimpleElement("div")
