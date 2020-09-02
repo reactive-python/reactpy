@@ -231,7 +231,7 @@ def test_simple_input_with_use_state(driver, display):
     @idom.element
     async def Input(message=None):
         message, set_message = idom.hooks.use_state(message)
-        message_ref.set(message)
+        message_ref.current = message
 
         async def on_change(event):
             if event["value"] == "this is a test":
@@ -251,21 +251,143 @@ def test_simple_input_with_use_state(driver, display):
     assert message_ref.current == "this is a test"
 
 
-def test_use_effect_callback_occurs_after_full_layout_update_is_complete():
-    # TODO: right now it runs after the element is rendered, not the full layout update
-    assert False
+async def test_use_effect_callback_occurs_after_full_render_is_complete():
+    effect_triggered = idom.Ref(False)
+    effect_triggers_after_final_render = idom.Ref(None)
+
+    @idom.element
+    async def OuterElement():
+        return idom.html.div(
+            ElementWithEffect(),
+            CheckNoEffectYet(),
+        )
+
+    @idom.element
+    async def ElementWithEffect():
+        @idom.hooks.use_effect
+        def effect():
+            effect_triggered.current = True
+
+        return idom.html.div()
+
+    @idom.element
+    async def CheckNoEffectYet():
+        effect_triggers_after_final_render.current = not effect_triggered.current
+        return idom.html.div()
+
+    async with idom.Layout(OuterElement()) as layout:
+        await layout.render()
+
+    assert effect_triggered.current
+    assert effect_triggers_after_final_render.current is not None
+    assert effect_triggers_after_final_render.current
 
 
-def test_use_effect_cleanup_occurs_on_will_render():
-    assert False
+async def test_use_effect_cleanup_occurs_on_will_render():
+    element_hook = idom.Ref(None)
+    cleanup_triggered = idom.Ref(False)
+    cleanup_triggered_before_next_render = idom.Ref(False)
+
+    @idom.element
+    async def ElementWithEffect():
+        element_hook.current = idom.hooks.current_hook()
+        if cleanup_triggered.current:
+            cleanup_triggered_before_next_render.current = True
+
+        @idom.hooks.use_effect
+        def effect():
+            def cleanup():
+                cleanup_triggered.current = True
+
+            return cleanup
+
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithEffect()) as layout:
+        await layout.render()
+
+        assert not cleanup_triggered.current
+
+        element_hook.current.schedule_render()
+        await layout.render()
+
+        assert cleanup_triggered.current
+        assert cleanup_triggered_before_next_render.current
 
 
-def test_use_effect_cleanup_occurs_on_will_unmount():
-    assert False
+async def test_use_effect_cleanup_occurs_on_will_unmount():
+    outer_element_hook = idom.Ref(None)
+    cleanup_triggered = idom.Ref(False)
+    cleanup_triggered_before_next_render = idom.Ref(False)
+
+    @idom.element
+    async def OuterElement():
+        outer_element_hook.current = idom.hooks.current_hook()
+        if cleanup_triggered.current:
+            cleanup_triggered_before_next_render.current = True
+        return ElementWithEffect()
+
+    @idom.element
+    async def ElementWithEffect():
+        @idom.hooks.use_effect
+        def effect():
+            def cleanup():
+                cleanup_triggered.current = True
+
+            return cleanup
+
+        return idom.html.div()
+
+    async with idom.Layout(OuterElement()) as layout:
+        await layout.render()
+
+        assert not cleanup_triggered.current
+
+        outer_element_hook.current.schedule_render()
+        await layout.render()
+
+        assert cleanup_triggered.current
+        assert cleanup_triggered_before_next_render.current
 
 
-def test_use_effect_memoization():
-    assert False
+async def test_use_effect_memoization():
+    element_hook = idom.Ref(None)
+    set_state_callback = idom.Ref(None)
+    effect_run_count = idom.Ref(0)
+
+    first_value = 1
+    second_value = 2
+
+    @idom.element
+    async def ElementWithMemoizedEffect():
+        element_hook.current = idom.hooks.current_hook()
+        state, set_state_callback.current = idom.hooks.use_state(first_value)
+
+        @idom.hooks.use_effect(args=[state])
+        def effect():
+            effect_run_count.current += 1
+
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithMemoizedEffect()) as layout:
+        await layout.render()
+
+        assert effect_run_count.current == 1
+
+        element_hook.current.schedule_render()
+        await layout.render()
+
+        assert effect_run_count.current == 1
+
+        set_state_callback.current(second_value)
+        await layout.render()
+
+        assert effect_run_count.current == 2
+
+        element_hook.current.schedule_render()
+        await layout.render()
+
+        assert effect_run_count.current == 2
 
 
 def test_use_reducer():

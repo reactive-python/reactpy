@@ -6,7 +6,6 @@ from idom.utils import html_to_vdom
 
 def test_basic_ref_behavior():
     r = idom.Ref(None)
-    r.set("new_1")
     assert r.current == "new_1"
     r.current = "new_2"
     assert r.current == "new_2"

@@ -221,11 +221,11 @@ def fixturized_server_type(server_type):
         """A per-client-state server that updates the ``last_server_error`` fixture"""
 
         async def _run_renderer(self, *args, **kwargs):
-            self._config["last_server_error"].set(None)
+            self._config["last_server_error"].current = None
             try:
                 await super()._run_renderer(*args, **kwargs)
             except Exception as e:
-                self._config["last_server_error"].set(e)
+                self._config["last_server_error"].current = e
 
     return ServerSavesLastError
 
@@ -261,7 +261,7 @@ def last_server_error():
 
 @pytest.fixture(autouse=True)
 def _clean_last_server_error(last_server_error) -> Iterator[None]:
-    last_server_error.set(default_error)
+    last_server_error.current = default_error
     yield
 
 

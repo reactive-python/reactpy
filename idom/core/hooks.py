@@ -236,10 +236,10 @@ def use_memo(
     if memo.empty():
         # we need to initialize on the first run
         changed = True
-        memo.args = args
+        memo.args = () if args is None else args
     elif (
         args is None
-        or len(memo.args) != args
+        or len(memo.args) != len(args)
         or any(current is not new for current, new in zip(memo.args, args))
     ):
         memo.args = args

@@ -25,10 +25,6 @@ class Ref(Generic[_Current]):
     def __init__(self, initial_value: _Current) -> None:
         self.current = initial_value
 
-    def set(self, value: _Current) -> None:
-        self.current = value
-        return None
-
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Ref) and (other.current == self.current)
 
