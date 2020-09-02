@@ -94,16 +94,6 @@ Try typing in the text box and pressing 'Enter' 📋
 .. interactive-widget:: todo
 
 
-Drag and Drop
--------------
-
-.. literalinclude:: examples/drag_and_drop.py
-
-Click and drag the black box onto the white one 👆
-
-.. interactive-widget:: drag_and_drop
-
-
 The Game Snake
 --------------
 
