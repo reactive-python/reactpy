@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable, Tuple, Optional, Dict, Union, Set
+from typing import Any, Callable, Tuple, Optional, Dict, Union, Set, cast
 
 from typing_extensions import Protocol
 
@@ -183,7 +183,7 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
             # new displays will adopt the latest constructor and arguments
             (f, a, kw), set_state = hooks.use_state(constructor_and_arguments.current)
 
-            def add_callback():
+            def add_callback() -> Callable[[], None]:
                 set_state_callbacks.add(set_state)
                 return lambda: set_state_callbacks.remove(set_state)
 
@@ -210,7 +210,7 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
             constructor_and_arguments.current = (_func_, args, kwargs)
             return None
 
-    return swap, HotSwap
+    return cast(MountFunc, swap), HotSwap
 
 
 def multiview() -> Tuple["MultiViewMount", ElementConstructor]:
@@ -290,36 +290,3 @@ class MultiViewMount:
         kwargs: Dict[str, Any],
     ) -> None:
         self._views[view_id] = lambda: constructor(*args, **kwargs)
-
-
-{
-    "tagName": "div",
-    "children": [
-        {
-            "tagName": "div",
-            "children": [
-                {
-                    "tagName": "button",
-                    "attributes": {"id": "incr-button"},
-                    "children": ["click to increment"],
-                    "eventHandlers": {
-                        "onClick": {
-                            "target": "139775953392160",
-                            "preventDefault": False,
-                            "stopPropagation": False,
-                        }
-                    },
-                },
-                {
-                    "tagName": "div",
-                    "attributes": {"id": "count-is-1"},
-                    "children": ["1"],
-                },
-            ],
-        }
-    ],
-}
-[
-    {"path": "/children/1/attributes/id", "op": "replace", "value": "count-is-1"},
-    {"path": "/children/1/children/0", "op": "replace", "value": "1"},
-]

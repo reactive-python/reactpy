@@ -13,7 +13,7 @@ ElementConstructor = Callable[..., "Element"]
 ElementRenderFunction = Callable[..., Awaitable["VdomDict"]]
 
 
-def element(function: ElementRenderFunction) -> Callable[..., Any]:
+def element(function: ElementRenderFunction) -> Callable[..., "Element"]:
     """A decorator for defining an :class:`Element`.
 
     Parameters:
