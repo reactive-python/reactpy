@@ -1,4 +1,3 @@
-from idom.core.element import element
 import re
 
 import pytest
@@ -519,12 +518,46 @@ async def test_use_reducer_dispatch_callback_identity_is_preserved():
         assert first_dispatch is d
 
 
-def test_use_callback_identity():
-    assert False
+async def test_use_callback_identity():
+    element_hook = HookCatcher()
+    used_callbacks = []
+
+    @idom.element
+    async def ElementWithRef():
+        used_callbacks.append(idom.hooks.use_callback(lambda: None))
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithRef()) as layout:
+        await layout.render()
+        element_hook.schedule_render()
+        await layout.render()
+
+    assert used_callbacks[0] is used_callbacks[1]
+    assert len(used_callbacks) == 2
 
 
-def test_use_callback_memoization():
-    assert False
+async def test_use_callback_memoization():
+    element_hook = HookCatcher()
+    set_state_hook = idom.Ref(None)
+    used_callbacks = []
+
+    @idom.element
+    @element_hook.capture
+    async def ElementWithRef():
+        state, set_state_hook.current = idom.hooks.use_state(0)
+        used_callbacks.append(idom.hooks.use_callback(lambda: None, [state]))
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithRef()) as layout:
+        await layout.render()
+        set_state_hook.current(1)
+        await layout.render()
+        element_hook.schedule_render()
+        await layout.render()
+
+    assert used_callbacks[0] is not used_callbacks[1]
+    assert used_callbacks[1] is used_callbacks[2]
+    assert len(used_callbacks) == 3
 
 
 def test_use_memo():
@@ -543,5 +576,19 @@ def test_use_memo_decorator_and_non_decorator_usage():
     assert False
 
 
-def test_use_ref():
-    assert False
+async def test_use_ref():
+    element_hook = HookCatcher()
+    used_refs = []
+
+    @idom.element
+    async def ElementWithRef():
+        used_refs.append(idom.hooks.use_ref(1))
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithRef()) as layout:
+        await layout.render()
+        element_hook.schedule_render()
+        await layout.render()
+
+    assert used_refs[0] is used_refs[1]
+    assert len(used_refs) == 2
