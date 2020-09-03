@@ -6,10 +6,11 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
-# -- Path Setup --------------------------------------------------------------
-
 import sys
 from pathlib import Path
+from setuptools_scm import version_from_scm
+
+# -- Path Setup --------------------------------------------------------------
 
 here = Path(__file__).parent
 
@@ -28,7 +29,9 @@ author = "Ryan Morshead"
 
 import idom  # noqa
 
-release = idom.__version__
+print(str(here.parent))
+_scm_version = version_from_scm(str(here.parent.parent))
+release = _scm_version.tag.base_version
 version = release.rsplit(".", 1)[0]
 
 # -- General configuration ---------------------------------------------------
