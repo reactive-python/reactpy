@@ -1,4 +1,3 @@
-from idom.core.element import element
 import re
 
 import pytest

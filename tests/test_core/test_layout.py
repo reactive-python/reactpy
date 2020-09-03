@@ -1,5 +1,6 @@
 import asyncio
 import gc
+import re
 from weakref import finalize
 
 import pytest
@@ -24,6 +25,21 @@ def test_layout_expects_abstract_element():
         idom.Layout(None)
     with pytest.raises(TypeError, match="Expected an AbstractElement"):
         idom.Layout(idom.html.div())
+
+
+def test_not_open_layout_update_logs_error(caplog):
+    @idom.element
+    async def Element():
+        ...
+
+    element = Element()
+    layout = idom.Layout(element)
+    layout.update(element)
+
+    assert re.match(
+        "Did not update .*? - resources of .*? are closed",
+        next(iter(caplog.records)).msg,
+    )
 
 
 async def test_simple_layout():
