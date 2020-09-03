@@ -10,7 +10,7 @@
   <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-purple.svg">
 </a>
 
-Libraries for creating and controlling interactive web pages with Python 3.6 and above.
+Libraries for creating and controlling interactive web pages with Python 3.7 and above.
 
 **Be sure to [read the Documentation](https://idom-docs.herokuapp.com)**
 

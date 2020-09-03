@@ -5,7 +5,7 @@ IDOM |release|
     :height: 250px
 
 Libraries for defining and controlling interactive webpages with Python
-3.6 and above.
+3.7 and above.
 
 .. toctree::
     :maxdepth: 1
