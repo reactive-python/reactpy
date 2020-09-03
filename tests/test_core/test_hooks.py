@@ -1,3 +1,4 @@
+from idom.core.element import element
 import re
 
 import pytest
@@ -523,6 +524,7 @@ async def test_use_callback_identity():
     used_callbacks = []
 
     @idom.element
+    @element_hook.capture
     async def ElementWithRef():
         used_callbacks.append(idom.hooks.use_callback(lambda: None))
         return idom.html.div()
@@ -545,7 +547,8 @@ async def test_use_callback_memoization():
     @element_hook.capture
     async def ElementWithRef():
         state, set_state_hook.current = idom.hooks.use_state(0)
-        used_callbacks.append(idom.hooks.use_callback(lambda: None, [state]))
+        cb = idom.hooks.use_callback(lambda: None, [state])
+        used_callbacks.append(cb)
         return idom.html.div()
 
     async with idom.Layout(ElementWithRef()) as layout:
@@ -560,20 +563,106 @@ async def test_use_callback_memoization():
     assert len(used_callbacks) == 3
 
 
-def test_use_memo():
-    assert False
+async def test_use_memo():
+    element_hook = HookCatcher()
+    set_state_hook = idom.Ref(None)
+    used_values = []
+
+    @idom.element
+    @element_hook.capture
+    async def ElementWithMemo():
+        state, set_state_hook.current = idom.hooks.use_state(0)
+        value = idom.hooks.use_memo(
+            lambda: idom.Ref(state),  # use a Ref here just to ensure it's a unique obj
+            [state],
+        )
+        used_values.append(value)
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithMemo()) as layout:
+        await layout.render()
+        set_state_hook.current(1)
+        await layout.render()
+        element_hook.schedule_render()
+        await layout.render()
+
+    assert used_values[0] is not used_values[1]
+    assert used_values[1] is used_values[2]
+    assert len(used_values) == 3
 
 
-def test_use_memo_always_runs_if_args_are_none():
-    assert False
+async def test_use_memo_always_runs_if_args_are_none():
+    element_hook = HookCatcher()
+    used_values = []
+
+    iter_values = iter([1, 2, 3])
+
+    @idom.element
+    @element_hook.capture
+    async def ElementWithMemo():
+        value = idom.hooks.use_memo(lambda: next(iter_values))
+        used_values.append(value)
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithMemo()) as layout:
+        await layout.render()
+        element_hook.schedule_render()
+        await layout.render()
+        element_hook.schedule_render()
+        await layout.render()
+
+    assert used_values == [1, 2, 3]
 
 
-def test_use_memo_never_runs_if_args_args_empty_list():
-    assert False
+async def test_use_memo_with_stored_args_is_empty_tuple_after_args_are_none():
+    element_hook = HookCatcher()
+    used_values = []
+
+    iter_values = iter([1, 2, 3])
+    args_used_in_memo = idom.Ref(())
+
+    @idom.element
+    @element_hook.capture
+    async def ElementWithMemo():
+        value = idom.hooks.use_memo(
+            lambda: next(iter_values), args_used_in_memo.current
+        )
+        used_values.append(value)
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithMemo()) as layout:
+        await layout.render()
+        element_hook.schedule_render()
+        args_used_in_memo.current = None
+        await layout.render()
+        element_hook.schedule_render()
+        args_used_in_memo.current = ()
+        await layout.render()
+
+    assert used_values == [1, 2, 2]
 
 
-def test_use_memo_decorator_and_non_decorator_usage():
-    assert False
+async def test_use_memo_never_runs_if_args_args_empty_list():
+    element_hook = HookCatcher()
+    used_values = []
+
+    iter_values = iter([1, 2, 3])
+
+    @idom.element
+    @element_hook.capture
+    async def ElementWithMemo():
+        value = idom.hooks.use_memo(lambda: next(iter_values), ())
+        used_values.append(value)
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithMemo()) as layout:
+        await layout.render()
+        element_hook.schedule_render()
+        await layout.render()
+        element_hook.schedule_render()
+        await layout.render()
+
+    assert used_values == [1, 1, 1]
 
 
 async def test_use_ref():
@@ -581,6 +670,7 @@ async def test_use_ref():
     used_refs = []
 
     @idom.element
+    @element_hook.capture
     async def ElementWithRef():
         used_refs.append(idom.hooks.use_ref(1))
         return idom.html.div()
