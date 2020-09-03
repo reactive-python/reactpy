@@ -92,4 +92,4 @@ cause the widget to change 🖱️
 .. _pull request: https://github.com/rmorshea/idom/pulls
 .. _IDOM Sandbox: https://idom-sandbox.herokuapp.com
 .. |launch-binder| image:: https://mybinder.org/badge_logo.svg
-   :target: https://mybinder.org/v2/gh/rmorshea/idom/master?filepath=examples%2Fintroduction.ipynb
+   :target: https://mybinder.org/v2/gh/rmorshea/idom/master?filepath=notebooks%2Fintroduction.ipynb

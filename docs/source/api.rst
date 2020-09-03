@@ -53,37 +53,30 @@ Sanic Servers
 Useful Tools
 ------------
 
-.. automodule:: idom.tools
+.. automodule:: idom.utils
     :members:
 
 
-Common Widgets
+Jupyter Widget
 --------------
 
-.. automodule:: idom.widgets.common
+.. automodule:: idom.widgets.jupyter
     :members:
 
 
-Display Utilities
------------------
-
-.. automodule:: idom.widgets.display
-    :members:
-
-
-Input Helper
+HTML Widgets
 ------------
-
-.. automodule:: idom.widgets.inputs
-    :members:
-
-
-HTML Nodes
-----------
 
 .. automodule:: idom.widgets.html
     :members:
     :undoc-members:
+
+Widget Tools
+------------
+
+.. automodule:: idom.widgets.utils
+    :members:
+
 
 Dialect
 -------

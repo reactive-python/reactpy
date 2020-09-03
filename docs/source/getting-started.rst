@@ -38,7 +38,7 @@ Since it's likely a lot to take in at once, we'll break it down piece by piece:
 
 The ``idom.element`` decorator creates an :ref:`Element <Stateful Element>` constructor
 whose render function is defined by the `asynchronous function`_ below it. To create
-an :class:`idom.core.element.Element` instance we call ``Slideshow()`` with the same
+an :class:`~idom.core.element.Element` instance we call ``Slideshow()`` with the same
 arguments as its render function. The render function of an Element returns a data
 structure that depicts a user interface, or in more technical terms a Document Object
 Model (DOM). We call this structural representation of the DOM a `Virtual DOM`__ (VDOM)
