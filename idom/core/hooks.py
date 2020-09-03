@@ -188,7 +188,7 @@ def use_callback(
 
 def use_callback(
     function: Optional[_CallbackFunc] = None,
-    args: Optional[Sequence[Any]] = None,
+    args: Optional[Sequence[Any]] = (),
 ) -> Union[_CallbackFunc, Callable[[_CallbackFunc], _CallbackFunc]]:
     """See the full :ref:`use_callback` docs for details
 
@@ -252,6 +252,7 @@ def use_memo(
         memo.args = () if args is None else args
     elif args is None:
         changed = True
+        memo.args = ()
     elif (
         len(memo.args) != len(args)
         # if args are same length check identity for each item
