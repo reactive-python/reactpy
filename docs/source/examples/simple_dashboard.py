@@ -23,8 +23,18 @@ async def RandomWalk():
             .number-input-container input + input {margin-left: 4%}
             """
         ),
-        NumberInput("Mean", mu.current, mu.set, (-1, 1, 0.01)),
-        NumberInput("Standard Deviation", sigma.current, sigma.set, (0, 1, 0.01)),
+        NumberInput(
+            "Mean",
+            mu.current,
+            mu.set_current,
+            (-1, 1, 0.01),
+        ),
+        NumberInput(
+            "Standard Deviation",
+            sigma.current,
+            sigma.set_current,
+            (0, 1, 0.01),
+        ),
     )
 
 
