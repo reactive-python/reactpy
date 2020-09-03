@@ -116,7 +116,9 @@ connects to it will see a fresh view of the layout. If clients should see views 
 common state you can use the ``SharedClientStateServer`` instead.
 
 To display the layout we can navigate to http://localhost:8765/client/index.html or
-use ``idom.display()`` to show it in a Jupyter Notebook via a widget.
+use the dislay function returns by :func:`~idom.widgets.jupyter.init_display` to show it
+in a Jupyter Notebook via a widget. See the :ref:`Examples` section for more info on
+the ways to display your layouts.
 
 .. Links
 .. =====
