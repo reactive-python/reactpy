@@ -9,17 +9,6 @@ from idom.core.layout import Layout, LayoutEvent
 from idom.core.render import SharedStateRenderer, AbstractRenderer
 
 
-import asyncio
-from asyncio.exceptions import CancelledError
-
-import pytest
-from anyio.exceptions import ExceptionGroup
-
-import idom
-from idom.core.layout import Layout, LayoutEvent
-from idom.core.render import SharedStateRenderer, AbstractRenderer
-
-
 async def test_shared_state_renderer():
     done = asyncio.Event()
     changes_1 = []
@@ -37,14 +26,14 @@ async def test_shared_state_renderer():
             return events_to_inject.pop(0)
         except IndexError:
             done.set()
-            raise CancelledError()
+            raise asyncio.CancelledError()
 
     async def send_2(patch):
         changes_2.append(patch.changes)
 
     async def recv_2():
         await done.wait()
-        raise CancelledError()
+        raise asyncio.CancelledError()
 
     @idom.element
     async def Clickable():

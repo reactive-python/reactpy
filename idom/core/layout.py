@@ -1,6 +1,5 @@
 import abc
 import asyncio
-from types import coroutine
 from typing import (
     List,
     Dict,
@@ -125,8 +124,11 @@ class Layout(HasAsyncResources):
 
     async def _render_element(self, element_state: ElementState) -> Dict[str, Any]:
         try:
-            # BUG: https://github.com/python/mypy/issues/9256
-            raw_model = await _render_with_life_cycle_hook(element_state)  # type: ignore
+            element_state.life_cycle_hook.set_current()
+            try:
+                raw_model = await element_state.element_obj.render()
+            finally:
+                element_state.life_cycle_hook.unset_current()
 
             if isinstance(raw_model, AbstractElement):
                 raw_model = {"tagName": "div", "children": [raw_model]}
@@ -209,10 +211,6 @@ class Layout(HasAsyncResources):
             life_cycle_hook=LifeCycleHook(element, self.update),
         )
 
-    def _reset_element_state(self, element_state: ElementState) -> None:
-        self._clear_element_state_event_handlers(element_state)
-        self._delete_element_state_children(element_state)
-
     def _delete_element_state(self, element_state: ElementState) -> None:
         self._clear_element_state_event_handlers(element_state)
         self._delete_element_state_children(element_state)
@@ -250,26 +248,6 @@ class Layout(HasAsyncResources):
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.root})"
-
-
-@coroutine
-def _render_with_life_cycle_hook(element_state: ElementState) -> Iterator[None]:
-    """Render an element which may use hooks.
-
-    We use a coroutine here because we need to know when control is yielded
-    back to the event loop since it might switch to render a different element.
-    """
-    gen = element_state.element_obj.render().__await__()
-    try:
-        while True:
-            element_state.life_cycle_hook.set_current()
-            value = next(gen)
-            element_state.life_cycle_hook.unset_current()
-            yield value
-    except StopIteration as error:
-        return error.value
-    finally:
-        element_state.life_cycle_hook.unset_current()
 
 
 class _ElementQueue:
