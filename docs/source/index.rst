@@ -15,11 +15,9 @@ Libraries for defining and controlling interactive webpages with Python
     core-concepts
     life-cycle-hooks
     javascript-modules
-    how-it-works
     specifications
     extra-features
     examples
-    glossary
     known-issues
     api
 
@@ -53,7 +51,7 @@ user clicks an image:
     async def Slideshow():
         index, set_index = idom.hooks.use_state(0)
 
-        async def next_image(event):
+        def next_image(event):
             set_index(index + 1)
 
         return idom.html.img(

@@ -20,31 +20,19 @@ data = [
 
 @idom.element
 async def ShowChartClicks():
-    shared_last_event = idom.hooks.Shared({})
-    idom.html.div(
-        ClickableChart(shared_last_event),
-        LastEventView(shared_last_event),
-    )
-
-
-@idom.element
-async def Chart(shared_last_event):
-    set_last_event = idom.hooks.use_state(shared_last_event)[1]
-
-    async def log_event(event):
-        set_last_event(event)
-
-    return ClickableChart(
-        {"data": data, "onClick": log_event, "style": {"parent": {"width": "500px"}}},
-    )
-
-
-@idom.element
-async def LastEventView(shared_last_event):
-    last_event = idom.hooks.use_state(shared_last_event)[0]
-
+    last_event, set_last_event = idom.hooks.use_state({})
     return idom.html.div(
-        {"class": "highlight"}, idom.html.pre(json.dumps(last_event, indent=2))
+        ClickableChart(
+            {
+                "data": data,
+                "onClick": set_last_event,
+                "style": {"parent": {"width": "500px"}},
+            },
+        ),
+        idom.html.div(
+            {"class": "highlight"},
+            idom.html.pre(json.dumps(last_event, indent=2)),
+        ),
     )
 
 

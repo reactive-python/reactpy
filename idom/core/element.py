@@ -18,7 +18,7 @@ def element(function: ElementRenderFunction) -> Callable[..., "Element"]:
 
     Parameters:
         function:
-            The function that will render a :term:`VDOM` model.
+            The function that will render a :ref:`VDOM <VDOM Mimetype>` model.
     """
     if not inspect.iscoroutinefunction(function):
         raise TypeError(f"Expected a coroutine function, not {function}")
@@ -49,7 +49,7 @@ class AbstractElement(abc.ABC):
 
     @abc.abstractmethod
     async def render(self) -> "VdomDict":
-        """Render the element's :term:`VDOM` model."""
+        """Render the element's :ref:`VDOM <VDOM Mimetype>` model."""
 
 
 class Element(AbstractElement):

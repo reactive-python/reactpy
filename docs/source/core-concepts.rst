@@ -19,9 +19,9 @@ the addage "the best code is no code at all," we make the related claim that "th
 way to manage state is to have no state at all."
 
 With IDOM the core of your application will be built on the back of basic functions and
-coroutines that return :term:`VDOM` models and which do so without state and without
-`side effects`_. We call these kinds of model rendering functions
-:term:`Pure Elements <Pure Element>`. For example, one might want a function which
+coroutines that return :ref:`VDOM <VDOM Mimetype>` models and which do so without state
+and without `side effects`_. We call these kinds of model rendering functions
+:ref:`Pure Elements`. For example, one might want a function which
 accepted a list of strings and turned it into a series of paragraph elements:
 
 .. code-block::
@@ -33,7 +33,7 @@ accepted a list of strings and turned it into a series of paragraph elements:
 Stateful Elements
 -----------------
 
-A Stateful Element is one which uses a :ref:`Life Cycle Hook`. These life cycle hooks
+A Stateful Element is one which uses a :ref:`Life Cycle Hooks`. These life cycle hooks
 allow you to add state to otherwise stateless functions. To create a stateful element
 you'll need to apply the :func:`~idom.core.element.element` decorator to a coroutine_
 whose body contains a hook usage. We'll demonstrate that with a simple
@@ -57,9 +57,9 @@ whose body contains a hook usage. We'll demonstrate that with a simple
 Element Layout
 --------------
 
-Displaying an element requires you to turn elements into :term:`VDOM` - this is done
-using a :class:`~idom.core.layout.Layout`. Layouts are responsible for rendering
-elements (turning them into VDOM) and scheduling their re-renders when they
+Displaying an element requires you to turn elements into :ref:`VDOM <VDOM Mimetype>` -
+this is done using a :class:`~idom.core.layout.Layout`. Layouts are responsible for
+rendering elements (turning them into VDOM) and scheduling their re-renders when they
 :meth:`~idom.core.layout.Layout.update`. To create a layout, you'll need an
 :class:`~idom.core.element.Element` instance, which will become its root, and won't
 ever be removed from the model. Then you'll just need to call and await a

@@ -13,7 +13,7 @@ Let's look at the example that you may have seen
     async def Slideshow():
         index, set_index = idom.hooks.use_state(0)
 
-        async def next_image(event):
+        def next_image(event):
             set_index(index + 1)
 
         return idom.html.img(
@@ -36,7 +36,7 @@ Since it's likely a lot to take in at once, we'll break it down piece by piece:
    @idom.element
    async def Slideshow():
 
-The ``idom.element`` decorator creates an :ref:`Element <Stateful Element>` constructor
+The ``idom.element`` decorator creates an :ref:`Element <Stateful Elements>` constructor
 whose render function is defined by the `asynchronous function`_ below it. To create
 an :class:`~idom.core.element.Element` instance we call ``Slideshow()`` with the same
 arguments as its render function. The render function of an Element returns a data
@@ -68,7 +68,7 @@ function allow us to change it. The one required argument of ``use_state`` is th
 
 .. code-block::
 
-        async def next_image(event):
+        def next_image(event):
             set_index(index + 1)
 
 The coroutine above will get added as an event handler to the resulting view. When it

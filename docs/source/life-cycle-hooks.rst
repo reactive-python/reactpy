@@ -187,7 +187,7 @@ one state to the next is especially complex or involves nested data structures.
 may be slightly more performant as well as being preferable since there is only one
 ``dispatch_action`` callback versus the many ``set_state`` callbacks.
 
-We can rework the :ref:`Function Updates` counter example to use ``use_reducer``:
+We can rework the :ref:`Functional Updates` counter example to use ``use_reducer``:
 
 .. literalinclude:: examples/use_reducer_counter.py
 

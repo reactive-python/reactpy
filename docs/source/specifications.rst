@@ -2,8 +2,9 @@ Specifications
 ==============
 
 Describes various data structures and protocols used to define and communicate virtual
-document object models (:term:`VDOM`). The definitions to below follow in the footsteps
-of `a specification <https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md>`_
+document object models (:ref:`VDOM <VDOM Mimetype>`). The definitions to below follow in
+the footsteps of
+`a specification <https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md>`_
 created by `Nteract <https://nteract.io>`_ and which was built into
 `JupyterLab <https://jupyterlab.readthedocs.io/en/stable/>`_. While IDOM's specification
 for VDOM is fairly well established, it should not be relied until it's been fully
@@ -167,4 +168,6 @@ Updates to VDOM modules are sent using the `JSON Patch`_ specification.
 ... this section is still under construction :)
 
 
-.. _JSON Patch:: http://jsonpatch.com/
+.. Links
+.. =====
+.. _JSON Patch: http://jsonpatch.com/

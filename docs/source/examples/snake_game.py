@@ -82,7 +82,7 @@ async def GameLoop(grid_size, block_scale, set_game_state):
         assign_grid_block_color(grid, snake[-1], "yellow")
         set_game_state(GameState.won)
 
-    interval = use_interval(0.4)
+    interval = use_interval(0.5)
 
     @use_async_effect
     async def animate():

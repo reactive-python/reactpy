@@ -123,7 +123,9 @@ def make_vdom_constructor(tag: str, allow_children: bool = True) -> VdomDictCons
     constructor.__name__ = tag
     qualname_prefix = constructor.__qualname__.rsplit(".", 1)[0]
     constructor.__qualname__ = qualname_prefix + f".{tag}"
-    constructor.__doc__ = f"""Create a new ``<{tag}/>`` - returns :term:`VDOM`."""
+    constructor.__doc__ = (
+        f"""Create a new ``<{tag}/>`` - returns :ref:`VDOM <VDOM Mimetype>`."""
+    )
 
     return constructor
 

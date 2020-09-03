@@ -167,12 +167,12 @@ Source of ``chart.js``:
 Shared Client Views
 -------------------
 
-This example requires the :ref:`~idom.server.sanic.SharedClientStateServer`. Be sure to
-replace it in your boilerplate code before going further! Once you've done this we can
-just re-display our :ref:`Slideshow` example using the new server. Now all we need to do
-is connect to the server with a couple clients to see that their views are synced. This
-can be done by navigating to the server URL in seperate browser tabs. Likewise if you're
-using a Jupyter Notebook you would display it in multiple cells like this:
+This example requires the :class:`~idom.server.sanic.SharedClientStateServer`. Be sure
+to replace it in your boilerplate code before going further! Once you've done this we
+can just re-display our :ref:`Slideshow` example using the new server. Now all we need
+to do is connect to the server with a couple clients to see that their views are synced.
+This can be done by navigating to the server URL in seperate browser tabs. Likewise if
+you're using a Jupyter Notebook you would display it in multiple cells like this:
 
 **Jupyter Notebook**
 

@@ -147,7 +147,6 @@ def _package_json() -> Dict[str, Any]:
         "snowpack": {
             "installOptions": {
                 "dest": str(WEB_MODULES),
-                "include": str(CORE_MODULES / "**" / "*.js"),
             },
             "webDependencies": [],
         },
