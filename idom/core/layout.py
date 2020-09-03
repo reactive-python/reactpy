@@ -4,6 +4,7 @@ from typing import (
     List,
     Dict,
     Tuple,
+    Mapping,
     NamedTuple,
     Any,
     Set,
@@ -145,16 +146,17 @@ class Layout(HasAsyncResources):
         return element_state.model
 
     async def _render_model(
-        self, element_state: ElementState, model: Dict[str, Any]
+        self, element_state: ElementState, model: Mapping[str, Any]
     ) -> Dict[str, Any]:
+        serialized_model: Dict[str, Any] = {}
         event_handlers = self._render_model_event_targets(element_state, model)
         if event_handlers:
-            model["eventHandlers"] = event_handlers
+            serialized_model["eventHandlers"] = event_handlers
         if "children" in model:
-            model["children"] = await self._render_model_children(
+            serialized_model["children"] = await self._render_model_children(
                 element_state, model["children"]
             )
-        return model
+        return {**model, **serialized_model}
 
     async def _render_model_children(
         self, element_state: ElementState, children: Union[List[Any], Tuple[Any, ...]]
@@ -176,7 +178,7 @@ class Layout(HasAsyncResources):
         return resolved_children
 
     def _render_model_event_targets(
-        self, element_state: ElementState, model: Dict[str, Any]
+        self, element_state: ElementState, model: Mapping[str, Any]
     ) -> Dict[str, EventTarget]:
         handlers: Dict[str, EventHandler] = {}
         if "eventHandlers" in model:

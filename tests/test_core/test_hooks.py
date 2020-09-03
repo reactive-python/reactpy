@@ -546,7 +546,11 @@ async def test_use_callback_memoization():
     @element_hook.capture
     async def ElementWithRef():
         state, set_state_hook.current = idom.hooks.use_state(0)
-        cb = idom.hooks.use_callback(lambda: None, [state])
+
+        @idom.hooks.use_callback(args=[state])  # use the deco form for coverage
+        def cb():
+            return None
+
         used_callbacks.append(cb)
         return idom.html.div()
 
