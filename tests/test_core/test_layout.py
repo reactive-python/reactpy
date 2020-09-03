@@ -12,7 +12,7 @@ from tests.general_utils import assert_unordered_equal, HookCatcher
 
 def test_layout_repr():
     @idom.element
-    async def MyElement():
+    def MyElement():
         ...
 
     my_element = MyElement()
@@ -29,7 +29,7 @@ def test_layout_expects_abstract_element():
 
 def test_not_open_layout_update_logs_error(caplog):
     @idom.element
-    async def Element():
+    def Element():
         ...
 
     element = Element()
@@ -46,7 +46,7 @@ async def test_simple_layout():
     set_state_hook = idom.Ref(None)
 
     @idom.element
-    async def SimpleElement():
+    def SimpleElement():
         tag, set_state_hook.current = idom.hooks.use_state("div")
         return idom.vdom(tag)
 
@@ -68,12 +68,12 @@ async def test_nested_element_layout():
     child_set_state = idom.Ref(None)
 
     @idom.element
-    async def Parent():
+    def Parent():
         state, parent_set_state.current = idom.hooks.use_state(0)
         return idom.html.div(state, Child())
 
     @idom.element
-    async def Child():
+    def Child():
         state, child_set_state.current = idom.hooks.use_state(0)
         return idom.html.div(state)
 
@@ -109,15 +109,15 @@ async def test_nested_element_layout():
 
 async def test_layout_render_error_has_partial_update():
     @idom.element
-    async def Main():
+    def Main():
         return idom.html.div([OkChild(), BadChild(), OkChild()])
 
     @idom.element
-    async def OkChild():
+    def OkChild():
         return idom.html.div(["hello"])
 
     @idom.element
-    async def BadChild():
+    def BadChild():
         raise ValueError("Something went wrong :(")
 
     async with idom.Layout(Main()) as layout:
@@ -141,11 +141,11 @@ async def test_layout_render_error_has_partial_update():
 
 async def test_render_raw_vdom_dict_with_single_element_object_as_children():
     @idom.element
-    async def Main():
+    def Main():
         return {"tagName": "div", "children": Child()}
 
     @idom.element
-    async def Child():
+    def Child():
         return {"tagName": "div", "children": {"tagName": "h1"}}
 
     async with idom.Layout(Main()) as layout:
@@ -169,7 +169,7 @@ async def test_elements_are_garbage_collected():
 
     @idom.element
     @outer_element_hook.capture
-    async def Outer():
+    def Outer():
         element = idom.hooks.current_hook().element
         live_elements.add(element.id)
         finalize(element, live_elements.remove, element.id)
@@ -183,7 +183,7 @@ async def test_elements_are_garbage_collected():
         return idom.html.div({"onEvent": force_update}, Inner())
 
     @idom.element
-    async def Inner():
+    def Inner():
         element = idom.hooks.current_hook().element
         live_elements.add(element.id)
         finalize(element, live_elements.remove, element.id)
@@ -220,7 +220,7 @@ async def test_double_updated_element_is_not_double_rendered():
 
     @idom.element
     @hook.capture
-    async def AnElement():
+    def AnElement():
         run_count.current += 1
         return idom.html.div()
 

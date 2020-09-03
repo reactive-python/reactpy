@@ -25,9 +25,9 @@ Libraries for defining and controlling interactive webpages with Python
 Try it Now!
 -----------
 
-- In a Jupyter Notebook - |launch-binder|
+- Using working :ref:`Examples`
 
-- Using working :ref:`examples <Examples>`
+- In a Jupyter Notebook - |launch-binder|
 
 
 Early Days
@@ -48,7 +48,7 @@ user clicks an image:
     import idom
 
     @idom.element
-    async def Slideshow():
+    def Slideshow():
         index, set_index = idom.hooks.use_state(0)
 
         def next_image(event):

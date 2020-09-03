@@ -90,7 +90,7 @@ def test_shared_hostwap(driver, display):
     """
 
     @idom.element
-    async def ButtonSwapsDivs():
+    def ButtonSwapsDivs():
         count = idom.Ref(0)
 
         @idom.event

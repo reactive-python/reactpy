@@ -14,7 +14,7 @@ class HookCatcher:
 
             @idom.element
             @element_hook.capture
-            async def MyElement():
+            def MyElement():
                 ...
 
         After the first render of ``MyElement`` the ``HookCatcher`` will have
@@ -32,9 +32,9 @@ class HookCatcher:
         self_ref = ref(self)
 
         @wraps(render_function)
-        async def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):
             self_ref().current = idom.hooks.current_hook()
-            return await render_function(*args, **kwargs)
+            return render_function(*args, **kwargs)
 
         return wrapper
 

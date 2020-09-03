@@ -45,7 +45,7 @@ whose body contains a hook usage. We'll demonstrate that with a simple
 
 
     @idom.element
-    async def ClickCount():
+    def ClickCount():
         count, set_count = idom.hooks.use_state(0)
 
         return idom.html.button(
@@ -85,7 +85,7 @@ have to re-render the layout and see what changed:
 
 
     @idom.element
-    async def ClickCount():
+    def ClickCount():
         count, set_count = idom.hooks.use_state(0)
 
         @idom.event(target_id=event_handler_id)  # <-- trick to hard code event handler ID

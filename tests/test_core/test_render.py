@@ -36,7 +36,7 @@ async def test_shared_state_renderer():
         raise asyncio.CancelledError()
 
     @idom.element
-    async def Clickable():
+    def Clickable():
         count, set_count = idom.hooks.use_state(0)
 
         @idom.event(target_id=target_id)
@@ -85,7 +85,7 @@ async def test_renderer_run_does_not_supress_non_cancel_errors():
             raise ValueError("this is a bug")
 
     @idom.element
-    async def AnyElement():
+    def AnyElement():
         return idom.html.div()
 
     async def send(data):
@@ -108,7 +108,7 @@ async def test_renderer_run_does_not_supress_non_stop_rendering_errors():
             raise ValueError("this is a bug")
 
     @idom.element
-    async def AnyElement():
+    def AnyElement():
         return idom.html.div()
 
     async def send(data):

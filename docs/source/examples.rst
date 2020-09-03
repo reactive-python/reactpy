@@ -36,7 +36,7 @@ view. In a Jupyter Notebook it will appear in an output cell. If you're running
         PerClientStateServer(element, *args, **kwargs).run("127.0.0.1", 8765)
 
     @idom.element
-    async def Main(self):
+    def Main(self):
         # define your element here
         ...
 
@@ -52,7 +52,7 @@ view. In a Jupyter Notebook it will appear in an output cell. If you're running
     display = init_display("127.0.0.1")
 
     @idom.element
-    async def MyElement():
+    def MyElement():
         # define your element here
         ...
 

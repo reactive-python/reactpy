@@ -13,7 +13,7 @@ def reducer(count, action):
 
 
 @idom.element
-async def Counter(initial_count):
+def Counter(initial_count):
     count, dispatch = idom.hooks.use_reducer(reducer, initial_count)
     return idom.html.div(
         f"Count: {count}",

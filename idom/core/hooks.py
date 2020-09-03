@@ -1,5 +1,7 @@
+import asyncio
 from threading import get_ident as get_thread_id
 from typing import (
+    Awaitable,
     Sequence,
     Dict,
     Any,
@@ -309,6 +311,53 @@ def use_ref(initial_value: _StateType) -> Ref[_StateType]:
         A :class:`Ref` object.
     """
     return _use_const(lambda: Ref(initial_value))
+
+
+_AsyncCleanFunc = Callable[[], None]
+_AsyncApplyFunc = Callable[[], Awaitable[Optional[_EffectCleanFunc]]]
+
+
+@overload
+def use_async(
+    function: None = None, args: Optional[Sequence[Any]] = None
+) -> Callable[[_AsyncApplyFunc], None]:
+    ...
+
+
+@overload
+def use_async(function: _AsyncApplyFunc, args: Optional[Sequence[Any]] = None) -> None:
+    ...
+
+
+def use_async(
+    function: Optional[_AsyncApplyFunc] = None,
+    args: Optional[Sequence[Any]] = None,
+) -> Optional[Callable[[_AsyncApplyFunc], None]]:
+    effect = use_effect(args=args)
+
+    def add_asyc_effect(function: _AsyncApplyFunc) -> None:
+        def create_future() -> Callable[[], None]:
+            future = asyncio.ensure_future(function())
+
+            def cleanup_future() -> None:
+                try:
+                    cleanup = future.result()
+                except asyncio.InvalidStateError:
+                    future.cancel()
+                else:
+                    if cleanup is not None:
+                        cleanup()
+
+            return cleanup_future
+
+        effect(create_future)
+        return None
+
+    if function is not None:
+        add_asyc_effect(function)
+        return None
+    else:
+        return add_asyc_effect
 
 
 def _use_const(function: Callable[[], _StateType]) -> _StateType:

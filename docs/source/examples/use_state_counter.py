@@ -10,7 +10,7 @@ def decrement(last_count):
 
 
 @idom.element
-async def Counter(initial_count):
+def Counter(initial_count):
     count, set_count = idom.hooks.use_state(initial_count)
     return idom.html.div(
         f"Count: {count}",

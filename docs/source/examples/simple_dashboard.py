@@ -10,7 +10,7 @@ VictoryLine = idom.Module("victory").Import("VictoryLine")
 
 
 @idom.element
-async def RandomWalk():
+def RandomWalk():
     mu = idom.hooks.use_ref(0)
     sigma = idom.hooks.use_ref(1)
 
@@ -39,11 +39,11 @@ async def RandomWalk():
 
 
 @idom.element
-async def RandomWalkGraph(mu, sigma):
+def RandomWalkGraph(mu, sigma):
     interval = use_interval(0.5)
     data, set_data = idom.hooks.use_state([{"x": 0, "y": 0}] * 50)
 
-    @use_async_effect
+    @idom.hooks.use_async
     async def animate():
         await interval
         last_data_point = data[-1]
@@ -57,7 +57,7 @@ async def RandomWalkGraph(mu, sigma):
 
 
 @idom.element
-async def NumberInput(label, value, set_value_callback, domain):
+def NumberInput(label, value, set_value_callback, domain):
     minimum, maximum, step = domain
     attrs = {"min": minimum, "max": maximum, "step": step}
 
@@ -75,22 +75,14 @@ async def NumberInput(label, value, set_value_callback, domain):
     )
 
 
-def use_async_effect(function):
-    def ensure_effect_future():
-        future = asyncio.ensure_future(function())
-        return future.cancel
+def use_interval(rate: float) -> Awaitable[None]:
+    usage_time = use_ref(time.time())
 
-    idom.hooks.use_effect(ensure_effect_future)
-
-
-def use_interval(rate):
-    usage_time = idom.hooks.use_ref(time.time())
-
-    async def interval():
+    async def interval() -> None:
         await asyncio.sleep(rate - (time.time() - usage_time.current))
         usage_time.current = time.time()
 
-    return interval()
+    return asyncio.ensure_future(interval())
 
 
 display(RandomWalk)

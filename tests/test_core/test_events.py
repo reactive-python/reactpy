@@ -97,7 +97,7 @@ def test_remove_event_handlers():
 
 def test_can_prevent_event_default_operation(driver, display):
     @idom.element
-    async def Input():
+    def Input():
         @idom.event(prevent_default=True)
         async def on_key_down(value):
             pass
@@ -116,7 +116,7 @@ def test_simple_click_event(driver, display):
     clicked = idom.Ref(False)
 
     @idom.element
-    async def Button():
+    def Button():
         hook = hooks.current_hook()
 
         async def on_click(event):
@@ -140,7 +140,7 @@ def test_simple_click_event(driver, display):
 
 def test_can_stop_event_propogation(driver, display):
     @idom.element
-    async def DivInDiv():
+    def DivInDiv():
         inner_events = idom.Events()
         inner_events.on("Click", stop_propagation=True)
 

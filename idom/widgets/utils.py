@@ -179,7 +179,7 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
         set_state_callbacks: Set[Callable[[_FuncArgsKwargs], None]] = set()
 
         @element
-        async def HotSwap() -> Any:
+        def HotSwap() -> Any:
             # new displays will adopt the latest constructor and arguments
             (f, a, kw), set_state = hooks.use_state(constructor_and_arguments.current)
 
@@ -202,7 +202,7 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
     else:
 
         @element
-        async def HotSwap() -> Any:
+        def HotSwap() -> Any:
             func, args, kwargs = constructor_and_arguments.current
             return func(*args, **kwargs)
 
@@ -250,7 +250,7 @@ def multiview() -> Tuple["MultiViewMount", ElementConstructor]:
     views: Dict[str, ElementConstructor] = {}
 
     @element
-    async def MultiView(view_id: str) -> Any:
+    def MultiView(view_id: str) -> Any:
         return views[view_id]()
 
     return MultiViewMount(views), MultiView

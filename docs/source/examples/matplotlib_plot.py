@@ -7,7 +7,7 @@ from idom.widgets.html import image
 
 
 @idom.element
-async def PolynomialPlot():
+def PolynomialPlot():
     coefficients, set_coefficients = idom.hooks.use_state([0])
 
     x = [n for n in linspace(-1, 1, 50)]
@@ -20,7 +20,7 @@ async def PolynomialPlot():
 
 
 @idom.element
-async def ExpandableNumberInputs(values, set_values):
+def ExpandableNumberInputs(values, set_values):
     inputs = []
     for i in range(len(values)):
 

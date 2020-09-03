@@ -1,5 +1,8 @@
 # IDOM
 
+<a href="https://github.com/idom-team/idom/actions?query=workflow%3ATest">
+  <img alt="Tests" src="https://github.com/idom-team/idom/workflows/Test/badge.svg?event=push" />
+</a>
 <a href="https://codecov.io/gh/rmorshea/idom">
   <img alt="Code Coverage" src="https://codecov.io/gh/rmorshea/idom/branch/master/graph/badge.svg" />
 </a>
@@ -45,7 +48,7 @@ IDOM can be used to create a simple slideshow which changes whenever a user clic
 import idom
 
 @idom.element
-async def Slideshow():
+def Slideshow():
     index, set_index = idom.hooks.use_state(0)
     url = f"https://picsum.photos/800/300?image={index}"
     return idom.html.img({"src": url, "onClick": lambda event: set_index(index + 1)})

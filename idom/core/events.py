@@ -4,11 +4,14 @@ from typing import (
     Dict,
     Callable,
     Any,
+    Coroutine,
     Optional,
     Iterator,
     List,
     Union,
 )
+
+from anyio import create_task_group
 
 from mypy_extensions import TypedDict
 
@@ -155,7 +158,8 @@ class EventHandler:
 
     __slots__ = (
         "__weakref__",
-        "_handlers",
+        "_coro_handlers",
+        "_func_handlers",
         "_target_id",
         "_prevent_default",
         "_stop_propogation",
@@ -167,7 +171,8 @@ class EventHandler:
         prevent_default: bool = False,
         target_id: Optional[str] = None,
     ) -> None:
-        self._handlers: List[Callable[..., Any]] = []
+        self._coro_handlers: List[Callable[..., Coroutine[Any, Any, Any]]] = []
+        self._func_handlers: List[Callable[..., Any]] = []
         self._target_id = target_id or str(id(self))
         self._stop_propogation = stop_propagation
         self._prevent_default = prevent_default
@@ -186,9 +191,10 @@ class EventHandler:
                 which should be sent back from the fronend unless otherwise specified by
                 the ``properties`` parameter.
         """
-        if not asyncio.iscoroutinefunction(function):
-            function = asyncio.coroutine(function)
-        self._handlers.append(function)
+        if asyncio.iscoroutinefunction(function):
+            self._coro_handlers.append(function)
+        else:
+            self._func_handlers.append(function)
         return self
 
     def remove(self, function: Callable[..., Any]) -> None:
@@ -197,11 +203,10 @@ class EventHandler:
         Raises:
             ValueError: if not found
         """
-        index = self._get_handler_index(function)
-        if index is not None:
-            del self._handlers[index]
+        if asyncio.iscoroutinefunction(function):
+            self._coro_handlers.remove(function)
         else:
-            raise ValueError(f"{self} does not contain {function}")
+            self._func_handlers.remove(function)
 
     def serialize(self) -> EventTarget:
         """Serialize the event handler."""
@@ -213,25 +218,18 @@ class EventHandler:
 
     async def __call__(self, data: List[Any]) -> Any:
         """Trigger all callbacks in the event handler."""
-        for handler in self._handlers:
-            await handler(*data)
+        if self._coro_handlers:
+            async with create_task_group() as group:
+                for handler in self._coro_handlers:
+                    await group.spawn(handler, *data)
+        for handler in self._func_handlers:
+            handler(*data)
 
     def __contains__(self, function: Any) -> bool:
-        return self._get_handler_index(function) is not None
+        if asyncio.iscoroutinefunction(function):
+            return function in self._coro_handlers
+        else:
+            return function in self._func_handlers
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"{type(self).__name__}({self.serialize()})"
-
-    def _get_handler_index(self, function: Callable[..., Any]) -> Optional[int]:
-        if asyncio.iscoroutinefunction(function):
-            try:
-                return self._handlers.index(function)
-            except ValueError:
-                return None
-        else:
-            for i, h in enumerate(self._handlers):
-                # The `coroutine()` decorator adds a `__wrapped__` attribute
-                if h.__wrapped__ == function:  # type: ignore
-                    return i
-            else:
-                return None

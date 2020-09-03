@@ -81,7 +81,7 @@ class Layout(HasAsyncResources):
         while True:
             element = await self._rendering_queue.get()
             if element.id in self._element_states:
-                return await self._create_layout_update(element)
+                return self._create_layout_update(element)
 
     @async_resource
     async def _rendering_queue(self) -> AsyncIterator["_ElementQueue"]:
@@ -97,7 +97,7 @@ class Layout(HasAsyncResources):
         finally:
             self._delete_element_state(root_element_state)
 
-    async def _create_layout_update(self, element: AbstractElement) -> LayoutUpdate:
+    def _create_layout_update(self, element: AbstractElement) -> LayoutUpdate:
         element_state = self._element_states[element.id]
 
         element_state.life_cycle_hook.element_will_render()
@@ -112,7 +112,7 @@ class Layout(HasAsyncResources):
         self._delete_element_state_children(element_state)
 
         old_model = element_state.model.copy()  # we copy because it will be mutated
-        new_model = await self._render_element(element_state)
+        new_model = self._render_element(element_state)
         changes = make_patch(old_model, new_model).patch
 
         for state in self._iter_element_states_from_root(
@@ -123,18 +123,18 @@ class Layout(HasAsyncResources):
 
         return LayoutUpdate(path=element_state.path, changes=changes)
 
-    async def _render_element(self, element_state: ElementState) -> Dict[str, Any]:
+    def _render_element(self, element_state: ElementState) -> Dict[str, Any]:
         try:
             element_state.life_cycle_hook.set_current()
             try:
-                raw_model = await element_state.element_obj.render()
+                raw_model = element_state.element_obj.render()
             finally:
                 element_state.life_cycle_hook.unset_current()
 
             if isinstance(raw_model, AbstractElement):
                 raw_model = {"tagName": "div", "children": [raw_model]}
 
-            resolved_model = await self._render_model(element_state, raw_model)
+            resolved_model = self._render_model(element_state, raw_model)
             element_state.model.clear()
             element_state.model.update(resolved_model)
         except Exception as error:
@@ -145,7 +145,7 @@ class Layout(HasAsyncResources):
         # between all `ElementState` objects within a `Layout` are shared.
         return element_state.model
 
-    async def _render_model(
+    def _render_model(
         self, element_state: ElementState, model: Mapping[str, Any]
     ) -> Dict[str, Any]:
         serialized_model: Dict[str, Any] = {}
@@ -153,12 +153,12 @@ class Layout(HasAsyncResources):
         if event_handlers:
             serialized_model["eventHandlers"] = event_handlers
         if "children" in model:
-            serialized_model["children"] = await self._render_model_children(
+            serialized_model["children"] = self._render_model_children(
                 element_state, model["children"]
             )
         return {**model, **serialized_model}
 
-    async def _render_model_children(
+    def _render_model_children(
         self, element_state: ElementState, children: Union[List[Any], Tuple[Any, ...]]
     ) -> List[Any]:
         resolved_children: List[Any] = []
@@ -166,12 +166,12 @@ class Layout(HasAsyncResources):
             children if isinstance(children, (list, tuple)) else [children]
         ):
             if isinstance(child, dict):
-                resolved_children.append(await self._render_model(element_state, child))
+                resolved_children.append(self._render_model(element_state, child))
             elif isinstance(child, AbstractElement):
                 child_path = f"{element_state.path}/children/{index}"
                 child_state = self._create_element_state(child, child_path)
                 self._element_states[child.id] = child_state
-                resolved_children.append(await self._render_element(child_state))
+                resolved_children.append(self._render_element(child_state))
                 element_state.child_elements_ids.append(child.id)
             else:
                 resolved_children.append(str(child))

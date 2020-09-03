@@ -36,7 +36,7 @@ def test_cross_origin_jupyter_display(server, driver, driver_wait, mount, server
     flask_server_url = f"http://{flask_host}:{flask_port}/"
 
     @idom.element
-    async def SimpleButton():
+    def SimpleButton():
         @idom.event
         async def on_click(event):
             clicked.current = True
@@ -85,7 +85,7 @@ def test_same_origin_jupyter_display(driver, driver_wait, mount, server_url):
     clicked = idom.Ref(False)
 
     @idom.element
-    async def SimpleButton():
+    def SimpleButton():
         @idom.event
         async def on_click(event):
             clicked.current = True
