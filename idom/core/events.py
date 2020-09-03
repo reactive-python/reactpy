@@ -222,7 +222,8 @@ class EventHandler:
                 return None
         else:
             for i, h in enumerate(self._handlers):
-                if h.__wrapped__ == function:
+                # The `coroutine()` decorator adds a `__wrapped__` attribute
+                if h.__wrapped__ == function:  # type: ignore
                     return i
             else:
                 return None

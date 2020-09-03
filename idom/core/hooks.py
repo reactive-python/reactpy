@@ -13,6 +13,7 @@ from typing import (
     List,
     overload,
 )
+from typing_extensions import Protocol
 
 from loguru import logger
 
@@ -89,7 +90,7 @@ _EffectApplyFunc = Callable[[], Optional[_EffectCleanFunc]]
 
 @overload
 def use_effect(
-    function: None, args: Optional[Sequence[Any]]
+    function: None = None, args: Optional[Sequence[Any]] = None
 ) -> Callable[[_EffectApplyFunc], None]:
     ...
 
@@ -118,7 +119,7 @@ def use_effect(
     hook = current_hook()
     memoize = use_memo(args=args)
 
-    def setup(function: _EffectApplyFunc) -> None:
+    def add_effect(function: _EffectApplyFunc) -> None:
         def effect() -> None:
             clean = function()
             if clean is not None:
@@ -127,9 +128,10 @@ def use_effect(
         return memoize(lambda: hook.add_effect("did_render", effect))
 
     if function is not None:
-        return setup(function)
+        add_effect(function)
+        return None
     else:
-        return setup
+        return add_effect
 
 
 _ActionType = TypeVar("_ActionType")
@@ -157,7 +159,7 @@ def use_reducer(
 
 def _create_dispatcher(
     reducer: Callable[[_StateType, _ActionType], _StateType],
-    set_state: Callable[[_StateType], None],
+    set_state: Callable[[Callable[[_StateType], _StateType]], None],
 ) -> Callable[[_ActionType], None]:
     def dispatch(action: _ActionType) -> None:
         set_state(lambda last_state: reducer(last_state, action))
@@ -170,20 +172,22 @@ _CallbackFunc = TypeVar("_CallbackFunc", bound=Callable[..., Any])
 
 @overload
 def use_callback(
-    function: None, args: Optional[Sequence[Any]]
-) -> Callable[[_CallbackFunc], None]:
+    function: None = None, args: Optional[Sequence[Any]] = None
+) -> Callable[[_CallbackFunc], _CallbackFunc]:
     ...
 
 
 @overload
-def use_callback(function: _CallbackFunc, args: Optional[Sequence[Any]]) -> None:
+def use_callback(
+    function: _CallbackFunc, args: Optional[Sequence[Any]]
+) -> _CallbackFunc:
     ...
 
 
 def use_callback(
     function: Optional[_CallbackFunc] = None,
     args: Optional[Sequence[Any]] = None,
-) -> Optional[Callable[[_CallbackFunc], None]]:
+) -> Union[_CallbackFunc, Callable[[_CallbackFunc], _CallbackFunc]]:
     """See the full :ref:`use_callback` docs for details
 
     Parameters:
@@ -204,10 +208,17 @@ def use_callback(
         return setup
 
 
+class _LambdaCaller(Protocol):
+    """MyPy doesn't know how to deal with TypeVars only used in function return"""
+
+    def __call__(self, func: Callable[[], _StateType]) -> _StateType:
+        ...
+
+
 @overload
 def use_memo(
-    function: None, args: Optional[Sequence[Any]]
-) -> Callable[[Callable[[], _StateType]], _StateType]:
+    function: None = None, args: Optional[Sequence[Any]] = None
+) -> _LambdaCaller:
     ...
 
 
@@ -231,21 +242,25 @@ def use_memo(
     Returns:
         The current state
     """
-    memo = _use_const(_Memo)
+    memo: _Memo[_StateType] = _use_const(_Memo)
 
     if memo.empty():
         # we need to initialize on the first run
         changed = True
         memo.args = () if args is None else args
+    elif args is None:
+        changed = True
     elif (
-        args is None
-        or len(memo.args) != len(args)
+        len(memo.args) != len(args)
+        # if args are same length check identity for each item
         or any(current is not new for current, new in zip(memo.args, args))
     ):
         memo.args = args
         changed = True
     else:
         changed = False
+
+    setup: Callable[[Callable[[], _StateType]], _StateType]
 
     if changed:
 
@@ -270,7 +285,7 @@ class _Memo(Generic[_StateType]):
     __slots__ = "value", "args"
 
     value: _StateType
-    args: Tuple[Any, ...]
+    args: Sequence[Any]
 
     def empty(self) -> bool:
         try:
