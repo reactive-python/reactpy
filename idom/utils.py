@@ -3,10 +3,10 @@ from html.parser import HTMLParser as _HTMLParser
 from typing import List, Tuple, Any, Dict, Callable, Optional, Generic, TypeVar
 
 
-_Current = TypeVar("_Current")
+_RefValue = TypeVar("_RefValue")
 
 
-class Ref(Generic[_Current]):
+class Ref(Generic[_RefValue]):
     """Hold a reference to a value
 
     This is used in imperative code to mutate the state of this object in order to
@@ -22,8 +22,17 @@ class Ref(Generic[_Current]):
 
     __slots__ = "current"
 
-    def __init__(self, initial_value: _Current) -> None:
+    def __init__(self, initial_value: _RefValue) -> None:
         self.current = initial_value
+
+    def set_current(self, new: _RefValue) -> _RefValue:
+        """Set the current value and return what is now the old value
+
+        This is nice to use in ``lambda`` functions.
+        """
+        old = self.current
+        self.current = new
+        return old
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Ref) and (other.current == self.current)

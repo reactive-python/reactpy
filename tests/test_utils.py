@@ -6,8 +6,13 @@ from idom.utils import html_to_vdom
 
 def test_basic_ref_behavior():
     r = idom.Ref(1)
+    assert r.current == 1
+
     r.current = 2
     assert r.current == 2
+
+    assert r.set_current(3) == 2
+    assert r.current == 3
 
 
 def test_ref_equivalence():
