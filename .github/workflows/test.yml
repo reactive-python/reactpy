@@ -22,4 +22,4 @@ jobs:
       - name: Install Python Dependencies
         run: pip install -r requirements/ci.txt
       - name: Run Tests
-        run: tox -- --headless
+        run: TOX_PARALLEL_NO_SPINNER=1 tox --parallel -- --headless
