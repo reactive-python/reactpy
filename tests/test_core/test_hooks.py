@@ -1,4 +1,5 @@
 import re
+import asyncio
 
 import pytest
 
@@ -389,6 +390,79 @@ async def test_use_effect_memoization():
         await layout.render()
 
         assert effect_run_count.current == 2
+
+
+async def test_use_async_effect():
+    effect_ran = asyncio.Event()
+
+    @idom.element
+    def ElementWithAsyncEffect():
+        @idom.hooks.use_effect
+        async def effect():
+            effect_ran.set()
+
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithAsyncEffect()) as layout:
+        await layout.render()
+        await effect_ran.wait()
+
+
+async def test_use_async_effect_cleanup():
+    element_hook = HookCatcher()
+    effect_ran = asyncio.Event()
+    cleanup_ran = asyncio.Event()
+
+    @idom.element
+    @element_hook.capture
+    def ElementWithAsyncEffect():
+        @idom.hooks.use_effect
+        async def effect():
+            effect_ran.set()
+            return cleanup_ran.set
+
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithAsyncEffect()) as layout:
+        await layout.render()
+
+        await effect_ran.wait()
+        element_hook.schedule_render()
+
+        await layout.render()
+
+    await asyncio.wait_for(cleanup_ran.wait(), 1)
+
+
+async def test_use_async_effect_cancel():
+    element_hook = HookCatcher()
+    effect_ran = asyncio.Event()
+    effect_was_cancelled = asyncio.Event()
+
+    event_that_is_never_set = asyncio.Event()
+
+    @idom.element
+    @element_hook.capture
+    def ElementWithLongWaitingEffect():
+        @idom.hooks.use_effect
+        async def effect():
+            effect_ran.set()
+            try:
+                await event_that_is_never_set.wait()
+            except asyncio.CancelledError:
+                effect_was_cancelled.set()
+
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithLongWaitingEffect()) as layout:
+        await layout.render()
+
+        await effect_ran.wait()
+        element_hook.schedule_render()
+
+        await layout.render()
+
+    await asyncio.wait_for(effect_was_cancelled.wait(), 1)
 
 
 async def test_error_in_effect_is_gracefully_handled(caplog):

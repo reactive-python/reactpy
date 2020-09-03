@@ -14,6 +14,7 @@ from typing import (
     NamedTuple,
     List,
     overload,
+    cast,
 )
 from typing_extensions import Protocol
 
@@ -87,7 +88,9 @@ class _CurrentState(Generic[_StateType]):
 
 
 _EffectCleanFunc = Callable[[], None]
-_EffectApplyFunc = Callable[[], Optional[_EffectCleanFunc]]
+_SyncEffectFunc = Callable[[], Optional[_EffectCleanFunc]]
+_AsyncEffectFunc = Callable[[], Awaitable[Optional[_EffectCleanFunc]]]
+_EffectApplyFunc = Union[_SyncEffectFunc, _AsyncEffectFunc]
 
 
 @overload
@@ -124,10 +127,32 @@ def use_effect(
     memoize = use_memo(args=args)
 
     def add_effect(function: _EffectApplyFunc) -> None:
+
+        if not asyncio.iscoroutinefunction(function):
+            sync_function = cast(_SyncEffectFunc, function)
+        else:
+
+            async_function = cast(_AsyncEffectFunc, function)
+
+            def sync_function() -> Optional[_EffectCleanFunc]:
+                future = asyncio.ensure_future(async_function())
+
+                def clean_future() -> None:
+                    try:
+                        clean = future.result()
+                    except asyncio.InvalidStateError:
+                        future.cancel()
+                    else:
+                        if clean is not None:
+                            clean()
+
+                return clean_future
+
         def effect() -> None:
-            clean = function()
+            clean = sync_function()
             if clean is not None:
                 hook.add_effect("will_render will_unmount", clean)
+            return None
 
         return memoize(lambda: hook.add_effect("did_render", effect))
 
@@ -311,53 +336,6 @@ def use_ref(initial_value: _StateType) -> Ref[_StateType]:
         A :class:`Ref` object.
     """
     return _use_const(lambda: Ref(initial_value))
-
-
-_AsyncCleanFunc = Callable[[], None]
-_AsyncApplyFunc = Callable[[], Awaitable[Optional[_EffectCleanFunc]]]
-
-
-@overload
-def use_async(
-    function: None = None, args: Optional[Sequence[Any]] = None
-) -> Callable[[_AsyncApplyFunc], None]:
-    ...
-
-
-@overload
-def use_async(function: _AsyncApplyFunc, args: Optional[Sequence[Any]] = None) -> None:
-    ...
-
-
-def use_async(
-    function: Optional[_AsyncApplyFunc] = None,
-    args: Optional[Sequence[Any]] = None,
-) -> Optional[Callable[[_AsyncApplyFunc], None]]:
-    effect = use_effect(args=args)
-
-    def add_asyc_effect(function: _AsyncApplyFunc) -> None:
-        def create_future() -> Callable[[], None]:
-            future = asyncio.ensure_future(function())
-
-            def cleanup_future() -> None:
-                try:
-                    cleanup = future.result()
-                except asyncio.InvalidStateError:
-                    future.cancel()
-                else:
-                    if cleanup is not None:
-                        cleanup()
-
-            return cleanup_future
-
-        effect(create_future)
-        return None
-
-    if function is not None:
-        add_asyc_effect(function)
-        return None
-    else:
-        return add_asyc_effect
 
 
 def _use_const(function: Callable[[], _StateType]) -> _StateType:
