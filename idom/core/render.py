@@ -1,7 +1,7 @@
 import abc
 import asyncio
 from functools import wraps
-from typing import Callable, Awaitable, Dict, Any, AsyncIterator
+from typing import Callable, Awaitable, Dict, Any, AsyncIterator, TypeVar, cast
 
 from anyio import create_task_group, TaskGroup  # type: ignore
 from jsonpatch import make_patch, apply_patch
@@ -106,7 +106,7 @@ class SharedStateRenderer(SingleStateRenderer):
 
     def __init__(self, layout: Layout) -> None:
         super().__init__(layout)
-        self._model_state = {}
+        self._model_state: Any = {}
         self._update_queues: Dict[str, asyncio.Queue[LayoutUpdate]] = {}
 
     @async_resource
@@ -147,21 +147,24 @@ class SharedStateRenderer(SingleStateRenderer):
             event.set()
 
 
-def _apply_layout_update(doc: Dict[str, Any], update: LayoutUpdate) -> Dict[str, Any]:
+def _apply_layout_update(doc: Dict[str, Any], update: LayoutUpdate) -> Any:
     return apply_patch(
         doc, [{**c, "path": update.path + c["path"]} for c in update.changes]
     )
 
 
-def _async_log_exceptions(function):
+_F = TypeVar("_F", bound=Callable[..., Any])
+
+
+def _async_log_exceptions(function: _F) -> _F:
     # BUG: https://github.com/agronholm/anyio/issues/155
 
     @wraps(function)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return await function(*args, **kwargs)
         except Exception:
             logger.exception(f"Failure in {function}")
             raise
 
-    return wrapper
+    return cast(_F, wrapper)
