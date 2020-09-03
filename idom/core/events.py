@@ -10,8 +10,16 @@ from typing import (
     Union,
 )
 
+from mypy_extensions import TypedDict
+
 
 EventsMapping = Union[Dict[str, Union["Callable[..., Any]", "EventHandler"]], "Events"]
+
+
+class EventTarget(TypedDict):
+    target: str
+    preventDefault: bool  # noqa
+    stopPropagation: bool  # noqa
 
 
 def event(
@@ -195,7 +203,7 @@ class EventHandler:
         else:
             raise ValueError(f"{self} does not contain {function}")
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> EventTarget:
         """Serialize the event handler."""
         return {
             "target": self._target_id,

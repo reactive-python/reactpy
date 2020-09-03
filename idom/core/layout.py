@@ -5,7 +5,6 @@ from typing import (
     List,
     Dict,
     Tuple,
-    Mapping,
     NamedTuple,
     Any,
     Set,
@@ -19,7 +18,7 @@ from loguru import logger
 from jsonpatch import make_patch
 
 from .element import AbstractElement
-from .events import EventHandler
+from .events import EventHandler, EventTarget
 from .utils import HasAsyncResources, async_resource, CannotAccessResource
 from .hooks import LifeCycleHook
 
@@ -40,7 +39,7 @@ class LayoutEvent(NamedTuple):
 
 class ElementState(NamedTuple):
     model: Dict[str, Any]
-    path: List[int]
+    path: str
     element_obj: AbstractElement
     event_handler_ids: Set[str]
     child_elements_ids: List[str]
@@ -78,7 +77,7 @@ class Layout(HasAsyncResources):
         if handler is not None:
             await handler(event.data)
 
-    async def render(self) -> Dict[str, Any]:
+    async def render(self) -> LayoutUpdate:
         while True:
             element = await self._rendering_queue.get()
             if element.id in self._element_states:
@@ -91,7 +90,7 @@ class Layout(HasAsyncResources):
         yield queue
 
     @async_resource
-    async def _element_states(self) -> AsyncIterator[ElementState]:
+    async def _element_states(self) -> AsyncIterator[Dict[str, ElementState]]:
         root_element_state = self._create_element_state(self.root, "")
         try:
             yield {self.root.id: root_element_state}
@@ -144,19 +143,15 @@ class Layout(HasAsyncResources):
         return element_state.model
 
     async def _render_model(
-        self, element_state: ElementState, model: Mapping[str, Any]
+        self, element_state: ElementState, model: Dict[str, Any]
     ) -> Dict[str, Any]:
-        model: Dict[str, Any] = dict(model)
-
-        event_handlers = self._render_model_event_handlers(element_state, model)
+        event_handlers = self._render_model_event_targets(element_state, model)
         if event_handlers:
             model["eventHandlers"] = event_handlers
-
         if "children" in model:
             model["children"] = await self._render_model_children(
                 element_state, model["children"]
             )
-
         return model
 
     async def _render_model_children(
@@ -166,7 +161,7 @@ class Layout(HasAsyncResources):
         for index, child in enumerate(
             children if isinstance(children, (list, tuple)) else [children]
         ):
-            if isinstance(child, Mapping):
+            if isinstance(child, dict):
                 resolved_children.append(await self._render_model(element_state, child))
             elif isinstance(child, AbstractElement):
                 child_path = f"{element_state.path}/children/{index}"
@@ -178,9 +173,9 @@ class Layout(HasAsyncResources):
                 resolved_children.append(str(child))
         return resolved_children
 
-    def _render_model_event_handlers(
-        self, element_state: ElementState, model: Mapping[str, Any]
-    ) -> Dict[str, str]:
+    def _render_model_event_targets(
+        self, element_state: ElementState, model: Dict[str, Any]
+    ) -> Dict[str, EventTarget]:
         handlers: Dict[str, EventHandler] = {}
         if "eventHandlers" in model:
             handlers.update(model["eventHandlers"])
@@ -281,9 +276,9 @@ class _ElementQueue:
 
     __slots__ = "_queue", "_pending"
 
-    def __init__(self):
-        self._queue = asyncio.Queue()
-        self._pending = set()
+    def __init__(self) -> None:
+        self._queue: "asyncio.Queue[AbstractElement]" = asyncio.Queue()
+        self._pending: Set[str] = set()
 
     def put(self, element: AbstractElement) -> None:
         if element.id not in self._pending:
