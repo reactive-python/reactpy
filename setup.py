@@ -22,7 +22,7 @@ root = os.path.join(here, name)
 
 package = {
     "name": name,
-    "python_requires": ">=3.6",
+    "python_requires": ">=3.7",
     "packages": find_packages(exclude=["tests*"]),
     "description": "Control the web with Python",
     "author": "Ryan Morshead",
