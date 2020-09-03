@@ -20,7 +20,7 @@ or create a
 [pull request](https://github.com/rmorshea/idom/pulls). Thanks in advance!
 
 <h3>
-  <a href="https://mybinder.org/v2/gh/rmorshea/idom/master?filepath=examples%2Fintroduction.ipynb">
+  <a href="https://mybinder.org/v2/gh/rmorshea/idom/master?filepath=notebooks%2Fintroduction.ipynb">
     Try it Now
     <img alt="Binder" valign="bottom" height="25px"
     src="https://mybinder.org/badge_logo.svg"

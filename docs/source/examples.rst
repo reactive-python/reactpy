@@ -135,7 +135,7 @@ Simply install your javascript library of choice using the ``idom`` CLI:
 
     idom install victory
 
-Then import the module with :class:`idom.widgets.utils.Module`:
+Then import the module with :class:`~idom.widgets.utils.Module`:
 
 .. literalinclude:: examples/victory_chart.py
 
@@ -167,7 +167,7 @@ Source of ``chart.js``:
 Shared Client Views
 -------------------
 
-This example requires the :ref:`idom.server.sanic.SharedClientState` server. Be sure to
+This example requires the :ref:`~idom.server.sanic.SharedClientStateServer`. Be sure to
 replace it in your boilerplate code before going further! Once you've done this we can
 just re-display our :ref:`Slideshow` example using the new server. Now all we need to do
 is connect to the server with a couple clients to see that their views are synced. This

@@ -15,6 +15,10 @@ def image(
     value: Union[str, bytes] = "",
     attributes: Optional[Dict[str, Any]] = None,
 ) -> VdomDict:
+    """Utility for constructing an image from a string or bytes
+
+    The source value will automatically be encoded to base64
+    """
     if format == "svg":
         format = "svg+xml"
 
@@ -38,6 +42,7 @@ async def Input(
     cast: Optional[Callable[[str], Any]] = None,
     ignore_empty: bool = True,
 ) -> VdomDict:
+    """Utility for making an ``<input/>`` with a callback"""
     attrs = attributes or {}
     value, set_value = idom.hooks.use_state(value)
 
@@ -55,6 +60,14 @@ async def Input(
 
 
 class Html:
+    """Utility for making basic HTML elements
+
+    Many basic elements already have constructors, however accessing an attribute
+    of any name on this object will return a constructor for an element with the
+    same ``tagName``.
+
+    All constructors return :class:`~idom.core.vdom.VdomDict`.
+    """
 
     __call__ = staticmethod(component)
 
@@ -158,3 +171,7 @@ class Html:
 
 
 html = Html()
+"""Holds pre-made constructors for basic HTML elements
+
+See :class:`Html` for more info.
+"""
