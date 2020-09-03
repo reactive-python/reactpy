@@ -61,7 +61,9 @@ Running this will serve our slideshow to `"https://localhost:8765/client/index.h
 You could even display the same thing in a Jupyter notebook!
 
 ```python
-idom.display("jupyter", "https://localhost:8765/stream")
+from idom.widgets.jupyter import init_display
+display = init_display("127.0.0.1")
+display(Slideshow)
 ```
 
 Every click will then cause the image to change (it won't here of course).
