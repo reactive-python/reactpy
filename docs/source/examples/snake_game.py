@@ -14,32 +14,23 @@ class GameState(enum.Enum):
 
 
 @idom.element
-async def GameView(grid_size, block_scale):
+def GameView(grid_size, block_scale):
     game_state, set_game_state = idom.hooks.use_state(GameState.init)
 
     if game_state == GameState.play:
         return GameLoop(grid_size, block_scale, set_game_state)
 
-    async def start_playing(event):
-        set_game_state(GameState.play)
+    start_button = idom.html.button(
+        {"onClick": lambda event: set_game_state(GameState.play)},
+        "Start",
+    )
 
     if game_state == GameState.won:
-        await asyncio.sleep(1)
-        return idom.html.div(
-            idom.html.h1("You won!"),
-            idom.html.button({"onClick": start_playing}, "Start"),
-        )
+        return idom.html.div(idom.html.h1("You won!"), start_button)
     elif game_state == GameState.lost:
-        await asyncio.sleep(1)
-        return idom.html.div(
-            idom.html.h1("You lost"),
-            idom.html.button({"onClick": start_playing}, "Start"),
-        )
+        return idom.html.div(idom.html.h1("You lost"), start_button)
     else:
-        return idom.html.div(
-            idom.html.h1("Click to play"),
-            idom.html.button({"onClick": start_playing}, "Start"),
-        )
+        return idom.html.div(idom.html.h1("Click to play"), start_button)
 
 
 class Direction(enum.Enum):
@@ -50,7 +41,7 @@ class Direction(enum.Enum):
 
 
 @idom.element
-async def GameLoop(grid_size, block_scale, set_game_state):
+def GameLoop(grid_size, block_scale, set_game_state):
     # we `use_ref` here to capture the latest direction press without any delay
     direction = idom.hooks.use_ref(Direction.ArrowRight.value)
 
@@ -75,17 +66,23 @@ async def GameLoop(grid_size, block_scale, set_game_state):
     for location in snake:
         assign_grid_block_color(grid, location, "white")
 
+    new_game_state = None
     if snake[-1] in snake[:-1]:
         assign_grid_block_color(grid, snake[-1], "red")
-        set_game_state(GameState.lost)
+        new_game_state = GameState.lost
     elif len(snake) == grid_size ** 2:
         assign_grid_block_color(grid, snake[-1], "yellow")
-        set_game_state(GameState.won)
+        new_game_state = GameState.won
 
     interval = use_interval(0.5)
 
-    @use_async_effect
+    @idom.hooks.use_async
     async def animate():
+        if new_game_state is not None:
+            await asyncio.sleep(1)
+            set_game_state(new_game_state)
+            return
+
         await interval
 
         new_snake_head = (
@@ -105,31 +102,6 @@ async def GameLoop(grid_size, block_scale, set_game_state):
     return grid
 
 
-def use_async_effect(function):
-    def ensure_effect_future():
-        future = asyncio.ensure_future(function())
-
-        def cleanup():
-            if future.done():
-                future.result()
-            else:
-                future.cancel()
-
-        return cleanup
-
-    idom.hooks.use_effect(ensure_effect_future)
-
-
-def use_interval(rate):
-    usage_time = idom.hooks.use_ref(time.time())
-
-    async def interval():
-        await asyncio.sleep(rate - (time.time() - usage_time.current))
-        usage_time.current = time.time()
-
-    return asyncio.ensure_future(interval())
-
-
 def use_snake_food(grid_size, current_snake):
     grid_points = {(x, y) for x in range(grid_size) for y in range(grid_size)}
     points_not_in_snake = grid_points.difference(current_snake)
@@ -140,6 +112,16 @@ def use_snake_food(grid_size, current_snake):
         _set_food(random.choice(list(points_not_in_snake)))
 
     return food, set_food
+
+
+def use_interval(rate: float) -> Awaitable[None]:
+    usage_time = use_ref(time.time())
+
+    async def interval() -> None:
+        await asyncio.sleep(rate - (time.time() - usage_time.current))
+        usage_time.current = time.time()
+
+    return asyncio.ensure_future(interval())
 
 
 def create_grid(grid_size, block_scale):

@@ -2,7 +2,7 @@ import idom
 
 
 @idom.element
-async def ClickCount():
+def ClickCount():
     count, set_count = idom.hooks.use_state(0)
 
     return idom.html.button(

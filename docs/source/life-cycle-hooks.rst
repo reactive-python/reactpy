@@ -106,7 +106,7 @@ use_effect
 The ``use_effect`` hook accepts a function which may be imperative, or mutate state. The
 function will be called immediately after the layout has fully updated.
 
-Mutations, subscriptions, delayed actions, and other `side effects`_ can cause
+Asynchronous actions, mutations, subscriptions, and other `side effects`_ can cause
 unexpected bugs if placed in the main body of an element's render function. Thus the
 ``use_effect`` hook provides a way to safely escape the purely functional world of
 element render functions.
@@ -270,6 +270,18 @@ A ``Ref`` is most useful if you need to incur side effects since updating its
 ``.current`` attribute doesn't trigger a re-render of the element. You'll often use this
 hook alongside :ref:`use_effect` or in response to element event handlers.
 :ref:`The Game Snake` provides a good use case for ``use_ref``.
+
+
+**Unique Hooks**
+----------------
+
+Hooks which are specific to IDOM and not present in React.
+
+
+use_async
+---------
+
+...
 
 
 **Rules of Hooks**

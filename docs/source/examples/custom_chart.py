@@ -19,7 +19,7 @@ data = [
 
 
 @idom.element
-async def ShowChartClicks():
+def ShowChartClicks():
     last_event, set_last_event = idom.hooks.use_state({})
     return idom.html.div(
         ClickableChart(

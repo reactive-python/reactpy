@@ -34,7 +34,7 @@ def image(
 
 
 @idom.element
-async def Input(
+def Input(
     callback: Callable[[str], None],
     type: str,
     value: str = "",
@@ -49,7 +49,7 @@ async def Input(
     events = idom.Events()
 
     @events.on("change")
-    async def on_change(event: Dict[str, Any]) -> None:
+    def on_change(event: Dict[str, Any]) -> None:
         value = event["value"]
         set_value(value)
         if not value and ignore_empty:

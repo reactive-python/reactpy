@@ -2,7 +2,7 @@ import abc
 import inspect
 from uuid import uuid4
 from functools import wraps
-from typing import TYPE_CHECKING, Dict, Callable, Any, Awaitable, Tuple
+from typing import TYPE_CHECKING, Dict, Callable, Any, Tuple, Union
 
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -10,7 +10,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 ElementConstructor = Callable[..., "Element"]
-ElementRenderFunction = Callable[..., Awaitable["VdomDict"]]
+ElementRenderFunction = Callable[..., Union["AbstractElement", "VdomDict"]]
 
 
 def element(function: ElementRenderFunction) -> Callable[..., "Element"]:
@@ -20,8 +20,6 @@ def element(function: ElementRenderFunction) -> Callable[..., "Element"]:
         function:
             The function that will render a :ref:`VDOM <VDOM Mimetype>` model.
     """
-    if not inspect.iscoroutinefunction(function):
-        raise TypeError(f"Expected a coroutine function, not {function}")
 
     @wraps(function)
     def constructor(*args: Any, **kwargs: Any) -> Element:
@@ -48,7 +46,7 @@ class AbstractElement(abc.ABC):
         return self._id
 
     @abc.abstractmethod
-    async def render(self) -> "VdomDict":
+    def render(self) -> "VdomDict":
         """Render the element's :ref:`VDOM <VDOM Mimetype>` model."""
 
 
@@ -88,8 +86,8 @@ class Element(AbstractElement):
         self._args = args
         self._kwargs = kwargs
 
-    async def render(self) -> Any:
-        return await self._function(*self._args, **self._kwargs)
+    def render(self) -> Any:
+        return self._function(*self._args, **self._kwargs)
 
     def __repr__(self) -> str:
         sig = inspect.signature(self._function)

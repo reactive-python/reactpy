@@ -2,7 +2,7 @@ import idom
 
 
 @idom.element
-async def Todo():
+def Todo():
     items, set_items = idom.hooks.use_state([])
 
     async def add_new_task(event):

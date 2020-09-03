@@ -18,7 +18,7 @@ def pre_seperated(*args):
 
 
 @idom.element
-async def PrimarySecondaryButtons():
+def PrimarySecondaryButtons():
     state, set_state = idom.hooks.use_state(
         {"message": None, "event": None, "info": None}
     )

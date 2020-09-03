@@ -10,7 +10,7 @@ Let's look at the example that you may have seen
 
 
     @idom.element
-    async def Slideshow():
+    def Slideshow():
         index, set_index = idom.hooks.use_state(0)
 
         def next_image(event):
@@ -34,7 +34,7 @@ Since it's likely a lot to take in at once, we'll break it down piece by piece:
 .. code-block::
 
    @idom.element
-   async def Slideshow():
+   def Slideshow():
 
 The ``idom.element`` decorator creates an :ref:`Element <Stateful Elements>` constructor
 whose render function is defined by the `asynchronous function`_ below it. To create

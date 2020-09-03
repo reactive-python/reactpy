@@ -9,7 +9,7 @@ from tests.general_utils import assert_unordered_equal, HookCatcher
 
 async def test_must_be_rendering_in_layout_to_use_hooks():
     @idom.element
-    async def SimpleElementWithHook():
+    def SimpleElementWithHook():
         idom.hooks.use_state(None)
         return idom.html.div()
 
@@ -22,7 +22,7 @@ async def test_must_be_rendering_in_layout_to_use_hooks():
 
 async def test_simple_stateful_element():
     @idom.element
-    async def SimpleStatefulElement():
+    def SimpleStatefulElement():
         index, set_index = idom.hooks.use_state(0)
         set_index(index + 1)
         return idom.html.div(index)
@@ -57,7 +57,7 @@ async def test_set_state_callback_identity_is_preserved():
     saved_set_state_hooks = []
 
     @idom.element
-    async def SimpleStatefulElement():
+    def SimpleStatefulElement():
         index, set_index = idom.hooks.use_state(0)
         saved_set_state_hooks.append(set_index)
         set_index(index + 1)
@@ -84,7 +84,7 @@ def test_use_state_with_constructor(driver, display, driver_wait):
         return 0
 
     @idom.element
-    async def Outer():
+    def Outer():
         hook = idom.hooks.current_hook()
 
         async def on_click(event):
@@ -98,7 +98,7 @@ def test_use_state_with_constructor(driver, display, driver_wait):
         )
 
     @idom.element
-    async def Inner():
+    def Inner():
         count, set_count = idom.hooks.use_state(make_default)
 
         async def on_click(event):
@@ -142,7 +142,7 @@ def test_set_state_with_reducer_instead_of_value(driver, display):
         return count + 1
 
     @idom.element
-    async def Counter():
+    def Counter():
         count, set_count = idom.hooks.use_state(0)
         return idom.html.button(
             {
@@ -180,7 +180,7 @@ def test_set_state_checks_identity_not_equality(driver, display, driver_wait):
         return tracker
 
     @idom.element
-    async def TestElement():
+    def TestElement():
         state, set_state = idom.hooks.use_state(r_1)
 
         render_count.current += 1
@@ -230,7 +230,7 @@ def test_simple_input_with_use_state(driver, display):
     message_ref = idom.Ref(None)
 
     @idom.element
-    async def Input(message=None):
+    def Input(message=None):
         message, set_message = idom.hooks.use_state(message)
         message_ref.current = message
 
@@ -257,14 +257,14 @@ async def test_use_effect_callback_occurs_after_full_render_is_complete():
     effect_triggers_after_final_render = idom.Ref(None)
 
     @idom.element
-    async def OuterElement():
+    def OuterElement():
         return idom.html.div(
             ElementWithEffect(),
             CheckNoEffectYet(),
         )
 
     @idom.element
-    async def ElementWithEffect():
+    def ElementWithEffect():
         @idom.hooks.use_effect
         def effect():
             effect_triggered.current = True
@@ -272,7 +272,7 @@ async def test_use_effect_callback_occurs_after_full_render_is_complete():
         return idom.html.div()
 
     @idom.element
-    async def CheckNoEffectYet():
+    def CheckNoEffectYet():
         effect_triggers_after_final_render.current = not effect_triggered.current
         return idom.html.div()
 
@@ -291,7 +291,7 @@ async def test_use_effect_cleanup_occurs_on_will_render():
 
     @idom.element
     @element_hook.capture
-    async def ElementWithEffect():
+    def ElementWithEffect():
         if cleanup_triggered.current:
             cleanup_triggered_before_next_render.current = True
 
@@ -323,13 +323,13 @@ async def test_use_effect_cleanup_occurs_on_will_unmount():
 
     @idom.element
     @outer_element_hook.capture
-    async def OuterElement():
+    def OuterElement():
         if cleanup_triggered.current:
             cleanup_triggered_before_next_render.current = True
         return ElementWithEffect()
 
     @idom.element
-    async def ElementWithEffect():
+    def ElementWithEffect():
         @idom.hooks.use_effect
         def effect():
             def cleanup():
@@ -361,7 +361,7 @@ async def test_use_effect_memoization():
 
     @idom.element
     @element_hook.capture
-    async def ElementWithMemoizedEffect():
+    def ElementWithMemoizedEffect():
         state, set_state_callback.current = idom.hooks.use_state(first_value)
 
         @idom.hooks.use_effect(args=[state])
@@ -393,7 +393,7 @@ async def test_use_effect_memoization():
 
 async def test_error_in_effect_is_gracefully_handled(caplog):
     @idom.element
-    async def ElementWithEffect():
+    def ElementWithEffect():
         @idom.hooks.use_effect
         def bad_effect():
             raise ValueError("Something went wong :(")
@@ -412,7 +412,7 @@ async def test_error_in_effect_pre_render_cleanup_is_gracefully_handled(caplog):
 
     @idom.element
     @element_hook.capture
-    async def ElementWithEffect():
+    def ElementWithEffect():
         @idom.hooks.use_effect
         def ok_effect():
             def bad_cleanup():
@@ -436,11 +436,11 @@ async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled(caplog)
 
     @idom.element
     @outer_element_hook.capture
-    async def OuterElement():
+    def OuterElement():
         return ElementWithEffect()
 
     @idom.element
-    async def ElementWithEffect():
+    def ElementWithEffect():
         @idom.hooks.use_effect
         def ok_effect():
             def bad_cleanup():
@@ -472,7 +472,7 @@ async def test_use_reducer():
             raise ValueError(f"Unknown action '{action}'")
 
     @idom.element
-    async def Counter(initial_count):
+    def Counter(initial_count):
         saved_count.current, saved_dispatch.current = idom.hooks.use_reducer(
             reducer, initial_count
         )
@@ -504,7 +504,7 @@ async def test_use_reducer_dispatch_callback_identity_is_preserved():
             raise ValueError(f"Unknown action '{action}'")
 
     @idom.element
-    async def ElementWithUseReduce():
+    def ElementWithUseReduce():
         saved_dispatchers.append(idom.hooks.use_reducer(reducer, 0)[1])
         return idom.html.div()
 
@@ -524,7 +524,7 @@ async def test_use_callback_identity():
 
     @idom.element
     @element_hook.capture
-    async def ElementWithRef():
+    def ElementWithRef():
         used_callbacks.append(idom.hooks.use_callback(lambda: None))
         return idom.html.div()
 
@@ -544,7 +544,7 @@ async def test_use_callback_memoization():
 
     @idom.element
     @element_hook.capture
-    async def ElementWithRef():
+    def ElementWithRef():
         state, set_state_hook.current = idom.hooks.use_state(0)
 
         @idom.hooks.use_callback(args=[state])  # use the deco form for coverage
@@ -573,7 +573,7 @@ async def test_use_memo():
 
     @idom.element
     @element_hook.capture
-    async def ElementWithMemo():
+    def ElementWithMemo():
         state, set_state_hook.current = idom.hooks.use_state(0)
         value = idom.hooks.use_memo(
             lambda: idom.Ref(state),  # use a Ref here just to ensure it's a unique obj
@@ -602,7 +602,7 @@ async def test_use_memo_always_runs_if_args_are_none():
 
     @idom.element
     @element_hook.capture
-    async def ElementWithMemo():
+    def ElementWithMemo():
         value = idom.hooks.use_memo(lambda: next(iter_values))
         used_values.append(value)
         return idom.html.div()
@@ -626,7 +626,7 @@ async def test_use_memo_with_stored_args_is_empty_tuple_after_args_are_none():
 
     @idom.element
     @element_hook.capture
-    async def ElementWithMemo():
+    def ElementWithMemo():
         value = idom.hooks.use_memo(
             lambda: next(iter_values), args_used_in_memo.current
         )
@@ -653,7 +653,7 @@ async def test_use_memo_never_runs_if_args_args_empty_list():
 
     @idom.element
     @element_hook.capture
-    async def ElementWithMemo():
+    def ElementWithMemo():
         value = idom.hooks.use_memo(lambda: next(iter_values), ())
         used_values.append(value)
         return idom.html.div()
@@ -674,7 +674,7 @@ async def test_use_ref():
 
     @idom.element
     @element_hook.capture
-    async def ElementWithRef():
+    def ElementWithRef():
         used_refs.append(idom.hooks.use_ref(1))
         return idom.html.div()
 

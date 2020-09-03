@@ -2,7 +2,7 @@ import idom
 
 
 @idom.element
-async def Slideshow():
+def Slideshow():
     index, set_index = idom.hooks.use_state(0)
 
     async def next_image(event):
