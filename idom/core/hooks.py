@@ -96,7 +96,9 @@ def use_effect(
 
 
 @overload
-def use_effect(function: _EffectApplyFunc, args: Optional[Sequence[Any]]) -> None:
+def use_effect(
+    function: _EffectApplyFunc, args: Optional[Sequence[Any]] = None
+) -> None:
     ...
 
 
@@ -179,7 +181,7 @@ def use_callback(
 
 @overload
 def use_callback(
-    function: _CallbackFunc, args: Optional[Sequence[Any]]
+    function: _CallbackFunc, args: Optional[Sequence[Any]] = None
 ) -> _CallbackFunc:
     ...
 
@@ -224,7 +226,7 @@ def use_memo(
 
 @overload
 def use_memo(
-    function: Callable[[], _StateType], args: Optional[Sequence[Any]]
+    function: Callable[[], _StateType], args: Optional[Sequence[Any]] = None
 ) -> _StateType:
     ...
 
