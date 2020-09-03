@@ -1,3 +1,6 @@
+from idom.core.element import element
+import re
+
 import pytest
 
 import idom
@@ -389,12 +392,72 @@ async def test_use_effect_memoization():
         assert effect_run_count.current == 2
 
 
-def test_error_in_effect_is_gracefully_handled():
-    assert False
+async def test_error_in_effect_is_gracefully_handled(caplog):
+    @idom.element
+    async def ElementWithEffect():
+        @idom.hooks.use_effect
+        def bad_effect():
+            raise ValueError("Something went wong :(")
+
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithEffect()) as layout:
+        await layout.render()  # no error
+
+    first_log_line = next(iter(caplog.records)).msg.split("\n", 1)[0]
+    assert re.match("Post-render effect .*? failed for .*?", first_log_line)
 
 
-def test_error_in_effect_cleanup_is_gracefully_handled():
-    assert False
+async def test_error_in_effect_pre_render_cleanup_is_gracefully_handled(caplog):
+    element_hook = HookCatcher()
+
+    @idom.element
+    @element_hook.capture
+    async def ElementWithEffect():
+        @idom.hooks.use_effect
+        def ok_effect():
+            def bad_cleanup():
+                raise ValueError("Something went wong :(")
+
+            return bad_cleanup
+
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithEffect()) as layout:
+        await layout.render()
+        element_hook.schedule_render()
+        await layout.render()  # no error
+
+    first_log_line = next(iter(caplog.records)).msg.split("\n", 1)[0]
+    assert re.match("Pre-render effect .*? failed for .*?", first_log_line)
+
+
+async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled(caplog):
+    outer_element_hook = HookCatcher()
+
+    @idom.element
+    @outer_element_hook.capture
+    async def OuterElement():
+        return ElementWithEffect()
+
+    @idom.element
+    async def ElementWithEffect():
+        @idom.hooks.use_effect
+        def ok_effect():
+            def bad_cleanup():
+                raise ValueError("Something went wong :(")
+
+            return bad_cleanup
+
+        return idom.html.div()
+
+    async with idom.Layout(OuterElement()) as layout:
+        await layout.render()
+        outer_element_hook.schedule_render()
+        await layout.render()  # no error
+
+    first_log_line = next(iter(caplog.records)).msg.split("\n", 1)[0]
+    assert re.match("Pre-unmount effect .*? failed for .*?", first_log_line)
 
 
 async def test_use_reducer():
