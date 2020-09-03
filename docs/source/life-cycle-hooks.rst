@@ -160,6 +160,12 @@ the effect will only occur when the given state changes:
 Now a new connection will only be estalished if a new ``url`` is provided.
 
 
+Async Effects
+.............
+
+under construction...
+
+
 **Supplementary Hooks**
 -----------------------
 
@@ -270,18 +276,6 @@ A ``Ref`` is most useful if you need to incur side effects since updating its
 ``.current`` attribute doesn't trigger a re-render of the element. You'll often use this
 hook alongside :ref:`use_effect` or in response to element event handlers.
 :ref:`The Game Snake` provides a good use case for ``use_ref``.
-
-
-**Unique Hooks**
-----------------
-
-Hooks which are specific to IDOM and not present in React.
-
-
-use_async
----------
-
-...
 
 
 **Rules of Hooks**
