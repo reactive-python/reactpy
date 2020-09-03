@@ -29,7 +29,7 @@ Try it Now!
 
 - In a Jupyter Notebook - |launch-binder|
 
-- With an online editor - `IDOM Sandbox`_
+- Using working :ref:`examples <Examples>`
 
 
 Early Days
@@ -69,8 +69,8 @@ user clicks an image:
     server.run(host, port)
 
 Running this will serve our slideshow to ``"https://localhost:8765"``. You can try out
-a working example by enabling the widget below - clicking the image should cause it to
-change 🖱️
+a working example by enabling the widget below. Once enabled clicking the image will
+cause the widget to change 🖱️
 
 .. interactive-widget:: slideshow
 

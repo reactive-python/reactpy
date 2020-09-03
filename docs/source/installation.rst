@@ -49,14 +49,14 @@ In order to work with IDOM's source code you'll need to install:
 
 - npm_
 
-You'll begin by copy the source from GitHub onto your computer using Git:
+You'll begin by copying the source from GitHub onto your computer using Git:
 
 .. code-block:: bash
 
     git clone https://github.com/rmorshea/idom.git
     cd idom
 
-At this point you should be able to run this install command to:
+At this point you should be able to run the command below to:
 
 - Install an editable version of the Python code
 
@@ -78,8 +78,8 @@ simply run the following to re-evaluate the ``package.json``:
     pip install -e .
 
 
-Running The Test
-----------------
+Running The Tests
+-----------------
 
 The test suite for IDOM is executed using Tox_ and covers:
 
@@ -122,7 +122,7 @@ If you prefer to run the tests using a headless browser:
 Building The Documentation
 --------------------------
 
-Building the documentation as it's is deployed in production requires Docker_. Once you've
+Building the documentation as it's deployed in production requires Docker_. Once you've
 installed ``docker`` you'll need to build and then run a container with the service:
 
 .. code-block:: bash
