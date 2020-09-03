@@ -32,7 +32,7 @@ use_state
 Returns a stateful value and a function to update it.
 
 During the first render the ``state`` will be identical to the ``initial_state`` passed
-as the first argument. However in subsiquent renders ``state`` will take on the value
+as the first argument. However in subsequent renders ``state`` will take on the value
 passed to ``set_state``.
 
 .. code-block::
@@ -41,7 +41,7 @@ passed to ``set_state``.
 
 The ``set_state`` function accepts a ``new_state`` as its only argument and schedules a
 re-render of the element where ``use_state`` was initially called. During these
-subsiquent re-renders the ``state`` returned by ``use_state`` will take on the value
+subsequent re-renders the ``state`` returned by ``use_state`` will take on the value
 of ``new_state``.
 
 .. note::
@@ -56,7 +56,7 @@ Functional Updates
 
 If the new state is computed from the previous state, you can pass a function which
 accepts a single argument (the previous state) and returns the next state. Consider this
-simple use case of a counter where we've pulled out logic for incrementing and
+simply use case of a counter where we've pulled out logic for incrementing and
 decrementing the count:
 
 .. literalinclude:: examples/use_state_counter.py
@@ -65,7 +65,7 @@ decrementing the count:
 
 We use the functional form for the "+" and "-" buttons since the next ``count`` depends
 on the previous value, while for the "Reset" button we simple assign the
-``initial_count`` since it's independent of the prior ``count``. This is a trivial
+``initial_count`` since it is independent of the prior ``count``. This is a trivial
 example, but it demonstrates how complex state logic can be factored out into well
 defined and potentially reuseable functions.
 
@@ -103,19 +103,17 @@ use_effect
 
     use_effect(did_render)
 
-The ``use_effect`` hook accepts a function which is may be imperative, or mutate state.
-The function will be called once the element has rendered, that is, when the
-element's render function and those of any child elements it produces have rendered
-successfully.
+The ``use_effect`` hook accepts a function which may be imperative, or mutate state. The
+function will be called immediately after the layout has fully updated.
 
-Mutations, subscriptsion, delayed actions, and other `side effects`_ can cause
+Mutations, subscriptions, delayed actions, and other `side effects`_ can cause
 unexpected bugs if placed in the main body of an element's render function. Thus the
 ``use_effect`` hook provides a way to safely escape the purely functional world of
 element render functions.
 
 .. note::
 
-    Normally in react the ``did_render`` function is called once an update has been
+    Normally in React the ``did_render`` function is called once an update has been
     commited to the screen. Since no such action is performed by IDOM, and the time
     at which the update is displayed cannot be known we are unable to achieve parity
     with this behavior.
@@ -124,15 +122,16 @@ element render functions.
 Cleaning Up Effects
 ...................
 
-If the effect you wish to enact creates resources you'll probably need to clean them up.
-In such cases you may simply return a function the addresses this from the function
-which created the resource. Consider the case of opening and then closing a connection:
+If the effect you wish to enact creates resources, you'll probably need to clean them
+up. In such cases you may simply return a function that addresses this from the
+``did_render`` function which created the resource. Consider the case of opening and
+then closing a connection:
 
 .. code-block::
 
     def establish_connection():
         connection = open_connection(url)
-        return connection.close
+        return lambda: close_connection(connection)
 
     use_effect(establish_connection)
 
@@ -145,7 +144,7 @@ time an element renders.
 Conditional Effects
 ...................
 
-By default effects are triggered after ever successful render to ensure that all state
+By default, effects are triggered after every successful render to ensure that all state
 referenced by the effect is up to date. However you can limit the number of times an
 effect is fired by specifying exactly what state the effect depends on. In doing so
 the effect will only occur when the given state changes:
@@ -154,7 +153,7 @@ the effect will only occur when the given state changes:
 
     def establish_connection():
         connection = open_connection(url)
-        return connection.close
+        return lambda: close_connection(connection)
 
     use_effect(establish_connection, [url])
 
@@ -210,12 +209,12 @@ use_callback
 
 A derivative of :ref:`use_memo`, the ``use_callback`` hook teturns a
 `memoized <memoization>`_ callback. This is useful when passing callbacks to child
-elements which check reference equality to prevent unnecessary renders. The of the
+elements which check reference equality to prevent unnecessary renders. The of
 ``memoized_callback`` will only change when the given depdencies do.
 
 .. note::
 
-    The list of "dependencies" are not passed as arguments to the function ostensibly
+    The list of "dependencies" are not passed as arguments to the function. Ostensibly
     though, that is what they represent. Thus any variable referenced by the function
     must be listed as dependencies. We're working on a linter to help enforce this
     [GH202]_.
@@ -243,9 +242,9 @@ after) and should not incur side effects.
 
 .. warning::
 
-    Remember that you shouldn't optimize something else you know it's a performance
-    bottleneck. Write your code without ``use_memo`` first and then add it to later
-    to targeted sections that need a speed-up.
+    Remember that you shouldn't optimize something unless you know it's a performance
+    bottleneck. Write your code without ``use_memo`` first and then add it to targeted
+    sections that need a speed-up.
 
 .. note::
 
@@ -267,9 +266,9 @@ Returns a mutable :class:`~idom.core.hooks.Ref` object that has a single
 ``initial_state``. The identity of the ``Ref`` object will be preserved for the lifetime
 of the element.
 
-A ``Ref`` is most useful if you need to incur side effect since updating its
+A ``Ref`` is most useful if you need to incur side effects since updating its
 ``.current`` attribute doesn't trigger a re-render of the element. You'll often use this
-hook alongside :ref:`use_effect` or in response to element event handlers. The
+hook alongside :ref:`use_effect` or in response to element event handlers.
 :ref:`The Game Snake` provides a good use case for ``use_ref``.
 
 

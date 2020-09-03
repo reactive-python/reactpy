@@ -13,7 +13,7 @@ Pure Elements
 -------------
 
 As in most programming paradigms, so many of the problems come down to how we manage
-state, and the first tool in encouraging its proper curation is the usage of
+state. The first tool in encouraging its proper curation is the usage of
 `pure functions`_. The benefit of a pure function is that there's no state. Similar to
 the addage "the best code is no code at all," we make the related claim that "the best
 way to manage state is to have no state at all."
@@ -33,7 +33,7 @@ accepted a list of strings and turned it into a series of paragraph elements:
 Stateful Elements
 -----------------
 
-A Stateful Element is one which uses a :ref:`Life Cycle Hook`. These lifecycle hooks
+A Stateful Element is one which uses a :ref:`Life Cycle Hook`. These life cycle hooks
 allow you to add state to otherwise stateless functions. To create a stateful element
 you'll need to apply the :func:`~idom.core.element.element` decorator to a coroutine_
 whose body contains a hook usage. We'll demonstrate that with a simple
@@ -70,11 +70,11 @@ ever be removed from the model. Then you'll just need to call and await a
     async with idom.Layout(ClickCount()) as layout:
         patch = await layout.render()
 
-The layout also handles the triggering event handlers. Normally this is done
-automatically by a :ref:`Renderer <Layout Renderer>`, but for now we'll to it manually.
-To do use we can use a trick to hard-code the ``event_handler_id`` so we can pass it,
-and a fake event, to the layout's :meth:`~idom.core.layout.Layout.dispatch` method. Then
-we just have to re-render the layout and see what changed:
+The layout also handles the triggering of event handlers. Normally this is done
+automatically by a :ref:`Renderer <Layout Renderer>`, but for now we'll do it manually.
+We can use a trick to hard-code the ``event_handler_id`` so we can pass it, and a fake
+event, to the layout's :meth:`~idom.core.layout.Layout.dispatch` method. Then we just
+have to re-render the layout and see what changed:
 
 .. testcode::
 
@@ -118,8 +118,8 @@ Layout Renderer
 An :class:`~idom.core.render.AbstractRenderer` implementation is a relatively thin layer
 of logic around a :class:`~idom.core.layout.Layout` which drives the triggering of
 events and layout updates by scheduling an asynchronous loop that will run forever -
-effectively animating the model. To run the loop the renderer's
-:meth:`~idom.core.render.AbstractRenderer.run` method accepts two callbacks, one is a
+effectively animating the model. To execute the loop, the renderer's
+:meth:`~idom.core.render.AbstractRenderer.run` method accepts two callbacks. One is a
 "send" callback to which the renderer passes updates, while the other is "receive"
 callback that's called by the renderer to events it should execute.
 
@@ -172,10 +172,10 @@ Layout Server
 -------------
 
 The :ref:`Renderer <Layout Renderer>` allows you to animate the layout, but we still
-need to get the models on the screen, and one of the last steps in that journey is to
-send them over the wire. To do that you need an
+need to get the models on the screen. One of the last steps in that journey is to send
+them over the wire. To do that you need an
 :class:`~idom.server.base.AbstractRenderServer` implementation. Right now we have a
-builtin subclass that relies on :mod:`sanic`, an async enabled web server. In principle
+built in subclass that relies on :mod:`sanic`, an async enabled web server. In principle
 though, the base server class is capable of working with any other async enabled server
 framework. Potential candidates range from newer frameworks like
 `vibora <https://vibora.io/>`__, `starlette <https://www.starlette.io/>`__, and
@@ -188,7 +188,7 @@ starting to add support for asyncio like
     an `issue <https://github.com/rmorshea/idom/issues>`__.
 
 In the case of our :class:`~idom.server.sanic.SanicRenderServer` types we have one
-implementation per builtin :ref:`Renderer <Layout Renderer>`:
+implementation per built in :ref:`Renderer <Layout Renderer>`:
 
 - :class:`idom.server.sanic.PerClientStateServer`
 
@@ -201,7 +201,7 @@ two ways - as a standalone application or as an extension to an existing applica
 Standalone Server Usage
 .......................
 
-The implementation constructs a default application that's used to server the renders of
+The implementation constructs a default application that's used to serve the renders of
 the model:
 
 .. code-block:: python
@@ -220,7 +220,7 @@ the model:
 Server Extension Usage
 ......................
 
-The implementation registers hooks into the application to server the model once run:
+The implementation registers hooks into the application to serve the model once run:
 
 .. code-block:: python
 

@@ -60,7 +60,7 @@ class Element(AbstractElement):
     From there an element instance will communicate its needs to the layout. For example
     when an element wants to re-render it will call :meth:`idom.core.layout.Layout.element_updated`.
 
-    The lifecycle of an element typically goes in this order:
+    The life cycle of an element typically goes in this order:
 
     1. The element instance is instantiated.
 
