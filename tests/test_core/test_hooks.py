@@ -472,12 +472,12 @@ async def test_use_async_effect_cleanup():
     await asyncio.wait_for(cleanup_ran.wait(), 1)
 
 
-async def test_use_async_effect_cancel():
+async def test_use_async_effect_cancel(caplog):
     element_hook = HookCatcher()
     effect_ran = asyncio.Event()
     effect_was_cancelled = asyncio.Event()
 
-    event_that_is_never_set = asyncio.Event()
+    event_that_never_occurs = asyncio.Event()
 
     @idom.element
     @element_hook.capture
@@ -486,9 +486,10 @@ async def test_use_async_effect_cancel():
         async def effect():
             effect_ran.set()
             try:
-                await event_that_is_never_set.wait()
+                await event_that_never_occurs.wait()
             except asyncio.CancelledError:
                 effect_was_cancelled.set()
+                raise
 
         return idom.html.div()
 
@@ -501,6 +502,12 @@ async def test_use_async_effect_cancel():
         await layout.render()
 
     await asyncio.wait_for(effect_was_cancelled.wait(), 1)
+
+    # So I know we said the event never occurs but... to ensure the effect's future is
+    # cancelled before the test is cleaned up we need to set the event. This is because
+    # the cancellation doesn't propogate before the test is resolved which causes
+    # delayed log messages that impact other tests.
+    event_that_never_occurs.set()
 
 
 async def test_error_in_effect_is_gracefully_handled(caplog):

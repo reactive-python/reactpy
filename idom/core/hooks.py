@@ -139,11 +139,8 @@ def use_effect(
                 future = asyncio.ensure_future(async_function())
 
                 def clean_future() -> None:
-                    try:
+                    if not future.cancel():
                         clean = future.result()
-                    except asyncio.InvalidStateError:
-                        future.cancel()
-                    else:
                         if clean is not None:
                             clean()
 
