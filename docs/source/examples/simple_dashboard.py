@@ -43,7 +43,7 @@ def RandomWalkGraph(mu, sigma):
     interval = use_interval(0.5)
     data, set_data = idom.hooks.use_state([{"x": 0, "y": 0}] * 50)
 
-    @idom.hooks.use_async
+    @idom.hooks.use_effect
     async def animate():
         await interval
         last_data_point = data[-1]
@@ -75,8 +75,8 @@ def NumberInput(label, value, set_value_callback, domain):
     )
 
 
-def use_interval(rate: float) -> Awaitable[None]:
-    usage_time = use_ref(time.time())
+def use_interval(rate):
+    usage_time = idom.hooks.use_ref(time.time())
 
     async def interval() -> None:
         await asyncio.sleep(rate - (time.time() - usage_time.current))
