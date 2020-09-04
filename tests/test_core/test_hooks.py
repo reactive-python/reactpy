@@ -520,6 +520,7 @@ async def test_error_in_effect_is_gracefully_handled(caplog):
 
 
 async def test_error_in_effect_cleanup_is_gracefully_handled(caplog):
+    caplog.clear()
     element_hook = HookCatcher()
 
     @idom.element
