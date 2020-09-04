@@ -234,11 +234,11 @@ async def test_double_updated_element_is_not_double_rendered():
 
         await layout.render()
         try:
-            asyncio.wait_for(
-                [layout.render()],
+            await asyncio.wait_for(
+                layout.render(),
                 timeout=0.1,  # this should have been plenty of time
             )
-        except asyncio.CancelledError:
+        except asyncio.TimeoutError:
             pass  # the render should still be rendering since we only update once
 
         assert run_count.current == 2
