@@ -76,7 +76,7 @@ def GameLoop(grid_size, block_scale, set_game_state):
 
     interval = use_interval(0.5)
 
-    @idom.hooks.use_async
+    @idom.hooks.use_effect
     async def animate():
         if new_game_state is not None:
             await asyncio.sleep(1)
@@ -114,8 +114,8 @@ def use_snake_food(grid_size, current_snake):
     return food, set_food
 
 
-def use_interval(rate: float) -> Awaitable[None]:
-    usage_time = use_ref(time.time())
+def use_interval(rate):
+    usage_time = idom.hooks.use_ref(time.time())
 
     async def interval() -> None:
         await asyncio.sleep(rate - (time.time() - usage_time.current))
