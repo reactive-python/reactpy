@@ -125,7 +125,7 @@ def use_effect(
     """
     hook = current_hook()
     memoize = use_memo(args=args)
-    last_clean_callback = use_ref(None)
+    last_clean_callback: Ref[Optional[_EffectCleanFunc]] = use_ref(None)
 
     def add_effect(function: _EffectApplyFunc) -> None:
 
