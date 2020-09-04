@@ -125,6 +125,7 @@ def use_effect(
     """
     hook = current_hook()
     memoize = use_memo(args=args)
+    last_clean_callback = use_ref(None)
 
     def add_effect(function: _EffectApplyFunc) -> None:
 
@@ -149,9 +150,13 @@ def use_effect(
                 return clean_future
 
         def effect() -> None:
-            clean = sync_function()
+            if last_clean_callback.current is not None:
+                last_clean_callback.current()
+
+            clean = last_clean_callback.current = sync_function()
             if clean is not None:
-                hook.add_effect("will_render will_unmount", clean)
+                hook.add_effect("will_unmount", clean)
+
             return None
 
         return memoize(lambda: hook.add_effect("did_render", effect))
@@ -355,7 +360,6 @@ def current_hook() -> "LifeCycleHook":
 
 
 class _EventEffects(NamedTuple):
-    will_render: List[Callable[[], Any]]
     did_render: List[Callable[[], Any]]
     will_unmount: List[Callable[[], Any]]
 
@@ -391,7 +395,7 @@ class LifeCycleHook:
         self._rendered_atleast_once = False
         self._current_state_index = 0
         self._state: Tuple[Any, ...] = ()
-        self._event_effects = _EventEffects([], [], [])
+        self._event_effects = _EventEffects([], [])
 
     def schedule_render(self) -> None:
         if self._is_rendering:
@@ -418,15 +422,6 @@ class LifeCycleHook:
     def element_will_render(self) -> None:
         """The element is about to render"""
         self._is_rendering = True
-
-        for effect in self._event_effects.will_render:
-            try:
-                effect()
-            except Exception:
-                msg = f"Pre-render effect {effect} failed for {self.element}"
-                logger.exception(msg)
-
-        self._event_effects.will_render.clear()
         self._event_effects.will_unmount.clear()
 
     def element_did_render(self) -> None:

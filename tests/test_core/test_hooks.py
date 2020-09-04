@@ -285,19 +285,19 @@ async def test_use_effect_callback_occurs_after_full_render_is_complete():
     assert effect_triggers_after_final_render.current
 
 
-async def test_use_effect_cleanup_occurs_on_will_render():
+async def test_use_effect_cleanup_occurs_before_next_effect():
     element_hook = HookCatcher()
     cleanup_triggered = idom.Ref(False)
-    cleanup_triggered_before_next_render = idom.Ref(False)
+    cleanup_triggered_before_next_effect = idom.Ref(False)
 
     @idom.element
     @element_hook.capture
     def ElementWithEffect():
-        if cleanup_triggered.current:
-            cleanup_triggered_before_next_render.current = True
-
         @idom.hooks.use_effect
         def effect():
+            if cleanup_triggered.current:
+                cleanup_triggered_before_next_effect.current = True
+
             def cleanup():
                 cleanup_triggered.current = True
 
@@ -314,7 +314,7 @@ async def test_use_effect_cleanup_occurs_on_will_render():
         await layout.render()
 
         assert cleanup_triggered.current
-        assert cleanup_triggered_before_next_render.current
+        assert cleanup_triggered_before_next_effect.current
 
 
 async def test_use_effect_cleanup_occurs_on_will_unmount():
@@ -352,7 +352,7 @@ async def test_use_effect_cleanup_occurs_on_will_unmount():
         assert cleanup_triggered_before_next_render.current
 
 
-async def test_use_effect_memoization():
+async def test_memoized_effect_on_recreated_if_args_change():
     element_hook = HookCatcher()
     set_state_callback = idom.Ref(None)
     effect_run_count = idom.Ref(0)
@@ -390,6 +390,44 @@ async def test_use_effect_memoization():
         await layout.render()
 
         assert effect_run_count.current == 2
+
+
+async def test_memoized_effect_cleanup_only_triggered_before_new_effect():
+    element_hook = HookCatcher()
+    set_state_callback = idom.Ref(None)
+    cleanup_trigger_count = idom.Ref(0)
+
+    first_value = 1
+    second_value = 2
+
+    @idom.element
+    @element_hook.capture
+    def ElementWithEffect():
+        state, set_state_callback.current = idom.hooks.use_state(first_value)
+
+        @idom.hooks.use_effect(args=[state])
+        def effect():
+            def cleanup():
+                cleanup_trigger_count.current += 1
+
+            return cleanup
+
+        return idom.html.div()
+
+    async with idom.Layout(ElementWithEffect()) as layout:
+        await layout.render()
+
+        assert cleanup_trigger_count.current == 0
+
+        element_hook.schedule_render()
+        await layout.render()
+
+        assert cleanup_trigger_count.current == 0
+
+        set_state_callback.current(second_value)
+        await layout.render()
+
+        assert cleanup_trigger_count.current == 1
 
 
 async def test_use_async_effect():
@@ -481,7 +519,7 @@ async def test_error_in_effect_is_gracefully_handled(caplog):
     assert re.match("Post-render effect .*? failed for .*?", first_log_line)
 
 
-async def test_error_in_effect_pre_render_cleanup_is_gracefully_handled(caplog):
+async def test_error_in_effect_cleanup_is_gracefully_handled(caplog):
     element_hook = HookCatcher()
 
     @idom.element
@@ -502,7 +540,7 @@ async def test_error_in_effect_pre_render_cleanup_is_gracefully_handled(caplog):
         await layout.render()  # no error
 
     first_log_line = next(iter(caplog.records)).msg.split("\n", 1)[0]
-    assert re.match("Pre-render effect .*? failed for .*?", first_log_line)
+    assert re.match("Post-render effect .*? failed for .*?", first_log_line)
 
 
 async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled(caplog):

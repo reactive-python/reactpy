@@ -163,7 +163,28 @@ Now a new connection will only be estalished if a new ``url`` is provided.
 Async Effects
 .............
 
-under construction...
+A behavior unique to IDOM's implementation of ``use_effect`` is that it natively
+supports ``async`` functions:
+
+.. code-block::
+
+    async def nonblocking_effect():
+        resource = await do_something_asynchronously()
+        return lambda: blocking_close(resource)
+
+    use_effect(nonblocking_effect)
+
+
+There are **three important subtleties** to note about using asynchronous effects:
+
+1. The cleanup function must be a normal synchronous function.
+
+2. Asynchronous effects which do not complete before the next effect is created
+   following a re-render will be cancelled. This means an
+   :class:`~asyncio.CancelledError` will be raised somewhere in the body of the effect.
+
+3. An asynchronous effect may occur any time after the update which added this effect
+   and before the next effect following a subsequent update.
 
 
 **Supplementary Hooks**
