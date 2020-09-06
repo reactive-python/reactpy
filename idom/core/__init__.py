@@ -1,13 +1,13 @@
 from .element import element, Element, AbstractElement, ElementConstructor
 from .events import event, Events, EventHandler
 from .layout import Layout, Layout
-from .render import AbstractRenderer, SharedStateRenderer, SingleStateRenderer
+from .dispatcher import AbstractDispatcher, SharedStateDispatcher, SingleStateDispatcher
 from .vdom import vdom
 
 __all__ = [
     "AbstractElement",
     "Layout",
-    "AbstractRenderer",
+    "AbstractDispatcher",
     "element",
     "Element",
     "EventHandler",
@@ -17,6 +17,6 @@ __all__ = [
     "hooks",
     "Layout",
     "vdom",
-    "SharedStateRenderer",
-    "SingleStateRenderer",
+    "SharedStateDispatcher",
+    "SingleStateDispatcher",
 ]

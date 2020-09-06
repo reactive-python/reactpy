@@ -29,7 +29,7 @@ Layout
     :members:
 
 
-Renderer
+Dispatcher
 --------
 
 .. automodule:: idom.core.render

@@ -9,9 +9,9 @@ from sanic_cors import CORS
 from mypy_extensions import TypedDict
 from websockets import WebSocketCommonProtocol
 
-from idom.core.render import (
-    SingleStateRenderer,
-    SharedStateRenderer,
+from idom.core.dispatcher import (
+    SingleStateDispatcher,
+    SharedStateDispatcher,
     SendCoroutine,
     RecvCoroutine,
 )
@@ -55,7 +55,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
             cors_params = cors_config if isinstance(cors_config, dict) else {}
             CORS(app, **cors_params)
 
-        bp = Blueprint(f"idom_renderer_{id(self)}", url_prefix=config["url_prefix"])
+        bp = Blueprint(f"idom_dispatcher_{id(self)}", url_prefix=config["url_prefix"])
         self._setup_blueprint_routes(bp, config)
         app.blueprint(bp)
 
@@ -75,7 +75,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
                 return LayoutEvent(event["target"], event["data"])
 
             param_dict = {k: request.args.get(k) for k in request.args}
-            await self._run_renderer(sock_send, sock_recv, param_dict)
+            await self._run_dispatcher(sock_send, sock_recv, param_dict)
 
         def handler_name(function: Any) -> str:
             return f"{blueprint.name}.{function.__name__}"
@@ -135,43 +135,43 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
 class PerClientStateServer(SanicRenderServer):
     """Each client view will have its own state."""
 
-    _renderer_type = SingleStateRenderer
+    _dispatcher_type = SingleStateDispatcher
 
-    async def _run_renderer(
+    async def _run_dispatcher(
         self,
         send: SendCoroutine,
         recv: RecvCoroutine,
         parameters: Dict[str, Any],
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
-        async with self._make_renderer(parameters, loop) as renderer:
-            await renderer.run(send, recv, None)
+        async with self._make_dispatcher(parameters, loop) as dispatcher:
+            await dispatcher.run(send, recv, None)
 
 
 class SharedClientStateServer(SanicRenderServer):
     """All connected client views will have shared state."""
 
-    _renderer_type = SharedStateRenderer
-    _renderer: SharedStateRenderer
+    _dispatcher_type = SharedStateDispatcher
+    _dispatcher: SharedStateDispatcher
 
     def _setup_application(self, app: Sanic, config: Config) -> None:
-        app.listener("before_server_start")(self._activate_renderer)
-        app.listener("before_server_stop")(self._deactivate_renderer)
+        app.listener("before_server_start")(self._activate_dispatcher)
+        app.listener("before_server_stop")(self._deactivate_dispatcher)
         super()._setup_application(app, config)
 
-    async def _activate_renderer(
+    async def _activate_dispatcher(
         self, app: Sanic, loop: asyncio.AbstractEventLoop
     ) -> None:
-        self._renderer = cast(SharedStateRenderer, self._make_renderer({}, loop))
-        await self._renderer.__aenter__()
+        self._dispatcher = cast(SharedStateDispatcher, self._make_dispatcher({}, loop))
+        await self._dispatcher.__aenter__()
 
-    async def _deactivate_renderer(
+    async def _deactivate_dispatcher(
         self, app: Sanic, loop: asyncio.AbstractEventLoop
     ) -> None:  # pragma: no cover
         # this doesn't seem to get triffered during testing for some reason
-        await self._renderer.__aexit__(None, None, None)
+        await self._dispatcher.__aexit__(None, None, None)
 
-    async def _run_renderer(
+    async def _run_dispatcher(
         self,
         send: SendCoroutine,
         recv: RecvCoroutine,
@@ -181,4 +181,4 @@ class SharedClientStateServer(SanicRenderServer):
         if parameters:
             msg = f"SharedClientState server does not support per-client view parameters {parameters}"
             raise ValueError(msg)
-        await self._renderer.run(send, recv, uuid.uuid4().hex, join=True)
+        await self._dispatcher.run(send, recv, uuid.uuid4().hex, join=True)

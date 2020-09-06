@@ -19,12 +19,8 @@ SendCoroutine = Callable[[Any], Awaitable[None]]
 RecvCoroutine = Callable[[], Awaitable[LayoutEvent]]
 
 
-class StopRendering(Exception):
-    """Raised to gracefully stop :meth:`AbstractRenderer.run`"""
-
-
-class AbstractRenderer(HasAsyncResources, abc.ABC):
-    """A base class for implementing :class:`~idom.core.layout.Layout` renderers."""
+class AbstractDispatcher(HasAsyncResources, abc.ABC):
+    """A base class for implementing :class:`~idom.core.layout.Layout` dispatchers."""
 
     __slots__ = "_layout"
 
@@ -73,11 +69,11 @@ class AbstractRenderer(HasAsyncResources, abc.ABC):
         ...
 
 
-class SingleStateRenderer(AbstractRenderer):
-    """Each client of the renderer will get its own model.
+class SingleStateDispatcher(AbstractDispatcher):
+    """Each client of the dispatcher will get its own model.
 
     ..note::
-        The ``context`` parameter of :meth:`SingleStateRenderer.run` should just
+        The ``context`` parameter of :meth:`SingleStateDispatcher.run` should just
         be ``None`` since it's not used.
     """
 
@@ -95,11 +91,11 @@ class SingleStateRenderer(AbstractRenderer):
         return None
 
 
-class SharedStateRenderer(SingleStateRenderer):
-    """Each client of the renderer shares the same model.
+class SharedStateDispatcher(SingleStateDispatcher):
+    """Each client of the dispatcher shares the same model.
 
     The client's ID is indicated by the ``context`` argument of
-    :meth:`SharedStateRenderer.run`
+    :meth:`SharedStateDispatcher.run`
     """
 
     __slots__ = "_update_queues", "_model_state"

@@ -71,7 +71,7 @@ ever be removed from the model. Then you'll just need to call and await a
         patch = await layout.render()
 
 The layout also handles the triggering of event handlers. Normally this is done
-automatically by a :ref:`Renderer <Layout Renderer>`, but for now we'll do it manually.
+automatically by a :ref:`Dispatcher <Layout Dispatcher>`, but for now we'll do it manually.
 We can use a trick to hard-code the ``event_handler_id`` so we can pass it, and a fake
 event, to the layout's :meth:`~idom.core.layout.Layout.dispatch` method. Then we just
 have to re-render the layout and see what changed:
@@ -112,22 +112,22 @@ have to re-render the layout and see what changed:
         assert count_did_increment
 
 
-Layout Renderer
----------------
+Layout Dispatcher
+-----------------
 
-An :class:`~idom.core.render.AbstractRenderer` implementation is a relatively thin layer
+An :class:`~idom.core.dispatcher.AbstractDispatcher` implementation is a relatively thin layer
 of logic around a :class:`~idom.core.layout.Layout` which drives the triggering of
 events and layout updates by scheduling an asynchronous loop that will run forever -
-effectively animating the model. To execute the loop, the renderer's
-:meth:`~idom.core.render.AbstractRenderer.run` method accepts two callbacks. One is a
-"send" callback to which the renderer passes updates, while the other is "receive"
-callback that's called by the renderer to events it should execute.
+effectively animating the model. To execute the loop, the dispatcher's
+:meth:`~idom.core.dispatcher.AbstractDispatcher.run` method accepts two callbacks. One is a
+"send" callback to which the dispatcher passes updates, while the other is "receive"
+callback that's called by the dispatcher to events it should execute.
 
 .. testcode::
 
     import asyncio
 
-    from idom.core import SingleStateRenderer, EventHandler
+    from idom.core import SingleStateDispatcher, EventHandler
     from idom.core.layout import LayoutEvent
 
 
@@ -137,7 +137,7 @@ callback that's called by the renderer to events it should execute.
     async def send(patch):
         sent_patches.append(patch)
         if len(sent_patches) == 5:
-            # if we didn't cancel the renderer would continue forever
+            # if we didn't cancel the dispatcher would continue forever
             raise asyncio.CancelledError()
 
 
@@ -152,9 +152,9 @@ callback that's called by the renderer to events it should execute.
         return event
 
 
-    async with SingleStateRenderer(idom.Layout(ClickCount())) as renderer:
+    async with SingleStateDispatcher(idom.Layout(ClickCount())) as dispatcher:
         context = None  # see note below
-        await renderer.run(send, recv, context)
+        await dispatcher.run(send, recv, context)
 
     assert len(sent_patches) == 5
 
@@ -162,16 +162,16 @@ callback that's called by the renderer to events it should execute.
 .. note::
 
     ``context`` is information that's specific to the
-    :class:`~idom.core.render.AbstractRenderer` implementation. In the case of
-    the :class:`~idom.core.render.SingleStateRenderer` it doesn't require any
-    context. On the other hand the :class:`~idom.core.render.SharedStateRenderer`
+    :class:`~idom.core.dispatcher.AbstractDispatcher` implementation. In the case of
+    the :class:`~idom.core.render.SingleStateDispatcher` it doesn't require any
+    context. On the other hand the :class:`~idom.core.render.SharedStateDispatcher`
     requires a client ID as its piece of contextual information.
 
 
 Layout Server
 -------------
 
-The :ref:`Renderer <Layout Renderer>` allows you to animate the layout, but we still
+The :ref:`Dispatcher <Layout Dispatcher>` allows you to animate the layout, but we still
 need to get the models on the screen. One of the last steps in that journey is to send
 them over the wire. To do that you need an
 :class:`~idom.server.base.AbstractRenderServer` implementation. Right now we have a
@@ -188,7 +188,7 @@ starting to add support for asyncio like
     an `issue <https://github.com/rmorshea/idom/issues>`__.
 
 In the case of our :class:`~idom.server.sanic.SanicRenderServer` types we have one
-implementation per built in :ref:`Renderer <Layout Renderer>`:
+implementation per built in :ref:`Dispatcher <Layout Dispatcher>`:
 
 - :class:`idom.server.sanic.PerClientStateServer`
 
