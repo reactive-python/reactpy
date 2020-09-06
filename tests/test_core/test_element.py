@@ -8,7 +8,7 @@ def test_element_repr():
 
     m_e = MyElement(1, 2, 3, x=4, y=5)
 
-    expected = f"MyElement({m_e.id}, a=1, b=(2, 3), c={{'x': 4, 'y': 5}})"
+    expected = f"MyElement:{id(m_e)}(a=1, b=(2, 3), c={{'x': 4, 'y': 5}})"
     assert repr(m_e) == expected
 
 
