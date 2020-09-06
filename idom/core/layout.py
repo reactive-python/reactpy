@@ -40,9 +40,10 @@ class LayoutEvent(NamedTuple):
 class ElementState(NamedTuple):
     model: Dict[str, Any]
     path: str
+    element_id: int
     element_obj: AbstractElement
     event_handler_ids: Set[str]
-    child_elements_ids: List[str]
+    child_elements_ids: List[int]
     life_cycle_hook: LifeCycleHook
 
 
@@ -80,7 +81,7 @@ class Layout(HasAsyncResources):
     async def render(self) -> LayoutUpdate:
         while True:
             element = await self._rendering_queue.get()
-            if element.id in self._element_states:
+            if self._has_element_state(element):
                 return self._create_layout_update(element)
 
     @async_resource
@@ -90,15 +91,15 @@ class Layout(HasAsyncResources):
         yield queue
 
     @async_resource
-    async def _element_states(self) -> AsyncIterator[Dict[str, ElementState]]:
-        root_element_state = self._create_element_state(self.root, "")
+    async def _element_states(self) -> AsyncIterator[Dict[int, ElementState]]:
+        root_element_state = self._create_element_state(self.root, "", save=False)
         try:
-            yield {self.root.id: root_element_state}
+            yield {root_element_state.element_id: root_element_state}
         finally:
             self._delete_element_state(root_element_state)
 
     def _create_layout_update(self, element: AbstractElement) -> LayoutUpdate:
-        element_state = self._element_states[element.id]
+        element_state = self._get_element_state(element)
 
         element_state.life_cycle_hook.element_will_render()
 
@@ -169,10 +170,9 @@ class Layout(HasAsyncResources):
                 resolved_children.append(self._render_model(element_state, child))
             elif isinstance(child, AbstractElement):
                 child_path = f"{element_state.path}/children/{index}"
-                child_state = self._create_element_state(child, child_path)
-                self._element_states[child.id] = child_state
+                child_state = self._create_element_state(child, child_path, save=True)
                 resolved_children.append(self._render_element(child_state))
-                element_state.child_elements_ids.append(child.id)
+                element_state.child_elements_ids.append(id(child))
             else:
                 resolved_children.append(str(child))
         return resolved_children
@@ -201,22 +201,36 @@ class Layout(HasAsyncResources):
 
         return {e: h.serialize() for e, h in handlers.items()}
 
+    def _get_element_state(self, element: AbstractElement) -> ElementState:
+        return self._element_states[id(element)]
+
+    def _has_element_state(self, element: AbstractElement) -> bool:
+        return id(element) in self._element_states
+
     def _create_element_state(
-        self, element: AbstractElement, path: str
+        self,
+        element: AbstractElement,
+        path: str,
+        save: bool,
     ) -> ElementState:
-        return ElementState(
+        element_id = id(element)
+        state = ElementState(
             model={},
             path=path,
+            element_id=element_id,
             element_obj=element,
             event_handler_ids=set(),
             child_elements_ids=[],
             life_cycle_hook=LifeCycleHook(element, self.update),
         )
+        if save:
+            self._element_states[element_id] = state
+        return state
 
     def _delete_element_state(self, element_state: ElementState) -> None:
         self._clear_element_state_event_handlers(element_state)
         self._delete_element_state_children(element_state)
-        del self._element_states[element_state.element_obj.id]
+        del self._element_states[element_state.element_id]
 
     def _clear_element_state_event_handlers(self, element_state: ElementState) -> None:
         for handler_id in element_state.event_handler_ids:
@@ -258,15 +272,16 @@ class _ElementQueue:
 
     def __init__(self) -> None:
         self._queue: "asyncio.Queue[AbstractElement]" = asyncio.Queue()
-        self._pending: Set[str] = set()
+        self._pending: Set[int] = set()
 
     def put(self, element: AbstractElement) -> None:
-        if element.id not in self._pending:
-            self._pending.add(element.id)
+        element_id = id(element)
+        if element_id not in self._pending:
+            self._pending.add(element_id)
             self._queue.put_nowait(element)
         return None
 
     async def get(self) -> AbstractElement:
         element = await self._queue.get()
-        self._pending.remove(element.id)
+        self._pending.remove(id(element))
         return element

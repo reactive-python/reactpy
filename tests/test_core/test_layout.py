@@ -17,7 +17,7 @@ def test_layout_repr():
 
     my_element = MyElement()
     layout = idom.Layout(my_element)
-    assert str(layout) == f"Layout(MyElement({my_element.id}))"
+    assert str(layout) == f"Layout(MyElement:{id(my_element)}())"
 
 
 def test_layout_expects_abstract_element():
@@ -171,8 +171,8 @@ async def test_elements_are_garbage_collected():
     @outer_element_hook.capture
     def Outer():
         element = idom.hooks.current_hook().element
-        live_elements.add(element.id)
-        finalize(element, live_elements.remove, element.id)
+        live_elements.add(id(element))
+        finalize(element, live_elements.remove, id(element))
 
         hook = idom.hooks.current_hook()
 
@@ -185,8 +185,8 @@ async def test_elements_are_garbage_collected():
     @idom.element
     def Inner():
         element = idom.hooks.current_hook().element
-        live_elements.add(element.id)
-        finalize(element, live_elements.remove, element.id)
+        live_elements.add(id(element))
+        finalize(element, live_elements.remove, id(element))
         return idom.html.div()
 
     async with idom.Layout(Outer()) as layout:
