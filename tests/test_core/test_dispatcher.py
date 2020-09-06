@@ -6,10 +6,10 @@ from anyio.exceptions import ExceptionGroup
 
 import idom
 from idom.core.layout import Layout, LayoutEvent
-from idom.core.render import SharedStateRenderer, AbstractRenderer
+from idom.core.dispatcher import SharedStateDispatcher, AbstractDispatcher
 
 
-async def test_shared_state_renderer():
+async def test_shared_state_dispatcher():
     done = asyncio.Event()
     changes_1 = []
     changes_2 = []
@@ -45,9 +45,9 @@ async def test_shared_state_renderer():
 
         return idom.html.div({"anEvent": an_event, "count": count})
 
-    async with SharedStateRenderer(Layout(Clickable())) as renderer:
-        await renderer.run(send_1, recv_1, "1")
-        await renderer.run(send_2, recv_2, "2")
+    async with SharedStateDispatcher(Layout(Clickable())) as dispatcher:
+        await dispatcher.run(send_1, recv_1, "1")
+        await dispatcher.run(send_2, recv_2, "2")
 
     expected_changes = [
         [
@@ -76,8 +76,8 @@ async def test_shared_state_renderer():
     assert changes_1 == changes_2
 
 
-async def test_renderer_run_does_not_supress_non_cancel_errors():
-    class RendererWithBug(AbstractRenderer):
+async def test_dispatcher_run_does_not_supress_non_cancel_errors():
+    class DispatcherWithBug(AbstractDispatcher):
         async def _outgoing(self, layout, context):
             raise ValueError("this is a bug")
 
@@ -95,12 +95,12 @@ async def test_renderer_run_does_not_supress_non_cancel_errors():
         return {}
 
     with pytest.raises(ExceptionGroup, match="this is a bug"):
-        async with RendererWithBug(idom.Layout(AnyElement())) as renderer:
-            await renderer.run(send, recv, None)
+        async with DispatcherWithBug(idom.Layout(AnyElement())) as dispatcher:
+            await dispatcher.run(send, recv, None)
 
 
-async def test_renderer_run_does_not_supress_non_stop_rendering_errors():
-    class RendererWithBug(AbstractRenderer):
+async def test_dispatcher_run_does_not_supress_non_stop_rendering_errors():
+    class DispatcherWithBug(AbstractDispatcher):
         async def _outgoing(self, layout, context):
             raise ValueError("this is a bug")
 
@@ -118,5 +118,5 @@ async def test_renderer_run_does_not_supress_non_stop_rendering_errors():
         return {}
 
     with pytest.raises(ExceptionGroup, match="this is a bug"):
-        async with RendererWithBug(idom.Layout(AnyElement())) as renderer:
-            await renderer.run(send, recv, None)
+        async with DispatcherWithBug(idom.Layout(AnyElement())) as dispatcher:
+            await dispatcher.run(send, recv, None)

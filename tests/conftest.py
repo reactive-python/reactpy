@@ -220,10 +220,10 @@ def fixturized_server_type(server_type):
     class ServerSavesLastError(server_type):
         """A per-client-state server that updates the ``last_server_error`` fixture"""
 
-        async def _run_renderer(self, *args, **kwargs):
+        async def _run_dispatcher(self, *args, **kwargs):
             self._config["last_server_error"].current = None
             try:
-                await super()._run_renderer(*args, **kwargs)
+                await super()._run_dispatcher(*args, **kwargs)
             except Exception as e:
                 self._config["last_server_error"].current = e
 

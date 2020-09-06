@@ -5,8 +5,8 @@ from threading import Thread
 
 from idom.core.element import ElementConstructor, AbstractElement
 from idom.core.layout import Layout, Layout
-from idom.core.render import (
-    AbstractRenderer,
+from idom.core.dispatcher import (
+    AbstractDispatcher,
     SendCoroutine,
     RecvCoroutine,
 )
@@ -31,7 +31,7 @@ class AbstractRenderServer(Generic[_App, _Config]):
     """
 
     _loop: AbstractEventLoop
-    _renderer_type: Type[AbstractRenderer]
+    _dispatcher_type: Type[AbstractDispatcher]
     _layout_type: Type[Layout] = Layout
 
     def __init__(
@@ -113,7 +113,7 @@ class AbstractRenderServer(Generic[_App, _Config]):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def _run_renderer(
+    async def _run_dispatcher(
         self,
         send: SendCoroutine,
         recv: RecvCoroutine,
@@ -131,12 +131,12 @@ class AbstractRenderServer(Generic[_App, _Config]):
         """
         raise NotImplementedError()
 
-    def _make_renderer(
+    def _make_dispatcher(
         self,
         parameters: Dict[str, Any],
         loop: Optional[AbstractEventLoop] = None,
-    ) -> AbstractRenderer:
-        return self._renderer_type(self._make_layout(parameters, loop))
+    ) -> AbstractDispatcher:
+        return self._dispatcher_type(self._make_layout(parameters, loop))
 
     def _make_layout(
         self,
