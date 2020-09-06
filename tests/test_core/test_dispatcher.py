@@ -99,7 +99,7 @@ async def test_dispatcher_run_does_not_supress_non_cancel_errors():
             await dispatcher.run(send, recv, None)
 
 
-async def test_dispatcher_run_does_not_supress_non_stop_rendering_errors():
+async def test_dispatcher_run_does_not_supress_errors():
     class DispatcherWithBug(AbstractDispatcher):
         async def _outgoing(self, layout, context):
             raise ValueError("this is a bug")

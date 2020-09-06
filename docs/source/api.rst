@@ -30,9 +30,9 @@ Layout
 
 
 Dispatcher
---------
+----------
 
-.. automodule:: idom.core.render
+.. automodule:: idom.core.dispatcher
     :members:
 
 

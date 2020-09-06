@@ -163,8 +163,8 @@ callback that's called by the dispatcher to events it should execute.
 
     ``context`` is information that's specific to the
     :class:`~idom.core.dispatcher.AbstractDispatcher` implementation. In the case of
-    the :class:`~idom.core.render.SingleStateDispatcher` it doesn't require any
-    context. On the other hand the :class:`~idom.core.render.SharedStateDispatcher`
+    the :class:`~idom.core.dispatcher.SingleStateDispatcher` it doesn't require any
+    context. On the other hand the :class:`~idom.core.dispatcher.SharedStateDispatcher`
     requires a client ID as its piece of contextual information.
 
 
@@ -201,8 +201,8 @@ two ways - as a standalone application or as an extension to an existing applica
 Standalone Server Usage
 .......................
 
-The implementation constructs a default application that's used to serve the renders of
-the model:
+The implementation constructs a default application that's used to serve the dispatched
+models:
 
 .. code-block:: python
 
