@@ -5,7 +5,7 @@ import idom
 def Slideshow():
     index, set_index = idom.hooks.use_state(0)
 
-    async def next_image(event):
+    def next_image(event):
         set_index(index + 1)
 
     return idom.html.img(
