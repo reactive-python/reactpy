@@ -6,7 +6,7 @@ import idom
 from idom.widgets.html import Input
 
 
-VictoryLine = idom.Module("victory").Import("VictoryLine")
+VictoryLine = idom.Module("victory").Import("VictoryLine", fallback="loading...")
 
 
 @idom.element

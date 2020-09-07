@@ -1,7 +1,7 @@
 import idom
 
 semantic_ui = idom.Module("semantic-ui-react")
-Button = semantic_ui.Import("Button")
+Button = semantic_ui.Import("Button", fallback="loading...")
 
 semantic_ui_style = idom.html.link(
     {
