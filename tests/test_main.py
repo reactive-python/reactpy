@@ -5,6 +5,8 @@ from idom import client
 
 from tests.test_client.utils import assert_file_is_touched
 
+from tests.general_utils import assert_same_items
+
 
 @pytest.mark.slow
 def test_simple_install(capsys):
@@ -46,7 +48,9 @@ def test_install_with_exports(capsys):
 @pytest.mark.slow
 def test_restore(capsys):
     main("restore")
-    assert client.installed() == ["fast-json-patch", "htm", "react", "react-dom"]
+    assert_same_items(
+        client.installed(), ["fast-json-patch", "htm", "react", "react-dom"]
+    )
 
 
 @pytest.mark.parametrize(

@@ -10,18 +10,28 @@
   "main": "core_modules/layout.js",
   "scripts": {
     "it": "./node_modules/.bin/npx",
-    "snowpack": "npm run it -- snowpack",
-    "lint": "npm run it -- prettier --write ./core_modules"
+    "build": "npm run it -- snowpack && npm run it -- snowpack build",
+    "format": "npm run it -- prettier --write ./core_modules"
   },
   "devDependencies": {
     "npx": "^10.2.2",
-    "prettier": "2.0.3",
-    "snowpack": "^1.6.0"
+    "prettier": "2.1.1",
+    "snowpack": "^2.10.2"
   },
   "dependencies": {
     "fast-json-patch": "^3.0.0-1",
     "htm": "^3.0.3",
-    "react": "npm:@pika/react@^16.13.1",
-    "react-dom": "npm:@pika/react-dom@^16.13.1"
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1"
+  },
+  "snowpack": {
+    "installOptions": {
+      "namedExports": [
+        "react"
+      ]
+    },
+    "buildOptions": {
+      "clean": true
+    }
   }
 }

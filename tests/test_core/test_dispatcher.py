@@ -1,5 +1,5 @@
 import asyncio
-from tests.general_utils import assert_unordered_equal
+from tests.general_utils import assert_same_items
 
 import pytest
 from anyio.exceptions import ExceptionGroup
@@ -71,7 +71,7 @@ async def test_shared_state_dispatcher():
     ]
 
     for c_2, expected_c in zip(changes_2, expected_changes):
-        assert_unordered_equal(c_2, expected_c)
+        assert_same_items(c_2, expected_c)
 
     assert changes_1 == changes_2
 

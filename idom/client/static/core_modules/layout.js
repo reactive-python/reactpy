@@ -1,22 +1,17 @@
-import React, {
-  useEffect,
-  useState,
-  useMemo,
-  Suspense,
-} from "../web_modules/react.js";
 
-import ReactDOM from "../web_modules/react-dom.js";
-import htm from "../web_modules/htm.js";
-import * as jsonpatch from "../web_modules/fast-json-patch.js";
+import * as react from "react";
+import * as reactDOM from "react-dom";
+import htm from "htm";
+import * as jsonpatch from "fast-json-patch";
 
-import serializeEvent from "./event-to-object.js";
+import serializeEvent from "./event-to-object";
 
-const html = htm.bind(React.createElement);
+const html = htm.bind(react.createElement);
 const alreadyImported = {};
 
 export function renderLayout(mountElement, endpoint) {
   const cmpt = html`<${Layout} endpoint=${endpoint} />`;
-  return ReactDOM.render(cmpt, mountElement);
+  return reactDOM.render(cmpt, mountElement);
 }
 
 export default function Layout({ endpoint }) {
@@ -36,8 +31,8 @@ export default function Layout({ endpoint }) {
     endpoint = new_uri + endpoint;
   }
 
-  const socket = useMemo(() => new WebSocket(endpoint), [endpoint]);
-  const [state, setState] = useState({ model: {} });
+  const socket = react.useMemo(() => new WebSocket(endpoint), [endpoint]);
+  const [state, setState] = react.useState({ model: {} });
 
   socket.onmessage = (event) => {
     const [pathPrefix, patch] = JSON.parse(event.data);
@@ -152,7 +147,7 @@ function eventHandler(sendEvent, eventSpec) {
 }
 
 function useLazyModule(source) {
-  const [module, setModule] = useState(alreadyImported[source]);
+  const [module, setModule] = react.useState(alreadyImported[source]);
   if (!module) {
     dynamicImport(source).then(setModule);
   }
