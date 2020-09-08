@@ -1,16 +1,13 @@
 import abc
 import asyncio
-from functools import wraps
-from typing import Callable, Awaitable, Dict, Any, AsyncIterator, TypeVar, cast
+from typing import Callable, Awaitable, Dict, Any, AsyncIterator
 
 from anyio import create_task_group, TaskGroup  # type: ignore
 from jsonpatch import make_patch, apply_patch
-from loguru import logger
 
 from .layout import (
     LayoutEvent,
     LayoutUpdate,
-    Layout,
     Layout,
 )
 from .utils import HasAsyncResources, async_resource
@@ -44,12 +41,8 @@ class AbstractDispatcher(HasAsyncResources, abc.ABC):
         This will call :meth:`AbstractLayouTaskGroupTaskGroupt.render` and :meth:`Layout.dispatch`
         to render new models and execute events respectively.
         """
-        await self.task_group.spawn(
-            _async_log_exceptions(self._outgoing_loop), send, context
-        )
-        await self.task_group.spawn(
-            _async_log_exceptions(self._incoming_loop), recv, context
-        )
+        await self.task_group.spawn(self._outgoing_loop, send, context)
+        await self.task_group.spawn(self._incoming_loop, recv, context)
         return None
 
     async def _outgoing_loop(self, send: SendCoroutine, context: Any) -> None:
@@ -108,7 +101,7 @@ class SharedStateDispatcher(SingleStateDispatcher):
     @async_resource
     async def task_group(self) -> AsyncIterator[TaskGroup]:
         async with create_task_group() as group:
-            await group.spawn(_async_log_exceptions(self._render_loop))
+            await group.spawn(self._render_loop)
             yield group
 
     async def run(
@@ -147,20 +140,3 @@ def _apply_layout_update(doc: Dict[str, Any], update: LayoutUpdate) -> Any:
     return apply_patch(
         doc, [{**c, "path": update.path + c["path"]} for c in update.changes]
     )
-
-
-_F = TypeVar("_F", bound=Callable[..., Any])
-
-
-def _async_log_exceptions(function: _F) -> _F:
-    # BUG: https://github.com/agronholm/anyio/issues/155
-
-    @wraps(function)
-    async def wrapper(*args: Any, **kwargs: Any) -> Any:
-        try:
-            return await function(*args, **kwargs)
-        except Exception:
-            logger.exception(f"Failure in {function}")
-            raise
-
-    return cast(_F, wrapper)
