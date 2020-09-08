@@ -5,7 +5,7 @@ import pytest
 
 import idom
 
-from tests.general_utils import assert_unordered_equal, HookCatcher
+from tests.general_utils import assert_same_items, HookCatcher
 
 
 async def test_must_be_rendering_in_layout_to_use_hooks():
@@ -33,7 +33,7 @@ async def test_simple_stateful_element():
     async with idom.Layout(sse) as layout:
         patch_1 = await layout.render()
         assert patch_1.path == ""
-        assert_unordered_equal(
+        assert_same_items(
             patch_1.changes,
             [
                 {"op": "add", "path": "/children", "value": ["0"]},

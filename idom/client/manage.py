@@ -4,16 +4,17 @@ import subprocess
 from loguru import logger
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional, List, Union, Dict, Any, Sequence
+from typing import Optional, List, Union, Dict, Sequence
 
 from .utils import Spinner
 
 
 STATIC_DIR = Path(__file__).parent / "static"
-
-CORE_MODULES = STATIC_DIR / "core_modules"
 NODE_MODULES = STATIC_DIR / "node_modules"
-WEB_MODULES = STATIC_DIR / "web_modules"
+BUILD_DIR = STATIC_DIR / "build"
+CORE_MODULES = BUILD_DIR / "core_modules"
+WEB_MODULES = BUILD_DIR / "web_modules"
+
 
 STATIC_SHIMS: Dict[str, Path] = {}
 
@@ -21,7 +22,7 @@ STATIC_SHIMS: Dict[str, Path] = {}
 def find_path(url_path: str) -> Optional[Path]:
     url_path = url_path.strip("/")
 
-    builtin_path = STATIC_DIR.joinpath(*url_path.split("/"))
+    builtin_path = BUILD_DIR.joinpath(*url_path.split("/"))
     if builtin_path.exists():
         return builtin_path
 
@@ -83,9 +84,9 @@ def delete_web_modules(names: Sequence[str], skip_missing: bool = False) -> None
 
 def installed() -> List[str]:
     names: List[str] = []
-    for path in WEB_MODULES.rglob("*"):
-        if path.is_file() and path.suffix == ".js":
-            rel_path = path.relative_to(WEB_MODULES)
+    for path in WEB_MODULES.rglob("*.js"):
+        rel_path = path.relative_to(WEB_MODULES)
+        if rel_path.parent.name != "common":
             names.append(str(rel_path.with_suffix("")))
     return list(sorted(names))
 
@@ -108,49 +109,38 @@ def install(
         for exp in export_list:
             delete_web_modules(exp, skip_missing=True)
 
-    package_json = _package_json()
-    package_json["snowpack"]["webDependencies"].extend(export_list)
-
     with TemporaryDirectory() as tempdir:
+        if BUILD_DIR.exists():
+            shutil.rmtree(BUILD_DIR)
+
         tempdir_path = Path(tempdir)
+        temp_static_dir = tempdir_path / "static"
 
-        if NODE_MODULES.exists():
-            shutil.copytree(
-                NODE_MODULES, tempdir_path / NODE_MODULES.name, symlinks=True
-            )
+        shutil.copytree(STATIC_DIR, temp_static_dir, symlinks=True)
+        assert (temp_static_dir / "package.json").exists()
 
-        with (tempdir_path / "package.json").open("w+") as f:
+        with open(temp_static_dir / "package.json") as f:
+            package_json = json.load(f)
+
+        package_json["snowpack"].setdefault("install", []).extend(export_list)
+
+        with (temp_static_dir / "package.json").open("w+") as f:
             json.dump(package_json, f)
 
         with Spinner(f"Installing: {', '.join(package_list)}"):
-            _run_subprocess(["npm", "install"], tempdir)
-            _run_subprocess(["npm", "install"] + package_list, tempdir)
-            _run_subprocess(["npm", "run", "snowpack"], tempdir)
+            _run_subprocess(["npm", "install"], temp_static_dir)
+            _run_subprocess(["npm", "install"] + package_list, temp_static_dir)
+            _run_subprocess(["npm", "run", "build"], temp_static_dir)
+
+        shutil.copytree(temp_static_dir / "build", BUILD_DIR, symlinks=True)
 
 
 def restore() -> None:
     with Spinner("Restoring"):
         _delete_os_paths(WEB_MODULES, NODE_MODULES)
         _run_subprocess(["npm", "install"], STATIC_DIR)
-        _run_subprocess(["npm", "run", "snowpack"], STATIC_DIR)
+        _run_subprocess(["npm", "run", "build"], STATIC_DIR)
     STATIC_SHIMS.clear()
-
-
-def _package_json() -> Dict[str, Any]:
-    with (STATIC_DIR / "package.json").open("r") as f:
-        dependencies = json.load(f)["dependencies"]
-
-    return {
-        "dependencies": dependencies,
-        "scripts": {"snowpack": "./node_modules/.bin/snowpack"},
-        "devDependencies": {"snowpack": "^1.6.0"},
-        "snowpack": {
-            "installOptions": {
-                "dest": str(WEB_MODULES),
-            },
-            "webDependencies": [],
-        },
-    }
 
 
 def _run_subprocess(args: List[str], cwd: Union[str, Path]) -> None:

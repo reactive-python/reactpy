@@ -43,7 +43,7 @@ class HookCatcher:
         self.current.schedule_render()
 
 
-def assert_unordered_equal(x, y):
+def assert_same_items(x, y):
     """Check that two unordered sequences are equal"""
 
     list_x = list(x)

@@ -7,7 +7,7 @@ import pytest
 
 import idom
 
-from tests.general_utils import assert_unordered_equal, HookCatcher
+from tests.general_utils import assert_same_items, HookCatcher
 
 
 def test_layout_repr():
@@ -82,7 +82,7 @@ async def test_nested_element_layout():
         path, changes = await layout.render()
 
         assert path == ""
-        assert_unordered_equal(
+        assert_same_items(
             changes,
             [
                 {
@@ -122,7 +122,7 @@ async def test_layout_render_error_has_partial_update():
 
     async with idom.Layout(Main()) as layout:
         patch = await layout.render()
-        assert_unordered_equal(
+        assert_same_items(
             patch.changes,
             [
                 {
@@ -150,7 +150,7 @@ async def test_render_raw_vdom_dict_with_single_element_object_as_children():
 
     async with idom.Layout(Main()) as layout:
         patch = await layout.render()
-        assert_unordered_equal(
+        assert_same_items(
             patch.changes,
             [
                 {
