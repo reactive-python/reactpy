@@ -4,7 +4,7 @@ import subprocess
 from loguru import logger
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional, List, Union, Dict, Sequence
+from typing import Optional, List, Union, Dict, Sequence, Any, cast
 
 from .utils import Spinner
 
@@ -110,9 +110,6 @@ def install(
             delete_web_modules(exp, skip_missing=True)
 
     with TemporaryDirectory() as tempdir:
-        if BUILD_DIR.exists():
-            shutil.rmtree(BUILD_DIR)
-
         tempdir_path = Path(tempdir)
         temp_static_dir = tempdir_path / "static"
 
@@ -122,7 +119,15 @@ def install(
         with open(temp_static_dir / "package.json") as f:
             package_json = json.load(f)
 
-        package_json["snowpack"].setdefault("install", []).extend(export_list)
+        temp_build_dir = temp_static_dir / "build"
+
+        cache = _read_idom_build_cache(temp_build_dir)
+
+        export_list = list(set(cache["export_list"] + export_list))
+        package_list = list(set(cache["package_list"] + package_list))
+
+        pkg_snowpack = package_json.setdefault("snowpack", {})
+        pkg_snowpack.setdefault("install", []).extend(export_list)
 
         with (temp_static_dir / "package.json").open("w+") as f:
             json.dump(package_json, f)
@@ -132,7 +137,15 @@ def install(
             _run_subprocess(["npm", "install"] + package_list, temp_static_dir)
             _run_subprocess(["npm", "run", "build"], temp_static_dir)
 
-        shutil.copytree(temp_static_dir / "build", BUILD_DIR, symlinks=True)
+        cache["export_list"] = export_list
+        cache["package_list"] = package_list
+
+        _write_idom_build_cache(temp_build_dir, cache)
+
+        if BUILD_DIR.exists():
+            shutil.rmtree(BUILD_DIR)
+
+        shutil.copytree(temp_build_dir, BUILD_DIR, symlinks=True)
 
 
 def restore() -> None:
@@ -161,6 +174,24 @@ def _delete_os_paths(*paths: Path) -> None:
             p.unlink()
         elif p.is_dir():
             shutil.rmtree(p)
+
+
+def _read_idom_build_cache(path: Path) -> Dict[str, Any]:
+    cache_file = path / ".idom-cache.json"
+    if not cache_file.exists():
+        return {
+            "package_list": [],
+            "export_list": [],
+        }
+    else:
+        with cache_file.open() as f:
+            return cast(Dict[str, Any], json.load(f))
+
+
+def _write_idom_build_cache(path: Path, cache: Dict[str, Any]) -> None:
+    cache_file = path / ".idom-cache.json"
+    with cache_file.open("w+") as f:
+        json.dump(cache, f)
 
 
 def _to_list_of_str(value: Sequence[str]) -> List[str]:
