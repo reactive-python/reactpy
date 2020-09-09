@@ -3,8 +3,6 @@ import pytest
 from idom.__main__ import main
 from idom import client
 
-from tests.test_client.utils import assert_file_is_touched
-
 from tests.general_utils import assert_same_items
 
 
@@ -17,10 +15,6 @@ def test_simple_install(capsys):
     main("installed")
     captured = capsys.readouterr()
     assert "- jquery" in captured.out
-
-    with assert_file_is_touched(client.web_module_path("jquery")):
-        main("install", "jquery", "--force")
-    assert client.web_module_exists("jquery")
 
     main("uninstall", "jquery")
     assert not client.web_module_exists("jquery")
@@ -57,11 +51,8 @@ def test_restore(capsys):
     "args, error",
     [
         (("uninstall", "x", "--exports"), ValueError("does not support exports")),
-        (("uninstall", "x", "--force"), ValueError("does not support force")),
         (("installed", "--exports"), ValueError("does not support exports")),
-        (("installed", "--force"), ValueError("does not support force")),
         (("restore", "--exports"), ValueError("does not support exports")),
-        (("restore", "--force"), ValueError("does not support force")),
     ],
 )
 def test_bad_options(capsys, args, error):
