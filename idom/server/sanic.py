@@ -88,14 +88,15 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
             ) -> response.HTTPResponse:
                 file_extensions = [".html", ".js", ".json"]
                 abs_path = find_path(path)
-                if (
-                    abs_path is not None
-                    and abs_path.suffix in file_extensions
-                    and not abs_path.stem.startswith(".")
-                ):
-                    return await response.file_stream(str(abs_path))
-                else:
-                    response.text(f"Could not find: {path!r}", status=404)
+                return (
+                    await response.file_stream(str(abs_path))
+                    if (
+                        abs_path is not None
+                        and abs_path.suffix in file_extensions
+                        and not abs_path.stem.startswith(".")
+                    )
+                    else response.text(f"Could not find: {path!r}", status=404)
+                )
 
         if config["redirect_root_to_index"]:
 

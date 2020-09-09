@@ -79,7 +79,7 @@ def delete_web_modules(names: Sequence[str], skip_missing: bool = False) -> None
         if not exists and not skip_missing:
             raise ValueError(f"Module '{name}' does not exist.")
 
-        cache.delete_package(name)
+        cache.delete_package(name, skip_missing)
 
     for p in paths:
         _delete_os_paths(p)
@@ -158,12 +158,13 @@ class Cache:
         self.package_list = list(set(self.package_list + package_list))
         self.export_list = list(set(self.export_list + export_list))
 
-    def delete_package(self, export_name: str) -> None:
-        self.export_list.remove(export_name)
-        for i, pkg in enumerate(self.package_list):
-            if _export_name_from_package(pkg) == export_name:
-                del self.package_list[i]
-                break
+    def delete_package(self, export_name: str, skip_missing: bool) -> None:
+        if export_name in self.export_list:
+            self.export_list.remove(export_name)
+            for i, pkg in enumerate(self.package_list):
+                if _export_name_from_package(pkg) == export_name:
+                    del self.package_list[i]
+                    break
 
     def save(self) -> None:
         cache = {

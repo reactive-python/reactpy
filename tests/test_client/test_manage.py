@@ -6,8 +6,6 @@ import pytest
 
 from idom import client
 
-from .utils import assert_file_is_touched
-
 
 @pytest.mark.slow
 def test_install():
@@ -17,8 +15,6 @@ def test_install():
     assert client.web_module_exists("jquery")
     assert client.web_module_exists("/jquery")  # works with a leading slash too
     assert "jquery" in client.installed()
-    with assert_file_is_touched(client.web_module_path("jquery")):
-        client.install("jquery", force=True)
 
     with pytest.raises(ValueError, match="already exists"):
         # can't register a module with the same name

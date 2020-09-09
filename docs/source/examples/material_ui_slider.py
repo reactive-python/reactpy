@@ -4,7 +4,7 @@ import idom
 
 
 material_ui = idom.Module("@material-ui/core")
-Slider = material_ui.Import("Slider")
+Slider = material_ui.Import("Slider", fallback="loading...")
 
 material_ui_style = idom.html.link(
     {
