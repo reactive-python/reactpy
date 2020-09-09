@@ -24,7 +24,7 @@ ADD README.md ./
 ADD idom/client/static/favicon.ico ./
 
 RUN pip install -e .[all]
-RUN python -m idom install victory semantic-ui-react
+RUN python -m idom install victory semantic-ui-react @material-ui/core
 
 # Build the Docs
 # --------------

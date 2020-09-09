@@ -194,6 +194,30 @@ you're using a Jupyter Notebook you would display it in multiple cells like this
     widget  # this is out second view
 
 
+Material UI Slider
+------------------
+
+Assuming you already installed ``@material-ui/core`` as in the :ref:`Install Javascript Modules` section:
+
+.. literalinclude:: examples/material_ui_slider.py
+
+Move the slider and see the event information update 👇
+
+.. interactive-widget:: material_ui_slider
+
+
+Semantic UI Buttons
+-------------------
+
+Assuming you already installed ``semantic-ui-react`` as in the :ref:`Install Javascript Modules` section:
+
+.. literalinclude:: examples/primary_secondary_buttons.py
+
+Move the slider and see the event information update 👇
+
+.. interactive-widget:: primary_secondary_buttons
+
+
 .. Links
 .. =====
 
