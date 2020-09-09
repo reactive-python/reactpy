@@ -24,7 +24,6 @@ def main(*args: str) -> None:
         type=str,
         default=None,
     )
-    cli.add_argument("--force", action="store_true")
     cli.add_argument("--debug", action="store_true")
 
     parsed = cli.parse_args(args or sys.argv[1:])
@@ -39,7 +38,7 @@ def main(*args: str) -> None:
 
 
 ARG_REQUIREMENTS: Dict[str, Dict[str, Any]] = {
-    "installed restore uninstall": {"exports": None, "force": False},
+    "installed restore uninstall": {"exports": None},
     "installed restore": {"dependencies": []},
 }
 
@@ -57,7 +56,7 @@ def run(args: argparse.Namespace) -> None:
             )
 
     if args.command == "install":
-        install(args.dependencies or [], args.exports or [], args.force)
+        install(args.dependencies or [], args.exports or [])
     elif args.command == "uninstall":
         delete_web_modules(args.dependencies)
     elif args.command == "restore":

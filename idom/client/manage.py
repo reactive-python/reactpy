@@ -4,7 +4,7 @@ import subprocess
 from loguru import logger
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional, List, Union, Dict, Sequence, Any, cast
+from typing import Optional, List, Union, Dict, Sequence
 
 from .utils import Spinner
 
@@ -56,6 +56,7 @@ def register_web_module(name: str, source: Union[str, Path]) -> str:
 
 def delete_web_modules(names: Sequence[str], skip_missing: bool = False) -> None:
     paths = []
+    cache = Cache(BUILD_DIR)
     for name in _to_list_of_str(names):
         exists = False
 
@@ -78,8 +79,12 @@ def delete_web_modules(names: Sequence[str], skip_missing: bool = False) -> None
         if not exists and not skip_missing:
             raise ValueError(f"Module '{name}' does not exist.")
 
+        cache.delete_package(name)
+
     for p in paths:
         _delete_os_paths(p)
+
+    cache.save()
 
 
 def installed() -> List[str]:
@@ -91,56 +96,33 @@ def installed() -> List[str]:
     return list(sorted(names))
 
 
-def install(
-    packages: Sequence[str], exports: Sequence[str] = (), force: bool = False
-) -> None:
-    package_list = _to_list_of_str(packages)
-    export_list = _to_list_of_str(exports)
-
-    for pkg in package_list:
-        at_count = pkg.count("@")
-        if pkg.startswith("@") and at_count == 1:
-            export_list.append(pkg)
-        else:
-            # this works even if there are no @ symbols
-            export_list.append(pkg.rsplit("@", 1)[0])
-
-    if force:
-        for exp in export_list:
-            delete_web_modules(exp, skip_missing=True)
-
+def install(packages: Sequence[str], exports: Sequence[str] = ()) -> None:
     with TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
         temp_static_dir = tempdir_path / "static"
+        temp_build_dir = temp_static_dir / "build"
 
+        # copy over the whole ./static directory into the temp one
         shutil.copytree(STATIC_DIR, temp_static_dir, symlinks=True)
-        assert (temp_static_dir / "package.json").exists()
+
+        cache = Cache(temp_build_dir)
+        cache.add_packages(packages, exports)
 
         with open(temp_static_dir / "package.json") as f:
             package_json = json.load(f)
 
-        temp_build_dir = temp_static_dir / "build"
-
-        cache = _read_idom_build_cache(temp_build_dir)
-
-        export_list = list(set(cache["export_list"] + export_list))
-        package_list = list(set(cache["package_list"] + package_list))
-
         pkg_snowpack = package_json.setdefault("snowpack", {})
-        pkg_snowpack.setdefault("install", []).extend(export_list)
+        pkg_snowpack.setdefault("install", []).extend(cache.export_list)
 
         with (temp_static_dir / "package.json").open("w+") as f:
             json.dump(package_json, f)
 
-        with Spinner(f"Installing: {', '.join(package_list)}"):
+        with Spinner(f"Installing: {', '.join(packages)}"):
             _run_subprocess(["npm", "install"], temp_static_dir)
-            _run_subprocess(["npm", "install"] + package_list, temp_static_dir)
+            _run_subprocess(["npm", "install"] + cache.package_list, temp_static_dir)
             _run_subprocess(["npm", "run", "build"], temp_static_dir)
 
-        cache["export_list"] = export_list
-        cache["package_list"] = package_list
-
-        _write_idom_build_cache(temp_build_dir, cache)
+        cache.save()
 
         if BUILD_DIR.exists():
             shutil.rmtree(BUILD_DIR)
@@ -150,10 +132,54 @@ def install(
 
 def restore() -> None:
     with Spinner("Restoring"):
-        _delete_os_paths(WEB_MODULES, NODE_MODULES)
+        _delete_os_paths(BUILD_DIR)
         _run_subprocess(["npm", "install"], STATIC_DIR)
         _run_subprocess(["npm", "run", "build"], STATIC_DIR)
     STATIC_SHIMS.clear()
+
+
+class Cache:
+    """Manages a cache file stored at ``build/.idom-cache.json``"""
+
+    __slots__ = "_file", "package_list", "export_list"
+
+    def __init__(self, path: Path) -> None:
+        self._file = path / ".idom-cache.json"
+        if not self._file.exists():
+            self.package_list: List[str] = []
+            self.export_list: List[str] = []
+        else:
+            self._load()
+
+    def add_packages(self, packages: Sequence[str], exports: Sequence[str]) -> None:
+        package_list = _to_list_of_str(packages)
+        export_list = _to_list_of_str(exports)
+        export_list.extend(map(_export_name_from_package, package_list))
+        self.package_list = list(set(self.package_list + package_list))
+        self.export_list = list(set(self.export_list + export_list))
+
+    def delete_package(self, export_name: str) -> None:
+        self.export_list.remove(export_name)
+        for i, pkg in enumerate(self.package_list):
+            if _export_name_from_package(pkg) == export_name:
+                del self.package_list[i]
+                break
+
+    def save(self) -> None:
+        cache = {
+            name: getattr(self, name)
+            for name in self.__slots__
+            if not name.startswith("_")
+        }
+        with self._file.open("w+") as f:
+            json.dump(cache, f)
+
+    def _load(self) -> None:
+        with self._file.open() as f:
+            cache = json.load(f)
+            for name in self.__slots__:
+                if not name.startswith("_"):
+                    setattr(self, name, cache[name])
 
 
 def _run_subprocess(args: List[str], cwd: Union[str, Path]) -> None:
@@ -176,23 +202,14 @@ def _delete_os_paths(*paths: Path) -> None:
             shutil.rmtree(p)
 
 
-def _read_idom_build_cache(path: Path) -> Dict[str, Any]:
-    cache_file = path / ".idom-cache.json"
-    if not cache_file.exists():
-        return {
-            "package_list": [],
-            "export_list": [],
-        }
-    else:
-        with cache_file.open() as f:
-            return cast(Dict[str, Any], json.load(f))
-
-
-def _write_idom_build_cache(path: Path, cache: Dict[str, Any]) -> None:
-    cache_file = path / ".idom-cache.json"
-    with cache_file.open("w+") as f:
-        json.dump(cache, f)
-
-
 def _to_list_of_str(value: Sequence[str]) -> List[str]:
     return [value] if isinstance(value, str) else list(value)
+
+
+def _export_name_from_package(pkg: str) -> str:
+    at_count = pkg.count("@")
+    if pkg.startswith("@") and at_count == 1:
+        return pkg
+    else:
+        # this works even if there are no @ symbols
+        return pkg.rsplit("@", 1)[0]
