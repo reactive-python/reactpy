@@ -117,7 +117,7 @@ def install(packages: Sequence[str], exports: Sequence[str] = ()) -> None:
         with (temp_static_dir / "package.json").open("w+") as f:
             json.dump(package_json, f)
 
-        with Spinner(f"Installing: {', '.join(packages)}"):
+        with Spinner(f"Installing: {', '.join(packages or cache.package_list)}"):
             _run_subprocess(["npm", "install"], temp_static_dir)
             _run_subprocess(["npm", "install"] + cache.package_list, temp_static_dir)
             _run_subprocess(["npm", "run", "build"], temp_static_dir)

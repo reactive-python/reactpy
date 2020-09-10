@@ -98,7 +98,15 @@ function LazyElement({ sendEvent, model }) {
     const attributes = elementAttributes(sendEvent, model);
     return html`<${cmpt} ...${attributes}>${children}<//>`;
   } else {
-    return html`<div>${model.importSource.fallback}<//>`;
+    const fallbackModel = model.importSource.fallback;
+    if (typeof model == "object") {
+      return html`<${Element}
+        model=${fallbackModel}
+        sendEvent=${sendEvent}
+      /> `;
+    } else {
+      return html`<div>${fallbackModel}<//>`;
+    }
   }
 }
 
@@ -109,7 +117,7 @@ function elementChildren(sendEvent, model) {
     return model.children.map((child) => {
       switch (typeof child) {
         case "object":
-          return html` <${Element} model=${child} sendEvent=${sendEvent} /> `;
+          return html`<${Element} model=${child} sendEvent=${sendEvent} /> `;
         case "string":
           return child;
       }
