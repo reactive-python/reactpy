@@ -23,9 +23,6 @@ you can use it with IDOM
 You can even define your own Javascript modules which use these third party Javascript
 packages.
 
-.. note::
-
-    We're working to support non-standard packages too [GH166]_.
 
 Installing React Components
 ---------------------------

@@ -8,8 +8,9 @@ cases the :ref:`**Basic Hooks**` should be enough, however the remaining
 
 .. note::
 
-    Not all of React's built-in hooks have been implemented. In the future they will be
-    added, but if you have a particular need for a missing hook post an issue [GH203]_.
+    Not all of React's built-in hooks have been implemented.
+    `In the future <https://github.com/idom-team/idom/issues/203>`_ they will be
+    added, but if you have a particular need for a missing hook post an issue.
 
 .. contents::
   :local:
@@ -243,8 +244,9 @@ elements which check reference equality to prevent unnecessary renders. The of
 
     The list of "dependencies" are not passed as arguments to the function. Ostensibly
     though, that is what they represent. Thus any variable referenced by the function
-    must be listed as dependencies. We're working on a linter to help enforce this
-    [GH202]_.
+    must be listed as dependencies. We're
+    `working on a linter <https://github.com/idom-team/idom/issues/202>`_ to help
+    enforce this.
 
 
 
@@ -277,8 +279,9 @@ after) and should not incur side effects.
 
     The list of "dependencies" are not passed as arguments to the function ostensibly
     though, that is what they represent. Thus any variable referenced by the function
-    must be listed as dependencies. We're working on a linter to help enforce this
-    [GH202]_.
+    must be listed as dependencies. We're
+    `working on a linter <https://github.com/idom-team/idom/issues/202>`_
+    to help enforce this.
 
 
 use_ref
@@ -302,11 +305,13 @@ hook alongside :ref:`use_effect` or in response to element event handlers.
 **Rules of Hooks**
 ------------------
 
-Under construction...
+Under construction... for now refer to
+`React's documentation <https://reactjs.org/docs/hooks-rules.html>`_ on this topic.
 
 .. note::
 
-    We're working on a linter to help enforce the rules [GH202]_.
+    We're `working on a linter <https://github.com/idom-team/idom/issues/202>`_ to help
+    enforce the rules.
 
 
 .. links
