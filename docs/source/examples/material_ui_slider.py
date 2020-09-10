@@ -31,7 +31,7 @@ def SliderOnPaper():
                 "onChange": lambda *event: set_event(event),
             }
         ),
-        json.dumps(event, indent=2),
+        idom.html.pre(json.dumps(event, indent=2)),
     )
 
 

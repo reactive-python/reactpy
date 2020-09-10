@@ -213,7 +213,7 @@ Assuming you already installed ``semantic-ui-react`` as in the :ref:`Install Jav
 
 .. literalinclude:: examples/primary_secondary_buttons.py
 
-Move the slider and see the event information update 👇
+Click the buttons and see the event information update 👇
 
 .. interactive-widget:: primary_secondary_buttons
 

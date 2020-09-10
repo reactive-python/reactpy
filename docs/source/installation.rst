@@ -87,7 +87,7 @@ The test suite for IDOM is executed using Tox_ and covers:
 
 2. The end-to-end application using Selenium_
 
-3. (Coming soon...) Client side Javascript code [GH195]_
+3. (`Coming soon <https://github.com/rmorshea/idom/issues/195>`_) Client side Javascript code
 
 To run the full suite of tests you'll need to install:
 
