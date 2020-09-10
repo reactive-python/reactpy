@@ -21,7 +21,12 @@
   "dependencies": {
     "fast-json-patch": "^3.0.0-1",
     "htm": "^3.0.3",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1"
+    "preact": "^10.4.8"
+  },
+  "snowpack": {
+    "alias": {
+      "react": "preact/compat",
+      "react-dom": "preact/compat"
+    }
   }
 }
