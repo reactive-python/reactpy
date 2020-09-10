@@ -10,6 +10,7 @@
   "main": "core_modules/layout.js",
   "scripts": {
     "it": "./node_modules/.bin/npx",
+    "start": "npm run it -- snowpack dev",
     "build": "npm run it -- snowpack && npm run it -- snowpack build",
     "format": "npm run it -- prettier --write ./core_modules"
   },

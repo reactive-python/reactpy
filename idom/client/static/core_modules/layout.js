@@ -76,21 +76,23 @@ export default function Layout({ registerUpdateCallback, sendCallback }) {
   }
 }
 
-function Element({ sendEvent, model }) {
+function Element({ sendEvent, model, key }) {
   if (model.importSource) {
     return html`<${LazyElement} sendEvent=${sendEvent} model=${model} />`;
   } else {
     const children = elementChildren(sendEvent, model);
     const attributes = elementAttributes(sendEvent, model);
     if (model.children && model.children.length) {
-      return html`<${model.tagName} ...${attributes}>${children}<//>`;
+      return html`<${model.tagName} key=${index} ...${attributes}
+        >${children}<//
+      >`;
     } else {
-      return html`<${model.tagName} ...${attributes} />`;
+      return html`<${model.tagName} key=${index} ...${attributes} />`;
     }
   }
 }
 
-function LazyElement({ sendEvent, model }) {
+function LazyElement({ sendEvent, model, key }) {
   const module = useLazyModule(model.importSource.source);
   if (module) {
     const cmpt = getPathProperty(module, model.tagName);
@@ -101,11 +103,12 @@ function LazyElement({ sendEvent, model }) {
     const fallbackModel = model.importSource.fallback;
     if (typeof model == "object") {
       return html`<${Element}
+        key=${index}
         model=${fallbackModel}
         sendEvent=${sendEvent}
       /> `;
     } else {
-      return html`<div>${fallbackModel}<//>`;
+      return html`<div key=${index}>${fallbackModel}</div>`;
     }
   }
 }
@@ -114,10 +117,14 @@ function elementChildren(sendEvent, model) {
   if (!model.children) {
     return [];
   } else {
-    return model.children.map((child) => {
+    return model.children.map((child, index) => {
       switch (typeof child) {
         case "object":
-          return html`<${Element} model=${child} sendEvent=${sendEvent} /> `;
+          return html`<${Element}
+            key=${index}
+            model=${child}
+            sendEvent=${sendEvent}
+          /> `;
         case "string":
           return child;
       }

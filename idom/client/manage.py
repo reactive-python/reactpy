@@ -10,7 +10,6 @@ from .utils import Spinner
 
 
 STATIC_DIR = Path(__file__).parent / "static"
-NODE_MODULES = STATIC_DIR / "node_modules"
 BUILD_DIR = STATIC_DIR / "build"
 CORE_MODULES = BUILD_DIR / "core_modules"
 WEB_MODULES = BUILD_DIR / "web_modules"
@@ -96,7 +95,9 @@ def installed() -> List[str]:
     return list(sorted(names))
 
 
-def install(packages: Sequence[str], exports: Sequence[str] = ()) -> None:
+def install(
+    packages: Sequence[str], exports: Sequence[str] = (), show_spinner: bool = True
+) -> None:
     with TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
         temp_static_dir = tempdir_path / "static"
@@ -117,7 +118,10 @@ def install(packages: Sequence[str], exports: Sequence[str] = ()) -> None:
         with (temp_static_dir / "package.json").open("w+") as f:
             json.dump(package_json, f)
 
-        with Spinner(f"Installing: {', '.join(packages or cache.package_list)}"):
+        with Spinner(
+            f"Installing: {', '.join(packages or cache.package_list)}",
+            show=show_spinner,
+        ):
             _run_subprocess(["npm", "install"], temp_static_dir)
             _run_subprocess(["npm", "install"] + cache.package_list, temp_static_dir)
             _run_subprocess(["npm", "run", "build"], temp_static_dir)
@@ -132,9 +136,12 @@ def install(packages: Sequence[str], exports: Sequence[str] = ()) -> None:
 
 def restore() -> None:
     with Spinner("Restoring"):
-        _delete_os_paths(BUILD_DIR)
-        _run_subprocess(["npm", "install"], STATIC_DIR)
-        _run_subprocess(["npm", "run", "build"], STATIC_DIR)
+        _delete_os_paths(
+            BUILD_DIR,
+            STATIC_DIR / "node_modules",
+            STATIC_DIR / "web_modules",
+        )
+        install([], [], show_spinner=False)
     STATIC_SHIMS.clear()
 
 

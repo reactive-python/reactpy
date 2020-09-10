@@ -10,19 +10,26 @@
     <script type="module">
       import { mountLayoutWithWebSocket } from "./core_modules/layout.js";
 
-      const uri = document.location.hostname + ":" + document.location.port;
-      const url = (uri + document.location.pathname).split("/").slice(0, -1);
-      url[url.length - 1] = "stream";
-      const secure = document.location.protocol === "https:";
+      const urlParams = new URLSearchParams(window.location.search);
 
-      let protocol;
-      if (secure) {
-        protocol = "wss:";
+      let endpoint;
+      if (urlParams.has("idom-url")) {
+        endpoint = decodeURIComponent(urlParams.get("idom-url"));
       } else {
-        protocol = "ws:";
-      }
+        const uri = document.location.hostname + ":" + document.location.port;
+        const url = (uri + document.location.pathname).split("/").slice(0, -1);
+        url[url.length - 1] = "stream";
+        const secure = document.location.protocol === "https:";
 
-      let endpoint = protocol + "//" + url.join("/") + window.location.search;
+        let protocol;
+        if (secure) {
+          protocol = "wss:";
+        } else {
+          protocol = "ws:";
+        }
+
+        endpoint = protocol + "//" + url.join("/") + window.location.search;
+      }
 
       mountLayoutWithWebSocket(document.getElementById("app"), endpoint);
     </script>

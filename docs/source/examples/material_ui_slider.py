@@ -15,7 +15,7 @@ material_ui_style = idom.html.link(
 
 
 @idom.element
-def SliderOnPaper():
+def MaterialSlider():
     event, set_event = idom.hooks.use_state(None)
 
     return idom.html.div(
@@ -35,4 +35,4 @@ def SliderOnPaper():
     )
 
 
-display(SliderOnPaper)
+display(MaterialSlider)

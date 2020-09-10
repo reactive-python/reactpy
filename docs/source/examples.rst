@@ -8,8 +8,8 @@ You can find the following examples and more on binder |launch-binder|:
   :depth: 1
 
 
-Display Function
-----------------
+**Display Function**
+--------------------
 
 Depending on how you plan to use these examples you'll need different
 boilerplate code.
@@ -223,3 +223,12 @@ Click the buttons and see the event information update 👇
 
 .. |launch-binder| image:: https://mybinder.org/badge_logo.svg
  :target: https://mybinder.org/v2/gh/rmorshea/idom/master?filepath=examples%2Fintroduction.ipynb
+
+
+Example Utilities
+-----------------
+
+In some of the examples above you may see this import ``from _utils import *`` the
+content of which is shown below:
+
+.. literalinclude:: examples/_utils.py
