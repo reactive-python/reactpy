@@ -80,7 +80,7 @@ class JupyterDisplay:
             fetch(http_proto + idom_url, {{mode: "no-cors"}}).then(rsp => {{
                 import(http_proto + idom_url + "/client/core_modules/layout.js").then(
                     (module) => {{
-                        module.renderLayout(
+                        module.mountLayoutWithWebSocket(
                             document.getElementById("{mount_id}"),
                             ws_proto + idom_url + "/stream?{self.query}"
                         );
