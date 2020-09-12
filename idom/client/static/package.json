@@ -1,13 +1,17 @@
 {
+  "private": true,
   "name": "idom-client-react",
   "description": "A client for IDOM implemented in React",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": "Ryan Morshead",
   "license": "MIT",
   "repository": {
     "url": "https://github.com/rmorshea/idom"
   },
   "main": "core_modules/layout.js",
+  "files": [
+    "core_modules/*.js"
+  ],
   "scripts": {
     "it": "./node_modules/.bin/npx",
     "build": "npm run it -- snowpack && npm run it -- snowpack build",
