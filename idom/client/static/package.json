@@ -1,7 +1,7 @@
 {
   "name": "idom-client-react",
   "description": "A client for IDOM implemented in React",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Ryan Morshead",
   "license": "MIT",
   "repository": {
