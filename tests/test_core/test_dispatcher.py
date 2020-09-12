@@ -2,7 +2,7 @@ import asyncio
 from tests.general_utils import assert_same_items
 
 import pytest
-from anyio.exceptions import ExceptionGroup
+from anyio import ExceptionGroup
 
 import idom
 from idom.core.layout import Layout, LayoutEvent
