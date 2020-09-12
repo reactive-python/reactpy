@@ -1,4 +1,3 @@
-
 import * as react from "react";
 import * as reactDOM from "react-dom";
 import htm from "htm";
@@ -9,13 +8,7 @@ import serializeEvent from "./event-to-object";
 const html = htm.bind(react.createElement);
 const alreadyImported = {};
 
-export function renderLayout(mountElement, endpoint) {
-  const cmpt = html`<${Layout} endpoint=${endpoint} />`;
-  return reactDOM.render(cmpt, mountElement);
-}
-
-export default function Layout({ endpoint }) {
-  // handle relative endpoint URI
+export function mountLayoutWithWebSocket(mountElement, endpoint) {
   if (endpoint.startsWith(".") || endpoint.startsWith("/")) {
     let loc = window.location;
     let protocol;
@@ -31,36 +24,53 @@ export default function Layout({ endpoint }) {
     endpoint = new_uri + endpoint;
   }
 
-  const socket = react.useMemo(() => new WebSocket(endpoint), [endpoint]);
-  const [state, setState] = react.useState({ model: {} });
+  const ws = new WebSocket(endpoint);
 
-  socket.onmessage = (event) => {
-    const [pathPrefix, patch] = JSON.parse(event.data);
-    setState({
-      model: jsonpatch.applyPatch(
-        state.model,
-        patch.map((op) => {
-          op.path = pathPrefix + op.path;
-          return op;
-        }),
-        undefined,
-        false
-      ).newDocument,
+  function registerUpdateCallback(update) {
+    ws.onmessage = (event) => {
+      const [pathPrefix, patch] = JSON.parse(event.data);
+      update(pathPrefix, patch);
+    };
+  }
+
+  function sendCallback(event) {
+    ws.send(
+      JSON.stringify({
+        header: {},
+        body: { event: event },
+      })
+    );
+  }
+
+  const cmpt = html`<${Layout}
+    registerUpdateCallback=${registerUpdateCallback}
+    sendCallback=${sendCallback}
+  />`;
+
+  return reactDOM.render(cmpt, mountElement);
+}
+
+export default function Layout({ registerUpdateCallback, sendCallback }) {
+  const [model, setModel] = react.useState({});
+
+  react.useEffect(() => {
+    registerUpdateCallback((pathPrefix, patch) => {
+      setModel(
+        jsonpatch.applyPatch(
+          model,
+          patch.map((op) => {
+            op.path = pathPrefix + op.path;
+            return op;
+          }),
+          undefined,
+          false
+        ).newDocument
+      );
     });
-  };
+  }, [model]);
 
-  const sendMsg = (msg) => {
-    socket.send(JSON.stringify(msg));
-  };
-  const sendEvent = (event) => {
-    sendMsg({
-      header: {},
-      body: { event: event },
-    });
-  };
-
-  if (state.model.tagName) {
-    return html`<${Element} sendEvent=${sendEvent} model=${state.model} />`;
+  if (model.tagName) {
+    return html`<${Element} sendEvent=${sendCallback} model=${model} />`;
   } else {
     return html`<div />`;
   }
