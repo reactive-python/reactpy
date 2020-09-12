@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-cd idom/client/static
+cd idom/client/app
 rm -rf node_modules
 rm -rf web_modules
 npm install

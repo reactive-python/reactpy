@@ -9,11 +9,9 @@ from typing import Optional, List, Union, Dict, Sequence
 from .utils import Spinner
 
 
-STATIC_DIR = Path(__file__).parent / "static"
-NODE_MODULES = STATIC_DIR / "node_modules"
-BUILD_DIR = STATIC_DIR / "build"
-CORE_MODULES = BUILD_DIR / "core_modules"
-WEB_MODULES = BUILD_DIR / "web_modules"
+APP_DIR = Path(__file__).parent / "app"
+BUILD_DIR = APP_DIR / "build"
+WEB_MODULES_DIR = BUILD_DIR / "web_modules"
 
 
 STATIC_SHIMS: Dict[str, Path] = {}
@@ -34,7 +32,7 @@ def web_module_path(name: str) -> Optional[Path]:
 
 
 def web_module_url(name: str) -> str:
-    path = f"../{WEB_MODULES.name}/{name}.js"
+    path = f"../{WEB_MODULES_DIR.name}/{name}.js"
     if not web_module_exists(name):
         raise ValueError(f"Module '{path}' does not exist.")
     return path
@@ -89,8 +87,8 @@ def delete_web_modules(names: Sequence[str], skip_missing: bool = False) -> None
 
 def installed() -> List[str]:
     names: List[str] = []
-    for path in WEB_MODULES.rglob("*.js"):
-        rel_path = path.relative_to(WEB_MODULES)
+    for path in WEB_MODULES_DIR.rglob("*.js"):
+        rel_path = path.relative_to(WEB_MODULES_DIR)
         if rel_path.parent.name != "common":
             names.append(str(rel_path.with_suffix("")))
     return list(sorted(names))
@@ -103,7 +101,7 @@ def install(packages: Sequence[str], exports: Sequence[str] = ()) -> None:
         temp_build_dir = temp_static_dir / "build"
 
         # copy over the whole ./static directory into the temp one
-        shutil.copytree(STATIC_DIR, temp_static_dir, symlinks=True)
+        shutil.copytree(APP_DIR, temp_static_dir, symlinks=True)
 
         cache = Cache(temp_build_dir)
         cache.add_packages(packages, exports)
@@ -133,8 +131,8 @@ def install(packages: Sequence[str], exports: Sequence[str] = ()) -> None:
 def restore() -> None:
     with Spinner("Restoring"):
         _delete_os_paths(BUILD_DIR)
-        _run_subprocess(["npm", "install"], STATIC_DIR)
-        _run_subprocess(["npm", "run", "build"], STATIC_DIR)
+        _run_subprocess(["npm", "install"], APP_DIR)
+        _run_subprocess(["npm", "run", "build"], APP_DIR)
     STATIC_SHIMS.clear()
 
 
