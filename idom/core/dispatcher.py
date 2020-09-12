@@ -2,7 +2,8 @@ import abc
 import asyncio
 from typing import Callable, Awaitable, Dict, Any, AsyncIterator
 
-from anyio import create_task_group, TaskGroup  # type: ignore
+from anyio import create_task_group
+from anyio.abc import TaskGroup
 from jsonpatch import make_patch, apply_patch
 
 from .layout import (
