@@ -7,14 +7,14 @@ from sanic import Sanic
 from sanic import response
 
 from idom.widgets.utils import multiview
-from idom.client.manage import STATIC_DIR
+from idom.client.manage import APP_DIR
 from idom.server.sanic import PerClientStateServer
 
 here = Path(__file__).parent
 
 app = Sanic(__name__)
 app.static("/docs", str(here / "build"))
-app.static("/favicon.ico", str(STATIC_DIR / "favicon.ico"))
+app.static("/favicon.ico", str(APP_DIR / "favicon.ico"))
 
 
 @app.route("/")

@@ -1,4 +1,4 @@
-graft idom/client/static/build
+graft idom/client/app/build
 include idom/py.typed
 include LICENSE
 include requirements/prod.txt
