@@ -9,19 +9,6 @@ on:
       - created
 
 jobs:
-  deploy-documentation:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Login to Heroku Container Registry
-        run: echo ${{ secrets.HEROKU_API_KEY }} | docker login -u ${{ secrets.HEROKU_EMAIL }} --password-stdin registry.heroku.com
-      - name: Build Docker Image
-        run: docker build . --file docs/Dockerfile --tag registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
-      - name: Push Docker Image
-        run: docker push registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
-      - name: Deploy
-        run: HEROKU_API_KEY=${{ secrets.HEROKU_API_KEY }} heroku container:release web --app ${{ secrets.HEROKU_APP_NAME }}
-
   publish-package:
     needs: [deploy-documentation]
     runs-on: ubuntu-latest
@@ -42,3 +29,15 @@ jobs:
         run: |
           python setup.py bdist_wheel
           twine upload dist/*
+  deploy-documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Login to Heroku Container Registry
+        run: echo ${{ secrets.HEROKU_API_KEY }} | docker login -u ${{ secrets.HEROKU_EMAIL }} --password-stdin registry.heroku.com
+      - name: Build Docker Image
+        run: docker build . --file docs/Dockerfile --tag registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
+      - name: Push Docker Image
+        run: docker push registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
+      - name: Deploy
+        run: HEROKU_API_KEY=${{ secrets.HEROKU_API_KEY }} heroku container:release web --app ${{ secrets.HEROKU_APP_NAME }}
