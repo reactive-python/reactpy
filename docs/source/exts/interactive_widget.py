@@ -61,7 +61,10 @@ class IteractiveWidget(Directive):
                                 fadeOutAndThen(enableWidgetButton, () => {{
                                     mount.removeChild(enableWidgetButton);
                                     mount.setAttribute("class", "interactive widget-container");
-                                    layout.renderLayout(mount, ws_proto + idom_url + "/stream?view_id={view_id}");
+                                    layout.mountLayoutWithWebSocket(
+                                      mount,
+                                      ws_proto + idom_url + "/stream?view_id={view_id}"
+                                    );
                                 }});
                             }});
                         }});
