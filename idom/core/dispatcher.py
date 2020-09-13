@@ -26,6 +26,13 @@ class AbstractDispatcher(HasAsyncResources, abc.ABC):
         super().__init__()
         self._layout = layout
 
+    async def start(self) -> None:
+        await self.__aenter__()
+
+    async def stop(self) -> None:
+        await self.task_group.cancel_scope.cancel()
+        await self.__aexit__(None, None, None)
+
     @async_resource
     async def layout(self) -> AsyncIterator[Layout]:
         async with self._layout as layout:
@@ -98,13 +105,6 @@ class SharedViewDispatcher(SingleViewDispatcher):
         super().__init__(layout)
         self._model_state: Any = {}
         self._update_queues: Dict[str, asyncio.Queue[LayoutUpdate]] = {}
-
-    async def start(self) -> None:
-        await self.__aenter__()
-
-    async def stop(self):
-        self.task_group.cancel_scope.cancel()
-        await self.__aexit__(None, None, None)
 
     @async_resource
     async def task_group(self) -> AsyncIterator[TaskGroup]:
