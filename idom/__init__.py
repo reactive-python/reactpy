@@ -10,8 +10,8 @@ from .core.vdom import vdom, VdomDict
 from .core import hooks
 
 from .widgets.html import html
-from .widgets.utils import Module, Import, hotswap, multiview
-from .widgets.jupyter import JupyterDisplay
+from .widgets.module import Module, Import
+from .widgets.utils import hotswap, multiview
 
 from .utils import Ref, html_to_vdom
 

@@ -1,9 +1,8 @@
-from .utils import Module, Import, hotswap, multiview
-from .jupyter import JupyterDisplay
+from .utils import hotswap, multiview
+from .module import Module, Import
 from .html import html, image, Input
 
 __all__ = [
-    "JupyterDisplay",
     "node",
     "hotswap",
     "multiview",
