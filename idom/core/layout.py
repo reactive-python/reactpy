@@ -268,9 +268,10 @@ class Layout(HasAsyncResources):
 
 class _ElementQueue:
 
-    __slots__ = "_queue", "_pending"
+    __slots__ = "_loop", "_queue", "_pending"
 
     def __init__(self) -> None:
+        self._loop = asyncio.get_event_loop()
         self._queue: "asyncio.Queue[AbstractElement]" = asyncio.Queue()
         self._pending: Set[int] = set()
 
@@ -278,7 +279,7 @@ class _ElementQueue:
         element_id = id(element)
         if element_id not in self._pending:
             self._pending.add(element_id)
-            self._queue.put_nowait(element)
+            self._loop.call_soon_threadsafe(self._queue.put_nowait, element)
         return None
 
     async def get(self) -> AbstractElement:
