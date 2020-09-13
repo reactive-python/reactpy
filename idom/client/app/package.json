@@ -1,5 +1,4 @@
 {
-  "private": true,
   "name": "idom-client-react",
   "description": "A client for IDOM implemented in React",
   "version": "0.3.0",
