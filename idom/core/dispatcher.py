@@ -99,6 +99,13 @@ class SharedViewDispatcher(SingleViewDispatcher):
         self._model_state: Any = {}
         self._update_queues: Dict[str, asyncio.Queue[LayoutUpdate]] = {}
 
+    async def start(self) -> None:
+        await self.__aenter__()
+
+    async def stop(self):
+        self.task_group.cancel_scope.cancel()
+        await self.__aexit__(None, None, None)
+
     @async_resource
     async def task_group(self) -> AsyncIterator[TaskGroup]:
         async with create_task_group() as group:

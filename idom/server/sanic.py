@@ -167,13 +167,13 @@ class SharedClientStateServer(SanicRenderServer):
         self, app: Sanic, loop: asyncio.AbstractEventLoop
     ) -> None:
         self._dispatcher = cast(SharedViewDispatcher, self._make_dispatcher({}, loop))
-        await self._dispatcher.__aenter__()
+        await self._dispatcher.start()
 
     async def _deactivate_dispatcher(
         self, app: Sanic, loop: asyncio.AbstractEventLoop
     ) -> None:  # pragma: no cover
-        # this doesn't seem to get triffered during testing for some reason
-        await self._dispatcher.__aexit__(None, None, None)
+        # this doesn't seem to get triggered during testing for some reason
+        await self._dispatcher.stop()
 
     async def _run_dispatcher(
         self,
