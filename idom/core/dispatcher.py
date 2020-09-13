@@ -63,11 +63,11 @@ class AbstractDispatcher(HasAsyncResources, abc.ABC):
         ...
 
 
-class SingleStateDispatcher(AbstractDispatcher):
+class SingleViewDispatcher(AbstractDispatcher):
     """Each client of the dispatcher will get its own model.
 
     ..note::
-        The ``context`` parameter of :meth:`SingleStateDispatcher.run` should just
+        The ``context`` parameter of :meth:`SingleViewDispatcher.run` should just
         be ``None`` since it's not used.
     """
 
@@ -85,11 +85,11 @@ class SingleStateDispatcher(AbstractDispatcher):
         return None
 
 
-class SharedStateDispatcher(SingleStateDispatcher):
+class SharedViewDispatcher(SingleViewDispatcher):
     """Each client of the dispatcher shares the same model.
 
     The client's ID is indicated by the ``context`` argument of
-    :meth:`SharedStateDispatcher.run`
+    :meth:`SharedViewDispatcher.run`
     """
 
     __slots__ = "_update_queues", "_model_state"

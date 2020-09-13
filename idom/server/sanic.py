@@ -10,8 +10,8 @@ from mypy_extensions import TypedDict
 from websockets import WebSocketCommonProtocol
 
 from idom.core.dispatcher import (
-    SingleStateDispatcher,
-    SharedStateDispatcher,
+    SingleViewDispatcher,
+    SharedViewDispatcher,
     SendCoroutine,
     RecvCoroutine,
 )
@@ -139,7 +139,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
 class PerClientStateServer(SanicRenderServer):
     """Each client view will have its own state."""
 
-    _dispatcher_type = SingleStateDispatcher
+    _dispatcher_type = SingleViewDispatcher
 
     async def _run_dispatcher(
         self,
@@ -155,8 +155,8 @@ class PerClientStateServer(SanicRenderServer):
 class SharedClientStateServer(SanicRenderServer):
     """All connected client views will have shared state."""
 
-    _dispatcher_type = SharedStateDispatcher
-    _dispatcher: SharedStateDispatcher
+    _dispatcher_type = SharedViewDispatcher
+    _dispatcher: SharedViewDispatcher
 
     def _setup_application(self, app: Sanic, config: Config) -> None:
         app.listener("before_server_start")(self._activate_dispatcher)
@@ -166,7 +166,7 @@ class SharedClientStateServer(SanicRenderServer):
     async def _activate_dispatcher(
         self, app: Sanic, loop: asyncio.AbstractEventLoop
     ) -> None:
-        self._dispatcher = cast(SharedStateDispatcher, self._make_dispatcher({}, loop))
+        self._dispatcher = cast(SharedViewDispatcher, self._make_dispatcher({}, loop))
         await self._dispatcher.__aenter__()
 
     async def _deactivate_dispatcher(
