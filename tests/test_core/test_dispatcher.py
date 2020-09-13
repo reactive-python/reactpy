@@ -6,7 +6,7 @@ from anyio import ExceptionGroup
 
 import idom
 from idom.core.layout import Layout, LayoutEvent
-from idom.core.dispatcher import SharedStateDispatcher, AbstractDispatcher
+from idom.core.dispatcher import SharedViewDispatcher, AbstractDispatcher
 
 
 async def test_shared_state_dispatcher():
@@ -45,7 +45,7 @@ async def test_shared_state_dispatcher():
 
         return idom.html.div({"anEvent": an_event, "count": count})
 
-    async with SharedStateDispatcher(Layout(Clickable())) as dispatcher:
+    async with SharedViewDispatcher(Layout(Clickable())) as dispatcher:
         await dispatcher.run(send_1, recv_1, "1")
         await dispatcher.run(send_2, recv_2, "2")
 

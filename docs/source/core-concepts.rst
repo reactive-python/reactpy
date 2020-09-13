@@ -127,7 +127,7 @@ callback that's called by the dispatcher to events it should execute.
 
     import asyncio
 
-    from idom.core import SingleStateDispatcher, EventHandler
+    from idom.core import SingleViewDispatcher, EventHandler
     from idom.core.layout import LayoutEvent
 
 
@@ -152,7 +152,7 @@ callback that's called by the dispatcher to events it should execute.
         return event
 
 
-    async with SingleStateDispatcher(idom.Layout(ClickCount())) as dispatcher:
+    async with SingleViewDispatcher(idom.Layout(ClickCount())) as dispatcher:
         context = None  # see note below
         await dispatcher.run(send, recv, context)
 
@@ -163,8 +163,8 @@ callback that's called by the dispatcher to events it should execute.
 
     ``context`` is information that's specific to the
     :class:`~idom.core.dispatcher.AbstractDispatcher` implementation. In the case of
-    the :class:`~idom.core.dispatcher.SingleStateDispatcher` it doesn't require any
-    context. On the other hand the :class:`~idom.core.dispatcher.SharedStateDispatcher`
+    the :class:`~idom.core.dispatcher.SingleViewDispatcher` it doesn't require any
+    context. On the other hand the :class:`~idom.core.dispatcher.SharedViewDispatcher`
     requires a client ID as its piece of contextual information.
 
 

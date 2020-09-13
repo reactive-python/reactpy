@@ -1,7 +1,7 @@
 from .element import element, Element, AbstractElement, ElementConstructor
 from .events import event, Events, EventHandler
 from .layout import Layout, Layout
-from .dispatcher import AbstractDispatcher, SharedStateDispatcher, SingleStateDispatcher
+from .dispatcher import AbstractDispatcher, SharedViewDispatcher, SingleViewDispatcher
 from .vdom import vdom
 
 __all__ = [
@@ -17,6 +17,6 @@ __all__ = [
     "hooks",
     "Layout",
     "vdom",
-    "SharedStateDispatcher",
-    "SingleStateDispatcher",
+    "SharedViewDispatcher",
+    "SingleViewDispatcher",
 ]
