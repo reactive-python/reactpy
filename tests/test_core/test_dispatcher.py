@@ -6,7 +6,11 @@ from anyio import ExceptionGroup
 
 import idom
 from idom.core.layout import Layout, LayoutEvent
-from idom.core.dispatcher import SharedViewDispatcher, AbstractDispatcher
+from idom.core.dispatcher import (
+    SharedViewDispatcher,
+    AbstractDispatcher,
+    SingleViewDispatcher,
+)
 
 
 async def test_shared_state_dispatcher():
@@ -120,3 +124,47 @@ async def test_dispatcher_run_does_not_supress_errors():
     with pytest.raises(ExceptionGroup, match="this is a bug"):
         async with DispatcherWithBug(idom.Layout(AnyElement())) as dispatcher:
             await dispatcher.run(send, recv, None)
+
+
+async def test_dispatcher_start_stop():
+    cancelled_recv = False
+    cancelled_send = False
+
+    async def send(patch):
+        nonlocal cancelled_send
+        try:
+            await asyncio.sleep(100)
+        except asyncio.CancelledError:
+            cancelled_send = True
+            raise
+        else:
+            assert False, "this should never be reached"
+
+    async def recv():
+        nonlocal cancelled_recv
+        try:
+            await asyncio.sleep(100)
+        except asyncio.CancelledError:
+            cancelled_recv = True
+            raise
+        else:
+            assert False, "this should never be reached"
+
+    @idom.element
+    def AnElement():
+        return idom.html.div()
+
+    dispatcher = SingleViewDispatcher(Layout(AnElement()))
+
+    await dispatcher.start()
+
+    await dispatcher.run(send, recv, None)
+
+    # let it run until it hits the sleeping recv/send calls
+    for i in range(10):
+        await asyncio.sleep(0)
+
+    await dispatcher.stop()
+
+    assert cancelled_recv
+    assert cancelled_send
