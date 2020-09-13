@@ -46,32 +46,20 @@ export function mountLayoutWithWebSocket(mountElement, endpoint) {
 }
 
 export function mountLayout(mountElement, saveUpdateHook, sendEvent) {
-  const updateHook = { current: null };
-
-  function setUpdateHook(hook) {
-    updateHook.current = hook;
-  }
-
   reactDOM.render(
-    html`<${Layout} setUpdateHook=${setUpdateHook} sendEvent=${sendEvent} />`,
+    html`<${Layout} saveUpdateHook=${saveUpdateHook} sendEvent=${sendEvent} />`,
     mountElement
   );
-
-  saveUpdateHook((pathPrefix, patch) => {
-    if (updateHook.current) {
-      updateHook.current(pathPrefix, patch);
-    }
-  });
 }
 
-export default function Layout({ setUpdateHook, sendEvent }) {
-  const [model, setModel] = react.useState({});
+export default function Layout({ saveUpdateHook, sendEvent }) {
+  const [modelRef, setModel] = useStateRef({});
 
   react.useEffect(() => {
-    setUpdateHook((pathPrefix, patch) => {
+    saveUpdateHook((pathPrefix, patch) => {
       setModel(
         jsonpatch.applyPatch(
-          model,
+          modelRef.current,
           patch.map((op) => {
             op.path = pathPrefix + op.path;
             return op;
@@ -81,10 +69,13 @@ export default function Layout({ setUpdateHook, sendEvent }) {
         ).newDocument
       );
     });
-  }, [model]);
+  }, [modelRef]);
 
-  if (model.tagName) {
-    return html`<${Element} sendEvent=${sendEvent} model=${model} />`;
+  if (modelRef.current.tagName) {
+    return html`<${Element}
+      sendEvent=${sendEvent}
+      model=${modelRef.current}
+    />`;
   } else {
     return html`<div />`;
   }
@@ -211,4 +202,11 @@ function getPathProperty(obj, prop) {
     value = value[path[i]];
   }
   return value;
+}
+
+function useStateRef(initialValue) {
+  const ref = react.useRef(initialValue);
+  const [state, setState] = react.useState(initialValue);
+  ref.current = state;
+  return [ref, setState];
 }
