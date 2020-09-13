@@ -57,19 +57,20 @@ Useful Tools
     :members:
 
 
-Jupyter Widget
---------------
-
-.. automodule:: idom.widgets.jupyter
-    :members:
-
-
 HTML Widgets
 ------------
 
 .. automodule:: idom.widgets.html
     :members:
     :undoc-members:
+
+
+Import Javascript Modules
+-------------------------
+
+.. automodule:: idom.widgets.module
+    :members:
+
 
 Widget Tools
 ------------

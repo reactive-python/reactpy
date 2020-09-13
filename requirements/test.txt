@@ -3,6 +3,5 @@ pytest-asyncio
 pytest-cov
 pytest-mock
 pytest-timeout
-flask
 selenium
 ipython
