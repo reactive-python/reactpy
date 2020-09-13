@@ -42,12 +42,21 @@ export function mountLayoutWithWebSocket(mountElement, endpoint) {
     );
   }
 
-  const cmpt = html`<${Layout}
-    registerUpdateCallback=${registerUpdateCallback}
-    sendCallback=${sendCallback}
-  />`;
+  return mountLayout(mountElement, registerUpdateCallback, sendCallback);
+}
 
-  return reactDOM.render(cmpt, mountElement);
+export function mountLayout(
+  mountElement,
+  registerUpdateCallback,
+  sendCallback
+) {
+  return reactDOM.render(
+    html`<${Layout}
+      registerUpdateCallback=${registerUpdateCallback}
+      sendCallback=${sendCallback}
+    />`,
+    mountElement
+  );
 }
 
 export default function Layout({ registerUpdateCallback, sendCallback }) {
