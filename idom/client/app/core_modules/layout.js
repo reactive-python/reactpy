@@ -26,7 +26,7 @@ export function mountLayoutWithWebSocket(mountElement, endpoint) {
 
   const ws = new WebSocket(endpoint);
 
-  function registerUpdateCallback(update) {
+  function saveUpdateHook(update) {
     ws.onmessage = (event) => {
       const [pathPrefix, patch] = JSON.parse(event.data);
       update(pathPrefix, patch);
@@ -42,28 +42,33 @@ export function mountLayoutWithWebSocket(mountElement, endpoint) {
     );
   }
 
-  return mountLayout(mountElement, registerUpdateCallback, sendCallback);
+  return mountLayout(mountElement, saveUpdateHook, sendCallback);
 }
 
-export function mountLayout(
-  mountElement,
-  registerUpdateCallback,
-  sendCallback
-) {
-  return reactDOM.render(
-    html`<${Layout}
-      registerUpdateCallback=${registerUpdateCallback}
-      sendCallback=${sendCallback}
-    />`,
+export function mountLayout(mountElement, saveUpdateHook, sendEvent) {
+  const updateHook = { current: null };
+
+  function setUpdateHook(hook) {
+    updateHook.current = hook;
+  }
+
+  reactDOM.render(
+    html`<${Layout} setUpdateHook=${setUpdateHook} sendEvent=${sendEvent} />`,
     mountElement
   );
+
+  saveUpdateHook((pathPrefix, patch) => {
+    if (updateHook.current) {
+      updateHook.current(pathPrefix, patch);
+    }
+  });
 }
 
-export default function Layout({ registerUpdateCallback, sendCallback }) {
+export default function Layout({ setUpdateHook, sendEvent }) {
   const [model, setModel] = react.useState({});
 
   react.useEffect(() => {
-    registerUpdateCallback((pathPrefix, patch) => {
+    setUpdateHook((pathPrefix, patch) => {
       setModel(
         jsonpatch.applyPatch(
           model,
@@ -79,7 +84,7 @@ export default function Layout({ registerUpdateCallback, sendCallback }) {
   }, [model]);
 
   if (model.tagName) {
-    return html`<${Element} sendEvent=${sendCallback} model=${model} />`;
+    return html`<${Element} sendEvent=${sendEvent} model=${model} />`;
   } else {
     return html`<div />`;
   }
