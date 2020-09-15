@@ -4,7 +4,6 @@ from typing import Callable, Awaitable, Dict, Any, AsyncIterator
 
 from anyio import create_task_group
 from anyio.abc import TaskGroup
-from jsonpatch import make_patch, apply_patch
 
 from .layout import (
     LayoutEvent,
@@ -122,14 +121,14 @@ class SharedViewDispatcher(SingleViewDispatcher):
     async def _render_loop(self) -> None:
         while True:
             update = await super()._outgoing(self.layout, None)
-            self._model_state = _apply_layout_update(self._model_state, update)
+            self._model_state = update.apply_to(self._model_state)
             # append updates to all other contexts
             for queue in self._update_queues.values():
                 await queue.put(update)
 
     async def _outgoing_loop(self, send: SendCoroutine, context: Any) -> None:
         self._update_queues[context] = asyncio.Queue()
-        await send(LayoutUpdate("", make_patch({}, self._model_state).patch))
+        await send(LayoutUpdate.create_from({}, self._model_state))
         await super()._outgoing_loop(send, context)
 
     async def _outgoing(self, layout: Layout, context: str) -> LayoutUpdate:
@@ -142,9 +141,3 @@ class SharedViewDispatcher(SingleViewDispatcher):
             yield event
         finally:
             event.set()
-
-
-def _apply_layout_update(doc: Dict[str, Any], update: LayoutUpdate) -> Any:
-    return apply_patch(
-        doc, [{**c, "path": update.path + c["path"]} for c in update.changes]
-    )
