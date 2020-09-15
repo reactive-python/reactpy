@@ -15,7 +15,7 @@ from typing import (
 )
 
 from loguru import logger
-from jsonpatch import make_patch
+from jsonpatch import make_patch, apply_patch
 
 from .element import AbstractElement
 from .events import EventHandler, EventTarget
@@ -28,6 +28,16 @@ class LayoutUpdate(NamedTuple):
 
     path: str
     changes: List[Dict[str, Any]]
+
+    def apply_to(self, model: Any) -> Any:
+        """Return the model resulting from the changes in this update"""
+        return apply_patch(
+            model, [{**c, "path": self.path + c["path"]} for c in self.changes]
+        )
+
+    @classmethod
+    def create_from(cls, source: Any, target: Any) -> "LayoutUpdate":
+        return cls("", make_patch(source, target).patch)
 
 
 class LayoutEvent(NamedTuple):
