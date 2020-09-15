@@ -6,8 +6,14 @@ from weakref import finalize
 import pytest
 
 import idom
+from idom.core.layout import LayoutUpdate
 
 from tests.general_utils import assert_same_items, HookCatcher
+
+
+def test_layout_update_create_from_apply_to():
+    update = LayoutUpdate.create_from({"a": 1, "b": [1]}, {"a": 2, "b": [1, 2]})
+    assert update.apply_to({"a": 1, "b": [1]}) == {"a": 2, "b": [1, 2]}
 
 
 def test_layout_repr():
