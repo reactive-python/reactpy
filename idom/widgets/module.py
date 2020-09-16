@@ -10,60 +10,42 @@ class Module:
 
     Parameters:
         name:
-            The module's name. If ``install`` or ``source`` are provided omit the ``.js``
-            file extension. Otherwise this is the exact import path and could be anything
-            including a URL.
-        install:
-            If a string, then the dependency string used to install a module with
-            the given ``name`` (e.g. ``my-module@1.2.3``). If ``True`` then the given
-            ``name`` will be used as the dependency string.
+            If the module is installed, or ``source`` is not None, then this is the name
+            the the module to import from (omit the ``.js`` file extension). Otherwise
+            this is the URl (relative or absolute) to import from.
         source:
             Create a module of the given name using the given source code.
+        replace:
+            Overwrite a module defined from ``source`` if one of the same ``name``
+            already exists, otherwise raise a ``ValueError`` complaining of name
+            conflict.
 
     Returns:
         An :class:`Import` element for the newly defined module.
     """
 
-    __slots__ = ("_module", "_name", "_installed")
+    __slots__ = "_module", "_installed"
 
     def __init__(
         self,
         name: str,
-        install: Union[bool, str] = False,
         source: Optional[Union[str, Path]] = None,
         replace: bool = False,
     ) -> None:
         self._installed = False
-        if install and source:
-            raise ValueError("Both 'install' and 'source' were given.")
-        elif (install or source) and not replace and client.web_module_exists(name):
-            self._module = client.web_module_url(name)
-            self._installed = True
-            self._name = name
-        elif source is not None:
+        if source is not None:
+            if replace:
+                client.delete_web_modules([name], skip_missing=True)
             self._module = client.register_web_module(name, source)
             self._installed = True
-            self._name = name
-        elif isinstance(install, str):
-            client.install([install], [name])
-            self._module = client.web_module_url(name)
-            self._installed = True
-            self._name = name
-        elif install is True:
-            client.install(name)
-            self._module = client.web_module_url(name)
-            self._installed = True
-            self._name = name
         elif client.web_module_exists(name):
             self._module = client.web_module_url(name)
         else:
             self._module = name
 
     @property
-    def name(self) -> str:
-        if not self._installed:
-            raise ValueError("Module is not installed locally")
-        return self._name
+    def installed(self) -> bool:
+        return self._installed
 
     @property
     def url(self) -> str:
@@ -71,11 +53,6 @@ class Module:
 
     def Import(self, name: str, *args: Any, **kwargs: Any) -> "Import":
         return Import(self._module, name, *args, **kwargs)
-
-    def delete(self) -> None:
-        if not self._installed:
-            raise ValueError("Module is not installed locally")
-        client.delete_web_modules([self._name])
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"{type(self).__name__}({self._module!r})"
