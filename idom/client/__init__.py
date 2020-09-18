@@ -4,7 +4,6 @@ from .manage import (
     delete_web_modules,
     register_web_module,
     web_module_exists,
-    web_module_path,
     install,
     installed,
     restore,

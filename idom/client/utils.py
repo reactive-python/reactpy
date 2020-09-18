@@ -25,7 +25,8 @@ class Spinner:
         failure_frame: str = "✖",
         success_frame: str = "✔",
         rate: float = 0.1,
-        display: Optional[Callable[[Optional[str], str], None]] = None,
+        show: bool = True,
+        display_function: Optional[Callable[[Optional[str], str], None]] = None,
     ) -> None:
         self.text = text
         self.frames = frames
@@ -34,8 +35,11 @@ class Spinner:
         self.rate = rate
         self._stop = Event()
         self._stopped = Event()
-        if display is not None:
-            self.display = display
+        if not show:
+            # do nothing on display
+            self.display = lambda *a, **kw: None
+        elif display_function is not None:
+            self.display = display_function
         else:
             self.display = (
                 self._display_notebook

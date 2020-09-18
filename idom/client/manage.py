@@ -27,10 +27,6 @@ def find_path(url_path: str) -> Optional[Path]:
     return STATIC_SHIMS.get(url_path)
 
 
-def web_module_path(name: str) -> Optional[Path]:
-    return find_path(f"web_modules/{name}.js")
-
-
 def web_module_url(name: str) -> str:
     path = f"../{WEB_MODULES_DIR.name}/{name}.js"
     if not web_module_exists(name):
@@ -94,7 +90,9 @@ def installed() -> List[str]:
     return list(sorted(names))
 
 
-def install(packages: Sequence[str], exports: Sequence[str] = ()) -> None:
+def install(
+    packages: Sequence[str], exports: Sequence[str] = (), show_spinner: bool = False
+) -> None:
     with TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
         temp_static_dir = tempdir_path / "static"
@@ -115,7 +113,7 @@ def install(packages: Sequence[str], exports: Sequence[str] = ()) -> None:
         with (temp_static_dir / "package.json").open("w+") as f:
             json.dump(package_json, f)
 
-        with Spinner(f"Installing: {', '.join(packages)}"):
+        with Spinner(f"Installing: {', '.join(packages)}", show=show_spinner):
             _run_subprocess(["npm", "install"], temp_static_dir)
             _run_subprocess(["npm", "install"] + cache.package_list, temp_static_dir)
             _run_subprocess(["npm", "run", "build"], temp_static_dir)
@@ -128,8 +126,8 @@ def install(packages: Sequence[str], exports: Sequence[str] = ()) -> None:
         shutil.copytree(temp_build_dir, BUILD_DIR, symlinks=True)
 
 
-def restore() -> None:
-    with Spinner("Restoring"):
+def restore(show_spinner: bool = False) -> None:
+    with Spinner("Restoring", show=show_spinner):
         _delete_os_paths(BUILD_DIR)
         _run_subprocess(["npm", "install"], APP_DIR)
         _run_subprocess(["npm", "run", "build"], APP_DIR)

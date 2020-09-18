@@ -33,6 +33,11 @@ def test_install_namespace_package():
     assert client.web_module_url("@material-ui/core") == expected
 
 
+def test_error_on_delete_not_exists():
+    with pytest.raises(ValueError, match=r"Module .*? does not exist"):
+        client.delete_web_modules("module/that/does/not/exist")
+
+
 def test_raise_on_missing_import_path():
     with pytest.raises(ValueError, match="does not exist"):
         client.web_module_url("module/that/does/not/exist")

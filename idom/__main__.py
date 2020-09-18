@@ -56,11 +56,11 @@ def run(args: argparse.Namespace) -> None:
             )
 
     if args.command == "install":
-        install(args.dependencies or [], args.exports or [])
+        install(args.dependencies or [], args.exports or [], show_spinner=True)
     elif args.command == "uninstall":
         delete_web_modules(args.dependencies)
     elif args.command == "restore":
-        restore()
+        restore(show_spinner=True)
     else:
         print("Installed:")
         for name in installed():

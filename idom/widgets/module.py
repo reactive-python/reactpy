@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any, Optional, Union
+from urllib.parse import urlparse
 
 from idom import client
 from idom.core.vdom import VdomDict, ImportSourceDict, make_vdom_constructor
@@ -9,49 +10,72 @@ class Module:
     """A Javascript module
 
     Parameters:
-        name:
-            If the module is installed, or ``source`` is not None, then this is the name
-            the the module to import from (omit the ``.js`` file extension). Otherwise
-            this is the URl (relative or absolute) to import from.
-        source:
-            Create a module of the given name using the given source code.
-        replace:
-            Overwrite a module defined from ``source`` if one of the same ``name``
-            already exists, otherwise raise a ``ValueError`` complaining of name
-            conflict.
+        path:
+            The URL to an ECMAScript module which exports React components
+            (*with* a ``.js`` file extension) or name of a module installed in the
+            built-in client application (*without* a ``.js`` file extension).
+        source_file:
+            Only applicable if running on the built-in client app. Dynamically install
+            the code in the give file as a single-file module. The built-in client will
+            inject this module adjacent to other installed modules which means they can
+            be imported via a relative path (e.g. ``./some-other-installed-module.js``).
 
-    Returns:
-        An :class:`Import` element for the newly defined module.
+    .. warning::
+
+        Do not use the ``source_file`` parameter if not running with the client app
+        distributed with ``idom``.
+
+    Examples:
+        .. testcode::
+
+            import idom
+
     """
 
     __slots__ = "_module", "_installed"
 
     def __init__(
         self,
-        name: str,
-        source: Optional[Union[str, Path]] = None,
-        replace: bool = False,
+        path: str,
+        source_file: Optional[Union[str, Path]] = None,
     ) -> None:
         self._installed = False
-        if source is not None:
-            if replace:
-                client.delete_web_modules([name], skip_missing=True)
-            self._module = client.register_web_module(name, source)
+        if source_file is not None:
+            self._module = client.register_web_module(path, source_file)
             self._installed = True
-        elif client.web_module_exists(name):
-            self._module = client.web_module_url(name)
+        elif client.web_module_exists(path):
+            self._module = client.web_module_url(path)
+            self._installed = True
+        elif not _is_url(path):
+            raise ValueError(
+                f"{path!r} is not installed - "
+                "only installed modules can omit a file extension."
+            )
         else:
-            self._module = name
+            self._module = path
 
     @property
     def installed(self) -> bool:
+        """Whether or not this module has been installed into the built-in client app."""
         return self._installed
 
     @property
     def url(self) -> str:
+        """The path this module will be imported from"""
         return self._module
 
     def Import(self, name: str, *args: Any, **kwargs: Any) -> "Import":
+        """Return  an :class:`Import` for the given :class:`Module` and ``name``
+
+        This roughly translates to the javascript statement
+
+        .. code-block:: javascript
+
+            import { name } from "module"
+
+        Where ``name`` is the given name, and ``module`` is the :attr:`Module.url` of
+        this :class:`Module` instance.
+        """
         return Import(self._module, name, *args, **kwargs)
 
     def __repr__(self) -> str:  # pragma: no cover
@@ -95,3 +119,11 @@ class Import:
     def __repr__(self) -> str:  # pragma: no cover
         items = ", ".join(f"{k}={v!r}" for k, v in self._import_source.items())
         return f"{type(self).__name__}({items})"
+
+
+def _is_url(string: str) -> bool:
+    if string.startswith("/") or string.startswith("./") or string.startswith("../"):
+        return True
+    else:
+        parsed = urlparse(string)
+        return parsed.scheme and parsed.netloc
