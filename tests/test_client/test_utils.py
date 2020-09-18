@@ -19,7 +19,7 @@ def test_spinner_custom_display():
         success_frame="success",
         failure_frame="failure",
         rate=0,  # go as fast as we can
-        display=save_display,
+        display_function=save_display,
     )
 
     seen_frames = set()
@@ -50,6 +50,7 @@ def test_spinner_custom_display():
                 if frame in seen_frames:
                     raise ValueError("we raised this on purpose")
                 seen_frames.add(frame)
+
     # grab the failure frame
     while not displayed_frames.empty():
         seen_frames.add(displayed_frames.get())

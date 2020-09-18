@@ -9,16 +9,23 @@ from idom import Module
 HERE = Path(__file__).parent
 
 
-def test_module_cannot_have_source_and_install():
-    with pytest.raises(ValueError, match=r"Both .* were given."):
-        idom.Module("something", install="something", source=HERE / "something.js")
-
-
 @pytest.fixture
 def victory():
     if "victory" not in client.installed():
         client.install(["victory"], [])
     return Module("victory")
+
+
+def test_non_url_must_be_installed():
+    with pytest.raises(ValueError, match="not installed"):
+        Module("module/not/installed")
+
+
+def test_any_relative_or_abolute_url_allowed():
+    Module("/absolute/url/module")
+    Module("./relative/url/module")
+    Module("../relative/url/module")
+    Module("http://someurl.com/module")
 
 
 @pytest.mark.slow
@@ -35,7 +42,7 @@ def test_reference_pre_installed_module(victory):
 
 @pytest.mark.slow
 def test_custom_module(driver, display, victory):
-    my_chart = Module("my/chart", source=HERE / "my_chart.js")
+    my_chart = Module("my/chart", source_file=HERE / "my-chart.js")
 
     assert client.web_module_exists("my/chart")
     assert client.web_module_url("my/chart") == "../web_modules/my/chart.js"
@@ -44,8 +51,7 @@ def test_custom_module(driver, display, victory):
 
     driver.find_element_by_class_name("VictoryContainer")
 
-    my_chart.delete()
-
+    client.delete_web_modules("my/chart")
     assert not client.web_module_exists("my/chart")
 
 
