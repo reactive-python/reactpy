@@ -37,7 +37,7 @@ class Spinner:
         self._stopped = Event()
         if not show:
             # do nothing on display
-            self.display = lambda *a, **kw: None
+            self.display: Callable[[Optional[str], str], None] = lambda frm, txt: None
         elif display_function is not None:
             self.display = display_function
         else:
