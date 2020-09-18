@@ -126,4 +126,4 @@ def _is_url(string: str) -> bool:
         return True
     else:
         parsed = urlparse(string)
-        return parsed.scheme and parsed.netloc
+        return bool(parsed.scheme and parsed.netloc)
