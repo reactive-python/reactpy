@@ -6,6 +6,10 @@ Javascript Modules
     This is a recent feature of IDOM. If you have a problem following this tutorial
     `post an issue <https://github.com/rmorshea/idom/issues>`__.
 
+.. contents::
+  :local:
+  :depth: 1
+
 While IDOM is a great tool for displaying HTML and responding to browser events with
 pure Python, there are other projects which already allow you to do this inside
 `Jupyter Notebooks <https://ipywidgets.readthedocs.io/en/latest/examples/Widget%20Basics.html>`__
@@ -33,13 +37,13 @@ Before you start:
 
 - We're assuming the presence of a :ref:`Display Function` for our examples.
 
-Once you've done this you can get started right away. In this example we'll be using a
-charting library for React called `Victory <https://formidable.com/open-source/victory/>`__
-which can be installed using the ``idom`` CLI:
+Once you've done this you can get started right away. In this example we'll be using the
+ubiquitous React-based UI framework `Material UI`_ which can be installed using the
+``idom`` CLI:
 
 .. code-block:: bash
 
-    idom install victory
+    idom install @material-ui/core
 
 Any standard javascript dependency specifier is allowed here. Also, if you need to
 access modules within a subfolder of your desired package you must explicitely state
@@ -49,33 +53,35 @@ those submodules using the ``--exports`` option:
 
     idom install my-package@1.2.3 --exports my-package/with-a-submodule
 
-Once the package has been succesfully installed, you can import and display the component:
+Once the package has been succesfully installed, you can import and display the element:
 
-.. literalinclude:: examples/victory_chart.py
+.. example:: material_ui_button_no_action
 
-.. interactive-widget:: victory_chart
 
 .. note::
 
-    Even though it's generally discouraged, you can install packages at runtime using the
-    ``install`` parameter of a :class:`~idom.widgets.utils.Module`.
+    Styling for Material UI is already built into this page so in the following examples
+    we've omitted a link to the style sheet which would otherwise be created with:
+
+    .. code-block::
+
+        material_ui_style = idom.html.link(
+            {
+                "rel": "stylesheet",
+                "href": "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap",
+            }
+        )
 
 
 Passing Props To Components
 ---------------------------
 
-So now that we can install and display a dependency we probably want to pass data or
-callbacks to it. This can be done in just the same way as you learned to do when
-:ref:`getting started`. In the following example we'll be using a
-`Button <https://react.semantic-ui.com/elements/button/>`__
-component from the
-`Semantic UI <https://react.semantic-ui.com/>`__
-framework. We'll register callbacks and pass props to the ``<Button/>`` just as you
-would for any other element in IDOM:
+So now that we can install and display a Material UI Button we probably want to make it
+do something. Thankfully there's nothing new to learn here, you can pass event handlers
+to the button just as you did when :ref:`getting started`. Thus, all we need to do is
+add an ``onClick`` handler to the element:
 
-.. literalinclude:: examples/primary_secondary_buttons.py
-
-.. interactive-widget:: primary_secondary_buttons
+.. example:: material_ui_button_on_click
 
 
 Defining Your Own Modules
@@ -96,8 +102,18 @@ is a bit more complex so we've implemented a quick wrapper for it in a file ``ch
 
 Which we can read in as a ``source`` to :class:`~idom.widgets.utils.Module`:
 
-.. literalinclude:: examples/custom_chart.py
-
 Click the bars to trigger an event 👇
 
-.. interactive-widget:: custom_chart
+.. example:: custom_chart
+
+
+Alternate Client Implementations
+--------------------------------
+
+under construction...
+
+
+.. Links
+.. =====
+
+.. _Material UI: https://material-ui.com/

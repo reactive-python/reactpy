@@ -50,26 +50,12 @@ Sanic Servers
     :members:
 
 
-Useful Tools
-------------
-
-.. automodule:: idom.utils
-    :members:
-
-
 HTML Widgets
 ------------
 
 .. automodule:: idom.widgets.html
     :members:
     :undoc-members:
-
-
-Import Javascript Modules
--------------------------
-
-.. automodule:: idom.widgets.module
-    :members:
 
 
 Widget Tools
@@ -83,3 +69,27 @@ Dialect
 -------
 
 .. automodule:: idom.dialect
+    :members:
+
+
+Client
+------
+
+.. automodule:: idom.client.module
+    :members:
+
+.. automodule:: idom.client.protocol
+    :members:
+
+.. automodule:: idom.client.manage
+    :members:
+
+.. automodule:: idom.client.utils
+    :members:
+
+
+Useful Tools
+------------
+
+.. automodule:: idom.utils
+    :members:
