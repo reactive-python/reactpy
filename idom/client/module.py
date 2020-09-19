@@ -2,67 +2,60 @@ from pathlib import Path
 from typing import Any, Optional, Union
 from urllib.parse import urlparse
 
-from idom import client
 from idom.core.vdom import VdomDict, ImportSourceDict, make_vdom_constructor
+
+from .protocol import client_implementation as client
 
 
 class Module:
     """A Javascript module
 
     Parameters:
-        path:
+        url_or_name:
             The URL to an ECMAScript module which exports React components
             (*with* a ``.js`` file extension) or name of a module installed in the
             built-in client application (*without* a ``.js`` file extension).
         source_file:
-            Only applicable if running on the built-in client app. Dynamically install
-            the code in the give file as a single-file module. The built-in client will
-            inject this module adjacent to other installed modules which means they can
-            be imported via a relative path (e.g. ``./some-other-installed-module.js``).
+            Only applicable if running on a client app which supports this feature.
+            Dynamically install the code in the give file as a single-file module. The
+            built-in client will inject this module adjacent to other installed modules
+            which means they can be imported via a relative path like
+            ``./some-other-installed-module.js``.
 
-    .. warning::
+    Attributes:
+        installed:
+            Whether or not this module has been installed into the built-in client app.
+        url:
+            The URL this module will be imported from.
 
-        Do not use the ``source_file`` parameter if not running with the client app
-        distributed with ``idom``.
-
-    Examples:
-        .. testcode::
-
-            import idom
-
+    Notes:
+        To allow for other client implementations, you can set the current client
+        implementation
+        following private methods to support serving dynamically registered source
+        files or loading modules that have been installed by some other means:
     """
 
-    __slots__ = "_module", "_installed"
+    __slots__ = "url", "installed"
 
     def __init__(
         self,
-        path: str,
+        url_or_name: str,
         source_file: Optional[Union[str, Path]] = None,
     ) -> None:
-        self._installed = False
+        self.installed = False
         if source_file is not None:
-            self._module = client.register_web_module(path, source_file)
-            self._installed = True
-        elif client.web_module_exists(path):
-            self._module = client.web_module_url(path)
-            self._installed = True
-        elif not _is_url(path):
+            self.url = client.current.register_web_module(url_or_name, source_file)
+            self.installed = True
+        elif client.current.web_module_exists(url_or_name):
+            self.url = client.current.web_module_url(url_or_name)
+            self.installed = True
+        elif _is_url(url_or_name):
+            self.url = url_or_name
+        else:
             raise ValueError(
-                f"{path!r} is not installed - "
+                f"{url_or_name!r} is not installed - "
                 "only installed modules can omit a file extension."
             )
-        else:
-            self._module = path
-
-    @property
-    def installed(self) -> bool:
-        """Whether or not this module has been installed into the built-in client app."""
-        return self._installed
-
-    @property
-    def url(self) -> str:
-        """The path this module will be imported from"""
-        return self._module
 
     def Import(self, name: str, *args: Any, **kwargs: Any) -> "Import":
         """Return  an :class:`Import` for the given :class:`Module` and ``name``
@@ -76,10 +69,10 @@ class Module:
         Where ``name`` is the given name, and ``module`` is the :attr:`Module.url` of
         this :class:`Module` instance.
         """
-        return Import(self._module, name, *args, **kwargs)
+        return Import(self.url, name, *args, **kwargs)
 
     def __repr__(self) -> str:  # pragma: no cover
-        return f"{type(self).__name__}({self._module!r})"
+        return f"{type(self).__name__}({self.url!r})"
 
 
 class Import:

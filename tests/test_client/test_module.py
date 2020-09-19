@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 import idom
-from idom import client
-from idom import Module
+from idom.client.manage import install, delete_web_modules
+from idom import Module, client
 
 
 HERE = Path(__file__).parent
@@ -12,7 +12,7 @@ HERE = Path(__file__).parent
 @pytest.fixture
 def victory():
     if "victory" not in client.installed():
-        client.install(["victory"], [])
+        install(["victory"], [])
     return Module("victory")
 
 
@@ -51,7 +51,7 @@ def test_custom_module(driver, display, victory):
 
     driver.find_element_by_class_name("VictoryContainer")
 
-    client.delete_web_modules("my/chart")
+    delete_web_modules("my/chart")
     assert not client.web_module_exists("my/chart")
 
 
@@ -60,3 +60,7 @@ def test_module_from_url():
     jquery = idom.Module(url)
     assert jquery.url == url
     assert not jquery.installed
+
+
+def test_module_uses_current_client_implementation():
+    assert False

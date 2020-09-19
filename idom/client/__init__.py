@@ -1,22 +1,5 @@
-from .manage import (
-    web_module_url,
-    find_path,
-    delete_web_modules,
-    register_web_module,
-    web_module_exists,
-    install,
-    installed,
-    restore,
-)
+from .protocol import client_implementation
+from .module import Module, Import
 
-__all__ = [
-    "web_module_url",
-    "find_path",
-    "delete_web_modules",
-    "register_web_module",
-    "web_module_exists",
-    "web_module_path",
-    "install",
-    "installed",
-    "restore",
-]
+
+__all__ = ["client_implementation", "Module", "Import"]
