@@ -3,6 +3,8 @@ from pkg_resources import (
     DistributionNotFound as _DistributionNotFound,
 )
 
+from .utils import Ref, html_to_vdom
+
 from .core.element import element, Element
 from .core.events import event, Events
 from .core.layout import Layout
@@ -10,10 +12,10 @@ from .core.vdom import vdom, VdomDict
 from .core import hooks
 
 from .widgets.html import html
-from .widgets.module import Module, Import
 from .widgets.utils import hotswap, multiview
 
-from .utils import Ref, html_to_vdom
+from .client.module import Module, Import
+from .client.protocol import client_implementation as client
 
 from . import server
 from . import widgets
@@ -59,4 +61,5 @@ __all__ = [
     "html_to_vdom",
     "VdomDict",
     "widgets",
+    "client",
 ]

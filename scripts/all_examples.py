@@ -5,6 +5,11 @@ from traceback import print_exc
 import idom
 from idom.server.sanic import PerClientStateServer
 
+from scripts.install_doc_js_modules import install_doc_js_modules
+
+
+install_doc_js_modules()
+
 here = Path(__file__).parent
 examples_dir = here.parent / "docs" / "source" / "examples"
 sys.path.insert(0, str(examples_dir))
