@@ -6,7 +6,8 @@ import idom
 
 here = Path(__file__).parent
 custom_chart_path = here / "custom_chart.js"
-ClickableChart = idom.Module("chart", source=custom_chart_path).Import("ClickableChart")
+custom_chart = idom.Module("chart", source_file=custom_chart_path)
+ClickableChart = custom_chart.Import("ClickableChart")
 
 
 data = [

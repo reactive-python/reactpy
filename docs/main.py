@@ -32,14 +32,17 @@ for file in examples_dir.iterdir():
         continue
 
     with file.open() as f:
-        exec(
-            f.read(),
-            {
-                "display": mount[file.stem],
-                "__file__": str(file),
-                "__name__": f"widgets.{file.stem}",
-            },
-        )
+        try:
+            exec(
+                f.read(),
+                {
+                    "display": mount[file.stem],
+                    "__file__": str(file),
+                    "__name__": f"widgets.{file.stem}",
+                },
+            )
+        except Exception as error:
+            raise RuntimeError(f"Failed to execute {file}") from error
 
 server = (
     PerClientStateServer(element)

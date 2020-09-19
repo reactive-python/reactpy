@@ -60,9 +60,7 @@ accepts a single argument (the previous state) and returns the next state. Consi
 simply use case of a counter where we've pulled out logic for incrementing and
 decrementing the count:
 
-.. literalinclude:: examples/use_state_counter.py
-
-.. interactive-widget:: use_state_counter
+.. example:: use_state_counter
 
 We use the functional form for the "+" and "-" buttons since the next ``count`` depends
 on the previous value, while for the "Reset" button we simple assign the
@@ -217,9 +215,7 @@ may be slightly more performant as well as being preferable since there is only 
 
 We can rework the :ref:`Functional Updates` counter example to use ``use_reducer``:
 
-.. literalinclude:: examples/use_reducer_counter.py
-
-.. interactive-widget:: use_reducer_counter
+.. example:: use_reducer_counter
 
 .. note::
 

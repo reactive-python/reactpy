@@ -52,7 +52,9 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "sphinx_autodoc_typehints",
     "interactive_widget",
+    "widget_example",
     "async_doctest",
+    "sphinx_panels",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -119,6 +121,15 @@ html_theme = "sphinx_rtd_theme"
 #
 # html_sidebars = {}
 
+
+# -- Options for Sphinx Panels -----------------------------------------------
+
+panels_css_variables = {
+    "tabs-color-label-active": "rgb(106, 176, 221)",
+    "tabs-color-label-inactive": "rgb(201, 225, 250)",
+    "tabs-color-overline": "rgb(201, 225, 250)",
+    "tabs-color-underline": "rgb(201, 225, 250)",
+}
 
 # -- Options for HTMLHelp output ---------------------------------------------
 

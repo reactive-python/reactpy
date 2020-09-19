@@ -69,61 +69,49 @@ view. In a Jupyter Notebook it will appear in an output cell. If you're running
 Slideshow
 ---------
 
-.. literalinclude:: examples/slideshow.py
-
 Try clicking the image 🖱️
 
-.. interactive-widget:: slideshow
+.. example:: slideshow
 
 
 Click Counter
 -------------
 
-.. literalinclude:: examples/click_count.py
-
-.. interactive-widget:: click_count
+.. example:: click_count
 
 
 To Do List
 ----------
 
-.. literalinclude:: examples/todo.py
-
 Try typing in the text box and pressing 'Enter' 📋
 
-.. interactive-widget:: todo
+.. example:: todo
 
 
 The Game Snake
 --------------
 
-.. literalinclude:: examples/snake_game.py
-
 Click to start playing and use the arrow keys to move 🎮
 
 Slow internet may cause inconsistent frame pacing 😅
 
-.. interactive-widget:: snake_game
+.. example:: snake_game
 
 
 Matplotlib Plot
 ---------------
 
-.. literalinclude:: examples/matplotlib_plot.py
-
 Pick the polynomial coefficients (seperate each coefficient by a space) 🔢:
 
-.. interactive-widget:: matplotlib_plot
+.. example:: matplotlib_plot
 
 
 Simple Dashboard
 ----------------
 
-.. literalinclude:: examples/simple_dashboard.py
-
 Try interacting with the sliders 📈
 
-.. interactive-widget:: simple_dashboard
+.. example:: simple_dashboard
 
 
 Install Javascript Modules
@@ -137,14 +125,7 @@ Simply install your javascript library of choice using the ``idom`` CLI:
 
 Then import the module with :class:`~idom.widgets.utils.Module`:
 
-.. literalinclude:: examples/victory_chart.py
-
-.. note::
-
-    It's possible to install the module at runtime by specifying ``install=True``.
-    However this is generally discouraged.
-
-.. interactive-widget:: victory_chart
+.. example:: victory_chart
 
 
 Define Javascript Modules
@@ -152,16 +133,9 @@ Define Javascript Modules
 
 Assuming you already installed ``victory`` as in the :ref:`Install Javascript Modules` section:
 
-.. literalinclude:: examples/custom_chart.py
-
 Click the bars to trigger an event 👇
 
-.. interactive-widget:: custom_chart
-
-Source of ``chart.js``:
-
-.. literalinclude:: examples/custom_chart.js
-    :language: javascript
+.. example:: custom_chart
 
 
 Shared Client Views
@@ -199,11 +173,9 @@ Material UI Slider
 
 Assuming you already installed ``@material-ui/core`` as in the :ref:`Install Javascript Modules` section:
 
-.. literalinclude:: examples/material_ui_slider.py
-
 Move the slider and see the event information update 👇
 
-.. interactive-widget:: material_ui_slider
+.. example:: material_ui_slider
 
 
 Semantic UI Buttons
@@ -211,11 +183,9 @@ Semantic UI Buttons
 
 Assuming you already installed ``semantic-ui-react`` as in the :ref:`Install Javascript Modules` section:
 
-.. literalinclude:: examples/primary_secondary_buttons.py
-
 Click the buttons and see the event information update 👇
 
-.. interactive-widget:: primary_secondary_buttons
+.. example:: primary_secondary_buttons
 
 
 .. Links
