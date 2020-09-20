@@ -192,4 +192,4 @@ Click the buttons and see the event information update 👇
 .. =====
 
 .. |launch-binder| image:: https://mybinder.org/badge_logo.svg
- :target: https://mybinder.org/v2/gh/rmorshea/idom/master?filepath=examples%2Fintroduction.ipynb
+ :target: https://mybinder.org/v2/gh/idom-team/idom-jupyter/main?filepath=examples%2Fintroduction.ipynb
