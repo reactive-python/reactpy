@@ -2,37 +2,38 @@ import pytest
 
 from idom.__main__ import main
 from idom import client
+from idom.client.manage import delete_web_modules, installed
 
 from tests.general_utils import assert_same_items
 
 
 @pytest.mark.slow
 def test_simple_install(capsys):
-    client.delete_web_modules("jquery", skip_missing=True)
+    delete_web_modules("jquery", skip_missing=True)
 
     main("install", "jquery")
-    assert client.web_module_exists("jquery")
+    assert client.current.web_module_exists("jquery")
     main("installed")
     captured = capsys.readouterr()
     assert "- jquery" in captured.out
 
     main("uninstall", "jquery")
-    assert not client.web_module_exists("jquery")
+    assert not client.current.web_module_exists("jquery")
 
 
 @pytest.mark.slow
 def test_install_with_exports(capsys):
-    client.delete_web_modules(["preact", "preact/hooks"], skip_missing=True)
+    delete_web_modules(["preact", "preact/hooks"], skip_missing=True)
 
     main("install", "preact", "--exports", "preact/hooks")
-    assert client.web_module_exists("preact/hooks")
+    assert client.current.web_module_exists("preact/hooks")
     main("installed")
     captured = capsys.readouterr()
     assert "- preact" in captured.out
     assert "- preact/hooks" in captured.out
 
     main("uninstall", "preact")
-    assert not client.web_module_exists("preact/hooks")
+    assert not client.current.web_module_exists("preact/hooks")
     main("installed")
     captured = capsys.readouterr()
     assert "- preact" not in captured.out
@@ -42,9 +43,7 @@ def test_install_with_exports(capsys):
 @pytest.mark.slow
 def test_restore(capsys):
     main("restore")
-    assert_same_items(
-        client.installed(), ["fast-json-patch", "htm", "react", "react-dom"]
-    )
+    assert_same_items(installed(), ["fast-json-patch", "htm", "react", "react-dom"])
 
 
 @pytest.mark.parametrize(

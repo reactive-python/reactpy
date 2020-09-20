@@ -37,24 +37,6 @@ class WidgetExample(Directive):
             self.state_machine,
         ).run()
 
-        example_tab = TabbedDirective(
-            "WidgetExample",
-            ["Live Example"],
-            {},
-            StringList(
-                [
-                    "",
-                    f"    .. interactive-widget:: {example_name}",
-                    "",
-                ]
-            ),
-            self.lineno - 1,
-            self.content_offset,
-            "",
-            self.state,
-            self.state_machine,
-        ).run()
-
         if (examples / f"{example_name}.js").exists():
             js_code_tab = TabbedDirective(
                 "WidgetExample",
@@ -77,7 +59,25 @@ class WidgetExample(Directive):
         else:
             js_code_tab = []
 
-        return py_code_tab + example_tab + js_code_tab
+        example_tab = TabbedDirective(
+            "WidgetExample",
+            ["Live Example"],
+            {},
+            StringList(
+                [
+                    "",
+                    f"    .. interactive-widget:: {example_name}",
+                    "",
+                ]
+            ),
+            self.lineno - 1,
+            self.content_offset,
+            "",
+            self.state,
+            self.state_machine,
+        ).run()
+
+        return py_code_tab + js_code_tab + example_tab
 
 
 def setup(app: Sphinx) -> None:
