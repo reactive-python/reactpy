@@ -4,12 +4,12 @@
   <img alt="Tests" src="https://github.com/idom-team/idom/workflows/Test/badge.svg?event=push" />
 </a>
 <a href="https://codecov.io/gh/rmorshea/idom">
-  <img alt="Code Coverage" src="https://codecov.io/gh/rmorshea/idom/branch/master/graph/badge.svg" />
+  <img alt="Code Coverage" src="https://codecov.io/gh/rmorshea/idom/branch/main/graph/badge.svg" />
 </a>
 <a href="https://pypi.python.org/pypi/idom">
   <img alt="Version Info" src="https://img.shields.io/pypi/v/idom.svg"/>
 </a>
-<a href="https://github.com/rmorshea/idom/blob/master/LICENSE"/>
+<a href="https://github.com/rmorshea/idom/blob/main/LICENSE"/>
   <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-purple.svg">
 </a>
 
@@ -25,7 +25,7 @@ or create a
 <h3>
   <a
     target="_blank"
-    href="https://mybinder.org/v2/gh/idom-team/idom-jupyter/master?filepath=notebooks%2Fintroduction.ipynb"
+    href="https://mybinder.org/v2/gh/idom-team/idom-jupyter/main?filepath=notebooks%2Fintroduction.ipynb"
   >
     Try it Now
     <img alt="Binder" valign="bottom" height="25px"
