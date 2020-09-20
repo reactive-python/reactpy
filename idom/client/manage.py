@@ -43,7 +43,7 @@ def register_web_module(name: str, source: Union[str, Path]) -> str:
     if web_module_exists(name):
         raise ValueError(f"Web module {name} already exists")
     if not source_path.is_file():
-        raise ValueError(f"Web modules source {source} does not exist or is not a file")
+        raise ValueError(f"Web module source {source} does not exist or is not a file")
     STATIC_SHIMS[f"web_modules/{name}.js"] = source_path
     return web_module_url(name)
 
@@ -140,6 +140,7 @@ class Cache:
     __slots__ = "_file", "package_list", "export_list"
 
     def __init__(self, path: Path) -> None:
+        path.mkdir(parents=True, exist_ok=True)
         self._file = path / ".idom-cache.json"
         if not self._file.exists():
             self.package_list: List[str] = []

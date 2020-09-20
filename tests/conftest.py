@@ -16,6 +16,7 @@ from selenium.webdriver.chrome.options import Options
 import pyalect.builtins.pytest  # noqa
 
 import idom
+from idom.client.manage import restore as restore_client
 from idom.core import ElementConstructor, AbstractElement
 from idom.server import hotswap_server, AbstractRenderServer, find_available_port
 from idom.server.sanic import PerClientStateServer
@@ -274,8 +275,8 @@ def fresh_client(pytestconfig: Config) -> Iterator[None]:
     after testing and may effect usage of IDOM beyond the scope of the tests.
     """
     if not pytestconfig.option.dirty_client:
-        idom.client.restore()
+        restore_client()
         yield
-        idom.client.restore()
+        restore_client()
     else:
         yield
