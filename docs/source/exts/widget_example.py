@@ -19,6 +19,10 @@ class WidgetExample(Directive):
     def run(self):
         example_name = self.arguments[0]
 
+        py_ex_path = examples / f"{example_name}.py"
+        if not py_ex_path.exists():
+            raise ValueError(f"No example file named {py_ex_path}")
+
         py_code_tab = TabbedDirective(
             "WidgetExample",
             ["Python Code"],
@@ -27,7 +31,7 @@ class WidgetExample(Directive):
                 [
                     "",
                     f"    .. literalinclude:: examples/{example_name}.py",
-                    "",
+                    f"        :lines: 1-{_py_ex_file_cutoff(py_ex_path)}",
                 ]
             ),
             self.lineno - 1,
@@ -78,6 +82,20 @@ class WidgetExample(Directive):
         ).run()
 
         return py_code_tab + js_code_tab + example_tab
+
+
+def _py_ex_file_cutoff(path):
+    empty_line_start = None
+    with path.open() as f:
+        for i, l in enumerate(f):
+            if not l.strip():
+                if empty_line_start is None:
+                    empty_line_start = i + 1
+            elif l.startswith("display(") and empty_line_start is not None:
+                return empty_line_start
+            else:
+                empty_line_start = None
+    raise ValueError(f"No display function called in {path}")
 
 
 def setup(app: Sphinx) -> None:

@@ -42,28 +42,7 @@ At a Glance
 Let's use IDOM to create a simple slideshow which changes whenever a
 user clicks an image:
 
-.. code-block::
-
-    import idom
-
-    @idom.element
-    def Slideshow():
-        index, set_index = idom.hooks.use_state(0)
-
-        def next_image(event):
-            set_index(index + 1)
-
-        return idom.html.img(
-            {
-                "src": f"https://picsum.photos/800/300?image={index}",
-                "style": {"cursor": "pointer"},
-                "onClick": next_image,
-            }
-        )
-
-    host, port = "localhost", 8765
-    server = idom.server.sanic.PerClientStateServer(Slideshow)
-    server.run(host, port)
+.. example:: slideshow
 
 Running this will serve our slideshow to ``"https://localhost:8765"``. You can try out
 a working example by enabling the widget below. Once enabled clicking the image will
