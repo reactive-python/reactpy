@@ -64,11 +64,10 @@ Running this will serve our slideshow to `"https://localhost:8765/client/index.h
 
 <img src='https://picsum.photos/800/300?random'/>
 
-You could even display the same thing in a Jupyter notebook!
+You can even display the same thing in a Jupyter Notebook, just use [`idom_jupyter`](https://github.com/idom-team/idom-jupyter):
 
 ```python
-from idom.widgets.jupyter import init_display
-display = init_display("127.0.0.1")
+from idom_jupyter import display
 display(Slideshow)
 ```
 
