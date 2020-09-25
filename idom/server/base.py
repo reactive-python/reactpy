@@ -3,7 +3,7 @@ from asyncio import AbstractEventLoop, new_event_loop, set_event_loop, get_event
 from typing import TypeVar, Dict, Any, Tuple, Type, Optional, Generic, TypeVar
 from threading import Thread
 
-from idom.core.element import ElementConstructor, AbstractElement
+from idom.core.element import ElementConstructor
 from idom.core.layout import Layout, Layout
 from idom.core.dispatcher import (
     AbstractDispatcher,
@@ -34,11 +34,17 @@ class AbstractRenderServer(Generic[_App, _Config]):
     _dispatcher_type: Type[AbstractDispatcher]
     _layout_type: Type[Layout] = Layout
 
-    def __init__(self, constructor: ElementConstructor) -> None:
+    def __init__(
+        self,
+        constructor: ElementConstructor,
+        config: Optional[_Config] = None,
+    ) -> None:
         self._app: Optional[_App] = None
-        self._root_element_constructor = constructor
+        self._make_root_element = constructor
         self._daemonized = False
         self._config = self._init_config()
+        if config is not None:
+            self._config = self._update_config(self._config, config)
 
     @property
     def loop(self) -> AbstractEventLoop:
@@ -78,15 +84,12 @@ class AbstractRenderServer(Generic[_App, _Config]):
         self._app = app
         return self
 
-    def configure(self: _Self, config: Optional[_Config] = None) -> _Self:
-        """Configure this extension."""
-        if config is not None:
-            self._config = self._update_config(self._config, config)
-        return self
-
-    @abc.abstractmethod
     def stop(self) -> None:
         """Stop the running application"""
+        self.loop.call_soon_threadsafe(self._stop)
+
+    @abc.abstractmethod
+    def _stop(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -109,15 +112,6 @@ class AbstractRenderServer(Generic[_App, _Config]):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def _run_dispatcher(
-        self,
-        send: SendCoroutine,
-        recv: RecvCoroutine,
-        parameters: Dict[str, Any],
-        loop: Optional[AbstractEventLoop] = None,
-    ) -> None:
-        raise NotImplementedError()
-
     def _update_config(self, old: _Config, new: _Config) -> _Config:  # pragma: no cover
         """Return the new configuration options
 
@@ -127,19 +121,23 @@ class AbstractRenderServer(Generic[_App, _Config]):
         """
         raise NotImplementedError()
 
+    async def _run_dispatcher(
+        self,
+        send: SendCoroutine,
+        recv: RecvCoroutine,
+        params: Dict[str, Any],
+    ) -> None:
+        async with self._make_dispatcher(params) as dispatcher:
+            await dispatcher.run(send, recv, None)
+
     def _make_dispatcher(
         self,
-        parameters: Dict[str, Any],
-        loop: Optional[AbstractEventLoop] = None,
+        params: Dict[str, Any],
     ) -> AbstractDispatcher:
-        return self._dispatcher_type(self._make_layout(parameters, loop))
+        return self._dispatcher_type(self._make_layout(params))
 
     def _make_layout(
         self,
-        parameters: Dict[str, Any],
-        loop: Optional[AbstractEventLoop] = None,
+        params: Dict[str, Any],
     ) -> Layout:
-        return self._layout_type(self._make_root_element(parameters), loop)
-
-    def _make_root_element(self, parameters: Dict[str, Any]) -> AbstractElement:
-        return self._root_element_constructor(**parameters)
+        return self._layout_type(self._make_root_element(**params))

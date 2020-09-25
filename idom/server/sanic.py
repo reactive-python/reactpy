@@ -31,7 +31,7 @@ class Config(TypedDict, total=False):
 class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
     """Base ``sanic`` extension."""
 
-    def stop(self) -> None:
+    def _stop(self) -> None:
         self.application.stop()
 
     def _init_config(self) -> Config:
@@ -74,8 +74,8 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
                 event = message["body"]["event"]
                 return LayoutEvent(event["target"], event["data"])
 
-            param_dict = {k: request.args.get(k) for k in request.args}
-            await self._run_dispatcher(sock_send, sock_recv, param_dict)
+            element_params = {k: request.args.get(k) for k in request.args}
+            await self._run_dispatcher(sock_send, sock_recv, element_params)
 
         def handler_name(function: Any) -> str:
             return f"{blueprint.name}.{function.__name__}"
@@ -141,16 +141,6 @@ class PerClientStateServer(SanicRenderServer):
 
     _dispatcher_type = SingleViewDispatcher
 
-    async def _run_dispatcher(
-        self,
-        send: SendCoroutine,
-        recv: RecvCoroutine,
-        parameters: Dict[str, Any],
-        loop: Optional[asyncio.AbstractEventLoop] = None,
-    ) -> None:
-        async with self._make_dispatcher(parameters, loop) as dispatcher:
-            await dispatcher.run(send, recv, None)
-
 
 class SharedClientStateServer(SanicRenderServer):
     """All connected client views will have shared state."""
@@ -166,7 +156,7 @@ class SharedClientStateServer(SanicRenderServer):
     async def _activate_dispatcher(
         self, app: Sanic, loop: asyncio.AbstractEventLoop
     ) -> None:
-        self._dispatcher = cast(SharedViewDispatcher, self._make_dispatcher({}, loop))
+        self._dispatcher = cast(SharedViewDispatcher, self._make_dispatcher({}))
         await self._dispatcher.start()
 
     async def _deactivate_dispatcher(
@@ -179,10 +169,9 @@ class SharedClientStateServer(SanicRenderServer):
         self,
         send: SendCoroutine,
         recv: RecvCoroutine,
-        parameters: Dict[str, Any],
-        loop: Optional[asyncio.AbstractEventLoop] = None,
+        params: Dict[str, Any],
     ) -> None:
-        if parameters:
-            msg = f"SharedClientState server does not support per-client view parameters {parameters}"
+        if params:
+            msg = f"SharedClientState server does not support per-client view parameters {params}"
             raise ValueError(msg)
         await self._dispatcher.run(send, recv, uuid.uuid4().hex, join=True)

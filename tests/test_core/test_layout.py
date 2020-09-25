@@ -23,7 +23,7 @@ def test_layout_repr():
 
     my_element = MyElement()
     layout = idom.Layout(my_element)
-    assert str(layout) == f"Layout(MyElement:{id(my_element)}())"
+    assert str(layout) == f"Layout(MyElement({id(my_element)}))"
 
 
 def test_layout_expects_abstract_element():
