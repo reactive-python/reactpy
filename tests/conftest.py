@@ -18,7 +18,7 @@ import pyalect.builtins.pytest  # noqa
 import idom
 from idom.client.manage import restore as restore_client
 from idom.core import ElementConstructor, AbstractElement
-from idom.server import hotswap_server, AbstractRenderServer, find_available_port
+from idom.server.utils import hotswap_server, AbstractRenderServer, find_available_port
 from idom.server.sanic import PerClientStateServer
 
 

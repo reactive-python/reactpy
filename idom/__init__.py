@@ -17,7 +17,8 @@ from .widgets.utils import hotswap, multiview
 from .client.module import Module, Import
 from .client.protocol import client_implementation as client
 
-from . import server
+from .server.utils import run
+
 from . import widgets
 
 try:
@@ -42,6 +43,7 @@ else:
 
 
 __all__ = [
+    "run",
     "element",
     "Element",
     "event",

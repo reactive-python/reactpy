@@ -37,4 +37,4 @@ def ShowChartClicks():
     )
 
 
-display(ShowChartClicks)
+idom.run(ShowChartClicks)

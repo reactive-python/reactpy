@@ -1,7 +1,8 @@
+import textwrap
 from pathlib import Path
 
 from sphinx.application import Sphinx
-from docutils.parsers.rst import Directive
+from docutils.parsers.rst import Directive, directives
 from docutils.statemachine import StringList
 
 from sphinx_panels.tabs import TabbedDirective
@@ -16,19 +17,23 @@ class WidgetExample(Directive):
     required_arguments = 1
     _next_id = 0
 
+    option_spec = {"linenos": directives.flag}
+
     def run(self):
         example_name = self.arguments[0]
+        show_linenos = "linenos" in self.options
+
+        py_ex_path = examples / f"{example_name}.py"
+        if not py_ex_path.exists():
+            raise ValueError(f"No example file named {py_ex_path}")
 
         py_code_tab = TabbedDirective(
             "WidgetExample",
             ["Python Code"],
             {},
-            StringList(
-                [
-                    "",
-                    f"    .. literalinclude:: examples/{example_name}.py",
-                    "",
-                ]
+            _literal_include_py_lines(
+                name=example_name,
+                linenos=show_linenos,
             ),
             self.lineno - 1,
             self.content_offset,
@@ -42,13 +47,9 @@ class WidgetExample(Directive):
                 "WidgetExample",
                 ["Javascript Code"],
                 {},
-                StringList(
-                    [
-                        "",
-                        f"    .. literalinclude:: examples/{example_name}.js",
-                        "        :language: javascript",
-                        "",
-                    ]
+                _literal_include_js_lines(
+                    name=example_name,
+                    linenos=show_linenos,
                 ),
                 self.lineno - 1,
                 self.content_offset,
@@ -63,12 +64,8 @@ class WidgetExample(Directive):
             "WidgetExample",
             ["Live Example"],
             {},
-            StringList(
-                [
-                    "",
-                    f"    .. interactive-widget:: {example_name}",
-                    "",
-                ]
+            _string_to_nested_lines(
+                _interactive_widget_template.format(name=example_name)
             ),
             self.lineno - 1,
             self.content_offset,
@@ -78,6 +75,44 @@ class WidgetExample(Directive):
         ).run()
 
         return py_code_tab + js_code_tab + example_tab
+
+
+def _literal_include_py_lines(name, linenos):
+    return _string_to_nested_lines(
+        _literal_include_template.format(
+            name=name,
+            ext="py",
+            language="python",
+            linenos=":linenos:" if linenos else "",
+        )
+    )
+
+
+def _literal_include_js_lines(name, linenos):
+    return _string_to_nested_lines(
+        _literal_include_template.format(
+            name=name,
+            ext="js",
+            language="javascript",
+            linenos=":linenos:" if linenos else "",
+        )
+    )
+
+
+_interactive_widget_template = """
+.. interactive-widget:: {name}
+"""
+
+
+_literal_include_template = """
+.. literalinclude:: examples/{name}.{ext}
+    :language: {language}
+    {linenos}
+"""
+
+
+def _string_to_nested_lines(content):
+    return StringList(textwrap.indent(content, "    ").split("\n"))
 
 
 def setup(app: Sphinx) -> None:

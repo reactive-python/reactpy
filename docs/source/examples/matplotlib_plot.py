@@ -87,4 +87,4 @@ def linspace(start, stop, n):
         yield start + h * i
 
 
-display(PolynomialPlot)
+idom.run(PolynomialPlot)

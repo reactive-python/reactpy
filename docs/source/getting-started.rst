@@ -4,37 +4,15 @@ Getting Started
 Let's look at the example that you may have seen
 :ref:`at a glance <At a Glance>` on the homepage:
 
-.. code-block::
-
-    import idom
-
-
-    @idom.element
-    def Slideshow():
-        index, set_index = idom.hooks.use_state(0)
-
-        def next_image(event):
-            set_index(index + 1)
-
-        return idom.html.img(
-            {
-                "src": f"https://picsum.photos/800/300?image={index}",
-                "style": {"cursor": "pointer"},
-                "onClick": next_image,
-            }
-        )
-
-
-    host, port = "localhost", 8765
-    server = idom.server.sanic.PerClientStateServer(Slideshow)
-    server.run(host, port)
+.. example:: slideshow
+    :linenos:
 
 Since it's likely a lot to take in at once, we'll break it down piece by piece:
 
-.. code-block::
-
-   @idom.element
-   def Slideshow():
+.. literalinclude:: examples/slideshow.py
+    :lineno-start: 4
+    :lines: 4-5
+    :linenos:
 
 The ``idom.element`` decorator creates an :ref:`Element <Stateful Elements>` constructor
 whose render function is defined by the `asynchronous function`_ below it. To create
@@ -47,9 +25,10 @@ will return a VDOM representing an image which, when clicked, will change.
 
 __ https://reactjs.org/docs/faq-internals.html#what-is-the-virtual-dom
 
-.. code-block::
-
-       index, set_index = idom.hooks.use_state(0)
+.. literalinclude:: examples/slideshow.py
+    :lineno-start: 6
+    :lines: 6
+    :linenos:
 
 The :func:`~idom.core.hooks.use_state` function is a :ref:`Hook <Life Cycle Hooks>`.
 Calling a Hook inside an Element's render function (one decorated by ``idom.element``)
@@ -62,14 +41,10 @@ that let's you update that value. In the case of ``Slideshow`` the value of the
 function allow us to change it. The one required argument of ``use_state`` is the
 *initial* state value.
 
-.. note::
-
-    The Hook design pattern has been lifted directly from `React Hooks`_.
-
-.. code-block::
-
-        def next_image(event):
-            set_index(index + 1)
+.. literalinclude:: examples/slideshow.py
+    :lineno-start: 8
+    :lines: 8,9
+    :linenos:
 
 The coroutine above will get added as an event handler to the resulting view. When it
 responds to an event it will use the update function returned by the ``use_state`` Hook
@@ -81,20 +56,15 @@ again, and its new result will be displayed.
 
     Even handlers like ``next_image`` which respond to user interactions recieve an
     ``event`` dictionary that contains different information depending on the type of
-    event that occured. All supported events and the data they contain is listed
+    event that occured. All supported events and the data they contain are listed
     `here`__.
 
 __ https://reactjs.org/docs/events.html
 
-.. code-block::
-
-        return idom.html.img(
-            {
-                "src": f"https://picsum.photos/800/300?image={index}",
-                "style": {"cursor": "pointer"},
-                "onClick": next_image,
-            }
-        )
+.. literalinclude:: examples/slideshow.py
+    :lineno-start: 11
+    :lines: 11-16
+    :linenos:
 
 Finally we come to the end of the ``Slideshow`` body where we return a model for an
 ``<img/>`` element that draws its image from https://picsum.photos. Our ``next_image``
@@ -103,22 +73,19 @@ can respond to it. We've also added a little bit of CSS styling to the image so 
 when the cursor hoverse over the image it will become a pointer so it appears clickable.
 The returned model conforms to the `VDOM mimetype specification`_.
 
-.. code-block::
+.. literalinclude:: examples/slideshow.py
+    :lineno-start: 20
+    :lines: 20
+    :linenos:
 
-    host, port = "localhost", 8765
-    server = idom.server.sanic.PerClientStateServer(Slideshow)
-    server.run(host, port)
+This last step runs a simple web server that will send the layout of elements defined in
+our ``Slideshow`` to the browser and receive any incoming events from the browser via a
+websocket. To display the layout we can navigate to http://localhost:8765/client/index.html.
 
-These last steps prepare a simple web server that will send the layout of elements
-defined in our ``Slideshow`` to the browser and receive any incoming events from the
-browser via a websocket. The server has "per client state" because each client that
-connects to it will see a fresh view of the layout. If clients should see views with a
-common state you can use the ``SharedClientStateServer`` instead.
+.. note::
 
-To display the layout we can navigate to http://localhost:8765/client/index.html or
-use the dislay function returns by :func:`~idom.widgets.jupyter.init_display` to show it
-in a Jupyter Notebook via a widget. See the :ref:`Examples` section for more info on
-the ways to display your layouts.
+    See the :ref:`Examples` section for more info on the ways to display your layouts.
+
 
 .. Links
 .. =====
