@@ -2,5 +2,5 @@ set -e
 python scripts/install_doc_js_modules.py
 sphinx-build -E -b html docs/source docs/build
 cd docs
-python -c "import main; main.local()"
+python -c "import main; main.local('docs/$1')"
 cd ../

@@ -69,11 +69,11 @@ def prod():
     )
 
 
-def local():
+def local(path=""):
     import webbrowser
 
     thread = server.daemon("127.0.0.1", 5000)
-    webbrowser.open("http://127.0.0.1:5000/")
+    webbrowser.open(f"http://127.0.0.1:5000/{path}")
     thread.join()
 
 

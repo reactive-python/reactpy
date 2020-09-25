@@ -20,38 +20,56 @@ def _find_default_server_type() -> Optional[Type[AbstractRenderServer[Any, Any]]
             pass
         else:
             return getattr(module, server_name)
-    else:
+    else:  # pragma: no cover
         return None
 
 
 def run(
     element: ElementConstructor,
-    server: Optional[
-        Type[AbstractRenderServer[Any, Any]]
-    ] = _find_default_server_type(),
+    server_type: Optional[Type[_S]] = _find_default_server_type(),
     host: Optional[str] = "127.0.0.1",
     port: Optional[int] = None,
+    server_options: Optional[Any] = None,
     run_options: Optional[Dict[str, Any]] = None,
-) -> None:
-    """A utility for quickly running a view with minimal boilerplat"""
-    if server is None:
+    daemon: bool = False,
+    app: Optional[Any] = None,
+) -> _S:
+    """A utility for quickly running a render server with minimal boilerplate
+
+    Parameters:
+        element: The root of the view.
+        server_type: What server to run. Defaults to a builtin implementation if available.
+        host: The host string.
+        port: The port number. Defaults to a dynamically discovered available port.
+        server_options: Options passed to configure the server.
+        run_options: Options passed to the server to run it.
+        daemon: Whether the server should be run in a daemon thread.
+        app: Register the server to an existing application and run that.
+
+    Returns:
+        The server instance. This isn't really useful unless the server is spawned
+        as a daemon. Otherwise this function blocks until the server has stopped.
+    """
+    if server_type is None:  # pragma: no cover
         raise ValueError("No default server available.")
-    if port is None:
+    if port is None:  # pragma: no cover
         port = find_available_port(host)
-    server(element).run(host, port, **(run_options or {}))
 
+    server = server_type(element, server_options)
 
-def find_available_port(host: str) -> int:
-    """Get a port that's available for the given host"""
-    sock = socket()
-    sock.bind((host, 0))
-    return cast(int, sock.getsockname()[1])
+    if app is not None:
+        server.register(app)
+
+    run_server = server.run if not daemon else server.daemon
+    run_server(host, port, **(run_options or {}))
+
+    return server
 
 
 def multiview_server(
-    server: Type[_S],
-    host: str,
-    port: int,
+    server_type: Type[_S],
+    host: Optional[str] = "127.0.0.1",
+    port: Optional[int] = None,
     server_options: Optional[Any] = None,
     run_options: Optional[Dict[str, Any]] = None,
     app: Optional[Any] = None,
@@ -75,18 +93,25 @@ def multiview_server(
         See :func:`idom.widgets.common.multiview` for details.
     """
     mount, element = multiview()
-    server_instance = server(element)
-    server_instance.configure(server_options)
-    if app is not None:
-        server_instance.register(app)
-    server_instance.daemon(host, port, **(run_options or {}))
-    return mount, server_instance
+
+    server = run(
+        element,
+        server_type,
+        host,
+        port,
+        server_options=server_options,
+        run_options=run_options,
+        daemon=True,
+        app=app,
+    )
+
+    return mount, server
 
 
 def hotswap_server(
-    server: Type[_S],
-    host: str,
-    port: int,
+    server_type: Type[_S],
+    host: Optional[str] = "127.0.0.1",
+    port: Optional[int] = None,
     server_options: Optional[Any] = None,
     run_options: Optional[Dict[str, Any]] = None,
     sync_views: bool = True,
@@ -112,9 +137,23 @@ def hotswap_server(
         See :func:`idom.widgets.common.hotswap` for details.
     """
     mount, element = hotswap(shared=sync_views)
-    server_instance = server(element)
-    server_instance.configure(server_options)
-    if app is not None:
-        server_instance.register(app)
-    server_instance.daemon(host, port, **(run_options or {}))
-    return mount, server_instance
+
+    server = run(
+        element,
+        server_type,
+        host,
+        port,
+        server_options=server_options,
+        run_options=run_options,
+        daemon=True,
+        app=app,
+    )
+
+    return mount, server
+
+
+def find_available_port(host: str) -> int:
+    """Get a port that's available for the given host"""
+    sock = socket()
+    sock.bind((host, 0))
+    return cast(int, sock.getsockname()[1])

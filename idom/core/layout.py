@@ -8,7 +8,6 @@ from typing import (
     NamedTuple,
     Any,
     Set,
-    Optional,
     Iterator,
     AsyncIterator,
     Union,
@@ -64,9 +63,7 @@ class Layout(HasAsyncResources):
     if not hasattr(abc.ABC, "__weakref__"):  # pragma: no cover
         __slots__.append("__weakref__")
 
-    def __init__(
-        self, root: "AbstractElement", loop: Optional[asyncio.AbstractEventLoop] = None
-    ) -> None:
+    def __init__(self, root: "AbstractElement") -> None:
         super().__init__()
         if not isinstance(root, AbstractElement):
             raise TypeError("Expected an AbstractElement, not %r" % root)

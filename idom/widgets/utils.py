@@ -16,9 +16,6 @@ class MountFunc(Protocol):
         ...
 
 
-_FuncArgsKwargs = Tuple[Callable[..., Any], Tuple[Any, ...], Dict[str, Any]]
-
-
 def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
     """Swap out elements from a layout on the fly.
 
@@ -53,31 +50,29 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
 
             # displaying the output now will show DivTwo
     """
-    constructor_and_arguments: Ref[_FuncArgsKwargs] = Ref(
-        (lambda: {"tagName": "div"}, (), {})
-    )
+    constructor_ref: Ref[Callable[[], Any]] = Ref(lambda: {"tagName": "div"})
 
     if shared:
-        set_state_callbacks: Set[Callable[[_FuncArgsKwargs], None]] = set()
+        set_constructor_callbacks: Set[Callable[[Callable[[], Any]], None]] = set()
 
         @element
         def HotSwap() -> Any:
             # new displays will adopt the latest constructor and arguments
-            (f, a, kw), set_state = hooks.use_state(constructor_and_arguments.current)
+            constructor, set_constructor = _use_callable(constructor_ref.current)
 
             def add_callback() -> Callable[[], None]:
-                set_state_callbacks.add(set_state)
-                return lambda: set_state_callbacks.remove(set_state)
+                set_constructor_callbacks.add(set_constructor)
+                return lambda: set_constructor_callbacks.remove(set_constructor)
 
             hooks.use_effect(add_callback)
 
-            return f(*a, **kw)
+            return constructor()
 
-        def swap(_func_: ElementConstructor, *args: Any, **kwargs: Any) -> None:
-            f_a_kw = constructor_and_arguments.current = (_func_, args, kwargs)
+        def swap(constructor: Callable[[], Any]) -> None:
+            constructor_ref.current = constructor
 
-            for set_state in set_state_callbacks:
-                set_state(f_a_kw)
+            for set_constructor in set_constructor_callbacks:
+                set_constructor(constructor)
 
             return None
 
@@ -85,14 +80,18 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
 
         @element
         def HotSwap() -> Any:
-            func, args, kwargs = constructor_and_arguments.current
-            return func(*args, **kwargs)
+            return constructor_ref.current()
 
-        def swap(_func_: ElementConstructor, *args: Any, **kwargs: Any) -> None:
-            constructor_and_arguments.current = (_func_, args, kwargs)
+        def swap(constructor: ElementConstructor) -> None:
+            constructor_ref.current = constructor
             return None
 
     return cast(MountFunc, swap), HotSwap
+
+
+def _use_callable(initial_func):
+    func, _set_func = hooks.use_state(lambda: initial_func)
+    return func, lambda new: _set_func(lambda old: new)
 
 
 def multiview() -> Tuple["MultiViewMount", ElementConstructor]:
@@ -150,25 +149,14 @@ class MultiViewMount:
         del self._views[view_id]
 
     def __getitem__(self, view_id: str) -> MountFunc:
-        def mount(constructor: ElementConstructor, *args: Any, **kwargs: Any) -> str:
-            self._add_view(view_id, constructor, args, kwargs)
+        def mount(constructor: ElementConstructor) -> str:
+            self._views[view_id] = constructor
             return view_id
 
         return mount
 
-    def __call__(
-        self, constructor: ElementConstructor, *args: Any, **kwargs: Any
-    ) -> str:
+    def __call__(self, constructor: ElementConstructor) -> str:
         self._next_auto_id += 1
         view_id = str(self._next_auto_id)
-        self._add_view(view_id, constructor, args, kwargs)
+        self._views[view_id] = constructor
         return view_id
-
-    def _add_view(
-        self,
-        view_id: str,
-        constructor: ElementConstructor,
-        args: Tuple[Any, ...],
-        kwargs: Dict[str, Any],
-    ) -> None:
-        self._views[view_id] = lambda: constructor(*args, **kwargs)
