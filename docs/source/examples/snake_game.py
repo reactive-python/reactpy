@@ -167,4 +167,4 @@ def assign_grid_block_color(grid, point, color):
     block["attributes"]["style"]["backgroundColor"] = color
 
 
-display(GameView, 6, 50)
+idom.run(GameView, 6, 50)

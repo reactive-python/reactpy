@@ -34,13 +34,9 @@ class AbstractRenderServer(Generic[_App, _Config]):
     _dispatcher_type: Type[AbstractDispatcher]
     _layout_type: Type[Layout] = Layout
 
-    def __init__(
-        self, constructor: ElementConstructor, *args: Any, **kwargs: Any
-    ) -> None:
+    def __init__(self, constructor: ElementConstructor) -> None:
         self._app: Optional[_App] = None
         self._root_element_constructor = constructor
-        self._root_element_args = args
-        self._root_element_kwargs = kwargs
         self._daemonized = False
         self._config = self._init_config()
 
@@ -146,6 +142,4 @@ class AbstractRenderServer(Generic[_App, _Config]):
         return self._layout_type(self._make_root_element(parameters), loop)
 
     def _make_root_element(self, parameters: Dict[str, Any]) -> AbstractElement:
-        return self._root_element_constructor(
-            *self._root_element_args, **{**self._root_element_kwargs, **parameters}
-        )
+        return self._root_element_constructor(**parameters)

@@ -20,4 +20,4 @@ def Counter(initial_count):
     )
 
 
-display(Counter, 0)
+idom.run(Counter, 0)

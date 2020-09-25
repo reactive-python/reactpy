@@ -26,4 +26,4 @@ def Todo():
     return idom.html.div(task_input, task_table)
 
 
-display(Todo)
+idom.run(Todo)

@@ -36,6 +36,23 @@ class IteractiveWidget(Directive):
                 }}
                 .enable-widget-button {{
                     padding: 10px;
+                    color: #ffffff !important;
+                    text-transform: uppercase;
+                    text-decoration: none;
+                    background: #3980b9;
+                    border: 2px solid #3980b9 !important;
+                    transition: all 0.2s ease 0s;
+                    box-shadow: 0 5px 10px grey;
+                }}
+                .enable-widget-button:hover {{
+                    color: #3980b9 !important;
+                    background: #ffffff;
+                    transition: all 0.2s ease 0s;
+                }}
+                .enable-widget-button:focus {{
+                    outline: 0 !important;
+                    transform: scale(0.98);
+                    transition: all 0.2s ease 0s;
                 }}
                 </style>
                 <div>
@@ -48,7 +65,7 @@ class IteractiveWidget(Directive):
 
                         const mount = document.getElementById("{container_id}");
                         const enableWidgetButton = document.createElement("button");
-                        enableWidgetButton.innerHTML = "⚡ Enable Widget ⚡";
+                        enableWidgetButton.innerHTML = "Enable Widget";
                         enableWidgetButton.setAttribute("class", "enable-widget-button")
 
                         enableWidgetButton.addEventListener("click", () => {{

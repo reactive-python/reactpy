@@ -13,8 +13,8 @@ def reducer(count, action):
 
 
 @idom.element
-def Counter(initial_count):
-    count, dispatch = idom.hooks.use_reducer(reducer, initial_count)
+def Counter():
+    count, dispatch = idom.hooks.use_reducer(reducer, 0)
     return idom.html.div(
         f"Count: {count}",
         idom.html.button({"onClick": lambda event: dispatch("reset")}, "Reset"),
@@ -23,4 +23,4 @@ def Counter(initial_count):
     )
 
 
-display(Counter, 0)
+idom.run(Counter)

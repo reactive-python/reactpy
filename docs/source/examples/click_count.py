@@ -11,4 +11,4 @@ def ClickCount():
     )
 
 
-display(ClickCount)
+idom.run(ClickCount)

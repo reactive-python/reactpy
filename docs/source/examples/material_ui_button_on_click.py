@@ -24,4 +24,4 @@ def ViewSliderEvents():
     )
 
 
-display(ViewSliderEvents)
+idom.run(ViewSliderEvents)

@@ -17,4 +17,4 @@ def Slideshow():
     )
 
 
-display(Slideshow)
+idom.run(Slideshow)

@@ -6,6 +6,7 @@ from pathlib import Path
 from sanic import Sanic
 from sanic import response
 
+import idom
 from idom.widgets.utils import multiview
 from idom.client.manage import APP_DIR
 from idom.server.sanic import PerClientStateServer
@@ -27,22 +28,30 @@ mount, element = multiview()
 examples_dir = here / "source" / "examples"
 sys.path.insert(0, str(examples_dir))
 
-for file in examples_dir.iterdir():
-    if not file.is_file() or not file.suffix == ".py" or file.stem.startswith("_"):
-        continue
+original_run = idom.run
 
-    with file.open() as f:
-        try:
-            exec(
-                f.read(),
-                {
-                    "display": mount[file.stem],
-                    "__file__": str(file),
-                    "__name__": f"widgets.{file.stem}",
-                },
-            )
-        except Exception as error:
-            raise RuntimeError(f"Failed to execute {file}") from error
+try:
+    for file in examples_dir.iterdir():
+        if not file.is_file() or not file.suffix == ".py" or file.stem.startswith("_"):
+            continue
+
+        # Modify the run function so when we exec the file
+        # instead of running a server we mount the view.
+        idom.run = mount[file.stem]
+
+        with file.open() as f:
+            try:
+                exec(
+                    f.read(),
+                    {
+                        "__file__": str(file),
+                        "__name__": f"widgets.{file.stem}",
+                    },
+                )
+            except Exception as error:
+                raise RuntimeError(f"Failed to execute {file}") from error
+except Exception:
+    idom.run = original_run
 
 server = (
     PerClientStateServer(element)

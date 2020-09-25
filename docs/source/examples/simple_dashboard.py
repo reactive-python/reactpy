@@ -85,4 +85,4 @@ def use_interval(rate):
     return asyncio.ensure_future(interval())
 
 
-display(RandomWalk)
+idom.run(RandomWalk)
