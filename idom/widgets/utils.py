@@ -1,19 +1,11 @@
-from typing import Any, Callable, Tuple, Dict, Set, cast
-
-from typing_extensions import Protocol
+from typing import TypeVar, Any, Callable, Tuple, Dict, Set
 
 from idom.core import hooks
 from idom.core.element import ElementConstructor, element
 from idom.utils import Ref
 
 
-class MountFunc(Protocol):
-    """Function for mounting views"""
-
-    def __call__(
-        self, constructor: ElementConstructor, *args: Any, **kwargs: Any
-    ) -> Any:
-        ...
+MountFunc = Callable[[ElementConstructor], None]
 
 
 def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
@@ -82,16 +74,22 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
         def HotSwap() -> Any:
             return constructor_ref.current()
 
-        def swap(constructor: ElementConstructor) -> None:
+        def swap(constructor: Callable[[], Any]) -> None:
             constructor_ref.current = constructor
             return None
 
-    return cast(MountFunc, swap), HotSwap
+    return swap, HotSwap
 
 
-def _use_callable(initial_func):
-    func, _set_func = hooks.use_state(lambda: initial_func)
-    return func, lambda new: _set_func(lambda old: new)
+_Func = Callable[..., Any]
+_FuncVar = TypeVar("_FuncVar", bound=_Func)
+
+
+def _use_callable(initial_func: _FuncVar) -> Tuple[_FuncVar, Callable[[_Func], None]]:
+    state: Tuple[_FuncVar, Callable[[_Func], None]] = hooks.use_state(
+        lambda: initial_func
+    )
+    return state[0], lambda new: state[1](lambda old: new)
 
 
 def multiview() -> Tuple["MultiViewMount", ElementConstructor]:
@@ -148,7 +146,7 @@ class MultiViewMount:
     def remove(self, view_id: str) -> None:
         del self._views[view_id]
 
-    def __getitem__(self, view_id: str) -> MountFunc:
+    def __getitem__(self, view_id: str) -> Callable[[ElementConstructor], str]:
         def mount(constructor: ElementConstructor) -> str:
             self._views[view_id] = constructor
             return view_id
@@ -161,5 +159,5 @@ class MultiViewMount:
         self._views[view_id] = constructor
         return view_id
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{type(self).__name__}({self._views})"
