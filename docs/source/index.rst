@@ -21,19 +21,11 @@ Libraries for defining and controlling interactive webpages with Python
     api
 
 
-Try it Now!
------------
-
-- Using working :ref:`Examples`
-
-- In a Jupyter Notebook - |launch-binder|
-
-
 Early Days
 ----------
 
-IDOM is still young. If you have ideas or find a bug, be sure to post an
-`issue`_ or create a `pull request`_. Thanks in advance!
+IDOM is still young. Be sure to post any `issues`_ you have or contribute by creating a
+`pull request`_.
 
 
 At a Glance
@@ -44,25 +36,32 @@ user clicks an image:
 
 .. example:: slideshow
 
-You can try out a **Live Example** by selecting the tab and enabling the widget.
+Try selecting the "Live Example" tab in the view above and enabling the widget.
 
 Once activated try clicking the displayed image to make it change 🖱️
 
 .. note::
 
-    You can display the same thing in a Jupyter Notebook using widgets!
+    You can display the same thing in a Jupyter Notebook by installing ``idom-jupyter``:
+
+    .. code-block:: bash
+
+        pip install idom-jupyter
+
+    Then simply
 
     .. code-block::
 
-        idom.JupyterDisplay(f"https://{host}:{port}")
+        import idom_jupyter
+        idom_jupyter.display(Slideshow)
 
-    For info on working with IDOM in Jupyter see some :ref:`examples <Display Function>`.
+    Try it out on Binder now: |launch-binder|
 
 
 .. Links
 .. =====
 
-.. _issue: https://github.com/rmorshea/idom/issues
+.. _issues: https://github.com/rmorshea/idom/issues
 .. _pull request: https://github.com/rmorshea/idom/pulls
 .. _IDOM Sandbox: https://idom-sandbox.herokuapp.com
 .. |launch-binder| image:: https://mybinder.org/badge_logo.svg

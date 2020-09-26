@@ -28,8 +28,8 @@ mount, element = multiview()
 examples_dir = here / "source" / "examples"
 sys.path.insert(0, str(examples_dir))
 
-original_run = idom.run
 
+original_run = idom.run
 try:
     for file in examples_dir.iterdir():
         if not file.is_file() or not file.suffix == ".py" or file.stem.startswith("_"):
@@ -50,14 +50,11 @@ try:
                 )
             except Exception as error:
                 raise RuntimeError(f"Failed to execute {file}") from error
-except Exception:
+finally:
     idom.run = original_run
 
-server = (
-    PerClientStateServer(element)
-    .configure({"redirect_root_to_index": False})
-    .register(app)
-)
+
+server = PerClientStateServer(element, {"redirect_root_to_index": False}).register(app)
 
 
 def prod():
@@ -73,6 +70,7 @@ def local(path=""):
     import webbrowser
 
     thread = server.daemon("127.0.0.1", 5000)
+    path = f"docs/{path}" if path else ""
     webbrowser.open(f"http://127.0.0.1:5000/{path}")
     thread.join()
 

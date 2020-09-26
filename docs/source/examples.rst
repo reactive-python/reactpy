@@ -8,58 +8,6 @@ You can also try these examples out on binder |launch-binder|:
   :depth: 1
 
 
-Displaying These Examples
--------------------------
-
-Depending on how you plan to use these examples you'll need different
-boilerplate code.
-
-In all cases we define a ``display(element)`` function which will display the
-view. In a Jupyter Notebook it will appear in an output cell. If you're running
-``idom`` as a webserver it will appear at http://localhost:8765/client/index.html.
-
-
-**Local Python File**
-
-.. code-block::
-
-    import idom
-    from idom.server.sanic import PerClientStateServer
-
-    def display(element, *args, **kwargs):
-        PerClientStateServer(element, *args, **kwargs).run("127.0.0.1", 8765)
-
-    @idom.element
-    def Main(self):
-        # define your element here
-        ...
-
-    if __name__ == "__main__":
-        display(Main)
-
-
-**Jupyter Notebook**
-
-.. code-block::
-
-    from idom.widgets.jupyter import init_display
-    display = init_display("127.0.0.1")
-
-    @idom.element
-    def MyElement():
-        # define your element here
-        ...
-
-    jupyter_widget = display(MyElement)
-
-.. note::
-
-    The ``init_display`` function checks environment variables to try and infer whether
-    it's in a Jupyterhub instance (e.g. mybinder.org) and if so, assumes the presence of a
-    `jupyter_server_proxy <https://github.com/jupyterhub/jupyter-server-proxy>`_. If this
-    doesn't work please `post an issue <https://github.com/rmorshea/idom/issues>`_.
-
-
 Slideshow
 ---------
 
