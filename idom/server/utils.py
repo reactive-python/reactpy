@@ -11,7 +11,7 @@ from .base import AbstractRenderServer
 _S = TypeVar("_S", bound=AbstractRenderServer[Any, Any])
 
 
-def _find_default_server_type() -> Optional[Type[AbstractRenderServer[Any, Any]]]:
+def _find_default_server_type() -> Optional[Type[_S]]:
     for name in ["sanic.PerClientStateServer"]:
         module_name, server_name = name.split(".")
         try:
@@ -19,7 +19,7 @@ def _find_default_server_type() -> Optional[Type[AbstractRenderServer[Any, Any]]
         except ImportError:  # pragma: no cover
             pass
         else:
-            return getattr(module, server_name)
+            return cast(Type[_S], getattr(module, server_name))
     else:  # pragma: no cover
         return None
 
@@ -27,7 +27,7 @@ def _find_default_server_type() -> Optional[Type[AbstractRenderServer[Any, Any]]
 def run(
     element: ElementConstructor,
     server_type: Optional[Type[_S]] = _find_default_server_type(),
-    host: Optional[str] = "127.0.0.1",
+    host: str = "127.0.0.1",
     port: Optional[int] = None,
     server_options: Optional[Any] = None,
     run_options: Optional[Dict[str, Any]] = None,
@@ -68,7 +68,7 @@ def run(
 
 def multiview_server(
     server_type: Type[_S],
-    host: Optional[str] = "127.0.0.1",
+    host: str = "127.0.0.1",
     port: Optional[int] = None,
     server_options: Optional[Any] = None,
     run_options: Optional[Dict[str, Any]] = None,
@@ -110,7 +110,7 @@ def multiview_server(
 
 def hotswap_server(
     server_type: Type[_S],
-    host: Optional[str] = "127.0.0.1",
+    host: str = "127.0.0.1",
     port: Optional[int] = None,
     server_options: Optional[Any] = None,
     run_options: Optional[Dict[str, Any]] = None,

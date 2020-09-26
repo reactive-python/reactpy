@@ -89,7 +89,7 @@ class AbstractRenderServer(Generic[_App, _Config]):
         self.loop.call_soon_threadsafe(self._stop)
 
     @abc.abstractmethod
-    def _stop(self):
+    def _stop(self) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
