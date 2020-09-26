@@ -26,12 +26,10 @@ def main():
         if not example_file.stem.startswith("_"):
             with example_file.open() as f_obj:
                 try:
+                    idom.run = lambda func: views.append((example_file.stem, func))
                     exec(
                         f_obj.read(),
                         {
-                            "display": lambda f, *a, **kw: views.append(
-                                (example_file.stem, f, a, kw)
-                            ),
                             "__file__": str(file),
                             "__name__": f"widgets.{file.stem}",
                         },
@@ -44,9 +42,9 @@ def main():
     @idom.element
     def AllExamples():
         examples = []
-        for title, f, a, kw in views:
+        for title, func in views:
             examples.append(idom.html.h1(title))
-            examples.append(f(*a, **kw))
+            examples.append(func())
             examples.append(idom.html.hr({"style": {"margin-top": "20px"}}))
         return idom.html.div({"style": {"margin": "20px"}}, examples)
 

@@ -14,11 +14,11 @@ class GameState(enum.Enum):
 
 
 @idom.element
-def GameView(grid_size, block_scale):
+def GameView():
     game_state, set_game_state = idom.hooks.use_state(GameState.init)
 
     if game_state == GameState.play:
-        return GameLoop(grid_size, block_scale, set_game_state)
+        return GameLoop(grid_size=6, block_scale=50, set_game_state=set_game_state)
 
     start_button = idom.html.button(
         {"onClick": lambda event: set_game_state(GameState.play)},
@@ -167,4 +167,4 @@ def assign_grid_block_color(grid, point, color):
     block["attributes"]["style"]["backgroundColor"] = color
 
 
-idom.run(GameView, 6, 50)
+idom.run(GameView)

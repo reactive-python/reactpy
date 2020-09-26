@@ -1,8 +1,7 @@
 import sys
 from pathlib import Path
 
-from idom.widgets.utils import hotswap
-from idom.server.sanic import PerClientStateServer
+import idom
 
 from scripts.install_doc_js_modules import install_doc_js_modules
 
@@ -33,20 +32,17 @@ def main():
         _print_available_options()
         return
 
-    mount, element = hotswap()
-    server = PerClientStateServer(element)
+    idom_run = idom.run
+    idom.run = lambda element: idom_run(element, port=5000)
 
     with example_file.open() as f:
         exec(
             f.read(),
             {
-                "display": mount,
                 "__file__": str(file),
                 "__name__": f"widgets.{file.stem}",
             },
         )
-
-    server.run("127.0.0.1", 5000)
 
 
 def _print_available_options():

@@ -31,15 +31,12 @@ packages.
 Installing React Components
 ---------------------------
 
-Before you start:
+.. note::
 
-- Be sure that you've installed `npm <https://www.npmjs.com/get-npm>`__.
+    Be sure that you've installed `npm <https://www.npmjs.com/get-npm>`__.
 
-- We're assuming the presence of a :ref:`Display Function` for our examples.
-
-Once you've done this you can get started right away. In this example we'll be using the
-ubiquitous React-based UI framework `Material UI`_ which can be installed using the
-``idom`` CLI:
+In this example we'll be using the ubiquitous React-based UI framework `Material UI`_
+which can be easily installed using the ``idom`` CLI:
 
 .. code-block:: bash
 
@@ -56,21 +53,6 @@ those submodules using the ``--exports`` option:
 Once the package has been succesfully installed, you can import and display the element:
 
 .. example:: material_ui_button_no_action
-
-
-.. note::
-
-    Styling for Material UI is already built into this page so in the following examples
-    we've omitted a link to the style sheet which would otherwise be created with:
-
-    .. code-block::
-
-        material_ui_style = idom.html.link(
-            {
-                "rel": "stylesheet",
-                "href": "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap",
-            }
-        )
 
 
 Passing Props To Components

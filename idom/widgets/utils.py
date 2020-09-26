@@ -160,3 +160,6 @@ class MultiViewMount:
         view_id = str(self._next_auto_id)
         self._views[view_id] = constructor
         return view_id
+
+    def __repr__(self):
+        return f"{type(self).__name__}({self._views})"
