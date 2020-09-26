@@ -6,6 +6,10 @@ import idom
 HERE = Path(__file__).parent
 
 
+def test_multiview_repr():
+    assert str(idom.widgets.utils.MultiViewMount({})) == "MultiViewMount({})"
+
+
 def test_shared_hostwap(driver, display):
     """Ensure shared hotswapping works
 
