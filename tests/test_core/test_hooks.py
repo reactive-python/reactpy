@@ -748,7 +748,8 @@ async def test_use_memo_with_stored_args_is_empty_tuple_after_args_are_none():
     @element_hook.capture
     def ElementWithMemo():
         value = idom.hooks.use_memo(
-            lambda: next(iter_values), args_used_in_memo.current
+            lambda: next(iter_values),
+            args_used_in_memo.current,  # noqa: ROH202
         )
         used_values.append(value)
         return idom.html.div()

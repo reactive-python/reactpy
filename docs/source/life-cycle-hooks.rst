@@ -338,13 +338,15 @@ the ``lint`` extra for IDOM:
 
 .. code-block:: bash
 
-    pip install idom[stable,lint]
+    pip install flake8-idom-hooks
 
-Once installed running ``flake8`` on your could will start catching errors:
+Once installed running, ``flake8`` on your code will start catching errors. For example:
 
 .. code-block:: bash
 
     flake8 my_idom_elements.py
+
+Might produce something like the following output:
 
 .. code-block:: text
 

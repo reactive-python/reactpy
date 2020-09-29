@@ -9,6 +9,3 @@ matplotlib
 htm
 pyalect
 tagged
-
-# extra=lint
-flake8-idom-hooks
