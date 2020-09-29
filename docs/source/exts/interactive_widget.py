@@ -17,44 +17,6 @@ class IteractiveWidget(Directive):
             raw(
                 "",
                 f"""
-                <style>
-                .interactive {{
-                    -webkit-transition: 0.2s ease-out;
-                    -moz-transition: 0.2s ease-out;
-                    -o-transition: 0.2s ease-out;
-                    transition: 0.2s ease-out;
-                }}
-                .widget-container {{
-                    padding: 15px;
-                    background-color: #fcfcfc;
-                    min-height: 75px;
-                }}
-                .center-content {{
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }}
-                .enable-widget-button {{
-                    padding: 10px;
-                    color: #ffffff !important;
-                    text-transform: uppercase;
-                    text-decoration: none;
-                    background: #3980b9;
-                    border: 2px solid #3980b9 !important;
-                    transition: all 0.2s ease 0s;
-                    box-shadow: 0 5px 10px grey;
-                }}
-                .enable-widget-button:hover {{
-                    color: #3980b9 !important;
-                    background: #ffffff;
-                    transition: all 0.2s ease 0s;
-                }}
-                .enable-widget-button:focus {{
-                    outline: 0 !important;
-                    transform: scale(0.98);
-                    transition: all 0.2s ease 0s;
-                }}
-                </style>
                 <div>
                     <div id="{container_id}" class="interactive widget-container center-content" style="" />
                     <script async type="module">
