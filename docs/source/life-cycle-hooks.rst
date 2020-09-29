@@ -301,14 +301,58 @@ hook alongside :ref:`use_effect` or in response to element event handlers.
 **Rules of Hooks**
 ------------------
 
-Under construction... for now refer to
-`React's documentation <https://reactjs.org/docs/hooks-rules.html>`_ on this topic.
+Hooks are just normal Python functions, but there's a bit of magic to them, and in order
+for that magic to work you've got to follow two rules. Thankfully we supply a
+`Flake8 Linter Plugin`_ to help enforce them.
 
-.. note::
 
-    We're `working on a linter <https://github.com/idom-team/idom/issues/202>`_ to help
-    enforce the rules.
+Only call hooks at the top level
+--------------------------------
 
+**Don't call hooks inside loops, conditions, or nested functions.** Instead you must
+always call hooks at the top level of your functions. By adhering to this rule you
+ensure that hooks are always called in the exact same order. This fact is what allows
+IDOM to preserve the state of hooks between multiple calls to ``useState`` and
+``useEffect`` calls.
+
+
+Only call hooks from IDOM functions
+-----------------------------------
+
+**Don't call hooks from regular Python functions.** Instead you should:
+
+- ✅ Call Hooks from an element's render function.
+
+- ✅ Call Hooks from another custom hook
+
+Following this rule ensures stateful logic for IDOM element is always clearly
+separated from the rest of your codebase.
+
+
+Flake8 Plugin
+-------------
+
+We provide a Flake8 plugin called `flake8-idom-hooks <Flake8 Linter Plugin>`_ that helps
+to enforce the two rules described above. You can ``pip`` install it directly, or with
+the ``lint`` extra for IDOM:
+
+.. code-block:: bash
+
+    pip install idom[stable,lint]
+
+Once installed running ``flake8`` on your could will start catching errors:
+
+.. code-block:: bash
+
+    flake8 my_idom_elements.py
+
+.. code-block:: text
+
+    ./my_idom_elements:10:8 ROH102 hook 'use_effect' used inside if statement
+    ./my_idom_elements:23:4 ROH102 hook 'use_state' used outside element or hook definition
+
+See the Flake8 docs for
+`more info <https://flake8.pycqa.org/en/latest/user/configuration.html>`__.
 
 .. links
 .. =====
@@ -316,5 +360,4 @@ Under construction... for now refer to
 .. _React Hooks: https://reactjs.org/docs/hooks-reference.html
 .. _side effects: https://en.wikipedia.org/wiki/Side_effect_(computer_science)
 .. _memoization: https://en.wikipedia.org/wiki/Memoization
-.. _premature optimization: https://en.wikiquote.org/wiki/Donald_Knuth#Computer_Programming_as_an_Art_(1974)
-.. _gh issues: https://github.com/idom-team/idom/issues
+.. _Flake8 Linter Plugin: https://github.com/idom-team/flake8-idom-hooks

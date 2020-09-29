@@ -1,3 +1,4 @@
 black
 flake8
 pep8-naming
+flake8-idom-hooks
