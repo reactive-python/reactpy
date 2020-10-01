@@ -56,8 +56,7 @@ def Slideshow():
     url = f"https://picsum.photos/800/300?image={index}"
     return idom.html.img({"src": url, "onClick": lambda event: set_index(index + 1)})
 
-server = idom.server.sanic.PerClientState(Slideshow)
-server.daemon("localhost", 8765).join()
+idom.run(Slideshow, port=8765)
 ```
 
 Running this will serve our slideshow to `"https://localhost:8765/client/index.html"`
@@ -67,8 +66,8 @@ Running this will serve our slideshow to `"https://localhost:8765/client/index.h
 You can even display the same thing in a Jupyter Notebook, just use [`idom_jupyter`](https://github.com/idom-team/idom-jupyter):
 
 ```python
-from idom_jupyter import display
-display(Slideshow)
+import idom_jupyter
+idom_jupyter.run(Slideshow)
 ```
 
 Every click will then cause the image to change (it won't here of course).
