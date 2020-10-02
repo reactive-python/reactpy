@@ -8,7 +8,7 @@
 
 import sys
 from pathlib import Path
-from setuptools_scm import version_from_scm
+from pkg_resources import get_distribution
 
 # -- Path Setup --------------------------------------------------------------
 
@@ -27,12 +27,9 @@ project = "IDOM"
 copyright = "2019, Ryan Morshead"
 author = "Ryan Morshead"
 
-import idom  # noqa
-
-print(str(here.parent))
-_scm_version = version_from_scm(str(here.parent.parent))
-release = _scm_version.tag.base_version
-version = release.rsplit(".", 1)[0]
+release = get_distribution("idom").version
+# for example take major/minor
+version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------
 
