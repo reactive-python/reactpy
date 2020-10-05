@@ -27,7 +27,7 @@ project = "IDOM"
 copyright = "2019, Ryan Morshead"
 author = "Ryan Morshead"
 
-release = get_distribution("idom").version
+release = get_distribution("idom").version.split("+")[0]
 # for example take major/minor
 version = ".".join(release.split(".")[:2])
 

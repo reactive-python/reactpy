@@ -1,3 +1,4 @@
+import os
 import sys
 import argparse
 from typing import TypeVar, Callable, Any, DefaultDict, Dict
@@ -55,12 +56,15 @@ def run(args: argparse.Namespace) -> None:
                 f"{args.command!r} does not support {k}={getattr(args, k)}"
             )
 
+    show_spinner_envvar = os.environ.get("IDOM_SHOW_SPINNER", "true").lower()
+    show_spinner = {"true": True, "false": False}[show_spinner_envvar]
+
     if args.command == "install":
-        install(args.dependencies or [], args.exports or [], show_spinner=True)
+        install(args.dependencies or [], args.exports or [], show_spinner=show_spinner)
     elif args.command == "uninstall":
         delete_web_modules(args.dependencies)
     elif args.command == "restore":
-        restore(show_spinner=True)
+        restore(show_spinner=show_spinner)
     else:
         print("Installed:")
         for name in installed():
