@@ -14,7 +14,12 @@ jobs:
   deploy-documentation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Check out src from Git
+        uses: actions/checkout@v2
+      - name: Get history and tags for SCM versioning to work
+        run: |
+          git fetch --prune --unshallow
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
       - name: Login to Heroku Container Registry
         run: echo ${{ secrets.HEROKU_API_KEY }} | docker login -u ${{ secrets.HEROKU_EMAIL }} --password-stdin registry.heroku.com
       - name: Build Docker Image
