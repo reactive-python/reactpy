@@ -170,7 +170,7 @@ function useLazyModule(source) {
 }
 
 function dynamicImport(source) {
-  return eval(`import('${source}')`).then(
+  return import(source).then(
     (pkg) => (pkg.default ? pkg.default : pkg),
     (error) => {
       if (!error.stack) {
