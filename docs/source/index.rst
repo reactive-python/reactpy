@@ -48,12 +48,12 @@ Once activated try clicking the displayed image to make it change 🖱️
 
         pip install idom-jupyter
 
-    Then simply
+    And replacing ``idom.run`` with ``idom_jupyter.run``:
 
     .. code-block::
 
         import idom_jupyter
-        idom_jupyter.display(Slideshow)
+        idom_jupyter.run(Slideshow)
 
     Try it out on Binder now: |launch-binder|
 
