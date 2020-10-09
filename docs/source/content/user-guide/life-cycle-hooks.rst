@@ -1,10 +1,11 @@
+================
 Life Cycle Hooks
 ================
 
 Hooks are functions that allow you to "hook into" the life cycle events and state of
-Elements. Their usage should always follow the :ref:`**Rules of Hooks**`. For most use
-cases the :ref:`**Basic Hooks**` should be enough, however the remaining
-:ref:`**Supplementary Hooks**` should fulfill less common scenarios.
+Elements. Their usage should always follow the :ref:`Rules of Hooks`. For most use
+cases the :ref:`Basic Hooks` should be enough, however the remaining
+:ref:`Supplementary Hooks` should fulfill less common scenarios.
 
 .. note::
 
@@ -14,11 +15,11 @@ cases the :ref:`**Basic Hooks**` should be enough, however the remaining
 
 .. contents::
   :local:
-  :depth: 1
+  :depth: 2
 
 
-**Basic Hooks**
----------------
+Basic Hooks
+===========
 
 Common hooks that should fulfill a majority of use cases.
 
@@ -186,11 +187,11 @@ There are **three important subtleties** to note about using asynchronous effect
    and before the next effect following a subsequent update.
 
 
-**Supplementary Hooks**
------------------------
+Supplementary Hooks
+===================
 
 Hooks that fulfill some less common, but still important use cases using variations of
-the :ref:`**Basic Hooks**`.
+the :ref:`Basic Hooks`.
 
 
 use_reducer
@@ -298,8 +299,8 @@ hook alongside :ref:`use_effect` or in response to element event handlers.
 :ref:`The Game Snake` provides a good use case for ``use_ref``.
 
 
-**Rules of Hooks**
-------------------
+Rules of Hooks
+==============
 
 Hooks are just normal Python functions, but there's a bit of magic to them, and in order
 for that magic to work you've got to follow two rules. Thankfully we supply a
