@@ -33,7 +33,7 @@ Try typing in the text box and pressing 'Enter' 📋
 The Game Snake
 --------------
 
-Click to start playing and use the arrow keys to move 🎮
+Click to start playing and use WASD to move 🎮
 
 Slow internet may cause inconsistent frame pacing 😅
 

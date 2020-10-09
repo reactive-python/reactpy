@@ -110,7 +110,7 @@ html_context = {
     "github_user": "idom-team",
     "github_repo": "idom",
     "github_version": "main",
-    "doc_path": "docs",
+    "doc_path": "docs/source",
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
