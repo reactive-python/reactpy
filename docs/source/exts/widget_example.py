@@ -105,7 +105,7 @@ _interactive_widget_template = """
 
 
 _literal_include_template = """
-.. literalinclude:: examples/{name}.{ext}
+.. literalinclude:: /examples/{name}.{ext}
     :language: {language}
     {linenos}
 """

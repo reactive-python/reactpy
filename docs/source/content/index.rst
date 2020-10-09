@@ -10,15 +10,10 @@ Libraries for defining and controlling interactive webpages with Python
 .. toctree::
     :maxdepth: 1
 
-    installation
-    getting-started
-    core-concepts
-    life-cycle-hooks
-    javascript-modules
-    specifications
-    extra-features
+    user-guide/index
     examples
-    api
+    advanced-usage/index
+    api-reference/index
 
 
 Early Days

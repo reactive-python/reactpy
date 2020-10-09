@@ -1,5 +1,5 @@
-API
-===
+Package API
+===========
 
 .. contents::
   :local:

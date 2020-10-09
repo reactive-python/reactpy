@@ -77,12 +77,8 @@ hook in a module of your own making on the fly. As before, we'll be using a
 parameter which is a file-like object. In the following example we'll use Victory again,
 but this time we'll add a callback to it. Unfortunately we can't just pass it in
 :ref:`like we did before <Passing Props To Components>` because Victory's event API
-is a bit more complex so we've implemented a quick wrapper for it in a file ``chart.js``.
-
-.. literalinclude:: examples/custom_chart.js
-    :language: javascript
-
-Which we can read in as a ``source`` to :class:`~idom.widgets.utils.Module`:
+is a bit more complex so we've implemented a quick wrapper for it in a file ``chart.js``
+which we can read in as a ``source`` to :class:`~idom.widgets.utils.Module`:
 
 Click the bars to trigger an event 👇
 
