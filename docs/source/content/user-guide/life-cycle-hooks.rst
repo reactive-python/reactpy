@@ -307,8 +307,8 @@ for that magic to work you've got to follow two rules. Thankfully we supply a
 `Flake8 Linter Plugin`_ to help enforce them.
 
 
-Only call hooks at the top level
---------------------------------
+Only call outside flow controls
+-------------------------------
 
 **Don't call hooks inside loops, conditions, or nested functions.** Instead you must
 always call hooks at the top level of your functions. By adhering to this rule you
@@ -317,8 +317,8 @@ IDOM to preserve the state of hooks between multiple calls to ``useState`` and
 ``useEffect`` calls.
 
 
-Only call hooks from IDOM functions
------------------------------------
+Only call in IDOM functions
+---------------------------
 
 **Don't call hooks from regular Python functions.** Instead you should:
 
