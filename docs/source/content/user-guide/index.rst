@@ -11,4 +11,3 @@ documentation see the :ref:`Advanced Usage` or :ref:`API Reference` sections res
     installation
     getting-started
     life-cycle-hooks
-    examples
