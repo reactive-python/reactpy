@@ -9,7 +9,7 @@ Let's look at the example that you may have seen
 
 Since it's likely a lot to take in at once, we'll break it down piece by piece:
 
-.. literalinclude:: examples/slideshow.py
+.. literalinclude:: /examples/slideshow.py
     :lineno-start: 4
     :lines: 4-5
     :linenos:
@@ -25,7 +25,7 @@ will return a VDOM representing an image which, when clicked, will change.
 
 __ https://reactjs.org/docs/faq-internals.html#what-is-the-virtual-dom
 
-.. literalinclude:: examples/slideshow.py
+.. literalinclude:: /examples/slideshow.py
     :lineno-start: 6
     :lines: 6
     :linenos:
@@ -41,7 +41,7 @@ that let's you update that value. In the case of ``Slideshow`` the value of the
 function allow us to change it. The one required argument of ``use_state`` is the
 *initial* state value.
 
-.. literalinclude:: examples/slideshow.py
+.. literalinclude:: /examples/slideshow.py
     :lineno-start: 8
     :lines: 8,9
     :linenos:
@@ -61,7 +61,7 @@ again, and its new result will be displayed.
 
 __ https://reactjs.org/docs/events.html
 
-.. literalinclude:: examples/slideshow.py
+.. literalinclude:: /examples/slideshow.py
     :lineno-start: 11
     :lines: 11-16
     :linenos:
@@ -73,7 +73,7 @@ can respond to it. We've also added a little bit of CSS styling to the image so 
 when the cursor hoverse over the image it will become a pointer so it appears clickable.
 The returned model conforms to the `VDOM mimetype specification`_.
 
-.. literalinclude:: examples/slideshow.py
+.. literalinclude:: /examples/slideshow.py
     :lineno-start: 20
     :lines: 20
     :linenos:

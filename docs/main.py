@@ -20,7 +20,7 @@ app.static("/favicon.ico", str(APP_DIR / "favicon.ico"))
 
 @app.route("/")
 async def forward_to_index(request):
-    return response.redirect("/docs/index.html")
+    return response.redirect("/docs/content/index.html")
 
 
 mount, element = multiview()
