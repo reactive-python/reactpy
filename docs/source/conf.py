@@ -103,6 +103,14 @@ html_theme = "pydata_sphinx_theme"
 #
 html_theme_options = {
     "github_url": "https://github.com/<idom-team/idom",
+    "use_edit_page_button": True,
+}
+
+html_context = {
+    "github_user": "idom-team",
+    "github_repo": "idom",
+    "github_version": "main",
+    "doc_path": "docs",
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
