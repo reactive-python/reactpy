@@ -1,5 +1,0 @@
-build:
-  docker:
-    web: docs/docker/prod.dockerfile
-  config:
-    GIT_BRANCH: interactive-docs
