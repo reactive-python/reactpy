@@ -1,8 +1,6 @@
 Examples
 ========
 
-You can also try these examples out on binder |launch-binder|:
-
 .. contents::
   :local:
   :depth: 1
