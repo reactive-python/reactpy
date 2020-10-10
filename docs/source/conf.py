@@ -73,12 +73,6 @@ master_doc = "content/index"
 # Usually you set "language" from the command line for these cases.
 language = None
 
-# order autodoc members by their order in the source
-autodoc_member_order = "bysource"
-
-# show base classes for autodoc
-autodoc_default_flags = ["show-inheritance", "inherited-members"]
-
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
@@ -89,6 +83,21 @@ pygments_style = None
 
 # The default language to highlight source code in.
 highlight_language = "python3"
+
+# -- Extension Configuration ------------------------------------------------------
+
+# -- sphinx_panel --
+
+# Used to stop the extension from loading bootstrap twice since the `pydata_sphinx_theme`
+# already adds it for use.
+panels_add_boostrap_css = False
+
+# -- sphinx.ext.autodoc --
+
+# show base classes for autodoc
+autodoc_default_flags = ["show-inheritance", "inherited-members"]
+# order autodoc members by their order in the source
+autodoc_member_order = "bysource"
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -123,7 +132,6 @@ html_static_path = ["static"]
 # or fully qualified paths (eg. https://...)
 html_css_files = [
     "css/interactive-widget.css",
-    "css/custom-max-width.css",
     "css/fix-code-linenos.css",
 ]
 
@@ -222,9 +230,6 @@ epub_title = project
 
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ["search.html"]
-
-
-# -- Extension configuration -------------------------------------------------
 
 # -- Options for intersphinx extension ---------------------------------------
 
