@@ -13,10 +13,6 @@ cases the :ref:`Basic Hooks` should be enough, however the remaining
     `In the future <https://github.com/idom-team/idom/issues/203>`_ they will be
     added, but if you have a particular need for a missing hook post an issue.
 
-.. contents::
-  :local:
-  :depth: 2
-
 
 Basic Hooks
 ===========

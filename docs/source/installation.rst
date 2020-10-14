@@ -21,7 +21,7 @@ Installation
 
               idom install some-js-package
 
-          For more info see the :ref:`Javascript Modules` section.
+          For more info see the :ref:`Custom Javascript` section.
 
     *   - Extra Features
 

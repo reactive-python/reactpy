@@ -1,4 +1,3 @@
-import textwrap
 from pathlib import Path
 
 from sphinx.application import Sphinx
@@ -112,7 +111,7 @@ _literal_include_template = """
 
 
 def _string_to_nested_lines(content):
-    return StringList(textwrap.indent(content, "    ").split("\n"))
+    return StringList(content.split("\n"))
 
 
 def setup(app: Sphinx) -> None:

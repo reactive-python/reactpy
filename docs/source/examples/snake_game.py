@@ -34,16 +34,16 @@ def GameView():
 
 
 class Direction(enum.Enum):
-    w = (0, -1)
-    a = (-1, 0)
-    s = (0, 1)
-    d = (1, 0)
+    ArrowUp = (0, -1)
+    ArrowLeft = (-1, 0)
+    ArrowDown = (0, 1)
+    ArrowRight = (1, 0)
 
 
 @idom.element
 def GameLoop(grid_size, block_scale, set_game_state):
     # we `use_ref` here to capture the latest direction press without any delay
-    direction = idom.hooks.use_ref(Direction.d.value)
+    direction = idom.hooks.use_ref(Direction.ArrowRight.value)
 
     snake, set_snake = idom.hooks.use_state([(grid_size // 2 - 1, grid_size // 2 - 1)])
     food, set_food = use_snake_food(grid_size, snake)

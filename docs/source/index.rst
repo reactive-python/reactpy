@@ -1,19 +1,28 @@
-IDOM |release|
-==============
-
-.. image:: branding/idom-logo.png
-    :height: 250px
+IDOM
+====
 
 Libraries for defining and controlling interactive webpages with Python
 3.7 and above.
 
 .. toctree::
-    :maxdepth: 1
+    :hidden:
+    :caption: User Guide
 
-    user-guide/index
+    installation
+    getting-started
+    life-cycle-hooks
+    core-concepts
+    custom-javascript
     examples
-    advanced-usage/index
-    api-reference/index
+
+.. toctree::
+    :hidden:
+    :caption: Reference
+
+    GitHub <https://github.com/idom-team/idom>
+    package-api
+    specifications
+    extra-features
 
 
 Early Days
