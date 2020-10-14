@@ -10,10 +10,6 @@ created by `Nteract <https://nteract.io>`_ and which was built into
 for VDOM is fairly well established, it should not be relied until it's been fully
 adopted by the aforementioned organizations.
 
-.. contents::
-  :local:
-  :depth: 1
-
 
 VDOM Mimetype
 -------------

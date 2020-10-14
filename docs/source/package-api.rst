@@ -1,10 +1,6 @@
 Package API
 ===========
 
-.. contents::
-  :local:
-  :depth: 1
-
 .. module:: idom
 
 

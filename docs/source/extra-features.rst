@@ -3,10 +3,6 @@ Extra Features
 
 Optionally installable features of IDOM.
 
-.. contents::
-  :local:
-  :depth: 1
-
 To install a **stable** set of features for IDOM simply run.
 
 .. code-block::

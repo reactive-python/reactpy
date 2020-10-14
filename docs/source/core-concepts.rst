@@ -4,10 +4,6 @@ Core Concepts
 This section covers core features of IDOM that are used in making
 interactive interfaces.
 
-.. contents::
-  :local:
-  :depth: 1
-
 
 Pure Elements
 -------------

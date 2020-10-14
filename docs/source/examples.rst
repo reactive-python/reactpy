@@ -1,10 +1,6 @@
 Examples
 ========
 
-.. contents::
-  :local:
-  :depth: 1
-
 
 Slideshow
 ---------
@@ -31,7 +27,7 @@ Try typing in the text box and pressing 'Enter' 📋
 The Game Snake
 --------------
 
-Click to start playing and use WASD to move 🎮
+Click to start playing and use the arrow keys to move 🎮
 
 Slow internet may cause inconsistent frame pacing 😅
 

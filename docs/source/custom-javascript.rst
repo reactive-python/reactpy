@@ -1,14 +1,10 @@
-Javascript Modules
-==================
+Custom Javascript
+=================
 
 .. note::
 
     This is a recent feature of IDOM. If you have a problem following this tutorial
     `post an issue <https://github.com/rmorshea/idom/issues>`__.
-
-.. contents::
-  :local:
-  :depth: 1
 
 While IDOM is a great tool for displaying HTML and responding to browser events with
 pure Python, there are other projects which already allow you to do this inside
@@ -19,11 +15,7 @@ The real power of IDOM comes from its ability to seemlessly leverage the existin
 ecosystem of
 `React components <https://reactjs.org/docs/components-and-props.html>`__.
 
-So long as your library of interest is an
-`ES Module <https://hacks.mozilla.org/2018/03/es-modules-a-cartoon-deep-dive/>`__
-you could install using
-`Snowpack <https://www.snowpack.dev/>`__
-you can use it with IDOM
+So long as your library of interest can be installed NPM_, you can use it with IDOM
 You can even define your own Javascript modules which use these third party Javascript
 packages.
 
@@ -33,7 +25,7 @@ Installing React Components
 
 .. note::
 
-    Be sure that you've installed `npm <https://www.npmjs.com/get-npm>`__.
+    Be sure that you `install NPM`_ before continuing.
 
 In this example we'll be using the ubiquitous React-based UI framework `Material UI`_
 which can be easily installed using the ``idom`` CLI:
@@ -95,3 +87,5 @@ under construction...
 .. =====
 
 .. _Material UI: https://material-ui.com/
+.. _NPM: https://www.npmjs.com
+.. _install NPM: https://www.npmjs.com/get-npm
