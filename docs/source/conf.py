@@ -96,7 +96,11 @@ panels_add_boostrap_css = False
 # -- sphinx.ext.autodoc --
 
 # show base classes for autodoc
-autodoc_default_flags = ["show-inheritance", "inherited-members"]
+autodoc_default_options = {
+    "show-inheritance": True,
+    "inherited-members": True,
+    "member-order": "bysource",
+}
 # order autodoc members by their order in the source
 autodoc_member_order = "bysource"
 
