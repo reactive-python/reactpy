@@ -19,7 +19,7 @@ Libraries for defining and controlling interactive webpages with Python
     :hidden:
     :caption: Reference
 
-    GitHub <https://github.com/idom-team/idom>
+    GitHub Repo <https://github.com/idom-team/idom>
     package-api
     specifications
     extra-features
