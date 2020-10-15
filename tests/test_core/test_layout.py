@@ -248,3 +248,24 @@ async def test_double_updated_element_is_not_double_rendered():
             pass  # the render should still be rendering since we only update once
 
         assert run_count.current == 2
+
+
+async def test_update_path_to_element_that_is_not_direct_child_is_correct():
+    hook = HookCatcher()
+
+    @idom.element
+    def Parent():
+        return idom.html.div(idom.html.div(Child()))
+
+    @idom.element
+    @hook.capture
+    def Child():
+        return idom.html.div()
+
+    async with idom.Layout(Parent()) as layout:
+        await layout.render()
+
+        hook.current.schedule_render()
+
+        update = await layout.render()
+        assert update.path == "/children/0/children/0"
