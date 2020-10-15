@@ -6,6 +6,7 @@ from typing import (
     Tuple,
     Mapping,
     NamedTuple,
+    Optional,
     Any,
     Set,
     Iterator,
@@ -154,29 +155,41 @@ class Layout(HasAsyncResources):
         return element_state.model
 
     def _render_model(
-        self, element_state: ElementState, model: Mapping[str, Any]
+        self,
+        element_state: ElementState,
+        model: Mapping[str, Any],
+        path: Optional[str] = None,
     ) -> Dict[str, Any]:
+        if path is None:
+            path = element_state.path
+
         serialized_model: Dict[str, Any] = {}
         event_handlers = self._render_model_event_targets(element_state, model)
         if event_handlers:
             serialized_model["eventHandlers"] = event_handlers
         if "children" in model:
             serialized_model["children"] = self._render_model_children(
-                element_state, model["children"]
+                element_state, model["children"], path
             )
         return {**model, **serialized_model}
 
     def _render_model_children(
-        self, element_state: ElementState, children: Union[List[Any], Tuple[Any, ...]]
+        self,
+        element_state: ElementState,
+        children: Union[List[Any], Tuple[Any, ...]],
+        path: str,
     ) -> List[Any]:
         resolved_children: List[Any] = []
         for index, child in enumerate(
             children if isinstance(children, (list, tuple)) else [children]
         ):
             if isinstance(child, dict):
-                resolved_children.append(self._render_model(element_state, child))
+                child_path = f"{path}/children/{index}"
+                resolved_children.append(
+                    self._render_model(element_state, child, child_path)
+                )
             elif isinstance(child, AbstractElement):
-                child_path = f"{element_state.path}/children/{index}"
+                child_path = f"{path}/children/{index}"
                 child_state = self._create_element_state(child, child_path, save=True)
                 resolved_children.append(self._render_element(child_state))
                 element_state.child_elements_ids.append(id(child))
