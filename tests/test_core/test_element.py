@@ -48,3 +48,23 @@ def test_display_simple_hello_world(driver, display):
     display(Hello)
 
     assert driver.find_element_by_id("hello")
+
+
+def test_pre_tags_are_rendered_correctly(driver, display):
+    @idom.element
+    def PreFormated():
+        return idom.html.pre(
+            {"id": "pre-form-test"},
+            idom.html.span("this", idom.html.span("is"), "some"),
+            "pre-formated",
+            " text",
+        )
+
+    display(PreFormated)
+
+    pre = driver.find_element_by_id("pre-form-test")
+
+    assert (
+        pre.get_attribute("innerHTML")
+        == "<span>this<span>is</span>some</span>pre-formated text"
+    )

@@ -114,7 +114,7 @@ function elementChildren(sendEvent, model) {
     return model.children.map((child) => {
       switch (typeof child) {
         case "object":
-          return html` <${Element} model=${child} sendEvent=${sendEvent} /> `;
+          return html`<${Element} model=${child} sendEvent=${sendEvent} />`;
         case "string":
           return child;
       }
