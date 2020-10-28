@@ -8,7 +8,6 @@
 
 import sys
 from pathlib import Path
-from pkg_resources import get_distribution
 
 # -- Path Setup --------------------------------------------------------------
 
@@ -24,22 +23,8 @@ sys.path.insert(0, str(here / "_exts"))
 # -- Project information -----------------------------------------------------
 
 project = "IDOM"
-copyright = "2019, Ryan Morshead"
+copyright = "2020, Ryan Morshead"
 author = "Ryan Morshead"
-
-dist = get_distribution("idom")
-release = get_distribution("idom").version.split("+")[0]
-
-# Hack because setuptools_scm doesn't play nice with github actions
-# dev0 indicates we're zero distance away from the last release
-# but setuptools_scm still seems to think we're developing. This
-# we need to remedy this misunderstanding.
-if release.endswith(".dev0"):
-    major, minor, patch, *_ = release.split(".")
-    release = f"{major}.{minor}.{int(patch) - 1}"
-
-# for example take major/minor
-version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------
 
