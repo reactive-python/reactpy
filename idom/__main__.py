@@ -1,8 +1,8 @@
-import os
 import sys
 import argparse
 from typing import TypeVar, Callable, Any, DefaultDict, Dict
 
+from loguru import logger
 from idom.client.manage import install, delete_web_modules, installed, restore
 
 
@@ -10,6 +10,15 @@ _Func = TypeVar("_Func", bound=Callable[..., Any])
 
 
 def main(*args: str) -> None:
+    logger.remove(0)
+    logger.add(
+        # make sure we print to the TextIO currently in sys.stdout
+        # since the Spinner takes control of that
+        lambda msg: sys.stdout.write(msg),
+        colorize=True,
+        format="<level>{message}</level>",
+    )
+
     cli = argparse.ArgumentParser()
     cli.add_argument(
         "command", choices=["install", "uninstall", "installed", "restore"]
@@ -56,15 +65,12 @@ def run(args: argparse.Namespace) -> None:
                 f"{args.command!r} does not support {k}={getattr(args, k)}"
             )
 
-    show_spinner_envvar = os.environ.get("IDOM_SHOW_SPINNER", "true").lower()
-    show_spinner = {"true": True, "false": False}[show_spinner_envvar]
-
     if args.command == "install":
-        install(args.dependencies or [], args.exports or [], show_spinner=show_spinner)
+        install(args.dependencies or [], args.exports or [])
     elif args.command == "uninstall":
         delete_web_modules(args.dependencies)
     elif args.command == "restore":
-        restore(show_spinner=show_spinner)
+        restore()
     else:
         print("Installed:")
         for name in installed():
