@@ -1,8 +1,11 @@
+import ast
 import json
 import shutil
 import subprocess
+from importlib.machinery import SourceFileLoader
 from loguru import logger
 from pathlib import Path
+from pkgutil import iter_modules
 from tempfile import TemporaryDirectory
 from typing import Optional, List, Union, Dict, Sequence
 
@@ -93,6 +96,12 @@ def installed() -> List[str]:
 def install(
     packages: Sequence[str], exports: Sequence[str] = (), show_spinner: bool = False
 ) -> None:
+    packages = list(packages) + _find_idom_js_dependencies_from_python_packages()
+
+    if not packages:
+        logger.debug("nothing to install")
+        return None
+
     with TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
         temp_static_dir = tempdir_path / "static"
@@ -211,3 +220,41 @@ def _export_name_from_package(pkg: str) -> str:
     else:
         # this works even if there are no @ symbols
         return pkg.rsplit("@", 1)[0]
+
+
+def _find_idom_js_dependencies_from_python_packages() -> List[str]:
+    depedencies: List[str] = []
+    for module_info in iter_modules():
+        module_loader = module_info.module_finder.find_module(module_info.name)
+        if isinstance(module_loader, SourceFileLoader):
+            module_src = module_loader.get_source(module_info.name)
+            depedencies.extend(
+                _get_js_dependencies_from_source(module_info.name, module_src)
+            )
+    return depedencies
+
+
+def _get_js_dependencies_from_source(module_name: str, module_src: str) -> List[str]:
+    dependencies: List[str] = []
+    for node in ast.parse(module_src).body:
+        if isinstance(node, ast.Assign) and (
+            len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+            and node.targets[0].id == "idom_js_dependencies"
+        ):
+            value = node.value
+            if not isinstance(value, ast.List):
+                logger.error(
+                    f"package {module_name!r} declared malformed 'idom_js_dependencies' "
+                    f"- expected list literal, but found {type(value).__name__} expression"
+                )
+                continue
+            for item in value.elts:
+                if not isinstance(item, ast.Str):
+                    logger.error(
+                        f"package {module_name!r} declared malformed 'idom_js_dependencies' "
+                        f"- expected string literals but found {type(item).__name__} expresion"
+                    )
+                    continue
+                dependencies.append(item.s)
+    return dependencies
