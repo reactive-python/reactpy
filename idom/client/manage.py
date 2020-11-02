@@ -1,15 +1,12 @@
-import ast
 import json
 import shutil
 import subprocess
-from importlib.machinery import SourceFileLoader
 from loguru import logger
 from pathlib import Path
-from pkgutil import iter_modules
 from tempfile import TemporaryDirectory
 from typing import Optional, List, Union, Dict, Sequence
 
-from .utils import Spinner
+from .utils import find_idom_js_dependencies_from_python_packages
 
 
 APP_DIR = Path(__file__).parent / "app"
@@ -93,12 +90,10 @@ def installed() -> List[str]:
     return list(sorted(names))
 
 
-def install(
-    packages: Sequence[str], exports: Sequence[str] = (), show_spinner: bool = False
-) -> None:
-    packages = list(packages) + _find_idom_js_dependencies_from_python_packages()
+def install(packages: Sequence[str], exports: Sequence[str] = ()) -> None:
+    py_pkg_deps = _get_py_pkg_deps_to_install()
 
-    if not packages:
+    if not packages and not py_pkg_deps:
         logger.debug("nothing to install")
         return None
 
@@ -122,10 +117,27 @@ def install(
         with (temp_static_dir / "package.json").open("w+") as f:
             json.dump(package_json, f)
 
-        with Spinner(f"Installing: {', '.join(packages)}", show=show_spinner):
-            _run_subprocess(["npm", "install"], temp_static_dir)
-            _run_subprocess(["npm", "install"] + cache.package_list, temp_static_dir)
-            _run_subprocess(["npm", "run", "build"], temp_static_dir)
+        if not packages:
+            install_msg = f"Reinstalling {len(cache.package_list)} packages"
+        else:
+            install_msg = f"Installing: {', '.join(packages)}"
+        logger.info(install_msg)
+
+        _run_subprocess(["npm", "install"], temp_static_dir)
+        _run_subprocess(["npm", "install"] + cache.package_list, temp_static_dir)
+
+        for mod_name, mod_deps in py_pkg_deps.items():
+            cache.add_packages(mod_deps, [])
+
+            logger.info(
+                f"Installing {len(mod_deps)} "
+                f"dependenc{'y' if len(mod_deps) == 1 else 'ies'} "
+                f"of {mod_name!r}"
+            )
+            _run_subprocess(["npm", "install"] + mod_deps, temp_static_dir)
+
+        logger.info("Building client")
+        _run_subprocess(["npm", "run", "build"], temp_static_dir)
 
         cache.save()
 
@@ -135,11 +147,11 @@ def install(
         shutil.copytree(temp_build_dir, BUILD_DIR, symlinks=True)
 
 
-def restore(show_spinner: bool = False) -> None:
-    with Spinner("Restoring", show=show_spinner):
-        _delete_os_paths(BUILD_DIR)
-        _run_subprocess(["npm", "install"], APP_DIR)
-        _run_subprocess(["npm", "run", "build"], APP_DIR)
+def restore() -> None:
+    logger.info("Restoring")
+    _delete_os_paths(BUILD_DIR)
+    _run_subprocess(["npm", "install"], APP_DIR)
+    _run_subprocess(["npm", "run", "build"], APP_DIR)
     STATIC_SHIMS.clear()
 
 
@@ -222,39 +234,13 @@ def _export_name_from_package(pkg: str) -> str:
         return pkg.rsplit("@", 1)[0]
 
 
-def _find_idom_js_dependencies_from_python_packages() -> List[str]:
-    depedencies: List[str] = []
-    for module_info in iter_modules():
-        module_loader = module_info.module_finder.find_module(module_info.name)
-        if isinstance(module_loader, SourceFileLoader):
-            module_src = module_loader.get_source(module_info.name)
-            depedencies.extend(
-                _get_js_dependencies_from_source(module_info.name, module_src)
-            )
-    return depedencies
+def _get_py_pkg_deps_to_install() -> Dict[str, List[str]]:
+    already_installed = set(installed())
 
+    py_pkg_deps: Dict[str, List[str]] = {}
+    for mod_name, mod_deps in find_idom_js_dependencies_from_python_packages().items():
+        mod_deps_to_install = set(mod_deps).difference(already_installed)
+        if mod_deps_to_install:
+            py_pkg_deps[mod_name] = list(mod_deps_to_install)
 
-def _get_js_dependencies_from_source(module_name: str, module_src: str) -> List[str]:
-    dependencies: List[str] = []
-    for node in ast.parse(module_src).body:
-        if isinstance(node, ast.Assign) and (
-            len(node.targets) == 1
-            and isinstance(node.targets[0], ast.Name)
-            and node.targets[0].id == "idom_js_dependencies"
-        ):
-            value = node.value
-            if not isinstance(value, ast.List):
-                logger.error(
-                    f"package {module_name!r} declared malformed 'idom_js_dependencies' "
-                    f"- expected list literal, but found {type(value).__name__} expression"
-                )
-                continue
-            for item in value.elts:
-                if not isinstance(item, ast.Str):
-                    logger.error(
-                        f"package {module_name!r} declared malformed 'idom_js_dependencies' "
-                        f"- expected string literals but found {type(item).__name__} expresion"
-                    )
-                    continue
-                dependencies.append(item.s)
-    return dependencies
+    return py_pkg_deps
