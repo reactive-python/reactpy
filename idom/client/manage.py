@@ -1,12 +1,11 @@
 import json
 import shutil
 import subprocess
-from loguru import logger
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Optional, List, Union, Dict, Sequence
 
-from .utils import find_idom_js_dependencies_from_python_packages
+from .utils import find_idom_js_dependencies_from_python_packages, spinner
 
 
 APP_DIR = Path(__file__).parent / "app"
@@ -48,10 +47,10 @@ def register_web_module(name: str, source: Union[str, Path]) -> str:
     return web_module_url(name)
 
 
-def delete_web_modules(names: Sequence[str], skip_missing: bool = False) -> None:
+def uninstall(names: List[str], skip_missing: bool = False) -> None:
     paths = []
     cache = Cache(BUILD_DIR)
-    for name in _to_list_of_str(names):
+    for name in names:
         exists = False
 
         dir_name = f"web_modules/{name}"
@@ -90,55 +89,41 @@ def installed() -> List[str]:
     return list(sorted(names))
 
 
-def install(packages: Sequence[str], exports: Sequence[str] = ()) -> None:
-    py_pkg_deps = _get_py_pkg_deps_to_install()
-
-    if not packages and not py_pkg_deps:
-        logger.debug("nothing to install")
-        return None
+def install(packages: List[str]) -> None:
 
     with TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
-        temp_static_dir = tempdir_path / "static"
-        temp_build_dir = temp_static_dir / "build"
+        temp_app_dir = tempdir_path / "static"
+        temp_build_dir = temp_app_dir / "build"
+        cache = Cache(BUILD_DIR)
 
-        # copy over the whole ./static directory into the temp one
-        shutil.copytree(APP_DIR, temp_static_dir, symlinks=True)
+        # copy over the whole APP_DIR directory into the temp one
+        shutil.copytree(APP_DIR, temp_app_dir, symlinks=True)
 
-        cache = Cache(temp_build_dir)
-        cache.add_packages(packages, exports)
+        if packages:
+            with spinner(f"Installing {', '.join(packages)}"):
+                _npm_install(packages, temp_app_dir)
 
-        with open(temp_static_dir / "package.json") as f:
-            package_json = json.load(f)
+        for pkg in packages:
+            cache.delete_package(pkg, skip_missing=True)
 
-        pkg_snowpack = package_json.setdefault("snowpack", {})
-        pkg_snowpack.setdefault("install", []).extend(cache.export_list)
+        pkgs_from_cache = cache.package_list()
+        if pkgs_from_cache:
+            plural_s = "" if len(pkgs_from_cache) == 1 else "s"
+            with spinner(f"Reinstalling {len(pkgs_from_cache)} package{plural_s}"):
+                _npm_install(pkgs_from_cache, temp_app_dir)
 
-        with (temp_static_dir / "package.json").open("w+") as f:
-            json.dump(package_json, f)
+        py_pkg_deps = _get_py_pkg_deps_to_install()
+        if py_pkg_deps:
+            for mod_name, mod_deps in py_pkg_deps.items():
+                with spinner(f"Installing dependencies of {mod_name!r}"):
+                    _npm_install(mod_deps, temp_app_dir)
 
-        if not packages:
-            install_msg = f"Reinstalling {len(cache.package_list)} packages"
-        else:
-            install_msg = f"Installing: {', '.join(packages)}"
-        logger.info(install_msg)
+        with spinner("Building client"):
+            _run_subprocess(["npm", "run", "build"], temp_app_dir)
 
-        _run_subprocess(["npm", "install"], temp_static_dir)
-        _run_subprocess(["npm", "install"] + cache.package_list, temp_static_dir)
-
-        for mod_name, mod_deps in py_pkg_deps.items():
-            cache.add_packages(mod_deps, [])
-
-            logger.info(
-                f"Installing {len(mod_deps)} "
-                f"dependenc{'y' if len(mod_deps) == 1 else 'ies'} "
-                f"of {mod_name!r}"
-            )
-            _run_subprocess(["npm", "install"] + mod_deps, temp_static_dir)
-
-        logger.info("Building client")
-        _run_subprocess(["npm", "run", "build"], temp_static_dir)
-
+        # finally save installed user packages
+        cache.add_packages(packages)
         cache.save()
 
         if BUILD_DIR.exists():
@@ -148,41 +133,39 @@ def install(packages: Sequence[str], exports: Sequence[str] = ()) -> None:
 
 
 def restore() -> None:
-    logger.info("Restoring")
-    _delete_os_paths(BUILD_DIR)
-    _run_subprocess(["npm", "install"], APP_DIR)
-    _run_subprocess(["npm", "run", "build"], APP_DIR)
-    STATIC_SHIMS.clear()
+    with spinner("Restoring"):
+        _delete_os_paths(BUILD_DIR)
+        _run_subprocess(["npm", "install"], APP_DIR)
+        _run_subprocess(["npm", "run", "build"], APP_DIR)
+        STATIC_SHIMS.clear()
 
 
 class Cache:
     """Manages a cache file stored at ``build/.idom-cache.json``"""
 
-    __slots__ = "_file", "package_list", "export_list"
+    __slots__ = "_file", "package_name_to_requirement"
 
     def __init__(self, path: Path) -> None:
         path.mkdir(parents=True, exist_ok=True)
         self._file = path / ".idom-cache.json"
         if not self._file.exists():
-            self.package_list: List[str] = []
-            self.export_list: List[str] = []
+            self.package_name_to_requirement: Dict[str, str] = {}
         else:
             self._load()
 
-    def add_packages(self, packages: Sequence[str], exports: Sequence[str]) -> None:
-        package_list = _to_list_of_str(packages)
-        export_list = _to_list_of_str(exports)
-        export_list.extend(map(_export_name_from_package, package_list))
-        self.package_list = list(set(self.package_list + package_list))
-        self.export_list = list(set(self.export_list + export_list))
+    def package_list(self) -> List[str]:
+        return list(self.package_name_to_requirement.values())
 
-    def delete_package(self, export_name: str, skip_missing: bool) -> None:
-        if export_name in self.export_list:
-            self.export_list.remove(export_name)
-            for i, pkg in enumerate(self.package_list):
-                if _export_name_from_package(pkg) == export_name:
-                    del self.package_list[i]
-                    break
+    def add_packages(self, packages: List[str]) -> None:
+        for pkg in packages:
+            self.package_name_to_requirement[_export_name_from_package(pkg)] = pkg
+
+    def delete_package(self, name: str, skip_missing: bool) -> None:
+        name = _export_name_from_package(name)
+        if name in self.package_name_to_requirement:
+            del self.package_name_to_requirement[name]
+        elif not skip_missing:
+            raise ValueError(f"{name!r} is not installed.")
 
     def save(self) -> None:
         cache = {
@@ -201,15 +184,17 @@ class Cache:
                     setattr(self, name, cache[name])
 
 
+def _npm_install(packages: Sequence[str], cwd: Union[str, Path]) -> None:
+    _run_subprocess(["npm", "install"] + packages, cwd)
+
+
 def _run_subprocess(args: List[str], cwd: Union[str, Path]) -> None:
     try:
         subprocess.run(
             args, cwd=cwd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
     except subprocess.CalledProcessError as error:
-        if error.stderr is not None:
-            logger.error(error.stderr.decode())
-        raise
+        raise RuntimeError(error.stderr.decode())
     return None
 
 
@@ -219,10 +204,6 @@ def _delete_os_paths(*paths: Path) -> None:
             p.unlink()
         elif p.is_dir():
             shutil.rmtree(p)
-
-
-def _to_list_of_str(value: Sequence[str]) -> List[str]:
-    return [value] if isinstance(value, str) else list(value)
 
 
 def _export_name_from_package(pkg: str) -> str:

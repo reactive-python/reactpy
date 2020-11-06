@@ -5,3 +5,5 @@ anyio >=2.0
 async_generator >=1.10; python_version<"3.7"
 async_exit_stack >=1.0.1; python_version<"3.7"
 jsonpatch >=1.26
+typer >=0.3.2
+click-spinner >=0.1.10
