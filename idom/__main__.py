@@ -1,81 +1,44 @@
-import sys
-import argparse
-from typing import TypeVar, Callable, Any, DefaultDict, Dict
+from typing import List
 
-from loguru import logger
-from idom.client.manage import install, delete_web_modules, installed, restore
+import typer
+from idom.client import manage as manage_client
 
 
-_Func = TypeVar("_Func", bound=Callable[..., Any])
+cli = typer.Typer()
 
 
-def main(*args: str) -> None:
-    logger.remove(0)
-    logger.add(
-        # make sure we print to the TextIO currently in sys.stdout
-        # since the Spinner takes control of that
-        lambda msg: sys.stdout.write(msg),
-        colorize=True,
-        format="<level>{message}</level>",
+@cli.command()
+def build():
+    manage_client.install([])
+
+
+@cli.command()
+def install(packages: List[str]) -> None:
+    """Install javascript packages with NPM"""
+    manage_client.install(
+        list(packages or [])  # BUG: https://github.com/tiangolo/typer/issues/127
     )
 
-    cli = argparse.ArgumentParser()
-    cli.add_argument(
-        "command", choices=["install", "uninstall", "installed", "restore"]
+
+@cli.command()
+def uninstall(packages: List[str], skip_missing: bool = False) -> None:
+    """Uninstall javascript packages"""
+    manage_client.uninstall(
+        list(packages),  # BUG: https://github.com/tiangolo/typer/issues/127
+        skip_missing=skip_missing,
     )
-    cli.add_argument(
-        "dependencies",
-        nargs="*",
-        type=str,
-    )
-    cli.add_argument(
-        "--exports",
-        nargs="*",
-        type=str,
-        default=None,
-    )
-    cli.add_argument("--debug", action="store_true")
-
-    parsed = cli.parse_args(args or sys.argv[1:])
-
-    try:
-        return run(parsed)
-    except Exception as error:
-        if parsed.debug:
-            raise
-        print(f"{type(error).__name__}: {error}")
-        sys.exit(1)
 
 
-ARG_REQUIREMENTS: Dict[str, Dict[str, Any]] = {
-    "installed restore uninstall": {"exports": None},
-    "installed restore": {"dependencies": []},
-}
+@cli.command()
+def installed():
+    """Print the list of installed packages"""
+    typer.echo(manage_client.installed())
 
 
-def run(args: argparse.Namespace) -> None:
-    requirements: DefaultDict[str, Dict[str, Any]] = DefaultDict(dict)
-    for cmd, reqs in ARG_REQUIREMENTS.items():
-        for c in cmd.split():
-            requirements[c].update(reqs)
-
-    for k, v in requirements.get(args.command, {}).items():
-        if getattr(args, k) != v:
-            raise ValueError(
-                f"{args.command!r} does not support {k}={getattr(args, k)}"
-            )
-
-    if args.command == "install":
-        install(args.dependencies or [], args.exports or [])
-    elif args.command == "uninstall":
-        delete_web_modules(args.dependencies)
-    elif args.command == "restore":
-        restore()
-    else:
-        print("Installed:")
-        for name in installed():
-            print("-", name)
+@cli.command()
+def restore():
+    manage_client.restore()
 
 
 if __name__ == "__main__":  # pragma: no cover
-    main()
+    cli()
