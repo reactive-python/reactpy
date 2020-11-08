@@ -40,7 +40,7 @@ def main():
             f.read(),
             {
                 "__file__": str(file),
-                "__name__": f"widgets.{file.stem}",
+                "__name__": f"__main__.examples.{file.stem}",
             },
         )
 
