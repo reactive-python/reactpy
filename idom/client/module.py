@@ -1,5 +1,5 @@
-from pathlib import Path
-from typing import Any, Optional, Union
+import inspect
+from typing import Any, Optional
 from urllib.parse import urlparse
 
 from idom.core.vdom import VdomDict, ImportSourceDict, make_vdom_constructor
@@ -37,25 +37,21 @@ class Module:
 
     __slots__ = "url", "installed"
 
-    def __init__(
-        self,
-        url_or_name: str,
-        source_file: Optional[Union[str, Path]] = None,
-    ) -> None:
-        self.installed = False
-        if source_file is not None:
-            self.url = client.current.register_web_module(url_or_name, source_file)
-            self.installed = True
-        elif client.current.web_module_exists(url_or_name):
-            self.url = client.current.web_module_url(url_or_name)
-            self.installed = True
-        elif _is_url(url_or_name):
+    def __init__(self, url_or_name: str, source_name: Optional[str] = None) -> None:
+        if _is_url(url_or_name):
             self.url = url_or_name
+            self.installed = False
         else:
-            raise ValueError(
-                f"{url_or_name!r} is not installed - "
-                "only installed modules can omit a file extension."
-            )
+            if source_name is None:
+                module_name: str = inspect.currentframe().f_back.f_globals["__name__"]
+                source_name = module_name.split(".", 1)[0]
+            url = client.current.web_module_url(source_name, url_or_name)
+            if url is None:
+                raise ValueError(
+                    f"{url_or_name!r} is not installed for {source_name!r}"
+                )
+            self.url = url
+            self.installed = True
 
     def Import(self, name: str, *args: Any, **kwargs: Any) -> "Import":
         """Return  an :class:`Import` for the given :class:`Module` and ``name``

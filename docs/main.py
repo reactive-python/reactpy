@@ -11,6 +11,14 @@ from idom.widgets.utils import multiview
 from idom.client.manage import APP_DIR
 from idom.server.sanic import PerClientStateServer
 
+idom_build_config = {
+    "js_dependencies": [
+        "@material-ui/core",
+        "victory",
+        "semantic-ui-react",
+    ]
+}
+
 here = Path(__file__).parent
 
 app = Sanic(__name__)
@@ -45,7 +53,7 @@ try:
                     f.read(),
                     {
                         "__file__": str(file),
-                        "__name__": f"widgets.{file.stem}",
+                        "__name__": f"__main__.examples.{file.stem}",
                     },
                 )
             except Exception as error:
