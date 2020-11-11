@@ -24,7 +24,7 @@ def spinner(message: str) -> Iterator[None]:
     except Exception as error:
         echo(typer.style("✖️", fg=typer.colors.RED))
         echo(str(error), message_color="red")
-        raise typer.Abort()
+        raise typer.Exit(1)
     else:
         echo(typer.style("✔️", fg=typer.colors.GREEN))
 
