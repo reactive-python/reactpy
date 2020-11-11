@@ -51,7 +51,7 @@ package = {
 
 
 package["entry_points"] = {
-    "console_scripts": ["idom = idom.__main__:cli"],
+    "console_scripts": ["idom = idom.__main__:main"],
 }
 
 
