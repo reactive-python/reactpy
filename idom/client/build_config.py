@@ -1,13 +1,83 @@
 import json
 import ast
+from contextlib import contextmanager
 from hashlib import sha256
 from pathlib import Path
 from importlib.machinery import SourceFileLoader
 from pkgutil import iter_modules
-from typing import List, Dict, Optional, Any, NamedTuple
+from typing import (
+    List,
+    Dict,
+    Optional,
+    Any,
+    NamedTuple,
+    Iterable,
+    TypeVar,
+    Callable,
+    Iterator,
+)
 
 from .sh import echo
 from .utils import split_package_name_and_version
+
+
+_F = TypeVar("_F", bound=Callable[..., Any])
+
+
+class BuildState:
+
+    __slots__ = "save_location", "configs"
+
+    def __init__(self, path: Path) -> None:
+        self.save_location = path
+        self.configs = self._load_configs()
+
+    @contextmanager
+    def transaction(self) -> Iterator[None]:
+        old_configs = self.configs
+        self.configs = old_configs.copy()
+        try:
+            yield
+        except Exception:
+            self.configs = old_configs
+            raise
+        else:
+            self.save()
+
+    def add(self, build_configs: Iterable[Any], ignore_existing: bool = False) -> None:
+        for config in map(to_build_config, build_configs):
+            source_name = config.source_name
+            if not ignore_existing and source_name in self.configs:
+                raise ValueError(f"A build config for {source_name!r} already exists")
+            self.configs[source_name] = config
+        return None
+
+    def save(self) -> None:
+        with (self.save_location / ".idom-build-state.json").open("w") as f:
+            json.dump({name: conf._asdict() for name, conf in self.configs.items()}, f)
+
+    def show(self, indent: int = 2) -> str:
+        return json.dumps(
+            {name: conf._asdict() for name, conf in self.configs.items()},
+            indent=indent,
+        )
+
+    def clear(self) -> None:
+        self.configs = {}
+
+    def _load_configs(self) -> Dict[str, "BuildConfig"]:
+        fname = self.save_location / ".idom-build-state.json"
+        if not fname.exists():
+            return {}
+        with fname.open() as f:
+            content = f.read()
+            if not content:
+                return {}
+            else:
+                return {n: BuildConfig(**c) for n, c in json.loads(content).items()}
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.show(indent=0)})"
 
 
 class BuildConfig(NamedTuple):
@@ -31,50 +101,29 @@ class BuildConfig(NamedTuple):
         return aliased_dependencies
 
 
-def save_build_configs(path: Path, configs: Dict[str, BuildConfig]) -> None:
-    with (path / ".idom-build-configs.json").open("w") as f:
-        json.dump(configs, f)
-
-
-def load_build_configs(path: Path) -> Dict[str, BuildConfig]:
-    fname = path / ".idom-build-configs.json"
-    if not fname.exists():
-        return {}
-    with fname.open() as f:
-        content = f.read()
-        if not content:
-            return {}
-        else:
-            return {n: BuildConfig(*c) for n, c in json.loads(content).items()}
-
-
 def to_build_config(config: Any, source_name: Optional[str] = None) -> BuildConfig:
     if isinstance(config, BuildConfig):
         return config
 
     if not isinstance(config, dict):
         raise ValueError(
-            f"build config must be a dictionary, but found {type(config).__name__}",
+            f"build config must be a dictionary, but found {config!r}",
         )
 
-    source_name = config.get("source_name", source_name)
+    source_name = config.setdefault("source_name", source_name)
     if not isinstance(source_name, str):
-        raise ValueError(
-            f"'source_name' must be a string, not {type(source_name).__name__}"
-        )
+        raise ValueError(f"'source_name' must be a string, not {source_name!r}")
 
     js_dependencies = config.get("js_dependencies")
     if not isinstance(js_dependencies, list):
-        raise ValueError(
-            f"'js_dependencies' must be a list, not {type(js_dependencies).__name__}"
-        )
+        raise ValueError(f"'js_dependencies' must be a list, not {js_dependencies!r}")
     for item in js_dependencies:
         if not isinstance(item, str):
             raise ValueError(
-                f"items of 'js_dependencies' must be strings, not {type(item).__name__}"
+                f"items of 'js_dependencies' must be strings, not {item!r}"
             )
 
-    return BuildConfig(source_name=source_name, js_dependencies=js_dependencies)
+    return BuildConfig(**config)
 
 
 def find_build_config_in_python_source(
@@ -86,7 +135,7 @@ def find_build_config_in_python_source(
 
 def find_python_packages_build_configs(
     path: Optional[str] = None,
-) -> Dict[str, BuildConfig]:
+) -> List[BuildConfig]:
     """Find javascript dependencies declared by Python modules
 
     Parameters:
@@ -97,14 +146,14 @@ def find_python_packages_build_configs(
     Returns:
         Mapping of module names to their corresponding list of discovered dependencies.
     """
-    build_configs: Dict[str, BuildConfig] = {}
+    build_configs: List[BuildConfig] = []
     for module_info in iter_modules(path):
         module_loader = module_info.module_finder.find_module(module_info.name)
         if isinstance(module_loader, SourceFileLoader):
             module_src = module_loader.get_source(module_info.name)
             conf = _parse_build_config_from_python_source(module_info.name, module_src)
             if conf is not None:
-                build_configs[conf.source_name] = conf
+                build_configs.append(conf)
     return build_configs
 
 
