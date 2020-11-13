@@ -76,6 +76,19 @@ async def handler(event):
             idom.vdom("div", map(lambda x: x ** 2, [1, 2, 3])),
             {"tagName": "div", "children": [1, 4, 9]},
         ),
+        (
+            idom.vdom(
+                "MyComponent",
+                import_source={"source": "./some-script.js", "fallback": "loading..."},
+            ),
+            {
+                "tagName": "MyComponent",
+                "importSource": {
+                    "source": "./some-script.js",
+                    "fallback": "loading...",
+                },
+            },
+        ),
     ],
 )
 def test_simple_node_construction(actual, expected):
