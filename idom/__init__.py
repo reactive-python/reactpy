@@ -3,6 +3,7 @@ from pkg_resources import (
     DistributionNotFound as _DistributionNotFound,
 )
 
+from . import cli
 from .utils import Ref, html_to_vdom
 
 from .core.element import element, Element
@@ -64,4 +65,5 @@ __all__ = [
     "VdomDict",
     "widgets",
     "client",
+    "cli",
 ]

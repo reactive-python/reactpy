@@ -6,6 +6,10 @@ import typer
 import click_spinner
 
 
+os.environ.setdefault("IDOM_CLI_SHOW_SPINNER", "1")
+os.environ.setdefault("IDOM_CLI_SHOW_OUTPUT", "1")
+
+
 def echo(message: str, message_color: Optional[str] = None, **kwargs: Any) -> None:
     if message_color is not None:
         message = typer.style(message, fg=getattr(typer.colors, message_color.upper()))
@@ -30,8 +34,8 @@ def spinner(message: str) -> Iterator[None]:
 
 
 def _show_spinner() -> bool:
-    return _show_output() and bool(int(os.environ.get("IDOM_SHOW_SPINNER", 1)))
+    return _show_output() and bool(int(os.environ["IDOM_CLI_SHOW_SPINNER"]))
 
 
 def _show_output() -> bool:
-    return bool(int(os.environ.get("IDOM_SHOW_CLIENT_MANAGEMENT_OUTPUT", 1)))
+    return bool(int(os.environ["IDOM_CLI_SHOW_OUTPUT"]))

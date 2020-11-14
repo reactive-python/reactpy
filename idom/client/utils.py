@@ -7,7 +7,7 @@ from typing import Tuple, Iterator, Any
 @contextmanager
 def open_modifiable_json(path: Path) -> Iterator[Any]:
     with path.open() as f:
-        data = json.load(f)
+        data = json.loads(f.read().strip() or "{}")
 
     yield data
 
@@ -24,6 +24,6 @@ def split_package_name_and_version(pkg: str) -> Tuple[str, str]:
             name, version = pkg[1:].split("@", 1)
             return ("@" + name), version
     elif at_count:
-        return pkg.split("@", 1)
+        return tuple(pkg.split("@", 1))
     else:
         return pkg, ""

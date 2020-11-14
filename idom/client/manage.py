@@ -4,18 +4,19 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Optional, Iterable, Sequence, List
 
-from .sh import spinner
 from .build_config import (
-    BuildState,
-    BuildConfig,
-    find_python_packages_build_configs,
+    BuildConfigFile,
+    BuildConfigItem,
+    find_python_packages_build_config_items,
 )
 from .utils import open_modifiable_json, split_package_name_and_version
+
+from idom.cli import console
 
 
 APP_DIR = Path(__file__).parent / "app"
 BUILD_DIR = APP_DIR / "build"
-BUILD_STATE = BuildState(BUILD_DIR)
+BUILD_CONFIG_FILE = BuildConfigFile(BUILD_DIR)
 
 
 def find_path(url_path: str) -> Optional[Path]:
@@ -29,7 +30,7 @@ def find_path(url_path: str) -> Optional[Path]:
 
 
 def web_module_url(source_name: str, package_name: str) -> str:
-    config = BUILD_STATE.configs.get(source_name)
+    config = BUILD_CONFIG_FILE.configs.get(source_name)
     if config is None:
         return None
     alias = config.get_js_dependency_alias(package_name)
@@ -40,15 +41,17 @@ def web_module_url(source_name: str, package_name: str) -> str:
 
 
 def build(
-    configs: Optional[Iterable[BuildConfig]] = None,
+    configs: Optional[Iterable[BuildConfigItem]] = None,
     output_dir: Path = BUILD_DIR,
 ) -> None:
-    with BUILD_STATE.transaction():
+    with BUILD_CONFIG_FILE.transaction():
         if configs is not None:
-            BUILD_STATE.add(configs, ignore_existing=True)
+            BUILD_CONFIG_FILE.add(configs, ignore_existing=True)
 
-        with spinner("Discovering dependencies"):
-            BUILD_STATE.add(find_python_packages_build_configs(), ignore_existing=True)
+        with console.spinner("Discovering dependencies"):
+            BUILD_CONFIG_FILE.add(
+                find_python_packages_build_config_items(), ignore_existing=True
+            )
 
         with TemporaryDirectory() as tempdir:
             tempdir_path = Path(tempdir)
@@ -61,7 +64,7 @@ def build(
 
             packages_to_install = [
                 dep
-                for conf in BUILD_STATE.configs.values()
+                for conf in BUILD_CONFIG_FILE.configs.values()
                 for dep in conf.aliased_js_dependencies()
             ]
 
@@ -74,10 +77,10 @@ def build(
                     ]
                 )
 
-            with spinner(f"Installing {len(packages_to_install)} dependencies"):
+            with console.spinner(f"Installing {len(packages_to_install)} dependencies"):
                 _npm_install(packages_to_install, temp_app_dir)
 
-            with spinner("Building client"):
+            with console.spinner("Building client"):
                 _npm_run_build(temp_app_dir)
 
             if output_dir.exists():
@@ -87,7 +90,7 @@ def build(
 
 
 def restore() -> None:
-    with spinner("Restoring"):
+    with console.spinner("Restoring"):
         shutil.rmtree(BUILD_DIR)
         _run_subprocess(["npm", "install"], APP_DIR)
         _run_subprocess(["npm", "run", "build"], APP_DIR)
