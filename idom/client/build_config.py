@@ -1,5 +1,6 @@
 import json
 import ast
+from functools import wraps
 from contextlib import contextmanager
 from hashlib import sha256
 from pathlib import Path
@@ -12,49 +13,88 @@ from .utils import split_package_name_and_version
 from idom.cli import console
 
 
+_Method = TypeVar("_Method")
+
+
+def _requires_open_transaction(method: _Method) -> _Method:
+    @wraps(method)
+    def wrapper(self: BuildConfigFile, *args: Any, **kwargs: Any) -> Any:
+        if not self._transaction_open:
+            raise RuntimeError("Cannot modify BuildConfigFile without transaction.")
+        return method(self, *args, **kwargs)
+
+    return wrapper
+
+
 class BuildConfigFile:
 
-    __slots__ = "configs", "_path"
-    _filename = ".idom-build-configs.json"
+    __slots__ = "_configs", "_path", "_transaction_open"
+    _filename = "idom-build-config.json"
 
     def __init__(self, path: Path) -> None:
         self._path = path / self._filename
-        self.configs = self._load_configs()
+        self._config_items = self._load_config_items()
+        self._transaction_open = False
 
     @contextmanager
     def transaction(self) -> Iterator[None]:
-        old_configs = self.configs
-        self.configs = old_configs.copy()
+        """Open a transaction to modify the config file state"""
+        self._transaction_open = True
+        old_configs = self._config_items
+        self._config_items = old_configs.copy()
         try:
             yield
         except Exception:
-            self.configs = old_configs
+            self._config_items = old_configs
             raise
         else:
             self.save()
+        finally:
+            self._transaction_open = False
 
-    def add(self, build_configs: Iterable[Any], ignore_existing: bool = False) -> None:
-        for config in map(BuildConfigItem.cast, build_configs):
-            source_name = config.source_name
-            if not ignore_existing and source_name in self.configs:
-                raise ValueError(f"A build config for {source_name!r} already exists")
-            self.configs[source_name] = config
-        return None
+    @property
+    def configs(self) -> Dict[str, "BuildConfigItem"]:
+        """A dictionary of config items"""
+        return self._config_items.copy()
 
     def save(self) -> None:
+        """Save config state to file"""
         with self._path.open("w") as f:
-            json.dump({name: conf._asdict() for name, conf in self.configs.items()}, f)
+            json.dump(
+                {name: conf._asdict() for name, conf in self._config_items.items()}, f
+            )
 
     def show(self, indent: int = 2) -> str:
+        """Return string repr of config state"""
         return json.dumps(
-            {name: conf._asdict() for name, conf in self.configs.items()},
+            {name: conf._asdict() for name, conf in self._config_items.items()},
             indent=indent,
         )
 
-    def clear(self) -> None:
-        self.configs = {}
+    @_requires_open_transaction
+    def add(self, build_configs: Iterable[Any], ignore_existing: bool = False) -> None:
+        """Add a config item"""
+        for config in map(BuildConfigItem.cast, build_configs):
+            source_name = config.source_name
+            if not ignore_existing and source_name in self._config_items:
+                raise ValueError(f"A build config for {source_name!r} already exists")
+            self._config_items[source_name] = config
+        return None
 
-    def _load_configs(self) -> Dict[str, "BuildConfigItem"]:
+    @_requires_open_transaction
+    def remove(self, source_name: str, ignore_missing: bool = False) -> None:
+        """Remove a config item"""
+        if ignore_missing:
+            self._config_items.pop(source_name, None)
+        else:
+            del self._config_items[source_name]
+
+    @_requires_open_transaction
+    def clear(self) -> None:
+        """Clear all config items"""
+        self._config_items = {}
+
+    def _load_config_items(self) -> Dict[str, "BuildConfigItem"]:
         if not self._path.exists():
             return {}
         with self._path.open() as f:
