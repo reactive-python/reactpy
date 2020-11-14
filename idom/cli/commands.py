@@ -4,7 +4,7 @@ import typer
 
 import idom
 from idom.client import manage as manage_client
-from idom.client.build_config import find_build_config_in_python_source
+from idom.client.build_config import find_build_config_item_in_python_source
 
 
 main = typer.Typer()
@@ -16,7 +16,9 @@ main.add_typer(show, name="show", short_help="Display information about IDOM")
 def build(entrypoint: str) -> None:
     """Configure and build the client"""
     if entrypoint.endswith(".py"):
-        config = find_build_config_in_python_source("__main__", Path.cwd() / entrypoint)
+        config = find_build_config_item_in_python_source(
+            "__main__", Path.cwd() / entrypoint
+        )
         if config is None:
             typer.echo(f"No build config found in {entrypoint!r}")
             manage_client.build()
@@ -36,7 +38,7 @@ def restore():
 @show.command()
 def config() -> None:
     """Show the state of IDOM's build config"""
-    typer.echo(manage_client.BUILD_STATE.show())
+    typer.echo(manage_client.BUILD_CONFIG_FILE.show())
     return None
 
 

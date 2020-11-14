@@ -2,7 +2,7 @@ from typing import cast, Optional
 
 from typing_extensions import Protocol
 
-from idom import Ref
+from idom.utils import Ref
 
 from . import manage
 
