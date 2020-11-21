@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import ast
+from copy import deepcopy
 from functools import wraps
 from contextlib import contextmanager
 from hashlib import sha256
@@ -13,210 +14,96 @@ from typing import (
     Dict,
     Optional,
     Any,
-    Iterable,
     Iterator,
     TypeVar,
     Tuple,
     Callable,
+    TypedDict,
 )
 
+from fastjsonschema import compile as compile_schema
+
+import idom
 from .utils import split_package_name_and_version
 
 
 _Self = TypeVar("_Self")
-_Class = TypeVar("_Class")
 _Method = TypeVar("_Method", bound=Callable[..., Any])
+
+_ConfigItem = Dict[str, Any]
 
 
 def _requires_open_transaction(method: _Method) -> _Method:
     @wraps(method)
-    def wrapper(self: BuildConfigFile, *args: Any, **kwargs: Any) -> Any:
+    def wrapper(self: BuildConfig, *args: Any, **kwargs: Any) -> Any:
         if not self._transaction_open:
-            raise RuntimeError("Cannot modify BuildConfigFile without transaction.")
+            raise RuntimeError("Cannot modify BuildConfig without transaction.")
         return method(self, *args, **kwargs)
 
     return wrapper
 
 
-class BuildConfigFile:
+class BuildConfig:
 
-    __slots__ = "_config_items", "_path", "_transaction_open"
+    __slots__ = "config", "_path", "_transaction_open"
     _filename = "idom-build-config.json"
+    _default_config = {"version": idom.__version__, "by_source": {}}
 
     def __init__(self, path: Path) -> None:
         self._path = path / self._filename
-        self._config_items = self._load_config_items()
+        self.config = self._load()
+        self._derived_properties = _derive_config_properties(self.config)
         self._transaction_open = False
 
     @contextmanager
     def transaction(self: _Self) -> Iterator[_Self]:
         """Open a transaction to modify the config file state"""
         self._transaction_open = True
-        old_configs = self._config_items
-        self._config_items = old_configs.copy()
+        old_config = deepcopy(self.config)
         try:
             yield self
         except Exception:
-            self._config_items = old_configs
+            self.config = old_config
             raise
         else:
-            self.save()
+            self._save()
         finally:
             self._transaction_open = False
 
-    @property
-    def configs(self) -> Dict[str, "BuildConfigItem"]:
-        """A dictionary of config items"""
-        return self._config_items.copy()
+    def get_js_dependency_alias(self, source_name: str, dependency_name: str) -> str:
+        aliases_by_src = self._derived_properties["js_dependency_aliases_by_source"]
+        return aliases_by_src[source_name][dependency_name]
 
-    def save(self) -> None:
-        """Save config state to file"""
-        with self._path.open("w") as f:
-            json.dump(self.to_dicts(), f)
+    def all_aliased_js_dependencies(self) -> List[str]:
+        return [
+            dep
+            for aliased_deps in self._derived_properties[
+                "aliased_js_dependencies_by_source"
+            ].values()
+            for dep in aliased_deps
+        ]
 
-    def to_dicts(self) -> Dict[str, Dict[str, Any]]:
-        """Return string repr of config state"""
-        return {name: conf.to_dict() for name, conf in self._config_items.items()}
-
-    @_requires_open_transaction
-    def add(self, build_configs: Iterable[Any], ignore_existing: bool = False) -> None:
-        """Add a config item"""
-        for config in map(to_build_config_item, build_configs):
-            source_name = config.source_name
-            if not ignore_existing and source_name in self._config_items:
-                raise ValueError(f"A build config for {source_name!r} already exists")
-            self._config_items[source_name] = config
-        return None
-
-    @_requires_open_transaction
-    def remove(self, source_name: str, ignore_missing: bool = False) -> None:
-        """Remove a config item"""
-        if ignore_missing:
-            self._config_items.pop(source_name, None)
-        else:
-            del self._config_items[source_name]
-
-    @_requires_open_transaction
-    def clear(self) -> None:
-        """Clear all config items"""
-        self._config_items = {}
-
-    def _load_config_items(self) -> Dict[str, "BuildConfigItem"]:
-        if not self._path.exists():
-            return {}
+    def _load(self) -> Dict[str, Any]:
         with self._path.open() as f:
-            content = f.read().strip() or "{}"
-            return {n: BuildConfigItem(**c) for n, c in json.loads(content).items()}
-
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.to_dicts()})"
-
-
-def _save_init_params(init_method: _Method) -> _Method:
-    @wraps(init_method)
-    def wrapper(self: Any, **kwargs: Any) -> None:
-        self._init_params = kwargs
-        init_method(self, **kwargs)
-        return None
-
-    return wrapper
-
-
-def to_build_config_item(value: Any) -> "BuildConfigItem":
-    if isinstance(value, dict):
-        return BuildConfigItem.from_dict(value)
-    elif isinstance(value, BuildConfigItem):
-        return value
-    else:
-        raise ValueError(f"Expected a BuildConfigItem or dict, not {value!r}")
-
-
-class BuildConfigItem:
-    """Describes build requirements for a Python package or application
-
-    Attributes:
-        source_name:
-            The name of the source where this config came from (usually a Python module)
-        js_dependencies:
-            A list of dependency specifiers which can be installed by NPM. The
-            specifiers give each dependency an alias to avoid name and version
-            clashes that might occur between configs.
-        js_dependency_aliases:
-            Maps the name of a dependency to the alias used in ``js_dependencies``
-    """
-
-    __slots__ = (
-        "_init_params",
-        "source_name",
-        "identifier",
-        "js_dependencies",
-        "js_dependency_aliases",
-        "js_dependency_alias_suffix",
-    )
-
-    @_save_init_params
-    def __init__(self, source_name: str, js_dependencies: List[str]) -> None:
-        if not isinstance(source_name, str):
-            raise ValueError(f"'source_name' must be a string, not {source_name!r}")
-        if not isinstance(js_dependencies, list):
-            raise ValueError(
-                f"'js_dependencies' must be a list, not {js_dependencies!r}"
+            return validate_config(
+                json.loads(f.read() or "null") or self._default_config
             )
-        for item in js_dependencies:
-            if not isinstance(item, str):
-                raise ValueError(
-                    f"items of 'js_dependencies' must be strings, not {item!r}"
-                )
 
-        self.source_name = source_name
-        self.js_dependencies: List[str] = []
-        self.js_dependency_aliases: Dict[str, str] = {}
-        self.js_dependency_alias_suffix = f"{source_name}-{format(hash(self), 'x')}"
-
-        for dep in js_dependencies:
-            dep_name = split_package_name_and_version(dep)[0]
-            dep_alias = f"{dep_name}-{self.js_dependency_alias_suffix}"
-            self.js_dependencies.append(f"{dep_alias}@npm:{dep}")
-            self.js_dependency_aliases[dep_name] = dep_alias
-
-    @classmethod
-    def from_dict(cls: _Class, value: Any, source_name: Optional[str] = None) -> _Class:
-        if not isinstance(value, dict):
-            raise ValueError(f"Expected build config to be a dict, not {value!r}")
-        if source_name is not None:
-            value.setdefault("source_name", source_name)
-        return cls(**value)
-
-    def to_dict(self) -> Dict[str, Any]:
-        return self._init_params.copy()
-
-    def __eq__(self, other: Any) -> bool:
-        return isinstance(other, type(self)) and (other.to_dict() == self.to_dict())
-
-    def __hash__(self) -> int:
-        sorted_params = {k: self._init_params[k] for k in sorted(self._init_params)}
-        param_hash = sha256(json.dumps(sorted_params).encode())
-        return (
-            int(param_hash.hexdigest(), 16)
-            # chop off the last 8 digits (no need for that many)
-            % 10 ** 8
-        )
-
-    def __repr__(self) -> str:
-        items = ", ".join(f"{k}={v!r}" for k, v in self.to_dict().items())
-        return f"{type(self).__name__}({items})"
+    def _save(self) -> None:
+        with self._path.open("w") as f:
+            json.dump(validate_config(self.config), f)
 
 
 def find_build_config_item_in_python_file(
     module_name: str, path: Path
-) -> Optional[BuildConfigItem]:
+) -> Optional[_ConfigItem]:
     with path.open() as f:
         return find_build_config_item_in_python_source(module_name, f.read())
 
 
 def find_python_packages_build_config_items(
     paths: Optional[List[str]] = None,
-) -> Tuple[List[BuildConfigItem], List[Exception]]:
+) -> Tuple[List[_ConfigItem], List[Exception]]:
     """Find javascript dependencies declared by Python modules
 
     Parameters:
@@ -228,7 +115,7 @@ def find_python_packages_build_config_items(
         Mapping of module names to their corresponding list of discovered dependencies.
     """
     failures: List[Tuple[str, Exception]] = []
-    build_configs: List[BuildConfigItem] = []
+    build_configs: List[_ConfigItem] = []
     for module_info in iter_modules(paths):
         module_name = module_info.name
         module_loader = module_info.module_finder.find_module(module_name)
@@ -250,13 +137,88 @@ def find_python_packages_build_config_items(
 
 def find_build_config_item_in_python_source(
     module_name: str, module_src: str
-) -> Optional[BuildConfigItem]:
+) -> Optional[_ConfigItem]:
     for node in ast.parse(module_src).body:
         if isinstance(node, ast.Assign) and (
             len(node.targets) == 1
             and isinstance(node.targets[0], ast.Name)
             and node.targets[0].id == "idom_build_config"
         ):
-            raw_config = eval(compile(ast.Expression(node.value), "temp", "eval"))
-            return BuildConfigItem.from_dict(raw_config, source_name=module_name)
+            config_item = validate_config_item(
+                eval(compile(ast.Expression(node.value), "temp", "eval"))
+            )
+            config_item.setdefault("source_name", module_name)
+            return config_item
+
     return None
+
+
+class _DerivedConfigProperties(TypedDict):
+    js_dependency_aliases_by_source: Dict[str, Dict[str, str]]
+    aliased_js_dependencies_by_source: Dict[str, List[str]]
+
+
+def _derive_config_properties(config: Dict[str, Any]) -> _DerivedConfigProperties:
+    js_dependency_aliases_by_source = {}
+    aliased_js_dependencies_by_source = {}
+    for src, cfg in config["by_source"].items():
+        cfg_hash = _hash_config_item(cfg)
+        aliases, aliased_js_deps = _config_item_js_dependencies(cfg, cfg_hash)
+        js_dependency_aliases_by_source[src] = aliases
+        aliased_js_dependencies_by_source[src] = aliased_js_deps
+    return {
+        "js_dependency_aliases_by_source": js_dependency_aliases_by_source,
+        "aliased_js_dependencies_by_source": aliased_js_dependencies_by_source,
+    }
+
+
+def _config_item_js_dependencies(
+    config_item: Dict[str, Any], config_hash: str
+) -> Tuple[Dict[str, str], List[str]]:
+    alias_suffix = f"{config_item['source_name']}-{config_hash}"
+    aliases: Dict[str, str] = {}
+    aliased_js_deps: List[str] = []
+    for dep in config_item["js_dependencies"]:
+        dep_name = split_package_name_and_version(dep)[0]
+        dep_alias = f"{dep_name}-{alias_suffix}"
+        aliases[dep_name] = dep_alias
+        aliased_js_deps.append(f"{dep_alias}@npm:{dep}")
+    return aliases, aliased_js_deps
+
+
+def _hash_config_item(config_item: Dict[str, Any]) -> str:
+    conf_hash = sha256(json.dumps(config_item, sort_keys=True).encode())
+    short_hash_int = (
+        int(conf_hash.hexdigest(), 16)
+        # chop off the last 8 digits (no need for that many)
+        % 10 ** 8
+    )
+    return format(short_hash_int, "x")
+
+
+_CONFIG_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string"},
+        "by_source": {
+            "type": "object",
+            "patternProperties": {".*": {"$ref": "#/definitions/ConfigItem"}},
+        },
+    },
+    "definitions": {
+        "ConfigItem": {
+            "type": "object",
+            "properties": {
+                "source_name": {"type": "string"},
+                "js_dependencies": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+            },
+        }
+    },
+}
+
+
+validate_config = compile_schema(_CONFIG_SCHEMA)
+validate_config_item = compile_schema(_CONFIG_SCHEMA["definitions"]["ConfigItem"])
