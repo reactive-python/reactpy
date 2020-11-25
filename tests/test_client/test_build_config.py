@@ -14,6 +14,20 @@ from idom.client.build_config import (
 )
 
 
+@pytest.fixture
+def make_build_config(tmp_path):
+    """A fixture for quickly constructing build configs"""
+
+    def make(*config_items):
+        config = BuildConfig(tmp_path)
+        if config_items:
+            with config.transaction():
+                config.update_config_items(config_items)
+        return config
+
+    return make
+
+
 @pytest.mark.parametrize(
     "value, expectation",
     [
@@ -134,15 +148,15 @@ def test_find_build_config_item_in_python_file(tmp_path):
     }
 
 
-def test_build_config_file_load_absent_config(tmp_path):
-    assert BuildConfig(tmp_path).config == {
+def test_build_config_file_load_absent_config(make_build_config):
+    assert make_build_config().config == {
         "version": idom.__version__,
         "by_source": {},
     }
 
 
-def test_build_config_file_repr(tmp_path):
-    with BuildConfig(tmp_path).transaction() as config_file:
+def test_build_config_file_repr(make_build_config):
+    with make_build_config().transaction() as config_file:
         config_file.update_config_items(
             [{"source_name": "a_test", "js_dependencies": ["a-different-package"]}]
         )
@@ -150,25 +164,39 @@ def test_build_config_file_repr(tmp_path):
         assert str(config_file) == f"BuildConfig({config_file.config})"
 
 
-def test_build_config_file_add_config_item(tmp_path):
-    with BuildConfig(tmp_path).transaction() as config_file:
+def test_build_config_file_add_config_item(make_build_config):
+    with make_build_config().transaction() as config_file:
         config_file.update_config_items(
             [{"source_name": "a_test", "js_dependencies": ["some-js-package"]}]
         )
 
-    assert BuildConfig(tmp_path).config["by_source"] == {
+    assert make_build_config().config["by_source"] == {
         "a_test": {"source_name": "a_test", "js_dependencies": ["some-js-package"]}
     }
 
 
 @pytest.mark.parametrize("method", ["update_config_items"])
-def test_some_build_config_file_methods_require_transaction(tmp_path, method):
-    config_file = BuildConfig(tmp_path)
-    with pytest.raises(
-        RuntimeError,
-        match="Cannot modify BuildConfig without transaction",
-    ):
+def test_some_build_config_file_methods_require_transaction(make_build_config, method):
+    config_file = make_build_config()
+    with pytest.raises(RuntimeError, match="must be used in a transaction"):
         getattr(config_file, method)()
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        "get_js_dependency_alias",
+        "all_aliased_js_dependencies",
+        "all_js_dependency_aliases",
+    ],
+)
+def test_some_build_config_file_methods_blocked_in_transaction(
+    make_build_config, method
+):
+    config_file = make_build_config()
+    with pytest.raises(RuntimeError, match="cannot be used in a transaction"):
+        with config_file.transaction():
+            getattr(config_file, method)()
 
 
 def test_find_python_packages_build_config_items():
@@ -193,9 +221,9 @@ def test_find_python_packages_build_config_items():
         raise errors[0].__cause__
 
 
-def test_build_config_file_transaction_rollback(tmp_path):
+def test_build_config_file_transaction_rollback(make_build_config):
     with pytest.raises(Exception):
-        with BuildConfig(tmp_path).transaction() as config_file:
+        with make_build_config().transaction() as config_file:
             config_file.update_config_items(
                 [
                     {
@@ -206,7 +234,7 @@ def test_build_config_file_transaction_rollback(tmp_path):
             )
             raise Exception()
 
-    assert BuildConfig(tmp_path).config == {
+    assert make_build_config().config == {
         "version": idom.__version__,
         "by_source": {},
     }
@@ -229,3 +257,40 @@ def test_split_package_name_and_version(package_specifier, expected_name_and_ver
     assert (
         split_package_name_and_version(package_specifier) == expected_name_and_version
     )
+
+
+def test_build_config_get_js_dependency_alias(make_build_config):
+    config = make_build_config(
+        {"source_name": "module_1", "js_dependencies": ["dep1", "dep2"]},
+        {"source_name": "module_2", "js_dependencies": ["dep2", "dep3"]},
+    )
+    assert config.get_js_dependency_alias("module_1", "dep1") == "dep1-module_1-5001a4b"
+    assert config.get_js_dependency_alias("module_1", "dep2") == "dep2-module_1-5001a4b"
+    assert config.get_js_dependency_alias("module_2", "dep2") == "dep2-module_2-46d6db8"
+    assert config.get_js_dependency_alias("module_2", "dep3") == "dep3-module_2-46d6db8"
+
+
+def test_build_config_all_aliased_js_dependencies(make_build_config):
+    config = make_build_config(
+        {"source_name": "module_1", "js_dependencies": ["dep1", "dep2"]},
+        {"source_name": "module_2", "js_dependencies": ["dep2", "dep3"]},
+    )
+    assert config.all_aliased_js_dependencies() == [
+        "dep1-module_1-5001a4b@npm:dep1",
+        "dep2-module_1-5001a4b@npm:dep2",
+        "dep2-module_2-46d6db8@npm:dep2",
+        "dep3-module_2-46d6db8@npm:dep3",
+    ]
+
+
+def test_build_config_all_js_dependency_aliases(make_build_config):
+    config = make_build_config(
+        {"source_name": "module_1", "js_dependencies": ["dep1", "dep2"]},
+        {"source_name": "module_2", "js_dependencies": ["dep2", "dep3"]},
+    )
+    assert config.all_js_dependency_aliases() == [
+        "dep1-module_1-5001a4b",
+        "dep2-module_1-5001a4b",
+        "dep2-module_2-46d6db8",
+        "dep3-module_2-46d6db8",
+    ]
