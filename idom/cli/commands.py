@@ -23,7 +23,7 @@ def build(
         "--entrypoint",
         "-e",
         help="A python file containing a build config",
-    )
+    ),
 ) -> None:
     """Configure and build the client"""
     if entrypoint is None:

@@ -5,11 +5,11 @@ from tempfile import TemporaryDirectory
 from typing import Optional, Iterable, Sequence, List
 
 from .build_config import (
-    BuildConfigFile,
+    BuildConfig,
     BuildConfigItem,
     find_python_packages_build_config_items,
 )
-from .utils import open_modifiable_json, split_package_name_and_version
+from .utils import open_modifiable_json
 
 from idom.cli import console
 
@@ -18,8 +18,8 @@ APP_DIR = Path(__file__).parent / "app"
 BUILD_DIR = APP_DIR / "build"
 
 
-def build_config_file() -> BuildConfigFile:
-    return BuildConfigFile(BUILD_DIR)
+def build_config() -> BuildConfig:
+    return BuildConfig(BUILD_DIR)
 
 
 def find_path(url_path: str) -> Optional[Path]:
@@ -33,7 +33,7 @@ def find_path(url_path: str) -> Optional[Path]:
 
 
 def web_module_url(source_name: str, package_name: str) -> Optional[str]:
-    config = build_config_file().configs.get(source_name)
+    config = build_config().configs.get(source_name)
     if config is None:
         return None
     if package_name not in config.js_dependency_aliases:
@@ -46,57 +46,52 @@ def web_module_url(source_name: str, package_name: str) -> Optional[str]:
 
 
 def build(
-    configs: Optional[Iterable[BuildConfigItem]] = None,
+    config_items: Optional[Iterable[BuildConfigItem]] = None,
     output_dir: Path = BUILD_DIR,
 ) -> None:
-    with build_config_file().transaction() as config_file:
-        if configs is not None:
-            config_file.add(configs, ignore_existing=True)
+    config = build_config()
+
+    with config.transaction():
+        if config_items is not None:
+            config.update_config_items(config_items)
 
         with console.spinner("Discovering dependencies"):
             configs, errors = find_python_packages_build_config_items()
             for e in errors:
                 console.echo(f"{e} because {e.__cause__}", color="red")
-            config_file.add(configs, ignore_existing=True)
+            config.update_config_items(configs)
 
-        with TemporaryDirectory() as tempdir:
-            tempdir_path = Path(tempdir)
-            temp_app_dir = tempdir_path / "app"
-            temp_build_dir = temp_app_dir / "build"
-            package_json_path = temp_app_dir / "package.json"
+    with TemporaryDirectory() as tempdir:
+        tempdir_path = Path(tempdir)
+        temp_app_dir = tempdir_path / "app"
+        temp_build_dir = temp_app_dir / "build"
+        package_json_path = temp_app_dir / "package.json"
 
-            # copy over the whole APP_DIR directory into the temp one
-            shutil.copytree(APP_DIR, temp_app_dir, symlinks=True)
+        # copy over the whole APP_DIR directory into the temp one
+        shutil.copytree(APP_DIR, temp_app_dir, symlinks=True)
 
-            packages_to_install = [
-                dep
-                for conf in config_file.configs.values()
-                for dep in conf.js_dependencies
-            ]
+        packages_to_install = config.all_aliased_js_dependencies()
 
-            with open_modifiable_json(package_json_path) as package_json:
-                snowpack_config = package_json.setdefault("snowpack", {})
-                snowpack_config.setdefault("install", []).extend(
-                    [
-                        split_package_name_and_version(dep)[0]
-                        for dep in packages_to_install
-                    ]
-                )
+        with open_modifiable_json(package_json_path) as package_json:
+            snowpack_config = package_json.setdefault("snowpack", {})
+            snowpack_config.setdefault("install", []).extend(
+                config.all_js_dependency_aliases()
+            )
 
-            with console.spinner(
-                f"Installing {len(packages_to_install)} dependencies"
-                if packages_to_install
-                else "Installing dependencies"
-            ):
-                _npm_install(packages_to_install, temp_app_dir)
+        with console.spinner(
+            f"Installing {len(packages_to_install)} dependencies"
+            if packages_to_install
+            else "Installing dependencies"
+        ):
+            _npm_install(packages_to_install, temp_app_dir)
 
-            with console.spinner("Building client"):
-                _npm_run_build(temp_app_dir)
+        with console.spinner("Building client"):
+            _npm_run_build(temp_app_dir)
 
-            if output_dir.exists():
-                shutil.rmtree(output_dir)
+        if output_dir.exists():
+            shutil.rmtree(output_dir)
 
-            shutil.copytree(temp_build_dir, output_dir, symlinks=True)
+        shutil.copytree(temp_build_dir, output_dir, symlinks=True)
 
 
 def restore() -> None:
