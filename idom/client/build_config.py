@@ -37,7 +37,9 @@ def _requires_open_transaction(method: _Method) -> _Method:
     @wraps(method)
     def wrapper(self: BuildConfig, *args: Any, **kwargs: Any) -> Any:
         if not self._transaction_open:
-            raise RuntimeError("Cannot modify BuildConfig without transaction.")
+            raise RuntimeError(
+                f"BuildConfig method {method.__name__!r} must be used in a transaction."
+            )
         return method(self, *args, **kwargs)
 
     return wrapper
@@ -47,7 +49,9 @@ def _modified_by_transaction(method: _Method) -> _Method:
     @wraps(method)
     def wrapper(self: BuildConfig, *args: Any, **kwargs: Any) -> Any:
         if self._transaction_open:
-            raise RuntimeError("Wait for transaction to end before using this method.")
+            raise RuntimeError(
+                f"BuildConfig method {method.__name__!r} cannot be used in a transaction."
+            )
         return method(self, *args, **kwargs)
 
     return wrapper
@@ -108,7 +112,7 @@ class BuildConfig:
             for aliases in self._derived_properties[
                 "js_dependency_aliases_by_source"
             ].values()
-            for als in aliases
+            for als in aliases.values()
         ]
 
     def _load(self) -> Dict[str, Any]:
