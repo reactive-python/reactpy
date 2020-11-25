@@ -3,6 +3,12 @@ from pkg_resources import (
     DistributionNotFound as _DistributionNotFound,
 )
 
+try:
+    __version__ = _get_distribution(__name__).version
+except _DistributionNotFound:  # pragma: no cover
+    # package is not installed
+    __version__ = "0.0.0"
+
 from . import cli
 from .utils import Ref, html_to_vdom
 
@@ -21,12 +27,6 @@ from .client.protocol import client_implementation as client
 from .server.utils import run
 
 from . import widgets
-
-try:
-    __version__ = _get_distribution(__name__).version
-except _DistributionNotFound:  # pragma: no cover
-    # package is not installed
-    __version__ = "0.0.0"
 
 # try to automatically setup the dialect's import hook
 try:
