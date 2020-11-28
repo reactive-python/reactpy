@@ -119,22 +119,22 @@ def test_use_state_with_constructor(driver, display, driver_wait):
     inner = driver.find_element_by_id("inner")
     count = driver.find_element_by_id("count-view")
 
-    assert constructor_call_count.current == 1
+    driver_wait.until(lambda d: constructor_call_count.current == 1)
     assert count.get_attribute("innerHTML") == "0"
 
     inner.click()
 
-    assert constructor_call_count.current == 1
+    driver_wait.until(lambda d: constructor_call_count.current == 1)
     assert count.get_attribute("innerHTML") == "1"
 
     outer.click()
 
-    assert constructor_call_count.current == 2
+    driver_wait.until(lambda d: constructor_call_count.current == 2)
     assert count.get_attribute("innerHTML") == "0"
 
     inner.click()
 
-    assert constructor_call_count.current == 2
+    driver_wait.until(lambda d: constructor_call_count.current == 2)
     assert count.get_attribute("innerHTML") == "1"
 
 
