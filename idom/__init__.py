@@ -24,7 +24,7 @@ from .widgets.utils import hotswap, multiview
 from .client.module import Module, Import
 from .client.protocol import client_implementation as client
 
-from .server.utils import run
+from .server.prefab import run
 
 from . import widgets
 

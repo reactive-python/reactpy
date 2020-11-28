@@ -1,8 +1,8 @@
 import idom
 
-victory = idom.Module("victory")
+victory = idom.Module("victory", fallback="loading...")
 
-VictoryBar = victory.Import("VictoryBar", fallback="loading...")
+VictoryBar = victory.Import("VictoryBar")
 
 idom.run(
     idom.element(

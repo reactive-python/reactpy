@@ -9,51 +9,58 @@ from .build_config import (
     BuildConfigItem,
     find_python_packages_build_config_items,
 )
-from .utils import open_modifiable_json
+from .utils import open_modifiable_json, find_js_module_exports
 
 from idom.cli import console
 
 
 APP_DIR = Path(__file__).parent / "app"
 BUILD_DIR = APP_DIR / "build"
+_BUILD_CONFIG: Optional[BuildConfig] = None
 
 
 def build_config() -> BuildConfig:
-    return BuildConfig(BUILD_DIR)
+    global _BUILD_CONFIG
+    if _BUILD_CONFIG is None:
+        _BUILD_CONFIG = BuildConfig(BUILD_DIR)
+    return _BUILD_CONFIG
 
 
-def find_path(url_path: str) -> Optional[Path]:
-    url_path = url_path.strip("/")
+def web_module_exports(source_name: str, package_name: str) -> List[str]:
+    dep_alias = build_config().get_js_dependency_alias(source_name, package_name)
+    if dep_alias is None:
+        return []
+    module_file = find_client_build_path(f"web_modules/{dep_alias}.js")
+    if module_file is None:
+        return []
+    return find_js_module_exports(module_file)
 
-    builtin_path = BUILD_DIR.joinpath(*url_path.split("/"))
+
+def web_module_url(source_name: str, package_name: str) -> Optional[str]:
+    dep_alias = build_config().get_js_dependency_alias(source_name, package_name)
+    if dep_alias is None:
+        return None
+    if find_client_build_path(f"web_modules/{dep_alias}.js") is None:
+        return None
+    # need to go back a level since the JS that import this is in `core_components`
+    return f"../web_modules/{dep_alias}.js"
+
+
+def find_client_build_path(rel_path: str) -> Optional[Path]:
+    if rel_path.startswith("/"):
+        raise ValueError(f"{rel_path!r} is not a relative path")
+    builtin_path = BUILD_DIR.joinpath(*rel_path.split("/"))
     if builtin_path.exists():
         return builtin_path
     else:
         return None
 
 
-def web_module_url(source_name: str, package_name: str) -> Optional[str]:
-    config = build_config().configs.get(source_name)
-    if config is None:
-        return None
-    if package_name not in config.js_dependency_aliases:
-        return None
-    alias = config.js_dependency_aliases[package_name]
-    if find_path(f"web_modules/{alias}.js") is None:
-        return None
-    # need to go back a level since the JS that import this is in `core_components`
-    return f"../web_modules/{alias}.js"
-
-
-def build(
-    config_items: Optional[Iterable[BuildConfigItem]] = None,
-    output_dir: Path = BUILD_DIR,
-) -> None:
+def build(config_items: Iterable[BuildConfigItem] = ()) -> None:
     config = build_config()
 
     with config.transaction():
-        if config_items is not None:
-            config.update_config_items(config_items)
+        config.update_config_items(config_items)
 
         with console.spinner("Discovering dependencies"):
             configs, errors = find_python_packages_build_config_items()
@@ -88,10 +95,10 @@ def build(
         with console.spinner("Building client"):
             _npm_run_build(temp_app_dir)
 
-        if output_dir.exists():
-            shutil.rmtree(output_dir)
+        if BUILD_DIR.exists():
+            shutil.rmtree(BUILD_DIR)
 
-        shutil.copytree(temp_build_dir, output_dir, symlinks=True)
+        shutil.copytree(temp_build_dir, BUILD_DIR, symlinks=True)
 
 
 def restore() -> None:

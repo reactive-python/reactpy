@@ -16,7 +16,7 @@ from idom.core.dispatcher import (
     RecvCoroutine,
 )
 from idom.core.layout import LayoutEvent
-from idom.client.manage import find_path
+from idom.client.manage import find_client_build_path
 
 from .base import AbstractRenderServer
 
@@ -87,7 +87,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
                 request: request.Request, path: str
             ) -> response.HTTPResponse:
                 file_extensions = [".html", ".js", ".json"]
-                abs_path = find_path(path)
+                abs_path = find_client_build_path(path)
                 return (
                     await response.file_stream(str(abs_path))
                     if (

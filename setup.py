@@ -41,6 +41,7 @@ package = {
         "Topic :: Multimedia :: Graphics",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
 }
 
@@ -108,8 +109,16 @@ package["long_description_content_type"] = "text/markdown"
 def build_javascript_first(cls):
     class Command(cls):
         def run(self):
-            command = ["sh", os.path.join(here, "scripts", "build.sh")]
-            subprocess.check_call(command, cwd=here)
+            for cmd_str in [
+                "rm -rf node_modules",
+                "rm -rf web_modules",
+                "npm install",
+                "npm run build",
+                "rm -rf node_modules",
+            ]:
+                subprocess.check_call(
+                    cmd_str.split(), cwd=os.path.join(root, "client", "app")
+                )
             super().run()
 
     return Command
