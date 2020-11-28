@@ -6,8 +6,6 @@ import idom
 from scripts.install_doc_js_modules import install_doc_js_modules
 
 
-install_doc_js_modules()
-
 here = Path(__file__).parent
 examples_dir = here.parent / "docs" / "source" / "examples"
 sys.path.insert(0, str(examples_dir))
@@ -18,6 +16,8 @@ for file in examples_dir.iterdir():
 
 
 def main():
+    install_doc_js_modules()
+
     try:
         ex_name = sys.argv[1]
     except IndexError:

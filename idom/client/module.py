@@ -52,12 +52,7 @@ class Module:
             if source_name is None:
                 module_name: str = inspect.currentframe().f_back.f_globals["__name__"]
                 source_name = module_name.split(".", 1)[0]
-            url = client.current.web_module_url(source_name, url_or_name)
-            if url is None:
-                raise ValueError(
-                    f"{url_or_name!r} is not installed for {source_name!r}"
-                )
-            self.url = url
+            self.url = client.current.web_module_url(source_name, url_or_name)
             self.installed = True
             if check_exports:
                 self.exports = client.current.web_module_exports(

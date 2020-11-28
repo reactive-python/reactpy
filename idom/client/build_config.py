@@ -270,7 +270,7 @@ _CONFIG_SCHEMA = {
             "properties": {
                 "source_name": {
                     "type": "string",
-                    "pattern": r"^[\w\d\-]+$",
+                    "pattern": r"^[\w\d\-\.]+$",
                 },
                 "js_dependencies": {
                     "type": "array",
