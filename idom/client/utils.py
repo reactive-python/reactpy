@@ -16,19 +16,19 @@ def open_modifiable_json(path: Path) -> Iterator[Any]:
         json.dump(data, f)
 
 
-_JS_MODULE_EXPORT_PATTERN = re.compile(r";export{(.*?)};")
-_JS_MODULE_EXPORT_NAME_PATTERN = re.compile(r";export (.*?) .*?;")
+_JS_VARIABLE_NAME = r"[a-zA-Z_$][0-9a-zA-Z_$]*"
+_JS_MODULE_EXPORT_PATTERN = re.compile(f";export{({_JS_VARIABLE_NAME})};")
+_JS_MODULE_EXPORT_NAME_PATTERN = re.compile(
+    f";export ({_JS_VARIABLE_NAME}) {_JS_VARIABLE_NAME};"
+)
 
 
-def find_js_module_exports(path: Path) -> List[str]:
+def find_js_module_exports_in_source(content: str) -> List[str]:
     names: List[str] = []
-    if path.suffix != ".js":
-        # we only know how to do this for javascript modules
-        return []
-    with path.open() as f:
-        content = f.read()
-        for match in _JS_MODULE_EXPORT_PATTERN.findall(content):
-            for export in match.split(","):
-                names.append(export.split(" as ", 1)[1].strip())
-        names.extend(_JS_MODULE_EXPORT_NAME_PATTERN.findall(content))
+    for match in _JS_MODULE_EXPORT_PATTERN.findall(content):
+        for export in match.split(","):
+            export_parts = export.split(" as ", 1)
+            print(export_parts)
+            names.append(export_parts[1].strip())
+    names.extend(_JS_MODULE_EXPORT_NAME_PATTERN.findall(content))
     return names

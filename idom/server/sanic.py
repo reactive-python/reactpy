@@ -2,7 +2,7 @@ import asyncio
 import json
 import uuid
 
-from typing import Tuple, Any, Dict, Union, Optional, cast
+from typing import Tuple, Any, Dict, Union, cast
 
 from sanic import Blueprint, Sanic, request, response
 from sanic_cors import CORS
@@ -16,14 +16,14 @@ from idom.core.dispatcher import (
     RecvCoroutine,
 )
 from idom.core.layout import LayoutEvent
-from idom.client.manage import find_client_build_path
+from idom.client.manage import BUILD_DIR
 
 from .base import AbstractRenderServer
 
 
 class Config(TypedDict, total=False):
     cors: Union[bool, Dict[str, Any]]
-    url_prefix: Optional[str]
+    url_prefix: str
     server_static_files: bool
     redirect_root_to_index: bool
 
@@ -37,7 +37,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
     def _init_config(self) -> Config:
         return Config(
             cors=False,
-            url_prefix=None,
+            url_prefix="",
             server_static_files=True,
             redirect_root_to_index=True,
         )
@@ -81,30 +81,13 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
             return f"{blueprint.name}.{function.__name__}"
 
         if config["server_static_files"]:
+            blueprint.static("/client", str(BUILD_DIR))
 
-            @blueprint.route("/client/<path:path>")  # type: ignore
-            async def client_files(
-                request: request.Request, path: str
-            ) -> response.HTTPResponse:
-                file_extensions = [".html", ".js", ".json"]
-                abs_path = find_client_build_path(path)
-                return (
-                    await response.file_stream(str(abs_path))
-                    if (
-                        abs_path is not None
-                        and abs_path.suffix in file_extensions
-                        and not abs_path.stem.startswith(".")
-                    )
-                    else response.text(f"Could not find: {path!r}", status=404)
-                )
-
-        if config["redirect_root_to_index"]:
+        if config["server_static_files"] and config["redirect_root_to_index"]:
 
             @blueprint.route("/")  # type: ignore
             def redirect_to_index(request: request.Request) -> response.HTTPResponse:
-                return response.redirect(
-                    request.app.url_for(handler_name(client_files), path="index.html")
-                )
+                return response.redirect(f"{blueprint.url_prefix}/client/index.html")
 
     def _run_application(
         self, app: Sanic, config: Config, args: Tuple[Any, ...], kwargs: Dict[str, Any]

@@ -1,6 +1,12 @@
 import pytest
 
-from idom.client.manage import web_module_url, web_module_exports, build, restore
+from idom.client.manage import (
+    web_module_url,
+    web_module_exports,
+    web_module_exists,
+    build,
+    restore,
+)
 
 from tests.general_utils import assert_same_items
 
@@ -15,14 +21,17 @@ def _setup_build_for_tests():
 
 
 def test_web_module_url():
-    assert web_module_url("tests", "does/not/exist") is None
     assert (
         web_module_url("tests", "victory") == "../web_modules/victory-tests-24fa38b.js"
     )
 
 
+def test_web_module_exists():
+    assert not web_module_exists("tests", "does/not/exist")
+    assert web_module_exists("tests", "victory")
+
+
 def test_web_module_exports():
-    assert web_module_exports("tests", "does/not/exist") == []
     assert_same_items(
         web_module_exports("tests", "victory"),
         [
