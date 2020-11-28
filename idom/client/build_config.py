@@ -91,9 +91,16 @@ class BuildConfig:
             self.config["by_source"][conf["source_name"]] = conf
 
     @_modified_by_transaction
-    def get_js_dependency_alias(self, source_name: str, dependency_name: str) -> str:
+    def get_js_dependency_alias(
+        self,
+        source_name: str,
+        dependency_name: str,
+    ) -> Optional[str]:
         aliases_by_src = self._derived_properties["js_dependency_aliases_by_source"]
-        return aliases_by_src[source_name][dependency_name]
+        try:
+            return aliases_by_src[source_name][dependency_name]
+        except KeyError:
+            return None
 
     @_modified_by_transaction
     def all_aliased_js_dependencies(self) -> List[str]:
@@ -132,13 +139,6 @@ class BuildConfig:
         return f"{type(self).__name__}({self.config})"
 
 
-def find_build_config_item_in_python_file(
-    module_name: str, path: Path
-) -> Optional[BuildConfigItem]:
-    with path.open() as f:
-        return find_build_config_item_in_python_source(module_name, f.read())
-
-
 def find_python_packages_build_config_items(
     paths: Optional[List[str]] = None,
 ) -> Tuple[List[BuildConfigItem], List[Exception]]:
@@ -171,6 +171,13 @@ def find_python_packages_build_config_items(
                 if conf is not None:
                     build_configs.append(conf)
     return build_configs, failures
+
+
+def find_build_config_item_in_python_file(
+    module_name: str, path: Path
+) -> Optional[BuildConfigItem]:
+    with path.open() as f:
+        return find_build_config_item_in_python_source(module_name, f.read())
 
 
 def find_build_config_item_in_python_source(

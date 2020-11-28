@@ -1,5 +1,5 @@
-from socket import socket
 from importlib import import_module
+from socket import socket
 from typing import Any, Dict, Optional, Tuple, Type, TypeVar, cast
 
 from idom.core.element import ElementConstructor
@@ -53,7 +53,7 @@ def run(
     if server_type is None:  # pragma: no cover
         raise ValueError("No default server available.")
     if port is None:  # pragma: no cover
-        port = find_available_port(host)
+        port = _find_available_port(host)
 
     server = server_type(element, server_options)
 
@@ -152,7 +152,7 @@ def hotswap_server(
     return mount, server
 
 
-def find_available_port(host: str) -> int:
+def _find_available_port(host: str) -> int:
     """Get a port that's available for the given host"""
     sock = socket()
     sock.bind((host, 0))

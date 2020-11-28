@@ -8,7 +8,7 @@ from .protocol import client_implementation as client
 
 
 class Module:
-    """A Javascript module
+    """An importable client-side module
 
     Parameters:
         url_or_name:
@@ -35,12 +35,19 @@ class Module:
         files or loading modules that have been installed by some other means:
     """
 
-    __slots__ = "url", "installed"
+    __slots__ = "url", "installed", "fallback", "exports"
 
-    def __init__(self, url_or_name: str, source_name: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        url_or_name: str,
+        source_name: Optional[str] = None,
+        fallback: Optional[str] = None,
+        check_exports: bool = True,
+    ) -> None:
         if _is_url(url_or_name):
             self.url = url_or_name
             self.installed = False
+            self.exports = []
         else:
             if source_name is None:
                 module_name: str = inspect.currentframe().f_back.f_globals["__name__"]
@@ -52,6 +59,14 @@ class Module:
                 )
             self.url = url
             self.installed = True
+            if check_exports:
+                self.exports = client.current.web_module_exports(
+                    source_name,
+                    url_or_name,
+                )
+            else:
+                self.exports = []
+        self.fallback = fallback
 
     def Import(self, name: str, *args: Any, **kwargs: Any) -> "Import":
         """Return  an :class:`Import` for the given :class:`Module` and ``name``
@@ -65,6 +80,17 @@ class Module:
         Where ``name`` is the given name, and ``module`` is the :attr:`Module.url` of
         this :class:`Module` instance.
         """
+        if (
+            self.installed
+            and self.exports
+            # if 'default' is exported there's not much we can infer
+            and "default" not in self.exports
+        ):
+            if name not in self.exports:
+                raise ValueError(
+                    f"{self} does not export {name!r}, available options are {self.exports}"
+                )
+        kwargs.setdefault("fallback", self.fallback)
         return Import(self.url, name, *args, **kwargs)
 
     def __repr__(self) -> str:  # pragma: no cover
