@@ -1,37 +1,29 @@
-import pytest
-
 from idom.client.manage import (
     web_module_url,
     web_module_exports,
     web_module_exists,
-    build,
-    restore,
 )
 
 from tests.general_utils import assert_same_items
 
 
-@pytest.fixture(scope="module", autouse=True)
-def _setup_build_for_tests():
-    build([{"source_name": "tests", "js_dependencies": ["victory@35.4.0"]}])
-    try:
-        yield
-    finally:
-        restore()
-
-
-def test_web_module_url():
+def test_web_module_url(victory_js):
     assert (
         web_module_url("tests", "victory") == "../web_modules/victory-tests-24fa38b.js"
     )
 
 
-def test_web_module_exists():
+def test_web_module_exists(temp_build_config, victory_js):
     assert not web_module_exists("tests", "does/not/exist")
     assert web_module_exists("tests", "victory")
 
+    temp_build_config.data["items"]["tests"]["js_dependencies"].append(
+        "module_not_installed_yet"
+    )
+    assert not web_module_exists("tests", "module_not_installed_yet")
 
-def test_web_module_exports():
+
+def test_web_module_exports(victory_js):
     assert_same_items(
         web_module_exports("tests", "victory"),
         [

@@ -10,7 +10,8 @@ from idom.client.build_config import (
     find_python_packages_build_config_items,
     split_package_name_and_version,
     validate_config,
-    derive_config_properties,
+    derive_config_item_info,
+    ConfigItemInfo,
 )
 
 
@@ -20,9 +21,8 @@ def make_build_config(tmp_path):
 
     def make(*config_items):
         config = BuildConfig(tmp_path)
-        if config_items:
-            with config.transaction():
-                config.update_config_items(config_items)
+        config.update(config_items)
+        config.save()
         return config
 
     return make
@@ -34,28 +34,28 @@ def make_build_config(tmp_path):
         (
             {
                 "version": "1.2.3",
-                "by_source": {"some_module": {"source_name": None}},
+                "items": {"some_module": {"source_name": None}},
             },
             "None is not of type 'string'",
         ),
         (
             {
                 "version": "1.2.3",
-                "by_source": {"some_module": {"source_name": "$bad-symbols!"}},
+                "items": {"some_module": {"source_name": "$bad-symbols!"}},
             },
             r"'\$bad-symbols\!' does not match",
         ),
         (
             {
                 "version": "1.2.3",
-                "by_source": {"some_module": {"source_name": "some_module"}},
+                "items": {"some_module": {"source_name": "some_module"}},
             },
             None,
         ),
         (
             {
                 "version": "1.2.3",
-                "by_source": {
+                "items": {
                     "some_module": {
                         "source_name": "some_module",
                         "js_dependencies": None,
@@ -67,7 +67,7 @@ def make_build_config(tmp_path):
         (
             {
                 "version": "1.2.3",
-                "by_source": {
+                "items": {
                     "some_module": {
                         "source_name": "some_module",
                         "js_dependencies": [],
@@ -79,7 +79,7 @@ def make_build_config(tmp_path):
         (
             {
                 "version": "1.2.3",
-                "by_source": {
+                "items": {
                     "some_module": {
                         "source_name": "some_module",
                         "js_dependencies": [None],
@@ -91,7 +91,7 @@ def make_build_config(tmp_path):
         (
             {
                 "version": "1.2.3",
-                "by_source": {
+                "items": {
                     "some_module": {
                         "source_name": "some_module",
                         "js_dependencies": ["dep1", "dep2"],
@@ -110,31 +110,22 @@ def test_validate_config_schema(value, expectation):
             validate_config(value)
 
 
-def test_derive_config_properties():
-    assert derive_config_properties(
+def test_derive_config_item_info():
+    assert derive_config_item_info(
         {
-            "version": "1.2.3",
-            "by_source": {
-                "some_module": {
-                    "source_name": "some_module",
-                    "js_dependencies": ["dep1", "dep2"],
-                }
-            },
+            "source_name": "some_module",
+            "js_dependencies": ["dep1", "dep2"],
         }
-    ) == {
-        "aliased_js_dependencies_by_source": {
-            "some_module": [
-                "dep1-some_module-261bad9@npm:dep1",
-                "dep2-some_module-261bad9@npm:dep2",
-            ]
+    ) == ConfigItemInfo(
+        js_dependency_aliases={
+            "dep1": "dep1-some_module-261bad9",
+            "dep2": "dep2-some_module-261bad9",
         },
-        "js_dependency_aliases_by_source": {
-            "some_module": {
-                "dep1": "dep1-some_module-261bad9",
-                "dep2": "dep2-some_module-261bad9",
-            }
-        },
-    }
+        aliased_js_dependencies=[
+            "dep1-some_module-261bad9@npm:dep1",
+            "dep2-some_module-261bad9@npm:dep2",
+        ],
+    )
 
 
 def test_find_build_config_item_in_python_file(tmp_path):
@@ -149,54 +140,29 @@ def test_find_build_config_item_in_python_file(tmp_path):
 
 
 def test_build_config_file_load_absent_config(make_build_config):
-    assert make_build_config().config == {
+    assert make_build_config().data == {
         "version": idom.__version__,
-        "by_source": {},
+        "items": {},
     }
 
 
 def test_build_config_file_repr(make_build_config):
-    with make_build_config().transaction() as config_file:
-        config_file.update_config_items(
-            [{"source_name": "a_test", "js_dependencies": ["a-different-package"]}]
-        )
+    config = make_build_config()
+    config.update(
+        [{"source_name": "a_test", "js_dependencies": ["a-different-package"]}]
+    )
+    assert str(config) == f"BuildConfig({config.data})"
 
-        assert str(config_file) == f"BuildConfig({config_file.config})"
 
+def test_build_config_file_add_config_item_and_save(make_build_config):
+    config = make_build_config()
+    config.update([{"source_name": "a_test", "js_dependencies": ["some-js-package"]}])
+    config.save()
 
-def test_build_config_file_add_config_item(make_build_config):
-    with make_build_config().transaction() as config_file:
-        config_file.update_config_items(
-            [{"source_name": "a_test", "js_dependencies": ["some-js-package"]}]
-        )
-
-    assert make_build_config().config["by_source"] == {
+    assert make_build_config().data["items"] == {
         "a_test": {"source_name": "a_test", "js_dependencies": ["some-js-package"]}
     }
-
-
-@pytest.mark.parametrize("method", ["update_config_items"])
-def test_some_build_config_file_methods_require_transaction(make_build_config, method):
-    config_file = make_build_config()
-    with pytest.raises(RuntimeError, match="must be used in a transaction"):
-        getattr(config_file, method)()
-
-
-@pytest.mark.parametrize(
-    "method",
-    [
-        "get_js_dependency_alias",
-        "all_aliased_js_dependencies",
-        "all_js_dependency_aliases",
-    ],
-)
-def test_some_build_config_file_methods_blocked_in_transaction(
-    make_build_config, method
-):
-    config_file = make_build_config()
-    with pytest.raises(RuntimeError, match="cannot be used in a transaction"):
-        with config_file.transaction():
-            getattr(config_file, method)()
+    assert make_build_config().has_config_item("a_test")
 
 
 def test_find_python_packages_build_config_items():
@@ -219,25 +185,6 @@ def test_find_python_packages_build_config_items():
 
     with pytest.raises(ValidationError, match="1 is not of type 'string'"):
         raise errors[0].__cause__
-
-
-def test_build_config_file_transaction_rollback(make_build_config):
-    with pytest.raises(Exception):
-        with make_build_config().transaction() as config_file:
-            config_file.update_config_items(
-                [
-                    {
-                        "source_name": "a_test",
-                        "js_dependencies": ["some-js-package"],
-                    }
-                ]
-            )
-            raise Exception()
-
-    assert make_build_config().config == {
-        "version": idom.__version__,
-        "by_source": {},
-    }
 
 
 @pytest.mark.parametrize(
@@ -294,3 +241,17 @@ def test_build_config_all_js_dependency_aliases(make_build_config):
         "dep2-module_2-46d6db8",
         "dep3-module_2-46d6db8",
     ]
+
+
+def test_get_js_dependency_alias(make_build_config):
+    config = make_build_config(
+        {"source_name": "module_1", "js_dependencies": ["dep1", "dep2"]},
+        {"source_name": "module_2", "js_dependencies": ["dep2", "dep3"]},
+    )
+    assert config.get_js_dependency_alias("module_1", "dep1") == "dep1-module_1-5001a4b"
+    assert config.get_js_dependency_alias("module_1", "dep2") == "dep2-module_1-5001a4b"
+    assert config.get_js_dependency_alias("module_2", "dep2") == "dep2-module_2-46d6db8"
+    assert config.get_js_dependency_alias("module_2", "dep3") == "dep3-module_2-46d6db8"
+
+    assert config.get_js_dependency_alias("missing_module", "missing_dep") is None
+    assert config.get_js_dependency_alias("module_1", "missing_dep") is None

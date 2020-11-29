@@ -6,7 +6,7 @@ from typing import Optional, Iterable, Sequence, List, Tuple
 
 from .build_config import (
     BuildConfig,
-    BuildConfigItem,
+    ConfigItem,
     find_python_packages_build_config_items,
 )
 from .utils import open_modifiable_json, find_js_module_exports_in_source
@@ -51,27 +51,13 @@ def web_module_exists(source_name: str, package_name: str) -> bool:
         return True
 
 
-def find_client_build_path(rel_path: str) -> Optional[Path]:
-    if rel_path.startswith("/"):
-        raise ValueError(f"{rel_path!r} is not a relative path")
-    builtin_path = BUILD_DIR.joinpath(*rel_path.split("/"))
-    if builtin_path.exists():
-        return builtin_path
-    else:
-        return None
-
-
-def build(config_items: Iterable[BuildConfigItem] = ()) -> None:
+def build(config_items: Iterable[ConfigItem] = ()) -> None:
     config = build_config()
-
-    with config.transaction():
-        config.update_config_items(config_items)
-
-        with console.spinner("Discovering dependencies"):
-            configs, errors = find_python_packages_build_config_items()
-            for e in errors:
-                console.echo(f"{e} because {e.__cause__}", color="red")
-            config.update_config_items(configs)
+    with console.spinner("Discovering dependencies"):
+        py_pkg_configs, errors = find_python_packages_build_config_items()
+        for e in errors:  # pragma: no cover
+            console.echo(f"{e} because {e.__cause__}", color="red")
+    config.update(py_pkg_configs + config_items)
 
     with TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
@@ -105,10 +91,13 @@ def build(config_items: Iterable[BuildConfigItem] = ()) -> None:
 
         shutil.copytree(temp_build_dir, BUILD_DIR, symlinks=True)
 
+    config.save()
+
 
 def restore() -> None:
     with console.spinner("Restoring"):
-        shutil.rmtree(BUILD_DIR)
+        if BUILD_DIR.exists():
+            shutil.rmtree(BUILD_DIR)
         _run_subprocess(["npm", "install"], APP_DIR)
         _run_subprocess(["npm", "run", "build"], APP_DIR)
 
@@ -121,12 +110,12 @@ def _web_module_alias_and_file_path(
         raise WebModuleError(
             f"Package {package_name!r} is not declared as a dependency of {source_name!r}"
         )
-    module_file = find_client_build_path(f"web_modules/{alias}.js")
-    if module_file is None:
+    builtin_path = BUILD_DIR.joinpath("web_modules", *f"{alias}.js".split("/"))
+    if not builtin_path.exists():
         raise WebModuleError(
             f"Dependency {package_name!r} of {source_name!r} was not installed"
         )
-    return alias, module_file
+    return alias, builtin_path
 
 
 def _npm_install(packages: Sequence[str], cwd: Path) -> None:

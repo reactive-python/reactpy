@@ -13,7 +13,7 @@ def install_doc_js_modules():
     )
     if (
         config_item is not None
-        and config_item["source_name"] not in build_config().config["by_source"]
+        and config_item["source_name"] not in build_config().config["items"]
     ):
         build([config_item])
 
