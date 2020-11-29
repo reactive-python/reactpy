@@ -1,6 +1,7 @@
 import logging
 import inspect
 import time
+from copy import deepcopy
 from typing import Callable, Any, Type, Tuple, Iterator, Iterable, Union
 
 import sanic
@@ -16,7 +17,11 @@ from selenium.webdriver.chrome.options import Options
 import pyalect.builtins.pytest  # noqa
 
 import idom
-from idom.client.manage import restore as restore_client
+from idom.client.manage import (
+    build_config,
+    build as build_client,
+    restore as restore_client,
+)
 from idom.core import ElementConstructor, AbstractElement
 from idom.server.prefab import hotswap_server, AbstractRenderServer
 from idom.server.utils import find_available_port
@@ -46,10 +51,10 @@ def pytest_addoption(parser: Parser) -> None:
         help="Whether to run browser tests in headless mode.",
     )
     parser.addoption(
-        "--dirty-client",
-        dest="dirty_client",
-        action="store_true",
-        help="Whether to refresh the client before and after testing.",
+        "--no-client-restore",
+        dest="restore_client",
+        action="store_false",
+        help="Whether to restore the client build before testing.",
     )
 
 
@@ -136,7 +141,7 @@ def driver(create_driver: Callable[[], Chrome]) -> Chrome:
 
 
 @pytest.fixture(scope="module")
-def create_driver(pytestconfig: Config, fresh_client: None, driver_timeout: float):
+def create_driver(pytestconfig: Config, driver_timeout: float):
     """A Selenium web driver"""
     created_drivers = []
 
@@ -267,15 +272,58 @@ def _clean_last_server_error(last_server_error) -> Iterator[None]:
     yield
 
 
-@pytest.fixture(scope="session")
-def fresh_client(pytestconfig: Config) -> Iterator[None]:
+@pytest.fixture
+def install():
+    def add_dependency(*packages):
+        config = build_config()
+        if not config.has_config_item("tests"):
+            build_client(
+                [
+                    {
+                        "source_name": "tests",
+                        "js_dependencies": list(sorted(packages)),
+                    }
+                ]
+            )
+        else:
+            to_install = set(packages)
+            already_installed = config.data["items"]["tests"]["js_dependencies"]
+            not_installed_pkgs = to_install.difference(already_installed)
+            if not_installed_pkgs:
+                build_client(
+                    [
+                        {
+                            "source_name": "tests",
+                            "js_dependencies": list(
+                                sorted(to_install.union(already_installed))
+                            ),
+                        }
+                    ]
+                )
+
+    return add_dependency
+
+
+@pytest.fixture
+def temp_build_config():
+    config = build_config()
+    original_data = deepcopy(config.data)
+    try:
+        yield config
+    finally:
+        config.data = original_data
+        config.save()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _restore_client(pytestconfig: Config) -> Iterator[None]:
     """Restore the client's state before and after testing
 
-    For faster test runs set ``--dirty-client`` at the CLI. Test coverage and
+    For faster test runs set ``--no-restore-client`` at the CLI. Test coverage and
     breakages may occur if this is set. Further the client is not cleaned up
     after testing and may effect usage of IDOM beyond the scope of the tests.
     """
-    if not pytestconfig.option.dirty_client:
+    if pytestconfig.option.restore_client:
         restore_client()
         yield
         restore_client()

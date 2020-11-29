@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Optional
+from typing import Any, Optional, List
 from urllib.parse import urlparse
 
 from idom.core.vdom import VdomDict, ImportSourceDict, make_vdom_constructor
@@ -44,23 +44,25 @@ class Module:
         fallback: Optional[str] = None,
         check_exports: bool = True,
     ) -> None:
+        self.exports: Optional[List[str]]
         if _is_url(url_or_name):
             self.url = url_or_name
             self.installed = False
-            self.exports = []
+            self.exports = None
         else:
             if source_name is None:
                 module_name: str = inspect.currentframe().f_back.f_globals["__name__"]
                 source_name = module_name.split(".", 1)[0]
             self.url = client.current.web_module_url(source_name, url_or_name)
             self.installed = True
-            if check_exports:
-                self.exports = client.current.web_module_exports(
+            self.exports = (
+                client.current.web_module_exports(
                     source_name,
                     url_or_name,
                 )
-            else:
-                self.exports = []
+                if check_exports
+                else None
+            )
         self.fallback = fallback
 
     def Import(self, name: str, *args: Any, **kwargs: Any) -> "Import":

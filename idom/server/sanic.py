@@ -77,9 +77,6 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
             element_params = {k: request.args.get(k) for k in request.args}
             await self._run_dispatcher(sock_send, sock_recv, element_params)
 
-        def handler_name(function: Any) -> str:
-            return f"{blueprint.name}.{function.__name__}"
-
         if config["server_static_files"]:
             blueprint.static("/client", str(BUILD_DIR))
 
