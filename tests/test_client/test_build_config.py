@@ -1,3 +1,5 @@
+import re
+
 from pathlib import Path
 from jsonschema import ValidationError
 
@@ -13,6 +15,9 @@ from idom.client.build_config import (
     derive_config_item_info,
     ConfigItemInfo,
 )
+
+
+HERE = Path(__file__).parent
 
 
 @pytest.fixture
@@ -31,6 +36,13 @@ def make_build_config(tmp_path):
 @pytest.mark.parametrize(
     "value, expectation",
     [
+        (
+            {
+                "version": "1.2.3",
+                "items": {"some_module": {}},
+            },
+            "'source_name' is a required property",
+        ),
         (
             {
                 "version": "1.2.3",
@@ -125,6 +137,7 @@ def test_derive_config_item_info():
             "dep1-some_module-261bad9@npm:dep1",
             "dep2-some_module-261bad9@npm:dep2",
         ],
+        js_package_def=None,
     )
 
 
@@ -168,23 +181,25 @@ def test_build_config_file_add_config_item_and_save(make_build_config):
 def test_find_python_packages_build_config_items():
     mock_site_pkgs_path = str((Path(__file__).parent / "mock_site_packages").absolute())
     configs, errors = find_python_packages_build_config_items([mock_site_pkgs_path])
+
     assert configs == [
         {
             "source_name": "has_good_config",
             "js_dependencies": ["some-js-package"],
-        }
+        },
+        {
+            "source_name": "has_js_package",
+            "js_package": str(
+                (HERE / "mock_site_packages" / "some_js_pkg").absolute().resolve()
+            ),
+        },
     ]
 
-    assert len(errors) == 1
-
-    with pytest.raises(
-        RuntimeError,
-        match="Failed to load build config for module 'has_bad_config'",
+    for error_msg, expected_msg in zip(
+        sorted([str(e.__cause__) for e in errors]),
+        ["1 is not of type 'string'", r"js_package.*? is not allowed"],
     ):
-        raise errors[0]
-
-    with pytest.raises(ValidationError, match="1 is not of type 'string'"):
-        raise errors[0].__cause__
+        assert re.search(expected_msg, error_msg)
 
 
 @pytest.mark.parametrize(
@@ -206,23 +221,31 @@ def test_split_package_name_and_version(package_specifier, expected_name_and_ver
     )
 
 
-def test_build_config_get_js_dependency_alias(make_build_config):
+def test_build_config_resolve_js_dependency_name(make_build_config):
     config = make_build_config(
         {"source_name": "module_1", "js_dependencies": ["dep1", "dep2"]},
         {"source_name": "module_2", "js_dependencies": ["dep2", "dep3"]},
     )
-    assert config.get_js_dependency_alias("module_1", "dep1") == "dep1-module_1-5001a4b"
-    assert config.get_js_dependency_alias("module_1", "dep2") == "dep2-module_1-5001a4b"
-    assert config.get_js_dependency_alias("module_2", "dep2") == "dep2-module_2-46d6db8"
-    assert config.get_js_dependency_alias("module_2", "dep3") == "dep3-module_2-46d6db8"
+    assert (
+        config.resolve_js_dependency_name("module_1", "dep1") == "dep1-module_1-5001a4b"
+    )
+    assert (
+        config.resolve_js_dependency_name("module_1", "dep2") == "dep2-module_1-5001a4b"
+    )
+    assert (
+        config.resolve_js_dependency_name("module_2", "dep2") == "dep2-module_2-46d6db8"
+    )
+    assert (
+        config.resolve_js_dependency_name("module_2", "dep3") == "dep3-module_2-46d6db8"
+    )
 
 
-def test_build_config_all_aliased_js_dependencies(make_build_config):
+def test_build_config_all_js_dependencies(make_build_config):
     config = make_build_config(
         {"source_name": "module_1", "js_dependencies": ["dep1", "dep2"]},
         {"source_name": "module_2", "js_dependencies": ["dep2", "dep3"]},
     )
-    assert config.all_aliased_js_dependencies() == [
+    assert config.all_js_dependencies() == [
         "dep1-module_1-5001a4b@npm:dep1",
         "dep2-module_1-5001a4b@npm:dep2",
         "dep2-module_2-46d6db8@npm:dep2",
@@ -230,12 +253,12 @@ def test_build_config_all_aliased_js_dependencies(make_build_config):
     ]
 
 
-def test_build_config_all_js_dependency_aliases(make_build_config):
+def test_build_config_all_js_dependency_names(make_build_config):
     config = make_build_config(
         {"source_name": "module_1", "js_dependencies": ["dep1", "dep2"]},
         {"source_name": "module_2", "js_dependencies": ["dep2", "dep3"]},
     )
-    assert config.all_js_dependency_aliases() == [
+    assert config.all_js_dependency_names() == [
         "dep1-module_1-5001a4b",
         "dep2-module_1-5001a4b",
         "dep2-module_2-46d6db8",
@@ -243,15 +266,22 @@ def test_build_config_all_js_dependency_aliases(make_build_config):
     ]
 
 
-def test_get_js_dependency_alias(make_build_config):
+def test_resolve_js_dependency_name(make_build_config):
     config = make_build_config(
         {"source_name": "module_1", "js_dependencies": ["dep1", "dep2"]},
         {"source_name": "module_2", "js_dependencies": ["dep2", "dep3"]},
     )
-    assert config.get_js_dependency_alias("module_1", "dep1") == "dep1-module_1-5001a4b"
-    assert config.get_js_dependency_alias("module_1", "dep2") == "dep2-module_1-5001a4b"
-    assert config.get_js_dependency_alias("module_2", "dep2") == "dep2-module_2-46d6db8"
-    assert config.get_js_dependency_alias("module_2", "dep3") == "dep3-module_2-46d6db8"
+    assert (
+        config.resolve_js_dependency_name("module_1", "dep1") == "dep1-module_1-5001a4b"
+    )
+    assert (
+        config.resolve_js_dependency_name("module_1", "dep2") == "dep2-module_1-5001a4b"
+    )
+    assert (
+        config.resolve_js_dependency_name("module_2", "dep2") == "dep2-module_2-46d6db8"
+    )
+    assert (
+        config.resolve_js_dependency_name("module_2", "dep3") == "dep3-module_2-46d6db8"
+    )
 
-    assert config.get_js_dependency_alias("missing_module", "missing_dep") is None
-    assert config.get_js_dependency_alias("module_1", "missing_dep") is None
+    assert config.resolve_js_dependency_name("module_1", "missing_dep") is None
