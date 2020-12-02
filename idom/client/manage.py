@@ -31,20 +31,20 @@ def build_config() -> BuildConfig:
 
 
 def web_module_exports(source_name: str, package_name: str) -> List[str]:
-    _, module_file = _web_module_alias_and_file_path(source_name, package_name)
+    _, module_file = _get_web_module_name_and_file_path(source_name, package_name)
     with module_file.open() as f:
         return find_js_module_exports_in_source(f.read())
 
 
 def web_module_url(source_name: str, package_name: str) -> Optional[str]:
-    alias, _ = _web_module_alias_and_file_path(source_name, package_name)
+    name, _ = _get_web_module_name_and_file_path(source_name, package_name)
     # need to go back a level since the JS that imports this is in `core_components`
-    return f"../web_modules/{alias}.js"
+    return f"../web_modules/{name}.js"
 
 
 def web_module_exists(source_name: str, package_name: str) -> bool:
     try:
-        _web_module_alias_and_file_path(source_name, package_name)
+        _get_web_module_name_and_file_path(source_name, package_name)
     except WebModuleError:
         return False
     else:
@@ -55,9 +55,9 @@ def build(config_items: Iterable[ConfigItem] = ()) -> None:
     config = build_config()
     with console.spinner("Discovering dependencies"):
         py_pkg_configs, errors = find_python_packages_build_config_items()
-        for e in errors:  # pragma: no cover
-            console.echo(f"{e} because {e.__cause__}", color="red")
-    config.update(py_pkg_configs + config_items)
+    for e in errors:  # pragma: no cover
+        console.echo(f"{e} because {e.__cause__}", message_color="red")
+    config.update(py_pkg_configs + list(config_items))
 
     with TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
@@ -68,13 +68,12 @@ def build(config_items: Iterable[ConfigItem] = ()) -> None:
         # copy over the whole APP_DIR directory into the temp one
         shutil.copytree(APP_DIR, temp_app_dir, symlinks=True)
 
-        packages_to_install = config.all_aliased_js_dependencies()
+        packages_to_install = config.all_js_dependencies()
 
         with open_modifiable_json(package_json_path) as package_json:
             snowpack_config = package_json.setdefault("snowpack", {})
-            snowpack_config.setdefault("install", []).extend(
-                config.all_js_dependency_aliases()
-            )
+            snowpack_install = snowpack_config.setdefault("install", [])
+            snowpack_install.extend(config.all_js_dependency_names())
 
         with console.spinner(
             f"Installing {len(packages_to_install)} dependencies"
@@ -102,27 +101,27 @@ def restore() -> None:
         _run_subprocess(["npm", "run", "build"], APP_DIR)
 
 
-def _web_module_alias_and_file_path(
+def _get_web_module_name_and_file_path(
     source_name: str, package_name: str
 ) -> Tuple[str, Path]:
-    alias = build_config().get_js_dependency_alias(source_name, package_name)
-    if alias is None:
+    pkg_name = build_config().resolve_js_dependency_name(source_name, package_name)
+    if pkg_name is None:
         raise WebModuleError(
             f"Package {package_name!r} is not declared as a dependency of {source_name!r}"
         )
-    builtin_path = BUILD_DIR.joinpath("web_modules", *f"{alias}.js".split("/"))
+    builtin_path = BUILD_DIR.joinpath("web_modules", *f"{pkg_name}.js".split("/"))
     if not builtin_path.exists():
         raise WebModuleError(
             f"Dependency {package_name!r} of {source_name!r} was not installed"
         )
-    return alias, builtin_path
+    return pkg_name, builtin_path
 
 
 def _npm_install(packages: Sequence[str], cwd: Path) -> None:
     _run_subprocess(["npm", "install"] + packages, cwd)
 
 
-def _npm_run_build(cwd: Path):
+def _npm_run_build(cwd: Path) -> None:
     _run_subprocess(["npm", "run", "build"], cwd)
 
 

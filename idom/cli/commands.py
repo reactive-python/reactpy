@@ -39,7 +39,7 @@ def build(
 
 
 @main.command()
-def restore():
+def restore() -> None:
     """Reset the client to its original state"""
     manage_client.restore()
 
@@ -47,7 +47,7 @@ def restore():
 @show.command()
 def build_config() -> None:
     """Show the state of IDOM's build config"""
-    typer.echo(json.dumps(manage_client.build_config().config, indent=2))
+    typer.echo(json.dumps(manage_client.build_config().data, indent=2))
     return None
 
 

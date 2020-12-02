@@ -51,7 +51,7 @@ def pytest_addoption(parser: Parser) -> None:
         help="Whether to run browser tests in headless mode.",
     )
     parser.addoption(
-        "--no-client-restore",
+        "--no-restore",
         dest="restore_client",
         action="store_false",
         help="Whether to restore the client build before testing.",

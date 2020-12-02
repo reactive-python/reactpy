@@ -40,8 +40,12 @@ class BuildConfig:
             for name, item in self.data["items"].items()
         }
 
-    def update(self, config_items: Iterable[ConfigItem]) -> None:
-        for conf in map(validate_config_item, config_items):
+    def update(self, config_items: Iterable[Dict[str, Any]]) -> None:
+        for conf in map(
+            # BUG: https://github.com/python/mypy/issues/6697
+            validate_config_item,  # type: ignore
+            config_items,
+        ):
             src_name = conf["source_name"]
             self.data["items"][src_name] = conf
             self._item_info[src_name] = derive_config_item_info(conf)
@@ -49,29 +53,40 @@ class BuildConfig:
     def has_config_item(self, source_name: str) -> bool:
         return source_name in self.data["items"]
 
-    def get_js_dependency_alias(
+    def resolve_js_dependency_name(
         self,
         source_name: str,
         dependency_name: str,
     ) -> Optional[str]:
-        try:
-            return self._item_info[source_name].js_dependency_aliases[dependency_name]
-        except KeyError:
-            return None
+        info = self._item_info[source_name]
+        if info.js_package_def is not None:
+            if info.js_package_def.name != dependency_name:
+                return None
+            else:
+                return dependency_name
+        else:
+            try:
+                return info.js_dependency_aliases[dependency_name]
+            except KeyError:
+                return None
 
-    def all_aliased_js_dependencies(self) -> List[str]:
-        return [
-            dep
-            for info in self._item_info.values()
-            for dep in info.aliased_js_dependencies
-        ]
+    def all_js_dependencies(self) -> List[str]:
+        deps: List[str] = []
+        for info in self._item_info.values():
+            if info.js_package_def is not None:
+                deps.append(str(info.js_package_def.path))
+            else:
+                deps.extend(info.aliased_js_dependencies)
+        return deps
 
-    def all_js_dependency_aliases(self) -> List[str]:
-        return [
-            alias
-            for info in self._item_info.values()
-            for alias in info.js_dependency_aliases.values()
-        ]
+    def all_js_dependency_names(self) -> List[str]:
+        names: List[str] = []
+        for info in self._item_info.values():
+            if info.js_package_def is not None:
+                names.append(info.js_package_def.name)
+            else:
+                names.extend(info.js_dependency_aliases.values())
+        return names
 
     def save(self) -> None:
         with self._path.open("w") as f:
@@ -109,9 +124,10 @@ def find_python_packages_build_config_items(
         module_name = module_info.name
         module_loader = module_info.module_finder.find_module(module_name)
         if isinstance(module_loader, SourceFileLoader):
-            module_src = module_loader.get_source(module_name)
             try:
-                conf = find_build_config_item_in_python_source(module_name, module_src)
+                conf = find_build_config_item_in_python_file(
+                    module_name, Path(module_loader.get_filename(module_name))
+                )
             except Exception as cause:
                 error = RuntimeError(
                     f"Failed to load build config for module {module_name!r}"
@@ -125,15 +141,11 @@ def find_python_packages_build_config_items(
 
 
 def find_build_config_item_in_python_file(
-    module_name: str, path: Path
+    module_name: str, module_path: Path
 ) -> Optional[ConfigItem]:
-    with path.open() as f:
-        return find_build_config_item_in_python_source(module_name, f.read())
+    with module_path.open() as f:
+        module_src = f.read()
 
-
-def find_build_config_item_in_python_source(
-    module_name: str, module_src: str
-) -> Optional[ConfigItem]:
     for node in ast.parse(module_src).body:
         if isinstance(node, ast.Assign) and (
             len(node.targets) == 1
@@ -141,8 +153,24 @@ def find_build_config_item_in_python_source(
             and node.targets[0].id == "idom_build_config"
         ):
             config_item = validate_config_item(
-                eval(compile(ast.Expression(node.value), "temp", "eval"))
+                {
+                    "source_name": module_name,
+                    **eval(
+                        compile(
+                            source=ast.Expression(node.value),
+                            filename=str(module_path),
+                            mode="eval",
+                        ),
+                    ),
+                }
             )
+            if "js_package" in config_item:
+                js_pkg = module_path.parent.joinpath(
+                    *config_item["js_package"].split("/")
+                )
+                if not (js_pkg / "package.json").exists():
+                    raise ValueError(f"{str(js_pkg)!r} does not contain 'package.json'")
+                config_item["js_package"] = str(js_pkg.resolve().absolute())
             config_item.setdefault("source_name", module_name)
             return config_item
 
@@ -163,9 +191,15 @@ def split_package_name_and_version(pkg: str) -> Tuple[str, str]:
         return pkg, ""
 
 
+class JsPackageDef(NamedTuple):
+    path: Path
+    name: str
+
+
 class ConfigItemInfo(NamedTuple):
     js_dependency_aliases: Dict[str, str]
     aliased_js_dependencies: List[str]
+    js_package_def: Optional[JsPackageDef]
 
 
 def derive_config_item_info(config_item: Dict[str, Any]) -> ConfigItemInfo:
@@ -178,9 +212,20 @@ def derive_config_item_info(config_item: Dict[str, Any]) -> ConfigItemInfo:
         dep_alias = f"{dep_name}-{alias_suffix}"
         aliases[dep_name] = dep_alias
         aliased_js_deps.append(f"{dep_alias}@npm:{dep}")
+
+    try:
+        js_pkg_path = Path(config_item["js_package"])
+        with (js_pkg_path / "package.json").open() as f:
+            js_pkg_name = str(json.load(f)["name"])
+    except Exception:
+        js_pkg_info = None
+    else:
+        js_pkg_info = JsPackageDef(path=js_pkg_path, name=js_pkg_name)
+
     return ConfigItemInfo(
         js_dependency_aliases=aliases,
         aliased_js_dependencies=aliased_js_deps,
+        js_package_def=js_pkg_info,
     )
 
 
@@ -215,15 +260,20 @@ _CONFIG_SCHEMA = {
                     "type": "array",
                     "items": {"type": "string"},
                 },
+                "js_package": {"type": "string"},
             },
-            "requiredProperties": ["source_name"],
-            "additionalProperties": False,
+            "required": ["source_name"],
+            "dependencies": {
+                "js_dependencies": {"not": {"required": ["js_package"]}},
+                "js_package": {"not": {"required": ["js_dependencies"]}},
+            },
+            "additionalProprties": False,
         }
     },
 }
 
 
-_V = TypeVar("_V")
+_V = TypeVar("_V", bound=Any)
 
 
 def validate_config(value: _V) -> _V:
