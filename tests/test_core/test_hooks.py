@@ -214,17 +214,17 @@ def test_set_state_checks_identity_not_equality(driver, display, driver_wait):
     client_r_1_button.click()
 
     driver_wait.until(lambda d: event_count.current == 1)
-    assert render_count.current == 1
+    driver_wait.until(lambda d: render_count.current == 1)
 
     client_r_2_button.click()
 
     driver_wait.until(lambda d: event_count.current == 2)
-    assert render_count.current == 2
+    driver_wait.until(lambda d: render_count.current == 2)
 
     client_r_2_button.click()
 
     driver_wait.until(lambda d: event_count.current == 3)
-    assert render_count.current == 2
+    driver_wait.until(lambda d: render_count.current == 2)
 
 
 def test_simple_input_with_use_state(driver, display):
