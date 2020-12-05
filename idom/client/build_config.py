@@ -40,7 +40,14 @@ class BuildConfig:
             for name, item in self.data["items"].items()
         }
 
-    def update(self, config_items: Iterable[Dict[str, Any]]) -> None:
+    def clear_items(self) -> None:
+        self.data["items"].clear()
+        self._item_info.clear()
+
+    def update_items(self, config_items: Iterable[Dict[str, Any]]) -> None:
+        # a useful debug assertion - the error which would result otherwise is confusing
+        assert not isinstance(config_items, dict), "expected list, not a dict"
+
         for conf in map(
             # BUG: https://github.com/python/mypy/issues/6697
             validate_config_item,  # type: ignore
@@ -168,8 +175,6 @@ def find_build_config_item_in_python_file(
                 js_pkg = module_path.parent.joinpath(
                     *config_item["js_package"].split("/")
                 )
-                if not (js_pkg / "package.json").exists():
-                    raise ValueError(f"{str(js_pkg)!r} does not contain 'package.json'")
                 config_item["js_package"] = str(js_pkg.resolve().absolute())
             config_item.setdefault("source_name", module_name)
             return config_item
@@ -213,14 +218,21 @@ def derive_config_item_info(config_item: Dict[str, Any]) -> ConfigItemInfo:
         aliases[dep_name] = dep_alias
         aliased_js_deps.append(f"{dep_alias}@npm:{dep}")
 
-    try:
+    if "js_package" in config_item:
         js_pkg_path = Path(config_item["js_package"])
-        with (js_pkg_path / "package.json").open() as f:
-            js_pkg_name = str(json.load(f)["name"])
-    except Exception:
-        js_pkg_info = None
+        js_pkg_json = js_pkg_path / "package.json"
+        try:
+            with js_pkg_json.open() as f:
+                js_pkg_name = str(json.load(f)["name"])
+        except FileNotFoundError as error:
+            raise ValueError(
+                f"Path to package {str(js_pkg_json)!r} specified by "
+                f"{config_item['source_name']!r} does not exist"
+            ) from error
+        else:
+            js_pkg_info = JsPackageDef(path=js_pkg_path, name=js_pkg_name)
     else:
-        js_pkg_info = JsPackageDef(path=js_pkg_path, name=js_pkg_name)
+        js_pkg_info = None
 
     return ConfigItemInfo(
         js_dependency_aliases=aliases,

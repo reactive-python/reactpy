@@ -18,6 +18,8 @@ from idom.client.build_config import (
 
 
 HERE = Path(__file__).parent
+MOCK_SITE_PACKAGES = HERE / "mock_site_packages"
+MOCK_JS_PACKAGE = MOCK_SITE_PACKAGES / "some_js_pkg"
 
 
 @pytest.fixture
@@ -26,11 +28,20 @@ def make_build_config(tmp_path):
 
     def make(*config_items):
         config = BuildConfig(tmp_path)
-        config.update(config_items)
+        config.update_items(config_items)
         config.save()
         return config
 
     return make
+
+
+@pytest.fixture
+def prefab_build_config(make_build_config):
+    return make_build_config(
+        {"source_name": "module_1", "js_dependencies": ["dep1", "dep2"]},
+        {"source_name": "module_2", "js_dependencies": ["dep2", "dep3"]},
+        {"source_name": "module_3", "js_package": str(MOCK_JS_PACKAGE)},
+    )
 
 
 @pytest.mark.parametrize(
@@ -161,7 +172,7 @@ def test_build_config_file_load_absent_config(make_build_config):
 
 def test_build_config_file_repr(make_build_config):
     config = make_build_config()
-    config.update(
+    config.update_items(
         [{"source_name": "a_test", "js_dependencies": ["a-different-package"]}]
     )
     assert str(config) == f"BuildConfig({config.data})"
@@ -169,7 +180,9 @@ def test_build_config_file_repr(make_build_config):
 
 def test_build_config_file_add_config_item_and_save(make_build_config):
     config = make_build_config()
-    config.update([{"source_name": "a_test", "js_dependencies": ["some-js-package"]}])
+    config.update_items(
+        [{"source_name": "a_test", "js_dependencies": ["some-js-package"]}]
+    )
     config.save()
 
     assert make_build_config().data["items"] == {
@@ -179,7 +192,7 @@ def test_build_config_file_add_config_item_and_save(make_build_config):
 
 
 def test_find_python_packages_build_config_items():
-    mock_site_pkgs_path = str((Path(__file__).parent / "mock_site_packages").absolute())
+    mock_site_pkgs_path = str(MOCK_SITE_PACKAGES.absolute())
     configs, errors = find_python_packages_build_config_items([mock_site_pkgs_path])
 
     assert configs == [
@@ -189,9 +202,7 @@ def test_find_python_packages_build_config_items():
         },
         {
             "source_name": "has_js_package",
-            "js_package": str(
-                (HERE / "mock_site_packages" / "some_js_pkg").absolute().resolve()
-            ),
+            "js_package": str(MOCK_JS_PACKAGE.absolute().resolve()),
         },
     ]
 
@@ -221,67 +232,48 @@ def test_split_package_name_and_version(package_specifier, expected_name_and_ver
     )
 
 
-def test_build_config_resolve_js_dependency_name(make_build_config):
-    config = make_build_config(
-        {"source_name": "module_1", "js_dependencies": ["dep1", "dep2"]},
-        {"source_name": "module_2", "js_dependencies": ["dep2", "dep3"]},
-    )
-    assert (
-        config.resolve_js_dependency_name("module_1", "dep1") == "dep1-module_1-5001a4b"
-    )
-    assert (
-        config.resolve_js_dependency_name("module_1", "dep2") == "dep2-module_1-5001a4b"
-    )
-    assert (
-        config.resolve_js_dependency_name("module_2", "dep2") == "dep2-module_2-46d6db8"
-    )
-    assert (
-        config.resolve_js_dependency_name("module_2", "dep3") == "dep3-module_2-46d6db8"
-    )
-
-
-def test_build_config_all_js_dependencies(make_build_config):
-    config = make_build_config(
-        {"source_name": "module_1", "js_dependencies": ["dep1", "dep2"]},
-        {"source_name": "module_2", "js_dependencies": ["dep2", "dep3"]},
-    )
-    assert config.all_js_dependencies() == [
+def test_build_config_all_js_dependencies(prefab_build_config):
+    assert prefab_build_config.all_js_dependencies() == [
         "dep1-module_1-5001a4b@npm:dep1",
         "dep2-module_1-5001a4b@npm:dep2",
         "dep2-module_2-46d6db8@npm:dep2",
         "dep3-module_2-46d6db8@npm:dep3",
+        str(MOCK_JS_PACKAGE.absolute()),
     ]
 
 
-def test_build_config_all_js_dependency_names(make_build_config):
-    config = make_build_config(
-        {"source_name": "module_1", "js_dependencies": ["dep1", "dep2"]},
-        {"source_name": "module_2", "js_dependencies": ["dep2", "dep3"]},
-    )
-    assert config.all_js_dependency_names() == [
+def test_build_config_all_js_dependency_names(prefab_build_config):
+    assert prefab_build_config.all_js_dependency_names() == [
         "dep1-module_1-5001a4b",
         "dep2-module_1-5001a4b",
         "dep2-module_2-46d6db8",
         "dep3-module_2-46d6db8",
+        "some_js_pkg",
     ]
 
 
-def test_resolve_js_dependency_name(make_build_config):
-    config = make_build_config(
-        {"source_name": "module_1", "js_dependencies": ["dep1", "dep2"]},
-        {"source_name": "module_2", "js_dependencies": ["dep2", "dep3"]},
-    )
+@pytest.mark.parametrize(
+    "given_dep, resolved_dep",
+    [
+        ("module_1:dep1", "dep1-module_1-5001a4b"),
+        ("module_1:dep2", "dep2-module_1-5001a4b"),
+        ("module_2:dep2", "dep2-module_2-46d6db8"),
+        ("module_2:dep3", "dep3-module_2-46d6db8"),
+        ("module_1:missing_dep", None),
+        ("module_3:some_js_pkg", "some_js_pkg"),
+        ("module_3:missing_dep", None),
+    ],
+)
+def test_resolve_js_dependency_name(prefab_build_config, given_dep, resolved_dep):
     assert (
-        config.resolve_js_dependency_name("module_1", "dep1") == "dep1-module_1-5001a4b"
-    )
-    assert (
-        config.resolve_js_dependency_name("module_1", "dep2") == "dep2-module_1-5001a4b"
-    )
-    assert (
-        config.resolve_js_dependency_name("module_2", "dep2") == "dep2-module_2-46d6db8"
-    )
-    assert (
-        config.resolve_js_dependency_name("module_2", "dep3") == "dep3-module_2-46d6db8"
+        prefab_build_config.resolve_js_dependency_name(*given_dep.split(":"))
+        == resolved_dep
     )
 
-    assert config.resolve_js_dependency_name("module_1", "missing_dep") is None
+
+def test_non_existant_js_package_path(make_build_config):
+    config = make_build_config()
+    with pytest.raises(ValueError, match=r"does not exist"):
+        config.update_items(
+            [{"source_name": "tests", "js_package": "path/does/not/exist"}]
+        )

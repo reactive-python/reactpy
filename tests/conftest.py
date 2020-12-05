@@ -307,11 +307,11 @@ def install():
 @pytest.fixture
 def temp_build_config():
     config = build_config()
-    original_data = deepcopy(config.data)
+    original_cfgs = [deepcopy(cfg) for cfg in config.data["items"].values()]
     try:
         yield config
     finally:
-        config.data = original_data
+        config.update_items(original_cfgs)
         config.save()
 
 
