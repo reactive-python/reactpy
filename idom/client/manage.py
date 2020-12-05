@@ -90,6 +90,8 @@ def build(config_items: Iterable[ConfigItem] = ()) -> None:
 
         shutil.copytree(temp_build_dir, BUILD_DIR, symlinks=True)
 
+        print(BUILD_DIR.exists())
+
     config.save()
 
 

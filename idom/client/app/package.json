@@ -12,12 +12,12 @@
     "core_modules/*.js"
   ],
   "scripts": {
-    "build": "npx snowpack build",
+    "build": "npx snowpack && npx snowpack build",
     "format": "npx prettier --write ./core_modules"
   },
   "devDependencies": {
     "prettier": "2.1.1",
-    "snowpack": "2.8.0"
+    "snowpack": "2.12.1"
   },
   "dependencies": {
     "fast-json-patch": "^3.0.0-1",
