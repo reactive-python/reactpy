@@ -57,8 +57,18 @@ def build(config_items: Iterable[ConfigItem] = ()) -> None:
         py_pkg_configs, errors = find_python_packages_build_config_items()
     for e in errors:  # pragma: no cover
         console.echo(f"{e} because {e.__cause__}", message_color="red")
-    config.update(py_pkg_configs + list(config_items))
+    config.update_items(py_pkg_configs + list(config_items))
+    _build_and_save_config()
 
+
+def restore() -> None:
+    config = build_config()
+    config.clear_items()
+    _build_and_save_config()
+
+
+def _build_and_save_config() -> None:
+    config = build_config()
     with TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
         temp_app_dir = tempdir_path / "app"
@@ -72,8 +82,14 @@ def build(config_items: Iterable[ConfigItem] = ()) -> None:
 
         with open_modifiable_json(package_json_path) as package_json:
             snowpack_config = package_json.setdefault("snowpack", {})
+
             snowpack_install = snowpack_config.setdefault("install", [])
             snowpack_install.extend(config.all_js_dependency_names())
+
+            snowpack_build = snowpack_config.setdefault("buildOptions", {})
+            snowpack_build["clean"] = True
+
+        console.echo(f"Current config: {config.data}", debug=True)
 
         with console.spinner(
             f"Installing {len(packages_to_install)} dependencies"
@@ -89,18 +105,7 @@ def build(config_items: Iterable[ConfigItem] = ()) -> None:
             shutil.rmtree(BUILD_DIR)
 
         shutil.copytree(temp_build_dir, BUILD_DIR, symlinks=True)
-
-        print(BUILD_DIR.exists())
-
     config.save()
-
-
-def restore() -> None:
-    with console.spinner("Restoring"):
-        if BUILD_DIR.exists():
-            shutil.rmtree(BUILD_DIR)
-        _run_subprocess(["npm", "install"], APP_DIR)
-        _run_subprocess(["npm", "run", "build"], APP_DIR)
 
 
 def _get_web_module_name_and_file_path(
@@ -111,12 +116,12 @@ def _get_web_module_name_and_file_path(
         raise WebModuleError(
             f"Package {package_name!r} is not declared as a dependency of {source_name!r}"
         )
-    builtin_path = BUILD_DIR.joinpath("web_modules", *f"{pkg_name}.js".split("/"))
-    if not builtin_path.exists():
+    build_path = BUILD_DIR.joinpath("web_modules", *f"{pkg_name}.js".split("/"))
+    if not build_path.exists():
         raise WebModuleError(
             f"Dependency {package_name!r} of {source_name!r} was not installed"
         )
-    return pkg_name, builtin_path
+    return pkg_name, build_path
 
 
 def _npm_install(packages: Sequence[str], cwd: Path) -> None:
@@ -132,6 +137,6 @@ def _run_subprocess(args: List[str], cwd: Path) -> None:
         subprocess.run(
             args, cwd=cwd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
-    except subprocess.CalledProcessError as error:
+    except subprocess.CalledProcessError as error:  # pragma: no cover
         raise subprocess.SubprocessError(error.stderr.decode()) from error
     return None

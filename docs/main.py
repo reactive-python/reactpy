@@ -16,7 +16,6 @@ idom_build_config = {
         "@material-ui/core",
         "victory",
         "semantic-ui-react",
-        "jquery",
     ]
 }
 

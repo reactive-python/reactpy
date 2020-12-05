@@ -1,7 +1,10 @@
+import pytest
+
 from idom.client.manage import (
     web_module_url,
     web_module_exports,
     web_module_exists,
+    WebModuleError,
 )
 
 from tests.general_utils import assert_same_items
@@ -11,6 +14,14 @@ def test_web_module_url(victory_js):
     assert (
         web_module_url("tests", "victory") == "../web_modules/victory-tests-24fa38b.js"
     )
+
+
+def test_bad_install(temp_build_config):
+    temp_build_config.update_items(
+        [{"source_name": "tests", "js_dependencies": ["some-dep"]}]
+    )
+    with pytest.raises(WebModuleError, match="not installed"):
+        web_module_url("tests", "some-dep")
 
 
 def test_web_module_exists(temp_build_config, victory_js):
