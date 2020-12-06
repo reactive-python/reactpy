@@ -2,7 +2,7 @@ import shutil
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional, Iterable, Sequence, List, Tuple
+from typing import Optional, Iterable, List, Tuple
 
 from .build_config import (
     BuildConfig,
@@ -124,7 +124,7 @@ def _get_web_module_name_and_file_path(
     return pkg_name, build_path
 
 
-def _npm_install(packages: Sequence[str], cwd: Path) -> None:
+def _npm_install(packages: List[str], cwd: Path) -> None:
     _run_subprocess(["npm", "install"] + packages, cwd)
 
 

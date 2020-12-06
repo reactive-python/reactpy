@@ -1,5 +1,6 @@
 import inspect
-from typing import Any, Optional, List
+from types import FrameType
+from typing import Any, Optional, List, cast
 from urllib.parse import urlparse
 
 from idom.core.vdom import VdomDict, ImportSourceDict, make_vdom_constructor
@@ -51,8 +52,10 @@ class Module:
             self.exports = None
         else:
             if source_name is None:
-                module_name: str = inspect.currentframe().f_back.f_globals["__name__"]
-                source_name = module_name.split(".", 1)[0]
+                frame = _get_frame_back(1)
+                if frame is None:  # pragma: no cover
+                    raise TypeError("Provide 'source_name' explicitely")
+                source_name = cast(str, frame.f_globals["__name__"].split(".", 1)[0])
             self.url = client.current.web_module_url(source_name, url_or_name)
             self.installed = True
             self.exports = (
@@ -139,3 +142,12 @@ def _is_url(string: str) -> bool:
     else:
         parsed = urlparse(string)
         return bool(parsed.scheme and parsed.netloc)
+
+
+def _get_frame_back(index: int) -> Optional[FrameType]:
+    frame = inspect.currentframe()
+    for _ in range(index + 1):
+        if frame is None:  # pragma: no cover
+            return None
+        frame = frame.f_back
+    return frame
