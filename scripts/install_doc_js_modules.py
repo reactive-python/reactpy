@@ -11,11 +11,9 @@ def install_doc_js_modules():
     config_item = find_build_config_item_in_python_file(
         "__main__", DOCS_PATH / "main.py"
     )
-    if (
-        config_item is not None
-        and config_item["source_name"] not in build_config().config["items"]
-    ):
-        build([config_item])
+    if config_item is not None:
+        if not build_config().has_config_item(config_item["source_name"]):
+            build([config_item])
 
 
 if __name__ == "__main__":

@@ -65,7 +65,10 @@ class BuildConfig:
         source_name: str,
         dependency_name: str,
     ) -> Optional[str]:
-        info = self._item_info[source_name]
+        try:
+            info = self._item_info[source_name]
+        except KeyError:
+            return None
         if info.js_package_def is not None:
             if info.js_package_def.name != dependency_name:
                 return None

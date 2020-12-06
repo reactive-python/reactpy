@@ -262,6 +262,7 @@ def test_build_config_all_js_dependency_names(prefab_build_config):
         ("module_1:missing_dep", None),
         ("module_3:some_js_pkg", "some_js_pkg"),
         ("module_3:missing_dep", None),
+        ("missing_module:some_dep", None),
     ],
 )
 def test_resolve_js_dependency_name(prefab_build_config, given_dep, resolved_dep):
