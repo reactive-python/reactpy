@@ -125,15 +125,18 @@ def find_python_packages_build_config_items(
     Returns:
         Mapping of module names to their corresponding list of discovered dependencies.
     """
-    failures: List[Tuple[str, Exception]] = []
+    failures: List[Exception] = []
     build_configs: List[ConfigItem] = []
     for module_info in iter_modules(paths):
         module_name = module_info.name
         module_loader = module_info.module_finder.find_module(module_name)
         if isinstance(module_loader, SourceFileLoader):
             try:
+                module_filename = module_loader.get_filename(module_name)
+                if isinstance(module_filename, bytes):  # pragma: no cover
+                    module_filename = module_filename.decode()
                 conf = find_build_config_item_in_python_file(
-                    module_name, Path(module_loader.get_filename(module_name))
+                    module_name, Path(module_filename)
                 )
             except Exception as cause:
                 error = RuntimeError(
@@ -191,7 +194,8 @@ def split_package_name_and_version(pkg: str) -> Tuple[str, str]:
             name, version = pkg[1:].split("@", 1)
             return ("@" + name), version
     elif at_count:
-        return tuple(pkg.split("@", 1))
+        name, version = pkg.split("@", 1)
+        return name, version
     else:
         return pkg, ""
 
@@ -218,6 +222,7 @@ def derive_config_item_info(config_item: Dict[str, Any]) -> ConfigItemInfo:
         aliases[dep_name] = dep_alias
         aliased_js_deps.append(f"{dep_alias}@npm:{dep}")
 
+    js_pkg_def: Optional[JsPackageDef]
     if "js_package" in config_item:
         js_pkg_path = Path(config_item["js_package"])
         js_pkg_json = js_pkg_path / "package.json"
@@ -230,14 +235,14 @@ def derive_config_item_info(config_item: Dict[str, Any]) -> ConfigItemInfo:
                 f"{config_item['source_name']!r} does not exist"
             ) from error
         else:
-            js_pkg_info = JsPackageDef(path=js_pkg_path, name=js_pkg_name)
+            js_pkg_def = JsPackageDef(path=js_pkg_path, name=js_pkg_name)
     else:
-        js_pkg_info = None
+        js_pkg_def = None
 
     return ConfigItemInfo(
         js_dependency_aliases=aliases,
         aliased_js_dependencies=aliased_js_deps,
-        js_package_def=js_pkg_info,
+        js_package_def=js_pkg_def,
     )
 
 
@@ -251,7 +256,7 @@ def _hash_config_item(config_item: Dict[str, Any]) -> str:
     return format(short_hash_int, "x")
 
 
-_CONFIG_SCHEMA = {
+_CONFIG_SCHEMA: Any = {
     "type": "object",
     "properties": {
         "version": {"type": "string"},
@@ -283,6 +288,7 @@ _CONFIG_SCHEMA = {
         }
     },
 }
+_CONFIG_ITEM_SCHEMA = _CONFIG_SCHEMA["definitions"]["ConfigItem"]
 
 
 _V = TypeVar("_V", bound=Any)
@@ -294,5 +300,5 @@ def validate_config(value: _V) -> _V:
 
 
 def validate_config_item(value: _V) -> _V:
-    validate_schema(value, _CONFIG_SCHEMA["definitions"]["ConfigItem"])
+    validate_schema(value, _CONFIG_ITEM_SCHEMA)
     return value
