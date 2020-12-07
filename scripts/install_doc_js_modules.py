@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from idom.client.build_config import find_build_config_item_in_python_file
+from idom.client.build_config import find_build_config_entry_in_python_file
 from idom.client.manage import build, build_config
 
 
@@ -8,11 +8,11 @@ DOCS_PATH = Path(__file__).parent.parent / "docs"
 
 
 def install_doc_js_modules():
-    config_item = find_build_config_item_in_python_file(
+    config_item = find_build_config_entry_in_python_file(
         "__main__", DOCS_PATH / "main.py"
     )
     if config_item is not None:
-        if not build_config().has_config_item(config_item["source_name"]):
+        if not build_config().has_entry(config_item["source_name"]):
             build([config_item])
 
 

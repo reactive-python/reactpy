@@ -8,12 +8,12 @@ import pytest
 import idom
 from idom.client.build_config import (
     BuildConfig,
-    find_build_config_item_in_python_file,
-    find_python_packages_build_config_items,
+    find_build_config_entry_in_python_file,
+    find_python_packages_build_config_entries,
     split_package_name_and_version,
     validate_config,
-    derive_config_item_info,
-    ConfigItemInfo,
+    derive_config_entry_info,
+    ConfigEntryInfo,
 )
 
 
@@ -26,9 +26,9 @@ MOCK_JS_PACKAGE = MOCK_SITE_PACKAGES / "some_js_pkg"
 def make_build_config(tmp_path):
     """A fixture for quickly constructing build configs"""
 
-    def make(*config_items):
+    def make(*config_entries):
         config = BuildConfig(tmp_path)
-        config.update_items(config_items)
+        config.update_entries(config_entries)
         config.save()
         return config
 
@@ -50,35 +50,35 @@ def prefab_build_config(make_build_config):
         (
             {
                 "version": "1.2.3",
-                "items": {"some_module": {}},
+                "entries": {"some_module": {}},
             },
             "'source_name' is a required property",
         ),
         (
             {
                 "version": "1.2.3",
-                "items": {"some_module": {"source_name": None}},
+                "entries": {"some_module": {"source_name": None}},
             },
             "None is not of type 'string'",
         ),
         (
             {
                 "version": "1.2.3",
-                "items": {"some_module": {"source_name": "$bad-symbols!"}},
+                "entries": {"some_module": {"source_name": "$bad-symbols!"}},
             },
             r"'\$bad-symbols\!' does not match",
         ),
         (
             {
                 "version": "1.2.3",
-                "items": {"some_module": {"source_name": "some_module"}},
+                "entries": {"some_module": {"source_name": "some_module"}},
             },
             None,
         ),
         (
             {
                 "version": "1.2.3",
-                "items": {
+                "entries": {
                     "some_module": {
                         "source_name": "some_module",
                         "js_dependencies": None,
@@ -90,7 +90,7 @@ def prefab_build_config(make_build_config):
         (
             {
                 "version": "1.2.3",
-                "items": {
+                "entries": {
                     "some_module": {
                         "source_name": "some_module",
                         "js_dependencies": [],
@@ -102,7 +102,7 @@ def prefab_build_config(make_build_config):
         (
             {
                 "version": "1.2.3",
-                "items": {
+                "entries": {
                     "some_module": {
                         "source_name": "some_module",
                         "js_dependencies": [None],
@@ -114,7 +114,7 @@ def prefab_build_config(make_build_config):
         (
             {
                 "version": "1.2.3",
-                "items": {
+                "entries": {
                     "some_module": {
                         "source_name": "some_module",
                         "js_dependencies": ["dep1", "dep2"],
@@ -133,13 +133,13 @@ def test_validate_config_schema(value, expectation):
             validate_config(value)
 
 
-def test_derive_config_item_info():
-    assert derive_config_item_info(
+def test_derive_config_entry_info():
+    assert derive_config_entry_info(
         {
             "source_name": "some_module",
             "js_dependencies": ["dep1", "dep2"],
         }
-    ) == ConfigItemInfo(
+    ) == ConfigEntryInfo(
         js_dependency_aliases={
             "dep1": "dep1-some_module-261bad9",
             "dep2": "dep2-some_module-261bad9",
@@ -152,11 +152,11 @@ def test_derive_config_item_info():
     )
 
 
-def test_find_build_config_item_in_python_file(tmp_path):
+def test_find_build_config_entry_in_python_file(tmp_path):
     py_module_path = tmp_path / "a_test.py"
     with py_module_path.open("w") as f:
         f.write("idom_build_config = {'js_dependencies': ['some-js-package']}")
-    actual_config = find_build_config_item_in_python_file("a_test", py_module_path)
+    actual_config = find_build_config_entry_in_python_file("a_test", py_module_path)
     assert actual_config == {
         "source_name": "a_test",
         "js_dependencies": ["some-js-package"],
@@ -166,34 +166,34 @@ def test_find_build_config_item_in_python_file(tmp_path):
 def test_build_config_file_load_absent_config(make_build_config):
     assert make_build_config().data == {
         "version": idom.__version__,
-        "items": {},
+        "entries": {},
     }
 
 
 def test_build_config_file_repr(make_build_config):
     config = make_build_config()
-    config.update_items(
+    config.update_entries(
         [{"source_name": "a_test", "js_dependencies": ["a-different-package"]}]
     )
     assert str(config) == f"BuildConfig({config.data})"
 
 
-def test_build_config_file_add_config_item_and_save(make_build_config):
+def test_build_config_file_add_config_entry_and_save(make_build_config):
     config = make_build_config()
-    config.update_items(
+    config.update_entries(
         [{"source_name": "a_test", "js_dependencies": ["some-js-package"]}]
     )
     config.save()
 
-    assert make_build_config().data["items"] == {
+    assert make_build_config().data["entries"] == {
         "a_test": {"source_name": "a_test", "js_dependencies": ["some-js-package"]}
     }
-    assert make_build_config().has_config_item("a_test")
+    assert make_build_config().has_entry("a_test")
 
 
-def test_find_python_packages_build_config_items():
+def test_find_python_packages_build_config_entries():
     mock_site_pkgs_path = str(MOCK_SITE_PACKAGES.absolute())
-    configs, errors = find_python_packages_build_config_items([mock_site_pkgs_path])
+    configs, errors = find_python_packages_build_config_entries([mock_site_pkgs_path])
 
     assert configs == [
         {
@@ -275,6 +275,6 @@ def test_resolve_js_dependency_name(prefab_build_config, given_dep, resolved_dep
 def test_non_existant_js_package_path(make_build_config):
     config = make_build_config()
     with pytest.raises(ValueError, match=r"does not exist"):
-        config.update_items(
+        config.update_entries(
             [{"source_name": "tests", "js_package": "path/does/not/exist"}]
         )

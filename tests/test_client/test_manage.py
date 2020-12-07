@@ -17,7 +17,7 @@ def test_web_module_url(victory_js):
 
 
 def test_bad_install(temp_build_config):
-    temp_build_config.update_items(
+    temp_build_config.update_entries(
         [{"source_name": "tests", "js_dependencies": ["some-dep"]}]
     )
     with pytest.raises(WebModuleError, match="not installed"):
@@ -28,7 +28,7 @@ def test_web_module_exists(temp_build_config, victory_js):
     assert not web_module_exists("tests", "does/not/exist")
     assert web_module_exists("tests", "victory")
 
-    temp_build_config.data["items"]["tests"]["js_dependencies"].append(
+    temp_build_config.get_entries("tests")["js_dependencies"].append(
         "module_not_installed_yet"
     )
     assert not web_module_exists("tests", "module_not_installed_yet")

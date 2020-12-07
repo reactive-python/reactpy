@@ -6,8 +6,8 @@ from typing import Optional, Iterable, List, Tuple
 
 from .build_config import (
     BuildConfig,
-    ConfigItem,
-    find_python_packages_build_config_items,
+    ConfigEntry,
+    find_python_packages_build_config_entries,
 )
 from .utils import open_modifiable_json, find_js_module_exports_in_source
 
@@ -51,19 +51,19 @@ def web_module_exists(source_name: str, package_name: str) -> bool:
         return True
 
 
-def build(config_items: Iterable[ConfigItem] = ()) -> None:
+def build(config_items: Iterable[ConfigEntry] = ()) -> None:
     config = build_config()
     with console.spinner("Discovering dependencies"):
-        py_pkg_configs, errors = find_python_packages_build_config_items()
+        py_pkg_configs, errors = find_python_packages_build_config_entries()
     for e in errors:  # pragma: no cover
         console.echo(f"{e} because {e.__cause__}", message_color="red")
-    config.update_items(py_pkg_configs + list(config_items))
+    config.update_entries(py_pkg_configs + list(config_items))
     _build_and_save_config()
 
 
 def restore() -> None:
     config = build_config()
-    config.clear_items()
+    config.clear_entries()
     _build_and_save_config()
 
 
