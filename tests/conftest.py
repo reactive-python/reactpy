@@ -276,7 +276,7 @@ def _clean_last_server_error(last_server_error) -> Iterator[None]:
 def install():
     def add_dependency(*packages):
         config = build_config()
-        if not config.has_config_item("tests"):
+        if not config.has_entry("tests"):
             build_client(
                 [
                     {
@@ -287,7 +287,7 @@ def install():
             )
         else:
             to_install = set(packages)
-            already_installed = config.data["items"]["tests"]["js_dependencies"]
+            already_installed = config.get_entry("tests")["js_dependencies"]
             not_installed_pkgs = to_install.difference(already_installed)
             if not_installed_pkgs:
                 build_client(
@@ -307,11 +307,11 @@ def install():
 @pytest.fixture
 def temp_build_config():
     config = build_config()
-    original_cfgs = [deepcopy(cfg) for cfg in config.data["items"].values()]
+    original_cfgs = [deepcopy(cfg) for cfg in config.data["entries"].values()]
     try:
         yield config
     finally:
-        config.update_items(original_cfgs)
+        config.update_entries(original_cfgs)
         config.save()
 
 
