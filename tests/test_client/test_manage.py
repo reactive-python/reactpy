@@ -28,9 +28,8 @@ def test_web_module_exists(temp_build_config, victory_js):
     assert not web_module_exists("tests", "does/not/exist")
     assert web_module_exists("tests", "victory")
 
-    temp_build_config.get_entries("tests")["js_dependencies"].append(
-        "module_not_installed_yet"
-    )
+    with temp_build_config.change_entry("tests") as entry:
+        entry["js_dependencies"].append("module_not_installed_yet")
     assert not web_module_exists("tests", "module_not_installed_yet")
 
 

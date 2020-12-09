@@ -1,3 +1,4 @@
+import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -89,7 +90,7 @@ def _build_and_save_config() -> None:
             snowpack_build = snowpack_config.setdefault("buildOptions", {})
             snowpack_build["clean"] = True
 
-        console.echo(f"Current config: {config.data}", debug=True)
+        console.echo(f"IDOM build config: {config.data}", debug=True)
 
         with console.spinner(
             f"Installing {len(packages_to_install)} dependencies"
@@ -97,6 +98,9 @@ def _build_and_save_config() -> None:
             else "Installing dependencies"
         ):
             _npm_install(packages_to_install, temp_app_dir)
+
+        with package_json_path.open() as pkg_json_file:
+            console.echo(f"Javascript package: {json.load(pkg_json_file)}", debug=True)
 
         with console.spinner("Building client"):
             _npm_run_build(temp_app_dir)

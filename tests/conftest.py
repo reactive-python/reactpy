@@ -276,30 +276,12 @@ def _clean_last_server_error(last_server_error) -> Iterator[None]:
 def install():
     def add_dependency(*packages):
         config = build_config()
-        if not config.has_entry("tests"):
-            build_client(
-                [
-                    {
-                        "source_name": "tests",
-                        "js_dependencies": list(sorted(packages)),
-                    }
-                ]
-            )
-        else:
-            to_install = set(packages)
-            already_installed = config.get_entry("tests")["js_dependencies"]
-            not_installed_pkgs = to_install.difference(already_installed)
-            if not_installed_pkgs:
-                build_client(
-                    [
-                        {
-                            "source_name": "tests",
-                            "js_dependencies": list(
-                                sorted(to_install.union(already_installed))
-                            ),
-                        }
-                    ]
-                )
+        with config.change_entry("tests") as entry:
+            old_js_deps = entry.setdefault("js_dependencies", [])
+            new_js_deps = set(packages).union(old_js_deps)
+            entry["js_dependencies"] = list(new_js_deps)
+        if old_js_deps != new_js_deps:
+            build_client()
 
     return add_dependency
 
