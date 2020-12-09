@@ -67,3 +67,16 @@ def test_show_environment():
             name, value = line.split("=")
             shown[name] = value
     assert shown == {name: os.environ[name] for name in settings.NAMES}
+
+
+def test_install():
+    result = cli_runner.invoke(main, ["install", "jquery"])
+    assert result.exit_code == 0
+    assert build_config().has_entry("__main__")
+    assert web_module_exists("__main__", "jquery")
+
+    result = cli_runner.invoke(main, ["install", "lodash"])
+    assert result.exit_code == 0
+    assert build_config().has_entry("__main__")
+    assert web_module_exists("__main__", "jquery")
+    assert web_module_exists("__main__", "lodash")

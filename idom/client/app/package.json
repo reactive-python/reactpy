@@ -7,13 +7,13 @@
   "repository": {
     "url": "https://github.com/rmorshea/idom"
   },
-  "main": "core_modules/layout.js",
+  "main": "src/layout.js",
   "files": [
-    "core_modules/*.js"
+    "src/*.js"
   ],
   "scripts": {
     "build": "npx snowpack && npx snowpack build",
-    "format": "npx prettier --write ./core_modules"
+    "format": "npx prettier --write ./src"
   },
   "devDependencies": {
     "prettier": "2.1.1",
@@ -24,5 +24,10 @@
     "htm": "^3.0.3",
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
+  },
+  "snowpack": {
+    "installOptions": {
+      "polyfillNode": true
+    }
   }
 }

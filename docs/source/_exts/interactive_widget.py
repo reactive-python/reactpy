@@ -31,7 +31,7 @@ class IteractiveWidget(Directive):
                         enableWidgetButton.setAttribute("class", "enable-widget-button")
 
                         enableWidgetButton.addEventListener("click", () => {{
-                            import("/client/core_modules/layout.js").then((layout) => {{
+                            import("/client/src/layout.js").then((layout) => {{
                                 fadeOutAndThen(enableWidgetButton, () => {{
                                     mount.removeChild(enableWidgetButton);
                                     mount.setAttribute("class", "interactive widget-container");

@@ -5,6 +5,7 @@ import ast
 from copy import deepcopy
 from hashlib import sha256
 from pathlib import Path
+from contextlib import contextmanager
 from importlib.machinery import SourceFileLoader
 from pkgutil import iter_modules
 from typing import (
@@ -16,6 +17,7 @@ from typing import (
     TypeVar,
     Tuple,
     NamedTuple,
+    Iterator,
 )
 
 from jsonschema import validate as validate_schema
@@ -40,15 +42,17 @@ class BuildConfig:
             for name, entry in self.data["entries"].items()
         }
 
-    def get_entry(self, source_name: str) -> ConfigEntry:
-        return self.data["entries"][source_name]
-
-    def get_entry_info(self, source_name: str) -> "ConfigEntryInfo":
-        return self._entry_info[source_name]
-
     def clear_entries(self) -> None:
         self.data["entries"].clear()
         self._entry_info.clear()
+
+    @contextmanager
+    def change_entry(self, source_name: str) -> Iterator[ConfigEntry]:
+        entry = self.data["entries"].setdefault(
+            source_name, {"source_name": source_name}
+        )
+        yield entry
+        self.update_entries([entry])
 
     def update_entries(self, config_entries: Iterable[Dict[str, Any]]) -> None:
         # a useful debug assertion - the error which would result otherwise is confusing
@@ -68,11 +72,10 @@ class BuildConfig:
 
     def entry_has_dependency(self, source_name: str, dependency: str) -> bool:
         name, _ = split_package_name_and_version(dependency)
-        entry_info = self.get_entry_info(source_name)
-        return (
-            name in entry_info.js_dependency_aliases
-            or name == entry_info.js_package_def.name
-        )
+        if source_name not in self._entry_info:
+            return False
+        else:
+            return name in self._entry_info[source_name].js_dependency_aliases
 
     def resolve_js_dependency_name(
         self,

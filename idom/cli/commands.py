@@ -1,13 +1,13 @@
 import os
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 import typer
 
 import idom
 from idom.client import manage as manage_client
-from idom.client.build_config import find_build_config_item_in_python_file
+from idom.client.build_config import find_build_config_entry_in_python_file
 
 from . import settings
 from .console import echo
@@ -16,6 +16,21 @@ from .console import echo
 main = typer.Typer()
 show = typer.Typer()
 main.add_typer(show, name="show", short_help="Display information about IDOM")
+
+
+@main.command()
+def install(packages: List[str]):
+    config = manage_client.build_config()
+    with config.change_entry("__main__") as entry:
+        entry_packages = entry.setdefault("js_dependencies", [])
+        entry_packages.extend(
+            [
+                pkg
+                for pkg in packages
+                if not config.entry_has_dependency("__main__", pkg)
+            ]
+        )
+    manage_client.build()
 
 
 @main.command()
@@ -49,7 +64,7 @@ def build(
         manage_client.build()
         return None
 
-    config = find_build_config_item_in_python_file("__main__", Path.cwd() / entrypoint)
+    config = find_build_config_entry_in_python_file("__main__", Path.cwd() / entrypoint)
     if config is None:
         echo(f"No build config found in {entrypoint!r}")
         manage_client.build()
