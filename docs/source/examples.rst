@@ -71,7 +71,7 @@ Assuming you already installed ``victory`` as in the :ref:`Install Javascript Mo
 
 Click the bars to trigger an event 👇
 
-.. example:: custom_chart
+.. example:: super_simple_chart
 
 
 Material UI Slider

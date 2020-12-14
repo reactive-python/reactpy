@@ -1,75 +1,77 @@
+import os
 import json
 import shutil
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional, Iterable, List, Tuple
+from typing import Optional, List, Set, Union, Sequence
 
-from .build_config import (
-    BuildConfig,
-    ConfigEntry,
-    find_python_packages_build_config_entries,
+from loguru import logger
+
+from .utils import (
+    open_modifiable_json,
+    find_js_module_exports_in_source,
+    get_package_name,
 )
-from .utils import open_modifiable_json, find_js_module_exports_in_source
-
-from idom.cli import console
 
 
 APP_DIR = Path(__file__).parent / "app"
 BUILD_DIR = APP_DIR / "build"
-_BUILD_CONFIG: Optional[BuildConfig] = None
+WEB_MODULES_DIR = BUILD_DIR / "web_modules"
 
 
-class WebModuleError(Exception):
-    """Related to the use of javascript web modules"""
+def web_module_exports(package_name: str) -> List[str]:
+    web_module_path(package_name, must_exist=True)
+    return find_js_module_exports_in_source(web_module_path(package_name).read_text())
 
 
-def build_config() -> BuildConfig:
-    global _BUILD_CONFIG
-    if _BUILD_CONFIG is None:
-        _BUILD_CONFIG = BuildConfig(BUILD_DIR)
-    return _BUILD_CONFIG
+def web_module_url(package_name: str) -> Optional[str]:
+    web_module_path(package_name, must_exist=True)
+    return f"../web_modules/{package_name}.js"
 
 
-def web_module_exports(source_name: str, package_name: str) -> List[str]:
-    _, module_file = _get_web_module_name_and_file_path(source_name, package_name)
-    with module_file.open() as f:
-        return find_js_module_exports_in_source(f.read())
+def web_module_exists(package_name: str) -> bool:
+    return web_module_path(package_name).exists()
 
 
-def web_module_url(source_name: str, package_name: str) -> Optional[str]:
-    name, _ = _get_web_module_name_and_file_path(source_name, package_name)
-    # need to go back a level since the JS that imports this is in `core_components`
-    return f"../web_modules/{name}.js"
+def web_module_names() -> Set[str]:
+    return {
+        str(rel_pth).rstrip(".js")
+        for rel_pth in (
+            pth.relative_to(WEB_MODULES_DIR) for pth in WEB_MODULES_DIR.glob("**/*.js")
+        )
+        if Path("common") not in rel_pth.parents
+    }
 
 
-def web_module_exists(source_name: str, package_name: str) -> bool:
-    try:
-        _get_web_module_name_and_file_path(source_name, package_name)
-    except WebModuleError:
-        return False
-    else:
-        return True
+def register_web_module(package_name: str, source: Union[Path, str]) -> str:
+    source = Path(source)
+    if not source.exists():
+        raise FileNotFoundError(f"Package source file does not exist: {str(source)!r}")
+    target = web_module_path(package_name)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists():
+        target.unlink()
+    target.symlink_to(source.absolute())
+    return web_module_url(package_name)
 
 
-def build(config_items: Iterable[ConfigEntry] = ()) -> None:
-    config = build_config()
-    with console.spinner("Discovering dependencies"):
-        py_pkg_configs, errors = find_python_packages_build_config_entries()
-    for e in errors:  # pragma: no cover
-        console.echo(f"{e} because {e.__cause__}", message_color="red")
-    config.update_entries(py_pkg_configs + list(config_items))
-    _build_and_save_config()
+def web_module_path(package_name: str, must_exist: bool = False) -> Path:
+    path = WEB_MODULES_DIR.joinpath(*(package_name + ".js").split("/"))
+    if must_exist and not path.exists():
+        raise ValueError(
+            f"Web module {package_name!r} does not exist at path {str(path)!r}"
+        )
+    return path
 
 
 def restore() -> None:
-    config = build_config()
-    config.clear_entries()
-    _build_and_save_config()
+    build(clean_build=True)
 
 
-def _build_and_save_config() -> None:
-    config = build_config()
+def build(packages_to_install: Sequence[str], clean_build: bool = False) -> None:
+    packages_to_install = list(packages_to_install)
+
     with TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
         temp_app_dir = tempdir_path / "app"
@@ -79,53 +81,40 @@ def _build_and_save_config() -> None:
         # copy over the whole APP_DIR directory into the temp one
         shutil.copytree(APP_DIR, temp_app_dir, symlinks=True)
 
-        packages_to_install = config.all_js_dependencies()
+        package_names_to_install = {get_package_name(p) for p in packages_to_install}
+
+        # make sure we don't delete anything we've already installed
+        built_package_json_path = temp_build_dir / "package.json"
+        if not clean_build and built_package_json_path.exists():
+            built_package_json = json.loads(built_package_json_path.read_text())
+            for dep_name, dep_ver in built_package_json.get("dependencies", {}).items():
+                if dep_name not in package_names_to_install:
+                    packages_to_install.append(f"{dep_name}@{dep_ver}")
+                    package_names_to_install.add(dep_name)
 
         with open_modifiable_json(package_json_path) as package_json:
             snowpack_config = package_json.setdefault("snowpack", {})
 
             snowpack_install = snowpack_config.setdefault("install", [])
-            snowpack_install.extend(config.all_js_dependency_names())
+            snowpack_install.extend(package_names_to_install)
 
             snowpack_build = snowpack_config.setdefault("buildOptions", {})
-            snowpack_build["clean"] = True
+            snowpack_build["clean"] = clean_build
 
-        console.echo(f"IDOM build config: {config.data}", debug=True)
+        logger.info(f"Installing {packages_to_install} ...", debug=True)
+        _npm_install(packages_to_install, temp_app_dir)
+        logger.info("Installed successfully ✅")
 
-        with console.spinner(
-            f"Installing {len(packages_to_install)} dependencies"
-            if packages_to_install
-            else "Installing dependencies"
-        ):
-            _npm_install(packages_to_install, temp_app_dir)
+        logger.debug(f"package.json: {package_json_path.read_text()}")
 
-        with package_json_path.open() as pkg_json_file:
-            console.echo(f"Javascript package: {json.load(pkg_json_file)}", debug=True)
-
-        with console.spinner("Building client"):
-            _npm_run_build(temp_app_dir)
+        logger.info("Building client ...")
+        _npm_run_build(temp_app_dir)
+        logger.info("Client built successfully ✅")
 
         if BUILD_DIR.exists():
             shutil.rmtree(BUILD_DIR)
 
         shutil.copytree(temp_build_dir, BUILD_DIR, symlinks=True)
-    config.save()
-
-
-def _get_web_module_name_and_file_path(
-    source_name: str, package_name: str
-) -> Tuple[str, Path]:
-    pkg_name = build_config().resolve_js_dependency_name(source_name, package_name)
-    if pkg_name is None:
-        raise WebModuleError(
-            f"Package {package_name!r} is not declared as a dependency of {source_name!r}"
-        )
-    build_path = BUILD_DIR.joinpath("web_modules", *f"{pkg_name}.js".split("/"))
-    if not build_path.exists():
-        raise WebModuleError(
-            f"Dependency {package_name!r} of {source_name!r} was not installed"
-        )
-    return pkg_name, build_path
 
 
 def _npm_install(packages: List[str], cwd: Path) -> None:

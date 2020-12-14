@@ -14,15 +14,6 @@ Installation
 
               pip install idom[stable]
 
-    *   - Javascript Packages
-        - Installing Javascript packages with IDOM requires npm_.
-
-          .. code-block::
-
-              idom install some-js-package
-
-          For more info see the :ref:`Custom Javascript` section.
-
     *   - Extra Features
 
         - To install **specific** features see :ref:`Extra Features`, but to install all of them:
