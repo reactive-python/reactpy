@@ -3,8 +3,8 @@ import json
 import idom
 
 
-material_ui = idom.Module("@material-ui/core", fallback="loading...")
-MaterialSlider = material_ui.Import("Slider")
+material_ui = idom.install("@material-ui/core")
+MaterialSlider = material_ui.use("Slider", fallback="loading...")
 
 
 @idom.element

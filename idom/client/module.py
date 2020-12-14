@@ -1,15 +1,50 @@
-import inspect
-from types import FrameType
-from typing import Any, Optional, List, cast
+from pathlib import Path
+from typing import Any, Optional, Union, List, Sequence, overload
 from urllib.parse import urlparse
 
 from idom.core.vdom import VdomDict, ImportSourceDict, make_vdom_constructor
 
+from . import manage as builtin_client
 from .protocol import client_implementation as client
+from .utils import get_package_name
+
+
+@overload
+def install(packages: str) -> "Module":
+    ...
+
+
+@overload
+def install(packages: Sequence[str]) -> List["Module"]:
+    ...
+
+
+def install(
+    packages: Sequence[str], ignore_installed: bool = False
+) -> Union["Module", List["Module"]]:
+    return_one = isinstance(packages, str)
+    if return_one:
+        packages = [packages]
+
+    pkg_names = {get_package_name(pkg) for pkg in packages}
+
+    if pkg_names.difference(client.current.web_module_names()):
+        builtin_client.build(packages)
+        not_discovered = pkg_names.difference(client.current.web_module_names())
+        if not_discovered:
+            raise RuntimeError(
+                f"Successfuly installed {list(pkg_names)} but client implementation "
+                f"{client.current} failed to discover {list(not_discovered)}."
+            )
+
+    if return_one:
+        return Module(pkg_names.pop())
+    else:
+        return list(map(Module, pkg_names))
 
 
 class Module:
-    """An importable client-side module
+    """A Javascript module
 
     Parameters:
         url_or_name:
@@ -28,47 +63,42 @@ class Module:
             Whether or not this module has been installed into the built-in client app.
         url:
             The URL this module will be imported from.
-
-    Notes:
-        To allow for other client implementations, you can set the current client
-        implementation
-        following private methods to support serving dynamically registered source
-        files or loading modules that have been installed by some other means:
     """
 
-    __slots__ = "url", "installed", "fallback", "exports"
+    __slots__ = "url", "exports", "fallback"
 
     def __init__(
         self,
         url_or_name: str,
-        source_name: Optional[str] = None,
+        source_file: Optional[Union[str, Path]] = None,
         fallback: Optional[str] = None,
         check_exports: bool = True,
     ) -> None:
-        self.exports: Optional[List[str]]
-        if _is_url(url_or_name):
+        self.fallback = fallback
+        self.exports: Optional[List[str]] = None
+        if source_file is not None:
+            self.url = client.current.register_web_module(url_or_name, source_file)
+            if check_exports:
+                self.exports = client.current.web_module_exports(url_or_name)
+        elif client.current.web_module_exists(url_or_name):
+            self.url = client.current.web_module_url(url_or_name)
+            if check_exports:
+                self.exports = client.current.web_module_exports(url_or_name)
+        elif _is_url(url_or_name):
             self.url = url_or_name
             self.installed = False
-            self.exports = None
         else:
-            if source_name is None:
-                frame = _get_frame_back(1)
-                if frame is None:  # pragma: no cover
-                    raise TypeError("Provide 'source_name' explicitely")
-                source_name = cast(str, frame.f_globals["__name__"].split(".", 1)[0])
-            self.url = client.current.web_module_url(source_name, url_or_name)
-            self.installed = True
-            self.exports = (
-                client.current.web_module_exports(
-                    source_name,
-                    url_or_name,
-                )
-                if check_exports
-                else None
+            raise ValueError(
+                f"{url_or_name!r} is not installed or is not a URL - "
+                "only installed modules can omit a file extension."
             )
-        self.fallback = fallback
 
-    def Import(self, name: str, *args: Any, **kwargs: Any) -> "Import":
+    def use(
+        self,
+        name: str,
+        has_children: bool = True,
+        fallback: Optional[str] = None,
+    ) -> "Import":
         """Return  an :class:`Import` for the given :class:`Module` and ``name``
 
         This roughly translates to the javascript statement
@@ -81,8 +111,7 @@ class Module:
         this :class:`Module` instance.
         """
         if (
-            self.installed
-            and self.exports
+            self.exports is not None
             # if 'default' is exported there's not much we can infer
             and "default" not in self.exports
         ):
@@ -90,11 +119,10 @@ class Module:
                 raise ValueError(
                     f"{self} does not export {name!r}, available options are {self.exports}"
                 )
-        kwargs.setdefault("fallback", self.fallback)
-        return Import(self.url, name, *args, **kwargs)
+        return Import(self.url, name, has_children, fallback=fallback or self.fallback)
 
-    def __repr__(self) -> str:  # pragma: no cover
-        return f"{type(self).__name__}({self.url!r})"
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.url})"
 
 
 class Import:
@@ -112,15 +140,16 @@ class Import:
             victory.VictoryBar({"style": style}, fallback="loading...")
     """
 
-    __slots__ = ("_constructor", "_import_source")
+    __slots__ = "_constructor", "_import_source", "_name"
 
     def __init__(
         self,
         module: str,
         name: str,
         has_children: bool = True,
-        fallback: Optional[str] = "",
+        fallback: Optional[str] = None,
     ) -> None:
+        self._name = name
         self._constructor = make_vdom_constructor(name, has_children)
         self._import_source = ImportSourceDict(source=module, fallback=fallback)
 
@@ -131,9 +160,10 @@ class Import:
     ) -> VdomDict:
         return self._constructor(import_source=self._import_source, *args, **kwargs)
 
-    def __repr__(self) -> str:  # pragma: no cover
-        items = ", ".join(f"{k}={v!r}" for k, v in self._import_source.items())
-        return f"{type(self).__name__}({items})"
+    def __repr__(self) -> str:
+        info = {"name": self._name, **self._import_source}
+        strings = ", ".join(f"{k}={v!r}" for k, v in info.items())
+        return f"{type(self).__name__}({strings})"
 
 
 def _is_url(string: str) -> bool:
@@ -142,12 +172,3 @@ def _is_url(string: str) -> bool:
     else:
         parsed = urlparse(string)
         return bool(parsed.scheme and parsed.netloc)
-
-
-def _get_frame_back(index: int) -> Optional[FrameType]:
-    frame = inspect.currentframe()
-    for _ in range(index + 1):
-        if frame is None:  # pragma: no cover
-            return None
-        frame = frame.f_back
-    return frame

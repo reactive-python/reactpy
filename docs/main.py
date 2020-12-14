@@ -11,14 +11,6 @@ from idom.widgets.utils import multiview
 from idom.client.manage import APP_DIR
 from idom.server.sanic import PerClientStateServer
 
-idom_build_config = {
-    "js_dependencies": [
-        "@material-ui/core",
-        "victory",
-        "semantic-ui-react",
-    ]
-}
-
 here = Path(__file__).parent
 
 app = Sanic(__name__)
@@ -75,11 +67,12 @@ def production():
 
 
 def local(path=""):
-    import webbrowser
+    from selenium.webdriver import Chrome
 
     thread = server.daemon("127.0.0.1", 5000)
     path = f"docs/{path}" if path else ""
-    webbrowser.open(f"http://127.0.0.1:5000/{path}")
+    driver = Chrome()
+    driver.get(f"http://127.0.0.1:5000/{path}")
     thread.join()
 
 

@@ -5,8 +5,6 @@ from traceback import print_exc
 import idom
 from idom.server.sanic import PerClientStateServer
 
-from scripts.install_doc_js_modules import install_doc_js_modules
-
 
 here = Path(__file__).parent
 examples_dir = here.parent / "docs" / "source" / "examples"
@@ -18,8 +16,6 @@ for file in examples_dir.iterdir():
 
 
 def main():
-    install_doc_js_modules()
-
     views = []
 
     for example_file in examples_dir.glob("*.py"):

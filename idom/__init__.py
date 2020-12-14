@@ -9,7 +9,6 @@ except _DistributionNotFound:  # pragma: no cover
     # package is not installed
     __version__ = "0.0.0"
 
-from . import cli
 from .utils import Ref, html_to_vdom
 
 from .core.element import element, Element
@@ -21,7 +20,7 @@ from .core import hooks
 from .widgets.html import html
 from .widgets.utils import hotswap, multiview
 
-from .client.module import Module, Import
+from .client.module import Module, Import, install
 from .client.protocol import client_implementation as client
 
 from .server.prefab import run
@@ -65,5 +64,5 @@ __all__ = [
     "VdomDict",
     "widgets",
     "client",
-    "cli",
+    "install",
 ]

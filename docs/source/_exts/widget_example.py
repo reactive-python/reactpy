@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from sphinx.application import Sphinx
-from docutils.parsers.rst import Directive, directives
+from sphinx.util.docutils import SphinxDirective
+from docutils.parsers.rst import directives
 from docutils.statemachine import StringList
 
 from sphinx_panels.tabs import TabbedDirective
@@ -10,7 +11,7 @@ here = Path(__file__).parent
 examples = here.parent / "examples"
 
 
-class WidgetExample(Directive):
+class WidgetExample(SphinxDirective):
 
     has_content = False
     required_arguments = 1
@@ -24,7 +25,10 @@ class WidgetExample(Directive):
 
         py_ex_path = examples / f"{example_name}.py"
         if not py_ex_path.exists():
-            raise ValueError(f"No example file named {py_ex_path}")
+            src_file, line_num = self.get_source_info()
+            raise ValueError(
+                f"Missing example file named {py_ex_path} referenced by document {src_file}:{line_num}"
+            )
 
         py_code_tab = TabbedDirective(
             "WidgetExample",

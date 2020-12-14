@@ -1,8 +1,7 @@
 import idom
 
-victory = idom.Module("victory", fallback="loading...")
-
-VictoryBar = victory.Import("VictoryBar")
+victory = idom.install("victory")
+VictoryBar = victory.use("VictoryBar", fallback="loading...")
 
 idom.run(
     idom.element(
