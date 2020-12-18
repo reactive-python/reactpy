@@ -171,7 +171,13 @@ class Layout(HasAsyncResources):
             serialized_model["children"] = self._render_model_children(
                 element_state, model["children"], path
             )
-        return {**model, **serialized_model}
+
+        resolved_model = {**model, **serialized_model}
+
+        # React requires this: https://reactjs.org/docs/reconciliation.html#keys
+        resolved_model.setdefault("attributes", {}).setdefault("key", str(id(model)))
+
+        return resolved_model
 
     def _render_model_children(
         self,
