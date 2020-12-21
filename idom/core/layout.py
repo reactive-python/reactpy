@@ -143,7 +143,11 @@ class Layout(HasAsyncResources):
             if isinstance(raw_model, AbstractElement):
                 raw_model = {"tagName": "div", "children": [raw_model]}
 
-            resolved_model = self._render_model(element_state, raw_model)
+            resolved_model = self._render_model(
+                element_state,
+                raw_model,
+                is_element_root=True,
+            )
             element_state.model.clear()
             element_state.model.update(resolved_model)
         except Exception as error:
@@ -159,6 +163,7 @@ class Layout(HasAsyncResources):
         element_state: ElementState,
         model: Mapping[str, Any],
         path: Optional[str] = None,
+        is_element_root: bool = False,
     ) -> Dict[str, Any]:
         if path is None:
             path = element_state.path
@@ -175,7 +180,8 @@ class Layout(HasAsyncResources):
         resolved_model = {**model, **serialized_model}
 
         # React requires this: https://reactjs.org/docs/reconciliation.html#keys
-        resolved_model.setdefault("attributes", {}).setdefault("key", str(id(model)))
+        model_key = str(element_state.element_id if is_element_root else id(model))
+        resolved_model.setdefault("attributes", {}).setdefault("key", model_key)
 
         return resolved_model
 
