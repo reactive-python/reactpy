@@ -1,4 +1,3 @@
-import os
 import json
 import shutil
 import subprocess
@@ -101,7 +100,7 @@ def build(packages_to_install: Sequence[str], clean_build: bool = False) -> None
             snowpack_build = snowpack_config.setdefault("buildOptions", {})
             snowpack_build["clean"] = clean_build
 
-        logger.info(f"Installing {packages_to_install} ...", debug=True)
+        logger.info(f"Installing {packages_to_install or 'packages'} ...", debug=True)
         _npm_install(packages_to_install, temp_app_dir)
         logger.info("Installed successfully ✅")
 
