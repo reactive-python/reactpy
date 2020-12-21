@@ -193,15 +193,32 @@ function useInplaceJsonPatch(doc) {
 
   const applyPatch = react.useCallback(
     (path, patch) => {
-      jsonpatch.applyPatch(
-        jsonpatch.getValueByPointer(ref.current, path),
-        patch
-      );
+      applyPatchInplace(ref.current, path, patch);
       forceUpdate();
     },
     [ref, forceUpdate]
   );
+
   return [ref.current, applyPatch];
+}
+
+function applyPatchInplace(doc, path, patch) {
+  if (!path) {
+    jsonpatch.applyPatch(doc, patch);
+  } else {
+    jsonpatch.applyPatch(doc, [
+      {
+        op: "replace",
+        path: path,
+        value: jsonpatch.applyPatch(
+          jsonpatch.getValueByPointer(doc, path),
+          patch,
+          false,
+          false
+        ).newDocument,
+      },
+    ]);
+  }
 }
 
 function useForceUpdate() {
