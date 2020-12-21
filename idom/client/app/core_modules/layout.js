@@ -53,29 +53,12 @@ export function mountLayout(mountElement, saveUpdateHook, sendEvent) {
 }
 
 export default function Layout({ saveUpdateHook, sendEvent }) {
-  const [modelRef, setModel] = useStateRef({});
+  const [model, patchModel] = useInplaceJsonPatch({});
 
-  react.useEffect(() => {
-    saveUpdateHook((pathPrefix, patch) => {
-      setModel(
-        jsonpatch.applyPatch(
-          modelRef.current,
-          patch.map((op) => {
-            op.path = pathPrefix + op.path;
-            return op;
-          }),
-          undefined,
-          false
-        ).newDocument
-      );
-    });
-  }, [modelRef]);
+  react.useEffect(() => saveUpdateHook(patchModel), [patchModel]);
 
-  if (modelRef.current.tagName) {
-    return html`<${Element}
-      sendEvent=${sendEvent}
-      model=${modelRef.current}
-    />`;
+  if (model.tagName) {
+    return html`<${Element} sendEvent=${sendEvent} model=${model} />`;
   } else {
     return html`<div />`;
   }
@@ -204,9 +187,24 @@ function getPathProperty(obj, prop) {
   return value;
 }
 
-function useStateRef(initialValue) {
-  const ref = react.useRef(initialValue);
-  const [state, setState] = react.useState(initialValue);
-  ref.current = state;
-  return [ref, setState];
+function useInplaceJsonPatch(doc) {
+  const ref = react.useRef(doc);
+  const forceUpdate = useForceUpdate();
+
+  const applyPatch = react.useCallback(
+    (path, patch) => {
+      jsonpatch.applyPatch(
+        jsonpatch.getValueByPointer(ref.current, path),
+        patch
+      );
+      forceUpdate();
+    },
+    [ref, forceUpdate]
+  );
+  return [ref.current, applyPatch];
+}
+
+function useForceUpdate() {
+  const [, updateState] = react.useState();
+  return react.useCallback(() => updateState({}), []);
 }
