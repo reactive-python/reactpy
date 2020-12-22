@@ -1,4 +1,3 @@
-# pragma: no cover
 import sys
 
 from loguru import logger

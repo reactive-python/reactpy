@@ -1,7 +1,7 @@
 import idom
 
 victory = idom.install("victory")
-VictoryBar = victory.use("VictoryBar", fallback="loading...")
+VictoryBar = victory.define("VictoryBar", fallback="loading...")
 
 idom.run(
     idom.element(

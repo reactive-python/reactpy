@@ -5,7 +5,7 @@ import idom
 
 path_to_source_file = Path(__file__).parent / "super_simple_chart.js"
 super_simple_chart = idom.Module("super-simple-chart", source_file=path_to_source_file)
-SuperSimpleChart = super_simple_chart.use("SuperSimpleChart")
+SuperSimpleChart = super_simple_chart.define("SuperSimpleChart")
 
 
 idom.run(

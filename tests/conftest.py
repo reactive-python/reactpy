@@ -261,6 +261,15 @@ def last_server_error():
     return idom.Ref(default_error)
 
 
+@pytest.fixture
+def client_implementation():
+    original = idom.client.current
+    try:
+        yield idom.client
+    finally:
+        idom.client.current = original
+
+
 @pytest.fixture(autouse=True)
 def _clean_last_server_error(last_server_error) -> Iterator[None]:
     last_server_error.current = default_error

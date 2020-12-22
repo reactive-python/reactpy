@@ -6,7 +6,7 @@ import idom
 from idom.widgets.html import Input
 
 
-VictoryLine = idom.install("victory").use("VictoryLine", fallback="loading...")
+VictoryLine = idom.install("victory").define("VictoryLine", fallback="loading...")
 
 
 @idom.element

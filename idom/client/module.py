@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Optional, Union, List, Sequence, overload
+from typing import Any, Optional, Union, List, Tuple, Dict, overload
 from urllib.parse import urlparse
 
 from idom.core.vdom import VdomDict, ImportSourceDict, make_vdom_constructor
@@ -15,20 +15,22 @@ def install(packages: str) -> "Module":
 
 
 @overload
-def install(packages: Sequence[str]) -> List["Module"]:
+def install(packages: Union[List[str], Tuple[str]]) -> List["Module"]:
     ...
 
 
 def install(
-    packages: Sequence[str], ignore_installed: bool = False
+    packages: Union[str, List[str], Tuple[str]], ignore_installed: bool = False
 ) -> Union["Module", List["Module"]]:
-    return_one = isinstance(packages, str)
-    if return_one:
+    if isinstance(packages, str):
         packages = [packages]
+        return_one = True
+    else:
+        return_one = False
 
     pkg_names = {get_package_name(pkg) for pkg in packages}
 
-    if pkg_names.difference(client.current.web_module_names()):
+    if ignore_installed or pkg_names.difference(client.current.web_module_names()):
         builtin_client.build(packages)
         not_discovered = pkg_names.difference(client.current.web_module_names())
         if not_discovered:
@@ -37,10 +39,7 @@ def install(
                 f"{client.current} failed to discover {list(not_discovered)}."
             )
 
-    if return_one:
-        return Module(pkg_names.pop())
-    else:
-        return list(map(Module, pkg_names))
+    return Module(pkg_names.pop()) if return_one else [Module(pkg) for pkg in pkg_names]
 
 
 class Module:
@@ -77,7 +76,11 @@ class Module:
         self.fallback = fallback
         self.exports: Optional[List[str]] = None
         if source_file is not None:
-            self.url = client.current.add_web_module(url_or_name, source_file)
+            self.url = (
+                client.current.web_module_url(url_or_name)
+                if client.current.web_module_exists(url_or_name)
+                else client.current.add_web_module(url_or_name, source_file)
+            )
             if check_exports:
                 self.exports = client.current.web_module_exports(url_or_name)
         elif client.current.web_module_exists(url_or_name):
@@ -86,14 +89,10 @@ class Module:
                 self.exports = client.current.web_module_exports(url_or_name)
         elif _is_url(url_or_name):
             self.url = url_or_name
-            self.installed = False
         else:
-            raise ValueError(
-                f"{url_or_name!r} is not installed or is not a URL - "
-                "only installed modules can omit a file extension."
-            )
+            raise ValueError(f"{url_or_name!r} is not installed or is not a URL")
 
-    def use(
+    def define(
         self,
         name: str,
         has_children: bool = True,
@@ -161,7 +160,7 @@ class Import:
         return self._constructor(import_source=self._import_source, *args, **kwargs)
 
     def __repr__(self) -> str:
-        info = {"name": self._name, **self._import_source}
+        info: Dict[str, Any] = {"name": self._name, **self._import_source}
         strings = ", ".join(f"{k}={v!r}" for k, v in info.items())
         return f"{type(self).__name__}({strings})"
 
