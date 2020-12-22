@@ -30,19 +30,26 @@ def test_module_from_url():
 
 
 def test_module_uses_current_client_implementation():
-    class MmockClientImplementation:
-        exists_return = True
-
-        def web_module_exists(self, source_name, package_name):
-            return package_name == "fake-name"
-
+    class MockClientImplementation:
         def web_module_url(self, source_name, package_name):
             return f"./mock/url/to/module-{package_name}.js"
 
         def web_module_exports(self, source_name, package_name):
             return ["x", "y", "z"]
 
-    client.current = MmockClientImplementation()
+        def web_module_exists(self, source_name, package_name):
+            return package_name == "fake-name"
+
+        def web_module_names(self):
+            raise NotImplementedError()
+
+        def web_module_path(self, package_name):
+            raise NotImplementedError()
+
+        def add_web_module(self, package_name, source):
+            raise NotImplementedError()
+
+    client.current = MockClientImplementation()
 
     fake = Module("fake-name")
     assert fake.url == "./mock/url/to/module-fake-name.js"

@@ -77,7 +77,7 @@ class Module:
         self.fallback = fallback
         self.exports: Optional[List[str]] = None
         if source_file is not None:
-            self.url = client.current.register_web_module(url_or_name, source_file)
+            self.url = client.current.add_web_module(url_or_name, source_file)
             if check_exports:
                 self.exports = client.current.web_module_exports(url_or_name)
         elif client.current.web_module_exists(url_or_name):
