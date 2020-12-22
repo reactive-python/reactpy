@@ -84,12 +84,12 @@ While it's probably best to create
 `a real package <https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry>`__
 for your Javascript, if you're just experimenting it might be easiest to quickly
 hook in a module of your own making on the fly. As before, we'll be using a
-:class:`~idom.widgets.utils.Module`, however this time we'll pass it a ``source``
+:class:`~idom.client.module.Module`, however this time we'll pass it a ``source``
 parameter which is a file-like object. In the following example we'll use Victory again,
 but this time we'll add a callback to it. Unfortunately we can't just pass it in
 :ref:`like we did before <Passing Props To Javascript>` because Victory's
 event API is a bit more complex so we've implemented a quick wrapper for it in a file
-``chart.js`` which we can read in as a ``source`` to :class:`~idom.widgets.utils.Module`:
+``chart.js`` which we can read in as a ``source`` to :class:`~idom.client.module.Module`:
 
 Click the bars to trigger an event 👇
 
