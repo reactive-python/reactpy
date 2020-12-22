@@ -1,7 +1,6 @@
 import logging
 import inspect
 import time
-from copy import deepcopy
 from typing import Callable, Any, Type, Tuple, Iterator, Iterable, Union
 
 import sanic
@@ -17,11 +16,7 @@ from selenium.webdriver.chrome.options import Options
 import pyalect.builtins.pytest  # noqa
 
 import idom
-from idom.client.manage import (
-    build_config,
-    build as build_client,
-    restore as restore_client,
-)
+from idom.client import manage as manage_client
 from idom.core import ElementConstructor, AbstractElement
 from idom.server.prefab import hotswap_server, AbstractRenderServer
 from idom.server.utils import find_available_port
@@ -272,31 +267,6 @@ def _clean_last_server_error(last_server_error) -> Iterator[None]:
     yield
 
 
-@pytest.fixture
-def install():
-    def add_dependency(*packages):
-        config = build_config()
-        with config.change_entry("tests") as entry:
-            old_js_deps = entry.setdefault("js_dependencies", [])
-            new_js_deps = set(packages).union(old_js_deps)
-            entry["js_dependencies"] = list(new_js_deps)
-        if old_js_deps != new_js_deps:
-            build_client()
-
-    return add_dependency
-
-
-@pytest.fixture
-def temp_build_config():
-    config = build_config()
-    original_cfgs = [deepcopy(cfg) for cfg in config.data["entries"].values()]
-    try:
-        yield config
-    finally:
-        config.update_entries(original_cfgs)
-        config.save()
-
-
 @pytest.fixture(scope="session", autouse=True)
 def _restore_client(pytestconfig: Config) -> Iterator[None]:
     """Restore the client's state before and after testing
@@ -306,8 +276,8 @@ def _restore_client(pytestconfig: Config) -> Iterator[None]:
     after testing and may effect usage of IDOM beyond the scope of the tests.
     """
     if pytestconfig.option.restore_client:
-        restore_client()
+        manage_client.restore()
         yield
-        restore_client()
+        manage_client.restore()
     else:
         yield

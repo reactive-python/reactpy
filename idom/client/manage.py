@@ -43,7 +43,7 @@ def web_module_names() -> Set[str]:
     }
 
 
-def register_web_module(package_name: str, source: Union[Path, str]) -> str:
+def add_web_module(package_name: str, source: Union[Path, str]) -> str:
     source = Path(source)
     if not source.exists():
         raise FileNotFoundError(f"Package source file does not exist: {str(source)!r}")
@@ -65,7 +65,7 @@ def web_module_path(package_name: str, must_exist: bool = False) -> Path:
 
 
 def restore() -> None:
-    build(clean_build=True)
+    build([], clean_build=True)
 
 
 def build(packages_to_install: Sequence[str], clean_build: bool = False) -> None:

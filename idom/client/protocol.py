@@ -26,7 +26,7 @@ class ClientImplementation(Protocol):
     def web_module_path(self, package_name: str) -> Path:
         """Return the path to a web module's source"""
 
-    def register_web_module(self, package_name: str, source: Union[Path, str]) -> str:
+    def add_web_module(self, package_name: str, source: Union[Path, str]) -> str:
         """Return the URL of a module added under the given ``name`` and contents of ``source``"""
 
 

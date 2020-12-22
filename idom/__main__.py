@@ -1,8 +1,8 @@
+# pragma: no cover
 import sys
 
 from loguru import logger
 
-# pragma: no cover
 from .cli import main
 
 
