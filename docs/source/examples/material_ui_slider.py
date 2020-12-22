@@ -4,7 +4,7 @@ import idom
 
 
 material_ui = idom.install("@material-ui/core")
-MaterialSlider = material_ui.use("Slider", fallback="loading...")
+MaterialSlider = material_ui.define("Slider", fallback="loading...")
 
 
 @idom.element

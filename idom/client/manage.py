@@ -3,7 +3,7 @@ import shutil
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional, List, Set, Union, Sequence
+from typing import List, Set, Union, Sequence
 
 from loguru import logger
 
@@ -24,7 +24,7 @@ def web_module_exports(package_name: str) -> List[str]:
     return find_js_module_exports_in_source(web_module_path(package_name).read_text())
 
 
-def web_module_url(package_name: str) -> Optional[str]:
+def web_module_url(package_name: str) -> str:
     web_module_path(package_name, must_exist=True)
     return f"../web_modules/{package_name}.js"
 
@@ -49,8 +49,6 @@ def add_web_module(package_name: str, source: Union[Path, str]) -> str:
         raise FileNotFoundError(f"Package source file does not exist: {str(source)!r}")
     target = web_module_path(package_name)
     target.parent.mkdir(parents=True, exist_ok=True)
-    if target.exists():
-        target.unlink()
     target.symlink_to(source.absolute())
     return web_module_url(package_name)
 

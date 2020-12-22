@@ -1,36 +1,35 @@
 import pytest
 
-from idom.client.manage import web_module_url, web_module_exports, web_module_exists
+from idom.client.manage import (
+    web_module_url,
+    web_module_exports,
+    web_module_exists,
+    web_module_path,
+    add_web_module,
+)
 
 from tests.general_utils import assert_same_items
 
 
-def test_web_module_url(victory_js):
-    assert (
-        web_module_url("tests", "victory") == "../web_modules/victory-tests-24fa38b.js"
-    )
+def test_add_web_module_source_must_exist(tmp_path):
+    with pytest.raises(FileNotFoundError, match="Package source file does not exist"):
+        add_web_module("test", tmp_path / "file-does-not-exist.js")
 
 
-def test_bad_install(temp_build_config):
-    temp_build_config.update_entries(
-        [{"source_name": "tests", "js_dependencies": ["some-dep"]}]
-    )
-    with pytest.raises(WebModuleError, match="not installed"):
-        web_module_url("tests", "some-dep")
+def test_web_module_path_must_exist():
+    with pytest.raises(ValueError, match="does not exist at path"):
+        web_module_path("this-does-not-exist", must_exist=True)
+    assert not web_module_path("this-does-not-exist", must_exist=False).exists()
 
 
-def test_web_module_exists(temp_build_config, victory_js):
-    assert not web_module_exists("tests", "does/not/exist")
-    assert web_module_exists("tests", "victory")
-
-    with temp_build_config.change_entry("tests") as entry:
-        entry["js_dependencies"].append("module_not_installed_yet")
-    assert not web_module_exists("tests", "module_not_installed_yet")
+def test_web_module_url(victory):
+    assert web_module_exists("victory")
+    assert web_module_url("victory") == "../web_modules/victory.js"
 
 
-def test_web_module_exports(victory_js):
+def test_web_module_exports(victory):
     assert_same_items(
-        web_module_exports("tests", "victory"),
+        web_module_exports("victory"),
         [
             "Area",
             "Axis",

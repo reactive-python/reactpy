@@ -1,7 +1,7 @@
 import idom
 
 material_ui = idom.install("@material-ui/core")
-MaterialButton = material_ui.use("Button", fallback="loading...")
+MaterialButton = material_ui.define("Button", fallback="loading...")
 
 idom.run(
     idom.element(
