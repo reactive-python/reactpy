@@ -22,11 +22,10 @@ def install(packages: Union[List[str], Tuple[str]]) -> List["Module"]:
 def install(
     packages: Union[str, List[str], Tuple[str]], ignore_installed: bool = False
 ) -> Union["Module", List["Module"]]:
+    return_one = False
     if isinstance(packages, str):
         packages = [packages]
         return_one = True
-    else:
-        return_one = False
 
     pkg_names = {get_package_name(pkg) for pkg in packages}
 
