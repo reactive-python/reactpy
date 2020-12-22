@@ -20,7 +20,7 @@ This can be accomplished in different ways for different reasons:
     *   - :ref:`Dynamically Install Javascript` (requires NPM_)
         - You want to **quickly experiment** with IDOM and the Javascript ecosystem.
 
-    *   - :ref:`Import Javascript Source`
+    *   - :ref:`Import Javascript Bundles`
         - You want to create polished software that can be **easily shared** with others.
 
 
@@ -32,19 +32,16 @@ Dynamically Install Javascript
     Before continuing `install NPM`_.
 
 IDOM makes it easy to draft your code when you're in the early stages of development by
-using NPM_ to directly install Javascript packages into IDOM on the fly. Ultimately
-though, this approach isn't recommended if you
-:ref:`Import Javascript Source`.
-
-Experimenting with IDOM it can be useful to quickly In this example we'll be using the ubiquitous React-based UI framework `Material UI`_
-which can be easily installed using the ``idom`` CLI:
+using NPM_ to directly install Javascript packages on the fly. In this example we'll be
+using the ubiquitous React-based UI framework `Material UI`_ which can be installed
+using the ``idom`` CLI:
 
 .. code-block:: bash
 
     idom install @material-ui/core
 
 Or at runtime with :func:`idom.client.module.install` (this is useful if you're working
-in a REPL or a Jupyter Notebook):
+in a REPL or Jupyter Notebook):
 
 .. code-block::
 
@@ -73,25 +70,38 @@ add an ``onClick`` handler to the element:
 .. example:: material_ui_button_on_click
 
 
-Import Javascript Source
-------------------------
+Import Javascript Bundles
+-------------------------
+
+For projects that will be shared with others we recommend bundling your Javascript with
+`rollup <https://rollupjs.org/guide/en/>`__ or `webpack <https://webpack.js.org/>`__
+into a
+`web module <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules>`__.
+Once you've done this, you can distribute bundled javascript in your Python package and
+integrate it into IDOM by defining :class:`~idom.client.module.Module` objects that
+load them from source:
+
+.. code-block::
+
+    import idom
+    my_js_package = idom.Module("my-js-package", source_file="/path/to/my/bundle.js")
+
+The core benefit of loading Javascript in this way is that users of your code won't need
+NPM_. Rather, they can use ``pip`` to install your Python package without any other build
+steps because the bundled Javascript you distributed with it will be symlinked into the
+IDOM client at runtime.
 
 .. note::
 
-    This does not require NPM_ to be installed.
+    In the future IDOM will come with tools to help author Python packages with bundled
+    Javascript
 
-While it's probably best to create
-`a real package <https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry>`__
-for your Javascript, if you're just experimenting it might be easiest to quickly
-hook in a module of your own making on the fly. As before, we'll be using a
-:class:`~idom.client.module.Module`, however this time we'll pass it a ``source``
-parameter which is a file-like object. In the following example we'll use Victory again,
-but this time we'll add a callback to it. Unfortunately we can't just pass it in
-:ref:`like we did before <Passing Props To Javascript>` because Victory's
-event API is a bit more complex so we've implemented a quick wrapper for it in a file
-``chart.js`` which we can read in as a ``source`` to :class:`~idom.client.module.Module`:
-
-Click the bars to trigger an event 👇
+With that said, if you just want to see how this all works it might be easiest to
+hook in simple a hand-crafted Javascript module. In the example to follow we'll create
+a very basic SVG line chart. The catch though is that we are limited to using Javascript
+that can run directly in the browser. This means we can't use fancy syntax like
+`JSX <https://reactjs.org/docs/introducing-jsx.html>`__ and instead will use
+`htm <https://github.com/developit/htm>`__ to simulate JSX in plain Javascript.
 
 .. example:: super_simple_chart
 
@@ -99,7 +109,14 @@ Click the bars to trigger an event 👇
 Alternate Client Implementations
 --------------------------------
 
-under construction...
+While it's possible to implement a whole-sale replacement for IDOM's built-in client by
+adhering to IDOM's :ref:`API <Package API>` and :ref:`Specifications`, the easiest way
+to implement a custom client is to create an object that adheres to the
+:class:`~idom.client.protocol.ClientImplementation` protocol and update the ``current``
+value of the :attr:`~idom.client.protocol.client_implementation` ref.
+
+.. autoclass:: idom.client.protocol.ClientImplementation
+    :noindex:
 
 
 .. Links

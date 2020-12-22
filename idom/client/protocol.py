@@ -9,7 +9,7 @@ from . import manage
 
 
 class ClientImplementation(Protocol):
-    """A minimal set of functions required to use :class:`idom.widget.module.Module`"""
+    """A minimal set of functions required to use :class:`~idom.client.module.Module`"""
 
     def web_module_url(self, package_name: str) -> str:
         """Return the URL to import the module with the given name."""
@@ -33,4 +33,4 @@ class ClientImplementation(Protocol):
 client_implementation: Ref[ClientImplementation] = Ref(
     cast(ClientImplementation, manage)
 )
-"""The current client implementation used by :class:`idom.widgets.module.Module`"""
+"""The current client implementation used by :class:`~idom.client.module.Module`"""
