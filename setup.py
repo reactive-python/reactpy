@@ -33,9 +33,9 @@ package = {
     "keywords": ["interactive", "widgets", "DOM", "React"],
     "include_package_data": True,
     "zip_safe": False,
-    "setup_requires": ["setuptools_scm"],
     "use_scm_version": True,
     "classifiers": [
+        "Framework :: IDOM",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Topic :: Multimedia :: Graphics",

@@ -1,6 +1,7 @@
 import logging
 import inspect
 import time
+from contextlib import ExitStack
 from typing import Callable, Any, Type, Tuple, Iterator, Iterable, Union
 
 import sanic
@@ -11,16 +12,21 @@ from _pytest.config import Config
 from _pytest.config.argparsing import Parser
 from selenium.webdriver import Chrome
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.chrome.options import Options
 
 import pyalect.builtins.pytest  # noqa
 
 import idom
 from idom.client import manage as manage_client
 from idom.core import ElementConstructor, AbstractElement
-from idom.server.prefab import hotswap_server, AbstractRenderServer
+from idom.server.prefab import AbstractRenderServer
 from idom.server.utils import find_available_port
 from idom.server.sanic import PerClientStateServer
+from idom.testing import (
+    create_selenium_page_get_and_display_context,
+    open_sanic_mount_and_server,
+    open_selenium_chrome_driver,
+    create_sanic_server_type_for_testing,
+)
 
 
 # Default is an error because we want to know whether we are setting the last
@@ -66,62 +72,33 @@ def caplog(_caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
 
 
 @pytest.fixture
-def display(
+def display(driver_get_and_display_content):
+    with driver_get_and_display_content[1]() as display:
+        yield display
+
+
+@pytest.fixture
+def driver_get(driver_get_and_display_content):
+    return driver_get_and_display_content[0]
+
+
+@pytest.fixture
+def driver_get_and_display_content(
     driver: Chrome,
-    driver_get: Callable[[str], None],
     server: AbstractRenderServer,
+    server_url: str,
     mount: Callable[..., None],
-    host: str,
-    port: int,
-    display_id: idom.Ref[int],
-    last_server_error: idom.Ref[Exception],
 ) -> Iterator[Callable[[Union[ElementConstructor, AbstractElement], str], None]]:
     """A function for displaying an element using the current web driver."""
-
-    def display(
-        element: Union[ElementConstructor, AbstractElement],
-        query: str = "",
-        check_mount: bool = True,
-    ):
-        d_id = display_id.current
-        display_id.current += 1
-        display_attrs = {"id": f"display-{d_id}"}
-        element_constructor = element if callable(element) else lambda: element
-        mount(lambda: idom.html.div(display_attrs, element_constructor()))
-        driver_get(query)
-        if check_mount:
-            # Ensure element was actually mounted.
-            driver.find_element_by_id(f"display-{d_id}")
-
-    try:
-        yield display
-    finally:
-        last_error = last_server_error.current
-        if last_error is default_error:
-            msg = f"The server {server} never ran or did not set the 'last_server_error' fixture."
-            raise NotImplementedError(msg)
-        elif last_error is not None:
-            raise last_error
+    return create_selenium_page_get_and_display_context(
+        driver, server, server_url, mount
+    )
 
 
 @pytest.fixture
-def driver_get(driver: Chrome, server_url: str) -> Callable[[str], None]:
-    """Navigate the driver to an IDOM server at the given host and port.
-
-    The ``query`` parameter is typically used to specify a ``view_id`` when a
-    ``multiview()`` elemement has been mounted to the layout.
-    """
-
-    def get(query: str = "") -> None:
-        driver.get(f"{server_url}/client/index.html?{query}")
-
-    return get
-
-
-@pytest.fixture
-def driver_wait(driver: Chrome, driver_timeout: float) -> WebDriverWait:
+def driver_wait(driver: Chrome) -> WebDriverWait:
     """A :class:`WebDriverWait` object for the current web driver"""
-    return WebDriverWait(driver, driver_timeout)
+    return WebDriverWait(driver, 3)
 
 
 @pytest.fixture(scope="session")
@@ -136,36 +113,16 @@ def driver(create_driver: Callable[[], Chrome]) -> Chrome:
 
 
 @pytest.fixture(scope="module")
-def create_driver(pytestconfig: Config, driver_timeout: float):
+def create_driver(pytestconfig: Config):
     """A Selenium web driver"""
-    created_drivers = []
+    with ExitStack() as exit_stack:
 
-    def create():
-        chrome_options = Options()
+        def create():
+            return exit_stack.enter_context(
+                open_selenium_chrome_driver(headless=bool(pytestconfig.option.headless))
+            )
 
-        if pytestconfig.option.headless:
-            chrome_options.headless = True
-
-        driver = Chrome(options=chrome_options)
-
-        driver.set_window_size(1080, 800)
-        driver.set_page_load_timeout(driver_timeout)
-        driver.implicitly_wait(driver_timeout)
-
-        created_drivers.append(driver)
-
-        return driver
-
-    yield create
-
-    for d in created_drivers:
-        d.quit()
-
-
-@pytest.fixture(scope="session")
-def driver_timeout() -> float:
-    """How the web driver will wait for a condition (e.g. page load, element lookup)"""
-    return 3.0
+        yield create
 
 
 @pytest.fixture(scope="module")
@@ -199,17 +156,10 @@ def mount_and_server(
 
     The ``mount`` and ``server`` fixtures use this.
     """
-
-    mount, server = hotswap_server(
-        fixturized_server_type,
-        host,
-        port,
-        server_options={"cors": True, "last_server_error": last_server_error},
-        run_options={},
-        sync_views=False,
-        app=application,
-    )
-    return mount, server
+    with open_sanic_mount_and_server(
+        fixturized_server_type, host=host, port=port, app=application
+    ) as mount_and_server:
+        yield mount_and_server
 
 
 @pytest.fixture(scope="module")
@@ -218,18 +168,14 @@ def application():
 
 
 @pytest.fixture(scope="module")
+def last_server_error(fixturized_server_type):
+    """A ``Ref`` containing the last server error. This must be populated by ``server_type``"""
+    return fixturized_server_type.last_server_error_for_idom_testing
+
+
+@pytest.fixture(scope="module")
 def fixturized_server_type(server_type):
-    class ServerSavesLastError(server_type):
-        """A per-client-state server that updates the ``last_server_error`` fixture"""
-
-        async def _run_dispatcher(self, *args, **kwargs):
-            self._config["last_server_error"].current = None
-            try:
-                await super()._run_dispatcher(*args, **kwargs)
-            except Exception as e:
-                self._config["last_server_error"].current = e
-
-    return ServerSavesLastError
+    return create_sanic_server_type_for_testing(server_type)
 
 
 @pytest.fixture(scope="module")
@@ -255,12 +201,6 @@ def port(host: str) -> int:
     return find_available_port(host)
 
 
-@pytest.fixture(scope="session")
-def last_server_error():
-    """A ``Ref`` containing the last server error. This must be populated by ``server_type``"""
-    return idom.Ref(default_error)
-
-
 @pytest.fixture
 def client_implementation():
     original = idom.client.current
@@ -268,12 +208,6 @@ def client_implementation():
         yield idom.client
     finally:
         idom.client.current = original
-
-
-@pytest.fixture(autouse=True)
-def _clean_last_server_error(last_server_error) -> Iterator[None]:
-    last_server_error.current = default_error
-    yield
 
 
 @pytest.fixture(scope="session", autouse=True)
