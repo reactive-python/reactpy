@@ -35,7 +35,6 @@ package = {
     "zip_safe": False,
     "use_scm_version": True,
     "classifiers": [
-        "Framework :: IDOM",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Topic :: Multimedia :: Graphics",
