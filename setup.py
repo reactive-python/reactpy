@@ -33,7 +33,6 @@ package = {
     "keywords": ["interactive", "widgets", "DOM", "React"],
     "include_package_data": True,
     "zip_safe": False,
-    "use_scm_version": True,
     "classifiers": [
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
