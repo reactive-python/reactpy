@@ -31,16 +31,16 @@ def open_selenium_chrome_driver_and_display_context(
         page_load_timeout=driver_timeout,
         implicit_wait_timeout=driver_timeout,
     ) as driver:
-        with open_sanic_hotswap_mount_and_server(
+        mount, server = create_sanic_hotswap_mount_and_server(
             server_type=PerClientStateServer, host=host, port=port
-        ) as (mount, server):
-            time.sleep(wait_for_server_start)
-            yield (
-                driver,
-                create_selenium_page_get_and_display_context(
-                    driver, server, server_url, mount
-                )[1],
-            )
+        )
+        time.sleep(wait_for_server_start)
+        yield (
+            driver,
+            create_selenium_page_get_and_display_context(
+                driver, server, server_url, mount
+            )[1],
+        )
 
 
 def create_selenium_page_get_and_display_context(
@@ -91,52 +91,41 @@ def create_selenium_page_get_and_display_context(
     return get_page, display_context
 
 
-@contextmanager
-def open_sanic_multiview_mount_and_server(
+def create_sanic_multiview_mount_and_server(
     server_type: Type[SanicRenderServer],
     host: str,
     port: int,
     debug: bool = False,
     app: Optional[Sanic] = None,
-) -> Iterator[Tuple[MultiViewMount, SanicRenderServer]]:
-    server_type = create_sanic_server_type_for_testing(server_type)
-    try:
-        yield multiview_server(
-            server_type,
-            host,
-            port,
-            server_options={"cors": True},
-            run_options={"debug": debug},
-            app=app,
-        )
-    finally:
-        if server_type.last_server_error_for_idom_testing.current is not None:
-            raise server_type.last_server_error_for_idom_testing.current  # pragma: no cover
+) -> Tuple[MultiViewMount, SanicRenderServer]:
+    return multiview_server(
+        create_sanic_server_type_for_testing(server_type),
+        host,
+        port,
+        server_options={"cors": True},
+        run_options={"debug": debug},
+        app=app,
+    )
 
 
-@contextmanager
-def open_sanic_hotswap_mount_and_server(
+def create_sanic_hotswap_mount_and_server(
     server_type: Type[SanicRenderServer],
     host: str,
     port: int,
     sync_views: bool = False,
     debug: bool = False,
     app: Optional[Sanic] = None,
-) -> Iterator[Tuple[Callable[..., None], SanicRenderServer]]:
-    server_type = create_sanic_server_type_for_testing(server_type)
-    try:
-        yield hotswap_server(
-            server_type,
-            host,
-            port,
-            server_options={"cors": True},
-            run_options={"debug": debug},
-            sync_views=sync_views,
-            app=app,
-        )
-    finally:
-        if server_type.last_server_error_for_idom_testing.current is not None:
-            raise server_type.last_server_error_for_idom_testing.current
+) -> Tuple[Callable[..., None], SanicRenderServer]:
+
+    return hotswap_server(
+        create_sanic_server_type_for_testing(server_type),
+        host,
+        port,
+        server_options={"cors": True},
+        run_options={"debug": debug},
+        sync_views=sync_views,
+        app=app,
+    )
 
 
 def create_sanic_server_type_for_testing(

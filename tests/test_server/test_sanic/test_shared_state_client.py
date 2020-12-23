@@ -6,12 +6,7 @@ import pytest
 
 import idom
 from idom.server.sanic import SharedClientStateServer
-from idom.testing import open_sanic_hotswap_mount_and_server
-
-
-@pytest.fixture(scope="module")
-def server_type():
-    return SharedClientStateServer
+from idom.testing import create_sanic_hotswap_mount_and_server
 
 
 @pytest.fixture(scope="module")
@@ -20,10 +15,9 @@ def mount_and_server(host, port):
 
     The ``mount`` and ``server`` fixtures use this.
     """
-    with open_sanic_hotswap_mount_and_server(
+    return create_sanic_hotswap_mount_and_server(
         SharedClientStateServer, host, port, sync_views=True
-    ) as mount_and_server:
-        yield mount_and_server
+    )
 
 
 def test_shared_client_state(create_driver, mount, server_url):
