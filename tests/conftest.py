@@ -22,7 +22,7 @@ from idom.server.utils import find_available_port
 from idom.server.sanic import PerClientStateServer
 from idom.testing import (
     create_selenium_page_get_and_display_context,
-    open_sanic_hotswap_mount_and_server,
+    create_sanic_hotswap_mount_and_server,
     open_selenium_chrome_driver,
     SanicRenderServerWithLastError,
 )
@@ -149,10 +149,7 @@ def mount_and_server(
 
     The ``mount`` and ``server`` fixtures use this.
     """
-    with open_sanic_hotswap_mount_and_server(
-        PerClientStateServer, host=host, port=port
-    ) as mount_and_server:
-        yield mount_and_server
+    return create_sanic_hotswap_mount_and_server(PerClientStateServer, host, port)
 
 
 @pytest.fixture(scope="module")

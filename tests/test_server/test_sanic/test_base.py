@@ -5,19 +5,18 @@ from sanic import Sanic
 
 import idom
 from idom.server.sanic import PerClientStateServer
-from idom.testing import open_sanic_multiview_mount_and_server
+from idom.testing import create_sanic_multiview_mount_and_server
 
 
 @pytest.fixture(scope="module")
 def mount_and_server(host, port):
-    with open_sanic_multiview_mount_and_server(
+    return create_sanic_multiview_mount_and_server(
         PerClientStateServer,
         host,
         port,
         # test that we can use a custom app instance
         app=Sanic(),
-    ) as mount_and_server:
-        yield mount_and_server
+    )
 
 
 def test_serve_has_loop_attribute(server):
