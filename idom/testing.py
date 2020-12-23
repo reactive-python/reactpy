@@ -1,3 +1,4 @@
+import time
 from contextlib import contextmanager, AbstractContextManager
 from typing import Callable, Tuple, Iterator, Type, Optional, Union, Any
 
@@ -9,7 +10,7 @@ from selenium.webdriver.chrome.options import Options
 import idom
 from idom.core.element import AbstractElement, ElementConstructor
 from idom.server.sanic import SanicRenderServer, PerClientStateServer
-from idom.server.prefab import hotswap_server
+from idom.server.prefab import hotswap_server, multiview_server, MultiViewMount
 from idom.server.utils import find_available_port
 from idom.utils import Ref
 
@@ -17,9 +18,10 @@ from idom.utils import Ref
 DisplayFunction = Callable[[Union[ElementConstructor, AbstractElement], str], None]
 
 
-def create_selenium_display_context(
-    headless: bool, driver_timeout: float = 3.0
-) -> Iterator[DisplayFunction]:
+@contextmanager
+def open_selenium_chrome_driver_and_display_context(
+    headless: bool, driver_timeout: float = 3.0, wait_for_server_start: float = 1.0
+) -> Iterator[Tuple[Chrome, DisplayFunction]]:
     host = "127.0.0.1"
     port = find_available_port(host)
     server_url = f"http://{host}:{port}"
@@ -29,17 +31,21 @@ def create_selenium_display_context(
         page_load_timeout=driver_timeout,
         implicit_wait_timeout=driver_timeout,
     ) as driver:
-        with open_sanic_mount_and_server(
+        with open_sanic_hotswap_mount_and_server(
             server_type=PerClientStateServer, host=host, port=port
         ) as (mount, server):
-            return create_selenium_page_get_and_display_context(
-                driver, server, server_url, mount
-            )[1]
+            time.sleep(wait_for_server_start)
+            yield (
+                driver,
+                create_selenium_page_get_and_display_context(
+                    driver, server, server_url, mount
+                )[1],
+            )
 
 
 def create_selenium_page_get_and_display_context(
     driver: WebDriver,
-    server: "_RenderServerSavesLastError",
+    server: "SanicRenderServerWithLastError",
     server_url: str,
     element_mount_function: Callable[..., None],
 ) -> Tuple[Callable[[str], None], "AbstractContextManager[DisplayFunction]"]:
@@ -86,24 +92,46 @@ def create_selenium_page_get_and_display_context(
 
 
 @contextmanager
-def open_sanic_mount_and_server(
+def open_sanic_multiview_mount_and_server(
     server_type: Type[SanicRenderServer],
     host: str,
     port: int,
+    debug: bool = False,
     app: Optional[Sanic] = None,
-) -> Iterator[Tuple[Callable[..., None], SanicRenderServer]]:
+) -> Iterator[Tuple[MultiViewMount, SanicRenderServer]]:
+    server_type = create_sanic_server_type_for_testing(server_type)
     try:
-        yield hotswap_server(
-            (
-                server_type
-                if issubclass(server_type, _RenderServerSavesLastError)
-                else create_sanic_server_type_for_testing(server_type)
-            ),
+        yield multiview_server(
+            server_type,
             host,
             port,
             server_options={"cors": True},
-            run_options={},
-            sync_views=False,
+            run_options={"debug": debug},
+            app=app,
+        )
+    finally:
+        if server_type.last_server_error_for_idom_testing.current is not None:
+            raise server_type.last_server_error_for_idom_testing.current  # pragma: no cover
+
+
+@contextmanager
+def open_sanic_hotswap_mount_and_server(
+    server_type: Type[SanicRenderServer],
+    host: str,
+    port: int,
+    sync_views: bool = False,
+    debug: bool = False,
+    app: Optional[Sanic] = None,
+) -> Iterator[Tuple[Callable[..., None], SanicRenderServer]]:
+    server_type = create_sanic_server_type_for_testing(server_type)
+    try:
+        yield hotswap_server(
+            server_type,
+            host,
+            port,
+            server_options={"cors": True},
+            run_options={"debug": debug},
+            sync_views=sync_views,
             app=app,
         )
     finally:
@@ -113,11 +141,15 @@ def open_sanic_mount_and_server(
 
 def create_sanic_server_type_for_testing(
     server_type: Type[SanicRenderServer],
-) -> Type["_RenderServerSavesLastError"]:
-    return type(
-        server_type.__name__,
-        (_RenderServerSavesLastError, server_type),
-        {"last_server_error_for_idom_testing": Ref(None)},
+) -> Type["SanicRenderServerWithLastError"]:
+    return (
+        server_type
+        if issubclass(server_type, SanicRenderServerWithLastError)
+        else type(
+            server_type.__name__,
+            (SanicRenderServerWithLastError, server_type),
+            {"last_server_error_for_idom_testing": Ref(None)},
+        )
     )
 
 
@@ -143,7 +175,7 @@ def open_selenium_chrome_driver(
         driver.quit()
 
 
-class _RenderServerSavesLastError(SanicRenderServer):
+class SanicRenderServerWithLastError(SanicRenderServer):
     """A server that updates the ``last_server_error`` fixture"""
 
     last_server_error_for_idom_testing: Ref[Optional[Exception]]

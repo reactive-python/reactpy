@@ -2,9 +2,8 @@ import logging
 import inspect
 import time
 from contextlib import ExitStack
-from typing import Callable, Any, Type, Tuple, Iterator, Iterable, Union
+from typing import Callable, Any, Tuple, Iterator, Iterable, Union
 
-import sanic
 from loguru import logger
 import pytest
 from _pytest.logging import caplog as _caplog, LogCaptureFixture  # noqa
@@ -23,16 +22,10 @@ from idom.server.utils import find_available_port
 from idom.server.sanic import PerClientStateServer
 from idom.testing import (
     create_selenium_page_get_and_display_context,
-    open_sanic_mount_and_server,
+    open_sanic_hotswap_mount_and_server,
     open_selenium_chrome_driver,
-    create_sanic_server_type_for_testing,
+    SanicRenderServerWithLastError,
 )
-
-
-# Default is an error because we want to know whether we are setting the last
-# error while testing. A refactor could miss the code path that catches serve
-# errors.
-default_error = NotImplementedError()
 
 
 def pytest_collection_modifyitems(items: Iterable[Any]) -> None:
@@ -113,13 +106,13 @@ def driver(create_driver: Callable[[], Chrome]) -> Chrome:
 
 
 @pytest.fixture(scope="module")
-def create_driver(pytestconfig: Config):
+def create_driver(driver_is_headless):
     """A Selenium web driver"""
     with ExitStack() as exit_stack:
 
         def create():
             return exit_stack.enter_context(
-                open_selenium_chrome_driver(headless=bool(pytestconfig.option.headless))
+                open_selenium_chrome_driver(headless=driver_is_headless)
             )
 
         yield create
@@ -139,6 +132,10 @@ def server(
 ) -> Iterator[AbstractRenderServer]:
     """An IDOM server"""
     server = mount_and_server[1]
+    if not isinstance(server, SanicRenderServerWithLastError):
+        raise TypeError(
+            "Servers for testing must be SanicRenderServerWithLastError instances"
+        )
     time.sleep(1)  # wait for server to start
     yield server
     server.stop()
@@ -146,42 +143,21 @@ def server(
 
 @pytest.fixture(scope="module")
 def mount_and_server(
-    application: sanic.Sanic,
-    fixturized_server_type: Type[AbstractRenderServer],
-    host: str,
-    port: int,
-    last_server_error: idom.Ref[Exception],
+    host: str, port: int
 ) -> Tuple[Callable[..., None], AbstractRenderServer]:
     """An IDOM layout mount function and server as a tuple
 
     The ``mount`` and ``server`` fixtures use this.
     """
-    with open_sanic_mount_and_server(
-        fixturized_server_type, host=host, port=port, app=application
+    with open_sanic_hotswap_mount_and_server(
+        PerClientStateServer, host=host, port=port
     ) as mount_and_server:
         yield mount_and_server
 
 
 @pytest.fixture(scope="module")
-def application():
-    return sanic.Sanic()
-
-
-@pytest.fixture(scope="module")
-def last_server_error(fixturized_server_type):
-    """A ``Ref`` containing the last server error. This must be populated by ``server_type``"""
-    return fixturized_server_type.last_server_error_for_idom_testing
-
-
-@pytest.fixture(scope="module")
-def fixturized_server_type(server_type):
-    return create_sanic_server_type_for_testing(server_type)
-
-
-@pytest.fixture(scope="module")
-def server_type() -> Type[AbstractRenderServer]:
-    """The type of server the ``mount_and_server`` fixture will use to initialize a server"""
-    return PerClientStateServer
+def last_server_error(server):
+    return server.last_server_error_for_idom_testing
 
 
 @pytest.fixture(scope="module")
@@ -208,6 +184,11 @@ def client_implementation():
         yield idom.client
     finally:
         idom.client.current = original
+
+
+@pytest.fixture(scope="session")
+def driver_is_headless(pytestconfig: Config):
+    return bool(pytestconfig.option.headless)
 
 
 @pytest.fixture(scope="session", autouse=True)

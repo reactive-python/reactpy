@@ -2,6 +2,9 @@
 sanic <19.12.0
 sanic-cors >=0.9.9
 
+# extra=testing
+selenium
+
 # extra=matplotlib
 matplotlib
 

@@ -5,8 +5,8 @@ from weakref import finalize
 import pytest
 
 import idom
-from idom.server import hotswap_server
 from idom.server.sanic import SharedClientStateServer
+from idom.testing import open_sanic_hotswap_mount_and_server
 
 
 @pytest.fixture(scope="module")
@@ -15,28 +15,15 @@ def server_type():
 
 
 @pytest.fixture(scope="module")
-def mount_and_server(
-    application,
-    fixturized_server_type,
-    host,
-    port,
-    last_server_error,
-):
+def mount_and_server(host, port):
     """An IDOM layout mount function and server as a tuple
 
     The ``mount`` and ``server`` fixtures use this.
     """
-
-    mount, server = hotswap_server(
-        fixturized_server_type,
-        host,
-        port,
-        server_options={"cors": True, "last_server_error": last_server_error},
-        run_options={},
-        sync_views=True,
-        app=application,
-    )
-    return mount, server
+    with open_sanic_hotswap_mount_and_server(
+        SharedClientStateServer, host, port, sync_views=True
+    ) as mount_and_server:
+        yield mount_and_server
 
 
 def test_shared_client_state(create_driver, mount, server_url):
@@ -89,7 +76,7 @@ def test_shared_client_state(create_driver, mount, server_url):
 
 
 def test_shared_client_state_server_does_not_support_per_client_parameters(
-    driver_get, server_url, last_server_error
+    driver_get, last_server_error
 ):
     driver_get("per_client_param=1")
 
@@ -99,3 +86,5 @@ def test_shared_client_state_server_does_not_support_per_client_parameters(
 
     with pytest.raises(ValueError, match="does not support per-client view parameters"):
         raise error
+
+    last_server_error.current = None

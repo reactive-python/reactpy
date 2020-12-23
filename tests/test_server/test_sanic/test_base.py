@@ -1,21 +1,23 @@
 import asyncio
 
 import pytest
+from sanic import Sanic
 
 import idom
+from idom.server.sanic import PerClientStateServer
+from idom.testing import open_sanic_multiview_mount_and_server
 
 
 @pytest.fixture(scope="module")
-def mount_and_server(fixturized_server_type, host, port, last_server_error):
-    return idom.server.multiview_server(
-        fixturized_server_type,
+def mount_and_server(host, port):
+    with open_sanic_multiview_mount_and_server(
+        PerClientStateServer,
         host,
         port,
-        server_options={"last_server_error": last_server_error},
-        run_options={"debug": True},
-        # use the default app for the server just to get test coverage there
-        app=None,
-    )
+        # test that we can use a custom app instance
+        app=Sanic(),
+    ) as mount_and_server:
+        yield mount_and_server
 
 
 def test_serve_has_loop_attribute(server):
