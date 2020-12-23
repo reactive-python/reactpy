@@ -120,22 +120,22 @@ def test_use_state_with_constructor(driver, display, driver_wait):
     count = driver.find_element_by_id("count-view")
 
     driver_wait.until(lambda d: constructor_call_count.current == 1)
-    assert count.get_attribute("innerHTML") == "0"
+    driver_wait.until(lambda d: count.get_attribute("innerHTML") == "0")
 
     inner.click()
 
     driver_wait.until(lambda d: constructor_call_count.current == 1)
-    assert count.get_attribute("innerHTML") == "1"
+    driver_wait.until(lambda d: count.get_attribute("innerHTML") == "1")
 
     outer.click()
 
     driver_wait.until(lambda d: constructor_call_count.current == 2)
-    assert count.get_attribute("innerHTML") == "0"
+    driver_wait.until(lambda d: count.get_attribute("innerHTML") == "0")
 
     inner.click()
 
     driver_wait.until(lambda d: constructor_call_count.current == 2)
-    assert count.get_attribute("innerHTML") == "1"
+    driver_wait.until(lambda d: count.get_attribute("innerHTML") == "1")
 
 
 def test_set_state_with_reducer_instead_of_value(driver, display):
