@@ -2,7 +2,7 @@ import logging
 import inspect
 import time
 from contextlib import ExitStack
-from typing import Callable, Any, Tuple, Iterator, Iterable, Union
+from typing import Callable, Any, Tuple, Iterator, Iterable
 
 from loguru import logger
 import pytest
@@ -16,15 +16,16 @@ import pyalect.builtins.pytest  # noqa
 
 import idom
 from idom.client import manage as manage_client
-from idom.core import ElementConstructor, AbstractElement
 from idom.server.prefab import AbstractRenderServer
 from idom.server.utils import find_available_port
 from idom.server.sanic import PerClientStateServer
 from idom.testing import (
-    create_selenium_page_get_and_display_context,
-    create_sanic_hotswap_mount_and_server,
-    open_selenium_chrome_driver,
-    SanicRenderServerWithLastError,
+    create_selenium_get_page_function,
+    open_selenium_web_driver,
+    open_selenium_web_driver,
+    RenderServerWithLastError,
+    open_selenium_mount_context,
+    create_hotswap_mount_and_server,
 )
 
 
@@ -65,27 +66,19 @@ def caplog(_caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
 
 
 @pytest.fixture
-def display(driver_get_and_display_content):
-    with driver_get_and_display_content[1]() as display:
-        yield display
-
-
-@pytest.fixture
-def driver_get(driver_get_and_display_content):
-    return driver_get_and_display_content[0]
-
-
-@pytest.fixture
-def driver_get_and_display_content(
+def display(
     driver: Chrome,
     server: AbstractRenderServer,
     server_url: str,
     mount: Callable[..., None],
-) -> Iterator[Callable[[Union[ElementConstructor, AbstractElement], str], None]]:
-    """A function for displaying an element using the current web driver."""
-    return create_selenium_page_get_and_display_context(
-        driver, server, server_url, mount
-    )
+):
+    with open_selenium_mount_context(driver, server, server_url, mount) as display:
+        yield display
+
+
+@pytest.fixture
+def driver_get(driver: Chrome, server_url: str):
+    return create_selenium_get_page_function(driver, server_url)
 
 
 @pytest.fixture
@@ -112,7 +105,7 @@ def create_driver(driver_is_headless):
 
         def create():
             return exit_stack.enter_context(
-                open_selenium_chrome_driver(headless=driver_is_headless)
+                open_selenium_web_driver(headless=driver_is_headless)
             )
 
         yield create
@@ -132,9 +125,9 @@ def server(
 ) -> Iterator[AbstractRenderServer]:
     """An IDOM server"""
     server = mount_and_server[1]
-    if not isinstance(server, SanicRenderServerWithLastError):
+    if not isinstance(server, RenderServerWithLastError):
         raise TypeError(
-            "Servers for testing must be SanicRenderServerWithLastError instances"
+            "Servers for testing must be RenderServerWithLastError instances"
         )
     time.sleep(1)  # wait for server to start
     yield server
@@ -149,7 +142,7 @@ def mount_and_server(
 
     The ``mount`` and ``server`` fixtures use this.
     """
-    return create_sanic_hotswap_mount_and_server(PerClientStateServer, host, port)
+    return create_hotswap_mount_and_server(PerClientStateServer, host, port)
 
 
 @pytest.fixture(scope="module")

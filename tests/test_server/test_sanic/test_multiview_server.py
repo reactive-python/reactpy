@@ -2,14 +2,14 @@ import pytest
 
 import idom
 from idom.server.sanic import PerClientStateServer
-from idom.testing import create_sanic_multiview_mount_and_server
+from idom.testing import create_multiview_mount_and_server
 
 from tests.driver_utils import no_such_element
 
 
 @pytest.fixture(scope="module")
 def mount_and_server(host, port):
-    return create_sanic_multiview_mount_and_server(PerClientStateServer, host, port)
+    return create_multiview_mount_and_server(PerClientStateServer, host, port)
 
 
 def test_multiview_server(driver_get, driver, mount, server):

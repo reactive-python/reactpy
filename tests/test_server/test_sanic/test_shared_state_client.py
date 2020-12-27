@@ -6,7 +6,7 @@ import pytest
 
 import idom
 from idom.server.sanic import SharedClientStateServer
-from idom.testing import create_sanic_hotswap_mount_and_server
+from idom.testing import create_hotswap_mount_and_server
 
 
 @pytest.fixture(scope="module")
@@ -15,7 +15,7 @@ def mount_and_server(host, port):
 
     The ``mount`` and ``server`` fixtures use this.
     """
-    return create_sanic_hotswap_mount_and_server(
+    return create_hotswap_mount_and_server(
         SharedClientStateServer, host, port, sync_views=True
     )
 
