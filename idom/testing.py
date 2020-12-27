@@ -10,18 +10,20 @@ from selenium.webdriver.chrome.options import Options
 import idom
 from idom.core.element import AbstractElement, ElementConstructor
 from idom.server.sanic import SanicRenderServer, PerClientStateServer
-from idom.server.prefab import hotswap_server, multiview_server, MultiViewMount
+from idom.widgets.utils import MultiViewMount
+from idom.server.prefab import hotswap_server, multiview_server
 from idom.server.utils import find_available_port
 from idom.utils import Ref
 
 
 DisplayFunction = Callable[[Union[ElementConstructor, AbstractElement], str], None]
+DisplayFunctionContext = Callable[[], "AbstractContextManager[DisplayFunction]"]
 
 
 @contextmanager
 def open_selenium_chrome_driver_and_display_context(
     headless: bool, driver_timeout: float = 3.0, wait_for_server_start: float = 1.0
-) -> Iterator[Tuple[Chrome, DisplayFunction]]:
+) -> Iterator[Tuple[Chrome, DisplayFunctionContext]]:
     host = "127.0.0.1"
     port = find_available_port(host)
     server_url = f"http://{host}:{port}"
@@ -48,7 +50,7 @@ def create_selenium_page_get_and_display_context(
     server: "SanicRenderServerWithLastError",
     server_url: str,
     element_mount_function: Callable[..., None],
-) -> Tuple[Callable[[str], None], "AbstractContextManager[DisplayFunction]"]:
+) -> Tuple[Callable[[str], None], DisplayFunctionContext]:
     display_id = Ref(0)
 
     def get_page(query: str = "") -> None:
@@ -80,7 +82,7 @@ def create_selenium_page_get_and_display_context(
         return None
 
     @contextmanager
-    def display_context():
+    def display_context() -> Iterator[DisplayFunction]:
         server.last_server_error_for_idom_testing.current = None
         try:
             yield display_function
@@ -97,7 +99,7 @@ def create_sanic_multiview_mount_and_server(
     port: int,
     debug: bool = False,
     app: Optional[Sanic] = None,
-) -> Tuple[MultiViewMount, SanicRenderServer]:
+) -> Tuple[MultiViewMount, "SanicRenderServerWithLastError"]:
     return multiview_server(
         create_sanic_server_type_for_testing(server_type),
         host,
@@ -115,7 +117,7 @@ def create_sanic_hotswap_mount_and_server(
     sync_views: bool = False,
     debug: bool = False,
     app: Optional[Sanic] = None,
-) -> Tuple[Callable[..., None], SanicRenderServer]:
+) -> Tuple[Callable[..., None], "SanicRenderServerWithLastError"]:
 
     return hotswap_server(
         create_sanic_server_type_for_testing(server_type),
