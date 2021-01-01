@@ -6,9 +6,13 @@ import * as jsonpatch from "fast-json-patch";
 import serializeEvent from "./event-to-object";
 
 const html = htm.bind(react.createElement);
-const alreadyImported = {};
+const LayoutConfigContext = react.createContext({});
 
-export function mountLayoutWithWebSocket(mountElement, endpoint) {
+export function mountLayoutWithWebSocket(
+  mountElement,
+  endpoint,
+  importSourceUrl
+) {
   if (endpoint.startsWith(".") || endpoint.startsWith("/")) {
     let loc = window.location;
     let protocol;
@@ -42,62 +46,108 @@ export function mountLayoutWithWebSocket(mountElement, endpoint) {
     );
   }
 
-  return mountLayout(mountElement, saveUpdateHook, sendCallback);
+  return mountLayout(
+    mountElement,
+    saveUpdateHook,
+    sendCallback,
+    importSourceUrl
+  );
 }
 
-export function mountLayout(mountElement, saveUpdateHook, sendEvent) {
+export function mountLayout(
+  mountElement,
+  saveUpdateHook,
+  sendEvent,
+  importSourceUrl
+) {
   reactDOM.render(
-    html`<${Layout} saveUpdateHook=${saveUpdateHook} sendEvent=${sendEvent} />`,
+    html`
+      <${Layout}
+        saveUpdateHook=${saveUpdateHook}
+        sendEvent=${sendEvent}
+        importSourceUrl=${importSourceUrl}
+      />
+    `,
     mountElement
   );
 }
 
-export default function Layout({ saveUpdateHook, sendEvent }) {
+export default function Layout({ saveUpdateHook, sendEvent, importSourceUrl }) {
   const [model, patchModel] = useInplaceJsonPatch({});
 
   react.useEffect(() => saveUpdateHook(patchModel), [patchModel]);
 
   if (model.tagName) {
-    return html`<${Element} sendEvent=${sendEvent} model=${model} />`;
+    return html`
+      <${LayoutConfigContext.Provider}
+        value=${{
+          sendEvent: sendEvent,
+          importSourceUrl: importSourceUrl,
+        }}
+      >
+        <${Element} model=${model} />
+      <//>
+    `;
   } else {
     return html`<div />`;
   }
 }
 
-function Element({ sendEvent, model }) {
+function Element({ model }) {
   if (model.importSource) {
-    return html`<${LazyElement} sendEvent=${sendEvent} model=${model} />`;
+    return html`<${ImportedElement} model=${model} />`;
   } else {
-    const children = elementChildren(sendEvent, model);
-    const attributes = elementAttributes(sendEvent, model);
-    if (model.children && model.children.length) {
-      return html`<${model.tagName} ...${attributes}>${children}<//>`;
-    } else {
-      return html`<${model.tagName} ...${attributes} />`;
-    }
+    return html`<${StandardElement} model=${model} />`;
   }
 }
 
-function LazyElement({ sendEvent, model }) {
-  const module = useLazyModule(model.importSource.source);
+function ImportedElement({ model }) {
+  const config = react.useContext(LayoutConfigContext);
+  const module = useLazyModule(
+    model.importSource.source,
+    config.importSourceUrl
+  );
   if (module) {
     const cmpt = getPathProperty(module, model.tagName);
-    const children = elementChildren(sendEvent, model);
-    const attributes = elementAttributes(sendEvent, model);
+    const children = elementChildren(model);
+    const attributes = elementAttributes(model, config.sendEvent);
     return html`<${cmpt} ...${attributes}>${children}<//>`;
   } else {
-    return html`<div>${model.importSource.fallback}<//>`;
+    return createElement(model.importSource.fallback);
   }
 }
 
-function elementChildren(sendEvent, model) {
+function StandardElement({ model }) {
+  const config = react.useContext(LayoutConfigContext);
+  const children = elementChildren(model);
+  const attributes = elementAttributes(model, config.sendEvent);
+  if (model.children && model.children.length) {
+    return html`<${model.tagName} ...${attributes}>${children}<//>`;
+  } else {
+    return html`<${model.tagName} ...${attributes} />`;
+  }
+}
+
+function createElement(value) {
+  if (!value) {
+    return html`<div />`;
+  }
+  switch (typeof value) {
+    case "object":
+      return html`<${Element} model=${value} />`;
+    case "string":
+      return html`<div>${value}</div>`;
+  }
+}
+
+function elementChildren(model) {
   if (!model.children) {
     return [];
   } else {
     return model.children.map((child) => {
       switch (typeof child) {
         case "object":
-          return html`<${Element} model=${child} sendEvent=${sendEvent} />`;
+          return html`<${Element} model=${child} />`;
         case "string":
           return child;
       }
@@ -105,7 +155,7 @@ function elementChildren(sendEvent, model) {
   }
 }
 
-function elementAttributes(sendEvent, model) {
+function elementAttributes(model, sendEvent) {
   const attributes = Object.assign({}, model.attributes);
 
   if (model.eventHandlers) {
@@ -144,10 +194,12 @@ function eventHandler(sendEvent, eventSpec) {
   };
 }
 
-function useLazyModule(source) {
-  const [module, setModule] = react.useState(alreadyImported[source]);
+function useLazyModule(source, sourceUrl = "") {
+  const [module, setModule] = react.useState(null);
   if (!module) {
-    dynamicImport(source).then(setModule);
+    dynamicImport(
+      source.startsWith("./") ? sourceUrl + source.slice(2) : source
+    ).then(setModule);
   }
   return module;
 }
@@ -161,7 +213,7 @@ function dynamicImport(source) {
       } else {
         console.log(error);
         return {
-          default: function Catch() {
+          default() {
             return html`
               <pre>
                   <h1>Error</h1>
