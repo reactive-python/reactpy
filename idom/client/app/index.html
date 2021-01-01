@@ -24,7 +24,11 @@
 
       let endpoint = protocol + "//" + url.join("/") + window.location.search;
 
-      mountLayoutWithWebSocket(document.getElementById("app"), endpoint);
+      mountLayoutWithWebSocket(
+        document.getElementById("app"),
+        endpoint,
+        "../web_modules/"
+      );
     </script>
   </body>
 </html>

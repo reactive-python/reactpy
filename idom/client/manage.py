@@ -26,7 +26,7 @@ def web_module_exports(package_name: str) -> List[str]:
 
 def web_module_url(package_name: str) -> str:
     web_module_path(package_name, must_exist=True)
-    return f"../web_modules/{package_name}.js"
+    return f"./{package_name}.js"
 
 
 def web_module_exists(package_name: str) -> bool:
