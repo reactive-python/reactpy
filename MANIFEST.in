@@ -1,6 +1,6 @@
-recursive-eclude idom/client/app/node_modules *
-recursive-eclude idom/client/app/web_modules *
 recursive-include idom/client/app *
+recursive-exclude idom/client/app/node_modules *
+recursive-exclude idom/client/app/web_modules *
 include idom/py.typed
 include LICENSE
 include requirements/prod.txt
