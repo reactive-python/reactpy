@@ -194,11 +194,15 @@ function eventHandler(sendEvent, eventSpec) {
   };
 }
 
-function useLazyModule(source, sourceUrl = "") {
+function useLazyModule(source, sourceUrlBase = "") {
   const [module, setModule] = react.useState(null);
   if (!module) {
     dynamicImport(
-      source.startsWith("./") ? sourceUrl + source.slice(2) : source
+      source.startsWith("./")
+        ? (sourceUrlBase.endsWith("/")
+            ? sourceUrlBase.slice(0, -1)
+            : sourceUrlBase) + source.slice(1)
+        : source
     ).then(setModule);
   }
   return module;
