@@ -113,7 +113,16 @@ function ImportedElement({ model }) {
     const attributes = elementAttributes(model, config.sendEvent);
     return html`<${cmpt} ...${attributes}>${children}<//>`;
   } else {
-    return createElement(model.importSource.fallback);
+    const fallback = model.importSource.fallback;
+    if (!fallback) {
+      return html`<div />`;
+    }
+    switch (typeof fallback) {
+      case "object":
+        return html`<${Element} model=${fallback} />`;
+      case "string":
+        return html`<div>${fallback}</div>`;
+    }
   }
 }
 
@@ -125,18 +134,6 @@ function StandardElement({ model }) {
     return html`<${model.tagName} ...${attributes}>${children}<//>`;
   } else {
     return html`<${model.tagName} ...${attributes} />`;
-  }
-}
-
-function createElement(value) {
-  if (!value) {
-    return html`<div />`;
-  }
-  switch (typeof value) {
-    case "object":
-      return html`<${Element} model=${value} />`;
-    case "string":
-      return html`<div>${value}</div>`;
   }
 }
 
@@ -197,39 +194,9 @@ function eventHandler(sendEvent, eventSpec) {
 function useLazyModule(source, sourceUrlBase = "") {
   const [module, setModule] = react.useState(null);
   if (!module) {
-    dynamicImport(
-      source.startsWith("./")
-        ? (sourceUrlBase.endsWith("/")
-            ? sourceUrlBase.slice(0, -1)
-            : sourceUrlBase) + source.slice(1)
-        : source
-    ).then(setModule);
+    import(joinUrl(sourceUrlBase, source)).then(setModule);
   }
   return module;
-}
-
-function dynamicImport(source) {
-  return import(source).then(
-    (pkg) => (pkg.default ? pkg.default : pkg),
-    (error) => {
-      if (!error.stack) {
-        throw error;
-      } else {
-        console.log(error);
-        return {
-          default() {
-            return html`
-              <pre>
-                  <h1>Error</h1>
-                  <code>${[error.stack, error.message]}</code>
-                </pre
-              >
-            `;
-          },
-        };
-      }
-    }
-  );
 }
 
 function getPathProperty(obj, prop) {
@@ -280,4 +247,10 @@ function applyPatchInplace(doc, path, patch) {
 function useForceUpdate() {
   const [, updateState] = react.useState();
   return react.useCallback(() => updateState({}), []);
+}
+
+function joinUrl(base, tail) {
+  return tail.startsWith("./")
+    ? (base.endsWith("/") ? base.slice(0, -1) : base) + tail.slice(1)
+    : tail;
 }
