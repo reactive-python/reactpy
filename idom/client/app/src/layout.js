@@ -194,7 +194,8 @@ function eventHandler(sendEvent, eventSpec) {
 function useLazyModule(source, sourceUrlBase = "") {
   const [module, setModule] = react.useState(null);
   if (!module) {
-    import(joinUrl(sourceUrlBase, source)).then(setModule);
+    // use eval() to avoid weird build behavior by bundlers like Webpack
+    eval(`import("${joinUrl(sourceUrlBase, source)}")`).then(setModule);
   }
   return module;
 }
