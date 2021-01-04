@@ -37,7 +37,8 @@ class IteractiveWidget(Directive):
                                     mount.setAttribute("class", "interactive widget-container");
                                     layout.mountLayoutWithWebSocket(
                                       mount,
-                                      ws_proto + idom_url + "/stream?view_id={view_id}"
+                                      ws_proto + idom_url + "/stream?view_id={view_id}",
+                                      "/client/web_modules",
                                     );
                                 }});
                             }});
