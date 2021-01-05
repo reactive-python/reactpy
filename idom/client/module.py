@@ -10,17 +10,27 @@ from .utils import get_package_name
 
 
 @overload
-def install(packages: str) -> "Module":
+def install(
+    packages: str,
+    ignore_installed: bool,
+    fallback: Optional[str],
+) -> "Module":
     ...
 
 
 @overload
-def install(packages: Union[List[str], Tuple[str]]) -> List["Module"]:
+def install(
+    packages: Union[List[str], Tuple[str]],
+    ignore_installed: bool,
+    fallback: Optional[str],
+) -> List["Module"]:
     ...
 
 
 def install(
-    packages: Union[str, List[str], Tuple[str]], ignore_installed: bool = False
+    packages: Union[str, List[str], Tuple[str]],
+    ignore_installed: bool = False,
+    fallback: Optional[str] = None,
 ) -> Union["Module", List["Module"]]:
     return_one = False
     if isinstance(packages, str):
@@ -38,7 +48,11 @@ def install(
                 f"{client.current} failed to discover {list(not_discovered)}."
             )
 
-    return Module(pkg_names.pop()) if return_one else [Module(pkg) for pkg in pkg_names]
+    return (
+        Module(pkg_names.pop(), fallback=fallback)
+        if return_one
+        else [Module(pkg, fallback=fallback) for pkg in pkg_names]
+    )
 
 
 class Module:
@@ -63,7 +77,7 @@ class Module:
             The URL this module will be imported from.
     """
 
-    __slots__ = "url", "exports", "fallback"
+    __slots__ = "url", "fallback", "exports", "_export_names"
 
     def __init__(
         self,
@@ -73,7 +87,7 @@ class Module:
         check_exports: bool = True,
     ) -> None:
         self.fallback = fallback
-        self.exports: Optional[List[str]] = None
+        self._export_names: Optional[List[str]] = None
         if source_file is not None:
             self.url = (
                 client.current.web_module_url(url_or_name)
@@ -81,17 +95,18 @@ class Module:
                 else client.current.add_web_module(url_or_name, source_file)
             )
             if check_exports:
-                self.exports = client.current.web_module_exports(url_or_name)
+                self._export_names = client.current.web_module_exports(url_or_name)
         elif client.current.web_module_exists(url_or_name):
             self.url = client.current.web_module_url(url_or_name)
             if check_exports:
-                self.exports = client.current.web_module_exports(url_or_name)
+                self._export_names = client.current.web_module_exports(url_or_name)
         elif _is_url(url_or_name):
             self.url = url_or_name
         else:
             raise ValueError(f"{url_or_name!r} is not installed or is not a URL")
+        self.exports = {name: self.declare(name) for name in (self._export_names or [])}
 
-    def define(
+    def declare(
         self,
         name: str,
         has_children: bool = True,
@@ -109,15 +124,18 @@ class Module:
         this :class:`Module` instance.
         """
         if (
-            self.exports is not None
+            self._export_names is not None
             # if 'default' is exported there's not much we can infer
-            and "default" not in self.exports
+            and "default" not in self._export_names
         ):
-            if name not in self.exports:
+            if name not in self._export_names:
                 raise ValueError(
-                    f"{self} does not export {name!r}, available options are {self.exports}"
+                    f"{self} does not export {name!r}, available options are {self._export_names}"
                 )
         return Import(self.url, name, has_children, fallback=fallback or self.fallback)
+
+    def __getattr__(self, name: str) -> "Import":
+        return self.exports.get(name) or self.declare(name)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.url})"

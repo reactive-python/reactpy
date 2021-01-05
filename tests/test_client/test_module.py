@@ -16,7 +16,7 @@ def test_any_relative_or_abolute_url_allowed():
 
 def test_module_import_repr():
     assert (
-        repr(Module("/absolute/url/module").define("SomeComponent"))
+        repr(Module("/absolute/url/module").declare("SomeComponent"))
         == "Import(name='SomeComponent', source='/absolute/url/module', fallback=None)"
     )
 
@@ -27,7 +27,7 @@ def test_module_does_not_exist():
 
 
 def test_installed_module(driver, display, victory):
-    display(victory.define("VictoryBar"))
+    display(victory.VictoryBar)
     driver.find_element_by_class_name("VictoryContainer")
 
 
@@ -79,25 +79,21 @@ def test_module_uses_current_client_implementation(client_implementation):
 
     fake = Module("fake-name")
     assert fake.url == "./mock/url/to/module-fake-name.js"
-    assert fake.exports == ["x", "y", "z"]
+    assert list(fake.exports) == ["x", "y", "z"]
     assert fake.fallback is None
 
     with pytest.raises(ValueError, match="does not export 'DoesNotExist'"):
-        fake.define("DoesNotExist")
-
-    for name in fake.exports:
-        fake.define(name)
+        fake.declare("DoesNotExist")
 
 
 def test_module_from_source(driver, driver_wait, display):
     test_module = Module("test-module", source_file=HERE / "test_js_module.js")
-    test_button = test_module.define("TestButton")
 
     response_data = idom.Ref(None)
 
     @idom.element
     def ShowButton():
-        return test_button(
+        return test_module.TestButton(
             {
                 "id": "test-button",
                 "onClick": lambda event: response_data.set_current(event["data"]),

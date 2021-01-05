@@ -6,7 +6,7 @@ import idom
 from idom.widgets.html import Input
 
 
-VictoryLine = idom.install("victory").define("VictoryLine", fallback="loading...")
+victory = idom.install("victory", fallback="loading...")
 
 
 @idom.element
@@ -53,7 +53,7 @@ def RandomWalkGraph(mu, sigma):
         }
         set_data(data[1:] + [next_data_point])
 
-    return VictoryLine({"data": data, "style": {"parent": {"width": "500px"}}})
+    return victory.VictoryLine({"data": data, "style": {"parent": {"width": "500px"}}})
 
 
 @idom.element

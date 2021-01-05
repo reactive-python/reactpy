@@ -3,8 +3,7 @@ import json
 import idom
 
 
-material_ui = idom.install("@material-ui/core")
-MaterialButton = material_ui.define("Button", fallback="loading...")
+material_ui = idom.install("@material-ui/core", fallback="loading...")
 
 
 @idom.element
@@ -12,7 +11,7 @@ def ViewSliderEvents():
     event, set_event = idom.hooks.use_state(None)
 
     return idom.html.div(
-        MaterialButton(
+        material_ui.Button(
             {
                 "color": "primary",
                 "variant": "contained",

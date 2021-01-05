@@ -1,11 +1,10 @@
 import idom
 
-material_ui = idom.install("@material-ui/core")
-MaterialButton = material_ui.define("Button", fallback="loading...")
+material_ui = idom.install("@material-ui/core", fallback="loading...")
 
 idom.run(
     idom.element(
-        lambda: MaterialButton(
+        lambda: material_ui.Button(
             {"color": "primary", "variant": "contained"}, "Hello World!"
         )
     )
