@@ -1,172 +1,101 @@
-import time
+from urllib.parse import urlunparse, urlencode
 from contextlib import contextmanager, AbstractContextManager
-from typing import Callable, Tuple, Iterator, Type, Optional, Union, Any
+from idom.core.element import ElementConstructor
+from typing import (
+    Callable,
+    NamedTuple,
+    Tuple,
+    Iterator,
+    Type,
+    Optional,
+    Union,
+    Any,
+    Dict,
+)
 
-from sanic import Sanic
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver import Chrome
-from selenium.webdriver.chrome.options import Options
 
-import idom
-from idom.core.element import AbstractElement, ElementConstructor
-from idom.server.sanic import SanicRenderServer, PerClientStateServer
-from idom.widgets.utils import MultiViewMount
-from idom.server.prefab import hotswap_server, multiview_server
+from idom.server.base import AbstractRenderServer
+from idom.server.sanic import PerClientStateServer
+from idom.server.prefab import hotswap_server
 from idom.server.utils import find_available_port
 from idom.utils import Ref
 
 
-DisplayFunction = Callable[[Union[ElementConstructor, AbstractElement], str], None]
-DisplayFunctionContext = Callable[[], "AbstractContextManager[DisplayFunction]"]
+MountType = Union[Callable[[ElementConstructor], None], Any]
+MountContext = Callable[[], "AbstractContextManager[MountType]"]
+AnyAbstractRenderServer = AbstractRenderServer[Any, Any]
 
 
-@contextmanager
-def open_selenium_chrome_driver_and_display_context(
-    headless: bool, driver_timeout: float = 3.0, wait_for_server_start: float = 1.0
-) -> Iterator[Tuple[Chrome, DisplayFunctionContext]]:
-    host = "127.0.0.1"
-    port = find_available_port(host)
-    server_url = f"http://{host}:{port}"
-
-    with open_selenium_chrome_driver(
-        headless=headless,
-        page_load_timeout=driver_timeout,
-        implicit_wait_timeout=driver_timeout,
-    ) as driver:
-        mount, server = create_sanic_hotswap_mount_and_server(
-            server_type=PerClientStateServer, host=host, port=port
-        )
-        time.sleep(wait_for_server_start)
-        yield (
-            driver,
-            create_selenium_page_get_and_display_context(
-                driver, server, server_url, mount
-            )[1],
-        )
+def server_base_url(host: str, port: int, path: str = "", query: Optional[Any] = None):
+    return urlunparse(["http", f"{host}:{port}", path, "", urlencode(query or ()), ""])
 
 
-def create_selenium_page_get_and_display_context(
-    driver: WebDriver,
-    server: "SanicRenderServerWithLastError",
-    server_url: str,
-    element_mount_function: Callable[..., None],
-) -> Tuple[Callable[[str], None], DisplayFunctionContext]:
-    display_id = Ref(0)
-
-    def get_page(query: str = "") -> None:
-        """Navigate the driver to an IDOM server at the given host and port.
-
-        The ``query`` parameter is typically used to specify a ``view_id`` when a
-        ``multiview()`` elemement has been mounted to the layout.
-        """
-        driver.get(f"{server_url}/client/index.html?{query}")
-
-    def display_function(
-        element: Union[Callable[[], Any], AbstractElement],
-        query: str = "",
-        check_mount: bool = True,
-    ) -> None:
-        d_id = display_id.current
-        display_id.current += 1
-        display_attrs = {"id": f"display-{d_id}"}
-        element_constructor = element if callable(element) else lambda: element
-        element_mount_function(
-            lambda: idom.html.div(display_attrs, element_constructor())
-        )
-
-        get_page(query)
-        if check_mount:
-            # Ensure element was actually mounted.
-            driver.find_element_by_id(f"display-{d_id}")
-
-        return None
-
-    @contextmanager
-    def display_context() -> Iterator[DisplayFunction]:
-        server.last_server_error_for_idom_testing.current = None
-        try:
-            yield display_function
-        finally:
-            if server.last_server_error_for_idom_testing.current is not None:
-                raise server.last_server_error_for_idom_testing.current
-
-    return get_page, display_context
+class MountAndServer(NamedTuple):
+    mount: MountContext
+    server: AnyAbstractRenderServer
 
 
-def create_sanic_multiview_mount_and_server(
-    server_type: Type[SanicRenderServer],
-    host: str,
-    port: int,
-    debug: bool = False,
-    app: Optional[Sanic] = None,
-) -> Tuple[MultiViewMount, "SanicRenderServerWithLastError"]:
-    return multiview_server(
-        create_sanic_server_type_for_testing(server_type),
-        host,
-        port,
-        server_options={"cors": True},
-        run_options={"debug": debug},
-        app=app,
-    )
-
-
-def create_sanic_hotswap_mount_and_server(
-    server_type: Type[SanicRenderServer],
-    host: str,
-    port: int,
-    sync_views: bool = False,
-    debug: bool = False,
-    app: Optional[Sanic] = None,
-) -> Tuple[Callable[..., None], "SanicRenderServerWithLastError"]:
-
-    return hotswap_server(
-        create_sanic_server_type_for_testing(server_type),
-        host,
-        port,
-        server_options={"cors": True},
-        run_options={"debug": debug},
-        sync_views=sync_views,
-        app=app,
-    )
-
-
-def create_sanic_server_type_for_testing(
-    server_type: Type[SanicRenderServer],
-) -> Type["SanicRenderServerWithLastError"]:
-    return (
-        server_type
-        if issubclass(server_type, SanicRenderServerWithLastError)
-        else type(
-            server_type.__name__,
-            (SanicRenderServerWithLastError, server_type),
-            {"last_server_error_for_idom_testing": Ref(None)},
-        )
-    )
-
-
-@contextmanager
-def open_selenium_chrome_driver(
-    headless: bool,
+def create_simple_selenium_web_driver(
+    driver_type: Type[WebDriver] = Chrome,
+    driver_options: Optional[Any] = None,
     implicit_wait_timeout: float = 3.0,
     page_load_timeout: float = 3.0,
     window_size: Tuple[int, int] = (1080, 800),
-) -> Iterator[Chrome]:
-    options = Options()
-    options.headless = headless
-
-    driver = Chrome(options=options)
+) -> WebDriver:
+    driver = driver_type(options=driver_options)
 
     driver.set_window_size(*window_size)
     driver.set_page_load_timeout(page_load_timeout)
     driver.implicitly_wait(implicit_wait_timeout)
 
-    try:
-        yield driver
-    finally:
-        driver.quit()
+    return driver
 
 
-class SanicRenderServerWithLastError(SanicRenderServer):
+def create_mount_and_server(
+    server_type: Type[AnyAbstractRenderServer] = PerClientStateServer,
+    host: str = "127.0.0.1",
+    port: Optional[int] = None,
+    server_config: Optional[Any] = None,
+    run_kwargs: Optional[Dict[str, Any]] = None,
+    mount_and_server_constructor: Callable[..., Any] = hotswap_server,
+    app: Optional[Any] = None,
+    **other_options: Any,
+) -> MountAndServer:
+    mount, server = mount_and_server_constructor(
+        (
+            server_type
+            if issubclass(server_type, _RenderServerWithLastError)
+            else type(
+                server_type.__name__,
+                (_RenderServerWithLastError, server_type),
+                {"last_server_error_for_idom_testing": Ref(None)},
+            )
+        ),
+        host,
+        port or find_available_port(),
+        server_config,
+        run_kwargs,
+        app,
+        **other_options,
+    )
+
+    assert isinstance(server, _RenderServerWithLastError)
+
+    @contextmanager
+    def mount_context() -> Iterator[MountType]:
+        server.last_server_error_for_idom_testing.current = None
+        try:
+            yield mount
+        finally:
+            if server.last_server_error_for_idom_testing.current is not None:
+                raise server.last_server_error_for_idom_testing.current
+
+    return MountAndServer(mount_context, server)
+
+
+class _RenderServerWithLastError(AnyAbstractRenderServer):
     """A server that updates the ``last_server_error`` fixture"""
 
     last_server_error_for_idom_testing: Ref[Optional[Exception]]

@@ -15,32 +15,31 @@ _image_src_bytes = b"""
 _base64_image_src = b64encode(_image_src_bytes).decode()
 
 
-def test_image_from_string(driver, driver_wait, display):
+def test_image_from_string(driver, display):
     src = _image_src_bytes.decode()
-    img = idom.widgets.image("svg", src, {"id": "a-circle-1"})
-    display(img)
+    display(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
     client_img = driver.find_element_by_id("a-circle-1")
     assert _base64_image_src in client_img.get_attribute("src")
 
 
-def test_image_from_bytes(driver, driver_wait, display):
+def test_image_from_bytes(driver, display):
     src = _image_src_bytes
-    img = idom.widgets.image("svg", src, {"id": "a-circle-1"})
-    display(img)
+    display(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
     client_img = driver.find_element_by_id("a-circle-1")
     assert _base64_image_src in client_img.get_attribute("src")
 
 
 def test_input_callback(driver, driver_wait, display):
     inp_ref = idom.Ref(None)
-    inp = idom.widgets.Input(
-        lambda value: setattr(inp_ref, "current", value),
-        "text",
-        "initial-value",
-        {"id": "inp"},
-    )
 
-    display(inp)
+    display(
+        lambda: idom.widgets.Input(
+            lambda value: setattr(inp_ref, "current", value),
+            "text",
+            "initial-value",
+            {"id": "inp"},
+        )
+    )
 
     client_inp = driver.find_element_by_id("inp")
     assert client_inp.get_attribute("value") == "initial-value"

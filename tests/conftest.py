@@ -1,30 +1,25 @@
 import logging
 import inspect
-import time
-from contextlib import ExitStack
-from typing import Callable, Any, Tuple, Iterator, Iterable, Union
+from typing import Callable, Any, Tuple, Iterator, Iterable
 
 from loguru import logger
 import pytest
 from _pytest.logging import caplog as _caplog, LogCaptureFixture  # noqa
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
-from selenium.webdriver import Chrome
+from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.support.ui import WebDriverWait
 
 import pyalect.builtins.pytest  # noqa
 
 import idom
 from idom.client import manage as manage_client
-from idom.core import ElementConstructor, AbstractElement
 from idom.server.prefab import AbstractRenderServer
 from idom.server.utils import find_available_port
-from idom.server.sanic import PerClientStateServer
 from idom.testing import (
-    create_selenium_page_get_and_display_context,
-    create_sanic_hotswap_mount_and_server,
-    open_selenium_chrome_driver,
-    SanicRenderServerWithLastError,
+    server_base_url,
+    create_mount_and_server,
+    create_simple_selenium_web_driver,
 )
 
 
@@ -33,8 +28,6 @@ def pytest_collection_modifyitems(items: Iterable[Any]) -> None:
         if isinstance(item, pytest.Function):
             if inspect.iscoroutinefunction(item.function):
                 item.add_marker(pytest.mark.asyncio)
-        if "driver" in item.fixturenames:
-            item.add_marker("slow")
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -52,91 +45,41 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
-@pytest.fixture(autouse=True)
-def caplog(_caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
-    class PropogateHandler(logging.Handler):
-        def emit(self, record):
-            logging.getLogger(record.name).handle(record)
+@pytest.fixture
+def display(driver, host, port, mount):
+    display_id = idom.Ref(0)
 
-    handler_id = logger.add(PropogateHandler(), format="{message}")
-    yield _caplog
-    logger.remove(handler_id)
-    assert not _caplog.record_tuples
+    def mount_and_display(element_constructor, query=None, check_mount=True):
+        element_id = f"display-{display_id.set_current(display_id.current + 1)}"
+        mount(lambda: idom.html.div({"id": element_id}, element_constructor()))
+        driver.get(server_base_url(host, port, query=query))
+        if check_mount:
+            driver.find_element_by_id(element_id)
+        return element_id
+
+    yield mount_and_display
 
 
 @pytest.fixture
-def display(driver_get_and_display_content):
-    with driver_get_and_display_content[1]() as display:
-        yield display
+def driver_get(driver, host, port):
+    return lambda query=None: driver.get(server_base_url(host, port, query=query))
+
+
+@pytest.fixture(scope="module")
+def last_server_error(server):
+    return server.last_server_error_for_idom_testing
 
 
 @pytest.fixture
-def driver_get(driver_get_and_display_content):
-    return driver_get_and_display_content[0]
-
-
-@pytest.fixture
-def driver_get_and_display_content(
-    driver: Chrome,
-    server: AbstractRenderServer,
-    server_url: str,
-    mount: Callable[..., None],
-) -> Iterator[Callable[[Union[ElementConstructor, AbstractElement], str], None]]:
-    """A function for displaying an element using the current web driver."""
-    return create_selenium_page_get_and_display_context(
-        driver, server, server_url, mount
-    )
-
-
-@pytest.fixture
-def driver_wait(driver: Chrome) -> WebDriverWait:
-    """A :class:`WebDriverWait` object for the current web driver"""
-    return WebDriverWait(driver, 3)
-
-
-@pytest.fixture(scope="session")
-def display_id() -> idom.Ref[int]:
-    return idom.Ref(0)
+def mount(mount_and_server):
+    with mount_and_server.mount() as mount:
+        yield mount
 
 
 @pytest.fixture(scope="module")
-def driver(create_driver: Callable[[], Chrome]) -> Chrome:
-    """A Selenium web driver"""
-    return create_driver()
-
-
-@pytest.fixture(scope="module")
-def create_driver(driver_is_headless):
-    """A Selenium web driver"""
-    with ExitStack() as exit_stack:
-
-        def create():
-            return exit_stack.enter_context(
-                open_selenium_chrome_driver(headless=driver_is_headless)
-            )
-
-        yield create
-
-
-@pytest.fixture(scope="module")
-def mount(
-    mount_and_server: Tuple[Callable[..., None], AbstractRenderServer]
-) -> Callable[..., None]:
-    """A function for mounting an element to the IDOM server's layout"""
-    return mount_and_server[0]
-
-
-@pytest.fixture(scope="module")
-def server(
-    mount_and_server: Tuple[Callable[..., None], AbstractRenderServer]
-) -> Iterator[AbstractRenderServer]:
+def server(mount_and_server):
     """An IDOM server"""
-    server = mount_and_server[1]
-    if not isinstance(server, SanicRenderServerWithLastError):
-        raise TypeError(
-            "Servers for testing must be SanicRenderServerWithLastError instances"
-        )
-    time.sleep(1)  # wait for server to start
+    server = mount_and_server.server
     yield server
     server.stop()
 
@@ -149,17 +92,41 @@ def mount_and_server(
 
     The ``mount`` and ``server`` fixtures use this.
     """
-    return create_sanic_hotswap_mount_and_server(PerClientStateServer, host, port)
+    return create_mount_and_server(host=host, port=port, server_config={"cors": True})
 
 
 @pytest.fixture(scope="module")
-def last_server_error(server):
-    return server.last_server_error_for_idom_testing
+def driver_wait(driver):
+    return WebDriverWait(driver, 3)
+
+
+@pytest.fixture(scope="module")
+def driver(create_driver: Callable[[], Chrome]) -> Chrome:
+    """A Selenium web driver"""
+    return create_driver()
+
+
+@pytest.fixture(scope="module")
+def create_driver(driver_is_headless):
+    """A Selenium web driver"""
+    drivers = []
+
+    def create():
+        options = ChromeOptions()
+        options.headless = driver_is_headless
+        driver = create_simple_selenium_web_driver(driver_options=options)
+        drivers.append(driver)
+        return driver
+
+    yield create
+
+    for d in drivers:
+        d.quit()
 
 
 @pytest.fixture(scope="module")
 def server_url(host, port):
-    return f"http://{host}:{port}"
+    return server_base_url(host, port)
 
 
 @pytest.fixture(scope="session")
@@ -186,6 +153,20 @@ def client_implementation():
 @pytest.fixture(scope="session")
 def driver_is_headless(pytestconfig: Config):
     return bool(pytestconfig.option.headless)
+
+
+@pytest.fixture(autouse=True)
+def caplog(_caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
+
+    handler_id = logger.add(_PropogateHandler(), format="{message}")
+    yield _caplog
+    logger.remove(handler_id)
+    assert not _caplog.record_tuples
+
+
+class _PropogateHandler(logging.Handler):
+    def emit(self, record):
+        logging.getLogger(record.name).handle(record)
 
 
 @pytest.fixture(scope="session", autouse=True)

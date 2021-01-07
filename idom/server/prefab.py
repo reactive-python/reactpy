@@ -29,22 +29,31 @@ def run(
     server_type: Optional[Type[_S]] = _find_default_server_type(),
     host: str = "127.0.0.1",
     port: Optional[int] = None,
-    server_options: Optional[Any] = None,
-    run_options: Optional[Dict[str, Any]] = None,
-    daemon: bool = False,
+    server_config: Optional[Any] = None,
+    run_kwargs: Optional[Dict[str, Any]] = None,
     app: Optional[Any] = None,
+    daemon: bool = False,
 ) -> _S:
     """A utility for quickly running a render server with minimal boilerplate
 
     Parameters:
-        element: The root of the view.
-        server_type: What server to run. Defaults to a builtin implementation if available.
-        host: The host string.
-        port: The port number. Defaults to a dynamically discovered available port.
-        server_options: Options passed to configure the server.
-        run_options: Options passed to the server to run it.
-        daemon: Whether the server should be run in a daemon thread.
-        app: Register the server to an existing application and run that.
+        element:
+            The root of the view.
+        server_type:
+            What server to run. Defaults to a builtin implementation if available.
+        host:
+            The host string.
+        port:
+            The port number. Defaults to a dynamically discovered available port.
+        server_config:
+            Options passed to configure the server.
+        run_kwargs:
+            Keyword arguments passed to the :meth:`~AbstractRenderServer.daemon`
+            or :meth:`~AbstractRenderServer.run` method of the server
+        app:
+            Register the server to an existing application and run that.
+        daemon:
+            Whether the server should be run in a daemon thread.
 
     Returns:
         The server instance. This isn't really useful unless the server is spawned
@@ -55,13 +64,13 @@ def run(
     if port is None:  # pragma: no cover
         port = find_available_port(host)
 
-    server = server_type(element, server_options)
+    server = server_type(element, server_config)
 
     if app is not None:
         server.register(app)
 
     run_server = server.run if not daemon else server.daemon
-    run_server(host, port, **(run_options or {}))
+    run_server(host, port, **(run_kwargs or {}))
 
     return server
 
@@ -70,8 +79,8 @@ def multiview_server(
     server_type: Type[_S],
     host: str = "127.0.0.1",
     port: Optional[int] = None,
-    server_options: Optional[Any] = None,
-    run_options: Optional[Dict[str, Any]] = None,
+    server_config: Optional[Any] = None,
+    run_kwargs: Optional[Dict[str, Any]] = None,
     app: Optional[Any] = None,
 ) -> Tuple[MultiViewMount, _S]:
     """Set up a server where views can be dynamically added.
@@ -84,8 +93,8 @@ def multiview_server(
         server: The server type to start up as a daemon
         host: The server hostname
         port: The server port number
-        server_options: Value passed to :meth:`AbstractRenderServer.configure`
-        run_options: Keyword args passed to :meth:`AbstractRenderServer.daemon`
+        server_config: Value passed to :meth:`AbstractRenderServer.configure`
+        run_kwargs: Keyword args passed to :meth:`AbstractRenderServer.daemon`
         app: Optionally provide a prexisting application to register to
 
     Returns:
@@ -99,8 +108,8 @@ def multiview_server(
         server_type,
         host,
         port,
-        server_options=server_options,
-        run_options=run_options,
+        server_config=server_config,
+        run_kwargs=run_kwargs,
         daemon=True,
         app=app,
     )
@@ -112,10 +121,10 @@ def hotswap_server(
     server_type: Type[_S],
     host: str = "127.0.0.1",
     port: Optional[int] = None,
-    server_options: Optional[Any] = None,
-    run_options: Optional[Dict[str, Any]] = None,
-    sync_views: bool = True,
+    server_config: Optional[Any] = None,
+    run_kwargs: Optional[Dict[str, Any]] = None,
     app: Optional[Any] = None,
+    sync_views: bool = False,
 ) -> Tuple[MountFunc, _S]:
     """Set up a server where views can be dynamically swapped out.
 
@@ -127,10 +136,10 @@ def hotswap_server(
         server: The server type to start up as a daemon
         host: The server hostname
         port: The server port number
-        server_options: Value passed to :meth:`AbstractRenderServer.configure`
-        run_options: Keyword args passed to :meth:`AbstractRenderServer.daemon`
-        sync_views: Whether to update all displays with newly mounted elements
+        server_config: Value passed to :meth:`AbstractRenderServer.configure`
+        run_kwargs: Keyword args passed to :meth:`AbstractRenderServer.daemon`
         app: Optionally provide a prexisting application to register to
+        sync_views: Whether to update all displays with newly mounted elements
 
     Returns:
         The server instance and a function for swapping views.
@@ -143,8 +152,8 @@ def hotswap_server(
         server_type,
         host,
         port,
-        server_options=server_options,
-        run_options=run_options,
+        server_config=server_config,
+        run_kwargs=run_kwargs,
         daemon=True,
         app=app,
     )

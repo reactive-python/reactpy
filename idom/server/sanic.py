@@ -1,6 +1,7 @@
 import asyncio
 import json
 import uuid
+from threading import Event, Thread
 
 from typing import Tuple, Any, Dict, Union, cast
 
@@ -31,6 +32,10 @@ class Config(TypedDict, total=False):
 class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
     """Base ``sanic`` extension."""
 
+    def daemon(self, *args: Any, **kwargs: Any) -> Thread:
+        self._daemon_server_did_start = Event()
+        return super().daemon(*args, **kwargs)
+
     def _stop(self) -> None:
         self.application.stop()
 
@@ -59,6 +64,11 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
         self._setup_blueprint_routes(bp, config)
         app.blueprint(bp)
 
+        async def server_did_start(app: Sanic, loop: asyncio.AbstractEventLoop) -> None:
+            self._daemon_server_did_start.set()
+
+        app.register_listener(server_did_start, "after_server_start")
+
     def _setup_blueprint_routes(self, blueprint: Blueprint, config: Config) -> None:
         """Add routes to the application blueprint"""
 
@@ -84,7 +94,9 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
 
             @blueprint.route("/")  # type: ignore
             def redirect_to_index(request: request.Request) -> response.HTTPResponse:
-                return response.redirect(f"{blueprint.url_prefix}/client/index.html")
+                return response.redirect(
+                    f"{blueprint.url_prefix}/client/index.html?{request.query_string}"
+                )
 
     def _run_application(
         self, app: Sanic, config: Config, args: Tuple[Any, ...], kwargs: Dict[str, Any]
@@ -129,8 +141,8 @@ class SharedClientStateServer(SanicRenderServer):
     _dispatcher: SharedViewDispatcher
 
     def _setup_application(self, app: Sanic, config: Config) -> None:
-        app.listener("before_server_start")(self._activate_dispatcher)
-        app.listener("before_server_stop")(self._deactivate_dispatcher)
+        app.register_listener(self._activate_dispatcher, "before_server_start")
+        app.register_listener(self._deactivate_dispatcher, "before_server_stop")
         super()._setup_application(app, config)
 
     async def _activate_dispatcher(
