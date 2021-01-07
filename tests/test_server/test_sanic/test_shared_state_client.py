@@ -6,7 +6,7 @@ import pytest
 
 import idom
 from idom.server.sanic import SharedClientStateServer
-from idom.testing import create_sanic_hotswap_mount_and_server
+from idom.testing import create_mount_and_server
 
 
 @pytest.fixture(scope="module")
@@ -15,9 +15,7 @@ def mount_and_server(host, port):
 
     The ``mount`` and ``server`` fixtures use this.
     """
-    return create_sanic_hotswap_mount_and_server(
-        SharedClientStateServer, host, port, sync_views=True
-    )
+    return create_mount_and_server(SharedClientStateServer, host, port, sync_views=True)
 
 
 def test_shared_client_state(create_driver, mount, server_url):
@@ -72,7 +70,7 @@ def test_shared_client_state(create_driver, mount, server_url):
 def test_shared_client_state_server_does_not_support_per_client_parameters(
     driver_get, last_server_error
 ):
-    driver_get("per_client_param=1")
+    driver_get({"per_client_param": 1})
 
     error = last_server_error.current
 

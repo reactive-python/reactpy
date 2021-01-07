@@ -1,7 +1,7 @@
 import abc
 from asyncio import AbstractEventLoop, new_event_loop, set_event_loop, get_event_loop
 from typing import TypeVar, Dict, Any, Tuple, Type, Optional, Generic, TypeVar
-from threading import Thread
+from threading import Thread, Event
 
 from idom.core.element import ElementConstructor
 from idom.core.layout import Layout, Layout
@@ -33,6 +33,7 @@ class AbstractRenderServer(Generic[_App, _Config]):
     _loop: AbstractEventLoop
     _dispatcher_type: Type[AbstractDispatcher]
     _layout_type: Type[Layout] = Layout
+    _daemon_server_did_start: Event
 
     def __init__(
         self,
@@ -76,6 +77,9 @@ class AbstractRenderServer(Generic[_App, _Config]):
 
         thread = Thread(target=run_in_thread, daemon=True)
         thread.start()
+
+        self._wait_until_daemon_server_start()
+
         return thread
 
     def register(self: _Self, app: Optional[_App]) -> _Self:
@@ -141,3 +145,11 @@ class AbstractRenderServer(Generic[_App, _Config]):
         params: Dict[str, Any],
     ) -> Layout:
         return self._layout_type(self._make_root_element(**params))
+
+    def _wait_until_daemon_server_start(self):
+        try:
+            self._daemon_server_did_start.wait(timeout=5)
+        except AttributeError:  # pragma: no cover
+            raise NotImplementedError(
+                f"Server implementation {self} did not define a server started thread event"
+            )
