@@ -74,7 +74,7 @@ def create_mount_and_server(
             )
         ),
         host,
-        port or find_available_port(),
+        port or find_available_port(host),
         server_config,
         run_kwargs,
         app,
