@@ -106,7 +106,7 @@ class ServerMountPoint(Generic[_Mount, _Server]):
             yield self._mount
         finally:
             if self.server.last_server_error_for_idom_testing.current is not None:
-                raise self.server.last_server_error_for_idom_testing.current
+                raise self.server.last_server_error_for_idom_testing.current  # pragma: no cover
 
 
 class _RenderServerWithLastError(AnyRenderServer):
