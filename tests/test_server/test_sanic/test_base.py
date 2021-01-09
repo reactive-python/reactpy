@@ -5,22 +5,20 @@ from sanic import Sanic
 
 import idom
 from idom.server.sanic import PerClientStateServer
-from idom.testing import create_mount_and_server
+from idom.testing import ServerMountPoint
 
 
 @pytest.fixture(scope="module")
-def mount_and_server(host, port):
-    return create_mount_and_server(
+def server_mount_point():
+    return ServerMountPoint(
         PerClientStateServer,
-        host,
-        port,
         # test that we can use a custom app instance
         app=Sanic(),
     )
 
 
-def test_serve_has_loop_attribute(server):
-    assert isinstance(server.loop, asyncio.AbstractEventLoop)
+def test_serve_has_loop_attribute(server_mount_point):
+    assert isinstance(server_mount_point.server.loop, asyncio.AbstractEventLoop)
 
 
 def test_no_application_until_running():
