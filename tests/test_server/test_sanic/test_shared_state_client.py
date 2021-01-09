@@ -6,19 +6,19 @@ import pytest
 
 import idom
 from idom.server.sanic import SharedClientStateServer
-from idom.testing import create_mount_and_server
+from idom.testing import ServerMountPoint
 
 
 @pytest.fixture(scope="module")
-def mount_and_server(host, port):
+def server_mount_point():
     """An IDOM layout mount function and server as a tuple
 
     The ``mount`` and ``server`` fixtures use this.
     """
-    return create_mount_and_server(SharedClientStateServer, host, port, sync_views=True)
+    return ServerMountPoint(SharedClientStateServer, sync_views=True)
 
 
-def test_shared_client_state(create_driver, mount, server_url):
+def test_shared_client_state(create_driver, mount, server_mount_point):
     driver_1 = create_driver()
     driver_2 = create_driver()
     was_garbage_collected = Event()
@@ -45,8 +45,8 @@ def test_shared_client_state(create_driver, mount, server_url):
 
     mount(IncrCounter)
 
-    driver_1.get(server_url)
-    driver_2.get(server_url)
+    driver_1.get(server_mount_point.url())
+    driver_2.get(server_mount_point.url())
 
     client_1_button = driver_1.find_element_by_id("incr-button")
     client_2_button = driver_2.find_element_by_id("incr-button")

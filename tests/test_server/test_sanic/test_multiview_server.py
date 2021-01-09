@@ -3,19 +3,19 @@ import pytest
 import idom
 from idom.server.sanic import PerClientStateServer
 from idom.server.prefab import multiview_server
-from idom.testing import create_mount_and_server
+from idom.testing import ServerMountPoint
 
 from tests.driver_utils import no_such_element
 
 
 @pytest.fixture(scope="module")
-def mount_and_server(host, port):
-    return create_mount_and_server(
-        PerClientStateServer, host, port, mount_and_server_constructor=multiview_server
+def server_mount_point():
+    return ServerMountPoint(
+        PerClientStateServer, mount_and_server_constructor=multiview_server
     )
 
 
-def test_multiview_server(driver_get, driver, mount, server):
+def test_multiview_server(driver_get, driver, mount):
     manual_id = mount["manually_set_id"](lambda: idom.html.h1({"id": "e1"}, ["e1"]))
     auto_view_id = mount(lambda: idom.html.h1({"id": "e2"}, ["e2"]))
 

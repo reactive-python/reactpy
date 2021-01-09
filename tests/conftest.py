@@ -1,6 +1,6 @@
 import logging
 import inspect
-from typing import Callable, Any, Tuple, Iterator, Iterable
+from typing import Any, Iterator, Iterable
 
 from loguru import logger
 import pytest
@@ -14,13 +14,7 @@ import pyalect.builtins.pytest  # noqa
 
 import idom
 from idom.client import manage as manage_client
-from idom.server.prefab import AbstractRenderServer
-from idom.server.utils import find_available_port
-from idom.testing import (
-    server_base_url,
-    create_mount_and_server,
-    create_simple_selenium_web_driver,
-)
+from idom.testing import ServerMountPoint, create_simple_selenium_web_driver
 
 
 def pytest_collection_modifyitems(items: Iterable[Any]) -> None:
@@ -46,13 +40,13 @@ def pytest_addoption(parser: Parser) -> None:
 
 
 @pytest.fixture
-def display(driver, host, port, mount):
+def display(driver, server_mount_point, mount):
     display_id = idom.Ref(0)
 
     def mount_and_display(element_constructor, query=None, check_mount=True):
         element_id = f"display-{display_id.set_current(display_id.current + 1)}"
         mount(lambda: idom.html.div({"id": element_id}, element_constructor()))
-        driver.get(server_base_url(host, port, query=query))
+        driver.get(server_mount_point.url(query=query))
         if check_mount:
             driver.find_element_by_id(element_id)
         return element_id
@@ -61,38 +55,30 @@ def display(driver, host, port, mount):
 
 
 @pytest.fixture
-def driver_get(driver, host, port):
-    return lambda query=None: driver.get(server_base_url(host, port, query=query))
-
-
-@pytest.fixture(scope="module")
-def last_server_error(server):
-    return server.last_server_error_for_idom_testing
+def driver_get(driver, server_mount_point):
+    return lambda query=None: driver.get(server_mount_point.url(query=query))
 
 
 @pytest.fixture
-def mount(mount_and_server):
-    with mount_and_server.mount() as mount:
+def mount(server_mount_point):
+    with server_mount_point.open_mount_function() as mount:
         yield mount
 
 
-@pytest.fixture(scope="module")
-def server(mount_and_server):
-    """An IDOM server"""
-    server = mount_and_server.server
-    yield server
-    server.stop()
+@pytest.fixture
+def last_server_error(server_mount_point):
+    return server_mount_point.server.last_server_error_for_idom_testing
 
 
 @pytest.fixture(scope="module")
-def mount_and_server(
-    host: str, port: int
-) -> Tuple[Callable[..., None], AbstractRenderServer]:
+def server_mount_point():
     """An IDOM layout mount function and server as a tuple
 
     The ``mount`` and ``server`` fixtures use this.
     """
-    return create_mount_and_server(host=host, port=port, server_config={"cors": True})
+    mount_point = ServerMountPoint(server_config={"cors": True})
+    yield mount_point
+    mount_point.server.stop()
 
 
 @pytest.fixture(scope="module")
@@ -101,7 +87,7 @@ def driver_wait(driver):
 
 
 @pytest.fixture(scope="module")
-def driver(create_driver: Callable[[], Chrome]) -> Chrome:
+def driver(create_driver) -> Chrome:
     """A Selenium web driver"""
     return create_driver()
 
@@ -122,23 +108,6 @@ def create_driver(driver_is_headless):
 
     for d in drivers:
         d.quit()
-
-
-@pytest.fixture(scope="module")
-def server_url(host, port):
-    return server_base_url(host, port)
-
-
-@pytest.fixture(scope="session")
-def host() -> str:
-    """The hostname for the IDOM server setup by ``mount_and_server``"""
-    return "127.0.0.1"
-
-
-@pytest.fixture(scope="module")
-def port(host: str) -> int:
-    """The port for the IDOM server setup by ``mount_and_server``"""
-    return find_available_port(host)
 
 
 @pytest.fixture
