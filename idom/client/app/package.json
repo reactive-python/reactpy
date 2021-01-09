@@ -1,17 +1,13 @@
 {
-  "name": "idom-client-react",
-  "description": "A client for IDOM implemented in React",
-  "version": "0.5.4",
+  "name": "idom-react-app",
+  "description": "A client application for IDOM implemented in React",
+  "version": "0.1.0",
   "author": "Ryan Morshead",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rmorshea/idom"
+    "url": "https://github.com/idom-team/idom"
   },
-  "main": "src/layout.js",
-  "files": [
-    "src/**/*.js"
-  ],
   "scripts": {
     "build": "snowpack && snowpack build",
     "format": "prettier --write ./src",
@@ -22,12 +18,12 @@
     "snowpack": "2.12.1"
   },
   "dependencies": {
-    "fast-json-patch": "^3.0.0-1",
-    "htm": "^3.0.3",
+    "idom-client-react": "^0.6.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
   },
   "snowpack": {
+    "install": ["htm", "react", "react-dom", "idom-client-react"],
     "installOptions": {
       "polyfillNode": true
     }
