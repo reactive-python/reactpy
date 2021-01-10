@@ -1,10 +1,9 @@
 ---
 name: Doc enhancement
 about: Documentation needs to be fixed or added
-title: Doc Enhancement
+title: Doc enhancement
 labels: docs
 assignees: rmorshea
-
 ---
 
 **Describe what documentation needs to be fixed or added**

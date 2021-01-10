@@ -9,7 +9,7 @@
 <a href="https://pypi.python.org/pypi/idom">
   <img alt="Version Info" src="https://img.shields.io/pypi/v/idom.svg"/>
 </a>
-<a href="https://github.com/rmorshea/idom/blob/main/LICENSE"/>
+<a href="https://github.com/rmorshea/idom/blob/main/LICENSE">
   <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-purple.svg">
 </a>
 

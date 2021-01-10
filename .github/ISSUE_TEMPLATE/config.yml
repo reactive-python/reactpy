@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and community support
+    url: https://gitter.im/idom-team/idom
+    about: Chat directly with fellow IDOM developers and users
+  - name: IDOM documentation
+    url: https://idom-docs.herokuapp.com/
+    about: Learn more about how IDOM works
