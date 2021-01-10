@@ -64,10 +64,14 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
         self._setup_blueprint_routes(bp, config)
         app.blueprint(bp)
 
-        async def server_did_start(app: Sanic, loop: asyncio.AbstractEventLoop) -> None:
-            self._daemon_server_did_start.set()
+        if hasattr(self, "_daemon_server_did_start"):
 
-        app.register_listener(server_did_start, "after_server_start")
+            async def server_did_start(
+                app: Sanic, loop: asyncio.AbstractEventLoop
+            ) -> None:
+                self._daemon_server_did_start.set()
+
+            app.register_listener(server_did_start, "after_server_start")
 
     def _setup_blueprint_routes(self, blueprint: Blueprint, config: Config) -> None:
         """Add routes to the application blueprint"""
