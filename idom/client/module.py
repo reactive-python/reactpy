@@ -1,11 +1,9 @@
 from pathlib import Path
 from typing import Any, Optional, Union, List, Tuple, Dict, overload
 from urllib.parse import urlparse
-
 from idom.core.vdom import VdomDict, ImportSourceDict, make_vdom_constructor
 
-from . import manage as builtin_client
-from .protocol import client_implementation as client
+from . import manage
 from .utils import get_package_name
 
 
@@ -39,14 +37,8 @@ def install(
 
     pkg_names = {get_package_name(pkg) for pkg in packages}
 
-    if ignore_installed or pkg_names.difference(client.current.web_module_names()):
-        builtin_client.build(packages)
-        not_discovered = pkg_names.difference(client.current.web_module_names())
-        if not_discovered:
-            raise RuntimeError(
-                f"Successfuly installed {list(pkg_names)} but client implementation "
-                f"{client.current} failed to discover {list(not_discovered)}."
-            )
+    if ignore_installed or pkg_names.difference(manage.web_module_names()):
+        manage.build(packages)
 
     return (
         Module(pkg_names.pop(), fallback=fallback)
@@ -90,16 +82,16 @@ class Module:
         self._export_names: Optional[List[str]] = None
         if source_file is not None:
             self.url = (
-                client.current.web_module_url(url_or_name)
-                if client.current.web_module_exists(url_or_name)
-                else client.current.add_web_module(url_or_name, source_file)
+                manage.web_module_url(url_or_name)
+                if manage.web_module_exists(url_or_name)
+                else manage.add_web_module(url_or_name, source_file)
             )
             if check_exports:
-                self._export_names = client.current.web_module_exports(url_or_name)
-        elif client.current.web_module_exists(url_or_name):
-            self.url = client.current.web_module_url(url_or_name)
+                self._export_names = manage.web_module_exports(url_or_name)
+        elif manage.web_module_exists(url_or_name):
+            self.url = manage.web_module_url(url_or_name)
             if check_exports:
-                self._export_names = client.current.web_module_exports(url_or_name)
+                self._export_names = manage.web_module_exports(url_or_name)
         elif _is_url(url_or_name):
             self.url = url_or_name
         else:

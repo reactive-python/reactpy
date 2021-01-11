@@ -113,6 +113,13 @@ def build(packages_to_install: Sequence[str], clean_build: bool = False) -> None
 
         shutil.copytree(temp_build_dir, BUILD_DIR, symlinks=True)
 
+    not_discovered = package_names_to_install.difference(web_module_names())
+    if not_discovered:
+        raise RuntimeError(  # pragma: no cover
+            f"Successfuly installed {list(package_names_to_install)} but "
+            f"failed to discover {list(not_discovered)} post-install."
+        )
+
 
 def _npm_install(packages: List[str], cwd: Path) -> None:
     _run_subprocess(["npm", "install"] + packages, cwd)
