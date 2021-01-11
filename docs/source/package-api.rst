@@ -74,9 +74,6 @@ Client
 .. automodule:: idom.client.module
     :members:
 
-.. automodule:: idom.client.protocol
-    :members:
-
 .. automodule:: idom.client.manage
     :members:
 
