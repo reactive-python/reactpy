@@ -2,7 +2,9 @@ from pathlib import Path
 
 import pytest
 import idom
-from idom import Module, install
+from idom import Module
+
+from tests.general_utils import patch_slots_object
 
 HERE = Path(__file__).parent
 
@@ -31,20 +33,6 @@ def test_installed_module(driver, display, victory):
     driver.find_element_by_class_name("VictoryContainer")
 
 
-def test_install_checks_client_implementation(client_implementation):
-    class MockClientImplementation:
-        def web_module_names(self):
-            return set()
-
-    client_implementation.current = MockClientImplementation()
-
-    with pytest.raises(
-        RuntimeError,
-        match=r"Successfuly installed .* but client implementation .* failed to discover .*",
-    ):
-        install("jquery@3.5.0", ignore_installed=True)
-
-
 def test_reference_pre_installed_module(victory):
     assert victory.url == idom.Module("victory").url
 
@@ -53,37 +41,6 @@ def test_module_from_url():
     url = "https://code.jquery.com/jquery-3.5.0.js"
     jquery = idom.Module(url)
     assert jquery.url == url
-
-
-def test_module_uses_current_client_implementation(client_implementation):
-    class MockClientImplementation:
-        def web_module_url(self, package_name):
-            return f"./mock/url/to/module-{package_name}.js"
-
-        def web_module_exports(self, package_name):
-            return ["x", "y", "z"]
-
-        def web_module_exists(self, package_name):
-            return package_name == "fake-name"
-
-        def web_module_names(self):
-            raise NotImplementedError()
-
-        def web_module_path(self, package_name):
-            raise NotImplementedError()
-
-        def add_web_module(self, package_name, source):
-            raise NotImplementedError()
-
-    client_implementation.current = MockClientImplementation()
-
-    fake = Module("fake-name")
-    assert fake.url == "./mock/url/to/module-fake-name.js"
-    assert list(fake.exports) == ["x", "y", "z"]
-    assert fake.fallback is None
-
-    with pytest.raises(ValueError, match="does not export 'DoesNotExist'"):
-        fake.declare("DoesNotExist")
 
 
 def test_module_from_source(driver, driver_wait, display):
@@ -106,3 +63,9 @@ def test_module_from_source(driver, driver_wait, display):
     client_button = driver.find_element_by_id("test-button")
     client_button.click()
     driver_wait.until(lambda dvr: response_data.current == 10)
+
+
+def test_module_checks_export_names(victory):
+    with patch_slots_object(victory, "_export_names", []):
+        with pytest.raises(ValueError, match="does not export"):
+            victory.decalare("VictoryBar")

@@ -106,23 +106,6 @@ that can run directly in the browser. This means we can't use fancy syntax like
 .. example:: super_simple_chart
 
 
-Alternate Client Implementations
---------------------------------
-
-While it's possible to implement a whole-sale replacement for IDOM's built-in client by
-adhering to IDOM's :ref:`API <Package API>` and :ref:`Specifications`, the easiest way
-to implement a custom client is to create an object that adheres to the
-:class:`~idom.client.protocol.ClientImplementation` protocol and update the ``current``
-value of the :attr:`~idom.client.protocol.client_implementation` ref. An example of
-such an implementation can be seen in
-`IDOM's Jupyter Widgets <https://github.com/idom-team/idom-jupyter>`__.
-
-The following describes the client implementation interface:
-
-.. autoclass:: idom.client.protocol.ClientImplementation
-    :noindex:
-
-
 .. Links
 .. =====
 

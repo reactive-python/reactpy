@@ -1,8 +1,21 @@
+from contextlib import contextmanager
 from functools import wraps
 from weakref import ref
 
 
 import idom
+
+
+@contextmanager
+def patch_slots_object(obj, attr, new_value):
+    # we do this since `mock.patch..object attempts to use __dict__
+    # which is not necessarilly present on an object with __slots__`
+    old_value = getattr(obj, attr)
+    setattr(obj, attr, new_value)
+    try:
+        yield new_value
+    finally:
+        setattr(obj, attr, old_value)
 
 
 class HookCatcher:

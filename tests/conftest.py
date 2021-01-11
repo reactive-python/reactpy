@@ -110,15 +110,6 @@ def create_driver(driver_is_headless):
         d.quit()
 
 
-@pytest.fixture
-def client_implementation():
-    original = idom.client.current
-    try:
-        yield idom.client
-    finally:
-        idom.client.current = original
-
-
 @pytest.fixture(scope="session")
 def driver_is_headless(pytestconfig: Config):
     return bool(pytestconfig.option.headless)
