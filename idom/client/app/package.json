@@ -23,7 +23,12 @@
     "react-dom": "^16.13.1"
   },
   "snowpack": {
-    "install": ["htm", "react", "react-dom", "idom-client-react"],
+    "install": [
+      "htm",
+      "react",
+      "react-dom",
+      "idom-client-react"
+    ],
     "installOptions": {
       "polyfillNode": true
     }

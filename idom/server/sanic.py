@@ -84,8 +84,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
                 await socket.send(json.dumps(value))
 
             async def sock_recv() -> LayoutEvent:
-                message = json.loads(await socket.recv())
-                event = message["body"]["event"]
+                event = json.loads(await socket.recv())
                 return LayoutEvent(event["target"], event["data"])
 
             element_params = {k: request.args.get(k) for k in request.args}
