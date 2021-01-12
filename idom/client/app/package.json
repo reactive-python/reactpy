@@ -18,7 +18,7 @@
     "snowpack": "2.12.1"
   },
   "dependencies": {
-    "idom-client-react": "^0.6.0",
+    "idom-client-react": "^0.7.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
   },
