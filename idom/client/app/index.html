@@ -8,7 +8,7 @@
   <body>
     <div id="app"></div>
     <script type="module">
-      import { mountLayoutWithWebSocket } from "idom-client-react";
+      import { mountLayout } from "idom-client-react";
 
       const uri = document.location.hostname + ":" + document.location.port;
       const url = (uri + document.location.pathname).split("/").slice(0, -1);
@@ -24,9 +24,23 @@
 
       let endpoint = protocol + "//" + url.join("/") + window.location.search;
 
-      mountLayoutWithWebSocket(
+      const ws = new WebSocket(endpoint);
+
+      function saveUpdateHook(update) {
+        ws.onmessage = (event) => {
+          const [pathPrefix, patch] = JSON.parse(event.data);
+          update(pathPrefix, patch);
+        };
+      }
+
+      function sendCallback(event) {
+        ws.send(JSON.stringify(event));
+      }
+
+      mountLayout(
         document.getElementById("app"),
-        endpoint,
+        saveUpdateHook,
+        sendCallback,
         "../web_modules/"
       );
     </script>
