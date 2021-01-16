@@ -5,17 +5,19 @@ from weakref import finalize
 import pytest
 
 import idom
-from idom.server.sanic import SharedClientStateServer
+from idom.server import sanic as idom_sanic
 from idom.testing import ServerMountPoint
 
 
-@pytest.fixture(scope="module")
-def server_mount_point():
-    """An IDOM layout mount function and server as a tuple
-
-    The ``mount`` and ``server`` fixtures use this.
-    """
-    return ServerMountPoint(SharedClientStateServer, sync_views=True)
+@pytest.fixture(
+    params=[
+        # add new SharedClientStateServer implementations here to
+        # run a suite of tests which check basic functionality
+        idom_sanic.SharedClientStateServer,
+    ]
+)
+def server_mount_point(request):
+    return ServerMountPoint(request.param, sync_views=True)
 
 
 def test_shared_client_state(create_driver, mount, server_mount_point):
@@ -76,7 +78,7 @@ def test_shared_client_state_server_does_not_support_per_client_parameters(
 
     assert error is not None
 
-    with pytest.raises(ValueError, match="does not support per-client view parameters"):
-        raise error
+    assert isinstance(error, ValueError)
+    assert "does not support per-client view parameters" in str(error)
 
     last_server_error.current = None

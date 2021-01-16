@@ -1,17 +1,20 @@
 import pytest
 
 import idom
-from idom.server.flask import PerClientStateServer
 from idom.testing import ServerMountPoint
+from idom.server import flask as idom_flask, sanic as idom_sanic
 
 
-@pytest.fixture(scope="module")
-def server_mount_point():
-    """An IDOM layout mount function and server as a tuple
-
-    The ``mount`` and ``server`` fixtures use this.
-    """
-    return ServerMountPoint(PerClientStateServer, server_config={"cors": True})
+@pytest.fixture(
+    params=[
+        # add new PerClientStateServer implementations here to
+        # run a suite of tests which check basic functionality
+        idom_sanic.PerClientStateServer,
+        idom_flask.PerClientStateServer,
+    ],
+)
+def server_mount_point(request):
+    return ServerMountPoint(request.param)
 
 
 def test_display_simple_hello_world(driver, display):

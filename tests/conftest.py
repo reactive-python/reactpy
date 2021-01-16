@@ -70,7 +70,7 @@ def last_server_error(server_mount_point):
     return server_mount_point.server.last_server_error_for_idom_testing
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def server_mount_point():
     """An IDOM layout mount function and server as a tuple
 
