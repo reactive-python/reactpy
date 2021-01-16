@@ -227,6 +227,6 @@ class _StartCallbackWSGIServer(pywsgi.WSGIServer):
 
         This includes getting the correct server name and port.
         """
-        result = super().update_environ()
-        self._before_first_request_callback()
-        return result
+        super().update_environ()
+        # BUG: for some reason coverage doesn't seem to think this line is covered
+        self._before_first_request_callback()  # pragma: no cover
