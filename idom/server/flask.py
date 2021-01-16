@@ -179,8 +179,8 @@ def run_dispatcher_in_thread(
         loop.run_until_complete(main_future)
 
     Thread(target=run_dispatcher, daemon=True).start()
-    dispatch_thread_info_created.wait()
 
+    dispatch_thread_info_created.wait()
     dispatch_thread_info = dispatch_thread_info_ref.current
     assert dispatch_thread_info is not None
 
@@ -221,6 +221,12 @@ class _StartCallbackWSGIServer(pywsgi.WSGIServer):
         self._before_first_request_callback = before_first_request
         super().__init__(*args, **kwargs)
 
-    def init_socket(self):
+    def update_environ(self):
+        """
+        Called before the first request is handled to fill in WSGI environment values.
+
+        This includes getting the correct server name and port.
+        """
+        result = super().update_environ()
         self._before_first_request_callback()
-        return super().init_socket()
+        return result
