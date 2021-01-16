@@ -2,6 +2,11 @@
 sanic <19.12.0
 sanic-cors >=0.9.9
 
+# extra=flask
+flask
+flask-cors
+flask-sockets
+
 # extra=testing
 selenium
 
