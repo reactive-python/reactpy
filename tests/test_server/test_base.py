@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest
 from sanic import Sanic
 
@@ -15,10 +13,6 @@ def server_mount_point():
         # test that we can use a custom app instance
         app=Sanic(),
     )
-
-
-def test_serve_has_loop_attribute(server_mount_point):
-    assert isinstance(server_mount_point.server.loop, asyncio.AbstractEventLoop)
 
 
 def test_no_application_until_running():
