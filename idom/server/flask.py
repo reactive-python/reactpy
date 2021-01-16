@@ -57,7 +57,7 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
         self._setup_blueprint_routes(bp, config)
 
         cors_config = config["cors"]
-        if cors_config:
+        if cors_config:  # pragma: no cover
             cors_params = cors_config if isinstance(cors_config, dict) else {}
             CORS(bp, **cors_params)
 
@@ -124,7 +124,7 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
         **kwargs
     ):
         if debug:
-            logging.basicConfig(level=logging.DEBUG)
+            logging.basicConfig(level=logging.DEBUG)  # pragma: no cover
         logging.debug("Starting server...")
         _StartCallbackWSGIServer(
             self._server_did_start.set,

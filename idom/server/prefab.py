@@ -66,7 +66,7 @@ def run(
 
     server = server_type(element, server_config)
 
-    if app is not None:
+    if app is not None:  # pragma: no cover
         server.register(app)
 
     run_server = server.run if not daemon else server.daemon
