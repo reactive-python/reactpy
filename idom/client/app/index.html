@@ -8,41 +8,9 @@
   <body>
     <div id="app"></div>
     <script type="module">
-      import { mountLayout } from "idom-client-react";
+      import { mountLayoutWithWebSocket } from "./index.js";
 
-      const uri = document.location.hostname + ":" + document.location.port;
-      const url = (uri + document.location.pathname).split("/").slice(0, -1);
-      url[url.length - 1] = "stream";
-      const secure = document.location.protocol === "https:";
-
-      let protocol;
-      if (secure) {
-        protocol = "wss:";
-      } else {
-        protocol = "ws:";
-      }
-
-      let endpoint = protocol + "//" + url.join("/") + window.location.search;
-
-      const ws = new WebSocket(endpoint);
-
-      function saveUpdateHook(update) {
-        ws.onmessage = (event) => {
-          const [pathPrefix, patch] = JSON.parse(event.data);
-          update(pathPrefix, patch);
-        };
-      }
-
-      function sendCallback(event) {
-        ws.send(JSON.stringify(event));
-      }
-
-      mountLayout(
-        document.getElementById("app"),
-        saveUpdateHook,
-        sendCallback,
-        "../web_modules/"
-      );
+      mountLayoutWithWebSocket(document.getElementById("app"));
     </script>
   </body>
 </html>

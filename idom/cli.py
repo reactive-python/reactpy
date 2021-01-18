@@ -18,8 +18,8 @@ def install(packages: List[str]) -> None:
 
 
 @main.command()
-def restore() -> None:
-    manage_client.build([], clean_build=True)
+def restore(clean_build: bool = True) -> None:
+    manage_client.build([], clean_build=clean_build)
     return None
 
 

@@ -3,6 +3,7 @@
   "description": "A client application for IDOM implemented in React",
   "version": "0.1.0",
   "author": "Ryan Morshead",
+  "main": "index.js",
   "license": "MIT",
   "repository": {
     "type": "git",

@@ -31,14 +31,13 @@ class IteractiveWidget(Directive):
                         enableWidgetButton.setAttribute("class", "enable-widget-button")
 
                         enableWidgetButton.addEventListener("click", () => {{
-                            import("/client/src/layout.js").then((layout) => {{
+                            import("/client/index.js").then((module) => {{
                                 fadeOutAndThen(enableWidgetButton, () => {{
                                     mount.removeChild(enableWidgetButton);
                                     mount.setAttribute("class", "interactive widget-container");
-                                    layout.mountLayoutWithWebSocket(
+                                    module.mountLayoutWithWebSocket(
                                       mount,
                                       ws_proto + idom_url + "/stream?view_id={view_id}",
-                                      "/client/web_modules",
                                     );
                                 }});
                             }});
