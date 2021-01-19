@@ -1,32 +1,18 @@
-from importlib import import_module
-from typing import Any, Dict, Optional, Tuple, Type, TypeVar, cast
+from typing import Any, Dict, Optional, Tuple, Type, TypeVar
 
 from idom.core.element import ElementConstructor
 from idom.widgets.utils import multiview, hotswap, MultiViewMount, MountFunc
 
 from .base import AbstractRenderServer
-from .utils import find_available_port
+from .utils import find_available_port, find_builtin_server_type
 
 
 _S = TypeVar("_S", bound=AbstractRenderServer[Any, Any])
 
 
-def _find_default_server_type() -> Optional[Type[_S]]:
-    for name in ["sanic.PerClientStateServer"]:
-        module_name, server_name = name.split(".")
-        try:
-            module = import_module(f"idom.server.{module_name}")
-        except ImportError:  # pragma: no cover
-            pass
-        else:
-            return cast(Type[_S], getattr(module, server_name))
-    else:  # pragma: no cover
-        return None
-
-
 def run(
     element: ElementConstructor,
-    server_type: Optional[Type[_S]] = _find_default_server_type(),
+    server_type: Optional[Type[_S]] = find_builtin_server_type("PerClientStateServer"),
     host: str = "127.0.0.1",
     port: Optional[int] = None,
     server_config: Optional[Any] = None,
