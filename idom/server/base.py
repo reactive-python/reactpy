@@ -10,7 +10,7 @@ _Config = TypeVar("_Config", bound=Any)
 _Self = TypeVar("_Self", bound="AbstractRenderServer[Any, Any]")
 
 
-class AbstractRenderServer(Generic[_App, _Config]):
+class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
     """Base class for all IDOM server application and extension implementations.
 
     It is assumed that IDOM will be used in conjuction with some async-enabled server
@@ -40,7 +40,7 @@ class AbstractRenderServer(Generic[_App, _Config]):
             raise RuntimeError("No application registered.")
         return self._app
 
-    def run(self, *args: Any, **kwargs: Any) -> None:
+    def run(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
         """Run as a standalone application."""
         if self._app is None:
             app = self._default_application(self._config)
@@ -48,9 +48,11 @@ class AbstractRenderServer(Generic[_App, _Config]):
         else:  # pragma: no cover
             app = self._app
         if not self._daemonized:  # pragma: no cover
-            return self._run_application(app, self._config, args, kwargs)
+            return self._run_application(self._config, app, host, port, args, kwargs)
         else:
-            return self._run_application_in_thread(app, self._config, args, kwargs)
+            return self._run_application_in_thread(
+                self._config, app, host, port, args, kwargs
+            )
 
     def daemon(self, *args: Any, **kwargs: Any) -> Thread:
         """Run the standalone application in a seperate thread."""
@@ -65,8 +67,10 @@ class AbstractRenderServer(Generic[_App, _Config]):
 
     def register(self: _Self, app: Optional[_App]) -> _Self:
         """Register this as an extension."""
-        self._setup_application(app, self._config)
-        self._setup_application_did_start_event(app, self._server_did_start)
+        self._setup_application(self._config, app)
+        self._setup_application_did_start_event(
+            self._config, app, self._server_did_start
+        )
         self._app = app
         return self
 
@@ -78,6 +82,10 @@ class AbstractRenderServer(Generic[_App, _Config]):
             )
 
     @abc.abstractmethod
+    def stop(self) -> None:
+        """Stop a currently running application"""
+
+    @abc.abstractmethod
     def _create_config(self, config: Optional[_Config]) -> _Config:
         """Return the default configuration options."""
 
@@ -87,25 +95,39 @@ class AbstractRenderServer(Generic[_App, _Config]):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _setup_application(self, app: _App, config: _Config) -> None:
+    def _setup_application(self, config: _Config, app: _App) -> None:
         """General application setup - add routes, templates, static resource, etc."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _setup_application_did_start_event(self, app: _App, event: Event) -> None:
+    def _setup_application_did_start_event(
+        self, config: _Config, app: _App, event: Event
+    ) -> None:
         """Register a callback to the app indicating whether the server has started"""
         raise NotImplementedError()
 
     @abc.abstractmethod
     def _run_application(
-        self, app: _App, config: _Config, args: Tuple[Any, ...], kwargs: Dict[str, Any]
+        self,
+        config: _Config,
+        app: _App,
+        host: str,
+        port: int,
+        args: Tuple[Any, ...],
+        kwargs: Dict[str, Any],
     ) -> None:
         """Run the application in the main thread"""
         raise NotImplementedError()
 
     @abc.abstractmethod
     def _run_application_in_thread(
-        self, app: _App, config: _Config, args: Tuple[Any, ...], kwargs: Dict[str, Any]
+        self,
+        config: _Config,
+        app: _App,
+        host: str,
+        port: int,
+        args: Tuple[Any, ...],
+        kwargs: Dict[str, Any],
     ) -> None:
         """This function has been called inside a daemon thread to run the application"""
         raise NotImplementedError()

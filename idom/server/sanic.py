@@ -17,7 +17,7 @@ from idom.core.dispatcher import (
     SendCoroutine,
     RecvCoroutine,
 )
-from idom.core.layout import LayoutEvent, Layout
+from idom.core.layout import LayoutEvent, Layout, LayoutUpdate
 from idom.client.manage import BUILD_DIR
 
 from .base import AbstractRenderServer
@@ -54,10 +54,10 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
     def _default_application(self, config: Config) -> Sanic:
         return Sanic()
 
-    def _setup_application(self, app: Sanic, config: Config) -> None:
+    def _setup_application(self, config: Config, app: Sanic) -> None:
         bp = Blueprint(f"idom_dispatcher_{id(self)}", url_prefix=config["url_prefix"])
 
-        self._setup_blueprint_routes(bp, config)
+        self._setup_blueprint_routes(config, bp)
 
         cors_config = config["cors"]
         if cors_config:
@@ -66,25 +66,26 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
 
         app.blueprint(bp)
 
-    def _setup_application_did_start_event(self, app: Sanic, event: Event) -> None:
+    def _setup_application_did_start_event(
+        self, config: Config, app: Sanic, event: Event
+    ) -> None:
         async def server_did_start(app: Sanic, loop: asyncio.AbstractEventLoop) -> None:
             event.set()
 
         app.register_listener(server_did_start, "after_server_start")
 
-    def _setup_blueprint_routes(self, blueprint: Blueprint, config: Config) -> None:
+    def _setup_blueprint_routes(self, config: Config, blueprint: Blueprint) -> None:
         """Add routes to the application blueprint"""
 
         @blueprint.websocket("/stream")  # type: ignore
         async def model_stream(
             request: request.Request, socket: WebSocketCommonProtocol
         ) -> None:
-            async def sock_send(value: Any) -> None:
+            async def sock_send(value: LayoutUpdate) -> None:
                 await socket.send(json.dumps(value))
 
             async def sock_recv() -> LayoutEvent:
-                event = json.loads(await socket.recv())
-                return LayoutEvent(event["target"], event["data"])
+                return LayoutEvent(**json.loads(await socket.recv()))
 
             element_params = {k: request.args.get(k) for k in request.args}
             await self._run_dispatcher(sock_send, sock_recv, element_params)
@@ -103,13 +104,25 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
                     )
 
     def _run_application(
-        self, app: Sanic, config: Config, args: Tuple[Any, ...], kwargs: Dict[str, Any]
+        self,
+        config: Config,
+        app: Sanic,
+        host: str,
+        port: int,
+        args: Tuple[Any, ...],
+        kwargs: Dict[str, Any],
     ) -> None:
         self._loop = asyncio.get_event_loop()
-        app.run(*args, **kwargs)
+        app.run(host, port, *args, **kwargs)
 
     def _run_application_in_thread(
-        self, app: Sanic, config: Config, args: Tuple[Any, ...], kwargs: Dict[str, Any]
+        self,
+        config: Config,
+        app: Sanic,
+        host: str,
+        port: int,
+        args: Tuple[Any, ...],
+        kwargs: Dict[str, Any],
     ) -> None:
         try:
             loop = asyncio.get_event_loop()
@@ -122,7 +135,9 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
         # what follows was copied from:
         # https://github.com/sanic-org/sanic/blob/7028eae083b0da72d09111b9892ddcc00bce7df4/examples/run_async_advanced.py
 
-        serv_coro = app.create_server(*args, **kwargs, return_asyncio_server=True)
+        serv_coro = app.create_server(
+            host, port, *args, **kwargs, return_asyncio_server=True
+        )
         serv_task = asyncio.ensure_future(serv_coro, loop=loop)
         server = loop.run_until_complete(serv_task)
         server.after_start()
@@ -167,10 +182,10 @@ class SharedClientStateServer(SanicRenderServer):
     _dispatcher_type = SharedViewDispatcher
     _dispatcher: SharedViewDispatcher
 
-    def _setup_application(self, app: Sanic, config: Config) -> None:
+    def _setup_application(self, config: Config, app: Sanic) -> None:
         app.register_listener(self._activate_dispatcher, "before_server_start")
         app.register_listener(self._deactivate_dispatcher, "before_server_stop")
-        super()._setup_application(app, config)
+        super()._setup_application(config, app)
 
     async def _activate_dispatcher(
         self, app: Sanic, loop: asyncio.AbstractEventLoop

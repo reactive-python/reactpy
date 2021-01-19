@@ -35,6 +35,17 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
     """Base class for render servers which use Flask"""
 
     _dispatcher_type: AbstractDispatcher
+    _wsgi_server: pywsgi.WSGIServer
+
+    def stop(self, timeout: Optional[float] = None) -> None:
+        try:
+            server = self._wsgi_server
+        except AttributeError:  # pragma: no cover
+            raise RuntimeError(
+                f"Application is not running or was not started by {self}"
+            )
+        else:
+            server.stop(timeout)
 
     def _create_config(self, config: Optional[Config]) -> Config:
         return Config(
@@ -51,10 +62,10 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
     def _default_application(self, config: Config) -> Flask:
         return Flask(config["import_name"])
 
-    def _setup_application(self, app: Flask, config: Config) -> None:
+    def _setup_application(self, config: Config, app: Flask) -> None:
         bp = Blueprint("idom", __name__, url_prefix=config["url_prefix"])
 
-        self._setup_blueprint_routes(bp, config)
+        self._setup_blueprint_routes(config, bp)
 
         cors_config = config["cors"]
         if cors_config:  # pragma: no cover
@@ -84,7 +95,7 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
                 None,
             )
 
-    def _setup_blueprint_routes(self, blueprint: Blueprint, config: Config) -> None:
+    def _setup_blueprint_routes(self, config: Config, blueprint: Blueprint) -> None:
         if config["serve_static_files"]:
 
             @blueprint.route("/client/<path:path>")
@@ -98,21 +109,33 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
                     return redirect(url_for("idom.send_build_dir", path="index.html"))
 
     def _setup_application_did_start_event(
-        self, app: Flask, event: ThreadEvent
+        self, config: Config, app: Flask, event: ThreadEvent
     ) -> None:
         @app.before_first_request
         def server_did_start():
             event.set()
 
     def _run_application(
-        self, app: Flask, config: Config, args: Tuple[Any, ...], kwargs: Dict[str, Any]
+        self,
+        config: Config,
+        app: Flask,
+        host: str,
+        port: int,
+        args: Tuple[Any, ...],
+        kwargs: Dict[str, Any],
     ) -> None:
-        self._generic_run_application(app, *args, **kwargs)
+        self._generic_run_application(app, host, port, *args, **kwargs)
 
     def _run_application_in_thread(
-        self, app: Flask, config: Config, args: Tuple[Any, ...], kwargs: Dict[str, Any]
+        self,
+        config: Config,
+        app: Flask,
+        host: str,
+        port: int,
+        args: Tuple[Any, ...],
+        kwargs: Dict[str, Any],
     ) -> None:
-        self._generic_run_application(app, *args, **kwargs)
+        self._generic_run_application(app, host, port, *args, **kwargs)
 
     def _generic_run_application(
         self,
@@ -121,19 +144,20 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
         port: int = 5000,
         debug: bool = False,
         *args: Any,
-        **kwargs
+        **kwargs,
     ):
         if debug:
             logging.basicConfig(level=logging.DEBUG)  # pragma: no cover
         logging.debug("Starting server...")
-        _StartCallbackWSGIServer(
+        self._wsgi_server = _StartCallbackWSGIServer(
             self._server_did_start.set,
             (host, port),
             app,
             *args,
             handler_class=WebSocketHandler,
             **kwargs,
-        ).serve_forever()
+        )
+        self._wsgi_server.serve_forever()
 
 
 class PerClientStateServer(FlaskRenderServer):

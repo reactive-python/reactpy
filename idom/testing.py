@@ -11,6 +11,7 @@ from typing import (
     Generic,
     TypeVar,
 )
+from weakref import finalize
 
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver import Chrome
@@ -54,7 +55,7 @@ _Server = TypeVar("_Server", bound=AnyRenderServer)
 
 class ServerMountPoint(Generic[_Mount, _Server]):
 
-    __slots__ = "server", "host", "port", "_mount"
+    __slots__ = "server", "host", "port", "_mount", "__weakref__"
 
     def __init__(
         self,
@@ -69,7 +70,7 @@ class ServerMountPoint(Generic[_Mount, _Server]):
     ):
         self.host = host
         self.port = port or find_available_port(host)
-        self._mount, self.server = mount_and_server_constructor(
+        self._mount, server = mount_and_server_constructor(
             (
                 server_type
                 if issubclass(server_type, _RenderServerWithLastError)
@@ -86,6 +87,9 @@ class ServerMountPoint(Generic[_Mount, _Server]):
             app,
             **other_options,
         )
+        self.server = server
+        # stop server once mount is done being used
+        finalize(self, server.stop)
 
     def url(self, path: str = "", query: Optional[Any] = None) -> str:
         return urlunparse(
