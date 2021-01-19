@@ -1,7 +1,7 @@
 import pytest
 
 import idom
-from idom.server.default import PerClientStateServer
+from idom.server.utils import find_builtin_server_type
 from idom.server.prefab import multiview_server
 from idom.testing import ServerMountPoint
 
@@ -11,7 +11,8 @@ from tests.driver_utils import no_such_element
 @pytest.fixture
 def server_mount_point():
     return ServerMountPoint(
-        PerClientStateServer, mount_and_server_constructor=multiview_server
+        find_builtin_server_type("PerClientStateServer"),
+        mount_and_server_constructor=multiview_server,
     )
 
 

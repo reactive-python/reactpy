@@ -16,7 +16,7 @@ from weakref import finalize
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver import Chrome
 
-from idom import server
+from idom.server.utils import find_builtin_server_type
 from idom.server.base import AbstractRenderServer
 from idom.server.prefab import hotswap_server
 from idom.server.utils import find_available_port
@@ -59,7 +59,7 @@ class ServerMountPoint(Generic[_Mount, _Server]):
 
     def __init__(
         self,
-        server_type: Type[_Server] = server.default.PerClientStateServer,
+        server_type: Type[_Server] = find_builtin_server_type("PerClientStateServer"),
         host: str = "127.0.0.1",
         port: Optional[int] = None,
         server_config: Optional[Any] = None,
