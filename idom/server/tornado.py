@@ -19,12 +19,15 @@ from .base import AbstractRenderServer
 
 
 class Config(TypedDict):
+    """Render server config for :class:`TornadoRenderServer` subclasses"""
+
     base_url: str
     serve_static_files: bool
     redirect_root_to_index: bool
 
 
 class TornadoRenderServer(AbstractRenderServer[Application, Config]):
+    """A base class for all Tornado render servers"""
 
     _model_stream_handler_type: Type[WebSocketHandler]
 
@@ -117,6 +120,7 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
 
 
 class PerClientStateModelStreamHandler(WebSocketHandler):
+    """A web-socket handler that serves up a new model stream to each new client"""
 
     _dispatcher_type: Type[AbstractDispatcher] = SingleViewDispatcher
     _dispatcher_inst: AbstractDispatcher
@@ -155,4 +159,6 @@ class PerClientStateModelStreamHandler(WebSocketHandler):
 
 
 class PerClientStateServer(TornadoRenderServer):
+    """Each client view will have its own state."""
+
     _model_stream_handler_type = PerClientStateModelStreamHandler

@@ -46,6 +46,20 @@ Sanic Servers
     :members:
 
 
+Flask Servers
+-------------
+
+.. automodule:: idom.server.flask
+    :members:
+
+
+Tornado Servers
+---------------
+
+.. automodule:: idom.server.tornado
+    :members:
+
+
 HTML Widgets
 ------------
 
