@@ -24,6 +24,8 @@ from .base import AbstractRenderServer
 
 
 class Config(TypedDict, total=False):
+    """Config for :class:`SanicRenderServer`"""
+
     cors: Union[bool, Dict[str, Any]]
     url_prefix: str
     server_static_files: bool

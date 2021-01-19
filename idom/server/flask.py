@@ -24,6 +24,8 @@ from .base import AbstractRenderServer
 
 
 class Config(TypedDict, total=False):
+    """Render server config for :class:`FlaskRenderServer`"""
+
     import_name: str
     url_prefix: str
     cors: Union[bool, Dict[str, Any]]
@@ -161,6 +163,8 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
 
 
 class PerClientStateServer(FlaskRenderServer):
+    """Each client view will have its own state."""
+
     _dispatcher_type = SingleViewDispatcher
 
 

@@ -170,25 +170,32 @@ Layout Server
 The :ref:`Dispatcher <Layout Dispatcher>` allows you to animate the layout, but we still
 need to get the models on the screen. One of the last steps in that journey is to send
 them over the wire. To do that you need an
-:class:`~idom.server.base.AbstractRenderServer` implementation. Right now we have a
-built in subclass that relies on :mod:`sanic`, an async enabled web server. In principle
-though, the base server class is capable of working with any other async enabled server
-framework. Potential candidates range from newer frameworks like
-`vibora <https://vibora.io/>`__, `starlette <https://www.starlette.io/>`__, and
-`aiohttp <https://aiohttp.readthedocs.io/en/stable/>`__ to older ones that are
-starting to add support for asyncio like
-`tornado <https://www.tornadoweb.org/en/stable/asyncio.html>`__.
+:class:`~idom.server.base.AbstractRenderServer` implementation. Presently, IDOM comes
+with support for the following web servers:
+
+- :class:`sanic.app.Sanic` (``pip install idom[sanic]``)
+
+  - :class:`idom.server.sanic.PerClientStateServer`
+
+  - :class:`idom.server.sanic.SharedClientStateServer`
+
+- :class:`flask.Flask` (``pip install idom[flask]``)
+
+  - :class:`idom.server.flask.PerClientStateServer`
+
+- :class:`tornado.web.Application` (``pip install idom[tornado]``)
+
+  - :class:`idom.server.tornado.PerClientStateServer`
+
+However, in principle, the base server class is capable of working with any other async
+enabled server framework. Potential candidates range from newer frameworks like
+`vibora <https://vibora.io/>`__ and `starlette <https://www.starlette.io/>`__ to
+`aiohttp <https://aiohttp.readthedocs.io/en/stable/>`__.
 
 .. note::
-    If using or implementing a bridge between IDOM and these servers interests you post
-    an `issue <https://github.com/rmorshea/idom/issues>`__.
 
-In the case of our :class:`~idom.server.sanic.SanicRenderServer` types we have one
-implementation per built in :ref:`Dispatcher <Layout Dispatcher>`:
-
-- :class:`idom.server.sanic.PerClientStateServer`
-
-- :class:`idom.server.sanic.SharedClientStateServer`
+    If using or implementing a bridge between IDOM and an async server not listed here
+    interests you, post an `issue <https://github.com/rmorshea/idom/issues>`__.
 
 The main thing to understand about server implementations is that they can function in
 two ways - as a standalone application or as an extension to an existing application.
