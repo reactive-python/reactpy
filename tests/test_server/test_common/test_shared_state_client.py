@@ -14,7 +14,8 @@ from idom.testing import ServerMountPoint
         # add new SharedClientStateServer implementations here to
         # run a suite of tests which check basic functionality
         idom_sanic.SharedClientStateServer,
-    ]
+    ],
+    ids=lambda cls: f"{cls.__module__}.{cls.__name__}",
 )
 def server_mount_point(request):
     return ServerMountPoint(request.param, sync_views=True)

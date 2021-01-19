@@ -2,7 +2,11 @@ import pytest
 
 import idom
 from idom.testing import ServerMountPoint
-from idom.server import flask as idom_flask, sanic as idom_sanic
+from idom.server import (
+    flask as idom_flask,
+    sanic as idom_sanic,
+    tornado as idom_tornado,
+)
 
 
 @pytest.fixture(
@@ -11,7 +15,9 @@ from idom.server import flask as idom_flask, sanic as idom_sanic
         # run a suite of tests which check basic functionality
         idom_sanic.PerClientStateServer,
         idom_flask.PerClientStateServer,
+        idom_tornado.PerClientStateServer,
     ],
+    ids=lambda cls: f"{cls.__module__}.{cls.__name__}",
 )
 def server_mount_point(request):
     return ServerMountPoint(request.param)
@@ -23,6 +29,11 @@ def test_display_simple_hello_world(driver, display):
         return idom.html.p({"id": "hello"}, ["Hello World"])
 
     display(Hello)
+
+    assert driver.find_element_by_id("hello")
+
+    # test that we can reconnect succefully
+    driver.refresh()
 
     assert driver.find_element_by_id("hello")
 

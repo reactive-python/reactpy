@@ -76,9 +76,7 @@ def server_mount_point():
 
     The ``mount`` and ``server`` fixtures use this.
     """
-    mount_point = ServerMountPoint(server_config={"cors": True})
-    yield mount_point
-    mount_point.server.stop()
+    return ServerMountPoint(server_config={"cors": True})
 
 
 @pytest.fixture(scope="module")
