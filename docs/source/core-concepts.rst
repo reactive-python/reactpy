@@ -56,7 +56,7 @@ Component Layout
 Displaying components requires you to turn them into :ref:`VDOM <VDOM Mimetype>` -
 this is done using a :class:`~idom.core.layout.Layout`. Layouts are responsible for
 rendering components (turning them into VDOM) and scheduling their re-renders when they
-:meth:`~idom.core.layout.Layout.update`. To create a layout, you'll need an
+:meth:`~idom.core.layout.Layout.update`. To create a layout, you'll need a
 :class:`~idom.core.component.Component` instance, which will become its root, and won't
 ever be removed from the model. Then you'll just need to call and await a
 :meth:`~idom.core.layout.Layout.render` which will return a :ref:`JSON Patch`:
