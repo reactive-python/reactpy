@@ -1,12 +1,12 @@
 .interactive {
-  -webkit-transition: 0.2s ease-out;
-  -moz-transition: 0.2s ease-out;
-  -o-transition: 0.2s ease-out;
-  transition: 0.2s ease-out;
+  -webkit-transition: 0.1s ease-out;
+  -moz-transition: 0.1s ease-out;
+  -o-transition: 0.1s ease-out;
+  transition: 0.1s ease-out;
 }
 .widget-container {
   padding: 15px;
-  background-color: #fcfcfc;
+  background-color: var(--color-code-background);
   min-height: 75px;
 }
 .center-content {
@@ -21,16 +21,16 @@
   text-decoration: none;
   background: #3980b9;
   border: 2px solid #3980b9 !important;
-  transition: all 0.2s ease 0s;
-  box-shadow: 0 5px 10px grey;
+  transition: all 0.1s ease 0s;
+  box-shadow: 0 5px 10px var(--color-foreground-border);
 }
 .enable-widget-button:hover {
   color: #3980b9 !important;
   background: #ffffff;
-  transition: all 0.2s ease 0s;
+  transition: all 0.1s ease 0s;
 }
 .enable-widget-button:focus {
   outline: 0 !important;
   transform: scale(0.98);
-  transition: all 0.2s ease 0s;
+  transition: all 0.1s ease 0s;
 }
