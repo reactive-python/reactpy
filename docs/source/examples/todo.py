@@ -1,7 +1,7 @@
 import idom
 
 
-@idom.element
+@idom.component
 def Todo():
     items, set_items = idom.hooks.use_state([])
 

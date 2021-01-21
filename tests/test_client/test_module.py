@@ -48,7 +48,7 @@ def test_module_from_source(driver, driver_wait, display):
 
     response_data = idom.Ref(None)
 
-    @idom.element
+    @idom.component
     def ShowButton():
         return test_module.TestButton(
             {

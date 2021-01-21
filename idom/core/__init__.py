@@ -1,17 +1,17 @@
-from .element import element, Element, AbstractElement, ElementConstructor
+from .component import component, Component, AbstractComponent, ComponentConstructor
 from .events import event, Events, EventHandler
 from .layout import Layout, Layout
 from .dispatcher import AbstractDispatcher, SharedViewDispatcher, SingleViewDispatcher
 from .vdom import vdom
 
 __all__ = [
-    "AbstractElement",
+    "AbstractComponent",
     "Layout",
     "AbstractDispatcher",
-    "element",
-    "Element",
+    "component",
+    "Component",
     "EventHandler",
-    "ElementConstructor",
+    "ComponentConstructor",
     "event",
     "Events",
     "hooks",

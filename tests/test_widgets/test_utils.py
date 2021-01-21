@@ -13,11 +13,11 @@ def test_multiview_repr():
 def test_shared_hostwap(driver, display):
     """Ensure shared hotswapping works
 
-    This basically means that previously rendered views of a hotswap element get updated
+    This basically means that previously rendered views of a hotswap component get updated
     when a new view is mounted, not just the next time it is re-displayed
 
     In this test we construct a scenario where clicking a button will cause a pre-existing
-    hotswap element to be updated
+    hotswap component to be updated
     """
 
     def make_next_count_constructor(count):
@@ -29,7 +29,7 @@ def test_shared_hostwap(driver, display):
 
         return constructor
 
-    @idom.element
+    @idom.component
     def ButtonSwapsDivs():
         count = idom.Ref(0)
 

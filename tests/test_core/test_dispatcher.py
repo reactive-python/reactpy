@@ -39,7 +39,7 @@ async def test_shared_state_dispatcher():
         await done.wait()
         raise asyncio.CancelledError()
 
-    @idom.element
+    @idom.component
     def Clickable():
         count, set_count = idom.hooks.use_state(0)
 
@@ -88,8 +88,8 @@ async def test_dispatcher_run_does_not_supress_non_cancel_errors():
         async def _incoming(self, layout, context, message):
             raise ValueError("this is a bug")
 
-    @idom.element
-    def AnyElement():
+    @idom.component
+    def AnyComponent():
         return idom.html.div()
 
     async def send(data):
@@ -99,7 +99,7 @@ async def test_dispatcher_run_does_not_supress_non_cancel_errors():
         return {}
 
     with pytest.raises(ExceptionGroup, match="this is a bug"):
-        async with DispatcherWithBug(idom.Layout(AnyElement())) as dispatcher:
+        async with DispatcherWithBug(idom.Layout(AnyComponent())) as dispatcher:
             await dispatcher.run(send, recv, None)
 
 
@@ -111,8 +111,8 @@ async def test_dispatcher_run_does_not_supress_errors():
         async def _incoming(self, layout, context, message):
             raise ValueError("this is a bug")
 
-    @idom.element
-    def AnyElement():
+    @idom.component
+    def AnyComponent():
         return idom.html.div()
 
     async def send(data):
@@ -122,7 +122,7 @@ async def test_dispatcher_run_does_not_supress_errors():
         return {}
 
     with pytest.raises(ExceptionGroup, match="this is a bug"):
-        async with DispatcherWithBug(idom.Layout(AnyElement())) as dispatcher:
+        async with DispatcherWithBug(idom.Layout(AnyComponent())) as dispatcher:
             await dispatcher.run(send, recv, None)
 
 
@@ -150,11 +150,11 @@ async def test_dispatcher_start_stop():
         else:
             assert False, "this should never be reached"
 
-    @idom.element
-    def AnElement():
+    @idom.component
+    def AnyComponent():
         return idom.html.div()
 
-    dispatcher = SingleViewDispatcher(Layout(AnElement()))
+    dispatcher = SingleViewDispatcher(Layout(AnyComponent()))
 
     await dispatcher.start()
 

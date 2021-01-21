@@ -8,12 +8,12 @@ if TYPE_CHECKING:  # pragma: no cover
     from .vdom import VdomDict  # noqa
 
 
-ElementConstructor = Callable[..., "Element"]
-ElementRenderFunction = Callable[..., Union["AbstractElement", "VdomDict"]]
+ComponentConstructor = Callable[..., "Component"]
+ComponentRenderFunction = Callable[..., Union["AbstractComponent", "VdomDict"]]
 
 
-def element(function: ElementRenderFunction) -> Callable[..., "Element"]:
-    """A decorator for defining an :class:`Element`.
+def component(function: ComponentRenderFunction) -> Callable[..., "Component"]:
+    """A decorator for defining an :class:`Component`.
 
     Parameters:
         function:
@@ -21,39 +21,23 @@ def element(function: ElementRenderFunction) -> Callable[..., "Element"]:
     """
 
     @wraps(function)
-    def constructor(*args: Any, **kwargs: Any) -> Element:
-        return Element(function, args, kwargs)
+    def constructor(*args: Any, **kwargs: Any) -> Component:
+        return Component(function, args, kwargs)
 
     return constructor
 
 
-class AbstractElement(abc.ABC):
+class AbstractComponent(abc.ABC):
 
     __slots__ = [] if hasattr(abc.ABC, "__weakref__") else ["__weakref__"]
 
     @abc.abstractmethod
     def render(self) -> "VdomDict":
-        """Render the element's :ref:`VDOM <VDOM Mimetype>` model."""
+        """Render the component's :ref:`VDOM <VDOM Mimetype>` model."""
 
 
-class Element(AbstractElement):
-    """An object for rending element models.
-
-    Rendering element objects is typically done by a :class:`idom.core.layout.Layout` which
-    will :meth:`Element.mount` itself to the element instance the first time it is rendered.
-    From there an element instance will communicate its needs to the layout. For example
-    when an element wants to re-render it will call :meth:`idom.core.layout.Layout.element_updated`.
-
-    The life cycle of an element typically goes in this order:
-
-    1. The element instance is instantiated.
-
-    2. The layout will call :meth:`Element.render`.
-
-    3. The element is dormant until an :meth:`Element.update` occurs.
-
-    4. Go back to step **2**.
-    """
+class Component(AbstractComponent):
+    """An object for rending component models."""
 
     __slots__ = (
         "_function",
@@ -63,7 +47,7 @@ class Element(AbstractElement):
 
     def __init__(
         self,
-        function: ElementRenderFunction,
+        function: ComponentRenderFunction,
         args: Tuple[Any, ...],
         kwargs: Dict[str, Any],
     ) -> None:

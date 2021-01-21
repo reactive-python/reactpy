@@ -1,39 +1,39 @@
 import idom
 
 
-def test_element_repr():
-    @idom.element
-    def MyElement(a, *b, **c):
+def test_component_repr():
+    @idom.component
+    def MyComponent(a, *b, **c):
         pass
 
-    m_e = MyElement(1, 2, 3, x=4, y=5)
+    m_e = MyComponent(1, 2, 3, x=4, y=5)
 
-    expected = f"MyElement({hex(id(m_e))}, a=1, b=(2, 3), c={{'x': 4, 'y': 5}})"
+    expected = f"MyComponent({hex(id(m_e))}, a=1, b=(2, 3), c={{'x': 4, 'y': 5}})"
     assert repr(m_e) == expected
 
 
-async def test_simple_element():
-    @idom.element
+async def test_simple_component():
+    @idom.component
     def SimpleDiv():
         return idom.html.div()
 
     assert SimpleDiv().render() == {"tagName": "div"}
 
 
-async def test_simple_parameterized_element():
-    @idom.element
-    def SimpleParamElement(tag):
+async def test_simple_parameterized_component():
+    @idom.component
+    def SimpleParamComponent(tag):
         return idom.vdom(tag)
 
-    assert SimpleParamElement("div").render() == {"tagName": "div"}
+    assert SimpleParamComponent("div").render() == {"tagName": "div"}
 
 
-async def test_element_with_var_args():
-    @idom.element
-    def ElementWithVarArgsAndKwargs(*args, **kwargs):
+async def test_component_with_var_args():
+    @idom.component
+    def ComponentWithVarArgsAndKwargs(*args, **kwargs):
         return idom.html.div(kwargs, args)
 
-    assert ElementWithVarArgsAndKwargs("hello", "world", myAttr=1).render() == {
+    assert ComponentWithVarArgsAndKwargs("hello", "world", myAttr=1).render() == {
         "tagName": "div",
         "attributes": {"myAttr": 1},
         "children": ["hello", "world"],
@@ -41,7 +41,7 @@ async def test_element_with_var_args():
 
 
 def test_display_simple_hello_world(driver, display):
-    @idom.element
+    @idom.component
     def Hello():
         return idom.html.p({"id": "hello"}, ["Hello World"])
 
@@ -51,7 +51,7 @@ def test_display_simple_hello_world(driver, display):
 
 
 def test_pre_tags_are_rendered_correctly(driver, display):
-    @idom.element
+    @idom.component
     def PreFormated():
         return idom.html.pre(
             {"id": "pre-form-test"},

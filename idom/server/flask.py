@@ -91,7 +91,9 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
                     return None
 
             run_dispatcher_in_thread(
-                lambda: self._dispatcher_type(Layout(self._root_element_constructor())),
+                lambda: self._dispatcher_type(
+                    Layout(self._root_component_constructor())
+                ),
                 send,
                 recv,
                 None,

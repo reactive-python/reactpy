@@ -11,7 +11,7 @@ from tornado.platform.asyncio import AsyncIOMainLoop
 from typing_extensions import TypedDict
 
 from idom.core.layout import Layout, LayoutUpdate, LayoutEvent
-from idom.core.element import ElementConstructor
+from idom.core.component import ComponentConstructor
 from idom.core.dispatcher import AbstractDispatcher, SingleViewDispatcher
 from idom.client.manage import BUILD_DIR
 
@@ -78,7 +78,7 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
             (
                 "/stream",
                 self._model_stream_handler_type,
-                {"element_constructor": self._root_element_constructor},
+                {"component_constructor": self._root_component_constructor},
             )
         ]
 
@@ -126,14 +126,14 @@ class PerClientStateModelStreamHandler(WebSocketHandler):
     _dispatcher_inst: AbstractDispatcher
     _message_queue: AsyncQueue
 
-    def initialize(self, element_constructor: ElementConstructor) -> None:
-        self._element_constructor = element_constructor
+    def initialize(self, component_constructor: ComponentConstructor) -> None:
+        self._component_constructor = component_constructor
 
     async def open(self):
         message_queue = AsyncQueue()
         query_params = {k: v[0].decode() for k, v in self.request.arguments.items()}
         dispatcher = self._dispatcher_type(
-            Layout(self._element_constructor(**query_params))
+            Layout(self._component_constructor(**query_params))
         )
 
         async def send(value: LayoutUpdate) -> None:

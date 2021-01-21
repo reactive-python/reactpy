@@ -43,13 +43,13 @@ def pytest_addoption(parser: Parser) -> None:
 def display(driver, server_mount_point, mount):
     display_id = idom.Ref(0)
 
-    def mount_and_display(element_constructor, query=None, check_mount=True):
-        element_id = f"display-{display_id.set_current(display_id.current + 1)}"
-        mount(lambda: idom.html.div({"id": element_id}, element_constructor()))
+    def mount_and_display(component_constructor, query=None, check_mount=True):
+        component_id = f"display-{display_id.set_current(display_id.current + 1)}"
+        mount(lambda: idom.html.div({"id": component_id}, component_constructor()))
         driver.get(server_mount_point.url(query=query))
         if check_mount:
-            driver.find_element_by_id(element_id)
-        return element_id
+            driver.find_element_by_id(component_id)
+        return component_id
 
     yield mount_and_display
 

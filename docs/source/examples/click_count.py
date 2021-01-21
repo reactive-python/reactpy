@@ -1,7 +1,7 @@
 import idom
 
 
-@idom.element
+@idom.component
 def ClickCount():
     count, set_count = idom.hooks.use_state(0)
 

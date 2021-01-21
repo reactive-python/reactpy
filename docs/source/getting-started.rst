@@ -14,14 +14,14 @@ Since it's likely a lot to take in at once, we'll break it down piece by piece:
     :lines: 4-5
     :linenos:
 
-The ``idom.element`` decorator creates an :ref:`Element <Stateful Elements>` constructor
+The ``idom.component`` decorator creates a :ref:`Component <Stateful Components>` constructor
 whose render function is defined by the `asynchronous function`_ below it. To create
-an :class:`~idom.core.element.Element` instance we call ``Slideshow()`` with the same
-arguments as its render function. The render function of an Element returns a data
-structure that depicts a user interface, or in more technical terms a Document Object
-Model (DOM). We call this structural representation of the DOM a `Virtual DOM`__ (VDOM)
-- a term familiar to those who work with `ReactJS`_. In the case of ``Slideshow`` it
-will return a VDOM representing an image which, when clicked, will change.
+a Component instance we call ``Slideshow()`` with the same arguments as its render
+function. The render function of a Component returns a data structure that depicts a
+user interface, or in more technical terms a Document Object Model (DOM). We call this
+structural representation of the DOM a `Virtual DOM`__ (VDOM) - a term familiar to those
+who work with `ReactJS`_. In the case of ``Slideshow`` it will return a VDOM
+representing an image which, when clicked, will change.
 
 __ https://reactjs.org/docs/faq-internals.html#what-is-the-virtual-dom
 
@@ -31,9 +31,9 @@ __ https://reactjs.org/docs/faq-internals.html#what-is-the-virtual-dom
     :linenos:
 
 The :func:`~idom.core.hooks.use_state` function is a :ref:`Hook <Life Cycle Hooks>`.
-Calling a Hook inside an Element's render function (one decorated by ``idom.element``)
+Calling a Hook inside a Component's render function (one decorated by ``idom.component``)
 adds some local state to it. IDOM will preserve the state added by Hooks between calls
-to the Element's render function.
+to the Component's render function.
 
 The ``use_state`` hook returns two values - the *current* state value and a function
 that let's you update that value. In the case of ``Slideshow`` the value of the
@@ -49,7 +49,7 @@ function allow us to change it. The one required argument of ``use_state`` is th
 The coroutine above will get added as an event handler to the resulting view. When it
 responds to an event it will use the update function returned by the ``use_state`` Hook
 to change which image is shown to the user. Calling the update function will schedule
-the Element to be re-rendered. That is, the Element's render function will be called
+the Component to be re-rendered. That is, the Component's render function will be called
 again, and its new result will be displayed.
 
 .. note::
