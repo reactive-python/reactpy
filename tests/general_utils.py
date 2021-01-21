@@ -19,28 +19,28 @@ def patch_slots_object(obj, attr, new_value):
 
 
 class HookCatcher:
-    """Utility for capturing a LifeCycleHook from an element
+    """Utility for capturing a LifeCycleHook from a component
 
     Example:
         .. code-block::
-            element_hook = HookCatcher()
+            component_hook = HookCatcher()
 
-            @idom.element
-            @element_hook.capture
-            def MyElement():
+            @idom.component
+            @component_hook.capture
+            def MyComponent():
                 ...
 
-        After the first render of ``MyElement`` the ``HookCatcher`` will have
-        captured the element's ``LifeCycleHook``.
+        After the first render of ``MyComponent`` the ``HookCatcher`` will have
+        captured the component's ``LifeCycleHook``.
     """
 
     current: idom.hooks.LifeCycleHook
 
     def capture(self, render_function):
-        """Decorator for capturing a ``LifeCycleHook`` on the first render of an element"""
+        """Decorator for capturing a ``LifeCycleHook`` on the first render of a component"""
 
         # The render function holds a reference to `self` and, via the `LifeCycleHook`,
-        # the element. Some tests check whether elements are garbage collected, thus we
+        # the component. Some tests check whether components are garbage collected, thus we
         # must use a `ref` here to ensure these checks pass.
         self_ref = ref(self)
 

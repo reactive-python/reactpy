@@ -17,30 +17,30 @@ def test_layout_update_create_from_apply_to():
 
 
 def test_layout_repr():
-    @idom.element
-    def MyElement():
+    @idom.component
+    def MyComponent():
         ...
 
-    my_element = MyElement()
-    layout = idom.Layout(my_element)
-    assert str(layout) == f"Layout(MyElement({hex(id(my_element))}))"
+    my_component = MyComponent()
+    layout = idom.Layout(my_component)
+    assert str(layout) == f"Layout(MyComponent({hex(id(my_component))}))"
 
 
-def test_layout_expects_abstract_element():
-    with pytest.raises(TypeError, match="Expected an AbstractElement"):
+def test_layout_expects_abstract_component():
+    with pytest.raises(TypeError, match="Expected an AbstractComponent"):
         idom.Layout(None)
-    with pytest.raises(TypeError, match="Expected an AbstractElement"):
+    with pytest.raises(TypeError, match="Expected an AbstractComponent"):
         idom.Layout(idom.html.div())
 
 
 def test_not_open_layout_update_logs_error(caplog):
-    @idom.element
-    def Element():
+    @idom.component
+    def Component():
         ...
 
-    element = Element()
-    layout = idom.Layout(element)
-    layout.update(element)
+    component = Component()
+    layout = idom.Layout(component)
+    layout.update(component)
 
     assert re.match(
         "Did not update .*? - resources of .*? are closed",
@@ -51,12 +51,12 @@ def test_not_open_layout_update_logs_error(caplog):
 async def test_simple_layout():
     set_state_hook = idom.Ref(None)
 
-    @idom.element
-    def SimpleElement():
+    @idom.component
+    def SimpleComponent():
         tag, set_state_hook.current = idom.hooks.use_state("div")
         return idom.vdom(tag)
 
-    async with idom.Layout(SimpleElement()) as layout:
+    async with idom.Layout(SimpleComponent()) as layout:
         path, changes = await layout.render()
 
         assert path == ""
@@ -69,16 +69,16 @@ async def test_simple_layout():
         assert changes == [{"op": "replace", "path": "/tagName", "value": "table"}]
 
 
-async def test_nested_element_layout():
+async def test_nested_component_layout():
     parent_set_state = idom.Ref(None)
     child_set_state = idom.Ref(None)
 
-    @idom.element
+    @idom.component
     def Parent():
         state, parent_set_state.current = idom.hooks.use_state(0)
         return idom.html.div(state, Child())
 
-    @idom.element
+    @idom.component
     def Child():
         state, child_set_state.current = idom.hooks.use_state(0)
         return idom.html.div(state)
@@ -114,15 +114,15 @@ async def test_nested_element_layout():
 
 
 async def test_layout_render_error_has_partial_update():
-    @idom.element
+    @idom.component
     def Main():
         return idom.html.div([OkChild(), BadChild(), OkChild()])
 
-    @idom.element
+    @idom.component
     def OkChild():
         return idom.html.div(["hello"])
 
-    @idom.element
+    @idom.component
     def BadChild():
         raise ValueError("Something went wrong :(")
 
@@ -145,12 +145,12 @@ async def test_layout_render_error_has_partial_update():
         )
 
 
-async def test_render_raw_vdom_dict_with_single_element_object_as_children():
-    @idom.element
+async def test_render_raw_vdom_dict_with_single_component_object_as_children():
+    @idom.component
     def Main():
         return {"tagName": "div", "children": Child()}
 
-    @idom.element
+    @idom.component
     def Child():
         return {"tagName": "div", "children": {"tagName": "h1"}}
 
@@ -169,16 +169,16 @@ async def test_render_raw_vdom_dict_with_single_element_object_as_children():
         )
 
 
-async def test_elements_are_garbage_collected():
-    live_elements = set()
-    outer_element_hook = HookCatcher()
+async def test_components_are_garbage_collected():
+    live_components = set()
+    outer_component_hook = HookCatcher()
 
-    @idom.element
-    @outer_element_hook.capture
+    @idom.component
+    @outer_component_hook.capture
     def Outer():
-        element = idom.hooks.current_hook().element
-        live_elements.add(id(element))
-        finalize(element, live_elements.remove, id(element))
+        component = idom.hooks.current_hook().component
+        live_components.add(id(component))
+        finalize(component, live_components.remove, id(component))
 
         hook = idom.hooks.current_hook()
 
@@ -188,49 +188,49 @@ async def test_elements_are_garbage_collected():
 
         return idom.html.div({"onEvent": force_update}, Inner())
 
-    @idom.element
+    @idom.component
     def Inner():
-        element = idom.hooks.current_hook().element
-        live_elements.add(id(element))
-        finalize(element, live_elements.remove, id(element))
+        component = idom.hooks.current_hook().component
+        live_components.add(id(component))
+        finalize(component, live_components.remove, id(component))
         return idom.html.div()
 
     async with idom.Layout(Outer()) as layout:
         await layout.render()
 
-        assert len(live_elements) == 2
+        assert len(live_components) == 2
 
-        last_live_elements = live_elements.copy()
-        # The existing `Outer` element rerenders. A new `Inner` element is created and
-        # the the old `Inner` element should be deleted. Thus there should be one
-        # changed element in the set of `live_elements` the old `Inner` deleted and new
+        last_live_components = live_components.copy()
+        # The existing `Outer` component rerenders. A new `Inner` component is created and
+        # the the old `Inner` component should be deleted. Thus there should be one
+        # changed component in the set of `live_components` the old `Inner` deleted and new
         # `Inner` added.
-        outer_element_hook.schedule_render()
+        outer_component_hook.schedule_render()
         await layout.render()
 
-        assert len(live_elements - last_live_elements) == 1
+        assert len(live_components - last_live_components) == 1
 
     # The layout still holds a reference to the root so that's
     # only deleted once we release a reference to it.
     del layout
-    # the hook also contains a reference to the root element
-    del outer_element_hook
+    # the hook also contains a reference to the root component
+    del outer_component_hook
 
     gc.collect()
-    assert not live_elements
+    assert not live_components
 
 
-async def test_double_updated_element_is_not_double_rendered():
+async def test_double_updated_component_is_not_double_rendered():
     hook = HookCatcher()
     run_count = idom.Ref(0)
 
-    @idom.element
+    @idom.component
     @hook.capture
-    def AnElement():
+    def AnyComponent():
         run_count.current += 1
         return idom.html.div()
 
-    async with idom.Layout(AnElement()) as layout:
+    async with idom.Layout(AnyComponent()) as layout:
         await layout.render()
 
         assert run_count.current == 1
@@ -250,14 +250,14 @@ async def test_double_updated_element_is_not_double_rendered():
         assert run_count.current == 2
 
 
-async def test_update_path_to_element_that_is_not_direct_child_is_correct():
+async def test_update_path_to_component_that_is_not_direct_child_is_correct():
     hook = HookCatcher()
 
-    @idom.element
+    @idom.component
     def Parent():
         return idom.html.div(idom.html.div(Child()))
 
-    @idom.element
+    @idom.component
     @hook.capture
     def Child():
         return idom.html.div()

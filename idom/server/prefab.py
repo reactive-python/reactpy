@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, Tuple, Type, TypeVar
 
-from idom.core.element import ElementConstructor
+from idom.core.component import ComponentConstructor
 from idom.widgets.utils import multiview, hotswap, MultiViewMount, MountFunc
 
 from .base import AbstractRenderServer
@@ -11,7 +11,7 @@ _S = TypeVar("_S", bound=AbstractRenderServer[Any, Any])
 
 
 def run(
-    element: ElementConstructor,
+    component: ComponentConstructor,
     server_type: Optional[Type[_S]] = find_builtin_server_type("PerClientStateServer"),
     host: str = "127.0.0.1",
     port: Optional[int] = None,
@@ -23,7 +23,7 @@ def run(
     """A utility for quickly running a render server with minimal boilerplate
 
     Parameters:
-        element:
+        component:
             The root of the view.
         server_type:
             What server to run. Defaults to a builtin implementation if available.
@@ -50,7 +50,7 @@ def run(
     if port is None:  # pragma: no cover
         port = find_available_port(host)
 
-    server = server_type(element, server_config)
+    server = server_type(component, server_config)
 
     if app is not None:  # pragma: no cover
         server.register(app)
@@ -87,10 +87,10 @@ def multiview_server(
         The server instance and a function for adding views.
         See :func:`idom.widgets.common.multiview` for details.
     """
-    mount, element = multiview()
+    mount, component = multiview()
 
     server = run(
-        element,
+        component,
         server_type,
         host,
         port,
@@ -125,16 +125,16 @@ def hotswap_server(
         server_config: Value passed to :meth:`AbstractRenderServer.configure`
         run_kwargs: Keyword args passed to :meth:`AbstractRenderServer.daemon`
         app: Optionally provide a prexisting application to register to
-        sync_views: Whether to update all displays with newly mounted elements
+        sync_views: Whether to update all displays with newly mounted components
 
     Returns:
         The server instance and a function for swapping views.
         See :func:`idom.widgets.common.hotswap` for details.
     """
-    mount, element = hotswap(shared=sync_views)
+    mount, component = hotswap(shared=sync_views)
 
     server = run(
-        element,
+        component,
         server_type,
         host,
         port,

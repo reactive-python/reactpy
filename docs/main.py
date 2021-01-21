@@ -23,7 +23,7 @@ async def forward_to_index(request):
     return response.redirect("/docs/index.html")
 
 
-mount, element = multiview()
+mount, component = multiview()
 
 examples_dir = here / "source" / "examples"
 sys.path.insert(0, str(examples_dir))
@@ -54,7 +54,9 @@ finally:
     idom.run = original_run
 
 
-server = PerClientStateServer(element, {"redirect_root_to_index": False}).register(app)
+server = PerClientStateServer(component, {"redirect_root_to_index": False}).register(
+    app
+)
 
 
 def production():

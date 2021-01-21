@@ -9,7 +9,7 @@ from idom.widgets.html import Input
 victory = idom.install("victory", fallback="loading...")
 
 
-@idom.element
+@idom.component
 def RandomWalk():
     mu = idom.hooks.use_ref(0)
     sigma = idom.hooks.use_ref(1)
@@ -38,7 +38,7 @@ def RandomWalk():
     )
 
 
-@idom.element
+@idom.component
 def RandomWalkGraph(mu, sigma):
     interval = use_interval(0.5)
     data, set_data = idom.hooks.use_state([{"x": 0, "y": 0}] * 50)
@@ -56,7 +56,7 @@ def RandomWalkGraph(mu, sigma):
     return victory.VictoryLine({"data": data, "style": {"parent": {"width": "500px"}}})
 
 
-@idom.element
+@idom.component
 def NumberInput(label, value, set_value_callback, domain):
     minimum, maximum, step = domain
     attrs = {"min": minimum, "max": maximum, "step": step}

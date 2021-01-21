@@ -4,10 +4,10 @@ Package API
 .. module:: idom
 
 
-Element
--------
+Component
+---------
 
-.. automodule:: idom.core.element
+.. automodule:: idom.core.component
     :members:
 
 

@@ -2,7 +2,7 @@ import abc
 from typing import TypeVar, Dict, Any, Tuple, Optional, Generic, TypeVar
 from threading import Thread, Event
 
-from idom.core.element import ElementConstructor
+from idom.core.component import ComponentConstructor
 
 
 _App = TypeVar("_App", bound=Any)
@@ -25,11 +25,11 @@ class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
 
     def __init__(
         self,
-        constructor: ElementConstructor,
+        constructor: ComponentConstructor,
         config: Optional[_Config] = None,
     ) -> None:
         self._app: Optional[_App] = None
-        self._root_element_constructor = constructor
+        self._root_component_constructor = constructor
         self._daemonized = False
         self._config = self._create_config(config)
         self._server_did_start = Event()

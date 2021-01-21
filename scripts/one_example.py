@@ -29,7 +29,7 @@ def main():
         return
 
     idom_run = idom.run
-    idom.run = lambda element: idom_run(element, port=5000)
+    idom.run = lambda component: idom_run(component, port=5000)
 
     with example_file.open() as f:
         exec(

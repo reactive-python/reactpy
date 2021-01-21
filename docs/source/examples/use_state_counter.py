@@ -9,7 +9,7 @@ def decrement(last_count):
     return last_count - 1
 
 
-@idom.element
+@idom.component
 def Counter():
     initial_count = 0
     count, set_count = idom.hooks.use_state(initial_count)

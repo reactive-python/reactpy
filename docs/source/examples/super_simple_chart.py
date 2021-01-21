@@ -8,7 +8,7 @@ ssc = idom.Module("super-simple-chart", source_file=path_to_source_file)
 
 
 idom.run(
-    idom.element(
+    idom.component(
         lambda: ssc.SuperSimpleChart(
             {
                 "data": [

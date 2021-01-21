@@ -33,7 +33,7 @@ def image(
     return {"tagName": "img", "attributes": {"src": src, **(attributes or {})}}
 
 
-@idom.element
+@idom.component
 def Input(
     callback: Callable[[str], None],
     type: str,

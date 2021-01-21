@@ -58,7 +58,7 @@ def test_input_ignore_empty(driver, driver_wait, display):
     inp_ingore_ref = idom.Ref("1")
     inp_not_ignore_ref = idom.Ref("1")
 
-    @idom.element
+    @idom.component
     def InputWrapper():
         return idom.html.div(
             idom.widgets.Input(

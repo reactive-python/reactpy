@@ -89,8 +89,8 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
             async def sock_recv() -> LayoutEvent:
                 return LayoutEvent(**json.loads(await socket.recv()))
 
-            element_params = {k: request.args.get(k) for k in request.args}
-            await self._run_dispatcher(sock_send, sock_recv, element_params)
+            component_params = {k: request.args.get(k) for k in request.args}
+            await self._run_dispatcher(sock_send, sock_recv, component_params)
 
         if config["serve_static_files"]:
             blueprint.static("/client", str(BUILD_DIR))
@@ -169,7 +169,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
             await dispatcher.run(send, recv, None)
 
     def _make_dispatcher(self, params: Dict[str, Any]) -> AbstractDispatcher:
-        return self._dispatcher_type(Layout(self._root_element_constructor(**params)))
+        return self._dispatcher_type(Layout(self._root_component_constructor(**params)))
 
 
 class PerClientStateServer(SanicRenderServer):

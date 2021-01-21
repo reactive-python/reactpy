@@ -5,8 +5,8 @@ This section covers core features of IDOM that are used in making
 interactive interfaces.
 
 
-Pure Elements
--------------
+Pure Components
+---------------
 
 As in most programming paradigms, so many of the problems come down to how we manage
 state. The first tool in encouraging its proper curation is the usage of
@@ -17,7 +17,7 @@ way to manage state is to have no state at all."
 With IDOM the core of your application will be built on the back of basic functions and
 coroutines that return :ref:`VDOM <VDOM Mimetype>` models and which do so without state
 and without `side effects`_. We call these kinds of model rendering functions
-:ref:`Pure Elements`. For example, one might want a function which
+:ref:`Pure Components`. For example, one might want a function which
 accepted a list of strings and turned it into a series of paragraph elements:
 
 .. code-block::
@@ -26,12 +26,12 @@ accepted a list of strings and turned it into a series of paragraph elements:
         return idom.html.div([idom.html.p(text) for text in list_of_text])
 
 
-Stateful Elements
------------------
+Stateful Components
+-------------------
 
-A Stateful Element is one which uses a :ref:`Life Cycle Hooks`. These life cycle hooks
-allow you to add state to otherwise stateless functions. To create a stateful element
-you'll need to apply the :func:`~idom.core.element.element` decorator to a coroutine_
+A Stateful Component is one which uses a :ref:`Life Cycle Hooks`. These life cycle hooks
+allow you to add state to otherwise stateless functions. To create a stateful component
+you'll need to apply the :func:`~idom.core.component.component` decorator to a coroutine_
 whose body contains a hook usage. We'll demonstrate that with a simple
 :ref:`click counter`:
 
@@ -40,7 +40,7 @@ whose body contains a hook usage. We'll demonstrate that with a simple
     import idom
 
 
-    @idom.element
+    @idom.component
     def ClickCount():
         count, set_count = idom.hooks.use_state(0)
 
@@ -50,14 +50,14 @@ whose body contains a hook usage. We'll demonstrate that with a simple
         )
 
 
-Element Layout
---------------
+Component Layout
+----------------
 
-Displaying an element requires you to turn elements into :ref:`VDOM <VDOM Mimetype>` -
+Displaying components requires you to turn them into :ref:`VDOM <VDOM Mimetype>` -
 this is done using a :class:`~idom.core.layout.Layout`. Layouts are responsible for
-rendering elements (turning them into VDOM) and scheduling their re-renders when they
+rendering components (turning them into VDOM) and scheduling their re-renders when they
 :meth:`~idom.core.layout.Layout.update`. To create a layout, you'll need an
-:class:`~idom.core.element.Element` instance, which will become its root, and won't
+:class:`~idom.core.component.Component` instance, which will become its root, and won't
 ever be removed from the model. Then you'll just need to call and await a
 :meth:`~idom.core.layout.Layout.render` which will return a :ref:`JSON Patch`:
 
@@ -80,7 +80,7 @@ have to re-render the layout and see what changed:
     event_handler_id = "on-click"
 
 
-    @idom.element
+    @idom.component
     def ClickCount():
         count, set_count = idom.hooks.use_state(0)
 
@@ -212,7 +212,7 @@ models:
     import idom
     from idom.server.sanic import PerClientStateServer
 
-    @idom.element
+    @idom.component
     def View(self):
         return idom.html.h1(["Hello World"])
 
@@ -233,7 +233,7 @@ The implementation registers hooks into the application to serve the model once 
 
     app = Sanic()
 
-    @idom.element
+    @idom.component
     def View(self):
         return idom.html.h1(["Hello World"])
 

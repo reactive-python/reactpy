@@ -54,18 +54,18 @@ in a REPL or Jupyter Notebook):
 
     Any standard javascript dependency specifier is allowed here.
 
-Once the package has been succesfully installed, you can import and display the element:
+Once the package has been succesfully installed, you can import and display the component:
 
 .. example:: material_ui_button_no_action
 
 
-Passing Props To Javascript
----------------------------
+Passing Props To Javascript Components
+--------------------------------------
 
 So now that we can install and display a Material UI Button we probably want to make it
 do something. Thankfully there's nothing new to learn here, you can pass event handlers
 to the button just as you did when :ref:`getting started`. Thus, all we need to do is
-add an ``onClick`` handler to the element:
+add an ``onClick`` handler to the component:
 
 .. example:: material_ui_button_on_click
 

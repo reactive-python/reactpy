@@ -4,7 +4,7 @@ from mypy_extensions import TypedDict
 from typing_extensions import Protocol
 
 from .events import EventsMapping
-from .element import AbstractElement
+from .component import AbstractComponent
 
 
 class ImportSourceDict(TypedDict):
@@ -28,7 +28,7 @@ class VdomDict(_VdomDictRequired, _VdomDictOptional):
 
 
 _TagArg = str
-_ComponentFunc = Callable[..., Union[VdomDict, AbstractElement]]
+_ComponentFunc = Callable[..., Union[VdomDict, AbstractComponent]]
 _AttributesAndChildrenArg = Union[Mapping[str, Any], str, Iterable[Any], Any]
 _EventHandlersArg = Optional[EventsMapping]
 _ImportSourceArg = Optional[ImportSourceDict]
@@ -37,7 +37,7 @@ _ImportSourceArg = Optional[ImportSourceDict]
 def component(
     tag: Union[_TagArg, _ComponentFunc],
     *attributes_and_children: _AttributesAndChildrenArg,
-) -> Union[VdomDict, AbstractElement]:
+) -> Union[VdomDict, AbstractComponent]:
     if isinstance(tag, str):
         return vdom(tag, *attributes_and_children)
 

@@ -1,7 +1,7 @@
 import idom
 
 
-@idom.element
+@idom.component
 def Slideshow():
     index, set_index = idom.hooks.use_state(0)
 

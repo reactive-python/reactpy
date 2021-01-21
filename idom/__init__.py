@@ -11,7 +11,7 @@ except _DistributionNotFound:  # pragma: no cover
 
 from .utils import Ref, html_to_vdom
 
-from .core.element import element, Element
+from .core.component import component, Component
 from .core.events import event, Events
 from .core.layout import Layout
 from .core.vdom import vdom, VdomDict
@@ -43,8 +43,8 @@ else:
 
 __all__ = [
     "run",
-    "element",
-    "Element",
+    "component",
+    "Component",
     "event",
     "Events",
     "dialect",

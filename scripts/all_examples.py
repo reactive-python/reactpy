@@ -35,7 +35,7 @@ def main():
                     print_exc()
                     print()
 
-    @idom.element
+    @idom.component
     def AllExamples():
         examples = []
         for title, func in views:

@@ -3,7 +3,7 @@ Life Cycle Hooks
 ================
 
 Hooks are functions that allow you to "hook into" the life cycle events and state of
-Elements. Their usage should always follow the :ref:`Rules of Hooks`. For most use
+Components. Their usage should always follow the :ref:`Rules of Hooks`. For most use
 cases the :ref:`Basic Hooks` should be enough, however the remaining
 :ref:`Supplementary Hooks` should fulfill less common scenarios.
 
@@ -38,7 +38,7 @@ passed to ``set_state``.
     set_state(new_state)
 
 The ``set_state`` function accepts a ``new_state`` as its only argument and schedules a
-re-render of the element where ``use_state`` was initially called. During these
+re-render of the component where ``use_state`` was initially called. During these
 subsequent re-renders the ``state`` returned by ``use_state`` will take on the value
 of ``new_state``.
 
@@ -71,7 +71,7 @@ Lazy Initial State
 
 In cases where it is costly to create the initial value for ``use_state``, you can pass
 a constructor function that accepts no arguments instead - it will be called on the
-first render of an element, but will be disregarded in all following renders:
+first render of a component, but will be disregarded in all following renders:
 
 .. code-block::
 
@@ -81,7 +81,7 @@ first render of an element, but will be disregarded in all following renders:
 Skipping Updates
 ................
 
-If you update a State Hook to the same value as the current state then the element which
+If you update a State Hook to the same value as the current state then the component which
 owns that state will not be rendered again. We check ``if new_state is current_state``
 in order to determine whether there has been a change. Thus the following would not
 result in a re-render:
@@ -103,9 +103,9 @@ The ``use_effect`` hook accepts a function which may be imperative, or mutate st
 function will be called immediately after the layout has fully updated.
 
 Asynchronous actions, mutations, subscriptions, and other `side effects`_ can cause
-unexpected bugs if placed in the main body of an element's render function. Thus the
+unexpected bugs if placed in the main body of a component's render function. Thus the
 ``use_effect`` hook provides a way to safely escape the purely functional world of
-element render functions.
+component render functions.
 
 .. note::
 
@@ -131,10 +131,10 @@ then closing a connection:
 
     use_effect(establish_connection)
 
-The clean-up function will be run before the element is unmounted or, before the next
-effect is triggered when the element re-renders. You can
+The clean-up function will be run before the component is unmounted or, before the next
+effect is triggered when the component re-renders. You can
 :ref:`conditionally fire events <Conditional Effects>` to avoid triggering them each
-time an element renders.
+time a component renders.
 
 
 Conditional Effects
@@ -217,7 +217,7 @@ We can rework the :ref:`Functional Updates` counter example to use ``use_reducer
 .. note::
 
     The identity of the ``dispatch_action`` function is guaranteed to be preserved
-    across re-renders throughout the lifetime of the element. This means it can safely
+    across re-renders throughout the lifetime of the component. This means it can safely
     be omited from dependency lists in :ref:`use_effect` or :ref:`use_callback`.
 
 
@@ -230,7 +230,7 @@ use_callback
 
 A derivative of :ref:`use_memo`, the ``use_callback`` hook teturns a
 `memoized <memoization>`_ callback. This is useful when passing callbacks to child
-elements which check reference equality to prevent unnecessary renders. The of
+components which check reference equality to prevent unnecessary renders. The of
 ``memoized_callback`` will only change when the given depdencies do.
 
 .. note::
@@ -287,11 +287,11 @@ use_ref
 Returns a mutable :class:`~idom.core.hooks.Ref` object that has a single
 :attr:`~idom.core.hooks.Ref.current` attribute that at first contains the
 ``initial_state``. The identity of the ``Ref`` object will be preserved for the lifetime
-of the element.
+of the component.
 
 A ``Ref`` is most useful if you need to incur side effects since updating its
-``.current`` attribute doesn't trigger a re-render of the element. You'll often use this
-hook alongside :ref:`use_effect` or in response to element event handlers.
+``.current`` attribute doesn't trigger a re-render of the component. You'll often use this
+hook alongside :ref:`use_effect` or in response to component event handlers.
 :ref:`The Game Snake` provides a good use case for ``use_ref``.
 
 
@@ -318,11 +318,11 @@ Only call in IDOM functions
 
 **Don't call hooks from regular Python functions.** Instead you should:
 
-- ✅ Call Hooks from an element's render function.
+- ✅ Call Hooks from a component's render function.
 
 - ✅ Call Hooks from another custom hook
 
-Following this rule ensures stateful logic for IDOM element is always clearly
+Following this rule ensures stateful logic for IDOM component is always clearly
 separated from the rest of your codebase.
 
 
@@ -341,14 +341,14 @@ Once installed running, ``flake8`` on your code will start catching errors. For 
 
 .. code-block:: bash
 
-    flake8 my_idom_elements.py
+    flake8 my_idom_components.py
 
 Might produce something like the following output:
 
 .. code-block:: text
 
-    ./my_idom_elements:10:8 ROH102 hook 'use_effect' used inside if statement
-    ./my_idom_elements:23:4 ROH102 hook 'use_state' used outside element or hook definition
+    ./my_idom_components:10:8 ROH102 hook 'use_effect' used inside if statement
+    ./my_idom_components:23:4 ROH102 hook 'use_state' used outside component or hook definition
 
 See the Flake8 docs for
 `more info <https://flake8.pycqa.org/en/latest/user/configuration.html>`__.

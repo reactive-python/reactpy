@@ -13,7 +13,7 @@ class GameState(enum.Enum):
     play = 3
 
 
-@idom.element
+@idom.component
 def GameView():
     game_state, set_game_state = idom.hooks.use_state(GameState.init)
 
@@ -40,7 +40,7 @@ class Direction(enum.Enum):
     ArrowRight = (1, 0)
 
 
-@idom.element
+@idom.component
 def GameLoop(grid_size, block_scale, set_game_state):
     # we `use_ref` here to capture the latest direction press without any delay
     direction = idom.hooks.use_ref(Direction.ArrowRight.value)

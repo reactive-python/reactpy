@@ -12,7 +12,7 @@ def reducer(count, action):
         raise ValueError(f"Unknown action '{action}'")
 
 
-@idom.element
+@idom.component
 def Counter():
     count, dispatch = idom.hooks.use_reducer(reducer, 0)
     return idom.html.div(

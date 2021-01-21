@@ -17,7 +17,7 @@ from typing import (
 from loguru import logger
 from jsonpatch import make_patch, apply_patch
 
-from .element import AbstractElement
+from .component import AbstractComponent
 from .events import EventHandler, EventTarget
 from .utils import HasAsyncResources, async_resource, CannotAccessResource
 from .hooks import LifeCycleHook
@@ -47,13 +47,13 @@ class LayoutEvent(NamedTuple):
     """A list of event data passed to the event handler."""
 
 
-class ElementState(NamedTuple):
+class ComponentState(NamedTuple):
     model: Dict[str, Any]
     path: str
-    element_id: int
-    element_obj: AbstractElement
+    component_id: int
+    component_obj: AbstractComponent
     event_handler_ids: Set[str]
-    child_elements_ids: List[int]
+    child_component_ids: List[int]
     life_cycle_hook: LifeCycleHook
 
 
@@ -64,18 +64,18 @@ class Layout(HasAsyncResources):
     if not hasattr(abc.ABC, "__weakref__"):  # pragma: no cover
         __slots__.append("__weakref__")
 
-    def __init__(self, root: "AbstractElement") -> None:
+    def __init__(self, root: "AbstractComponent") -> None:
         super().__init__()
-        if not isinstance(root, AbstractElement):
-            raise TypeError("Expected an AbstractElement, not %r" % root)
+        if not isinstance(root, AbstractComponent):
+            raise TypeError("Expected an AbstractComponent, not %r" % root)
         self.root = root
         self._event_handlers: Dict[str, EventHandler] = {}
 
-    def update(self, element: "AbstractElement") -> None:
+    def update(self, component: "AbstractComponent") -> None:
         try:
-            self._rendering_queue.put(element)
+            self._rendering_queue.put(component)
         except CannotAccessResource:
-            logger.info(f"Did not update {element} - resources of {self} are closed")
+            logger.info(f"Did not update {component} - resources of {self} are closed")
 
     async def dispatch(self, event: LayoutEvent) -> None:
         # It is possible for an element in the frontend to produce an event
@@ -88,94 +88,94 @@ class Layout(HasAsyncResources):
 
     async def render(self) -> LayoutUpdate:
         while True:
-            element = await self._rendering_queue.get()
-            if self._has_element_state(element):
-                return self._create_layout_update(element)
+            component = await self._rendering_queue.get()
+            if self._has_component_state(component):
+                return self._create_layout_update(component)
 
     @async_resource
-    async def _rendering_queue(self) -> AsyncIterator["_ElementQueue"]:
-        queue = _ElementQueue()
+    async def _rendering_queue(self) -> AsyncIterator["_ComponentQueue"]:
+        queue = _ComponentQueue()
         queue.put(self.root)
         yield queue
 
     @async_resource
-    async def _element_states(self) -> AsyncIterator[Dict[int, ElementState]]:
-        root_element_state = self._create_element_state(self.root, "", save=False)
+    async def _component_states(self) -> AsyncIterator[Dict[int, ComponentState]]:
+        root_component_state = self._create_component_state(self.root, "", save=False)
         try:
-            yield {root_element_state.element_id: root_element_state}
+            yield {root_component_state.component_id: root_component_state}
         finally:
-            self._delete_element_state(root_element_state)
+            self._delete_component_state(root_component_state)
 
-    def _create_layout_update(self, element: AbstractElement) -> LayoutUpdate:
-        element_state = self._get_element_state(element)
+    def _create_layout_update(self, component: AbstractComponent) -> LayoutUpdate:
+        component_state = self._get_component_state(component)
 
-        element_state.life_cycle_hook.element_will_render()
+        component_state.life_cycle_hook.component_will_render()
 
-        for state in self._iter_element_states_from_root(
-            element_state,
+        for state in self._iter_component_states_from_root(
+            component_state,
             include_root=False,
         ):
-            state.life_cycle_hook.element_will_unmount()
+            state.life_cycle_hook.component_will_unmount()
 
-        self._clear_element_state_event_handlers(element_state)
-        self._delete_element_state_children(element_state)
+        self._clear_component_state_event_handlers(component_state)
+        self._delete_component_state_children(component_state)
 
-        old_model = element_state.model.copy()  # we copy because it will be mutated
-        new_model = self._render_element(element_state)
+        old_model = component_state.model.copy()  # we copy because it will be mutated
+        new_model = self._render_component(component_state)
         changes = make_patch(old_model, new_model).patch
 
-        for state in self._iter_element_states_from_root(
-            element_state,
+        for state in self._iter_component_states_from_root(
+            component_state,
             include_root=True,
         ):
-            state.life_cycle_hook.element_did_render()
+            state.life_cycle_hook.component_did_render()
 
-        return LayoutUpdate(path=element_state.path, changes=changes)
+        return LayoutUpdate(path=component_state.path, changes=changes)
 
-    def _render_element(self, element_state: ElementState) -> Dict[str, Any]:
+    def _render_component(self, component_state: ComponentState) -> Dict[str, Any]:
         try:
-            element_state.life_cycle_hook.set_current()
+            component_state.life_cycle_hook.set_current()
             try:
-                raw_model = element_state.element_obj.render()
+                raw_model = component_state.component_obj.render()
             finally:
-                element_state.life_cycle_hook.unset_current()
+                component_state.life_cycle_hook.unset_current()
 
-            if isinstance(raw_model, AbstractElement):
+            if isinstance(raw_model, AbstractComponent):
                 raw_model = {"tagName": "div", "children": [raw_model]}
 
-            resolved_model = self._render_model(element_state, raw_model)
-            element_state.model.clear()
-            element_state.model.update(resolved_model)
+            resolved_model = self._render_model(component_state, raw_model)
+            component_state.model.clear()
+            component_state.model.update(resolved_model)
         except Exception as error:
-            logger.exception(f"Failed to render {element_state.element_obj}")
-            element_state.model.update({"tagName": "div", "__error__": str(error)})
+            logger.exception(f"Failed to render {component_state.component_obj}")
+            component_state.model.update({"tagName": "div", "__error__": str(error)})
 
-        # We need to return the model from the `element_state` so that the model
-        # between all `ElementState` objects within a `Layout` are shared.
-        return element_state.model
+        # We need to return the model from the `component_state` so that the model
+        # between all `ComponentState` objects within a `Layout` are shared.
+        return component_state.model
 
     def _render_model(
         self,
-        element_state: ElementState,
+        component_state: ComponentState,
         model: Mapping[str, Any],
         path: Optional[str] = None,
     ) -> Dict[str, Any]:
         if path is None:
-            path = element_state.path
+            path = component_state.path
 
         serialized_model: Dict[str, Any] = {}
-        event_handlers = self._render_model_event_targets(element_state, model)
+        event_handlers = self._render_model_event_targets(component_state, model)
         if event_handlers:
             serialized_model["eventHandlers"] = event_handlers
         if "children" in model:
             serialized_model["children"] = self._render_model_children(
-                element_state, model["children"], path
+                component_state, model["children"], path
             )
         return {**model, **serialized_model}
 
     def _render_model_children(
         self,
-        element_state: ElementState,
+        component_state: ComponentState,
         children: Union[List[Any], Tuple[Any, ...]],
         path: str,
     ) -> List[Any]:
@@ -186,19 +186,19 @@ class Layout(HasAsyncResources):
             if isinstance(child, dict):
                 child_path = f"{path}/children/{index}"
                 resolved_children.append(
-                    self._render_model(element_state, child, child_path)
+                    self._render_model(component_state, child, child_path)
                 )
-            elif isinstance(child, AbstractElement):
+            elif isinstance(child, AbstractComponent):
                 child_path = f"{path}/children/{index}"
-                child_state = self._create_element_state(child, child_path, save=True)
-                resolved_children.append(self._render_element(child_state))
-                element_state.child_elements_ids.append(id(child))
+                child_state = self._create_component_state(child, child_path, save=True)
+                resolved_children.append(self._render_component(child_state))
+                component_state.child_component_ids.append(id(child))
             else:
                 resolved_children.append(str(child))
         return resolved_children
 
     def _render_model_event_targets(
-        self, element_state: ElementState, model: Mapping[str, Any]
+        self, component_state: ComponentState, model: Mapping[str, Any]
     ) -> Dict[str, EventTarget]:
         handlers: Dict[str, EventHandler] = {}
         if "eventHandlers" in model:
@@ -215,94 +215,97 @@ class Layout(HasAsyncResources):
                         handlers[k] = h
 
         event_handlers_by_id = {h.id: h for h in handlers.values()}
-        element_state.event_handler_ids.clear()
-        element_state.event_handler_ids.update(event_handlers_by_id)
+        component_state.event_handler_ids.clear()
+        component_state.event_handler_ids.update(event_handlers_by_id)
         self._event_handlers.update(event_handlers_by_id)
 
         return {e: h.serialize() for e, h in handlers.items()}
 
-    def _get_element_state(self, element: AbstractElement) -> ElementState:
-        return self._element_states[id(element)]
+    def _get_component_state(self, component: AbstractComponent) -> ComponentState:
+        return self._component_states[id(component)]
 
-    def _has_element_state(self, element: AbstractElement) -> bool:
-        return id(element) in self._element_states
+    def _has_component_state(self, component: AbstractComponent) -> bool:
+        return id(component) in self._component_states
 
-    def _create_element_state(
+    def _create_component_state(
         self,
-        element: AbstractElement,
+        component: AbstractComponent,
         path: str,
         save: bool,
-    ) -> ElementState:
-        element_id = id(element)
-        state = ElementState(
+    ) -> ComponentState:
+        component_id = id(component)
+        state = ComponentState(
             model={},
             path=path,
-            element_id=element_id,
-            element_obj=element,
+            component_id=component_id,
+            component_obj=component,
             event_handler_ids=set(),
-            child_elements_ids=[],
-            life_cycle_hook=LifeCycleHook(element, self.update),
+            child_component_ids=[],
+            life_cycle_hook=LifeCycleHook(component, self.update),
         )
         if save:
-            self._element_states[element_id] = state
+            self._component_states[component_id] = state
         return state
 
-    def _delete_element_state(self, element_state: ElementState) -> None:
-        self._clear_element_state_event_handlers(element_state)
-        self._delete_element_state_children(element_state)
-        del self._element_states[element_state.element_id]
+    def _delete_component_state(self, component_state: ComponentState) -> None:
+        self._clear_component_state_event_handlers(component_state)
+        self._delete_component_state_children(component_state)
+        del self._component_states[component_state.component_id]
 
-    def _clear_element_state_event_handlers(self, element_state: ElementState) -> None:
-        for handler_id in element_state.event_handler_ids:
+    def _clear_component_state_event_handlers(
+        self, component_state: ComponentState
+    ) -> None:
+        for handler_id in component_state.event_handler_ids:
             del self._event_handlers[handler_id]
-        element_state.event_handler_ids.clear()
+        component_state.event_handler_ids.clear()
 
-    def _delete_element_state_children(self, element_state: ElementState) -> None:
-        for e_id in element_state.child_elements_ids:
-            self._delete_element_state(self._element_states[e_id])
-        element_state.child_elements_ids.clear()
+    def _delete_component_state_children(self, component_state: ComponentState) -> None:
+        for e_id in component_state.child_component_ids:
+            self._delete_component_state(self._component_states[e_id])
+        component_state.child_component_ids.clear()
 
-    def _iter_element_states_from_root(
+    def _iter_component_states_from_root(
         self,
-        root_element_state: ElementState,
+        root_component_state: ComponentState,
         include_root: bool,
-    ) -> Iterator[ElementState]:
+    ) -> Iterator[ComponentState]:
         if include_root:
-            pending = [root_element_state]
+            pending = [root_component_state]
         else:
             pending = [
-                self._element_states[i] for i in root_element_state.child_elements_ids
+                self._component_states[i]
+                for i in root_component_state.child_component_ids
             ]
 
         while pending:
-            visited_element_state = pending.pop(0)
-            yield visited_element_state
+            visited_component_state = pending.pop(0)
+            yield visited_component_state
             pending.extend(
-                self._element_states[i]
-                for i in visited_element_state.child_elements_ids
+                self._component_states[i]
+                for i in visited_component_state.child_component_ids
             )
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.root})"
 
 
-class _ElementQueue:
+class _ComponentQueue:
 
     __slots__ = "_loop", "_queue", "_pending"
 
     def __init__(self) -> None:
         self._loop = asyncio.get_event_loop()
-        self._queue: "asyncio.Queue[AbstractElement]" = asyncio.Queue()
+        self._queue: "asyncio.Queue[AbstractComponent]" = asyncio.Queue()
         self._pending: Set[int] = set()
 
-    def put(self, element: AbstractElement) -> None:
-        element_id = id(element)
-        if element_id not in self._pending:
-            self._pending.add(element_id)
-            self._loop.call_soon_threadsafe(self._queue.put_nowait, element)
+    def put(self, component: AbstractComponent) -> None:
+        component_id = id(component)
+        if component_id not in self._pending:
+            self._pending.add(component_id)
+            self._loop.call_soon_threadsafe(self._queue.put_nowait, component)
         return None
 
-    async def get(self) -> AbstractElement:
-        element = await self._queue.get()
-        self._pending.remove(id(element))
-        return element
+    async def get(self) -> AbstractComponent:
+        component = await self._queue.get()
+        self._pending.remove(id(component))
+        return component

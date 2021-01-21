@@ -26,7 +26,7 @@ def test_shared_client_state(create_driver, mount, server_mount_point):
     driver_2 = create_driver()
     was_garbage_collected = Event()
 
-    @idom.element
+    @idom.component
     def IncrCounter(count=0):
         count, set_count = idom.hooks.use_state(count)
 
@@ -40,10 +40,10 @@ def test_shared_client_state(create_driver, mount, server_mount_point):
 
         return idom.html.div(button, Counter(count))
 
-    @idom.element
+    @idom.component
     def Counter(count):
-        element = idom.hooks.current_hook().element
-        finalize(element, was_garbage_collected.set)
+        component = idom.hooks.current_hook().component
+        finalize(component, was_garbage_collected.set)
         return idom.html.div({"id": f"count-is-{count}"}, count)
 
     mount(IncrCounter)

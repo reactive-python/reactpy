@@ -1,17 +1,17 @@
 from typing import TypeVar, Any, Callable, Tuple, Dict, Set
 
 from idom.core import hooks
-from idom.core.element import ElementConstructor, element
+from idom.core.component import ComponentConstructor, component
 from idom.utils import Ref
 
 
-MountFunc = Callable[[ElementConstructor], None]
+MountFunc = Callable[[ComponentConstructor], None]
 
 
-def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
-    """Swap out elements from a layout on the fly.
+def hotswap(shared: bool = False) -> Tuple[MountFunc, ComponentConstructor]:
+    """Swap out components from a layout on the fly.
 
-    Since you can't change the element functions used to create a layout
+    Since you can't change the component functions used to create a layout
     in an imperative manner, you can use ``hotswap`` to do this so
     long as you set things up ahead of time.
 
@@ -26,7 +26,7 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
             show, root = idom.hotswap()
             PerClientState(root).daemon("localhost", 8765)
 
-            @idom.element
+            @idom.component
             def DivOne(self):
                 return {"tagName": "div", "children": [1]}
 
@@ -34,7 +34,7 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
 
             # displaying the output now will show DivOne
 
-            @idom.element
+            @idom.component
             def DivTwo(self):
                 return {"tagName": "div", "children": [2]}
 
@@ -47,7 +47,7 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
     if shared:
         set_constructor_callbacks: Set[Callable[[Callable[[], Any]], None]] = set()
 
-        @element
+        @component
         def HotSwap() -> Any:
             # new displays will adopt the latest constructor and arguments
             constructor, set_constructor = _use_callable(constructor_ref.current)
@@ -70,7 +70,7 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ElementConstructor]:
 
     else:
 
-        @element
+        @component
         def HotSwap() -> Any:
             return constructor_ref.current()
 
@@ -92,10 +92,10 @@ def _use_callable(initial_func: _FuncVar) -> Tuple[_FuncVar, Callable[[_Func], N
     return state[0], lambda new: state[1](lambda old: new)
 
 
-def multiview() -> Tuple["MultiViewMount", ElementConstructor]:
-    """Dynamically add elements to a layout on the fly
+def multiview() -> Tuple["MultiViewMount", ComponentConstructor]:
+    """Dynamically add components to a layout on the fly
 
-    Since you can't change the element functions used to create a layout
+    Since you can't change the component functions used to create a layout
     in an imperative manner, you can use ``multiview`` to do this so
     long as you set things up ahead of time.
 
@@ -110,7 +110,7 @@ def multiview() -> Tuple["MultiViewMount", ElementConstructor]:
 
             define, root = idom.widgets.multiview()
 
-            @element
+            @component
             def Hello(self, phrase):
                 return idom.html.h1(["hello " + phrase])
 
@@ -126,9 +126,9 @@ def multiview() -> Tuple["MultiViewMount", ElementConstructor]:
 
         Refer to :func:`idom.server.imperative_server_mount` for a reference usage.
     """
-    views: Dict[str, ElementConstructor] = {}
+    views: Dict[str, ComponentConstructor] = {}
 
-    @element
+    @component
     def MultiView(view_id: str) -> Any:
         return views[view_id]()
 
@@ -139,21 +139,21 @@ class MultiViewMount:
 
     __slots__ = "_next_auto_id", "_views"
 
-    def __init__(self, views: Dict[str, ElementConstructor]):
+    def __init__(self, views: Dict[str, ComponentConstructor]):
         self._next_auto_id = 0
         self._views = views
 
     def remove(self, view_id: str) -> None:
         del self._views[view_id]
 
-    def __getitem__(self, view_id: str) -> Callable[[ElementConstructor], str]:
-        def mount(constructor: ElementConstructor) -> str:
+    def __getitem__(self, view_id: str) -> Callable[[ComponentConstructor], str]:
+        def mount(constructor: ComponentConstructor) -> str:
             self._views[view_id] = constructor
             return view_id
 
         return mount
 
-    def __call__(self, constructor: ElementConstructor) -> str:
+    def __call__(self, constructor: ComponentConstructor) -> str:
         self._next_auto_id += 1
         view_id = str(self._next_auto_id)
         self._views[view_id] = constructor

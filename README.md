@@ -50,7 +50,7 @@ IDOM can be used to create a simple slideshow which changes whenever a user clic
 ```python
 import idom
 
-@idom.element
+@idom.component
 def Slideshow():
     index, set_index = idom.hooks.use_state(0)
     url = f"https://picsum.photos/800/300?image={index}"

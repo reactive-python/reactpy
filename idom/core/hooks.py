@@ -22,7 +22,7 @@ from loguru import logger
 
 from idom.utils import Ref
 
-from .element import AbstractElement
+from .component import AbstractComponent
 
 
 __all__ = [
@@ -362,14 +362,14 @@ class _EventEffects(NamedTuple):
 
 
 class LifeCycleHook:
-    """Defines the life cycle of a layout element.
+    """Defines the life cycle of a layout component.
 
-    Elements can request access to their own life cycle events and state, while layouts
+    Components can request access to their own life cycle events and state, while layouts
     drive the life cycle forward by triggering events.
     """
 
     __slots__ = (
-        "element",
+        "component",
         "_schedule_render_callback",
         "_schedule_render_later",
         "_current_state_index",
@@ -382,10 +382,10 @@ class LifeCycleHook:
 
     def __init__(
         self,
-        element: AbstractElement,
-        schedule_render: Callable[[AbstractElement], None],
+        component: AbstractComponent,
+        schedule_render: Callable[[AbstractComponent], None],
     ) -> None:
-        self.element = element
+        self.component = component
         self._schedule_render_callback = schedule_render
         self._schedule_render_later = False
         self._is_rendering = False
@@ -416,18 +416,18 @@ class LifeCycleHook:
         for e in events.split():
             getattr(self._event_effects, e).append(function)
 
-    def element_will_render(self) -> None:
-        """The element is about to render"""
+    def component_will_render(self) -> None:
+        """The component is about to render"""
         self._is_rendering = True
         self._event_effects.will_unmount.clear()
 
-    def element_did_render(self) -> None:
-        """The element completed a render"""
+    def component_did_render(self) -> None:
+        """The component completed a render"""
         for effect in self._event_effects.did_render:
             try:
                 effect()
             except Exception:
-                msg = f"Post-render effect {effect} failed for {self.element}"
+                msg = f"Post-render effect {effect} failed for {self.component}"
                 logger.exception(msg)
 
         self._event_effects.did_render.clear()
@@ -438,13 +438,13 @@ class LifeCycleHook:
         self._rendered_atleast_once = True
         self._current_state_index = 0
 
-    def element_will_unmount(self) -> None:
-        """The element is about to be removed from the layout"""
+    def component_will_unmount(self) -> None:
+        """The component is about to be removed from the layout"""
         for effect in self._event_effects.will_unmount:
             try:
                 effect()
             except Exception:
-                msg = f"Pre-unmount effect {effect} failed for {self.element}"
+                msg = f"Pre-unmount effect {effect} failed for {self.component}"
                 logger.exception(msg)
 
         self._event_effects.will_unmount.clear()
@@ -453,7 +453,7 @@ class LifeCycleHook:
         """Set this hook as the active hook in this thread
 
         This method is called by a layout before entering the render method
-        of this hook's associated element.
+        of this hook's associated component.
         """
         _current_life_cycle_hook[get_thread_id()] = self
 
@@ -464,4 +464,4 @@ class LifeCycleHook:
         del _current_life_cycle_hook[get_thread_id()]
 
     def _schedule_render(self) -> None:
-        self._schedule_render_callback(self.element)
+        self._schedule_render_callback(self.component)
