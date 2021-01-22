@@ -11,7 +11,7 @@ except _DistributionNotFound:  # pragma: no cover
 
 from .utils import Ref, html_to_vdom
 
-from .core.component import component, Component
+from .core.component import component, Component, AbstractComponent
 from .core.events import event, Events
 from .core.layout import Layout
 from .core.vdom import vdom, VdomDict
@@ -64,4 +64,5 @@ __all__ = [
     "widgets",
     "client",
     "install",
+    "AbstractComponent",
 ]
