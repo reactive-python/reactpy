@@ -13,20 +13,16 @@ from typing import (
     Union,
     NamedTuple,
     List,
-    TYPE_CHECKING,
     overload,
     cast,
 )
-from weakref import ref
-
 from typing_extensions import Protocol
 
 from loguru import logger
 
 from idom.utils import Ref
 
-if TYPE_CHECKING:  # pragma: no cover
-    from .component import AbstractComponent
+from .component import AbstractComponent
 
 
 __all__ = [
@@ -386,11 +382,10 @@ class LifeCycleHook:
 
     def __init__(
         self,
-        component: "AbstractComponent",
-        schedule_render: Callable[["AbstractComponent"], None],
+        component: AbstractComponent,
+        schedule_render: Callable[[AbstractComponent], None],
     ) -> None:
         self.component = component
-        component._life_cycle_hook = ref(self)
         self._schedule_render_callback = schedule_render
         self._schedule_render_later = False
         self._is_rendering = False
