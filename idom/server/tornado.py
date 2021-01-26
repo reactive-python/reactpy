@@ -3,7 +3,7 @@ import asyncio
 from threading import Event as ThreadEvent
 from urllib.parse import urljoin
 from asyncio import Queue as AsyncQueue
-from typing import Optional, Type, Any, List, Tuple, Dict
+from typing import Optional, Type, Any, List, Tuple, Dict, Union
 
 from tornado.web import Application, StaticFileHandler, RedirectHandler, RequestHandler
 from tornado.websocket import WebSocketHandler
@@ -49,9 +49,8 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
             "base_url": "",
             "serve_static_files": True,
             "redirect_root_to_index": True,
+            **(config or {}),  # type: ignore
         }
-        if config is not None:
-            new_config.update(config)
         return new_config
 
     def _default_application(self, config: Config) -> Application:
@@ -66,7 +65,7 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
         app.add_handlers(
             r".*",
             [
-                (urljoin(base_url, route_pattern),) + tuple(handler_info)
+                (urljoin(base_url, route_pattern),) + tuple(handler_info)  # type: ignore
                 for route_pattern, *handler_info in self._create_route_handlers(config)
             ],
         )
@@ -122,7 +121,7 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
         self._run_application(config, app, host, port, args, kwargs)
 
 
-class PerClientStateModelStreamHandler(WebSocketHandler):  # type: ignore
+class PerClientStateModelStreamHandler(WebSocketHandler):
     """A web-socket handler that serves up a new model stream to each new client"""
 
     _dispatcher_type: Type[AbstractDispatcher] = SingleViewDispatcher
@@ -132,7 +131,7 @@ class PerClientStateModelStreamHandler(WebSocketHandler):  # type: ignore
     def initialize(self, component_constructor: ComponentConstructor) -> None:
         self._component_constructor = component_constructor
 
-    async def open(self) -> None:
+    async def open(self, *args: str, **kwargs: str) -> None:
         message_queue: "AsyncQueue[str]" = AsyncQueue()
         query_params = {k: v[0].decode() for k, v in self.request.arguments.items()}
         dispatcher = self._dispatcher_type(
@@ -154,8 +153,10 @@ class PerClientStateModelStreamHandler(WebSocketHandler):  # type: ignore
         self._dispatcher_inst = dispatcher
         self._message_queue = message_queue
 
-    async def on_message(self, message: str) -> None:
-        await self._message_queue.put(message)
+    async def on_message(self, message: Union[str, bytes]) -> None:
+        await self._message_queue.put(
+            message if isinstance(message, str) else message.decode()
+        )
 
     def on_close(self) -> None:
         asyncio.ensure_future(self._dispatcher_inst.__aexit__(None, None, None))

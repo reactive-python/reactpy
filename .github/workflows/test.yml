@@ -25,4 +25,4 @@ jobs:
       - name: Install Python Dependencies
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
-        run: HEADLESS_BROWSER=1 nox
+        run: HEADLESS=1 nox

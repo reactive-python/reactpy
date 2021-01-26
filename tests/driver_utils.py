@@ -15,4 +15,4 @@ def no_such_element(driver: WebDriver, method: str, param: Any) -> bool:
     except NoSuchElementException:
         return True
     else:
-        raise False
+        return False

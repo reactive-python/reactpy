@@ -5,7 +5,7 @@ import htm
 from pyalect import DialectError, Dialect
 
 
-class HtmlDialectTranspiler(Dialect, name="html"):  # type: ignore
+class HtmlDialectTranspiler(Dialect, name="html"):
     """An HTML dialect transpiler for Python."""
 
     def __init__(self, filename: Optional[str] = None):
