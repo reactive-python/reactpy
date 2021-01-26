@@ -56,7 +56,7 @@ def run(
         server.register(app)
 
     run_server = server.run if not daemon else server.daemon
-    run_server(host, port, **(run_kwargs or {}))
+    run_server(host, port, **(run_kwargs or {}))  # type: ignore
 
     return server
 

@@ -50,16 +50,17 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
             server.stop(timeout)
 
     def _create_config(self, config: Optional[Config]) -> Config:
-        return Config(
-            {
-                "import_name": __name__,
-                "url_prefix": "",
-                "cors": False,
-                "serve_static_files": True,
-                "redirect_root_to_index": True,
-                **(config or {}),
-            }
-        )
+        new_config: Config = {
+            "import_name": __name__,
+            "url_prefix": "",
+            "cors": False,
+            "serve_static_files": True,
+            "redirect_root_to_index": True,
+        }
+        if config is not None:
+            # BUG: https://github.com/python/mypy/issues/6462
+            new_config.update(config)  # type: ignore
+        return new_config
 
     def _default_application(self, config: Config) -> Flask:
         return Flask(config["import_name"])

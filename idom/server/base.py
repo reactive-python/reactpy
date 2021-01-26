@@ -74,7 +74,7 @@ class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
         self._app = app
         return self
 
-    def wait_until_server_start(self, timeout: float = 3.0):
+    def wait_until_server_start(self, timeout: float = 3.0) -> None:
         """Block until the underlying application has started"""
         if not self._server_did_start.wait(timeout=timeout):
             raise RuntimeError(  # pragma: no cover

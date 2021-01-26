@@ -21,7 +21,7 @@ def server_mount_point(request):
     return ServerMountPoint(request.param, sync_views=True)
 
 
-def test_shared_client_state(create_driver, mount, server_mount_point):
+def test_shared_client_state(create_driver, server_mount_point):
     driver_1 = create_driver()
     driver_2 = create_driver()
     was_garbage_collected = Event()
@@ -46,7 +46,7 @@ def test_shared_client_state(create_driver, mount, server_mount_point):
         finalize(component, was_garbage_collected.set)
         return idom.html.div({"id": f"count-is-{count}"}, count)
 
-    mount(IncrCounter)
+    server_mount_point.mount(IncrCounter)
 
     driver_1.get(server_mount_point.url())
     driver_2.get(server_mount_point.url())
@@ -71,15 +71,17 @@ def test_shared_client_state(create_driver, mount, server_mount_point):
 
 
 def test_shared_client_state_server_does_not_support_per_client_parameters(
-    driver_get, last_server_error
+    driver_get, caplog
 ):
     driver_get({"per_client_param": 1})
 
-    error = last_server_error.current
+    for record in caplog.records:
+        if record.exc_info and isinstance(record.exc_info[1], ValueError):
+            assert "does not support per-client view parameters" in str(
+                record.exc_info[1]
+            )
+            break
+    else:
+        assert False, "did not log error"
 
-    assert error is not None
-
-    assert isinstance(error, ValueError)
-    assert "does not support per-client view parameters" in str(error)
-
-    last_server_error.current = None
+    caplog.clear()

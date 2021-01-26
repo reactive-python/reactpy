@@ -1,9 +1,7 @@
 from urllib.parse import urlunparse, urlencode
-from contextlib import contextmanager
 from typing import (
     Callable,
     Tuple,
-    Iterator,
     Type,
     Optional,
     Any,
@@ -20,7 +18,6 @@ from idom.server.utils import find_builtin_server_type
 from idom.server.base import AbstractRenderServer
 from idom.server.prefab import hotswap_server
 from idom.server.utils import find_available_port
-from idom.utils import Ref
 
 
 __all__ = [
@@ -55,7 +52,7 @@ _Server = TypeVar("_Server", bound=AnyRenderServer)
 
 class ServerMountPoint(Generic[_Mount, _Server]):
 
-    __slots__ = "server", "host", "port", "_mount", "__weakref__"
+    __slots__ = "server", "host", "port", "mount", "__weakref__"
 
     def __init__(
         self,
@@ -64,22 +61,14 @@ class ServerMountPoint(Generic[_Mount, _Server]):
         port: Optional[int] = None,
         server_config: Optional[Any] = None,
         run_kwargs: Optional[Dict[str, Any]] = None,
-        mount_and_server_constructor: "Callable[..., Tuple[_Mount, _Server]]" = hotswap_server,
+        mount_and_server_constructor: "Callable[..., Tuple[_Mount, _Server]]" = hotswap_server,  # type: ignore
         app: Optional[Any] = None,
         **other_options: Any,
     ):
         self.host = host
         self.port = port or find_available_port(host)
-        self._mount, server = mount_and_server_constructor(
-            (
-                server_type
-                if issubclass(server_type, _RenderServerWithLastError)
-                else type(
-                    server_type.__name__,
-                    (_RenderServerWithLastError, server_type),
-                    {"last_server_error_for_idom_testing": Ref(None)},
-                )
-            ),
+        self.mount, self.server = mount_and_server_constructor(
+            server_type,
             self.host,
             self.port,
             server_config,
@@ -87,9 +76,8 @@ class ServerMountPoint(Generic[_Mount, _Server]):
             app,
             **other_options,
         )
-        self.server = server
         # stop server once mount is done being used
-        finalize(self, server.stop)
+        finalize(self, self.server.stop)
 
     def url(self, path: str = "", query: Optional[Any] = None) -> str:
         return urlunparse(
@@ -102,25 +90,3 @@ class ServerMountPoint(Generic[_Mount, _Server]):
                 "",
             ]
         )
-
-    @contextmanager
-    def open_mount_function(self) -> Iterator[_Mount]:
-        self.server.last_server_error_for_idom_testing.current = None
-        try:
-            yield self._mount
-        finally:
-            if self.server.last_server_error_for_idom_testing.current is not None:
-                raise self.server.last_server_error_for_idom_testing.current  # pragma: no cover
-
-
-class _RenderServerWithLastError(AnyRenderServer):
-    """A server that updates the ``last_server_error`` fixture"""
-
-    last_server_error_for_idom_testing: Ref[Optional[Exception]]
-
-    async def _run_dispatcher(self, *args: Any, **kwargs: Any) -> None:
-        self.last_server_error_for_idom_testing.current = None
-        try:
-            await super()._run_dispatcher(*args, **kwargs)
-        except Exception as e:
-            self.last_server_error_for_idom_testing.current = e

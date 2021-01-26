@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 from asyncio import Queue as AsyncQueue
 from typing import Optional, Type, Any, List, Tuple, Dict
 
-from tornado.web import Application, StaticFileHandler, RedirectHandler
+from tornado.web import Application, StaticFileHandler, RedirectHandler, RequestHandler
 from tornado.websocket import WebSocketHandler
 from tornado.platform.asyncio import AsyncIOMainLoop
 from typing_extensions import TypedDict
@@ -18,7 +18,10 @@ from idom.client.manage import BUILD_DIR
 from .base import AbstractRenderServer
 
 
-class Config(TypedDict):
+_RouteHandlerSpecs = List[Tuple[str, Type[RequestHandler], Any]]
+
+
+class Config(TypedDict, total=False):
     """Render server config for :class:`TornadoRenderServer` subclasses"""
 
     base_url: str
@@ -31,7 +34,7 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
 
     _model_stream_handler_type: Type[WebSocketHandler]
 
-    def stop(self):
+    def stop(self) -> None:
         try:
             loop = self._loop
         except AttributeError:  # pragma: no cover
@@ -42,14 +45,14 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
             loop.call_soon_threadsafe(self._loop.stop)
 
     def _create_config(self, config: Optional[Config]) -> Config:
-        return Config(
-            {
-                "base_url": "",
-                "serve_static_files": True,
-                "redirect_root_to_index": True,
-                **(config or {}),
-            }
-        )
+        new_config: Config = {
+            "base_url": "",
+            "serve_static_files": True,
+            "redirect_root_to_index": True,
+        }
+        if config is not None:
+            new_config.update(config)
+        return new_config
 
     def _default_application(self, config: Config) -> Application:
         return Application()
@@ -73,8 +76,8 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
     ) -> None:
         pass
 
-    def _create_route_handlers(self, config: Config) -> List[Tuple[Any, ...]]:
-        handlers = [
+    def _create_route_handlers(self, config: Config) -> _RouteHandlerSpecs:
+        handlers: _RouteHandlerSpecs = [
             (
                 "/stream",
                 self._model_stream_handler_type,
@@ -119,18 +122,18 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
         self._run_application(config, app, host, port, args, kwargs)
 
 
-class PerClientStateModelStreamHandler(WebSocketHandler):
+class PerClientStateModelStreamHandler(WebSocketHandler):  # type: ignore
     """A web-socket handler that serves up a new model stream to each new client"""
 
     _dispatcher_type: Type[AbstractDispatcher] = SingleViewDispatcher
     _dispatcher_inst: AbstractDispatcher
-    _message_queue: AsyncQueue
+    _message_queue: "AsyncQueue[str]"
 
     def initialize(self, component_constructor: ComponentConstructor) -> None:
         self._component_constructor = component_constructor
 
-    async def open(self):
-        message_queue = AsyncQueue()
+    async def open(self) -> None:
+        message_queue: "AsyncQueue[str]" = AsyncQueue()
         query_params = {k: v[0].decode() for k, v in self.request.arguments.items()}
         dispatcher = self._dispatcher_type(
             Layout(self._component_constructor(**query_params))
@@ -154,7 +157,7 @@ class PerClientStateModelStreamHandler(WebSocketHandler):
     async def on_message(self, message: str) -> None:
         await self._message_queue.put(message)
 
-    def on_close(self):
+    def on_close(self) -> None:
         asyncio.ensure_future(self._dispatcher_inst.__aexit__(None, None, None))
 
 
