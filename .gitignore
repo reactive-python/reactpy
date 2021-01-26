@@ -21,6 +21,7 @@ dist
 __pycache__/
 *.py[cod]
 .tox
+.nox
 pip-wheel-metadata
 
 # --- PyEnv ---
