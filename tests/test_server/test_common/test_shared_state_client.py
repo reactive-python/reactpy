@@ -18,7 +18,8 @@ from idom.testing import ServerMountPoint
     ids=lambda cls: f"{cls.__module__}.{cls.__name__}",
 )
 def server_mount_point(request):
-    return ServerMountPoint(request.param, sync_views=True)
+    with ServerMountPoint(request.param, sync_views=True) as mount_point:
+        yield mount_point
 
 
 def test_shared_client_state(create_driver, server_mount_point):
@@ -71,17 +72,13 @@ def test_shared_client_state(create_driver, server_mount_point):
 
 
 def test_shared_client_state_server_does_not_support_per_client_parameters(
-    driver_get, caplog
+    driver_get,
+    server_mount_point,
 ):
     driver_get({"per_client_param": 1})
 
-    for record in caplog.records:
-        if record.exc_info and isinstance(record.exc_info[1], ValueError):
-            assert "does not support per-client view parameters" in str(
-                record.exc_info[1]
-            )
-            break
-    else:
-        assert False, "did not log error"
-
-    caplog.clear()
+    server_mount_point.assert_logged_exception(
+        ValueError,
+        "does not support per-client view parameters",
+        clear_after=True,
+    )

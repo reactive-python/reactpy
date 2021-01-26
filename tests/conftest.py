@@ -67,7 +67,8 @@ def server_mount_point():
 
     The ``mount`` and ``server`` fixtures use this.
     """
-    return ServerMountPoint(server_config={"cors": True})
+    with ServerMountPoint(server_config={"cors": True}) as mount_point:
+        yield mount_point
 
 
 @pytest.fixture(scope="module")

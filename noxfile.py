@@ -9,7 +9,7 @@ BLACK_DEFAULT_EXCLUDE = r"\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.sv
 
 
 @nox.session
-def test_suite(session: Session) -> None:
+def test_python(session: Session) -> None:
     session.env.update(os.environ)
     session.install("-r", "requirements/test-env.txt")
     session.install(".[all]")
@@ -22,7 +22,8 @@ def test_suite(session: Session) -> None:
 @nox.session
 def check_types(session: Session) -> None:
     session.install("-r", "requirements/check-types.txt")
-    session.install(".[all]")
+    session.install("-r", "requirements/pkg-deps.txt")
+    session.install("-r", "requirements/pkg-extras.txt")
     session.run("mypy", "--strict", "idom")
 
 
