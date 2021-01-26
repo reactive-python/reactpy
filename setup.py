@@ -62,7 +62,7 @@ package["entry_points"] = {
 
 
 requirements = []
-with open(os.path.join(here, "requirements", "prod.txt"), "r") as f:
+with open(os.path.join(here, "requirements", "pkg-deps.txt"), "r") as f:
     for line in map(str.strip, f):
         if not line.startswith("#"):
             requirements.append(line)
@@ -70,7 +70,7 @@ package["install_requires"] = requirements
 
 _current_extras = []
 extra_requirements = {"all": []}  # type: ignore
-extra_requirements_path = os.path.join(here, "requirements", "extras.txt")
+extra_requirements_path = os.path.join(here, "requirements", "pkg-extras.txt")
 with open(extra_requirements_path, "r") as f:
     for line in map(str.strip, f):
         if line.startswith("#") and line[1:].strip().startswith("extra="):

@@ -1,4 +1,11 @@
--r requirements/prod.txt
--r requirements/dev.txt
--r requirements/docs.txt
--r requirements/extras.txt
+pre-commit
+twine
+wheel
+setuptools_scm
+-r requirements/build-docs.txt
+-r requirements/check-style.txt
+-r requirements/check-types.txt
+-r requirements/pkg-deps.txt
+-r requirements/pkg-extras.txt
+-r requirements/test-env.txt
+-r requirements/test-run.txt
