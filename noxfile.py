@@ -5,7 +5,7 @@ import nox
 from nox.sessions import Session
 
 
-HEADLESS_BROWSER = bool(int(os.environ.get("HEADLESS_BROWSER", "0")))
+HEADLESS = bool(int(os.environ.get("HEADLESS", "0")))
 BLACK_DEFAULT_EXCLUDE = r"\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist"
 
 
@@ -26,10 +26,8 @@ def test_with_coverage(session: Session) -> None:
 @nox.session
 def check_types(session: Session) -> None:
     session.install("-r", "requirements/check-types.txt")
-    session.log("Check Packages (strict)")
+    session.install(".[all]")
     session.run("mypy", "--strict", "idom")
-    session.log("Check Tests (lenient)")
-    session.run("mypy", "tests")
 
 
 @nox.session
@@ -60,7 +58,7 @@ def _test_setup(session: Session) -> None:
 
 def _test_run(session: Session, extra_args: Iterable[str] = ()) -> None:
     args = ["pytest", "tests"]
-    if HEADLESS_BROWSER:
+    if HEADLESS:
         args.append("--headless")
     args.extend(extra_args)
     session.run(*args)

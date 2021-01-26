@@ -101,7 +101,7 @@ If you prefer to run the tests using a headless browser:
 
 .. code-block:: bash
 
-    HEADLESS_BROWSER=1 nox
+    HEADLESS=1 nox
 
 
 Building The Documentation

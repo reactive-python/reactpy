@@ -48,9 +48,8 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
             "url_prefix": "",
             "serve_static_files": True,
             "redirect_root_to_index": True,
+            **(config or {}),  # type: ignore
         }
-        if config is not None:
-            new_config.update(config)
         return new_config
 
     def _default_application(self, config: Config) -> Sanic:

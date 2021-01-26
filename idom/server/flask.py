@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 from asyncio import Queue as AsyncQueue
 from threading import Event as ThreadEvent, Thread
 from queue import Queue as ThreadQueue
-from typing import Union, Tuple, Dict, Any, Optional, Callable, NamedTuple
+from typing import Union, Tuple, Dict, Any, Optional, Callable, NamedTuple, Type, cast
 
 from typing_extensions import TypedDict
 from flask import Flask, Blueprint, send_from_directory, redirect, url_for
@@ -17,7 +17,7 @@ from geventwebsocket.handler import WebSocketHandler
 
 import idom
 from idom.client.manage import BUILD_DIR
-from idom.core.layout import LayoutEvent, Layout
+from idom.core.layout import LayoutEvent, Layout, LayoutUpdate
 from idom.core.dispatcher import AbstractDispatcher, SingleViewDispatcher
 
 from .base import AbstractRenderServer
@@ -36,7 +36,7 @@ class Config(TypedDict, total=False):
 class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
     """Base class for render servers which use Flask"""
 
-    _dispatcher_type: AbstractDispatcher
+    _dispatcher_type: Type[AbstractDispatcher]
     _wsgi_server: pywsgi.WSGIServer
 
     def stop(self, timeout: Optional[float] = None) -> None:
@@ -56,10 +56,8 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
             "cors": False,
             "serve_static_files": True,
             "redirect_root_to_index": True,
+            **(config or {}),  # type: ignore
         }
-        if config is not None:
-            # BUG: https://github.com/python/mypy/issues/6462
-            new_config.update(config)  # type: ignore
         return new_config
 
     def _default_application(self, config: Config) -> Flask:
@@ -79,12 +77,12 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
 
         sockets = Sockets(app)
 
-        @sockets.route(urljoin(config["url_prefix"], "/stream"))
+        @sockets.route(urljoin(config["url_prefix"], "/stream"))  # type: ignore
         def model_stream(ws: WebSocket) -> None:
             def send(value: Any) -> None:
                 ws.send(json.dumps(value))
 
-            def recv() -> LayoutEvent:
+            def recv() -> Optional[LayoutEvent]:
                 event = ws.receive()
                 if event is not None:
                     return LayoutEvent(**json.loads(event))
@@ -104,20 +102,20 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
         if config["serve_static_files"]:
 
             @blueprint.route("/client/<path:path>")
-            def send_build_dir(path):
+            def send_build_dir(path: str) -> Any:
                 return send_from_directory(str(BUILD_DIR), path)
 
             if config["redirect_root_to_index"]:
 
                 @blueprint.route("/")
-                def redirect_to_index():
+                def redirect_to_index() -> Any:
                     return redirect(url_for("idom.send_build_dir", path="index.html"))
 
     def _setup_application_did_start_event(
         self, config: Config, app: Flask, event: ThreadEvent
     ) -> None:
         @app.before_first_request
-        def server_did_start():
+        def server_did_start() -> None:
             event.set()
 
     def _run_application(
@@ -149,8 +147,8 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
         port: int = 5000,
         debug: bool = False,
         *args: Any,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         if debug:
             logging.basicConfig(level=logging.DEBUG)  # pragma: no cover
         logging.debug("Starting server...")
@@ -180,12 +178,12 @@ def run_dispatcher_in_thread(
     dispatch_thread_info_created = ThreadEvent()
     dispatch_thread_info_ref: idom.Ref[Optional[_DispatcherThreadInfo]] = idom.Ref(None)
 
-    def run_dispatcher():
+    def run_dispatcher() -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        thread_send_queue = ThreadQueue()
-        async_recv_queue = AsyncQueue()
+        thread_send_queue: "ThreadQueue[LayoutUpdate]" = ThreadQueue()
+        async_recv_queue: "AsyncQueue[LayoutEvent]" = AsyncQueue()
 
         async def send_coro(value: Any) -> None:
             thread_send_queue.put(value)
@@ -193,7 +191,7 @@ def run_dispatcher_in_thread(
         async def recv_coro() -> Any:
             return await async_recv_queue.get()
 
-        async def main():
+        async def main() -> None:
             async with make_dispatcher() as dispatcher:
                 await dispatcher.run(send_coro, recv_coro, context)
 
@@ -212,12 +210,12 @@ def run_dispatcher_in_thread(
     Thread(target=run_dispatcher, daemon=True).start()
 
     dispatch_thread_info_created.wait()
-    dispatch_thread_info = dispatch_thread_info_ref.current
+    dispatch_thread_info = cast(_DispatcherThreadInfo, dispatch_thread_info_ref.current)
     assert dispatch_thread_info is not None
 
     stop = ThreadEvent()
 
-    def run_send():
+    def run_send() -> None:
         while not stop.is_set():
             send(dispatch_thread_info.thread_send_queue.get())
 
@@ -242,17 +240,19 @@ def run_dispatcher_in_thread(
 
 class _DispatcherThreadInfo(NamedTuple):
     dispatch_loop: asyncio.AbstractEventLoop
-    dispatch_future: asyncio.Future
-    thread_send_queue: ThreadQueue
-    async_recv_queue: AsyncQueue
+    dispatch_future: "asyncio.Future[Any]"
+    thread_send_queue: "ThreadQueue[LayoutUpdate]"
+    async_recv_queue: "AsyncQueue[LayoutEvent]"
 
 
-class _StartCallbackWSGIServer(pywsgi.WSGIServer):
-    def __init__(self, before_first_request: Callable[[], None], *args, **kwargs):
+class _StartCallbackWSGIServer(pywsgi.WSGIServer):  # type: ignore
+    def __init__(
+        self, before_first_request: Callable[[], None], *args: Any, **kwargs: Any
+    ) -> None:
         self._before_first_request_callback = before_first_request
         super().__init__(*args, **kwargs)
 
-    def update_environ(self):
+    def update_environ(self) -> None:
         """
         Called before the first request is handled to fill in WSGI environment values.
 
