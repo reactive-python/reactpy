@@ -20,7 +20,8 @@ from idom.server import (
     ids=lambda cls: f"{cls.__module__}.{cls.__name__}",
 )
 def server_mount_point(request):
-    return ServerMountPoint(request.param)
+    with ServerMountPoint(request.param) as mount_point:
+        yield mount_point
 
 
 def test_display_simple_hello_world(driver, display):

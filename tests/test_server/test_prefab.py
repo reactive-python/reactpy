@@ -10,10 +10,11 @@ from tests.driver_utils import no_such_element
 
 @pytest.fixture
 def server_mount_point():
-    return ServerMountPoint(
+    with ServerMountPoint(
         find_builtin_server_type("PerClientStateServer"),
         mount_and_server_constructor=multiview_server,
-    )
+    ) as mount_point:
+        yield mount_point
 
 
 def test_multiview_server(driver_get, driver, server_mount_point):
@@ -35,3 +36,5 @@ def test_multiview_server(driver_get, driver, server_mount_point):
 
     assert no_such_element(driver, "id", "e1")
     assert no_such_element(driver, "id", "e2")
+
+    server_mount_point.log_records.clear()
