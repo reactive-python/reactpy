@@ -72,13 +72,13 @@ simply run the following to re-evaluate the ``package.json``:
 Running The Tests
 -----------------
 
-The test suite for IDOM is executed using Tox_ and covers:
+The test suite for IDOM is executed using Nox_ and covers:
 
-1. Server-side Python code using PyTest_
+1. Server-side Python code with PyTest_
 
 2. The end-to-end application using Selenium_
 
-3. (`Coming soon <https://github.com/rmorshea/idom/issues/195>`_) Client side Javascript code
+3. (`Coming soon <https://github.com/idom-team/idom/issues/195>`_) Client side Javascript code
 
 To run the full suite of tests you'll need to install:
 
@@ -95,19 +95,13 @@ run:
 
 .. code-block:: bash
 
-    tox --factor py38
-
-.. note::
-
-    You can substitute ``py38`` for your prefered Python version, however only
-    a subset of the tests are configured to run on versions besides 3.8
-
+    nox
 
 If you prefer to run the tests using a headless browser:
 
 .. code-block:: bash
 
-    tox --factor py38 -- --headless
+    HEADLESS_BROWSER=1 nox
 
 
 Building The Documentation
@@ -119,7 +113,7 @@ installed ``docker`` you'll need to build and then run a container with the serv
 .. code-block:: bash
 
     docker build . --file docs/Dockerfile --tag idom-docs:latest
-    docker run -p 5000:5000 -e DEBUG=true -it idom-docs:latest
+    docker run -it -p 5000:5000 -e DEBUG=true --rm idom-docs:latest
 
 You should then navigate to http://127.0.0.1:5000 to see the documentation.
 
@@ -137,4 +131,4 @@ You should then navigate to http://127.0.0.1:5000 to see the documentation.
 .. _pip: https://pypi.org/project/pip/
 .. _PyTest: pytest <https://docs.pytest.org
 .. _Selenium: https://www.seleniumhq.org/
-.. _Tox: https://tox.readthedocs.io/en/latest/
+.. _Nox: https://nox.thea.codes/en/stable/#

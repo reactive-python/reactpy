@@ -23,6 +23,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Python Dependencies
-        run: pip install -r requirements/ci.txt
+        run: pip install -r requirements/test-run.txt
       - name: Run Tests
-        run: TOX_PARALLEL_NO_SPINNER=1 tox --parallel -- --headless
+        run: HEADLESS_BROWSER=1 nox

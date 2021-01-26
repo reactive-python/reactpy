@@ -8,7 +8,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from .vdom import VdomDict  # noqa
 
 
-ComponentConstructor = Callable[..., "Component"]
+ComponentConstructor = Callable[..., "AbstractComponent"]
 ComponentRenderFunction = Callable[..., Union["AbstractComponent", "VdomDict"]]
 
 
