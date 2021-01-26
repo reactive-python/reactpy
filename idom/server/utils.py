@@ -24,7 +24,7 @@ def find_builtin_server_type(type_name: str) -> Type[Any]:
 
     for builtin_module in installed_builtin_modules:
         try:
-            return getattr(builtin_module, type_name)
+            return getattr(builtin_module, type_name)  # type: ignore
         except AttributeError:  # pragma: no cover
             pass
     else:  # pragma: no cover

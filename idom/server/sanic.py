@@ -28,7 +28,7 @@ class Config(TypedDict, total=False):
 
     cors: Union[bool, Dict[str, Any]]
     url_prefix: str
-    server_static_files: bool
+    serve_static_files: bool
     redirect_root_to_index: bool
 
 
@@ -43,15 +43,15 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
         self._loop.call_soon_threadsafe(self.application.stop)
 
     def _create_config(self, config: Optional[Config]) -> Config:
-        return Config(
-            {
-                "cors": False,
-                "url_prefix": "",
-                "serve_static_files": True,
-                "redirect_root_to_index": True,
-                **(config or {}),
-            }
-        )
+        new_config: Config = {
+            "cors": False,
+            "url_prefix": "",
+            "serve_static_files": True,
+            "redirect_root_to_index": True,
+        }
+        if config is not None:
+            new_config.update(config)
+        return new_config
 
     def _default_application(self, config: Config) -> Sanic:
         return Sanic()

@@ -26,7 +26,9 @@ def test_with_coverage(session: Session) -> None:
 @nox.session
 def check_types(session: Session) -> None:
     session.install("-r", "requirements/check-types.txt")
+    session.log("Check Packages (strict)")
     session.run("mypy", "--strict", "idom")
+    session.log("Check Tests (lenient)")
     session.run("mypy", "tests")
 
 

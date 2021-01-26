@@ -40,12 +40,14 @@ def pytest_addoption(parser: Parser) -> None:
 
 
 @pytest.fixture
-def display(driver, server_mount_point, mount):
+def display(driver, server_mount_point):
     display_id = idom.Ref(0)
 
     def mount_and_display(component_constructor, query=None, check_mount=True):
         component_id = f"display-{display_id.set_current(display_id.current + 1)}"
-        mount(lambda: idom.html.div({"id": component_id}, component_constructor()))
+        server_mount_point.mount(
+            lambda: idom.html.div({"id": component_id}, component_constructor())
+        )
         driver.get(server_mount_point.url(query=query))
         if check_mount:
             driver.find_element_by_id(component_id)
@@ -57,17 +59,6 @@ def display(driver, server_mount_point, mount):
 @pytest.fixture
 def driver_get(driver, server_mount_point):
     return lambda query=None: driver.get(server_mount_point.url(query=query))
-
-
-@pytest.fixture
-def mount(server_mount_point):
-    with server_mount_point.open_mount_function() as mount:
-        yield mount
-
-
-@pytest.fixture
-def last_server_error(server_mount_point):
-    return server_mount_point.server.last_server_error_for_idom_testing
 
 
 @pytest.fixture
@@ -115,11 +106,13 @@ def driver_is_headless(pytestconfig: Config):
 
 @pytest.fixture(autouse=True)
 def caplog(_caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
-
     handler_id = logger.add(_PropogateHandler(), format="{message}")
     yield _caplog
     logger.remove(handler_id)
-    assert not _caplog.record_tuples
+    for record in _caplog.records:
+        if record.exc_info:
+            raise record.exc_info[1]
+        assert record.levelno < logging.ERROR
 
 
 class _PropogateHandler(logging.Handler):
