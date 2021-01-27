@@ -31,7 +31,7 @@ RUN python -m idom install victory semantic-ui-react @material-ui/core
 ADD docs/main.py ./docs/
 ADD docs/source ./docs/source
 
-RUN pip install -r requirements/docs.txt
+RUN pip install -r requirements/build-docs.txt
 RUN sphinx-build -b html docs/source docs/build
 
 # Define Entrypoint
