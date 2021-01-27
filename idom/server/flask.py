@@ -1,14 +1,14 @@
 import json
 import asyncio
 import logging
-from urllib.parse import urljoin
 from asyncio import Queue as AsyncQueue
 from threading import Event as ThreadEvent, Thread
 from queue import Queue as ThreadQueue
+from urllib.parse import parse_qs as parse_query_string
 from typing import Union, Tuple, Dict, Any, Optional, Callable, NamedTuple, Type, cast
 
 from typing_extensions import TypedDict
-from flask import Flask, Blueprint, send_from_directory, redirect, url_for
+from flask import Flask, Blueprint, send_from_directory, redirect, url_for, request
 from flask_cors import CORS
 from flask_sockets import Sockets
 from geventwebsocket.websocket import WebSocket
@@ -77,7 +77,7 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
 
         sockets = Sockets(app)
 
-        @sockets.route(urljoin(config["url_prefix"], "/stream"))  # type: ignore
+        @sockets.route(_join_url_paths(config["url_prefix"], "/stream"))  # type: ignore
         def model_stream(ws: WebSocket) -> None:
             def send(value: Any) -> None:
                 ws.send(json.dumps(value))
@@ -89,9 +89,14 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
                 else:
                     return None
 
+            query_params = {
+                k: v if len(v) > 1 else v[0]
+                for k, v in parse_query_string(ws.environ["QUERY_STRING"]).items()
+            }
+
             run_dispatcher_in_thread(
                 lambda: self._dispatcher_type(
-                    Layout(self._root_component_constructor())
+                    Layout(self._root_component_constructor(**query_params))
                 ),
                 send,
                 recv,
@@ -109,7 +114,13 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
 
                 @blueprint.route("/")
                 def redirect_to_index() -> Any:
-                    return redirect(url_for("idom.send_build_dir", path="index.html"))
+                    return redirect(
+                        url_for(
+                            "idom.send_build_dir",
+                            path="index.html",
+                            **request.args,
+                        )
+                    )
 
     def _setup_application_did_start_event(
         self, config: Config, app: Flask, event: ThreadEvent
@@ -261,3 +272,9 @@ class _StartCallbackWSGIServer(pywsgi.WSGIServer):  # type: ignore
         super().update_environ()
         # BUG: for some reason coverage doesn't seem to think this line is covered
         self._before_first_request_callback()  # pragma: no cover
+
+
+def _join_url_paths(*args: str) -> str:
+    # urllib.parse.urljoin performs more logic than is needed. Thus we need a util func
+    # to join paths as if they were POSIX paths.
+    return "/".join(map(lambda x: str(x).rstrip("/"), filter(None, args)))

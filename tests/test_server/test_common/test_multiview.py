@@ -1,17 +1,31 @@
 import pytest
 
 import idom
-from idom.server.utils import find_builtin_server_type
 from idom.server.prefab import multiview_server
 from idom.testing import ServerMountPoint
+from idom.server import (
+    flask as idom_flask,
+    sanic as idom_sanic,
+    tornado as idom_tornado,
+)
+
 
 from tests.driver_utils import no_such_element
 
 
-@pytest.fixture
-def server_mount_point():
+@pytest.fixture(
+    params=[
+        # add new PerClientStateServer implementations here to
+        # run a suite of tests which check basic functionality
+        idom_sanic.PerClientStateServer,
+        idom_flask.PerClientStateServer,
+        idom_tornado.PerClientStateServer,
+    ],
+    ids=lambda cls: f"{cls.__module__}.{cls.__name__}",
+)
+def server_mount_point(request):
     with ServerMountPoint(
-        find_builtin_server_type("PerClientStateServer"),
+        request.param,
         mount_and_server_constructor=multiview_server,
     ) as mount_point:
         yield mount_point
