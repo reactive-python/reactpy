@@ -6,13 +6,11 @@ on:
     - cron: "0 0 * * *"
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+  test-on-linux:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.7, 3.8, 3.9]
-        os: [macos-latest, ubuntu-latest, windows-latest]
-
     steps:
       - uses: actions/checkout@v2
       - uses: nanasess/setup-chromedriver@master
@@ -26,4 +24,51 @@ jobs:
       - name: Install Python Dependencies
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
-        run: HEADLESS=1 nox
+        env:
+          HEADLESS: 1
+        run: |
+          pip install --upgrade pip
+          nox
+
+  test-on-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: nanasess/setup-chromedriver@master
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: "12"
+      - name: Use Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install Python Dependencies
+        run: pip install -r requirements/test-run.txt
+      - name: Run Tests
+        env:
+          HEADLESS: 1
+        run: |
+          pip install --upgrade pip
+          nox
+
+  test-on-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup ChromeDriver
+        run: nuget install Selenium.WebDriver.ChromeDriver -Version 88.0.4324.9600
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: "12"
+      - name: Use Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install Python Dependencies
+        run: pip install -r requirements/test-run.txt
+      - name: Run Tests
+        env:
+          HEADLESS: 1
+        run: |
+          pip install --upgrade pip wheel
+          nox
