@@ -67,6 +67,7 @@ jobs:
       - name: Install Python Dependencies
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
+        shell: bash
         env:
           HEADLESS: 1
         run: |
