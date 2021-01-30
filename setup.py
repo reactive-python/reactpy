@@ -5,6 +5,7 @@ import os
 import pipes
 import shutil
 import subprocess
+import traceback
 
 from setuptools import setup, find_packages
 from distutils import log
@@ -122,10 +123,19 @@ package["long_description_content_type"] = "text/markdown"
 def build_javascript_first(cls):
     class Command(cls):
         def run(self):
-            for cmd, *args in map(str.split, ["npm install", "npm run build"]):
-                cmd_args = [shutil.which(cmd)] + args
-                log.info(list2cmdline(cmd_args))
-                subprocess.check_call(cmd_args, cwd=os.path.join(root, "client", "app"))
+            log.info("Installing Javascript...")
+            try:
+                js_dir = os.path.join(root, "client", "app")
+                for cmd, *args in map(str.split, ["npm install", "npm run build"]):
+                    cmd_args = [shutil.which(cmd)] + args
+                    log.info(f"> {list2cmdline(cmd_args)}")
+                    subprocess.check_call(cmd_args, cwd=js_dir)
+            except Exception:
+                log.error("Failed to install Javascript")
+                log.error(traceback.format_exc())
+                raise
+            else:
+                log.info("Successfully installed Javascript")
             super().run()
 
     return Command
