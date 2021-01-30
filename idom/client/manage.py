@@ -35,7 +35,7 @@ def web_module_exists(package_name: str) -> bool:
 
 def web_module_names() -> Set[str]:
     return {
-        str(rel_pth).rstrip(".js")
+        str(rel_pth.as_posix()).rstrip(".js")
         for rel_pth in (
             pth.relative_to(WEB_MODULES_DIR) for pth in WEB_MODULES_DIR.glob("**/*.js")
         )
