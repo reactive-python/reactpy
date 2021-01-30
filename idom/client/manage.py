@@ -131,7 +131,9 @@ def _npm_run_build(cwd: Path) -> None:
 
 def _run_subprocess(args: List[str], cwd: Path) -> None:
     cmd, *args = args
-    cmd = shutil.which(cmd)
+    which_cmd = shutil.which(cmd)
+    if which_cmd is None:
+        raise RuntimeError(f"Failed to run command - {cmd!r} is not installed.")
     try:
         subprocess.run(
             [cmd] + args,

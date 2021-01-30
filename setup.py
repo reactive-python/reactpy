@@ -127,7 +127,12 @@ def build_javascript_first(cls):
             try:
                 js_dir = os.path.join(root, "client", "app")
                 for cmd, *args in map(str.split, ["npm install", "npm run build"]):
-                    cmd_args = [shutil.which(cmd)] + args
+                    which_cmd = shutil.which(cmd)
+                    if which_cmd is None:
+                        raise RuntimeError(
+                            f"Failed to run command - {cmd!r} is not installed."
+                        )
+                    cmd_args = [which_cmd] + args
                     log.info(f"> {list2cmdline(cmd_args)}")
                     subprocess.check_call(cmd_args, cwd=js_dir)
             except Exception:
