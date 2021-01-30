@@ -130,9 +130,15 @@ def _npm_run_build(cwd: Path) -> None:
 
 
 def _run_subprocess(args: List[str], cwd: Path) -> None:
+    cmd, *args = args
+    cmd = shutil.which(cmd)
     try:
         subprocess.run(
-            args, cwd=cwd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            [cmd] + args,
+            cwd=cwd,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
     except subprocess.CalledProcessError as error:  # pragma: no cover
         raise subprocess.SubprocessError(error.stderr.decode()) from error
