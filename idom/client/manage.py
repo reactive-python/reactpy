@@ -135,7 +135,9 @@ def _run_subprocess(args: List[str], cwd: Path) -> None:
     cmd, *args = args
     which_cmd = shutil.which(cmd)
     if which_cmd is None:
-        raise RuntimeError(f"Failed to run command - {cmd!r} is not installed.")
+        raise RuntimeError(  # pragma: no cover
+            f"Failed to run command - {cmd!r} is not installed."
+        )
     try:
         subprocess.run(
             [which_cmd] + args,
