@@ -21,7 +21,9 @@ WEB_MODULES_DIR = BUILD_DIR / "web_modules"
 
 def web_module_exports(package_name: str) -> List[str]:
     web_module_path(package_name, must_exist=True)
-    return find_js_module_exports_in_source(web_module_path(package_name).read_text())
+    return find_js_module_exports_in_source(
+        web_module_path(package_name).read_text(encoding="utf-8")
+    )
 
 
 def web_module_url(package_name: str) -> str:
@@ -136,7 +138,7 @@ def _run_subprocess(args: List[str], cwd: Path) -> None:
         raise RuntimeError(f"Failed to run command - {cmd!r} is not installed.")
     try:
         subprocess.run(
-            [cmd] + args,
+            [which_cmd] + args,
             cwd=cwd,
             check=True,
             stdout=subprocess.PIPE,
