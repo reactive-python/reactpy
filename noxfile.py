@@ -7,7 +7,7 @@ from nox.sessions import Session
 
 
 HEADLESS = bool(int(os.environ.get("HEADLESS", "0")))
-PIP_NO_PEP517 = bool(int(os.environ.get("PIP_NO_PEP517", "0")))
+NO_COVERAGE_CHECK = bool(int(os.environ.get("NO_COVERAGE_CHECK", "0")))
 BLACK_DEFAULT_EXCLUDE = r"\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist"
 
 
@@ -32,6 +32,8 @@ def test_python(session: Session) -> None:
     args = ["pytest", "tests"]
     if HEADLESS:
         args.append("--headless")
+    if NO_COVERAGE_CHECK:
+        args.append("--no-cov")
     session.run(*args)
 
 

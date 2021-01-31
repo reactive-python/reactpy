@@ -48,4 +48,5 @@ jobs:
       - name: Run Tests
         env:
           HEADLESS: 1
+          NO_COVERAGE_CHECK: 1
         run: nox
