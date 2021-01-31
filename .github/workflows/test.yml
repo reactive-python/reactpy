@@ -9,7 +9,6 @@ jobs:
   test-linux:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
         python-version: [3.7, 3.8, 3.9]
     steps:
@@ -31,6 +30,7 @@ jobs:
   test-other-systems:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ macos-latest, windows-latest ]
     steps:
