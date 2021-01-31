@@ -24,7 +24,7 @@ def pytest_collection_modifyitems(
     session: pytest.Session, config: pytest.config.Config, items: List[pytest.Item]
 ) -> None:
     _mark_coros_as_async_tests(items)
-    _xfail_driver_tests_on_windows(items)
+    _skip_web_driver_tests_on_windows(items)
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -147,7 +147,7 @@ def _mark_coros_as_async_tests(items: List[pytest.Item]) -> None:
                 item.add_marker(pytest.mark.asyncio)
 
 
-def _xfail_driver_tests_on_windows(items: List[pytest.Item]) -> None:
+def _skip_web_driver_tests_on_windows(items: List[pytest.Item]) -> None:
     if os.name == "nt":
         for item in items:
             if isinstance(item, pytest.Function):
@@ -155,7 +155,7 @@ def _xfail_driver_tests_on_windows(items: List[pytest.Item]) -> None:
                     item.fixturenames
                 ):
                     item.add_marker(
-                        pytest.mark.xfail(
+                        pytest.mark.skip(
                             reason="WebDriver tests are not working on Windows",
                         )
                     )
