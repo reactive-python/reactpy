@@ -1,6 +1,9 @@
+from __future__ import annotations
+
+import os
 import logging
 import inspect
-from typing import Any, Iterator, Iterable
+from typing import Iterator, List
 
 from loguru import logger
 import pytest
@@ -17,11 +20,11 @@ from idom.client import manage as manage_client
 from idom.testing import ServerMountPoint, create_simple_selenium_web_driver
 
 
-def pytest_collection_modifyitems(items: Iterable[Any]) -> None:
-    for item in items:
-        if isinstance(item, pytest.Function):
-            if inspect.iscoroutinefunction(item.function):
-                item.add_marker(pytest.mark.asyncio)
+def pytest_collection_modifyitems(
+    session: pytest.Session, config: pytest.config.Config, items: List[pytest.Item]
+) -> None:
+    _mark_coros_as_async_tests(items)
+    _xfail_driver_tests_on_windows(items)
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -135,3 +138,24 @@ def _restore_client(pytestconfig: Config) -> Iterator[None]:
         manage_client.restore()
     else:
         yield
+
+
+def _mark_coros_as_async_tests(items: List[pytest.Item]) -> None:
+    for item in items:
+        if isinstance(item, pytest.Function):
+            if inspect.iscoroutinefunction(item.function):
+                item.add_marker(pytest.mark.asyncio)
+
+
+def _xfail_driver_tests_on_windows(items: List[pytest.Item]) -> None:
+    if os.name == "nt":
+        for item in items:
+            if isinstance(item, pytest.Function):
+                if {"display", "driver", "create_driver"}.intersection(
+                    item.fixturenames
+                ):
+                    item.add_marker(
+                        pytest.mark.xfail(
+                            reason="WebDriver tests are not working on Windows",
+                        )
+                    )
