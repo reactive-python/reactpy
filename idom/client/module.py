@@ -88,12 +88,12 @@ class Module:
             )
             if check_exports:
                 self._export_names = manage.web_module_exports(url_or_name)
+        elif _is_url(url_or_name):
+            self.url = url_or_name
         elif manage.web_module_exists(url_or_name):
             self.url = manage.web_module_url(url_or_name)
             if check_exports:
                 self._export_names = manage.web_module_exports(url_or_name)
-        elif _is_url(url_or_name):
-            self.url = url_or_name
         else:
             raise ValueError(f"{url_or_name!r} is not installed or is not a URL")
         self.exports = {name: self.declare(name) for name in (self._export_names or [])}
