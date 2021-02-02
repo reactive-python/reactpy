@@ -15,13 +15,12 @@ Since it's likely a lot to take in at once, we'll break it down piece by piece:
     :linenos:
 
 The ``idom.component`` decorator creates a :ref:`Component <Stateful Components>` constructor
-whose render function is defined by the `asynchronous function`_ below it. To create
-a Component instance we call ``Slideshow()`` with the same arguments as its render
-function. The render function of a Component returns a data structure that depicts a
-user interface, or in more technical terms a Document Object Model (DOM). We call this
-structural representation of the DOM a `Virtual DOM`__ (VDOM) - a term familiar to those
-who work with `ReactJS`_. In the case of ``Slideshow`` it will return a VDOM
-representing an image which, when clicked, will change.
+whose which is "rendered" by the function below it. To create a Component instance we call
+``Slideshow()`` with the same arguments as its render function. The render function of a
+Component returns a data structure that depicts a user interface, or in more technical terms
+a Document Object Model (DOM). We call this structural representation of the DOM a
+`Virtual DOM`__ (VDOM) - a term familiar to those who work with `ReactJS`_. In the case of
+``Slideshow`` it will return a VDOM representing an image which, when clicked, will change.
 
 __ https://reactjs.org/docs/faq-internals.html#what-is-the-virtual-dom
 
@@ -92,6 +91,5 @@ websocket. To display the layout we can navigate to http://localhost:8765/client
 
 .. _VDOM event specification: https://github.com/nteract/vdom/blob/master/docs/event-spec.md
 .. _VDOM mimetype specification: https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md
-.. _asynchronous function: https://realpython.com/async-io-python/
 .. _ReactJS: https://reactjs.org/docs/faq-internals.html
 .. _React Hooks: https://reactjs.org/docs/hooks-overview.html
