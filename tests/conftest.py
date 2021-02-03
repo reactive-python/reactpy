@@ -148,14 +148,15 @@ def _mark_coros_as_async_tests(items: List[pytest.Item]) -> None:
 
 
 def _skip_web_driver_tests_on_windows(items: List[pytest.Item]) -> None:
-    if os.name == "nt":
-        for item in items:
-            if isinstance(item, pytest.Function):
-                if {"display", "driver", "create_driver"}.intersection(
-                    item.fixturenames
-                ):
-                    item.add_marker(
-                        pytest.mark.skip(
-                            reason="WebDriver tests are not working on Windows",
-                        )
-                    )
+    # if os.name == "nt":
+    #     for item in items:
+    #         if isinstance(item, pytest.Function):
+    #             if {"display", "driver", "create_driver"}.intersection(
+    #                 item.fixturenames
+    #             ):
+    #                 item.add_marker(
+    #                     pytest.mark.skip(
+    #                         reason="WebDriver tests are not working on Windows",
+    #                     )
+    #                 )
+    pass
