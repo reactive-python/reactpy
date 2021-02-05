@@ -1,5 +1,5 @@
-Javascript Modules
-==================
+Javascript Components
+=====================
 
 While IDOM is a great tool for displaying HTML and responding to browser events with
 pure Python, there are other projects which already allow you to do this inside
@@ -96,9 +96,9 @@ IDOM client at runtime.
     In the future IDOM will come with tools to help author Python packages with bundled
     Javascript
 
-With that said, if you just want to see how this all works it might be easiest to
-hook in simple a hand-crafted Javascript module. In the example to follow we'll create
-a very basic SVG line chart. The catch though is that we are limited to using Javascript
+With that said, if you just want to see how this all works it might be easiest to hook
+in simple a hand-crafted Javascript component. In the example to follow we'll create a
+very basic SVG line chart. The catch though is that we are limited to using Javascript
 that can run directly in the browser. This means we can't use fancy syntax like
 `JSX <https://reactjs.org/docs/introducing-jsx.html>`__ and instead will use
 `htm <https://github.com/developit/htm>`__ to simulate JSX in plain Javascript.

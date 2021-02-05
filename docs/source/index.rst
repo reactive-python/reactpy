@@ -12,7 +12,7 @@ Libraries for defining and controlling interactive webpages with Python
     getting-started
     life-cycle-hooks
     core-concepts
-    javascript-modules
+    javascript-components
     examples
 
 .. toctree::
