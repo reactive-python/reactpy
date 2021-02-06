@@ -120,9 +120,8 @@ html_static_path = ["_static"]
 
 # These paths are either relative to html_static_path
 # or fully qualified paths (eg. https://...)
-html_css_files = [
-    "css/interactive-widget.css",
-]
+css_dir = here / "_static" / "css"
+html_css_files = [str(p.relative_to(here / "_static")) for p in css_dir.glob("*.css")]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.

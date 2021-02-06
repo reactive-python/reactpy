@@ -1,0 +1,25 @@
+code.literal {
+  background: var(--color-inline-code-background) !important;
+}
+
+:root {
+  --color-inline-code-background: #f0f0f0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-code-background: #202020;
+    --color-inline-code-background: hsl(0, 0%, 18%);
+  }
+
+  td.linenos pre {
+    background: #202020 !important;
+    color: #d0d0d0 !important;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-inline-code-background: #f0f0f0;
+  }
+}
