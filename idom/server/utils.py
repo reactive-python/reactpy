@@ -1,7 +1,8 @@
 from socket import socket
 from types import ModuleType
-from typing import Type, Any, List, cast
+from typing import Type, Any, List
 from importlib import import_module
+from contextlib import closing
 
 
 def find_builtin_server_type(type_name: str) -> Type[Any]:
@@ -34,8 +35,16 @@ def find_builtin_server_type(type_name: str) -> Type[Any]:
         )
 
 
-def find_available_port(host: str) -> int:
-    """Get a port that's available for the given host"""
-    sock = socket()
-    sock.bind((host, 0))
-    return cast(int, sock.getsockname()[1])
+def find_available_port(host: str, port_min: int = 8000, port_max: int = 9000) -> int:
+    """Get a port that's available for the given host and port range"""
+    for port in range(port_min, port_max):
+        with closing(socket()) as sock:
+            try:
+                sock.bind((host, port))
+            except OSError:
+                pass
+            else:
+                return port
+    raise RuntimeError(
+        f"Host {host!r} has no available port in range {port_max}-{port_max}"
+    )
