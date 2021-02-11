@@ -7,7 +7,7 @@ material_ui = idom.install("@material-ui/core", fallback="loading...")
 
 
 @idom.component
-def ViewSliderEvents():
+def ViewButtonEvents():
     event, set_event = idom.hooks.use_state(None)
 
     return idom.html.div(
@@ -23,4 +23,4 @@ def ViewSliderEvents():
     )
 
 
-idom.run(ViewSliderEvents)
+idom.run(ViewButtonEvents)
