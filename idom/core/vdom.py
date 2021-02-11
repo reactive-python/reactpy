@@ -1,10 +1,10 @@
-from typing import Optional, Iterable, Any, Dict, List, Tuple, Union, Mapping, Callable
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 
 from mypy_extensions import TypedDict
 from typing_extensions import Protocol
 
-from .events import EventsMapping
 from .component import AbstractComponent
+from .events import EventsMapping
 
 
 class ImportSourceDict(TypedDict):

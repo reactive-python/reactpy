@@ -3,16 +3,15 @@ import shutil
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List, Set, Union, Sequence
+from typing import List, Sequence, Set, Union
 
 from loguru import logger
 
 from .utils import (
-    open_modifiable_json,
     find_js_module_exports_in_source,
     get_package_name,
+    open_modifiable_json,
 )
-
 
 APP_DIR = Path(__file__).parent / "app"
 BUILD_DIR = APP_DIR / "build"

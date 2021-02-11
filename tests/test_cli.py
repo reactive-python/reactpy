@@ -4,7 +4,6 @@ import idom
 from idom.cli import main
 from idom.client.manage import web_module_exists
 
-
 cli_runner = CliRunner()
 
 

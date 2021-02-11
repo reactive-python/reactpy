@@ -1,16 +1,16 @@
 import asyncio
-from tests.general_utils import assert_same_items
 
 import pytest
 from anyio import ExceptionGroup
 
 import idom
-from idom.core.layout import Layout, LayoutEvent
 from idom.core.dispatcher import (
-    SharedViewDispatcher,
     AbstractDispatcher,
+    SharedViewDispatcher,
     SingleViewDispatcher,
 )
+from idom.core.layout import Layout, LayoutEvent
+from tests.general_utils import assert_same_items
 
 
 async def test_shared_state_dispatcher():

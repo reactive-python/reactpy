@@ -2,7 +2,6 @@ from pathlib import Path
 
 import idom
 
-
 HERE = Path(__file__).parent
 
 

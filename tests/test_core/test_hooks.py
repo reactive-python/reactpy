@@ -1,11 +1,10 @@
-import re
 import asyncio
+import re
 
 import pytest
 
 import idom
-
-from tests.general_utils import assert_same_items, HookCatcher
+from tests.general_utils import HookCatcher, assert_same_items
 
 
 async def test_must_be_rendering_in_layout_to_use_hooks():

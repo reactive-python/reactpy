@@ -1,16 +1,16 @@
 from __future__ import print_function
 
-import sys
 import os
 import pipes
 import shutil
 import subprocess
+import sys
 import traceback
-
-from setuptools import setup, find_packages
 from distutils import log
 from distutils.command.build import build  # type: ignore
 from distutils.command.sdist import sdist  # type: ignore
+
+from setuptools import find_packages, setup
 from setuptools.command.develop import develop
 
 if sys.platform == "win32":

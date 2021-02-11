@@ -5,7 +5,6 @@ import time
 import idom
 from idom.widgets.html import Input
 
-
 victory = idom.install("victory", fallback="loading...")
 
 

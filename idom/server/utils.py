@@ -1,8 +1,8 @@
+from contextlib import closing
+from importlib import import_module
 from socket import socket
 from types import ModuleType
-from typing import Type, Any, List
-from importlib import import_module
-from contextlib import closing
+from typing import Any, List, Type
 
 
 def find_builtin_server_type(type_name: str) -> Type[Any]:

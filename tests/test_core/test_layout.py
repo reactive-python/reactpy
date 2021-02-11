@@ -7,8 +7,7 @@ import pytest
 
 import idom
 from idom.core.layout import LayoutUpdate
-
-from tests.general_utils import assert_same_items, HookCatcher
+from tests.general_utils import HookCatcher, assert_same_items
 
 
 def test_layout_update_create_from_apply_to():

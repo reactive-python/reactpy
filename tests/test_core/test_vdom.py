@@ -1,8 +1,7 @@
 import pytest
 
 import idom
-from idom.core.vdom import make_vdom_constructor, component
-
+from idom.core.vdom import component, make_vdom_constructor
 
 fake_events = idom.Events()
 

@@ -1,29 +1,27 @@
-import re
 import logging
-from urllib.parse import urlunparse, urlencode
+import re
+from types import TracebackType
 from typing import (
-    Callable,
-    Tuple,
-    Type,
-    Optional,
     Any,
+    Callable,
     Dict,
     Generic,
-    TypeVar,
     List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
     Union,
 )
-from types import TracebackType
+from urllib.parse import urlencode, urlunparse
 
 from loguru import logger
-from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver import Chrome
+from selenium.webdriver.remote.webdriver import WebDriver
 
-from idom.server.utils import find_builtin_server_type
 from idom.server.base import AbstractRenderServer
 from idom.server.prefab import hotswap_server
-from idom.server.utils import find_available_port
-
+from idom.server.utils import find_available_port, find_builtin_server_type
 
 __all__ = [
     "find_available_port",

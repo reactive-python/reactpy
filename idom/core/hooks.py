@@ -1,29 +1,28 @@
 import asyncio
 from threading import get_ident as get_thread_id
 from typing import (
-    Awaitable,
-    Sequence,
-    Dict,
     Any,
-    TypeVar,
+    Awaitable,
     Callable,
-    Tuple,
-    Optional,
+    Dict,
     Generic,
-    Union,
-    NamedTuple,
     List,
-    overload,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
     cast,
+    overload,
 )
-from typing_extensions import Protocol
 
 from loguru import logger
+from typing_extensions import Protocol
 
 from idom.utils import Ref
 
 from .component import AbstractComponent
-
 
 __all__ = [
     "use_state",

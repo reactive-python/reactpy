@@ -1,10 +1,9 @@
 from pathlib import Path
 
-from sphinx.application import Sphinx
-from sphinx.util.docutils import SphinxDirective
 from docutils.parsers.rst import directives
 from docutils.statemachine import StringList
-
+from sphinx.application import Sphinx
+from sphinx.util.docutils import SphinxDirective
 from sphinx_panels.tabs import TabbedDirective
 
 here = Path(__file__).parent

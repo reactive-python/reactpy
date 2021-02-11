@@ -1,10 +1,10 @@
+from doctest import DocTest, DocTestRunner
 from textwrap import indent
 from typing import Any
 
 from sphinx.application import Sphinx
-from sphinx.ext.doctest import DocTestBuilder, setup as doctest_setup
-from doctest import DocTest, DocTestRunner
-
+from sphinx.ext.doctest import DocTestBuilder
+from sphinx.ext.doctest import setup as doctest_setup
 
 test_template = """
 import asyncio as __asyncio

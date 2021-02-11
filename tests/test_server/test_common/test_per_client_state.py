@@ -1,12 +1,10 @@
 import pytest
 
 import idom
+from idom.server import flask as idom_flask
+from idom.server import sanic as idom_sanic
+from idom.server import tornado as idom_tornado
 from idom.testing import ServerMountPoint
-from idom.server import (
-    flask as idom_flask,
-    sanic as idom_sanic,
-    tornado as idom_tornado,
-)
 
 
 @pytest.fixture(

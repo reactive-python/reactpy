@@ -1,7 +1,8 @@
 from pathlib import Path
-from typing import Any, Optional, Union, List, Tuple, Dict, overload
+from typing import Any, Dict, List, Optional, Tuple, Union, overload
 from urllib.parse import urlparse
-from idom.core.vdom import VdomDict, ImportSourceDict, make_vdom_constructor
+
+from idom.core.vdom import ImportSourceDict, VdomDict, make_vdom_constructor
 
 from . import manage
 from .utils import get_package_name

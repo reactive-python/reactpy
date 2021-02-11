@@ -1,7 +1,7 @@
-from .component import component, Component, AbstractComponent, ComponentConstructor
-from .events import event, Events, EventHandler
-from .layout import Layout, Layout
+from .component import AbstractComponent, Component, ComponentConstructor, component
 from .dispatcher import AbstractDispatcher, SharedViewDispatcher, SingleViewDispatcher
+from .events import EventHandler, Events, event
+from .layout import Layout
 from .vdom import vdom
 
 __all__ = [

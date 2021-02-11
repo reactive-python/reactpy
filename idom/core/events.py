@@ -1,20 +1,18 @@
 import asyncio
 from typing import (
-    Mapping,
-    Dict,
-    Callable,
     Any,
+    Callable,
     Coroutine,
-    Optional,
+    Dict,
     Iterator,
     List,
+    Mapping,
+    Optional,
     Union,
 )
 
 from anyio import create_task_group
-
 from mypy_extensions import TypedDict
-
 
 EventsMapping = Union[Dict[str, Union["Callable[..., Any]", "EventHandler"]], "Events"]
 

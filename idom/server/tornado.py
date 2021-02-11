@@ -1,22 +1,21 @@
-import json
 import asyncio
-from threading import Event as ThreadEvent
-from urllib.parse import urljoin
+import json
 from asyncio import Queue as AsyncQueue
-from typing import Optional, Type, Any, List, Tuple, Dict, Union
+from threading import Event as ThreadEvent
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from urllib.parse import urljoin
 
-from tornado.web import Application, StaticFileHandler, RedirectHandler, RequestHandler
-from tornado.websocket import WebSocketHandler
 from tornado.platform.asyncio import AsyncIOMainLoop
+from tornado.web import Application, RedirectHandler, RequestHandler, StaticFileHandler
+from tornado.websocket import WebSocketHandler
 from typing_extensions import TypedDict
 
-from idom.core.layout import Layout, LayoutUpdate, LayoutEvent
+from idom.client.manage import BUILD_DIR
 from idom.core.component import ComponentConstructor
 from idom.core.dispatcher import AbstractDispatcher, SingleViewDispatcher
-from idom.client.manage import BUILD_DIR
+from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
 from .base import AbstractRenderServer
-
 
 _RouteHandlerSpecs = List[Tuple[str, Type[RequestHandler], Any]]
 

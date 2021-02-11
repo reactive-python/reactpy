@@ -1,8 +1,8 @@
 import ast
-from typing import Optional, List, Union, Any, Tuple
+from typing import Any, List, Optional, Tuple, Union
 
 import htm
-from pyalect import DialectError, Dialect
+from pyalect import Dialect, DialectError
 
 
 class HtmlDialectTranspiler(Dialect, name="html"):

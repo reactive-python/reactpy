@@ -1,25 +1,24 @@
 import sys
-
 from typing import (
-    TypeVar,
     Any,
-    Type,
-    Callable,
-    Optional,
     AsyncIterator,
-    Generic,
-    Union,
+    Callable,
     Dict,
+    Generic,
+    Optional,
     Tuple,
+    Type,
+    TypeVar,
+    Union,
     cast,
     overload,
 )
 
 if sys.version_info >= (3, 7):  # pragma: no cover
-    from contextlib import asynccontextmanager, AsyncExitStack  # noqa
+    from contextlib import AsyncExitStack, asynccontextmanager  # noqa
 else:  # pragma: no cover
-    from async_generator import asynccontextmanager
     from async_exit_stack import AsyncExitStack
+    from async_generator import asynccontextmanager
 
 
 _Rsrc = TypeVar("_Rsrc")

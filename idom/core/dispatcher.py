@@ -1,15 +1,11 @@
 import abc
 import asyncio
-from typing import Callable, Awaitable, Dict, Any, AsyncIterator
+from typing import Any, AsyncIterator, Awaitable, Callable, Dict
 
 from anyio import create_task_group
 from anyio.abc import TaskGroup
 
-from .layout import (
-    LayoutEvent,
-    LayoutUpdate,
-    Layout,
-)
+from .layout import Layout, LayoutEvent, LayoutUpdate
 from .utils import HasAsyncResources, async_resource
 
 SendCoroutine = Callable[[Any], Awaitable[None]]
