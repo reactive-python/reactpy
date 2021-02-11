@@ -1,9 +1,8 @@
 import abc
-from typing import TypeVar, Dict, Any, Tuple, Optional, Generic, TypeVar
-from threading import Thread, Event
+from threading import Event, Thread
+from typing import Any, Dict, Generic, Optional, Tuple, TypeVar
 
 from idom.core.component import ComponentConstructor
-
 
 _App = TypeVar("_App", bound=Any)
 _Config = TypeVar("_Config", bound=Any)

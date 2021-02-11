@@ -1,11 +1,10 @@
-from base64 import b64encode
 import time
+from base64 import b64encode
 
-import idom
 from selenium.webdriver.common.keys import Keys
 
+import idom
 from tests.driver_utils import send_keys
-
 
 _image_src_bytes = b"""
 <svg width="400" height="110" xmlns="http://www.w3.org/2000/svg">

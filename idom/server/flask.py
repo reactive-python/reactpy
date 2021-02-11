@@ -1,24 +1,25 @@
-import json
 import asyncio
+import json
 import logging
 from asyncio import Queue as AsyncQueue
-from threading import Event as ThreadEvent, Thread
 from queue import Queue as ThreadQueue
+from threading import Event as ThreadEvent
+from threading import Thread
+from typing import Any, Callable, Dict, NamedTuple, Optional, Tuple, Type, Union, cast
 from urllib.parse import parse_qs as parse_query_string
-from typing import Union, Tuple, Dict, Any, Optional, Callable, NamedTuple, Type, cast
 
-from typing_extensions import TypedDict
-from flask import Flask, Blueprint, send_from_directory, redirect, url_for, request
+from flask import Blueprint, Flask, redirect, request, send_from_directory, url_for
 from flask_cors import CORS
 from flask_sockets import Sockets
-from geventwebsocket.websocket import WebSocket
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
+from geventwebsocket.websocket import WebSocket
+from typing_extensions import TypedDict
 
 import idom
 from idom.client.manage import BUILD_DIR
-from idom.core.layout import LayoutEvent, Layout, LayoutUpdate
 from idom.core.dispatcher import AbstractDispatcher, SingleViewDispatcher
+from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
 from .base import AbstractRenderServer
 

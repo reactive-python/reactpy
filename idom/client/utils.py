@@ -1,8 +1,8 @@
-import re
 import json
-from pathlib import Path
+import re
 from contextlib import contextmanager
-from typing import Iterator, Any, List, Tuple
+from pathlib import Path
+from typing import Any, Iterator, List, Tuple
 
 
 def get_package_name(pkg: str) -> str:

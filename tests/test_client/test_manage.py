@@ -1,13 +1,12 @@
 import pytest
 
 from idom.client.manage import (
-    web_module_url,
-    web_module_exports,
-    web_module_exists,
-    web_module_path,
     add_web_module,
+    web_module_exists,
+    web_module_exports,
+    web_module_path,
+    web_module_url,
 )
-
 from tests.general_utils import assert_same_items
 
 

@@ -1,26 +1,26 @@
 import abc
 import asyncio
 from typing import (
-    List,
+    Any,
+    AsyncIterator,
     Dict,
-    Tuple,
+    Iterator,
+    List,
     Mapping,
     NamedTuple,
     Optional,
-    Any,
     Set,
-    Iterator,
-    AsyncIterator,
+    Tuple,
     Union,
 )
 
+from jsonpatch import apply_patch, make_patch
 from loguru import logger
-from jsonpatch import make_patch, apply_patch
 
 from .component import AbstractComponent
 from .events import EventHandler, EventTarget
-from .utils import HasAsyncResources, async_resource, CannotAccessResource
 from .hooks import LifeCycleHook
+from .utils import CannotAccessResource, HasAsyncResources, async_resource
 
 
 class LayoutUpdate(NamedTuple):

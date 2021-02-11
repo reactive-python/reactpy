@@ -1,9 +1,8 @@
-from typing import TypeVar, Any, Callable, Tuple, Dict, Set
+from typing import Any, Callable, Dict, Set, Tuple, TypeVar
 
 from idom.core import hooks
 from idom.core.component import ComponentConstructor, component
 from idom.utils import Ref
-
 
 MountFunc = Callable[[ComponentConstructor], None]
 

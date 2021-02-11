@@ -12,3 +12,8 @@ repos:
     hooks:
       - id: nbstripout
         files: ".ipynb"
+  - repo: https://github.com/pycqa/isort
+    rev: 5.6.3
+    hooks:
+      - id: isort
+        name: isort

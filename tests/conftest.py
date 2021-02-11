@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-import os
-import logging
 import inspect
+import logging
+import os
 from typing import Iterator, List
 
-from loguru import logger
+import pyalect.builtins.pytest  # noqa
 import pytest
-from _pytest.logging import caplog as _caplog, LogCaptureFixture  # noqa
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
+from _pytest.logging import LogCaptureFixture
+from _pytest.logging import caplog as _caplog  # noqa
+from loguru import logger
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.support.ui import WebDriverWait
-
-import pyalect.builtins.pytest  # noqa
 
 import idom
 from idom.client import manage as manage_client

@@ -5,7 +5,6 @@ from typing import TypeVar
 import nox
 from nox.sessions import Session
 
-
 HEADLESS = bool(int(os.environ.get("HEADLESS", "0")))
 NO_COVERAGE_CHECK = bool(int(os.environ.get("NO_COVERAGE_CHECK", "0")))
 BLACK_DEFAULT_EXCLUDE = r"\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist"
@@ -58,6 +57,7 @@ def check_style(session: Session) -> None:
         rf"/({BLACK_DEFAULT_EXCLUDE}|node_modules)/",
     )
     session.run("flake8", "idom", "tests", "docs")
+    session.run("isort", ".", "--check-only")
 
 
 @nox.session

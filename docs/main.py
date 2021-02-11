@@ -1,15 +1,13 @@
 import os
 import sys
 from pathlib import Path
-from pathlib import Path
 
-from sanic import Sanic
-from sanic import response
+from sanic import Sanic, response
 
 import idom
-from idom.widgets.utils import multiview
 from idom.client.manage import APP_DIR
 from idom.server.sanic import PerClientStateServer
+from idom.widgets.utils import multiview
 
 here = Path(__file__).parent
 

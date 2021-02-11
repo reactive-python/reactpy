@@ -1,6 +1,6 @@
-from sphinx.application import Sphinx
-from docutils.parsers.rst import Directive
 from docutils.nodes import raw
+from docutils.parsers.rst import Directive
+from sphinx.application import Sphinx
 
 
 class IteractiveWidget(Directive):

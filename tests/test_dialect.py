@@ -1,8 +1,8 @@
 import ast
-from typing import Tuple, Dict, Any, Any
+from typing import Any, Dict, Tuple
 
 import pytest
-from pyalect import apply_dialects, DialectError
+from pyalect import DialectError, apply_dialects
 
 from idom import html
 

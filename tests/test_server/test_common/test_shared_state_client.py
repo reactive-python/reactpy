@@ -1,7 +1,6 @@
 from threading import Event
 from weakref import finalize
 
-
 import pytest
 
 import idom

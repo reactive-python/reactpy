@@ -1,11 +1,10 @@
 import pytest
 
 from idom.client.utils import (
-    open_modifiable_json,
     find_js_module_exports_in_source,
+    open_modifiable_json,
     split_package_name_and_version,
 )
-
 from tests.general_utils import assert_same_items
 
 

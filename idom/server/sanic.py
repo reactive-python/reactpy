@@ -2,23 +2,22 @@ import asyncio
 import json
 import uuid
 from threading import Event
+from typing import Any, Dict, Optional, Tuple, Type, Union, cast
 
-from typing import Tuple, Any, Dict, Union, Optional, Type, cast
-
+from mypy_extensions import TypedDict
 from sanic import Blueprint, Sanic, request, response
 from sanic_cors import CORS
-from mypy_extensions import TypedDict
 from websockets import WebSocketCommonProtocol
 
+from idom.client.manage import BUILD_DIR
 from idom.core.dispatcher import (
     AbstractDispatcher,
-    SingleViewDispatcher,
-    SharedViewDispatcher,
-    SendCoroutine,
     RecvCoroutine,
+    SendCoroutine,
+    SharedViewDispatcher,
+    SingleViewDispatcher,
 )
-from idom.core.layout import LayoutEvent, Layout, LayoutUpdate
-from idom.client.manage import BUILD_DIR
+from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
 from .base import AbstractRenderServer
 

@@ -1,11 +1,10 @@
 from typing import Any, Dict, Optional, Tuple, Type, TypeVar
 
 from idom.core.component import ComponentConstructor
-from idom.widgets.utils import multiview, hotswap, MultiViewMount, MountFunc
+from idom.widgets.utils import MountFunc, MultiViewMount, hotswap, multiview
 
 from .base import AbstractRenderServer
 from .utils import find_available_port, find_builtin_server_type
-
 
 _S = TypeVar("_S", bound=AbstractRenderServer[Any, Any])
 
