@@ -52,12 +52,13 @@ Once activated try clicking the displayed image to make it change 🖱️
 
         pip install idom-jupyter
 
-    And replacing ``idom.run`` with ``idom_jupyter.run``:
+    Then just import ``idom_jupyter`` at the top of your notebook and your components
+    will magically turn into widgets:
 
     .. code-block::
 
         import idom_jupyter
-        idom_jupyter.run(Slideshow)
+        Slideshow()
 
     Try it out on Binder now: |launch-binder|
 
