@@ -5,13 +5,12 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="16" height="16" viewBox="0 0 16 16" version="1.1"
-   id="SVGRoot" inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
-   sodipodi:docname="idom-logo-square-no-margin-or-background.svg">
+   id="SVGRoot" inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)" sodipodi:docname="idom-logo-square-small.svg">
    <defs id="defs1408" />
    <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0"
       inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="40.96" inkscape:cx="7.4550038"
-      inkscape:cy="10.909463" inkscape:document-units="px" inkscape:current-layer="layer2" showgrid="true"
-      inkscape:window-width="3440" inkscape:window-height="1403" inkscape:window-x="0" inkscape:window-y="0"
+      inkscape:cy="7.003213" inkscape:document-units="px" inkscape:current-layer="layer2" showgrid="true"
+      inkscape:window-width="1920" inkscape:window-height="1016" inkscape:window-x="872" inkscape:window-y="1467"
       inkscape:window-maximized="1" inkscape:grid-bbox="true">
       <inkscape:grid type="xygrid" id="grid1964" empspacing="1" />
    </sodipodi:namedview>
@@ -20,7 +19,7 @@
          <cc:Work rdf:about="">
             <dc:format>image/svg+xml</dc:format>
             <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-            <dc:title></dc:title>
+            <dc:title />
          </cc:Work>
       </rdf:RDF>
    </metadata>
@@ -40,9 +39,7 @@
    <g class="foreground" inkscape:label="Layer 2" inkscape:groupmode="layer" id="layer2" transform="translate(0,-184)">
       <rect id="rect872" width="2" height="2" x="7" y="188" />
       <rect id="rect874" width="2" height="5" x="7" y="191" />
-      <rect id="rect876" width="9" height="2" x="0" y="198" />
-      <rect id="rect878" width="2" height="7" x="0" y="191" />
-      <rect id="rect880" width="2" height="9" x="14" y="184" />
-      <rect id="rect882" width="7" height="2" x="7" y="184" />
+      <path d="M 0 7 L 0 14 L 0 16 L 9 16 L 9 14 L 2 14 L 2 7 L 0 7 z " transform="translate(0,184)" id="rect876" />
+      <path d="M 7 0 L 7 2 L 14 2 L 14 9 L 16 9 L 16 0 L 14 0 L 7 0 z " transform="translate(0,184)" id="rect880" />
    </g>
 </svg>
