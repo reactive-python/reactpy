@@ -77,10 +77,10 @@ For projects that will be shared with others we recommend bundling your Javascri
 `rollup <https://rollupjs.org/guide/en/>`__ or `webpack <https://webpack.js.org/>`__
 into a
 `web module <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules>`__
-by using IDOM's
+using IDOM's
 `template repository <https://github.com/idom-team/idom-react-component-cookiecutter>`__
-as a blueprint. Once you've done this, you can distribute bundled javascript in your
-Python package and integrate it into IDOM by defining
+as a blueprint to build a React component. Once you've done this, you can distribute
+bundled javascript in your Python package and integrate it into IDOM by defining
 :class:`~idom.client.module.Module` objects that load them from source:
 
 .. code-block::
