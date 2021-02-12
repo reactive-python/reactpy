@@ -5,7 +5,8 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="720" height="480" viewBox="0 0 720 480"
-   version="1.1" id="SVGRoot" inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)" sodipodi:docname="idom-logo.svg">
+   version="1.1" id="SVGRoot" inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
+   sodipodi:docname="idom-logo-backed.svg">
    <defs id="defs1408" />
    <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0"
       inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="2" inkscape:cx="432.27704"
@@ -44,11 +45,11 @@
          }
       }
    </style>
-   <g class="background" inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1" style="fill:white">
+   <g class="background" inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1">
       <rect y="0" x="0" height="480" width="720" id="rect1975" />
    </g>
    <g class="foreground" inkscape:label="Layer 2" inkscape:groupmode="layer" id="layer2" transform="translate(0,280)">
-      <g id="g1497" style="fill:black">
+      <g id="g1497">
          <rect transform="rotate(45)" y="-403.09396" x="206.88077" height="40" width="40" id="rect1974" />
          <rect transform="rotate(45)" y="-343.09396" x="206.88077" height="180" width="40" id="rect1974-3" />
          <path id="rect2005" transform="translate(0,-280)"
