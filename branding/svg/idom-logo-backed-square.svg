@@ -29,14 +29,25 @@
          .foreground {
             fill: black;
          }
+
+         .background {
+            fill: white;
+         }
       }
 
       @media (prefers-color-scheme: dark) {
          .foreground {
             fill: white;
          }
+
+         .background {
+            fill: black;
+         }
       }
    </style>
+   <g class="background" inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1">
+      <rect y="0" x="0" height="560" width="560" id="rect1975" />
+   </g>
    <g class="foreground" inkscape:label="Layer 2" inkscape:groupmode="layer" id="layer2" transform="translate(0,360)">
       <g id="g1505">
          <rect y="-200" x="260" height="40" width="40" id="rect1974" />

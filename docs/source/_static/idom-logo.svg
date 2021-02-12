@@ -27,30 +27,15 @@
       @media (prefers-color-scheme: light) {
          .foreground {
             fill: black;
-            stroke: black;
-         }
-
-         .background {
-            fill: white;
-            stroke: white;
          }
       }
 
       @media (prefers-color-scheme: dark) {
          .foreground {
             fill: white;
-            stroke: white;
-         }
-
-         .background {
-            fill: black;
-            stroke: black;
          }
       }
    </style>
-   <g class="background" inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1">
-      <rect y="0" x="0" height="480" width="720" id="rect1975" />
-   </g>
    <g class="foreground" inkscape:label="Layer 2" inkscape:groupmode="layer" id="layer2" transform="translate(0,280)">
       <g id="g1497">
          <rect transform="rotate(45)" y="-403.09396" x="206.88077" height="40" width="40" id="rect1974" />
