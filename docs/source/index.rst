@@ -52,7 +52,7 @@ Once activated try clicking the displayed image to make it change 🖱️
 
         pip install idom-jupyter
 
-    Then just import ``idom_jupyter`` at the top of your notebook and your components
+    Then just import ``idom_jupyter`` at the top of a notebook and your components
     will magically turn into widgets:
 
     .. code-block::
