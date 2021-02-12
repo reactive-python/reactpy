@@ -76,10 +76,12 @@ Import Javascript Bundles
 For projects that will be shared with others we recommend bundling your Javascript with
 `rollup <https://rollupjs.org/guide/en/>`__ or `webpack <https://webpack.js.org/>`__
 into a
-`web module <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules>`__.
-Once you've done this, you can distribute bundled javascript in your Python package and
-integrate it into IDOM by defining :class:`~idom.client.module.Module` objects that
-load them from source:
+`web module <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules>`__
+by using IDOM's
+`template repository <https://github.com/idom-team/idom-react-component-cookiecutter>`__
+as a blueprint. Once you've done this, you can distribute bundled javascript in your
+Python package and integrate it into IDOM by defining
+:class:`~idom.client.module.Module` objects that load them from source:
 
 .. code-block::
 
@@ -90,11 +92,6 @@ The core benefit of loading Javascript in this way is that users of your code wo
 NPM_. Rather, they can use ``pip`` to install your Python package without any other build
 steps because the bundled Javascript you distributed with it will be symlinked into the
 IDOM client at runtime.
-
-.. note::
-
-    In the future IDOM will come with tools to help author Python packages with bundled
-    Javascript
 
 With that said, if you just want to see how this all works it might be easiest to hook
 in simple a hand-crafted Javascript component. In the example to follow we'll create a
