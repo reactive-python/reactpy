@@ -105,7 +105,8 @@ autodoc_member_order = "bysource"
 # a list of builtin themes.
 #
 html_theme = "furo"
-html_logo = "branding/idom-logo-white.png"
+html_logo = "_static/idom-logo.svg"
+html_favicon = "_static/idom-logo-square-small.svg"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
