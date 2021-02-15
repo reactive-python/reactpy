@@ -16,14 +16,14 @@ To install **all** extra features run
     pip install idom[all]
 
 
-Sanic Layout Server
--------------------
+Layout Server Implementations
+-----------------------------
 
-At the moment this is the only supported :ref:`Layout Server` available for IDOM:
+There are several supported :ref:`Layout Server` implementations available for IDOM:
 
-.. code-block:: bash
-
-    pip install idom[sanic]
+- `Sanic <https://sanicframework.org/>`__: ``pip install idom[sanic]``
+- `Flask <https://palletsprojects.com/p/flask/>`__: ``pip install idom[flask]``
+- `Tornado <https://www.tornadoweb.org/en/stable/>`__: ``pip install idom[tornado]``
 
 
 Python Language Extension
