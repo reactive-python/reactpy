@@ -1,35 +1,45 @@
 Extra Features
 ==============
 
-Optionally installable features of IDOM.
+Optionally installable features of IDOM. To install them use the given "Name" from the table below
 
-To install a **stable** set of features for IDOM simply run.
+.. code-block:: bash
 
-.. code-block::
+    pip install idom[NAME]
 
-    pip install idom[stable]
+.. list-table::
+    :header-rows: 1
+    :widths: 1 3
 
-To install **all** extra features run
+    *   - Name
+        - Description
 
-.. code-block::
+    *   - ``stable``
+        - Default implementations for all IDOM's features
 
-    pip install idom[all]
+    *   - ``testing``
+        - Utilities for testing IDOM using `Selenium <https://www.selenium.dev/>`__
 
+    *   - ``sanic``
+        - `Sanic <https://sanicframework.org/>`__ as a :ref:`Layout Server`
 
-Layout Server Implementations
------------------------------
+    *   - ``tornado``
+        - `Tornado <https://www.tornadoweb.org/en/stable/>`__ as a :ref:`Layout Server`
 
-There are several supported :ref:`Layout Server` implementations available for IDOM:
+    *   - ``flask``
+        - `Flask <https://palletsprojects.com/p/flask/>`__ as a :ref:`Layout Server`
 
-- `Sanic <https://sanicframework.org/>`__: ``pip install idom[sanic]``
-- `Flask <https://palletsprojects.com/p/flask/>`__: ``pip install idom[flask]``
-- `Tornado <https://www.tornadoweb.org/en/stable/>`__: ``pip install idom[tornado]``
+    *   - ``dialect``
+        - :ref:`Python Language Extension` for writing JSX-like syntax
+
+    *   - ``all``
+        - All the features listed above (not usually needed)
 
 
 Python Language Extension
 -------------------------
 
-IDOM includes a transpiler for writing JSX-like syntax in a normal Python file!
+IDOM includes an import-time transpiler for writing JSX-like syntax in a ``.py`` file!
 
 .. code-block:: python
 

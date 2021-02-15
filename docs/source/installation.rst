@@ -1,34 +1,19 @@
 Installation
 ============
 
-.. list-table::
-    :header-rows: 1
+To install IDOM and a default implementation for all features:
 
-    *   - What
-        - How To Install
+.. code-block:: bash
 
-    *   - The Core Library
-        - IDOM is on PyPI_ - use  pip_ to install a **stable** version:
+    pip install idom[stable]
 
-          .. code-block:: bash
+For a minimal installation that lacks implementations for some features:
 
-              pip install idom[stable]
+.. code-block:: bash
 
-    *   - Extra Features
+    pip install idom
 
-        - To install **specific** features see :ref:`Extra Features`, but to install all of them:
-
-          .. code-block:: bash
-
-              # all extra features
-              pip install idom[all]
-
-    *   - Pre Release
-        - This may be unstable or subject to breaking changes
-
-          .. code-block:: bash
-
-              pip install idom --pre
+For more installation options see the :ref:`Extra Features` section.
 
 
 Development Version

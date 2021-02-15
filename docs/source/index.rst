@@ -13,6 +13,8 @@ Libraries for defining and controlling interactive webpages with Python
     life-cycle-hooks
     core-concepts
     javascript-components
+    specifications
+    extra-features
     examples
 
 .. toctree::
@@ -21,8 +23,6 @@ Libraries for defining and controlling interactive webpages with Python
 
     GitHub Repo <https://github.com/idom-team/idom>
     package-api
-    specifications
-    extra-features
 
 
 Early Days
