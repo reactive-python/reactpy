@@ -41,7 +41,7 @@ class AbstractDispatcher(HasAsyncResources, abc.ABC):
     async def run(self, send: SendCoroutine, recv: RecvCoroutine, context: Any) -> None:
         """Start an unending loop which will drive the layout.
 
-        This will call :meth:`AbstractLayouTaskGroupTaskGroupt.render` and :meth:`Layout.dispatch`
+        This will call :meth:`AbstractLayout.render` and :meth:`Layout.dispatch`
         to render new models and execute events respectively.
         """
         await self.task_group.spawn(self._outgoing_loop, send, context)

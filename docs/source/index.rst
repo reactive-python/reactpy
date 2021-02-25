@@ -6,33 +6,32 @@ Libraries for defining and controlling interactive webpages with Python
 
 .. toctree::
     :hidden:
-    :caption: User Guide
 
     installation
     getting-started
     life-cycle-hooks
     core-concepts
     javascript-components
-    specifications
-    extra-features
+
     examples
 
 .. toctree::
     :hidden:
-    :caption: Reference
+    :caption: Developer Guide
 
-    GitHub Repo <https://github.com/idom-team/idom>
+    contributing
+    developer-installation
+    specifications
     package-api
 
+.. toctree::
+    :hidden:
+    :caption: External Resources
 
-Early Days
-----------
+    Source Code <https://github.com/idom-team/idom>
+    Community <https://github.com/idom-team/idom/discussions>
+    Issues <https://github.com/idom-team/idom/issues>
 
-IDOM is still young. If you need help or want to contribute:
-
-- Ask `questions <https://github.com/idom-team/idom/discussions>`__
-- Report `issues <https://github.com/rmorshea/idom/issues>`__
-- Creating a `pull request <https://github.com/rmorshea/idom/pulls>`__
 
 
 At a Glance
@@ -46,8 +45,3 @@ user clicks an image:
 Try selecting the "Live Example" tab in the view above and enabling the widget.
 
 Once activated try clicking the displayed image to make it change 🖱️
-
-.. note::
-
-    You can display the same thing in a Jupyter Notebook by installing
-    `idom-jupyter <https://github.com/idom-team/idom-jupyter>`__.

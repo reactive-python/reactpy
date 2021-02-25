@@ -15,105 +15,134 @@ For a minimal installation that lacks implementations for some features:
 
 For more installation options see the :ref:`Extra Features` section.
 
+.. note::
 
-Development Version
--------------------
+    To contribute to IDOM, refer to the :ref:`Developer Installation` instructions.
 
-In order to work with IDOM's source code you'll need to install:
 
-- git_
+Extra Features
+--------------
 
-- npm_
-
-You'll begin by copying the source from GitHub onto your computer using Git:
+Optionally installable features of IDOM. To install them use the given "Name" from the table below
 
 .. code-block:: bash
 
-    git clone https://github.com/rmorshea/idom.git
-    cd idom
+    pip install idom[NAME]
 
-At this point you should be able to run the command below to:
+.. list-table::
+    :header-rows: 1
+    :widths: 1 3
 
-- Install an editable version of the Python code
+    *   - Name
+        - Description
 
-- Download, build, and install Javascript dependencies
+    *   - ``stable``
+        - Default implementations for all IDOM's features
 
-- Install some pre-commit hooks for Git
+    *   - ``testing``
+        - Utilities for testing IDOM using `Selenium <https://www.selenium.dev/>`__
 
-.. code-block:: bash
+    *   - ``sanic``
+        - `Sanic <https://sanicframework.org/>`__ as a :ref:`Layout Server`
 
-    pip install -e . -r requirements.txt && pre-commit install
+    *   - ``tornado``
+        - `Tornado <https://www.tornadoweb.org/en/stable/>`__ as a :ref:`Layout Server`
 
-Since we're using native ES modules for our Javascript, you should usually be able to
-refresh your browser page to see your latest changes to the client. However if you
-modify any dependencies you can run standard ``npm`` commands to install them or
-simply run the following to re-evaluate the ``package.json``:
+    *   - ``flask``
+        - `Flask <https://palletsprojects.com/p/flask/>`__ as a :ref:`Layout Server`
 
-.. code-block:: bash
+    *   - ``dialect``
+        - :ref:`Python Language Extension` for writing JSX-like syntax
 
-    pip install -e .
-
-
-Running The Tests
------------------
-
-The test suite for IDOM is executed using Nox_ and covers:
-
-1. Server-side Python code with PyTest_
-
-2. The end-to-end application using Selenium_
-
-3. (`Coming soon <https://github.com/idom-team/idom/issues/195>`_) Client side Javascript code
-
-To run the full suite of tests you'll need to install:
-
-- `Google Chrome`_
-
-- ChromeDriver_.
-
-.. warning::
-
-    Be sure the version of `Google Chrome`_ and ChromeDriver_ you install are compatible.
-
-Once you've installed the aforementined browser and web driver you should be able to
-run:
-
-.. code-block:: bash
-
-    nox
-
-If you prefer to run the tests using a headless browser:
-
-.. code-block:: bash
-
-    HEADLESS=1 nox
+    *   - ``all``
+        - All the features listed above (not usually needed)
 
 
-Building The Documentation
---------------------------
+Python Language Extension
+-------------------------
 
-Building the documentation as it's deployed in production requires Docker_. Once you've
-installed ``docker`` you'll need to build and then run a container with the service:
+IDOM includes an import-time transpiler for writing JSX-like syntax in a ``.py`` file!
 
-.. code-block:: bash
+.. code-block:: python
 
-    docker build . --file docs/Dockerfile --tag idom-docs:latest
-    docker run -it -p 5000:5000 -e DEBUG=true --rm idom-docs:latest
+    # dialect=html
+    from idom import html
 
-You should then navigate to http://127.0.0.1:5000 to see the documentation.
+    message = "hello world!"
+    attrs = {"height": "10px", "width": "10px"}
+    model = html(f"<div ...{attrs}><p>{message}</p></div>")
+
+    assert model == {
+        "tagName": "div",
+        "attributes": {"height": "10px", "width": "10px"},
+        "children": [{"tagName": "p", "children": ["hello world!"]}],
+    }
+
+With Jupyter and IPython support:
+
+.. code-block:: python
+
+    %%dialect html
+    from idom import html
+    assert html(f"<div/>") == {"tagName": "div"}
+
+That you can install with ``pip``:
+
+.. code-block::
+
+    pip install idom[dialect]
+
+
+Usage
+.....
+
+1. Import ``idom`` in your application's ``entrypoint.py``
+
+2. Import ``your_module.py`` with a ``# dialect=html`` header comment.
+
+3. Inside ``your_module.py`` import ``html`` from ``idom``
+
+4. Run ``python entrypoint.py`` from your console.
+
+So here's the files you should have set up:
+
+.. code-block:: text
+
+    project
+    |-  entrypoint.py
+    |-  your_module.py
+
+The contents of ``entrypoint.py`` should contain:
+
+.. code-block::
+
+    import idom  # this needs to be first!
+    import your_module
+
+While ``your_module.py`` should contain the following:
+
+.. code-block::
+
+    # dialect=html
+    from idom import html
+    assert html(f"<div/>") == {"tagName": "div"}
+
+And that's it!
+
+
+How It Works
+............
+
+Once ``idom`` has been imported at your application's entrypoint, any following modules
+imported with a ``# dialect=html`` header comment get transpiled just before they're
+executed. This is accomplished by using Pyalect_ to hook a transpiler into Pythons
+import system. The :class:`~idom.dialect.HtmlDialectTranspiler` which implements
+Pyalect_'s :class:`~pyalect.dialect.Transpiler` interface using some tooling from
+htm.py_.
 
 
 .. Links
 .. =====
 
-.. _Google Chrome: https://www.google.com/chrome/
-.. _ChromeDriver: https://chromedriver.chromium.org/downloads
-.. _Docker: https://docs.docker.com/get-docker/
-.. _git: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
-.. _Git Bash: https://gitforwindows.org/
-.. _npm: https://www.npmjs.com/get-npm
-.. _PyPI: https://pypi.org/project/idom
-.. _pip: https://pypi.org/project/pip/
-.. _PyTest: pytest <https://docs.pytest.org
-.. _Selenium: https://www.seleniumhq.org/
-.. _Nox: https://nox.thea.codes/en/stable/#
+.. _Pyalect: https://pyalect.readthedocs.io/en/latest/
+.. _htm.py: https://github.com/jviide/htm.py
