@@ -107,7 +107,7 @@ Code Style
 ----------
 
 Under construction... in the meantime though, we use
-`Black <https://github.com/psf/black>` to format our code.
+`Black <https://github.com/psf/black>`__ to format our code.
 
 
 Building The Documentation
