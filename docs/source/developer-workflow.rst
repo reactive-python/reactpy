@@ -103,6 +103,13 @@ If you prefer to run the tests using a headless browser:
     nox -s test -- pytest[--headless]
 
 
+Code Style
+----------
+
+Under construction... in the meantime though, we use
+`Black <https://github.com/psf/black>` to format our code.
+
+
 Building The Documentation
 --------------------------
 
