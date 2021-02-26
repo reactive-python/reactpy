@@ -41,7 +41,7 @@ def web_module_names() -> Set[str]:
         if Path("common") in rel_pth.parents:
             continue
         module_path = str(rel_pth.as_posix())
-        if module_path.endswith('.js'):
+        if module_path.endswith(".js"):
             module_path = module_path[:-3]
         names.append(module_path)
     return set(names)
