@@ -37,13 +37,13 @@ def web_module_exists(package_name: str) -> bool:
 def web_module_names() -> Set[str]:
     names = []
     for pth in WEB_MODULES_DIR.glob("**/*.js"):
-        for rel_pth in pth.relative_to(WEB_MODULES_DIR):
-            if Path("common") not in rel_pth.parents:
-                continue
-            module_path = str(rel_pth.as_posix())
-            if module_path.endswith('.js'):
-                module_path = module_path[:-3]
-            names.append(module_path)
+        rel_pth = pth.relative_to(WEB_MODULES_DIR)
+        if Path("common") in rel_pth.parents:
+            continue
+        module_path = str(rel_pth.as_posix())
+        if module_path.endswith('.js'):
+            module_path = module_path[:-3]
+        names.append(module_path)
     return set(names)
 
 
