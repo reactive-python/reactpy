@@ -35,7 +35,8 @@ you can help move this project and community forward!
 Everyone Can Contribute!
 ------------------------
 
-Trust us, there's so many ways to help. We're always looking for people who can:
+Trust us, there's so many ways to support the project. We're always looking for people
+who can:
 
 - Improve our documentation
 - Teach and tell others about IDOM
@@ -43,6 +44,6 @@ Trust us, there's so many ways to help. We're always looking for people who can:
 - Report bugs
 - Participate in general discussions
 
-Still aren't sure how you can help? Just
+Still aren't sure what you have to offer? Just
 `ask us <https://github.com/idom-team/idom/discussions>`__ and we'll help you make your
 first contribution.
