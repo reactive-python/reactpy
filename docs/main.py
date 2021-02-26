@@ -50,29 +50,13 @@ finally:
     idom.run = original_run
 
 
-server = PerClientStateServer(component, {"redirect_root_to_index": False}).register(
-    app
-)
+PerClientStateServer(component, {"redirect_root_to_index": False}).register(app)
 
 
-def production():
-    server.run(
+if __name__ == "__main__":
+    app.run(
         host="0.0.0.0",
         port=int(os.environ.get("PORT", 5000)),
         workers=int(os.environ.get("WEB_CONCURRENCY", 1)),
         debug=bool(int(os.environ.get("DEBUG", "0"))),
     )
-
-
-def local(path=""):
-    from selenium.webdriver import Chrome
-
-    thread = server.daemon("127.0.0.1", 5000)
-    path = f"docs/{path}" if path else ""
-    driver = Chrome()
-    driver.get(f"http://127.0.0.1:5000/{path}")
-    thread.join()
-
-
-if __name__ == "__main__":
-    production()

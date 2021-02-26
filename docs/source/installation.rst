@@ -17,7 +17,7 @@ For more installation options see the :ref:`Extra Features` section.
 
 .. note::
 
-    To contribute to IDOM, refer to the :ref:`Developer Installation` instructions.
+    To contribute to IDOM, refer to the :ref:`Developer Workflow` instructions.
 
 
 Extra Features
