@@ -35,13 +35,16 @@ def web_module_exists(package_name: str) -> bool:
 
 
 def web_module_names() -> Set[str]:
-    return {
-        str(rel_pth.as_posix()).rstrip(".js")
-        for rel_pth in (
-            pth.relative_to(WEB_MODULES_DIR) for pth in WEB_MODULES_DIR.glob("**/*.js")
-        )
-        if Path("common") not in rel_pth.parents
-    }
+    names = []
+    for pth in WEB_MODULES_DIR.glob("**/*.js"):
+        for rel_pth in pth.relative_to(WEB_MODULES_DIR):
+            if Path("common") not in rel_pth.parents:
+                continue
+            module_path = str(rel_pth.as_posix())
+            if module_path.endswith('.js'):
+                module_path = module_path[:-3]
+            names.append(module_path)
+    return set(names)
 
 
 def add_web_module(package_name: str, source: Union[Path, str]) -> str:
