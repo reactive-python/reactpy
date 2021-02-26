@@ -25,7 +25,7 @@ you can help move this project and community forward!
     *   - `Where to report issues <https://github.com/idom-team/idom/issues>`__
         - Tell us about any problems you're having
 
-    *   - `How to contribute Code <https://github.com/idom-team/idom/pulls>`__
+    *   - :ref:`How to contribute Code <Developer Workflow>`
         - Make and review code changes
 
     *   - `Other related projects <https://github.com/idom-team>`__

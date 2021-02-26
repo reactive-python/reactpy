@@ -1,9 +1,10 @@
 Developer Workflow
 ==================
 
-This project uses the `GitHub Flow`_ for collaboration and consists of Python code and
-Javascript code. A variety of tools are used to aid in its development. Below is a short
-list of the tools which will be most commonly referenced in the sections to follow:
+This project uses the `GitHub Flow`_ for collaboration and consists primarilly of Python
+code and Javascript code. A variety of tools are used to aid in its development. Below
+is a short list of the tools which will be most commonly referenced in the sections to
+follow:
 
 .. list-table::
     :header-rows: 1
