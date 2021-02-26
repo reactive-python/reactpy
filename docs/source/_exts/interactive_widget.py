@@ -1,6 +1,10 @@
+import os
+
 from docutils.nodes import raw
 from docutils.parsers.rst import Directive
 from sphinx.application import Sphinx
+
+_IDOM_SERVER_LOC = os.environ.get("IDOM_DOC_EXAMPLE_SERVER_HOST", "")
 
 
 class IteractiveWidget(Directive):
@@ -21,7 +25,7 @@ class IteractiveWidget(Directive):
                     <div id="{container_id}" class="interactive widget-container center-content" style="" />
                     <script async type="module">
                         const loc = window.location;
-                        const idom_url = "//" + loc.host;
+                        const idom_url = "//" + ("{_IDOM_SERVER_LOC}" || loc.host);
                         const http_proto = loc.protocol;
                         const ws_proto = http_proto === "https:" ? "wss:" : "ws:";
 
@@ -31,7 +35,7 @@ class IteractiveWidget(Directive):
                         enableWidgetButton.setAttribute("class", "enable-widget-button")
 
                         enableWidgetButton.addEventListener("click", () => {{
-                            import("/client/index.js").then((module) => {{
+                            import(http_proto + idom_url + "/client/index.js").then((module) => {{
                                 fadeOutAndThen(enableWidgetButton, () => {{
                                     mount.removeChild(enableWidgetButton);
                                     mount.setAttribute("class", "interactive widget-container");

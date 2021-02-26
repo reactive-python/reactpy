@@ -20,7 +20,7 @@ Libraries for defining and controlling interactive webpages with Python
     :caption: Developer Guide
 
     contributing
-    developer-installation
+    developer-workflow
     specifications
     package-api
 

@@ -24,9 +24,8 @@ jobs:
       - name: Install Python Dependencies
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
-        env:
-          HEADLESS: 1
-        run: nox
+        run: |
+          nox -s test -- pytest[--headless]
   test-other-systems:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -46,7 +45,5 @@ jobs:
       - name: Install Python Dependencies
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
-        env:
-          HEADLESS: 1
-          NO_COVERAGE_CHECK: 1
-        run: nox
+        run: |
+          nox -s test -- pytest[--headless,--no-cov]
