@@ -17,10 +17,10 @@ Libraries for defining and controlling interactive webpages with Python
 
 .. toctree::
     :hidden:
-    :caption: Developer Guide
+    :caption: Development
 
     contributing
-    developer-workflow
+    developer-guide
     specifications
     package-api
 

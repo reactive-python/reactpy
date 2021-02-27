@@ -1,10 +1,16 @@
-Developer Workflow
-==================
+Developer Guide
+===============
 
-This project uses the `GitHub Flow`_ for collaboration and consists primarilly of Python
-code and Javascript code. A variety of tools are used to aid in its development. Below
-is a short list of the tools which will be most commonly referenced in the sections to
-follow:
+.. note::
+
+    If you have any questions during set up or development post on our
+    `discussion board <https://github.com/idom-team/idom/discussions>`__ and we'll
+    answer them.
+
+This project uses the `GitHub Flow`_ (more detail :ref:`below <Making a Pull Request>`)
+for collaboration and consists primarilly of Python code and Javascript code. A variety
+of tools are used to aid in its development. Below is a short list of the tools which
+will be most commonly referenced in the sections to follow:
 
 .. list-table::
     :header-rows: 1
@@ -37,15 +43,45 @@ follow:
         - containerizing and hosting this documentation
 
 
+Making a Pull Request
+---------------------
+
+To make your first code contribution to IDOM, you'll need to install Git_ (or
+`Git Bash`_ on Windows). Thankfully there are many helpful
+`tutorials <https://github.com/firstcontributions/first-contributions/blob/master/README.md>`__
+about how to get started. To make a change to IDOM you'll do the following:
+
+`Fork IDOM <https://docs.github.com/en/github/getting-started-with-github/fork-a-repo>`__:
+    Go to `this URL <https://github.com/idom-team/idom>`__ and click the "Fork" button.
+
+`Clone your fork <https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository>`__:
+    You use a ``git clone`` command to copy the code from GitHub to your computer.
+
+`Create a new branch <https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging>`__:
+    You'll ``git checkout -b your-first-branch`` to create a new space to start your work
+
+:ref:`Prepare your Development Environment <Development Environment>`:
+    We explain in more detail below how to install all IDOM's dependencies
+
+`Push your changes <https://docs.github.com/en/github/using-git/pushing-commits-to-a-remote-repository>`__:
+    Once you've made changes to IDOM, you'll ``git push`` them to your fork.
+
+`Create a Pull Request <https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request>`__:
+    We'll review your changes, run some :ref:`tests <Running The Tests>` and
+    :ref:`qaulity checks <Code Quality Checks>` and, with any luck, accept your request.
+    At that point your contribution will be merged into the main codebase!
+
+
 Development Environment
 -----------------------
 
+If you've already :ref:
 In order to work with IDOM's source code you'll need to install Git_ (or `Git Bash`_ on
 Windows). Once done you can clone a local copy of this repository:
 
 .. code-block:: bash
 
-    git clone https://github.com/rmorshea/idom.git
+    git clone https://github.com/idom-team/idom.git
     cd idom
 
 At this point you should be able to run the command below to:
@@ -54,7 +90,7 @@ At this point you should be able to run the command below to:
 
 - Download, build, and install Javascript dependencies
 
-- Install some pre-commit hooks for Git
+- Install some pre-commit_ hooks for Git
 
 .. code-block:: bash
 
@@ -102,12 +138,36 @@ If you prefer to run the tests using a headless browser:
 
     nox -s test -- pytest[--headless]
 
+You can pass other options to pytest in a similar manner:
 
-Code Style
-----------
+.. code-block:: bash
 
-Under construction... in the meantime though, we use
-`Black <https://github.com/psf/black>`__ to format our code.
+    nox -s test -- pytest[arg,--flag,--key=value]
+
+
+Code Quality Checks
+-------------------
+
+Several tools are run on the Python codebase to help validate its quality. For the most
+part, if you set up your :ref:`Development Environment` with ``pre-commit`` to check
+your work before you commit it, then you'll be notified when changes need to be made or,
+in the best case, changes will be made automatically for you.
+
+The following are currently being used:
+
+- MyPy_ - a static type checker
+- Black_ - an opinionated code formatter
+- Flake8_ - a style guide enforcement tool
+- ISort_ - a utility for alphabetically sorting imports
+
+The most strict measure of quality enforced on the codebase is 100% coverage. This means
+that every line of coded added to IDOM requires a test case that excersizes it. This
+doesn't prevent all bugs, but it should ensure that we catch the most common ones.
+
+If you need help understanding why code you've submitted does not pass these checks,
+then be sure to ask, either in the
+`Community Forum <https://github.com/idom-team/idom/discussions>`__ or in your
+:ref:`Pull Request <Making a Pull Request>`.
 
 
 Building The Documentation
@@ -141,26 +201,8 @@ installed, you can run:
 You should then navigate to  to see the documentation.
 
 
-Making a Pull Request
----------------------
-
-Under construction...
-
-
 Release Process
 ---------------
-
-Under construction...
-
-
-How It's Published to PyPI
-..........................
-
-Under construction...
-
-
-How Docs are Deployed to Heroku
-...............................
 
 Under construction...
 
@@ -168,8 +210,8 @@ Under construction...
 Other Core Repositories
 -----------------------
 
-IDOM involves several other core projects. For documentation on them you should refer to
-their respective documentation in the links below
+IDOM depends on several other core projects. For documentation on them you should refer
+to their respective documentation in the links below
 
 - https://github.com/idom-team/idom-client-react - Javascript client for IDOM
 - https://github.com/idom-team/flake8-idom-hooks - Enforces the :ref:`Rules of Hooks`
@@ -194,3 +236,7 @@ their respective documentation in the links below
 .. _GitHub Actions: https://github.com/features/actions
 .. _pre-commit: https://pre-commit.com/
 .. _GitHub Flow: https://guides.github.com/introduction/flow/
+.. _MyPy: http://mypy-lang.org/
+.. _Black: https://github.com/psf/black
+.. _Flake8: https://flake8.pycqa.org/en/latest/
+.. _ISort: https://pycqa.github.io/isort/
