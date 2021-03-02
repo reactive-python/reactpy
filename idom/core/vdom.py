@@ -46,6 +46,7 @@ SERIALIZED_VDOM_JSON_SCHEMA = {
             "properties": {
                 "source": {"type": "string"},
                 "fallback": {
+                    "type": ["object", "string", "null"],
                     "if": {"not": {"type": "null"}},
                     "then": {"$ref": "#/definitions/elementOrString"},
                 },
@@ -53,7 +54,8 @@ SERIALIZED_VDOM_JSON_SCHEMA = {
             "required": ["source"],
         },
         "elementOrString": {
-            "if": {"not": {"type": "string"}},
+            "type": ["object", "string"],
+            "if": {"type": "object"},
             "then": {"$ref": "#/definitions/element"},
         },
     },
