@@ -151,9 +151,8 @@ type name. The various properties for the ``onChange`` handler are:
 
 To clearly describe the VDOM schema we've created a `JSON Schema <https://json-schema.org/>`_:
 
-.. literalinclude:: ./mimetype.json
+.. literalinclude:: ./vdom-json-schema.json
    :language: json
-
 
 
 JSON Patch

@@ -1,10 +1,66 @@
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 
+from fastjsonschema import compile as compile_json_schema
 from mypy_extensions import TypedDict
 from typing_extensions import Protocol
 
 from .component import AbstractComponent
 from .events import EventsMapping
+
+SERIALIZED_VDOM_JSON_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$ref": "#/definitions/element",
+    "definitions": {
+        "element": {
+            "type": "object",
+            "properties": {
+                "tagName": {"type": "string"},
+                "children": {"$ref": "#/definitions/elementChildren"},
+                "attributes": {"type": "object"},
+                "eventHandlers": {"$ref": "#/definitions/elementEventHandlers"},
+                "importSource": {"$ref": "#/definitions/importSource"},
+            },
+            "required": ["tagName"],
+        },
+        "elementChildren": {
+            "type": "array",
+            "items": {"$ref": "#/definitions/elementOrString"},
+        },
+        "elementEventHandlers": {
+            "type": "object",
+            "patternProperties": {
+                ".*": {"$ref": "#/definitions/eventHander"},
+            },
+        },
+        "eventHander": {
+            "type": "object",
+            "properties": {
+                "target": {"type": "string"},
+                "preventDefault": {"type": "boolean"},
+                "stopPropagation": {"type": "boolean"},
+            },
+            "required": ["target"],
+        },
+        "importSource": {
+            "type": "object",
+            "properties": {
+                "source": {"type": "string"},
+                "fallback": {
+                    "if": {"not": {"type": "null"}},
+                    "then": {"$ref": "#/definitions/elementOrString"},
+                },
+            },
+            "required": ["source"],
+        },
+        "elementOrString": {
+            "if": {"not": {"type": "string"}},
+            "then": {"$ref": "#/definitions/element"},
+        },
+    },
+}
+
+
+validate_serialized_vdom = compile_json_schema(SERIALIZED_VDOM_JSON_SCHEMA)
 
 
 class ImportSourceDict(TypedDict):

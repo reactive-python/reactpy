@@ -1,5 +1,6 @@
 import abc
 import asyncio
+from functools import wraps
 from typing import (
     Any,
     AsyncIterator,
@@ -17,10 +18,13 @@ from typing import (
 from jsonpatch import apply_patch, make_patch
 from loguru import logger
 
+from idom.options import IDOM_DEBUG
+
 from .component import AbstractComponent
 from .events import EventHandler, EventTarget
 from .hooks import LifeCycleHook
 from .utils import CannotAccessResource, HasAsyncResources, async_resource
+from .vdom import validate_serialized_vdom
 
 
 class LayoutUpdate(NamedTuple):
@@ -91,6 +95,18 @@ class Layout(HasAsyncResources):
             component = await self._rendering_queue.get()
             if self._has_component_state(component):
                 return self._create_layout_update(component)
+
+    if IDOM_DEBUG:
+        from loguru import logger
+
+        _debug_render = render
+
+        @wraps(_debug_render)
+        async def render(self) -> LayoutUpdate:
+            # Ensure that the model is valid VDOM on each render
+            result = await self._debug_render()
+            validate_serialized_vdom(self._component_states[id(self.root)].model)
+            return result
 
     @async_resource
     async def _rendering_queue(self) -> AsyncIterator["_ComponentQueue"]:
