@@ -29,9 +29,6 @@
       "react",
       "react-dom",
       "idom-client-react"
-    ],
-    "installOptions": {
-      "polyfillNode": true
-    }
+    ]
   }
 }

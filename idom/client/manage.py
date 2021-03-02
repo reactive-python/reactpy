@@ -14,9 +14,21 @@ from .utils import (
 
 logger = getLogger(__name__)
 
-APP_DIR = Path(__file__).parent / "app"
-BUILD_DIR = APP_DIR / "build"
+THIS_DIR = Path(__file__).parent
+APP_DIR = THIS_DIR / "app"
+BUILD_DIR = THIS_DIR / "build"
 WEB_MODULES_DIR = BUILD_DIR / "web_modules"
+BACKUP_BUILD_DIR = APP_DIR / "build"
+
+
+def _copy_to_build_dir(source: Path) -> None:
+    if BUILD_DIR.exists():
+        shutil.rmtree(BUILD_DIR)
+    shutil.copytree(source, BUILD_DIR, symlinks=True)
+
+
+if not BUILD_DIR.exists():  # pragma: no cover
+    _copy_to_build_dir(BACKUP_BUILD_DIR)
 
 
 def web_module_exports(package_name: str) -> List[str]:
@@ -68,7 +80,7 @@ def web_module_path(package_name: str, must_exist: bool = False) -> Path:
 
 
 def restore() -> None:
-    build([], clean_build=True)
+    _copy_to_build_dir(BACKUP_BUILD_DIR)
 
 
 def build(packages_to_install: Sequence[str], clean_build: bool = False) -> None:
@@ -113,10 +125,7 @@ def build(packages_to_install: Sequence[str], clean_build: bool = False) -> None
         _npm_run_build(temp_app_dir)
         logger.info("Client built successfully ✅")
 
-        if BUILD_DIR.exists():
-            shutil.rmtree(BUILD_DIR)
-
-        shutil.copytree(temp_build_dir, BUILD_DIR, symlinks=True)
+        _copy_to_build_dir(temp_build_dir)
 
     not_discovered = package_names_to_install.difference(web_module_names())
     if not_discovered:
