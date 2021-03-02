@@ -235,8 +235,8 @@ def test_valid_vdom(value):
             r"data must be array",
         ),
         (
-            {"tagName": "tag", "children": [0]},
-            r"data must be object",
+            {"tagName": "tag", "children": [None]},
+            r"data must be object or string",
         ),
         (
             {"tagName": "tag", "children": [{"tagName": None}]},
@@ -298,7 +298,7 @@ def test_valid_vdom(value):
                 "tagName": "tag",
                 "importSource": {"source": "something", "fallback": 0},
             },
-            r"data must be object",
+            r"data\.fallback must be object or string or null",
         ),
         (
             {
