@@ -1,7 +1,8 @@
 import pytest
+from fastjsonschema import JsonSchemaException
 
 import idom
-from idom.core.vdom import component, make_vdom_constructor
+from idom.core.vdom import component, make_vdom_constructor, validate_serialized_vdom
 
 fake_events = idom.Events()
 
@@ -147,3 +148,167 @@ def test_vdom_component():
         "attributes": {"x": 4},
         "children": ["hello", "world"],
     }
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        {
+            "tagName": "div",
+            "children": [
+                "Some text",
+                {"tagName": "div"},
+            ],
+        },
+        {
+            "tagName": "div",
+            "attributes": {"style": {"color": "blue"}},
+        },
+        {
+            "tagName": "div",
+            "eventHandler": {"target": "something"},
+        },
+        {
+            "tagName": "div",
+            "eventHandler": {
+                "target": "something",
+                "preventDefault": False,
+                "stopPropogation": True,
+            },
+        },
+        {
+            "tagName": "div",
+            "importSource": {"source": "something"},
+        },
+        {
+            "tagName": "div",
+            "importSource": {"source": "something", "fallback": None},
+        },
+        {
+            "tagName": "div",
+            "importSource": {"source": "something", "fallback": "loading..."},
+        },
+        {
+            "tagName": "div",
+            "importSource": {"source": "something", "fallback": {"tagName": "div"}},
+        },
+        {
+            "tagName": "div",
+            "children": [
+                "Some text",
+                {"tagName": "div"},
+            ],
+            "attributes": {"style": {"color": "blue"}},
+            "eventHandler": {
+                "target": "something",
+                "preventDefault": False,
+                "stopPropogation": True,
+            },
+            "importSource": {
+                "source": "something",
+                "fallback": {"tagName": "div"},
+            },
+        },
+    ],
+)
+def test_valid_vdom(value):
+    validate_serialized_vdom(value)
+
+
+@pytest.mark.parametrize(
+    "value, error_message_pattern",
+    [
+        (
+            None,
+            r"data must be object",
+        ),
+        (
+            {},
+            r"data must contain \['tagName'\] properties",
+        ),
+        (
+            {"tagName": 0},
+            r"data\.tagName must be string",
+        ),
+        (
+            {"tagName": "tag", "children": None},
+            r"data must be array",
+        ),
+        (
+            {"tagName": "tag", "children": [0]},
+            r"data must be object",
+        ),
+        (
+            {"tagName": "tag", "children": [{"tagName": None}]},
+            r"data\.tagName must be string",
+        ),
+        (
+            {"tagName": "tag", "attributes": None},
+            r"data.attributes must be object",
+        ),
+        (
+            {"tagName": "tag", "eventHandlers": None},
+            r"data must be object",
+        ),
+        (
+            {"tagName": "tag", "eventHandlers": {"onEvent": None}},
+            r"data must be object",
+        ),
+        (
+            {
+                "tagName": "tag",
+                "eventHandlers": {"onEvent": {}},
+            },
+            r"data must contain \['target'\] properties",
+        ),
+        (
+            {
+                "tagName": "tag",
+                "eventHandlers": {
+                    "onEvent": {
+                        "target": "something",
+                        "preventDefault": None,
+                    }
+                },
+            },
+            r"data\.preventDefault must be boolean",
+        ),
+        (
+            {
+                "tagName": "tag",
+                "eventHandlers": {
+                    "onEvent": {
+                        "target": "something",
+                        "stopPropagation": None,
+                    }
+                },
+            },
+            r"data\.stopPropagation must be boolean",
+        ),
+        (
+            {"tagName": "tag", "importSource": None},
+            r"data must be object",
+        ),
+        (
+            {"tagName": "tag", "importSource": {}},
+            r"data must contain \['source'\] properties",
+        ),
+        (
+            {
+                "tagName": "tag",
+                "importSource": {"source": "something", "fallback": 0},
+            },
+            r"data must be object",
+        ),
+        (
+            {
+                "tagName": "tag",
+                "importSource": {"source": "something", "fallback": {"tagName": None}},
+            },
+            r"data.tagName must be string",
+        ),
+    ],
+)
+def test_invalid_vdom(value, error_message_pattern):
+    with pytest.raises(JsonSchemaException, match=error_message_pattern):
+        validate_serialized_vdom(value)

@@ -43,11 +43,13 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autosectionlabel",
     "sphinx_autodoc_typehints",
+    "sphinx_panels",
+    "sphinx_copybutton",
+    # custom extensions
     "interactive_widget",
     "widget_example",
     "async_doctest",
-    "sphinx_panels",
-    "sphinx_copybutton",
+    "copy_vdom_json_schema",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

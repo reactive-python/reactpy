@@ -85,6 +85,7 @@ def test(session: Session) -> None:
 @nox.session
 def test_python(session: Session) -> None:
     """Run the Python-based test suite"""
+    session.env["IDOM_DEBUG"] = "1"
     session.install("-r", "requirements/test-env.txt")
     session.install(".[all]")
     args = ["pytest", "tests"] + get_posargs("pytest", session)
