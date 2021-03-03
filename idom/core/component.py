@@ -59,9 +59,13 @@ class Component(AbstractComponent):
 
     def __repr__(self) -> str:
         sig = inspect.signature(self._function)
-        args = sig.bind(*self._args, **self._kwargs).arguments
-        items = ", ".join(f"{k}={v!r}" for k, v in args.items())
-        if items:
-            return f"{self._function.__name__}({hex(id(self))}, {items})"
+        try:
+            args = sig.bind(*self._args, **self._kwargs).arguments
+        except TypeError:
+            return f"{self._function.__name__}(...)"
         else:
-            return f"{self._function.__name__}({hex(id(self))})"
+            items = ", ".join(f"{k}={v!r}" for k, v in args.items())
+            if items:
+                return f"{self._function.__name__}({hex(id(self))}, {items})"
+            else:
+                return f"{self._function.__name__}({hex(id(self))})"

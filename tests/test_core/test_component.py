@@ -6,10 +6,13 @@ def test_component_repr():
     def MyComponent(a, *b, **c):
         pass
 
-    m_e = MyComponent(1, 2, 3, x=4, y=5)
+    mc1 = MyComponent(1, 2, 3, x=4, y=5)
 
-    expected = f"MyComponent({hex(id(m_e))}, a=1, b=(2, 3), c={{'x': 4, 'y': 5}})"
-    assert repr(m_e) == expected
+    expected = f"MyComponent({hex(id(mc1))}, a=1, b=(2, 3), c={{'x': 4, 'y': 5}})"
+    assert repr(mc1) == expected
+
+    # not enough args supplied to function
+    assert repr(MyComponent()) == "MyComponent(...)"
 
 
 async def test_simple_component():
