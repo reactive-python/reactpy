@@ -64,10 +64,3 @@ Running this will serve our slideshow to `"https://localhost:8765/client/index.h
 <img src='https://picsum.photos/800/300?random'/>
 
 You can even display the same thing in a Jupyter Notebook, just use [`idom_jupyter`](https://github.com/idom-team/idom-jupyter):
-
-```python
-import idom_jupyter
-idom_jupyter.run(Slideshow)
-```
-
-Every click will then cause the image to change (it won't here of course).
