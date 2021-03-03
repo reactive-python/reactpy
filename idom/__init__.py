@@ -7,6 +7,7 @@ except _DistributionNotFound:  # pragma: no cover
     # package is not installed
     __version__ = "0.0.0"
 
+from . import log
 from .client.module import Import, Module, install
 from .core import hooks
 from .core.component import Component, component
@@ -56,4 +57,5 @@ __all__ = [
     "widgets",
     "client",
     "install",
+    "log",
 ]

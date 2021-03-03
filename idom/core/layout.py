@@ -1,6 +1,7 @@
 import abc
 import asyncio
 from functools import wraps
+from logging import getLogger
 from typing import (
     Any,
     AsyncIterator,
@@ -16,15 +17,16 @@ from typing import (
 )
 
 from jsonpatch import apply_patch, make_patch
-from loguru import logger
 
-from idom.options import IDOM_DEBUG
+from idom._options import IDOM_DEBUG_MODE
 
 from .component import AbstractComponent
 from .events import EventHandler, EventTarget
 from .hooks import LifeCycleHook
 from .utils import CannotAccessResource, HasAsyncResources, async_resource
 from .vdom import validate_serialized_vdom
+
+logger = getLogger(__name__)
 
 
 class LayoutUpdate(NamedTuple):
@@ -89,6 +91,10 @@ class Layout(HasAsyncResources):
         handler = self._event_handlers.get(event.target)
         if handler is not None:
             await handler(event.data)
+        else:
+            logger.info(
+                f"Ignored event - handler {event.target!r} does not exist or its component unmounted"
+            )
 
     async def render(self) -> LayoutUpdate:
         while True:
@@ -96,9 +102,7 @@ class Layout(HasAsyncResources):
             if self._has_component_state(component):
                 return self._create_layout_update(component)
 
-    if IDOM_DEBUG:
-        from loguru import logger
-
+    if IDOM_DEBUG_MODE:
         _debug_render = render
 
         @wraps(_debug_render)

@@ -1,4 +1,5 @@
 import asyncio
+from logging import getLogger
 from threading import get_ident as get_thread_id
 from typing import (
     Any,
@@ -17,7 +18,6 @@ from typing import (
     overload,
 )
 
-from loguru import logger
 from typing_extensions import Protocol
 
 from idom.utils import Ref
@@ -33,6 +33,7 @@ __all__ = [
     "use_memo",
 ]
 
+logger = getLogger(__name__)
 
 _StateType = TypeVar("_StateType")
 

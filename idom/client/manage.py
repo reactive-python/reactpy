@@ -1,17 +1,18 @@
 import json
 import shutil
 import subprocess
+from logging import getLogger
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, Sequence, Set, Union
-
-from loguru import logger
 
 from .utils import (
     find_js_module_exports_in_source,
     get_package_name,
     open_modifiable_json,
 )
+
+logger = getLogger(__name__)
 
 APP_DIR = Path(__file__).parent / "app"
 BUILD_DIR = APP_DIR / "build"
@@ -102,7 +103,7 @@ def build(packages_to_install: Sequence[str], clean_build: bool = False) -> None
             snowpack_build = snowpack_config.setdefault("buildOptions", {})
             snowpack_build["clean"] = clean_build
 
-        logger.info(f"Installing {packages_to_install or 'packages'} ...", debug=True)
+        logger.info(f"Installing {packages_to_install or 'packages'} ...")
         _npm_install(packages_to_install, temp_app_dir)
         logger.info("Installed successfully ✅")
 
