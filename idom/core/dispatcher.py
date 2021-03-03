@@ -1,5 +1,6 @@
 import abc
 import asyncio
+from logging import getLogger
 from typing import Any, AsyncIterator, Awaitable, Callable, Dict
 
 from anyio import create_task_group
@@ -7,6 +8,8 @@ from anyio.abc import TaskGroup
 
 from .layout import Layout, LayoutEvent, LayoutUpdate
 from .utils import HasAsyncResources, async_resource
+
+logger = getLogger(__name__)
 
 SendCoroutine = Callable[[Any], Awaitable[None]]
 RecvCoroutine = Callable[[], Awaitable[LayoutEvent]]
@@ -49,12 +52,20 @@ class AbstractDispatcher(HasAsyncResources, abc.ABC):
         return None
 
     async def _outgoing_loop(self, send: SendCoroutine, context: Any) -> None:
-        while True:
-            await send(await self._outgoing(self.layout, context))
+        try:
+            while True:
+                await send(await self._outgoing(self.layout, context))
+        except Exception:
+            logger.info("Failed to send outgoing update", exc_info=True)
+            raise
 
     async def _incoming_loop(self, recv: RecvCoroutine, context: Any) -> None:
-        while True:
-            await self._incoming(self.layout, context, await recv())
+        try:
+            while True:
+                await self._incoming(self.layout, context, await recv())
+        except Exception:
+            logger.info("Failed to receive incoming event", exc_info=True)
+            raise
 
     @abc.abstractmethod
     async def _outgoing(self, layout: Layout, context: Any) -> Any:

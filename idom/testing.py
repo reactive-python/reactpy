@@ -15,7 +15,6 @@ from typing import (
 )
 from urllib.parse import urlencode, urlunparse
 
-from loguru import logger
 from selenium.webdriver import Chrome
 from selenium.webdriver.remote.webdriver import WebDriver
 
@@ -61,7 +60,6 @@ class ServerMountPoint(Generic[_Mount, _Server]):
     server: _Server
 
     _log_handler: "_LogRecordCaptor"
-    _loguru_handler_id: int
 
     def __init__(
         self,
@@ -113,20 +111,28 @@ class ServerMountPoint(Generic[_Mount, _Server]):
             if clear_after:
                 self.log_records.clear()
 
-    def raise_first_logged_exception(
+    def raise_if_logged_exception(
         self,
+        log_level: int = logging.ERROR,
         exclude_exc_types: Union[Type[Exception], Tuple[Type[Exception], ...]] = (),
+        clear_after: bool = True,
     ) -> None:
         """Raise the first logged exception (if any)
 
         Args:
+            log_level: The level of log to check
             exclude_exc_types: Any exception types to ignore
+            clear_after: Whether to clear logs after check
         """
-        for record in self._log_handler.records:
-            if record.exc_info is not None:
-                error = record.exc_info[1]
-                if error is not None and not isinstance(error, exclude_exc_types):
-                    raise error
+        try:
+            for record in self._log_handler.records:
+                if record.levelno >= log_level and record.exc_info is not None:
+                    error = record.exc_info[1]
+                    if error is not None and not isinstance(error, exclude_exc_types):
+                        raise error
+        finally:
+            if clear_after:
+                self.log_records.clear()
 
     def url(self, path: str = "", query: Optional[Any] = None) -> str:
         return urlunparse(
@@ -143,7 +149,6 @@ class ServerMountPoint(Generic[_Mount, _Server]):
     def __enter__(self: _Self) -> _Self:
         self._log_handler = _LogRecordCaptor()
         logging.getLogger().addHandler(self._log_handler)
-        self._loguru_handler_id = logger.add(self._log_handler, format="{message}")
         self.mount, self.server = self._mount_and_server_constructor()
         return self
 
@@ -154,12 +159,8 @@ class ServerMountPoint(Generic[_Mount, _Server]):
         traceback: Optional[TracebackType],
     ) -> None:
         self.server.stop()
-
         logging.getLogger().removeHandler(self._log_handler)
-        logger.remove(self._loguru_handler_id)
-
-        self.raise_first_logged_exception()
-
+        self.raise_if_logged_exception()
         return None
 
 

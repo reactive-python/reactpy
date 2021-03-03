@@ -6,7 +6,7 @@ from weakref import finalize
 import pytest
 
 import idom
-from idom.core.layout import LayoutUpdate
+from idom.core.layout import LayoutEvent, LayoutUpdate
 from tests.general_utils import HookCatcher, assert_same_items
 
 
@@ -268,3 +268,17 @@ async def test_update_path_to_component_that_is_not_direct_child_is_correct():
 
         update = await layout.render()
         assert update.path == "/children/0/children/0"
+
+
+async def test_log_on_dispatch_to_missing_event_handler(caplog):
+    @idom.component
+    def SomeComponent():
+        return idom.html.div()
+
+    async with idom.Layout(SomeComponent()) as layout:
+        await layout.dispatch(LayoutEvent(target="missing", data=[]))
+
+    assert re.match(
+        "Ignored event - handler 'missing' does not exist or its component unmounted",
+        next(iter(caplog.records)).msg,
+    )
