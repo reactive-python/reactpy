@@ -14,13 +14,14 @@ Since it's likely a lot to take in at once, we'll break it down piece by piece:
     :lines: 4-5
     :linenos:
 
-The ``idom.component`` decorator creates a :ref:`Component <Stateful Components>` constructor
-whose which is "rendered" by the function below it. To create a Component instance we call
-``Slideshow()`` with the same arguments as its render function. The render function of a
-Component returns a data structure that depicts a user interface, or in more technical terms
-a Document Object Model (DOM). We call this structural representation of the DOM a
-`Virtual DOM`__ (VDOM) - a term familiar to those who work with `ReactJS`_. In the case of
-``Slideshow`` it will return a VDOM representing an image which, when clicked, will change.
+The ``idom.component`` decorator creates a :ref:`Component <Stateful Components>`
+constructor which is "rendered" by the function below it. To create a Component instance
+we call ``Slideshow()`` with the same arguments as its render function. The render
+function of a Component returns a data structure that depicts a user interface, or in
+more technical terms a Document Object Model (DOM). We call this structural
+representation of the DOM a `Virtual DOM`__ (VDOM) - a term familiar to those who work
+with `ReactJS`_. In the case of ``Slideshow`` it will return a VDOM representing an
+image which, when clicked, will change.
 
 __ https://reactjs.org/docs/faq-internals.html#what-is-the-virtual-dom
 

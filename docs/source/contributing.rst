@@ -6,7 +6,7 @@ Contributing
     The
     `Code of Conduct <https://github.com/idom-team/idom/blob/main/CODE_OF_CONDUCT.md>`__
     applies in all community spaces. If you are not familiar with our Code of Conduct
-    policy, take a minute to read the policy before starting with your first contribution.
+    policy, take a minute to read it before making your first contribution.
 
 The IDOM team welcomes contributions and contributors of all kinds - whether they come
 as code changes, participation in the discussions, opening issues and pointing out bugs,
@@ -25,7 +25,7 @@ you can help move this project and community forward!
     *   - `Where to report issues <https://github.com/idom-team/idom/issues>`__
         - Tell us about any problems you're having
 
-    *   - :ref:`How to contribute Code <Developer Workflow>`
+    *   - :ref:`How to contribute Code <Developer Guide>`
         - Make and review code changes
 
     *   - `Other related projects <https://github.com/idom-team>`__
