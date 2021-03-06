@@ -195,7 +195,7 @@ class SharedClientStateServer(SanicRenderServer):
 
     async def _deactivate_dispatcher(
         self, app: Sanic, loop: asyncio.AbstractEventLoop
-    ) -> None:  # pragma: no cover
+    ) -> None:  # coverage: skip
         # this doesn't seem to get triggered during testing for some reason
         await self._dispatcher.stop()
 

@@ -44,14 +44,14 @@ def run(
         The server instance. This isn't really useful unless the server is spawned
         as a daemon. Otherwise this function blocks until the server has stopped.
     """
-    if server_type is None:  # pragma: no cover
+    if server_type is None:  # coverage: skip
         raise ValueError("No default server available.")
-    if port is None:  # pragma: no cover
+    if port is None:  # coverage: skip
         port = find_available_port(host)
 
     server = server_type(component, server_config)
 
-    if app is not None:  # pragma: no cover
+    if app is not None:  # coverage: skip
         server.register(app)
 
     run_server = server.run if not daemon else server.daemon

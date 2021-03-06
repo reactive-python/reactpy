@@ -1,10 +1,6 @@
-recursive-include idom/client/app *
-recursive-exclude idom/client/app/node_modules *
-recursive-exclude idom/client/app/web_modules *
-recursive-exclude idom/client/build *
-include idom/py.typed
-include LICENSE
+recursive-include src/idom *
+recursive-exclude src/idom/client/app/node_modules *
+recursive-exclude src/idom/client/app/web_modules *
+recursive-exclude src/idom/client/build *
 include requirements/prod.txt
 include requirements/extras.txt
-include README.md
-include scripts/build.sh

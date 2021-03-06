@@ -44,9 +44,9 @@ class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
         if self._app is None:
             app = self._default_application(self._config)
             self.register(app)
-        else:  # pragma: no cover
+        else:  # coverage: skip
             app = self._app
-        if not self._daemonized:  # pragma: no cover
+        if not self._daemonized:  # coverage: skip
             return self._run_application(self._config, app, host, port, args, kwargs)
         else:
             return self._run_application_in_thread(
@@ -76,7 +76,7 @@ class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
     def wait_until_server_start(self, timeout: float = 3.0) -> None:
         """Block until the underlying application has started"""
         if not self._server_did_start.wait(timeout=timeout):
-            raise RuntimeError(  # pragma: no cover
+            raise RuntimeError(  # coverage: skip
                 f"Server did not start within {timeout} seconds"
             )
 

@@ -87,9 +87,14 @@ def test_python(session: Session) -> None:
     """Run the Python-based test suite"""
     session.env["IDOM_DEBUG_MODE"] = "1"
     session.install("-r", "requirements/test-env.txt")
-    session.install(".[all]")
-    args = ["pytest", "tests"] + get_posargs("pytest", session)
-    session.run(*args)
+
+    pytest_args = get_posargs("pytest", session)
+    if "--no-cov" in pytest_args:
+        session.install(".[all]")
+    else:
+        session.install("-e", ".[all]")
+
+    session.run("pytest", "tests", *pytest_args)
 
 
 @nox.session
@@ -98,14 +103,14 @@ def test_types(session: Session) -> None:
     session.install("-r", "requirements/check-types.txt")
     session.install("-r", "requirements/pkg-deps.txt")
     session.install("-r", "requirements/pkg-extras.txt")
-    session.run("mypy", "--strict", "idom")
+    session.run("mypy", "--strict", "src/idom")
 
 
 @nox.session
 def test_style(session: Session) -> None:
     """Check that style guidelines are being followed"""
     session.install("-r", "requirements/check-style.txt")
-    session.run("flake8", "idom", "tests", "docs")
+    session.run("flake8", "src/idom", "tests", "docs")
     black_default_exclude = r"\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist"
     session.run(
         "black",
