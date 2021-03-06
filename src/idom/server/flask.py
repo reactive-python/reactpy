@@ -43,7 +43,7 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
     def stop(self, timeout: Optional[float] = None) -> None:
         try:
             server = self._wsgi_server
-        except AttributeError:  # pragma: no cover
+        except AttributeError:  # coverage: skip
             raise RuntimeError(
                 f"Application is not running or was not started by {self}"
             )
@@ -70,7 +70,7 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
         self._setup_blueprint_routes(config, bp)
 
         cors_config = config["cors"]
-        if cors_config:  # pragma: no cover
+        if cors_config:  # coverage: skip
             cors_params = cors_config if isinstance(cors_config, dict) else {}
             CORS(bp, **cors_params)
 
@@ -162,7 +162,7 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
         **kwargs: Any,
     ) -> None:
         if debug:
-            logging.basicConfig(level=logging.DEBUG)  # pragma: no cover
+            logging.basicConfig(level=logging.DEBUG)  # coverage: skip
         logging.debug("Starting server...")
         self._wsgi_server = _StartCallbackWSGIServer(
             self._server_did_start.set,
@@ -272,7 +272,7 @@ class _StartCallbackWSGIServer(pywsgi.WSGIServer):  # type: ignore
         """
         super().update_environ()
         # BUG: for some reason coverage doesn't seem to think this line is covered
-        self._before_first_request_callback()  # pragma: no cover
+        self._before_first_request_callback()  # coverage: skip
 
 
 def _join_url_paths(*args: str) -> str:

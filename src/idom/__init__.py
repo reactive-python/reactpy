@@ -3,7 +3,7 @@ from pkg_resources import get_distribution as _get_distribution
 
 try:
     __version__: str = _get_distribution(__name__).version
-except _DistributionNotFound:  # pragma: no cover
+except _DistributionNotFound:  # coverage: skip
     # package is not installed
     __version__ = "0.0.0"
 
@@ -24,7 +24,7 @@ try:
     import htm
     import pyalect
     import tagged
-except ImportError:  # pragma: no cover
+except ImportError:  # coverage: skip
     pass
 else:
     from . import dialect

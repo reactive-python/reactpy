@@ -36,7 +36,7 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
     def stop(self) -> None:
         try:
             loop = self._loop
-        except AttributeError:  # pragma: no cover
+        except AttributeError:  # coverage: skip
             raise RuntimeError(
                 f"Application is not running or was not started by {self}"
             )

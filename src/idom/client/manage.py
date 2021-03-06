@@ -27,7 +27,7 @@ def _copy_to_build_dir(source: Path) -> None:
     shutil.copytree(source, BUILD_DIR, symlinks=True)
 
 
-if not BUILD_DIR.exists():  # pragma: no cover
+if not BUILD_DIR.exists():  # coverage: skip
     _copy_to_build_dir(BACKUP_BUILD_DIR)
 
 
@@ -129,7 +129,7 @@ def build(packages_to_install: Sequence[str], clean_build: bool = False) -> None
 
     not_discovered = package_names_to_install.difference(web_module_names())
     if not_discovered:
-        raise RuntimeError(  # pragma: no cover
+        raise RuntimeError(  # coverage: skip
             f"Successfuly installed {list(package_names_to_install)} but "
             f"failed to discover {list(not_discovered)} post-install."
         )
@@ -147,7 +147,7 @@ def _run_subprocess(args: List[str], cwd: Path) -> None:
     cmd, *args = args
     which_cmd = shutil.which(cmd)
     if which_cmd is None:
-        raise RuntimeError(  # pragma: no cover
+        raise RuntimeError(  # coverage: skip
             f"Failed to run command - {cmd!r} is not installed."
         )
     try:
@@ -158,6 +158,6 @@ def _run_subprocess(args: List[str], cwd: Path) -> None:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-    except subprocess.CalledProcessError as error:  # pragma: no cover
+    except subprocess.CalledProcessError as error:  # coverage: skip
         raise subprocess.SubprocessError(error.stderr.decode()) from error
     return None

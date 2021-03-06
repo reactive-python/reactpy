@@ -105,7 +105,7 @@ class ServerMountPoint(Generic[_Mount, _Server]):
                     error = record.exc_info[1]
                     if isinstance(error, error_type) and re_pattern.search(str(error)):
                         break
-            else:  # pragma: no cover
+            else:  # coverage: skip
                 assert False, f"did not raise {error_type} matching {error_pattern!r}"
         finally:
             if clear_after:

@@ -11,11 +11,29 @@ on:
     - cron: "0 0 * * *"
 
 jobs:
-  test-linux:
+  coverage:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: nanasess/setup-chromedriver@master
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: "12"
+      - name: Use Latest Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install Python Dependencies
+        run: pip install -r requirements/test-run.txt
+      - name: Run Tests
+        run: |
+          nox -s test -- pytest[--headless]
+  matrix:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python-version: [3.7, 3.8, 3.9]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v2
       - uses: nanasess/setup-chromedriver@master
@@ -26,27 +44,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Python Dependencies
-        run: pip install -r requirements/test-run.txt
-      - name: Run Tests
-        run: |
-          nox -s test -- pytest[--headless]
-  test-other-systems:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ macos-latest, windows-latest ]
-    steps:
-      - uses: actions/checkout@v2
-      - uses: nanasess/setup-chromedriver@master
-      - uses: actions/setup-node@v2-beta
-        with:
-          node-version: "12"
-      - name: Use Python 3.9
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.9
       - name: Install Python Dependencies
         run: pip install -r requirements/test-run.txt
       - name: Run Tests

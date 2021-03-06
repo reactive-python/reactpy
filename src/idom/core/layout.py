@@ -67,7 +67,7 @@ class Layout(HasAsyncResources):
 
     __slots__ = ["root", "_event_handlers"]
 
-    if not hasattr(abc.ABC, "__weakref__"):  # pragma: no cover
+    if not hasattr(abc.ABC, "__weakref__"):  # coverage: skip
         __slots__.append("__weakref__")
 
     def __init__(self, root: "AbstractComponent") -> None:
