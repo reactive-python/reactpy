@@ -10,7 +10,7 @@ from tornado.web import Application, RedirectHandler, RequestHandler, StaticFile
 from tornado.websocket import WebSocketHandler
 from typing_extensions import TypedDict
 
-from idom.client.manage import BUILD_DIR
+from idom.config import IDOM_CLIENT_BUILD_DIR
 from idom.core.component import ComponentConstructor
 from idom.core.dispatcher import AbstractDispatcher, SingleViewDispatcher
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
@@ -85,7 +85,11 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
 
         if config["serve_static_files"]:
             handlers.append(
-                (r"/client/(.*)", StaticFileHandler, {"path": str(BUILD_DIR)})
+                (
+                    r"/client/(.*)",
+                    StaticFileHandler,
+                    {"path": str(IDOM_CLIENT_BUILD_DIR.get())},
+                )
             )
             if config["redirect_root_to_index"]:
                 handlers.append(("/", RedirectHandler, {"url": "./client/index.html"}))

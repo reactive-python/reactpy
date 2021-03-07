@@ -9,7 +9,7 @@ from sanic import Blueprint, Sanic, request, response
 from sanic_cors import CORS
 from websockets import WebSocketCommonProtocol
 
-from idom.client.manage import BUILD_DIR
+from idom.client.manage import IDOM_CLIENT_BUILD_DIR
 from idom.core.dispatcher import (
     AbstractDispatcher,
     RecvCoroutine,
@@ -91,7 +91,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
             await self._run_dispatcher(sock_send, sock_recv, component_params)
 
         if config["serve_static_files"]:
-            blueprint.static("/client", str(BUILD_DIR))
+            blueprint.static("/client", str(IDOM_CLIENT_BUILD_DIR.get()))
 
             if config["redirect_root_to_index"]:
 

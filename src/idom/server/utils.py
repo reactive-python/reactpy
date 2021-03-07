@@ -1,38 +1,35 @@
 from contextlib import closing
 from importlib import import_module
 from socket import socket
-from types import ModuleType
 from typing import Any, List, Type
 
 
 def find_builtin_server_type(type_name: str) -> Type[Any]:
     """Find first installed server implementation"""
-    builtin_module_names = ["sanic", "flask", "tornado"]
+    supported_packages = ["sanic", "flask", "tornado"]
 
-    installed_builtin_modules: List[ModuleType] = []
-    for module_name in builtin_module_names:
+    installed_builtins: List[str] = []
+    for name in supported_packages:
         try:
-            installed_builtin_modules.append(
-                import_module(f"idom.server.{module_name}")
-            )
+            import_module(name)
         except ImportError:  # coverage: skip
-            pass
-
-    if not installed_builtin_modules:  # coverage: skip
-        raise RuntimeError(
-            f"Found none of the following builtin server implementations {builtin_module_names}"
-        )
-
-    for builtin_module in installed_builtin_modules:
+            continue
+        else:
+            builtin_module = import_module(f"idom.server.{name}")
+            installed_builtins.append(builtin_module.__name__)
         try:
             return getattr(builtin_module, type_name)  # type: ignore
         except AttributeError:  # coverage: skip
             pass
     else:  # coverage: skip
-        installed_names = [m.__name__ for m in installed_builtin_modules]
-        raise ImportError(
-            f"No server type {type_name!r} found in installed implementations {installed_names}"
-        )
+        if not installed_builtins:
+            raise RuntimeError(
+                f"Found none of the following builtin server implementations {supported_packages}"
+            )
+        else:
+            raise ImportError(
+                f"No server type {type_name!r} found in installed implementations {installed_builtins}"
+            )
 
 
 def find_available_port(host: str, port_min: int = 8000, port_max: int = 9000) -> int:
