@@ -1,8 +1,5 @@
-import json
 import re
-from contextlib import contextmanager
-from pathlib import Path
-from typing import Any, Iterator, List, Tuple
+from typing import List, Tuple
 
 
 def get_package_name(pkg: str) -> str:
@@ -22,17 +19,6 @@ def split_package_name_and_version(pkg: str) -> Tuple[str, str]:
         return name, version
     else:
         return pkg, ""
-
-
-@contextmanager
-def open_modifiable_json(path: Path) -> Iterator[Any]:
-    with path.open() as f:
-        data = json.loads(f.read().strip() or "{}")
-
-    yield data
-
-    with path.open("w") as f:
-        json.dump(data, f)
 
 
 _JS_MODULE_EXPORT_PATTERN = re.compile(

@@ -7,7 +7,7 @@ except _DistributionNotFound:  # coverage: skip
     # package is not installed
     __version__ = "0.0.0"
 
-from . import log
+from . import config, log
 from .client.module import Import, Module, install
 from .core import hooks
 from .core.component import Component, component
@@ -58,4 +58,5 @@ __all__ = [
     "client",
     "install",
     "log",
+    "config",
 ]

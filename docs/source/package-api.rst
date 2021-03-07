@@ -100,3 +100,10 @@ Useful Tools
 
 .. automodule:: idom.utils
     :members:
+
+
+Configuration Options
+---------------------
+
+.. automodule:: idom.config
+    :members:

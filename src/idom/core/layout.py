@@ -18,7 +18,7 @@ from typing import (
 
 from jsonpatch import apply_patch, make_patch
 
-from idom._options import IDOM_DEBUG_MODE
+from idom.config import IDOM_DEBUG_MODE
 
 from .component import AbstractComponent
 from .events import EventHandler, EventTarget
@@ -102,7 +102,7 @@ class Layout(HasAsyncResources):
             if self._has_component_state(component):
                 return self._create_layout_update(component)
 
-    if IDOM_DEBUG_MODE:
+    if IDOM_DEBUG_MODE.get():
         _debug_render = render
 
         @wraps(_debug_render)

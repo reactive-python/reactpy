@@ -2,7 +2,7 @@ import logging
 import sys
 from logging.config import dictConfig
 
-from ._options import IDOM_DEBUG_MODE
+from .config import IDOM_DEBUG_MODE
 
 root_logger = logging.getLogger("idom")
 
@@ -12,7 +12,7 @@ LOGGING_CONFIG_DEFAULTS = {
     "disable_existing_loggers": False,
     "loggers": {
         "idom": {
-            "level": "DEBUG" if IDOM_DEBUG_MODE else "INFO",
+            "level": "DEBUG" if IDOM_DEBUG_MODE.get() else "INFO",
             "handlers": ["console"],
         },
     },
