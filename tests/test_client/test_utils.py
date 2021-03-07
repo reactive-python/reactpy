@@ -2,23 +2,9 @@ import pytest
 
 from idom.client.utils import (
     find_js_module_exports_in_source,
-    open_modifiable_json,
     split_package_name_and_version,
 )
 from tests.general_utils import assert_same_items
-
-
-def test_open_modifiable_json(tmp_path):
-    temp_json = tmp_path / "data.json"
-
-    temp_json.touch()
-
-    with open_modifiable_json(temp_json) as data:
-        assert data == {}
-        data["x"] = 1
-
-    with open_modifiable_json(temp_json) as updated_data:
-        assert updated_data == {"x": 1}
 
 
 @pytest.mark.parametrize(

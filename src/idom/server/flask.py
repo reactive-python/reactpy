@@ -17,7 +17,7 @@ from geventwebsocket.websocket import WebSocket
 from typing_extensions import TypedDict
 
 import idom
-from idom.client.manage import BUILD_DIR
+from idom.config import IDOM_CLIENT_BUILD_DIR
 from idom.core.dispatcher import AbstractDispatcher, SingleViewDispatcher
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
@@ -111,7 +111,7 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
 
             @blueprint.route("/client/<path:path>")
             def send_build_dir(path: str) -> Any:
-                return send_from_directory(str(BUILD_DIR), path)
+                return send_from_directory(str(IDOM_CLIENT_BUILD_DIR.get()), path)
 
             if config["redirect_root_to_index"]:
 
