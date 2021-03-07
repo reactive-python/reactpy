@@ -7,11 +7,6 @@ repos:
     rev: 3.7.9
     hooks:
       - id: flake8
-  - repo: https://github.com/kynan/nbstripout
-    rev: 0.3.9
-    hooks:
-      - id: nbstripout
-        files: ".ipynb"
   - repo: https://github.com/pycqa/isort
     rev: 5.6.3
     hooks:
