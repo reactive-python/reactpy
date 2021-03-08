@@ -14,9 +14,9 @@ from typing import (
     overload,
 )
 
-if sys.version_info >= (3, 7):  # coverage: skip
+if sys.version_info >= (3, 7):  # pragma: no cover
     from contextlib import AsyncExitStack, asynccontextmanager  # noqa
-else:  # coverage: skip
+else:  # pragma: no cover
     from async_exit_stack import AsyncExitStack
     from async_generator import asynccontextmanager
 
