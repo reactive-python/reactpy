@@ -1,6 +1,6 @@
 import pytest
 
-from idom.client.utils import (
+from idom.client._private import (
     find_js_module_exports_in_source,
     split_package_name_and_version,
 )

@@ -4,8 +4,7 @@ from urllib.parse import urlparse
 
 from idom.core.vdom import ImportSourceDict, VdomDict, make_vdom_constructor
 
-from . import manage
-from .utils import get_package_name
+from . import _private, manage
 
 
 @overload
@@ -36,7 +35,7 @@ def install(
         packages = [packages]
         return_one = True
 
-    pkg_names = {get_package_name(pkg) for pkg in packages}
+    pkg_names = {_private.get_package_name(pkg) for pkg in packages}
 
     if ignore_installed or pkg_names.difference(manage.web_module_names()):
         manage.build(packages)

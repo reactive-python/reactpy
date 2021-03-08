@@ -1,5 +1,41 @@
 import re
+import shutil
+from pathlib import Path
 from typing import List, Tuple
+
+from idom.config import IDOM_CLIENT_BUILD_DIR
+
+HERE = Path(__file__).parent
+
+
+APP_DIR = HERE / "app"
+BACKUP_BUILD_DIR = APP_DIR / "build"
+
+
+if not IDOM_CLIENT_BUILD_DIR.get().exists():
+    shutil.copytree(BACKUP_BUILD_DIR, IDOM_CLIENT_BUILD_DIR.get(), symlinks=True)
+
+
+def build_dir() -> Path:
+    return IDOM_CLIENT_BUILD_DIR.get()
+
+
+def web_modules_dir() -> Path:
+    return build_dir() / "_snowpack" / "pkg"
+
+
+def restore_build_dir_from_backup() -> None:
+    target = build_dir()
+    if target.exists():
+        shutil.rmtree(target)
+    shutil.copytree(BACKUP_BUILD_DIR, target, symlinks=True)
+
+
+def replace_build_dir(source: Path) -> None:
+    target = build_dir()
+    if target.exists():
+        shutil.rmtree(target)
+    shutil.copytree(source, target, symlinks=True)
 
 
 def get_package_name(pkg: str) -> str:
