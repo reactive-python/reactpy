@@ -6,48 +6,23 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, Sequence, Set, Union
 
-from idom.config import IDOM_CLIENT_BUILD_DIR
+from idom.config import IDOM_CLIENT_WEB_MODULE_BASE_URL
 
-from .utils import find_js_module_exports_in_source, get_package_name
+from . import _private
 
 logger = getLogger(__name__)
 
 
-_THIS_DIR = Path(__file__).parent
-_APP_DIR = _THIS_DIR / "app"
-_BACKUP_BUILD_DIR = _APP_DIR / "build"
-# these directory are modified when users install packages
-
-
-def _build_dir() -> Path:
-    return IDOM_CLIENT_BUILD_DIR.get()
-
-
-def _web_modules_dir() -> Path:
-    return _build_dir() / "_snowpack" / "pkg"
-
-
-def _copy_to_build_dir(source: Path) -> None:
-    target = _build_dir()
-    if target.exists():
-        shutil.rmtree(target)
-    shutil.copytree(source, target, symlinks=True)
-
-
-if not _build_dir().exists():  # coverage: skip
-    _copy_to_build_dir(_BACKUP_BUILD_DIR)
-
-
 def web_module_exports(package_name: str) -> List[str]:
     web_module_path(package_name, must_exist=True)
-    return find_js_module_exports_in_source(
+    return _private.find_js_module_exports_in_source(
         web_module_path(package_name).read_text(encoding="utf-8")
     )
 
 
 def web_module_url(package_name: str) -> str:
     web_module_path(package_name, must_exist=True)
-    return f"./_snowpack/pkg/{package_name}.js"
+    return IDOM_CLIENT_WEB_MODULE_BASE_URL.get() + f"/{package_name}.js"
 
 
 def web_module_exists(package_name: str) -> bool:
@@ -56,7 +31,7 @@ def web_module_exists(package_name: str) -> bool:
 
 def web_module_names() -> Set[str]:
     names = []
-    web_mod_dir = _web_modules_dir()
+    web_mod_dir = _private.web_modules_dir()
     for pth in web_mod_dir.glob("**/*.js"):
         rel_pth = pth.relative_to(web_mod_dir)
         if Path("common") in rel_pth.parents:
@@ -79,7 +54,7 @@ def add_web_module(package_name: str, source: Union[Path, str]) -> str:
 
 
 def web_module_path(package_name: str, must_exist: bool = False) -> Path:
-    path = _web_modules_dir().joinpath(*(package_name + ".js").split("/"))
+    path = _private.web_modules_dir().joinpath(*(package_name + ".js").split("/"))
     if must_exist and not path.exists():
         raise ValueError(
             f"Web module {package_name!r} does not exist at path {str(path)!r}"
@@ -88,7 +63,7 @@ def web_module_path(package_name: str, must_exist: bool = False) -> Path:
 
 
 def restore() -> None:
-    _copy_to_build_dir(_BACKUP_BUILD_DIR)
+    _private.restore_build_dir_from_backup()
 
 
 def build(packages_to_install: Sequence[str], clean_build: bool = False) -> None:
@@ -101,9 +76,11 @@ def build(packages_to_install: Sequence[str], clean_build: bool = False) -> None
         package_json_path = temp_app_dir / "package.json"
 
         # copy over the whole APP_DIR directory into the temp one
-        shutil.copytree(_APP_DIR, temp_app_dir, symlinks=True)
+        shutil.copytree(_private.APP_DIR, temp_app_dir, symlinks=True)
 
-        package_names_to_install = {get_package_name(p) for p in packages_to_install}
+        package_names_to_install = {
+            _private.get_package_name(p) for p in packages_to_install
+        }
 
         # make sure we don't delete anything we've already installed
         built_package_json_path = temp_build_dir / "package.json"
@@ -130,7 +107,7 @@ def build(packages_to_install: Sequence[str], clean_build: bool = False) -> None
         _npm_run_build(temp_app_dir)
         logger.info("Client built successfully ✅")
 
-        _copy_to_build_dir(temp_build_dir)
+        _private.replace_build_dir(temp_build_dir)
 
     not_discovered = package_names_to_install.difference(web_module_names())
     if not_discovered:

@@ -9,7 +9,7 @@ from sanic import Blueprint, Sanic, request, response
 from sanic_cors import CORS
 from websockets import WebSocketCommonProtocol
 
-from idom.client.manage import IDOM_CLIENT_BUILD_DIR
+from idom.config import IDOM_CLIENT_BUILD_DIR
 from idom.core.dispatcher import (
     AbstractDispatcher,
     RecvCoroutine,

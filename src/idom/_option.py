@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import os
-from typing import Callable, Generic, TypeVar
+from typing import Any, Callable, Generic, TypeVar
 
 _O = TypeVar("_O")
 
@@ -12,16 +14,13 @@ class Option(Generic[_O]):
         name: str,
         default: _O,
         allow_changes: bool = True,
-        from_string: Callable[[str], _O] = lambda x: x,
+        validator: Callable[[Any], _O] = lambda x: x,
     ) -> None:
         self.name = name
         self._default = default
         self._allow_changes = allow_changes
-        assert name == name.upper()
-        if name not in os.environ:
-            self._value = default
-        else:
-            self._value = from_string(os.environ[name])
+        self._validator = validator
+        self._value = validator(os.environ.get(name, default))
 
     def get(self) -> _O:
         return self._value
@@ -30,7 +29,7 @@ class Option(Generic[_O]):
         if not self._allow_changes:
             raise ValueError(f"{self.name} cannot be modified.")
         old = self._value
-        self._value = new
+        self._value = self._validator(new)
         return old
 
     def reset(self) -> _O:
