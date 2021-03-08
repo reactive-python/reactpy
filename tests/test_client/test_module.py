@@ -43,7 +43,12 @@ def test_module_from_url():
     assert jquery.url == url
 
 
-def test_module_from_source(driver, driver_wait, display):
+def test_module_from_source(
+    driver,
+    driver_wait,
+    display,
+    htm,  # we need this in order to run the test js module
+):
     test_module = Module("test-module", source_file=HERE / "test_js_module.js")
 
     response_data = idom.Ref(None)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any, Callable, Generic, TypeVar, cast
 
 _O = TypeVar("_O")
 
@@ -14,7 +14,7 @@ class Option(Generic[_O]):
         name: str,
         default: _O,
         allow_changes: bool = True,
-        validator: Callable[[Any], _O] = lambda x: x,
+        validator: Callable[[Any], _O] = lambda x: cast(_O, x),
     ) -> None:
         self.name = name
         self._default = default

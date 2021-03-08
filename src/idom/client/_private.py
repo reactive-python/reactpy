@@ -12,7 +12,7 @@ APP_DIR = HERE / "app"
 BACKUP_BUILD_DIR = APP_DIR / "build"
 
 
-if not IDOM_CLIENT_BUILD_DIR.get().exists():
+if not IDOM_CLIENT_BUILD_DIR.get().exists():  # pragma: no cover
     shutil.copytree(BACKUP_BUILD_DIR, IDOM_CLIENT_BUILD_DIR.get(), symlinks=True)
 
 

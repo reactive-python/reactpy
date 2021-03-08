@@ -20,6 +20,6 @@ IDOM_CLIENT_BUILD_DIR = _option.Option(
 IDOM_CLIENT_WEB_MODULE_BASE_URL = _option.Option(
     "IDOM_CLIENT_WEB_MODULE_BASE_URL",
     default=".",
-    validator=lambda x: x.rstrip("/"),
+    validator=lambda x: str(x).rstrip("/"),
 )
 """The base URL where all user-installed web modules reside"""

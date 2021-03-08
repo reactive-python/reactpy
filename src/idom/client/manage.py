@@ -111,7 +111,7 @@ def build(packages_to_install: Sequence[str], clean_build: bool = False) -> None
 
     not_discovered = package_names_to_install.difference(web_module_names())
     if not_discovered:
-        raise RuntimeError(  # coverage: skip
+        raise RuntimeError(  # pragma: no cover
             f"Successfuly installed {list(package_names_to_install)} but "
             f"failed to discover {list(not_discovered)} post-install."
         )
@@ -129,7 +129,7 @@ def _run_subprocess(args: List[str], cwd: Path) -> None:
     cmd, *args = args
     which_cmd = shutil.which(cmd)
     if which_cmd is None:
-        raise RuntimeError(  # coverage: skip
+        raise RuntimeError(  # pragma: no cover
             f"Failed to run command - {cmd!r} is not installed."
         )
     try:
@@ -140,7 +140,7 @@ def _run_subprocess(args: List[str], cwd: Path) -> None:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-    except subprocess.CalledProcessError as error:  # coverage: skip
+    except subprocess.CalledProcessError as error:  # pragma: no cover
         raise subprocess.SubprocessError(error.stderr.decode()) from error
     return None
 

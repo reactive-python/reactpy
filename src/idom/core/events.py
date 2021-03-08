@@ -134,7 +134,7 @@ class Events(Mapping[str, "EventHandler"]):
     def __getitem__(self, key: str) -> "EventHandler":
         return self._handlers[key]
 
-    def __repr__(self) -> str:  # coverage: skip
+    def __repr__(self) -> str:  # pragma: no cover
         return repr(self._handlers)
 
 
@@ -229,5 +229,5 @@ class EventHandler:
         else:
             return function in self._func_handlers
 
-    def __repr__(self) -> str:  # coverage: skip
+    def __repr__(self) -> str:  # pragma: no cover
         return f"{type(self).__name__}({self.serialize()})"

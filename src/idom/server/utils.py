@@ -12,16 +12,16 @@ def find_builtin_server_type(type_name: str) -> Type[Any]:
     for name in supported_packages:
         try:
             import_module(name)
-        except ImportError:  # coverage: skip
+        except ImportError:  # pragma: no cover
             continue
         else:
             builtin_module = import_module(f"idom.server.{name}")
             installed_builtins.append(builtin_module.__name__)
         try:
             return getattr(builtin_module, type_name)  # type: ignore
-        except AttributeError:  # coverage: skip
+        except AttributeError:  # pragma: no cover
             pass
-    else:  # coverage: skip
+    else:  # pragma: no cover
         if not installed_builtins:
             raise RuntimeError(
                 f"Found none of the following builtin server implementations {supported_packages}"
