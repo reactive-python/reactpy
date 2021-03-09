@@ -1,11 +1,13 @@
 import re
+from pathlib import Path
 from typing import List
 
 import nox
 from nox.sessions import Session
 
 
-posargs_pattern = re.compile(r"^(\w+)\[(.+)\]$")
+HERE = Path(__file__).parent
+POSARGS_PATTERN = re.compile(r"^(\w+)\[(.+)\]$")
 
 
 def get_posargs(name: str, session: Session) -> List[str]:
@@ -21,7 +23,7 @@ def get_posargs(name: str, session: Session) -> List[str]:
     """
     collected_args: List[str] = []
     for arg in session.posargs:
-        match = posargs_pattern.match(arg)
+        match = POSARGS_PATTERN.match(arg)
         if match is not None:
             found_name, found_args = match.groups()
             if name == found_name:
@@ -34,8 +36,14 @@ def get_posargs(name: str, session: Session) -> List[str]:
 @nox.session(reuse_venv=True)
 def example(session: Session) -> None:
     """Run an example"""
+    if not session.posargs:
+        print("No example name given. Choose from:")
+        for found_example_file in (HERE / "docs" / "source" / "examples").glob("*.py"):
+            print("-", found_example_file.stem)
+        return None
+
     session.install("matplotlib")
-    session.install("-e", ".[stable]")
+    install_idom_dev(session)
     session.run("python", "scripts/one_example.py", *session.posargs)
 
 
@@ -43,7 +51,7 @@ def example(session: Session) -> None:
 def docs(session: Session) -> None:
     """Build and display documentation in the browser (automatically reloads on change)"""
     session.install("-r", "requirements/build-docs.txt")
-    session.install("-e", ".[all]")
+    install_idom_dev(session, extras="all")
     session.run(
         "python",
         "scripts/live_docs.py",
@@ -93,7 +101,7 @@ def test_python(session: Session) -> None:
     if "--no-cov" in pytest_args:
         session.install(".[all]")
     else:
-        session.install("-e", ".[all]")
+        install_idom_dev(session, extras="all")
 
     session.run("pytest", "tests", *pytest_args)
 
@@ -127,6 +135,11 @@ def test_style(session: Session) -> None:
 def test_docs(session: Session) -> None:
     """Verify that the docs build and that doctests pass"""
     session.install("-r", "requirements/build-docs.txt")
-    session.install("-e", ".[all]")
+    install_idom_dev(session, extras="all")
     session.run("sphinx-build", "-b", "html", "docs/source", "docs/build")
     session.run("sphinx-build", "-b", "doctest", "docs/source", "docs/build")
+
+
+def install_idom_dev(session: Session, extras: str = "stable") -> None:
+    session.install("-e", f".[{extras}]")
+    session.run("idom", "restore")

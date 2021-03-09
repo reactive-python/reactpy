@@ -1,9 +1,11 @@
 import { mountLayout } from "idom-client-react";
 
-const userPackages = import("./user-packages.js").then((packages) => {
-  packages.forEach((pkg) => {
-    console.log(`Loaded ${pkg}`);
-  });
+const userPackages = import("./user-packages.js").then((module) => {
+  for (const pkgName in module.default) {
+    module.default[pkgName].then((pkg) => {
+      console.log(`Loaded module '${pkgName}'`);
+    });
+  }
 });
 
 export function mountLayoutWithWebSocket(element, endpoint, importSourceURL) {
