@@ -6,6 +6,7 @@ from sphinx.application import Sphinx
 from sphinx.ext.doctest import DocTestBuilder
 from sphinx.ext.doctest import setup as doctest_setup
 
+
 test_template = """
 import asyncio as __asyncio
 

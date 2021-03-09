@@ -7,6 +7,7 @@ from idom.widgets.utils import MountFunc, MultiViewMount, hotswap, multiview
 from .base import AbstractRenderServer
 from .utils import find_available_port, find_builtin_server_type
 
+
 logger = logging.getLogger(__name__)
 _S = TypeVar("_S", bound=AbstractRenderServer[Any, Any])
 

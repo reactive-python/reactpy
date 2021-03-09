@@ -4,6 +4,7 @@ from docutils.nodes import raw
 from docutils.parsers.rst import Directive
 from sphinx.application import Sphinx
 
+
 _IDOM_SERVER_LOC = os.environ.get("IDOM_DOC_EXAMPLE_SERVER_HOST", "")
 
 

@@ -5,6 +5,7 @@ from typing import List, Tuple
 
 from idom.config import IDOM_CLIENT_BUILD_DIR
 
+
 HERE = Path(__file__).parent
 
 

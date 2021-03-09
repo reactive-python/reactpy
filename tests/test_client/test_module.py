@@ -6,6 +6,7 @@ import idom
 from idom import Module
 from tests.general_utils import patch_slots_object
 
+
 HERE = Path(__file__).parent
 
 

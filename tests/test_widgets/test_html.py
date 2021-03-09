@@ -6,6 +6,7 @@ from selenium.webdriver.common.keys import Keys
 import idom
 from tests.driver_utils import send_keys
 
+
 _image_src_bytes = b"""
 <svg width="400" height="110" xmlns="http://www.w3.org/2000/svg">
     <rect width="300" height="100" style="fill:rgb(0,0,255);" />

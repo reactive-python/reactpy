@@ -4,6 +4,7 @@ from fastjsonschema import JsonSchemaException
 import idom
 from idom.core.vdom import component, make_vdom_constructor, validate_serialized_vdom
 
+
 fake_events = idom.Events()
 
 

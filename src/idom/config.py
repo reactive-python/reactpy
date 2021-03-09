@@ -2,6 +2,7 @@ from pathlib import Path
 
 from . import _option
 
+
 IDOM_DEBUG_MODE = _option.Option(
     "IDOM_DEBUG_MODE",
     default=False,

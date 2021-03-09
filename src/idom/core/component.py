@@ -3,6 +3,7 @@ import inspect
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple, Union
 
+
 if TYPE_CHECKING:  # pragma: no cover
     from .vdom import VdomDict  # noqa
 

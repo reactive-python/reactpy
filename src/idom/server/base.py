@@ -4,6 +4,7 @@ from typing import Any, Dict, Generic, Optional, Tuple, TypeVar
 
 from idom.core.component import ComponentConstructor
 
+
 _App = TypeVar("_App", bound=Any)
 _Config = TypeVar("_Config", bound=Any)
 _Self = TypeVar("_Self", bound="AbstractRenderServer[Any, Any]")

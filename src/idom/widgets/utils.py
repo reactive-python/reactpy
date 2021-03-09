@@ -4,6 +4,7 @@ from idom.core import hooks
 from idom.core.component import ComponentConstructor, component
 from idom.utils import Ref
 
+
 MountFunc = Callable[[ComponentConstructor], None]
 
 

@@ -8,6 +8,7 @@ import idom
 from idom.server.sanic import PerClientStateServer
 from idom.widgets.utils import multiview
 
+
 here = Path(__file__).parent
 
 app = Sanic(__name__)

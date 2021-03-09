@@ -4,6 +4,7 @@ from typing import List
 import nox
 from nox.sessions import Session
 
+
 posargs_pattern = re.compile(r"^(\w+)\[(.+)\]$")
 
 

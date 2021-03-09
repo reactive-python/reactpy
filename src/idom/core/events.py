@@ -14,6 +14,7 @@ from typing import (
 from anyio import create_task_group
 from mypy_extensions import TypedDict
 
+
 EventsMapping = Union[Dict[str, Union["Callable[..., Any]", "EventHandler"]], "Events"]
 
 

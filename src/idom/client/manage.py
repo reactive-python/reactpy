@@ -10,6 +10,7 @@ from idom.config import IDOM_CLIENT_WEB_MODULE_BASE_URL
 
 from . import _private
 
+
 logger = getLogger(__name__)
 
 

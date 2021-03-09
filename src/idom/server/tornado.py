@@ -17,6 +17,7 @@ from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
 from .base import AbstractRenderServer
 
+
 _RouteHandlerSpecs = List[Tuple[str, Type[RequestHandler], Any]]
 
 
