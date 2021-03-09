@@ -12,6 +12,7 @@ from sphinx_autobuild.cli import (
 
 from idom.server.sanic import PerClientStateServer
 
+
 os.environ["IDOM_DOC_EXAMPLE_SERVER_HOST"] = "127.0.0.1:5555"
 _running_idom_servers = []
 

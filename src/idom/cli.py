@@ -5,6 +5,7 @@ import typer
 import idom
 from idom.client import manage as manage_client
 
+
 main = typer.Typer()
 show = typer.Typer()
 main.add_typer(show, name="show", short_help="Display information about IDOM")

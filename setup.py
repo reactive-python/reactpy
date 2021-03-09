@@ -13,6 +13,7 @@ from pathlib import Path
 from setuptools import find_packages, setup
 from setuptools.command.develop import develop
 
+
 if sys.platform == "win32":
     from subprocess import list2cmdline
 else:

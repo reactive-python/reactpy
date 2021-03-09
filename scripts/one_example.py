@@ -3,6 +3,7 @@ from pathlib import Path
 
 import idom
 
+
 here = Path(__file__).parent
 examples_dir = here.parent / "docs" / "source" / "examples"
 sys.path.insert(0, str(examples_dir))

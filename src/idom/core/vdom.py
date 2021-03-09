@@ -7,6 +7,7 @@ from typing_extensions import Protocol
 from .component import AbstractComponent
 from .events import EventsMapping
 
+
 SERIALIZED_VDOM_JSON_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema",
     "$ref": "#/definitions/element",

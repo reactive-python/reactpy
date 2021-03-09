@@ -6,6 +6,7 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 from sphinx_panels.tabs import TabbedDirective
 
+
 here = Path(__file__).parent
 examples = here.parent / "examples"
 

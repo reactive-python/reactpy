@@ -4,6 +4,7 @@ from logging.config import dictConfig
 
 from .config import IDOM_DEBUG_MODE
 
+
 root_logger = logging.getLogger("idom")
 
 

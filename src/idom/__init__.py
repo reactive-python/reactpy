@@ -1,6 +1,7 @@
 from pkg_resources import DistributionNotFound as _DistributionNotFound
 from pkg_resources import get_distribution as _get_distribution
 
+
 try:
     __version__: str = _get_distribution(__name__).version
 except _DistributionNotFound:  # pragma: no cover
@@ -18,6 +19,7 @@ from .server.prefab import run
 from .utils import Ref, html_to_vdom
 from .widgets.html import html
 from .widgets.utils import hotswap, multiview
+
 
 # try to automatically setup the dialect's import hook
 try:

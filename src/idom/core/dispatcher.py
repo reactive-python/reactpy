@@ -9,6 +9,7 @@ from anyio.abc import TaskGroup
 from .layout import Layout, LayoutEvent, LayoutUpdate
 from .utils import HasAsyncResources, async_resource
 
+
 logger = getLogger(__name__)
 
 SendCoroutine = Callable[[Any], Awaitable[None]]
