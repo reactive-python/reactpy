@@ -28,7 +28,7 @@ class Option(Generic[_O]):
 
     def set(self, new: _O) -> _O:
         if self._immutable:
-            raise TypeError(f"{self} cannot be modified after initial load.")
+            raise TypeError(f"{self} cannot be modified after initial load")
         old = self._value
         self._value = self._validator(new)
         return old

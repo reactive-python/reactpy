@@ -8,7 +8,7 @@ from .component import AbstractComponent
 from .events import EventsMapping
 
 
-SERIALIZED_VDOM_JSON_SCHEMA = {
+VDOM_JSON_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema",
     "$ref": "#/definitions/element",
     "definitions": {
@@ -63,7 +63,7 @@ SERIALIZED_VDOM_JSON_SCHEMA = {
 }
 
 
-validate_serialized_vdom = compile_json_schema(SERIALIZED_VDOM_JSON_SCHEMA)
+validate_serialized_vdom = compile_json_schema(VDOM_JSON_SCHEMA)
 
 
 class ImportSourceDict(TypedDict):
