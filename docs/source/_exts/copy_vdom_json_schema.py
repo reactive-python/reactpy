@@ -3,12 +3,12 @@ from pathlib import Path
 
 from sphinx.application import Sphinx
 
-from idom.core.vdom import SERIALIZED_VDOM_JSON_SCHEMA
+from idom.core.vdom import VDOM_JSON_SCHEMA
 
 
 def setup(app: Sphinx) -> None:
     schema_file = Path(__file__).parent.parent / "vdom-json-schema.json"
-    current_schema = json.dumps(SERIALIZED_VDOM_JSON_SCHEMA, indent=2, sort_keys=True)
+    current_schema = json.dumps(VDOM_JSON_SCHEMA, indent=2, sort_keys=True)
 
     # We need to make this check because the autoreload system for the docs checks
     # to see if the file has changed to determine whether to re-build. Thus we should
