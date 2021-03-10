@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, Optional, Tuple, Type, TypeVar
 
 from idom.core.component import ComponentConstructor
@@ -6,12 +7,13 @@ from idom.widgets.utils import MountFunc, MultiViewMount, hotswap, multiview
 from .base import AbstractRenderServer
 from .utils import find_available_port, find_builtin_server_type
 
+logger = logging.getLogger(__name__)
 _S = TypeVar("_S", bound=AbstractRenderServer[Any, Any])
 
 
 def run(
     component: ComponentConstructor,
-    server_type: Optional[Type[_S]] = find_builtin_server_type("PerClientStateServer"),
+    server_type: Type[_S] = find_builtin_server_type("PerClientStateServer"),
     host: str = "127.0.0.1",
     port: Optional[int] = None,
     server_config: Optional[Any] = None,
@@ -44,10 +46,10 @@ def run(
         The server instance. This isn't really useful unless the server is spawned
         as a daemon. Otherwise this function blocks until the server has stopped.
     """
-    if server_type is None:  # coverage: skip
-        raise ValueError("No default server available.")
     if port is None:  # coverage: skip
         port = find_available_port(host)
+
+    logger.info(f"Using {server_type.__module__}.{server_type.__name__}")
 
     server = server_type(component, server_config)
 

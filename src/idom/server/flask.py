@@ -23,6 +23,8 @@ from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
 from .base import AbstractRenderServer
 
+logger = logging.getLogger(__name__)
+
 
 class Config(TypedDict, total=False):
     """Render server config for :class:`FlaskRenderServer`"""
@@ -163,7 +165,7 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
     ) -> None:
         if debug:
             logging.basicConfig(level=logging.DEBUG)  # coverage: skip
-        logging.debug("Starting server...")
+        logger.info(f"Running at http://{host}:{port}")
         self._wsgi_server = _StartCallbackWSGIServer(
             self._server_did_start.set,
             (host, port),
