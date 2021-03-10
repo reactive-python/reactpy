@@ -25,7 +25,7 @@ LOGGING_CONFIG_DEFAULTS = {
     },
     "formatters": {
         "generic": {
-            "format": "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+            "format": "%(asctime)s | %(levelname)s | %(message)s",
             "datefmt": r"%Y-%m-%dT%H:%M:%S%z",
             "class": "logging.Formatter",
         }
