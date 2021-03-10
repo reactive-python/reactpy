@@ -6,7 +6,7 @@ from . import _option
 IDOM_DEBUG_MODE = _option.Option(
     "IDOM_DEBUG_MODE",
     default=False,
-    allow_changes=False,
+    immutable=True,
     validator=lambda x: bool(int(x)),
 )
 """Turn on/off debug mode"""
