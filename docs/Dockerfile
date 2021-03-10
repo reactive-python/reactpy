@@ -15,7 +15,7 @@ RUN pip install --upgrade pip
 # ------------
 ADD requirements ./requirements
 ADD .git ./.git
-ADD idom ./idom
+ADD src ./src
 ADD scripts ./scripts
 ADD setup.py ./
 ADD setup.cfg ./
