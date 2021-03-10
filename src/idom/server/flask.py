@@ -241,7 +241,9 @@ def run_dispatcher_in_thread(
             if value is None:
                 stop.set()
                 break
-            dispatch_thread_info.dispatch_loop.call_soon_threadsafe(
+            # BUG: https://github.com/nedbat/coveragepy/issues/1012
+            # Coverage isn't able to support concurrency coverage for both threading and gevent
+            dispatch_thread_info.dispatch_loop.call_soon_threadsafe(  # pragma: no cover
                 dispatch_thread_info.async_recv_queue.put_nowait, value
             )
     finally:
@@ -273,7 +275,8 @@ class _StartCallbackWSGIServer(pywsgi.WSGIServer):  # type: ignore
         This includes getting the correct server name and port.
         """
         super().update_environ()
-        # BUG: for some reason coverage doesn't seem to think this line is covered
+        # BUG: https://github.com/nedbat/coveragepy/issues/1012
+        # Coverage isn't able to support concurrency coverage for both threading and gevent
         self._before_first_request_callback()  # pragma: no cover
 
 

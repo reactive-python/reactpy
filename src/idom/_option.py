@@ -14,12 +14,12 @@ class Option(Generic[_O]):
         self,
         name: str,
         default: _O,
-        allow_changes: bool = True,
+        immutable: bool = False,
         validator: Callable[[Any], _O] = lambda x: cast(_O, x),
     ) -> None:
         self.name = name
         self._default = default
-        self._allow_changes = allow_changes
+        self._immutable = immutable
         self._validator = validator
         self._value = validator(os.environ.get(name, default))
 
@@ -27,11 +27,14 @@ class Option(Generic[_O]):
         return self._value
 
     def set(self, new: _O) -> _O:
-        if not self._allow_changes:
-            raise ValueError(f"{self.name} cannot be modified.")
+        if self._immutable:
+            raise TypeError(f"{self} cannot be modified after initial load.")
         old = self._value
         self._value = self._validator(new)
         return old
 
     def reset(self) -> _O:
         return self.set(self._default)
+
+    def __repr__(self) -> str:
+        return f"Option(name={self.name!r}, value={self._value!r})"
