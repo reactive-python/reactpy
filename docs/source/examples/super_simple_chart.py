@@ -3,6 +3,9 @@ from pathlib import Path
 import idom
 
 
+# we use this to make writing our React code a bit easier
+idom.install("htm")
+
 path_to_source_file = Path(__file__).parent / "super_simple_chart.js"
 ssc = idom.Module("super-simple-chart", source_file=path_to_source_file)
 

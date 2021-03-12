@@ -142,4 +142,4 @@ def test_docs(session: Session) -> None:
 
 def install_idom_dev(session: Session, extras: str = "stable") -> None:
     session.install("-e", f".[{extras}]")
-    session.run("idom", "restore")
+    session.run("idom", "client", "restore")

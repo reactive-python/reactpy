@@ -7,3 +7,4 @@ jsonpatch >=1.26
 typer >=0.3.2
 click-spinner >=0.1.10
 fastjsonschema >=2.14.5
+rich >=9.13.0
