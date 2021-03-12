@@ -38,7 +38,7 @@ def install(
     pkg_names = {_private.get_package_name(pkg) for pkg in packages}
 
     if ignore_installed or pkg_names.difference(manage.web_module_names()):
-        manage.build(packages)
+        manage.build(packages, clean_build=False)
 
     return (
         Module(pkg_names.pop(), fallback=fallback)

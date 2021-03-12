@@ -57,7 +57,7 @@ Simply install your javascript library of choice using the ``idom`` CLI:
 
 .. code-block:: bash
 
-    idom install victory
+    idom client install victory
 
 Then import the module with :class:`~idom.widgets.utils.Module`:
 

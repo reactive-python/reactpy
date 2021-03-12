@@ -38,7 +38,7 @@ using the ``idom`` CLI:
 
 .. code-block:: bash
 
-    idom install @material-ui/core
+    idom client install @material-ui/core
 
 Or at runtime with :func:`idom.client.module.install` (this is useful if you're working
 in a REPL or Jupyter Notebook):
