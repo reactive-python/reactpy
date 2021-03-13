@@ -26,12 +26,6 @@ def install(packages: List[str]) -> None:
 
 
 @client.command()
-def rebuild(clean: bool = False) -> None:
-    """Rebuild the client (keeps currently installed packages by default)"""
-    manage_client.build([], clean_build=clean)
-
-
-@client.command()
 def restore() -> None:
     """Return to a fresh install of Ithe client"""
     manage_client.restore()

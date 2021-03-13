@@ -4,7 +4,7 @@ import subprocess
 from logging import getLogger
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Dict, Iterable, List, Sequence, Set, Union
+from typing import Dict, Iterable, List, Sequence, Set, Union, cast
 
 from idom.config import IDOM_CLIENT_WEB_MODULE_BASE_URL
 
@@ -65,7 +65,7 @@ def web_module_path(package_name: str, must_exist: bool = False) -> Path:
 
 def dependency_versions() -> Dict[str, str]:
     package_json = _private.build_dir() / "package.json"
-    return json.loads(package_json.read_text())["dependencies"]
+    return cast(Dict[str, str], json.loads(package_json.read_text())["dependencies"])
 
 
 def restore() -> None:
