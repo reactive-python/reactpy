@@ -26,7 +26,7 @@ def test_show_version():
     actual_rows = []
     for line in verbose_result.stdout.split("\n"):
         maybe_row = list(map(str.strip, filter(None, line.split("│"))))
-        if len(maybe_row) > 1:
+        if len(maybe_row) > 1 and maybe_row != ["Package", "Version", "Language"]:
             actual_rows.append(maybe_row)
 
     expected_rows = [["idom", idom.__version__, "Python"]] + [
