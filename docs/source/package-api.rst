@@ -91,9 +91,6 @@ Client
 .. automodule:: idom.client.manage
     :members:
 
-.. automodule:: idom.client.utils
-    :members:
-
 
 Useful Tools
 ------------

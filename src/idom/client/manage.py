@@ -89,7 +89,7 @@ def build(packages_to_install: Sequence[str], clean_build: bool = True) -> None:
         }
 
         # make sure we don't delete anything we've already installed
-        built_package_json_path = temp_build_dir / "package.json"
+        built_package_json_path = _private.build_dir() / "package.json"
         if not clean_build and built_package_json_path.exists():
             built_package_json = json.loads(built_package_json_path.read_text())
             for dep_name, dep_ver in built_package_json.get("dependencies", {}).items():
