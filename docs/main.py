@@ -2,7 +2,7 @@ import os
 import sys
 from pathlib import Path
 
-from sanic import Sanic, response
+from sanic import Sanic
 
 import idom
 from idom.server.sanic import PerClientStateServer
@@ -12,12 +12,7 @@ from idom.widgets.utils import multiview
 here = Path(__file__).parent
 
 app = Sanic(__name__)
-app.static("/docs", str(here / "build"))
-
-
-@app.route("/")
-async def forward_to_index(request):
-    return response.redirect("/docs/index.html")
+app.static("/", str(here / "build"))
 
 
 mount, component = multiview()
@@ -51,7 +46,9 @@ finally:
     idom.run = original_run
 
 
-PerClientStateServer(component, {"redirect_root_to_index": False}).register(app)
+PerClientStateServer(
+    component, {"redirect_root_to_index": False, "url_prefix": "/_idom"}
+).register(app)
 
 
 if __name__ == "__main__":

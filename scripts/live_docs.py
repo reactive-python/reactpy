@@ -26,7 +26,9 @@ def wrap_builder(old_builder):
 
         importlib.reload(main)
 
-        server = PerClientStateServer(main.component, {"cors": True})
+        server = PerClientStateServer(
+            main.component, {"cors": True, "url_prefix": "_idom"}
+        )
         _running_idom_servers.append(server)
         server.daemon("127.0.0.1", 5555, debug=True)
         old_builder()

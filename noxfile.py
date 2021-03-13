@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 from typing import List
@@ -56,10 +57,14 @@ def docs(session: Session) -> None:
         "python",
         "scripts/live_docs.py",
         "--open-browser",
+        "--ignore=build/**/*",
+        "-a",
+        "-E",
         "-b",
         "html",
         "docs/source",
         "docs/build",
+        env={"PYTHONPATH": os.getcwd()},
     )
 
 
@@ -142,4 +147,5 @@ def test_docs(session: Session) -> None:
 
 def install_idom_dev(session: Session, extras: str = "stable") -> None:
     session.install("-e", f".[{extras}]")
-    session.run("idom", "client", "restore")
+    if "--no-restore" not in session.posargs:
+        session.run("idom", "client", "restore")
