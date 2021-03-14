@@ -12,12 +12,12 @@ from idom.widgets.utils import multiview
 here = Path(__file__).parent
 
 app = Sanic(__name__)
-app.static("/", str(here / "build"))
+app.static("/docs", str(here / "build"))
 
 
 @app.route("/")
 async def forward_to_index(request):
-    return response.redirect("/index.html")
+    return response.redirect("/docs/index.html")
 
 
 mount, component = multiview()
