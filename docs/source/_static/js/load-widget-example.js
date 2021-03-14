@@ -1,6 +1,11 @@
-export default function loadWidgetExample(idomServerLocation, mountID, viewID) {
+export default function loadWidgetExample(
+  idomServerHost,
+  idomServerPath,
+  mountID,
+  viewID
+) {
   const loc = window.location;
-  const idom_url = "//" + (idomServerLocation || loc.host);
+  const idom_url = "//" + (idomServerHost || loc.host) + idomServerPath;
   const http_proto = loc.protocol;
   const ws_proto = http_proto === "https:" ? "wss:" : "ws:";
 
