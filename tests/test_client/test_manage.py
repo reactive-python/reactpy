@@ -2,12 +2,22 @@ import pytest
 
 from idom.client.manage import (
     add_web_module,
+    build,
+    restore,
     web_module_exists,
     web_module_exports,
     web_module_path,
     web_module_url,
 )
 from tests.general_utils import assert_same_items
+
+
+def test_clean_build():
+    restore()
+    build(["jquery"])
+    assert web_module_exists("jquery")
+    build([], clean_build=True)
+    assert not web_module_exists("jquery")
 
 
 def test_add_web_module_source_must_exist(tmp_path):

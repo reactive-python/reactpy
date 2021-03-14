@@ -23,7 +23,7 @@ ADD MANIFEST.in ./
 ADD README.md ./
 
 RUN pip install -e .[all]
-RUN python -m idom client install victory semantic-ui-react @material-ui/core
+RUN python -m idom install htm victory semantic-ui-react @material-ui/core
 
 # Build the Docs
 # --------------

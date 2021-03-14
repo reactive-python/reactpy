@@ -1,10 +1,9 @@
-import json
 import shutil
 import subprocess
 from logging import getLogger
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Dict, Iterable, List, Sequence, Set, Union, cast
+from typing import Dict, Iterable, List, Sequence, Set, Union
 
 from idom.config import IDOM_CLIENT_WEB_MODULE_BASE_URL
 
@@ -63,17 +62,37 @@ def web_module_path(package_name: str, must_exist: bool = False) -> Path:
     return path
 
 
-def dependency_versions() -> Dict[str, str]:
-    package_json = _private.build_dir() / "package.json"
-    return cast(Dict[str, str], json.loads(package_json.read_text())["dependencies"])
-
-
 def restore() -> None:
     _private.restore_build_dir_from_backup()
 
 
-def build(packages_to_install: Sequence[str], clean_build: bool = True) -> None:
-    packages_to_install = list(packages_to_install)
+def build(
+    packages: Sequence[str],
+    clean_build: bool = True,
+    skip_if_already_installed: bool = True,
+) -> None:
+    package_specifiers_to_install = list(packages)
+    del packages  # delete since we just renamed it
+
+    packages_to_install = _parse_package_specs(package_specifiers_to_install)
+    installed_packages = _private.build_dependencies()
+
+    if clean_build:
+        all_packages = packages_to_install
+    else:
+        if skip_if_already_installed:
+            for pkg_name, pkg_ver in packages_to_install.items():
+                if pkg_name not in installed_packages or (
+                    pkg_ver and installed_packages[pkg_name] != pkg_ver
+                ):
+                    break
+            else:
+                logger.info(f"Already installed {package_specifiers_to_install}")
+                logger.info("Build skipped ✅")
+                return None
+        all_packages = {**installed_packages, **packages_to_install}
+
+    all_package_specifiers = [f"{p}@{v}" if v else p for p, v in all_packages.items()]
 
     with TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
@@ -84,26 +103,13 @@ def build(packages_to_install: Sequence[str], clean_build: bool = True) -> None:
         # copy over the whole APP_DIR directory into the temp one
         shutil.copytree(_private.APP_DIR, temp_app_dir, symlinks=True)
 
-        package_names_to_install = {
-            _private.get_package_name(p) for p in packages_to_install
-        }
-
-        # make sure we don't delete anything we've already installed
-        built_package_json_path = _private.build_dir() / "package.json"
-        if not clean_build and built_package_json_path.exists():
-            built_package_json = json.loads(built_package_json_path.read_text())
-            for dep_name, dep_ver in built_package_json.get("dependencies", {}).items():
-                if dep_name not in package_names_to_install:
-                    packages_to_install.append(f"{dep_name}@{dep_ver}")
-                    package_names_to_install.add(dep_name)
-
         _write_user_packages_file(
             temp_app_dir / "src" / "user-packages.js",
-            package_names_to_install,
+            list(all_packages),
         )
 
-        logger.info(f"Installing {packages_to_install or 'packages'} ...")
-        _npm_install(packages_to_install, temp_app_dir)
+        logger.info("Installing dependencies...")
+        _npm_install(all_package_specifiers, temp_app_dir)
         logger.info("Installed successfully ✅")
 
         logger.debug(f"package.json: {package_json_path.read_text()}")
@@ -114,12 +120,19 @@ def build(packages_to_install: Sequence[str], clean_build: bool = True) -> None:
 
         _private.replace_build_dir(temp_build_dir)
 
-    not_discovered = package_names_to_install.difference(web_module_names())
+    not_discovered = set(all_packages).difference(web_module_names())
     if not_discovered:
         raise RuntimeError(  # pragma: no cover
-            f"Successfuly installed {list(package_names_to_install)} but "
+            f"Successfuly installed {list(all_packages)} but "
             f"failed to discover {list(not_discovered)} post-install."
         )
+
+
+def _parse_package_specs(package_strings: Sequence[str]) -> Dict[str, str]:
+    return {
+        dep: ver
+        for dep, ver in map(_private.split_package_name_and_version, package_strings)
+    }
 
 
 def _npm_install(packages: List[str], cwd: Path) -> None:

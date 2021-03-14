@@ -1,14 +1,13 @@
+import json
 import re
 import shutil
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, List, Tuple, cast
 
 from idom.config import IDOM_CLIENT_BUILD_DIR
 
 
 HERE = Path(__file__).parent
-
-
 APP_DIR = HERE / "app"
 BACKUP_BUILD_DIR = APP_DIR / "build"
 
@@ -56,6 +55,11 @@ def split_package_name_and_version(pkg: str) -> Tuple[str, str]:
         return name, version
     else:
         return pkg, ""
+
+
+def build_dependencies() -> Dict[str, str]:
+    package_json = build_dir() / "package.json"
+    return cast(Dict[str, str], json.loads(package_json.read_text())["dependencies"])
 
 
 _JS_MODULE_EXPORT_PATTERN = re.compile(
