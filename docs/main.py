@@ -2,7 +2,7 @@ import os
 import sys
 from pathlib import Path
 
-from sanic import Sanic
+from sanic import Sanic, response
 
 import idom
 from idom.server.sanic import PerClientStateServer
@@ -13,6 +13,11 @@ here = Path(__file__).parent
 
 app = Sanic(__name__)
 app.static("/", str(here / "build"))
+
+
+@app.route("/")
+async def forward_to_index(request):
+    return response.redirect("/index.html")
 
 
 mount, component = multiview()
