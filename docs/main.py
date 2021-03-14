@@ -52,7 +52,7 @@ finally:
 
 
 PerClientStateServer(
-    component, {"serve_static_files": False, "url_prefix": "/_idom"}
+    component, {"redirect_root_to_index": False, "url_prefix": "/_idom"}
 ).register(app)
 
 
