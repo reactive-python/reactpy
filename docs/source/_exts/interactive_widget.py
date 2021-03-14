@@ -25,7 +25,7 @@ class IteractiveWidget(Directive):
                 <div>
                     <div id="{container_id}" class="interactive widget-container center-content" style="" />
                     <script async type="module">
-                        import loadWidgetExample from "/_static/js/load-widget-example.js";
+                        import loadWidgetExample from "/docs/_static/js/load-widget-example.js";
                         loadWidgetExample("{_IDOM_SERVER_LOC}", "/_idom", "{container_id}", "{view_id}");
                     </script>
                 </div>
