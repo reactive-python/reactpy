@@ -8,7 +8,7 @@ from idom._option import Option
 
 def test_option_repr():
     opt = Option("A_FAKE_OPTION", "some-value")
-    assert repr(opt) == "Option(name='A_FAKE_OPTION', value='some-value')"
+    assert repr(opt) == "Option(A_FAKE_OPTION='some-value')"
 
 
 @mock.patch.dict(os.environ, {"A_FAKE_OPTION": "value-from-environ"})
@@ -36,7 +36,8 @@ def test_option_validator():
 
 
 def test_immutable_option():
-    opt = Option("A_FAKE_OPTION", "default-value", immutable=True)
+    opt = Option("A_FAKE_OPTION", "default-value", mutable=False)
+    assert not opt.mutable
     with pytest.raises(TypeError, match="cannot be modified after initial load"):
         opt.set("a-new-value")
 
