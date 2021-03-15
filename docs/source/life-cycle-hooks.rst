@@ -300,7 +300,7 @@ Rules of Hooks
 
 Hooks are just normal Python functions, but there's a bit of magic to them, and in order
 for that magic to work you've got to follow two rules. Thankfully we supply a
-`Flake8 Linter Plugin`_ to help enforce them.
+:ref:`Flake8 Plugin` to help enforce them.
 
 
 Only call outside flow controls

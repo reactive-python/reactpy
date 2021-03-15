@@ -17,13 +17,14 @@ For more installation options see the :ref:`Extra Features` section.
 
 .. note::
 
-    To contribute to IDOM, refer to the :ref:`Developer Guide` instructions.
+    IDOM also supplies a :ref:`Flake8 Plugin` to help enforce the :ref:`Rules of Hooks`
 
 
 Extra Features
 --------------
 
-Optionally installable features of IDOM. To install them use the given "Name" from the table below
+Optionally installable features of IDOM. To include, them use the given "Name" from the
+table below:
 
 .. code-block:: bash
 
@@ -136,9 +137,8 @@ How It Works
 Once ``idom`` has been imported at your application's entrypoint, any following modules
 imported with a ``# dialect=html`` header comment get transpiled just before they're
 executed. This is accomplished by using Pyalect_ to hook a transpiler into Pythons
-import system. The :class:`~idom.dialect.HtmlDialectTranspiler` which implements
-Pyalect_'s :class:`~pyalect.dialect.Transpiler` interface using some tooling from
-htm.py_.
+import system. The :class:`~idom.dialect.HtmlDialectTranspiler` implements Pyalect_'s
+:class:`~pyalect.dialect.Transpiler` interface using some tooling from htm.py_.
 
 
 .. Links
