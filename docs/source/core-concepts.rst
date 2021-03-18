@@ -179,6 +179,12 @@ with support for the following web servers:
 
   - :class:`idom.server.sanic.SharedClientStateServer`
 
+- `fastapi.FastAPI <https://fastapi.tiangolo.com/>`__ (``pip install idom[fastapi]``)
+
+  - :class:`idom.server.fastapi.PerClientStateServer`
+
+  - :class:`idom.server.fastapi.SharedClientStateServer`
+
 - :class:`flask.Flask` (``pip install idom[flask]``)
 
   - :class:`idom.server.flask.PerClientStateServer`
