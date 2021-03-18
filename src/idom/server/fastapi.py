@@ -67,7 +67,7 @@ class FastApiRenderServer(AbstractRenderServer[FastAPI, Config]):
         self._setup_static_files(config, app)
 
         cors_config = config["cors"]
-        if cors_config:
+        if cors_config:  # pragma: no cover
             cors_params = (
                 cors_config
                 if isinstance(cors_config, dict)
