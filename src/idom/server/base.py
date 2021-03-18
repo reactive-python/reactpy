@@ -30,7 +30,7 @@ class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
     ) -> None:
         self._app: Optional[_App] = None
         self._root_component_constructor = constructor
-        self._daemonized = False
+        self._daemon_thread: Optional[Thread] = None
         self._config = self._create_config(config)
         self._server_did_start = Event()
 
@@ -47,7 +47,7 @@ class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
             self.register(app)
         else:  # pragma: no cover
             app = self._app
-        if not self._daemonized:  # pragma: no cover
+        if self._daemon_thread is None:  # pragma: no cover
             return self._run_application(self._config, app, host, port, args, kwargs)
         else:
             return self._run_application_in_thread(
@@ -56,11 +56,11 @@ class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
 
     def daemon(self, *args: Any, **kwargs: Any) -> Thread:
         """Run the standalone application in a seperate thread."""
-        self._daemonized = True
+        self._daemon_thread = thread = Thread(
+            target=lambda: self.run(*args, **kwargs), daemon=True
+        )
 
-        thread = Thread(target=lambda: self.run(*args, **kwargs), daemon=True)
         thread.start()
-
         self.wait_until_server_start()
 
         return thread

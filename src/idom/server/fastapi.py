@@ -1,17 +1,21 @@
 import asyncio
 import json
 import logging
+import sys
 import uuid
 from threading import Event
 from typing import Any, Dict, Optional, Tuple, Type, Union, cast
 
-import uvicorn
 from fastapi import APIRouter, FastAPI, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from mypy_extensions import TypedDict
 from starlette.websockets import WebSocketDisconnect
+from uvicorn.config import Config as UvicornConfig
+from uvicorn.server import Server as UvicornServer
+from uvicorn.supervisors.multiprocess import Multiprocess
+from uvicorn.supervisors.statreload import StatReload as ChangeReload
 
 from idom.config import IDOM_CLIENT_BUILD_DIR
 from idom.core.dispatcher import (
@@ -42,10 +46,13 @@ class FastApiRenderServer(AbstractRenderServer[FastAPI, Config]):
     """Base ``sanic`` extension."""
 
     _dispatcher_type: Type[AbstractDispatcher]
+    _server: UvicornServer
 
-    def stop(self) -> None:
+    def stop(self, timeout: float = 3) -> None:
         """Stop the running application"""
-        self._loop.call_soon_threadsafe(self._loop.stop)
+        self._server.should_exit
+        if self._daemon_thread is not None:
+            self._daemon_thread.join(timeout)
 
     def _create_config(self, config: Optional[Config]) -> Config:
         new_config: Config = {
@@ -137,7 +144,10 @@ class FastApiRenderServer(AbstractRenderServer[FastAPI, Config]):
         args: Tuple[Any, ...],
         kwargs: Dict[str, Any],
     ) -> None:
-        uvicorn.run(app, host=host, port=port, loop="asyncio", *args, **kwargs)
+        self._server = UvicornServer(
+            UvicornConfig(app, host=host, port=port, loop="asyncio", *args, **kwargs)
+        )
+        _run_uvicorn_server(self._server)
 
     def _run_application_in_thread(
         self,
@@ -199,3 +209,35 @@ class SharedClientStateServer(FastApiRenderServer):
             msg = f"SharedClientState server does not support per-client view parameters {params}"
             raise ValueError(msg)
         await self._dispatcher.run(send, recv, uuid.uuid4().hex, join=True)
+
+
+def _run_uvicorn_server(server: UvicornServer) -> None:
+    # The following was copied from the uvicorn source with minimal modification. We
+    # shouldn't need to do this, but unfortunately there's no easy way to gain access to
+    # the server instance so you can stop it.
+    # BUG: https://github.com/encode/uvicorn/issues/742
+    config = server.config
+
+    if (config.reload or config.workers > 1) and not isinstance(
+        server.config.app, str
+    ):  # pragma: no cover
+        logger = logging.getLogger("uvicorn.error")
+        logger.warning(
+            "You must pass the application as an import string to enable 'reload' or "
+            "'workers'."
+        )
+        sys.exit(1)
+
+    if config.should_reload:  # pragma: no cover
+        sock = config.bind_socket()
+        supervisor = ChangeReload(config, target=server.run, sockets=[sock])
+        supervisor.run()
+    elif config.workers > 1:  # pragma: no cover
+        sock = config.bind_socket()
+        supervisor = Multiprocess(config, target=server.run, sockets=[sock])
+        supervisor.run()
+    else:
+        import asyncio
+
+        asyncio.set_event_loop(asyncio.new_event_loop())
+        server.run()
