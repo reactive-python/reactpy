@@ -53,6 +53,13 @@ Flask Servers
     :members:
 
 
+FastAPI Servers
+-------------
+
+.. automodule:: idom.server.fastapi
+    :members:
+
+
 Tornado Servers
 ---------------
 

@@ -46,6 +46,9 @@ table below:
     *   - ``sanic``
         - `Sanic <https://sanicframework.org/>`__ as a :ref:`Layout Server`
 
+    *   - ``fastapi``
+        - `FastAPI <https://fastapi.tiangolo.com//>`__ as a :ref:`Layout Server`
+
     *   - ``tornado``
         - `Tornado <https://www.tornadoweb.org/en/stable/>`__ as a :ref:`Layout Server`
 
