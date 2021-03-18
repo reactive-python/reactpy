@@ -69,7 +69,7 @@ def server_mount_point():
 
     The ``mount`` and ``server`` fixtures use this.
     """
-    with ServerMountPoint(server_config={"cors": True}) as mount_point:
+    with ServerMountPoint() as mount_point:
         yield mount_point
 
 

@@ -60,7 +60,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
         self._setup_blueprint_routes(config, bp)
 
         cors_config = config["cors"]
-        if cors_config:
+        if cors_config:  # pragma: no cover
             cors_params = cors_config if isinstance(cors_config, dict) else {}
             CORS(bp, **cors_params)
 
