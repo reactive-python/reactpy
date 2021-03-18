@@ -137,7 +137,7 @@ class FastApiRenderServer(AbstractRenderServer[FastAPI, Config]):
         args: Tuple[Any, ...],
         kwargs: Dict[str, Any],
     ) -> None:
-        uvicorn.run(app, host=host, port=port, *args, **kwargs)
+        uvicorn.run(app, host=host, port=port, loop="asyncio", *args, **kwargs)
 
     def _run_application_in_thread(
         self,
