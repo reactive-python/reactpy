@@ -1,6 +1,7 @@
 import pytest
 
 import idom
+from idom.server import fastapi as idom_fastapi
 from idom.server import flask as idom_flask
 from idom.server import sanic as idom_sanic
 from idom.server import tornado as idom_tornado
@@ -14,6 +15,7 @@ from idom.testing import ServerMountPoint
         idom_sanic.PerClientStateServer,
         idom_flask.PerClientStateServer,
         idom_tornado.PerClientStateServer,
+        idom_fastapi.PerClientStateServer,
     ],
     ids=lambda cls: f"{cls.__module__}.{cls.__name__}",
 )

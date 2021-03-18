@@ -2,6 +2,10 @@
 sanic <19.12.0
 sanic-cors >=0.9.9
 
+# extra=fastapi
+fastapi >=0.63.0
+uvicorn[standard] >=0.13.4
+
 # extra=flask
 flask
 flask-cors

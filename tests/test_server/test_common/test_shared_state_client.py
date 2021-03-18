@@ -4,6 +4,7 @@ from weakref import finalize
 import pytest
 
 import idom
+from idom.server import fastapi as idom_fastapi
 from idom.server import sanic as idom_sanic
 from idom.testing import ServerMountPoint
 
@@ -13,6 +14,7 @@ from idom.testing import ServerMountPoint
         # add new SharedClientStateServer implementations here to
         # run a suite of tests which check basic functionality
         idom_sanic.SharedClientStateServer,
+        idom_fastapi.SharedClientStateServer,
     ],
     ids=lambda cls: f"{cls.__module__}.{cls.__name__}",
 )
