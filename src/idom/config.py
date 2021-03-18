@@ -24,7 +24,12 @@ IDOM_CLIENT_BUILD_DIR = _option.Option(
     default=Path(__file__).parent / "client" / "build",
     validator=Path,
 )
-"""The location IDOM will use to store its client application"""
+"""The location IDOM will use to store its client application
+
+This directory **MUST** be treated as a black box. Downstream applications **MUST NOT**
+assume anything about the structure of this directory see :mod:`idom.client.manage` for
+a set of publically available APIs for working with the client.
+"""
 
 IDOM_CLIENT_WEB_MODULE_BASE_URL = _option.Option(
     "IDOM_CLIENT_WEB_MODULE_BASE_URL",
