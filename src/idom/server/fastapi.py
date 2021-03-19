@@ -1,9 +1,9 @@
-import asyncio
 import json
 import logging
 import sys
+import time
 import uuid
-from threading import Event
+from threading import Event, Thread
 from typing import Any, Dict, Optional, Tuple, Type, Union, cast
 
 from fastapi import APIRouter, FastAPI, Request, WebSocket
@@ -87,10 +87,12 @@ class FastApiRenderServer(AbstractRenderServer[FastAPI, Config]):
     def _setup_application_did_start_event(
         self, config: Config, app: FastAPI, event: Event
     ) -> None:
-        @app.on_event("startup")
-        async def startup_event() -> None:
-            self._loop = asyncio.get_event_loop()
+        def target():
+            while not hasattr(self, "_server") or not self._server.started:
+                time.sleep(1e-3)
             event.set()
+
+        Thread(target=target, daemon=True).start()
 
     def _setup_api_router(self, config: Config, router: APIRouter) -> None:
         """Add routes to the application blueprint"""
