@@ -87,7 +87,7 @@ class FastApiRenderServer(AbstractRenderServer[FastAPI, Config]):
     def _setup_application_did_start_event(
         self, config: Config, app: FastAPI, event: Event
     ) -> None:
-        def target():
+        def target() -> None:
             while not hasattr(self, "_server") or not self._server.started:
                 time.sleep(1e-3)
             event.set()
