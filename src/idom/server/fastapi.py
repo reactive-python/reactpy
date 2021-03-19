@@ -88,14 +88,14 @@ class FastApiRenderServer(AbstractRenderServer[FastAPI, Config]):
         self, config: Config, app: FastAPI, event: Event
     ) -> None:
         @app.on_event("startup")
-        async def startup_event():
+        async def startup_event() -> None:
             self._loop = asyncio.get_event_loop()
             event.set()
 
     def _setup_api_router(self, config: Config, router: APIRouter) -> None:
         """Add routes to the application blueprint"""
 
-        @router.websocket("/stream")  # type: ignore
+        @router.websocket("/stream")
         async def model_stream(socket: WebSocket) -> None:
             await socket.accept()
 
@@ -130,7 +130,7 @@ class FastApiRenderServer(AbstractRenderServer[FastAPI, Config]):
             if config["redirect_root_to_index"]:
 
                 @app.route(f"{url_prefix}/")
-                def redirect_to_index(request: Request):
+                def redirect_to_index(request: Request) -> RedirectResponse:
                     return RedirectResponse(
                         f"{url_prefix}/client/index.html?{request.query_params}"
                     )
