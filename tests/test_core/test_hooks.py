@@ -252,6 +252,42 @@ def test_simple_input_with_use_state(driver, display):
     assert message_ref.current == "this is a test"
 
 
+def test_double_set_state(driver, display):
+    @idom.component
+    def SomeComponent():
+        state_1, set_state_1 = idom.hooks.use_state(0)
+        state_2, set_state_2 = idom.hooks.use_state(0)
+
+        def double_set_state(event):
+            set_state_1(state_1 + 1)
+            set_state_2(state_2 + 1)
+
+        return idom.html.div(
+            idom.html.div({"id": "first", "value": state_1}, f"value is: {state_1}"),
+            idom.html.div({"id": "second", "value": state_2}, f"value is: {state_2}"),
+            idom.html.button({"id": "button", "onClick": double_set_state}, "click me"),
+        )
+
+    display(SomeComponent)
+
+    button = driver.find_element_by_id("button")
+    first = driver.find_element_by_id("first")
+    second = driver.find_element_by_id("second")
+
+    assert first.get_attribute("value") == "0"
+    assert second.get_attribute("value") == "0"
+
+    button.click()
+
+    assert first.get_attribute("value") == "1"
+    assert second.get_attribute("value") == "1"
+
+    button.click()
+
+    assert first.get_attribute("value") == "2"
+    assert second.get_attribute("value") == "2"
+
+
 async def test_use_effect_callback_occurs_after_full_render_is_complete():
     effect_triggered = idom.Ref(False)
     effect_triggers_after_final_render = idom.Ref(None)
