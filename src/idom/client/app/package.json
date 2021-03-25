@@ -19,7 +19,7 @@
     "snowpack": "^3.1.0-pre.11"
   },
   "dependencies": {
-    "idom-client-react": "^0.7.3",
+    "idom-client-react": "file:packages/idom-client-react",
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
   }
