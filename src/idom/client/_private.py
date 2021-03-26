@@ -11,6 +11,15 @@ HERE = Path(__file__).parent
 APP_DIR = HERE / "app"
 BACKUP_BUILD_DIR = APP_DIR / "build"
 
+# the path relative to the build that contains import sources
+IDOM_CLIENT_IMPORT_SOURCE_URL_INFIX = "/_snowpack/pkg"
+
+
+def web_modules_dir() -> Path:
+    return IDOM_CLIENT_BUILD_DIR.get().joinpath(
+        *IDOM_CLIENT_IMPORT_SOURCE_URL_INFIX[1:].split("/")
+    )
+
 
 if not IDOM_CLIENT_BUILD_DIR.get().exists():  # pragma: no cover
     shutil.copytree(BACKUP_BUILD_DIR, IDOM_CLIENT_BUILD_DIR.get(), symlinks=True)

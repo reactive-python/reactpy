@@ -20,6 +20,7 @@ def test_option_from_os_environ():
 def test_option_from_default():
     opt = Option("A_FAKE_OPTION", "default-value")
     assert opt.get() == "default-value"
+    assert opt.get() is opt.default
 
 
 @mock.patch.dict(os.environ, {"A_FAKE_OPTION": "1"})
@@ -47,7 +48,7 @@ def test_option_reset():
     opt.set("a-new-value")
     assert opt.get() == "a-new-value"
     opt.reset()
-    assert opt.get() == "default-value"
+    assert opt.get() is opt.default
 
 
 def test_option_set_returns_last_value():

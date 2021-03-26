@@ -33,7 +33,7 @@ def test_web_module_path_must_exist():
 
 def test_web_module_url(victory):
     assert web_module_exists("victory")
-    assert web_module_url("victory") == "./victory.js"
+    assert web_module_url("victory") == "/client/_snowpack/pkg/victory.js"
 
 
 def test_web_module_exports(victory):
