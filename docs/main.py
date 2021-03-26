@@ -5,8 +5,17 @@ from pathlib import Path
 from sanic import Sanic, response
 
 import idom
+from idom.config import IDOM_CLIENT_IMPORT_SOURCE_URL
 from idom.server.sanic import PerClientStateServer
 from idom.widgets.utils import multiview
+
+
+IDOM_MODEL_SERVER_URL_PREFIX = "/_idom"
+
+IDOM_CLIENT_IMPORT_SOURCE_URL.set_default(
+    # set_default because scripts/live_docs.py needs to overwrite this
+    f"{IDOM_MODEL_SERVER_URL_PREFIX}{IDOM_CLIENT_IMPORT_SOURCE_URL.default}"
+)
 
 
 here = Path(__file__).parent
@@ -52,7 +61,11 @@ finally:
 
 
 PerClientStateServer(
-    component, {"redirect_root_to_index": False, "url_prefix": "/_idom"}
+    component,
+    {
+        "redirect_root_to_index": False,
+        "url_prefix": IDOM_MODEL_SERVER_URL_PREFIX,
+    },
 ).register(app)
 
 

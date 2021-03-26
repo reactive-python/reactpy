@@ -5,7 +5,9 @@ from docutils.parsers.rst import Directive
 from sphinx.application import Sphinx
 
 
-_IDOM_SERVER_LOC = os.environ.get("IDOM_DOC_EXAMPLE_SERVER_HOST", "")
+_IDOM_EXAMPLE_HOST = os.environ.get("IDOM_DOC_EXAMPLE_SERVER_HOST", "")
+_IDOM_EXAMPLE_PATH = os.environ.get("IDOM_DOC_EXAMPLE_SERVER_PATH", "/_idom")
+_IDOM_STATIC_HOST = os.environ.get("IDOM_DOC_STATIC_SERVER_HOST", "/docs").rstrip("/")
 
 
 class IteractiveWidget(Directive):
@@ -25,8 +27,8 @@ class IteractiveWidget(Directive):
                 <div>
                     <div id="{container_id}" class="interactive widget-container center-content" style="" />
                     <script async type="module">
-                        import loadWidgetExample from "/docs/_static/js/load-widget-example.js";
-                        loadWidgetExample("{_IDOM_SERVER_LOC}", "/_idom", "{container_id}", "{view_id}");
+                        import loadWidgetExample from "{_IDOM_STATIC_HOST}/_static/js/load-widget-example.js";
+                        loadWidgetExample("{_IDOM_EXAMPLE_HOST}", "{_IDOM_EXAMPLE_PATH}", "{container_id}", "{view_id}");
                     </script>
                 </div>
                 """,

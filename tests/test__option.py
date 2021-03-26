@@ -8,6 +8,7 @@ from idom._option import Option
 
 def test_option_repr():
     opt = Option("A_FAKE_OPTION", "some-value")
+    assert opt.name == "A_FAKE_OPTION"
     assert repr(opt) == "Option(A_FAKE_OPTION='some-value')"
 
 
@@ -41,16 +42,35 @@ def test_immutable_option():
     assert not opt.mutable
     with pytest.raises(TypeError, match="cannot be modified after initial load"):
         opt.set("a-new-value")
+    with pytest.raises(TypeError, match="cannot be modified after initial load"):
+        opt.reset()
 
 
 def test_option_reset():
     opt = Option("A_FAKE_OPTION", "default-value")
     opt.set("a-new-value")
-    assert opt.get() == "a-new-value"
     opt.reset()
     assert opt.get() is opt.default
+    assert not opt.is_set()
 
 
-def test_option_set_returns_last_value():
+@mock.patch.dict(os.environ, {"A_FAKE_OPTION": "value-from-environ"})
+def test_option_reload():
     opt = Option("A_FAKE_OPTION", "default-value")
-    assert opt.set("a-new-value") == "default-value"
+    opt.set("some-other-value")
+    opt.reload()
+    assert opt.get() == "value-from-environ"
+
+
+def test_option_set():
+    opt = Option("A_FAKE_OPTION", "default-value")
+    assert not opt.is_set()
+    opt.set("a-new-value")
+    assert opt.is_set()
+
+
+def test_option_set_default():
+    opt = Option("A_FAKE_OPTION", "default-value")
+    assert not opt.is_set()
+    assert opt.set_default("new-value") == "new-value"
+    assert opt.is_set()

@@ -28,7 +28,7 @@ def ExpandableNumberInputs(values, set_values):
             new_value = float(event["value"] or 0)
             set_values(values[:index] + [new_value] + values[index + 1 :])
 
-        inputs.append(poly_coef_input(i, set_value_at_index))
+        inputs.append(poly_coef_input(i + 1, set_value_at_index))
 
     def add_input():
         set_values(values + [0])
@@ -75,7 +75,7 @@ def poly_coef_input(index, callback):
 
 
 def polynomial(x, coefficients):
-    return sum(c * (x ** i) for i, c in enumerate(coefficients))
+    return sum(c * (x ** (i + 1)) for i, c in enumerate(coefficients))
 
 
 def linspace(start, stop, n):

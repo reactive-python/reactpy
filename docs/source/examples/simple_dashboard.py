@@ -53,7 +53,15 @@ def RandomWalkGraph(mu, sigma):
         }
         set_data(data[1:] + [next_data_point])
 
-    return victory.VictoryLine({"data": data, "style": {"parent": {"width": "500px"}}})
+    return victory.VictoryLine(
+        {
+            "data": data,
+            "style": {
+                "parent": {"width": "500px"},
+                "data": {"stroke": "#c43a31"},
+            },
+        }
+    )
 
 
 @idom.component
