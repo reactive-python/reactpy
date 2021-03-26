@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/idom-team/idom-client-react"
+    "url": "https://github.com/idom-team/idom"
   },
   "main": "src/index.js",
   "files": [
