@@ -54,7 +54,7 @@ Flask Servers
 
 
 FastAPI Servers
--------------
+---------------
 
 .. automodule:: idom.server.fastapi
     :members:
