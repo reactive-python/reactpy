@@ -58,7 +58,7 @@ def RandomWalkGraph(mu, sigma):
             "data": data,
             "style": {
                 "parent": {"width": "500px"},
-                "data": {"stroke": "#c43a31"},
+                "data": {"stroke": "royalblue"},
             },
         }
     )

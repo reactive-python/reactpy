@@ -25,9 +25,9 @@ idom.run(
                 ],
                 "height": 300,
                 "width": 500,
-                "color": "#24909d",
+                "color": "royalblue",
                 "lineWidth": 4,
-                "axisColor": "#bdc3c7",
+                "axisColor": "silver",
             }
         )
     )
