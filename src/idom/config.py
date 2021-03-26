@@ -31,9 +31,24 @@ assume anything about the structure of this directory see :mod:`idom.client.mana
 a set of publically available APIs for working with the client.
 """
 
-IDOM_CLIENT_WEB_MODULE_BASE_URL = _option.Option(
-    "IDOM_CLIENT_WEB_MODULE_BASE_URL",
-    default=".",
+
+IDOM_CLIENT_IMPORT_SOURCE_URL = _option.Option(
+    "IDOM_CLIENT_IMPORT_SOURCE_URL",
+    default="/client",
     validator=lambda x: cast(str, x[:-1] if x.endswith("/") else x),
 )
-"""The base URL where all user-installed web modules reside"""
+"""The URL to importable modules containing Javascript components
+
+Setting this to an empty string will given the client control over the location of
+import sources. Using a relative path (e.g. one starting with ``./``) with locate import
+sources relative to a base URL specified by the client. Lastly, an absolute URL
+specifies exactly where import sources are located and ignores are client configuration.
+
+Examples:
+    Empty String:
+        ``CLIENT_SPECIFIED_BASE_URL/my-module.js``
+    Relative Path:
+        ``CLIENT_SPECIFIED_BASE_URL/RELATIVE_PATH/my-module.js``
+    Absolute URL
+        ``ABSOLUTE_PATH/my-module.js``
+"""

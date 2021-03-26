@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Dict, Iterable, List, Sequence, Set, Union
 
-from idom.config import IDOM_CLIENT_BUILD_DIR, IDOM_CLIENT_WEB_MODULE_BASE_URL
+from idom.config import IDOM_CLIENT_IMPORT_SOURCE_URL
 
 from . import _private
 
@@ -13,12 +13,8 @@ from . import _private
 logger = getLogger(__name__)
 
 
-def web_modules_dir() -> Path:
-    return IDOM_CLIENT_BUILD_DIR.get() / "_snowpack" / "pkg"
-
-
 def web_module_path(package_name: str, must_exist: bool = False) -> Path:
-    path = web_modules_dir().joinpath(*(package_name + ".js").split("/"))
+    path = _private.web_modules_dir().joinpath(*(package_name + ".js").split("/"))
     if must_exist and not path.exists():
         raise ValueError(
             f"Web module {package_name!r} does not exist at path {str(path)!r}"
@@ -35,7 +31,10 @@ def web_module_exports(package_name: str) -> List[str]:
 
 def web_module_url(package_name: str) -> str:
     web_module_path(package_name, must_exist=True)
-    return IDOM_CLIENT_WEB_MODULE_BASE_URL.get() + f"/{package_name}.js"
+    return (
+        IDOM_CLIENT_IMPORT_SOURCE_URL.get()
+        + f"{_private.IDOM_CLIENT_IMPORT_SOURCE_URL_INFIX}/{package_name}.js"
+    )
 
 
 def web_module_exists(package_name: str) -> bool:
@@ -44,7 +43,7 @@ def web_module_exists(package_name: str) -> bool:
 
 def web_module_names() -> Set[str]:
     names = []
-    web_mod_dir = web_modules_dir()
+    web_mod_dir = _private.web_modules_dir()
     for pth in web_mod_dir.glob("**/*.js"):
         rel_pth = pth.relative_to(web_mod_dir)
         if Path("common") in rel_pth.parents:

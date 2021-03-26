@@ -28,6 +28,11 @@ class Option(Generic[_O]):
         """Whether this option can be modified after being loaded"""
         return self._mutable
 
+    @property
+    def default(self) -> _O:
+        """This option's default value"""
+        return self._default
+
     def get(self) -> _O:
         """Get the current value of this option."""
         return self._value
@@ -35,7 +40,7 @@ class Option(Generic[_O]):
     def set(self, new: _O) -> _O:
         """Set the value of this configuration option
 
-        Raises a ``TypeError`` if this option is immutable.
+        Raises a ``TypeError`` if this option is not :attr:`Option.mutable`.
         """
         if not self._mutable:
             raise TypeError(f"{self} cannot be modified after initial load")
