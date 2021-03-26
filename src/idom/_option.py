@@ -48,9 +48,9 @@ class Option(Generic[_O]):
 
     def get(self) -> _O:
         """Get the current value of this option."""
-        return getattr(self, "_value", self._default)
+        return cast(_O, getattr(self, "_value", self._default))
 
-    def set(self, new: _O) -> None:
+    def set(self, new: Any) -> None:
         """Set the value of this option
 
         Raises a ``TypeError`` if this option is not :attr:`Option.mutable`.
