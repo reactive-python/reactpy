@@ -162,6 +162,7 @@ class ServerMountPoint(Generic[_Mount, _Server]):
         self.server.stop()
         logging.getLogger().removeHandler(self._log_handler)
         self.raise_if_logged_exception()
+        del self.mount, self.server
         return None
 
 

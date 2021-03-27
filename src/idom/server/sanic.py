@@ -36,10 +36,12 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
 
     _loop: asyncio.AbstractEventLoop
     _dispatcher_type: Type[AbstractDispatcher]
+    _did_stop: Event
 
     def stop(self) -> None:
         """Stop the running application"""
         self._loop.call_soon_threadsafe(self.application.stop)
+        self._did_stop.wait(5)
 
     def _create_config(self, config: Optional[Config]) -> Config:
         new_config: Config = {
@@ -58,6 +60,12 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
         bp = Blueprint(f"idom_dispatcher_{id(self)}", url_prefix=config["url_prefix"])
 
         self._setup_blueprint_routes(config, bp)
+
+        self._did_stop = did_stop = Event()
+
+        @app.listener("before_server_stop")  # type: ignore
+        async def server_did_stop(app: Sanic, loop: asyncio.AbstractEventLoop) -> None:
+            did_stop.set()
 
         cors_config = config["cors"]
         if cors_config:  # pragma: no cover
