@@ -61,7 +61,7 @@ class Option(Generic[_O]):
         logger.debug(f"{self._name}={self._value}")
 
     def set_default(self, new: _O) -> _O:
-        """Set the value of this option if :meth:`Option.is_default`
+        """Set the value of this option if not :meth:`Option.is_set`
 
         Returns the current value (a la :meth:`dict.set_default`)
         """
