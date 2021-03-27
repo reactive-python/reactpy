@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 import logging
 import os
-from typing import Iterator, List
+from typing import Any, Iterator, List
 
 import pyalect.builtins.pytest  # noqa
 import pytest
@@ -89,10 +89,10 @@ def create_driver(driver_is_headless):
     """A Selenium web driver"""
     drivers = []
 
-    def create():
+    def create(**kwargs: Any):
         options = ChromeOptions()
         options.headless = driver_is_headless
-        driver = create_simple_selenium_web_driver(driver_options=options)
+        driver = create_simple_selenium_web_driver(driver_options=options, **kwargs)
         drivers.append(driver)
         return driver
 
