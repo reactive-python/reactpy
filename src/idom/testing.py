@@ -112,11 +112,11 @@ class ServerMountPoint(Generic[_Mount, _Server]):
 
     def list_logged_exceptions(
         self,
-        pattern: Optional[str] = "",
-        types: Union[Type[Exception], Tuple[Type[Exception], ...]] = Exception,
+        pattern: str = "",
+        types: Union[Type[Any], Tuple[Type[Any], ...]] = Exception,
         log_level: int = logging.ERROR,
         del_log_records: bool = True,
-    ) -> List[Exception]:
+    ) -> List[BaseException]:
         """Return a list of logged exception matching the given criteria
 
         Args:
@@ -124,7 +124,7 @@ class ServerMountPoint(Generic[_Mount, _Server]):
             exclude_exc_types: Any exception types to ignore
             del_log_records: Whether to delete the log records for yielded exceptions
         """
-        found: List[Exception] = []
+        found: List[BaseException] = []
         compiled_pattern = re.compile(pattern)
         for index, record in enumerate(self.log_records):
             if record.levelno >= log_level and record.exc_info is not None:
