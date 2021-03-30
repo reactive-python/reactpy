@@ -14,6 +14,7 @@ logger = getLogger(__name__)
 
 
 def web_module_path(package_name: str, must_exist: bool = False) -> Path:
+    """Get the :class:`Path` to a web module's source"""
     path = _private.web_modules_dir().joinpath(*(package_name + ".js").split("/"))
     if must_exist and not path.exists():
         raise ValueError(
@@ -23,6 +24,7 @@ def web_module_path(package_name: str, must_exist: bool = False) -> Path:
 
 
 def web_module_exports(package_name: str) -> List[str]:
+    """Get a list of names this module exports"""
     web_module_path(package_name, must_exist=True)
     return _private.find_js_module_exports_in_source(
         web_module_path(package_name).read_text(encoding="utf-8")
@@ -30,6 +32,10 @@ def web_module_exports(package_name: str) -> List[str]:
 
 
 def web_module_url(package_name: str) -> str:
+    """Get the URL the where the web module should reside
+
+    If this URL is relative, then the base URL is determined by the client
+    """
     web_module_path(package_name, must_exist=True)
     return (
         IDOM_CLIENT_IMPORT_SOURCE_URL.get()
@@ -38,6 +44,7 @@ def web_module_url(package_name: str) -> str:
 
 
 def web_module_exists(package_name: str) -> bool:
+    """Whether a web module with a given name exists"""
     return web_module_path(package_name).exists()
 
 

@@ -109,18 +109,12 @@ def driver_is_headless(pytestconfig: Config):
 
 @pytest.fixture(autouse=True)
 def caplog(_caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
-    _caplog.set_level(logging.DEBUG)
     yield _caplog
     # check that there are no ERROR level log messages
     for record in _caplog.records:
         if record.exc_info:
             raise record.exc_info[1]
         assert record.levelno < logging.ERROR
-
-
-class _PropogateHandler(logging.Handler):
-    def emit(self, record):
-        logging.getLogger(record.name).handle(record)
 
 
 @pytest.fixture(scope="session", autouse=True)
