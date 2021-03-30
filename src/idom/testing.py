@@ -155,7 +155,7 @@ class ServerMountPoint(Generic[_Mount, _Server]):
         logging.getLogger().removeHandler(self._log_handler)
         del self.mount, self.server
         logged_errors = self.list_logged_exceptions(del_log_records=False)
-        if logged_errors:
+        if logged_errors:  # pragma: no cover
             raise logged_errors[0]
         return None
 
