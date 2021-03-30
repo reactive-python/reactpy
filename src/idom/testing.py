@@ -92,50 +92,13 @@ class ServerMountPoint(Generic[_Mount, _Server]):
         """A list of captured log records"""
         return self._log_handler.records
 
-    def assert_logged_exception(
-        self,
-        error_type: Type[Exception],
-        error_pattern: str,
-        clear_after: bool = True,
-    ) -> None:
-        """Assert that a given error type and message were logged"""
-        try:
-            re_pattern = re.compile(error_pattern)
-            for record in self.log_records:
-                if record.exc_info is not None:
-                    error = record.exc_info[1]
-                    if isinstance(error, error_type) and re_pattern.search(str(error)):
-                        break
-            else:  # pragma: no cover
-                assert False, f"did not raise {error_type} matching {error_pattern!r}"
-        finally:
-            if clear_after:
-                self.log_records.clear()
-
-    def raise_if_logged_exception(
-        self,
-        log_level: int = logging.ERROR,
-        exclude_exc_types: Union[Type[Exception], Tuple[Type[Exception], ...]] = (),
-        clear_after: bool = True,
-    ) -> None:
-        """Raise the first logged exception (if any)
+    def url(self, path: str = "", query: Optional[Any] = None) -> str:
+        """Return a URL string pointing to the host and point of the server
 
         Args:
-            log_level: The level of log to check
-            exclude_exc_types: Any exception types to ignore
-            clear_after: Whether to clear logs after check
+            path: the path to a resource on the server
+            query: a dictionary or list of query parameters
         """
-        try:
-            for record in self._log_handler.records:
-                if record.levelno >= log_level and record.exc_info is not None:
-                    error = record.exc_info[1]
-                    if error is not None and not isinstance(error, exclude_exc_types):
-                        raise error
-        finally:
-            if clear_after:
-                self.log_records.clear()
-
-    def url(self, path: str = "", query: Optional[Any] = None) -> str:
         return urlunparse(
             [
                 "http",
@@ -146,6 +109,35 @@ class ServerMountPoint(Generic[_Mount, _Server]):
                 "",
             ]
         )
+
+    def list_logged_exceptions(
+        self,
+        pattern: Optional[str] = "",
+        types: Union[Type[Exception], Tuple[Type[Exception], ...]] = Exception,
+        log_level: int = logging.ERROR,
+        del_log_records: bool = True,
+    ) -> List[Exception]:
+        """Return a list of logged exception matching the given criteria
+
+        Args:
+            log_level: The level of log to check
+            exclude_exc_types: Any exception types to ignore
+            del_log_records: Whether to delete the log records for yielded exceptions
+        """
+        found: List[Exception] = []
+        compiled_pattern = re.compile(pattern)
+        for index, record in enumerate(self.log_records):
+            if record.levelno >= log_level and record.exc_info is not None:
+                error = record.exc_info[1]
+                if (
+                    error is not None
+                    and isinstance(error, types)
+                    and compiled_pattern.search(str(error))
+                ):
+                    if del_log_records:
+                        del self.log_records[index - len(found)]
+                    found.append(error)
+        return found
 
     def __enter__(self: _Self) -> _Self:
         self._log_handler = _LogRecordCaptor()
@@ -161,8 +153,10 @@ class ServerMountPoint(Generic[_Mount, _Server]):
     ) -> None:
         self.server.stop()
         logging.getLogger().removeHandler(self._log_handler)
-        self.raise_if_logged_exception()
         del self.mount, self.server
+        logged_errors = self.list_logged_exceptions(del_log_records=False)
+        if logged_errors:
+            raise logged_errors[0]
         return None
 
 

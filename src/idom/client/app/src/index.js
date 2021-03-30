@@ -25,7 +25,7 @@ function defaultWebSocketEndpoint() {
     protocol = "ws:";
   }
 
-  return protocol + "//" + url.join("/") + window.location.search;
+  return protocol + "//" + url.join("/") + "?" + queryParams.user.toString();
 }
 
 export function mountLayoutWithWebSocket(
@@ -48,7 +48,7 @@ export function mountLayoutWithWebSocket(
   });
 
   socket.onopen = (event) => {
-    console.log(`Connected to ${endpoint}`);
+    console.log(`Connected.`);
     if (mountState.everMounted) {
       unmountComponentAtNode(element);
     }
@@ -69,6 +69,10 @@ export function mountLayoutWithWebSocket(
   };
 
   socket.onclose = (event) => {
+    if (!shouldReconnect()) {
+      console.log(`Connection lost.`);
+      return;
+    }
     const reconnectTimeout = _nextReconnectTimeout(mountState);
     console.log(`Connection lost, reconnecting in ${reconnectTimeout} seconds`);
     setTimeout(function () {
@@ -95,3 +99,26 @@ function _nextReconnectTimeout(mountState) {
   }
   return timeout;
 }
+
+function shouldReconnect() {
+  return queryParams.reserved.get("noReconnect") === null;
+}
+
+const queryParams = (() => {
+  const reservedParams = new URLSearchParams();
+  const userParams = new URLSearchParams(window.location.search);
+
+  const reservedParamNames = ["noReconnect"];
+  reservedParamNames.forEach((name) => {
+    const value = userParams.get(name);
+    if (value !== null) {
+      reservedParams.append(name, userParams.get(name));
+      userParams.delete(name);
+    }
+  });
+
+  return {
+    reserved: reservedParams,
+    user: userParams,
+  };
+})();

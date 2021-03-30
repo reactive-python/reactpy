@@ -74,12 +74,25 @@ def test_shared_client_state(create_driver, server_mount_point):
 
 def test_shared_client_state_server_does_not_support_per_client_parameters(
     driver_get,
+    driver_wait,
     server_mount_point,
 ):
-    driver_get({"per_client_param": 1})
+    driver_get(
+        {
+            "per_client_param": 1,
+            # we need to stop reconnect attempts to prevent the error from happening
+            # more than once
+            "noReconnect": True,
+        }
+    )
 
-    server_mount_point.assert_logged_exception(
-        ValueError,
-        "does not support per-client view parameters",
-        clear_after=True,
+    driver_wait.until(
+        lambda driver: (
+            len(
+                server_mount_point.list_logged_exceptions(
+                    "does not support per-client view parameters", ValueError
+                )
+            )
+            == 1
+        )
     )
