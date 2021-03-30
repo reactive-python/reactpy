@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-import logging
 import os
 from typing import Any, Iterator, List
 
@@ -9,8 +8,6 @@ import pyalect.builtins.pytest  # noqa
 import pytest
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
-from _pytest.logging import LogCaptureFixture
-from _pytest.logging import caplog as _caplog  # noqa
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -105,16 +102,6 @@ def create_driver(driver_is_headless):
 @pytest.fixture(scope="session")
 def driver_is_headless(pytestconfig: Config):
     return bool(pytestconfig.option.headless)
-
-
-@pytest.fixture(autouse=True)
-def caplog(_caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
-    yield _caplog
-    # check that there are no ERROR level log messages
-    for record in _caplog.records:
-        if record.exc_info:
-            raise record.exc_info[1]
-        assert record.levelno < logging.ERROR
 
 
 @pytest.fixture(scope="session", autouse=True)
