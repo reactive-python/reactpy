@@ -4,7 +4,7 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import DefaultDict, List, Tuple
+from typing import List, Tuple
 
 import nox
 from nox.sessions import Session
@@ -168,26 +168,17 @@ def commits_since_last_tag(session: Session) -> None:
         .split("\n")
     )
 
-    commits: List[Tuple[str, str, str]] = []
-    for commit_ref in commit_references:
+    def parse_commit_reference(commit_ref: str) -> Tuple[str, str, str]:
         commit_sha, remainder = commit_ref.split(" ", 1)
         commit_message, commit_date = remainder[1:-1].rsplit(", ", 1)
-        commits.append((commit_sha, commit_message, commit_date))
+        return commit_sha, commit_message, commit_date
 
-    commits_by_date: DefaultDict[str, List[str]] = DefaultDict(list)
-    for sha, msg, date in commits:
+    for sha, msg, _ in map(parse_commit_reference, commit_references):
         if rst_format:
             sha_repr = f"`{sha} <https://github.com/idom-team/idom/commit/{sha}>`__"
         else:
             sha_repr = sha
-        commits_by_date[date].append(f"{msg} - {sha_repr}")
-
-    for date, commits in commits_by_date.items():
-        print(f"Commits on {date}")
-        print()
-        for cmt in commits:
-            print("-", cmt)
-        print()
+        print(f"- {msg} - {sha_repr}")
 
 
 def install_idom_dev(session: Session, extras: str = "stable") -> None:

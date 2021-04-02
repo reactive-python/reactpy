@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.23.1
+------
+
+- fix non-deterministic return order in install() - `494d5c2 <https://github.com/idom-team/idom/commit/494d5c2>`__
+
 0.23.0
 ------
 
