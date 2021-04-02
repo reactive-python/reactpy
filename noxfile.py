@@ -151,6 +151,7 @@ def test_docs(session: Session) -> None:
 
 @nox.session
 def commits_since_last_tag(session: Session) -> None:
+    """A basic script for outputing changelog info"""
     rst_format = "--format=rst" in session.posargs
 
     latest_tag = (
