@@ -151,7 +151,7 @@ def test_docs(session: Session) -> None:
 
 @nox.session
 def commits_since_last_tag(session: Session) -> None:
-    sha_format_in_rst = "--sha-format=rst" in session.posargs
+    rst_format = "--format=rst" in session.posargs
 
     latest_tag = (
         subprocess.check_output(["git", "describe", "--tags", "--abbrev=0"])
@@ -175,11 +175,11 @@ def commits_since_last_tag(session: Session) -> None:
 
     commits_by_date: DefaultDict[str, List[str]] = DefaultDict(list)
     for sha, msg, date in commits:
-        if sha_format_in_rst:
+        if rst_format:
             sha_repr = f"`{sha} <https://github.com/idom-team/idom/commit/{sha}>`__"
         else:
             sha_repr = sha
-        commits_by_date[date].append(f"{msg} {sha_repr}")
+        commits_by_date[date].append(f"{msg} - {sha_repr}")
 
     for date, commits in commits_by_date.items():
         print(f"Commits on {date}")
