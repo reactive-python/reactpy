@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union, overload
 from urllib.parse import urlparse
@@ -12,7 +14,7 @@ def install(
     packages: str,
     ignore_installed: bool,
     fallback: Optional[str],
-) -> "Module":
+) -> Module:
     ...
 
 
@@ -21,7 +23,7 @@ def install(
     packages: Union[List[str], Tuple[str]],
     ignore_installed: bool,
     fallback: Optional[str],
-) -> List["Module"]:
+) -> List[Module]:
     ...
 
 
@@ -29,22 +31,21 @@ def install(
     packages: Union[str, List[str], Tuple[str]],
     ignore_installed: bool = False,
     fallback: Optional[str] = None,
-) -> Union["Module", List["Module"]]:
+) -> Union[Module, List[Module]]:
     return_one = False
     if isinstance(packages, str):
         packages = [packages]
         return_one = True
 
-    pkg_names = {_private.get_package_name(pkg) for pkg in packages}
+    pkg_names = [_private.get_package_name(pkg) for pkg in packages]
 
-    if ignore_installed or pkg_names.difference(manage.web_module_names()):
+    if ignore_installed or set(pkg_names).difference(manage.web_module_names()):
         manage.build(packages, clean_build=False)
 
-    return (
-        Module(pkg_names.pop(), fallback=fallback)
-        if return_one
-        else [Module(pkg, fallback=fallback) for pkg in pkg_names]
-    )
+    if return_one:
+        return Module(pkg_names[0], fallback=fallback)
+    else:
+        return [Module(pkg, fallback=fallback) for pkg in pkg_names]
 
 
 class Module:
