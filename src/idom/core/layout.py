@@ -235,12 +235,19 @@ class Layout(HasAsyncResources):
                         h = attrs.pop(k)
                         handlers[k] = h
 
-        event_handlers_by_id = {h.id: h for h in handlers.values()}
+        event_handlers_by_id = {h.target_id: h for h in handlers.values()}
         component_state.event_handler_ids.clear()
         component_state.event_handler_ids.update(event_handlers_by_id)
         self._event_handlers.update(event_handlers_by_id)
 
-        return {e: h.serialize() for e, h in handlers.items()}
+        return {
+            e: {
+                "target": h.target_id,
+                "preventDefault": h.prevent_default,
+                "stopPropagation": h.stop_propogation,
+            }
+            for e, h in handlers.items()
+        }
 
     def _get_component_state(self, component: AbstractComponent) -> ComponentState:
         return self._component_states[id(component)]
