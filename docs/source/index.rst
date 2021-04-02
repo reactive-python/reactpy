@@ -29,6 +29,7 @@ Libraries for defining and controlling interactive webpages with Python
 
     contributing
     developer-guide
+    changelog
 
 .. toctree::
     :hidden:

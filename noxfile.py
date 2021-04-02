@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import os
 import re
+import subprocess
 from pathlib import Path
-from typing import List
+from typing import DefaultDict, List, Tuple
 
 import nox
 from nox.sessions import Session
@@ -144,6 +147,46 @@ def test_docs(session: Session) -> None:
     install_idom_dev(session, extras="all")
     session.run("sphinx-build", "-b", "html", "docs/source", "docs/build")
     session.run("sphinx-build", "-b", "doctest", "docs/source", "docs/build")
+
+
+@nox.session
+def commits_since_last_tag(session: Session) -> None:
+    sha_format_in_rst = "--sha-format=rst" in session.posargs
+
+    latest_tag = (
+        subprocess.check_output(["git", "describe", "--tags", "--abbrev=0"])
+        .decode()
+        .strip()
+    )
+    commit_references = (
+        subprocess.check_output(
+            ["git", "log", "--pretty=reference", f"{latest_tag}..HEAD"]
+        )
+        .decode()
+        .strip()
+        .split("\n")
+    )
+
+    commits: List[Tuple[str, str, str]] = []
+    for commit_ref in commit_references:
+        commit_sha, remainder = commit_ref.split(" ", 1)
+        commit_message, commit_date = remainder[1:-1].rsplit(", ", 1)
+        commits.append((commit_sha, commit_message, commit_date))
+
+    commits_by_date: DefaultDict[str, List[str]] = DefaultDict(list)
+    for sha, msg, date in commits:
+        if sha_format_in_rst:
+            sha_repr = f"`{sha} <https://github.com/idom-team/idom/commit/{sha}>`__"
+        else:
+            sha_repr = sha
+        commits_by_date[date].append(f"{msg} {sha_repr}")
+
+    for date, commits in commits_by_date.items():
+        print(f"Commits on {date}")
+        print()
+        for cmt in commits:
+            print("-", cmt)
+        print()
 
 
 def install_idom_dev(session: Session, extras: str = "stable") -> None:
