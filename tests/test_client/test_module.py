@@ -24,6 +24,17 @@ def test_module_import_repr():
     )
 
 
+def test_install_multiple():
+    # install several random JS packages
+    pad_left, decamelize, is_sorted = idom.install(
+        ["pad-left", "decamelize", "is-sorted"]
+    )
+    # ensure the output order is the same as the input order
+    assert pad_left.url.endswith("pad-left.js")
+    assert decamelize.url.endswith("decamelize.js")
+    assert is_sorted.url.endswith("is-sorted.js")
+
+
 def test_module_does_not_exist():
     with pytest.raises(ValueError, match="is not installed or is not a URL"):
         Module("this-module-does-not-exist")
