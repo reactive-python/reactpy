@@ -159,9 +159,9 @@ class EventHandler:
         "__weakref__",
         "_coro_handlers",
         "_func_handlers",
-        "_target_id",
-        "_prevent_default",
-        "_stop_propogation",
+        "target_id",
+        "prevent_default",
+        "stop_propogation",
     )
 
     def __init__(
@@ -170,16 +170,11 @@ class EventHandler:
         prevent_default: bool = False,
         target_id: Optional[str] = None,
     ) -> None:
+        self.target_id = target_id or str(id(self))
+        self.stop_propogation = stop_propagation
+        self.prevent_default = prevent_default
         self._coro_handlers: List[Callable[..., Coroutine[Any, Any, Any]]] = []
         self._func_handlers: List[Callable[..., Any]] = []
-        self._target_id = target_id or str(id(self))
-        self._stop_propogation = stop_propagation
-        self._prevent_default = prevent_default
-
-    @property
-    def id(self) -> str:
-        """ID of the event handler."""
-        return self._target_id
 
     def add(self, function: Callable[..., Any]) -> "EventHandler":
         """Add a callback to the event handler.
@@ -206,14 +201,6 @@ class EventHandler:
             self._coro_handlers.remove(function)
         else:
             self._func_handlers.remove(function)
-
-    def serialize(self) -> EventTarget:
-        """Serialize the event handler."""
-        return {
-            "target": self._target_id,
-            "preventDefault": self._prevent_default,
-            "stopPropagation": self._stop_propogation,
-        }
 
     async def __call__(self, data: List[Any]) -> Any:
         """Trigger all callbacks in the event handler."""
