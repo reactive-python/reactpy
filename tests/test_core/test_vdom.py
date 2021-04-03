@@ -2,7 +2,7 @@ import pytest
 from fastjsonschema import JsonSchemaException
 
 import idom
-from idom.core.vdom import component, make_vdom_constructor, validate_serialized_vdom
+from idom.core.vdom import component, make_vdom_constructor, validate_vdom
 
 
 fake_events = idom.Events()
@@ -213,7 +213,7 @@ def test_vdom_component():
     ],
 )
 def test_valid_vdom(value):
-    validate_serialized_vdom(value)
+    validate_vdom(value)
 
 
 @pytest.mark.parametrize(
@@ -312,4 +312,4 @@ def test_valid_vdom(value):
 )
 def test_invalid_vdom(value, error_message_pattern):
     with pytest.raises(JsonSchemaException, match=error_message_pattern):
-        validate_serialized_vdom(value)
+        validate_vdom(value)
