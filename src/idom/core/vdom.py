@@ -63,7 +63,7 @@ VDOM_JSON_SCHEMA = {
 }
 
 
-validate_serialized_vdom = compile_json_schema(VDOM_JSON_SCHEMA)
+validate_vdom = compile_json_schema(VDOM_JSON_SCHEMA)
 
 
 class ImportSourceDict(TypedDict):

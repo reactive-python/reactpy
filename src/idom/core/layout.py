@@ -24,7 +24,7 @@ from .component import AbstractComponent
 from .events import EventHandler, EventTarget
 from .hooks import LifeCycleHook
 from .utils import CannotAccessResource, HasAsyncResources, async_resource
-from .vdom import validate_serialized_vdom
+from .vdom import validate_vdom
 
 
 logger = getLogger(__name__)
@@ -104,13 +104,17 @@ class Layout(HasAsyncResources):
                 return self._create_layout_update(component)
 
     if IDOM_DEBUG_MODE.get():
+        # If in debug mode inject a function that ensures all returned updates
+        # contain valid VDOM models. We only do this in debug mode in order to
+        # avoid unnecessarily impacting performance.
+
         _debug_render = render
 
         @wraps(_debug_render)
         async def render(self) -> LayoutUpdate:
             # Ensure that the model is valid VDOM on each render
             result = await self._debug_render()
-            validate_serialized_vdom(self._component_states[id(self.root)].model)
+            validate_vdom(self._component_states[id(self.root)].model)
             return result
 
     @async_resource
