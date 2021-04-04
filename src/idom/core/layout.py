@@ -207,7 +207,7 @@ class Layout(HasAsyncResources):
                         component_state,
                         cast(VdomDict, child),
                         patch_path=f"{patch_path}/children/{index}",
-                        key_path=f"{key_path}/{index}",
+                        key_path=f"{key_path}/{child.get('key') or hex(id(child))[2:]}",
                     )
                 )
             elif isinstance(child, AbstractComponent):
@@ -250,7 +250,7 @@ class Layout(HasAsyncResources):
         handlers_by_target: Dict[str, EventHandler] = {}
         model_event_targets: Dict[str, _EventTarget] = {}
         for event, handler in handlers_by_event.items():
-            target = f"{key_path}.{event}"
+            target = f"{key_path}/{event}"
             handlers_by_target[target] = handler
             model_event_targets[event] = {
                 "target": target,
