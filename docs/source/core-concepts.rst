@@ -66,11 +66,11 @@ ever be removed from the model. Then you'll just need to call and await a
     async with idom.Layout(ClickCount()) as layout:
         patch = await layout.render()
 
-The layout also handles the triggering of event handlers. Normally this is done
-automatically by a :ref:`Dispatcher <Layout Dispatcher>`, but for now we'll do it manually.
-We can use a trick to hard-code the ``event_handler_id`` so we can pass it, and a fake
-event, to the layout's :meth:`~idom.core.layout.Layout.dispatch` method. Then we just
-have to re-render the layout and see what changed:
+The layout also handles the triggering of event handlers. Normally these are
+automatically sent to a :ref:`Dispatcher <Layout Dispatcher>`, but for now we'll do it
+manually. To do this we need to pass a fake event with its "target" (event handler
+identifier), to the layout's :meth:`~idom.core.layout.Layout.dispatch` method, after
+which we can re-render and see what changed:
 
 .. testcode::
 
@@ -85,10 +85,10 @@ have to re-render the layout and see what changed:
             [f"Click count: {count}"],
         )
 
-    async with idom.Layout(ClickCount(key="something")) as layout:
+    async with idom.Layout(ClickCount(key="test-component")) as layout:
         patch_1 = await layout.render()
 
-        fake_event = LayoutEvent("/something/onClick", [{}])
+        fake_event = LayoutEvent(target="/test-component/onClick", data=[{}])
         await layout.dispatch(fake_event)
         patch_2 = await layout.render()
 
@@ -97,6 +97,12 @@ have to re-render the layout and see what changed:
                 count_did_increment = change["value"] == "Click count: 1"
 
         assert count_did_increment
+
+.. note::
+
+    Don't worry about the format of the layout event's ``target``. Its an internal
+    detail of the layout's implementation that is neither neccessary to understanding
+    how things work, nor is it part of the interface clients should rely on.
 
 
 Layout Dispatcher
@@ -129,7 +135,7 @@ callback that's called by the dispatcher to events it should execute.
 
 
     async def recv():
-        event = LayoutEvent("/my-component/onClick", [{}])
+        event = LayoutEvent(target="/test-component/onClick", data=[{}])
 
         # We need this so we don't flood the render loop with events.
         # In practice this is never an issue since events won't arrive
@@ -140,7 +146,7 @@ callback that's called by the dispatcher to events it should execute.
 
 
     async with SingleViewDispatcher(
-        idom.Layout(ClickCount(key="my-component"))
+        idom.Layout(ClickCount(key="test-component"))
     ) as dispatcher:
         context = None  # see note below
         await dispatcher.run(send, recv, context)
