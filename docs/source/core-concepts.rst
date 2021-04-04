@@ -77,27 +77,18 @@ have to re-render the layout and see what changed:
     from idom.core.layout import LayoutEvent
 
 
-    event_handler_id = "on-click"
-
-
     @idom.component
     def ClickCount():
         count, set_count = idom.hooks.use_state(0)
-
-        @idom.event(target_id=event_handler_id)  # <-- trick to hard code event handler ID
-        def on_click(event):
-            set_count(count + 1)
-
         return idom.html.button(
-            {"onClick": on_click},
+            {"onClick": lambda event: set_count(count + 1)},
             [f"Click count: {count}"],
         )
 
-
-    async with idom.Layout(ClickCount()) as layout:
+    async with idom.Layout(ClickCount(key="something")) as layout:
         patch_1 = await layout.render()
 
-        fake_event = LayoutEvent(event_handler_id, [{}])
+        fake_event = LayoutEvent("something.onClick", [{}])
         await layout.dispatch(fake_event)
         patch_2 = await layout.render()
 

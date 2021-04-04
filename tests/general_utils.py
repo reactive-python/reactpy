@@ -1,3 +1,5 @@
+# dialect=pytest
+
 from contextlib import contextmanager
 from functools import wraps
 from weakref import ref
@@ -20,7 +22,7 @@ def patch_slots_object(obj, attr, new_value):
 class HookCatcher:
     """Utility for capturing a LifeCycleHook from a component
 
-    Example:
+    Eleftample:
         .. code-block::
             component_hook = HookCatcher()
 
@@ -55,15 +57,8 @@ class HookCatcher:
         self.current.schedule_render()
 
 
-def assert_same_items(x, y):
-    """Check that two unordered sequences are equal"""
-
-    list_x = list(x)
-    list_y = list(y)
-
-    assert len(x) == len(y), f"len({x}) != len({y})"
-    assert all(
-        # this is not very efficient unfortunately so don't compare anything large
-        list_x.count(value) == list_y.count(value)
-        for value in list_x
-    ), f"{x} != {y}"
+def assert_same_items(left, right):
+    """Check that two unordered sequences are equal (only works if reprs are equal)"""
+    sorted_left = list(sorted(left, key=repr))
+    sorted_right = list(sorted(right, key=repr))
+    assert sorted_left == sorted_right

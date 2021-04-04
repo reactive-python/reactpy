@@ -2,7 +2,7 @@ import pytest
 from fastjsonschema import JsonSchemaException
 
 import idom
-from idom.core.vdom import component, make_vdom_constructor, validate_vdom
+from idom.core.vdom import make_vdom_constructor, validate_vdom
 
 
 fake_events = idom.Events()
@@ -116,39 +116,6 @@ def test_make_vdom_constructor():
         no_children([1, 2, 3])
 
     assert no_children() == {"tagName": "no-children"}
-
-
-def test_vdom_component():
-    def MyComponentWithAttributes(x, y):
-        return idom.html.div({"x": x * 2, "y": y * 2})
-
-    assert component(MyComponentWithAttributes, {"x": 1}, {"y": 2}) == {
-        "tagName": "div",
-        "attributes": {"x": 2, "y": 4},
-    }
-
-    with pytest.raises(TypeError, match="unexpected keyword argument 'children'"):
-        assert component(MyComponentWithAttributes, "a-child")
-
-    def MyComponentWithChildren(children):
-        return idom.html.div(children + ["world"])
-
-    assert component(MyComponentWithChildren, "hello") == {
-        "tagName": "div",
-        "children": ["hello", "world"],
-    }
-
-    with pytest.raises(TypeError, match="unexpected keyword argument"):
-        assert component(MyComponentWithAttributes, {"an-attribute": 1})
-
-    def MyComponentWithChildrenAndAttributes(children, x):
-        return idom.html.div({"x": x * 2}, children + ["world"])
-
-    assert component(MyComponentWithChildrenAndAttributes, {"x": 2}, "hello") == {
-        "tagName": "div",
-        "attributes": {"x": 4},
-        "children": ["hello", "world"],
-    }
 
 
 @pytest.mark.parametrize(

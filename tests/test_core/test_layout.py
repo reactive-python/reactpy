@@ -178,14 +178,7 @@ async def test_components_are_garbage_collected():
         component = idom.hooks.current_hook().component
         live_components.add(id(component))
         finalize(component, live_components.remove, id(component))
-
-        hook = idom.hooks.current_hook()
-
-        @idom.event(target_id="force-update")
-        async def force_update():
-            hook.schedule_render()
-
-        return idom.html.div({"onEvent": force_update}, Inner())
+        return Inner()
 
     @idom.component
     def Inner():

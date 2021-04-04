@@ -1,11 +1,12 @@
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple, Union
+from __future__ import annotations
+
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
 from fastjsonschema import compile as compile_json_schema
 from mypy_extensions import TypedDict
 from typing_extensions import Protocol
 
-from .component import AbstractComponent
-from .events import EventsMapping
+from .events import EventHandler
 
 
 VDOM_JSON_SCHEMA = {
@@ -16,6 +17,7 @@ VDOM_JSON_SCHEMA = {
             "type": "object",
             "properties": {
                 "tagName": {"type": "string"},
+                "key": {"type": "string"},
                 "children": {"$ref": "#/definitions/elementChildren"},
                 "attributes": {"type": "object"},
                 "eventHandlers": {"$ref": "#/definitions/elementEventHandlers"},
@@ -72,9 +74,10 @@ class ImportSourceDict(TypedDict):
 
 
 class _VdomDictOptional(TypedDict, total=False):
-    children: Union[List[Any], Tuple[Any, ...]]  # noqa
+    key: str  # noqa
+    children: Sequence[Any]  # noqa
     attributes: Dict[str, Any]  # noqa
-    eventHandlers: EventsMapping  # noqa
+    eventHandlers: Mapping[str, EventHandler]  # noqa
     importSource: ImportSourceDict  # noqa
 
 
@@ -86,31 +89,15 @@ class VdomDict(_VdomDictRequired, _VdomDictOptional):
     """A VDOM dictionary"""
 
 
-_TagArg = str
-_ComponentFunc = Callable[..., Union[VdomDict, AbstractComponent]]
 _AttributesAndChildrenArg = Union[Mapping[str, Any], str, Iterable[Any], Any]
-_EventHandlersArg = Optional[EventsMapping]
+_EventHandlersArg = Optional[Mapping[str, EventHandler]]
 _ImportSourceArg = Optional[ImportSourceDict]
 
 
-def component(
-    tag: Union[_TagArg, _ComponentFunc],
-    *attributes_and_children: _AttributesAndChildrenArg,
-) -> Union[VdomDict, AbstractComponent]:
-    if isinstance(tag, str):
-        return vdom(tag, *attributes_and_children)
-
-    attributes, children = _coalesce_attributes_and_children(attributes_and_children)
-
-    if children:
-        return tag(children=children, **attributes)
-    else:
-        return tag(**attributes)
-
-
 def vdom(
-    tag: _TagArg,
+    tag: str,
     *attributes_and_children: _AttributesAndChildrenArg,
+    key: str = "",
     event_handlers: _EventHandlersArg = None,
     import_source: _ImportSourceArg = None,
 ) -> VdomDict:
@@ -123,6 +110,11 @@ def vdom(
             The attributes **must** precede the children, though you may pass multiple
             sets of attributes, or children which will be merged into their respective
             parts of the model.
+        key:
+            A string idicating the identity of a particular element. This is significant
+            to preserve event handlers across updates - without a key, a re-render would
+            cause these handlers to be deleted, but with a key, they would be redirected
+            to any newly defined handlers.
         event_handlers:
             Maps event types to coroutines that are responsible for handling those events.
         import_source:
@@ -131,13 +123,16 @@ def vdom(
     """
     model: VdomDict = {"tagName": tag}
 
-    attributes, children = _coalesce_attributes_and_children(attributes_and_children)
+    attributes, children = coalesce_attributes_and_children(attributes_and_children)
 
     if attributes:
         model["attributes"] = attributes
 
     if children:
         model["children"] = children
+
+    if key:
+        model["key"] = key
 
     if event_handlers is not None:
         model["eventHandlers"] = event_handlers
@@ -166,12 +161,14 @@ def make_vdom_constructor(tag: str, allow_children: bool = True) -> VdomDictCons
 
     def constructor(
         *attributes_and_children: _AttributesAndChildrenArg,
+        key: str = "",
         event_handlers: _EventHandlersArg = None,
         import_source: _ImportSourceArg = None,
     ) -> VdomDict:
         model = vdom(
             tag,
             *attributes_and_children,
+            key=key,
             event_handlers=event_handlers,
             import_source=import_source,
         )
@@ -189,7 +186,7 @@ def make_vdom_constructor(tag: str, allow_children: bool = True) -> VdomDictCons
     return constructor
 
 
-def _coalesce_attributes_and_children(
+def coalesce_attributes_and_children(
     attributes_and_children: _AttributesAndChildrenArg,
 ) -> Tuple[Dict[str, Any], List[Any]]:
     attributes: Dict[str, Any] = {}

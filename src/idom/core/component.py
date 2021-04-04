@@ -1,15 +1,15 @@
+from __future__ import annotations
+
 import abc
 import inspect
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple, Union
+from typing import Any, Callable, Dict, Tuple, Union
 
-
-if TYPE_CHECKING:  # pragma: no cover
-    from .vdom import VdomDict  # noqa
+from .vdom import VdomDict
 
 
 ComponentConstructor = Callable[..., "AbstractComponent"]
-ComponentRenderFunction = Callable[..., Union["AbstractComponent", "VdomDict"]]
+ComponentRenderFunction = Callable[..., Union["AbstractComponent", VdomDict]]
 
 
 def component(function: ComponentRenderFunction) -> Callable[..., "Component"]:
@@ -21,42 +21,47 @@ def component(function: ComponentRenderFunction) -> Callable[..., "Component"]:
     """
 
     @wraps(function)
-    def constructor(*args: Any, **kwargs: Any) -> Component:
-        return Component(function, args, kwargs)
+    def constructor(*args: Any, key: str = "", **kwargs: Any) -> Component:
+        return Component(function, key, args, kwargs)
 
     return constructor
 
 
 class AbstractComponent(abc.ABC):
 
-    __slots__ = [] if hasattr(abc.ABC, "__weakref__") else ["__weakref__"]
+    __slots__ = ["key"]
+    if not hasattr(abc.ABC, "__weakref__"):
+        __slots__.append("__weakref__")  # pragma: no cover
+
+    key: str
 
     @abc.abstractmethod
-    def render(self) -> "VdomDict":
+    def render(self) -> VdomDict:
         """Render the component's :ref:`VDOM <VDOM Mimetype>` model."""
 
 
 class Component(AbstractComponent):
     """An object for rending component models."""
 
-    __slots__ = (
-        "_function",
-        "_args",
-        "_kwargs",
-    )
+    __slots__ = "_function", "_args", "_kwargs"
 
     def __init__(
         self,
         function: ComponentRenderFunction,
+        key: str,
         args: Tuple[Any, ...],
         kwargs: Dict[str, Any],
     ) -> None:
+        self.key = key
         self._function = function
         self._args = args
         self._kwargs = kwargs
 
-    def render(self) -> Any:
-        return self._function(*self._args, **self._kwargs)
+    def render(self) -> VdomDict:
+        model = self._function(*self._args, **self._kwargs)
+        if isinstance(model, AbstractComponent):
+            model = {"tagName": "div", "children": [model]}
+        return model
 
     def __repr__(self) -> str:
         sig = inspect.signature(self._function)

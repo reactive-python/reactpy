@@ -2,11 +2,13 @@ from base64 import b64encode
 from typing import Any, Callable, Dict, Optional, Union
 
 import idom
+from idom.core.component import AbstractComponent, ComponentConstructor
 from idom.core.vdom import (
     VdomDict,
     VdomDictConstructor,
-    component,
+    coalesce_attributes_and_children,
     make_vdom_constructor,
+    vdom,
 )
 
 
@@ -68,8 +70,6 @@ class Html:
 
     All constructors return :class:`~idom.core.vdom.VdomDict`.
     """
-
-    __call__ = staticmethod(component)
 
     def __init__(self) -> None:
         # External sources
@@ -165,6 +165,21 @@ class Html:
         self.menu = make_vdom_constructor("menu")
         self.menuitem = make_vdom_constructor("menuitem")
         self.summary = make_vdom_constructor("summary")
+
+    @staticmethod
+    def __call__(
+        tag: Union[str, ComponentConstructor],
+        *attributes_and_children: Any,
+    ) -> Union[VdomDict, AbstractComponent]:
+        if isinstance(tag, str):
+            return vdom(tag, *attributes_and_children)
+
+        attributes, children = coalesce_attributes_and_children(attributes_and_children)
+
+        if children:
+            return tag(children=children, **attributes)
+        else:
+            return tag(**attributes)
 
     def __getattr__(self, tag: str) -> VdomDictConstructor:
         return make_vdom_constructor(tag)

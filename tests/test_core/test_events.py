@@ -40,18 +40,15 @@ async def test_register_multiple_handlers_to_same_event():
 
 
 def test_event_handler_props():
-    handler_0 = EventHandler(target_id="uuid")
-    assert handler_0.target_id == "uuid"
+    handler_0 = EventHandler()
     assert handler_0.stop_propagation is False
     assert handler_0.prevent_default is False
 
-    handler_1 = EventHandler(target_id="uuid", prevent_default=True)
-    assert handler_1.target_id == "uuid"
+    handler_1 = EventHandler(prevent_default=True)
     assert handler_1.stop_propagation is False
     assert handler_1.prevent_default is True
 
-    handler_2 = EventHandler(target_id="uuid", stop_propagation=True)
-    assert handler_2.target_id == "uuid"
+    handler_2 = EventHandler(stop_propagation=True)
     assert handler_2.stop_propagation is True
     assert handler_2.prevent_default is False
 
