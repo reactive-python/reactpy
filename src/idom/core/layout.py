@@ -1,30 +1,21 @@
+from __future__ import annotations
+
 import abc
 import asyncio
 from functools import wraps
 from logging import getLogger
-from typing import (
-    Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import Any, AsyncIterator, Dict, Iterator, List, NamedTuple, Set, cast
 
 from jsonpatch import apply_patch, make_patch
+from typing_extensions import TypedDict
 
 from idom.config import IDOM_DEBUG_MODE
 
 from .component import AbstractComponent
-from .events import EventHandler, EventTarget
+from .events import EventHandler
 from .hooks import LifeCycleHook
 from .utils import CannotAccessResource, HasAsyncResources, async_resource
-from .vdom import validate_vdom
+from .vdom import VdomDict, validate_vdom
 
 
 logger = getLogger(__name__)
@@ -52,16 +43,6 @@ class LayoutEvent(NamedTuple):
     """The ID of the event handler."""
     data: List[Any]
     """A list of event data passed to the event handler."""
-
-
-class ComponentState(NamedTuple):
-    model: Dict[str, Any]
-    path: str
-    component_id: int
-    component_obj: AbstractComponent
-    event_handler_ids: Set[str]
-    child_component_ids: List[int]
-    life_cycle_hook: LifeCycleHook
 
 
 class Layout(HasAsyncResources):
@@ -124,8 +105,10 @@ class Layout(HasAsyncResources):
         yield queue
 
     @async_resource
-    async def _component_states(self) -> AsyncIterator[Dict[int, ComponentState]]:
-        root_component_state = self._create_component_state(self.root, "", save=False)
+    async def _component_states(self) -> AsyncIterator[Dict[int, _ComponentState]]:
+        root_component_state = self._create_component_state(
+            self.root, "", "", save=False
+        )
         try:
             yield {root_component_state.component_id: root_component_state}
         finally:
@@ -155,105 +138,133 @@ class Layout(HasAsyncResources):
         ):
             state.life_cycle_hook.component_did_render()
 
-        return LayoutUpdate(path=component_state.path, changes=changes)
+        return LayoutUpdate(path=component_state.patch_path, changes=changes)
 
-    def _render_component(self, component_state: ComponentState) -> Dict[str, Any]:
+    def _render_component(self, component_state: _ComponentState) -> Dict[str, Any]:
+        component_obj = component_state.component_obj
         try:
             component_state.life_cycle_hook.set_current()
             try:
-                raw_model = component_state.component_obj.render()
+                raw_model = component_obj.render()
             finally:
                 component_state.life_cycle_hook.unset_current()
 
-            if isinstance(raw_model, AbstractComponent):
-                raw_model = {"tagName": "div", "children": [raw_model]}
+            assert "key" not in raw_model, "Component must not return VDOM with a 'key'"
+            key = getattr(component_obj, "key", "")
+            if key:
+                raw_model = cast(VdomDict, {**raw_model, "key": key})
 
-            resolved_model = self._render_model(component_state, raw_model)
-            component_state.model.clear()
-            component_state.model.update(resolved_model)
+            component_state.model.update(
+                self._render_model(
+                    component_state,
+                    raw_model,
+                    component_state.patch_path,
+                    component_state.key_path,
+                )
+            )
         except Exception as error:
-            logger.exception(f"Failed to render {component_state.component_obj}")
+            logger.exception(f"Failed to render {component_obj}")
             component_state.model.update({"tagName": "div", "__error__": str(error)})
 
         # We need to return the model from the `component_state` so that the model
-        # between all `ComponentState` objects within a `Layout` are shared.
+        # between all `_ComponentState` objects within a `Layout` are shared.
         return component_state.model
 
     def _render_model(
         self,
-        component_state: ComponentState,
-        model: Mapping[str, Any],
-        path: Optional[str] = None,
+        component_state: _ComponentState,
+        model: VdomDict,
+        patch_path: str,
+        key_path: str,
     ) -> Dict[str, Any]:
-        if path is None:
-            path = component_state.path
-
         serialized_model: Dict[str, Any] = {}
-        event_handlers = self._render_model_event_targets(component_state, model)
+        event_handlers = self._render_model_event_targets(
+            component_state, model, key_path
+        )
         if event_handlers:
             serialized_model["eventHandlers"] = event_handlers
         if "children" in model:
             serialized_model["children"] = self._render_model_children(
-                component_state, model["children"], path
+                component_state, model, patch_path, key_path
             )
         return {**model, **serialized_model}
 
     def _render_model_children(
         self,
-        component_state: ComponentState,
-        children: Union[List[Any], Tuple[Any, ...]],
-        path: str,
+        component_state: _ComponentState,
+        model: VdomDict,
+        patch_path: str,
+        key_path: str,
     ) -> List[Any]:
+        children = model["children"]
         resolved_children: List[Any] = []
         for index, child in enumerate(
             children if isinstance(children, (list, tuple)) else [children]
         ):
             if isinstance(child, dict):
-                child_path = f"{path}/children/{index}"
                 resolved_children.append(
-                    self._render_model(component_state, child, child_path)
+                    self._render_model(
+                        component_state,
+                        cast(VdomDict, child),
+                        patch_path=f"{patch_path}/children/{index}",
+                        key_path=f"{key_path}/{index}",
+                    )
                 )
             elif isinstance(child, AbstractComponent):
-                child_path = f"{path}/children/{index}"
-                child_state = self._create_component_state(child, child_path, save=True)
-                resolved_children.append(self._render_component(child_state))
+                resolved_children.append(
+                    self._render_component(
+                        self._create_component_state(
+                            child,
+                            patch_path=f"{patch_path}/children/{index}",
+                            parent_key_path=key_path,
+                            save=True,
+                        )
+                    )
+                )
                 component_state.child_component_ids.append(id(child))
             else:
                 resolved_children.append(str(child))
         return resolved_children
 
     def _render_model_event_targets(
-        self, component_state: ComponentState, model: Mapping[str, Any]
-    ) -> Dict[str, EventTarget]:
-        handlers: Dict[str, EventHandler] = {}
+        self,
+        component_state: _ComponentState,
+        model: VdomDict,
+        key_path: str,
+    ) -> Dict[str, _EventTarget]:
+        handlers_by_event: Dict[str, EventHandler] = {}
         if "eventHandlers" in model:
-            handlers.update(model["eventHandlers"])
+            handlers_by_event.update(model["eventHandlers"])
+
         if "attributes" in model:
             attrs = model["attributes"]
             for k, v in list(attrs.items()):
                 if callable(v):
                     if not isinstance(v, EventHandler):
-                        h = handlers[k] = EventHandler()
+                        h = handlers_by_event[k] = EventHandler()
                         h.add(attrs.pop(k))
                     else:
                         h = attrs.pop(k)
-                        handlers[k] = h
+                        handlers_by_event[k] = h
 
-        event_handlers_by_id = {h.target_id: h for h in handlers.values()}
-        component_state.event_handler_ids.clear()
-        component_state.event_handler_ids.update(event_handlers_by_id)
-        self._event_handlers.update(event_handlers_by_id)
-
-        return {
-            e: {
-                "target": h.target_id,
-                "preventDefault": h.prevent_default,
-                "stopPropagation": h.stop_propogation,
+        handlers_by_target: Dict[str, EventHandler] = {}
+        model_event_targets: Dict[str, _EventTarget] = {}
+        for event, handler in handlers_by_event.items():
+            target = f"{key_path}.{event}"
+            handlers_by_target[target] = handler
+            model_event_targets[event] = {
+                "target": target,
+                "preventDefault": handler.prevent_default,
+                "stopPropagation": handler.stop_propagation,
             }
-            for e, h in handlers.items()
-        }
 
-    def _get_component_state(self, component: AbstractComponent) -> ComponentState:
+        component_state.event_handler_ids.clear()
+        component_state.event_handler_ids.update(handlers_by_target)
+        self._event_handlers.update(handlers_by_target)
+
+        return model_event_targets
+
+    def _get_component_state(self, component: AbstractComponent) -> _ComponentState:
         return self._component_states[id(component)]
 
     def _has_component_state(self, component: AbstractComponent) -> bool:
@@ -262,13 +273,15 @@ class Layout(HasAsyncResources):
     def _create_component_state(
         self,
         component: AbstractComponent,
-        path: str,
+        patch_path: str,
+        parent_key_path: str,
         save: bool,
-    ) -> ComponentState:
+    ) -> _ComponentState:
         component_id = id(component)
-        state = ComponentState(
+        state = _ComponentState(
             model={},
-            path=path,
+            patch_path=patch_path,
+            key_path=f"{parent_key_path}/{_get_component_key(component)}",
             component_id=component_id,
             component_obj=component,
             event_handler_ids=set(),
@@ -279,28 +292,30 @@ class Layout(HasAsyncResources):
             self._component_states[component_id] = state
         return state
 
-    def _delete_component_state(self, component_state: ComponentState) -> None:
+    def _delete_component_state(self, component_state: _ComponentState) -> None:
         self._clear_component_state_event_handlers(component_state)
         self._delete_component_state_children(component_state)
         del self._component_states[component_state.component_id]
 
     def _clear_component_state_event_handlers(
-        self, component_state: ComponentState
+        self, component_state: _ComponentState
     ) -> None:
         for handler_id in component_state.event_handler_ids:
             del self._event_handlers[handler_id]
         component_state.event_handler_ids.clear()
 
-    def _delete_component_state_children(self, component_state: ComponentState) -> None:
+    def _delete_component_state_children(
+        self, component_state: _ComponentState
+    ) -> None:
         for e_id in component_state.child_component_ids:
             self._delete_component_state(self._component_states[e_id])
         component_state.child_component_ids.clear()
 
     def _iter_component_states_from_root(
         self,
-        root_component_state: ComponentState,
+        root_component_state: _ComponentState,
         include_root: bool,
-    ) -> Iterator[ComponentState]:
+    ) -> Iterator[_ComponentState]:
         if include_root:
             pending = [root_component_state]
         else:
@@ -319,6 +334,27 @@ class Layout(HasAsyncResources):
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.root})"
+
+
+class _ComponentState(NamedTuple):
+    model: Dict[str, Any]
+    patch_path: str
+    key_path: str
+    component_id: int
+    component_obj: AbstractComponent
+    event_handler_ids: Set[str]
+    child_component_ids: List[int]
+    life_cycle_hook: LifeCycleHook
+
+
+class _EventTarget(TypedDict):
+    target: str
+    preventDefault: bool  # noqa
+    stopPropagation: bool  # noqa
+
+
+def _get_component_key(component: AbstractComponent) -> str:
+    return getattr(component, "key", "") or hex(id(component))[2:]
 
 
 class _ComponentQueue:
