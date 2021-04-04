@@ -275,3 +275,87 @@ async def test_log_on_dispatch_to_missing_event_handler(caplog):
         "Ignored event - handler 'missing' does not exist or its component unmounted",
         next(iter(caplog.records)).msg,
     )
+
+
+def use_toggle(init=False):
+    state, set_state = idom.hooks.use_state(init)
+    return state, lambda: set_state(lambda old: not old)
+
+
+async def test_model_key_preserves_callback_identity_for_common_elements():
+    called_good_trigger = idom.Ref(False)
+
+    @idom.component
+    def MyComponent():
+        reverse_children, set_reverse_children = use_toggle()
+
+        def good_trigger():
+            called_good_trigger.current = True
+            set_reverse_children()
+
+        def bad_trigger():
+            raise ValueError("Called bad trigger")
+
+        children = [
+            idom.html.button(
+                {"onClick": good_trigger, "id": "good"}, "good", key="good"
+            ),
+            idom.html.button({"onClick": bad_trigger, "id": "bad"}, "bad", key="bad"),
+        ]
+
+        if reverse_children:
+            children.reverse()
+
+        return idom.html.div(children)
+
+    async with idom.Layout(MyComponent(key="component")) as layout:
+        await layout.render()
+        for i in range(3):
+            event = LayoutEvent("/component/good/onClick", [])
+            await layout.dispatch(event)
+
+            assert called_good_trigger.current
+            # reset after checking
+            called_good_trigger.current = False
+
+            await layout.render()
+
+
+async def test_model_key_preserves_callback_identity_for_components():
+    called_good_trigger = idom.Ref(False)
+
+    @idom.component
+    def RootComponent():
+        reverse_children, set_reverse_children = use_toggle()
+
+        children = [
+            Trigger(name, set_reverse_children, key=name) for name in ["good", "bad"]
+        ]
+
+        if reverse_children:
+            children.reverse()
+
+        return idom.html.div(children)
+
+    @idom.component
+    def Trigger(name, set_reverse_children):
+        def callback():
+            if name == "good":
+                called_good_trigger.current = True
+                set_reverse_children()
+            else:
+                raise ValueError("Called bad trigger")
+
+        return idom.html.button({"onClick": callback, "id": "good"}, "good")
+
+    async with idom.Layout(RootComponent(key="root")) as layout:
+        await layout.render()
+        for i in range(3):
+            event = LayoutEvent("/root/good/onClick", [])
+            await layout.dispatch(event)
+
+            assert called_good_trigger.current
+            # reset after checking
+            called_good_trigger.current = False
+
+            await layout.render()

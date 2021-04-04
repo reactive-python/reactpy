@@ -19,7 +19,7 @@ async def test_shared_state_dispatcher():
     changes_2 = []
     key = "test-element"
     event_name = "onEvent"
-    target_id = f"/{key}.{event_name}"
+    target_id = f"/{key}/{event_name}"
 
     events_to_inject = [LayoutEvent(target=target_id, data=[])] * 4
 
