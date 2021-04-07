@@ -4,12 +4,12 @@ Roadmap
 2021-Q2
 -------
 
-Element and Component Identity:
+**Element and Component Identity**:
     At the moment, whenever a particular branch of a layout is updated, all the state
     (i.e. hooks and event handlers) that live within that branch are thrown away and
     reconstructed. Given IDOM's current implementation for
     :class:`~idom.core.layout.Layout` this is unavoidable. To resolve this issue, we
-    need to add a concept of `"keys" <https://reactjs.org/docs/lists-and-keys.html>`
+    need to add a concept of `"keys" <https://reactjs.org/docs/lists-and-keys.html>`__
     which can be used to indicate the identity of an element within the layout
     structure. For example, if you have a list of elements that get re-ordered when a
     button is pressed, their state should be preserved, and reassigned to their new
@@ -29,7 +29,7 @@ Element and Component Identity:
     - https://github.com/idom-team/idom/issues/330
     - https://github.com/idom-team/idom/issues/19
 
-Reconsider Custom Component Interface:
+**Reconsider Custom Component Interface**:
     One problem that's come up several times while implementing alternate client
     solutions with React is that custom components must use the same React instances
     as the client. This is problematic for developers of these custom components because
