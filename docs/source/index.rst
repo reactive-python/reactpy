@@ -30,6 +30,7 @@ Libraries for defining and controlling interactive webpages with Python
     contributing
     developer-guide
     changelog
+    roadmap
 
 .. toctree::
     :hidden:
@@ -38,7 +39,6 @@ Libraries for defining and controlling interactive webpages with Python
     Source Code <https://github.com/idom-team/idom>
     Community <https://github.com/idom-team/idom/discussions>
     Issues <https://github.com/idom-team/idom/issues>
-
 
 
 At a Glance
