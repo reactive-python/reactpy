@@ -76,7 +76,7 @@ class ImportSourceDict(TypedDict):
 class _VdomDictOptional(TypedDict, total=False):
     key: str  # noqa
     children: Sequence[Any]  # noqa
-    attributes: Dict[str, Any]  # noqa
+    attributes: Mapping[str, Any]  # noqa
     eventHandlers: Mapping[str, EventHandler]  # noqa
     importSource: ImportSourceDict  # noqa
 

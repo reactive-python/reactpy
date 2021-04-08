@@ -1,5 +1,4 @@
 import asyncio
-import gc
 import re
 from weakref import finalize
 
@@ -75,10 +74,10 @@ async def test_nested_component_layout():
     @idom.component
     def Parent():
         state, parent_set_state.current = idom.hooks.use_state(0)
-        return idom.html.div(state, Child())
+        return idom.html.div(state, Child(key="c"))
 
     @idom.component
-    def Child():
+    def Child(key):
         state, child_set_state.current = idom.hooks.use_state(0)
         return idom.html.div(state)
 
@@ -135,7 +134,10 @@ async def test_layout_render_error_has_partial_update():
                     "path": "/children",
                     "value": [
                         {"tagName": "div", "children": ["hello"]},
-                        {"tagName": "div", "__error__": "Something went wrong :("},
+                        {
+                            "tagName": "__error__",
+                            "children": ["Something went wrong :("],
+                        },
                         {"tagName": "div", "children": ["hello"]},
                     ],
                 },
@@ -208,7 +210,6 @@ async def test_components_are_garbage_collected():
     # the hook also contains a reference to the root component
     del outer_component_hook
 
-    gc.collect()
     assert not live_components
 
 
@@ -308,10 +309,10 @@ async def test_model_key_preserves_callback_identity_for_common_elements():
 
         return idom.html.div(children)
 
-    async with idom.Layout(MyComponent(key="component")) as layout:
+    async with idom.Layout(MyComponent()) as layout:
         await layout.render()
         for i in range(3):
-            event = LayoutEvent("/component/good/onClick", [])
+            event = LayoutEvent("/good/onClick", [])
             await layout.dispatch(event)
 
             assert called_good_trigger.current
@@ -328,9 +329,7 @@ async def test_model_key_preserves_callback_identity_for_components():
     def RootComponent():
         reverse_children, set_reverse_children = use_toggle()
 
-        children = [
-            Trigger(name, set_reverse_children, key=name) for name in ["good", "bad"]
-        ]
+        children = [Trigger(set_reverse_children, key=name) for name in ["good", "bad"]]
 
         if reverse_children:
             children.reverse()
@@ -338,9 +337,9 @@ async def test_model_key_preserves_callback_identity_for_components():
         return idom.html.div(children)
 
     @idom.component
-    def Trigger(name, set_reverse_children):
+    def Trigger(set_reverse_children, key):
         def callback():
-            if name == "good":
+            if key == "good":
                 called_good_trigger.current = True
                 set_reverse_children()
             else:
@@ -348,10 +347,10 @@ async def test_model_key_preserves_callback_identity_for_components():
 
         return idom.html.button({"onClick": callback, "id": "good"}, "good")
 
-    async with idom.Layout(RootComponent(key="root")) as layout:
+    async with idom.Layout(RootComponent()) as layout:
         await layout.render()
         for i in range(3):
-            event = LayoutEvent("/root/good/onClick", [])
+            event = LayoutEvent("/good/onClick", [])
             await layout.dispatch(event)
 
             assert called_good_trigger.current
@@ -359,3 +358,73 @@ async def test_model_key_preserves_callback_identity_for_components():
             called_good_trigger.current = False
 
             await layout.render()
+
+
+async def test_component_can_return_another_component_directly():
+    @idom.component
+    def Outer():
+        return Inner()
+
+    @idom.component
+    def Inner():
+        return idom.html.div("hello")
+
+    async with idom.Layout(Outer()) as layout:
+        update = await layout.render()
+        assert_same_items(
+            update.changes,
+            [
+                {
+                    "op": "add",
+                    "path": "/children",
+                    "value": [{"children": ["hello"], "tagName": "div"}],
+                },
+                {"op": "add", "path": "/tagName", "value": "div"},
+            ],
+        )
+
+
+async def test_keyed_components_get_garbage_collected():
+    pop_item = idom.Ref(None)
+    garbage_collect_items = []
+
+    @idom.component
+    def Outer():
+        items, set_items = idom.hooks.use_state([1, 2, 3])
+        pop_item.current = lambda: set_items(items[:-1])
+        return idom.html.div(Inner(key=k) for k in items)
+
+    @idom.component
+    def Inner(key):
+        component = idom.hooks.current_hook().component
+        finalize(component, lambda: garbage_collect_items.append(key))
+        return idom.html.div(key)
+
+    async with idom.Layout(Outer()) as layout:
+        await layout.render()
+
+        pop_item.current()
+        await layout.render()
+        assert garbage_collect_items == [3]
+
+        pop_item.current()
+        await layout.render()
+        assert garbage_collect_items == [3, 2]
+
+        pop_item.current()
+        await layout.render()
+        assert garbage_collect_items == [3, 2, 1]
+
+
+async def test_duplicate_sibling_keys_causes_error(caplog):
+    @idom.component
+    def ComponentReturnsDuplicateKeys():
+        return idom.html.div(
+            idom.html.div(key="duplicate"), idom.html.div(key="duplicate")
+        )
+
+    async with idom.Layout(ComponentReturnsDuplicateKeys()) as layout:
+        await layout.render()
+
+    with pytest.raises(ValueError, match="Duplicate keys in"):
+        raise next(iter(caplog.records)).exc_info[1]

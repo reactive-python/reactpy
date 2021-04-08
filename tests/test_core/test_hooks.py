@@ -354,18 +354,22 @@ async def test_use_effect_cleanup_occurs_before_next_effect():
 
 async def test_use_effect_cleanup_occurs_on_will_unmount():
     outer_component_hook = HookCatcher()
+    component_did_render = idom.Ref(False)
     cleanup_triggered = idom.Ref(False)
     cleanup_triggered_before_next_render = idom.Ref(False)
 
     @idom.component
     @outer_component_hook.capture
     def OuterComponent():
-        if cleanup_triggered.current:
-            cleanup_triggered_before_next_render.current = True
         return ComponentWithEffect()
 
     @idom.component
     def ComponentWithEffect():
+        if component_did_render.current and cleanup_triggered.current:
+            cleanup_triggered_before_next_render.current = True
+
+        component_did_render.current = True
+
         @idom.hooks.use_effect
         def effect():
             def cleanup():

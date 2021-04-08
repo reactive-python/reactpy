@@ -21,8 +21,8 @@ def component(function: ComponentRenderFunction) -> Callable[..., "Component"]:
     """
 
     @wraps(function)
-    def constructor(*args: Any, key: str = "", **kwargs: Any) -> Component:
-        return Component(function, key, args, kwargs)
+    def constructor(*args: Any, **kwargs: Any) -> Component:
+        return Component(function, args, kwargs)
 
     return constructor
 
@@ -48,11 +48,10 @@ class Component(AbstractComponent):
     def __init__(
         self,
         function: ComponentRenderFunction,
-        key: str,
         args: Tuple[Any, ...],
         kwargs: Dict[str, Any],
     ) -> None:
-        self.key = key
+        self.key = kwargs.get("key", "")
         self._function = function
         self._args = args
         self._kwargs = kwargs

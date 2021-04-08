@@ -85,10 +85,10 @@ which we can re-render and see what changed:
             [f"Click count: {count}"],
         )
 
-    async with idom.Layout(ClickCount(key="test-component")) as layout:
+    async with idom.Layout(ClickCount()) as layout:
         patch_1 = await layout.render()
 
-        fake_event = LayoutEvent(target="/test-component/onClick", data=[{}])
+        fake_event = LayoutEvent(target="/onClick", data=[{}])
         await layout.dispatch(fake_event)
         patch_2 = await layout.render()
 
@@ -135,7 +135,7 @@ callback that's called by the dispatcher to events it should execute.
 
 
     async def recv():
-        event = LayoutEvent(target="/test-component/onClick", data=[{}])
+        event = LayoutEvent(target="/onClick", data=[{}])
 
         # We need this so we don't flood the render loop with events.
         # In practice this is never an issue since events won't arrive
@@ -145,9 +145,7 @@ callback that's called by the dispatcher to events it should execute.
         return event
 
 
-    async with SingleViewDispatcher(
-        idom.Layout(ClickCount(key="test-component"))
-    ) as dispatcher:
+    async with SingleViewDispatcher(idom.Layout(ClickCount())) as dispatcher:
         context = None  # see note below
         await dispatcher.run(send, recv, context)
 
