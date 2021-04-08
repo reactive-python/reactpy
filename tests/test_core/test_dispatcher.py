@@ -17,9 +17,8 @@ async def test_shared_state_dispatcher():
     done = asyncio.Event()
     changes_1 = []
     changes_2 = []
-    key = "test-element"
     event_name = "onEvent"
-    target_id = f"/{key}/{event_name}"
+    target_id = f"/{event_name}"
 
     events_to_inject = [LayoutEvent(target=target_id, data=[])] * 4
 
@@ -46,7 +45,7 @@ async def test_shared_state_dispatcher():
         count, set_count = idom.hooks.use_state(0)
         return idom.html.div({event_name: lambda: set_count(count + 1), "count": count})
 
-    async with SharedViewDispatcher(Layout(Clickable(key=key))) as dispatcher:
+    async with SharedViewDispatcher(Layout(Clickable())) as dispatcher:
         await dispatcher.run(send_1, recv_1, "1")
         await dispatcher.run(send_2, recv_2, "2")
 
@@ -65,7 +64,6 @@ async def test_shared_state_dispatcher():
             },
             {"op": "add", "path": "/attributes", "value": {"count": 0}},
             {"op": "add", "path": "/tagName", "value": "div"},
-            {"op": "add", "path": "/key", "value": key},
         ],
         [{"op": "replace", "path": "/attributes/count", "value": 1}],
         [{"op": "replace", "path": "/attributes/count", "value": 2}],

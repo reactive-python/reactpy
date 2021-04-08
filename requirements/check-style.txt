@@ -1,5 +1,6 @@
 black
 flake8
+flake8-print
 pep8-naming
 flake8-idom-hooks >=0.4.0
 isort >=5.7.0

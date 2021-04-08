@@ -2,7 +2,7 @@ from base64 import b64encode
 from typing import Any, Callable, Dict, Optional, Union
 
 import idom
-from idom.core.component import AbstractComponent, ComponentConstructor
+from idom.core.component import AbstractComponent, ComponentConstructor, component
 from idom.core.vdom import (
     VdomDict,
     VdomDictConstructor,
@@ -35,7 +35,7 @@ def image(
     return {"tagName": "img", "attributes": {"src": src, **(attributes or {})}}
 
 
-@idom.core.component
+@component
 def Input(
     callback: Callable[[str], None],
     type: str,

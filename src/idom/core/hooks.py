@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 from logging import getLogger
 from threading import get_ident as get_thread_id
@@ -20,6 +22,7 @@ from typing import (
 
 from typing_extensions import Protocol
 
+import idom
 from idom.utils import Ref
 
 from .component import AbstractComponent
@@ -384,10 +387,10 @@ class LifeCycleHook:
     def __init__(
         self,
         component: AbstractComponent,
-        schedule_render: Callable[[AbstractComponent], None],
+        layout: idom.core.layout.Layout,
     ) -> None:
         self.component = component
-        self._schedule_render_callback = schedule_render
+        self._schedule_render_callback = layout.update
         self._schedule_render_later = False
         self._is_rendering = False
         self._rendered_atleast_once = False
