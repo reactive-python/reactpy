@@ -384,7 +384,7 @@ async def test_component_can_return_another_component_directly():
         )
 
 
-async def test_keyed_components_get_garbage_collected():
+async def test_hooks_for_keyed_components_get_garbage_collected():
     pop_item = idom.Ref(None)
     garbage_collect_items = []
 
@@ -396,8 +396,7 @@ async def test_keyed_components_get_garbage_collected():
 
     @idom.component
     def Inner(key):
-        component = idom.hooks.current_hook().component
-        finalize(component, lambda: garbage_collect_items.append(key))
+        finalize(idom.hooks.current_hook(), lambda: garbage_collect_items.append(key))
         return idom.html.div(key)
 
     async with idom.Layout(Outer()) as layout:
@@ -428,3 +427,26 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
 
     with pytest.raises(ValueError, match="Duplicate keys in"):
         raise next(iter(caplog.records)).exc_info[1]
+
+
+async def test_keyed_components_preserve_hook_on_parent_update():
+    outer_hook = HookCatcher()
+    inner_hook = HookCatcher()
+
+    @idom.component
+    @outer_hook.capture
+    def Outer():
+        return Inner(key=1)
+
+    @idom.component
+    @inner_hook.capture
+    def Inner(key):
+        return idom.html.div(key)
+
+    async with idom.Layout(Outer()) as layout:
+        await layout.render()
+        old_inner_hook = inner_hook.current
+
+        outer_hook.current.schedule_render()
+        await layout.render()
+        assert old_inner_hook is inner_hook.current

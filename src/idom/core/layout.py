@@ -15,7 +15,7 @@ from typing import (
     Set,
     Tuple,
 )
-from weakref import ReferenceType, ref
+from weakref import ref
 
 from jsonpatch import apply_patch, make_patch
 from typing_extensions import TypedDict
@@ -125,7 +125,7 @@ class Layout(HasAsyncResources):
 
     def _create_layout_update(self, component: AbstractComponent) -> LayoutUpdate:
         old_state = self._model_state_by_component_id[id(component)]
-        new_state = old_state.new()
+        new_state = old_state.new(None, component)
 
         self._render_component(old_state, new_state, component)
         changes = make_patch(getattr(old_state, "model", {}), new_state.model).patch
@@ -269,7 +269,7 @@ class Layout(HasAsyncResources):
 
         old_keys = set(old_state.children_by_key).difference(raw_typed_children_by_key)
         old_child_states = {key: old_state.children_by_key[key] for key in old_keys}
-        if old_child_states:
+        if old_keys:
             self._unmount_model_states(list(old_child_states.values()))
 
         new_children = new_state.model["children"] = []
@@ -277,18 +277,25 @@ class Layout(HasAsyncResources):
             raw_typed_children_by_key.items()
         ):
             if child_type is DICT_TYPE:
-                child_state = _ModelState(ref(new_state), index, key, None)
-                self._render_model(old_child_states.get(key), child_state, child)
-                new_children.append(child_state.model)
-                new_state.children_by_key[key] = child_state
+                old_child_state = old_state.children_by_key.get(key)
+                if old_child_state is not None:
+                    new_child_state = old_child_state.new(new_state, None)
+                else:
+                    new_child_state = _ModelState(new_state, index, key, None)
+                self._render_model(old_child_state, new_child_state, child)
+                new_children.append(new_child_state.model)
+                new_state.children_by_key[key] = new_child_state
             elif child_type is COMPONENT_TYPE:
-                key = getattr(child, "key", "") or hex(id(child))
-                life_cycle_hook = LifeCycleHook(child, self)
-                child_state = _ModelState(ref(new_state), index, key, life_cycle_hook)
-                self._render_component(old_child_states.get(key), child_state, child)
-                new_children.append(child_state.model)
-                new_state.children_by_key[key] = child_state
-                self._model_state_by_component_id[id(child)] = child_state
+                old_child_state = old_state.children_by_key.get(key)
+                if old_child_state is not None:
+                    new_child_state = old_child_state.new(new_state, child)
+                else:
+                    hook = LifeCycleHook(child, self)
+                    new_child_state = _ModelState(new_state, index, key, hook)
+                self._render_component(old_child_state, new_child_state, child)
+                new_children.append(new_child_state.model)
+                new_state.children_by_key[key] = new_child_state
+                self._model_state_by_component_id[id(child)] = new_child_state
             else:
                 new_children.append(child)
 
@@ -299,14 +306,14 @@ class Layout(HasAsyncResources):
         for index, child in enumerate(raw_children):
             if isinstance(child, dict):
                 key = child.get("key") or hex(id(child))
-                child_state = _ModelState(ref(new_state), index, key, None)
+                child_state = _ModelState(new_state, index, key, None)
                 self._render_model(None, child_state, child)
                 new_children.append(child_state.model)
                 new_state.children_by_key[key] = child_state
             elif isinstance(child, AbstractComponent):
                 key = getattr(child, "key", "") or hex(id(child))
                 life_cycle_hook = LifeCycleHook(child, self)
-                child_state = _ModelState(ref(new_state), index, key, life_cycle_hook)
+                child_state = _ModelState(new_state, index, key, life_cycle_hook)
                 self._render_component(None, child_state, child)
                 new_children.append(child_state.model)
                 new_state.children_by_key[key] = child_state
@@ -322,6 +329,10 @@ class Layout(HasAsyncResources):
                 hook = state.life_cycle_hook
                 hook.component_will_unmount()
                 del self._model_state_by_component_id[id(hook.component)]
+                import gc
+
+                print(state)
+                print(gc.get_referrers(hook))
             to_unmount.extend(state.children_by_key.values())
 
     def __repr__(self) -> str:
@@ -333,7 +344,7 @@ class _ModelState:
     __slots__ = (
         "index",
         "key",
-        "parent_ref",
+        "_parent_ref",
         "life_cycle_hook",
         "patch_path",
         "key_path",
@@ -347,7 +358,7 @@ class _ModelState:
 
     def __init__(
         self,
-        parent_ref: Optional[ReferenceType[_ModelState]],
+        parent: Optional[_ModelState],
         index: int,
         key: str,
         life_cycle_hook: Optional[LifeCycleHook],
@@ -355,32 +366,41 @@ class _ModelState:
         self.index = index
         self.key = key
 
-        if parent_ref is not None:
-            self.parent_ref = parent_ref
-            # temporarilly hydrate for use below
-            parent = parent_ref()
+        if parent is not None:
+            self._parent_ref = ref(parent)
+            self.key_path = f"{parent.key_path}/{key}"
+            self.patch_path = f"{parent.patch_path}/children/{index}"
         else:
-            parent = None
+            self.key_path = self.patch_path = ""
 
         if life_cycle_hook is not None:
             self.life_cycle_hook = life_cycle_hook
 
-        if parent is None:
-            self.key_path = self.patch_path = ""
-        else:
-            self.key_path = f"{parent.key_path}/{key}"
-            self.patch_path = f"{parent.patch_path}/children/{index}"
-
         self.event_targets: Set[str] = set()
         self.children_by_key: Dict[str, _ModelState] = {}
 
-    def new(self) -> _ModelState:
-        return _ModelState(
-            getattr(self, "parent_ref", None),
-            self.index,
-            self.key,
-            getattr(self, "life_cycle_hook", None),
-        )
+    @property
+    def parent(self) -> _ModelState:
+        # An AttributeError here is ok. It's synonymous
+        # with the existance of 'parent' attribute
+        p = self._parent_ref()
+        assert p is not None, "detached model state"
+        return p
+
+    def new(
+        self,
+        new_parent: Optional[_ModelState],
+        component: Optional[AbstractComponent],
+    ) -> _ModelState:
+        if new_parent is None:
+            new_parent = getattr(self, "parent", None)
+        if hasattr(self, "life_cycle_hook"):
+            assert component is not None
+            life_cycle_hook = self.life_cycle_hook
+            life_cycle_hook.component = component
+        else:
+            life_cycle_hook = None
+        return _ModelState(new_parent, self.index, self.key, life_cycle_hook)
 
     def iter_children(self, include_self: bool = True) -> Iterator[_ModelState]:
         to_yield = [self] if include_self else []
@@ -388,6 +408,28 @@ class _ModelState:
             node = to_yield.pop()
             yield node
             to_yield.extend(node.children_by_key.values())
+
+
+class _ComponentQueue:
+
+    __slots__ = "_loop", "_queue", "_pending"
+
+    def __init__(self) -> None:
+        self._loop = asyncio.get_event_loop()
+        self._queue: "asyncio.Queue[AbstractComponent]" = asyncio.Queue()
+        self._pending: Set[int] = set()
+
+    def put(self, component: AbstractComponent) -> None:
+        component_id = id(component)
+        if component_id not in self._pending:
+            self._pending.add(component_id)
+            self._loop.call_soon_threadsafe(self._queue.put_nowait, component)
+        return None
+
+    async def get(self) -> AbstractComponent:
+        component = await self._queue.get()
+        self._pending.remove(id(component))
+        return component
 
 
 class _ModelEventTarget(TypedDict):
@@ -415,25 +457,3 @@ class _ModelVdomRequired(TypedDict, total=True):
 
 class _ModelVdom(_ModelVdomRequired, _ModelVdomOptional):
     """A VDOM dictionary model specifically for use with a :class:`Layout`"""
-
-
-class _ComponentQueue:
-
-    __slots__ = "_loop", "_queue", "_pending"
-
-    def __init__(self) -> None:
-        self._loop = asyncio.get_event_loop()
-        self._queue: "asyncio.Queue[AbstractComponent]" = asyncio.Queue()
-        self._pending: Set[int] = set()
-
-    def put(self, component: AbstractComponent) -> None:
-        component_id = id(component)
-        if component_id not in self._pending:
-            self._pending.add(component_id)
-            self._loop.call_soon_threadsafe(self._queue.put_nowait, component)
-        return None
-
-    async def get(self) -> AbstractComponent:
-        component = await self._queue.get()
-        self._pending.remove(id(component))
-        return component
