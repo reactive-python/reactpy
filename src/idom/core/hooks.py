@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import weakref
 from logging import getLogger
 from threading import get_ident as get_thread_id
 from typing import (
@@ -374,7 +375,7 @@ class LifeCycleHook:
 
     __slots__ = (
         "component",
-        "_schedule_render_callback",
+        "_layout",
         "_schedule_render_later",
         "_current_state_index",
         "_state",
@@ -390,7 +391,7 @@ class LifeCycleHook:
         layout: idom.core.layout.Layout,
     ) -> None:
         self.component = component
-        self._schedule_render_callback = layout.update
+        self._layout = weakref.ref(layout)
         self._schedule_render_later = False
         self._is_rendering = False
         self._rendered_atleast_once = False
@@ -468,4 +469,6 @@ class LifeCycleHook:
         del _current_life_cycle_hook[get_thread_id()]
 
     def _schedule_render(self) -> None:
-        self._schedule_render_callback(self.component)
+        layout = self._layout()
+        assert layout is not None
+        layout.update(self.component)
