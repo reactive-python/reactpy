@@ -255,7 +255,7 @@ class Layout(HasAsyncResources):
                 key = child.get("key") or hex(id(child))[2:]
             elif isinstance(child, AbstractComponent):
                 child_type = COMPONENT_TYPE
-                key = getattr(child, "key", "") or hex(id(child))[2:]
+                key = getattr(child, "key", None) or hex(id(child))[2:]
             else:
                 child = str(child)
                 child_type = STRING_TYPE
@@ -288,6 +288,8 @@ class Layout(HasAsyncResources):
             elif child_type is COMPONENT_TYPE:
                 old_child_state = old_state.children_by_key.get(key)
                 if old_child_state is not None:
+                    old_component = old_child_state.life_cycle_hook.component
+                    del self._model_state_by_component_id[id(old_component)]
                     new_child_state = old_child_state.new(new_state, child)
                 else:
                     hook = LifeCycleHook(child, self)
@@ -329,10 +331,6 @@ class Layout(HasAsyncResources):
                 hook = state.life_cycle_hook
                 hook.component_will_unmount()
                 del self._model_state_by_component_id[id(hook.component)]
-                import gc
-
-                print(state)
-                print(gc.get_referrers(hook))
             to_unmount.extend(state.children_by_key.values())
 
     def __repr__(self) -> str:
