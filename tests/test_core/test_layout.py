@@ -387,6 +387,7 @@ async def test_component_can_return_another_component_directly():
 async def test_hooks_for_keyed_components_get_garbage_collected():
     pop_item = idom.Ref(None)
     garbage_collect_items = []
+    registered_finalizers = set()
 
     @idom.component
     def Outer():
@@ -396,7 +397,10 @@ async def test_hooks_for_keyed_components_get_garbage_collected():
 
     @idom.component
     def Inner(key):
-        finalize(idom.hooks.current_hook(), lambda: garbage_collect_items.append(key))
+        if key not in registered_finalizers:
+            hook = idom.hooks.current_hook()
+            finalize(hook, lambda: garbage_collect_items.append(key))
+            registered_finalizers.add(key)
         return idom.html.div(key)
 
     async with idom.Layout(Outer()) as layout:
