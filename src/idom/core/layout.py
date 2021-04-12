@@ -130,16 +130,6 @@ class Layout(HasAsyncResources):
         self._render_component(old_state, new_state, component)
         changes = make_patch(getattr(old_state, "model", {}), new_state.model).patch
 
-        # replace model and state in parent
-        if hasattr(new_state, "parent_ref"):
-            parent = new_state.parent_ref()
-            if parent is not None:
-                parent.children_by_key[new_state.key] = new_state
-                parent.model["children"][new_state.index] = new_state.model
-
-        # replace in global state
-        self._model_state_by_component_id[id(component)] = new_state
-
         # hook effects must run after the update is complete
         for state in new_state.iter_children():
             if hasattr(state, "life_cycle_hook"):
@@ -165,6 +155,26 @@ class Layout(HasAsyncResources):
         except Exception as error:
             logger.exception(f"Failed to render {component}")
             new_state.model = {"tagName": "__error__", "children": [str(error)]}
+
+        if old_state is not None and old_state.component is not component:
+            del self._model_state_by_component_id[id(old_state.component)]
+        self._model_state_by_component_id[id(component)] = new_state
+
+        try:
+            parent = new_state.parent
+        except AttributeError:
+            pass
+        else:
+            key, index = new_state.key, new_state.index
+            if old_state is not None:
+                assert (key, index) == (old_state.key, old_state.index,), (
+                    "state mismatch during component update - "
+                    f"key {key!r}!={old_state.key} "
+                    f"or index {index}!={old_state.index}"
+                )
+            parent.children_by_key[key] = new_state
+            # need to do insertion in case where old_state is None and we're appending
+            parent.model["children"][index : index + 1] = [new_state.model]
 
     def _render_model(
         self,
@@ -259,8 +269,8 @@ class Layout(HasAsyncResources):
             else:
                 child = str(child)
                 child_type = STRING_TYPE
-                # The key doesn't matter since we won't look it up - all that matter is
-                # that the key is unique (which this approach guarantees)
+                # The specific key doesn't matter here since we won't look it up - all
+                # we care about is that the key is unique, which object() can guarantee.
                 key = object()
             raw_typed_children_by_key[key] = (child_type, child)
 
@@ -288,16 +298,11 @@ class Layout(HasAsyncResources):
             elif child_type is COMPONENT_TYPE:
                 old_child_state = old_state.children_by_key.get(key)
                 if old_child_state is not None:
-                    old_component = old_child_state.life_cycle_hook.component
-                    del self._model_state_by_component_id[id(old_component)]
                     new_child_state = old_child_state.new(new_state, child)
                 else:
                     hook = LifeCycleHook(child, self)
                     new_child_state = _ModelState(new_state, index, key, hook)
                 self._render_component(old_child_state, new_child_state, child)
-                new_children.append(new_child_state.model)
-                new_state.children_by_key[key] = new_child_state
-                self._model_state_by_component_id[id(child)] = new_child_state
             else:
                 new_children.append(child)
 
@@ -317,9 +322,6 @@ class Layout(HasAsyncResources):
                 life_cycle_hook = LifeCycleHook(child, self)
                 child_state = _ModelState(new_state, index, key, life_cycle_hook)
                 self._render_component(None, child_state, child)
-                new_children.append(child_state.model)
-                new_state.children_by_key[key] = child_state
-                self._model_state_by_component_id[id(child)] = child_state
             else:
                 new_children.append(str(child))
 
@@ -344,6 +346,7 @@ class _ModelState:
         "key",
         "_parent_ref",
         "life_cycle_hook",
+        "component",
         "patch_path",
         "key_path",
         "model",
@@ -373,6 +376,7 @@ class _ModelState:
 
         if life_cycle_hook is not None:
             self.life_cycle_hook = life_cycle_hook
+            self.component = life_cycle_hook.component
 
         self.event_targets: Set[str] = set()
         self.children_by_key: Dict[str, _ModelState] = {}
