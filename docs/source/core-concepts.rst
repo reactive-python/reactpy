@@ -75,20 +75,23 @@ which we can re-render and see what changed:
 .. testcode::
 
     from idom.core.layout import LayoutEvent
+    from idom.testing import StaticEventHandler
 
+    static_handler = StaticEventHandler()
 
     @idom.component
     def ClickCount():
         count, set_count = idom.hooks.use_state(0)
-        return idom.html.button(
-            {"onClick": lambda event: set_count(count + 1)},
-            [f"Click count: {count}"],
-        )
+
+        # we do this in order to capture the event handler's target ID
+        handler = static_handler.use(lambda event: set_count(count + 1))
+
+        return idom.html.button({"onClick": handler}, [f"Click count: {count}"])
 
     async with idom.Layout(ClickCount()) as layout:
         patch_1 = await layout.render()
 
-        fake_event = LayoutEvent(target="/onClick", data=[{}])
+        fake_event = LayoutEvent(target=static_handler.target, data=[{}])
         await layout.dispatch(fake_event)
         patch_2 = await layout.render()
 
@@ -135,7 +138,7 @@ callback that's called by the dispatcher to events it should execute.
 
 
     async def recv():
-        event = LayoutEvent(target="/onClick", data=[{}])
+        event = LayoutEvent(target=static_handler.target, data=[{}])
 
         # We need this so we don't flood the render loop with events.
         # In practice this is never an issue since events won't arrive
