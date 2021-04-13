@@ -73,7 +73,7 @@ class Events(Mapping[str, "EventHandler"]):
             stop_propagation:
                 Block the event from propagating further up the DOM.
             prevent_default:
-                Stops the default actional associate with the event from taking place.
+                Stops the default action associate with the event from taking place.
 
         Returns:
             A decorator which accepts an event handler function as its first argument.
@@ -133,12 +133,10 @@ class EventHandler:
     The event handler object acts like a coroutine when called.
 
     Parameters:
-        event_name:
-            The camel case name of the event.
-        target_id:
-            A unique identifier for the event handler. This is generally used if
-            an element has more than on event handler for the same event type. If
-            no ID is provided one will be generated automatically.
+        stop_propagation:
+            Block the event from propagating further up the DOM.
+        prevent_default:
+            Stops the default action associate with the event from taking place.
     """
 
     __slots__ = (
@@ -160,13 +158,12 @@ class EventHandler:
         self._func_handlers: List[Callable[..., Any]] = []
 
     def add(self, function: Callable[..., Any]) -> "EventHandler":
-        """Add a callback to the event handler.
+        """Add a callback function or coroutine to the event handler.
 
         Parameters:
             function:
-                The event handler function. Its parameters may indicate event attributes
-                which should be sent back from the fronend unless otherwise specified by
-                the ``properties`` parameter.
+                The event handler function accepting parameters sent by the client.
+                Typically this is a single ``event`` parameter that is a dictionary.
         """
         if asyncio.iscoroutinefunction(function):
             self._coro_handlers.append(function)
@@ -175,7 +172,7 @@ class EventHandler:
         return self
 
     def remove(self, function: Callable[..., Any]) -> None:
-        """Remove the function from the event handler.
+        """Remove the given function or coroutine from this event handler.
 
         Raises:
             ValueError: if not found
@@ -184,6 +181,11 @@ class EventHandler:
             self._coro_handlers.remove(function)
         else:
             self._func_handlers.remove(function)
+
+    def clear(self) -> None:
+        """Remove all functions and coroutines from this event handler"""
+        self._coro_handlers.clear()
+        self._func_handlers.clear()
 
     async def __call__(self, data: List[Any]) -> Any:
         """Trigger all callbacks in the event handler."""

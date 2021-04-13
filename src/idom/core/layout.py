@@ -230,7 +230,7 @@ class Layout(HasAsyncResources):
 
         model_event_handlers = new_state.model["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
-            target = old_state.targets_by_event.get(event, id(handler))
+            target = old_state.targets_by_event.get(event, hex_id(handler))
             new_state.targets_by_event[event] = target
             self._event_handlers[target] = handler
             model_event_handlers[event] = {

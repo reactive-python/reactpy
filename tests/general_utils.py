@@ -5,6 +5,8 @@ from functools import wraps
 from weakref import ref
 
 import idom
+from idom.core.events import EventHandler
+from idom.core.utils import hex_id
 
 
 @contextmanager
@@ -19,11 +21,41 @@ def patch_slots_object(obj, attr, new_value):
         setattr(obj, attr, old_value)
 
 
+class EventCatcher:
+    """Utility for capturing the target of an event handler
+
+    Example:
+        .. code-block::
+
+            event_catcher = EventCatcher()
+
+            @idom.component
+            def MyComponent():
+                state, set_state = idom.hooks.use_state(0)
+                handler = event_catcher.capture(lambda event: set_state(state + 1))
+                return idom.html.button({"onClick": handler}, "Click me!")
+    """
+
+    def __init__(self):
+        self._event_handler = EventHandler()
+
+    @property
+    def target(self) -> str:
+        return hex_id(self._event_handler)
+
+    def capture(self, function) -> EventHandler:
+        """Called within the body of a component to create a captured event handler"""
+        self._event_handler.clear()
+        self._event_handler.add(function)
+        return self._event_handler
+
+
 class HookCatcher:
     """Utility for capturing a LifeCycleHook from a component
 
-    Eleftample:
+    Example:
         .. code-block::
+
             component_hook = HookCatcher()
 
             @idom.component
