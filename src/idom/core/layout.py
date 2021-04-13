@@ -215,27 +215,50 @@ class Layout(HasAsyncResources):
                         h = attrs.pop(k)
                         handlers_by_event[k] = h
 
-        handlers_by_target: Dict[str, EventHandler] = {}
-        model_event_targets: Dict[str, _ModelEventTarget] = {}
+        if old_state is None:
+            self._render_model_event_handlers_without_old_state(
+                new_state, handlers_by_event
+            )
+            return None
+
+        for old_event in set(old_state.targets_by_event).difference(handlers_by_event):
+            old_target = old_state.targets_by_event[old_event]
+            del self._event_handlers[old_target]
+
+        if not handlers_by_event:
+            return None
+
+        model_event_handlers = new_state.model["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
-            target = f"{new_state.key_path}/{event}"
-            handlers_by_target[target] = handler
-            model_event_targets[event] = {
+            target = old_state.targets_by_event.get(event, id(handler))
+            new_state.targets_by_event[event] = target
+            self._event_handlers[target] = handler
+            model_event_handlers[event] = {
                 "target": target,
                 "preventDefault": handler.prevent_default,
                 "stopPropagation": handler.stop_propagation,
             }
 
-        if old_state is not None:
-            for old_target in set(old_state.event_targets).difference(
-                handlers_by_target
-            ):
-                del self._event_handlers[old_target]
+        return None
 
-        if model_event_targets:
-            new_state.event_targets.update(handlers_by_target)
-            self._event_handlers.update(handlers_by_target)
-            new_state.model["eventHandlers"] = model_event_targets
+    def _render_model_event_handlers_without_old_state(
+        self,
+        new_state: _ModelState,
+        handlers_by_event: Dict[str, EventHandler],
+    ) -> None:
+        if not handlers_by_event:
+            return None
+
+        model_event_handlers = new_state.model["eventHandlers"] = {}
+        for event, handler in handlers_by_event.items():
+            target = hex(id(handler))[2:]
+            new_state.targets_by_event[event] = target
+            self._event_handlers[target] = handler
+            model_event_handlers[event] = {
+                "target": target,
+                "preventDefault": handler.prevent_default,
+                "stopPropagation": handler.stop_propagation,
+            }
 
         return None
 
@@ -283,8 +306,9 @@ class Layout(HasAsyncResources):
             self._unmount_model_states(list(old_child_states.values()))
 
         new_children = new_state.model["children"] = []
-        for index, (key, (child_type, child)) in enumerate(
-            raw_typed_children_by_key.items()
+        for index, (key, (child_type, child)) in (
+            # we can enumerate this because dict insertion order is preserved
+            enumerate(raw_typed_children_by_key.items())
         ):
             if child_type is DICT_TYPE:
                 old_child_state = old_state.children_by_key.get(key)
@@ -348,9 +372,8 @@ class _ModelState:
         "life_cycle_hook",
         "component",
         "patch_path",
-        "key_path",
         "model",
-        "event_targets",
+        "targets_by_event",
         "children_by_key",
         "__weakref__",
     )
@@ -369,16 +392,15 @@ class _ModelState:
 
         if parent is not None:
             self._parent_ref = ref(parent)
-            self.key_path = f"{parent.key_path}/{key}"
             self.patch_path = f"{parent.patch_path}/children/{index}"
         else:
-            self.key_path = self.patch_path = ""
+            self.patch_path = ""
 
         if life_cycle_hook is not None:
             self.life_cycle_hook = life_cycle_hook
             self.component = life_cycle_hook.component
 
-        self.event_targets: Set[str] = set()
+        self.targets_by_event: Dict[str, str] = {}
         self.children_by_key: Dict[str, _ModelState] = {}
 
     @property
