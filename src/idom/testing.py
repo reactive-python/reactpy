@@ -13,14 +13,12 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    overload,
 )
 from urllib.parse import urlencode, urlunparse
 from weakref import ref
 
 from selenium.webdriver import Chrome
 from selenium.webdriver.remote.webdriver import WebDriver
-from typing_extensions import Literal
 
 from idom.core.events import EventHandler
 from idom.core.hooks import LifeCycleHook, current_hook
@@ -229,52 +227,32 @@ class HookCatcher:
         return wrapper
 
 
-class StaticEventHandlers:
-    """Utility for capturing the target of a static set of event handlers
+class StaticEventHandler:
+    """Utility for capturing the target of one event handler
 
     Example:
         .. code-block::
 
-            static_handlers = StaticEventHandlers("first", "second")
+            static_handler = StaticEventHandler()
 
             @idom.component
-            def MyComponent(key):
+            def MyComponent():
                 state, set_state = idom.hooks.use_state(0)
-                handler = static_handlers.use(key, lambda event: set_state(state + 1))
+                handler = static_handler.use(lambda event: set_state(state + 1))
                 return idom.html.button({"onClick": handler}, "Click me!")
 
-            # gives the target ID for onClick where MyComponent(key="first")
-            first_target = static_handlers.targets["first"]
+            # gives the target ID for onClick where from the last render of MyComponent
+            static_handlers.target
     """
 
-    def __init__(self, *index: Any) -> None:
-        if not index:
-            raise ValueError("Static set of index keys are required")
-        self._handlers: Dict[Any, EventHandler] = {i: EventHandler() for i in index}
-        self.targets: Dict[Any, str] = {i: hex_id(h) for i, h in self._handlers.items()}
+    def __init__(self) -> None:
+        self._handler = EventHandler()
 
-    @overload
-    def use(
-        self,
-        index: Any,
-        function: Literal[None] = ...,
-    ) -> Callable[[Callable[..., Any]], EventHandler]:
-        ...
+    @property
+    def target(self) -> str:
+        return hex_id(self._handler)
 
-    @overload
-    def use(self, index: Any, function: Callable[..., Any]) -> EventHandler:
-        ...
-
-    def use(self, index: Any, function: Optional[Callable[..., Any]] = None) -> Any:
-        """Decorator for capturing an event handler function"""
-
-        def setup(function: Callable[..., Any]) -> EventHandler:
-            handler = self._handlers[index]
-            handler.clear()
-            handler.add(function)
-            return handler
-
-        if function is not None:
-            return setup(function)
-        else:
-            return setup
+    def use(self, function: Callable[..., Any]) -> EventHandler:
+        self._handler.clear()
+        self._handler.add(function)
+        return self._handler
