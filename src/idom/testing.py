@@ -243,6 +243,30 @@ class StaticEventHandler:
 
             # gives the target ID for onClick where from the last render of MyComponent
             static_handlers.target
+
+        If you need to capture event handlers from different instances of a component
+        the you should create multiple ``StaticEventHandler`` instances.
+
+        .. code-block::
+
+            static_handlers_by_key = {
+                "first": StaticEventHandler(),
+                "second": StaticEventHandler(),
+            }
+
+            @idom.component
+            def Parent():
+                return idom.html.div(Child(key="first"), Child(key="second"))
+
+            @idom.component
+            def Child(key):
+                state, set_state = idom.hooks.use_state(0)
+                handler = static_handlers_by_key[key].use(lambda event: set_state(state + 1))
+                return idom.html.button({"onClick": handler}, "Click me!")
+
+            # grab the individual targets for each instance above
+            first_target = static_handlers_by_key["first"].target
+            second_target = static_handlers_by_key["second"].target
     """
 
     def __init__(self) -> None:
