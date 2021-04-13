@@ -6,6 +6,7 @@ import pytest
 
 import idom
 from idom.core.layout import LayoutEvent, LayoutUpdate
+from idom.core.utils import hex_id
 from tests.general_utils import HookCatcher, assert_same_items
 
 
@@ -21,7 +22,7 @@ def test_layout_repr():
 
     my_component = MyComponent()
     layout = idom.Layout(my_component)
-    assert str(layout) == f"Layout(MyComponent({hex(id(my_component))}))"
+    assert str(layout) == f"Layout(MyComponent({hex_id(my_component)}))"
 
 
 def test_layout_expects_abstract_component():

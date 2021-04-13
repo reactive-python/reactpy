@@ -25,7 +25,7 @@ from idom.config import IDOM_DEBUG_MODE
 from .component import AbstractComponent
 from .events import EventHandler
 from .hooks import LifeCycleHook
-from .utils import CannotAccessResource, HasAsyncResources, async_resource
+from .utils import CannotAccessResource, HasAsyncResources, async_resource, hex_id
 from .vdom import validate_vdom
 
 
@@ -251,7 +251,7 @@ class Layout(HasAsyncResources):
 
         model_event_handlers = new_state.model["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
-            target = hex(id(handler))[2:]
+            target = hex_id(handler)
             new_state.targets_by_event[event] = target
             self._event_handlers[target] = handler
             model_event_handlers[event] = {
@@ -285,10 +285,10 @@ class Layout(HasAsyncResources):
         for index, child in enumerate(raw_children):
             if isinstance(child, dict):
                 child_type = DICT_TYPE
-                key = child.get("key") or hex(id(child))[2:]
+                key = child.get("key") or hex_id(child)
             elif isinstance(child, AbstractComponent):
                 child_type = COMPONENT_TYPE
-                key = getattr(child, "key", None) or hex(id(child))[2:]
+                key = getattr(child, "key", None) or hex_id(child)
             else:
                 child = str(child)
                 child_type = STRING_TYPE
@@ -336,13 +336,13 @@ class Layout(HasAsyncResources):
         new_children = new_state.model["children"] = []
         for index, child in enumerate(raw_children):
             if isinstance(child, dict):
-                key = child.get("key") or hex(id(child))
+                key = child.get("key") or hex_id(child)
                 child_state = _ModelState(new_state, index, key, None)
                 self._render_model(None, child_state, child)
                 new_children.append(child_state.model)
                 new_state.children_by_key[key] = child_state
             elif isinstance(child, AbstractComponent):
-                key = getattr(child, "key", "") or hex(id(child))
+                key = getattr(child, "key", "") or hex_id(child)
                 life_cycle_hook = LifeCycleHook(child, self)
                 child_state = _ModelState(new_state, index, key, life_cycle_hook)
                 self._render_component(None, child_state, child)
