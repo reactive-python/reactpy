@@ -5,6 +5,7 @@ import inspect
 from functools import wraps
 from typing import Any, Callable, Dict, Tuple, Union
 
+from .utils import hex_id
 from .vdom import VdomDict
 
 
@@ -74,6 +75,6 @@ class Component(AbstractComponent):
         else:
             items = ", ".join(f"{k}={v!r}" for k, v in args.items())
             if items:
-                return f"{self._function.__name__}({hex(id(self))}, {items})"
+                return f"{self._function.__name__}({hex_id(self)}, {items})"
             else:
-                return f"{self._function.__name__}({hex(id(self))})"
+                return f"{self._function.__name__}({hex_id(self)})"

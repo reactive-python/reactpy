@@ -22,6 +22,10 @@ else:  # pragma: no cover
     from async_generator import asynccontextmanager
 
 
+def hex_id(obj: Any) -> str:
+    return format(id(obj), "x")
+
+
 _Rsrc = TypeVar("_Rsrc")
 _Self = TypeVar("_Self", bound="HasAsyncResources")
 
