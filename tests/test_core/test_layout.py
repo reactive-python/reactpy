@@ -7,7 +7,7 @@ import pytest
 import idom
 from idom.core.layout import LayoutEvent, LayoutUpdate
 from idom.core.utils import hex_id
-from tests.general_utils import HookCatcher, assert_same_items
+from tests.general_utils import EventCatcher, HookCatcher, assert_same_items
 
 
 def test_layout_update_create_from_apply_to():
@@ -286,15 +286,19 @@ def use_toggle(init=False):
 
 async def test_model_key_preserves_callback_identity_for_common_elements():
     called_good_trigger = idom.Ref(False)
+    good_event_catcher = EventCatcher()
+    bad_event_catcher = EventCatcher()
 
     @idom.component
     def MyComponent():
         reverse_children, set_reverse_children = use_toggle()
 
+        @good_event_catcher.capture
         def good_trigger():
             called_good_trigger.current = True
             set_reverse_children()
 
+        @bad_event_catcher.capture
         def bad_trigger():
             raise ValueError("Called bad trigger")
 
@@ -313,7 +317,7 @@ async def test_model_key_preserves_callback_identity_for_common_elements():
     async with idom.Layout(MyComponent()) as layout:
         await layout.render()
         for i in range(3):
-            event = LayoutEvent("/good/onClick", [])
+            event = LayoutEvent(good_event_catcher.target, [])
             await layout.dispatch(event)
 
             assert called_good_trigger.current
@@ -325,6 +329,8 @@ async def test_model_key_preserves_callback_identity_for_common_elements():
 
 async def test_model_key_preserves_callback_identity_for_components():
     called_good_trigger = idom.Ref(False)
+    good_event_catcher = EventCatcher()
+    bad_event_catcher = EventCatcher()
 
     @idom.component
     def RootComponent():
@@ -339,11 +345,17 @@ async def test_model_key_preserves_callback_identity_for_components():
 
     @idom.component
     def Trigger(set_reverse_children, key):
-        def callback():
-            if key == "good":
+        if key == "good":
+
+            @good_event_catcher.capture
+            def callback():
                 called_good_trigger.current = True
                 set_reverse_children()
-            else:
+
+        else:
+
+            @bad_event_catcher.capture
+            def callback():
                 raise ValueError("Called bad trigger")
 
         return idom.html.button({"onClick": callback, "id": "good"}, "good")
@@ -351,7 +363,7 @@ async def test_model_key_preserves_callback_identity_for_components():
     async with idom.Layout(RootComponent()) as layout:
         await layout.render()
         for i in range(3):
-            event = LayoutEvent("/good/onClick", [])
+            event = LayoutEvent(good_event_catcher.target, [])
             await layout.dispatch(event)
 
             assert called_good_trigger.current
