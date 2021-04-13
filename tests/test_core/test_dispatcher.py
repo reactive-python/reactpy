@@ -10,7 +10,8 @@ from idom.core.dispatcher import (
     SingleViewDispatcher,
 )
 from idom.core.layout import Layout, LayoutEvent
-from tests.general_utils import EventCatcher, assert_same_items
+from idom.testing import StaticEventHandlers
+from tests.general_utils import assert_same_items
 
 
 async def test_shared_state_dispatcher():
@@ -19,9 +20,9 @@ async def test_shared_state_dispatcher():
     changes_2 = []
 
     event_name = "onEvent"
-    event_catcher = EventCatcher()
+    event_handlers = StaticEventHandlers(event_name)
 
-    events_to_inject = [LayoutEvent(target=event_catcher.target, data=[])] * 4
+    events_to_inject = [LayoutEvent(event_handlers.targets[event_name], [])] * 4
 
     async def send_1(patch):
         changes_1.append(patch.changes)
@@ -47,7 +48,7 @@ async def test_shared_state_dispatcher():
     @idom.component
     def Clickable():
         count, set_count = idom.hooks.use_state(0)
-        handler = event_catcher.capture(lambda: set_count(count + 1))
+        handler = event_handlers.use(event_name, lambda: set_count(count + 1))
         return idom.html.div({event_name: handler, "count": count})
 
     async with SharedViewDispatcher(Layout(Clickable())) as dispatcher:
@@ -61,7 +62,7 @@ async def test_shared_state_dispatcher():
                 "path": "/eventHandlers",
                 "value": {
                     event_name: {
-                        "target": event_catcher.target,
+                        "target": event_handlers.targets[event_name],
                         "preventDefault": False,
                         "stopPropagation": False,
                     }

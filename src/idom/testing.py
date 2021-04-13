@@ -1,5 +1,6 @@
 import logging
 import re
+from functools import wraps
 from types import TracebackType
 from typing import (
     Any,
@@ -12,12 +13,18 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    overload,
 )
 from urllib.parse import urlencode, urlunparse
+from weakref import ref
 
 from selenium.webdriver import Chrome
 from selenium.webdriver.remote.webdriver import WebDriver
+from typing_extensions import Literal
 
+from idom.core.events import EventHandler
+from idom.core.hooks import LifeCycleHook, current_hook
+from idom.core.utils import hex_id
 from idom.server.base import AbstractRenderServer
 from idom.server.prefab import hotswap_server
 from idom.server.utils import find_available_port, find_builtin_server_type
@@ -167,3 +174,107 @@ class _LogRecordCaptor(logging.NullHandler):
 
     def handle(self, record: logging.LogRecord) -> None:
         self.records.append(record)
+
+
+class HookCatcher:
+    """Utility for capturing a LifeCycleHook from a component
+
+    Example:
+        .. code-block::
+
+            hooks = HookCatcher(index_by_kwarg="key")
+
+            @idom.component
+            @hooks.capture
+            def MyComponent(key):
+                ...
+
+            ... # render the component
+
+            # grab the last render of where MyComponent(key='some_key')
+            hooks.index["some_key"]
+            # or grab the hook from the component's last render
+            hooks.latest
+
+        After the first render of ``MyComponent`` the ``HookCatcher`` will have
+        captured the component's ``LifeCycleHook``.
+    """
+
+    latest: LifeCycleHook
+
+    def __init__(self, index_by_kwarg: Optional[str] = None):
+        self.index_by_kwarg = index_by_kwarg
+        self.index: Dict[Any, LifeCycleHook] = {}
+
+    def capture(self, render_function: Callable[..., Any]) -> Callable[..., Any]:
+        """Decorator for capturing a ``LifeCycleHook`` on each render of a component"""
+
+        # The render function holds a reference to `self` and, via the `LifeCycleHook`,
+        # the component. Some tests check whether components are garbage collected, thus
+        # we must use a `ref` here to ensure these checks pass once the catcher itself
+        # has been collected.
+        self_ref = ref(self)
+
+        @wraps(render_function)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            self = self_ref()
+            assert self is not None, "Hook catcher has been garbage collected"
+
+            hook = current_hook()
+            if self.index_by_kwarg is not None:
+                self.index[kwargs[self.index_by_kwarg]] = hook
+            self.latest = hook
+            return render_function(*args, **kwargs)
+
+        return wrapper
+
+
+class StaticEventHandlers:
+    """Utility for capturing the target of a static set of event handlers
+
+    Example:
+        .. code-block::
+
+            static_handlers = StaticEventHandlers("first", "second")
+
+            @idom.component
+            def MyComponent(key):
+                state, set_state = idom.hooks.use_state(0)
+                handler = static_handlers.use(key, lambda event: set_state(state + 1))
+                return idom.html.button({"onClick": handler}, "Click me!")
+
+            # gives the target ID for onClick where MyComponent(key="first")
+            first_target = static_handlers.targets["first"]
+    """
+
+    def __init__(self, *index: Any) -> None:
+        if not index:
+            raise ValueError("Static set of index keys are required")
+        self._handlers: Dict[Any, EventHandler] = {i: EventHandler() for i in index}
+        self.targets: Dict[Any, str] = {i: hex_id(h) for i, h in self._handlers.items()}
+
+    @overload
+    def use(
+        self,
+        index: Any,
+        function: Literal[None] = ...,
+    ) -> Callable[[Callable[..., Any]], EventHandler]:
+        ...
+
+    @overload
+    def use(self, index: Any, function: Callable[..., Any]) -> EventHandler:
+        ...
+
+    def use(self, index: Any, function: Optional[Callable[..., Any]] = None) -> Any:
+        """Decorator for capturing an event handler function"""
+
+        def setup(function: Callable[..., Any]) -> EventHandler:
+            handler = self._handlers[index]
+            handler.clear()
+            handler.add(function)
+            return handler
+
+        if function is not None:
+            return setup(function)
+        else:
+            return setup
