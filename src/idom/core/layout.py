@@ -379,6 +379,9 @@ class _ModelState:
     )
 
     model: _ModelVdom
+    life_cycle_hook: LifeCycleHook
+    patch_path: str
+    component: AbstractComponent
 
     def __init__(
         self,
@@ -418,12 +421,15 @@ class _ModelState:
     ) -> _ModelState:
         if new_parent is None:
             new_parent = getattr(self, "parent", None)
+
+        life_cycle_hook: Optional[LifeCycleHook]
         if hasattr(self, "life_cycle_hook"):
             assert component is not None
             life_cycle_hook = self.life_cycle_hook
             life_cycle_hook.component = component
         else:
             life_cycle_hook = None
+
         return _ModelState(new_parent, self.index, self.key, life_cycle_hook)
 
     def iter_children(self, include_self: bool = True) -> Iterator[_ModelState]:

@@ -4,7 +4,8 @@ import re
 import pytest
 
 import idom
-from tests.general_utils import HookCatcher, assert_same_items
+from idom.testing import HookCatcher
+from tests.general_utils import assert_same_items
 
 
 async def test_must_be_rendering_in_layout_to_use_hooks():
@@ -345,7 +346,7 @@ async def test_use_effect_cleanup_occurs_before_next_effect():
 
         assert not cleanup_triggered.current
 
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
         await layout.render()
 
         assert cleanup_triggered.current
@@ -384,7 +385,7 @@ async def test_use_effect_cleanup_occurs_on_will_unmount():
 
         assert not cleanup_triggered.current
 
-        outer_component_hook.schedule_render()
+        outer_component_hook.latest.schedule_render()
         await layout.render()
 
         assert cleanup_triggered.current
@@ -415,7 +416,7 @@ async def test_memoized_effect_on_recreated_if_args_change():
 
         assert effect_run_count.current == 1
 
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
         await layout.render()
 
         assert effect_run_count.current == 1
@@ -425,7 +426,7 @@ async def test_memoized_effect_on_recreated_if_args_change():
 
         assert effect_run_count.current == 2
 
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
         await layout.render()
 
         assert effect_run_count.current == 2
@@ -458,7 +459,7 @@ async def test_memoized_effect_cleanup_only_triggered_before_new_effect():
 
         assert cleanup_trigger_count.current == 0
 
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
         await layout.render()
 
         assert cleanup_trigger_count.current == 0
@@ -504,7 +505,7 @@ async def test_use_async_effect_cleanup():
         await layout.render()
 
         await effect_ran.wait()
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
 
         await layout.render()
 
@@ -536,7 +537,7 @@ async def test_use_async_effect_cancel(caplog):
         await layout.render()
 
         await effect_ran.wait()
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
 
         await layout.render()
 
@@ -583,7 +584,7 @@ async def test_error_in_effect_cleanup_is_gracefully_handled(caplog):
 
     async with idom.Layout(ComponentWithEffect()) as layout:
         await layout.render()
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
         await layout.render()  # no error
 
     first_log_line = next(iter(caplog.records)).msg.split("\n", 1)[0]
@@ -611,7 +612,7 @@ async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled(caplog)
 
     async with idom.Layout(OuterComponent()) as layout:
         await layout.render()
-        outer_component_hook.schedule_render()
+        outer_component_hook.latest.schedule_render()
         await layout.render()  # no error
 
     first_log_line = next(iter(caplog.records)).msg.split("\n", 1)[0]
@@ -689,7 +690,7 @@ async def test_use_callback_identity():
 
     async with idom.Layout(ComponentWithRef()) as layout:
         await layout.render()
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
         await layout.render()
 
     assert used_callbacks[0] is used_callbacks[1]
@@ -717,7 +718,7 @@ async def test_use_callback_memoization():
         await layout.render()
         set_state_hook.current(1)
         await layout.render()
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
         await layout.render()
 
     assert used_callbacks[0] is not used_callbacks[1]
@@ -745,7 +746,7 @@ async def test_use_memo():
         await layout.render()
         set_state_hook.current(1)
         await layout.render()
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
         await layout.render()
 
     assert used_values[0] is not used_values[1]
@@ -768,9 +769,9 @@ async def test_use_memo_always_runs_if_args_are_none():
 
     async with idom.Layout(ComponentWithMemo()) as layout:
         await layout.render()
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
         await layout.render()
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
         await layout.render()
 
     assert used_values == [1, 2, 3]
@@ -795,10 +796,10 @@ async def test_use_memo_with_stored_args_is_empty_tuple_after_args_are_none():
 
     async with idom.Layout(ComponentWithMemo()) as layout:
         await layout.render()
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
         args_used_in_memo.current = None
         await layout.render()
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
         args_used_in_memo.current = ()
         await layout.render()
 
@@ -820,9 +821,9 @@ async def test_use_memo_never_runs_if_args_args_empty_list():
 
     async with idom.Layout(ComponentWithMemo()) as layout:
         await layout.render()
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
         await layout.render()
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
         await layout.render()
 
     assert used_values == [1, 1, 1]
@@ -840,7 +841,7 @@ async def test_use_ref():
 
     async with idom.Layout(ComponentWithRef()) as layout:
         await layout.render()
-        component_hook.schedule_render()
+        component_hook.latest.schedule_render()
         await layout.render()
 
     assert used_refs[0] is used_refs[1]

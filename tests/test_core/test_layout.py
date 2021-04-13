@@ -7,7 +7,8 @@ import pytest
 import idom
 from idom.core.layout import LayoutEvent, LayoutUpdate
 from idom.core.utils import hex_id
-from tests.general_utils import EventCatcher, HookCatcher, assert_same_items
+from idom.testing import HookCatcher, StaticEventHandlers
+from tests.general_utils import assert_same_items
 
 
 def test_layout_update_create_from_apply_to():
@@ -200,7 +201,7 @@ async def test_components_are_garbage_collected():
         # the the old `Inner` component should be deleted. Thus there should be one
         # changed component in the set of `live_components` the old `Inner` deleted and new
         # `Inner` added.
-        outer_component_hook.schedule_render()
+        outer_component_hook.latest.schedule_render()
         await layout.render()
 
         assert len(live_components - last_live_components) == 1
@@ -229,8 +230,8 @@ async def test_double_updated_component_is_not_double_rendered():
 
         assert run_count.current == 1
 
-        hook.schedule_render()
-        hook.schedule_render()
+        hook.latest.schedule_render()
+        hook.latest.schedule_render()
 
         await layout.render()
         try:
@@ -259,7 +260,7 @@ async def test_update_path_to_component_that_is_not_direct_child_is_correct():
     async with idom.Layout(Parent()) as layout:
         await layout.render()
 
-        hook.current.schedule_render()
+        hook.latest.schedule_render()
 
         update = await layout.render()
         assert update.path == "/children/0/children/0"
@@ -286,19 +287,18 @@ def use_toggle(init=False):
 
 async def test_model_key_preserves_callback_identity_for_common_elements():
     called_good_trigger = idom.Ref(False)
-    good_event_catcher = EventCatcher()
-    bad_event_catcher = EventCatcher()
+    event_handlers = StaticEventHandlers("good", "bad")
 
     @idom.component
     def MyComponent():
         reverse_children, set_reverse_children = use_toggle()
 
-        @good_event_catcher.capture
+        @event_handlers.use("good")
         def good_trigger():
             called_good_trigger.current = True
             set_reverse_children()
 
-        @bad_event_catcher.capture
+        @event_handlers.use("bad")
         def bad_trigger():
             raise ValueError("Called bad trigger")
 
@@ -317,7 +317,7 @@ async def test_model_key_preserves_callback_identity_for_common_elements():
     async with idom.Layout(MyComponent()) as layout:
         await layout.render()
         for i in range(3):
-            event = LayoutEvent(good_event_catcher.target, [])
+            event = LayoutEvent(event_handlers.targets["good"], [])
             await layout.dispatch(event)
 
             assert called_good_trigger.current
@@ -329,8 +329,7 @@ async def test_model_key_preserves_callback_identity_for_common_elements():
 
 async def test_model_key_preserves_callback_identity_for_components():
     called_good_trigger = idom.Ref(False)
-    good_event_catcher = EventCatcher()
-    bad_event_catcher = EventCatcher()
+    event_handlers = StaticEventHandlers("good", "bad")
 
     @idom.component
     def RootComponent():
@@ -347,14 +346,14 @@ async def test_model_key_preserves_callback_identity_for_components():
     def Trigger(set_reverse_children, key):
         if key == "good":
 
-            @good_event_catcher.capture
+            @event_handlers.use("good")
             def callback():
                 called_good_trigger.current = True
                 set_reverse_children()
 
         else:
 
-            @bad_event_catcher.capture
+            @event_handlers.use("bad")
             def callback():
                 raise ValueError("Called bad trigger")
 
@@ -362,8 +361,8 @@ async def test_model_key_preserves_callback_identity_for_components():
 
     async with idom.Layout(RootComponent()) as layout:
         await layout.render()
-        for i in range(3):
-            event = LayoutEvent(good_event_catcher.target, [])
+        for _ in range(3):
+            event = LayoutEvent(event_handlers.targets["good"], [])
             await layout.dispatch(event)
 
             assert called_good_trigger.current
@@ -462,8 +461,8 @@ async def test_keyed_components_preserve_hook_on_parent_update():
 
     async with idom.Layout(Outer()) as layout:
         await layout.render()
-        old_inner_hook = inner_hook.current
+        old_inner_hook = inner_hook.latest
 
-        outer_hook.current.schedule_render()
+        outer_hook.latest.schedule_render()
         await layout.render()
-        assert old_inner_hook is inner_hook.current
+        assert old_inner_hook is inner_hook.latest
