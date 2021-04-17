@@ -34,7 +34,7 @@ class AbstractComponent(abc.ABC):
     if not hasattr(abc.ABC, "__weakref__"):
         __slots__.append("__weakref__")  # pragma: no cover
 
-    key: str
+    key: Optional[Any]
 
     @abc.abstractmethod
     def render(self) -> VdomDict:
@@ -44,7 +44,7 @@ class AbstractComponent(abc.ABC):
 class Component(AbstractComponent):
     """An object for rending component models."""
 
-    __slots__ = "_function", "_args", "_kwargs"
+    __slots__ = "_func", "_args", "_kwargs"
 
     def __init__(
         self,
@@ -54,14 +54,14 @@ class Component(AbstractComponent):
         kwargs: Dict[str, Any],
     ) -> None:
         self.key = key
-        self._function = function
+        self._func = function
         self._args = args
         self._kwargs = kwargs
         if key is not None:
             kwargs["key"] = key
 
     def render(self) -> VdomDict:
-        model = self._function(*self._args, **self._kwargs)
+        model = self._func(*self._args, **self._kwargs)
         if isinstance(model, AbstractComponent):
             model = {"tagName": "div", "children": [model]}
         return model
@@ -70,14 +70,14 @@ class Component(AbstractComponent):
         return isinstance(other, Component) and other._func == self._func
 
     def __repr__(self) -> str:
-        sig = inspect.signature(self._function)
+        sig = inspect.signature(self._func)
         try:
             args = sig.bind(*self._args, **self._kwargs).arguments
         except TypeError:
-            return f"{self._function.__name__}(...)"
+            return f"{self._func.__name__}(...)"
         else:
             items = ", ".join(f"{k}={v!r}" for k, v in args.items())
             if items:
-                return f"{self._function.__name__}({hex_id(self)}, {items})"
+                return f"{self._func.__name__}({hex_id(self)}, {items})"
             else:
-                return f"{self._function.__name__}({hex_id(self)})"
+                return f"{self._func.__name__}({hex_id(self)})"
