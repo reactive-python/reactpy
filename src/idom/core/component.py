@@ -66,9 +66,6 @@ class Component(AbstractComponent):
             model = {"tagName": "div", "children": [model]}
         return model
 
-    def __eq__(self, other: Any) -> bool:
-        return isinstance(other, Component) and other._func == self._func
-
     def __repr__(self) -> str:
         sig = inspect.signature(self._func)
         try:
