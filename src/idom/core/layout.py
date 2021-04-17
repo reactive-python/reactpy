@@ -21,7 +21,7 @@ from weakref import ref
 from jsonpatch import apply_patch, make_patch
 from typing_extensions import TypedDict
 
-from idom.config import IDOM_DEBUG_MODE
+from idom.config import IDOM_DEBUG_MODE, IDOM_FEATURE_INDEX_AS_DEFAULT_KEY
 
 from .component import AbstractComponent
 from .events import EventHandler
@@ -453,7 +453,7 @@ class _ComponentQueue:
 def _process_child_type_and_key(
     children: List[Any],
 ) -> Iterator[Tuple[Any, int, Any]]:
-    for child in children:
+    for index, child in enumerate(children):
         if isinstance(child, dict):
             child_type = _DICT_TYPE
             key = child.get("key")
@@ -466,9 +466,21 @@ def _process_child_type_and_key(
             key = None
 
         if key is None:
-            key = object()
+            key = _default_key(index)
 
         yield (child, child_type, key)
+
+
+if IDOM_FEATURE_INDEX_AS_DEFAULT_KEY.get():
+
+    def _default_key(index: int) -> Any:  # pragma: no cover
+        return index
+
+
+else:
+
+    def _default_key(index: int) -> Any:
+        return object()
 
 
 # used in _process_child_type_and_key
