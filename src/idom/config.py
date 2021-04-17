@@ -76,5 +76,5 @@ if not IDOM_FEATURE_INDEX_AS_DEFAULT_KEY.get():  # pragma: no cover
             "by default. For more information on changes to this feature flag, see: "
             "https://github.com/idom-team/idom/issues/351"
         ),
-        UserWarning,
+        DeprecationWarning,
     )
