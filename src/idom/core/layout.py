@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import asyncio
+from collections import Counter
 from functools import wraps
 from logging import getLogger
 from typing import (
@@ -279,38 +280,25 @@ class Layout(HasAsyncResources):
             self._unmount_model_states(list(old_state.children_by_key.values()))
             return None
 
-        DICT_TYPE, COMPONENT_TYPE, STRING_TYPE = 1, 2, 3  # noqa
+        child_type_key_tuples = list(_process_child_type_and_key(raw_children))
 
-        raw_typed_children_by_key: Dict[str, Tuple[int, Any]] = {}
-        for index, child in enumerate(raw_children):
-            if isinstance(child, dict):
-                child_type = DICT_TYPE
-                key = child.get("key") or hex_id(child)
-            elif isinstance(child, AbstractComponent):
-                child_type = COMPONENT_TYPE
-                key = getattr(child, "key", None) or hex_id(child)
-            else:
-                child = str(child)
-                child_type = STRING_TYPE
-                # The specific key doesn't matter here since we won't look it up - all
-                # we care about is that the key is unique, which object() can guarantee.
-                key = object()
-            raw_typed_children_by_key[key] = (child_type, child)
+        new_keys = {item[2] for item in child_type_key_tuples}
+        if len(new_keys) != len(raw_children):
+            key_counter = Counter(item[2] for item in child_type_key_tuples)
+            duplicate_keys = [key for key, count in key_counter.items() if count > 1]
+            raise ValueError(
+                f"Duplicate keys {duplicate_keys} at {new_state.patch_path or '/'!r}"
+            )
 
-        if len(raw_typed_children_by_key) != len(raw_children):
-            raise ValueError(f"Duplicate keys in {raw_children}")
-
-        old_keys = set(old_state.children_by_key).difference(raw_typed_children_by_key)
-        old_child_states = {key: old_state.children_by_key[key] for key in old_keys}
+        old_keys = set(old_state.children_by_key).difference(new_keys)
         if old_keys:
-            self._unmount_model_states(list(old_child_states.values()))
+            self._unmount_model_states(
+                [old_state.children_by_key[key] for key in old_keys]
+            )
 
         new_children = new_state.model["children"] = []
-        for index, (key, (child_type, child)) in (
-            # we can enumerate this because dict insertion order is preserved
-            enumerate(raw_typed_children_by_key.items())
-        ):
-            if child_type is DICT_TYPE:
+        for index, (child, child_type, key) in enumerate(child_type_key_tuples):
+            if child_type is _DICT_TYPE:
                 old_child_state = old_state.children_by_key.get(key)
                 if old_child_state is not None:
                     new_child_state = old_child_state.new(new_state, None)
@@ -319,7 +307,7 @@ class Layout(HasAsyncResources):
                 self._render_model(old_child_state, new_child_state, child)
                 new_children.append(new_child_state.model)
                 new_state.children_by_key[key] = new_child_state
-            elif child_type is COMPONENT_TYPE:
+            elif child_type is _COMPONENT_TYPE:
                 old_child_state = old_state.children_by_key.get(key)
                 if old_child_state is not None:
                     new_child_state = old_child_state.new(new_state, child)
@@ -334,20 +322,20 @@ class Layout(HasAsyncResources):
         self, new_state: _ModelState, raw_children: List[Any]
     ) -> None:
         new_children = new_state.model["children"] = []
-        for index, child in enumerate(raw_children):
-            if isinstance(child, dict):
-                key = child.get("key") or hex_id(child)
+        for index, (child, child_type, key) in enumerate(
+            _process_child_type_and_key(raw_children)
+        ):
+            if child_type is _DICT_TYPE:
                 child_state = _ModelState(new_state, index, key, None)
                 self._render_model(None, child_state, child)
                 new_children.append(child_state.model)
                 new_state.children_by_key[key] = child_state
-            elif isinstance(child, AbstractComponent):
-                key = getattr(child, "key", "") or hex_id(child)
+            elif child_type is _COMPONENT_TYPE:
                 life_cycle_hook = LifeCycleHook(child, self)
                 child_state = _ModelState(new_state, index, key, life_cycle_hook)
                 self._render_component(None, child_state, child)
             else:
-                new_children.append(str(child))
+                new_children.append(child)
 
     def _unmount_model_states(self, old_states: List[_ModelState]) -> None:
         to_unmount = old_states[::-1]
@@ -387,7 +375,7 @@ class _ModelState:
         self,
         parent: Optional[_ModelState],
         index: int,
-        key: str,
+        key: Any,
         life_cycle_hook: Optional[LifeCycleHook],
     ) -> None:
         self.index = index
@@ -487,3 +475,30 @@ class _ModelVdomRequired(TypedDict, total=True):
 
 class _ModelVdom(_ModelVdomRequired, _ModelVdomOptional):
     """A VDOM dictionary model specifically for use with a :class:`Layout`"""
+
+
+def _process_child_type_and_key(
+    raw_children: List[Any],
+) -> Iterator[Tuple[Any, int, Any]]:
+    for index, child in enumerate(raw_children):
+        if isinstance(child, dict):
+            child_type = _DICT_TYPE
+            key = child.get("key")
+        elif isinstance(child, AbstractComponent):
+            child_type = _COMPONENT_TYPE
+            key = getattr(child, "key", None)
+        else:
+            child = f"{child}"
+            child_type = _STRING_TYPE
+            key = None
+
+        if key is None:
+            key = index
+
+        yield (child, child_type, key)
+
+
+# used in _process_child_type_and_key
+_DICT_TYPE = 1
+_COMPONENT_TYPE = 2
+_STRING_TYPE = 3

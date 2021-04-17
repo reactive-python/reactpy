@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 import inspect
 from functools import wraps
-from typing import Any, Callable, Dict, Tuple, Union
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 from .utils import hex_id
 from .vdom import VdomDict
@@ -22,7 +22,7 @@ def component(function: ComponentRenderFunction) -> Callable[..., "Component"]:
     """
 
     @wraps(function)
-    def constructor(*args: Any, key: str = "", **kwargs: Any) -> Component:
+    def constructor(*args: Any, key: Optional[Any] = None, **kwargs: Any) -> Component:
         return Component(function, key, args, kwargs)
 
     return constructor
@@ -49,7 +49,7 @@ class Component(AbstractComponent):
     def __init__(
         self,
         function: ComponentRenderFunction,
-        key: str,
+        key: Optional[Any],
         args: Tuple[Any, ...],
         kwargs: Dict[str, Any],
     ) -> None:
@@ -57,7 +57,7 @@ class Component(AbstractComponent):
         self._function = function
         self._args = args
         self._kwargs = kwargs
-        if key:
+        if key is not None:
             kwargs["key"] = key
 
     def render(self) -> VdomDict:
@@ -65,6 +65,9 @@ class Component(AbstractComponent):
         if isinstance(model, AbstractComponent):
             model = {"tagName": "div", "children": [model]}
         return model
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, Component) and other._func == self._func
 
     def __repr__(self) -> str:
         sig = inspect.signature(self._function)
