@@ -443,7 +443,7 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
     async with idom.Layout(ComponentReturnsDuplicateKeys()) as layout:
         await layout.render()
 
-    with pytest.raises(ValueError, match="Duplicate keys in"):
+    with pytest.raises(ValueError, match=r"Duplicate keys \['duplicate'\] at '/'"):
         raise next(iter(caplog.records)).exc_info[1]
 
 
