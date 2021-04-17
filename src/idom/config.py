@@ -62,7 +62,7 @@ IDOM_FEATURE_INDEX_AS_DEFAULT_KEY = _option.Option(
 """A feature flag for using the index of a sibling element as its default key
 
 In a future release this flag's default value will be set to true, and after that, this
-flag willbe removed entirely and the indices will always be the default key.
+flag will be removed entirely and the indices will always be the default key.
 
 For more information on changes to this feature flag see: https://github.com/idom-team/idom/issues/351
 """
