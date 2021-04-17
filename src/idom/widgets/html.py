@@ -1,5 +1,5 @@
 from base64 import b64encode
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union, overload
 
 import idom
 from idom.core.component import AbstractComponent, ComponentConstructor, component
@@ -165,6 +165,18 @@ class Html:
         self.menu = make_vdom_constructor("menu")
         self.menuitem = make_vdom_constructor("menuitem")
         self.summary = make_vdom_constructor("summary")
+
+    @overload
+    @staticmethod
+    def __call__(
+        tag: ComponentConstructor, *attributes_and_children: Any
+    ) -> AbstractComponent:
+        ...
+
+    @overload
+    @staticmethod
+    def __call__(tag: str, *attributes_and_children: Any) -> VdomDict:
+        ...
 
     @staticmethod
     def __call__(
