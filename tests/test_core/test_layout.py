@@ -181,14 +181,14 @@ async def test_components_are_garbage_collected():
     def Outer():
         component = idom.hooks.current_hook().component
         live_components.add(id(component))
-        finalize(component, live_components.remove, id(component))
+        finalize(component, live_components.discard, id(component))
         return Inner()
 
     @idom.component
     def Inner():
         component = idom.hooks.current_hook().component
         live_components.add(id(component))
-        finalize(component, live_components.remove, id(component))
+        finalize(component, live_components.discard, id(component))
         return idom.html.div()
 
     async with idom.Layout(Outer()) as layout:

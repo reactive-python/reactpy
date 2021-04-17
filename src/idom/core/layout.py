@@ -450,6 +450,33 @@ class _ComponentQueue:
         return component
 
 
+def _process_child_type_and_key(
+    children: List[Any],
+) -> Iterator[Tuple[Any, int, Any]]:
+    for child in children:
+        if isinstance(child, dict):
+            child_type = _DICT_TYPE
+            key = child.get("key")
+        elif isinstance(child, AbstractComponent):
+            child_type = _COMPONENT_TYPE
+            key = getattr(child, "key", None)
+        else:
+            child = f"{child}"
+            child_type = _STRING_TYPE
+            key = None
+
+        if key is None:
+            key = object()
+
+        yield (child, child_type, key)
+
+
+# used in _process_child_type_and_key
+_DICT_TYPE = 1
+_COMPONENT_TYPE = 2
+_STRING_TYPE = 3
+
+
 class _ModelEventTarget(TypedDict):
     target: str
     preventDefault: bool  # noqa
@@ -475,30 +502,3 @@ class _ModelVdomRequired(TypedDict, total=True):
 
 class _ModelVdom(_ModelVdomRequired, _ModelVdomOptional):
     """A VDOM dictionary model specifically for use with a :class:`Layout`"""
-
-
-def _process_child_type_and_key(
-    raw_children: List[Any],
-) -> Iterator[Tuple[Any, int, Any]]:
-    for index, child in enumerate(raw_children):
-        if isinstance(child, dict):
-            child_type = _DICT_TYPE
-            key = child.get("key")
-        elif isinstance(child, AbstractComponent):
-            child_type = _COMPONENT_TYPE
-            key = getattr(child, "key", None)
-        else:
-            child = f"{child}"
-            child_type = _STRING_TYPE
-            key = None
-
-        if key is None:
-            key = index
-
-        yield (child, child_type, key)
-
-
-# used in _process_child_type_and_key
-_DICT_TYPE = 1
-_COMPONENT_TYPE = 2
-_STRING_TYPE = 3
