@@ -66,15 +66,3 @@ flag will be removed entirely and the indices will always be the default key.
 
 For more information on changes to this feature flag see: https://github.com/idom-team/idom/issues/351
 """
-
-if not IDOM_FEATURE_INDEX_AS_DEFAULT_KEY.get():  # pragma: no cover
-    from warnings import warn
-
-    warn(
-        (
-            "In a future release 'IDOM_FEATURE_INDEX_AS_DEFAULT_KEY' will be turned on "
-            "by default. For more information on changes to this feature flag, see: "
-            "https://github.com/idom-team/idom/issues/351"
-        ),
-        DeprecationWarning,
-    )
