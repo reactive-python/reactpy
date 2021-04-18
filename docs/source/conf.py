@@ -27,6 +27,15 @@ project = "IDOM"
 copyright = "2020, Ryan Morshead"
 author = "Ryan Morshead"
 
+# -- Common External Links ---------------------------------------------------
+
+extlinks = {
+    "issue": ("https://github.com/idom-team/idom/issues/%s", "#"),
+    "pull": ("https://github.com/idom-team/idom/pulls/%s", "#"),
+    "discussion": ("https://github.com/idom-team/idom/discussions/%s", "#"),
+    "commit": ("https://github.com/idom-team/idom/commit/%s", ""),
+}
+
 # -- General configuration ---------------------------------------------------
 
 # If your documentatirston needs a minimal Sphinx version, state it here.
@@ -42,15 +51,17 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
+    "sphinx.ext.extlinks",
     "sphinx.ext.autosectionlabel",
     "sphinx_autodoc_typehints",
     "sphinx_panels",
     "sphinx_copybutton",
     # custom extensions
-    "interactive_widget",
-    "widget_example",
     "async_doctest",
     "copy_vdom_json_schema",
+    "interactive_widget",
+    "patched_html_translator",
+    "widget_example",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

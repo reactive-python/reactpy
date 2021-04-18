@@ -175,7 +175,7 @@ def commits_since_last_tag(session: Session) -> None:
 
     for sha, msg, _ in map(parse_commit_reference, commit_references):
         if rst_format:
-            sha_repr = f"`{sha} <https://github.com/idom-team/idom/commit/{sha}>`__"
+            sha_repr = f":commit:`{sha}`"
         else:
             sha_repr = sha
         print(f"- {msg} - {sha_repr}")

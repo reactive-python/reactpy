@@ -25,9 +25,10 @@ Roadmap
     primarilly be a tool for optimization rather than a functional requirement.
 
     Related issues:
+        :issue:`330`, :issue:`19`
 
-    - https://github.com/idom-team/idom/issues/330
-    - https://github.com/idom-team/idom/issues/19
+    Related work:
+        :pull:`345`
 
 **Reconsider Custom Component Interface**:
     One problem that's come up several times while implementing alternate client
@@ -45,6 +46,7 @@ Roadmap
     effort.
 
     Related issues:
+        :issue:`13`, :issue:`6`
 
-    - https://github.com/idom-team/idom-jupyter/issues/13
-    - https://github.com/idom-team/idom-dash/issues/6
+    Related work:
+        in progress...
