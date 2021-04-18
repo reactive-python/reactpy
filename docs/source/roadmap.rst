@@ -24,11 +24,8 @@ Roadmap
     will be to assume that any element without a key is new. Thus, for IDOM, keys will
     primarilly be a tool for optimization rather than a functional requirement.
 
-    Related issues:
-        :issue:`330`, :issue:`19`
-
-    Related work:
-        :pull:`345`
+    - Related issues: :issue:`330`, :issue:`19`, :issue:`351`
+    - Related work: :pull:`345`
 
 **Reconsider Custom Component Interface**:
     One problem that's come up several times while implementing alternate client
@@ -45,8 +42,5 @@ Roadmap
     incorperate components from other Javascript frameworks (e.g. Vue) without much
     effort.
 
-    Related issues:
-        :issue:`13`, :issue:`6`
-
-    Related work:
-        in progress...
+    - Related issues: :issue:`13`, :issue:`6`
+    - Related work: pending
