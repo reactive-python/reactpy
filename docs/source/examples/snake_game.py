@@ -44,6 +44,8 @@ class Direction(enum.Enum):
 def GameLoop(grid_size, block_scale, set_game_state):
     # we `use_ref` here to capture the latest direction press without any delay
     direction = idom.hooks.use_ref(Direction.ArrowRight.value)
+    # capture the last direction of travel that was rendered
+    last_direction = direction.current
 
     snake, set_snake = idom.hooks.use_state([(grid_size // 2 - 1, grid_size // 2 - 1)])
     food, set_food = use_snake_food(grid_size, snake)
@@ -52,11 +54,11 @@ def GameLoop(grid_size, block_scale, set_game_state):
     grid_events = grid["eventHandlers"] = idom.Events()
 
     @grid_events.on("KeyDown", prevent_default=True)
-    async def on_direction_change(event):
+    def on_direction_change(event):
         if hasattr(Direction, event["key"]):
             maybe_new_direction = Direction[event["key"]].value
             direction_vector_sum = tuple(
-                map(sum, zip(direction.current, maybe_new_direction))
+                map(sum, zip(last_direction, maybe_new_direction))
             )
             if direction_vector_sum != (0, 0):
                 direction.current = maybe_new_direction
