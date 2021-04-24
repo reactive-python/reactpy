@@ -63,7 +63,7 @@ ever be removed from the model. Then you'll just need to call and await a
 
 .. testcode::
 
-    async with idom.Layout(ClickCount()) as layout:
+    with idom.Layout(ClickCount()) as layout:
         patch = await layout.render()
 
 The layout also handles the triggering of event handlers. Normally these are
@@ -88,7 +88,7 @@ which we can re-render and see what changed:
 
         return idom.html.button({"onClick": handler}, [f"Click count: {count}"])
 
-    async with idom.Layout(ClickCount()) as layout:
+    with idom.Layout(ClickCount()) as layout:
         patch_1 = await layout.render()
 
         fake_event = LayoutEvent(target=static_handler.target, data=[{}])
@@ -111,20 +111,20 @@ which we can re-render and see what changed:
 Layout Dispatcher
 -----------------
 
-An :class:`~idom.core.dispatcher.AbstractDispatcher` implementation is a relatively thin layer
-of logic around a :class:`~idom.core.layout.Layout` which drives the triggering of
-events and layout updates by scheduling an asynchronous loop that will run forever -
-effectively animating the model. To execute the loop, the dispatcher's
-:meth:`~idom.core.dispatcher.AbstractDispatcher.run` method accepts two callbacks. One is a
-"send" callback to which the dispatcher passes updates, while the other is "receive"
-callback that's called by the dispatcher to events it should execute.
+A "dispatcher" implementation is a relatively thin layer of logic around a
+:class:`~idom.core.layout.Layout` which drives the triggering of events and updates by
+scheduling an asynchronous loop that will run forever - effectively animating the model.
+The simplest dispatcher is :func:`~idom.core.dispatcher.dispatch_single_view` which
+accepts three arguments. The first is a :class:`~idom.core.layout.Layout`, the second is
+a "send" callback to which the dispatcher passes updates, and the third is a "receive"
+callback that's called by the dispatcher to collect events it should execute.
 
 .. testcode::
 
     import asyncio
 
-    from idom.core import SingleViewDispatcher, EventHandler
     from idom.core.layout import LayoutEvent
+    from idom.core.dispatch import dispatch_single_view
 
 
     sent_patches = []
@@ -148,20 +148,14 @@ callback that's called by the dispatcher to events it should execute.
         return event
 
 
-    async with SingleViewDispatcher(idom.Layout(ClickCount())) as dispatcher:
-        context = None  # see note below
-        await dispatcher.run(send, recv, context)
-
+    await dispatch_single_view(idom.Layout(ClickCount()), send, recv)
     assert len(sent_patches) == 5
 
 
 .. note::
 
-    ``context`` is information that's specific to the
-    :class:`~idom.core.dispatcher.AbstractDispatcher` implementation. In the case of
-    the :class:`~idom.core.dispatcher.SingleViewDispatcher` it doesn't require any
-    context. On the other hand the :class:`~idom.core.dispatcher.SharedViewDispatcher`
-    requires a client ID as its piece of contextual information.
+    The :func:`~idom.core.dispatcher.create_shared_view_dispatcher`, while more complex
+    in its usage, allows multiple clients to share one synchronized view.
 
 
 Layout Server

@@ -1,8 +1,7 @@
 import asyncio
 import json
-import uuid
 from threading import Event
-from typing import Any, Dict, Optional, Tuple, Type, Union, cast
+from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Union
 
 from mypy_extensions import TypedDict
 from sanic import Blueprint, Sanic, request, response
@@ -11,11 +10,10 @@ from websockets import WebSocketCommonProtocol
 
 from idom.config import IDOM_CLIENT_BUILD_DIR
 from idom.core.dispatcher import (
-    AbstractDispatcher,
     RecvCoroutine,
     SendCoroutine,
-    SharedViewDispatcher,
-    SingleViewDispatcher,
+    dispatch_single_view,
+    ensure_shared_view_dispatcher_future,
 )
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
@@ -35,7 +33,6 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
     """Base ``sanic`` extension."""
 
     _loop: asyncio.AbstractEventLoop
-    _dispatcher_type: Type[AbstractDispatcher]
     _did_stop: Event
 
     def stop(self) -> None:
@@ -165,30 +162,28 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
                 connection.close_if_idle()
             server.after_stop()
 
+
+class PerClientStateServer(SanicRenderServer):
+    """Each client view will have its own state."""
+
     async def _run_dispatcher(
         self,
         send: SendCoroutine,
         recv: RecvCoroutine,
         params: Dict[str, Any],
     ) -> None:
-        async with self._make_dispatcher(params) as dispatcher:
-            await dispatcher.run(send, recv, None)
-
-    def _make_dispatcher(self, params: Dict[str, Any]) -> AbstractDispatcher:
-        return self._dispatcher_type(Layout(self._root_component_constructor(**params)))
-
-
-class PerClientStateServer(SanicRenderServer):
-    """Each client view will have its own state."""
-
-    _dispatcher_type = SingleViewDispatcher
+        await dispatch_single_view(
+            Layout(self._root_component_constructor(**params)),
+            send,
+            recv,
+        )
 
 
 class SharedClientStateServer(SanicRenderServer):
     """All connected client views will have shared state."""
 
-    _dispatcher_type = SharedViewDispatcher
-    _dispatcher: SharedViewDispatcher
+    _dispatch_daemon_future: asyncio.Future
+    _dispatch_coroutine: Callable[[SendCoroutine, RecvCoroutine], Awaitable[None]]
 
     def _setup_application(self, config: Config, app: Sanic) -> None:
         app.register_listener(self._activate_dispatcher, "before_server_start")
@@ -198,14 +193,18 @@ class SharedClientStateServer(SanicRenderServer):
     async def _activate_dispatcher(
         self, app: Sanic, loop: asyncio.AbstractEventLoop
     ) -> None:
-        self._dispatcher = cast(SharedViewDispatcher, self._make_dispatcher({}))
-        await self._dispatcher.start()
+        (
+            self._dispatch_daemon_future,
+            self._dispatch_coroutine,
+        ) = ensure_shared_view_dispatcher_future(
+            Layout(self._root_component_constructor())
+        )
 
     async def _deactivate_dispatcher(
         self, app: Sanic, loop: asyncio.AbstractEventLoop
-    ) -> None:  # pragma: no cover
-        # this doesn't seem to get triggered during testing for some reason
-        await self._dispatcher.stop()
+    ) -> None:
+        self._dispatch_daemon_future.cancel(f"{self} is shutting down")
+        await asyncio.wait([self._dispatch_daemon_future])
 
     async def _run_dispatcher(
         self,
@@ -216,4 +215,4 @@ class SharedClientStateServer(SanicRenderServer):
         if params:
             msg = f"SharedClientState server does not support per-client view parameters {params}"
             raise ValueError(msg)
-        await self._dispatcher.run(send, recv, uuid.uuid4().hex, join=True)
+        await self._dispatch_coroutine(send, recv)

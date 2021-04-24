@@ -1,6 +1,7 @@
 import asyncio
 import json
 from asyncio import Queue as AsyncQueue
+from asyncio.futures import Future
 from threading import Event as ThreadEvent
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from urllib.parse import urljoin
@@ -12,7 +13,7 @@ from typing_extensions import TypedDict
 
 from idom.config import IDOM_CLIENT_BUILD_DIR
 from idom.core.component import ComponentConstructor
-from idom.core.dispatcher import AbstractDispatcher, SingleViewDispatcher
+from idom.core.dispatcher import dispatch_single_view
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
 from .base import AbstractRenderServer
@@ -128,8 +129,7 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
 class PerClientStateModelStreamHandler(WebSocketHandler):
     """A web-socket handler that serves up a new model stream to each new client"""
 
-    _dispatcher_type: Type[AbstractDispatcher] = SingleViewDispatcher
-    _dispatcher_inst: AbstractDispatcher
+    _dispatch_future: Future
     _message_queue: "AsyncQueue[str]"
 
     def initialize(self, component_constructor: ComponentConstructor) -> None:
@@ -138,9 +138,6 @@ class PerClientStateModelStreamHandler(WebSocketHandler):
     async def open(self, *args: str, **kwargs: str) -> None:
         message_queue: "AsyncQueue[str]" = AsyncQueue()
         query_params = {k: v[0].decode() for k, v in self.request.arguments.items()}
-        dispatcher = self._dispatcher_type(
-            Layout(self._component_constructor(**query_params))
-        )
 
         async def send(value: LayoutUpdate) -> None:
             await self.write_message(json.dumps(value))
@@ -148,14 +145,14 @@ class PerClientStateModelStreamHandler(WebSocketHandler):
         async def recv() -> LayoutEvent:
             return LayoutEvent(**json.loads(await message_queue.get()))
 
-        async def run() -> None:
-            await dispatcher.__aenter__()
-            await dispatcher.run(send, recv, None)
-
-        asyncio.ensure_future(run())
-
-        self._dispatcher_inst = dispatcher
         self._message_queue = message_queue
+        self._dispatch_future = asyncio.ensure_future(
+            dispatch_single_view(
+                Layout(self._component_constructor(**query_params)),
+                send,
+                recv,
+            )
+        )
 
     async def on_message(self, message: Union[str, bytes]) -> None:
         await self._message_queue.put(
@@ -163,7 +160,8 @@ class PerClientStateModelStreamHandler(WebSocketHandler):
         )
 
     def on_close(self) -> None:
-        asyncio.ensure_future(self._dispatcher_inst.__aexit__(None, None, None))
+        if not self._dispatch_future.done():
+            self._dispatch_future.cancel()
 
 
 class PerClientStateServer(TornadoRenderServer):

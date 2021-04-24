@@ -132,7 +132,7 @@ class ServerMountPoint(Generic[_Mount, _Server]):
         found: List[BaseException] = []
         compiled_pattern = re.compile(pattern)
         for index, record in enumerate(self.log_records):
-            if record.levelno >= log_level and record.exc_info is not None:
+            if record.levelno >= log_level and record.exc_info:
                 error = record.exc_info[1]
                 if (
                     error is not None

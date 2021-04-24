@@ -5,7 +5,7 @@ from asyncio import Queue as AsyncQueue
 from queue import Queue as ThreadQueue
 from threading import Event as ThreadEvent
 from threading import Thread
-from typing import Any, Callable, Dict, NamedTuple, Optional, Tuple, Type, Union, cast
+from typing import Any, Callable, Dict, NamedTuple, Optional, Tuple, Union, cast
 from urllib.parse import parse_qs as parse_query_string
 
 from flask import Blueprint, Flask, redirect, request, send_from_directory, url_for
@@ -18,8 +18,9 @@ from typing_extensions import TypedDict
 
 import idom
 from idom.config import IDOM_CLIENT_BUILD_DIR
-from idom.core.dispatcher import AbstractDispatcher, SingleViewDispatcher
-from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
+from idom.core.component import AbstractComponent
+from idom.core.dispatcher import RecvCoroutine, SendCoroutine, dispatch_single_view
+from idom.core.layout import LayoutEvent, LayoutUpdate
 
 from .base import AbstractRenderServer
 
@@ -40,7 +41,6 @@ class Config(TypedDict, total=False):
 class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
     """Base class for render servers which use Flask"""
 
-    _dispatcher_type: Type[AbstractDispatcher]
     _wsgi_server: pywsgi.WSGIServer
 
     def stop(self, timeout: Optional[float] = None) -> None:
@@ -98,14 +98,7 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
                 for k, v in parse_query_string(ws.environ["QUERY_STRING"]).items()
             }
 
-            run_dispatcher_in_thread(
-                lambda: self._dispatcher_type(
-                    Layout(self._root_component_constructor(**query_params))
-                ),
-                send,
-                recv,
-                None,
-            )
+            self._run_dispatcher(query_params, send, recv)
 
     def _setup_blueprint_routes(self, config: Config, blueprint: Blueprint) -> None:
         if config["serve_static_files"]:
@@ -177,18 +170,25 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
         )
         self._wsgi_server.serve_forever()
 
+    def _run_dispatcher(
+        self, query_params: Dict[str, Any], send: SendCoroutine, recv: RecvCoroutine
+    ):
+        raise NotImplementedError()
+
 
 class PerClientStateServer(FlaskRenderServer):
     """Each client view will have its own state."""
 
-    _dispatcher_type = SingleViewDispatcher
+    def _run_dispatcher(
+        self, query_params: Dict[str, Any], send: SendCoroutine, recv: RecvCoroutine
+    ):
+        dispatch_single_view_in_thread(
+            self._root_component_constructor(**query_params), send, recv
+        )
 
 
-def run_dispatcher_in_thread(
-    make_dispatcher: Callable[[], AbstractDispatcher],
-    send: Callable[[Any], None],
-    recv: Callable[[], Optional[LayoutEvent]],
-    context: Optional[Any],
+def dispatch_single_view_in_thread(
+    component: AbstractComponent, send: SendCoroutine, recv: RecvCoroutine
 ) -> None:
     dispatch_thread_info_created = ThreadEvent()
     dispatch_thread_info_ref: idom.Ref[Optional[_DispatcherThreadInfo]] = idom.Ref(None)
@@ -207,8 +207,7 @@ def run_dispatcher_in_thread(
             return await async_recv_queue.get()
 
         async def main() -> None:
-            async with make_dispatcher() as dispatcher:
-                await dispatcher.run(send_coro, recv_coro, context)
+            await dispatch_single_view(idom.Layout(component), send_coro, recv_coro)
 
         main_future = asyncio.ensure_future(main())
 

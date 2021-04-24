@@ -1,13 +1,23 @@
-import abc
-import asyncio
+from __future__ import annotations
+
+import sys
+from asyncio import Future, Queue
+from asyncio.tasks import FIRST_COMPLETED, ensure_future, gather, wait
 from logging import getLogger
-from typing import Any, AsyncIterator, Awaitable, Callable, Dict
+from typing import Any, AsyncIterator, Awaitable, Callable, List, Sequence, Tuple
+from weakref import WeakSet
 
 from anyio import create_task_group
-from anyio.abc import TaskGroup
+
+from idom.utils import Ref
 
 from .layout import Layout, LayoutEvent, LayoutUpdate
-from .utils import HasAsyncResources, async_resource
+
+
+if sys.version_info >= (3, 7):  # pragma: no cover
+    from contextlib import asynccontextmanager  # noqa
+else:  # pragma: no cover
+    from async_generator import asynccontextmanager
 
 
 logger = getLogger(__name__)
@@ -16,136 +26,139 @@ SendCoroutine = Callable[[Any], Awaitable[None]]
 RecvCoroutine = Callable[[], Awaitable[LayoutEvent]]
 
 
-class AbstractDispatcher(HasAsyncResources, abc.ABC):
-    """A base class for implementing :class:`~idom.core.layout.Layout` dispatchers."""
-
-    __slots__ = "_layout"
-
-    def __init__(self, layout: Layout) -> None:
-        super().__init__()
-        self._layout = layout
-
-    async def start(self) -> None:
-        await self.__aenter__()
-
-    async def stop(self) -> None:
-        await self.task_group.cancel_scope.cancel()
-        await self.__aexit__(None, None, None)
-
-    @async_resource
-    async def layout(self) -> AsyncIterator[Layout]:
-        async with self._layout as layout:
-            yield layout
-
-    @async_resource
-    async def task_group(self) -> AsyncIterator[TaskGroup]:
-        async with create_task_group() as group:
-            yield group
-
-    async def run(self, send: SendCoroutine, recv: RecvCoroutine, context: Any) -> None:
-        """Start an unending loop which will drive the layout.
-
-        This will call :meth:`AbstractLayout.render` and :meth:`Layout.dispatch`
-        to render new models and execute events respectively.
-        """
-        await self.task_group.spawn(self._outgoing_loop, send, context)
-        await self.task_group.spawn(self._incoming_loop, recv, context)
-        return None
-
-    async def _outgoing_loop(self, send: SendCoroutine, context: Any) -> None:
-        try:
-            while True:
-                await send(await self._outgoing(self.layout, context))
-        except Exception:
-            logger.info("Failed to send outgoing update", exc_info=True)
-            raise
-
-    async def _incoming_loop(self, recv: RecvCoroutine, context: Any) -> None:
-        try:
-            while True:
-                await self._incoming(self.layout, context, await recv())
-        except Exception:
-            logger.info("Failed to receive incoming event", exc_info=True)
-            raise
-
-    @abc.abstractmethod
-    async def _outgoing(self, layout: Layout, context: Any) -> Any:
-        ...
-
-    @abc.abstractmethod
-    async def _incoming(self, layout: Layout, context: Any, message: Any) -> None:
-        ...
+async def dispatch_single_view(
+    layout: Layout,
+    send: SendCoroutine,
+    recv: RecvCoroutine,
+) -> None:
+    with layout:
+        async with create_task_group() as task_group:
+            task_group.start_soon(_single_outgoing_loop, layout, send)
+            task_group.start_soon(_single_incoming_loop, layout, recv)
 
 
-class SingleViewDispatcher(AbstractDispatcher):
-    """Each client of the dispatcher will get its own model.
-
-    ..note::
-        The ``context`` parameter of :meth:`SingleViewDispatcher.run` should just
-        be ``None`` since it's not used.
-    """
-
-    __slots__ = "_current_model_as_json"
-
-    def __init__(self, layout: Layout) -> None:
-        super().__init__(layout)
-        self._current_model_as_json = ""
-
-    async def _outgoing(self, layout: Layout, context: Any) -> LayoutUpdate:
-        return await layout.render()
-
-    async def _incoming(self, layout: Layout, context: Any, event: LayoutEvent) -> None:
-        await layout.dispatch(event)
-        return None
+_SharedDispatchFuture = Callable[[SendCoroutine, RecvCoroutine], Future]
 
 
-class SharedViewDispatcher(SingleViewDispatcher):
-    """Each client of the dispatcher shares the same model.
+@asynccontextmanager
+async def create_shared_view_dispatcher(
+    layout: Layout, run_forever: bool = False
+) -> AsyncIterator[_SharedDispatchFuture]:
+    with layout:
+        (
+            dispatch_shared_view,
+            model_state,
+            all_update_queues,
+        ) = await _make_shared_view_dispatcher(layout)
 
-    The client's ID is indicated by the ``context`` argument of
-    :meth:`SharedViewDispatcher.run`
-    """
+        dispatch_tasks: List[Future] = []
 
-    __slots__ = "_update_queues", "_model_state"
+        def dispatch_shared_view_soon(
+            send: SendCoroutine, recv: RecvCoroutine
+        ) -> Future:
+            future = ensure_future(dispatch_shared_view(send, recv))
+            dispatch_tasks.append(future)
+            return future
 
-    def __init__(self, layout: Layout) -> None:
-        super().__init__(layout)
-        self._model_state: Any = {}
-        self._update_queues: Dict[str, asyncio.Queue[LayoutUpdate]] = {}
+        yield dispatch_shared_view_soon
 
-    @async_resource
-    async def task_group(self) -> AsyncIterator[TaskGroup]:
-        async with create_task_group() as group:
-            await group.spawn(self._render_loop)
-            yield group
+        gathered_dispatch_tasks = gather(*dispatch_tasks, return_exceptions=True)
 
-    async def run(
-        self, send: SendCoroutine, recv: RecvCoroutine, context: str, join: bool = False
-    ) -> None:
-        await super().run(send, recv, context)
-        if join:
-            await self._join_event.wait()
-
-    async def _render_loop(self) -> None:
         while True:
-            update = await super()._outgoing(self.layout, None)
-            self._model_state = update.apply_to(self._model_state)
-            # append updates to all other contexts
-            for queue in self._update_queues.values():
-                await queue.put(update)
+            (
+                update_future,
+                dispatchers_completed_future,
+            ) = await _wait_until_first_complete(
+                layout.render(),
+                gathered_dispatch_tasks,
+            )
 
-    async def _outgoing_loop(self, send: SendCoroutine, context: Any) -> None:
-        self._update_queues[context] = asyncio.Queue()
-        await send(LayoutUpdate.create_from({}, self._model_state))
-        await super()._outgoing_loop(send, context)
+            if dispatchers_completed_future.done():
+                update_future.cancel()
+                break
+            else:
+                update: LayoutUpdate = update_future.result()
 
-    async def _outgoing(self, layout: Layout, context: str) -> LayoutUpdate:
-        return await self._update_queues[context].get()
+            model_state.current = update.apply_to(model_state.current)
+            # push updates to all dispatcher callbacks
+            for queue in all_update_queues:
+                queue.put_nowait(update)
 
-    @async_resource
-    async def _join_event(self) -> AsyncIterator[asyncio.Event]:
-        event = asyncio.Event()
-        try:
-            yield event
-        finally:
-            event.set()
+
+def ensure_shared_view_dispatcher_future(
+    layout: Layout,
+) -> Tuple[Future, _SharedDispatchFuture]:
+    dispatcher_future = Future()
+
+    async def dispatch_shared_view_forever():
+        with layout:
+            (
+                dispatch_shared_view,
+                model_state,
+                all_update_queues,
+            ) = await _make_shared_view_dispatcher(layout)
+
+            dispatcher_future.set_result(dispatch_shared_view)
+
+            while True:
+                update = await layout.render()
+                model_state.current = update.apply_to(model_state.current)
+                # push updates to all dispatcher callbacks
+                for queue in all_update_queues:
+                    queue.put_nowait(update)
+
+    async def dispatch(send: SendCoroutine, recv: RecvCoroutine) -> None:
+        await (await dispatcher_future)(send, recv)
+
+    return ensure_future(dispatch_shared_view_forever()), dispatch
+
+
+_SharedDispatchCoroutine = Callable[[SendCoroutine, RecvCoroutine], Awaitable[None]]
+
+
+async def _make_shared_view_dispatcher(
+    layout: Layout,
+) -> Tuple[_SharedDispatchCoroutine, Ref[Any], WeakSet[Queue[LayoutUpdate]]]:
+    initial_update = await layout.render()
+    model_state = Ref(initial_update.apply_to({}))
+
+    # We push updates to queues instead of pushing directly to send() callbacks in
+    # order to isolate the render loop from any errors dispatch callbacks might
+    # raise.
+    all_update_queues: WeakSet[Queue[LayoutUpdate]] = WeakSet()
+
+    async def dispatch_shared_view(send: SendCoroutine, recv: RecvCoroutine) -> None:
+        update_queue: Queue[LayoutUpdate] = Queue()
+        async with create_task_group() as inner_task_group:
+            all_update_queues.add(update_queue)
+            await send(LayoutUpdate.create_from({}, model_state.current))
+            inner_task_group.start_soon(_single_incoming_loop, layout, recv)
+            inner_task_group.start_soon(_shared_outgoing_loop, send, update_queue)
+        return None
+
+    return dispatch_shared_view, model_state, all_update_queues
+
+
+async def _single_outgoing_loop(layout: Layout, send: SendCoroutine) -> None:
+    while True:
+        await send(await layout.render())
+
+
+async def _single_incoming_loop(layout: Layout, recv: RecvCoroutine) -> None:
+    while True:
+        await layout.dispatch(await recv())
+
+
+async def _shared_outgoing_loop(
+    send: SendCoroutine, queue: Queue[LayoutUpdate]
+) -> None:
+    while True:
+        await send(await queue.get())
+
+
+async def _wait_until_first_complete(
+    *tasks: Awaitable[Any],
+) -> Sequence[Future]:
+    futures = [ensure_future(t) for t in tasks]
+    await wait(futures, return_when=FIRST_COMPLETED)
+    return futures

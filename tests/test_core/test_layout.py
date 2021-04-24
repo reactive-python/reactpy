@@ -33,19 +33,22 @@ def test_layout_expects_abstract_component():
         idom.Layout(idom.html.div())
 
 
-def test_not_open_layout_update_logs_error(caplog):
+async def test_layout_cannot_be_used_outside_context_manager(caplog):
     @idom.component
     def Component():
         ...
 
     component = Component()
     layout = idom.Layout(component)
-    layout.update(component)
 
-    assert re.match(
-        "Did not update .*? - resources of .*? are closed",
-        next(iter(caplog.records)).msg,
-    )
+    with pytest.raises(Exception):
+        await layout.dispatch(LayoutEvent("something", []))
+
+    with pytest.raises(Exception):
+        layout.update(component)
+
+    with pytest.raises(Exception):
+        await layout.render()
 
 
 async def test_simple_layout():
@@ -56,7 +59,7 @@ async def test_simple_layout():
         tag, set_state_hook.current = idom.hooks.use_state("div")
         return idom.vdom(tag)
 
-    async with idom.Layout(SimpleComponent()) as layout:
+    with idom.Layout(SimpleComponent()) as layout:
         path, changes = await layout.render()
 
         assert path == ""
@@ -83,7 +86,7 @@ async def test_nested_component_layout():
         state, child_set_state.current = idom.hooks.use_state(0)
         return idom.html.div(state)
 
-    async with idom.Layout(Parent()) as layout:
+    with idom.Layout(Parent()) as layout:
 
         path, changes = await layout.render()
 
@@ -126,7 +129,7 @@ async def test_layout_render_error_has_partial_update():
     def BadChild():
         raise ValueError("Something went wrong :(")
 
-    async with idom.Layout(Main()) as layout:
+    with idom.Layout(Main()) as layout:
         patch = await layout.render()
         assert_same_items(
             patch.changes,
@@ -157,7 +160,7 @@ async def test_render_raw_vdom_dict_with_single_component_object_as_children():
     def Child():
         return {"tagName": "div", "children": {"tagName": "h1"}}
 
-    async with idom.Layout(Main()) as layout:
+    with idom.Layout(Main()) as layout:
         patch = await layout.render()
         assert_same_items(
             patch.changes,
@@ -191,7 +194,7 @@ async def test_components_are_garbage_collected():
         finalize(component, live_components.discard, id(component))
         return idom.html.div()
 
-    async with idom.Layout(Outer()) as layout:
+    with idom.Layout(Outer()) as layout:
         await layout.render()
 
         assert len(live_components) == 2
@@ -225,7 +228,7 @@ async def test_double_updated_component_is_not_double_rendered():
         run_count.current += 1
         return idom.html.div()
 
-    async with idom.Layout(AnyComponent()) as layout:
+    with idom.Layout(AnyComponent()) as layout:
         await layout.render()
 
         assert run_count.current == 1
@@ -257,7 +260,7 @@ async def test_update_path_to_component_that_is_not_direct_child_is_correct():
     def Child():
         return idom.html.div()
 
-    async with idom.Layout(Parent()) as layout:
+    with idom.Layout(Parent()) as layout:
         await layout.render()
 
         hook.latest.schedule_render()
@@ -271,7 +274,7 @@ async def test_log_on_dispatch_to_missing_event_handler(caplog):
     def SomeComponent():
         return idom.html.div()
 
-    async with idom.Layout(SomeComponent()) as layout:
+    with idom.Layout(SomeComponent()) as layout:
         await layout.dispatch(LayoutEvent(target="missing", data=[]))
 
     assert re.match(
@@ -315,7 +318,7 @@ async def test_model_key_preserves_callback_identity_for_common_elements():
 
         return idom.html.div(children)
 
-    async with idom.Layout(MyComponent()) as layout:
+    with idom.Layout(MyComponent()) as layout:
         await layout.render()
         for i in range(3):
             event = LayoutEvent(good_handler.target, [])
@@ -361,7 +364,7 @@ async def test_model_key_preserves_callback_identity_for_components():
 
         return idom.html.button({"onClick": callback, "id": "good"}, "good")
 
-    async with idom.Layout(RootComponent()) as layout:
+    with idom.Layout(RootComponent()) as layout:
         await layout.render()
         for _ in range(3):
             event = LayoutEvent(good_handler.target, [])
@@ -383,7 +386,7 @@ async def test_component_can_return_another_component_directly():
     def Inner():
         return idom.html.div("hello")
 
-    async with idom.Layout(Outer()) as layout:
+    with idom.Layout(Outer()) as layout:
         update = await layout.render()
         assert_same_items(
             update.changes,
@@ -417,7 +420,7 @@ async def test_hooks_for_keyed_components_get_garbage_collected():
             registered_finalizers.add(key)
         return idom.html.div(key)
 
-    async with idom.Layout(Outer()) as layout:
+    with idom.Layout(Outer()) as layout:
         await layout.render()
 
         pop_item.current()
@@ -440,7 +443,7 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
             idom.html.div(key="duplicate"), idom.html.div(key="duplicate")
         )
 
-    async with idom.Layout(ComponentReturnsDuplicateKeys()) as layout:
+    with idom.Layout(ComponentReturnsDuplicateKeys()) as layout:
         await layout.render()
 
     with pytest.raises(ValueError, match=r"Duplicate keys \['duplicate'\] at '/'"):
@@ -461,7 +464,7 @@ async def test_keyed_components_preserve_hook_on_parent_update():
     def Inner(key):
         return idom.html.div(key)
 
-    async with idom.Layout(Outer()) as layout:
+    with idom.Layout(Outer()) as layout:
         await layout.render()
         old_inner_hook = inner_hook.latest
 

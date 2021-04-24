@@ -5,17 +5,7 @@ import asyncio
 from collections import Counter
 from functools import wraps
 from logging import getLogger
-from typing import (
-    Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
-    NamedTuple,
-    Optional,
-    Set,
-    Tuple,
-)
+from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, TypeVar
 from weakref import ref
 
 from jsonpatch import apply_patch, make_patch
@@ -26,7 +16,7 @@ from idom.config import IDOM_DEBUG_MODE, IDOM_FEATURE_INDEX_AS_DEFAULT_KEY
 from .component import AbstractComponent
 from .events import EventHandler
 from .hooks import LifeCycleHook
-from .utils import CannotAccessResource, HasAsyncResources, async_resource, hex_id
+from .utils import hex_id
 from .vdom import validate_vdom
 
 
@@ -57,9 +47,17 @@ class LayoutEvent(NamedTuple):
     """A list of event data passed to the event handler."""
 
 
-class Layout(HasAsyncResources):
+_Self = TypeVar("_Self")
 
-    __slots__ = ["root", "_event_handlers"]
+
+class Layout:
+
+    __slots__ = [
+        "root",
+        "_event_handlers",
+        "_rendering_queue",
+        "_model_state_by_component_id",
+    ]
 
     if not hasattr(abc.ABC, "__weakref__"):  # pragma: no cover
         __slots__.append("__weakref__")
@@ -69,13 +67,31 @@ class Layout(HasAsyncResources):
         if not isinstance(root, AbstractComponent):
             raise TypeError("Expected an AbstractComponent, not %r" % root)
         self.root = root
+
+    def __enter__(self: _Self) -> _Self:
+        # create attributes here to avoid access before entering context manager
         self._event_handlers: Dict[str, EventHandler] = {}
+        self._rendering_queue = _ComponentQueue()
+        self._model_state_by_component_id: Dict[int, _ModelState] = {
+            id(self.root): _ModelState(None, -1, "", LifeCycleHook(self, self.root))
+        }
+        self._rendering_queue.put(self.root)
+        return self
+
+    def __exit__(self, *exc: Any) -> None:
+        root_state = self._model_state_by_component_id[id(self.root)]
+        self._unmount_model_states([root_state])
+
+        # delete attributes here to avoid access after exiting context manager
+        del self._event_handlers
+        del self._rendering_queue
+        del self._model_state_by_component_id
+
+        return None
 
     def update(self, component: "AbstractComponent") -> None:
-        try:
-            self._rendering_queue.put(component)
-        except CannotAccessResource:
-            logger.info(f"Did not update {component} - resources of {self} are closed")
+        self._rendering_queue.put(component)
+        return None
 
     async def dispatch(self, event: LayoutEvent) -> None:
         # It is possible for an element in the frontend to produce an event
@@ -83,6 +99,7 @@ class Layout(HasAsyncResources):
         # events if the element and the handler exist in the backend. Otherwise
         # we just ignore the event.
         handler = self._event_handlers.get(event.target)
+
         if handler is not None:
             await handler(event.data)
         else:
@@ -92,9 +109,7 @@ class Layout(HasAsyncResources):
 
     async def render(self) -> LayoutUpdate:
         while True:
-            component = await self._rendering_queue.get()
-            if id(component) in self._model_state_by_component_id:
-                return self._create_layout_update(component)
+            return self._create_layout_update(await self._rendering_queue.get())
 
     if IDOM_DEBUG_MODE.get():
         # If in debug mode inject a function that ensures all returned updates
@@ -109,20 +124,6 @@ class Layout(HasAsyncResources):
             result = await self._debug_render()
             validate_vdom(self._model_state_by_component_id[id(self.root)].model)
             return result
-
-    @async_resource
-    async def _rendering_queue(self) -> AsyncIterator[_ComponentQueue]:
-        queue = _ComponentQueue()
-        queue.put(self.root)
-        yield queue
-
-    @async_resource
-    async def _model_state_by_component_id(
-        self,
-    ) -> AsyncIterator[Dict[int, _ModelState]]:
-        root_state = _ModelState(None, -1, "", LifeCycleHook(self.root, self))
-        yield {id(self.root): root_state}
-        self._unmount_model_states([root_state])
 
     def _create_layout_update(self, component: AbstractComponent) -> LayoutUpdate:
         old_state = self._model_state_by_component_id[id(component)]
@@ -312,7 +313,7 @@ class Layout(HasAsyncResources):
                 if old_child_state is not None:
                     new_child_state = old_child_state.new(new_state, child)
                 else:
-                    hook = LifeCycleHook(child, self)
+                    hook = LifeCycleHook(self, child)
                     new_child_state = _ModelState(new_state, index, key, hook)
                 self._render_component(old_child_state, new_child_state, child)
             else:
@@ -331,7 +332,7 @@ class Layout(HasAsyncResources):
                 new_children.append(child_state.model)
                 new_state.children_by_key[key] = child_state
             elif child_type is _COMPONENT_TYPE:
-                life_cycle_hook = LifeCycleHook(child, self)
+                life_cycle_hook = LifeCycleHook(self, child)
                 child_state = _ModelState(new_state, index, key, life_cycle_hook)
                 self._render_component(None, child_state, child)
             else:

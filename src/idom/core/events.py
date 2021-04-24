@@ -192,7 +192,7 @@ class EventHandler:
         if self._coro_handlers:
             async with create_task_group() as group:
                 for handler in self._coro_handlers:
-                    await group.spawn(handler, *data)
+                    group.start_soon(handler, *data)
         for handler in self._func_handlers:
             handler(*data)
 
