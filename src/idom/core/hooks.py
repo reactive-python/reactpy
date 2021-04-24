@@ -387,8 +387,8 @@ class LifeCycleHook:
 
     def __init__(
         self,
-        component: AbstractComponent,
         layout: idom.core.layout.Layout,
+        component: AbstractComponent,
     ) -> None:
         self.component = component
         self._layout = weakref.ref(layout)

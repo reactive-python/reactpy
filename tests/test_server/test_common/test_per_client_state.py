@@ -39,7 +39,7 @@ def test_display_simple_hello_world(driver, display):
     assert driver.find_element_by_id("hello")
 
 
-def test_display_simple_click_counter(driver, display):
+def test_display_simple_click_counter(driver, driver_wait, display):
     def increment(count):
         return count + 1
 
@@ -59,7 +59,9 @@ def test_display_simple_click_counter(driver, display):
     client_counter = driver.find_element_by_id("counter")
 
     for i in range(3):
-        assert client_counter.get_attribute("innerHTML") == f"Count: {i}"
+        driver_wait.until(
+            lambda driver: client_counter.get_attribute("innerHTML") == f"Count: {i}"
+        )
         client_counter.click()
 
 

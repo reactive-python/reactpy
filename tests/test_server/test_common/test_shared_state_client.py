@@ -24,16 +24,13 @@ def server_mount_point(request):
 
 
 def test_shared_client_state(create_driver, server_mount_point):
-    driver_1 = create_driver()
-    driver_2 = create_driver()
     was_garbage_collected = Event()
 
     @idom.component
-    def IncrCounter(count=0):
-        count, set_count = idom.hooks.use_state(count)
+    def IncrCounter():
+        count, set_count = idom.hooks.use_state(0)
 
-        @idom.event
-        async def incr_on_click(event):
+        def incr_on_click(event):
             set_count(count + 1)
 
         button = idom.html.button(
@@ -49,6 +46,9 @@ def test_shared_client_state(create_driver, server_mount_point):
         return idom.html.div({"id": f"count-is-{count}"}, count)
 
     server_mount_point.mount(IncrCounter)
+
+    driver_1 = create_driver()
+    driver_2 = create_driver()
 
     driver_1.get(server_mount_point.url())
     driver_2.get(server_mount_point.url())
@@ -68,6 +68,30 @@ def test_shared_client_state(create_driver, server_mount_point):
 
     driver_1.find_element_by_id("count-is-2")
     driver_2.find_element_by_id("count-is-2")
+
+    assert was_garbage_collected.wait(1)
+    was_garbage_collected.clear()
+
+    # Ensure this continues working after a refresh. In the past dispatchers failed to
+    # exit when the connections closed. This was due to an expected error that is raised
+    # when the web socket closes.
+    driver_1.refresh()
+    driver_2.refresh()
+
+    client_1_button = driver_1.find_element_by_id("incr-button")
+    client_2_button = driver_2.find_element_by_id("incr-button")
+
+    client_1_button.click()
+
+    driver_1.find_element_by_id("count-is-3")
+    driver_2.find_element_by_id("count-is-3")
+
+    client_1_button.click()
+
+    driver_1.find_element_by_id("count-is-4")
+    driver_2.find_element_by_id("count-is-4")
+
+    client_2_button.click()
 
     assert was_garbage_collected.wait(1)
 

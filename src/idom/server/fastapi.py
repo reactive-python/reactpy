@@ -1,10 +1,11 @@
+import asyncio
 import json
 import logging
 import sys
 import time
-import uuid
+from asyncio.futures import Future
 from threading import Event, Thread
-from typing import Any, Dict, Optional, Tuple, Type, Union, cast
+from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Union
 
 from fastapi import APIRouter, FastAPI, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,11 +20,10 @@ from uvicorn.supervisors.statreload import StatReload as ChangeReload
 
 from idom.config import IDOM_CLIENT_BUILD_DIR
 from idom.core.dispatcher import (
-    AbstractDispatcher,
     RecvCoroutine,
     SendCoroutine,
-    SharedViewDispatcher,
-    SingleViewDispatcher,
+    dispatch_single_view,
+    ensure_shared_view_dispatcher_future,
 )
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
@@ -45,7 +45,6 @@ class Config(TypedDict, total=False):
 class FastApiRenderServer(AbstractRenderServer[FastAPI, Config]):
     """Base ``sanic`` extension."""
 
-    _dispatcher_type: Type[AbstractDispatcher]
     _server: UvicornServer
 
     def stop(self, timeout: float = 3) -> None:
@@ -163,30 +162,28 @@ class FastApiRenderServer(AbstractRenderServer[FastAPI, Config]):
         # uvicorn does the event loop setup for us
         self._run_application(config, app, host, port, args, kwargs)
 
+
+class PerClientStateServer(FastApiRenderServer):
+    """Each client view will have its own state."""
+
     async def _run_dispatcher(
         self,
         send: SendCoroutine,
         recv: RecvCoroutine,
         params: Dict[str, Any],
     ) -> None:
-        async with self._make_dispatcher(params) as dispatcher:
-            await dispatcher.run(send, recv, None)
-
-    def _make_dispatcher(self, params: Dict[str, Any]) -> AbstractDispatcher:
-        return self._dispatcher_type(Layout(self._root_component_constructor(**params)))
-
-
-class PerClientStateServer(FastApiRenderServer):
-    """Each client view will have its own state."""
-
-    _dispatcher_type = SingleViewDispatcher
+        await dispatch_single_view(
+            Layout(self._root_component_constructor(**params)),
+            send,
+            recv,
+        )
 
 
 class SharedClientStateServer(FastApiRenderServer):
     """All connected client views will have shared state."""
 
-    _dispatcher_type = SharedViewDispatcher
-    _dispatcher: SharedViewDispatcher
+    _dispatch_daemon_future: Future
+    _dispatch_coroutine: Callable[[SendCoroutine, RecvCoroutine], Awaitable[None]]
 
     def _setup_application(self, config: Config, app: FastAPI) -> None:
         app.on_event("startup")(self._activate_dispatcher)
@@ -194,12 +191,17 @@ class SharedClientStateServer(FastApiRenderServer):
         super()._setup_application(config, app)
 
     async def _activate_dispatcher(self) -> None:
-        self._dispatcher = cast(SharedViewDispatcher, self._make_dispatcher({}))
-        await self._dispatcher.start()
+        (
+            self._dispatch_daemon_future,
+            self._dispatch_coroutine,
+        ) = ensure_shared_view_dispatcher_future(
+            Layout(self._root_component_constructor())
+        )
 
     async def _deactivate_dispatcher(self) -> None:  # pragma: no cover
-        # this doesn't seem to get triggered during testing for some reason
-        await self._dispatcher.stop()
+        # for some reason this isn't getting run during testing
+        self._dispatch_daemon_future.cancel(f"{self} is shutting down")
+        await asyncio.wait([self._dispatch_daemon_future])
 
     async def _run_dispatcher(
         self,
@@ -210,7 +212,7 @@ class SharedClientStateServer(FastApiRenderServer):
         if params:
             msg = f"SharedClientState server does not support per-client view parameters {params}"
             raise ValueError(msg)
-        await self._dispatcher.run(send, recv, uuid.uuid4().hex, join=True)
+        await self._dispatch_coroutine(send, recv)
 
 
 def _run_uvicorn_server(server: UvicornServer) -> None:
