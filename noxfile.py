@@ -14,27 +14,11 @@ HERE = Path(__file__).parent
 POSARGS_PATTERN = re.compile(r"^(\w+)\[(.+)\]$")
 
 
-def get_posargs(name: str, session: Session) -> List[str]:
-    """Find named positional arguments
-
-    Positional args of the form `name[arg1,arg2]` will be parsed as ['arg1', 'arg2'] if
-    the given `name` matches. Any args not matching that pattern will be added to the
-    list of args as well. Thus the following:
-
-    --param session_1[arg1,arg2] session_2[arg3,arg4]
-
-    where `name` is session_1 would produce ['--param', 'arg1', 'arg2']
-    """
-    collected_args: List[str] = []
-    for arg in session.posargs:
-        match = POSARGS_PATTERN.match(arg)
-        if match is not None:
-            found_name, found_args = match.groups()
-            if name == found_name:
-                collected_args.extend(map(str.strip, found_args.split(",")))
-        else:
-            collected_args.append(arg)
-    return collected_args
+@nox.session(reuse_venv=True)
+def format(session: Session) -> None:
+    install_requirements_file(session, "check-style")
+    session.run("black", ".")
+    session.run("isort", ".")
 
 
 @nox.session(reuse_venv=True)
@@ -54,7 +38,7 @@ def example(session: Session) -> None:
 @nox.session(reuse_venv=True)
 def docs(session: Session) -> None:
     """Build and display documentation in the browser (automatically reloads on change)"""
-    session.install("-r", "requirements/build-docs.txt")
+    install_requirements_file(session, "build-docs")
     install_idom_dev(session, extras="all")
     session.run(
         "python",
@@ -103,7 +87,7 @@ def test(session: Session) -> None:
 def test_python(session: Session) -> None:
     """Run the Python-based test suite"""
     session.env["IDOM_DEBUG_MODE"] = "1"
-    session.install("-r", "requirements/test-env.txt")
+    install_requirements_file(session, "test-env")
 
     pytest_args = get_posargs("pytest", session)
     if "--no-cov" in pytest_args:
@@ -118,16 +102,16 @@ def test_python(session: Session) -> None:
 @nox.session
 def test_types(session: Session) -> None:
     """Perform a static type analysis of the codebase"""
-    session.install("-r", "requirements/check-types.txt")
-    session.install("-r", "requirements/pkg-deps.txt")
-    session.install("-r", "requirements/pkg-extras.txt")
+    install_requirements_file(session, "check-types")
+    install_requirements_file(session, "pkg-deps")
+    install_requirements_file(session, "pkg-extras")
     session.run("mypy", "--strict", "src/idom")
 
 
 @nox.session
 def test_style(session: Session) -> None:
     """Check that style guidelines are being followed"""
-    session.install("-r", "requirements/check-style.txt")
+    install_requirements_file(session, "check-style")
     session.run("flake8", "src/idom", "tests", "docs")
     black_default_exclude = r"\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist"
     session.run(
@@ -143,7 +127,7 @@ def test_style(session: Session) -> None:
 @nox.session
 def test_docs(session: Session) -> None:
     """Verify that the docs build and that doctests pass"""
-    session.install("-r", "requirements/build-docs.txt")
+    install_requirements_file(session, "build-docs")
     install_idom_dev(session, extras="all")
     session.run("sphinx-build", "-b", "html", "docs/source", "docs/build")
     session.run("sphinx-build", "-b", "doctest", "docs/source", "docs/build")
@@ -179,6 +163,35 @@ def commits_since_last_tag(session: Session) -> None:
         else:
             sha_repr = sha
         print(f"- {msg} - {sha_repr}")
+
+
+def get_posargs(name: str, session: Session) -> List[str]:
+    """Find named positional arguments
+
+    Positional args of the form `name[arg1,arg2]` will be parsed as ['arg1', 'arg2'] if
+    the given `name` matches. Any args not matching that pattern will be added to the
+    list of args as well. Thus the following:
+
+    --param session_1[arg1,arg2] session_2[arg3,arg4]
+
+    where `name` is session_1 would produce ['--param', 'arg1', 'arg2']
+    """
+    collected_args: List[str] = []
+    for arg in session.posargs:
+        match = POSARGS_PATTERN.match(arg)
+        if match is not None:
+            found_name, found_args = match.groups()
+            if name == found_name:
+                collected_args.extend(map(str.strip, found_args.split(",")))
+        else:
+            collected_args.append(arg)
+    return collected_args
+
+
+def install_requirements_file(session: Session, name: str) -> None:
+    file_path = HERE / "requirements" / (name + ".txt")
+    assert file_path.exists(), f"requirements file {file_path} does not exist"
+    session.install("-r", str(file_path))
 
 
 def install_idom_dev(session: Session, extras: str = "stable") -> None:
