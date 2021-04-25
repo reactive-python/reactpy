@@ -40,12 +40,16 @@ whose body contains a hook usage. We'll demonstrate that with a simple
     import idom
 
 
+    def use_counter():
+        count, set_count = idom.hooks.use_state(0)
+        return count, lambda: set_count(lambda old_count: old_count + 1)
+
+
     @idom.component
     def ClickCount():
-        count, set_count = idom.hooks.use_state(0)
-
+        count, increment_count = use_counter()
         return idom.html.button(
-            {"onClick": lambda event: set_count(count + 1)},
+            {"onClick": lambda event: increment_count()},
             [f"Click count: {count}"],
         )
 
@@ -79,14 +83,16 @@ which we can re-render and see what changed:
 
     static_handler = StaticEventHandler()
 
+
     @idom.component
     def ClickCount():
-        count, set_count = idom.hooks.use_state(0)
+        count, increment_count = use_counter()
 
         # we do this in order to capture the event handler's target ID
-        handler = static_handler.use(lambda event: set_count(count + 1))
+        handler = static_handler.use(lambda event: increment_count())
 
         return idom.html.button({"onClick": handler}, [f"Click count: {count}"])
+
 
     with idom.Layout(ClickCount()) as layout:
         patch_1 = await layout.render()
@@ -124,27 +130,28 @@ callback that's called by the dispatcher to collect events it should execute.
     import asyncio
 
     from idom.core.layout import LayoutEvent
-    from idom.core.dispatch import dispatch_single_view
+    from idom.core.dispatcher import dispatch_single_view
 
 
     sent_patches = []
 
+    # We need this to simulate a scenario in which events ariving *after* each update
+    # has been sent to the client. Otherwise the events would all arive at once and we
+    # would observe one large update rather than many discrete updates.
+    sempahore = asyncio.Semaphore(0)
+
 
     async def send(patch):
         sent_patches.append(patch)
+        sempahore.release()
         if len(sent_patches) == 5:
             # if we didn't cancel the dispatcher would continue forever
             raise asyncio.CancelledError()
 
 
     async def recv():
+        await sempahore.acquire()
         event = LayoutEvent(target=static_handler.target, data=[{}])
-
-        # We need this so we don't flood the render loop with events.
-        # In practice this is never an issue since events won't arrive
-        # as quickly as in this example.
-        await asyncio.sleep(0)
-
         return event
 
 
