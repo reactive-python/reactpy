@@ -1,7 +1,7 @@
 import asyncio
 import json
 from threading import Event
-from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from mypy_extensions import TypedDict
 from sanic import Blueprint, Sanic, request, response
@@ -108,6 +108,11 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
                         f"{blueprint.url_prefix}/client/index.html?{request.query_string}"
                     )
 
+    async def _run_dispatcher(
+        self, send: SendCoroutine, recv: RecvCoroutine, params: Dict[str, Any]
+    ) -> None:
+        raise NotImplementedError()
+
     def _run_application(
         self,
         config: Config,
@@ -181,9 +186,6 @@ class PerClientStateServer(SanicRenderServer):
 
 class SharedClientStateServer(SanicRenderServer):
     """All connected client views will have shared state."""
-
-    _dispatch_daemon_future: asyncio.Future
-    _dispatch_coroutine: Callable[[SendCoroutine, RecvCoroutine], Awaitable[None]]
 
     def _setup_application(self, config: Config, app: Sanic) -> None:
         app.register_listener(self._activate_dispatcher, "before_server_start")

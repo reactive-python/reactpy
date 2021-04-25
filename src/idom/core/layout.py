@@ -47,7 +47,7 @@ class LayoutEvent(NamedTuple):
     """A list of event data passed to the event handler."""
 
 
-_Self = TypeVar("_Self")
+_Self = TypeVar("_Self", bound="Layout")
 
 
 class Layout:

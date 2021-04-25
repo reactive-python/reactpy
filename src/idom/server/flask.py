@@ -19,7 +19,7 @@ from typing_extensions import TypedDict
 import idom
 from idom.config import IDOM_CLIENT_BUILD_DIR
 from idom.core.component import AbstractComponent
-from idom.core.dispatcher import RecvCoroutine, SendCoroutine, dispatch_single_view
+from idom.core.dispatcher import dispatch_single_view
 from idom.core.layout import LayoutEvent, LayoutUpdate
 
 from .base import AbstractRenderServer
@@ -171,8 +171,11 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
         self._wsgi_server.serve_forever()
 
     def _run_dispatcher(
-        self, query_params: Dict[str, Any], send: SendCoroutine, recv: RecvCoroutine
-    ):
+        self,
+        query_params: Dict[str, Any],
+        send: Callable[[Any], None],
+        recv: Callable[[], Optional[LayoutEvent]],
+    ) -> None:
         raise NotImplementedError()
 
 
@@ -180,15 +183,20 @@ class PerClientStateServer(FlaskRenderServer):
     """Each client view will have its own state."""
 
     def _run_dispatcher(
-        self, query_params: Dict[str, Any], send: SendCoroutine, recv: RecvCoroutine
-    ):
+        self,
+        query_params: Dict[str, Any],
+        send: Callable[[Any], None],
+        recv: Callable[[], Optional[LayoutEvent]],
+    ) -> None:
         dispatch_single_view_in_thread(
             self._root_component_constructor(**query_params), send, recv
         )
 
 
 def dispatch_single_view_in_thread(
-    component: AbstractComponent, send: SendCoroutine, recv: RecvCoroutine
+    component: AbstractComponent,
+    send: Callable[[Any], None],
+    recv: Callable[[], Optional[LayoutEvent]],
 ) -> None:
     dispatch_thread_info_created = ThreadEvent()
     dispatch_thread_info_ref: idom.Ref[Optional[_DispatcherThreadInfo]] = idom.Ref(None)

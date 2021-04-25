@@ -37,13 +37,14 @@ async def dispatch_single_view(
             task_group.start_soon(_single_incoming_loop, layout, recv)
 
 
-_SharedDispatchFuture = Callable[[SendCoroutine, RecvCoroutine], Future]
+_SharedViewDispatcherFuture = Callable[[SendCoroutine, RecvCoroutine], Future[None]]
+_SharedViewDispatcherCoro = Callable[[SendCoroutine, RecvCoroutine], Awaitable[None]]
 
 
 @asynccontextmanager
 async def create_shared_view_dispatcher(
     layout: Layout, run_forever: bool = False
-) -> AsyncIterator[_SharedDispatchFuture]:
+) -> AsyncIterator[_SharedViewDispatcherFuture]:
     with layout:
         (
             dispatch_shared_view,
@@ -51,11 +52,11 @@ async def create_shared_view_dispatcher(
             all_update_queues,
         ) = await _make_shared_view_dispatcher(layout)
 
-        dispatch_tasks: List[Future] = []
+        dispatch_tasks: List[Future[None]] = []
 
         def dispatch_shared_view_soon(
             send: SendCoroutine, recv: RecvCoroutine
-        ) -> Future:
+        ) -> Future[None]:
             future = ensure_future(dispatch_shared_view(send, recv))
             dispatch_tasks.append(future)
             return future
@@ -87,10 +88,10 @@ async def create_shared_view_dispatcher(
 
 def ensure_shared_view_dispatcher_future(
     layout: Layout,
-) -> Tuple[Future, _SharedDispatchFuture]:
-    dispatcher_future = Future()
+) -> Tuple[Future[None], _SharedViewDispatcherCoro]:
+    dispatcher_future: Future[_SharedViewDispatcherCoro] = Future()
 
-    async def dispatch_shared_view_forever():
+    async def dispatch_shared_view_forever() -> None:
         with layout:
             (
                 dispatch_shared_view,
@@ -113,12 +114,9 @@ def ensure_shared_view_dispatcher_future(
     return ensure_future(dispatch_shared_view_forever()), dispatch
 
 
-_SharedDispatchCoroutine = Callable[[SendCoroutine, RecvCoroutine], Awaitable[None]]
-
-
 async def _make_shared_view_dispatcher(
     layout: Layout,
-) -> Tuple[_SharedDispatchCoroutine, Ref[Any], WeakSet[Queue[LayoutUpdate]]]:
+) -> Tuple[_SharedViewDispatcherCoro, Ref[Any], WeakSet[Queue[LayoutUpdate]]]:
     initial_update = await layout.render()
     model_state = Ref(initial_update.apply_to({}))
 
@@ -158,7 +156,7 @@ async def _shared_outgoing_loop(
 
 async def _wait_until_first_complete(
     *tasks: Awaitable[Any],
-) -> Sequence[Future]:
+) -> Sequence[Future[Any]]:
     futures = [ensure_future(t) for t in tasks]
     await wait(futures, return_when=FIRST_COMPLETED)
     return futures

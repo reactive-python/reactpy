@@ -129,8 +129,8 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
 class PerClientStateModelStreamHandler(WebSocketHandler):
     """A web-socket handler that serves up a new model stream to each new client"""
 
-    _dispatch_future: Future
-    _message_queue: "AsyncQueue[str]"
+    _dispatch_future: Future[None]
+    _message_queue: AsyncQueue[str]
 
     def initialize(self, component_constructor: ComponentConstructor) -> None:
         self._component_constructor = component_constructor
