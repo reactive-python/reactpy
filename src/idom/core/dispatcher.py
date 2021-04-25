@@ -37,7 +37,7 @@ async def dispatch_single_view(
             task_group.start_soon(_single_incoming_loop, layout, recv)
 
 
-_SharedViewDispatcherFuture = Callable[[SendCoroutine, RecvCoroutine], Future[None]]
+_SharedViewDispatcherFuture = Callable[[SendCoroutine, RecvCoroutine], "Future[None]"]
 _SharedViewDispatcherCoro = Callable[[SendCoroutine, RecvCoroutine], Awaitable[None]]
 
 
