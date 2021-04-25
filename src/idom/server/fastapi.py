@@ -3,9 +3,8 @@ import json
 import logging
 import sys
 import time
-from asyncio.futures import Future
 from threading import Event, Thread
-from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from fastapi import APIRouter, FastAPI, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
@@ -162,6 +161,11 @@ class FastApiRenderServer(AbstractRenderServer[FastAPI, Config]):
         # uvicorn does the event loop setup for us
         self._run_application(config, app, host, port, args, kwargs)
 
+    async def _run_dispatcher(
+        self, send: SendCoroutine, recv: RecvCoroutine, params: Dict[str, Any]
+    ) -> None:
+        raise NotImplementedError()
+
 
 class PerClientStateServer(FastApiRenderServer):
     """Each client view will have its own state."""
@@ -181,9 +185,6 @@ class PerClientStateServer(FastApiRenderServer):
 
 class SharedClientStateServer(FastApiRenderServer):
     """All connected client views will have shared state."""
-
-    _dispatch_daemon_future: Future
-    _dispatch_coroutine: Callable[[SendCoroutine, RecvCoroutine], Awaitable[None]]
 
     def _setup_application(self, config: Config, app: FastAPI) -> None:
         app.on_event("startup")(self._activate_dispatcher)
