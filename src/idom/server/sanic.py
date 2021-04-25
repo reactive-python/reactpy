@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from threading import Event
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -18,6 +19,9 @@ from idom.core.dispatcher import (
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
 from .base import AbstractRenderServer
+
+
+logger = logging.getLogger(__name__)
 
 
 class Config(TypedDict, total=False):
@@ -205,7 +209,8 @@ class SharedClientStateServer(SanicRenderServer):
     async def _deactivate_dispatcher(
         self, app: Sanic, loop: asyncio.AbstractEventLoop
     ) -> None:
-        self._dispatch_daemon_future.cancel(f"{self} is shutting down")
+        logger.debug("Stopping dispatcher - server is shutting down")
+        self._dispatch_daemon_future.cancel()
         await asyncio.wait([self._dispatch_daemon_future])
 
     async def _run_dispatcher(

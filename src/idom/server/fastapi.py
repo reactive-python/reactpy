@@ -201,7 +201,8 @@ class SharedClientStateServer(FastApiRenderServer):
 
     async def _deactivate_dispatcher(self) -> None:  # pragma: no cover
         # for some reason this isn't getting run during testing
-        self._dispatch_daemon_future.cancel(f"{self} is shutting down")
+        logger.debug("Stopping dispatcher - server is shutting down")
+        self._dispatch_daemon_future.cancel()
         await asyncio.wait([self._dispatch_daemon_future])
 
     async def _run_dispatcher(
