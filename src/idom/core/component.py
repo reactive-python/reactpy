@@ -1,3 +1,8 @@
+"""
+Component
+=========
+"""
+
 from __future__ import annotations
 
 import abc
@@ -17,8 +22,7 @@ def component(function: ComponentRenderFunction) -> Callable[..., "Component"]:
     """A decorator for defining an :class:`Component`.
 
     Parameters:
-        function:
-            The function that will render a :ref:`VDOM <VDOM Mimetype>` model.
+        function: The function that will render a :class:`VdomDict`.
     """
 
     @wraps(function)
@@ -38,7 +42,7 @@ class AbstractComponent(abc.ABC):
 
     @abc.abstractmethod
     def render(self) -> VdomDict:
-        """Render the component's :ref:`VDOM <VDOM Mimetype>` model."""
+        """Render the component's :class:`VdomDict`."""
 
 
 class Component(AbstractComponent):

@@ -1,3 +1,8 @@
+"""
+Logging
+=======
+"""
+
 import logging
 import sys
 from logging.config import dictConfig
@@ -10,6 +15,7 @@ root_logger = logging.getLogger("idom")
 
 
 def logging_config_defaults() -> Any:
+    """Get default logging configuration"""
     return {
         "version": 1,
         "disable_existing_loggers": False,

@@ -1,3 +1,8 @@
+"""
+HTML Language Extension
+=======================
+"""
+
 import ast
 from typing import Any, List, Optional, Tuple, Union
 

@@ -53,11 +53,14 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.extlinks",
     "sphinx.ext.autosectionlabel",
+    # third party extensions
     "sphinx_autodoc_typehints",
     "sphinx_panels",
     "sphinx_copybutton",
+    "sphinx_reredirects",
     # custom extensions
     "async_doctest",
+    "autogen_api_docs",
     "copy_vdom_json_schema",
     "interactive_widget",
     "patched_html_translator",
@@ -112,6 +115,13 @@ autodoc_default_options = {
 }
 # order autodoc members by their order in the source
 autodoc_member_order = "bysource"
+
+# -- sphinx_reredirects --
+
+redirects = {
+    "package-api": "api-reference.html",
+    "configuration-options": "api-reference.html#configuration-options",
+}
 
 # -- Options for HTML output -------------------------------------------------
 

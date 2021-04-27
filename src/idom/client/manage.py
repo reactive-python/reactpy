@@ -1,3 +1,8 @@
+"""
+Client Manager
+==============
+"""
+
 import shutil
 import subprocess
 from logging import getLogger
@@ -49,6 +54,7 @@ def web_module_exists(package_name: str) -> bool:
 
 
 def web_module_names() -> Set[str]:
+    """Get the names of all installed web modules"""
     names = []
     web_mod_dir = _private.web_modules_dir()
     for pth in web_mod_dir.glob("**/*.js"):
@@ -63,6 +69,7 @@ def web_module_names() -> Set[str]:
 
 
 def add_web_module(package_name: str, source: Union[Path, str]) -> str:
+    """Add a web module from source"""
     source = Path(source)
     if not source.exists():
         raise FileNotFoundError(f"Package source file does not exist: {str(source)!r}")
@@ -81,6 +88,7 @@ def build(
     clean_build: bool = True,
     skip_if_already_installed: bool = True,
 ) -> None:
+    """Build the client"""
     package_specifiers_to_install = list(packages)
     del packages  # delete since we just renamed it
 

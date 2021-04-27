@@ -1,3 +1,8 @@
+"""
+VDOM Constructors
+=================
+"""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
@@ -63,9 +68,16 @@ VDOM_JSON_SCHEMA = {
         },
     },
 }
+"""JSON Schema describing serialized VDOM - see :ref:`VDOM Mimetype` for more info"""
 
 
-validate_vdom = compile_json_schema(VDOM_JSON_SCHEMA)
+# we can't add a docstring to this because Sphinx doesn't know how to find its source
+_COMPILED_VDOM_VALIDATOR = compile_json_schema(VDOM_JSON_SCHEMA)
+
+
+def validate_vdom(value: Any) -> None:
+    """Validate serialized VDOM - see :attr:`VDOM_JSON_SCHEMA` for more info"""
+    _COMPILED_VDOM_VALIDATOR(value)
 
 
 class ImportSourceDict(TypedDict):
