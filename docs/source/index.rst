@@ -10,7 +10,7 @@ Libraries for defining and controlling interactive webpages with Python
     installation
     getting-started
     life-cycle-hooks
-    package-api
+    api-reference
     examples
 
 .. toctree::
@@ -20,7 +20,6 @@ Libraries for defining and controlling interactive webpages with Python
     core-concepts
     javascript-components
     command-line
-    configuration-options
     specifications
 
 .. toctree::
@@ -29,6 +28,7 @@ Libraries for defining and controlling interactive webpages with Python
 
     contributing
     developer-guide
+    developer-apis
     changelog
     roadmap
 

@@ -1,3 +1,7 @@
+"""
+Events
+"""
+
 import asyncio
 from typing import (
     Any,

@@ -53,7 +53,6 @@ __all__ = [
     "Import",
     "hotswap",
     "multiview",
-    "JupyterDisplay",
     "html_to_vdom",
     "VdomDict",
     "widgets",

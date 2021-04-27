@@ -1,3 +1,8 @@
+"""
+Widget Tools
+============
+"""
+
 from typing import Any, Callable, Dict, Set, Tuple, TypeVar
 
 from idom.core import hooks

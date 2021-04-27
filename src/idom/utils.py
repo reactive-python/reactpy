@@ -1,3 +1,8 @@
+"""
+General Utilities
+=================
+"""
+
 from html.parser import HTMLParser as _HTMLParser
 from typing import Any, Callable, Dict, Generic, List, Optional, Tuple, TypeVar
 
@@ -78,14 +83,19 @@ def html_to_vdom(source: str, *transforms: _ModelTransform) -> Dict[str, Any]:
 
 
 class HtmlParser(_HTMLParser):
+    """HTML to VDOM parser"""
+
     def model(self) -> Dict[str, Any]:
+        """Get the current state of parsed VDOM model"""
         return self._node_stack[0]
 
     def feed(self, data: str) -> None:
+        """Feed in HTML that will update the :meth:`HtmlParser.model`"""
         self._node_stack.append(self._make_vdom("div", {}))
         super().feed(data)
 
     def reset(self) -> None:
+        """Reset the state of the parser"""
         self._node_stack: List[Dict[str, Any]] = []
         super().reset()
 
