@@ -169,6 +169,13 @@ then be sure to ask, either in the
 `Community Forum <https://github.com/idom-team/idom/discussions>`__ or in your
 :ref:`Pull Request <Making a Pull Request>`.
 
+.. note::
+
+    You can manually run ``nox -s format`` to auto format your code without having to
+    do so via ``pre-commit``. However, many IDEs have integrations for automatically
+    formatting upon saving a file
+    (e.g.`VSCode <https://code.visualstudio.com/docs/python/editing#_formatting>`__)
+
 
 Building The Documentation
 --------------------------
