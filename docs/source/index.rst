@@ -10,7 +10,7 @@ Libraries for defining and controlling interactive webpages with Python
     installation
     getting-started
     life-cycle-hooks
-    api-reference
+    auto/api-reference
     examples
 
 .. toctree::
@@ -28,7 +28,7 @@ Libraries for defining and controlling interactive webpages with Python
 
     contributing
     developer-guide
-    developer-apis
+    auto/developer-apis
     changelog
     roadmap
 

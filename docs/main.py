@@ -1,5 +1,6 @@
 import os
 import sys
+from functools import partial
 from pathlib import Path
 
 from sanic import Sanic, response
@@ -43,7 +44,7 @@ try:
 
         # Modify the run function so when we exec the file
         # instead of running a server we mount the view.
-        idom.run = mount[file.stem]
+        idom.run = partial(mount.add, file.stem)
 
         with file.open() as f:
             try:
