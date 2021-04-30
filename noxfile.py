@@ -44,7 +44,8 @@ def docs(session: Session) -> None:
         "python",
         "scripts/live_docs.py",
         "--open-browser",
-        "--ignore=build/**/*",
+        # for some reason this matches absolute paths
+        "--ignore=**/docs/source/auto/*",
         "-a",
         "-E",
         "-b",
@@ -198,3 +199,5 @@ def install_idom_dev(session: Session, extras: str = "stable") -> None:
     session.install("-e", f".[{extras}]")
     if "--no-restore" not in session.posargs:
         session.run("idom", "restore")
+    else:
+        session.posargs.remove("--no-restore")

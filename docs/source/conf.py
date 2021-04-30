@@ -54,7 +54,6 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.autosectionlabel",
     # third party extensions
-    "sphinx_autodoc_typehints",
     "sphinx_panels",
     "sphinx_copybutton",
     "sphinx_reredirects",
@@ -97,6 +96,9 @@ pygments_style = None
 # The default language to highlight source code in.
 highlight_language = "python3"
 
+# Controls how sphinx.ext.autodoc represents typehints in the function signature
+autodoc_typehints = "description"
+
 # -- Extension Configuration ------------------------------------------------------
 
 # -- sphinx_panel --
@@ -110,7 +112,6 @@ panels_add_boostrap_css = False
 # show base classes for autodoc
 autodoc_default_options = {
     "show-inheritance": True,
-    "inherited-members": True,
     "member-order": "bysource",
 }
 # order autodoc members by their order in the source
@@ -119,8 +120,8 @@ autodoc_member_order = "bysource"
 # -- sphinx_reredirects --
 
 redirects = {
-    "package-api": "api-reference.html",
-    "configuration-options": "api-reference.html#configuration-options",
+    "package-api": "auto/api-reference.html",
+    "configuration-options": "auto/api-reference.html#configuration-options",
 }
 
 # -- Options for HTML output -------------------------------------------------
