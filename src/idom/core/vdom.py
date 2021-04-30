@@ -114,14 +114,15 @@ def vdom(
     import_source: _ImportSourceArg = None,
 ) -> VdomDict:
     """A helper function for creating VDOM dictionaries.
+
     Parameters:
         tag:
             The type of element (e.g. 'div', 'h1', 'img')
         attributes_and_children:
-            Attribute mappings followed by iterables of children for the element.
-            The attributes **must** precede the children, though you may pass multiple
-            sets of attributes, or children which will be merged into their respective
-            parts of the model.
+            Attribute mappings followed by iterables of children for the element. The
+            attributes **must** precede the children, though you may pass multiple sets
+            of attributes, or children which will be merged into their respective parts
+            of the model.
         key:
             A string idicating the identity of a particular element. This is significant
             to preserve event handlers across updates - without a key, a re-render would
@@ -167,6 +168,7 @@ class VdomDictConstructor(Protocol):
 
 def make_vdom_constructor(tag: str, allow_children: bool = True) -> VdomDictConstructor:
     """Return a constructor for VDOM dictionaries with the given tag name.
+
     The resulting callable will have the same interface as :func:`vdom` but without its
     first ``tag`` argument.
     """

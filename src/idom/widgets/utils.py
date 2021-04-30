@@ -2,8 +2,9 @@
 Widget Tools
 ============
 """
+from __future__ import annotations
 
-from typing import Any, Callable, Dict, Set, Tuple, TypeVar
+from typing import Any, Callable, Dict, Optional, Set, Tuple, TypeVar
 
 from idom.core import hooks
 from idom.core.component import ComponentConstructor, component
@@ -97,15 +98,12 @@ def _use_callable(initial_func: _FuncVar) -> Tuple[_FuncVar, Callable[[_Func], N
     return state[0], lambda new: state[1](lambda old: new)
 
 
-def multiview() -> Tuple["MultiViewMount", ComponentConstructor]:
+def multiview() -> Tuple[MultiViewMount, ComponentConstructor]:
     """Dynamically add components to a layout on the fly
 
     Since you can't change the component functions used to create a layout
     in an imperative manner, you can use ``multiview`` to do this so
     long as you set things up ahead of time.
-
-    Returns:
-        A function for adding views and the root of the dynamic view
 
     Examples:
 
@@ -113,14 +111,23 @@ def multiview() -> Tuple["MultiViewMount", ComponentConstructor]:
 
             import idom
 
-            define, root = idom.widgets.multiview()
+            mount, multiview = idom.widgets.multiview()
 
-            @component
-            def Hello(self, phrase):
-                return idom.html.h1(["hello " + phrase])
+            @idom.component
+            def Hello():
+                return idom.html.h1(["hello"])
 
-            add_hello = define(Hello)
-            hello_world_view_id = add_hello("world")
+            # auto static view ID
+            mount.add("hello", Hello)
+            # use the view ID to create the associate component instance
+            hello_component_instance = multiview("hello")
+
+            @idom.component
+            def World():
+                return idom.html.h1(["world"])
+
+            generated_view_id = mount.add(None, World)
+            world_component_instance = multiview(generated_view_id)
 
         Displaying ``root`` with the parameter ``view_id=hello_world_view_id`` will show
         the message 'hello world'. Usually though this is achieved by connecting to the
@@ -141,6 +148,7 @@ def multiview() -> Tuple["MultiViewMount", ComponentConstructor]:
 
 
 class MultiViewMount:
+    """Mount point for :func:`multiview`"""
 
     __slots__ = "_next_auto_id", "_views"
 
@@ -148,21 +156,29 @@ class MultiViewMount:
         self._next_auto_id = 0
         self._views = views
 
-    def remove(self, view_id: str) -> None:
-        del self._views[view_id]
+    def add(self, view_id: Optional[str], constructor: ComponentConstructor) -> str:
+        """Add a component constructor
 
-    def __getitem__(self, view_id: str) -> Callable[[ComponentConstructor], str]:
-        def mount(constructor: ComponentConstructor) -> str:
-            self._views[view_id] = constructor
-            return view_id
+        Parameters:
+            view_id:
+                The view ID the constructor will be associated with. If ``None`` then
+                a view ID will be automatically generated.
+            constructor:
+                The component constructor to be mounted. It must accept no arguments.
 
-        return mount
-
-    def __call__(self, constructor: ComponentConstructor) -> str:
-        self._next_auto_id += 1
-        view_id = str(self._next_auto_id)
+        Returns:
+            The view ID that was assocaited with the component - most useful for
+            auto-generated view IDs
+        """
+        if view_id is None:
+            self._next_auto_id += 1
+            view_id = str(self._next_auto_id)
         self._views[view_id] = constructor
         return view_id
+
+    def remove(self, view_id: str) -> None:
+        """Remove a mounted component constructor given its view ID"""
+        del self._views[view_id]
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._views})"
