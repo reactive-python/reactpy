@@ -1,6 +1,26 @@
 Changelog
 =========
 
+0.25.0
+------
+
+Completely refactors :ref:`Layout Dispatchers <Layout Dispatcher>` by switching from a
+class-based approach to one that leverages pure functions. While the logic itself isn't
+any simpler, it was easier to implement, and now hopefully understand, correctly. This
+conversion was motivated by several bugs that had cropped up related to improper usage
+of ``anyio``.
+
+**Issues Fixed:**
+
+- :issue:`330`
+- :issue:`298`
+
+**Highlighted Commits:**
+
+- improve docs + simplify multiview - :commit:`4129b60`
+- require anyio>=3.0 - :commit:`24aed28`
+- refactor dispatchers - :commit:`ce8e060`
+
 0.24.0
 ------
 
@@ -17,6 +37,8 @@ with respect to its siblings in the layout. The
 :attr:`~idom.config.IDOM_FEATURE_INDEX_AS_DEFAULT_KEY` feature flag has been introduced
 to allow users to enable this behavior early.
 
+**Highlighted Commits:**
+
 - add feature flag for default key behavior - :commit:`42ee01c`
 - use unique object instead of index as default key - :commit:`5727ab4`
 - make HookCatcher/StaticEventHandlers testing utils - :commit:`1abfd76`
@@ -32,10 +54,14 @@ to allow users to enable this behavior early.
 0.23.1
 ------
 
+**Highlighted Commits:**
+
 - fix non-deterministic return order in install() - :commit:`494d5c2`
 
 0.23.0
 ------
+
+**Highlighted Commits:**
 
 - add changelog to docs - :commit:`9cbfe94`
 - automatically reconnect to server - :commit:`3477e2b`
