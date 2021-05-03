@@ -30,7 +30,7 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ComponentConstructor]:
             import idom
 
             show, root = idom.hotswap()
-            PerClientState(root).daemon("localhost", 8765)
+            PerClientStateServer(root).run_in_thread("localhost", 8765)
 
             @idom.component
             def DivOne(self):
