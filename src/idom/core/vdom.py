@@ -5,7 +5,7 @@ VDOM Constructors
 
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
 from fastjsonschema import compile as compile_json_schema
 from mypy_extensions import TypedDict
@@ -119,10 +119,9 @@ def vdom(
         tag:
             The type of element (e.g. 'div', 'h1', 'img')
         attributes_and_children:
-            Attribute mappings followed by iterables of children for the element. The
-            attributes **must** precede the children, though you may pass multiple sets
-            of attributes, or children which will be merged into their respective parts
-            of the model.
+            An optional attribute mapping followed by any number of children or
+            iterables of children. The attribute mapping **must** precede the children,
+            or children which will be merged into their respective parts of the model.
         key:
             A string idicating the identity of a particular element. This is significant
             to preserve event handlers across updates - without a key, a re-render would
@@ -201,26 +200,22 @@ def make_vdom_constructor(tag: str, allow_children: bool = True) -> VdomDictCons
 
 
 def coalesce_attributes_and_children(
-    attributes_and_children: _AttributesAndChildrenArg,
-) -> Tuple[Dict[str, Any], List[Any]]:
-    attributes: Dict[str, Any] = {}
-    children: List[Any] = []
+    values: Sequence[Any],
+) -> Tuple[Mapping[str, Any], List[Any]]:
+    if not values:
+        return {}, []
 
-    began_children = False
-    for argument in attributes_and_children:
-        if isinstance(argument, Mapping):
-            if "tagName" not in argument:
-                if began_children:
-                    raise ValueError("Attribute dictionaries should precede children.")
-                attributes.update(argument)
-            else:
-                children.append(argument)
-                began_children = True
-        elif not isinstance(argument, str) and isinstance(argument, Iterable):
-            children.extend(argument)
-            began_children = True
+    children_or_iterables: Sequence[Any]
+    attributes, *children_or_iterables = values
+    if not isinstance(attributes, Mapping) or "tagName" in attributes:
+        attributes = {}
+        children_or_iterables = values
+
+    children: List[Any] = []
+    for child in children_or_iterables:
+        if isinstance(child, (str, Mapping)) or not hasattr(child, "__iter__"):
+            children.append(child)
         else:
-            children.append(argument)
-            began_children = True
+            children.extend(child)
 
     return attributes, children
