@@ -41,8 +41,9 @@ def run(
         server_config:
             Options passed to configure the server.
         run_kwargs:
-            Keyword arguments passed to the :meth:`~AbstractRenderServer.daemon`
-            or :meth:`~AbstractRenderServer.run` method of the server
+            Keyword arguments passed to the :meth:`AbstractRenderServer.run`
+            or :meth:`AbstractRenderServer.run_in_thread` methods of the server
+            depending on whether ``daemon`` is set or not.
         app:
             Register the server to an existing application and run that.
         daemon:
@@ -64,7 +65,7 @@ def run(
     if app is not None:  # pragma: no cover
         server.register(app)
 
-    run_server = server.run if not daemon else server.daemon
+    run_server = server.run if not daemon else server.run_in_thread
     run_server(host, port, **(run_kwargs or {}))  # type: ignore
 
     return server
@@ -89,7 +90,7 @@ def multiview_server(
         host: The server hostname
         port: The server port number
         server_config: Value passed to :meth:`AbstractRenderServer.configure`
-        run_kwargs: Keyword args passed to :meth:`AbstractRenderServer.daemon`
+        run_kwargs: Keyword args passed to :meth:`AbstractRenderServer.run_in_thread`
         app: Optionally provide a prexisting application to register to
 
     Returns:
@@ -132,7 +133,7 @@ def hotswap_server(
         host: The server hostname
         port: The server port number
         server_config: Value passed to :meth:`AbstractRenderServer.configure`
-        run_kwargs: Keyword args passed to :meth:`AbstractRenderServer.daemon`
+        run_kwargs: Keyword args passed to :meth:`AbstractRenderServer.run_in_thread`
         app: Optionally provide a prexisting application to register to
         sync_views: Whether to update all displays with newly mounted components
 

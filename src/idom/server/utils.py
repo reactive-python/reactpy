@@ -4,12 +4,18 @@ from socket import socket
 from typing import Any, List, Type
 
 
+_SUPPORTED_PACKAGES = [
+    "sanic",
+    "fastapi",
+    "flask",
+    "tornado",
+]
+
+
 def find_builtin_server_type(type_name: str) -> Type[Any]:
     """Find first installed server implementation"""
-    supported_packages = ["sanic", "flask", "tornado"]
-
     installed_builtins: List[str] = []
-    for name in supported_packages:
+    for name in _SUPPORTED_PACKAGES:
         try:
             import_module(name)
         except ImportError:  # pragma: no cover
@@ -24,7 +30,7 @@ def find_builtin_server_type(type_name: str) -> Type[Any]:
     else:  # pragma: no cover
         if not installed_builtins:
             raise RuntimeError(
-                f"Found none of the following builtin server implementations {supported_packages}"
+                f"Found none of the following builtin server implementations {_SUPPORTED_PACKAGES}"
             )
         else:
             raise ImportError(

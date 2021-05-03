@@ -18,9 +18,9 @@ class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
     standalone and as an extension to an existing application.
 
     Standalone usage:
-        :meth:`AbstractServerExtension.run` or :meth:`AbstractServerExtension.daemon`
+        :meth:`~AbstractServerExtension.run` or :meth:`~AbstractServerExtension.run_in_thread`
     Register an extension:
-        :meth:`AbstractServerExtension.register`
+        :meth:`~AbstractServerExtension.register`
     """
 
     def __init__(
@@ -54,7 +54,7 @@ class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
                 self._config, app, host, port, args, kwargs
             )
 
-    def daemon(self, *args: Any, **kwargs: Any) -> Thread:
+    def run_in_thread(self, *args: Any, **kwargs: Any) -> Thread:
         """Run the standalone application in a seperate thread."""
         self._daemon_thread = thread = Thread(
             target=lambda: self.run(*args, **kwargs), daemon=True
@@ -67,6 +67,8 @@ class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
 
     def register(self: _Self, app: Optional[_App]) -> _Self:
         """Register this as an extension."""
+        if self._app is not None:
+            raise RuntimeError(f"Already registered {self._app}")
         self._setup_application(self._config, app)
         self._setup_application_did_start_event(
             self._config, app, self._server_did_start
@@ -84,10 +86,12 @@ class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
     @abc.abstractmethod
     def stop(self) -> None:
         """Stop a currently running application"""
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def _create_config(self, config: Optional[_Config]) -> _Config:
         """Return the default configuration options."""
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def _default_application(self, config: _Config) -> _App:
