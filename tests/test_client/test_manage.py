@@ -1,5 +1,6 @@
 import pytest
 
+import idom
 from idom.client.manage import (
     add_web_module,
     build,
@@ -10,6 +11,11 @@ from idom.client.manage import (
     web_module_url,
 )
 from tests.general_utils import assert_same_items
+
+
+@pytest.fixture(scope="module")
+def victory():
+    return idom.install("victory@35.4.0")
 
 
 def test_clean_build():

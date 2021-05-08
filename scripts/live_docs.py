@@ -28,7 +28,7 @@ def wrap_builder(old_builder):
         [s.stop() for s in _running_idom_servers]
 
         # we need to set this before `docs.main` does
-        IDOM_CLIENT_IMPORT_SOURCE_URL.set(
+        IDOM_CLIENT_IMPORT_SOURCE_URL.current = (
             f"http://{example_server_host}{IDOM_CLIENT_IMPORT_SOURCE_URL.default}"
         )
 

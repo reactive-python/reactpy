@@ -58,6 +58,7 @@ VDOM_JSON_SCHEMA = {
                     "if": {"not": {"type": "null"}},
                     "then": {"$ref": "#/definitions/elementOrString"},
                 },
+                "hasMount": {"type": "boolean"},
             },
             "required": ["source"],
         },
@@ -83,6 +84,7 @@ def validate_vdom(value: Any) -> None:
 class ImportSourceDict(TypedDict):
     source: str
     fallback: Any
+    hasMount: bool  # noqa
 
 
 class _VdomDictOptional(TypedDict, total=False):

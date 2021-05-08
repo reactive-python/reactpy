@@ -6,9 +6,10 @@ Client Modules
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union, overload
+from typing import Any, Dict, List, Optional, Set, Tuple, Union, overload
 from urllib.parse import urlparse
 
+from idom.config import IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT
 from idom.core.vdom import ImportSourceDict, VdomDict, make_vdom_constructor
 
 from . import _private, manage
@@ -36,6 +37,8 @@ def install(
     packages: Union[str, List[str], Tuple[str]],
     ignore_installed: bool = False,
     fallback: Optional[str] = None,
+    # dynamically installed modules probably won't have a mount so we default to False
+    has_mount: bool = False,
 ) -> Union[Module, List[Module]]:
     return_one = False
     if isinstance(packages, str):
@@ -48,9 +51,11 @@ def install(
         manage.build(packages, clean_build=False)
 
     if return_one:
-        return Module(pkg_names[0], fallback=fallback)
+        return Module(pkg_names[0], fallback=fallback, has_mount=has_mount)
     else:
-        return [Module(pkg, fallback=fallback) for pkg in pkg_names]
+        return [
+            Module(pkg, fallback=fallback, has_mount=has_mount) for pkg in pkg_names
+        ]
 
 
 class Module:
@@ -67,6 +72,12 @@ class Module:
             built-in client will inject this module adjacent to other installed modules
             which means they can be imported via a relative path like
             ``./some-other-installed-module.js``.
+        fallack:
+            What to display while the modules is being loaded.
+        has_mount:
+            Whether the module exports a ``mount`` function that allows components to
+            be mounted directly to the DOM. Such a mount function enables greater
+            flexibility in how custom components can be implemented.
 
     Attributes:
         installed:
@@ -75,17 +86,28 @@ class Module:
             The URL this module will be imported from.
     """
 
-    __slots__ = "url", "fallback", "exports", "_export_names"
+    __slots__ = (
+        "url",
+        "fallback",
+        "exports",
+        "has_mount",
+        "check_exports",
+        "_export_names",
+    )
 
     def __init__(
         self,
         url_or_name: str,
         source_file: Optional[Union[str, Path]] = None,
         fallback: Optional[str] = None,
+        has_mount: bool = False,
         check_exports: bool = True,
     ) -> None:
         self.fallback = fallback
-        self._export_names: Optional[List[str]] = None
+        self.has_mount = has_mount
+        self.check_exports = check_exports
+
+        self.exports: Set[str] = set()
         if source_file is not None:
             self.url = (
                 manage.web_module_url(url_or_name)
@@ -93,23 +115,23 @@ class Module:
                 else manage.add_web_module(url_or_name, source_file)
             )
             if check_exports:
-                self._export_names = manage.web_module_exports(url_or_name)
+                self.exports = manage.web_module_exports(url_or_name)
         elif _is_url(url_or_name):
             self.url = url_or_name
+            self.check_exports = False
         elif manage.web_module_exists(url_or_name):
             self.url = manage.web_module_url(url_or_name)
             if check_exports:
-                self._export_names = manage.web_module_exports(url_or_name)
+                self.exports = manage.web_module_exports(url_or_name)
         else:
             raise ValueError(f"{url_or_name!r} is not installed or is not a URL")
-        self.exports = {name: self.declare(name) for name in (self._export_names or [])}
 
     def declare(
         self,
         name: str,
         has_children: bool = True,
         fallback: Optional[str] = None,
-    ) -> "Import":
+    ) -> Import:
         """Return  an :class:`Import` for the given :class:`Module` and ``name``
 
         This roughly translates to the javascript statement
@@ -121,19 +143,20 @@ class Module:
         Where ``name`` is the given name, and ``module`` is the :attr:`Module.url` of
         this :class:`Module` instance.
         """
-        if (
-            self._export_names is not None
-            # if 'default' is exported there's not much we can infer
-            and "default" not in self._export_names
-        ):
-            if name not in self._export_names:
-                raise ValueError(
-                    f"{self} does not export {name!r}, available options are {self._export_names}"
-                )
-        return Import(self.url, name, has_children, fallback=fallback or self.fallback)
+        if self.check_exports and name not in self.exports:
+            raise ValueError(
+                f"{self} does not export {name!r}, available options are {list(self.exports)}"
+            )
+        return Import(
+            self.url,
+            name,
+            has_children,
+            has_mount=self.has_mount,
+            fallback=fallback or self.fallback,
+        )
 
-    def __getattr__(self, name: str) -> "Import":
-        return self.exports.get(name) or self.declare(name)
+    def __getattr__(self, name: str) -> Import:
+        return self.declare(name)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.url})"
@@ -161,11 +184,19 @@ class Import:
         module: str,
         name: str,
         has_children: bool = True,
+        has_mount: bool = False,
         fallback: Optional[str] = None,
     ) -> None:
+        if IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT.current and not has_mount:
+            raise RuntimeError(
+                f"{IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT} is set and {module} has no mount"
+            )
+
         self._name = name
         self._constructor = make_vdom_constructor(name, has_children)
-        self._import_source = ImportSourceDict(source=module, fallback=fallback)
+        self._import_source = ImportSourceDict(
+            source=module, fallback=fallback, hasMount=has_mount
+        )
 
     def __call__(
         self,

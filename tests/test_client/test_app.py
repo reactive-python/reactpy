@@ -1,5 +1,11 @@
+from pathlib import Path
+
 import idom
+from idom.client.module import Module
 from idom.testing import ServerMountPoint
+
+
+HERE = Path(__file__).parent
 
 
 def test_automatic_reconnect(create_driver):
@@ -36,3 +42,20 @@ def test_automatic_reconnect(create_driver):
         # check that we can resume normal operation
         set_state.current(1)
         driver.find_element_by_id("new-component-1")
+
+
+def test_vanilla_js_component_with_mount(driver, display):
+    vanilla_js_component = Module(
+        "vanilla-js-component",
+        source_file=HERE / "js" / "vanilla-js-component.js",
+        has_mount=True,
+    )
+
+    @idom.component
+    def MakeVanillaHtml():
+        raw_html = "<h1 id='raw-html'>this was set via innerHTML</h1>"
+        return vanilla_js_component.SetInnerHtml({"innerHTML": raw_html})
+
+    display(MakeVanillaHtml)
+
+    driver.find_element_by_id("raw-html")

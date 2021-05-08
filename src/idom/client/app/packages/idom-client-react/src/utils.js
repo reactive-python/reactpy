@@ -19,17 +19,6 @@ export function applyPatchInplace(doc, path, patch) {
   }
 }
 
-export function getPathProperty(obj, prop) {
-  // properties may be dot seperated strings
-  const path = prop.split(".");
-  const firstProp = path.shift();
-  let value = obj[firstProp];
-  for (let i = 0; i < path.length; i++) {
-    value = value[path[i]];
-  }
-  return value;
-}
-
 export function joinUrl(base, tail) {
   return tail.startsWith("./")
     ? (base.endsWith("/") ? base.slice(0, -1) : base) + tail.slice(1)

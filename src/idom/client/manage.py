@@ -28,7 +28,7 @@ def web_module_path(package_name: str, must_exist: bool = False) -> Path:
     return path
 
 
-def web_module_exports(package_name: str) -> List[str]:
+def web_module_exports(package_name: str) -> Set[str]:
     """Get a list of names this module exports"""
     web_module_path(package_name, must_exist=True)
     return _private.find_js_module_exports_in_source(
