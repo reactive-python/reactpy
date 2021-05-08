@@ -4,12 +4,17 @@ import htm from "htm";
 
 import serializeEvent from "./event-to-object";
 
-import { applyPatchInplace, getPathProperty, joinUrl } from "./utils";
+import { applyPatchInplace, joinUrl } from "./utils";
 
 const html = htm.bind(react.createElement);
 const LayoutConfigContext = react.createContext({});
 
-export function mountLayout(mountElement, saveUpdateHook, sendEvent, importSourceUrl) {
+export function mountLayout(
+  mountElement,
+  saveUpdateHook,
+  sendEvent,
+  importSourceUrl
+) {
   reactDOM.render(
     html`
       <${Layout}
@@ -53,24 +58,18 @@ function Element({ model }) {
 
 function ImportedElement({ model }) {
   const config = react.useContext(LayoutConfigContext);
-  const module = useLazyModule(model.importSource.source, config.importSourceUrl);
-  if (module) {
-    const cmpt = getPathProperty(module, model.tagName);
-    const children = elementChildren(model);
-    const attributes = elementAttributes(model, config.sendEvent);
-    return html`<${cmpt} ...${attributes}>${children}<//>`;
-  } else {
-    const fallback = model.importSource.fallback;
-    if (!fallback) {
-      return html`<div />`;
-    }
-    switch (typeof fallback) {
-      case "object":
-        return html`<${Element} model=${fallback} />`;
-      case "string":
-        return html`<div>${fallback}</div>`;
-    }
-  }
+  const mountPoint = react.useRef(null);
+
+  react.useEffect(() => {
+    const importSource = joinUrl(
+      config.importSourceUrl,
+      model.importSource.source
+    );
+    eval(`import("${importSource}")`).then((module) => {
+      mountImportSource(module, mountPoint.current, model, config);
+    });
+  });
+  return html`<div ref=${mountPoint} />`;
 }
 
 function StandardElement({ model }) {
@@ -91,7 +90,7 @@ function elementChildren(model) {
     return model.children.map((child) => {
       switch (typeof child) {
         case "object":
-          return html`<${Element} model=${child} />`;
+          return html`<${Element} key=${child.key} model=${child} />`;
         case "string":
           return child;
       }
@@ -138,13 +137,21 @@ function eventHandler(sendEvent, eventSpec) {
   };
 }
 
-function useLazyModule(source, sourceUrlBase = "") {
-  const [module, setModule] = react.useState(null);
-  if (!module) {
-    // use eval() to avoid weird build behavior by bundlers like Webpack
-    eval(`import("${joinUrl(sourceUrlBase, source)}")`).then(setModule);
-  }
-  return module;
+function mountImportSource(module, mountPoint, model, config) {
+  const mountFunction = model.importSource.hasMount
+    ? module.mount
+    : (element, component, props, children) =>
+        reactDOM.render(
+          react.createElement(component, props, ...children),
+          element
+        );
+
+  const component = module[model.tagName];
+  const children = elementChildren(model);
+  const attributes = elementAttributes(model, config.sendEvent);
+  const props = { key: model.key, ...attributes };
+
+  mountFunction(mountPoint, component, props, children);
 }
 
 function useInplaceJsonPatch(doc) {

@@ -82,6 +82,7 @@ def test_show_options():
                 "True",
             ],
             ["IDOM_CLIENT_IMPORT_SOURCE_URL", "/client", "/client", "True"],
+            ["IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT", "False", "False", "True"],
             [
                 "IDOM_DEBUG_MODE",
                 IDOM_DEBUG_MODE.current,

@@ -66,6 +66,19 @@ Examples:
         ``ABSOLUTE_PATH/my-module.js``
 """
 
+IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT = _option.Option(
+    "IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT",
+    default=False,
+    validator=lambda x: bool(int(x)),
+)
+"""Control whether imported modules must have a mounting function.
+
+Client implementations that do not support dynamically installed modules can set this
+option to block the usages of components that are not mounted in isolation. More
+specifically, this requires the ``has_mount`` option of
+:class:`~idom.client.module.Module` must be set to ``True``.
+"""
+
 IDOM_FEATURE_INDEX_AS_DEFAULT_KEY = _option.Option(
     "IDOM_FEATURE_INDEX_AS_DEFAULT_KEY",
     default=False,
