@@ -7,12 +7,12 @@ variables or, for those which allow it, a programatic interface.
 """
 
 from pathlib import Path
-from typing import List, cast
+from typing import Any, List, cast
 
 from . import _option
 
 
-def all_options() -> List[_option.Option]:
+def all_options() -> List[_option.Option[Any]]:
     """Get a list of all options"""
     return list(_option.ALL_OPTIONS)
 

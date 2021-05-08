@@ -15,7 +15,7 @@ _O = TypeVar("_O")
 logger = getLogger(__name__)
 
 
-ALL_OPTIONS: WeakSet[Option] = WeakSet()
+ALL_OPTIONS: WeakSet[Option[Any]] = WeakSet()
 
 
 class Option(Generic[_O]):
