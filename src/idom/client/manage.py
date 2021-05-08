@@ -43,7 +43,7 @@ def web_module_url(package_name: str) -> str:
     """
     web_module_path(package_name, must_exist=True)
     return (
-        IDOM_CLIENT_IMPORT_SOURCE_URL.get()
+        IDOM_CLIENT_IMPORT_SOURCE_URL.current
         + f"{_private.IDOM_CLIENT_IMPORT_SOURCE_URL_INFIX}/{package_name}.js"
     )
 

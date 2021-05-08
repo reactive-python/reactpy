@@ -6,7 +6,7 @@ from typer.testing import CliRunner
 import idom
 from idom.cli import main
 from idom.client.manage import _private, web_module_exists
-from idom.config import IDOM_CLIENT_BUILD_DIR
+from idom.config import IDOM_CLIENT_BUILD_DIR, IDOM_DEBUG_MODE
 
 
 cli_runner = CliRunner()
@@ -26,7 +26,8 @@ def assert_rich_table_equals(stdout, expected_header, expected_rows):
 
     actual_header, *actual_rows = parsed_lines
 
-    assert actual_header == expected_header and actual_rows == expected_rows
+    assert actual_header == list(map(str, expected_header))
+    assert actual_rows == [list(map(str, row)) for row in expected_rows]
 
 
 @with_large_console
@@ -70,14 +71,23 @@ def test_show_version():
 
 @with_large_console
 def test_show_options():
-    build_dir = str(IDOM_CLIENT_BUILD_DIR.get())
     assert_rich_table_equals(
         cli_runner.invoke(main, ["options"]).stdout,
         ["Name", "Value", "Default", "Mutable"],
         [
-            ["IDOM_CLIENT_BUILD_DIR", build_dir, build_dir, "True"],
+            [
+                "IDOM_CLIENT_BUILD_DIR",
+                IDOM_CLIENT_BUILD_DIR.current,
+                IDOM_CLIENT_BUILD_DIR.default,
+                "True",
+            ],
             ["IDOM_CLIENT_IMPORT_SOURCE_URL", "/client", "/client", "True"],
-            ["IDOM_DEBUG_MODE", "False", "False", "False"],
+            [
+                "IDOM_DEBUG_MODE",
+                IDOM_DEBUG_MODE.current,
+                IDOM_DEBUG_MODE.default,
+                "False",
+            ],
             ["IDOM_FEATURE_INDEX_AS_DEFAULT_KEY", "False", "False", "False"],
         ],
     )

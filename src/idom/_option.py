@@ -33,8 +33,8 @@ class Option(Generic[_O]):
         self._mutable = mutable
         self._validator = validator
         if name in os.environ:
-            self._value = validator(os.environ[name])
-        logger.debug(f"{self._name}={self.get()}")
+            self._current = validator(os.environ[name])
+        logger.debug(f"{self._name}={self.current}")
         ALL_OPTIONS.add(self)
 
     @property
@@ -52,39 +52,44 @@ class Option(Generic[_O]):
         """This option's default value"""
         return self._default
 
+    @property
+    def current(self) -> _O:
+        try:
+            return self._current
+        except AttributeError:
+            return self._default
+
+    @current.setter
+    def current(self, new: _O) -> None:
+        self.set_current(new)
+        return None
+
     def is_set(self) -> bool:
         """Whether this option has a value other than its default."""
-        return hasattr(self, "_value")
+        return hasattr(self, "_current")
 
-    def get(self) -> _O:
-        """Get the current value of this option."""
-        return cast(_O, getattr(self, "_value", self._default))
-
-    def set(self, new: Any) -> None:
+    def set_current(self, new: Any) -> None:
         """Set the value of this option
 
         Raises a ``TypeError`` if this option is not :attr:`Option.mutable`.
         """
         if not self._mutable:
             raise TypeError(f"{self} cannot be modified after initial load")
-        self._value = self._validator(new)
-        logger.debug(f"{self._name}={self._value}")
+        self._current = self._validator(new)
+        logger.debug(f"{self._name}={self._current}")
 
     def set_default(self, new: _O) -> _O:
         """Set the value of this option if not :meth:`Option.is_set`
 
         Returns the current value (a la :meth:`dict.set_default`)
         """
-        if not hasattr(self, "_value"):
-            self.set(new)
-        return self._value
+        if not hasattr(self, "_current"):
+            self.set_current(new)
+        return self._current
 
     def reload(self) -> None:
-        """Reload this option from its environment variable
-
-        Returns the old value of the option.
-        """
-        self.set(os.environ.get(self._name, self._default))
+        """Reload this option from its environment variable"""
+        self.set_current(os.environ.get(self._name, self._default))
 
     def reset(self) -> None:
         """Reset the value of this option to its default setting
@@ -93,7 +98,7 @@ class Option(Generic[_O]):
         """
         if not self._mutable:
             raise TypeError(f"{self} cannot be modified after initial load")
-        delattr(self, "_value")
+        delattr(self, "_current")
 
     def __repr__(self) -> str:
-        return f"Option({self._name}={self.get()!r})"
+        return f"Option({self._name}={self.current!r})"

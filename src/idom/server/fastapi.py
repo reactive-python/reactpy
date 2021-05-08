@@ -125,7 +125,7 @@ class FastApiRenderServer(AbstractRenderServer[FastAPI, Config]):
             app.mount(
                 f"{url_prefix}/client",
                 StaticFiles(
-                    directory=str(IDOM_CLIENT_BUILD_DIR.get()),
+                    directory=str(IDOM_CLIENT_BUILD_DIR.current),
                     html=True,
                     check_dir=True,
                 ),

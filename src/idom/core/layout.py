@@ -121,7 +121,7 @@ class Layout:
                     f"Did not render component - {component} already unmounted or does not belong to this layout"
                 )
 
-    if IDOM_DEBUG_MODE.get():
+    if IDOM_DEBUG_MODE.current:
         # If in debug mode inject a function that ensures all returned updates
         # contain valid VDOM models. We only do this in debug mode in order to
         # avoid unnecessarily impacting performance.
@@ -482,7 +482,7 @@ def _process_child_type_and_key(
         yield (child, child_type, key)
 
 
-if IDOM_FEATURE_INDEX_AS_DEFAULT_KEY.get():
+if IDOM_FEATURE_INDEX_AS_DEFAULT_KEY.current:
 
     def _default_key(index: int) -> Any:  # pragma: no cover
         return index
