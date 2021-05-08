@@ -9,6 +9,7 @@ import idom
 from idom.client import _private
 from idom.client import manage as manage_client
 
+from .config import all_options
 from .log import logging_config_defaults
 
 
@@ -54,3 +55,22 @@ def version(verbose: bool = False) -> None:
             table.add_row(js_pkg, js_ver, "Javascript")
 
         console.print(table)
+
+
+@main.command()
+def options() -> None:
+    """Show available global options and their current values"""
+    options = list(sorted(all_options(), key=lambda opt: opt.name))
+
+    table = Table()
+
+    table.add_column("Name", min_width=len(max([opt.name for opt in options])))
+    table.add_column("Value")
+    table.add_column("Default")
+    table.add_column("Mutable")
+
+    for opt in options:
+        value, default, mutable = list(map(str, [opt.get(), opt.default, opt.mutable]))
+        table.add_row(opt.name, value, default, mutable)
+
+    console.print(table)
