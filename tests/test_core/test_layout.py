@@ -471,3 +471,27 @@ async def test_keyed_components_preserve_hook_on_parent_update():
         outer_hook.latest.schedule_render()
         await layout.render()
         assert old_inner_hook is inner_hook.latest
+
+
+async def test_log_warning_on_attempt_to_render_component_not_in_layout(caplog):
+    @idom.component
+    def SomeComponent():
+        return idom.html.div()
+
+    component_in_layout = SomeComponent()
+    component_not_in_layout = SomeComponent()
+
+    with idom.Layout(component_in_layout) as layout:
+        await layout.render()
+
+        # try to update a component instance not in layout
+        layout.update(component_not_in_layout)
+        # update this too so the next render doesn't hang forever
+        layout.update(component_in_layout)
+
+        await layout.render()
+
+    assert (
+        next(iter(caplog.records)).message
+        == f"Did not render component - {component_not_in_layout} already unmounted or does not belong to this layout"
+    )
