@@ -113,7 +113,13 @@ class Layout:
 
     async def render(self) -> LayoutUpdate:
         while True:
-            return self._create_layout_update(await self._rendering_queue.get())
+            component = await self._rendering_queue.get()
+            if id(component) in self._model_state_by_component_id:
+                return self._create_layout_update(component)
+            else:
+                logger.info(
+                    f"Did not render component - {component} already unmounted or does not belong to this layout"
+                )
 
     if IDOM_DEBUG_MODE.get():
         # If in debug mode inject a function that ensures all returned updates
