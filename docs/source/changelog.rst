@@ -1,6 +1,22 @@
 Changelog
 =========
 
+0.26.0
+------
+
+A collection of minor fixes and changes that, as a whole, add up to something requiring
+a minor release. The most significant addition is a fix for situations where a
+``Layout`` can raise an error when a component whose state has been delete is rendered.
+This occurs when element has been unmounted, but a latent event tells the layout it
+should be updated. For example, when a user clicks a button rapidly, and the resulting
+update deletes the original button.
+
+- only one attr dict in vdom constructor - :commit:`555086a`
+- remove Option setter/getter with current property - :commit:`2627f79`
+- add cli command to show options - :commit:`c9e6869`
+- check component has model state before render - :commit:`6a50d56`
+- rename daemon to run_in_thread + misc - :commit:`417b687`
+
 0.25.0
 ------
 
