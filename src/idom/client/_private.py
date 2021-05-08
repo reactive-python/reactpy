@@ -16,24 +16,24 @@ IDOM_CLIENT_IMPORT_SOURCE_URL_INFIX = "/_snowpack/pkg"
 
 
 def web_modules_dir() -> Path:
-    return IDOM_CLIENT_BUILD_DIR.get().joinpath(
+    return IDOM_CLIENT_BUILD_DIR.current.joinpath(
         *IDOM_CLIENT_IMPORT_SOURCE_URL_INFIX[1:].split("/")
     )
 
 
-if not IDOM_CLIENT_BUILD_DIR.get().exists():  # pragma: no cover
-    shutil.copytree(BACKUP_BUILD_DIR, IDOM_CLIENT_BUILD_DIR.get(), symlinks=True)
+if not IDOM_CLIENT_BUILD_DIR.current.exists():  # pragma: no cover
+    shutil.copytree(BACKUP_BUILD_DIR, IDOM_CLIENT_BUILD_DIR.current, symlinks=True)
 
 
 def restore_build_dir_from_backup() -> None:
-    target = IDOM_CLIENT_BUILD_DIR.get()
+    target = IDOM_CLIENT_BUILD_DIR.current
     if target.exists():
         shutil.rmtree(target)
     shutil.copytree(BACKUP_BUILD_DIR, target, symlinks=True)
 
 
 def replace_build_dir(source: Path) -> None:
-    target = IDOM_CLIENT_BUILD_DIR.get()
+    target = IDOM_CLIENT_BUILD_DIR.current
     if target.exists():
         shutil.rmtree(target)
     shutil.copytree(source, target, symlinks=True)
@@ -59,7 +59,7 @@ def split_package_name_and_version(pkg: str) -> Tuple[str, str]:
 
 
 def build_dependencies() -> Dict[str, str]:
-    package_json = IDOM_CLIENT_BUILD_DIR.get() / "package.json"
+    package_json = IDOM_CLIENT_BUILD_DIR.current / "package.json"
     return cast(Dict[str, str], json.loads(package_json.read_text())["dependencies"])
 
 

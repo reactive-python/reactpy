@@ -105,7 +105,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
             await self._run_dispatcher(sock_send, sock_recv, component_params)
 
         if config["serve_static_files"]:
-            blueprint.static("/client", str(IDOM_CLIENT_BUILD_DIR.get()))
+            blueprint.static("/client", str(IDOM_CLIENT_BUILD_DIR.current))
 
             if config["redirect_root_to_index"]:
 

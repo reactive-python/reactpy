@@ -110,7 +110,7 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
 
             @blueprint.route("/client/<path:path>")
             def send_build_dir(path: str) -> Any:
-                return send_from_directory(str(IDOM_CLIENT_BUILD_DIR.get()), path)
+                return send_from_directory(str(IDOM_CLIENT_BUILD_DIR.current), path)
 
             if config["redirect_root_to_index"]:
 

@@ -70,7 +70,9 @@ def options() -> None:
     table.add_column("Mutable")
 
     for opt in options:
-        value, default, mutable = list(map(str, [opt.get(), opt.default, opt.mutable]))
+        value, default, mutable = list(
+            map(str, [opt.current, opt.default, opt.mutable])
+        )
         table.add_row(opt.name, value, default, mutable)
 
     console.print(table)

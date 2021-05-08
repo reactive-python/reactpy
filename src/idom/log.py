@@ -21,7 +21,7 @@ def logging_config_defaults() -> Any:
         "disable_existing_loggers": False,
         "loggers": {
             "idom": {
-                "level": "DEBUG" if IDOM_DEBUG_MODE.get() else "INFO",
+                "level": "DEBUG" if IDOM_DEBUG_MODE.current else "INFO",
                 "handlers": ["console"],
             },
         },

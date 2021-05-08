@@ -97,7 +97,7 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
                 (
                     r"/client/(.*)",
                     StaticFileHandler,
-                    {"path": str(IDOM_CLIENT_BUILD_DIR.get())},
+                    {"path": str(IDOM_CLIENT_BUILD_DIR.current)},
                 )
             )
             if config["redirect_root_to_index"]:
