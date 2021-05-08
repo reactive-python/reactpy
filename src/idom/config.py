@@ -7,9 +7,14 @@ variables or, for those which allow it, a programatic interface.
 """
 
 from pathlib import Path
-from typing import cast
+from typing import List, cast
 
 from . import _option
+
+
+def all_options() -> List[_option.Option]:
+    """Get a list of all options"""
+    return list(_option.ALL_OPTIONS)
 
 
 IDOM_DEBUG_MODE = _option.Option(
