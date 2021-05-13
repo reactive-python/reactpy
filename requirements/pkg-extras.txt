@@ -7,7 +7,7 @@ fastapi >=0.63.0
 uvicorn[standard] >=0.13.4
 
 # extra=flask
-flask
+flask<2.0
 flask-cors
 flask-sockets
 
