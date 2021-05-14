@@ -8,7 +8,7 @@ Introduces changes to the interface for custom Javascript components. This now a
 JS modules to export a ``mount(element, component, props)`` function which can be used
 to bind new elements to the DOM instead of using the application's own React instance
 and specifying React as a peer dependency. This avoids a wide variety of potential
-issues with implementing custom components and opens up the possiblity for a wider
+issues with implementing custom components and opens up the possibility for a wider
 variety of component implementations.
 
 - modules with mount func should not have children - :commit:`94d006c`
