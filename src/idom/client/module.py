@@ -129,7 +129,7 @@ class Module:
     def declare(
         self,
         name: str,
-        has_children: bool = True,
+        has_children: Optional[bool] = None,
         fallback: Optional[str] = None,
     ) -> Import:
         """Return  an :class:`Import` for the given :class:`Module` and ``name``
@@ -147,10 +147,11 @@ class Module:
             raise ValueError(
                 f"{self} does not export {name!r}, available options are {list(self.exports)}"
             )
+
         return Import(
             self.url,
             name,
-            has_children,
+            has_children=has_children,
             has_mount=self.has_mount,
             fallback=fallback or self.fallback,
         )
@@ -183,7 +184,7 @@ class Import:
         self,
         module: str,
         name: str,
-        has_children: bool = True,
+        has_children: Optional[bool] = None,
         has_mount: bool = False,
         fallback: Optional[str] = None,
     ) -> None:
@@ -191,6 +192,16 @@ class Import:
             raise RuntimeError(
                 f"{IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT} is set and {module} has no mount"
             )
+
+        if has_mount:
+            if has_children is True:
+                raise ValueError(
+                    f"Components of {module!r} do not support "
+                    "children because has_mount=True"
+                )
+            has_children = False
+        else:
+            has_children = bool(has_children)
 
         self._name = name
         self._constructor = make_vdom_constructor(name, has_children)

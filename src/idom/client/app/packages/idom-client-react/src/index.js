@@ -66,7 +66,7 @@ function ImportedElement({ model }) {
       model.importSource.source
     );
     eval(`import("${importSource}")`).then((module) => {
-      mountImportSource(module, mountPoint.current, model, config);
+      mountImportSource(mountPoint.current, module, model, config);
     });
   });
   return html`<div ref=${mountPoint} />`;
@@ -137,21 +137,26 @@ function eventHandler(sendEvent, eventSpec) {
   };
 }
 
-function mountImportSource(module, mountPoint, model, config) {
-  const mountFunction = model.importSource.hasMount
-    ? module.mount
-    : (element, component, props, children) =>
-        reactDOM.render(
-          react.createElement(component, props, ...children),
-          element
-        );
-
-  const component = module[model.tagName];
-  const children = elementChildren(model);
-  const attributes = elementAttributes(model, config.sendEvent);
-  const props = { key: model.key, ...attributes };
-
-  mountFunction(mountPoint, component, props, children);
+function mountImportSource(element, module, model, config) {
+  if (model.importSource.hasMount) {
+    if (model.children) {
+      console.error("Mount function does not support children");
+    }
+    module.mount(
+      element,
+      module[model.tagName],
+      elementAttributes(model, config.sendEvent)
+    );
+  } else {
+    reactDOM.render(
+      react.createElement(
+        module[model.tagName],
+        elementAttributes(model, config.sendEvent),
+        ...elementChildren(model)
+      ),
+      element
+    );
+  }
 }
 
 function useInplaceJsonPatch(doc) {
