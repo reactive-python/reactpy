@@ -8,6 +8,7 @@ from idom.config import IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT
 
 
 HERE = Path(__file__).parent
+JS_FIXTURES = HERE / "js"
 
 
 @pytest.fixture
@@ -17,7 +18,7 @@ def victory():
 
 @pytest.fixture
 def simple_button():
-    return Module("simple-button", source_file=HERE / "js" / "simple-button.js")
+    return Module("simple-button", source_file=JS_FIXTURES / "simple-button.js")
 
 
 def test_any_relative_or_abolute_url_allowed():
@@ -112,4 +113,13 @@ def test_no_children_if_import_has_mount():
             has_children=True,
             has_mount=True,
             fallback=None,
+        )
+
+
+def test_module_must_export_mount_if_has_mount_is_set():
+    with pytest.raises(ValueError, match="does not export 'mount' but has_mount=True"):
+        idom.Module(
+            "component-without-mount",
+            source_file=JS_FIXTURES / "component-without-mount.js",
+            has_mount=True,
         )

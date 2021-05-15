@@ -118,13 +118,18 @@ class Module:
                 self.exports = manage.web_module_exports(url_or_name)
         elif _is_url(url_or_name):
             self.url = url_or_name
-            self.check_exports = False
+            self.check_exports = check_exports = False
         elif manage.web_module_exists(url_or_name):
             self.url = manage.web_module_url(url_or_name)
             if check_exports:
                 self.exports = manage.web_module_exports(url_or_name)
         else:
             raise ValueError(f"{url_or_name!r} is not installed or is not a URL")
+
+        if check_exports and has_mount and "mount" not in self.exports:
+            raise ValueError(
+                f"Module {url_or_name!r} does not export 'mount' but has_mount=True"
+            )
 
     def declare(
         self,
