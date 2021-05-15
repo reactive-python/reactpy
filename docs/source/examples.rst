@@ -37,7 +37,7 @@ Slow internet may cause inconsistent frame pacing 😅
 Matplotlib Plot
 ---------------
 
-Pick the polynomial coefficients (seperate each coefficient by a space) 🔢:
+Pick the polynomial coefficients (separate each coefficient by a space) 🔢:
 
 .. example:: matplotlib_plot
 

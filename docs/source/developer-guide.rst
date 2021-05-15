@@ -8,7 +8,7 @@ Developer Guide
     answer them.
 
 This project uses the `GitHub Flow`_ (more detail :ref:`below <Making a Pull Request>`)
-for collaboration and consists primarilly of Python code and Javascript code. A variety
+for collaboration and consists primarily of Python code and Javascript code. A variety
 of tools are used to aid in its development. Below is a short list of the tools which
 will be most commonly referenced in the sections to follow:
 
@@ -28,7 +28,7 @@ will be most commonly referenced in the sections to follow:
         - executing the Python-based test suite
 
     *   - pre-commit_
-        - helping impose basic syle guidelines
+        - helping impose basic style guidelines
 
     *   - NPM_
         - managing and installing Javascript packages
@@ -68,7 +68,7 @@ about how to get started. To make a change to IDOM you'll do the following:
 
 `Create a Pull Request <https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request>`__:
     We'll review your changes, run some :ref:`tests <Running The Tests>` and
-    :ref:`qaulity checks <Code Quality Checks>` and, with any luck, accept your request.
+    :ref:`equality checks <Code Quality Checks>` and, with any luck, accept your request.
     At that point your contribution will be merged into the main codebase!
 
 
@@ -125,7 +125,7 @@ To run the full suite of tests you'll need to install:
 
     Be sure the version of `Google Chrome`_ and ChromeDriver_ you install are compatible.
 
-Once you've installed the aforementined browser and web driver you should be able to
+Once you've installed the aforementioned browser and web driver you should be able to
 run:
 
 .. code-block:: bash
@@ -161,7 +161,7 @@ The following are currently being used:
 - ISort_ - a utility for alphabetically sorting imports
 
 The most strict measure of quality enforced on the codebase is 100% coverage. This means
-that every line of coded added to IDOM requires a test case that excersizes it. This
+that every line of coded added to IDOM requires a test case that exercises it. This
 doesn't prevent all bugs, but it should ensure that we catch the most common ones.
 
 If you need help understanding why code you've submitted does not pass these checks,
@@ -172,8 +172,8 @@ then be sure to ask, either in the
 .. note::
 
     You can manually run ``nox -s format`` to auto format your code without having to
-    do so via ``pre-commit``. However, many IDEs have integrations for automatically
-    formatting upon saving a file
+    do so via ``pre-commit``. However, many IDEs have ways to automatically format upon
+    saving a file
     (e.g.`VSCode <https://code.visualstudio.com/docs/python/editing#_formatting>`__)
 
 

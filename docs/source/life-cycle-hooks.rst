@@ -45,7 +45,7 @@ of ``new_state``.
 .. note::
 
     The identity of ``set_state`` is guaranteed to be preserved across renders. This
-    means it can safely be omited from dependency lists in :ref:`use_effect` or
+    means it can safely be omitted from dependency lists in :ref:`use_effect` or
     :ref:`use_callback`.
 
 
@@ -54,8 +54,8 @@ Functional Updates
 
 If the new state is computed from the previous state, you can pass a function which
 accepts a single argument (the previous state) and returns the next state. Consider this
-simply use case of a counter where we've pulled out logic for incrementing and
-decrementing the count:
+simply use case of a counter where we've pulled out logic for increment and
+decremented the count:
 
 .. example:: use_state_counter
 
@@ -63,7 +63,7 @@ We use the functional form for the "+" and "-" buttons since the next ``count`` 
 on the previous value, while for the "Reset" button we simple assign the
 ``initial_count`` since it is independent of the prior ``count``. This is a trivial
 example, but it demonstrates how complex state logic can be factored out into well
-defined and potentially reuseable functions.
+defined and potentially reusable functions.
 
 
 Lazy Initial State
@@ -110,7 +110,7 @@ component render functions.
 .. note::
 
     Normally in React the ``did_render`` function is called once an update has been
-    commited to the screen. Since no such action is performed by IDOM, and the time
+    committed to the screen. Since no such action is performed by IDOM, and the time
     at which the update is displayed cannot be known we are unable to achieve parity
     with this behavior.
 
@@ -153,7 +153,7 @@ the effect will only occur when the given state changes:
 
     use_effect(establish_connection, [url])
 
-Now a new connection will only be estalished if a new ``url`` is provided.
+Now a new connection will only be established if a new ``url`` is provided.
 
 
 Async Effects
@@ -204,7 +204,7 @@ of the form ``(current_state, action) -> new_state``. The ``use_reducer`` hook t
 returns the current state and a ``dispatch_action`` function that accepts an ``action``
 and causes a transition to the next state via the ``reducer``.
 
-``use_reducer`` is generally prefered to ``use_state`` if logic for transitioning from
+``use_reducer`` is generally preferred to ``use_state`` if logic for transitioning from
 one state to the next is especially complex or involves nested data structures.
 ``use_reducer`` can also be used to collect several ``use_state`` calls together - this
 may be slightly more performant as well as being preferable since there is only one
@@ -218,7 +218,7 @@ We can rework the :ref:`Functional Updates` counter example to use ``use_reducer
 
     The identity of the ``dispatch_action`` function is guaranteed to be preserved
     across re-renders throughout the lifetime of the component. This means it can safely
-    be omited from dependency lists in :ref:`use_effect` or :ref:`use_callback`.
+    be omitted from dependency lists in :ref:`use_effect` or :ref:`use_callback`.
 
 
 use_callback
@@ -228,10 +228,10 @@ use_callback
 
     memoized_callback = use_callback(lambda: do_something(a, b), [a, b])
 
-A derivative of :ref:`use_memo`, the ``use_callback`` hook teturns a
+A derivative of :ref:`use_memo`, the ``use_callback`` hook returns a
 `memoized <memoization>`_ callback. This is useful when passing callbacks to child
 components which check reference equality to prevent unnecessary renders. The of
-``memoized_callback`` will only change when the given depdencies do.
+``memoized_callback`` will only change when the given dependencies do.
 
 .. note::
 
@@ -253,10 +253,10 @@ use_memo
 Returns a `memoized <memoization>`_ value. By passing a constructor function accepting
 no arguments and an array of dependencies for that constructor, the ``use_callback``
 hook will return the value computed by the constructor. The ``memoized_value`` will only
-be recomputed when a value in the array of depdencies changes. This optimizes
+be recomputed when a value in the array of dependencies changes. This optimizes
 performance because you don't need to ``compute_something_expensive`` on every render.
 
-If the array of depdencies is ``None`` then the constructor will be called on every
+If the array of dependencies is ``None`` then the constructor will be called on every
 render.
 
 Unlike ``use_effect`` the constructor function is called during each render (instead of

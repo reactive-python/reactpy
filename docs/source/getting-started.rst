@@ -37,7 +37,7 @@ to the Component's render function.
 
 The ``use_state`` hook returns two values - the *current* state value and a function
 that let's you update that value. In the case of ``Slideshow`` the value of the
-``use_state`` hook determines which image is showm to the user, while its update
+``use_state`` hook determines which image is shown to the user, while its update
 function allow us to change it. The one required argument of ``use_state`` is the
 *initial* state value.
 
@@ -54,9 +54,9 @@ again, and its new result will be displayed.
 
 .. note::
 
-    Even handlers like ``next_image`` which respond to user interactions recieve an
+    Even handlers like ``next_image`` which respond to user interactions receive an
     ``event`` dictionary that contains different information depending on the type of
-    event that occured. All supported events and the data they contain are listed
+    event that occurred. All supported events and the data they contain are listed
     `here`__.
 
 __ https://reactjs.org/docs/events.html
@@ -70,7 +70,7 @@ Finally we come to the end of the ``Slideshow`` body where we return a model for
 ``<img/>`` element that draws its image from https://picsum.photos. Our ``next_image``
 event handler has been added to the image so that when an ``onClick`` event occurs we
 can respond to it. We've also added a little bit of CSS styling to the image so that
-when the cursor hoverse over the image it will become a pointer so it appears clickable.
+when the cursor hovers over the image it will become a pointer so it appears clickable.
 The returned model conforms to the `VDOM mimetype specification`_.
 
 .. literalinclude:: /examples/slideshow.py
@@ -80,7 +80,7 @@ The returned model conforms to the `VDOM mimetype specification`_.
 
 This last step runs a simple web server that will send the layout of elements defined in
 our ``Slideshow`` to the browser and receive any incoming events from the browser via a
-websocket. To display the layout we can navigate to http://localhost:8765/client/index.html.
+WebSocket. To display the layout we can navigate to http://localhost:8765/client/index.html.
 
 .. note::
 

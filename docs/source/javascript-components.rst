@@ -6,7 +6,7 @@ pure Python, there are other projects which already allow you to do this inside
 `Jupyter Notebooks <https://ipywidgets.readthedocs.io/en/latest/examples/Widget%20Basics.html>`__
 or in
 `webpages <https://blog.jupyter.org/and-voil%C3%A0-f6a2c08a4a93?gi=54b835a2fcce>`__.
-The real power of IDOM comes from its ability to seemlessly leverage the existing
+The real power of IDOM comes from its ability to seamlessly leverage the existing
 ecosystem of
 `React components <https://reactjs.org/docs/components-and-props.html>`__.
 This can be accomplished in different ways for different reasons:
@@ -54,7 +54,7 @@ in a REPL or Jupyter Notebook):
 
     Any standard javascript dependency specifier is allowed here.
 
-Once the package has been succesfully installed, you can import and display the component:
+Once the package has been successfully installed, you can import and display the component:
 
 .. example:: material_ui_button_no_action
 

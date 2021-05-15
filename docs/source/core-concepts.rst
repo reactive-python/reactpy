@@ -11,7 +11,7 @@ Pure Components
 As in most programming paradigms, so many of the problems come down to how we manage
 state. The first tool in encouraging its proper curation is the usage of
 `pure functions`_. The benefit of a pure function is that there's no state. Similar to
-the addage "the best code is no code at all," we make the related claim that "the best
+the adage "the best code is no code at all," we make the related claim that "the best
 way to manage state is to have no state at all."
 
 With IDOM the core of your application will be built on the back of basic functions and
@@ -110,7 +110,7 @@ which we can re-render and see what changed:
 .. note::
 
     Don't worry about the format of the layout event's ``target``. Its an internal
-    detail of the layout's implementation that is neither neccessary to understanding
+    detail of the layout's implementation that is neither necessary to understanding
     how things work, nor is it part of the interface clients should rely on.
 
 
@@ -135,22 +135,22 @@ callback that's called by the dispatcher to collect events it should execute.
 
     sent_patches = []
 
-    # We need this to simulate a scenario in which events ariving *after* each update
-    # has been sent to the client. Otherwise the events would all arive at once and we
+    # We need this to simulate a scenario in which events arriving *after* each update
+    # has been sent to the client. Otherwise the events would all arrive at once and we
     # would observe one large update rather than many discrete updates.
-    sempahore = asyncio.Semaphore(0)
+    semaphore = asyncio.Semaphore(0)
 
 
     async def send(patch):
         sent_patches.append(patch)
-        sempahore.release()
+        semaphore.release()
         if len(sent_patches) == 5:
             # if we didn't cancel the dispatcher would continue forever
             raise asyncio.CancelledError()
 
 
     async def recv():
-        await sempahore.acquire()
+        await semaphore.acquire()
         event = LayoutEvent(target=static_handler.target, data=[{}])
         return event
 

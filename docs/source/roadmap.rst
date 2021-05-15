@@ -16,13 +16,13 @@ Roadmap
     location in the layout.
 
     By default React requires keys to be used to communicate element identity whenever
-    the order or number of simbling elements can change. While there are clear
+    the order or number of sibling elements can change. While there are clear
     performance benefits for adhering to this stipulation, it's often confusing for new
     developers. React has the further advantage of the JSX syntax, which makes it easier
     for the program to determine exactly when keys must be supplied by the user. To make
-    the experience for new users simpler, and due to a lack of inforcement via JSX, IDOM
+    the experience for new users simpler, and due to a lack of enforcement via JSX, IDOM
     will be to assume that any element without a key is new. Thus, for IDOM, keys will
-    primarilly be a tool for optimization rather than a functional requirement.
+    primarily be a tool for optimization rather than a functional requirement.
 
     - Related issues: :issue:`330`, :issue:`19`, :issue:`351`
     - Related work: :pull:`345`
@@ -39,7 +39,7 @@ Roadmap
     Ideally developers of custom components should be able to operate in isolation
     without assuming anything about the environment they are running in. This has the
     benefit of simplifying the development workflow as well as making it possible to
-    incorperate components from other Javascript frameworks (e.g. Vue) without much
+    incorporate components from other Javascript frameworks (e.g. Vue) without much
     effort.
 
     - Related issues: :issue:`13`, :issue:`6`

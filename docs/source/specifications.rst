@@ -145,7 +145,7 @@ type name. The various properties for the ``onChange`` handler are:
 - ``preventDefault``: Stop the event's default action. More info
   `here <https://developer.mozilla.org/en-US/docs/Web/API/Event/preventDefault>`__.
 
-- ``stopPropagration``: prevent the event from bubbling up through the DOM. More info
+- ``stopPropagation``: prevent the event from bubbling up through the DOM. More info
   `here <https://developer.mozilla.org/en-US/docs/Web/API/Event/stopPropagation>`__.
 
 
