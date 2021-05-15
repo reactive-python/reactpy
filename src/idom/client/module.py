@@ -189,6 +189,9 @@ class Import:
         fallback: Optional[str] = None,
     ) -> None:
         if IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT.current and not has_mount:
+            # This check is not perfect since IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT can be
+            # set after Import instances have been constructed. A more comprehensive
+            # check can be introduced if that is shown to be an issue in practice.
             raise RuntimeError(
                 f"{IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT} is set and {module} has no mount"
             )

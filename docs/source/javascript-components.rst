@@ -17,57 +17,11 @@ This can be accomplished in different ways for different reasons:
     *   - Integration Method
         - Use Case
 
-    *   - :ref:`Dynamically Install Javascript` (requires NPM_)
-        - You want to **quickly experiment** with IDOM and the Javascript ecosystem.
-
     *   - :ref:`Import Javascript Bundles`
         - You want to create polished software that can be **easily shared** with others.
 
-
-Dynamically Install Javascript
-------------------------------
-
-.. warning::
-
-    Before continuing `install NPM`_.
-
-IDOM makes it easy to draft your code when you're in the early stages of development by
-using NPM_ to directly install Javascript packages on the fly. In this example we'll be
-using the ubiquitous React-based UI framework `Material UI`_ which can be installed
-using the ``idom`` CLI:
-
-.. code-block:: bash
-
-    idom install @material-ui/core
-
-Or at runtime with :func:`idom.client.module.install` (this is useful if you're working
-in a REPL or Jupyter Notebook):
-
-.. code-block::
-
-    import idom
-    material_ui = idom.install("@material-ui/core")
-    # or install multiple modules at once
-    material_ui, *other_modules = idom.install(["@material-ui/core", ...])
-
-.. note::
-
-    Any standard javascript dependency specifier is allowed here.
-
-Once the package has been successfully installed, you can import and display the component:
-
-.. example:: material_ui_button_no_action
-
-
-Passing Props To Javascript Components
---------------------------------------
-
-So now that we can install and display a Material UI Button we probably want to make it
-do something. Thankfully there's nothing new to learn here, you can pass event handlers
-to the button just as you did when :ref:`getting started`. Thus, all we need to do is
-add an ``onClick`` handler to the component:
-
-.. example:: material_ui_button_on_click
+    *   - :ref:`Dynamically Install Javascript` (requires NPM_)
+        - You want to **quickly experiment** with IDOM and the Javascript ecosystem.
 
 
 Import Javascript Bundles
@@ -109,3 +63,52 @@ that can run directly in the browser. This means we can't use fancy syntax like
 .. _Material UI: https://material-ui.com/
 .. _NPM: https://www.npmjs.com
 .. _install NPM: https://www.npmjs.com/get-npm
+
+
+
+Dynamically Install Javascript
+------------------------------
+
+.. warning::
+
+    - Before continuing `install NPM`_.
+    - Not guaranteed to work in all client implementations
+      (see :attr:`~idom.config.IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT`)
+
+IDOM makes it easy to draft your code when you're in the early stages of development by
+using NPM_ to directly install Javascript packages on the fly. In this example we'll be
+using the ubiquitous React-based UI framework `Material UI`_ which can be installed
+using the ``idom`` CLI:
+
+.. code-block:: bash
+
+    idom install @material-ui/core
+
+Or at runtime with :func:`idom.client.module.install` (this is useful if you're working
+in a REPL or Jupyter Notebook):
+
+.. code-block::
+
+    import idom
+    material_ui = idom.install("@material-ui/core")
+    # or install multiple modules at once
+    material_ui, *other_modules = idom.install(["@material-ui/core", ...])
+
+.. note::
+
+    Any standard javascript dependency specifier is allowed here.
+
+Once the package has been successfully installed, you can import and display the component:
+
+.. example:: material_ui_button_no_action
+
+
+Passing Props To Javascript Components
+--------------------------------------
+
+So now that we can install and display a Material UI Button we probably want to make it
+do something. Thankfully there's nothing new to learn here, you can pass event handlers
+to the button just as you did when :ref:`getting started`. Thus, all we need to do is
+add an ``onClick`` handler to the component:
+
+.. example:: material_ui_button_on_click

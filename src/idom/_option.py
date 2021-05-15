@@ -83,7 +83,7 @@ class Option(Generic[_O]):
 
         Returns the current value (a la :meth:`dict.set_default`)
         """
-        if not hasattr(self, "_current"):
+        if not self.is_set():
             self.set_current(new)
         return self._current
 
@@ -91,11 +91,8 @@ class Option(Generic[_O]):
         """Reload this option from its environment variable"""
         self.set_current(os.environ.get(self._name, self._default))
 
-    def reset(self) -> None:
-        """Reset the value of this option to its default setting
-
-        Returns the old value of the option.
-        """
+    def unset(self) -> None:
+        """Remove the current value, the default will be used until it is set again."""
         if not self._mutable:
             raise TypeError(f"{self} cannot be modified after initial load")
         delattr(self, "_current")

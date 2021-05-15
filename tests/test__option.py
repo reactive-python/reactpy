@@ -43,13 +43,13 @@ def test_immutable_option():
     with pytest.raises(TypeError, match="cannot be modified after initial load"):
         opt.current = "a-new-value"
     with pytest.raises(TypeError, match="cannot be modified after initial load"):
-        opt.reset()
+        opt.unset()
 
 
 def test_option_reset():
     opt = Option("A_FAKE_OPTION", "default-value")
     opt.current = "a-new-value"
-    opt.reset()
+    opt.unset()
     assert opt.current is opt.default
     assert not opt.is_set()
 

@@ -9,15 +9,16 @@ variables or, for those which allow it, a programatic interface.
 from pathlib import Path
 from typing import Any, List, cast
 
-from . import _option
+from ._option import ALL_OPTIONS as _ALL_OPTIONS
+from ._option import Option as _Option
 
 
-def all_options() -> List[_option.Option[Any]]:
+def all_options() -> List[_Option[Any]]:
     """Get a list of all options"""
-    return list(_option.ALL_OPTIONS)
+    return list(_ALL_OPTIONS)
 
 
-IDOM_DEBUG_MODE = _option.Option(
+IDOM_DEBUG_MODE = _Option(
     "IDOM_DEBUG_MODE",
     default=False,
     mutable=False,
@@ -32,7 +33,7 @@ performance but can be used to catch bugs. Additionally, the default log level f
 is set to ``DEBUG``.
 """
 
-IDOM_CLIENT_BUILD_DIR = _option.Option(
+IDOM_CLIENT_BUILD_DIR = _Option(
     "IDOM_CLIENT_BUILD_DIR",
     default=Path(__file__).parent / "client" / "build",
     validator=Path,
@@ -45,7 +46,7 @@ a set of publically available APIs for working with the client.
 """
 
 
-IDOM_CLIENT_IMPORT_SOURCE_URL = _option.Option(
+IDOM_CLIENT_IMPORT_SOURCE_URL = _Option(
     "IDOM_CLIENT_IMPORT_SOURCE_URL",
     default="/client",
     validator=lambda x: cast(str, x[:-1] if x.endswith("/") else x),
@@ -66,7 +67,7 @@ Examples:
         ``ABSOLUTE_PATH/my-module.js``
 """
 
-IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT = _option.Option(
+IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT = _Option(
     "IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT",
     default=False,
     validator=lambda x: bool(int(x)),
@@ -75,11 +76,11 @@ IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT = _option.Option(
 
 Client implementations that do not support dynamically installed modules can set this
 option to block the usages of components that are not mounted in isolation. More
-specifically, this requires the ``has_mount`` option of
-:class:`~idom.client.module.Module` must be set to ``True``.
+specifically, this requires the ``has_mount`` option of :class:`~idom.client.module.Module`
+to be ``True``.
 """
 
-IDOM_FEATURE_INDEX_AS_DEFAULT_KEY = _option.Option(
+IDOM_FEATURE_INDEX_AS_DEFAULT_KEY = _Option(
     "IDOM_FEATURE_INDEX_AS_DEFAULT_KEY",
     default=False,
     mutable=False,

@@ -83,7 +83,20 @@ def html_to_vdom(source: str, *transforms: _ModelTransform) -> Dict[str, Any]:
 
 
 class HtmlParser(_HTMLParser):
-    """HTML to VDOM parser"""
+    """HTML to VDOM parser
+
+    Example:
+
+        .. code-block::
+
+            parser = HtmlParser()
+
+            parser.feed(an_html_string)
+            parser.feed(another_html_string)
+            ...
+
+            vdom = parser.model()
+    """
 
     def model(self) -> Dict[str, Any]:
         """Get the current state of parsed VDOM model"""
