@@ -142,11 +142,11 @@ function mountImportSource(element, module, model, config) {
     if (model.children) {
       console.error("Mount function does not support children");
     }
-    module.mount(
-      element,
-      module[model.tagName],
-      elementAttributes(model, config.sendEvent)
-    );
+    const props = elementAttributes(model, config.sendEvent);
+    if (model.children) {
+      props.children = model.children;
+    }
+    module.mount(element, module[model.tagName], props);
   } else {
     reactDOM.render(
       react.createElement(

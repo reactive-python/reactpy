@@ -105,17 +105,6 @@ def test_idom_client_modules_must_have_mount():
         IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT.current = old_opt
 
 
-def test_no_children_if_import_has_mount():
-    with pytest.raises(ValueError, match="do not support children"):
-        idom.Import(
-            "https://some.url",
-            "SomeComponent",
-            has_children=True,
-            has_mount=True,
-            fallback=None,
-        )
-
-
 def test_module_must_export_mount_if_has_mount_is_set():
     with pytest.raises(ValueError, match="does not export 'mount' but has_mount=True"):
         idom.Module(

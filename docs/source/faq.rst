@@ -30,8 +30,7 @@ similar to those of standard event handlers (e.g. ``onClick``) will operate as e
 
 However, if you import a pre-built :ref:`Custom Javascript Component <Custom Javascript Components>`
 then, so long as the bundle has be defined appropriately, any component can be made to
-work, even those that don't rely on React. However these components cannot have
-children.
+work, even those that don't rely on React.
 
 
 How does IDOM communicate with the client?
