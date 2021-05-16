@@ -2,6 +2,7 @@
 Sanic Servers
 =============
 """
+from __future__ import annotations
 
 import asyncio
 import json
@@ -36,6 +37,32 @@ class Config(TypedDict, total=False):
     url_prefix: str
     serve_static_files: bool
     redirect_root_to_index: bool
+
+
+def PerClientStateServer(
+    constructor: ComponentConstructor,
+    config: Optional[Config] = None,
+    app: Optional[Sanic] = None,
+) -> SanicServer:
+    config, app = _setup_config_and_app(config, app)
+    blueprint = Blueprint(f"idom_dispatcher_{id(app)}", url_prefix=config["url_prefix"])
+    _setup_common_routes(blueprint, config)
+    _setup_single_view_dispatcher_route(blueprint, constructor)
+    app.blueprint(blueprint)
+    return SanicServer(app)
+
+
+def SharedClientStateServer(
+    constructor: ComponentConstructor,
+    config: Optional[Config] = None,
+    app: Optional[Sanic] = None,
+) -> SanicServer:
+    config, app = _setup_config_and_app(config, app)
+    blueprint = Blueprint(f"idom_dispatcher_{id(app)}", url_prefix=config["url_prefix"])
+    _setup_common_routes(blueprint, config)
+    _setup_shared_view_dispatcher_route(app, blueprint, constructor)
+    app.blueprint(blueprint)
+    return SanicServer(app)
 
 
 class SanicServer:
@@ -105,32 +132,6 @@ class SanicServer:
 
     async def _server_did_stop(self, app: Sanic, loop: AbstractEventLoop) -> None:
         self._did_stop.set()
-
-
-def PerClientStateServer(
-    constructor: ComponentConstructor,
-    config: Optional[Config] = None,
-    app: Optional[Sanic] = None,
-) -> SanicServer:
-    config, app = _setup_config_and_app(config, app)
-    blueprint = Blueprint(f"idom_dispatcher_{id(app)}", url_prefix=config["url_prefix"])
-    _setup_common_routes(blueprint, config)
-    _setup_single_view_dispatcher_route(blueprint, constructor)
-    app.blueprint(blueprint)
-    return SanicServer(app)
-
-
-def SharedClientStateServer(
-    constructor: ComponentConstructor,
-    config: Optional[Config] = None,
-    app: Optional[Sanic] = None,
-) -> SanicServer:
-    config, app = _setup_config_and_app(config, app)
-    blueprint = Blueprint(f"idom_dispatcher_{id(app)}", url_prefix=config["url_prefix"])
-    _setup_common_routes(blueprint, config)
-    _setup_shared_view_dispatcher_route(app, blueprint, constructor)
-    app.blueprint(blueprint)
-    return SanicServer(app)
 
 
 def _setup_config_and_app(
