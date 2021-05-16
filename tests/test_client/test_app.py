@@ -21,6 +21,8 @@ def test_automatic_reconnect(create_driver):
     with mount_point:
         mount_point.mount(OldComponent)
         driver.get(mount_point.url())
+        # ensure the element is displayed before stopping the server
+        driver.find_element_by_id("old-component")
 
     # the server is disconnected but the last view state is still shown
     driver.find_element_by_id("old-component")
