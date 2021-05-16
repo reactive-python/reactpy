@@ -1,15 +1,41 @@
 function serializeEvent(event) {
   const data = {};
-  if ("value" in event.target) {
-    data.value = event.target.value;
-  }
+
   if (event.type in eventTransforms) {
     Object.assign(data, eventTransforms[event.type](event));
   }
+
+  const target = event.target;
+  if (target.tagName in targetTransforms) {
+    Object.assign(data, targetTransforms[target.tagName](target));
+  }
+
   return data;
 }
 
-const eventCategoryTransforms = {
+const targetTransformCategories = {
+  hasValue: (target) => ({
+    value: target.value,
+  }),
+  hasCurrentTime: (target) => ({
+    currentTime: target.currentTime,
+  }),
+};
+
+const targetTagCategories = {
+  hasValue: ["BUTTON", "INPUT", "OPTION", "LI", "METER", "PROGRESS", "PARAM"],
+  hasCurrentTime: ["AUDIO", "VIDEO"],
+};
+
+const targetTransforms = {};
+
+Object.keys(targetTagCategories).forEach((category) => {
+  targetTagCategories[category].forEach((type) => {
+    targetTransforms[type] = targetTransformCategories[category];
+  });
+});
+
+const eventTransformCategories = {
   clipboard: (event) => ({
     clipboardData: event.clipboardData,
   }),
@@ -128,7 +154,7 @@ const eventTransforms = {};
 
 Object.keys(eventTypeCategories).forEach((category) => {
   eventTypeCategories[category].forEach((type) => {
-    eventTransforms[type] = eventCategoryTransforms[category];
+    eventTransforms[type] = eventTransformCategories[category];
   });
 });
 
