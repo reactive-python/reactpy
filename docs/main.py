@@ -67,7 +67,8 @@ PerClientStateServer(
         "redirect_root_to_index": False,
         "url_prefix": IDOM_MODEL_SERVER_URL_PREFIX,
     },
-).register(app)
+    app,
+)
 
 
 if __name__ == "__main__":

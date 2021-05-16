@@ -51,7 +51,7 @@ class FastApiRenderServer(AbstractRenderServer[FastAPI, Config]):
 
     _server: UvicornServer
 
-    def stop(self, timeout: float = 3) -> None:
+    def stop(self, timeout: Optional[float] = 3.0) -> None:
         """Stop the running application"""
         self._server.should_exit
         if self._daemon_thread is not None:

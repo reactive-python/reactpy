@@ -170,9 +170,8 @@ Layout Server
 
 The :ref:`Dispatcher <Layout Dispatcher>` allows you to animate the layout, but we still
 need to get the models on the screen. One of the last steps in that journey is to send
-them over the wire. To do that you need an
-:class:`~idom.server.base.AbstractRenderServer` implementation. Presently, IDOM comes
-with support for the following web servers:
+them over the wire. To do that you need a :class:`~idom.server.proto.ServerFactory`
+implementation. Presently, IDOM comes with support for the following web servers:
 
 - :class:`sanic.app.Sanic` (``pip install idom[sanic]``)
 
@@ -244,8 +243,7 @@ The implementation registers hooks into the application to serve the model once 
     def View(self):
         return idom.html.h1(["Hello World"])
 
-    per_client_state = PerClientStateServer(View)
-    per_client_state.register(app)
+    per_client_state = PerClientStateServer(View, app=app)
 
     app.run("localhost", 5000)
 
