@@ -28,9 +28,9 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from idom.core.events import EventHandler
 from idom.core.hooks import LifeCycleHook, current_hook
 from idom.core.utils import hex_id
-from idom.server.base import AbstractRenderServer
-from idom.server.prefab import hotswap_server
-from idom.server.utils import find_available_port, find_builtin_server_type
+from idom.server.prefab import DEFAULT_SERVER_FACTORY, hotswap_server
+from idom.server.proto import Server, ServerFactory
+from idom.server.utils import find_available_port
 
 
 __all__ = [
@@ -38,9 +38,6 @@ __all__ = [
     "create_simple_selenium_web_driver",
     "ServerMountPoint",
 ]
-
-
-AnyRenderServer = AbstractRenderServer[Any, Any]
 
 
 def create_simple_selenium_web_driver(
@@ -61,7 +58,9 @@ def create_simple_selenium_web_driver(
 
 _Self = TypeVar("_Self", bound="ServerMountPoint[Any, Any]")
 _Mount = TypeVar("_Mount")
-_Server = TypeVar("_Server", bound=AnyRenderServer)
+_Server = TypeVar("_Server", bound=Server[Any])
+_App = TypeVar("_App")
+_Config = TypeVar("_Config")
 
 
 class ServerMountPoint(Generic[_Mount, _Server]):
@@ -74,13 +73,13 @@ class ServerMountPoint(Generic[_Mount, _Server]):
 
     def __init__(
         self,
-        server_type: Type[_Server] = find_builtin_server_type("PerClientStateServer"),
+        server_type: ServerFactory[_App, _Config] = DEFAULT_SERVER_FACTORY,
         host: str = "127.0.0.1",
         port: Optional[int] = None,
-        server_config: Optional[Any] = None,
+        server_config: Optional[_Config] = None,
         run_kwargs: Optional[Dict[str, Any]] = None,
         mount_and_server_constructor: "Callable[..., Tuple[_Mount, _Server]]" = hotswap_server,  # type: ignore
-        app: Optional[Any] = None,
+        app: Optional[_App] = None,
         **other_options: Any,
     ) -> None:
         self.host = host

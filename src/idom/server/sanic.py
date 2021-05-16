@@ -44,10 +44,10 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
     _loop: asyncio.AbstractEventLoop
     _did_stop: Event
 
-    def stop(self) -> None:
+    def stop(self, timeout: Optional[float] = 5.0) -> None:
         """Stop the running application"""
-        self._loop.call_soon_threadsafe(self.application.stop)
-        self._did_stop.wait(5)
+        self._loop.call_soon_threadsafe(self.app.stop)
+        self._did_stop.wait(timeout)
 
     def _create_config(self, config: Optional[Config]) -> Config:
         new_config: Config = {

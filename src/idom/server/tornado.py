@@ -42,7 +42,7 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
 
     _model_stream_handler_type: Type[WebSocketHandler]
 
-    def stop(self) -> None:
+    def stop(self, timeout: Optional[float] = None) -> None:
         try:
             loop = self._loop
         except AttributeError:  # pragma: no cover
@@ -50,7 +50,14 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
                 f"Application is not running or was not started by {self}"
             )
         else:
-            loop.call_soon_threadsafe(self._loop.stop)
+            did_stop = ThreadEvent()
+
+            def stop() -> None:
+                loop.stop()
+                did_stop.set()
+
+            loop.call_soon_threadsafe(stop)
+            did_stop.wait(timeout)
 
     def _create_config(self, config: Optional[Config]) -> Config:
         new_config: Config = {

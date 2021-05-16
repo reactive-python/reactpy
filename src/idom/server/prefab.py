@@ -4,29 +4,33 @@ Server Prefabs
 """
 
 import logging
-from typing import Any, Dict, Optional, Tuple, Type, TypeVar
+from typing import Any, Dict, Optional, Tuple, TypeVar
 
 from idom.core.component import ComponentConstructor
 from idom.widgets.utils import MountFunc, MultiViewMount, hotswap, multiview
 
-from .base import AbstractRenderServer
+from .proto import Server, ServerFactory
 from .utils import find_available_port, find_builtin_server_type
 
 
+DEFAULT_SERVER_FACTORY = find_builtin_server_type("PerClientStateServer")
+
 logger = logging.getLogger(__name__)
-_S = TypeVar("_S", bound=AbstractRenderServer[Any, Any])
+
+_App = TypeVar("_App")
+_Config = TypeVar("_Config")
 
 
 def run(
     component: ComponentConstructor,
-    server_type: Type[_S] = find_builtin_server_type("PerClientStateServer"),
+    server_type: ServerFactory[_App, _Config] = DEFAULT_SERVER_FACTORY,
     host: str = "127.0.0.1",
     port: Optional[int] = None,
     server_config: Optional[Any] = None,
     run_kwargs: Optional[Dict[str, Any]] = None,
     app: Optional[Any] = None,
     daemon: bool = False,
-) -> _S:
+) -> Server[_App]:
     """A utility for quickly running a render server with minimal boilerplate
 
     Parameters:
@@ -41,8 +45,8 @@ def run(
         server_config:
             Options passed to configure the server.
         run_kwargs:
-            Keyword arguments passed to the :meth:`AbstractRenderServer.run`
-            or :meth:`AbstractRenderServer.run_in_thread` methods of the server
+            Keyword arguments passed to the :meth:`~idom.server.proto.Server.run`
+            or :meth:`~idom.server.proto.Server.run_in_thread` methods of the server
             depending on whether ``daemon`` is set or not.
         app:
             Register the server to an existing application and run that.
@@ -58,12 +62,8 @@ def run(
     if port is None:  # pragma: no cover
         port = find_available_port(host)
 
-    logger.info(f"Using {server_type.__module__}.{server_type.__name__}")
-
-    server = server_type(component, server_config)
-
-    if app is not None:  # pragma: no cover
-        server.register(app)
+    server = server_type(component, server_config, app)
+    logger.info(f"Using {server}")
 
     run_server = server.run if not daemon else server.run_in_thread
     run_server(host, port, **(run_kwargs or {}))  # type: ignore
@@ -72,13 +72,13 @@ def run(
 
 
 def multiview_server(
-    server_type: Type[_S],
+    server_type: ServerFactory[_App, _Config] = DEFAULT_SERVER_FACTORY,
     host: str = "127.0.0.1",
     port: Optional[int] = None,
-    server_config: Optional[Any] = None,
+    server_config: Optional[_Config] = None,
     run_kwargs: Optional[Dict[str, Any]] = None,
     app: Optional[Any] = None,
-) -> Tuple[MultiViewMount, _S]:
+) -> Tuple[MultiViewMount, Server[_App]]:
     """Set up a server where views can be dynamically added.
 
     In other words this allows the user to work with IDOM in an imperative manner.
@@ -89,8 +89,8 @@ def multiview_server(
         server: The server type to start up as a daemon
         host: The server hostname
         port: The server port number
-        server_config: Value passed to :meth:`AbstractRenderServer.configure`
-        run_kwargs: Keyword args passed to :meth:`AbstractRenderServer.run_in_thread`
+        server_config: Value passed to :meth:`~idom.server.proto.ServerFactory`
+        run_kwargs: Keyword args passed to :meth:`~idom.server.proto.Server.run_in_thread`
         app: Optionally provide a prexisting application to register to
 
     Returns:
@@ -114,14 +114,14 @@ def multiview_server(
 
 
 def hotswap_server(
-    server_type: Type[_S],
+    server_type: ServerFactory[_App, _Config] = DEFAULT_SERVER_FACTORY,
     host: str = "127.0.0.1",
     port: Optional[int] = None,
-    server_config: Optional[Any] = None,
+    server_config: Optional[_Config] = None,
     run_kwargs: Optional[Dict[str, Any]] = None,
     app: Optional[Any] = None,
     sync_views: bool = False,
-) -> Tuple[MountFunc, _S]:
+) -> Tuple[MountFunc, Server[_App]]:
     """Set up a server where views can be dynamically swapped out.
 
     In other words this allows the user to work with IDOM in an imperative manner.
@@ -132,8 +132,8 @@ def hotswap_server(
         server: The server type to start up as a daemon
         host: The server hostname
         port: The server port number
-        server_config: Value passed to :meth:`AbstractRenderServer.configure`
-        run_kwargs: Keyword args passed to :meth:`AbstractRenderServer.run_in_thread`
+        server_config: Value passed to :meth:`~idom.server.proto.ServerFactory`
+        run_kwargs: Keyword args passed to :meth:`~idom.server.proto.Server.run_in_thread`
         app: Optionally provide a prexisting application to register to
         sync_views: Whether to update all displays with newly mounted components
 

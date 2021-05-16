@@ -1,16 +1,17 @@
 import abc
 from threading import Event, Thread
-from typing import Any, Dict, Generic, Optional, Tuple, TypeVar
+from typing import Any, Dict, Optional, Tuple, TypeVar
 
 from idom.core.component import ComponentConstructor
+
+from .proto import ServerFactory
 
 
 _App = TypeVar("_App", bound=Any)
 _Config = TypeVar("_Config", bound=Any)
-_Self = TypeVar("_Self", bound="AbstractRenderServer[Any, Any]")
 
 
-class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
+class AbstractRenderServer(ServerFactory[_App, _Config], abc.ABC):
     """Base class for all IDOM server application and extension implementations.
 
     It is assumed that IDOM will be used in conjuction with some async-enabled server
@@ -18,65 +19,52 @@ class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
     standalone and as an extension to an existing application.
 
     Standalone usage:
-        :meth:`~AbstractServerExtension.run` or :meth:`~AbstractServerExtension.run_in_thread`
-    Register an extension:
-        :meth:`~AbstractServerExtension.register`
+        Construct the server then call ``:meth:`~AbstractRenderServer.run` or
+        :meth:`~AbstractRenderServer.run_in_thread`
+    Register as an extension:
+        Simply construct the :meth:`~AbstractRenderServer` and pass it an ``app``
+        instance.
     """
 
     def __init__(
         self,
         constructor: ComponentConstructor,
         config: Optional[_Config] = None,
+        app: Optional[_App] = None,
     ) -> None:
-        self._app: Optional[_App] = None
         self._root_component_constructor = constructor
         self._daemon_thread: Optional[Thread] = None
         self._config = self._create_config(config)
         self._server_did_start = Event()
-
-    @property
-    def application(self) -> _App:
-        if self._app is None:
-            raise RuntimeError("No application registered.")
-        return self._app
+        self.app = app or self._default_application(self._config)
+        self._setup_application(self._config, self.app)
+        self._setup_application_did_start_event(
+            self._config, self.app, self._server_did_start
+        )
 
     def run(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
         """Run as a standalone application."""
-        if self._app is None:
-            app = self._default_application(self._config)
-            self.register(app)
-        else:  # pragma: no cover
-            app = self._app
         if self._daemon_thread is None:  # pragma: no cover
-            return self._run_application(self._config, app, host, port, args, kwargs)
+            return self._run_application(
+                self._config, self.app, host, port, args, kwargs
+            )
         else:
             return self._run_application_in_thread(
-                self._config, app, host, port, args, kwargs
+                self._config, self.app, host, port, args, kwargs
             )
 
-    def run_in_thread(self, *args: Any, **kwargs: Any) -> Thread:
+    def run_in_thread(self, host: str, port: int, *args: Any, **kwargs: Any) -> Thread:
         """Run the standalone application in a seperate thread."""
         self._daemon_thread = thread = Thread(
-            target=lambda: self.run(*args, **kwargs), daemon=True
+            target=lambda: self.run(host, port, *args, **kwargs), daemon=True
         )
 
         thread.start()
-        self.wait_until_server_start()
+        self.wait_until_started()
 
         return thread
 
-    def register(self: _Self, app: Optional[_App]) -> _Self:
-        """Register this as an extension."""
-        if self._app is not None:
-            raise RuntimeError(f"Already registered {self._app}")
-        self._setup_application(self._config, app)
-        self._setup_application_did_start_event(
-            self._config, app, self._server_did_start
-        )
-        self._app = app
-        return self
-
-    def wait_until_server_start(self, timeout: float = 3.0) -> None:
+    def wait_until_started(self, timeout: Optional[float] = 3.0) -> None:
         """Block until the underlying application has started"""
         if not self._server_did_start.wait(timeout=timeout):
             raise RuntimeError(  # pragma: no cover
@@ -84,7 +72,7 @@ class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
             )
 
     @abc.abstractmethod
-    def stop(self) -> None:
+    def stop(self, timeout: Optional[float] = None) -> None:
         """Stop a currently running application"""
         raise NotImplementedError()
 
@@ -135,3 +123,8 @@ class AbstractRenderServer(Generic[_App, _Config], abc.ABC):
     ) -> None:
         """This function has been called inside a daemon thread to run the application"""
         raise NotImplementedError()
+
+    def __repr__(self) -> str:
+        cls = type(self)
+        full_name = f"{cls.__module__}.{cls.__name__}"
+        return f"{full_name}({self._config})"

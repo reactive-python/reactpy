@@ -1,7 +1,9 @@
 from contextlib import closing
 from importlib import import_module
 from socket import socket
-from typing import Any, List, Type
+from typing import Any, List
+
+from .proto import ServerFactory
 
 
 _SUPPORTED_PACKAGES = [
@@ -12,7 +14,7 @@ _SUPPORTED_PACKAGES = [
 ]
 
 
-def find_builtin_server_type(type_name: str) -> Type[Any]:
+def find_builtin_server_type(type_name: str) -> ServerFactory[Any, Any]:
     """Find first installed server implementation"""
     installed_builtins: List[str] = []
     for name in _SUPPORTED_PACKAGES:
