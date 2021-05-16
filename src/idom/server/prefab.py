@@ -67,6 +67,7 @@ def run(
 
     run_server = server.run if not daemon else server.run_in_thread
     run_server(host, port, **(run_kwargs or {}))  # type: ignore
+    server.wait_until_started()
 
     return server
 

@@ -6,7 +6,9 @@ Sanic Servers
 import asyncio
 import json
 import logging
-from threading import Event
+from asyncio import Future
+from asyncio.events import AbstractEventLoop
+from threading import Event, Thread
 from typing import Any, Dict, Optional, Tuple, Union
 
 from mypy_extensions import TypedDict
@@ -15,15 +17,13 @@ from sanic_cors import CORS
 from websockets import WebSocketCommonProtocol
 
 from idom.config import IDOM_CLIENT_BUILD_DIR
+from idom.core.component import ComponentConstructor
 from idom.core.dispatcher import (
-    RecvCoroutine,
-    SendCoroutine,
+    SharedViewDispatcher,
     dispatch_single_view,
     ensure_shared_view_dispatcher_future,
 )
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
-
-from .base import AbstractRenderServer
 
 
 logger = logging.getLogger(__name__)
@@ -38,111 +38,34 @@ class Config(TypedDict, total=False):
     redirect_root_to_index: bool
 
 
-class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
-    """Base ``sanic`` extension."""
+class SanicServer:
 
-    _loop: asyncio.AbstractEventLoop
-    _did_stop: Event
+    _loop: AbstractEventLoop
 
-    def stop(self, timeout: Optional[float] = 5.0) -> None:
-        """Stop the running application"""
+    def __init__(self, app: Sanic) -> None:
+        self.app = app
+        self._did_start = Event()
+        self._did_stop = Event()
+        app.register_listener(self._server_did_start, "after_server_start")
+        app.register_listener(self._server_did_stop, "after_server_stop")
+
+    def run(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
+        self.app.run(host, port, *args, **kwargs)  # pragma: no cover
+
+    def run_in_thread(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
+        thread = Thread(
+            target=lambda: self._run_in_thread(host, port, *args, *kwargs), daemon=True
+        )
+        thread.start()
+
+    def wait_until_started(self, timeout: Optional[float] = 3.0) -> None:
+        self._did_start.wait(timeout)
+
+    def stop(self, timeout: Optional[float] = 3.0) -> None:
         self._loop.call_soon_threadsafe(self.app.stop)
         self._did_stop.wait(timeout)
 
-    def _create_config(self, config: Optional[Config]) -> Config:
-        new_config: Config = {
-            "cors": False,
-            "url_prefix": "",
-            "serve_static_files": True,
-            "redirect_root_to_index": True,
-            **(config or {}),  # type: ignore
-        }
-        return new_config
-
-    def _default_application(self, config: Config) -> Sanic:
-        return Sanic()
-
-    def _setup_application(self, config: Config, app: Sanic) -> None:
-        bp = Blueprint(f"idom_dispatcher_{id(self)}", url_prefix=config["url_prefix"])
-
-        self._setup_blueprint_routes(config, bp)
-
-        self._did_stop = did_stop = Event()
-
-        @app.listener("before_server_stop")  # type: ignore
-        async def server_did_stop(app: Sanic, loop: asyncio.AbstractEventLoop) -> None:
-            did_stop.set()
-
-        cors_config = config["cors"]
-        if cors_config:  # pragma: no cover
-            cors_params = cors_config if isinstance(cors_config, dict) else {}
-            CORS(bp, **cors_params)
-
-        app.blueprint(bp)
-
-    def _setup_application_did_start_event(
-        self, config: Config, app: Sanic, event: Event
-    ) -> None:
-        async def server_did_start(app: Sanic, loop: asyncio.AbstractEventLoop) -> None:
-            event.set()
-
-        app.register_listener(server_did_start, "after_server_start")
-
-    def _setup_blueprint_routes(self, config: Config, blueprint: Blueprint) -> None:
-        """Add routes to the application blueprint"""
-
-        @blueprint.websocket("/stream")  # type: ignore
-        async def model_stream(
-            request: request.Request, socket: WebSocketCommonProtocol
-        ) -> None:
-            async def sock_send(value: LayoutUpdate) -> None:
-                await socket.send(json.dumps(value))
-
-            async def sock_recv() -> LayoutEvent:
-                return LayoutEvent(**json.loads(await socket.recv()))
-
-            component_params = {k: request.args.get(k) for k in request.args}
-            await self._run_dispatcher(sock_send, sock_recv, component_params)
-
-        if config["serve_static_files"]:
-            blueprint.static("/client", str(IDOM_CLIENT_BUILD_DIR.current))
-
-            if config["redirect_root_to_index"]:
-
-                @blueprint.route("/")  # type: ignore
-                def redirect_to_index(
-                    request: request.Request,
-                ) -> response.HTTPResponse:
-                    return response.redirect(
-                        f"{blueprint.url_prefix}/client/index.html?{request.query_string}"
-                    )
-
-    async def _run_dispatcher(
-        self, send: SendCoroutine, recv: RecvCoroutine, params: Dict[str, Any]
-    ) -> None:
-        raise NotImplementedError()
-
-    def _run_application(
-        self,
-        config: Config,
-        app: Sanic,
-        host: str,
-        port: int,
-        args: Tuple[Any, ...],
-        kwargs: Dict[str, Any],
-    ) -> None:
-        self._loop = asyncio.get_event_loop()
-        app.run(host, port, *args, **kwargs)
-
-    def _run_application_in_thread(
-        self,
-        config: Config,
-        app: Sanic,
-        host: str,
-        port: int,
-        args: Tuple[Any, ...],
-        kwargs: Dict[str, Any],
-    ) -> None:
+    def _run_in_thread(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:
@@ -154,7 +77,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
         # what follows was copied from:
         # https://github.com/sanic-org/sanic/blob/7028eae083b0da72d09111b9892ddcc00bce7df4/examples/run_async_advanced.py
 
-        serv_coro = app.create_server(
+        serv_coro = self.app.create_server(
             host, port, *args, **kwargs, return_asyncio_server=True
         )
         serv_task = asyncio.ensure_future(serv_coro, loop=loop)
@@ -162,7 +85,7 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
         server.after_start()
         try:
             loop.run_forever()
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  # pragma: no cover
             loop.stop()
         finally:
             server.before_stop()
@@ -176,55 +99,131 @@ class SanicRenderServer(AbstractRenderServer[Sanic, Config]):
                 connection.close_if_idle()
             server.after_stop()
 
+    async def _server_did_start(self, app: Sanic, loop: AbstractEventLoop) -> None:
+        self._loop = loop
+        self._did_start.set()
 
-class PerClientStateServer(SanicRenderServer):
-    """Each client view will have its own state."""
+    async def _server_did_stop(self, app: Sanic, loop: AbstractEventLoop) -> None:
+        self._did_stop.set()
 
-    async def _run_dispatcher(
-        self,
-        send: SendCoroutine,
-        recv: RecvCoroutine,
-        params: Dict[str, Any],
+
+def PerClientStateServer(
+    constructor: ComponentConstructor,
+    config: Optional[Config] = None,
+    app: Optional[Sanic] = None,
+) -> SanicServer:
+    config, app = _setup_config_and_app(config, app)
+    blueprint = Blueprint(f"idom_dispatcher_{id(app)}", url_prefix=config["url_prefix"])
+    _setup_common_routes(blueprint, config)
+    _setup_single_view_dispatcher_route(blueprint, constructor)
+    app.blueprint(blueprint)
+    return SanicServer(app)
+
+
+def SharedClientStateServer(
+    constructor: ComponentConstructor,
+    config: Optional[Config] = None,
+    app: Optional[Sanic] = None,
+) -> SanicServer:
+    config, app = _setup_config_and_app(config, app)
+    blueprint = Blueprint(f"idom_dispatcher_{id(app)}", url_prefix=config["url_prefix"])
+    _setup_common_routes(blueprint, config)
+    _setup_shared_view_dispatcher_route(app, blueprint, constructor)
+    app.blueprint(blueprint)
+    return SanicServer(app)
+
+
+def _setup_config_and_app(
+    config: Optional[Config],
+    app: Optional[Sanic],
+) -> Tuple[Config, Sanic]:
+    return (
+        {
+            "cors": False,
+            "url_prefix": "",
+            "serve_static_files": True,
+            "redirect_root_to_index": True,
+            **(config or {}),  # type: ignore
+        },
+        app or Sanic(),
+    )
+
+
+def _setup_common_routes(blueprint: Blueprint, config: Config) -> None:
+    cors_config = config["cors"]
+    if cors_config:  # pragma: no cover
+        cors_params = cors_config if isinstance(cors_config, dict) else {}
+        CORS(blueprint, **cors_params)
+
+    if config["serve_static_files"]:
+        blueprint.static("/client", str(IDOM_CLIENT_BUILD_DIR.current))
+
+        if config["redirect_root_to_index"]:
+
+            @blueprint.route("/")  # type: ignore
+            def redirect_to_index(
+                request: request.Request,
+            ) -> response.HTTPResponse:
+                return response.redirect(
+                    f"{blueprint.url_prefix}/client/index.html?{request.query_string}"
+                )
+
+
+def _setup_single_view_dispatcher_route(
+    blueprint: Blueprint, constructor: ComponentConstructor
+) -> None:
+    @blueprint.websocket("/stream")  # type: ignore
+    async def model_stream(
+        request: request.Request, socket: WebSocketCommonProtocol
     ) -> None:
+        async def sock_send(value: LayoutUpdate) -> None:
+            await socket.send(json.dumps(value))
+
+        async def sock_recv() -> LayoutEvent:
+            return LayoutEvent(**json.loads(await socket.recv()))
+
+        component_params = {k: request.args.get(k) for k in request.args}
         await dispatch_single_view(
-            Layout(self._root_component_constructor(**params)),
-            send,
-            recv,
+            Layout(constructor(**component_params)),
+            sock_send,
+            sock_recv,
         )
 
 
-class SharedClientStateServer(SanicRenderServer):
-    """All connected client views will have shared state."""
+def _setup_shared_view_dispatcher_route(
+    app: Sanic, blueprint: Blueprint, constructor: ComponentConstructor
+) -> None:
+    dispatcher_future: Future[None]
+    dispatch_coroutine: SharedViewDispatcher
 
-    def _setup_application(self, config: Config, app: Sanic) -> None:
-        app.register_listener(self._activate_dispatcher, "before_server_start")
-        app.register_listener(self._deactivate_dispatcher, "before_server_stop")
-        super()._setup_application(config, app)
-
-    async def _activate_dispatcher(
-        self, app: Sanic, loop: asyncio.AbstractEventLoop
-    ) -> None:
-        (
-            self._dispatch_daemon_future,
-            self._dispatch_coroutine,
-        ) = ensure_shared_view_dispatcher_future(
-            Layout(self._root_component_constructor())
+    async def activate_dispatcher(app: Sanic, loop: AbstractEventLoop) -> None:
+        nonlocal dispatcher_future
+        nonlocal dispatch_coroutine
+        dispatcher_future, dispatch_coroutine = ensure_shared_view_dispatcher_future(
+            Layout(constructor())
         )
 
-    async def _deactivate_dispatcher(
-        self, app: Sanic, loop: asyncio.AbstractEventLoop
-    ) -> None:
+    async def deactivate_dispatcher(app: Sanic, loop: AbstractEventLoop) -> None:
         logger.debug("Stopping dispatcher - server is shutting down")
-        self._dispatch_daemon_future.cancel()
-        await asyncio.wait([self._dispatch_daemon_future])
+        dispatcher_future.cancel()
+        await asyncio.wait([dispatcher_future])
 
-    async def _run_dispatcher(
-        self,
-        send: SendCoroutine,
-        recv: RecvCoroutine,
-        params: Dict[str, Any],
+    app.register_listener(activate_dispatcher, "before_server_start")
+    app.register_listener(deactivate_dispatcher, "before_server_stop")
+
+    @blueprint.websocket("/stream")  # type: ignore
+    async def model_stream(
+        request: request.Request, socket: WebSocketCommonProtocol
     ) -> None:
-        if params:
-            msg = f"SharedClientState server does not support per-client view parameters {params}"
-            raise ValueError(msg)
-        await self._dispatch_coroutine(send, recv)
+        if request.args:
+            raise ValueError(
+                "SharedClientState server does not support per-client view parameters"
+            )
+
+        async def sock_send(value: LayoutUpdate) -> None:
+            await socket.send(json.dumps(value))
+
+        async def sock_recv() -> LayoutEvent:
+            return LayoutEvent(**json.loads(await socket.recv()))
+
+        await dispatch_coroutine(sock_send, sock_recv)

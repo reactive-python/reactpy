@@ -7,7 +7,7 @@ from idom.core.component import ComponentConstructor
 
 try:
     from typing import Protocol
-except ImportError:
+except ImportError:  # pragma: no cover
     from typing_extensions import Protocol  # type: ignore
 
 

@@ -40,6 +40,7 @@ def wrap_builder(old_builder):
         server = PerClientStateServer(main.component, {"cors": True})
         _running_idom_servers.append(server)
         server.run_in_thread("127.0.0.1", 5555, debug=True)
+        server.wait_until_started()
         old_builder()
 
     return new_builder
