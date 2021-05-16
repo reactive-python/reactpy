@@ -120,7 +120,7 @@ def test_style(session: Session) -> None:
         ".",
         "--check",
         "--exclude",
-        rf"/({black_default_exclude}|node_modules)/",
+        rf"/({black_default_exclude}|venv|node_modules)/",
     )
     session.run("isort", ".", "--check-only")
 
