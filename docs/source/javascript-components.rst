@@ -17,15 +17,15 @@ This can be accomplished in different ways for different reasons:
     *   - Integration Method
         - Use Case
 
-    *   - :ref:`Import Javascript Bundles`
+    *   - :ref:`Custom Javascript Components`
         - You want to create polished software that can be **easily shared** with others.
 
     *   - :ref:`Dynamically Install Javascript` (requires NPM_)
         - You want to **quickly experiment** with IDOM and the Javascript ecosystem.
 
 
-Import Javascript Bundles
--------------------------
+Custom Javascript Components
+----------------------------
 
 For projects that will be shared with others we recommend bundling your Javascript with
 `rollup <https://rollupjs.org/guide/en/>`__ or `webpack <https://webpack.js.org/>`__

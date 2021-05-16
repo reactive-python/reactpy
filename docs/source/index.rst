@@ -12,6 +12,7 @@ Libraries for defining and controlling interactive webpages with Python
     life-cycle-hooks
     auto/api-reference
     examples
+    faq
 
 .. toctree::
     :hidden:
