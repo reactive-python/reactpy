@@ -42,8 +42,8 @@ async def dispatch_single_view(
             task_group.start_soon(_single_incoming_loop, layout, recv)
 
 
+SharedViewDispatcher = Callable[[SendCoroutine, RecvCoroutine], Awaitable[None]]
 _SharedViewDispatcherFuture = Callable[[SendCoroutine, RecvCoroutine], "Future[None]"]
-_SharedViewDispatcherCoro = Callable[[SendCoroutine, RecvCoroutine], Awaitable[None]]
 
 
 @asynccontextmanager
@@ -93,8 +93,8 @@ async def create_shared_view_dispatcher(
 
 def ensure_shared_view_dispatcher_future(
     layout: Layout,
-) -> Tuple[Future[None], _SharedViewDispatcherCoro]:
-    dispatcher_future: Future[_SharedViewDispatcherCoro] = Future()
+) -> Tuple[Future[None], SharedViewDispatcher]:
+    dispatcher_future: Future[SharedViewDispatcher] = Future()
 
     async def dispatch_shared_view_forever() -> None:
         with layout:
@@ -121,7 +121,7 @@ def ensure_shared_view_dispatcher_future(
 
 async def _make_shared_view_dispatcher(
     layout: Layout,
-) -> Tuple[_SharedViewDispatcherCoro, Ref[Any], WeakSet[Queue[LayoutUpdate]]]:
+) -> Tuple[SharedViewDispatcher, Ref[Any], WeakSet[Queue[LayoutUpdate]]]:
     initial_update = await layout.render()
     model_state = Ref(initial_update.apply_to({}))
 
