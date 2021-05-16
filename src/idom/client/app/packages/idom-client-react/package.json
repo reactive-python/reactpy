@@ -1,7 +1,7 @@
 {
   "name": "idom-client-react",
   "description": "A client for IDOM implemented in React",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "author": "Ryan Morshead",
   "license": "MIT",
   "repository": {
@@ -13,7 +13,7 @@
     "src/**/*.js"
   ],
   "scripts": {
-    "format": "prettier --print-width 88 --write ./src",
+    "format": "prettier --write ./src",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
