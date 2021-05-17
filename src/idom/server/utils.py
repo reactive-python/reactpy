@@ -1,7 +1,11 @@
+import asyncio
+import time
 from contextlib import closing
+from functools import wraps
 from importlib import import_module
 from socket import socket
-from typing import Any, List
+from threading import Event, Thread
+from typing import Any, Callable, List, Optional, TypeVar, cast
 
 from .proto import ServerFactory
 
@@ -12,6 +16,45 @@ _SUPPORTED_PACKAGES = [
     "flask",
     "tornado",
 ]
+
+
+_Func = TypeVar("_Func", bound=Callable[..., None])
+
+
+def threaded(function: _Func) -> _Func:
+    @wraps(function)
+    def wrapper(*args: Any, **kwargs: Any) -> None:
+        def target() -> None:
+            asyncio.set_event_loop(asyncio.new_event_loop())
+            function(*args, **kwargs)
+
+        Thread(target=target, daemon=True).start()
+
+        return None
+
+    return cast(_Func, wrapper)
+
+
+def wait_on_event(description: str, event: Event, timeout: float) -> None:
+    if not event.wait(timeout):
+        raise TimeoutError(f"Did not {description} within {timeout} seconds")
+
+
+def poll(
+    description: str,
+    frequency: float,
+    timeout: Optional[float],
+    function: Callable[[], bool],
+) -> None:
+    if timeout is not None:
+        expiry = time.time() + timeout
+        while not function():
+            if time.time() > expiry:
+                raise TimeoutError(f"Did not {description} within {timeout} seconds")
+            time.sleep(frequency)
+    else:
+        while not function():
+            time.sleep(frequency)
 
 
 def find_builtin_server_type(type_name: str) -> ServerFactory[Any, Any]:
