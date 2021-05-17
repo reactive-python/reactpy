@@ -34,7 +34,7 @@ from idom.core.dispatcher import (
 )
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
-from .utils import poll
+from .utils import poll, threaded
 
 
 logger = logging.getLogger(__name__)
@@ -146,11 +146,7 @@ class FastApiServer:
             asyncio.set_event_loop(asyncio.new_event_loop())
             server.run()
 
-    def run_in_thread(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
-        thread = Thread(
-            target=lambda: self.run(host, port, *args, *kwargs), daemon=True
-        )
-        thread.start()
+    run_in_thread = threaded(run)
 
     def wait_until_started(self, timeout: Optional[float] = 3.0) -> None:
         poll(
