@@ -137,13 +137,11 @@ def _setup_common_routes(config: Config) -> _RouteHandlerSpecs:
 def _add_handler(
     app: Application, config: Config, handlers: _RouteHandlerSpecs
 ) -> None:
-    app.add_handlers(
-        r".*",
-        [
-            (urljoin(config["url_prefix"], route_pattern),) + tuple(handler_info)
-            for route_pattern, *handler_info in handlers
-        ],
-    )
+    prefixed_handlers: List[Any] = [
+        (urljoin(config["url_prefix"], route_pattern),) + tuple(handler_info)
+        for route_pattern, *handler_info in handlers
+    ]
+    app.add_handlers(r".*", prefixed_handlers)
 
 
 def _setup_single_view_dispatcher_route(

@@ -35,7 +35,7 @@ def threaded(function: _Func) -> _Func:
     return cast(_Func, wrapper)
 
 
-def wait_on_event(description: str, event: Event, timeout: float) -> None:
+def wait_on_event(description: str, event: Event, timeout: Optional[float]) -> None:
     if not event.wait(timeout):
         raise TimeoutError(f"Did not {description} within {timeout} seconds")
 
