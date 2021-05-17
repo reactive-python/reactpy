@@ -2,6 +2,7 @@
 Flask Servers
 =============
 """
+from __future__ import annotations
 
 import asyncio
 import json
@@ -22,12 +23,12 @@ from geventwebsocket.websocket import WebSocket
 from typing_extensions import TypedDict
 
 import idom
-from idom.config import IDOM_CLIENT_BUILD_DIR
-from idom.core.component import AbstractComponent
-from idom.core.dispatcher import dispatch_single_view
+from idom.config import IDOM_CLIENT_BUILD_DIR, IDOM_DEBUG_MODE
+from idom.core.component import AbstractComponent, ComponentConstructor
+from idom.core.dispatcher import RecvCoroutine, SendCoroutine, dispatch_single_view
 from idom.core.layout import LayoutEvent, LayoutUpdate
 
-from .base import AbstractRenderServer
+from .utils import threaded, wait_on_event
 
 
 logger = logging.getLogger(__name__)
@@ -43,12 +44,64 @@ class Config(TypedDict, total=False):
     redirect_root_to_index: bool
 
 
-class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
-    """Base class for render servers which use Flask"""
+def PerClientStateServer(
+    constructor: ComponentConstructor,
+    config: Optional[Config] = None,
+    app: Optional[Flask] = None,
+) -> FlaskServer:
+    """Return a :class:`FlaskServer` where each client has its own state.
+
+    Implements the :class:`~idom.server.proto.ServerFactory` protocol
+
+    Parameters:
+        constructor: A component constructor
+        config: Options for configuring server behavior
+        app: An application instance (otherwise a default instance is created)
+    """
+    config, app = _setup_config_and_app(config, app)
+    blueprint = Blueprint("idom", __name__, url_prefix=config["url_prefix"])
+    _setup_common_routes(blueprint, config)
+    _setup_single_view_dispatcher_route(app, config, constructor)
+    app.register_blueprint(blueprint)
+    return FlaskServer(app)
+
+
+class FlaskServer:
+    """A thin wrapper for running a Flask application
+
+    See :class:`idom.server.proto.Server` for more info
+    """
 
     _wsgi_server: pywsgi.WSGIServer
 
-    def stop(self, timeout: Optional[float] = None) -> None:
+    def __init__(self, app: Flask) -> None:
+        self.app = app
+        self._did_start = ThreadEvent()
+
+        @app.before_first_request
+        def server_did_start() -> None:
+            self._did_start.set()
+
+    def run(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
+        if IDOM_DEBUG_MODE.current:
+            logging.basicConfig(level=logging.DEBUG)  # pragma: no cover
+        logger.info(f"Running at http://{host}:{port}")
+        self._wsgi_server = _StartCallbackWSGIServer(
+            self._did_start.set,
+            (host, port),
+            self.app,
+            *args,
+            handler_class=WebSocketHandler,
+            **kwargs,
+        )
+        self._wsgi_server.serve_forever()
+
+    run_in_thread = threaded(run)
+
+    def wait_until_started(self, timeout: Optional[float] = 3.0) -> None:
+        wait_on_event(f"start {self.app}", self._did_start, timeout)
+
+    def stop(self, timeout: Optional[float] = 3.0) -> None:
         try:
             server = self._wsgi_server
         except AttributeError:  # pragma: no cover
@@ -58,144 +111,77 @@ class FlaskRenderServer(AbstractRenderServer[Flask, Config]):
         else:
             server.stop(timeout)
 
-    def _create_config(self, config: Optional[Config]) -> Config:
-        new_config: Config = {
-            "import_name": __name__,
+
+def _setup_config_and_app(
+    config: Optional[Config], app: Optional[Flask]
+) -> Tuple[Config, Flask]:
+    return (
+        {
             "url_prefix": "",
             "cors": False,
             "serve_static_files": True,
             "redirect_root_to_index": True,
             **(config or {}),  # type: ignore
-        }
-        return new_config
+        },
+        app or Flask(__name__),
+    )
 
-    def _default_application(self, config: Config) -> Flask:
-        return Flask(config["import_name"])
 
-    def _setup_application(self, config: Config, app: Flask) -> None:
-        bp = Blueprint("idom", __name__, url_prefix=config["url_prefix"])
+def _setup_common_routes(blueprint: Blueprint, config: Config) -> None:
+    cors_config = config["cors"]
+    if cors_config:  # pragma: no cover
+        cors_params = cors_config if isinstance(cors_config, dict) else {}
+        CORS(blueprint, **cors_params)
 
-        self._setup_blueprint_routes(config, bp)
+    if config["serve_static_files"]:
 
-        cors_config = config["cors"]
-        if cors_config:  # pragma: no cover
-            cors_params = cors_config if isinstance(cors_config, dict) else {}
-            CORS(bp, **cors_params)
+        @blueprint.route("/client/<path:path>")
+        def send_build_dir(path: str) -> Any:
+            return send_from_directory(str(IDOM_CLIENT_BUILD_DIR.current), path)
 
-        app.register_blueprint(bp)
+        if config["redirect_root_to_index"]:
 
-        sockets = Sockets(app)
-
-        @sockets.route(_join_url_paths(config["url_prefix"], "/stream"))  # type: ignore
-        def model_stream(ws: WebSocket) -> None:
-            def send(value: Any) -> None:
-                ws.send(json.dumps(value))
-
-            def recv() -> Optional[LayoutEvent]:
-                event = ws.receive()
-                if event is not None:
-                    return LayoutEvent(**json.loads(event))
-                else:
-                    return None
-
-            query_params = {
-                k: v if len(v) > 1 else v[0]
-                for k, v in parse_query_string(ws.environ["QUERY_STRING"]).items()
-            }
-
-            self._run_dispatcher(query_params, send, recv)
-
-    def _setup_blueprint_routes(self, config: Config, blueprint: Blueprint) -> None:
-        if config["serve_static_files"]:
-
-            @blueprint.route("/client/<path:path>")
-            def send_build_dir(path: str) -> Any:
-                return send_from_directory(str(IDOM_CLIENT_BUILD_DIR.current), path)
-
-            if config["redirect_root_to_index"]:
-
-                @blueprint.route("/")
-                def redirect_to_index() -> Any:
-                    return redirect(
-                        url_for(
-                            "idom.send_build_dir",
-                            path="index.html",
-                            **request.args,
-                        )
+            @blueprint.route("/")
+            def redirect_to_index() -> Any:
+                return redirect(
+                    url_for(
+                        "idom.send_build_dir",
+                        path="index.html",
+                        **request.args,
                     )
-
-    def _setup_application_did_start_event(
-        self, config: Config, app: Flask, event: ThreadEvent
-    ) -> None:
-        @app.before_first_request
-        def server_did_start() -> None:
-            event.set()
-
-    def _run_application(
-        self,
-        config: Config,
-        app: Flask,
-        host: str,
-        port: int,
-        args: Tuple[Any, ...],
-        kwargs: Dict[str, Any],
-    ) -> None:
-        self._generic_run_application(app, host, port, *args, **kwargs)
-
-    def _run_application_in_thread(
-        self,
-        config: Config,
-        app: Flask,
-        host: str,
-        port: int,
-        args: Tuple[Any, ...],
-        kwargs: Dict[str, Any],
-    ) -> None:
-        self._generic_run_application(app, host, port, *args, **kwargs)
-
-    def _generic_run_application(
-        self,
-        app: Flask,
-        host: str = "",
-        port: int = 5000,
-        debug: bool = False,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        if debug:
-            logging.basicConfig(level=logging.DEBUG)  # pragma: no cover
-        logger.info(f"Running at http://{host}:{port}")
-        self._wsgi_server = _StartCallbackWSGIServer(
-            self._server_did_start.set,
-            (host, port),
-            app,
-            *args,
-            handler_class=WebSocketHandler,
-            **kwargs,
-        )
-        self._wsgi_server.serve_forever()
-
-    def _run_dispatcher(
-        self,
-        query_params: Dict[str, Any],
-        send: Callable[[Any], None],
-        recv: Callable[[], Optional[LayoutEvent]],
-    ) -> None:
-        raise NotImplementedError()
+                )
 
 
-class PerClientStateServer(FlaskRenderServer):
-    """Each client view will have its own state."""
+def _setup_single_view_dispatcher_route(
+    app: Flask, config: Config, constructor: ComponentConstructor
+) -> None:
+    sockets = Sockets(app)
 
-    def _run_dispatcher(
-        self,
-        query_params: Dict[str, Any],
-        send: Callable[[Any], None],
-        recv: Callable[[], Optional[LayoutEvent]],
-    ) -> None:
-        dispatch_single_view_in_thread(
-            self._root_component_constructor(**query_params), send, recv
-        )
+    @sockets.route(_join_url_paths(config["url_prefix"], "/stream"))  # type: ignore
+    def model_stream(ws: WebSocket) -> None:
+        send, recv = _make_send_recv_callbacks(ws)
+        dispatch_single_view_in_thread(constructor(**_get_query_params(ws)), send, recv)
+
+
+def _make_send_recv_callbacks(ws: WebSocket) -> Tuple[SendCoroutine, RecvCoroutine]:
+    def send(value: Any) -> None:
+        ws.send(json.dumps(value))
+
+    def recv() -> Optional[LayoutEvent]:
+        event = ws.receive()
+        if event is not None:
+            return LayoutEvent(**json.loads(event))
+        else:
+            return None
+
+    return send, recv
+
+
+def _get_query_params(ws: WebSocket) -> Dict[str, Any]:
+    return {
+        k: v if len(v) > 1 else v[0]
+        for k, v in parse_query_string(ws.environ["QUERY_STRING"]).items()
+    }
 
 
 def dispatch_single_view_in_thread(
