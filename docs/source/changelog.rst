@@ -11,6 +11,8 @@ and specifying React as a peer dependency. This avoids a wide variety of potenti
 issues with implementing custom components and opens up the possibility for a wider
 variety of component implementations.
 
+**Highlighted Commits:**
+
 - modules with mount func should not have children - :commit:`94d006c`
 - limit to flask<2.0 - :commit:`e7c11d0`
 - federate modules with mount function - :commit:`bf63a62`
@@ -25,6 +27,8 @@ a minor release. The most significant addition is a fix for situations where a
 This occurs when element has been unmounted, but a latent event tells the layout it
 should be updated. For example, when a user clicks a button rapidly, and the resulting
 update deletes the original button.
+
+**Highlighted Commits:**
 
 - only one attr dict in vdom constructor - :commit:`555086a`
 - remove Option setter/getter with current property - :commit:`2627f79`
