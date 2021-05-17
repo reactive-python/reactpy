@@ -20,6 +20,8 @@ from websockets import WebSocketCommonProtocol
 from idom.config import IDOM_CLIENT_BUILD_DIR
 from idom.core.component import ComponentConstructor
 from idom.core.dispatcher import (
+    RecvCoroutine,
+    SendCoroutine,
     SharedViewDispatcher,
     dispatch_single_view,
     ensure_shared_view_dispatcher_future,
@@ -177,18 +179,9 @@ def _setup_single_view_dispatcher_route(
     async def model_stream(
         request: request.Request, socket: WebSocketCommonProtocol
     ) -> None:
-        async def sock_send(value: LayoutUpdate) -> None:
-            await socket.send(json.dumps(value))
-
-        async def sock_recv() -> LayoutEvent:
-            return LayoutEvent(**json.loads(await socket.recv()))
-
+        send, recv = _make_send_recv_callbacks(socket)
         component_params = {k: request.args.get(k) for k in request.args}
-        await dispatch_single_view(
-            Layout(constructor(**component_params)),
-            sock_send,
-            sock_recv,
-        )
+        await dispatch_single_view(Layout(constructor(**component_params)), send, recv)
 
 
 def _setup_shared_view_dispatcher_route(
@@ -220,11 +213,17 @@ def _setup_shared_view_dispatcher_route(
             raise ValueError(
                 "SharedClientState server does not support per-client view parameters"
             )
+        send, recv = _make_send_recv_callbacks(socket)
+        await dispatch_coroutine(send, recv)
 
-        async def sock_send(value: LayoutUpdate) -> None:
-            await socket.send(json.dumps(value))
 
-        async def sock_recv() -> LayoutEvent:
-            return LayoutEvent(**json.loads(await socket.recv()))
+def _make_send_recv_callbacks(
+    socket: WebSocketCommonProtocol,
+) -> Tuple[SendCoroutine, RecvCoroutine]:
+    async def sock_send(value: LayoutUpdate) -> None:
+        await socket.send(json.dumps(value))
 
-        await dispatch_coroutine(sock_send, sock_recv)
+    async def sock_recv() -> LayoutEvent:
+        return LayoutEvent(**json.loads(await socket.recv()))
+
+    return sock_send, sock_recv
