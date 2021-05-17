@@ -25,7 +25,7 @@ from typing_extensions import TypedDict
 import idom
 from idom.config import IDOM_CLIENT_BUILD_DIR, IDOM_DEBUG_MODE
 from idom.core.component import AbstractComponent, ComponentConstructor
-from idom.core.dispatcher import RecvCoroutine, SendCoroutine, dispatch_single_view
+from idom.core.dispatcher import dispatch_single_view
 from idom.core.layout import LayoutEvent, LayoutUpdate
 
 from .utils import threaded, wait_on_event
@@ -159,22 +159,17 @@ def _setup_single_view_dispatcher_route(
 
     @sockets.route(_join_url_paths(config["url_prefix"], "/stream"))  # type: ignore
     def model_stream(ws: WebSocket) -> None:
-        send, recv = _make_send_recv_callbacks(ws)
+        def send(value: Any) -> None:
+            ws.send(json.dumps(value))
+
+        def recv() -> Optional[LayoutEvent]:
+            event = ws.receive()
+            if event is not None:
+                return LayoutEvent(**json.loads(event))
+            else:
+                return None
+
         dispatch_single_view_in_thread(constructor(**_get_query_params(ws)), send, recv)
-
-
-def _make_send_recv_callbacks(ws: WebSocket) -> Tuple[SendCoroutine, RecvCoroutine]:
-    def send(value: Any) -> None:
-        ws.send(json.dumps(value))
-
-    def recv() -> Optional[LayoutEvent]:
-        event = ws.receive()
-        if event is not None:
-            return LayoutEvent(**json.loads(event))
-        else:
-            return None
-
-    return send, recv
 
 
 def _get_query_params(ws: WebSocket) -> Dict[str, Any]:
