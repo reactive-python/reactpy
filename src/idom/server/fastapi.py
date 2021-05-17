@@ -53,6 +53,15 @@ def PerClientStateServer(
     config: Optional[Config] = None,
     app: Optional[FastAPI] = None,
 ) -> FastApiServer:
+    """Return a :class:`FastApiServer` where each client has its own state.
+
+    Implements the :class:`~idom.server.proto.ServerFactory` protocol
+
+    Parameters:
+        constructor: A component constructor
+        config: Options for configuring server behavior
+        app: An application instance (otherwise a default instance is created)
+    """
     config, app = _setup_config_and_app(config, app)
     router = APIRouter(prefix=config["url_prefix"])
     _setup_common_routes(app, router, config)
@@ -66,6 +75,15 @@ def SharedClientStateServer(
     config: Optional[Config] = None,
     app: Optional[FastAPI] = None,
 ) -> FastApiServer:
+    """Return a :class:`FastApiServer` where each client shares state.
+
+    Implements the :class:`~idom.server.proto.ServerFactory` protocol
+
+    Parameters:
+        constructor: A component constructor
+        config: Options for configuring server behavior
+        app: An application instance (otherwise a default instance is created)
+    """
     config, app = _setup_config_and_app(config, app)
     router = APIRouter(prefix=config["url_prefix"])
     _setup_common_routes(app, router, config)
@@ -75,6 +93,11 @@ def SharedClientStateServer(
 
 
 class FastApiServer:
+    """A thin wrapper for running a FastAPI application
+
+    See :class:`idom.server.proto.Server` for more info
+    """
+
     _server: UvicornServer
     _current_thread: Thread
 

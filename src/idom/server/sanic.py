@@ -46,6 +46,15 @@ def PerClientStateServer(
     config: Optional[Config] = None,
     app: Optional[Sanic] = None,
 ) -> SanicServer:
+    """Return a :class:`SanicServer` where each client has its own state.
+
+    Implements the :class:`~idom.server.proto.ServerFactory` protocol
+
+    Parameters:
+        constructor: A component constructor
+        config: Options for configuring server behavior
+        app: An application instance (otherwise a default instance is created)
+    """
     config, app = _setup_config_and_app(config, app)
     blueprint = Blueprint(f"idom_dispatcher_{id(app)}", url_prefix=config["url_prefix"])
     _setup_common_routes(blueprint, config)
@@ -59,6 +68,15 @@ def SharedClientStateServer(
     config: Optional[Config] = None,
     app: Optional[Sanic] = None,
 ) -> SanicServer:
+    """Return a :class:`SanicServer` where each client shares state.
+
+    Implements the :class:`~idom.server.proto.ServerFactory` protocol
+
+    Parameters:
+        constructor: A component constructor
+        config: Options for configuring server behavior
+        app: An application instance (otherwise a default instance is created)
+    """
     config, app = _setup_config_and_app(config, app)
     blueprint = Blueprint(f"idom_dispatcher_{id(app)}", url_prefix=config["url_prefix"])
     _setup_common_routes(blueprint, config)
@@ -68,6 +86,10 @@ def SharedClientStateServer(
 
 
 class SanicServer:
+    """A thin wrapper for running a Sanic application
+
+    See :class:`idom.server.proto.Server` for more info
+    """
 
     _loop: AbstractEventLoop
 

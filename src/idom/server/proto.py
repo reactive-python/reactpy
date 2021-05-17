@@ -28,7 +28,7 @@ class ServerFactory(Protocol[_App, _Config]):
 
 
 class Server(Protocol[_App]):
-    """An object representing a server prepared to support IDOM's protocols"""
+    """A thin wrapper around a web server that provides a common operational interface"""
 
     app: _App
     """The server's underlying application"""
