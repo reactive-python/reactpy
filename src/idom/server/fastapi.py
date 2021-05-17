@@ -8,7 +8,6 @@ import asyncio
 import json
 import logging
 import sys
-import time
 from asyncio import Future
 from threading import Event, Thread, current_thread
 from typing import Any, Dict, Optional, Tuple, Union
@@ -34,6 +33,8 @@ from idom.core.dispatcher import (
     ensure_shared_view_dispatcher_future,
 )
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
+
+from .utils import poll
 
 
 logger = logging.getLogger(__name__)
@@ -152,10 +153,12 @@ class FastApiServer:
         thread.start()
 
     def wait_until_started(self, timeout: Optional[float] = 3.0) -> None:
-        while self._current_thread.is_alive() and (
-            not hasattr(self, "_server") or not self._server.started
-        ):
-            time.sleep(0.01)
+        poll(
+            f"start {self.app}",
+            0.01,
+            timeout,
+            lambda: hasattr(self, "_server") and self._server.started,
+        )
 
     def stop(self, timeout: Optional[float] = 3.0) -> None:
         self._server.should_exit = True

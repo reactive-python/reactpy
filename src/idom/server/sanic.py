@@ -9,7 +9,7 @@ import json
 import logging
 from asyncio import Future
 from asyncio.events import AbstractEventLoop
-from threading import Event, Thread
+from threading import Event
 from typing import Any, Dict, Optional, Tuple, Union
 
 from mypy_extensions import TypedDict
@@ -27,6 +27,8 @@ from idom.core.dispatcher import (
     ensure_shared_view_dispatcher_future,
 )
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
+
+from .utils import threaded, wait_on_event
 
 
 logger = logging.getLogger(__name__)
@@ -103,27 +105,9 @@ class SanicServer:
     def run(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
         self.app.run(host, port, *args, **kwargs)  # pragma: no cover
 
+    @threaded
     def run_in_thread(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
-        thread = Thread(
-            target=lambda: self._run_in_thread(host, port, *args, *kwargs), daemon=True
-        )
-        thread.start()
-
-    def wait_until_started(self, timeout: Optional[float] = 3.0) -> None:
-        self._did_start.wait(timeout)
-
-    def stop(self, timeout: Optional[float] = 3.0) -> None:
-        self._loop.call_soon_threadsafe(self.app.stop)
-        self._did_stop.wait(timeout)
-
-    def _run_in_thread(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        finally:
-            self._loop = loop
+        loop = asyncio.get_event_loop()
 
         # what follows was copied from:
         # https://github.com/sanic-org/sanic/blob/7028eae083b0da72d09111b9892ddcc00bce7df4/examples/run_async_advanced.py
@@ -149,6 +133,13 @@ class SanicServer:
             for connection in server.connections:
                 connection.close_if_idle()
             server.after_stop()
+
+    def wait_until_started(self, timeout: Optional[float] = 3.0) -> None:
+        wait_on_event(f"start {self.app}", self._did_start, timeout)
+
+    def stop(self, timeout: Optional[float] = 3.0) -> None:
+        self._loop.call_soon_threadsafe(self.app.stop)
+        wait_on_event(f"stop {self.app}", self._did_stop, timeout)
 
     async def _server_did_start(self, app: Sanic, loop: AbstractEventLoop) -> None:
         self._loop = loop

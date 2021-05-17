@@ -10,7 +10,7 @@ import json
 from asyncio import Queue as AsyncQueue
 from asyncio.futures import Future
 from threading import Event as ThreadEvent
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, List, Optional, Tuple, Type, Union
 from urllib.parse import urljoin
 
 from tornado.platform.asyncio import AsyncIOMainLoop
@@ -23,7 +23,7 @@ from idom.core.component import ComponentConstructor
 from idom.core.dispatcher import dispatch_single_view
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
-from .base import AbstractRenderServer
+from .utils import threaded, wait_on_event
 
 
 _RouteHandlerSpecs = List[Tuple[str, Type[RequestHandler], Any]]
@@ -32,17 +32,61 @@ _RouteHandlerSpecs = List[Tuple[str, Type[RequestHandler], Any]]
 class Config(TypedDict, total=False):
     """Render server config for :class:`TornadoRenderServer` subclasses"""
 
-    base_url: str
+    url_prefix: str
     serve_static_files: bool
     redirect_root_to_index: bool
 
 
-class TornadoRenderServer(AbstractRenderServer[Application, Config]):
-    """A base class for all Tornado render servers"""
+def PerClientStateServer(
+    constructor: ComponentConstructor,
+    config: Optional[Config] = None,
+    app: Optional[Application] = None,
+) -> TornadoServer:
+    """Return a :class:`FastApiServer` where each client has its own state.
 
-    _model_stream_handler_type: Type[WebSocketHandler]
+    Implements the :class:`~idom.server.proto.ServerFactory` protocol
 
-    def stop(self, timeout: Optional[float] = None) -> None:
+    Parameters:
+        constructor: A component constructor
+        config: Options for configuring server behavior
+        app: An application instance (otherwise a default instance is created)
+    """
+    config, app = _setup_config_and_app(config, app)
+    _add_handler(
+        app,
+        config,
+        _setup_common_routes(config) + _setup_single_view_dispatcher_route(constructor),
+    )
+    return TornadoServer(app)
+
+
+class TornadoServer:
+    """A thin wrapper for running a Tornado application
+
+    See :class:`idom.server.proto.Server` for more info
+    """
+
+    _loop: asyncio.AbstractEventLoop
+
+    def __init__(self, app: Application) -> None:
+        self.app = app
+        self._did_start = ThreadEvent()
+
+    def run(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
+        self._loop = asyncio.get_event_loop()
+        AsyncIOMainLoop().install()
+        self.app.listen(port, host, *args, **kwargs)
+        self._did_start.set()
+        asyncio.get_event_loop().run_forever()
+
+    @threaded
+    def run_in_thread(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
+        self.run(host, port, *args, **kwargs)
+
+    def wait_until_started(self, timeout: Optional[float] = 3.0) -> None:
+        self._did_start.wait(timeout)
+
+    def stop(self, timeout: Optional[float] = 3.0) -> None:
         try:
             loop = self._loop
         except AttributeError:  # pragma: no cover
@@ -57,87 +101,61 @@ class TornadoRenderServer(AbstractRenderServer[Application, Config]):
                 did_stop.set()
 
             loop.call_soon_threadsafe(stop)
-            did_stop.wait(timeout)
 
-    def _create_config(self, config: Optional[Config]) -> Config:
-        new_config: Config = {
-            "base_url": "",
+            wait_on_event(f"stop {self.app}", did_stop, timeout)
+
+
+def _setup_config_and_app(
+    config: Optional[Config], app: Optional[Application]
+) -> Tuple[Config, Application]:
+    return (
+        {
+            "url_prefix": "",
             "serve_static_files": True,
             "redirect_root_to_index": True,
             **(config or {}),  # type: ignore
-        }
-        return new_config
+        },
+        app or Application(),
+    )
 
-    def _default_application(self, config: Config) -> Application:
-        return Application()
 
-    def _setup_application(
-        self,
-        config: Config,
-        app: Application,
-    ) -> None:
-        base_url = config["base_url"]
-        app.add_handlers(
-            r".*",
-            [
-                (urljoin(base_url, route_pattern),) + tuple(handler_info)  # type: ignore
-                for route_pattern, *handler_info in self._create_route_handlers(config)
-            ],
-        )
-
-    def _setup_application_did_start_event(
-        self, config: Config, app: Application, event: ThreadEvent
-    ) -> None:
-        pass
-
-    def _create_route_handlers(self, config: Config) -> _RouteHandlerSpecs:
-        handlers: _RouteHandlerSpecs = [
+def _setup_common_routes(config: Config) -> _RouteHandlerSpecs:
+    handlers: _RouteHandlerSpecs = []
+    if config["serve_static_files"]:
+        handlers.append(
             (
-                "/stream",
-                self._model_stream_handler_type,
-                {"component_constructor": self._root_component_constructor},
+                r"/client/(.*)",
+                StaticFileHandler,
+                {"path": str(IDOM_CLIENT_BUILD_DIR.current)},
             )
-        ]
+        )
+        if config["redirect_root_to_index"]:
+            handlers.append(("/", RedirectHandler, {"url": "./client/index.html"}))
+    return handlers
 
-        if config["serve_static_files"]:
-            handlers.append(
-                (
-                    r"/client/(.*)",
-                    StaticFileHandler,
-                    {"path": str(IDOM_CLIENT_BUILD_DIR.current)},
-                )
-            )
-            if config["redirect_root_to_index"]:
-                handlers.append(("/", RedirectHandler, {"url": "./client/index.html"}))
 
-        return handlers
+def _add_handler(
+    app: Application, config: Config, handlers: _RouteHandlerSpecs
+) -> None:
+    app.add_handlers(
+        r".*",
+        [
+            (urljoin(config["url_prefix"], route_pattern),) + tuple(handler_info)
+            for route_pattern, *handler_info in handlers
+        ],
+    )
 
-    def _run_application(
-        self,
-        config: Config,
-        app: Application,
-        host: str,
-        port: int,
-        args: Tuple[Any, ...],
-        kwargs: Dict[str, Any],
-    ) -> None:
-        self._loop = asyncio.get_event_loop()
-        AsyncIOMainLoop().install()
-        app.listen(port, host, *args, **kwargs)
-        self._server_did_start.set()
-        asyncio.get_event_loop().run_forever()
 
-    def _run_application_in_thread(
-        self,
-        config: Config,
-        app: Application,
-        host: str,
-        port: int,
-        args: Tuple[Any, ...],
-        kwargs: Dict[str, Any],
-    ) -> None:
-        asyncio.set_event_loop(asyncio.new_event_loop())
-        self._run_application(config, app, host, port, args, kwargs)
+def _setup_single_view_dispatcher_route(
+    constructor: ComponentConstructor,
+) -> _RouteHandlerSpecs:
+    return [
+        (
+            "/stream",
+            PerClientStateModelStreamHandler,
+            {"component_constructor": constructor},
+        )
+    ]
 
 
 class PerClientStateModelStreamHandler(WebSocketHandler):
@@ -176,9 +194,3 @@ class PerClientStateModelStreamHandler(WebSocketHandler):
     def on_close(self) -> None:
         if not self._dispatch_future.done():
             self._dispatch_future.cancel()
-
-
-class PerClientStateServer(TornadoRenderServer):
-    """Each client view will have its own state."""
-
-    _model_stream_handler_type = PerClientStateModelStreamHandler
