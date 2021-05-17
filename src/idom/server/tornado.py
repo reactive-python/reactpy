@@ -42,7 +42,7 @@ def PerClientStateServer(
     config: Optional[Config] = None,
     app: Optional[Application] = None,
 ) -> TornadoServer:
-    """Return a :class:`FastApiServer` where each client has its own state.
+    """Return a :class:`TornadoServer` where each client has its own state.
 
     Implements the :class:`~idom.server.proto.ServerFactory` protocol
 
