@@ -1,6 +1,22 @@
+from threading import Event
+
 import pytest
 
-from idom.server.utils import find_available_port
+from idom.server.utils import find_available_port, poll, wait_on_event
+
+
+def test_poll():
+    with pytest.raises(TimeoutError, match="Did not do something within 0.1 seconds"):
+        poll("do something", 0.01, 0.1, lambda: False)
+    poll("do something", 0.01, None, lambda: True)
+
+
+def test_wait_on_event():
+    event = Event()
+    with pytest.raises(TimeoutError, "Did not do something within 0.1 seconds"):
+        wait_on_event("do something", event, 0.1)
+    event.set()
+    wait_on_event("do something", event, None)
 
 
 def test_find_available_port():
