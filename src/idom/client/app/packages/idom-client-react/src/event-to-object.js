@@ -7,7 +7,9 @@ function serializeEvent(event) {
 
   const target = event.target;
   if (target.tagName in targetTransforms) {
-    Object.assign(data, targetTransforms[target.tagName](target));
+    targetTransforms[target.tagName].forEach((trans) =>
+      Object.assign(data, trans(target))
+    );
   }
 
   return data;
@@ -20,18 +22,23 @@ const targetTransformCategories = {
   hasCurrentTime: (target) => ({
     currentTime: target.currentTime,
   }),
+  hasFiles: (target) => {
+    return target.type == "file" ? { files: target.files } : {};
+  },
 };
 
 const targetTagCategories = {
   hasValue: ["BUTTON", "INPUT", "OPTION", "LI", "METER", "PROGRESS", "PARAM"],
   hasCurrentTime: ["AUDIO", "VIDEO"],
+  hasFiles: ["INPUT"],
 };
 
 const targetTransforms = {};
 
 Object.keys(targetTagCategories).forEach((category) => {
   targetTagCategories[category].forEach((type) => {
-    targetTransforms[type] = targetTransformCategories[category];
+    const transforms = targetTransforms[type] || (targetTransforms[type] = []);
+    transforms.push(targetTransformCategories[category]);
   });
 });
 
