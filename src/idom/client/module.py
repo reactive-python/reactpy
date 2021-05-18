@@ -38,7 +38,7 @@ def install(
     ignore_installed: bool = False,
     fallback: Optional[str] = None,
     # dynamically installed modules probably won't have a mount so we default to False
-    has_mount: bool = False,
+    exports_mount: bool = False,
 ) -> Union[Module, List[Module]]:
     return_one = False
     if isinstance(packages, str):
@@ -51,10 +51,11 @@ def install(
         manage.build(packages, clean_build=False)
 
     if return_one:
-        return Module(pkg_names[0], fallback=fallback, has_mount=has_mount)
+        return Module(pkg_names[0], fallback=fallback, exports_mount=exports_mount)
     else:
         return [
-            Module(pkg, fallback=fallback, has_mount=has_mount) for pkg in pkg_names
+            Module(pkg, fallback=fallback, exports_mount=exports_mount)
+            for pkg in pkg_names
         ]
 
 
@@ -74,7 +75,7 @@ class Module:
             ``./some-other-installed-module.js``.
         fallack:
             What to display while the modules is being loaded.
-        has_mount:
+        exports_mount:
             Whether the module exports a ``mount`` function that allows components to
             be mounted directly to the DOM. Such a mount function enables greater
             flexibility in how custom components can be implemented.
@@ -90,7 +91,7 @@ class Module:
         "url",
         "fallback",
         "exports",
-        "has_mount",
+        "exports_mount",
         "check_exports",
         "_export_names",
     )
@@ -100,11 +101,11 @@ class Module:
         url_or_name: str,
         source_file: Optional[Union[str, Path]] = None,
         fallback: Optional[str] = None,
-        has_mount: bool = False,
+        exports_mount: bool = False,
         check_exports: bool = True,
     ) -> None:
         self.fallback = fallback
-        self.has_mount = has_mount
+        self.exports_mount = exports_mount
         self.check_exports = check_exports
 
         self.exports: Set[str] = set()
@@ -126,9 +127,9 @@ class Module:
         else:
             raise ValueError(f"{url_or_name!r} is not installed or is not a URL")
 
-        if check_exports and has_mount and "mount" not in self.exports:
+        if check_exports and exports_mount and "mount" not in self.exports:
             raise ValueError(
-                f"Module {url_or_name!r} does not export 'mount' but has_mount=True"
+                f"Module {url_or_name!r} does not export 'mount' but exports_mount=True"
             )
 
     def declare(
@@ -157,7 +158,7 @@ class Module:
             self.url,
             name,
             has_children=has_children,
-            has_mount=self.has_mount,
+            exports_mount=self.exports_mount,
             fallback=fallback or self.fallback,
         )
 
@@ -190,10 +191,10 @@ class Import:
         module: str,
         name: str,
         has_children: bool = True,
-        has_mount: bool = False,
+        exports_mount: bool = False,
         fallback: Optional[str] = None,
     ) -> None:
-        if IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT.current and not has_mount:
+        if IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT.current and not exports_mount:
             # This check is not perfect since IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT can be
             # set after Import instances have been constructed. A more comprehensive
             # check can be introduced if that is shown to be an issue in practice.
@@ -203,7 +204,7 @@ class Import:
         self._name = name
         self._constructor = make_vdom_constructor(name, has_children)
         self._import_source = ImportSourceDict(
-            source=module, fallback=fallback, hasMount=has_mount
+            source=module, fallback=fallback, exportsMount=exports_mount
         )
 
     def __call__(
