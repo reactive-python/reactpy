@@ -50,7 +50,7 @@ def test_vanilla_js_component_with_mount(driver, display):
     vanilla_js_component = Module(
         "vanilla-js-component",
         source_file=HERE / "js" / "vanilla-js-component.js",
-        has_mount=True,
+        exports_mount=True,
     )
 
     @idom.component

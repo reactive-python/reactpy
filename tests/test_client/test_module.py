@@ -31,7 +31,7 @@ def test_any_relative_or_abolute_url_allowed():
 def test_module_import_repr():
     assert (
         repr(Module("/absolute/url/module").declare("SomeComponent"))
-        == "Import(name='SomeComponent', source='/absolute/url/module', fallback=None, hasMount=False)"
+        == "Import(name='SomeComponent', source='/absolute/url/module', fallback=None, exportsMount=False)"
     )
 
 
@@ -99,16 +99,18 @@ def test_idom_client_modules_must_have_mount():
             idom.Import(
                 "https://some.url",
                 "SomeComponent",
-                has_mount=False,
+                exports_mount=False,
             )
     finally:
         IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT.current = old_opt
 
 
-def test_module_must_export_mount_if_has_mount_is_set():
-    with pytest.raises(ValueError, match="does not export 'mount' but has_mount=True"):
+def test_module_must_export_mount_if_exports_mount_is_set():
+    with pytest.raises(
+        ValueError, match="does not export 'mount' but exports_mount=True"
+    ):
         idom.Module(
             "component-without-mount",
             source_file=JS_FIXTURES / "component-without-mount.js",
-            has_mount=True,
+            exports_mount=True,
         )

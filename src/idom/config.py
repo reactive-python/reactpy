@@ -76,8 +76,8 @@ IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT = _Option(
 
 Client implementations that do not support dynamically installed modules can set this
 option to block the usages of components that are not mounted in isolation. More
-specifically, this requires the ``has_mount`` option of :class:`~idom.client.module.Module`
-to be ``True``.
+specifically, this requires the ``exports_mount`` option of
+:class:`~idom.client.module.Module` to be ``True``.
 """
 
 IDOM_FEATURE_INDEX_AS_DEFAULT_KEY = _Option(

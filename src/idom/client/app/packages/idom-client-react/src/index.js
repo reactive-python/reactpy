@@ -69,6 +69,7 @@ function ImportedElement({ model }) {
       mountImportSource(mountPoint.current, module, model, config);
     });
   });
+
   return html`<div ref=${mountPoint} />`;
 }
 
@@ -138,10 +139,7 @@ function eventHandler(sendEvent, eventSpec) {
 }
 
 function mountImportSource(element, module, model, config) {
-  if (model.importSource.hasMount) {
-    if (model.children) {
-      console.error("Mount function does not support children");
-    }
+  if (model.importSource.exportsMount) {
     const props = elementAttributes(model, config.sendEvent);
     if (model.children) {
       props.children = model.children;
