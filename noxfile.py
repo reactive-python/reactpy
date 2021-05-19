@@ -82,6 +82,7 @@ def test(session: Session) -> None:
     test_types(session)
     test_style(session)
     test_docs(session)
+    test_js(session)
 
 
 @nox.session
@@ -132,6 +133,24 @@ def test_docs(session: Session) -> None:
     install_idom_dev(session, extras="all")
     session.run("sphinx-build", "-b", "html", "docs/source", "docs/build")
     session.run("sphinx-build", "-b", "doctest", "docs/source", "docs/build")
+
+
+@nox.session
+def test_js(session: Session) -> None:
+    """Verify that the docs build and that doctests pass"""
+    app_dir = HERE / "src" / "idom" / "client" / "app"
+    session.chdir(str(app_dir))
+    session.run("npm", "install", external=True)
+    for package_dir in (app_dir / "packages").glob("*"):
+        session.run(
+            "npm",
+            "--prefix",
+            str(package_dir.relative_to(app_dir)),
+            "run",
+            "test",
+            external=True,
+        )
+    session.chdir(str(HERE))
 
 
 @nox.session
