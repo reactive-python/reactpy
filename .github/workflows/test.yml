@@ -18,7 +18,7 @@ jobs:
       - uses: nanasess/setup-chromedriver@master
       - uses: actions/setup-node@v2-beta
         with:
-          node-version: "12"
+          node-version: "14"
       - name: Use Latest Python
         uses: actions/setup-python@v2
         with:
@@ -39,7 +39,7 @@ jobs:
       - uses: nanasess/setup-chromedriver@master
       - uses: actions/setup-node@v2-beta
         with:
-          node-version: "12"
+          node-version: "14"
       - name: Use Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:

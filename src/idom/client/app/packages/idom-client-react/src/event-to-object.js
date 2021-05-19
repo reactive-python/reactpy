@@ -23,7 +23,7 @@ const targetTransformCategories = {
     currentTime: target.currentTime,
   }),
   hasFiles: (target) => {
-    return target.type == "file" ? { files: target.files } : {};
+    return target.type && target.type == "file" ? { files: target.files } : {};
   },
 };
 
@@ -86,6 +86,9 @@ const eventTransformCategories = {
     pointerType: event.pointerType,
     isPrimary: event.isPrimary,
   }),
+  selection: () => {
+    return { selectedText: window.getSelection().toString() };
+  },
   touch: (event) => ({
     altKey: event.altKey,
     ctrlKey: event.ctrlKey,
