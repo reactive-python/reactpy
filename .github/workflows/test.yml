@@ -11,7 +11,7 @@ on:
     - cron: "0 0 * * *"
 
 jobs:
-  test-coverage:
+  test-python:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -27,8 +27,24 @@ jobs:
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
         run: |
-          nox -s test -- pytest[--headless]
-  matrix:
+          nox -s test_python -- pytest[--headless]
+  test-javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: "14"
+      - name: Use Latest Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install Python Dependencies
+        run: pip install -r requirements/test-run.txt
+      - name: Run Tests
+        run: |
+          nox -s test_javascript
+  test-python-versions:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -48,4 +64,4 @@ jobs:
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
         run: |
-          nox -s test -- pytest[--headless,--no-cov]
+          nox -s test_python -- pytest[--headless,--no-cov]
