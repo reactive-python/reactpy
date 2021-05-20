@@ -9,8 +9,8 @@ Developer Guide
 
 This project uses the `GitHub Flow`_ (more detail :ref:`below <Making a Pull Request>`)
 for collaboration and consists primarily of Python code and Javascript code. A variety
-of tools are used to aid in its development. Below is a short list of the tools which
-will be most commonly referenced in the sections to follow:
+of tools are used to aid in its development. Below is a brief list of the most commonly
+used tools:
 
 .. list-table::
     :header-rows: 1
@@ -75,16 +75,38 @@ about how to get started. To make a change to IDOM you'll do the following:
 Development Environment
 -----------------------
 
-If you've already :ref:
-In order to work with IDOM's source code you'll need to install Git_ (or `Git Bash`_ on
-Windows). Once done you can clone a local copy of this repository:
+In order to develop IDOM locally you'll first need to install the following:
+
+.. list-table::
+    :header-rows: 1
+
+    *   - What to Install
+        - How to Install
+
+    *   - Git_
+        - https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
+
+    *   - Python_ >= 3.7
+        - https://realpython.com/installing-python/
+
+    *   - NodeJS >= 14
+        - https://nodejs.org/en/download/package-manager/
+
+    *   - NPM >= 7.7
+        - https://docs.npmjs.com/try-the-latest-stable-version-of-npm
+
+.. note::
+
+    NodeJS distributes a version of NPM, but you'll want to get the latest
+
+Once done, you can clone a local copy of this repository:
 
 .. code-block:: bash
 
     git clone https://github.com/idom-team/idom.git
     cd idom
 
-At this point you should be able to run the command below to:
+Then, you should be able to run the command below to:
 
 - Install an editable version of the Python code
 
@@ -102,20 +124,26 @@ If you modify any Javascript, you'll need to re-install IDOM:
 
     pip install -e .
 
-However you may also ``cd`` to the ``idom/client/app`` directory which contains a
+However you may also ``cd`` to the ``src/idom/client/app`` directory which contains a
 ``package.json`` that you can use to run standard ``npm`` commands from.
 
 
 Running The Tests
 -----------------
 
-The test suite for IDOM is executed using Nox_ and covers:
+The test suite for IDOM uses Nox_ and NPM_ in order to validate:
 
 1. Server-side Python code with PyTest_
 
-2. The end-to-end application using Selenium_
+2. The end-to-end application using Selenium_ in Python
 
-To run the full suite of tests you'll need to install:
+3. Client-side Javascript code with UVU_
+
+
+Running Python Tests
+....................
+
+To run the full suite of Python tests you'll need to install:
 
 - `Google Chrome`_
 
@@ -143,6 +171,21 @@ You can pass other options to pytest in a similar manner:
 .. code-block:: bash
 
     nox -s test -- pytest[arg,--flag,--key=value]
+
+
+Running Javascript Tests
+........................
+
+If you've already run ``npm install`` inside the ``src/idom/client/app`` directory, you
+can execute the suite of workspace tests under ``packages/*`` with:
+
+.. code-block::
+
+    npm test
+
+As a final check, you might want to run ``npm run build``. This command is run in the
+top-level ``setup.py`` installation script for the Python package, so if this command
+fails, the installation of the Python package with ``pip`` will too.
 
 
 Code Quality Checks
@@ -247,3 +290,4 @@ to their respective documentation in the links below
 .. _Black: https://github.com/psf/black
 .. _Flake8: https://flake8.pycqa.org/en/latest/
 .. _ISort: https://pycqa.github.io/isort/
+.. _UVU: https://github.com/lukeed/uvu
