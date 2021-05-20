@@ -4,9 +4,7 @@
   "version": "0.1.0",
   "author": "Ryan Morshead",
   "main": "index.js",
-  "workspaces": [
-    "packages/idom-client-react"
-  ],
+  "workspaces": [ "./packages/*" ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -15,7 +13,7 @@
   "scripts": {
     "build": "snowpack build",
     "format": "prettier --write ./src",
-    "test": "uvu packages/idom-client-react/tests"
+    "test": "npm --workspaces test"
   },
   "devDependencies": {
     "prettier": "^2.2.1",

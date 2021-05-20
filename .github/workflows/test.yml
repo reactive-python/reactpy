@@ -27,23 +27,20 @@ jobs:
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
         run: |
-          nox -s test_python -- pytest[--headless]
+          nox -s test -- pytest[--headless]
   test-javascript:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2-beta
+      - uses: actions/setup-node@v2
         with:
           node-version: "14"
-      - name: Use Latest Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.9
-      - name: Install Python Dependencies
-        run: pip install -r requirements/test-run.txt
-      - name: Run Tests
+      - name: Test Javascript
+        working-directory: ./src/idom/client/app
         run: |
-          nox -s test_javascript
+          npm --version
+          npm install
+          npm test
   test-python-versions:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -64,4 +61,4 @@ jobs:
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
         run: |
-          nox -s test_python -- pytest[--headless,--no-cov]
+          nox -s test -- pytest[--headless,--no-cov]

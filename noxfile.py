@@ -75,17 +75,17 @@ def docs_in_docker(session: Session) -> None:
 
 
 @nox.session
-def test_python(session: Session) -> None:
+def test(session: Session) -> None:
     """Run the complete test suite"""
     session.install("--upgrade", "pip", "setuptools", "wheel")
-    test_python_suite(session)
-    test_python_types(session)
-    test_python_style(session)
-    test_python_docs(session)
+    test_suite(session)
+    test_types(session)
+    test_style(session)
+    test_docs(session)
 
 
 @nox.session
-def test_python_suite(session: Session) -> None:
+def test_suite(session: Session) -> None:
     """Run the Python-based test suite"""
     session.env["IDOM_DEBUG_MODE"] = "1"
     install_requirements_file(session, "test-env")
@@ -101,7 +101,7 @@ def test_python_suite(session: Session) -> None:
 
 
 @nox.session
-def test_python_types(session: Session) -> None:
+def test_types(session: Session) -> None:
     """Perform a static type analysis of the codebase"""
     install_requirements_file(session, "check-types")
     install_requirements_file(session, "pkg-deps")
@@ -110,7 +110,7 @@ def test_python_types(session: Session) -> None:
 
 
 @nox.session
-def test_python_style(session: Session) -> None:
+def test_style(session: Session) -> None:
     """Check that style guidelines are being followed"""
     install_requirements_file(session, "check-style")
     session.run("flake8", "src/idom", "tests", "docs")
@@ -126,30 +126,12 @@ def test_python_style(session: Session) -> None:
 
 
 @nox.session
-def test_python_docs(session: Session) -> None:
+def test_docs(session: Session) -> None:
     """Verify that the docs build and that doctests pass"""
     install_requirements_file(session, "build-docs")
     install_idom_dev(session, extras="all")
     session.run("sphinx-build", "-b", "html", "docs/source", "docs/build")
     session.run("sphinx-build", "-b", "doctest", "docs/source", "docs/build")
-
-
-@nox.session
-def test_javascript(session: Session) -> None:
-    """Verify that the docs build and that doctests pass"""
-    app_dir = HERE / "src" / "idom" / "client" / "app"
-    session.chdir(str(app_dir))
-    session.run("npm", "install", external=True)
-    for package_dir in (app_dir / "packages").glob("*"):
-        session.run(
-            "npm",
-            "--prefix",
-            str(package_dir.relative_to(app_dir)),
-            "run",
-            "test",
-            external=True,
-        )
-    session.chdir(str(HERE))
 
 
 @nox.session
