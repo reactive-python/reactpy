@@ -28,19 +28,6 @@ jobs:
       - name: Run Tests
         run: |
           nox -s test -- pytest[--headless]
-  test-javascript:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "14"
-      - name: Test Javascript
-        working-directory: ./src/idom/client/app
-        run: |
-          npm --version
-          npm install
-          npm test
   test-python-versions:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -62,3 +49,16 @@ jobs:
       - name: Run Tests
         run: |
           nox -s test -- pytest[--headless,--no-cov]
+  test-javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Test Javascript
+        working-directory: ./src/idom/client/app
+        run: |
+          npm --version
+          npm install
+          npm test
