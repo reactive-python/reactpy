@@ -86,7 +86,7 @@ In order to develop IDOM locally you'll first need to install the following:
     *   - Git_
         - https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 
-    *   - Python_ >= 3.7
+    *   - Python >= 3.7
         - https://realpython.com/installing-python/
 
     *   - NodeJS >= 14
