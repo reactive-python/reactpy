@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "author": "Ryan Morshead",
   "main": "index.js",
-  "workspaces": [ "./packages/*" ],
+  "workspaces": [
+    "./packages/*"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

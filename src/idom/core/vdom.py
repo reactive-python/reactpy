@@ -5,13 +5,19 @@ VDOM Constructors
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
 from fastjsonschema import compile as compile_json_schema
 from mypy_extensions import TypedDict
 from typing_extensions import Protocol
 
+from idom.config import IDOM_DEBUG_MODE
+
 from .events import EventHandler
+
+
+logger = logging.getLogger()
 
 
 VDOM_JSON_SCHEMA = {
@@ -209,15 +215,59 @@ def coalesce_attributes_and_children(
 
     children_or_iterables: Sequence[Any]
     attributes, *children_or_iterables = values
-    if not isinstance(attributes, Mapping) or "tagName" in attributes:
+    if not _is_attributes(attributes):
         attributes = {}
         children_or_iterables = values
 
     children: List[Any] = []
     for child in children_or_iterables:
-        if isinstance(child, (str, Mapping)) or not hasattr(child, "__iter__"):
+        if _is_single_child(child):
             children.append(child)
         else:
             children.extend(child)
 
     return attributes, children
+
+
+def _is_attributes(value: Any) -> bool:
+    return isinstance(value, Mapping) and "tagName" not in value
+
+
+if IDOM_DEBUG_MODE.current:
+
+    _debug_is_attributes = _is_attributes
+
+    def _is_attributes(value: Any) -> bool:
+        result = _debug_is_attributes(value)
+        if result and "children" in value:
+            logger.error(f"Reserved key 'children' found in attributes {value}")
+        return result
+
+
+def _is_single_child(value: Any) -> bool:
+    return isinstance(value, (str, Mapping)) or not hasattr(value, "__iter__")
+
+
+if IDOM_DEBUG_MODE.current:
+
+    _debug_is_single_child = _is_single_child
+
+    def _is_single_child(value: Any) -> bool:
+        if _debug_is_single_child(value):
+            return True
+
+        from .component import AbstractComponent
+
+        if hasattr(value, "__iter__") and not hasattr(value, "__len__"):
+            logger.error(
+                f"Did not verify key-path integrity of children in generator {value} "
+                "- pass a sequence (i.e. list of finite length) in order to verify"
+            )
+        else:
+            for child in value:
+                if (isinstance(child, AbstractComponent) and child.key is None) or (
+                    isinstance(child, Mapping) and "key" not in child
+                ):
+                    logger.error(f"Key not specified for dynamic child {child}")
+
+        return False
