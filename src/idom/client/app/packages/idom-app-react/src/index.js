@@ -40,12 +40,7 @@ export function mountLayoutWithWebSocket(
 ) {
   const socket = new WebSocket(endpoint);
 
-  let resolveUpdateHook = null;
-  let rejectUpdateHook = null;
-  const updateHookPromise = new Promise((resolve, reject) => {
-    resolveUpdateHook = resolve;
-    rejectUpdateHook = reject;
-  });
+  let updateLayout;
 
   socket.onopen = (event) => {
     console.log(`Connected.`);
@@ -54,18 +49,19 @@ export function mountLayoutWithWebSocket(
     }
     mountLayout(
       element,
-      (updateHook) => resolveUpdateHook(updateHook),
-      (event) => socket.send(JSON.stringify(event)),
+      (update) => {
+        updateLayout = update;
+      },
+      (event) => {
+        socket.send(JSON.stringify(event));
+      },
       importSourceURL
     );
     _setOpenMountState(mountState);
   };
 
   socket.onmessage = (event) => {
-    updateHookPromise.then((update) => {
-      const [pathPrefix, patch] = JSON.parse(event.data);
-      update(pathPrefix, patch);
-    });
+    updateLayout(pathPrefix, patch);
   };
 
   socket.onclose = (event) => {
