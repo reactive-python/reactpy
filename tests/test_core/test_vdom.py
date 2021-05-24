@@ -2,6 +2,7 @@ import pytest
 from fastjsonschema import JsonSchemaException
 
 import idom
+from idom.config import IDOM_DEBUG_MODE
 from idom.core.vdom import make_vdom_constructor, validate_vdom
 
 
@@ -256,3 +257,40 @@ def test_valid_vdom(value):
 def test_invalid_vdom(value, error_message_pattern):
     with pytest.raises(JsonSchemaException, match=error_message_pattern):
         validate_vdom(value)
+
+
+@pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="Only logs in debug mode")
+def test_debug_log_if_children_in_attributes(caplog):
+    idom.vdom("div", {"children": ["hello"]})
+    assert len(caplog.records) == 1
+    assert caplog.records[0].message.startswith(
+        "Reserved key 'children' found in attributes"
+    )
+    caplog.records.clear()
+
+
+@pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="Only logs in debug mode")
+def test_debug_log_cannot_verify_keypath_for_genereators(caplog):
+    idom.vdom("div", (1 for i in range(10)))
+    assert len(caplog.records) == 1
+    assert caplog.records[0].message.startswith(
+        "Did not verify key-path integrity of children in generator"
+    )
+    caplog.records.clear()
+
+
+@pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="Only logs in debug mode")
+def test_debug_log_dynamic_children_must_have_keys(caplog):
+    idom.vdom("div", [idom.vdom("div")])
+    assert len(caplog.records) == 1
+    assert caplog.records[0].message.startswith("Key not specified for dynamic child")
+
+    caplog.records.clear()
+
+    @idom.component
+    def MyComponent():
+        return idom.vdom("div")
+
+    idom.vdom("div", [MyComponent()])
+    assert len(caplog.records) == 1
+    assert caplog.records[0].message.startswith("Key not specified for dynamic child")
