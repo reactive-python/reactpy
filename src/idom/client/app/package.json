@@ -3,7 +3,6 @@
   "description": "A client application for IDOM implemented in React",
   "version": "0.1.0",
   "author": "Ryan Morshead",
-  "main": "index.js",
   "workspaces": [
     "./packages/*"
   ],
@@ -14,7 +13,7 @@
   },
   "scripts": {
     "build": "snowpack build",
-    "format": "prettier --write ./src",
+    "format": "npm --workspaces run format",
     "test": "npm --workspaces test"
   },
   "devDependencies": {

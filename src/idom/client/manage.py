@@ -10,8 +10,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Dict, Iterable, List, Sequence, Set, Union
 
-from idom.config import IDOM_CLIENT_IMPORT_SOURCE_URL
-
 from . import _private
 
 
@@ -41,11 +39,7 @@ def web_module_url(package_name: str) -> str:
 
     If this URL is relative, then the base URL is determined by the client
     """
-    web_module_path(package_name, must_exist=True)
-    return (
-        IDOM_CLIENT_IMPORT_SOURCE_URL.current
-        + f"{_private.IDOM_CLIENT_IMPORT_SOURCE_URL_INFIX}/{package_name}.js"
-    )
+    return package_name
 
 
 def web_module_exists(package_name: str) -> bool:
@@ -121,10 +115,7 @@ def build(
         # copy over the whole APP_DIR directory into the temp one
         shutil.copytree(_private.APP_DIR, temp_app_dir, symlinks=True)
 
-        _write_user_packages_file(
-            temp_app_dir / "src" / "user-packages.js",
-            list(all_packages),
-        )
+        _write_user_packages_file(temp_app_dir, list(all_packages))
 
         logger.info("Installing dependencies...")
         _npm_install(all_package_specifiers, temp_app_dir)
@@ -181,8 +172,8 @@ def _run_subprocess(args: List[str], cwd: Path) -> None:
     return None
 
 
-def _write_user_packages_file(filepath: Path, packages: Iterable[str]) -> None:
-    filepath.write_text(
+def _write_user_packages_file(app_dir: Path, packages: Iterable[str]) -> None:
+    _private.get_use_packages_file(app_dir).write_text(
         _USER_PACKAGES_FILE_TEMPLATE.format(
             imports=",".join(f'"{pkg}":import({pkg!r})' for pkg in packages)
         )
