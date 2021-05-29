@@ -27,6 +27,7 @@ jobs:
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
         run: |
+          npm install -g npm@v7.13.0
           nox -s test -- pytest[--headless]
   test-python-versions:
     runs-on: ${{ matrix.os }}
@@ -48,6 +49,7 @@ jobs:
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
         run: |
+          npm install -g npm@v7.13.0
           nox -s test -- pytest[--headless,--no-cov]
   test-javascript:
     runs-on: ubuntu-latest
