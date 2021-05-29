@@ -91,7 +91,7 @@ def validate_vdom(value: Any) -> None:
 class ImportSourceDict(TypedDict):
     source: str
     fallback: Any
-    sourceType: str
+    sourceType: str  # noqa
     exportsMount: bool  # noqa
 
 
