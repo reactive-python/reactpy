@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import pipes
+import shutil
 import subprocess
 import sys
 import traceback
@@ -129,7 +130,10 @@ def build_javascript_first(cls):
             log.info("Installing Javascript...")
             try:
                 js_dir = str(package_dir / "client" / "app")
-                for args in ("npm install", "npm run build"):
+                npm = shutil.which("npm")  # this is required on windows
+                if npm is None:
+                    raise RuntimeError("NPM is not installed.")
+                for args in (f"{npm} install", f"{npm} run build"):
                     args_list = args.split()
                     log.info(f"> {list2cmdline(args_list)}")
                     subprocess.run(args_list, cwd=js_dir)
