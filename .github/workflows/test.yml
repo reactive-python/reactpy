@@ -63,3 +63,4 @@ jobs:
           npm install -g npm@v7.13.0
           npm install
           npm test
+          npm run build
