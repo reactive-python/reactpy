@@ -8,7 +8,6 @@ from idom.client.manage import (
     web_module_exists,
     web_module_exports,
     web_module_path,
-    web_module_url,
 )
 from tests.general_utils import assert_same_items
 
@@ -35,11 +34,6 @@ def test_web_module_path_must_exist():
     with pytest.raises(ValueError, match="does not exist at path"):
         web_module_path("this-does-not-exist", must_exist=True)
     assert not web_module_path("this-does-not-exist", must_exist=False).exists()
-
-
-def test_web_module_url(victory):
-    assert web_module_exists("victory")
-    assert web_module_url("victory") == "/client/_snowpack/pkg/victory.js"
 
 
 def test_web_module_exports(victory):

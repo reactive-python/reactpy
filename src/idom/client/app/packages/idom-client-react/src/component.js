@@ -41,9 +41,14 @@ function ImportedElement({ model }) {
   const mountPoint = react.useRef(null);
 
   react.useEffect(() => {
-    config.loadImportSource(model.importSource.source).then((module) => {
-      mountImportSource(mountPoint.current, module, model, config);
-    });
+    config
+      .loadImportSource(
+        model.importSource.source,
+        model.importSource.sourceType
+      )
+      .then((module) => {
+        mountImportSource(mountPoint.current, module, model, config);
+      });
   });
 
   return html`<div ref=${mountPoint} />`;

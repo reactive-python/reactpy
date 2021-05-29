@@ -1,6 +1,15 @@
 import { mountLayoutWithWebSocket } from "idom-client-react";
 import { unmountComponentAtNode } from "react-dom";
 
+// imported so static analysis knows to pick up files linked by user-packages.js
+import("./user-packages.js").then((module) => {
+  for (const pkgName in module.default) {
+    module.default[pkgName].then((pkg) => {
+      console.log(`Loaded module '${pkgName}'`);
+    });
+  }
+});
+
 export function mount(mountPoint) {
   mountLayoutWithWebSocket(
     mountPoint,
@@ -26,8 +35,8 @@ function getWebSocketEndpoint() {
   return protocol + "//" + url.join("/") + "?" + queryParams.user.toString();
 }
 
-function loadImportSource(source) {
-  return import("./user-packages.js").then((module) => module.default[source]);
+function loadImportSource(source, sourceType) {
+  return import(sourceType == "NAME" ? `./${source}.js` : source);
 }
 
 function shouldReconnect() {

@@ -34,14 +34,6 @@ def web_module_exports(package_name: str) -> Set[str]:
     )
 
 
-def web_module_url(package_name: str) -> str:
-    """Get the URL the where the web module should reside
-
-    If this URL is relative, then the base URL is determined by the client
-    """
-    return package_name
-
-
 def web_module_exists(package_name: str) -> bool:
     """Whether a web module with a given name exists"""
     return web_module_path(package_name).exists()
@@ -62,15 +54,19 @@ def web_module_names() -> Set[str]:
     return set(names)
 
 
-def add_web_module(package_name: str, source: Union[Path, str]) -> str:
+def add_web_module(
+    package_name: str,
+    source: Union[Path, str],
+) -> None:
     """Add a web module from source"""
+    if web_module_exists(package_name):
+        raise ValueError(f"Web module {package_name!r} already exists")
     source = Path(source)
     if not source.exists():
         raise FileNotFoundError(f"Package source file does not exist: {str(source)!r}")
     target = web_module_path(package_name)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.symlink_to(source.absolute())
-    return web_module_url(package_name)
 
 
 def restore() -> None:
@@ -173,7 +169,7 @@ def _run_subprocess(args: List[str], cwd: Path) -> None:
 
 
 def _write_user_packages_file(app_dir: Path, packages: Iterable[str]) -> None:
-    _private.get_use_packages_file(app_dir).write_text(
+    _private.get_user_packages_file(app_dir).write_text(
         _USER_PACKAGES_FILE_TEMPLATE.format(
             imports=",".join(f'"{pkg}":import({pkg!r})' for pkg in packages)
         )
