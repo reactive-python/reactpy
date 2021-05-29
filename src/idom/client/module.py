@@ -125,7 +125,7 @@ class Module:
 
         if self.source_type == URL_SOURCE:
             if check_exports is True:
-                raise ValueError("Cannot check exports for source type {source_type!r}")
+                raise ValueError(f"Cannot check exports of source type {source_type!r}")
             elif source_file is not None:
                 raise ValueError(f"File given, but source type is {source_type!r}")
             else:
