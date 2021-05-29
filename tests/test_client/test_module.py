@@ -116,3 +116,26 @@ def test_module_must_export_mount_if_exports_mount_is_set():
             source_file=JS_FIXTURES / "component-without-mount.js",
             exports_mount=True,
         )
+
+
+def test_cannot_have_source_file_for_url_source_type():
+    with pytest.raises(ValueError, match="File given, but source type is 'URL'"):
+        idom.Module("test", source_file="something.js", source_type=URL_SOURCE)
+
+
+def test_cannot_check_exports_for_url_source_type():
+    with pytest.raises(ValueError, match="Can't check exports for source type 'URL'"):
+        idom.Module("test", check_exports=True, source_type=URL_SOURCE)
+
+
+def test_invalid_source_type():
+    with pytest.raises(ValueError, match="Invalid source type"):
+        idom.Module("test", source_type="TYPE_DOES_NOT_EXIST")
+
+
+def test_attribute_error_if_lowercase_name_doesn_not_exist():
+    mod = idom.Module("test", source_type=URL_SOURCE)
+    with pytest.raises(AttributeError, match="this_attribute_does_not_exist"):
+        # This attribute would otherwise be considered to
+        # be the name of a component the module exports.
+        mod.this_attribute_does_not_exist

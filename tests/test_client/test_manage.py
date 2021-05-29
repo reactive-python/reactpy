@@ -30,6 +30,14 @@ def test_add_web_module_source_must_exist(tmp_path):
         add_web_module("test", tmp_path / "file-does-not-exist.js")
 
 
+def test_cannot_add_web_module_if_already_exists(tmp_path):
+    temp_file = tmp_path / "temp.js"
+    temp_file.write_text("console.log('hello!')")  # this won't get run
+    add_web_module("test", temp_file)
+    with pytest.raises(ValueError, match="already exists"):
+        add_web_module("test", temp_file)
+
+
 def test_web_module_path_must_exist():
     with pytest.raises(ValueError, match="does not exist at path"):
         web_module_path("this-does-not-exist", must_exist=True)
