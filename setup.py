@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import pipes
-import shutil
 import subprocess
 import sys
 import traceback
@@ -130,15 +129,10 @@ def build_javascript_first(cls):
             log.info("Installing Javascript...")
             try:
                 js_dir = str(package_dir / "client" / "app")
-                for cmd, *args in map(str.split, ["npm install", "npm run build"]):
-                    which_cmd = shutil.which(cmd)
-                    if which_cmd is None:
-                        raise RuntimeError(
-                            f"Failed to run command - {cmd!r} is not installed."
-                        )
-                    cmd_args = [which_cmd] + args
-                    log.info(f"> {list2cmdline(cmd_args)}")
-                    subprocess.check_call(cmd_args, cwd=js_dir)
+                for args in ("npm install", "npm run build"):
+                    args_list = args.split()
+                    log.info(f"> {list2cmdline(args_list)}")
+                    subprocess.run(args_list, cwd=js_dir)
             except Exception:
                 log.error("Failed to install Javascript")
                 log.error(traceback.format_exc())
