@@ -4,6 +4,7 @@ import pytest
 
 import idom
 from idom import Module
+from idom.client.module import URL_SOURCE
 from idom.config import IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT
 
 
@@ -16,7 +17,7 @@ def victory():
     return idom.install("victory@35.4.0")
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def simple_button():
     return Module("simple-button", source_file=JS_FIXTURES / "simple-button.js")
 
@@ -31,7 +32,7 @@ def test_any_relative_or_abolute_url_allowed():
 def test_module_import_repr():
     assert (
         repr(Module("/absolute/url/module").declare("SomeComponent"))
-        == "Import(name='SomeComponent', source='/absolute/url/module', fallback=None, exportsMount=False)"
+        == "Import(name='SomeComponent', source='/absolute/url/module', sourceType='URL', fallback=None, exportsMount=False)"
     )
 
 
@@ -41,13 +42,13 @@ def test_install_multiple():
         ["pad-left", "decamelize", "is-sorted"]
     )
     # ensure the output order is the same as the input order
-    assert pad_left.url.endswith("pad-left.js")
-    assert decamelize.url.endswith("decamelize.js")
-    assert is_sorted.url.endswith("is-sorted.js")
+    assert pad_left.source.endswith("pad-left")
+    assert decamelize.source.endswith("decamelize")
+    assert is_sorted.source.endswith("is-sorted")
 
 
 def test_module_does_not_exist():
-    with pytest.raises(ValueError, match="is not installed or is not a URL"):
+    with pytest.raises(ValueError, match="does not exist"):
         Module("this-module-does-not-exist")
 
 
@@ -57,13 +58,15 @@ def test_installed_module(driver, display, victory):
 
 
 def test_reference_pre_installed_module(victory):
-    assert victory.url == idom.Module("victory").url
+    assert victory == idom.Module("victory")
 
 
 def test_module_from_url():
     url = "https://code.jquery.com/jquery-3.5.0.js"
     jquery = idom.Module(url)
-    assert jquery.url == url
+    assert jquery.source == url
+    assert jquery.source_type == URL_SOURCE
+    assert jquery.exports is None
 
 
 def test_module_from_source(driver, driver_wait, display, simple_button):
@@ -97,8 +100,9 @@ def test_idom_client_modules_must_have_mount():
     try:
         with pytest.raises(RuntimeError, match="has no mount"):
             idom.Import(
-                "https://some.url",
-                "SomeComponent",
+                name="SomeComponent",
+                source="https://some.url",
+                source_type=URL_SOURCE,
                 exports_mount=False,
             )
     finally:
@@ -106,9 +110,7 @@ def test_idom_client_modules_must_have_mount():
 
 
 def test_module_must_export_mount_if_exports_mount_is_set():
-    with pytest.raises(
-        ValueError, match="does not export 'mount' but exports_mount=True"
-    ):
+    with pytest.raises(ValueError, match="does not export 'mount'"):
         idom.Module(
             "component-without-mount",
             source_file=JS_FIXTURES / "component-without-mount.js",

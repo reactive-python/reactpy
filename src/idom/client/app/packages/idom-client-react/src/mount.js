@@ -10,7 +10,7 @@ export function mountLayoutWithWebSocket(
   element,
   endpoint,
   loadImportSource,
-  maxReconnectTimeout = 0
+  maxReconnectTimeout
 ) {
   mountLayoutWithReconnectingWebSocket(
     element,
@@ -28,6 +28,7 @@ function mountLayoutWithReconnectingWebSocket(
   mountState = {
     everMounted: false,
     reconnectAttempts: 0,
+    reconnectTimeoutRange: 0,
   }
 ) {
   const socket = new WebSocket(endpoint);
@@ -36,15 +37,17 @@ function mountLayoutWithReconnectingWebSocket(
 
   socket.onopen = (event) => {
     console.log(`Connected.`);
+
     if (mountState.everMounted) {
       unmountComponentAtNode(element);
     }
+    _resetOpenMountState(mountState);
+
     mountLayout(element, {
       loadImportSource,
       saveUpdateHook: updateHookPromise.resolve,
       sendEvent: (event) => socket.send(JSON.stringify(event)),
     });
-    _setOpenMountState(mountState);
   };
 
   socket.onmessage = (event) => {
@@ -53,26 +56,35 @@ function mountLayoutWithReconnectingWebSocket(
   };
 
   socket.onclose = (event) => {
-    if (maxReconnectTimeout != 0) {
+    if (!maxReconnectTimeout) {
       console.log(`Connection lost.`);
       return;
     }
+
     const reconnectTimeout = _nextReconnectTimeout(
       maxReconnectTimeout,
       mountState
     );
+
     console.log(`Connection lost, reconnecting in ${reconnectTimeout} seconds`);
+
     setTimeout(function () {
       mountState.reconnectAttempts++;
-      mountLayoutWithWebSocket(element, endpoint, importSourceURL, mountState);
+      mountLayoutWithReconnectingWebSocket(
+        element,
+        endpoint,
+        loadImportSource,
+        maxReconnectTimeout,
+        mountState
+      );
     }, reconnectTimeout * 1000);
   };
 }
 
-function _setOpenMountState(mountState) {
+function _resetOpenMountState(mountState) {
   mountState.everMounted = true;
   mountState.reconnectAttempts = 0;
-  mountState.reconnectTimeoutRange = 1;
+  mountState.reconnectTimeoutRange = 0;
 }
 
 function _nextReconnectTimeout(maxReconnectTimeout, mountState) {

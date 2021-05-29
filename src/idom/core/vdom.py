@@ -59,6 +59,7 @@ VDOM_JSON_SCHEMA = {
             "type": "object",
             "properties": {
                 "source": {"type": "string"},
+                "sourceType": {"enum": ["URL", "NAME"]},
                 "fallback": {
                     "type": ["object", "string", "null"],
                     "if": {"not": {"type": "null"}},
@@ -90,6 +91,7 @@ def validate_vdom(value: Any) -> None:
 class ImportSourceDict(TypedDict):
     source: str
     fallback: Any
+    sourceType: str
     exportsMount: bool  # noqa
 
 

@@ -15,7 +15,7 @@ BACKUP_BUILD_DIR = APP_DIR / "build"
 IDOM_CLIENT_IMPORT_SOURCE_URL_INFIX = "/_snowpack/pkg"
 
 
-def get_use_packages_file(app_dir: Path) -> Path:
+def get_user_packages_file(app_dir: Path) -> Path:
     return app_dir / "packages" / "idom-app-react" / "src" / "user-packages.js"
 
 

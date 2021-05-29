@@ -59,15 +59,28 @@ def install(
         ]
 
 
+NAME_SOURCE = "NAME"
+"""A named souce - usually a Javascript package name"""
+
+URL_SOURCE = "URL"
+"""A source loaded from a URL, usually from a CDN"""
+
+SOURCE_TYPES = {NAME_SOURCE, URL_SOURCE}
+"""The possible source types for a :class:`Module`"""
+
+
 class Module:
     """A Javascript module
 
     Parameters:
-        url_or_name:
+        source:
             The URL to an ECMAScript module which exports React components
             (*with* a ``.js`` file extension) or name of a module installed in the
             built-in client application (*without* a ``.js`` file extension).
-        source_file:
+        source_type:
+            The type of the given ``source``. See :const:`SOURCE_TYPES` for the set of
+            possible values.
+        file:
             Only applicable if running on a client app which supports this feature.
             Dynamically install the code in the give file as a single-file module. The
             built-in client will inject this module adjacent to other installed modules
@@ -87,50 +100,48 @@ class Module:
             The URL this module will be imported from.
     """
 
-    __slots__ = (
-        "url",
-        "fallback",
-        "exports",
-        "exports_mount",
-        "check_exports",
-        "_export_names",
-    )
+    __slots__ = "source", "source_type", "fallback", "exports", "exports_mount"
 
     def __init__(
         self,
-        url_or_name: str,
+        source: str,
+        source_type: Optional[str] = None,
         source_file: Optional[Union[str, Path]] = None,
         fallback: Optional[str] = None,
         exports_mount: bool = False,
-        check_exports: bool = True,
+        check_exports: Optional[bool] = None,
     ) -> None:
+        self.source = source
         self.fallback = fallback
         self.exports_mount = exports_mount
-        self.check_exports = check_exports
+        self.exports: Optional[Set[str]] = None
 
-        self.exports: Set[str] = set()
-        if source_file is not None:
-            self.url = (
-                manage.web_module_url(url_or_name)
-                if manage.web_module_exists(url_or_name)
-                else manage.add_web_module(url_or_name, source_file)
-            )
-            if check_exports:
-                self.exports = manage.web_module_exports(url_or_name)
-        elif _is_url(url_or_name):
-            self.url = url_or_name
-            self.check_exports = check_exports = False
-        elif manage.web_module_exists(url_or_name):
-            self.url = manage.web_module_url(url_or_name)
-            if check_exports:
-                self.exports = manage.web_module_exports(url_or_name)
+        if source_type is None:
+            self.source_type = URL_SOURCE if _is_url(source) else NAME_SOURCE
+        elif source_type in SOURCE_TYPES:
+            self.source_type = source_type
         else:
-            raise ValueError(f"{url_or_name!r} is not installed or is not a URL")
+            raise ValueError(f"Invalid source type {source_type!r}")
 
-        if check_exports and exports_mount and "mount" not in self.exports:
-            raise ValueError(
-                f"Module {url_or_name!r} does not export 'mount' but exports_mount=True"
-            )
+        if self.source_type == URL_SOURCE:
+            if check_exports is True:
+                raise ValueError("Cannot check exports for source type {source_type!r}")
+            elif source_file is not None:
+                raise ValueError(f"File given, but source type is {source_type!r}")
+            else:
+                return None
+        elif check_exports is None:
+            check_exports = True
+
+        if source_file is not None:
+            manage.add_web_module(source, source_file)
+        elif not manage.web_module_exists(source):
+            raise ValueError(f"Module {source!r} does not exist")
+
+        if check_exports:
+            self.exports = manage.web_module_exports(source)
+            if exports_mount and "mount" not in self.exports:
+                raise ValueError(f"Module {source!r} does not export 'mount'")
 
     def declare(
         self,
@@ -149,24 +160,35 @@ class Module:
         Where ``name`` is the given name, and ``module`` is the :attr:`Module.url` of
         this :class:`Module` instance.
         """
-        if self.check_exports and name not in self.exports:
+        if self.exports is not None and name not in self.exports:
             raise ValueError(
                 f"{self} does not export {name!r}, available options are {list(self.exports)}"
             )
 
         return Import(
-            self.url,
             name,
-            has_children=has_children,
-            exports_mount=self.exports_mount,
-            fallback=fallback or self.fallback,
+            self.source,
+            self.source_type,
+            has_children,
+            self.exports_mount,
+            fallback or self.fallback,
         )
 
     def __getattr__(self, name: str) -> Import:
+        if name[0].lower() == name[0]:
+            # component names should be capitalized
+            raise AttributeError(f"{self} has no attribute {name!r}")
         return self.declare(name)
 
+    def __eq__(self, other: Any) -> bool:
+        return (
+            isinstance(other, Module)
+            and self.source == other.source
+            and self.source_type == other.source_type
+        )
+
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.url})"
+        return f"{type(self).__name__}({self.source})"
 
 
 class Import:
@@ -188,8 +210,9 @@ class Import:
 
     def __init__(
         self,
-        module: str,
         name: str,
+        source: str,
+        source_type: str,
         has_children: bool = True,
         exports_mount: bool = False,
         fallback: Optional[str] = None,
@@ -199,12 +222,15 @@ class Import:
             # set after Import instances have been constructed. A more comprehensive
             # check can be introduced if that is shown to be an issue in practice.
             raise RuntimeError(
-                f"{IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT} is set and {module} has no mount"
+                f"{IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT} is set and {source} has no mount"
             )
         self._name = name
         self._constructor = make_vdom_constructor(name, has_children)
         self._import_source = ImportSourceDict(
-            source=module, fallback=fallback, exportsMount=exports_mount
+            source=source,
+            sourceType=source_type,
+            fallback=fallback,
+            exportsMount=exports_mount,
         )
 
     def __call__(
