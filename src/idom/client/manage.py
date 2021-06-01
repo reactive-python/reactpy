@@ -5,6 +5,7 @@ Client Manager
 
 import shutil
 import subprocess
+import sys
 from logging import getLogger
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -131,6 +132,25 @@ def build(
             f"Successfuly installed {list(all_packages)} but "
             f"failed to discover {list(not_discovered)} post-install."
         )
+
+
+if sys.platform == "win32" and sys.version_info[:2] == (3, 7):  # pragma: no cover
+
+    def build(
+        packages: Sequence[str],
+        clean_build: bool = True,
+        skip_if_already_installed: bool = True,
+    ) -> None:
+        msg = (
+            "A bug in Python 3.7 on Windows causes this feature to break. "
+            "For more information see: https://bugs.python.org/issue31226"
+        )
+        try:
+            import pytest
+        except ImportError:
+            raise NotImplementedError(msg)
+        else:
+            pytest.xfail(msg)
 
 
 def _parse_package_specs(package_strings: Sequence[str]) -> Dict[str, str]:
