@@ -1,6 +1,60 @@
 Changelog
 =========
 
+0.28.0
+------
+
+Includes a wide variety of improvements:
+
+- support ``currentTime`` attr of audio/video elements
+- support for the ``files`` attribute from the target of input elements
+- model children are passed to the Javascript ``mount()`` function
+- began to add tests to client-side javascript
+- add a ``mountLayoutWithWebSocket`` function to ``idom-client-react``
+
+and breaking changes, the most significant of which are:
+
+- Refactor existing server implementations as functions adhering to a protocol. This
+  greatly simplified much of the code responsible for setting up servers and avoids
+  the use of inheritance.
+- Switch to a monorepo-style structure for Javascript enabling a greater separation of
+  concerns and common workspace scripts in ``package.json``.
+- Use a ``loadImportSource()`` function instead of trying to infer the path to dynamic
+  modules which was brittle and inflexible. Allowing the specific client implementation
+  to discover where "import sources" are located means ``idom-client-react`` doesn't
+  need to try and devise a solution that will work for all cases. The fallout from this
+  change is the addition of `importSource.sourceType` which, for the moment can either
+  be ``"NAME"`` or ``"URL"`` where the former indicates the client is expected to know
+  where to find a module of that name, and the latter should (usually) be passed on to
+  ``import()``
+
+
+**Issues Fixed:**
+
+- :issue:`324` (partially resolved)
+- :issue:`375`
+
+**Highlighted Commits:**
+
+- xfail due to bug in Python - :commit:`fee49a7`
+- add importSource sourceType field - :commit:`795bf94`
+- refactor client to use loadImportSource param - :commit:`bb5e3f3`
+- turn app into a package - :commit:`b282fc2`
+- add debug logs - :commit:`4b4f9b7`
+- add basic docs about JS test suite - :commit:`9ecfde5`
+- only use nox for python tests - :commit:`5056b7b`
+- test event serialization - :commit:`05fd86c`
+- serialize files attribute of file input element - :commit:`f0d00b7`
+- rename hasMount to exportsMount - :commit:`d55a28f`
+- refactor flask - :commit:`94681b6`
+- refactor tornado + misc fixes to sanic/fastapi - :commit:`16c9209`
+- refactor fastapi using server protocol - :commit:`0cc03ba`
+- recactor sanic server - :commit:`43d4b4f`
+- use server protocol instead of inheritance - :commit:`abe0fde`
+- support currentTime attr of audio/video elements - :commit:`975b54a`
+- pass children as props to mount() - :commit:`9494bc0`
+
+
 0.27.0
 ------
 
