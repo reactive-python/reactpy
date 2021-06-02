@@ -6,6 +6,7 @@ WORKDIR /app/
 # --------------
 RUN curl -sL https://deb.nodesource.com/setup_14.x  | bash -
 RUN apt-get install -yq nodejs build-essential
+RUN npm install -g npm@latest
 
 # Upgrad PIP
 # ----------
