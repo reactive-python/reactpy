@@ -142,8 +142,8 @@ if sys.platform == "win32" and sys.version_info[:2] == (3, 7):  # pragma: no cov
         skip_if_already_installed: bool = True,
     ) -> None:
         msg = (
-            "A bug in Python 3.7 on Windows causes this feature to break. "
-            "For more information see: https://bugs.python.org/issue31226"
+            "This feature is not available due to a bug in Python<3.8 on Windows - for "
+            "more information see: https://bugs.python.org/issue31226"
         )
         try:
             import pytest
