@@ -60,14 +60,20 @@ def add_web_module(
     source: Union[Path, str],
 ) -> None:
     """Add a web module from source"""
-    if web_module_exists(package_name):
-        raise ValueError(f"Web module {package_name!r} already exists")
-    source = Path(source)
-    if not source.exists():
+    resolved_source = Path(source).resolve()
+    if not resolved_source.exists():
         raise FileNotFoundError(f"Package source file does not exist: {str(source)!r}")
     target = web_module_path(package_name)
+    if target.resolve() == resolved_source:
+        return None  # already added
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.symlink_to(source.absolute())
+    # this will raise an error if already exists
+    target.symlink_to(resolved_source)
+
+
+def remove_web_module(package_name: str, must_exist: bool = False) -> None:
+    """Remove a web module"""
+    web_module_path(package_name, must_exist).unlink()
 
 
 def restore() -> None:
