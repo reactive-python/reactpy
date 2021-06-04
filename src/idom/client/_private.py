@@ -1,6 +1,7 @@
 import json
 import re
 import shutil
+from os.path import getmtime
 from pathlib import Path
 from typing import Dict, Set, Tuple, cast
 
@@ -15,6 +16,15 @@ BACKUP_BUILD_DIR = APP_DIR / "build"
 IDOM_CLIENT_IMPORT_SOURCE_URL_INFIX = "/_snowpack/pkg"
 
 
+if getmtime(BACKUP_BUILD_DIR) > getmtime(IDOM_CLIENT_BUILD_DIR.current):
+    # delete the runtime build if the backup build is newer (i.e. IDOM was re-installed)
+    shutil.rmtree(IDOM_CLIENT_BUILD_DIR.current)
+
+if not IDOM_CLIENT_BUILD_DIR.current.exists():
+    # populate the runtime build directory if it doesn't exist
+    shutil.copytree(BACKUP_BUILD_DIR, IDOM_CLIENT_BUILD_DIR.current, symlinks=True)
+
+
 def get_user_packages_file(app_dir: Path) -> Path:
     return app_dir / "packages" / "idom-app-react" / "src" / "user-packages.js"
 
@@ -23,10 +33,6 @@ def web_modules_dir() -> Path:
     return IDOM_CLIENT_BUILD_DIR.current.joinpath(
         *IDOM_CLIENT_IMPORT_SOURCE_URL_INFIX[1:].split("/")
     )
-
-
-if not IDOM_CLIENT_BUILD_DIR.current.exists():  # pragma: no cover
-    shutil.copytree(BACKUP_BUILD_DIR, IDOM_CLIENT_BUILD_DIR.current, symlinks=True)
 
 
 def restore_build_dir_from_backup() -> None:
