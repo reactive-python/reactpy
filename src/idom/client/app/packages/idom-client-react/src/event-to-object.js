@@ -1,3 +1,5 @@
+import { copyAttributes } from "./utils.js";
+
 function serializeEvent(event) {
   const data = {};
 
@@ -23,7 +25,18 @@ const targetTransformCategories = {
     currentTime: target.currentTime,
   }),
   hasFiles: (target) => {
-    return target.type && target.type == "file" ? { files: target.files } : {};
+    if (target?.type == "file") {
+      return {
+        files: Array.from(target.files).map((file) => ({
+          lastModified: file.lastModified,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        })),
+      };
+    } else {
+      return {};
+    }
   },
 };
 
