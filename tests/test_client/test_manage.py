@@ -4,6 +4,7 @@ import idom
 from idom.client.manage import (
     add_web_module,
     build,
+    remove_web_module,
     restore,
     web_module_exists,
     web_module_exports,
@@ -31,11 +32,25 @@ def test_add_web_module_source_must_exist(tmp_path):
 
 
 def test_cannot_add_web_module_if_already_exists(tmp_path):
+    first_temp_file = tmp_path / "temp-1.js"
+    second_temp_file = tmp_path / "temp-2.js"
+
+    first_temp_file.write_text("console.log('hello!')")  # this won't get run
+    second_temp_file.write_text("console.log('hello!')")  # this won't get run
+
+    add_web_module("test", first_temp_file)
+    with pytest.raises(FileExistsError):
+        add_web_module("test", second_temp_file)
+
+    remove_web_module("test")
+
+
+def test_can_add_web_module_if_already_exists_and_source_is_same(tmp_path):
     temp_file = tmp_path / "temp.js"
-    temp_file.write_text("console.log('hello!')")  # this won't get run
+    temp_file.write_text("console.log('hello!')")
     add_web_module("test", temp_file)
-    with pytest.raises(ValueError, match="already exists"):
-        add_web_module("test", temp_file)
+    add_web_module("test", temp_file)
+    remove_web_module("test")
 
 
 def test_web_module_path_must_exist():
