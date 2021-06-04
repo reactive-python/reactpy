@@ -29,6 +29,7 @@ name = "idom"
 root_dir = Path(__file__).parent
 src_dir = root_dir / "src"
 package_dir = src_dir / name
+js_runtime_build = package_dir / "client" / "build"
 
 
 # -----------------------------------------------------------------------------
@@ -142,6 +143,8 @@ def build_javascript_first(cls):
                 log.error(traceback.format_exc())
                 raise
             else:
+                if js_runtime_build.exists():
+                    shutil.rmtree(js_runtime_build)
                 log.info("Successfully installed Javascript")
             super().run()
 
