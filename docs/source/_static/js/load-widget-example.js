@@ -1,3 +1,5 @@
+const IDOM_CLIENT_REACT_PATH = "/client/_snowpack/pkg/idom-client-react.js";
+
 export default function loadWidgetExample(
   idomServerHost,
   idomServerPath,
@@ -16,7 +18,7 @@ export default function loadWidgetExample(
 
   enableWidgetButton.addEventListener("click", () => {
     {
-      import(http_proto + idom_url + "/client/src/index.js").then((module) => {
+      import(http_proto + idom_url + IDOM_CLIENT_REACT_PATH).then((module) => {
         {
           fadeOutAndThen(enableWidgetButton, () => {
             {

@@ -26,7 +26,6 @@ def wrap_builder(old_builder):
     # This is the bit that we're injecting to get the example components to reload too
     def new_builder():
         [s.stop() for s in _running_idom_servers]
-        [s.wait_until_stopped() for s in _running_idom_servers]
 
         # we need to set this before `docs.main` does
         IDOM_CLIENT_IMPORT_SOURCE_URL.current = (
