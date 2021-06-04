@@ -4,7 +4,14 @@ import serializeEvent from "../src/event-to-object.js";
 import "./tooling/setup.js";
 
 const allTargetData = {
-  files: ["path/to/some/file"],
+  files: [
+    {
+      lastModified: 0,
+      name: "something",
+      type: "some-type",
+      size: 0,
+    },
+  ],
   value: "something",
   currentTime: 35,
   tagName: null, // overwritten in tests
