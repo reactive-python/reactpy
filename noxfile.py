@@ -95,7 +95,6 @@ def test_suite(session: Session) -> None:
         session.install(".[all]")
     else:
         install_idom_dev(session, extras="all")
-    pytest_args += ["--reruns", "1"]
 
     session.run("pytest", "tests", *pytest_args)
 
