@@ -1,5 +1,3 @@
-import { copyAttributes } from "./utils.js";
-
 function serializeEvent(event) {
   const data = {};
 
