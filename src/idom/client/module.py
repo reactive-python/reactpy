@@ -108,7 +108,7 @@ class Module:
         source_type: Optional[str] = None,
         source_file: Optional[Union[str, Path]] = None,
         fallback: Optional[str] = None,
-        exports_mount: bool = False,
+        exports_mount: bool = True,
         check_exports: Optional[bool] = None,
     ) -> None:
         self.source = source

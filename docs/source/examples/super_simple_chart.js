@@ -1,7 +1,15 @@
-import React from "./react.js";
-import htm from "./htm.js";
+import { h, Component, render } from "https://unpkg.com/preact?module";
+import htm from "https://unpkg.com/htm?module";
 
-const html = htm.bind(React.createElement);
+const html = htm.bind(h);
+
+export function mount(element, component, props) {
+  const root = render(html`<${component} ...${props} />`, element);
+  return () => {
+    const Nothing = () => null;
+    render(html`<${Nothing} />`, element, root);
+  };
+}
 
 export function SuperSimpleChart(props) {
   const data = props.data;

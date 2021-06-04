@@ -19,7 +19,11 @@ def victory():
 
 @pytest.fixture(scope="module")
 def simple_button():
-    return Module("simple-button", source_file=JS_FIXTURES / "simple-button.js")
+    return Module(
+        "simple-button",
+        source_file=JS_FIXTURES / "simple-button.js",
+        exports_mount=False,
+    )
 
 
 def test_any_relative_or_abolute_url_allowed():
@@ -32,7 +36,7 @@ def test_any_relative_or_abolute_url_allowed():
 def test_module_import_repr():
     assert (
         repr(Module("/absolute/url/module").declare("SomeComponent"))
-        == "Import(name='SomeComponent', source='/absolute/url/module', sourceType='URL', fallback=None, exportsMount=False)"
+        == "Import(name='SomeComponent', source='/absolute/url/module', sourceType='URL', fallback=None, exportsMount=True)"
     )
 
 
@@ -58,7 +62,7 @@ def test_installed_module(driver, display, victory):
 
 
 def test_reference_pre_installed_module(victory):
-    assert victory == idom.Module("victory")
+    assert victory == idom.Module("victory", exports_mount=False)
 
 
 def test_module_from_url():

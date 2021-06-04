@@ -63,7 +63,7 @@ def run(
         port = find_available_port(host)
 
     server = server_type(component, server_config, app)
-    logger.info(f"Using {server}")
+    logger.info(f"Using {type(server).__name__}")
 
     run_server = server.run if not daemon else server.run_in_thread
     run_server(host, port, **(run_kwargs or {}))  # type: ignore
