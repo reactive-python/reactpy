@@ -16,12 +16,13 @@ BACKUP_BUILD_DIR = APP_DIR / "build"
 IDOM_CLIENT_IMPORT_SOURCE_URL_INFIX = "/_snowpack/pkg"
 
 
-if getmtime(BACKUP_BUILD_DIR) > getmtime(IDOM_CLIENT_BUILD_DIR.current):
-    # delete the runtime build if the backup build is newer (i.e. IDOM was re-installed)
-    shutil.rmtree(IDOM_CLIENT_BUILD_DIR.current)
-
 if not IDOM_CLIENT_BUILD_DIR.current.exists():
     # populate the runtime build directory if it doesn't exist
+    shutil.copytree(BACKUP_BUILD_DIR, IDOM_CLIENT_BUILD_DIR.current, symlinks=True)
+elif getmtime(BACKUP_BUILD_DIR) > getmtime(IDOM_CLIENT_BUILD_DIR.current):
+    # delete the existing runtime build because it's out of date
+    shutil.rmtree(IDOM_CLIENT_BUILD_DIR.current)
+    # replace it with the newer backup build (presumable from a fresh install)
     shutil.copytree(BACKUP_BUILD_DIR, IDOM_CLIENT_BUILD_DIR.current, symlinks=True)
 
 
