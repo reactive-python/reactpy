@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union, overload
 from urllib.parse import urlparse
 
-from idom.config import IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT
 from idom.core.vdom import ImportSourceDict, VdomDict, make_vdom_constructor
 
 from . import _private, manage
@@ -37,8 +36,6 @@ def install(
     packages: Union[str, List[str], Tuple[str]],
     ignore_installed: bool = False,
     fallback: Optional[str] = None,
-    # dynamically installed modules probably won't have a mount so we default to False
-    exports_mount: bool = False,
 ) -> Union[Module, List[Module]]:
     return_one = False
     if isinstance(packages, str):
@@ -51,12 +48,9 @@ def install(
         manage.build(packages, clean_build=False)
 
     if return_one:
-        return Module(pkg_names[0], fallback=fallback, exports_mount=exports_mount)
+        return Module(pkg_names[0], fallback=fallback)
     else:
-        return [
-            Module(pkg, fallback=fallback, exports_mount=exports_mount)
-            for pkg in pkg_names
-        ]
+        return [Module(pkg, fallback=fallback) for pkg in pkg_names]
 
 
 NAME_SOURCE = "NAME"
@@ -88,10 +82,6 @@ class Module:
             ``./some-other-installed-module.js``.
         fallack:
             What to display while the modules is being loaded.
-        exports_mount:
-            Whether the module exports a ``mount`` function that allows components to
-            be mounted directly to the DOM. Such a mount function enables greater
-            flexibility in how custom components can be implemented.
 
     Attributes:
         installed:
@@ -100,7 +90,7 @@ class Module:
             The URL this module will be imported from.
     """
 
-    __slots__ = "source", "source_type", "fallback", "exports", "exports_mount"
+    __slots__ = "source", "source_type", "fallback", "exports"
 
     def __init__(
         self,
@@ -108,12 +98,10 @@ class Module:
         source_type: Optional[str] = None,
         source_file: Optional[Union[str, Path]] = None,
         fallback: Optional[str] = None,
-        exports_mount: bool = True,
         check_exports: Optional[bool] = None,
     ) -> None:
         self.source = source
         self.fallback = fallback
-        self.exports_mount = exports_mount
         self.exports: Optional[Set[str]] = None
 
         if source_type is None:
@@ -140,8 +128,6 @@ class Module:
 
         if check_exports:
             self.exports = manage.web_module_exports(source)
-            if exports_mount and "mount" not in self.exports:
-                raise ValueError(f"Module {source!r} does not export 'mount'")
 
     def declare(
         self,
@@ -170,7 +156,6 @@ class Module:
             self.source,
             self.source_type,
             has_children,
-            self.exports_mount,
             fallback or self.fallback,
         )
 
@@ -214,23 +199,14 @@ class Import:
         source: str,
         source_type: str,
         has_children: bool = True,
-        exports_mount: bool = False,
         fallback: Optional[str] = None,
     ) -> None:
-        if IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT.current and not exports_mount:
-            # This check is not perfect since IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT can be
-            # set after Import instances have been constructed. A more comprehensive
-            # check can be introduced if that is shown to be an issue in practice.
-            raise RuntimeError(
-                f"{IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT} is set and {source} has no mount"
-            )
         self._name = name
         self._constructor = make_vdom_constructor(name, has_children)
         self._import_source = ImportSourceDict(
             source=source,
             sourceType=source_type,
             fallback=fallback,
-            exportsMount=exports_mount,
         )
 
     def __call__(

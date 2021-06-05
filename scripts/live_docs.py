@@ -1,4 +1,3 @@
-import importlib
 import os
 
 from sphinx_autobuild.cli import (
@@ -10,13 +9,12 @@ from sphinx_autobuild.cli import (
     get_parser,
 )
 
-from idom.config import IDOM_CLIENT_IMPORT_SOURCE_URL
+from docs.main import IDOM_MODEL_SERVER_URL_PREFIX, make_app, make_component
 from idom.server.sanic import PerClientStateServer
 
 
 # these environment variable are used in custom Sphinx extensions
-os.environ["IDOM_DOC_EXAMPLE_SERVER_HOST"] = example_server_host = "127.0.0.1:5555"
-os.environ["IDOM_DOC_EXAMPLE_SERVER_PATH"] = ""
+os.environ["IDOM_DOC_EXAMPLE_SERVER_HOST"] = "127.0.0.1:5555"
 os.environ["IDOM_DOC_STATIC_SERVER_HOST"] = ""
 
 _running_idom_servers = []
@@ -27,19 +25,15 @@ def wrap_builder(old_builder):
     def new_builder():
         [s.stop() for s in _running_idom_servers]
 
-        # we need to set this before `docs.main` does
-        IDOM_CLIENT_IMPORT_SOURCE_URL.current = (
-            f"http://{example_server_host}{IDOM_CLIENT_IMPORT_SOURCE_URL.default}"
+        server = PerClientStateServer(
+            make_component(),
+            {"cors": True, "url_prefix": IDOM_MODEL_SERVER_URL_PREFIX},
+            make_app(),
         )
-
-        from docs import main
-
-        importlib.reload(main)
-
-        server = PerClientStateServer(main.component, {"cors": True})
-        _running_idom_servers.append(server)
         server.run_in_thread("127.0.0.1", 5555, debug=True)
+        _running_idom_servers.append(server)
         server.wait_until_started()
+
         old_builder()
 
     return new_builder

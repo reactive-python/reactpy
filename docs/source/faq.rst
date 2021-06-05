@@ -48,9 +48,12 @@ Yes, but with some restrictions:
 
 1. The Javascript in question must be distributed as an ECMAScript Module
    (`ESM <https://hacks.mozilla.org/2018/03/es-modules-a-cartoon-deep-dive/>`__)
-2. The module must export a ``mount(element, component, props)`` function
-3. Set ``exports_mount=True`` when creating your :class:`~idom.client.module.Module`
-   instance.
+2. The module must export the following functions:
+
+   - ``render(element: HTMLElement, component: any, props: Object) => void``
+   - ``unmount(element: HTMLElement) => void``
+
+
 
 These restrictions apply because the Javascript from the CDN must be able to run
 natively in the browser, the module must be able to run in isolation from the main

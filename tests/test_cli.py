@@ -81,14 +81,17 @@ def test_show_options():
                 IDOM_CLIENT_BUILD_DIR.default,
                 "True",
             ],
-            ["IDOM_CLIENT_IMPORT_SOURCE_URL", "/client", "/client", "True"],
-            ["IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT", "False", "False", "True"],
             [
                 "IDOM_DEBUG_MODE",
                 IDOM_DEBUG_MODE.current,
                 IDOM_DEBUG_MODE.default,
                 "False",
             ],
-            ["IDOM_FEATURE_INDEX_AS_DEFAULT_KEY", "False", "False", "False"],
+            [
+                "IDOM_FEATURE_INDEX_AS_DEFAULT_KEY",
+                "False",
+                "False",
+                "False",
+            ],
         ],
     )
