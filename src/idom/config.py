@@ -7,7 +7,7 @@ variables or, for those which allow it, a programatic interface.
 """
 
 from pathlib import Path
-from typing import Any, List, cast
+from typing import Any, List
 
 from ._option import ALL_OPTIONS as _ALL_OPTIONS
 from ._option import Option as _Option
@@ -43,41 +43,6 @@ IDOM_CLIENT_BUILD_DIR = _Option(
 This directory **MUST** be treated as a black box. Downstream applications **MUST NOT**
 assume anything about the structure of this directory see :mod:`idom.client.manage` for
 a set of publically available APIs for working with the client.
-"""
-
-
-IDOM_CLIENT_IMPORT_SOURCE_URL = _Option(
-    "IDOM_CLIENT_IMPORT_SOURCE_URL",
-    default="/client",
-    validator=lambda x: cast(str, x[:-1] if x.endswith("/") else x),
-)
-"""The URL to importable modules containing Javascript components
-
-Setting this to an empty string will given the client control over the location of
-import sources. Using a relative path (e.g. one starting with ``./``) with locate import
-sources relative to a base URL specified by the client. Lastly, an absolute URL
-specifies exactly where import sources are located and ignores are client configuration.
-
-Examples:
-    Empty String:
-        ``CLIENT_SPECIFIED_BASE_URL/my-module.js``
-    Relative Path:
-        ``CLIENT_SPECIFIED_BASE_URL/RELATIVE_PATH/my-module.js``
-    Absolute URL
-        ``ABSOLUTE_PATH/my-module.js``
-"""
-
-IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT = _Option(
-    "IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT",
-    default=False,
-    validator=lambda x: bool(int(x)),
-)
-"""Control whether imported modules must have a mounting function.
-
-Client implementations that do not support dynamically installed modules can set this
-option to block the usages of components that are not mounted in isolation. More
-specifically, this requires the ``exports_mount`` option of
-:class:`~idom.client.module.Module` to be ``True``.
 """
 
 IDOM_FEATURE_INDEX_AS_DEFAULT_KEY = _Option(

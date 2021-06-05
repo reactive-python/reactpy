@@ -5,7 +5,6 @@ import pytest
 import idom
 from idom import Module
 from idom.client.module import URL_SOURCE
-from idom.config import IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT
 
 
 HERE = Path(__file__).parent
@@ -19,11 +18,7 @@ def victory():
 
 @pytest.fixture(scope="module")
 def simple_button():
-    return Module(
-        "simple-button",
-        source_file=JS_FIXTURES / "simple-button.js",
-        exports_mount=False,
-    )
+    return Module("simple-button", source_file=JS_FIXTURES / "simple-button.js")
 
 
 def test_any_relative_or_abolute_url_allowed():
@@ -36,7 +31,7 @@ def test_any_relative_or_abolute_url_allowed():
 def test_module_import_repr():
     assert (
         repr(Module("/absolute/url/module").declare("SomeComponent"))
-        == "Import(name='SomeComponent', source='/absolute/url/module', sourceType='URL', fallback=None, exportsMount=True)"
+        == "Import(name='SomeComponent', source='/absolute/url/module', sourceType='URL', fallback=None)"
     )
 
 
@@ -62,7 +57,7 @@ def test_installed_module(driver, display, victory):
 
 
 def test_reference_pre_installed_module(victory):
-    assert victory == idom.Module("victory", exports_mount=False)
+    assert victory == idom.Module("victory")
 
 
 def test_module_from_url():
@@ -96,30 +91,6 @@ def test_module_from_source(driver, driver_wait, display, simple_button):
 def test_module_checks_export_names(simple_button):
     with pytest.raises(ValueError, match="does not export 'ComponentDoesNotExist'"):
         simple_button.declare("ComponentDoesNotExist")
-
-
-def test_idom_client_modules_must_have_mount():
-    old_opt = IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT.current
-    IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT.current = True
-    try:
-        with pytest.raises(RuntimeError, match="has no mount"):
-            idom.Import(
-                name="SomeComponent",
-                source="https://some.url",
-                source_type=URL_SOURCE,
-                exports_mount=False,
-            )
-    finally:
-        IDOM_CLIENT_MODULES_MUST_HAVE_MOUNT.current = old_opt
-
-
-def test_module_must_export_mount_if_exports_mount_is_set():
-    with pytest.raises(ValueError, match="does not export 'mount'"):
-        idom.Module(
-            "component-without-mount",
-            source_file=JS_FIXTURES / "component-without-mount.js",
-            exports_mount=True,
-        )
 
 
 def test_cannot_have_source_file_for_url_source_type():

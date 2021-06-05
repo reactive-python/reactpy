@@ -13,14 +13,11 @@ APP_DIR = HERE / "app"
 BACKUP_BUILD_DIR = APP_DIR / "build"
 
 # the path relative to the build that contains import sources
-IDOM_CLIENT_IMPORT_SOURCE_URL_INFIX = "/_snowpack/pkg"
+IDOM_CLIENT_IMPORT_SOURCE_INFIX = "_snowpack/pkg"
 
 
-def _run_build_dir_init_only_once():  # pragma: no cover
-    """Initialize the runtime build directory
-
-    This should only be called *once*
-    """
+def _run_build_dir_init_only_once() -> None:  # pragma: no cover
+    """Initialize the runtime build directory - this should only be called once"""
     if not IDOM_CLIENT_BUILD_DIR.current.exists():
         # populate the runtime build directory if it doesn't exist
         shutil.copytree(BACKUP_BUILD_DIR, IDOM_CLIENT_BUILD_DIR.current, symlinks=True)
@@ -36,12 +33,6 @@ _run_build_dir_init_only_once()  # this is only ever called once!
 
 def get_user_packages_file(app_dir: Path) -> Path:
     return app_dir / "packages" / "idom-app-react" / "src" / "user-packages.js"
-
-
-def web_modules_dir() -> Path:
-    return IDOM_CLIENT_BUILD_DIR.current.joinpath(
-        *IDOM_CLIENT_IMPORT_SOURCE_URL_INFIX[1:].split("/")
-    )
 
 
 def restore_build_dir_from_backup() -> None:

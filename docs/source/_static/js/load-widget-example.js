@@ -1,32 +1,32 @@
-const IDOM_CLIENT_REACT_PATH = "/client/_snowpack/pkg/idom-client-react.js";
+const LOC = window.location;
+const HTTP_PROTO = LOC.protocol;
+const WS_PROTO = HTTP_PROTO === "https:" ? "wss:" : "ws:";
+const IDOM_MODULES_PATH = "/_modules";
+const IDOM_CLIENT_REACT_PATH = IDOM_MODULES_PATH + "/idom-client-react.js";
 
-export default function loadWidgetExample(
-  idomServerHost,
-  idomServerPath,
-  mountID,
-  viewID
-) {
-  const loc = window.location;
-  const idom_url = "//" + (idomServerHost || loc.host) + idomServerPath;
-  const http_proto = loc.protocol;
-  const ws_proto = http_proto === "https:" ? "wss:" : "ws:";
+export default function loadWidgetExample(idomServerHost, mountID, viewID) {
+  const idom_url = "//" + (idomServerHost || LOC.host);
+  const http_idom_url = HTTP_PROTO + idom_url;
+  const ws_idom_url = WS_PROTO + idom_url;
 
-  const mount = document.getElementById(mountID);
+  const mountEl = document.getElementById(mountID);
   const enableWidgetButton = document.createElement("button");
-  enableWidgetButton.innerHTML = "Enable Widget";
+  enableWidgetButton.appendChild(document.createTextNode("Enable Widget"));
   enableWidgetButton.setAttribute("class", "enable-widget-button");
 
   enableWidgetButton.addEventListener("click", () => {
     {
-      import(http_proto + idom_url + IDOM_CLIENT_REACT_PATH).then((module) => {
+      import(http_idom_url + IDOM_CLIENT_REACT_PATH).then((module) => {
         {
           fadeOutAndThen(enableWidgetButton, () => {
             {
-              mount.removeChild(enableWidgetButton);
-              mount.setAttribute("class", "interactive widget-container");
+              mountEl.removeChild(enableWidgetButton);
+              mountEl.setAttribute("class", "interactive widget-container");
               module.mountLayoutWithWebSocket(
-                mount,
-                ws_proto + idom_url + `/stream?view_id=${viewID}`
+                mountEl,
+                ws_idom_url + `/_idom/stream?view_id=${viewID}`,
+                (source, sourceType) =>
+                  loadImportSource(http_idom_url, source, sourceType)
               );
             }
           });
@@ -55,5 +55,13 @@ export default function loadWidgetExample(
     }
   }
 
-  mount.appendChild(enableWidgetButton);
+  mountEl.appendChild(enableWidgetButton);
+}
+
+function loadImportSource(baseUrl, source, sourceType) {
+  if (sourceType == "NAME") {
+    return import(baseUrl + IDOM_MODULES_PATH + "/" + source + ".js");
+  } else {
+    return import(source);
+  }
 }

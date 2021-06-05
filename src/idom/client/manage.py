@@ -11,15 +11,27 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Dict, Iterable, List, Sequence, Set, Union
 
+from idom.config import IDOM_CLIENT_BUILD_DIR
+
 from . import _private
 
 
 logger = getLogger(__name__)
 
 
+def web_modules_dir() -> Path:
+    """The directory containing all web modules
+
+    .. warning::
+
+        No assumptions should be made about the exact structure of this directory!
+    """
+    return IDOM_CLIENT_BUILD_DIR.current / "_snowpack" / "pkg"
+
+
 def web_module_path(package_name: str, must_exist: bool = False) -> Path:
     """Get the :class:`Path` to a web module's source"""
-    path = _private.web_modules_dir().joinpath(*(package_name + ".js").split("/"))
+    path = web_modules_dir().joinpath(*(package_name + ".js").split("/"))
     if must_exist and not path.exists():
         raise ValueError(
             f"Web module {package_name!r} does not exist at path {str(path)!r}"
@@ -43,7 +55,7 @@ def web_module_exists(package_name: str) -> bool:
 def web_module_names() -> Set[str]:
     """Get the names of all installed web modules"""
     names = []
-    web_mod_dir = _private.web_modules_dir()
+    web_mod_dir = web_modules_dir()
     for pth in web_mod_dir.glob("**/*.js"):
         rel_pth = pth.relative_to(web_mod_dir)
         if Path("common") in rel_pth.parents:

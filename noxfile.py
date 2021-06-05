@@ -195,7 +195,10 @@ def install_requirements_file(session: Session, name: str) -> None:
 
 
 def install_idom_dev(session: Session, extras: str = "stable") -> None:
-    session.install("-e", f".[{extras}]")
+    if "--no-install" not in session.posargs:
+        session.install("-e", f".[{extras}]")
+    else:
+        session.posargs.remove("--no-install")
     if "--no-restore" not in session.posargs:
         session.run("idom", "restore")
     else:

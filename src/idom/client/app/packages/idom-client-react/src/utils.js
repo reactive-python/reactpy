@@ -1,22 +1,12 @@
 import * as jsonpatch from "fast-json-patch";
 
-export function applyPatchInplace(doc, path, patch) {
-  if (!path) {
-    jsonpatch.applyPatch(doc, patch);
-  } else {
-    jsonpatch.applyPatch(doc, [
-      {
-        op: "replace",
-        path: path,
-        value: jsonpatch.applyPatch(
-          jsonpatch.getValueByPointer(doc, path),
-          patch,
-          false,
-          false
-        ).newDocument,
-      },
-    ]);
+export function applyPatchInplace(doc, pathPrefix, patch) {
+  if (pathPrefix) {
+    patch = patch.map((op) =>
+      Object.assign({}, op, { path: pathPrefix + op.path })
+    );
   }
+  jsonpatch.applyPatch(doc, patch, false, true);
 }
 
 export function joinUrl(base, tail) {
