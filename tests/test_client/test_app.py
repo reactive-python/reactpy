@@ -4,7 +4,7 @@ import idom
 from idom.testing import ServerMountPoint
 
 
-HERE = Path(__file__).parent
+JS_DIR = Path(__file__).parent / "js"
 
 
 def test_automatic_reconnect(create_driver):
@@ -43,3 +43,35 @@ def test_automatic_reconnect(create_driver):
         # check that we can resume normal operation
         set_state.current(1)
         driver.find_element_by_id("new-component-1")
+
+
+def test_that_js_module_unmount_is_called(driver, driver_wait, display):
+    module = idom.Module(
+        "set-flag-when-unmount-is-called",
+        source_file=JS_DIR / "set-flag-when-unmount-is-called.js",
+    )
+
+    set_current_component = idom.Ref(None)
+
+    @idom.component
+    def ShowCurrentComponent():
+        current_component, set_current_component.current = idom.hooks.use_state(
+            lambda: module.SomeComponent(
+                {"id": "some-component", "text": "initial component"}
+            )
+        )
+        return current_component
+
+    display(ShowCurrentComponent)
+
+    driver.find_element_by_id("some-component")
+
+    set_current_component.current(
+        idom.html.h1({"id": "some-other-component"}, "some other component")
+    )
+
+    # the new component has been displayed
+    driver.find_element_by_id("some-other-component")
+
+    # the unmount callback for the old component was called
+    driver.find_element_by_id("unmount-flag")
