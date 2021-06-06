@@ -136,7 +136,7 @@ def build_javascript_first(cls):
                 for args in (f"{npm} install", f"{npm} run build"):
                     args_list = args.split()
                     log.info(f"> {list2cmdline(args_list)}")
-                    subprocess.run(args_list, cwd=js_dir)
+                    subprocess.run(args_list, cwd=js_dir, check=True)
             except Exception:
                 log.error("Failed to install Javascript")
                 log.error(traceback.format_exc())

@@ -1,18 +1,12 @@
-import {
-  h,
-  Component,
-  render as preactRender,
-} from "https://unpkg.com/preact?module";
+import { h, Component, render } from "https://unpkg.com/preact?module";
 import htm from "https://unpkg.com/htm?module";
 
 const html = htm.bind(h);
 
-export function render(element, component, props) {
-  preactRender(html`<${component} ...${props} />`, element);
-}
+export { h as createElement, render as renderElement };
 
-export function unmount(element) {
-  preactRender(null, element);
+export function unmountElement(container) {
+  preactRender(null, container);
 }
 
 export function SuperSimpleChart(props) {

@@ -30,28 +30,62 @@ Custom Javascript Components
 For projects that will be shared with others we recommend bundling your Javascript with
 `rollup <https://rollupjs.org/guide/en/>`__ or `webpack <https://webpack.js.org/>`__
 into a
-`web module <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules>`__
-using IDOM's
+`web module <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules>`__.
+IDOM also provides a
 `template repository <https://github.com/idom-team/idom-react-component-cookiecutter>`__
-as a blueprint to build a React component. Once you've done this, you can distribute
-bundled javascript in your Python package and integrate it into IDOM by defining
-:class:`~idom.client.module.Module` objects that load them from source:
+that can be used as a blueprint to build a library of React components.
+
+The core benefit of loading Javascript in this way is that users of your code won't need
+to have NPM_ installed. Rather, they can use ``pip`` to install your Python package
+without any other build steps because the bundled Javascript you distributed with it
+will be symlinked into the IDOM client at runtime.
+
+To work as intended, the Javascript bundle must export the following named functions:
+
+.. code-block:: typescript
+
+    type createElement = (component: any, props: Object) => any;
+    type renderElement = (element: any, container: HTMLElement) => void;
+    type unmountElement = (element: HTMLElement) => void;
+
+These functions can be thought of as being analogous to those from React.
+
+- ``createElement`` ➜ |react.createElement|_
+- ``renderElement`` ➜ |reactDOM.render|_
+- ``unmountElement`` ➜ |reactDOM.unmountComponentAtNode|_
+
+.. |react.createElement| replace:: ``react.createElement``
+.. _react.createElement: https://reactjs.org/docs/react-api.html#createelement
+
+.. |reactDOM.render| replace:: ``reactDOM.render``
+.. _reactDOM.render: https://reactjs.org/docs/react-dom.html#render
+
+.. |reactDOM.unmountComponentAtNode| replace:: ``reactDOM.unmountComponentAtNode``
+.. _reactDOM.unmountComponentAtNode: https://reactjs.org/docs/react-api.html#createelement
+
+And will be called in the following manner:
+
+.. code-block::
+
+    // on every render
+    renderElement(createElement(type, props), container);
+    // on unmount
+    unmountElement(container);
+
+Once you've done this, you can distribute the bundled javascript in your Python package
+and integrate it into IDOM by defining :class:`~idom.client.module.Module` objects that
+load them from source:
 
 .. code-block::
 
     import idom
     my_js_package = idom.Module("my-js-package", source_file="/path/to/my/bundle.js")
 
-The core benefit of loading Javascript in this way is that users of your code won't need
-NPM_. Rather, they can use ``pip`` to install your Python package without any other build
-steps because the bundled Javascript you distributed with it will be symlinked into the
-IDOM client at runtime.
-
-With that said, if you just want to see how this all works it might be easiest to hook
-in simple a hand-crafted Javascript component. In the example to follow we'll create a
-very basic SVG line chart. The catch though is that we are limited to using Javascript
-that can run directly in the browser. This means we can't use fancy syntax like
-`JSX <https://reactjs.org/docs/introducing-jsx.html>`__ and instead will use
+The simplest way to try this out yourself though, is to hook in simple a hand-crafted
+Javascript module that has the requisite interface. In the example to follow we'll
+create a very basic SVG line chart. The catch though is that we are limited to using
+Javascript that can run directly in the browser. This means we can't use fancy syntax
+like `JSX <https://reactjs.org/docs/introducing-jsx.html>`__ and instead will use
 `htm <https://github.com/developit/htm>`__ to simulate JSX in plain Javascript.
 
 .. example:: super_simple_chart
