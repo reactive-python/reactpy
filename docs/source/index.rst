@@ -1,9 +1,6 @@
 IDOM
 ====
 
-Libraries for defining and controlling interactive webpages with Python
-3.7 and above.
-
 .. toctree::
     :hidden:
 
@@ -41,6 +38,8 @@ Libraries for defining and controlling interactive webpages with Python
     Community <https://github.com/idom-team/idom/discussions>
     Issues <https://github.com/idom-team/idom/issues>
 
+A package for building highly interactive user interfaces in pure Python inspred by
+`ReactJS <https://reactjs.org/>`__.
 
 At a Glance
 -----------

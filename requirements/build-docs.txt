@@ -1,7 +1,7 @@
 sphinx ==3.5.4
 sphinx-autodoc-typehints ==1.7.0
 furo ==2020.10.13b12
-sphinx-panels ==0.5.0
+sphinx-panels ==0.6.0
 setuptools_scm
 sphinx-copybutton ==0.3.0
 sphinx-autobuild ==2020.9.1
