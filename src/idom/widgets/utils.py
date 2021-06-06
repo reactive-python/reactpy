@@ -14,7 +14,7 @@ from idom.utils import Ref
 MountFunc = Callable[[ComponentConstructor], None]
 
 
-def hotswap(shared: bool = False) -> Tuple[MountFunc, ComponentConstructor]:
+def hotswap(update_on_change: bool = False) -> Tuple[MountFunc, ComponentConstructor]:
     """Swap out components from a layout on the fly.
 
     Since you can't change the component functions used to create a layout
@@ -22,7 +22,7 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ComponentConstructor]:
     long as you set things up ahead of time.
 
     Parameters:
-        shared: Whether or not all views of the layout should be udpated on a swap.
+        update_on_change: Whether or not all views of the layout should be udpated on a swap.
 
     Example:
         .. code-block:: python
@@ -50,7 +50,7 @@ def hotswap(shared: bool = False) -> Tuple[MountFunc, ComponentConstructor]:
     """
     constructor_ref: Ref[Callable[[], Any]] = Ref(lambda: {"tagName": "div"})
 
-    if shared:
+    if update_on_change:
         set_constructor_callbacks: Set[Callable[[Callable[[], Any]], None]] = set()
 
         @component

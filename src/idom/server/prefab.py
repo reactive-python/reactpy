@@ -142,7 +142,7 @@ def hotswap_server(
         The server instance and a function for swapping views.
         See :func:`idom.widgets.common.hotswap` for details.
     """
-    mount, component = hotswap(shared=sync_views)
+    mount, component = hotswap(update_on_change=sync_views)
 
     server = run(
         component,

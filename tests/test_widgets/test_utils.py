@@ -10,7 +10,7 @@ def test_multiview_repr():
     assert str(idom.widgets.utils.MultiViewMount({})) == "MultiViewMount({})"
 
 
-def test_shared_hostwap(driver, display):
+def test_hostwap_update_on_change(driver, display):
     """Ensure shared hotswapping works
 
     This basically means that previously rendered views of a hotswap component get updated
@@ -39,7 +39,7 @@ def test_shared_hostwap(driver, display):
 
         incr = idom.html.button({"onClick": on_click, "id": "incr-button"}, "incr")
 
-        mount, make_hostswap = idom.widgets.hotswap(shared=True)
+        mount, make_hostswap = idom.widgets.hotswap(update_on_change=True)
         mount(make_next_count_constructor(count))
         hotswap_view = make_hostswap()
 

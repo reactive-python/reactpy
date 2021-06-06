@@ -10,8 +10,9 @@ def Slideshow():
 
     return idom.html.img(
         {
-            "src": f"https://picsum.photos/800/300?image={index}",
+            "src": f"https://picsum.photos/400/200?image={index}",
             "style": {"cursor": "pointer"},
+            "height": "300px",
             "onClick": next_image,
         }
     )
