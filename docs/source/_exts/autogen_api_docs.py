@@ -29,7 +29,10 @@ def generate_api_docs():
         "private.misc": [PRIVATE_MISC_TITLE],
     }
 
-    for file in sorted(PACKAGE_SRC.glob("[!node_modules]/**/*.py")):
+    for file in sorted(PACKAGE_SRC.glob("**/*.py")):
+        if "node_modules" in file.parts:
+            # don't look in javascript source
+            continue
         if file.stem.startswith("__"):
             # skip __init__ and __main__
             continue
