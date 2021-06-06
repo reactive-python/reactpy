@@ -105,7 +105,7 @@ autodoc_typehints = "description"
 
 # Used to stop the extension from loading bootstrap twice since the `pydata_sphinx_theme`
 # already adds it for use.
-panels_add_boostrap_css = False
+panels_add_bootstrap_css = False
 
 # -- sphinx.ext.autodoc --
 

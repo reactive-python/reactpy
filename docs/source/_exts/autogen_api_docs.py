@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import sys
 from pathlib import Path
 
 from sphinx.application import Sphinx
@@ -29,12 +32,9 @@ def generate_api_docs():
         "private.misc": [PRIVATE_MISC_TITLE],
     }
 
-    for file in sorted(PACKAGE_SRC.glob("**/*.py")):
-        if "node_modules" in file.parts:
-            # don't look in javascript source
-            continue
-        if file.stem.startswith("__"):
-            # skip __init__ and __main__
+    for file in sorted(pathlib_walk(PACKAGE_SRC, ignore_dirs=["node_modules"])):
+        if not file.suffix == ".py" or file.stem.startswith("__"):
+            # skip non-Python files along with __init__ and __main__
             continue
         public_vs_private = "private" if is_private_module(file) else "public"
         main_vs_misc = "main" if file_starts_with_docstring(file) else "misc"
@@ -51,6 +51,16 @@ def generate_api_docs():
 
     PUBLIC_API_REFERENCE_FILE.write_text("\n".join(public_content))
     PRIVATE_API_REFERENCE_FILE.write_text("\n".join(private_content))
+
+
+def pathlib_walk(root: Path, ignore_dirs: list[str]):
+    for path in root.iterdir():
+        if path.is_dir():
+            if path.name in ignore_dirs:
+                continue
+            yield from pathlib_walk(path, ignore_dirs)
+        else:
+            yield path
 
 
 def is_private_module(path: Path) -> bool:
@@ -75,5 +85,7 @@ def file_starts_with_docstring(path: Path) -> bool:
 
 
 def setup(app: Sphinx) -> None:
+    if sys.platform == "win32" and sys.version_info[:2] == (3, 7):
+        return None
     generate_api_docs()
     return None
