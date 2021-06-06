@@ -48,22 +48,16 @@ Yes, but with some restrictions:
 
 1. The Javascript in question must be distributed as an ECMAScript Module
    (`ESM <https://hacks.mozilla.org/2018/03/es-modules-a-cartoon-deep-dive/>`__)
-2. The module must export the following functions:
-
-   - ``render(element: HTMLElement, component: any, props: Object) => void``
-   - ``unmount(element: HTMLElement) => void``
-
-
+2. The module must export the :ref:`required interface <Custom Javascript Components>`.
 
 These restrictions apply because the Javascript from the CDN must be able to run
-natively in the browser, the module must be able to run in isolation from the main
-application, and the server must tell the client to use the exported ``mount()``
-function.
+natively in the browser and the module must be able to run in isolation from the main
+application.
 
 
 What props can I pass to Javascript components?
 -----------------------------------------------
 
 You can only pass JSON serializable props to components implemented in Javascript. It is
-possible to implement a :ref:`Custom Javascript Component <Custom Javascript Components>`
+possible to create a :ref:`Custom Javascript Component <Custom Javascript Components>`
 which undestands how to deserialise JSON data into native Javascript objects though.

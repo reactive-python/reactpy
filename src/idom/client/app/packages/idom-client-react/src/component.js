@@ -64,19 +64,23 @@ function ImportedElement({ model }) {
 
   // this effect must run every time in case the model has changed
   react.useEffect(() => {
-    importSource.then(({ render }) => {
-      render(
-        mountPoint.current,
-        model.tagName,
-        elementAttributes(model, config.sendEvent),
-        model.children,
-        config
+    importSource.then(({ createElement, renderElement }) => {
+      renderElement(
+        createElement(
+          model.tagName,
+          elementAttributes(model, config.sendEvent),
+          model.children
+        ),
+        mountPoint.current
       );
     });
   });
 
   react.useEffect(
-    () => () => importSource.then(({ unmount }) => unmount()),
+    () => () =>
+      importSource.then(({ unmountElement }) =>
+        unmountElement(mountPoint.current)
+      ),
     []
   );
 
@@ -149,28 +153,26 @@ function loadFromImportSource(config, importSource) {
     .loadImportSource(importSource.source, importSource.sourceType)
     .then((module) => {
       if (
-        typeof module.render == "function" &&
-        typeof module.unmount == "function"
+        typeof module.createElement == "function" &&
+        typeof module.renderElement == "function" &&
+        typeof module.unmountElement == "function"
       ) {
         return {
-          render: (element, type, props, children, config) => {
-            module.render(element, module[type], props, children, config);
-          },
-          unmount: module.unmount,
+          createElement: (type, props) =>
+            module.createElement(module[type], props),
+          renderElement: module.renderElement,
+          unmountElement: module.unmountElement,
         };
       } else {
         return {
-          render: (element, type, props, children) => {
-            reactDOM.render(
-              react.createElement(
-                module[type],
-                props,
-                ...elementChildren(children)
-              ),
-              element
-            );
-          },
-          unmount: reactDOM.unmountComponentAtNode,
+          createElement: (type, props, children) =>
+            react.createElement(
+              module[type],
+              props,
+              ...elementChildren(children)
+            ),
+          renderElement: reactDOM.render,
+          unmountElement: reactDOM.unmountComponentAtNode,
         };
       }
     });

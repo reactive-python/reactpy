@@ -1,18 +1,22 @@
-export function render(element, component, props) {
-  if (element.firstChild) {
-    element.removeChild(element.firstChild);
-  }
-  element.appendChild(component(props));
+export function createElement(component, props) {
+  return component(props);
 }
 
-export function unmount(element) {
+export function renderElement(element, container) {
+  if (container.firstChild) {
+    container.removeChild(container.firstChild);
+  }
+  container.appendChild(element);
+}
+
+export function unmountElement(container) {
   // We add an element to the document.body to indicate that this function was called.
   // Thus allowing Selenium to see communicate to server-side code that this effect
   // did indeed occur.
   const unmountFlag = document.createElement("h1");
   unmountFlag.setAttribute("id", "unmount-flag");
   document.body.appendChild(unmountFlag);
-  element.innerHTML = "";
+  container.innerHTML = "";
 }
 
 export function SomeComponent(props) {
