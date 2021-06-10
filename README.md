@@ -10,7 +10,8 @@
   <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-purple.svg">
 </a>
 
-Libraries for creating and controlling interactive web pages with Python 3.7 and above.
+A package for building highly interactive user interfaces in pure Python inspred by
+[ReactJS](https://reactjs.org/).
 
 **Be sure to [read the Documentation](https://idom-docs.herokuapp.com)**
 

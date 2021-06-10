@@ -19,6 +19,7 @@ IDOM_CLIENT_IMPORT_SOURCE_INFIX = "_snowpack/pkg"
 def _run_build_dir_init_only_once() -> None:  # pragma: no cover
     """Initialize the runtime build directory - this should only be called once"""
     if not IDOM_CLIENT_BUILD_DIR.current.exists():
+        IDOM_CLIENT_BUILD_DIR.current.parent.mkdir(parents=True, exist_ok=True)
         # populate the runtime build directory if it doesn't exist
         shutil.copytree(BACKUP_BUILD_DIR, IDOM_CLIENT_BUILD_DIR.current, symlinks=True)
     elif getmtime(BACKUP_BUILD_DIR) > getmtime(IDOM_CLIENT_BUILD_DIR.current):
@@ -28,7 +29,7 @@ def _run_build_dir_init_only_once() -> None:  # pragma: no cover
         shutil.copytree(BACKUP_BUILD_DIR, IDOM_CLIENT_BUILD_DIR.current, symlinks=True)
 
 
-_run_build_dir_init_only_once()  # this is only ever called once!
+_run_build_dir_init_only_once()  # this is only ever called once at runtime!
 
 
 def get_user_packages_file(app_dir: Path) -> Path:
