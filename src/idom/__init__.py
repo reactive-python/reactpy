@@ -8,6 +8,8 @@ except _DistributionNotFound:  # pragma: no cover
     # package is not installed
     __version__ = "0.0.0"
 
+__author__ = "idom-team"
+
 from . import config, log
 from .client.module import Import, Module, install
 from .core import hooks

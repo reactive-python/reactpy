@@ -1,36 +1,18 @@
-from unittest.mock import patch
-
-from rich.console import Console
 from typer.testing import CliRunner
 
 import idom
 from idom.cli import main
-from idom.client.manage import _private, web_module_exists
-from idom.config import IDOM_CLIENT_BUILD_DIR, IDOM_DEBUG_MODE
+from idom.client.manage import web_module_exists
+from idom.config import all_options
 
 
 cli_runner = CliRunner()
 
 
-with_large_console = patch("idom.cli.console", Console(width=10000))
+def test_root():
+    assert idom.__version__ in cli_runner.invoke(main, ["--version"]).stdout
 
 
-def assert_rich_table_equals(stdout, expected_header, expected_rows):
-    parsed_lines = []
-    for line in stdout.split("\n"):
-        maybe_row = list(
-            map(str.strip, filter(None, line.replace("┃", "│").split("│")))
-        )
-        if len(maybe_row) > 1:
-            parsed_lines.append(maybe_row)
-
-    actual_header, *actual_rows = parsed_lines
-
-    assert actual_header == list(map(str, expected_header))
-    assert actual_rows == [list(map(str, row)) for row in expected_rows]
-
-
-@with_large_console
 def test_install():
     cli_runner.invoke(main, ["restore"])
     assert cli_runner.invoke(main, ["install", "jquery"]).exit_code == 0
@@ -44,54 +26,12 @@ def test_install():
     assert web_module_exists("jquery")
 
 
-@with_large_console
 def test_restore():
     assert cli_runner.invoke(main, ["restore"]).exit_code == 0
 
 
-@with_large_console
-def test_show_version():
-    terse_result = cli_runner.invoke(main, ["version"])
-    assert idom.__version__ in terse_result.stdout
-
-    verbose_result = cli_runner.invoke(main, ["version", "--verbose"])
-
-    assert_rich_table_equals(
-        verbose_result.stdout,
-        ["Package", "Version", "Language"],
-        (
-            [["idom", idom.__version__, "Python"]]
-            + [
-                [js_pkg, js_ver, "Javascript"]
-                for js_pkg, js_ver in _private.build_dependencies().items()
-            ]
-        ),
-    )
-
-
-@with_large_console
-def test_show_options():
-    assert_rich_table_equals(
-        cli_runner.invoke(main, ["options"]).stdout,
-        ["Name", "Value", "Default", "Mutable"],
-        [
-            [
-                "IDOM_CLIENT_BUILD_DIR",
-                IDOM_CLIENT_BUILD_DIR.current,
-                IDOM_CLIENT_BUILD_DIR.default,
-                "True",
-            ],
-            [
-                "IDOM_DEBUG_MODE",
-                IDOM_DEBUG_MODE.current,
-                IDOM_DEBUG_MODE.default,
-                "False",
-            ],
-            [
-                "IDOM_FEATURE_INDEX_AS_DEFAULT_KEY",
-                "False",
-                "False",
-                "False",
-            ],
-        ],
-    )
+def test_options():
+    assert cli_runner.invoke(main, ["options"]).stdout.strip().split("\n") == [
+        f"{opt.name} = {opt.current}"
+        for opt in sorted(all_options(), key=lambda o: o.name)
+    ]
