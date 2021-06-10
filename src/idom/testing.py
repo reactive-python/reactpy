@@ -174,8 +174,9 @@ class _LogRecordCaptor(logging.NullHandler):
         self.records: List[logging.LogRecord] = []
         super().__init__()
 
-    def handle(self, record: logging.LogRecord) -> None:
+    def handle(self, record: logging.LogRecord) -> bool:
         self.records.append(record)
+        return True
 
 
 class HookCatcher:
