@@ -22,7 +22,7 @@ def root(
         show_default=False,
         is_eager=True,
     )
-):
+) -> None:
     """Command line interface for IDOM"""
 
     # reset logging config after Typer() has wrapped stdout
@@ -30,6 +30,8 @@ def root(
 
     if version:
         typer.echo(idom.__version__)
+
+    return None
 
 
 @main.command()
