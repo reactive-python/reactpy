@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 import shutil
 from os.path import getmtime
@@ -7,6 +8,8 @@ from typing import Dict, Set, Tuple, cast
 
 from idom.config import IDOM_CLIENT_BUILD_DIR
 
+
+logger = logging.getLogger()
 
 HERE = Path(__file__).parent
 APP_DIR = HERE / "app"
@@ -19,10 +22,12 @@ IDOM_CLIENT_IMPORT_SOURCE_INFIX = "_snowpack/pkg"
 def _run_build_dir_init_only_once() -> None:  # pragma: no cover
     """Initialize the runtime build directory - this should only be called once"""
     if not IDOM_CLIENT_BUILD_DIR.current.exists():
+        logger.debug("creating new runtime build directory")
         IDOM_CLIENT_BUILD_DIR.current.parent.mkdir(parents=True, exist_ok=True)
         # populate the runtime build directory if it doesn't exist
         shutil.copytree(BACKUP_BUILD_DIR, IDOM_CLIENT_BUILD_DIR.current, symlinks=True)
     elif getmtime(BACKUP_BUILD_DIR) > getmtime(IDOM_CLIENT_BUILD_DIR.current):
+        logger.debug("updating runtime build directory because it is out of date")
         # delete the existing runtime build because it's out of date
         shutil.rmtree(IDOM_CLIENT_BUILD_DIR.current)
         # replace it with the newer backup build (presumable from a fresh install)

@@ -40,4 +40,5 @@ RUN sphinx-build -b html docs/source docs/build
 # Define Entrypoint
 # -----------------
 ENV PORT 5000
+ENV IDOM_DEBUG_MODE=1
 CMD python docs/main.py
