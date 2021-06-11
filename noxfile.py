@@ -59,7 +59,14 @@ def docs(session: Session) -> None:
 @nox.session
 def docs_in_docker(session: Session) -> None:
     session.run(
-        "docker", "build", ".", "--file", "docs/Dockerfile", "--tag", "idom-docs:latest"
+        "docker",
+        "build",
+        ".",
+        "--file",
+        "docs/Dockerfile",
+        "--tag",
+        "idom-docs:latest",
+        external=True,
     )
     session.run(
         "docker",
@@ -71,6 +78,7 @@ def docs_in_docker(session: Session) -> None:
         "DEBUG=1",
         "--rm",
         "idom-docs:latest",
+        external=True,
     )
 
 

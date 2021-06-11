@@ -6,10 +6,13 @@ WORKDIR /app/
 # --------------
 RUN curl -sL https://deb.nodesource.com/setup_14.x  | bash -
 RUN apt-get install -yq nodejs build-essential
-RUN npm install -g npm@latest
+RUN npm install -g npm@7.13.0
 
-# Upgrad PIP
-# ----------
+# Create Python Venv
+# ------------------
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install --upgrade pip
 
 # Install IDOM

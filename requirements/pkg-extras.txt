@@ -1,6 +1,6 @@
 # extra=stable,sanic
 sanic <19.12.0
-sanic-cors >=0.9.9
+sanic-cors
 
 # extra=fastapi
 fastapi >=0.63.0
