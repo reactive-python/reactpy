@@ -27,6 +27,10 @@ ADD MANIFEST.in ./
 ADD README.md ./
 
 RUN pip install -e .[all]
+
+ENV IDOM_DEBUG_MODE=1
+ENV IDOM_CLIENT_BUILD_DIR=./build
+
 RUN python -m idom install htm victory semantic-ui-react @material-ui/core
 
 # Build the Docs
@@ -40,5 +44,4 @@ RUN sphinx-build -b html docs/source docs/build
 # Define Entrypoint
 # -----------------
 ENV PORT 5000
-ENV IDOM_DEBUG_MODE=1
 CMD python docs/main.py
