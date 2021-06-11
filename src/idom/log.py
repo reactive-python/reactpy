@@ -43,3 +43,7 @@ def logging_config_defaults() -> Any:
 
 
 dictConfig(logging_config_defaults())
+
+
+if IDOM_DEBUG_MODE.current:
+    root_logger.debug("IDOM is in debug mode")

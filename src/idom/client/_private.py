@@ -9,7 +9,7 @@ from typing import Dict, Set, Tuple, cast
 from idom.config import IDOM_CLIENT_BUILD_DIR
 
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 HERE = Path(__file__).parent
 APP_DIR = HERE / "app"
@@ -32,6 +32,8 @@ def _run_build_dir_init_only_once() -> None:  # pragma: no cover
         shutil.rmtree(IDOM_CLIENT_BUILD_DIR.current)
         # replace it with the newer backup build (presumable from a fresh install)
         shutil.copytree(BACKUP_BUILD_DIR, IDOM_CLIENT_BUILD_DIR.current, symlinks=True)
+    else:
+        logger.debug("runtime build directory is up to date")
 
 
 _run_build_dir_init_only_once()  # this is only ever called once at runtime!
