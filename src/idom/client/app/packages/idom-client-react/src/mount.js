@@ -1,9 +1,9 @@
-import { createElement } from "react";
-import { unmountComponentAtNode, render } from "react-dom";
+import * as react from "react";
+import * as reactDOM from "react-dom";
 import { Layout } from "./component.js";
 
 export function mountLayout(mountElement, layoutProps) {
-  render(createElement(Layout, layoutProps), mountElement);
+  reactDOM.render(react.createElement(Layout, layoutProps), mountElement);
 }
 
 export function mountLayoutWithWebSocket(
@@ -39,7 +39,7 @@ function mountLayoutWithReconnectingWebSocket(
     console.log(`Connected.`);
 
     if (mountState.everMounted) {
-      unmountComponentAtNode(element);
+      reactDOM.unmountComponentAtNode(element);
     }
     _resetOpenMountState(mountState);
 

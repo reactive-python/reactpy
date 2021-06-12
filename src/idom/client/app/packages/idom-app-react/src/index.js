@@ -1,5 +1,4 @@
 import { mountLayoutWithWebSocket } from "idom-client-react";
-import { unmountComponentAtNode } from "react-dom";
 
 // imported so static analysis knows to pick up files linked by user-packages.js
 import("./user-packages.js").then((module) => {
