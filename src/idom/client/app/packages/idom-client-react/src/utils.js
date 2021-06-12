@@ -1,4 +1,4 @@
-import * as jsonpatch from "fast-json-patch";
+import jsonpatch from "fast-json-patch";
 
 export function applyPatchInplace(doc, pathPrefix, patch) {
   if (pathPrefix) {

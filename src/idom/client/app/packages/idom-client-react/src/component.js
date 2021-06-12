@@ -1,5 +1,5 @@
-import * as react from "react";
-import * as reactDOM from "react-dom";
+import react from "react";
+import reactDOM from "react-dom";
 import htm from "htm";
 
 import serializeEvent from "./event-to-object";
