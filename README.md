@@ -10,7 +10,7 @@
   <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-purple.svg">
 </a>
 
-A package for building highly interactive user interfaces in pure Python inspred by
+A package for building highly interactive user interfaces in pure Python inspired by
 [ReactJS](https://reactjs.org/).
 
 **Be sure to [read the Documentation](https://idom-docs.herokuapp.com)**
