@@ -1,14 +1,5 @@
 import { mountLayoutWithWebSocket } from "idom-client-react";
 
-// imported so static analysis knows to pick up files linked by user-packages.js
-import("./user-packages.js").then((module) => {
-  for (const pkgName in module.default) {
-    module.default[pkgName].then((pkg) => {
-      console.log(`Loaded module '${pkgName}'`);
-    });
-  }
-});
-
 export function mount(mountPoint) {
   mountLayoutWithWebSocket(
     mountPoint,
@@ -35,7 +26,7 @@ function getWebSocketEndpoint() {
 }
 
 function loadImportSource(source, sourceType) {
-  return import(sourceType == "NAME" ? `./${source}.js` : source);
+  return import(sourceType == "NAME" ? `/modules/${source}.js` : source);
 }
 
 function shouldReconnect() {

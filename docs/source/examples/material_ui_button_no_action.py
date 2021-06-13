@@ -1,12 +1,11 @@
 import idom
 
 
-material_ui = idom.install("@material-ui/core", fallback="loading...")
+mui = idom.web.module_from_template("react", "@material-ui/core", fallback="⌛")
+Button = idom.web.export(mui, "Button")
 
 idom.run(
     idom.component(
-        lambda: material_ui.Button(
-            {"color": "primary", "variant": "contained"}, "Hello World!"
-        )
+        lambda: Button({"color": "primary", "variant": "contained"}, "Hello World!")
     )
 )

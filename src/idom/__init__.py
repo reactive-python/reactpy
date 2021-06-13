@@ -10,8 +10,7 @@ except _DistributionNotFound:  # pragma: no cover
 
 __author__ = "idom-team"
 
-from . import config, log
-from .client.module import Import, Module, install
+from . import config, log, web
 from .core import hooks
 from .core.component import Component, component
 from .core.events import Events, event
@@ -21,21 +20,6 @@ from .server.prefab import run
 from .utils import Ref, html_to_vdom
 from .widgets.html import html
 from .widgets.utils import hotswap, multiview
-
-
-# try to automatically setup the dialect's import hook
-try:
-    import htm
-    import pyalect
-    import tagged
-except ImportError:  # pragma: no cover
-    pass
-else:
-    from . import dialect
-
-    del pyalect
-    del tagged
-    del htm
 
 
 __all__ = [
@@ -51,8 +35,6 @@ __all__ = [
     "server",
     "Ref",
     "vdom",
-    "Module",
-    "Import",
     "hotswap",
     "multiview",
     "html_to_vdom",
@@ -62,4 +44,5 @@ __all__ = [
     "install",
     "log",
     "config",
+    "web",
 ]

@@ -64,16 +64,6 @@ package = {
 
 
 # -----------------------------------------------------------------------------
-# CLI Entrypoints
-# -----------------------------------------------------------------------------
-
-
-package["entry_points"] = {
-    "console_scripts": ["idom = idom.__main__:main"],
-}
-
-
-# -----------------------------------------------------------------------------
 # Requirements
 # -----------------------------------------------------------------------------
 
@@ -129,7 +119,7 @@ def build_javascript_first(cls):
         def run(self):
             log.info("Installing Javascript...")
             try:
-                js_dir = str(package_dir / "client" / "app")
+                js_dir = str(package_dir / "client")
                 npm = shutil.which("npm")  # this is required on windows
                 if npm is None:
                     raise RuntimeError("NPM is not installed.")

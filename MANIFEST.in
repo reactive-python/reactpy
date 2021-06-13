@@ -1,6 +1,4 @@
 recursive-include src/idom *
-recursive-exclude src/idom/client/app/node_modules *
-recursive-exclude src/idom/client/app/web_modules *
-recursive-exclude src/idom/client/build *
+recursive-exclude src/idom/client/node_modules *
 include requirements/prod.txt
 include requirements/extras.txt

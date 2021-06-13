@@ -23,7 +23,7 @@ from uvicorn.server import Server as UvicornServer
 from uvicorn.supervisors.multiprocess import Multiprocess
 from uvicorn.supervisors.statreload import StatReload as ChangeReload
 
-from idom.config import IDOM_CLIENT_BUILD_DIR
+from idom.config import IDOM_WED_MODULES_DIR
 from idom.core.component import ComponentConstructor
 from idom.core.dispatcher import (
     RecvCoroutine,
@@ -34,7 +34,7 @@ from idom.core.dispatcher import (
 )
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
-from .utils import poll, threaded
+from .utils import CLIENT_BUILD_DIR, poll, threaded
 
 
 logger = logging.getLogger(__name__)
@@ -195,7 +195,16 @@ def _setup_common_routes(app: FastAPI, router: APIRouter, config: Config) -> Non
         app.mount(
             f"{url_prefix}/client",
             StaticFiles(
-                directory=str(IDOM_CLIENT_BUILD_DIR.current),
+                directory=str(CLIENT_BUILD_DIR),
+                html=True,
+                check_dir=True,
+            ),
+            name="idom_static_files",
+        )
+        app.mount(
+            f"{url_prefix}/modules",
+            StaticFiles(
+                directory=str(IDOM_WED_MODULES_DIR.current),
                 html=True,
                 check_dir=True,
             ),

@@ -17,7 +17,7 @@ from sanic import Blueprint, Sanic, request, response
 from sanic_cors import CORS
 from websockets import WebSocketCommonProtocol
 
-from idom.config import IDOM_CLIENT_BUILD_DIR
+from idom.config import IDOM_WED_MODULES_DIR
 from idom.core.component import ComponentConstructor
 from idom.core.dispatcher import (
     RecvCoroutine,
@@ -28,7 +28,7 @@ from idom.core.dispatcher import (
 )
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
-from .utils import threaded, wait_on_event
+from .utils import CLIENT_BUILD_DIR, threaded, wait_on_event
 
 
 logger = logging.getLogger(__name__)
@@ -172,7 +172,8 @@ def _setup_common_routes(blueprint: Blueprint, config: Config) -> None:
         CORS(blueprint, **cors_params)
 
     if config["serve_static_files"]:
-        blueprint.static("/client", str(IDOM_CLIENT_BUILD_DIR.current))
+        blueprint.static("/client", str(CLIENT_BUILD_DIR))
+        blueprint.static("/modules", str(IDOM_WED_MODULES_DIR.current))
 
         if config["redirect_root_to_index"]:
 

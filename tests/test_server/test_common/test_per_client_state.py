@@ -65,7 +65,8 @@ def test_display_simple_click_counter(driver, driver_wait, display):
         client_counter.click()
 
 
-def test_installed_module(driver, display):
-    victory = idom.install("victory@35.4.0")
-    display(victory.VictoryBar)
+def test_module_from_template(driver, display):
+    victory = idom.web.module_from_template("react", "victory@35.4.0")
+    VictoryBar = idom.web.export(victory, "VictoryBar")
+    display(VictoryBar)
     driver.find_element_by_class_name("VictoryContainer")

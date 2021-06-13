@@ -1,6 +1,8 @@
 import idom
 
 
-victory = idom.install("victory", fallback="loading...")
+victory = idom.web.module_from_template("react", "victory", fallback="⌛")
+VictoryBar = idom.web.export(victory, "VictoryBar")
+
 bar_style = {"parent": {"width": "500px"}, "data": {"fill": "royalblue"}}
-idom.run(idom.component(lambda: victory.VictoryBar({"style": bar_style})))
+idom.run(idom.component(lambda: VictoryBar({"style": bar_style})))

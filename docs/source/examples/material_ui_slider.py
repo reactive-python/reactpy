@@ -3,7 +3,8 @@ import json
 import idom
 
 
-material_ui = idom.install("@material-ui/core", fallback="loading...")
+mui = idom.web.module_from_template("react", "@material-ui/core", fallback="⌛")
+Slider = idom.web.export(mui, "Slider")
 
 
 @idom.component
@@ -11,7 +12,7 @@ def ViewSliderEvents():
     (event, value), set_data = idom.hooks.use_state((None, 50))
 
     return idom.html.div(
-        material_ui.Slider(
+        Slider(
             {
                 "color": "primary" if value < 50 else "secondary",
                 "step": 10,
