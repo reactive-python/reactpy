@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import functools
 import os
 import re
 import subprocess
 from pathlib import Path
-from typing import List, Tuple
+from typing import Any, Callable, Tuple
 
 import nox
 from nox.sessions import Session
@@ -14,7 +15,19 @@ HERE = Path(__file__).parent
 POSARGS_PATTERN = re.compile(r"^(\w+)\[(.+)\]$")
 
 
+def apply_standard_pip_upgrades(
+    function: Callable[[Session], Any]
+) -> Callable[[Session], Any]:
+    @functools.wraps(function)
+    def wrapper(session: Session) -> None:
+        session.install("--upgrade", "pip", "setuptools", "wheel")
+        return function(session)
+
+    return wrapper
+
+
 @nox.session(reuse_venv=True)
+@apply_standard_pip_upgrades
 def format(session: Session) -> None:
     install_requirements_file(session, "check-style")
     session.run("black", ".")
@@ -22,6 +35,7 @@ def format(session: Session) -> None:
 
 
 @nox.session(reuse_venv=True)
+@apply_standard_pip_upgrades
 def example(session: Session) -> None:
     """Run an example"""
     if not session.posargs:
@@ -36,6 +50,7 @@ def example(session: Session) -> None:
 
 
 @nox.session(reuse_venv=True)
+@apply_standard_pip_upgrades
 def docs(session: Session) -> None:
     """Build and display documentation in the browser (automatically reloads on change)"""
     install_requirements_file(session, "build-docs")
@@ -85,29 +100,33 @@ def docs_in_docker(session: Session) -> None:
 @nox.session
 def test(session: Session) -> None:
     """Run the complete test suite"""
-    session.install("--upgrade", "pip", "setuptools", "wheel")
-    test_suite(session)
-    test_types(session)
-    test_style(session)
-    test_docs(session)
+    session.notify("test_suite", posargs=session.posargs)
+    session.notify("test_types")
+    session.notify("test_style")
+    session.notify("test_docs")
 
 
 @nox.session
+@apply_standard_pip_upgrades
 def test_suite(session: Session) -> None:
     """Run the Python-based test suite"""
     session.env["IDOM_DEBUG_MODE"] = "1"
     install_requirements_file(session, "test-env")
 
-    pytest_args = get_posargs("pytest", session)
-    if "--no-cov" in pytest_args:
+    posargs = session.posargs
+    if "--no-cov" in session.posargs:
+        session.log("Coverage won't be checked")
         session.install(".[all]")
     else:
+        session.log("Coverage will be checked")
+        posargs += ["--cov=src/idom", "--cov-report", "term"]
         install_idom_dev(session, extras="all")
 
-    session.run("pytest", "tests", *pytest_args)
+    session.run("pytest", "tests", *posargs)
 
 
 @nox.session
+@apply_standard_pip_upgrades
 def test_types(session: Session) -> None:
     """Perform a static type analysis of the codebase"""
     install_requirements_file(session, "check-types")
@@ -117,6 +136,7 @@ def test_types(session: Session) -> None:
 
 
 @nox.session
+@apply_standard_pip_upgrades
 def test_style(session: Session) -> None:
     """Check that style guidelines are being followed"""
     install_requirements_file(session, "check-style")
@@ -133,6 +153,7 @@ def test_style(session: Session) -> None:
 
 
 @nox.session
+@apply_standard_pip_upgrades
 def test_docs(session: Session) -> None:
     """Verify that the docs build and that doctests pass"""
     install_requirements_file(session, "build-docs")
@@ -171,29 +192,6 @@ def commits_since_last_tag(session: Session) -> None:
         else:
             sha_repr = sha
         print(f"- {msg} - {sha_repr}")
-
-
-def get_posargs(name: str, session: Session) -> List[str]:
-    """Find named positional arguments
-
-    Positional args of the form `name[arg1,arg2]` will be parsed as ['arg1', 'arg2'] if
-    the given `name` matches. Any args not matching that pattern will be added to the
-    list of args as well. Thus the following:
-
-    --param session_1[arg1,arg2] session_2[arg3,arg4]
-
-    where `name` is session_1 would produce ['--param', 'arg1', 'arg2']
-    """
-    collected_args: List[str] = []
-    for arg in session.posargs:
-        match = POSARGS_PATTERN.match(arg)
-        if match is not None:
-            found_name, found_args = match.groups()
-            if name == found_name:
-                collected_args.extend(map(str.strip, found_args.split(",")))
-        else:
-            collected_args.append(arg)
-    return collected_args
 
 
 def install_requirements_file(session: Session, name: str) -> None:
