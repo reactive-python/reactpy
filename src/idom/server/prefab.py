@@ -13,8 +13,6 @@ from .proto import Server, ServerFactory
 from .utils import find_available_port, find_builtin_server_type
 
 
-DEFAULT_SERVER_FACTORY = find_builtin_server_type("PerClientStateServer")
-
 logger = logging.getLogger(__name__)
 
 _App = TypeVar("_App")
@@ -23,7 +21,7 @@ _Config = TypeVar("_Config")
 
 def run(
     component: ComponentConstructor,
-    server_type: ServerFactory[_App, _Config] = DEFAULT_SERVER_FACTORY,
+    server_type: Optional[ServerFactory[_App, _Config]] = None,
     host: str = "127.0.0.1",
     port: Optional[int] = None,
     server_config: Optional[Any] = None,
@@ -57,8 +55,8 @@ def run(
         The server instance. This isn't really useful unless the server is spawned
         as a daemon. Otherwise this function blocks until the server has stopped.
     """
-    if server_type is None:  # pragma: no cover
-        raise ValueError("No default server available.")
+    if server_type is None:
+        server_type = find_builtin_server_type("PerClientStateServer")
     if port is None:  # pragma: no cover
         port = find_available_port(host)
 
@@ -73,7 +71,7 @@ def run(
 
 
 def multiview_server(
-    server_type: ServerFactory[_App, _Config] = DEFAULT_SERVER_FACTORY,
+    server_type: Optional[ServerFactory[_App, _Config]] = None,
     host: str = "127.0.0.1",
     port: Optional[int] = None,
     server_config: Optional[_Config] = None,
@@ -115,7 +113,7 @@ def multiview_server(
 
 
 def hotswap_server(
-    server_type: ServerFactory[_App, _Config] = DEFAULT_SERVER_FACTORY,
+    server_type: Optional[ServerFactory[_App, _Config]] = None,
     host: str = "127.0.0.1",
     port: Optional[int] = None,
     server_config: Optional[_Config] = None,

@@ -58,7 +58,11 @@ def poll(
 
 
 def find_builtin_server_type(type_name: str) -> ServerFactory[Any, Any]:
-    """Find first installed server implementation"""
+    """Find first installed server implementation
+
+    Raises:
+        :class:`RuntimeError` if one cannot be found
+    """
     installed_builtins: List[str] = []
     for name in _SUPPORTED_PACKAGES:
         try:

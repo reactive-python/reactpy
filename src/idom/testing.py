@@ -28,7 +28,7 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from idom.core.events import EventHandler
 from idom.core.hooks import LifeCycleHook, current_hook
 from idom.core.utils import hex_id
-from idom.server.prefab import DEFAULT_SERVER_FACTORY, hotswap_server
+from idom.server.prefab import hotswap_server
 from idom.server.proto import Server, ServerFactory
 from idom.server.utils import find_available_port
 
@@ -73,7 +73,7 @@ class ServerMountPoint(Generic[_Mount, _Server]):
 
     def __init__(
         self,
-        server_type: ServerFactory[_App, _Config] = DEFAULT_SERVER_FACTORY,
+        server_type: Optional[ServerFactory[_App, _Config]] = None,
         host: str = "127.0.0.1",
         port: Optional[int] = None,
         server_config: Optional[_Config] = None,
