@@ -16,9 +16,9 @@ A package for building highly interactive user interfaces in pure Python inspire
 **Be sure to [read the Documentation](https://idom-docs.herokuapp.com)**
 
 IDOM is still young. If you have ideas or find a bug, be sure to post an
-[issue](https://github.com/rmorshea/idom/issues)
+[issue](https://github.com/idom-team/idom/issues)
 or create a
-[pull request](https://github.com/rmorshea/idom/pulls). Thanks in advance!
+[pull request](https://github.com/idom-team/idom/pulls). Thanks in advance!
 
 <h3>
   <a
