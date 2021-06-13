@@ -8,14 +8,10 @@ from __future__ import annotations
 import os
 from logging import getLogger
 from typing import Any, Callable, Generic, TypeVar, cast
-from weakref import WeakSet
 
 
 _O = TypeVar("_O")
 logger = getLogger(__name__)
-
-
-ALL_OPTIONS: WeakSet[Option[Any]] = WeakSet()
 
 
 class Option(Generic[_O]):
@@ -35,7 +31,6 @@ class Option(Generic[_O]):
         if name in os.environ:
             self._current = validator(os.environ[name])
         logger.debug(f"{self._name}={self.current}")
-        ALL_OPTIONS.add(self)
 
     @property
     def name(self) -> str:

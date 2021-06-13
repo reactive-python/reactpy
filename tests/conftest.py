@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import inspect
 import os
-from typing import Any, Iterator, List
+from typing import Any, List
 
-import pyalect.builtins.pytest  # noqa
 import pytest
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
@@ -12,7 +11,6 @@ from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.support.ui import WebDriverWait
 
 import idom
-from idom.client import manage as manage_client
 from idom.testing import ServerMountPoint, create_simple_selenium_web_driver
 
 
@@ -102,22 +100,6 @@ def create_driver(driver_is_headless):
 @pytest.fixture(scope="session")
 def driver_is_headless(pytestconfig: Config):
     return bool(pytestconfig.option.headless)
-
-
-@pytest.fixture(scope="session", autouse=True)
-def _restore_client(pytestconfig: Config) -> Iterator[None]:
-    """Restore the client's state before and after testing
-
-    For faster test runs set ``--no-restore-client`` at the CLI. Test coverage and
-    breakages may occur if this is set. Further the client is not cleaned up
-    after testing and may effect usage of IDOM beyond the scope of the tests.
-    """
-    if pytestconfig.option.restore_client:
-        manage_client.restore()
-        yield
-        manage_client.restore()
-    else:
-        yield
 
 
 def _mark_coros_as_async_tests(items: List[pytest.Item]) -> None:

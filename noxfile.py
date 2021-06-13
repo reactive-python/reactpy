@@ -205,7 +205,3 @@ def install_idom_dev(session: Session, extras: str = "stable") -> None:
         session.install("-e", f".[{extras}]")
     else:
         session.posargs.remove("--no-install")
-    if "--no-restore" not in session.posargs:
-        session.run("idom", "restore")
-    else:
-        session.posargs.remove("--no-restore")

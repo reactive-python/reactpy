@@ -3,7 +3,8 @@ import json
 import idom
 
 
-material_ui = idom.install("@material-ui/core", fallback="loading...")
+mui = idom.web.module_from_template("react", "@material-ui/core", fallback="⌛")
+Button = idom.web.export(mui, "Button")
 
 
 @idom.component
@@ -11,7 +12,7 @@ def ViewButtonEvents():
     event, set_event = idom.hooks.use_state(None)
 
     return idom.html.div(
-        material_ui.Button(
+        Button(
             {
                 "color": "primary",
                 "variant": "contained",

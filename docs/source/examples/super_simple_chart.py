@@ -1,15 +1,16 @@
 from pathlib import Path
 
 import idom
+from idom.config import IDOM_WED_MODULES_DIR
 
 
-path_to_source_file = Path(__file__).parent / "super_simple_chart.js"
-ssc = idom.Module("super-simple-chart", source_file=path_to_source_file)
-
+file = Path(__file__).parent / "super_simple_chart.js"
+ssc = idom.web.module_from_file("super-simple-chart", file, fallback="⌛")
+SuperSimpleChart = idom.web.export(ssc, "SuperSimpleChart")
 
 idom.run(
     idom.component(
-        lambda: ssc.SuperSimpleChart(
+        lambda: SuperSimpleChart(
             {
                 "data": [
                     {"x": 1, "y": 2},

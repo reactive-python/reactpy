@@ -19,8 +19,3 @@ selenium
 
 # extra=matplotlib
 matplotlib
-
-# extra=dialect
-htm
-pyalect
-tagged

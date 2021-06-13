@@ -18,12 +18,12 @@ from tornado.web import Application, RedirectHandler, RequestHandler, StaticFile
 from tornado.websocket import WebSocketHandler
 from typing_extensions import TypedDict
 
-from idom.config import IDOM_CLIENT_BUILD_DIR
+from idom.config import IDOM_WED_MODULES_DIR
 from idom.core.component import ComponentConstructor
 from idom.core.dispatcher import dispatch_single_view
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
-from .utils import threaded, wait_on_event
+from .utils import CLIENT_BUILD_DIR, threaded, wait_on_event
 
 
 _RouteHandlerSpecs = List[Tuple[str, Type[RequestHandler], Any]]
@@ -126,7 +126,14 @@ def _setup_common_routes(config: Config) -> _RouteHandlerSpecs:
             (
                 r"/client/(.*)",
                 StaticFileHandler,
-                {"path": str(IDOM_CLIENT_BUILD_DIR.current)},
+                {"path": str(CLIENT_BUILD_DIR)},
+            )
+        )
+        handlers.append(
+            (
+                r"/modules/(.*)",
+                StaticFileHandler,
+                {"path": str(IDOM_WED_MODULES_DIR.current)},
             )
         )
         if config["redirect_root_to_index"]:

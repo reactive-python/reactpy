@@ -3,12 +3,17 @@ import time
 from contextlib import closing
 from functools import wraps
 from importlib import import_module
+from pathlib import Path
 from socket import socket
 from threading import Event, Thread
 from typing import Any, Callable, List, Optional, TypeVar, cast
 
+import idom
+
 from .proto import ServerFactory
 
+
+CLIENT_BUILD_DIR = Path(idom.__file__).parent / "client" / "build"
 
 _SUPPORTED_PACKAGES = [
     "sanic",
@@ -16,7 +21,6 @@ _SUPPORTED_PACKAGES = [
     "flask",
     "tornado",
 ]
-
 
 _Func = TypeVar("_Func", bound=Callable[..., None])
 
