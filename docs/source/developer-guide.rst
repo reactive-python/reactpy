@@ -164,13 +164,13 @@ If you prefer to run the tests using a headless browser:
 
 .. code-block:: bash
 
-    nox -s test -- pytest[--headless]
+    nox -s test -- --headless
 
 You can pass other options to pytest in a similar manner:
 
 .. code-block:: bash
 
-    nox -s test -- pytest[arg,--flag,--key=value]
+    nox -s test -- arg --flag --key=value
 
 
 Running Javascript Tests
