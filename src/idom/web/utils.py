@@ -50,15 +50,46 @@ def resolve_module_exports_from_url(url: str, max_depth: int) -> Set[str]:
 
 def resolve_module_exports_from_source(content: str) -> Tuple[Set[str], Set[str]]:
     names: Set[str] = set()
-    for match in _JS_MODULE_EXPORT_PATTERN.findall(content):
-        for export in match.split(","):
-            export_parts = export.split(" as ", 1)
-            names.add(export_parts[-1].strip())
-    names.update(_JS_MODULE_EXPORT_FUNC_PATTERN.findall(content))
-    names.update(_JS_MODULE_EXPORT_NAME_PATTERN.findall(content))
-
-    references: Set[str] = set(_JS_MODULE_EXPORT_FROM_REF_PATTERN.findall(content))
-    return names, references
+    references: Set[str] = set()
+    for export in _JS_EXPORT_PATTERN.findall(
+        # strip comments
+        _JS_LINE_COMMENT.sub("", content)
+    ):
+        export = export.rstrip(";").strip()
+        # Exporting individual features
+        if export.startswith("let "):
+            names.update(let.split("=", 1)[0] for let in export[4:].split(","))
+        elif export.startswith("function "):
+            names.add(export[9:].split("(", 1)[0])
+        elif export.startswith("class "):
+            names.add(export[6:].split("{", 1)[0])
+        # Renaming exports and export list
+        elif export.startswith("{") and export.endswith("}"):
+            names.update(
+                item.split(" as ", 1)[-1] for item in export.strip("{}").split(",")
+            )
+        # Exporting destructured assignments with renaming
+        elif export.startswith("const "):
+            names.update(
+                item.split(":", 1)[0]
+                for item in export[6:].split("=", 1)[0].strip("{}").split(",")
+            )
+        # Default exports
+        elif export.startswith("default "):
+            names.add("default")
+        # Aggregating modules
+        elif export.startswith("* as "):
+            names.add(export[5:].split(" from ", 1)[0])
+        elif export.startswith("* "):
+            references.add(export[2:].split("from ", 1)[-1].strip("'\""))
+        elif export.startswith("{") and " from " in export:
+            names.update(
+                item.split(" as ", 1)[-1]
+                for item in export.split(" from ")[0].strip("{}").split(",")
+            )
+        else:
+            logger.warning(f"Unknown export type {export!r}")
+    return {n.strip() for n in names}, {r.strip() for r in references}
 
 
 def _resolve_relative_file_path(base_path: Path, rel_url: str) -> Path:
@@ -81,16 +112,5 @@ def _resolve_relative_url(base_url: str, rel_url: str) -> str:
     return f"{base_url}/{rel_url}"
 
 
-_JS_MODULE_EXPORT_PATTERN = re.compile(
-    r";?\s*export\s*{([0-9a-zA-Z_$\s,]*)}\s*;", re.MULTILINE
-)
-_JS_VAR = r"[a-zA-Z_$][0-9a-zA-Z_$]*"
-_JS_MODULE_EXPORT_NAME_PATTERN = re.compile(
-    fr";?\s*export\s+({_JS_VAR})\s+{_JS_VAR}\s*;", re.MULTILINE
-)
-_JS_MODULE_EXPORT_FUNC_PATTERN = re.compile(
-    fr";?\s*export\s+function\s+({_JS_VAR})\s*\(.*?", re.MULTILINE
-)
-_JS_MODULE_EXPORT_FROM_REF_PATTERN = re.compile(
-    r""";?\s*export\s+\*\s+from\s+['"](.*?)['"];"""
-)
+_JS_LINE_COMMENT = re.compile(r"//.*$")
+_JS_EXPORT_PATTERN = re.compile(r";?\s*export(?=\s+|{)(.*?(?:;|}\s*))", re.MULTILINE)
