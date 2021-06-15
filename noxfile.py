@@ -122,7 +122,7 @@ def test_suite(session: Session) -> None:
         posargs += ["--cov=src/idom", "--cov-report", "term"]
         install_idom_dev(session, extras="all")
 
-    session.run("pytest", "tests", *posargs)
+    session.run("pytest", *posargs)
 
 
 @nox.session

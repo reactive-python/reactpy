@@ -67,7 +67,7 @@ jobs:
           npm install -g npm@latest
           npm --version
       - name: Test Javascript
-        working-directory: ./src/idom/client/app
+        working-directory: ./src/idom/client
         run: |
           npm install
           npm test
