@@ -28,8 +28,6 @@ ADD README.md ./
 
 RUN pip install -e .[all]
 
-RUN python -m idom install htm victory semantic-ui-react @material-ui/core
-
 # Build the Docs
 # --------------
 ADD docs/main.py ./docs/
