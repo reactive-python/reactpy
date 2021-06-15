@@ -5,3 +5,4 @@ pytest-mock
 pytest-timeout
 selenium
 ipython
+responses
