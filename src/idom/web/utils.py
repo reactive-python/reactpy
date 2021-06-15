@@ -123,10 +123,10 @@ def _resolve_relative_url(base_url: str, rel_url: str) -> str:
 
 
 _JS_DEFAULT_EXPORT_PATTERN = re.compile(
-    rf";?\s*export\s+default\s",
+    r";?\s*export\s+default\s",
 )
 _JS_FUNC_OR_CLS_EXPORT_PATTERN = re.compile(
-    rf";?\s*export\s+(?:function|class)\s+([a-zA-Z_$][0-9a-zA-Z_$]*)"
+    r";?\s*export\s+(?:function|class)\s+([a-zA-Z_$][0-9a-zA-Z_$]*)"
 )
 _JS_GENERAL_EXPORT_PATTERN = re.compile(
     r";?\s*export(?=\s+|{)(.*?)(?:;|$)", re.MULTILINE

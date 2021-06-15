@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import idom
-from idom.config import IDOM_WED_MODULES_DIR
 
 
 file = Path(__file__).parent / "super_simple_chart.js"
