@@ -61,15 +61,18 @@ def resolve_module_exports_from_url(url: str, max_depth: int) -> Set[str]:
 def resolve_module_exports_from_source(content: str) -> Tuple[Set[str], Set[str]]:
     names: Set[str] = set()
     references: Set[str] = set()
-    for export in _JS_EXPORT_PATTERN.findall(content):
+
+    if _JS_DEFAULT_EXPORT_PATTERN.search(content):
+        names.add("default")
+
+    # Exporting functions and classes
+    names.update(_JS_FUNC_OR_CLS_EXPORT_PATTERN.findall(content))
+
+    for export in _JS_GENERAL_EXPORT_PATTERN.findall(content):
         export = export.rstrip(";").strip()
         # Exporting individual features
         if export.startswith("let "):
             names.update(let.split("=", 1)[0] for let in export[4:].split(","))
-        elif export.startswith("function "):
-            names.add(export[9:].split("(", 1)[0])
-        elif export.startswith("class "):
-            names.add(export[6:].split("{", 1)[0])
         # Renaming exports and export list
         elif export.startswith("{") and export.endswith("}"):
             names.update(
@@ -119,4 +122,12 @@ def _resolve_relative_url(base_url: str, rel_url: str) -> str:
     return f"{base_url}/{rel_url}"
 
 
-_JS_EXPORT_PATTERN = re.compile(r";?\s*export(?=\s+|{)(.*?(?:;|}\s*))", re.MULTILINE)
+_JS_DEFAULT_EXPORT_PATTERN = re.compile(
+    rf";?\s*export\s+default\s",
+)
+_JS_FUNC_OR_CLS_EXPORT_PATTERN = re.compile(
+    rf";?\s*export\s+(?:function|class)\s+([a-zA-Z_$][0-9a-zA-Z_$]*)"
+)
+_JS_GENERAL_EXPORT_PATTERN = re.compile(
+    r";?\s*export(?=\s+|{)(.*?)(?:;|$)", re.MULTILINE
+)
