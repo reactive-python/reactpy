@@ -25,7 +25,7 @@ def test_resolve_module_default_exports_from_source(text):
 
 
 def test_resolve_module_exports_from_source():
-    fixture_file = JS_FIXTURES_DIR / "exports_syntax.js"
+    fixture_file = JS_FIXTURES_DIR / "exports-syntax.js"
     names, references = resolve_module_exports_from_source(fixture_file.read_text())
     assert (
         names
