@@ -1,6 +1,6 @@
 """
-Widget Tools
-============
+Widgets
+=======
 """
 from __future__ import annotations
 
