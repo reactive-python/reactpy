@@ -6,9 +6,9 @@ from pathlib import Path
 from sanic import Sanic, response
 
 import idom
-from idom.client.manage import web_modules_dir
+from idom.config import IDOM_WED_MODULES_DIR
 from idom.server.sanic import PerClientStateServer
-from idom.widgets.utils import multiview
+from idom.widgets import multiview
 
 
 HERE = Path(__file__).parent
@@ -18,7 +18,7 @@ IDOM_MODEL_SERVER_URL_PREFIX = "/_idom"
 def make_app():
     app = Sanic(__name__)
     app.static("/docs", str(HERE / "build"))
-    app.static("/_modules", str(web_modules_dir()))
+    app.static("/_modules", str(IDOM_WED_MODULES_DIR.current))
 
     @app.route("/")
     async def forward_to_index(request):

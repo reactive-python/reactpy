@@ -4,11 +4,65 @@ Widgets
 """
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Optional, Set, Tuple, TypeVar
+from base64 import b64encode
+from typing import Any, Callable, Dict, Optional, Set, Tuple, TypeVar, Union
 
-from idom.core import hooks
-from idom.core.component import ComponentConstructor, component
-from idom.utils import Ref
+import idom
+
+from . import html
+from .core import hooks
+from .core.component import ComponentConstructor, component
+from .core.vdom import VdomDict
+from .utils import Ref
+
+
+def image(
+    format: str,
+    value: Union[str, bytes] = "",
+    attributes: Optional[Dict[str, Any]] = None,
+) -> VdomDict:
+    """Utility for constructing an image from a string or bytes
+
+    The source value will automatically be encoded to base64
+    """
+    if format == "svg":
+        format = "svg+xml"
+
+    if isinstance(value, str):
+        bytes_value = value.encode()
+    else:
+        bytes_value = value
+
+    base64_value = b64encode(bytes_value).decode()
+    src = f"data:image/{format};base64,{base64_value}"
+
+    return {"tagName": "img", "attributes": {"src": src, **(attributes or {})}}
+
+
+@component
+def Input(
+    callback: Callable[[str], None],
+    type: str,
+    value: str = "",
+    attributes: Optional[Dict[str, Any]] = None,
+    cast: Optional[Callable[[str], Any]] = None,
+    ignore_empty: bool = True,
+) -> VdomDict:
+    """Utility for making an ``<input/>`` with a callback"""
+    attrs = attributes or {}
+    value, set_value = idom.hooks.use_state(value)
+
+    events = idom.Events()
+
+    @events.on("change")
+    def on_change(event: Dict[str, Any]) -> None:
+        value = event["value"]
+        set_value(value)
+        if not value and ignore_empty:
+            return
+        callback(value if cast is None else cast(value))
+
+    return html.input({"type": type, "value": value, **attrs}, event_handlers=events)
 
 
 MountFunc = Callable[[ComponentConstructor], None]

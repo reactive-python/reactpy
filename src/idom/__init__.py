@@ -10,7 +10,7 @@ except _DistributionNotFound:  # pragma: no cover
 
 __author__ = "idom-team"
 
-from . import config, log, web
+from . import config, html, log, web
 from .core import hooks
 from .core.component import Component, component
 from .core.events import Events, event
@@ -18,8 +18,7 @@ from .core.layout import Layout
 from .core.vdom import VdomDict, vdom
 from .server.prefab import run
 from .utils import Ref, html_to_vdom
-from .widgets.html import html
-from .widgets.utils import hotswap, multiview
+from .widgets import hotswap, multiview
 
 
 __all__ = [

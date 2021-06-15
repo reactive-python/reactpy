@@ -59,7 +59,7 @@ Simply install your javascript library of choice using the ``idom`` CLI:
 
     idom install victory
 
-Then import the module with :class:`~idom.widgets.utils.Module`:
+Then import the module with :mod:`~idom.web.module`:
 
 .. example:: victory_chart
 

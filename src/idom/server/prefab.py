@@ -7,7 +7,7 @@ import logging
 from typing import Any, Dict, Optional, Tuple, TypeVar
 
 from idom.core.component import ComponentConstructor
-from idom.widgets.utils import MountFunc, MultiViewMount, hotswap, multiview
+from idom.widgets import MountFunc, MultiViewMount, hotswap, multiview
 
 from .proto import Server, ServerFactory
 from .utils import find_available_port, find_builtin_server_type

@@ -1,5 +1,6 @@
 import time
 from base64 import b64encode
+from pathlib import Path
 
 from selenium.webdriver.common.keys import Keys
 
@@ -7,26 +8,79 @@ import idom
 from tests.driver_utils import send_keys
 
 
-_image_src_bytes = b"""
+HERE = Path(__file__).parent
+
+
+def test_multiview_repr():
+    assert str(idom.widgets.MultiViewMount({})) == "MultiViewMount({})"
+
+
+def test_hostwap_update_on_change(driver, display):
+    """Ensure shared hotswapping works
+
+    This basically means that previously rendered views of a hotswap component get updated
+    when a new view is mounted, not just the next time it is re-displayed
+
+    In this test we construct a scenario where clicking a button will cause a pre-existing
+    hotswap component to be updated
+    """
+
+    def make_next_count_constructor(count):
+        """We need to construct a new function so they're different when we set_state"""
+
+        def constructor():
+            count.current += 1
+            return idom.html.div({"id": f"hotswap-{count.current}"}, count.current)
+
+        return constructor
+
+    @idom.component
+    def ButtonSwapsDivs():
+        count = idom.Ref(0)
+
+        @idom.event
+        async def on_click(event):
+            mount(make_next_count_constructor(count))
+
+        incr = idom.html.button({"onClick": on_click, "id": "incr-button"}, "incr")
+
+        mount, make_hostswap = idom.widgets.hotswap(update_on_change=True)
+        mount(make_next_count_constructor(count))
+        hotswap_view = make_hostswap()
+
+        return idom.html.div(incr, hotswap_view)
+
+    display(ButtonSwapsDivs)
+
+    client_incr_button = driver.find_element_by_id("incr-button")
+
+    driver.find_element_by_id("hotswap-1")
+    client_incr_button.click()
+    driver.find_element_by_id("hotswap-2")
+    client_incr_button.click()
+    driver.find_element_by_id("hotswap-3")
+
+
+IMAGE_SRC_BYTES = b"""
 <svg width="400" height="110" xmlns="http://www.w3.org/2000/svg">
     <rect width="300" height="100" style="fill:rgb(0,0,255);" />
 </svg>
 """
-_base64_image_src = b64encode(_image_src_bytes).decode()
+BASE64_IMAGE_SRC = b64encode(IMAGE_SRC_BYTES).decode()
 
 
 def test_image_from_string(driver, display):
-    src = _image_src_bytes.decode()
+    src = IMAGE_SRC_BYTES.decode()
     display(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
     client_img = driver.find_element_by_id("a-circle-1")
-    assert _base64_image_src in client_img.get_attribute("src")
+    assert BASE64_IMAGE_SRC in client_img.get_attribute("src")
 
 
 def test_image_from_bytes(driver, display):
-    src = _image_src_bytes
+    src = IMAGE_SRC_BYTES
     display(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
     client_img = driver.find_element_by_id("a-circle-1")
-    assert _base64_image_src in client_img.get_attribute("src")
+    assert BASE64_IMAGE_SRC in client_img.get_attribute("src")
 
 
 def test_input_callback(driver, driver_wait, display):
