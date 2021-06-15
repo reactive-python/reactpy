@@ -16,8 +16,8 @@ export { variable1 as name10, variable2 as name11, name12 };
 export const { name13, name14: bar } = o;
 
 // Aggregating modules
-export * from "source1"; // does not set the default export
-export * from "source2"; // does not set the default export
-export * as name15 from "source3"; // Draft ECMAScript® 2O21
-export { name16, name17 } from "source4";
-export { import1 as name18, import2 as name19, name20 } from "source5";
+export * from "https://source1.com"; // does not set the default export
+export * from "https://source2.com"; // does not set the default export
+export * as name15 from "https://source3.com"; // Draft ECMAScript® 2O21
+export { name16, name17 } from "https://source4.com";
+export { import1 as name18, import2 as name19, name20 } from "https://source5.com";
