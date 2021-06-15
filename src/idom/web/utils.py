@@ -18,43 +18,50 @@ def web_module_path(name: str) -> Path:
 
 
 def resolve_module_exports_from_file(file: Path, max_depth: int) -> Set[str]:
-    export_names, references = resolve_module_exports_from_source(file.read_text())
     if max_depth == 0:
-        logger.warning(f"Unable to resolve all exports for {file}")
-    else:
-        for ref in references:
-            if urlparse(ref).scheme:  # is an absolute URL
-                export_names.update(resolve_module_exports_from_url(ref, max_depth - 1))
-            elif ref.startswith("."):
-                path = _resolve_relative_file_path(file, ref)
-                export_names.update(
-                    resolve_module_exports_from_file(path, max_depth - 1)
-                )
-            else:
-                logger.warning(f"Did not resolve exports for unknown location {ref}")
+        logger.warning(f"Did not resolve all exports for {file} - max depth reached")
+        return set()
+    elif not file.exists():
+        logger.warning(f"Did not resolve exports for unknown file {file}")
+        return set()
+
+    export_names, references = resolve_module_exports_from_source(file.read_text())
+
+    for ref in references:
+        if urlparse(ref).scheme:  # is an absolute URL
+            export_names.update(resolve_module_exports_from_url(ref, max_depth - 1))
+        else:
+            path = _resolve_relative_file_path(file, ref)
+            export_names.update(resolve_module_exports_from_file(path, max_depth - 1))
+
     return export_names
 
 
 def resolve_module_exports_from_url(url: str, max_depth: int) -> Set[str]:
-    export_names, references = resolve_module_exports_from_source(
-        requests.get(url).text
-    )
     if max_depth == 0:
-        logger.warning(f"Unable to fully resolve all exports for {url}")
-    else:
-        for ref in references:
-            url = _resolve_relative_url(url, ref)
-            export_names.update(resolve_module_exports_from_url(url, max_depth - 1))
+        logger.warning(f"Did not resolve all exports for {url} - max depth reached")
+        return set()
+
+    try:
+        text = requests.get(url).text
+    except requests.exceptions.ConnectionError as error:
+        reason = "" if error is None else " - {error.errno}"
+        logger.warning("Did not resolve exports for url " + url + reason)
+        return set()
+
+    export_names, references = resolve_module_exports_from_source(text)
+
+    for ref in references:
+        url = _resolve_relative_url(url, ref)
+        export_names.update(resolve_module_exports_from_url(url, max_depth - 1))
+
     return export_names
 
 
 def resolve_module_exports_from_source(content: str) -> Tuple[Set[str], Set[str]]:
     names: Set[str] = set()
     references: Set[str] = set()
-    for export in _JS_EXPORT_PATTERN.findall(
-        # strip comments
-        _JS_LINE_COMMENT.sub("", content)
-    ):
+    for export in _JS_EXPORT_PATTERN.findall(content):
         export = export.rstrip(";").strip()
         # Exporting individual features
         if export.startswith("let "):
@@ -112,5 +119,4 @@ def _resolve_relative_url(base_url: str, rel_url: str) -> str:
     return f"{base_url}/{rel_url}"
 
 
-_JS_LINE_COMMENT = re.compile(r"//.*$")
 _JS_EXPORT_PATTERN = re.compile(r";?\s*export(?=\s+|{)(.*?(?:;|}\s*))", re.MULTILINE)
