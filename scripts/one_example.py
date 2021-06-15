@@ -5,7 +5,7 @@ from pathlib import Path
 from threading import Thread
 
 import idom
-from idom.widgets.utils import hotswap
+from idom.widgets import hotswap
 
 
 here = Path(__file__).parent

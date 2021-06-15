@@ -106,7 +106,7 @@ class _VdomDictRequired(TypedDict, total=True):
 
 
 class VdomDict(_VdomDictRequired, _VdomDictOptional):
-    """A VDOM dictionary"""
+    """A VDOM dictionary - see :ref:`VDOM Mimetype` for more info"""
 
 
 _AttributesAndChildrenArg = Union[Mapping[str, Any], str, Iterable[Any], Any]
@@ -201,7 +201,7 @@ def make_vdom_constructor(tag: str, allow_children: bool = True) -> VdomDictCons
     qualname_prefix = constructor.__qualname__.rsplit(".", 1)[0]
     constructor.__qualname__ = qualname_prefix + f".{tag}"
     constructor.__doc__ = (
-        f"""Create a new ``<{tag}/>`` - returns :ref:`VDOM <VDOM Mimetype>`."""
+        f"""Create a new ``<{tag}/>`` - returns a :class:`VdomDict`."""
     )
 
     return constructor

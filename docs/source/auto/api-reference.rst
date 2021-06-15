@@ -55,10 +55,10 @@ API Reference
 .. automodule:: idom.utils
     :members:
 
-.. automodule:: idom.widgets.html
+.. automodule:: idom.html
     :members:
 
-.. automodule:: idom.widgets.utils
+.. automodule:: idom.widgets
     :members:
 
 Misc Modules
