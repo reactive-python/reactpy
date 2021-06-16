@@ -58,18 +58,30 @@ def test_resolve_module_exports_from_file_log_on_unknown_file_location(
 def test_resolve_module_exports_from_url():
     responses.add(
         responses.GET,
-        "https://first.url",
-        body="export const First = 1; export * from 'https://second.url';",
+        "https://some.url/first.js",
+        body="export const First = 1; export * from 'https://another.url/path/second.js';",
     )
     responses.add(
         responses.GET,
-        "https://second.url",
-        body="export const Second = 2;",
+        "https://another.url/path/second.js",
+        body="export const Second = 2; export * from '../third.js';",
+    )
+    responses.add(
+        responses.GET,
+        "https://another.url/third.js",
+        body="export const Third = 3; export * from './fourth.js';",
+    )
+    responses.add(
+        responses.GET,
+        "https://another.url/fourth.js",
+        body="export const Fourth = 4;",
     )
 
-    assert resolve_module_exports_from_url("https://first.url", 2) == {
+    assert resolve_module_exports_from_url("https://some.url/first.js", 4) == {
         "First",
         "Second",
+        "Third",
+        "Fourth",
     }
 
 
