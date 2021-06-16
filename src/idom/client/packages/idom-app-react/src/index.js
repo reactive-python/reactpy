@@ -26,7 +26,7 @@ function getWebSocketEndpoint() {
 }
 
 function loadImportSource(source, sourceType) {
-  return import(sourceType == "NAME" ? `/modules/${source}.js` : source);
+  return import(sourceType == "NAME" ? `/modules/${source}` : source);
 }
 
 function shouldReconnect() {

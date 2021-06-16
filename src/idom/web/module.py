@@ -10,14 +10,13 @@ from functools import partial
 from pathlib import Path
 from typing import Any, List, NewType, Optional, Set, Tuple, Union, overload
 
-from idom.config import IDOM_DEBUG_MODE
+from idom.config import IDOM_DEBUG_MODE, IDOM_WED_MODULES_DIR
 from idom.core.vdom import ImportSourceDict, VdomDictConstructor, make_vdom_constructor
 
 from .utils import (
+    module_name_suffix,
     resolve_module_exports_from_file,
     resolve_module_exports_from_url,
-    url_suffix,
-    web_module_path,
 )
 
 
@@ -59,13 +58,13 @@ def module_from_template(
 ) -> WebModule:
     cdn = cdn.rstrip("/")
     template_file = (
-        Path(__file__).parent / "templates" / f"{template}{url_suffix(name)}"
+        Path(__file__).parent / "templates" / f"{template}{module_name_suffix(name)}"
     )
 
     if not template_file.exists():
         raise ValueError(f"No template for {template!r} exists")
 
-    target_file = web_module_path(name)
+    target_file = _web_module_path(name)
     if not target_file.exists():
         target_file.parent.mkdir(parents=True, exist_ok=True)
         target_file.write_text(
@@ -73,7 +72,7 @@ def module_from_template(
         )
 
     return WebModule(
-        source=name,
+        source=name + module_name_suffix(name),
         source_type=NAME_SOURCE,
         default_fallback=fallback,
         file=target_file,
@@ -93,7 +92,7 @@ def module_from_file(
     resolve_exports_depth: int = 5,
 ) -> WebModule:
     source_file = Path(file)
-    target_file = web_module_path(name)
+    target_file = _web_module_path(name)
     if target_file.exists():
         if target_file.resolve() != source_file.resolve():
             raise ValueError(f"{name!r} already exists as {target_file.resolve()}")
@@ -101,7 +100,7 @@ def module_from_file(
         target_file.parent.mkdir(parents=True, exist_ok=True)
         target_file.symlink_to(source_file)
     return WebModule(
-        source=name,
+        source=name + module_name_suffix(name),
         source_type=NAME_SOURCE,
         default_fallback=fallback,
         file=target_file,
@@ -180,3 +179,9 @@ def _make_export(
             fallback=(fallback or web_module.default_fallback),
         ),
     )
+
+
+def _web_module_path(name: str) -> Path:
+    name += module_name_suffix(name)
+    path = IDOM_WED_MODULES_DIR.current.joinpath(*name.split("/"))
+    return path.with_suffix(path.suffix)
