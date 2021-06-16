@@ -16,6 +16,7 @@ from idom.core.vdom import ImportSourceDict, VdomDictConstructor, make_vdom_cons
 from .utils import (
     resolve_module_exports_from_file,
     resolve_module_exports_from_url,
+    url_suffix,
     web_module_path,
 )
 
@@ -57,8 +58,10 @@ def module_from_template(
     resolve_exports_depth: int = 5,
 ) -> WebModule:
     cdn = cdn.rstrip("/")
+    template_file = (
+        Path(__file__).parent / "templates" / f"{template}{url_suffix(name)}"
+    )
 
-    template_file = Path(__file__).parent / "templates" / f"{template}.js"
     if not template_file.exists():
         raise ValueError(f"No template for {template!r} exists")
 

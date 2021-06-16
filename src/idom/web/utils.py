@@ -1,6 +1,6 @@
 import logging
 import re
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Set, Tuple
 from urllib.parse import urlparse
 
@@ -12,9 +12,16 @@ from idom.config import IDOM_WED_MODULES_DIR
 logger = logging.getLogger(__name__)
 
 
+def url_suffix(name: str) -> str:
+    head, _, tail = name.partition("@")  # handle version identifier
+    version, _, tail = tail.partition("/")  # get section after version
+    return PurePosixPath(tail or head).suffix or ".js"
+
+
 def web_module_path(name: str) -> Path:
+    name += url_suffix(name)
     path = IDOM_WED_MODULES_DIR.current.joinpath(*name.split("/"))
-    return path.with_suffix(path.suffix + ".js")
+    return path.with_suffix(path.suffix)
 
 
 def resolve_module_exports_from_file(file: Path, max_depth: int) -> Set[str]:
@@ -31,7 +38,7 @@ def resolve_module_exports_from_file(file: Path, max_depth: int) -> Set[str]:
         if urlparse(ref).scheme:  # is an absolute URL
             export_names.update(resolve_module_exports_from_url(ref, max_depth - 1))
         else:
-            path = _resolve_relative_file_path(file, ref)
+            path = file.parent.joinpath(*ref.split("/"))
             export_names.update(resolve_module_exports_from_file(path, max_depth - 1))
 
     return export_names
@@ -102,23 +109,19 @@ def resolve_module_exports_from_source(content: str) -> Tuple[Set[str], Set[str]
     return {n.strip() for n in names}, {r.strip() for r in references}
 
 
-def _resolve_relative_file_path(base_path: Path, rel_url: str) -> Path:
-    if rel_url.startswith("./"):
-        return base_path.parent / rel_url[2:]
-    while rel_url.startswith("../"):
-        base_path = base_path.parent
-        rel_url = rel_url[3:]
-    return base_path / rel_url
-
-
 def _resolve_relative_url(base_url: str, rel_url: str) -> str:
     if not rel_url.startswith("."):
         return rel_url
-    elif rel_url.startswith("./"):
-        return base_url.rsplit("/")[0] + rel_url[1:]
+
+    base_url = base_url.rsplit("/", 1)[0]
+
+    if rel_url.startswith("./"):
+        return base_url + rel_url[1:]
+
     while rel_url.startswith("../"):
-        base_url = base_url.rsplit("/")[0]
+        base_url = base_url.rsplit("/", 1)[0]
         rel_url = rel_url[3:]
+
     return f"{base_url}/{rel_url}"
 
 

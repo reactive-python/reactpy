@@ -1,12 +1,9 @@
-export * from "$CDN/$PACKAGE";
+import { render } from "$CDN/preact";
 
-import { h, Component, render } from "$CDN/preact";
-import htm from "$CDN/htm";
-
-const html = htm.bind(h);
-
-export { h as createElement, render as renderElement };
+export { h as createElement, render as renderElement } from "$CDN/preact";
 
 export function unmountElement(container) {
-  preactRender(null, container);
+  render(null, container);
 }
+
+export * from "$CDN/$PACKAGE";
