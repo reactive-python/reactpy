@@ -6,22 +6,14 @@ from urllib.parse import urlparse
 
 import requests
 
-from idom.config import IDOM_WED_MODULES_DIR
-
 
 logger = logging.getLogger(__name__)
 
 
-def url_suffix(name: str) -> str:
+def module_name_suffix(name: str) -> str:
     head, _, tail = name.partition("@")  # handle version identifier
     version, _, tail = tail.partition("/")  # get section after version
     return PurePosixPath(tail or head).suffix or ".js"
-
-
-def web_module_path(name: str) -> Path:
-    name += url_suffix(name)
-    path = IDOM_WED_MODULES_DIR.current.joinpath(*name.split("/"))
-    return path.with_suffix(path.suffix)
 
 
 def resolve_module_exports_from_file(file: Path, max_depth: int) -> Set[str]:
