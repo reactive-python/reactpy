@@ -288,7 +288,7 @@ def use_toggle(init=False):
     return state, lambda: set_state(lambda old: not old)
 
 
-async def test_model_key_preserves_callback_identity_for_common_elements():
+async def test_model_key_preserves_callback_identity_for_common_elements(caplog):
     called_good_trigger = idom.Ref(False)
     good_handler = StaticEventHandler()
     bad_handler = StaticEventHandler()
@@ -329,6 +329,8 @@ async def test_model_key_preserves_callback_identity_for_common_elements():
             called_good_trigger.current = False
 
             await layout.render()
+
+    assert not caplog.records
 
 
 async def test_model_key_preserves_callback_identity_for_components():
@@ -494,4 +496,25 @@ async def test_log_warning_on_attempt_to_render_component_not_in_layout(caplog):
     assert (
         next(iter(caplog.records)).message
         == f"Did not render component - {component_not_in_layout} already unmounted or does not belong to this layout"
+    )
+
+
+async def test_log_error_on_bad_event_handler(caplog):
+    bad_handler = StaticEventHandler()
+
+    @idom.component
+    def ComponentWithBadEventHandler():
+        @bad_handler.use
+        def raise_error():
+            raise Exception("bad event handler")
+
+        return idom.html.button({"onClick": raise_error})
+
+    with idom.Layout(ComponentWithBadEventHandler()) as layout:
+        await layout.render()
+        event = LayoutEvent(bad_handler.target, [])
+        await layout.dispatch(event)
+
+    assert next(iter(caplog.records)).message.startswith(
+        "Failed to execute event handler"
     )
