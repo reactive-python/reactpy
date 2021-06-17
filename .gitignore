@@ -35,3 +35,7 @@ pip-wheel-metadata
 # --- IDE ---
 .idea
 .vscode
+
+# --- JS ---
+
+node_modules

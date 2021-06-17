@@ -5,6 +5,7 @@ Web Modules
 
 from __future__ import annotations
 
+import shutil
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
@@ -89,6 +90,7 @@ def module_from_file(
     fallback: Optional[Any] = None,
     resolve_exports: bool = IDOM_DEBUG_MODE.current,
     resolve_exports_depth: int = 5,
+    symlink: bool = False,
 ) -> WebModule:
     source_file = Path(file)
     target_file = _web_module_path(name)
@@ -98,7 +100,10 @@ def module_from_file(
         raise FileExistsError(f"{name!r} already exists as {target_file.resolve()}")
     else:
         target_file.parent.mkdir(parents=True, exist_ok=True)
-        target_file.symlink_to(source_file)
+        if symlink:
+            target_file.symlink_to(source_file)
+        else:
+            shutil.copy(source_file, target_file)
     return WebModule(
         source=name + module_name_suffix(name),
         source_type=NAME_SOURCE,

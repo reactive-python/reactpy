@@ -60,7 +60,10 @@ def docs(session: Session) -> None:
         "scripts/live_docs.py",
         "--open-browser",
         # for some reason this matches absolute paths
-        "--ignore=**/docs/source/auto/*",
+        "--ignore=**/auto/*",
+        "--ignore=**/_static/custom.js",
+        "--ignore=**/node_modules/**/*",
+        "--ignore=**/package-lock.json",
         "-a",
         "-E",
         "-b",

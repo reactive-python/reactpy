@@ -1,0 +1,20 @@
+{
+  "name": "idom-docs-example-loader",
+  "version": "1.0.0",
+  "description": "simple javascript client for IDOM's documentation",
+  "main": "index.js",
+  "scripts": {
+    "build": "rollup --config",
+    "format": "prettier --ignore-path .gitignore --write ."
+  },
+  "devDependencies": {
+    "prettier": "^2.2.1",
+    "rollup": "^2.35.1",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-replace": "^2.2.0"
+  },
+  "dependencies": {
+    "idom-client-react": "file:../../../src/idom/client/packages/idom-client-react"
+  }
+}

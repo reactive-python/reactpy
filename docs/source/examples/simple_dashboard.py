@@ -3,10 +3,11 @@ import random
 import time
 
 import idom
-from idom.widgets.html import Input
+from idom.widgets import Input
 
 
-victory = idom.install("victory", fallback="loading...")
+victory = idom.web.module_from_template("react", "victory", fallback="loading...")
+VictoryLine = idom.web.export(victory, "VictoryLine")
 
 
 @idom.component
@@ -53,7 +54,7 @@ def RandomWalkGraph(mu, sigma):
         }
         set_data(data[1:] + [next_data_point])
 
-    return victory.VictoryLine(
+    return VictoryLine(
         {
             "data": data,
             "style": {

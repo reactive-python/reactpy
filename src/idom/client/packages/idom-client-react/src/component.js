@@ -58,7 +58,12 @@ function ImportedElement({ model }) {
 
   react.useEffect(() => {
     if (fallback) {
-      reactDOM.unmountComponentAtNode(mountPoint.current);
+      importSource.then(() => {
+        reactDOM.unmountComponentAtNode(mountPoint.current);
+        if ( mountPoint.current.children ) {
+          mountPoint.current.removeChild(mountPoint.current.children[0])
+        }
+      });
     }
   }, []);
 
@@ -87,7 +92,8 @@ function ImportedElement({ model }) {
   if (!fallback) {
     return html`<div ref=${mountPoint} />`;
   } else if (typeof fallback == "string") {
-    return html`<div ref=${mountPoint}>${fallback}</div>`;
+    // need the second div there so we can removeChild above
+    return html`<div ref=${mountPoint}><div>${fallback}</div></div>`;
   } else {
     return html`<div ref=${mountPoint}>
       <${StandardElement} model=${fallback} />

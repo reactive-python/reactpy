@@ -49,7 +49,7 @@ def test_that_js_module_unmount_is_called(driver, display):
 
 
 def test_module_from_url(driver):
-    app = Sanic()
+    app = Sanic(__name__)
 
     # instead of directing the URL to a CDN, we just point it to this static file
     app.static(
@@ -128,6 +128,19 @@ def test_module_from_file_source_conflict(tmp_path):
 
     with pytest.raises(FileExistsError, match="already exists"):
         idom.web.module_from_file("temp", second_file)
+
+
+def test_web_module_from_file_symlink(tmp_path):
+    file = tmp_path / "temp.js"
+    file.touch()
+
+    module = idom.web.module_from_file("temp", file, symlink=True)
+
+    assert module.file.resolve().read_text() == ""
+
+    file.write_text("hello world!")
+
+    assert module.file.resolve().read_text() == "hello world!"
 
 
 def test_module_missing_exports():

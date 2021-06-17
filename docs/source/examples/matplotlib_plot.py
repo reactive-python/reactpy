@@ -3,7 +3,7 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 
 import idom
-from idom.widgets.html import image
+from idom.widgets import image
 
 
 @idom.component

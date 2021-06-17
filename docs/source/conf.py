@@ -64,6 +64,7 @@ extensions = [
     "interactive_widget",
     "patched_html_translator",
     "widget_example",
+    "build_custom_js",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

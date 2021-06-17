@@ -1,12 +1,6 @@
 API Reference
 =============
 
-.. automodule:: idom.client.manage
-    :members:
-
-.. automodule:: idom.client.module
-    :members:
-
 .. automodule:: idom.config
     :members:
 
@@ -28,7 +22,7 @@ API Reference
 .. automodule:: idom.core.vdom
     :members:
 
-.. automodule:: idom.dialect
+.. automodule:: idom.html
     :members:
 
 .. automodule:: idom.log
@@ -55,7 +49,7 @@ API Reference
 .. automodule:: idom.utils
     :members:
 
-.. automodule:: idom.html
+.. automodule:: idom.web.module
     :members:
 
 .. automodule:: idom.widgets
@@ -64,9 +58,6 @@ API Reference
 Misc Modules
 ------------
 
-.. automodule:: idom.cli
-    :members:
-
 .. automodule:: idom.core.utils
     :members:
 
@@ -74,4 +65,7 @@ Misc Modules
     :members:
 
 .. automodule:: idom.server.utils
+    :members:
+
+.. automodule:: idom.web.utils
     :members:
