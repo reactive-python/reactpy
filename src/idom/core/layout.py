@@ -105,7 +105,10 @@ class Layout:
         handler = self._event_handlers.get(event.target)
 
         if handler is not None:
-            await handler(event.data)
+            try:
+                await handler(event.data)
+            except Exception:
+                logger.exception(f"Failed to execute event handler {handler}")
         else:
             logger.info(
                 f"Ignored event - handler {event.target!r} does not exist or its component unmounted"
