@@ -57,12 +57,11 @@ def module_from_template(
     resolve_exports_depth: int = 5,
 ) -> WebModule:
     cdn = cdn.rstrip("/")
-    template_file = (
-        Path(__file__).parent / "templates" / f"{template}{module_name_suffix(name)}"
-    )
 
+    template_file_name = f"{template}{module_name_suffix(name)}"
+    template_file = Path(__file__).parent / "templates" / template_file_name
     if not template_file.exists():
-        raise ValueError(f"No template for {template!r} exists")
+        raise ValueError(f"No template for {template_file_name!r} exists")
 
     target_file = _web_module_path(name)
     if not target_file.exists():
@@ -93,9 +92,10 @@ def module_from_file(
 ) -> WebModule:
     source_file = Path(file)
     target_file = _web_module_path(name)
-    if target_file.exists():
-        if target_file.resolve() != source_file.resolve():
-            raise ValueError(f"{name!r} already exists as {target_file.resolve()}")
+    if not source_file.exists():
+        raise FileNotFoundError(f"Source file does not exist: {source_file}")
+    elif target_file.exists() or target_file.is_symlink():
+        raise FileExistsError(f"{name!r} already exists as {target_file.resolve()}")
     else:
         target_file.parent.mkdir(parents=True, exist_ok=True)
         target_file.symlink_to(source_file)
@@ -156,7 +156,9 @@ def export(
         return _make_export(web_module, export_names, fallback, allow_children)
     else:
         if web_module.export_names is not None:
-            missing = list(set(export_names).difference(web_module.export_names))
+            missing = list(
+                sorted(set(export_names).difference(web_module.export_names))
+            )
             if missing:
                 raise ValueError(f"{web_module.source!r} does not export {missing!r}")
         return [

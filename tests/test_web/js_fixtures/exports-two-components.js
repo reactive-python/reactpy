@@ -9,15 +9,10 @@ export function unmountElement(container) {
   render(null, container);
 }
 
-export function SimpleButton(props) {
-  return h(
-    "button",
-    {
-      id: props.id,
-      onClick(event) {
-        props.onClick({ data: props.eventResponseData });
-      },
-    },
-    "simple button"
-  );
+export function Header1(props) {
+  return h("h1", {id: props.id}, props.text);
+}
+
+export function Header2(props) {
+  return h("h2", {id: props.id}, props.text);
 }

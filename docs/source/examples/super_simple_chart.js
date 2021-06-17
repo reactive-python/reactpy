@@ -1,4 +1,4 @@
-import { h, Component, render } from "https://unpkg.com/preact?module";
+import { h, render } from "https://unpkg.com/preact?module";
 import htm from "https://unpkg.com/htm?module";
 
 const html = htm.bind(h);
@@ -6,7 +6,7 @@ const html = htm.bind(h);
 export { h as createElement, render as renderElement };
 
 export function unmountElement(container) {
-  preactRender(null, container);
+  render(null, container);
 }
 
 export function SuperSimpleChart(props) {
