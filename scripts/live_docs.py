@@ -11,6 +11,7 @@ from sphinx_autobuild.cli import (
 
 from docs.main import IDOM_MODEL_SERVER_URL_PREFIX, make_app, make_component
 from idom.server.sanic import PerClientStateServer
+from idom.testing import clear_idom_web_modules_dir
 
 
 # these environment variable are used in custom Sphinx extensions
@@ -24,6 +25,7 @@ def wrap_builder(old_builder):
     # This is the bit that we're injecting to get the example components to reload too
     def new_builder():
         [s.stop() for s in _running_idom_servers]
+        clear_idom_web_modules_dir()
 
         server = PerClientStateServer(
             make_component(),

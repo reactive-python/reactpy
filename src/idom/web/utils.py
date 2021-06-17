@@ -96,7 +96,7 @@ def resolve_module_exports_from_source(content: str) -> Tuple[Set[str], Set[str]
                 item.split(" as ", 1)[-1]
                 for item in export.split(" from ")[0].strip("{}").split(",")
             )
-        else:
+        elif not (export.startswith("function ") or export.startswith("class ")):
             logger.warning(f"Unknown export type {export!r}")
     return {n.strip() for n in names}, {r.strip() for r in references}
 

@@ -5,6 +5,7 @@ Test Tooling
 
 import logging
 import re
+import shutil
 from functools import wraps
 from types import TracebackType
 from typing import (
@@ -25,6 +26,7 @@ from weakref import ref
 from selenium.webdriver import Chrome
 from selenium.webdriver.remote.webdriver import WebDriver
 
+from idom.config import IDOM_WED_MODULES_DIR
 from idom.core.events import EventHandler
 from idom.core.hooks import LifeCycleHook, current_hook
 from idom.core.utils import hex_id
@@ -285,3 +287,8 @@ class StaticEventHandler:
         self._handler.clear()
         self._handler.add(function)
         return self._handler
+
+
+def clear_idom_web_modules_dir() -> None:
+    for path in IDOM_WED_MODULES_DIR.current.iterdir():
+        shutil.rmtree(path) if path.is_dir() else path.unlink()

@@ -1,10 +1,11 @@
+import { mountLayoutWithWebSocket } from "idom-client-react";
+
 const LOC = window.location;
 const HTTP_PROTO = LOC.protocol;
 const WS_PROTO = HTTP_PROTO === "https:" ? "wss:" : "ws:";
 const IDOM_MODULES_PATH = "/_modules";
-const IDOM_CLIENT_REACT_PATH = IDOM_MODULES_PATH + "/idom-client-react.js";
 
-export default function loadWidgetExample(idomServerHost, mountID, viewID) {
+export function mountWidgetExample(mountID, viewID, idomServerHost) {
   const idom_url = "//" + (idomServerHost || LOC.host);
   const http_idom_url = HTTP_PROTO + idom_url;
   const ws_idom_url = WS_PROTO + idom_url;
@@ -14,28 +15,22 @@ export default function loadWidgetExample(idomServerHost, mountID, viewID) {
   enableWidgetButton.appendChild(document.createTextNode("Enable Widget"));
   enableWidgetButton.setAttribute("class", "enable-widget-button");
 
-  enableWidgetButton.addEventListener("click", () => {
-    {
-      import(http_idom_url + IDOM_CLIENT_REACT_PATH).then((module) => {
-        {
-          fadeOutAndThen(enableWidgetButton, () => {
-            {
-              mountEl.removeChild(enableWidgetButton);
-              mountEl.setAttribute("class", "interactive widget-container");
-              module.mountLayoutWithWebSocket(
-                mountEl,
-                ws_idom_url + `/_idom/stream?view_id=${viewID}`,
-                (source, sourceType) =>
-                  loadImportSource(http_idom_url, source, sourceType)
-              );
-            }
-          });
-        }
-      });
-    }
-  });
+  enableWidgetButton.addEventListener("click", () =>
+    fadeOutElementThenCallback(enableWidgetButton, () => {
+      {
+        mountEl.removeChild(enableWidgetButton);
+        mountEl.setAttribute("class", "interactive widget-container");
+        mountLayoutWithWebSocket(
+          mountEl,
+          ws_idom_url + `/_idom/stream?view_id=${viewID}`,
+          (source, sourceType) =>
+            loadImportSource(http_idom_url, source, sourceType)
+        );
+      }
+    })
+  );
 
-  function fadeOutAndThen(element, callback) {
+  function fadeOutElementThenCallback(element, callback) {
     {
       var op = 1; // initial opacity
       var timer = setInterval(function () {
@@ -60,7 +55,7 @@ export default function loadWidgetExample(idomServerHost, mountID, viewID) {
 
 function loadImportSource(baseUrl, source, sourceType) {
   if (sourceType == "NAME") {
-    return import(baseUrl + IDOM_MODULES_PATH + "/" + source + ".js");
+    return import(baseUrl + IDOM_MODULES_PATH + "/" + source);
   } else {
     return import(source);
   }

@@ -1,7 +1,7 @@
 {
   "name": "idom-client-react",
   "description": "A client for IDOM implemented in React",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "author": "Ryan Morshead",
   "license": "MIT",
   "type": "module",
@@ -20,8 +20,6 @@
   "devDependencies": {
     "jsdom": "16.3.0",
     "prettier": "^2.2.1",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
     "uvu": "^0.5.1"
   },
   "dependencies": {

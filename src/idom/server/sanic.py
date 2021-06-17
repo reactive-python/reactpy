@@ -33,6 +33,8 @@ from .utils import CLIENT_BUILD_DIR, threaded, wait_on_event
 
 logger = logging.getLogger(__name__)
 
+_SERVER_COUNT = 0
+
 
 class Config(TypedDict, total=False):
     """Config for :class:`SanicRenderServer`"""
@@ -153,6 +155,10 @@ def _setup_config_and_app(
     config: Optional[Config],
     app: Optional[Sanic],
 ) -> Tuple[Config, Sanic]:
+    if app is None:
+        global _SERVER_COUNT
+        _SERVER_COUNT += 1
+        app = Sanic(f"{__name__}[{_SERVER_COUNT}]")
     return (
         {
             "cors": False,
@@ -161,7 +167,7 @@ def _setup_config_and_app(
             "redirect_root_to_index": True,
             **(config or {}),  # type: ignore
         },
-        app or Sanic(),
+        app,
     )
 
 
