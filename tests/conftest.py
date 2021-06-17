@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import os
+import shutil
 from typing import Any, List
 
 import pytest
@@ -11,6 +12,7 @@ from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.support.ui import WebDriverWait
 
 import idom
+from idom.config import IDOM_WED_MODULES_DIR
 from idom.testing import ServerMountPoint, create_simple_selenium_web_driver
 
 
@@ -100,6 +102,15 @@ def create_driver(driver_is_headless):
 @pytest.fixture(scope="session")
 def driver_is_headless(pytestconfig: Config):
     return bool(pytestconfig.option.headless)
+
+
+@pytest.fixture(autouse=True)
+def _clear_web_modules_dir_after_test():
+    for path in IDOM_WED_MODULES_DIR.current.iterdir():
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
 
 
 def _mark_coros_as_async_tests(items: List[pytest.Item]) -> None:
