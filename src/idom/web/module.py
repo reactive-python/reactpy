@@ -27,7 +27,7 @@ NAME_SOURCE = SourceType("NAME")
 """A named souce - usually a Javascript package name"""
 
 URL_SOURCE = SourceType("URL")
-"""A source loaded from a URL, usually from a CDN"""
+"""A source loaded from a URL, usually a CDN"""
 
 
 def module_from_url(
@@ -36,6 +36,19 @@ def module_from_url(
     resolve_exports: bool = IDOM_DEBUG_MODE.current,
     resolve_exports_depth: int = 5,
 ) -> WebModule:
+    """Load a :class:`WebModule` from a :data:`URL_SOURCE`
+
+    Parameters:
+        url:
+            Where the javascript module will be loaded from which conforms to the
+            interface for :ref:`Custom Javascript Components`
+        fallback:
+            What to temporarilly display while the module is being loaded.
+        resolve_imports:
+            Whether to try and find all the named exports of this module.
+        resolve_exports_depth:
+            How deeply to search for those exports.
+    """
     return WebModule(
         source=url,
         source_type=URL_SOURCE,
@@ -51,33 +64,50 @@ def module_from_url(
 
 def module_from_template(
     template: str,
-    name: str,
+    package: str,
     cdn: str = "https://esm.sh",
     fallback: Optional[Any] = None,
     resolve_exports: bool = IDOM_DEBUG_MODE.current,
     resolve_exports_depth: int = 5,
 ) -> WebModule:
+    """Load a :class:`WebModule` from a :data:`URL_SOURCE` using a known framework
+
+    Parameters:
+        template:
+            The name of the template to use with the given ``package`` (``react`` | ``preact``)
+        package:
+            The name of a package to load. May include a file extension (defaults to
+            ``.js`` if not given)
+        cdn:
+            Where the package should be loaded from. The CDN must distribute ESM modules
+        fallback:
+            What to temporarilly display while the module is being loaded.
+        resolve_imports:
+            Whether to try and find all the named exports of this module.
+        resolve_exports_depth:
+            How deeply to search for those exports.
+    """
     cdn = cdn.rstrip("/")
 
-    template_file_name = f"{template}{module_name_suffix(name)}"
+    template_file_name = f"{template}{module_name_suffix(package)}"
     template_file = Path(__file__).parent / "templates" / template_file_name
     if not template_file.exists():
         raise ValueError(f"No template for {template_file_name!r} exists")
 
-    target_file = _web_module_path(name)
+    target_file = _web_module_path(package)
     if not target_file.exists():
         target_file.parent.mkdir(parents=True, exist_ok=True)
         target_file.write_text(
-            template_file.read_text().replace("$PACKAGE", name).replace("$CDN", cdn)
+            template_file.read_text().replace("$PACKAGE", package).replace("$CDN", cdn)
         )
 
     return WebModule(
-        source=name + module_name_suffix(name),
+        source=package + module_name_suffix(package),
         source_type=NAME_SOURCE,
         default_fallback=fallback,
         file=target_file,
         export_names=(
-            resolve_module_exports_from_url(f"{cdn}/{name}", resolve_exports_depth)
+            resolve_module_exports_from_url(f"{cdn}/{package}", resolve_exports_depth)
             if resolve_exports
             else None
         ),
@@ -92,6 +122,23 @@ def module_from_file(
     resolve_exports_depth: int = 5,
     symlink: bool = False,
 ) -> WebModule:
+    """Load a :class:`WebModule` from a :data:`URL_SOURCE` using a known framework
+
+    Parameters:
+        template:
+            The name of the template to use with the given ``package``
+        package:
+            The name of a package to load. May include a file extension (defaults to
+            ``.js`` if not given)
+        cdn:
+            Where the package should be loaded from. The CDN must distribute ESM modules
+        fallback:
+            What to temporarilly display while the module is being loaded.
+        resolve_imports:
+            Whether to try and find all the named exports of this module.
+        resolve_exports_depth:
+            How deeply to search for those exports.
+    """
     source_file = Path(file)
     target_file = _web_module_path(name)
     if not source_file.exists():

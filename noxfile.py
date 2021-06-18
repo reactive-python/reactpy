@@ -62,7 +62,7 @@ def docs(session: Session) -> None:
         # for some reason this matches absolute paths
         "--ignore=**/auto/*",
         "--ignore=**/_static/custom.js",
-        "--ignore=**/node_modules/**/*",
+        "--ignore=**/node_modules/*",
         "--ignore=**/package-lock.json",
         "-a",
         "-E",
