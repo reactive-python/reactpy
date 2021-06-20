@@ -105,23 +105,44 @@ Distributing Javascript Components
 
 There are two ways that you can distribute your :ref:`Custom Javascript Components`:
 
-- In a Python package via PyPI_
 - Using a CDN_
+- In a Python package via PyPI_
 
-These options are not mutually exclusive though - if you upload your Javascript
-components to NPM_ and also bundle your Javascript inside a Python package, in principle
-your users can determine which option work best for them. Regardless though, either you
-or, if you give then the choice, your users, will have to consider the tradeoffs of
-either approach.
+These options are not mutually exclusive though, and it may be beneficial to support
+both options. For example, if you upload your Javascript components to NPM_ and also
+bundle your Javascript inside a Python package, in principle your users can determine
+which work best for them. Regardless though, either you or, if you give then the choice,
+your users, will have to consider the tradeoffs of either approach.
 
-- Distribution via PyPI_ - This method is ideal for local usage since the user can
-  server all the Javascript components they depend on from their computer without
-  requiring a network connection.
+- :ref:`Distributing Javascript via CDN_` - Most useful in production-grade applications
+  where its assumed the user has a network connection. In this scenario a CDN's `edge
+  network <https://en.wikipedia.org/wiki/Edge_computing>`__ can be used to bring the
+  Javascript source closer to the user in order to reduce page load times.
 
-- Distribution via a CDN_ - Most useful in production-grade applications where its assumed
-  the user has a network connection. In this scenario a CDN's
-  `edge network <https://en.wikipedia.org/wiki/Edge_computing>`__ can be used to bring
-  the Javascript source closer to the user in order to reduce page load times.
+- :ref:`Distributing Javascript via PyPI_` - This method is ideal for local usage since
+  the user can server all the Javascript components they depend on from their computer
+  without requiring a network connection.
+
+
+Distributing Javascript via CDN_
+................................
+
+Under this approach, to simplify these instructions, we're going to ignore the problem
+of distributing the Javascript since that must be handled by your CDN. For open source
+or personal projects, a CDN like https://unpkg.com/ makes things easy by automatically
+preparing any package that's been uploaded to NPM_. If you need to roll with your own
+private CDN, this will likely be more complicated.
+
+In either case though, on the Python side, things are quite simple. You need only pass
+the URL where your package can be found to :func:`~idom.web.module.module_from_file`
+where you can then load any of its exports:
+
+.. code-block::
+
+    import idom
+
+    your_module = ido.web.module_from_file("https://some.cdn/your-module")
+    YourComponent = idom.web.export(your_module, "YourComponent")
 
 
 Distributing Javascript via PyPI_
@@ -365,12 +386,6 @@ includes ``bundle.js``:
 And that's it! While this might seem like a lot of work, you're always free to start
 creating your custom components using the provided `template repository`_ so you can get
 up and running as quickly as possible.
-
-
-Distributing Javascript via CDN_
-................................
-
-Under construction...
 
 
 .. Links
