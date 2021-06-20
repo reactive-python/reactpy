@@ -83,7 +83,7 @@ jobs:
           git fetch --depth=1 origin +refs/tags/*:refs/tags/*
       - name: Build Docker Image
         run: docker build . --file docs/Dockerfile
-  test-build:
+  test-build-package:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -98,5 +98,9 @@ jobs:
         run: |
           npm install -g npm@latest
           npm --version
+      - name: Install Python Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements/build-pkg.txt
       - name: Test Build Creation
         run: python setup.py bdist_wheel sdist
