@@ -1,6 +1,37 @@
 Changelog
 =========
 
+0.29.0
+------
+
+Contains breaking changes, the most significant of which are:
+
+- Moves the runtime client build directory to a "user data" directory rather a directory
+  where IDOM's code was installed. This has the advantage of not requiring write
+  permissions to rebuild the client if IDOM was installed globally rather than in a
+  virtual environment.
+- The custom JS component interface has been reworked to expose an API similar to
+  the ``createElement``, ``render``, ``unmountComponentAtNode`` functions from React.
+
+**Issues Fixed:**
+
+- :issue:`375`
+- :issue:`394`
+- :issue:`401`
+
+**Highlighted Commits:**
+
+- add try/except around event handling - :commit:`f2bf589`
+- do not call find_builtin_server_type at import time - :commit:`e29745e`
+- import default from react/reactDOM/fast-json-patch - :commit:`74c8a34`
+- no named exports for react/reactDOM - :commit:`f13bf35`
+- debug logs for runtime build dir create/update - :commit:`af94f4e`
+- put runtime build in user data dir - :commit:`0af69d2`
+- change shared to update_on_change - :commit:`6c09a86`
+- rework js module interface + fix docs - :commit:`699cc66`
+- correctly serialize File object - :commit:`a2398dc`
+
+
 0.28.0
 ------
 
