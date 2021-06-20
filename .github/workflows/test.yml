@@ -77,3 +77,16 @@ jobs:
           git fetch --depth=1 origin +refs/tags/*:refs/tags/*
       - name: Build Docker Image
         run: docker build . --file docs/Dockerfile
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: "14"
+      - name: Use Latest Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Test Build Creation
+        run: python setup.py bdist_wheel sdist
