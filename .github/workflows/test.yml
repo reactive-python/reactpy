@@ -23,12 +23,14 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
+      - name: Install latest NPM
+        run: |
+          npm install -g npm@latest
+          npm --version
       - name: Install Python Dependencies
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
-        run: |
-          npm install -g npm@v7.13.0
-          nox -s test -- --headless
+        run: nox -s test -- --headless
   test-python-versions:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -45,12 +47,14 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install latest NPM
+        run: |
+          npm install -g npm@latest
+          npm --version
       - name: Install Python Dependencies
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
-        run: |
-          npm install -g npm@v7.13.0
-          nox -s test -- --headless --no-cov
+        run: nox -s test -- --headless --no-cov
   test-javascript:
     runs-on: ubuntu-latest
     steps:
@@ -58,11 +62,13 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "14"
+      - name: Install latest NPM
+        run: |
+          npm install -g npm@latest
+          npm --version
       - name: Test Javascript
         working-directory: ./src/idom/client/app
         run: |
-          npm --version
-          npm install -g npm@v7.13.0
           npm install
           npm test
           npm run build
@@ -88,5 +94,9 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
+      - name: Install latest NPM
+        run: |
+          npm install -g npm@latest
+          npm --version
       - name: Test Build Creation
         run: python setup.py bdist_wheel sdist
