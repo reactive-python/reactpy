@@ -24,11 +24,11 @@ simple and one which allows you to do everything you normally would in Python.
 Does IDOM support any React component?
 --------------------------------------
 
-If you :ref:`Dynamically Install Javascript` components, then the answer is no. Only
-components whose props are JSON serializable, or which expect basic callback functions
-similar to those of standard event handlers (e.g. ``onClick``) will operate as expected.
+If you use :ref:`Dynamically Loaded Components`, then the answer is no. Only components
+whose props are JSON serializable, or which expect basic callback functions similar to
+those of standard event handlers (e.g. ``onClick``) will operate as expected.
 
-However, if you import a pre-built :ref:`Custom Javascript Component <Custom Javascript Components>`
+However, if you import a :ref:`Custom Javascript Component <Custom Javascript Components>`
 then, so long as the bundle has be defined appropriately, any component can be made to
 work, even those that don't rely on React.
 
@@ -53,6 +53,8 @@ Yes, but with some restrictions:
 These restrictions apply because the Javascript from the CDN must be able to run
 natively in the browser and the module must be able to run in isolation from the main
 application.
+
+See :ref:`Distributing Javascript via CDN_` for more info.
 
 
 What props can I pass to Javascript components?

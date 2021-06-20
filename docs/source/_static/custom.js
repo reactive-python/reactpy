@@ -1608,6 +1608,21 @@ function Element({ model, key }) {
   }
 }
 
+function elementChildren(modelChildren) {
+  if (!modelChildren) {
+    return [];
+  } else {
+    return modelChildren.map((child) => {
+      switch (typeof child) {
+        case "object":
+          return html`<${Element} key=${child.key} model=${child} />`;
+        case "string":
+          return child;
+      }
+    });
+  }
+}
+
 function StandardElement({ model }) {
   const config = react.useContext(LayoutConfigContext);
   const children = elementChildren(model.children);
@@ -1632,7 +1647,7 @@ function ImportedElement({ model }) {
     if (fallback) {
       importSource.then(() => {
         reactDom.unmountComponentAtNode(mountPoint.current);
-        if ( mountPoint.current.children ) {
+        if (mountPoint.current.children) {
           mountPoint.current.removeChild(mountPoint.current.children[0]);
         }
       });
@@ -1670,21 +1685,6 @@ function ImportedElement({ model }) {
     return html`<div ref=${mountPoint}>
       <${StandardElement} model=${fallback} />
     </div>`;
-  }
-}
-
-function elementChildren(modelChildren) {
-  if (!modelChildren) {
-    return [];
-  } else {
-    return modelChildren.map((child) => {
-      switch (typeof child) {
-        case "object":
-          return html`<${Element} key=${child.key} model=${child} />`;
-        case "string":
-          return child;
-      }
-    });
   }
 }
 
@@ -1736,22 +1736,13 @@ function loadFromImportSource(config, importSource) {
         typeof module.unmountElement == "function"
       ) {
         return {
-          createElement: (type, props) =>
-            module.createElement(module[type], props),
+          createElement: (type, props, children) =>
+            module.createElement(module[type], props, children, config),
           renderElement: module.renderElement,
           unmountElement: module.unmountElement,
         };
       } else {
-        return {
-          createElement: (type, props, children) =>
-            react.createElement(
-              module[type],
-              props,
-              ...elementChildren(children)
-            ),
-          renderElement: reactDom.render,
-          unmountElement: reactDom.unmountComponentAtNode,
-        };
+        console.error(`${module} does not expose the required interfaces`);
       }
     });
 }
