@@ -1,0 +1,4 @@
+pre-commit
+twine
+wheel
+setuptools_scm
