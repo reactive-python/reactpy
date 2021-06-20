@@ -17,7 +17,6 @@ IDOM
 
     core-concepts
     javascript-components
-    command-line
     specifications
 
 .. toctree::
@@ -40,6 +39,7 @@ IDOM
 
 A package for building highly interactive user interfaces in pure Python inspred by
 `ReactJS <https://reactjs.org/>`__.
+
 
 At a Glance
 -----------

@@ -199,6 +199,18 @@ def export(
     fallback: Optional[Any] = None,
     allow_children: bool = True,
 ) -> Union[VdomDictConstructor, List[VdomDictConstructor]]:
+    """Return one or more VDOM constructors from a :class:`WebModule`
+
+    Parameters:
+        export_names:
+            One or more names to export. If given as a string, a single component
+            will be returned. If a list is given, then a list of components will be
+            returned.
+        fallback:
+            What to temporarilly display while the module is being loaded.
+        allow_children:
+            Whether or not these components can have children.
+    """
     if isinstance(export_names, str):
         if (
             web_module.export_names is not None
