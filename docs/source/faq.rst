@@ -5,7 +5,7 @@ See our `Discussion Forum <https://github.com/idom-team/idom/discussions>`__ for
 questions and answers.
 
 
-Do UI components run server-side?
+Do UI components run client-side?
 ---------------------------------
 
 No. The layout is constructed, and components are executed, server-side in Python. Only
