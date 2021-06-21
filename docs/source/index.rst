@@ -13,10 +13,11 @@ IDOM
 
 .. toctree::
     :hidden:
-    :caption: Advanced Usage
+    :caption: Advanced Topics
 
     core-concepts
     javascript-components
+    architectural-patterns
     specifications
 
 .. toctree::
