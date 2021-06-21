@@ -15,7 +15,7 @@ Since it's likely a lot to take in at once, we'll break it down piece by piece:
     :linenos:
 
 The ``idom.component`` decorator creates a :ref:`Component <Stateful Components>`
-constructor which is "rendered" by the function below it. To create a Component instance
+constructor whose "renderer" is the function below it. To create a Component instance
 we call ``Slideshow()`` with the same arguments as its render function. The render
 function of a Component returns a data structure that depicts a user interface, or in
 more technical terms a Document Object Model (DOM). We call this structural
@@ -35,22 +35,22 @@ Calling a Hook inside a Component's render function (one decorated by ``idom.com
 adds some local state to it. IDOM will preserve the state added by Hooks between calls
 to the Component's render function.
 
-The ``use_state`` hook returns two values - the *current* state value and a function
+The ``use_state`` hook returns two values - the **current** state value and a function
 that let's you update that value. In the case of ``Slideshow`` the value of the
 ``use_state`` hook determines which image is shown to the user, while its update
 function allow us to change it. The one required argument of ``use_state`` is the
-*initial* state value.
+**initial** state value.
 
 .. literalinclude:: /examples/slideshow.py
     :lineno-start: 8
     :lines: 8,9
     :linenos:
 
-The coroutine above will get added as an event handler to the resulting view. When it
-responds to an event it will use the update function returned by the ``use_state`` Hook
-to change which image is shown to the user. Calling the update function will schedule
-the Component to be re-rendered. That is, the Component's render function will be called
-again, and its new result will be displayed.
+The function above will get added as an event handler to the resulting view. When it
+responds to an event it will use ``set_state`` (the update function returned by the
+``use_state`` Hook) to change which image is shown to the user. Calling the update
+function will schedule the Component to be re-rendered. That is, the Component's render
+function will be called again, and its new result will be displayed.
 
 .. note::
 
