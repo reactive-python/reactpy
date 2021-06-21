@@ -57,9 +57,9 @@ As a result, IDOM was developed to help solve these problems.
 Ecosystem Independence
 ----------------------
 
-IDOM has a flexible set of :ref:`core abstractions <Core Concepts>` that allow it to
-interface with its peers. At the time of writing Jupyter, Dash, and Bokeh (via Panel)
-are supported, while Streamlit is in the works:
+IDOM has a flexible set of :ref:`Core Abstractions` that allow it to interface with its
+peers. At the time of writing Jupyter, Dash, and Bokeh (via Panel) are supported, while
+Streamlit is in the works:
 
 - idom-jupyter_ (try it now with Binder_)
 - idom-dash_

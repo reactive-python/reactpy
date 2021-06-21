@@ -80,9 +80,9 @@ def multiview_server(
 ) -> Tuple[MultiViewMount, Server[_App]]:
     """Set up a server where views can be dynamically added.
 
-    In other words this allows the user to work with IDOM in an imperative manner.
-    Under the hood this uses the :func:`idom.widgets.common.multiview` function to
-    add the views on the fly.
+    In other words this allows the user to work with IDOM in an imperative manner. Under
+    the hood this uses the :func:`idom.widgets.multiview` function to add the views on
+    the fly.
 
     Parameters:
         server: The server type to start up as a daemon
@@ -93,8 +93,8 @@ def multiview_server(
         app: Optionally provide a prexisting application to register to
 
     Returns:
-        The server instance and a function for adding views.
-        See :func:`idom.widgets.common.multiview` for details.
+        The server instance and a function for adding views. See
+        :func:`idom.widgets.multiview` for details.
     """
     mount, component = multiview()
 
@@ -123,9 +123,9 @@ def hotswap_server(
 ) -> Tuple[MountFunc, Server[_App]]:
     """Set up a server where views can be dynamically swapped out.
 
-    In other words this allows the user to work with IDOM in an imperative manner.
-    Under the hood this uses the :func:`idom.widgets.common.hotswap` function to
-    swap the views on the fly.
+    In other words this allows the user to work with IDOM in an imperative manner. Under
+    the hood this uses the :func:`idom.widgets.hotswap` function to swap the views on
+    the fly.
 
     Parameters:
         server: The server type to start up as a daemon
@@ -137,8 +137,8 @@ def hotswap_server(
         sync_views: Whether to update all displays with newly mounted components
 
     Returns:
-        The server instance and a function for swapping views.
-        See :func:`idom.widgets.common.hotswap` for details.
+        The server instance and a function for swapping views. See
+        :func:`idom.widgets.hotswap` for details.
     """
     mount, component = hotswap(update_on_change=sync_views)
 

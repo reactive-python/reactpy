@@ -36,6 +36,7 @@ async def dispatch_single_view(
     send: SendCoroutine,
     recv: RecvCoroutine,
 ) -> None:
+    """Run a dispatch loop for a single view instance"""
     with layout:
         async with create_task_group() as task_group:
             task_group.start_soon(_single_outgoing_loop, layout, send)
@@ -50,6 +51,7 @@ _SharedViewDispatcherFuture = Callable[[SendCoroutine, RecvCoroutine], "Future[N
 async def create_shared_view_dispatcher(
     layout: Layout, run_forever: bool = False
 ) -> AsyncIterator[_SharedViewDispatcherFuture]:
+    """Enter a dispatch context where all subsequent view instances share the same state"""
     with layout:
         (
             dispatch_shared_view,
@@ -94,6 +96,7 @@ async def create_shared_view_dispatcher(
 def ensure_shared_view_dispatcher_future(
     layout: Layout,
 ) -> Tuple[Future[None], SharedViewDispatcher]:
+    """Ensure the future of a dispatcher created by :func:`create_shared_view_dispatcher`"""
     dispatcher_future: Future[SharedViewDispatcher] = Future()
 
     async def dispatch_shared_view_forever() -> None:

@@ -38,8 +38,8 @@ IDOM_WED_MODULES_DIR = _Option(
 """The location IDOM will use to store its client application
 
 This directory **MUST** be treated as a black box. Downstream applications **MUST NOT**
-assume anything about the structure of this directory see :mod:`idom.client.manage` for
-a set of publically available APIs for working with the client.
+assume anything about the structure of this directory see :mod:`idom.web.module` for a
+set of publically available APIs for working with the client.
 """
 
 IDOM_FEATURE_INDEX_AS_DEFAULT_KEY = _Option(

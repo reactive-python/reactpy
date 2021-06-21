@@ -161,8 +161,18 @@ def test_docs(session: Session) -> None:
     """Verify that the docs build and that doctests pass"""
     install_requirements_file(session, "build-docs")
     install_idom_dev(session, extras="all")
-    session.run("sphinx-build", "-T", "-b", "html", "docs/source", "docs/build")
-    session.run("sphinx-build", "-T", "-b", "doctest", "docs/source", "docs/build")
+    session.run(
+        "sphinx-build",
+        "-a",  # re-write all output files
+        "-T",  # show full tracebacks
+        "-W",  # turn warnings into errors
+        "--keep-going",  # complete the build, but still report warnings as errors
+        "-b",
+        "html",
+        "docs/source",
+        "docs/build",
+    )
+    session.run("sphinx-build", "-b", "doctest", "docs/source", "docs/build")
 
 
 @nox.session

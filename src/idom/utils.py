@@ -17,9 +17,6 @@ class Ref(Generic[_RefValue]):
     incur side effects. Generally refs should be avoided if possible, but sometimes
     they are required.
 
-    Attributes:
-        current: The present value.
-
     Notes:
         You can compare the contents for two ``Ref`` objects using the ``==`` operator.
     """
@@ -28,6 +25,7 @@ class Ref(Generic[_RefValue]):
 
     def __init__(self, initial_value: _RefValue) -> None:
         self.current = initial_value
+        """The present value"""
 
     def set_current(self, new: _RefValue) -> _RefValue:
         """Set the current value and return what is now the old value

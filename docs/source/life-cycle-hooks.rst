@@ -284,10 +284,9 @@ use_ref
 
     ref_container = use_ref(initial_value)
 
-Returns a mutable :class:`~idom.core.hooks.Ref` object that has a single
-:attr:`~idom.core.hooks.Ref.current` attribute that at first contains the
-``initial_state``. The identity of the ``Ref`` object will be preserved for the lifetime
-of the component.
+Returns a mutable :class:`~idom.utils.Ref` object that has a single
+:attr:`~idom.utils.Ref.current` attribute that at first contains the ``initial_state``.
+The identity of the ``Ref`` object will be preserved for the lifetime of the component.
 
 A ``Ref`` is most useful if you need to incur side effects since updating its
 ``.current`` attribute doesn't trigger a re-render of the component. You'll often use this
