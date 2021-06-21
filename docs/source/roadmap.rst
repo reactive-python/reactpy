@@ -34,7 +34,7 @@ Roadmap
     they need purpose-built
     `compiler plugins <https://github.com/idom-team/idom-react-component-cookiecutter/blob/1cc31b8690f84cb90dd861f2f47873b1d5711f74/%7B%7Bcookiecutter.repository_name%7D%7D/js/rollup.config.js>`__
     that will convert imports of React to point to the location ``react.js`` will be
-    once the component has been loaded via :class:`~idom.client.module.Module`.
+    once the component has been loaded via ``idom.client.module.Module``
 
     Ideally developers of custom components should be able to operate in isolation
     without assuming anything about the environment they are running in. This has the

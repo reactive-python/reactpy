@@ -1,8 +1,5 @@
-Core Concepts
-=============
-
-This section covers core features of IDOM that are used in making interactive
-interfaces.
+Core Abstractions
+=================
 
 
 Pure Components

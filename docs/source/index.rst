@@ -15,7 +15,7 @@ IDOM
     :hidden:
     :caption: Advanced Topics
 
-    core-concepts
+    core-abstractions
     javascript-components
     architectural-patterns
     specifications

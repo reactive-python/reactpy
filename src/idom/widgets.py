@@ -190,7 +190,7 @@ def multiview() -> Tuple[MultiViewMount, ComponentConstructor]:
         Notebook where one might want multiple active views which can all be interacted
         with at the same time.
 
-        Refer to :func:`idom.server.imperative_server_mount` for a reference usage.
+        See :func:`idom.server.prefab.multiview_server` for a reference usage.
     """
     views: Dict[str, ComponentConstructor] = {}
 

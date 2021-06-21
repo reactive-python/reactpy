@@ -55,6 +55,7 @@ _Self = TypeVar("_Self", bound="Layout")
 
 
 class Layout:
+    """Responsible for "rendering" components. That is, turning them into VDOM."""
 
     __slots__ = [
         "root",
@@ -94,10 +95,12 @@ class Layout:
         return None
 
     def update(self, component: "AbstractComponent") -> None:
+        """Schedule a re-render of a component in the layout"""
         self._rendering_queue.put(component)
         return None
 
     async def dispatch(self, event: LayoutEvent) -> None:
+        """Dispatch an event to the targeted handler"""
         # It is possible for an element in the frontend to produce an event
         # associated with a backend model that has been deleted. We only handle
         # events if the element and the handler exist in the backend. Otherwise
@@ -115,6 +118,7 @@ class Layout:
             )
 
     async def render(self) -> LayoutUpdate:
+        """Await the next available render. This will block until a component is updated"""
         while True:
             component = await self._rendering_queue.get()
             if id(component) in self._model_state_by_component_id:
