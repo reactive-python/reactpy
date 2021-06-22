@@ -28,7 +28,7 @@ def DivInDiv():
             {"onClick": lambda e: set_stop_propagatation(not stop_propagatation)},
             "Toggle Propogation",
         ),
-        idom.html.pre(f"Will stop propagation: {stop_propagatation}"),
+        idom.html.pre(f"Will propagate: {not stop_propagatation}"),
         idom.html.pre(f"Inner click count: {inner_count}"),
         idom.html.pre(f"Outer click count: {outer_count}"),
         div_in_div,
