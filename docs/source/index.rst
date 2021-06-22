@@ -40,7 +40,7 @@ IDOM
     Community <https://github.com/idom-team/idom/discussions>
     Issues <https://github.com/idom-team/idom/issues>
 
-A package for building highly interactive user interfaces in pure Python inspred by
+A package for building highly interactive user interfaces in pure Python inspired by
 `ReactJS <https://reactjs.org/>`__.
 
 
