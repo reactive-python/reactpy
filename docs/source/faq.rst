@@ -16,7 +16,7 @@ favorite Python packages with IDOM.
 Does IDOM transpile Python to Javascript?
 -----------------------------------------
 
-No. As in the answer to :ref:`Do UI components run server-side?`, IDOM runs almost
+No. As in the answer to :ref:`Do UI components run client-side?`, IDOM runs almost
 everything server-side and in Python. This was an explicit design choice to keep things
 simple and one which allows you to do everything you normally would in Python.
 

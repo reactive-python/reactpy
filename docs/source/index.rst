@@ -3,9 +3,11 @@ IDOM
 
 .. toctree::
     :hidden:
+    :caption: User Guide
 
     installation
     getting-started
+    handling-events
     life-cycle-hooks
     auto/api-reference
     examples
