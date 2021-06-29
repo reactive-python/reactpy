@@ -134,14 +134,14 @@ preparing any package that's been uploaded to NPM_. If you need to roll with you
 private CDN, this will likely be more complicated.
 
 In either case though, on the Python side, things are quite simple. You need only pass
-the URL where your package can be found to :func:`~idom.web.module.module_from_file`
+the URL where your package can be found to :func:`~idom.web.module.module_from_url`
 where you can then load any of its exports:
 
 .. code-block::
 
     import idom
 
-    your_module = ido.web.module_from_file("https://some.cdn/your-module")
+    your_module = ido.web.module_from_url("https://some.cdn/your-module")
     YourComponent = idom.web.export(your_module, "YourComponent")
 
 
