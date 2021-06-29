@@ -3,9 +3,8 @@ from __future__ import annotations
 import functools
 import os
 import re
-import subprocess
 from pathlib import Path
-from typing import Any, Callable, Tuple
+from typing import Any, Callable
 
 import nox
 from nox.sessions import Session
@@ -175,36 +174,11 @@ def test_docs(session: Session) -> None:
     session.run("sphinx-build", "-b", "doctest", "docs/source", "docs/build")
 
 
-@nox.session
-def commits_since_last_tag(session: Session) -> None:
+@nox.session(reuse_venv=True)
+def latest_pull_requests(session: Session) -> None:
     """A basic script for outputing changelog info"""
-    rst_format = "--format=rst" in session.posargs
-
-    latest_tag = (
-        subprocess.check_output(["git", "describe", "--tags", "--abbrev=0"])
-        .decode()
-        .strip()
-    )
-    commit_references = (
-        subprocess.check_output(
-            ["git", "log", "--pretty=reference", f"{latest_tag}..HEAD"]
-        )
-        .decode()
-        .strip()
-        .split("\n")
-    )
-
-    def parse_commit_reference(commit_ref: str) -> Tuple[str, str, str]:
-        commit_sha, remainder = commit_ref.split(" ", 1)
-        commit_message, commit_date = remainder[1:-1].rsplit(", ", 1)
-        return commit_sha, commit_message, commit_date
-
-    for sha, msg, _ in map(parse_commit_reference, commit_references):
-        if rst_format:
-            sha_repr = f":commit:`{sha}`"
-        else:
-            sha_repr = sha
-        print(f"- {msg} - {sha_repr}")
+    session.install("requests", "python-dateutil")
+    session.run("python", "scripts/latest_pull_requests.py", *session.posargs)
 
 
 def install_requirements_file(session: Session, name: str) -> None:

@@ -1,6 +1,49 @@
 Changelog
 =========
 
+0.30.0
+------
+
+With recent changes to the custom component interface, it's now possible to remove all
+runtime reliance on NPM. Doing so has many virtuous knock-on effects:
+
+1. Removal of large chunks of code
+2. Greatly simplifies how users dynamically experiment with React component libraries,
+   because their usage no longer requires a build step. Instead they can be loaded in
+   the browser from a CDN that distributes ESM modules.
+3. The built-in client code needs to make fewer assumption about where static resources
+   are located, and as a result, it's also easier to coordinate the server and client
+   code.
+4. Alternate client implementations benefit from this simplicity. Now, it's possible to
+   install idom-client-react normally and write a ``loadImportSource()`` function that
+   looks for route serving the contents of `IDOM_WEB_MODULES_DIR.`
+
+This change includes large breaking changes:
+
+- The CLI is being removed as it won't be needed any longer
+- The `idom.client` is being removed in favor of a stripped down ``idom.web`` module
+- The `IDOM_CLIENT_BUILD_DIR` config option will no longer exist and a new
+  ``IDOM_WEB_MODULES_DIR`` which only contains dynamically linked web modules. While
+  this new directory's location is configurable, it is meant to be transient and should
+  not be re-used across sessions.
+
+The new ``idom.web`` module takes a simpler approach to constructing import sources and
+expands upon the logic for resolving imports by allowing exports from URLs to be
+discovered too. Now, that IDOM isn't using NPM to dynamically install component
+libraries ``idom.web`` instead creates JS modules from template files and links them
+into ``IDOM_WEB_MODULES_DIR``. These templates ultimately direct the browser to load the
+desired library from a CDN.
+
+**Pull Requests**
+
+- Add changelog entry for 0.30.0 - :pull:`415`
+- Fix typo in index.rst - :pull:`411`
+- Add event handlers docs - :pull:`410`
+- Misc doc improvements - :pull:`409`
+- Port first IDOM article to docs - :pull:`408`
+- Test build in CI - :pull:`404`
+- Remove all runtime reliance on NPM - :pull:`398`
+
 0.29.0
 ------
 
