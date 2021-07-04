@@ -17,10 +17,9 @@ from typing_extensions import TypedDict
 
 from idom.config import IDOM_DEBUG_MODE, IDOM_FEATURE_INDEX_AS_DEFAULT_KEY
 
-from .component import AbstractComponent
+from .component import ComponentType
 from .events import EventHandler
 from .hooks import LifeCycleHook
-from .utils import hex_id
 from .vdom import validate_vdom
 
 
@@ -67,24 +66,24 @@ class Layout:
     if not hasattr(abc.ABC, "__weakref__"):  # pragma: no cover
         __slots__.append("__weakref__")
 
-    def __init__(self, root: "AbstractComponent") -> None:
+    def __init__(self, root: "ComponentType") -> None:
         super().__init__()
-        if not isinstance(root, AbstractComponent):
-            raise TypeError("Expected an AbstractComponent, not %r" % root)
+        if not isinstance(root, ComponentType):
+            raise TypeError("Expected an ComponentType, not %r" % root)
         self.root = root
 
     def __enter__(self: _Self) -> _Self:
         # create attributes here to avoid access before entering context manager
         self._event_handlers: Dict[str, EventHandler] = {}
         self._rendering_queue = _ComponentQueue()
-        self._model_state_by_component_id: Dict[int, _ModelState] = {
-            id(self.root): _ModelState(None, -1, "", LifeCycleHook(self, self.root))
+        self._model_state_by_component_id: Dict[str, _ModelState] = {
+            self.root.id: _ModelState(None, -1, "", LifeCycleHook(self, self.root))
         }
         self._rendering_queue.put(self.root)
         return self
 
     def __exit__(self, *exc: Any) -> None:
-        root_state = self._model_state_by_component_id[id(self.root)]
+        root_state = self._model_state_by_component_id[self.root.id]
         self._unmount_model_states([root_state])
 
         # delete attributes here to avoid access after exiting context manager
@@ -94,7 +93,7 @@ class Layout:
 
         return None
 
-    def update(self, component: "AbstractComponent") -> None:
+    def update(self, component: "ComponentType") -> None:
         """Schedule a re-render of a component in the layout"""
         self._rendering_queue.put(component)
         return None
@@ -121,7 +120,7 @@ class Layout:
         """Await the next available render. This will block until a component is updated"""
         while True:
             component = await self._rendering_queue.get()
-            if id(component) in self._model_state_by_component_id:
+            if component.id in self._model_state_by_component_id:
                 return self._create_layout_update(component)
             else:
                 logger.info(
@@ -139,11 +138,11 @@ class Layout:
         async def render(self) -> LayoutUpdate:
             # Ensure that the model is valid VDOM on each render
             result = await self._debug_render()
-            validate_vdom(self._model_state_by_component_id[id(self.root)].model)
+            validate_vdom(self._model_state_by_component_id[self.root.id].model)
             return result
 
-    def _create_layout_update(self, component: AbstractComponent) -> LayoutUpdate:
-        old_state = self._model_state_by_component_id[id(component)]
+    def _create_layout_update(self, component: ComponentType) -> LayoutUpdate:
+        old_state = self._model_state_by_component_id[component.id]
         new_state = old_state.new(None, component)
 
         self._render_component(old_state, new_state, component)
@@ -160,7 +159,7 @@ class Layout:
         self,
         old_state: Optional[_ModelState],
         new_state: _ModelState,
-        component: AbstractComponent,
+        component: ComponentType,
     ) -> None:
         life_cycle_hook = new_state.life_cycle_hook
         life_cycle_hook.component_will_render()
@@ -176,8 +175,8 @@ class Layout:
             new_state.model = {"tagName": "__error__", "children": [str(error)]}
 
         if old_state is not None and old_state.component is not component:
-            del self._model_state_by_component_id[id(old_state.component)]
-        self._model_state_by_component_id[id(component)] = new_state
+            del self._model_state_by_component_id[old_state.component.id]
+        self._model_state_by_component_id[component.id] = new_state
 
         try:
             parent = new_state.parent
@@ -249,7 +248,7 @@ class Layout:
 
         model_event_handlers = new_state.model["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
-            target = old_state.targets_by_event.get(event, hex_id(handler))
+            target = old_state.targets_by_event.get(event, handler.target)
             new_state.targets_by_event[event] = target
             self._event_handlers[target] = handler
             model_event_handlers[event] = {
@@ -270,7 +269,7 @@ class Layout:
 
         model_event_handlers = new_state.model["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
-            target = hex_id(handler)
+            target = handler.target
             new_state.targets_by_event[event] = target
             self._event_handlers[target] = handler
             model_event_handlers[event] = {
@@ -362,7 +361,7 @@ class Layout:
             if hasattr(state, "life_cycle_hook"):
                 hook = state.life_cycle_hook
                 hook.component_will_unmount()
-                del self._model_state_by_component_id[id(hook.component)]
+                del self._model_state_by_component_id[hook.component.id]
             to_unmount.extend(state.children_by_key.values())
 
     def __repr__(self) -> str:
@@ -387,7 +386,7 @@ class _ModelState:
     model: _ModelVdom
     life_cycle_hook: LifeCycleHook
     patch_path: str
-    component: AbstractComponent
+    component: ComponentType
 
     def __init__(
         self,
@@ -423,7 +422,7 @@ class _ModelState:
     def new(
         self,
         new_parent: Optional[_ModelState],
-        component: Optional[AbstractComponent],
+        component: Optional[ComponentType],
     ) -> _ModelState:
         if new_parent is None:
             new_parent = getattr(self, "parent", None)
@@ -452,19 +451,19 @@ class _ComponentQueue:
 
     def __init__(self) -> None:
         self._loop = asyncio.get_event_loop()
-        self._queue: "asyncio.Queue[AbstractComponent]" = asyncio.Queue()
-        self._pending: Set[int] = set()
+        self._queue: "asyncio.Queue[ComponentType]" = asyncio.Queue()
+        self._pending: Set[str] = set()
 
-    def put(self, component: AbstractComponent) -> None:
-        component_id = id(component)
+    def put(self, component: ComponentType) -> None:
+        component_id = component.id
         if component_id not in self._pending:
             self._pending.add(component_id)
             self._loop.call_soon_threadsafe(self._queue.put_nowait, component)
         return None
 
-    async def get(self) -> AbstractComponent:
+    async def get(self) -> ComponentType:
         component = await self._queue.get()
-        self._pending.remove(id(component))
+        self._pending.remove(component.id)
         return component
 
 
@@ -475,7 +474,7 @@ def _process_child_type_and_key(
         if isinstance(child, dict):
             child_type = _DICT_TYPE
             key = child.get("key")
-        elif isinstance(child, AbstractComponent):
+        elif isinstance(child, ComponentType):
             child_type = _COMPONENT_TYPE
             key = getattr(child, "key", None)
         else:

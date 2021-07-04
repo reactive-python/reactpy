@@ -3,6 +3,14 @@ from idom import hooks
 from idom.core.events import EventHandler
 
 
+def test_event_handler_repr():
+    handler = EventHandler()
+    assert (
+        repr(handler)
+        == f"EventHandler(prevent_default=False, stop_propagation=False, target={handler.target!r})"
+    )
+
+
 def test_simple_events_object():
     events = idom.Events()
 

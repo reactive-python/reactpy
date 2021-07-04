@@ -198,16 +198,18 @@ def make_vdom_constructor(tag: str, allow_children: bool = True) -> VdomDictCons
             raise TypeError(f"{tag!r} nodes cannot have children.")
         return model
 
-    module = _get_module_name_by_frame_index(1)
-    if module is None:
-        qualname = None
-    else:
-        qualname = module + "." + tag
-
+    # replicate common function attributes
     constructor.__name__ = tag
-    constructor.__module__ = module
-    constructor.__qualname__ = qualname
     constructor.__doc__ = f"Return a new ``<{tag}/>`` :class:`VdomDict` element"
+
+    frame = inspect.currentframe()
+    if frame is not None and frame.f_back is not None and frame.f_back is not None:
+        module = frame.f_back.f_globals.get("__name__")  # module in outer frame
+        if module is not None:
+            qualname = module + "." + tag
+            constructor.__module__ = module
+            constructor.__qualname__ = qualname
+
     return constructor
 
 
@@ -260,7 +262,7 @@ if IDOM_DEBUG_MODE.current:
         if _debug_is_single_child(value):
             return True
 
-        from .component import AbstractComponent
+        from .component import ComponentType
 
         if hasattr(value, "__iter__") and not hasattr(value, "__len__"):
             logger.error(
@@ -269,19 +271,9 @@ if IDOM_DEBUG_MODE.current:
             )
         else:
             for child in value:
-                if (isinstance(child, AbstractComponent) and child.key is None) or (
+                if (isinstance(child, ComponentType) and child.key is None) or (
                     isinstance(child, Mapping) and "key" not in child
                 ):
                     logger.error(f"Key not specified for dynamic child {child}")
 
         return False
-
-
-def _get_module_name_by_frame_index(index: int) -> Optional[str]:
-    frame = inspect.currentframe()
-    for i in range(index + 1):  # add one to ignore this frame
-        if frame is None:
-            return None
-        else:
-            frame = frame.f_back
-    return frame.f_globals.get("__name__")

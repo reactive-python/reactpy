@@ -14,6 +14,7 @@ from typing import (
     Optional,
     Union,
 )
+from uuid import uuid4
 
 from anyio import create_task_group
 
@@ -149,6 +150,7 @@ class EventHandler:
         "_func_handlers",
         "prevent_default",
         "stop_propagation",
+        "target",
     )
 
     def __init__(
@@ -156,10 +158,11 @@ class EventHandler:
         stop_propagation: bool = False,
         prevent_default: bool = False,
     ) -> None:
-        self.stop_propagation = stop_propagation
-        self.prevent_default = prevent_default
         self._coro_handlers: List[Callable[..., Coroutine[Any, Any, Any]]] = []
         self._func_handlers: List[Callable[..., Any]] = []
+        self.prevent_default = prevent_default
+        self.stop_propagation = stop_propagation
+        self.target = uuid4().hex
 
     def add(self, function: Callable[..., Any]) -> "EventHandler":
         """Add a callback function or coroutine to the event handler.
@@ -205,3 +208,8 @@ class EventHandler:
             return function in self._coro_handlers
         else:
             return function in self._func_handlers
+
+    def __repr__(self) -> str:
+        public_names = [name for name in self.__slots__ if not name.startswith("_")]
+        items = ", ".join([f"{n}={getattr(self, n)!r}" for n in public_names])
+        return f"{type(self).__name__}({items})"

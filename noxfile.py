@@ -122,7 +122,6 @@ def test_suite(session: Session) -> None:
         session.log("Coverage won't be checked")
         session.install(".[all]")
     else:
-        session.log("Coverage will be checked")
         posargs += ["--cov=src/idom", "--cov-report", "term"]
         install_idom_dev(session, extras="all")
 

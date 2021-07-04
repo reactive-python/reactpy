@@ -24,7 +24,7 @@ from typing_extensions import TypedDict
 
 import idom
 from idom.config import IDOM_DEBUG_MODE, IDOM_WED_MODULES_DIR
-from idom.core.component import AbstractComponent, ComponentConstructor
+from idom.core.component import ComponentConstructor, ComponentType
 from idom.core.dispatcher import dispatch_single_view
 from idom.core.layout import LayoutEvent, LayoutUpdate
 
@@ -184,7 +184,7 @@ def _get_query_params(ws: WebSocket) -> Dict[str, Any]:
 
 
 def dispatch_single_view_in_thread(
-    component: AbstractComponent,
+    component: ComponentType,
     send: Callable[[Any], None],
     recv: Callable[[], Optional[LayoutEvent]],
 ) -> None:

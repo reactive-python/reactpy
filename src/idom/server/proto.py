@@ -2,13 +2,9 @@ from __future__ import annotations
 
 from typing import Optional, TypeVar
 
+from typing_extensions import Protocol
+
 from idom.core.component import ComponentConstructor
-
-
-try:
-    from typing import Protocol
-except ImportError:  # pragma: no cover
-    from typing_extensions import Protocol  # type: ignore
 
 
 _App = TypeVar("_App")
