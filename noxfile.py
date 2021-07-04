@@ -58,6 +58,8 @@ def docs(session: Session) -> None:
         "python",
         "scripts/live_docs.py",
         "--open-browser",
+        # watch python source too
+        "--watch=src/idom",
         # for some reason this matches absolute paths
         "--ignore=**/auto/*",
         "--ignore=**/_static/custom.js",

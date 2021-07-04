@@ -5,6 +5,7 @@ VDOM Constructors
 
 from __future__ import annotations
 
+import inspect
 import logging
 from typing import Any, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
@@ -197,13 +198,16 @@ def make_vdom_constructor(tag: str, allow_children: bool = True) -> VdomDictCons
             raise TypeError(f"{tag!r} nodes cannot have children.")
         return model
 
-    constructor.__name__ = tag
-    qualname_prefix = constructor.__qualname__.rsplit(".", 1)[0]
-    constructor.__qualname__ = qualname_prefix + f".{tag}"
-    constructor.__doc__ = (
-        f"""Create a new ``<{tag}/>`` - returns a :class:`VdomDict`."""
-    )
+    module = _get_module_name_by_frame_index(1)
+    if module is None:
+        qualname = None
+    else:
+        qualname = module + "." + tag
 
+    constructor.__name__ = tag
+    constructor.__module__ = module
+    constructor.__qualname__ = qualname
+    constructor.__doc__ = f"Return a new ``<{tag}/>`` :class:`VdomDict` element"
     return constructor
 
 
@@ -271,3 +275,13 @@ if IDOM_DEBUG_MODE.current:
                     logger.error(f"Key not specified for dynamic child {child}")
 
         return False
+
+
+def _get_module_name_by_frame_index(index: int) -> Optional[str]:
+    frame = inspect.currentframe()
+    for i in range(index + 1):  # add one to ignore this frame
+        if frame is None:
+            return None
+        else:
+            frame = frame.f_back
+    return frame.f_globals.get("__name__")

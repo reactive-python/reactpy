@@ -65,7 +65,6 @@ extensions = [
     "patched_html_translator",
     "widget_example",
     "build_custom_js",
-    "only_warn_on_broken_internal_refs",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

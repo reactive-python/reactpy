@@ -6,7 +6,7 @@ Standard HTML Elements
 External sources
 ----------------
 
-link = make_vdom_constructor("link", allow_children=False)
+- :func:`link`
 
 
 Content Sectioning
