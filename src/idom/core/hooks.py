@@ -31,7 +31,7 @@ from typing_extensions import Protocol
 import idom
 from idom.utils import Ref
 
-from .component import AbstractComponent
+from .component import ComponentType
 
 
 __all__ = [
@@ -393,7 +393,7 @@ class LifeCycleHook:
     def __init__(
         self,
         layout: idom.core.layout.Layout,
-        component: AbstractComponent,
+        component: ComponentType,
     ) -> None:
         self.component = component
         self._layout = weakref.ref(layout)

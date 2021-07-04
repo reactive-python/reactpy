@@ -29,7 +29,6 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from idom.config import IDOM_WED_MODULES_DIR
 from idom.core.events import EventHandler
 from idom.core.hooks import LifeCycleHook, current_hook
-from idom.core.utils import hex_id
 from idom.server.prefab import hotswap_server
 from idom.server.proto import Server, ServerFactory
 from idom.server.utils import find_available_port
@@ -281,7 +280,7 @@ class StaticEventHandler:
 
     @property
     def target(self) -> str:
-        return hex_id(self._handler)
+        return self._handler.target
 
     def use(self, function: Callable[..., Any]) -> EventHandler:
         self._handler.clear()

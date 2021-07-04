@@ -9,13 +9,15 @@ import abc
 import inspect
 from functools import wraps
 from typing import Any, Callable, Dict, Optional, Tuple, Union
+from uuid import uuid4
 
-from .utils import hex_id
+from typing_extensions import Protocol, runtime_checkable
+
 from .vdom import VdomDict
 
 
-ComponentConstructor = Callable[..., "AbstractComponent"]
-ComponentRenderFunction = Callable[..., Union["AbstractComponent", VdomDict]]
+ComponentConstructor = Callable[..., "ComponentType"]
+ComponentRenderFunction = Callable[..., Union["ComponentType", VdomDict]]
 
 
 def component(function: ComponentRenderFunction) -> Callable[..., "Component"]:
@@ -32,12 +34,11 @@ def component(function: ComponentRenderFunction) -> Callable[..., "Component"]:
     return constructor
 
 
-class AbstractComponent(abc.ABC):
+@runtime_checkable
+class ComponentType(Protocol):
+    """The expected interface for all component-like objects"""
 
-    __slots__ = ["key"]
-    if not hasattr(abc.ABC, "__weakref__"):
-        __slots__.append("__weakref__")  # pragma: no cover
-
+    id: str
     key: Optional[Any]
 
     @abc.abstractmethod
@@ -45,10 +46,10 @@ class AbstractComponent(abc.ABC):
         """Render the component's :class:`VdomDict`."""
 
 
-class Component(AbstractComponent):
+class Component:
     """An object for rending component models."""
 
-    __slots__ = "_func", "_args", "_kwargs"
+    __slots__ = "__weakref__", "_func", "_args", "_kwargs", "id", "key"
 
     def __init__(
         self,
@@ -57,16 +58,17 @@ class Component(AbstractComponent):
         args: Tuple[Any, ...],
         kwargs: Dict[str, Any],
     ) -> None:
-        self.key = key
-        self._func = function
         self._args = args
+        self._func = function
         self._kwargs = kwargs
+        self.id = uuid4().hex
+        self.key = key
         if key is not None:
             kwargs["key"] = key
 
     def render(self) -> VdomDict:
         model = self._func(*self._args, **self._kwargs)
-        if isinstance(model, AbstractComponent):
+        if isinstance(model, ComponentType):
             model = {"tagName": "div", "children": [model]}
         return model
 
@@ -79,6 +81,6 @@ class Component(AbstractComponent):
         else:
             items = ", ".join(f"{k}={v!r}" for k, v in args.items())
             if items:
-                return f"{self._func.__name__}({hex_id(self)}, {items})"
+                return f"{self._func.__name__}({self.id}, {items})"
             else:
-                return f"{self._func.__name__}({hex_id(self)})"
+                return f"{self._func.__name__}({self.id})"

@@ -6,7 +6,6 @@ import pytest
 
 import idom
 from idom.core.layout import LayoutEvent, LayoutUpdate
-from idom.core.utils import hex_id
 from idom.testing import HookCatcher, StaticEventHandler
 from tests.general_utils import assert_same_items
 
@@ -23,13 +22,13 @@ def test_layout_repr():
 
     my_component = MyComponent()
     layout = idom.Layout(my_component)
-    assert str(layout) == f"Layout(MyComponent({hex_id(my_component)}))"
+    assert str(layout) == f"Layout(MyComponent({my_component.id}))"
 
 
 def test_layout_expects_abstract_component():
-    with pytest.raises(TypeError, match="Expected an AbstractComponent"):
+    with pytest.raises(TypeError, match="Expected an ComponentType"):
         idom.Layout(None)
-    with pytest.raises(TypeError, match="Expected an AbstractComponent"):
+    with pytest.raises(TypeError, match="Expected an ComponentType"):
         idom.Layout(idom.html.div())
 
 
@@ -183,15 +182,15 @@ async def test_components_are_garbage_collected():
     @outer_component_hook.capture
     def Outer():
         component = idom.hooks.current_hook().component
-        live_components.add(id(component))
-        finalize(component, live_components.discard, id(component))
+        live_components.add(component.id)
+        finalize(component, live_components.discard, component.id)
         return Inner()
 
     @idom.component
     def Inner():
         component = idom.hooks.current_hook().component
-        live_components.add(id(component))
-        finalize(component, live_components.discard, id(component))
+        live_components.add(component.id)
+        finalize(component, live_components.discard, component.id)
         return idom.html.div()
 
     with idom.Layout(Outer()) as layout:

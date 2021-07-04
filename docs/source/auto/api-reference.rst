@@ -58,9 +58,6 @@ API Reference
 Misc Modules
 ------------
 
-.. automodule:: idom.core.utils
-    :members:
-
 .. automodule:: idom.server.proto
     :members:
 
