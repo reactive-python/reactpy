@@ -26,9 +26,16 @@ def component(function: ComponentRenderFunction) -> Callable[..., "Component"]:
     Parameters:
         function: The function that will render a :class:`VdomDict`.
     """
+    sig = inspect.signature(function)
+    key_is_kwarg = "key" in sig.parameters and sig.parameters["key"].kind in (
+        inspect.Parameter.KEYWORD_ONLY,
+        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+    )
 
     @wraps(function)
     def constructor(*args: Any, key: Optional[Any] = None, **kwargs: Any) -> Component:
+        if key_is_kwarg:
+            kwargs["key"] = key
         return Component(function, key, args, kwargs)
 
     return constructor
@@ -63,8 +70,6 @@ class Component:
         self._kwargs = kwargs
         self.id = uuid4().hex
         self.key = key
-        if key is not None:
-            kwargs["key"] = key
 
     def render(self) -> VdomDict:
         model = self._func(*self._args, **self._kwargs)
