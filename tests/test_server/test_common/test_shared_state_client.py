@@ -37,12 +37,13 @@ def test_shared_client_state(create_driver, server_mount_point):
             {"onClick": incr_on_click, "id": "incr-button"}, "click to increment"
         )
 
-        return idom.html.div(button, Counter(count))
+        counter = Counter(count)
+        finalize(counter, was_garbage_collected.set)
+
+        return idom.html.div(button, counter)
 
     @idom.component
     def Counter(count):
-        component = idom.hooks.current_hook().component
-        finalize(component, was_garbage_collected.set)
         return idom.html.div({"id": f"count-is-{count}"}, count)
 
     server_mount_point.mount(IncrCounter)

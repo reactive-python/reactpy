@@ -19,9 +19,9 @@ from tornado.websocket import WebSocketHandler
 from typing_extensions import TypedDict
 
 from idom.config import IDOM_WED_MODULES_DIR
-from idom.core.component import ComponentConstructor
-from idom.core.dispatcher import dispatch_single_view
-from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
+from idom.core.dispatcher import VdomJsonPatch, dispatch_single_view
+from idom.core.layout import Layout, LayoutEvent
+from idom.core.proto import ComponentConstructor
 
 from .utils import CLIENT_BUILD_DIR, threaded, wait_on_event
 
@@ -176,7 +176,7 @@ class PerClientStateModelStreamHandler(WebSocketHandler):
         message_queue: "AsyncQueue[str]" = AsyncQueue()
         query_params = {k: v[0].decode() for k, v in self.request.arguments.items()}
 
-        async def send(value: LayoutUpdate) -> None:
+        async def send(value: VdomJsonPatch) -> None:
             await self.write_message(json.dumps(value))
 
         async def recv() -> LayoutEvent:

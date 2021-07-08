@@ -6,7 +6,7 @@ Server Prefabs
 import logging
 from typing import Any, Dict, Optional, Tuple, TypeVar
 
-from idom.core.component import ComponentConstructor
+from idom.core.proto import ComponentConstructor
 from idom.widgets import MountFunc, MultiViewMount, hotswap, multiview
 
 from .proto import Server, ServerFactory

@@ -5,23 +5,18 @@ Component
 
 from __future__ import annotations
 
-import abc
 import inspect
 import warnings
 from functools import wraps
 from typing import Any, Callable, Dict, Optional, Tuple, Union
-from uuid import uuid4
 
-from typing_extensions import Protocol, runtime_checkable
-
+from .proto import ComponentType
 from .vdom import VdomDict
 
 
-ComponentConstructor = Callable[..., "ComponentType"]
-ComponentRenderFunction = Callable[..., Union["ComponentType", VdomDict]]
-
-
-def component(function: ComponentRenderFunction) -> Callable[..., "Component"]:
+def component(
+    function: Callable[..., Union[ComponentType, VdomDict]]
+) -> Callable[..., "Component"]:
     """A decorator for defining an :class:`Component`.
 
     Parameters:
@@ -48,26 +43,14 @@ def component(function: ComponentRenderFunction) -> Callable[..., "Component"]:
     return constructor
 
 
-@runtime_checkable
-class ComponentType(Protocol):
-    """The expected interface for all component-like objects"""
-
-    id: str
-    key: Optional[Any]
-
-    @abc.abstractmethod
-    def render(self) -> VdomDict:
-        """Render the component's :class:`VdomDict`."""
-
-
 class Component:
     """An object for rending component models."""
 
-    __slots__ = "__weakref__", "_func", "_args", "_kwargs", "id", "key"
+    __slots__ = "__weakref__", "_func", "_args", "_kwargs", "key"
 
     def __init__(
         self,
-        function: ComponentRenderFunction,
+        function: Callable[..., Union[ComponentType, VdomDict]],
         key: Optional[Any],
         args: Tuple[Any, ...],
         kwargs: Dict[str, Any],
@@ -75,7 +58,6 @@ class Component:
         self._args = args
         self._func = function
         self._kwargs = kwargs
-        self.id = uuid4().hex
         self.key = key
 
     def render(self) -> VdomDict:
@@ -93,6 +75,6 @@ class Component:
         else:
             items = ", ".join(f"{k}={v!r}" for k, v in args.items())
             if items:
-                return f"{self._func.__name__}({self.id}, {items})"
+                return f"{self._func.__name__}({id(self)}, {items})"
             else:
-                return f"{self._func.__name__}({self.id})"
+                return f"{self._func.__name__}({id(self)})"

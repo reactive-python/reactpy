@@ -4,6 +4,8 @@ import re
 import pytest
 
 import idom
+from idom.core.dispatcher import render_json_patch
+from idom.core.hooks import LifeCycleHook
 from idom.testing import HookCatcher
 from tests.general_utils import assert_same_items
 
@@ -31,7 +33,7 @@ async def test_simple_stateful_component():
     sse = SimpleStatefulComponent()
 
     with idom.Layout(sse) as layout:
-        patch_1 = await layout.render()
+        patch_1 = await render_json_patch(layout)
         assert patch_1.path == ""
         assert_same_items(
             patch_1.changes,
@@ -41,13 +43,13 @@ async def test_simple_stateful_component():
             ],
         )
 
-        patch_2 = await layout.render()
+        patch_2 = await render_json_patch(layout)
         assert patch_2.path == ""
         assert patch_2.changes == [
             {"op": "replace", "path": "/children/0", "value": "1"}
         ]
 
-        patch_3 = await layout.render()
+        patch_3 = await render_json_patch(layout)
         assert patch_3.path == ""
         assert patch_3.changes == [
             {"op": "replace", "path": "/children/0", "value": "2"}
@@ -563,7 +565,7 @@ async def test_error_in_effect_is_gracefully_handled(caplog):
         await layout.render()  # no error
 
     first_log_line = next(iter(caplog.records)).msg.split("\n", 1)[0]
-    assert re.match("Post-render effect .*? failed for .*?", first_log_line)
+    assert re.match("Post-render effect .*? failed", first_log_line)
 
 
 async def test_error_in_effect_cleanup_is_gracefully_handled(caplog):
@@ -588,7 +590,7 @@ async def test_error_in_effect_cleanup_is_gracefully_handled(caplog):
         await layout.render()  # no error
 
     first_log_line = next(iter(caplog.records)).msg.split("\n", 1)[0]
-    assert re.match("Post-render effect .*? failed for .*?", first_log_line)
+    assert re.match("Post-render effect .*?", first_log_line)
 
 
 async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled(caplog):
@@ -616,7 +618,7 @@ async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled(caplog)
         await layout.render()  # no error
 
     first_log_line = next(iter(caplog.records)).msg.split("\n", 1)[0]
-    assert re.match("Pre-unmount effect .*? failed for .*?", first_log_line)
+    assert re.match("Pre-unmount effect .*? failed", first_log_line)
 
 
 async def test_use_reducer():
@@ -846,3 +848,15 @@ async def test_use_ref():
 
     assert used_refs[0] is used_refs[1]
     assert len(used_refs) == 2
+
+
+def test_bad_schedule_render_callback(caplog):
+    def bad_callback():
+        raise ValueError("something went wrong")
+
+    hook = LifeCycleHook(bad_callback)
+
+    hook.schedule_render()
+
+    first_log_line = next(iter(caplog.records)).msg.split("\n", 1)[0]
+    assert re.match(f"Failed to schedule render via {bad_callback}", first_log_line)

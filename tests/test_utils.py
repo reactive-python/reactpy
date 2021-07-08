@@ -14,15 +14,25 @@ def test_basic_ref_behavior():
     assert r.set_current(3) == 2
     assert r.current == 3
 
+    r = idom.Ref()
+    with pytest.raises(AttributeError):
+        r.current
+
+    r.current = 4
+    assert r.current == 4
+
 
 def test_ref_equivalence():
     assert idom.Ref([1, 2, 3]) == idom.Ref([1, 2, 3])
     assert idom.Ref([1, 2, 3]) != idom.Ref([1, 2])
     assert idom.Ref([1, 2, 3]) != [1, 2, 3]
+    assert idom.Ref() != idom.Ref()
+    assert idom.Ref() != idom.Ref(1)
 
 
 def test_ref_repr():
     assert repr(idom.Ref([1, 2, 3])) == "Ref([1, 2, 3])"
+    assert repr(idom.Ref()) == "Ref(<undefined>)"
 
 
 @pytest.mark.parametrize(

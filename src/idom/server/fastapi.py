@@ -24,15 +24,16 @@ from uvicorn.supervisors.multiprocess import Multiprocess
 from uvicorn.supervisors.statreload import StatReload as ChangeReload
 
 from idom.config import IDOM_WED_MODULES_DIR
-from idom.core.component import ComponentConstructor
 from idom.core.dispatcher import (
     RecvCoroutine,
     SendCoroutine,
     SharedViewDispatcher,
+    VdomJsonPatch,
     dispatch_single_view,
     ensure_shared_view_dispatcher_future,
 )
-from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
+from idom.core.layout import Layout, LayoutEvent
+from idom.core.proto import ComponentConstructor
 
 from .utils import CLIENT_BUILD_DIR, poll, threaded
 
@@ -275,7 +276,7 @@ def _setup_shared_view_dispatcher_route(
 def _make_send_recv_callbacks(
     socket: WebSocket,
 ) -> Tuple[SendCoroutine, RecvCoroutine]:
-    async def sock_send(value: LayoutUpdate) -> None:
+    async def sock_send(value: VdomJsonPatch) -> None:
         await socket.send_text(json.dumps(value))
 
     async def sock_recv() -> LayoutEvent:

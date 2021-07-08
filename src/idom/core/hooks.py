@@ -6,7 +6,6 @@ Hooks
 from __future__ import annotations
 
 import asyncio
-import weakref
 from logging import getLogger
 from threading import get_ident as get_thread_id
 from typing import (
@@ -16,7 +15,7 @@ from typing import (
     Dict,
     Generic,
     List,
-    NamedTuple,
+    NewType,
     Optional,
     Sequence,
     Tuple,
@@ -28,10 +27,7 @@ from typing import (
 
 from typing_extensions import Protocol
 
-import idom
 from idom.utils import Ref
-
-from .component import ComponentType
 
 
 __all__ = [
@@ -162,11 +158,11 @@ def use_effect(
 
             clean = last_clean_callback.current = sync_function()
             if clean is not None:
-                hook.add_effect("will_unmount", clean)
+                hook.add_effect(WILL_UNMOUNT_EFFECT, clean)
 
             return None
 
-        return memoize(lambda: hook.add_effect("did_render", effect))
+        return memoize(lambda: hook.add_effect(DID_RENDER_EFFECT, effect))
 
     if function is not None:
         add_effect(function)
@@ -366,21 +362,79 @@ def current_hook() -> "LifeCycleHook":
         raise RuntimeError(msg) from error
 
 
-class _EventEffects(NamedTuple):
-    did_render: List[Callable[[], Any]]
-    will_unmount: List[Callable[[], Any]]
+EffectType = NewType("EffectType", str)
+"""Used in :meth:`LifeCycleHook.add_effect` to indicate what effect should be saved"""
+
+DID_RENDER_EFFECT = EffectType("DID_RENDER")
+"""An effect that will be triggered after each render"""
+
+WILL_UNMOUNT_EFFECT = EffectType("WILL_UNMOUNT")
+"""An effect that will be triggered just before the component is unmounted"""
 
 
 class LifeCycleHook:
     """Defines the life cycle of a layout component.
 
-    Components can request access to their own life cycle events and state, while layouts
-    drive the life cycle forward by triggering events.
+    Components can request access to their own life cycle events and state through hooks
+    while :class:`~idom.core.proto.LayoutType` objects drive drive the life cycle
+    forward by triggering events and rendering view changes.
+
+    Example:
+
+        If removed from the complexities of a layout, a very simplified full life cycle
+        for a single component with no child components would look a bit like this:
+
+        .. testcode::
+
+            from idom.core.hooks import LifeCycleHook, DID_RENDER_EFFECT
+
+
+            # this function will come from a layout implementation
+            schedule_render = lambda: ...
+
+            # --- start life cycle ---
+
+            hook = hooks.LifeCycle(schedule_render)
+
+            # --- start render cycle ---
+
+            hook.component_will_render()
+
+            hook.set_current()
+
+            try:
+                # render the component
+                ...
+
+                # the component may access the current hook
+                assert hooks.current_hook() is hook
+
+                # and save state or add effects
+                current_hook().use_state(lambda: ...)
+                current_hook().use_effect(DID_RENDER_EFFECT, lambda: ...)
+            finally:
+                hook.unset_current()
+
+            # This should only be called after any child components yielded by
+            # component_instance.render() have also been rendered because effects
+            # must run after the full set of changes have been resolved.
+            hook.component_did_render()
+
+            # Typically an event occurs and a new render is scheduled, thus begining
+            # the render cycle anew.
+            hook.schedule_render()
+
+
+            # --- end render cycle ---
+
+            hook.component_will_unmount()
+            del hook
+
+            # --- end render cycle ---
     """
 
     __slots__ = (
-        "component",
-        "_layout",
+        "_schedule_render_callback",
         "_schedule_render_later",
         "_current_state_index",
         "_state",
@@ -392,17 +446,18 @@ class LifeCycleHook:
 
     def __init__(
         self,
-        layout: idom.core.layout.Layout,
-        component: ComponentType,
+        schedule_render: Callable[[], None],
     ) -> None:
-        self.component = component
-        self._layout = weakref.ref(layout)
+        self._schedule_render_callback = schedule_render
         self._schedule_render_later = False
         self._is_rendering = False
         self._rendered_atleast_once = False
         self._current_state_index = 0
         self._state: Tuple[Any, ...] = ()
-        self._event_effects = _EventEffects([], [])
+        self._event_effects: Dict[EffectType, List[Callable[[], None]]] = {
+            DID_RENDER_EFFECT: [],
+            WILL_UNMOUNT_EFFECT: [],
+        }
 
     def schedule_render(self) -> None:
         if self._is_rendering:
@@ -422,25 +477,24 @@ class LifeCycleHook:
         self._current_state_index += 1
         return result
 
-    def add_effect(self, events: str, function: Callable[[], None]) -> None:
-        for e in events.split():
-            getattr(self._event_effects, e).append(function)
+    def add_effect(self, effect_type: EffectType, function: Callable[[], None]) -> None:
+        """Trigger a function on the occurance of the given effect type"""
+        self._event_effects[effect_type].append(function)
 
     def component_will_render(self) -> None:
         """The component is about to render"""
         self._is_rendering = True
-        self._event_effects.will_unmount.clear()
+        self._event_effects[WILL_UNMOUNT_EFFECT].clear()
 
     def component_did_render(self) -> None:
         """The component completed a render"""
-        for effect in self._event_effects.did_render:
+        did_render_effects = self._event_effects[DID_RENDER_EFFECT]
+        for effect in did_render_effects:
             try:
                 effect()
             except Exception:
-                msg = f"Post-render effect {effect} failed for {self.component}"
-                logger.exception(msg)
-
-        self._event_effects.did_render.clear()
+                logger.exception(f"Post-render effect {effect} failed")
+        did_render_effects.clear()
 
         self._is_rendering = False
         if self._schedule_render_later:
@@ -450,14 +504,13 @@ class LifeCycleHook:
 
     def component_will_unmount(self) -> None:
         """The component is about to be removed from the layout"""
-        for effect in self._event_effects.will_unmount:
+        will_unmount_effects = self._event_effects[WILL_UNMOUNT_EFFECT]
+        for effect in will_unmount_effects:
             try:
                 effect()
             except Exception:
-                msg = f"Pre-unmount effect {effect} failed for {self.component}"
-                logger.exception(msg)
-
-        self._event_effects.will_unmount.clear()
+                logger.exception(f"Pre-unmount effect {effect} failed")
+        will_unmount_effects.clear()
 
     def set_current(self) -> None:
         """Set this hook as the active hook in this thread
@@ -474,6 +527,9 @@ class LifeCycleHook:
         del _current_life_cycle_hook[get_thread_id()]
 
     def _schedule_render(self) -> None:
-        layout = self._layout()
-        assert layout is not None
-        layout.update(self.component)
+        try:
+            self._schedule_render_callback()
+        except Exception:
+            logger.exception(
+                f"Failed to schedule render via {self._schedule_render_callback}"
+            )

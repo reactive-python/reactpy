@@ -7,7 +7,18 @@ from __future__ import annotations
 
 import inspect
 import logging
-from typing import Any, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 from fastjsonschema import compile as compile_json_schema
 from mypy_extensions import TypedDict
@@ -83,36 +94,15 @@ VDOM_JSON_SCHEMA = {
 _COMPILED_VDOM_VALIDATOR = compile_json_schema(VDOM_JSON_SCHEMA)
 
 
-def validate_vdom(value: Any) -> None:
+def validate_vdom(value: Any) -> VdomJson:
     """Validate serialized VDOM - see :attr:`VDOM_JSON_SCHEMA` for more info"""
     _COMPILED_VDOM_VALIDATOR(value)
-
-
-class ImportSourceDict(TypedDict):
-    source: str
-    fallback: Any
-    sourceType: str  # noqa
-
-
-class _VdomDictOptional(TypedDict, total=False):
-    key: str  # noqa
-    children: Sequence[Any]  # noqa
-    attributes: Mapping[str, Any]  # noqa
-    eventHandlers: Mapping[str, EventHandler]  # noqa
-    importSource: ImportSourceDict  # noqa
-
-
-class _VdomDictRequired(TypedDict, total=True):
-    tagName: str  # noqa
-
-
-class VdomDict(_VdomDictRequired, _VdomDictOptional):
-    """A VDOM dictionary - see :ref:`VDOM Mimetype` for more info"""
+    return cast(VdomJson, value)
 
 
 _AttributesAndChildrenArg = Union[Mapping[str, Any], str, Iterable[Any], Any]
 _EventHandlersArg = Optional[Mapping[str, EventHandler]]
-_ImportSourceArg = Optional[ImportSourceDict]
+_ImportSourceArg = Optional["ImportSourceDict"]
 
 
 def vdom(
@@ -262,7 +252,7 @@ if IDOM_DEBUG_MODE.current:
         if _debug_is_single_child(value):
             return True
 
-        from .component import ComponentType
+        from .proto import ComponentType
 
         if hasattr(value, "__iter__") and not hasattr(value, "__len__"):
             logger.error(
@@ -277,3 +267,55 @@ if IDOM_DEBUG_MODE.current:
                     logger.error(f"Key not specified for dynamic child {child}")
 
         return False
+
+
+class _VdomDictOptional(TypedDict, total=False):
+    key: str  # noqa
+    children: Sequence[Any]  # noqa
+    attributes: Mapping[str, Any]  # noqa
+    eventHandlers: Mapping[str, EventHandler]  # noqa
+    importSource: ImportSourceDict  # noqa
+
+
+class _VdomDictRequired(TypedDict, total=True):
+    tagName: str  # noqa
+
+
+class VdomDict(_VdomDictRequired, _VdomDictOptional):
+    """A VDOM dictionary - see :ref:`VDOM Mimetype` for more info"""
+
+
+class ImportSourceDict(TypedDict):
+    source: str
+    fallback: Any
+    sourceType: str  # noqa
+
+
+class _OptionalVdomJson(TypedDict, total=False):
+    key: str  # noqa
+    children: List[Any]  # noqa
+    attributes: Dict[str, Any]  # noqa
+    eventHandlers: Dict[str, _JsonEventTarget]  # noqa
+    importSource: _JsonImportSource  # noqa
+
+
+class _RequiredVdomJson(TypedDict, total=True):
+    tagName: str  # noqa
+
+
+class VdomJson(_RequiredVdomJson, _OptionalVdomJson):
+    """A JSON serializable form of :class:`VdomDict` compliant with :data:`VDOM_JSON_SCHEMA`
+
+    For more information on this form see :ref:`VDOM Mimetype`.
+    """
+
+
+class _JsonEventTarget(TypedDict):
+    target: str
+    preventDefault: bool  # noqa
+    stopPropagation: bool  # noqa
+
+
+class _JsonImportSource(TypedDict):
+    source: str
+    fallback: Any
