@@ -5,34 +5,43 @@ Dispatchers
 
 from __future__ import annotations
 
-import sys
 from asyncio import Future, Queue
 from asyncio.tasks import FIRST_COMPLETED, ensure_future, gather, wait
+from contextlib import asynccontextmanager
 from logging import getLogger
-from typing import Any, AsyncIterator, Awaitable, Callable, List, Sequence, Tuple
+from typing import (
+    Any,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Sequence,
+    Tuple,
+    cast,
+)
 from weakref import WeakSet
 
 from anyio import create_task_group
+from jsonpatch import apply_patch, make_patch
 
+from idom.core.vdom import VdomJson
 from idom.utils import Ref
 
-from .layout import Layout, LayoutEvent, LayoutUpdate
-
-
-if sys.version_info >= (3, 7):  # pragma: no cover
-    from contextlib import asynccontextmanager  # noqa
-else:  # pragma: no cover
-    from async_generator import asynccontextmanager
+from .layout import LayoutEvent, LayoutUpdate
+from .proto import LayoutType
 
 
 logger = getLogger(__name__)
 
-SendCoroutine = Callable[[Any], Awaitable[None]]
+
+SendCoroutine = Callable[["VdomJsonPatch"], Awaitable[None]]
 RecvCoroutine = Callable[[], Awaitable[LayoutEvent]]
 
 
 async def dispatch_single_view(
-    layout: Layout,
+    layout: LayoutType[LayoutUpdate, LayoutEvent],
     send: SendCoroutine,
     recv: RecvCoroutine,
 ) -> None:
@@ -49,14 +58,14 @@ _SharedViewDispatcherFuture = Callable[[SendCoroutine, RecvCoroutine], "Future[N
 
 @asynccontextmanager
 async def create_shared_view_dispatcher(
-    layout: Layout, run_forever: bool = False
+    layout: LayoutType[LayoutUpdate, LayoutEvent],
 ) -> AsyncIterator[_SharedViewDispatcherFuture]:
     """Enter a dispatch context where all subsequent view instances share the same state"""
     with layout:
         (
             dispatch_shared_view,
             model_state,
-            all_update_queues,
+            all_patch_queues,
         ) = await _make_shared_view_dispatcher(layout)
 
         dispatch_tasks: List[Future[None]] = []
@@ -85,16 +94,16 @@ async def create_shared_view_dispatcher(
                 update_future.cancel()
                 break
             else:
-                update: LayoutUpdate = update_future.result()
+                patch = VdomJsonPatch.create_from(update_future.result())
 
-            model_state.current = update.apply_to(model_state.current)
+            model_state.current = patch.apply_to(model_state.current)
             # push updates to all dispatcher callbacks
-            for queue in all_update_queues:
-                queue.put_nowait(update)
+            for queue in all_patch_queues:
+                queue.put_nowait(patch)
 
 
 def ensure_shared_view_dispatcher_future(
-    layout: Layout,
+    layout: LayoutType[LayoutUpdate, LayoutEvent],
 ) -> Tuple[Future[None], SharedViewDispatcher]:
     """Ensure the future of a dispatcher created by :func:`create_shared_view_dispatcher`"""
     dispatcher_future: Future[SharedViewDispatcher] = Future()
@@ -104,17 +113,17 @@ def ensure_shared_view_dispatcher_future(
             (
                 dispatch_shared_view,
                 model_state,
-                all_update_queues,
+                all_patch_queues,
             ) = await _make_shared_view_dispatcher(layout)
 
             dispatcher_future.set_result(dispatch_shared_view)
 
             while True:
-                update = await layout.render()
-                model_state.current = update.apply_to(model_state.current)
+                patch = await render_json_patch(layout)
+                model_state.current = patch.apply_to(model_state.current)
                 # push updates to all dispatcher callbacks
-                for queue in all_update_queues:
-                    queue.put_nowait(update)
+                for queue in all_patch_queues:
+                    queue.put_nowait(patch)
 
     async def dispatch(send: SendCoroutine, recv: RecvCoroutine) -> None:
         await (await dispatcher_future)(send, recv)
@@ -122,41 +131,75 @@ def ensure_shared_view_dispatcher_future(
     return ensure_future(dispatch_shared_view_forever()), dispatch
 
 
+async def render_json_patch(layout: LayoutType[LayoutUpdate, Any]) -> VdomJsonPatch:
+    """Render a class:`VdomJsonPatch` from a layout"""
+    return VdomJsonPatch.create_from(await layout.render())
+
+
+class VdomJsonPatch(NamedTuple):
+    """An object describing an update to a :class:`Layout` in the form of a JSON patch"""
+
+    path: str
+    """The path where changes should be applied"""
+
+    changes: List[Dict[str, Any]]
+    """A list of JSON patches to apply at the given path"""
+
+    def apply_to(self, model: VdomJson) -> VdomJson:
+        """Return the model resulting from the changes in this update"""
+        return cast(
+            VdomJson,
+            apply_patch(
+                model, [{**c, "path": self.path + c["path"]} for c in self.changes]
+            ),
+        )
+
+    @classmethod
+    def create_from(cls, update: LayoutUpdate) -> VdomJsonPatch:
+        """Return a patch given an layout update"""
+        return cls(update.path, make_patch(update.old or {}, update.new).patch)
+
+
 async def _make_shared_view_dispatcher(
-    layout: Layout,
-) -> Tuple[SharedViewDispatcher, Ref[Any], WeakSet[Queue[LayoutUpdate]]]:
-    initial_update = await layout.render()
-    model_state = Ref(initial_update.apply_to({}))
+    layout: LayoutType[LayoutUpdate, LayoutEvent],
+) -> Tuple[SharedViewDispatcher, Ref[Any], WeakSet[Queue[VdomJsonPatch]]]:
+    update = await layout.render()
+    model_state = Ref(update.new)
 
     # We push updates to queues instead of pushing directly to send() callbacks in
     # order to isolate the render loop from any errors dispatch callbacks might
     # raise.
-    all_update_queues: WeakSet[Queue[LayoutUpdate]] = WeakSet()
+    all_patch_queues: WeakSet[Queue[VdomJsonPatch]] = WeakSet()
 
     async def dispatch_shared_view(send: SendCoroutine, recv: RecvCoroutine) -> None:
-        update_queue: Queue[LayoutUpdate] = Queue()
+        patch_queue: Queue[VdomJsonPatch] = Queue()
         async with create_task_group() as inner_task_group:
-            all_update_queues.add(update_queue)
-            await send(LayoutUpdate.create_from({}, model_state.current))
+            all_patch_queues.add(patch_queue)
+            effective_update = LayoutUpdate("", None, model_state.current)
+            await send(VdomJsonPatch.create_from(effective_update))
             inner_task_group.start_soon(_single_incoming_loop, layout, recv)
-            inner_task_group.start_soon(_shared_outgoing_loop, send, update_queue)
+            inner_task_group.start_soon(_shared_outgoing_loop, send, patch_queue)
         return None
 
-    return dispatch_shared_view, model_state, all_update_queues
+    return dispatch_shared_view, model_state, all_patch_queues
 
 
-async def _single_outgoing_loop(layout: Layout, send: SendCoroutine) -> None:
+async def _single_outgoing_loop(
+    layout: LayoutType[LayoutUpdate, LayoutEvent], send: SendCoroutine
+) -> None:
     while True:
-        await send(await layout.render())
+        await send(await render_json_patch(layout))
 
 
-async def _single_incoming_loop(layout: Layout, recv: RecvCoroutine) -> None:
+async def _single_incoming_loop(
+    layout: LayoutType[LayoutUpdate, LayoutEvent], recv: RecvCoroutine
+) -> None:
     while True:
-        await layout.dispatch(await recv())
+        await layout.deliver(await recv())
 
 
 async def _shared_outgoing_loop(
-    send: SendCoroutine, queue: Queue[LayoutUpdate]
+    send: SendCoroutine, queue: Queue[VdomJsonPatch]
 ) -> None:
     while True:
         await send(await queue.get())

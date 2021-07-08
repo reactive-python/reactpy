@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, Generic, List, Optional, Tuple, TypeVar
 
 
 _RefValue = TypeVar("_RefValue")
+_UNDEFINED: Any = object()
 
 
 class Ref(Generic[_RefValue]):
@@ -23,9 +24,10 @@ class Ref(Generic[_RefValue]):
 
     __slots__ = "current"
 
-    def __init__(self, initial_value: _RefValue) -> None:
-        self.current = initial_value
-        """The present value"""
+    def __init__(self, initial_value: _RefValue = _UNDEFINED) -> None:
+        if initial_value is not _UNDEFINED:
+            self.current = initial_value
+            """The present value"""
 
     def set_current(self, new: _RefValue) -> _RefValue:
         """Set the current value and return what is now the old value
@@ -37,10 +39,19 @@ class Ref(Generic[_RefValue]):
         return old
 
     def __eq__(self, other: Any) -> bool:
-        return isinstance(other, Ref) and (other.current == self.current)
+        try:
+            return isinstance(other, Ref) and (other.current == self.current)
+        except AttributeError:
+            # attribute error occurs for uninitialized refs
+            return False
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.current})"
+        try:
+            current = repr(self.current)
+        except AttributeError:
+            # attribute error occurs for uninitialized refs
+            current = "<undefined>"
+        return f"{type(self).__name__}({current})"
 
 
 _ModelTransform = Callable[[Dict[str, Any]], Any]

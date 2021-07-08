@@ -18,15 +18,16 @@ from sanic_cors import CORS
 from websockets import WebSocketCommonProtocol
 
 from idom.config import IDOM_WED_MODULES_DIR
-from idom.core.component import ComponentConstructor
 from idom.core.dispatcher import (
     RecvCoroutine,
     SendCoroutine,
     SharedViewDispatcher,
+    VdomJsonPatch,
     dispatch_single_view,
     ensure_shared_view_dispatcher_future,
 )
-from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
+from idom.core.layout import Layout, LayoutEvent
+from idom.core.proto import ComponentConstructor
 
 from .utils import CLIENT_BUILD_DIR, threaded, wait_on_event
 
@@ -240,7 +241,7 @@ def _setup_shared_view_dispatcher_route(
 def _make_send_recv_callbacks(
     socket: WebSocketCommonProtocol,
 ) -> Tuple[SendCoroutine, RecvCoroutine]:
-    async def sock_send(value: LayoutUpdate) -> None:
+    async def sock_send(value: VdomJsonPatch) -> None:
         await socket.send(json.dumps(value))
 
     async def sock_recv() -> LayoutEvent:

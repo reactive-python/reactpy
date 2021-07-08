@@ -5,6 +5,7 @@ import pytest
 
 import idom
 from idom.core.dispatcher import (
+    VdomJsonPatch,
     create_shared_view_dispatcher,
     dispatch_single_view,
     ensure_shared_view_dispatcher_future,
@@ -15,6 +16,13 @@ from idom.testing import StaticEventHandler
 
 EVENT_NAME = "onEvent"
 EVENT_HANDLER = StaticEventHandler()
+
+
+def test_vdom_json_patch_create_from_apply_to():
+    update = LayoutUpdate("", {"a": 1, "b": [1]}, {"a": 2, "b": [1, 2]})
+    patch = VdomJsonPatch.create_from(update)
+    result = patch.apply_to({"a": 1, "b": [1]})
+    assert result == {"a": 2, "b": [1, 2]}
 
 
 def make_send_recv_callbacks(events_to_inject):

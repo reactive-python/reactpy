@@ -19,6 +19,9 @@ API Reference
 .. automodule:: idom.core.layout
     :members:
 
+.. automodule:: idom.core.proto
+    :members:
+
 .. automodule:: idom.core.vdom
     :members:
 

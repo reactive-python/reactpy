@@ -4,7 +4,7 @@ from typing import Optional, TypeVar
 
 from typing_extensions import Protocol
 
-from idom.core.component import ComponentConstructor
+from idom.core.proto import ComponentConstructor
 
 
 _App = TypeVar("_App")

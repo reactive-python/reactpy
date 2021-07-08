@@ -54,23 +54,30 @@ whose body contains a hook usage. We'll demonstrate that with a simple
 Component Layout
 ----------------
 
-Displaying components requires you to turn them into :ref:`VDOM <VDOM Mimetype>` -
-this is done using a :class:`~idom.core.layout.Layout`. Layouts are responsible for
-rendering components (turning them into VDOM) and scheduling their re-renders when they
-:meth:`~idom.core.layout.Layout.update`. To create a layout, you'll need a
-:class:`~idom.core.component.Component` instance, which will become its root, and won't
-ever be removed from the model. Then you'll just need to call and await a
-:meth:`~idom.core.layout.Layout.render` which will return a :ref:`JSON Patch`:
+Displaying components requires you to turn them into :ref:`VDOM <VDOM Mimetype>`. This
+transformation, known as "rendering a component", is done by a
+:class:`~idom.core.proto.LayoutType`. Layouts are responsible for rendering components
+and scheduling their re-renders when they change. IDOM's concrete
+:class:`~idom.core.layout.Layout` implementation renders
+:class:`~idom.core.component.Component` instances into
+:class:`~idom.core.layout.LayoutUpdate` and responds to
+:class:`~idom.core.layout.LayoutEvent` objects respectively.
+
+To create a layout, you'll need a :class:`~idom.core.component.Component` instance, that
+will become its root. This component won't ever be removed from the model. Then, you'll
+just need to call and await a :meth:`~idom.core.layout.Layout.render` which will return
+a :ref:`JSON Patch`:
+
 
 .. testcode::
 
     with idom.Layout(ClickCount()) as layout:
-        patch = await layout.render()
+        update = await layout.render()
 
-The layout also handles the triggering of event handlers. Normally these are
-automatically sent to a :ref:`Dispatcher <Layout Dispatcher>`, but for now we'll do it
-manually. To do this we need to pass a fake event with its "target" (event handler
-identifier), to the layout's :meth:`~idom.core.layout.Layout.dispatch` method, after
+The layout also handles the deliver of events to their handlers. Normally these are sent
+through a :ref:`Dispatcher <Layout Dispatcher>` first, but for now we'll do it manually.
+To accomplish this we need to pass a fake event with its "target" (event handler
+identifier), to the layout's :meth:`~idom.core.layout.Layout.deliver` method, after
 which we can re-render and see what changed:
 
 .. testcode::
@@ -92,17 +99,13 @@ which we can re-render and see what changed:
 
 
     with idom.Layout(ClickCount()) as layout:
-        patch_1 = await layout.render()
+        update_1 = await layout.render()
 
         fake_event = LayoutEvent(target=static_handler.target, data=[{}])
-        await layout.dispatch(fake_event)
-        patch_2 = await layout.render()
+        await layout.deliver(fake_event)
 
-        for change in patch_2.changes:
-            if change["path"] == "/children/0":
-                count_did_increment = change["value"] == "Click count: 1"
-
-        assert count_did_increment
+        update_2 = await layout.render()
+        assert update_2.new["children"][0] == "Click count: 1"
 
 .. note::
 

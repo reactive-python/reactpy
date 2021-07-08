@@ -9,41 +9,51 @@ import asyncio
 from collections import Counter
 from functools import wraps
 from logging import getLogger
-from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, TypeVar
-from weakref import ref
-
-from jsonpatch import apply_patch, make_patch
-from typing_extensions import TypedDict
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterator,
+    List,
+    NamedTuple,
+    NewType,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+)
+from uuid import uuid4
+from weakref import ref as weakref
 
 from idom.config import IDOM_DEBUG_MODE, IDOM_FEATURE_INDEX_AS_DEFAULT_KEY
+from idom.utils import Ref
 
-from .component import ComponentType
 from .events import EventHandler
 from .hooks import LifeCycleHook
-from .vdom import validate_vdom
+from .proto import ComponentType
+from .vdom import VdomJson, validate_vdom
 
 
 logger = getLogger(__name__)
 
 
 class LayoutUpdate(NamedTuple):
-    """An object describing an update to a :class:`Layout`"""
+    """A change to a view as a result of a :meth:`Layout.render`"""
 
     path: str
-    changes: List[Dict[str, Any]]
+    """A "/" delimited path to the element from the root of the layout"""
 
-    def apply_to(self, model: Any) -> Any:
-        """Return the model resulting from the changes in this update"""
-        return apply_patch(
-            model, [{**c, "path": self.path + c["path"]} for c in self.changes]
-        )
+    old: Optional[VdomJson]
+    """The old state of the layout"""
 
-    @classmethod
-    def create_from(cls, source: Any, target: Any) -> "LayoutUpdate":
-        return cls("", make_patch(source, target).patch)
+    new: VdomJson
+    """The new state of the layout"""
 
 
 class LayoutEvent(NamedTuple):
+    """An event that should be relayed to its handler by :meth:`Layout.deliver`"""
+
     target: str
     """The ID of the event handler."""
     data: List[Any]
@@ -60,7 +70,8 @@ class Layout:
         "root",
         "_event_handlers",
         "_rendering_queue",
-        "_model_state_by_component_id",
+        "_root_life_cycle_state_id",
+        "_model_states_by_life_cycle_state_id",
     ]
 
     if not hasattr(abc.ABC, "__weakref__"):  # pragma: no cover
@@ -75,30 +86,31 @@ class Layout:
     def __enter__(self: _Self) -> _Self:
         # create attributes here to avoid access before entering context manager
         self._event_handlers: Dict[str, EventHandler] = {}
-        self._rendering_queue = _ComponentQueue()
-        self._model_state_by_component_id: Dict[str, _ModelState] = {
-            self.root.id: _ModelState(None, -1, "", LifeCycleHook(self, self.root))
-        }
-        self._rendering_queue.put(self.root)
+
+        self._rendering_queue: _ThreadSafeQueue[_LifeCycleStateId] = _ThreadSafeQueue()
+        root_model_state = _new_root_model_state(self.root, self._rendering_queue.put)
+
+        self._root_life_cycle_state_id = root_id = root_model_state.life_cycle_state.id
+        self._rendering_queue.put(root_id)
+
+        self._model_states_by_life_cycle_state_id = {root_id: root_model_state}
+
         return self
 
     def __exit__(self, *exc: Any) -> None:
-        root_state = self._model_state_by_component_id[self.root.id]
-        self._unmount_model_states([root_state])
+        root_csid = self._root_life_cycle_state_id
+        root_model_state = self._model_states_by_life_cycle_state_id[root_csid]
+        self._unmount_model_states([root_model_state])
 
         # delete attributes here to avoid access after exiting context manager
         del self._event_handlers
         del self._rendering_queue
-        del self._model_state_by_component_id
+        del self._root_life_cycle_state_id
+        del self._model_states_by_life_cycle_state_id
 
         return None
 
-    def update(self, component: "ComponentType") -> None:
-        """Schedule a re-render of a component in the layout"""
-        self._rendering_queue.put(component)
-        return None
-
-    async def dispatch(self, event: LayoutEvent) -> None:
+    async def deliver(self, event: LayoutEvent) -> None:
         """Dispatch an event to the targeted handler"""
         # It is possible for an element in the frontend to produce an event
         # associated with a backend model that has been deleted. We only handle
@@ -119,13 +131,16 @@ class Layout:
     async def render(self) -> LayoutUpdate:
         """Await the next available render. This will block until a component is updated"""
         while True:
-            component = await self._rendering_queue.get()
-            if component.id in self._model_state_by_component_id:
-                return self._create_layout_update(component)
-            else:
+            model_state_id = await self._rendering_queue.get()
+            try:
+                model_state = self._model_states_by_life_cycle_state_id[model_state_id]
+            except KeyError:
                 logger.info(
-                    f"Did not render component - {component} already unmounted or does not belong to this layout"
+                    f"Did not render component with model state ID {model_state_id!r} "
+                    "- component already unmounted or does not belong to this layout"
                 )
+            else:
+                return self._create_layout_update(model_state)
 
     if IDOM_DEBUG_MODE.current:
         # If in debug mode inject a function that ensures all returned updates
@@ -136,24 +151,35 @@ class Layout:
 
         @wraps(_debug_render)
         async def render(self) -> LayoutUpdate:
-            # Ensure that the model is valid VDOM on each render
             result = await self._debug_render()
-            validate_vdom(self._model_state_by_component_id[self.root.id].model)
+            # Ensure that the model is valid VDOM on each render
+            root_id = self._root_life_cycle_state_id
+            root_model = self._model_states_by_life_cycle_state_id[root_id]
+            validate_vdom(root_model.model.current)
             return result
 
-    def _create_layout_update(self, component: ComponentType) -> LayoutUpdate:
-        old_state = self._model_state_by_component_id[component.id]
-        new_state = old_state.new(None, component)
+    def _create_layout_update(self, old_state: _ModelState) -> LayoutUpdate:
+        new_state = _copy_component_model_state(old_state)
 
+        component = new_state.life_cycle_state.component
         self._render_component(old_state, new_state, component)
-        changes = make_patch(getattr(old_state, "model", {}), new_state.model).patch
 
         # hook effects must run after the update is complete
-        for state in new_state.iter_children():
-            if hasattr(state, "life_cycle_hook"):
-                state.life_cycle_hook.component_did_render()
+        for model_state in _iter_model_state_children(new_state):
+            if hasattr(model_state, "life_cycle_state"):
+                model_state.life_cycle_state.hook.component_did_render()
 
-        return LayoutUpdate(path=new_state.patch_path, changes=changes)
+        old_model: Optional[VdomJson]
+        try:
+            old_model = old_state.model.current
+        except AttributeError:
+            old_model = None
+
+        return LayoutUpdate(
+            path=new_state.patch_path,
+            old=old_model,
+            new=new_state.model.current,
+        )
 
     def _render_component(
         self,
@@ -161,8 +187,12 @@ class Layout:
         new_state: _ModelState,
         component: ComponentType,
     ) -> None:
-        life_cycle_hook = new_state.life_cycle_hook
+        life_cycle_state = new_state.life_cycle_state
+        self._model_states_by_life_cycle_state_id[life_cycle_state.id] = new_state
+
+        life_cycle_hook = life_cycle_state.hook
         life_cycle_hook.component_will_render()
+
         try:
             life_cycle_hook.set_current()
             try:
@@ -172,11 +202,7 @@ class Layout:
             self._render_model(old_state, new_state, raw_model)
         except Exception as error:
             logger.exception(f"Failed to render {component}")
-            new_state.model = {"tagName": "__error__", "children": [str(error)]}
-
-        if old_state is not None and old_state.component is not component:
-            del self._model_state_by_component_id[old_state.component.id]
-        self._model_state_by_component_id[component.id] = new_state
+            new_state.model.current = {"tagName": "__error__", "children": [str(error)]}
 
         try:
             parent = new_state.parent
@@ -192,7 +218,9 @@ class Layout:
                 )
             parent.children_by_key[key] = new_state
             # need to do insertion in case where old_state is None and we're appending
-            parent.model["children"][index : index + 1] = [new_state.model]
+            parent.model.current["children"][index : index + 1] = [
+                new_state.model.current
+            ]
 
     def _render_model(
         self,
@@ -200,15 +228,15 @@ class Layout:
         new_state: _ModelState,
         raw_model: Any,
     ) -> None:
-        new_state.model = {"tagName": raw_model["tagName"]}
+        new_state.model.current = {"tagName": raw_model["tagName"]}
 
         self._render_model_attributes(old_state, new_state, raw_model)
         self._render_model_children(old_state, new_state, raw_model.get("children", []))
 
         if "key" in raw_model:
-            new_state.model["key"] = raw_model["key"]
+            new_state.model.current["key"] = raw_model["key"]
         if "importSource" in raw_model:
-            new_state.model["importSource"] = raw_model["importSource"]
+            new_state.model.current["importSource"] = raw_model["importSource"]
 
     def _render_model_attributes(
         self,
@@ -223,7 +251,8 @@ class Layout:
             handlers_by_event.update(raw_model["eventHandlers"])
 
         if "attributes" in raw_model:
-            attrs = new_state.model["attributes"] = raw_model["attributes"].copy()
+            attrs = raw_model["attributes"].copy()
+            new_state.model.current["attributes"] = attrs
             for k, v in list(attrs.items()):
                 if callable(v):
                     if not isinstance(v, EventHandler):
@@ -246,7 +275,7 @@ class Layout:
         if not handlers_by_event:
             return None
 
-        model_event_handlers = new_state.model["eventHandlers"] = {}
+        model_event_handlers = new_state.model.current["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
             target = old_state.targets_by_event.get(event, handler.target)
             new_state.targets_by_event[event] = target
@@ -267,7 +296,7 @@ class Layout:
         if not handlers_by_event:
             return None
 
-        model_event_handlers = new_state.model["eventHandlers"] = {}
+        model_event_handlers = new_state.model.current["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
             target = handler.target
             new_state.targets_by_event[event] = target
@@ -313,24 +342,42 @@ class Layout:
                 [old_state.children_by_key[key] for key in old_keys]
             )
 
-        new_children = new_state.model["children"] = []
+        new_children = new_state.model.current["children"] = []
         for index, (child, child_type, key) in enumerate(child_type_key_tuples):
             if child_type is _DICT_TYPE:
                 old_child_state = old_state.children_by_key.get(key)
-                if old_child_state is not None:
-                    new_child_state = old_child_state.new(new_state, None)
+                if old_child_state is None:
+                    new_child_state = _make_element_model_state(
+                        new_state,
+                        index,
+                        key,
+                    )
                 else:
-                    new_child_state = _ModelState(new_state, index, key, None)
+                    new_child_state = _update_element_model_state(
+                        old_child_state,
+                        new_state,
+                        index,
+                    )
                 self._render_model(old_child_state, new_child_state, child)
-                new_children.append(new_child_state.model)
+                new_children.append(new_child_state.model.current)
                 new_state.children_by_key[key] = new_child_state
             elif child_type is _COMPONENT_TYPE:
                 old_child_state = old_state.children_by_key.get(key)
-                if old_child_state is not None:
-                    new_child_state = old_child_state.new(new_state, child)
+                if old_child_state is None:
+                    new_child_state = _make_component_model_state(
+                        new_state,
+                        index,
+                        key,
+                        child,
+                        self._rendering_queue.put,
+                    )
                 else:
-                    hook = LifeCycleHook(self, child)
-                    new_child_state = _ModelState(new_state, index, key, hook)
+                    new_child_state = _update_component_model_state(
+                        old_child_state,
+                        new_state,
+                        index,
+                        child,
+                    )
                 self._render_component(old_child_state, new_child_state, child)
             else:
                 new_children.append(child)
@@ -338,138 +385,292 @@ class Layout:
     def _render_model_children_without_old_state(
         self, new_state: _ModelState, raw_children: List[Any]
     ) -> None:
-        new_children = new_state.model["children"] = []
+        new_children = new_state.model.current["children"] = []
         for index, (child, child_type, key) in enumerate(
             _process_child_type_and_key(raw_children)
         ):
             if child_type is _DICT_TYPE:
-                child_state = _ModelState(new_state, index, key, None)
+                child_state = _make_element_model_state(new_state, index, key)
                 self._render_model(None, child_state, child)
-                new_children.append(child_state.model)
+                new_children.append(child_state.model.current)
                 new_state.children_by_key[key] = child_state
             elif child_type is _COMPONENT_TYPE:
-                life_cycle_hook = LifeCycleHook(self, child)
-                child_state = _ModelState(new_state, index, key, life_cycle_hook)
+                child_state = _make_component_model_state(
+                    new_state, index, key, child, self._rendering_queue.put
+                )
                 self._render_component(None, child_state, child)
             else:
                 new_children.append(child)
 
     def _unmount_model_states(self, old_states: List[_ModelState]) -> None:
-        to_unmount = old_states[::-1]
+        to_unmount = old_states[::-1]  # unmount in reversed order of rendering
         while to_unmount:
-            state = to_unmount.pop()
-            if hasattr(state, "life_cycle_hook"):
-                hook = state.life_cycle_hook
-                hook.component_will_unmount()
-                del self._model_state_by_component_id[hook.component.id]
-            to_unmount.extend(state.children_by_key.values())
+            model_state = to_unmount.pop()
+
+            if hasattr(model_state, "life_cycle_state"):
+                life_cycle_state = model_state.life_cycle_state
+                del self._model_states_by_life_cycle_state_id[life_cycle_state.id]
+                life_cycle_state.hook.component_will_unmount()
+
+            to_unmount.extend(model_state.children_by_key.values())
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.root})"
 
 
-class _ModelState:
+def _iter_model_state_children(model_state: _ModelState) -> Iterator[_ModelState]:
+    yield model_state
+    for child in model_state.children_by_key.values():
+        yield from _iter_model_state_children(child)
 
-    __slots__ = (
-        "index",
-        "key",
-        "_parent_ref",
-        "life_cycle_hook",
-        "component",
-        "patch_path",
-        "model",
-        "targets_by_event",
-        "children_by_key",
-        "__weakref__",
+
+def _new_root_model_state(
+    component: ComponentType, schedule_render: Callable[[_LifeCycleStateId], None]
+) -> _ModelState:
+    return _ModelState(
+        parent=None,
+        index=-1,
+        key=None,
+        model=Ref(),
+        patch_path="",
+        children_by_key={},
+        targets_by_event={},
+        life_cycle_state=_make_life_cycle_state(component, schedule_render),
     )
 
-    model: _ModelVdom
-    life_cycle_hook: LifeCycleHook
-    patch_path: str
-    component: ComponentType
+
+def _make_component_model_state(
+    parent: _ModelState,
+    index: int,
+    key: Any,
+    component: ComponentType,
+    schedule_render: Callable[[_LifeCycleStateId], None],
+) -> _ModelState:
+    return _ModelState(
+        parent=parent,
+        index=index,
+        key=key,
+        model=Ref(),
+        patch_path=f"{parent.patch_path}/children/{index}",
+        children_by_key={},
+        targets_by_event={},
+        life_cycle_state=_make_life_cycle_state(component, schedule_render),
+    )
+
+
+def _copy_component_model_state(old_model_state: _ModelState) -> _ModelState:
+
+    # use try/except here because not having a parent is rare (only the root state)
+    try:
+        parent: Optional[_ModelState] = old_model_state.parent
+    except AttributeError:
+        parent = None
+
+    return _ModelState(
+        parent=parent,
+        index=old_model_state.index,
+        key=old_model_state.key,
+        model=Ref(),  # does not copy the model
+        patch_path=old_model_state.patch_path,
+        children_by_key={},
+        targets_by_event={},
+        life_cycle_state=old_model_state.life_cycle_state,
+    )
+
+
+def _update_component_model_state(
+    old_model_state: _ModelState,
+    new_parent: _ModelState,
+    new_index: int,
+    new_component: ComponentType,
+) -> _ModelState:
+    try:
+        old_life_cycle_state = old_model_state.life_cycle_state
+    except AttributeError:
+        raise ValueError(
+            f"Failed to render layout at {old_model_state.patch_path!r} with key "
+            f"{old_model_state.key!r} - prior element with this key wasn't a component"
+        )
+
+    return _ModelState(
+        parent=new_parent,
+        index=new_index,
+        key=old_model_state.key,
+        model=Ref(),  # does not copy the model
+        patch_path=old_model_state.patch_path,
+        children_by_key={},
+        targets_by_event={},
+        life_cycle_state=_update_life_cycle_state(old_life_cycle_state, new_component),
+    )
+
+
+def _make_element_model_state(
+    parent: _ModelState,
+    index: int,
+    key: Any,
+) -> _ModelState:
+    return _ModelState(
+        parent=parent,
+        index=index,
+        key=key,
+        model=Ref(),
+        patch_path=f"{parent.patch_path}/children/{index}",
+        children_by_key={},
+        targets_by_event={},
+    )
+
+
+def _update_element_model_state(
+    old_model_state: _ModelState,
+    new_parent: _ModelState,
+    new_index: int,
+) -> _ModelState:
+    if hasattr(old_model_state, "life_cycle_state"):
+        raise ValueError(
+            f"Failed to render layout at {old_model_state.patch_path!r} with key "
+            f"{old_model_state.key!r} - prior element with this key was a component"
+        )
+
+    return _ModelState(
+        parent=new_parent,
+        index=new_index,
+        key=old_model_state.key,
+        model=Ref(),  # does not copy the model
+        patch_path=old_model_state.patch_path,
+        children_by_key=old_model_state.children_by_key.copy(),
+        targets_by_event={},
+    )
+
+
+class _ModelState:
+    """State that is bound to a particular element within the layout"""
+
+    __slots__ = (
+        "__weakref__",
+        "_parent_ref",
+        "children_by_key",
+        "index",
+        "key",
+        "life_cycle_state",
+        "model",
+        "patch_path",
+        "targets_by_event",
+    )
 
     def __init__(
         self,
         parent: Optional[_ModelState],
         index: int,
         key: Any,
-        life_cycle_hook: Optional[LifeCycleHook],
-    ) -> None:
+        model: Ref[VdomJson],
+        patch_path: str,
+        children_by_key: Dict[str, _ModelState],
+        targets_by_event: Dict[str, str],
+        life_cycle_state: Optional[_LifeCycleState] = None,
+    ):
         self.index = index
+        """The index of the element amongst its siblings"""
+
         self.key = key
+        """A key that uniquely identifies the element amongst its siblings"""
+
+        self.model = model
+        """The actual model of the element"""
+
+        self.patch_path = patch_path
+        """A "/" delimitted path to the element within the greater layout"""
+
+        self.children_by_key = children_by_key
+        """Child model states indexed by their unique keys"""
+
+        self.targets_by_event = targets_by_event
+        """The element's event handler target strings indexed by their event name"""
+
+        # === Conditionally Evailable Attributes ===
+        # It's easier to conditionally assign than to force a null check on every usage
 
         if parent is not None:
-            self._parent_ref = ref(parent)
-            self.patch_path = f"{parent.patch_path}/children/{index}"
-        else:
-            self.patch_path = ""
+            self._parent_ref = weakref(parent)
+            """The parent model state"""
 
-        if life_cycle_hook is not None:
-            self.life_cycle_hook = life_cycle_hook
-            self.component = life_cycle_hook.component
-
-        self.targets_by_event: Dict[str, str] = {}
-        self.children_by_key: Dict[str, _ModelState] = {}
+        if life_cycle_state is not None:
+            self.life_cycle_state = life_cycle_state
+            """The state for the element's component (if it has one)"""
 
     @property
     def parent(self) -> _ModelState:
-        # An AttributeError here is ok. It's synonymous
-        # with the existance of 'parent' attribute
-        p = self._parent_ref()
-        assert p is not None, "detached model state"
-        return p
-
-    def new(
-        self,
-        new_parent: Optional[_ModelState],
-        component: Optional[ComponentType],
-    ) -> _ModelState:
-        if new_parent is None:
-            new_parent = getattr(self, "parent", None)
-
-        life_cycle_hook: Optional[LifeCycleHook]
-        if hasattr(self, "life_cycle_hook"):
-            assert component is not None
-            life_cycle_hook = self.life_cycle_hook
-            life_cycle_hook.component = component
-        else:
-            life_cycle_hook = None
-
-        return _ModelState(new_parent, self.index, self.key, life_cycle_hook)
-
-    def iter_children(self, include_self: bool = True) -> Iterator[_ModelState]:
-        to_yield = [self] if include_self else []
-        while to_yield:
-            node = to_yield.pop()
-            yield node
-            to_yield.extend(node.children_by_key.values())
+        parent = self._parent_ref()
+        assert parent is not None, "detached model state"
+        return parent
 
 
-class _ComponentQueue:
+def _make_life_cycle_state(
+    component: ComponentType,
+    schedule_render: Callable[[_LifeCycleStateId], None],
+) -> _LifeCycleState:
+    life_cycle_state_id = _LifeCycleStateId(uuid4().hex)
+    return _LifeCycleState(
+        life_cycle_state_id,
+        LifeCycleHook(lambda: schedule_render(life_cycle_state_id)),
+        component,
+    )
+
+
+def _update_life_cycle_state(
+    old_life_cycle_state: _LifeCycleState,
+    new_component: ComponentType,
+) -> _LifeCycleState:
+    return _LifeCycleState(
+        old_life_cycle_state.id,
+        # the hook is preserved across renders because it holds the state
+        old_life_cycle_state.hook,
+        new_component,
+    )
+
+
+_LifeCycleStateId = NewType("_LifeCycleStateId", str)
+
+
+class _LifeCycleState(NamedTuple):
+    """Component state for :class:`_ModelState`"""
+
+    id: _LifeCycleStateId
+    """A unique identifier used in the :class:`~idom.core.hooks.LifeCycleHook` callback"""
+
+    hook: LifeCycleHook
+    """The life cycle hook"""
+
+    component: ComponentType
+    """The current component instance"""
+
+
+_Type = TypeVar("_Type")
+
+
+class _ThreadSafeQueue(Generic[_Type]):
 
     __slots__ = "_loop", "_queue", "_pending"
 
     def __init__(self) -> None:
         self._loop = asyncio.get_event_loop()
-        self._queue: "asyncio.Queue[ComponentType]" = asyncio.Queue()
-        self._pending: Set[str] = set()
+        self._queue: asyncio.Queue[_Type] = asyncio.Queue()
+        self._pending: Set[_Type] = set()
 
-    def put(self, component: ComponentType) -> None:
-        component_id = component.id
-        if component_id not in self._pending:
-            self._pending.add(component_id)
-            self._loop.call_soon_threadsafe(self._queue.put_nowait, component)
+    def put(self, value: _Type) -> None:
+        if value not in self._pending:
+            self._pending.add(value)
+            self._loop.call_soon_threadsafe(self._queue.put_nowait, value)
         return None
 
-    async def get(self) -> ComponentType:
-        component = await self._queue.get()
-        self._pending.remove(component.id)
-        return component
+    async def get(self) -> _Type:
+        value = await self._queue.get()
+        self._pending.remove(value)
+        return value
 
 
 def _process_child_type_and_key(
     children: List[Any],
-) -> Iterator[Tuple[Any, int, Any]]:
+) -> Iterator[Tuple[Any, _ElementType, Any]]:
     for index, child in enumerate(children):
         if isinstance(child, dict):
             child_type = _DICT_TYPE
@@ -488,6 +689,13 @@ def _process_child_type_and_key(
         yield (child, child_type, key)
 
 
+# used in _process_child_type_and_key
+_ElementType = NewType("_ElementType", int)
+_DICT_TYPE = _ElementType(1)
+_COMPONENT_TYPE = _ElementType(2)
+_STRING_TYPE = _ElementType(3)
+
+
 if IDOM_FEATURE_INDEX_AS_DEFAULT_KEY.current:
 
     def _default_key(index: int) -> Any:  # pragma: no cover
@@ -498,36 +706,3 @@ else:
 
     def _default_key(index: int) -> Any:
         return object()
-
-
-# used in _process_child_type_and_key
-_DICT_TYPE = 1
-_COMPONENT_TYPE = 2
-_STRING_TYPE = 3
-
-
-class _ModelEventTarget(TypedDict):
-    target: str
-    preventDefault: bool  # noqa
-    stopPropagation: bool  # noqa
-
-
-class _ModelImportSource(TypedDict):
-    source: str
-    fallback: Any
-
-
-class _ModelVdomOptional(TypedDict, total=False):
-    key: str  # noqa
-    children: List[Any]  # noqa
-    attributes: Dict[str, Any]  # noqa
-    eventHandlers: Dict[str, _ModelEventTarget]  # noqa
-    importSource: _ModelImportSource  # noqa
-
-
-class _ModelVdomRequired(TypedDict, total=True):
-    tagName: str  # noqa
-
-
-class _ModelVdom(_ModelVdomRequired, _ModelVdomOptional):
-    """A VDOM dictionary model specifically for use with a :class:`Layout`"""
