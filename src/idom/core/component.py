@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import abc
 import inspect
+import warnings
 from functools import wraps
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 from uuid import uuid4
@@ -31,6 +32,11 @@ def component(function: ComponentRenderFunction) -> Callable[..., "Component"]:
         inspect.Parameter.KEYWORD_ONLY,
         inspect.Parameter.POSITIONAL_OR_KEYWORD,
     )
+    if key_is_kwarg:  # pragma: no cover
+        warnings.warn(
+            f"Component render function {function} uses reserved parameter 'key' - this "
+            "will produce an error in a future release"
+        )
 
     @wraps(function)
     def constructor(*args: Any, key: Optional[Any] = None, **kwargs: Any) -> Component:
