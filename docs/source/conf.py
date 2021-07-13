@@ -31,7 +31,7 @@ author = "Ryan Morshead"
 
 extlinks = {
     "issue": ("https://github.com/idom-team/idom/issues/%s", "#"),
-    "pull": ("https://github.com/idom-team/idom/pulls/%s", "#"),
+    "pull": ("https://github.com/idom-team/idom/pull/%s", "#"),
     "discussion": ("https://github.com/idom-team/idom/discussions/%s", "#"),
     "commit": ("https://github.com/idom-team/idom/commit/%s", ""),
 }
