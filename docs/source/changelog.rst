@@ -1,6 +1,23 @@
 Changelog
 =========
 
+
+0.30.1
+------
+
+Removes the usage of the :func:`id` function for generating unique ideas because there
+were situations where the IDs bound to the lifetime of an object are problematic. Also
+adds a warning :class:`Deprecation` warning to render functions that include the
+parameter ``key``. It's been decided that allowing ``key`` to be used in this way can
+lead to confusing bugs.
+
+**Pull Requests**
+
+- warn if key is param of component render function - :pull:`421`
+- fix :issue:`417` and :issue:`413` - :pull:`418`
+- add changelog entry for :ref:`0.30.0` - :pull:`415`
+
+
 0.30.0
 ------
 
@@ -43,6 +60,7 @@ desired library from a CDN.
 - Port first IDOM article to docs - :pull:`408`
 - Test build in CI - :pull:`404`
 - Remove all runtime reliance on NPM - :pull:`398`
+
 
 0.29.0
 ------

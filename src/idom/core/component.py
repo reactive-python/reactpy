@@ -35,7 +35,8 @@ def component(function: ComponentRenderFunction) -> Callable[..., "Component"]:
     if key_is_kwarg:  # pragma: no cover
         warnings.warn(
             f"Component render function {function} uses reserved parameter 'key' - this "
-            "will produce an error in a future release"
+            "will produce an error in a future release",
+            DeprecationWarning,
         )
 
     @wraps(function)
