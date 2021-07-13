@@ -1,6 +1,41 @@
 Changelog
 =========
 
+0.31.0
+------
+
+The :class:`~idom.core.layout.Layout` is now a prototype, and ``Layout.update`` is no
+longer a public API. This is combined with a much more significant refactor of the
+underlying rendering logic.
+
+The biggest issue that has been resolved relates to the relationship between
+:class:`~idom.core.hooks.LifeCycleHook` and ``Layout``. Previously, the
+``LifeCycleHook`` accepted a layout instance in its constructor and called
+``Layout.update``. Additionally, the ``Layout`` would manipulate the
+``LifeCycleHook.component`` attribute whenever the component instance changed after a
+render. The former behavior leads to a non-linear code path that's a touch to follow.
+The latter behavior is the most egregious design issue since there's absolutely no local
+indication that the component instance can be swapped out (not even a comment).
+
+The new refactor no longer binds component or layout instances to a ``LifeCycleHook``.
+Instead, the hook simply receives an unparametrized callback that can be triggered to
+schedule a render. While some error logs lose clarity (since we can't say what component
+caused them). This change precludes a need for the layout to ever mutate the hook.
+
+To accomodate this change, the internal representation of the layout's state had to
+change. Previsouly, a class-based approach was take, where methods of the state-holding
+classes were meant to handle all use cases. Now we rely much more heavily on very simple
+(and mostly static) data structures that have purpose built constructor functions that
+much more narrowly address each use case.
+
+After these refactors, ``ComponentTypes`` no longer needs a unique ``id`` attribute.
+Instead, a unique ID is generated internally which is associated with the
+``LifeCycleState``, not component instances since they are inherently transient.
+
+**Pull Requests**
+
+- fix #419 and #412 - :pull:`422`
+
 
 0.30.1
 ------
