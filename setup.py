@@ -119,7 +119,7 @@ def build_javascript_first(cls):
         def run(self):
             log.info("Installing Javascript...")
             try:
-                js_dir = str(package_dir / "client")
+                js_dir = str(src_dir / "client")
                 npm = shutil.which("npm")  # this is required on windows
                 if npm is None:
                     raise RuntimeError("NPM is not installed.")
