@@ -39,3 +39,4 @@ pip-wheel-metadata
 # --- JS ---
 
 node_modules
+src/idom/client

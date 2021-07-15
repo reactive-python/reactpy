@@ -13,7 +13,7 @@ import idom
 from .proto import ServerFactory
 
 
-CLIENT_BUILD_DIR = Path(idom.__file__).parent / "client" / "build"
+CLIENT_BUILD_DIR = Path(idom.__file__).parent / "client"
 
 _SUPPORTED_PACKAGES = [
     "sanic",
