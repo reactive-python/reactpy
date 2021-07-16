@@ -5,7 +5,9 @@ Widgets
 from __future__ import annotations
 
 from base64 import b64encode
+from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Set, Tuple, TypeVar, Union
+from uuid import uuid4
 
 import idom
 
@@ -15,6 +17,7 @@ from .core.component import component
 from .core.proto import ComponentConstructor
 from .core.vdom import VdomDict
 from .utils import Ref
+from .web.module import export, module_from_source_string
 
 
 def image(
@@ -64,6 +67,61 @@ def Input(
         callback(value if cast is None else cast(value))
 
     return html.input({"type": type, "value": value, **attrs}, event_handlers=events)
+
+
+def javascript(file: Union[None, str, Path]) -> VdomDict:
+    """Link a Javascript module into the view
+
+    This is useful for modifying page attributes like ``document.title`` or manipulating
+    the view ways that could not otherwise be accomplished with
+    :ref:`Custom Javascript Components`
+
+    .. warning::
+        Every call to this function creates a file in
+        :data:`~idom.config.IDOM_WEB_MODULES_DIR`. To mitigate the number of files
+        created, assign the resulting script as a global constant.
+
+    Example:
+
+        .. code-block::
+
+            import idom
+
+            script = idom.widgets.javascript("path/to/script.js")
+
+            @idom.component
+            def MyApp():
+                return idom.html.div(script, ...)
+
+    .. note::
+
+        This module does not need to adhere to the :ref:`Custom Javascript Components`
+        interface since it's just a standard module.
+    """
+    file_path = Path(file)
+    return _javascript(f"script-{uuid4().hex}{file_path.suffix}", file_path.read_text())
+
+
+def _javascript(name: str, content: str) -> VdomDict:
+    # midly abuse the Custom Javascript Component system to inject standard scripts
+    script = _JAVASCRIPT_TEMPLATE.format(content=content)
+    module = module_from_source_string(name, script)
+    constructor = export(module, "Script", allow_children=False)
+    return constructor()
+
+
+_JAVASCRIPT_TEMPLATE = """
+// implement a no-op IDOM compatible module interface
+export const createElement = () => null;
+export const renderElement = () => null;
+export const unmountElement = () => null;
+
+// we need a no-op component that we can use too
+export const Script = null;
+
+// user script content goes here
+{content}
+"""
 
 
 MountFunc = Callable[[ComponentConstructor], None]

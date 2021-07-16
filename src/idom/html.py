@@ -118,6 +118,18 @@ Interactive Elements
 - :func:`menu`
 - :func:`menuitem`
 - :func:`summary`
+
+
+Document Metadata
+-----------------
+
+- :func:`title`
+- :func:`base`
+- :func:`style`
+- :func:`meta`
+- :func:`script`
+- :func:`noscript`
+- :func:`template`
 """
 
 from .core.vdom import make_vdom_constructor
@@ -216,3 +228,13 @@ dialog = make_vdom_constructor("dialog")
 menu = make_vdom_constructor("menu")
 menuitem = make_vdom_constructor("menuitem")
 summary = make_vdom_constructor("summary")
+
+# Document metadata
+
+title = make_vdom_constructor("title")
+base = make_vdom_constructor("base", allow_children=False)
+style = make_vdom_constructor("style")
+meta = make_vdom_constructor("meta", allow_children=False)
+script = make_vdom_constructor("script")
+noscript = make_vdom_constructor("noscript")
+template = make_vdom_constructor("template")

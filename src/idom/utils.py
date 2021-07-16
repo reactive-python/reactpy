@@ -6,6 +6,8 @@ General Utilities
 from html.parser import HTMLParser as _HTMLParser
 from typing import Any, Callable, Dict, Generic, List, Optional, Tuple, TypeVar
 
+from idom.core.vdom import VdomDict
+
 
 _RefValue = TypeVar("_RefValue")
 _UNDEFINED: Any = object()
@@ -57,7 +59,7 @@ class Ref(Generic[_RefValue]):
 _ModelTransform = Callable[[Dict[str, Any]], Any]
 
 
-def html_to_vdom(source: str, *transforms: _ModelTransform) -> Dict[str, Any]:
+def html_to_vdom(source: str, *transforms: _ModelTransform) -> VdomDict:
     """Transform HTML into a DOM model
 
     Parameters:

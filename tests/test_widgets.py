@@ -2,6 +2,7 @@ import time
 from base64 import b64encode
 from pathlib import Path
 
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.keys import Keys
 
 import idom
@@ -9,6 +10,7 @@ from tests.driver_utils import send_keys
 
 
 HERE = Path(__file__).parent
+JS_FIXTURES = HERE / "js_fixtures"
 
 
 def test_multiview_repr():
@@ -151,3 +153,24 @@ def test_input_ignore_empty(driver, driver_wait, display):
     assert inp_ingore_ref.current == "1"
     # did not ignore empty value on change
     assert inp_not_ignore_ref.current == ""
+
+
+def test_javascript(driver, driver_wait, display):
+    script = idom.widgets.javascript(JS_FIXTURES / "add-button-to-body.js")
+
+    @idom.component
+    def MyScript():
+        return script
+
+    display(MyScript)
+    button = driver.find_element_by_id("the-button")
+    button.click()
+
+    @driver_wait.until
+    def button_is_removed(driver):
+        try:
+            button.is_displayed()
+        except StaleElementReferenceException:
+            return True
+        else:
+            return False

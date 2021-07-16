@@ -143,6 +143,29 @@ def test_web_module_from_file_symlink(tmp_path):
     assert module.file.resolve().read_text() == "hello world!"
 
 
+def test_module_from_source_string(driver, driver_wait, display):
+    SimpleButton = idom.web.export(
+        idom.web.module_from_source_string(
+            "simple-button", (JS_FIXTURES_DIR / "simple-button.js").read_text()
+        ),
+        "SimpleButton",
+    )
+
+    is_clicked = idom.Ref(False)
+
+    @idom.component
+    def ShowSimpleButton():
+        return SimpleButton(
+            {"id": "my-button", "onClick": lambda event: is_clicked.set_current(True)}
+        )
+
+    display(ShowSimpleButton)
+
+    button = driver.find_element_by_id("my-button")
+    button.click()
+    driver_wait.until(lambda d: is_clicked.current)
+
+
 def test_module_missing_exports():
     module = WebModule("test", NAME_SOURCE, None, {"a", "b", "c"}, None)
 

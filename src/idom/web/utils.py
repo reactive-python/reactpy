@@ -1,6 +1,6 @@
 import logging
 import re
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Set, Tuple
 from urllib.parse import urlparse
 
@@ -8,12 +8,6 @@ import requests
 
 
 logger = logging.getLogger(__name__)
-
-
-def module_name_suffix(name: str) -> str:
-    head, _, tail = name.partition("@")  # handle version identifier
-    version, _, tail = tail.partition("/")  # get section after version
-    return PurePosixPath(tail or head).suffix or ".js"
 
 
 def resolve_module_exports_from_file(file: Path, max_depth: int) -> Set[str]:

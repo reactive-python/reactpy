@@ -8,17 +8,13 @@ from __future__ import annotations
 import shutil
 from dataclasses import dataclass
 from functools import partial
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, List, NewType, Optional, Set, Tuple, Union, overload
 
 from idom.config import IDOM_DEBUG_MODE, IDOM_WED_MODULES_DIR
 from idom.core.vdom import ImportSourceDict, VdomDictConstructor, make_vdom_constructor
 
-from .utils import (
-    module_name_suffix,
-    resolve_module_exports_from_file,
-    resolve_module_exports_from_url,
-)
+from .utils import resolve_module_exports_from_file, resolve_module_exports_from_url
 
 
 SourceType = NewType("SourceType", str)
@@ -44,7 +40,7 @@ def module_from_url(
             interface for :ref:`Custom Javascript Components`
         fallback:
             What to temporarilly display while the module is being loaded.
-        resolve_imports:
+        resolve_exports:
             Whether to try and find all the named exports of this module.
         resolve_exports_depth:
             How deeply to search for those exports.
@@ -82,27 +78,26 @@ def module_from_template(
             Where the package should be loaded from. The CDN must distribute ESM modules
         fallback:
             What to temporarilly display while the module is being loaded.
-        resolve_imports:
+        resolve_exports:
             Whether to try and find all the named exports of this module.
         resolve_exports_depth:
             How deeply to search for those exports.
     """
     cdn = cdn.rstrip("/")
 
-    template_file_name = f"{template}{module_name_suffix(package)}"
+    template_file_name = f"{template}{_module_name_suffix(package)}"
     template_file = Path(__file__).parent / "templates" / template_file_name
     if not template_file.exists():
         raise ValueError(f"No template for {template_file_name!r} exists")
 
-    target_file = _web_module_path(package)
+    target_file = _make_web_module_path(package, exists_ok=True)
     if not target_file.exists():
-        target_file.parent.mkdir(parents=True, exist_ok=True)
         target_file.write_text(
             template_file.read_text().replace("$PACKAGE", package).replace("$CDN", cdn)
         )
 
     return WebModule(
-        source=package + module_name_suffix(package),
+        source=package,
         source_type=NAME_SOURCE,
         default_fallback=fallback,
         file=target_file,
@@ -122,42 +117,75 @@ def module_from_file(
     resolve_exports_depth: int = 5,
     symlink: bool = False,
 ) -> WebModule:
-    """Load a :class:`WebModule` from a :data:`URL_SOURCE` using a known framework
+    """Load a :class:`WebModule` from a static file
 
     Parameters:
-        template:
-            The name of the template to use with the given ``package``
-        package:
-            The name of a package to load. May include a file extension (defaults to
-            ``.js`` if not given)
-        cdn:
-            Where the package should be loaded from. The CDN must distribute ESM modules
+        name:
+            The name we want to give the resulting module.
+        file:
+            A path to the file where the module's source resides.
         fallback:
             What to temporarilly display while the module is being loaded.
-        resolve_imports:
+        resolve_exports:
             Whether to try and find all the named exports of this module.
         resolve_exports_depth:
             How deeply to search for those exports.
+        symlink:
+            Whether to use a symlink when serving the file.
     """
     source_file = Path(file)
-    target_file = _web_module_path(name)
     if not source_file.exists():
         raise FileNotFoundError(f"Source file does not exist: {source_file}")
-    elif target_file.exists() or target_file.is_symlink():
-        raise FileExistsError(f"{name!r} already exists as {target_file.resolve()}")
+
+    target_file = _make_web_module_path(name)
+    if symlink:
+        target_file.symlink_to(source_file)
     else:
-        target_file.parent.mkdir(parents=True, exist_ok=True)
-        if symlink:
-            target_file.symlink_to(source_file)
-        else:
-            shutil.copy(source_file, target_file)
+        shutil.copy(source_file, target_file)
+
     return WebModule(
-        source=name + module_name_suffix(name),
+        source=name,
         source_type=NAME_SOURCE,
         default_fallback=fallback,
         file=target_file,
         export_names=(
             resolve_module_exports_from_file(source_file, resolve_exports_depth)
+            if resolve_exports
+            else None
+        ),
+    )
+
+
+def module_from_source_string(
+    name: str,
+    content: str,
+    fallback: Optional[Any] = None,
+    resolve_exports: bool = IDOM_DEBUG_MODE.current,
+    resolve_exports_depth: int = 5,
+) -> WebModule:
+    """Create a :class:`WebModule` from a string containing the module's source
+
+    Parameters:
+        name:
+            The name we want to give the resulting module.
+        content:
+            A string containing the source code for the module.
+        fallback:
+            What to temporarilly display while the module is being loaded.
+        resolve_exports:
+            Whether to try and find all the named exports of this module.
+        resolve_exports_depth:
+            How deeply to search for those exports.
+    """
+    target_file = _make_web_module_path(name)
+    target_file.write_text(content)
+    return WebModule(
+        source=name,
+        source_type=NAME_SOURCE,
+        default_fallback=fallback,
+        file=target_file,
+        export_names=(
+            resolve_module_exports_from_file(target_file, resolve_exports_depth)
             if resolve_exports
             else None
         ),
@@ -247,7 +275,19 @@ def _make_export(
     )
 
 
-def _web_module_path(name: str) -> Path:
-    name += module_name_suffix(name)
+def _make_web_module_path(name: str, exists_ok: bool = False) -> Path:
     path = IDOM_WED_MODULES_DIR.current.joinpath(*name.split("/"))
-    return path.with_suffix(path.suffix)
+    target_file = path.with_suffix(path.suffix)
+
+    if target_file.exists() or target_file.is_symlink():
+        if not exists_ok:
+            raise FileExistsError(f"{name!r} already exists as {target_file.resolve()}")
+    else:
+        target_file.parent.mkdir(parents=True, exist_ok=True)
+    return target_file
+
+
+def _module_name_suffix(name: str) -> str:
+    head, _, tail = name.partition("@")  # handle version identifier
+    version, _, tail = tail.partition("/")  # get section after version
+    return PurePosixPath(tail or head).suffix or ".js"

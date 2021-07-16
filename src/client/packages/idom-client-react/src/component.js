@@ -170,7 +170,15 @@ function loadFromImportSource(config, importSource) {
           unmountElement: module.unmountElement,
         };
       } else {
-        console.error(`${module} does not expose the required interfaces`);
+        console.error(
+          `${importSource.source} does not expose the required interfaces`
+        );
+        // results in a no-op
+        return {
+          createElement: () => null,
+          renderElement: () => null,
+          unmountElement: () => null,
+        };
       }
     });
 }
