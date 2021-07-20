@@ -28,26 +28,11 @@ export function Layout({ saveUpdateHook, sendEvent, loadImportSource }) {
   }
 }
 
-export function Element({ model, key }) {
+export function Element({ model }) {
   if (model.importSource) {
     return html`<${ImportedElement} model=${model} />`;
   } else {
     return html`<${StandardElement} model=${model} />`;
-  }
-}
-
-export function elementChildren(modelChildren) {
-  if (!modelChildren) {
-    return [];
-  } else {
-    return modelChildren.map((child) => {
-      switch (typeof child) {
-        case "object":
-          return html`<${Element} key=${child.key} model=${child} />`;
-        case "string":
-          return child;
-      }
-    });
   }
 }
 
@@ -113,6 +98,24 @@ function ImportedElement({ model }) {
     return html`<div ref=${mountPoint}>
       <${StandardElement} model=${fallback} />
     </div>`;
+  }
+}
+
+export function elementChildren(modelChildren) {
+  if (!modelChildren) {
+    return [];
+  } else {
+    return modelChildren.map((child, index) => {
+      switch (typeof child) {
+        case "object":
+          return html`<${Element}
+            key=${child.key || index.toString()}
+            model=${child}
+          />`;
+        case "string":
+          return child;
+      }
+    });
   }
 }
 
