@@ -1,8 +1,4 @@
 {
-  "name": "idom-react-app",
-  "description": "A client application for IDOM implemented in React",
-  "version": "0.1.0",
-  "author": "Ryan Morshead",
   "workspaces": [
     "./packages/*"
   ],
