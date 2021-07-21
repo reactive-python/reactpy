@@ -2,9 +2,9 @@ import react from "react";
 import reactDOM from "react-dom";
 import htm from "htm";
 
-import serializeEvent from "./event-to-object";
+import serializeEvent from "./event-to-object.js";
 
-import { applyPatchInplace, joinUrl } from "./utils";
+import { applyPatchInplace, joinUrl } from "./utils.js";
 
 const html = htm.bind(react.createElement);
 export const LayoutConfigContext = react.createContext({
