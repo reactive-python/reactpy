@@ -41,7 +41,7 @@ package = {
     "python_requires": ">=3.7",
     "packages": find_packages(str(src_dir)),
     "package_dir": {"": "src"},
-    "description": "Control the web with Python",
+    "description": "It's React, but in Python",
     "author": "Ryan Morshead",
     "author_email": "ryan.morshead@gmail.com",
     "url": "https://github.com/rmorshea/idom",
@@ -53,12 +53,17 @@ package = {
     "setup_requires": ["setuptools_scm"],
     "use_scm_version": True,
     "classifiers": [
+        "Environment :: Web Environment",
+        "Framework :: AsyncIO",
+        "Framework :: Flask",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
-        "Topic :: Multimedia :: Graphics",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Topic :: Software Development :: User Interfaces",
+        "Topic :: Software Development :: Widget Sets",
+        "Typing :: Typed",
     ],
 }
 
