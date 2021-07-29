@@ -22,13 +22,16 @@ Javascript ecosystem. This can be accomplished in different ways for different r
         - You want to create polished software that can be **easily shared** with others.
 
 
+.. _Dynamically Loaded Component:
+
 Dynamically Loaded Components
 -----------------------------
 
 .. note::
 
     This method is not recommended in production systems - see
-    :ref:`Distributing Javascript Components` for more info.
+    :ref:`Distributing Javascript Components` for more info. Instead, it's best used
+    during exploratory phases of development.
 
 IDOM makes it easy to draft your code when you're in the early stages of development by
 using a CDN_ to dynamically load Javascript packages on the fly. In this example we'll
@@ -43,6 +46,8 @@ an ``onClick`` handler to the component:
 
 .. example:: material_ui_button_on_click
 
+
+.. _Custom Javascript Component:
 
 Custom Javascript Components
 ----------------------------
