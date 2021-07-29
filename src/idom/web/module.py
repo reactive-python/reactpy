@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from typing import Any, List, NewType, Optional, Set, Tuple, Union, overload
+from urllib.parse import urlparse
 
 from idom.config import IDOM_DEBUG_MODE, IDOM_WED_MODULES_DIR
 from idom.core.vdom import ImportSourceDict, VdomDictConstructor, make_vdom_constructor
@@ -70,11 +71,22 @@ def module_from_template(
     resolve_exports: bool = IDOM_DEBUG_MODE.current,
     resolve_exports_depth: int = 5,
 ) -> WebModule:
-    """Load a :class:`WebModule` from a :data:`URL_SOURCE` using a known framework
+    """Create a :class:`WebModule` from a framework template
+
+    This is useful for experimenting with component libraries that do not already
+    support IDOM's :ref:`Custom Javascript Component` interface.
+
+    .. warning::
+
+        This approach is not recommended for use in a production setting because the
+        framework templates may use unpinned dependencies that could change without
+        warning.cIt's best to author a module adhering to the
+        :ref:`Custom Javascript Component` interface instead.
 
     Parameters:
         template:
-            The name of the template to use with the given ``package`` (``react`` | ``preact``)
+            The name of the framework template to use with the given ``package``
+            (``react`` | ``preact``).
         package:
             The name of a package to load. May include a file extension (defaults to
             ``.js`` if not given)
@@ -87,14 +99,20 @@ def module_from_template(
         resolve_exports_depth:
             How deeply to search for those exports.
     """
+    # We do this since the package may be any valid URL path. Thus we may need to strip
+    # object parameters or query information so we save the resulting template under the
+    # correct file name.
+    package_name = urlparse(package).path
+
+    # downstream code assumes no trailing slash
     cdn = cdn.rstrip("/")
 
-    template_file_name = f"{template}{module_name_suffix(package)}"
+    template_file_name = f"{template}{module_name_suffix(package_name)}"
     template_file = Path(__file__).parent / "templates" / template_file_name
     if not template_file.exists():
         raise ValueError(f"No template for {template_file_name!r} exists")
 
-    target_file = _web_module_path(package)
+    target_file = _web_module_path(package_name)
     if not target_file.exists():
         target_file.parent.mkdir(parents=True, exist_ok=True)
         target_file.write_text(
@@ -102,7 +120,7 @@ def module_from_template(
         )
 
     return WebModule(
-        source=package + module_name_suffix(package),
+        source=package_name + module_name_suffix(package_name),
         source_type=NAME_SOURCE,
         default_fallback=fallback,
         file=target_file,
