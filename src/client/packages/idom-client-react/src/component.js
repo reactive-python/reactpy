@@ -1,13 +1,13 @@
-import react from "react";
-import reactDOM from "react-dom";
+import React from "react";
+import ReactDOM from "react-dom";
 import htm from "htm";
 
 import serializeEvent from "./event-to-object.js";
 
 import { applyPatchInplace, joinUrl } from "./utils.js";
 
-const html = htm.bind(react.createElement);
-export const LayoutConfigContext = react.createContext({
+const html = htm.bind(React.createElement);
+export const LayoutConfigContext = React.createContext({
   sendEvent: undefined,
   loadImportSource: undefined,
 });
@@ -15,7 +15,7 @@ export const LayoutConfigContext = react.createContext({
 export function Layout({ saveUpdateHook, sendEvent, loadImportSource }) {
   const [model, patchModel] = useInplaceJsonPatch({});
 
-  react.useEffect(() => saveUpdateHook(patchModel), [patchModel]);
+  React.useEffect(() => saveUpdateHook(patchModel), [patchModel]);
 
   if (model.tagName) {
     return html`
@@ -37,81 +37,67 @@ export function Element({ model }) {
 }
 
 function StandardElement({ model }) {
-  const config = react.useContext(LayoutConfigContext);
+  const config = React.useContext(LayoutConfigContext);
   const children = elementChildren(model.children);
   const attributes = elementAttributes(model, config.sendEvent);
-  if (model.children && model.children.length) {
-    return html`<${model.tagName} ...${attributes}>${children}<//>`;
-  } else {
-    return html`<${model.tagName} ...${attributes} />`;
-  }
+  // Use createElement here to avoid warning about variable numbers of children not
+  // having keys. Warning about this must now be the responsibility of the server
+  // providing the models instead of the client rendering them.
+  return React.createElement(model.tagName, attributes, ...children);
 }
 
 function ImportedElement({ model }) {
-  const config = react.useContext(LayoutConfigContext);
-  const sendEvent = config.sendEvent;
-  const mountPoint = react.useRef(null);
-  const fallback = model.importSource.fallback;
-  const importSource = useConst(() =>
-    loadFromImportSource(config, model.importSource)
-  );
+  const config = React.useContext(LayoutConfigContext);
 
-  react.useEffect(() => {
-    if (fallback) {
-      importSource.then(() => {
-        reactDOM.unmountComponentAtNode(mountPoint.current);
-        if (mountPoint.current.children) {
-          mountPoint.current.removeChild(mountPoint.current.children[0]);
-        }
-      });
+  const importSourceFallback = model.importSource.fallback;
+  const [importSource, setImportSource] = React.useState(null);
+
+  if (!importSource) {
+    // load the import source in the background
+    loadImportSource(config, model.importSource).then(setImportSource);
+
+    // display a fallback if one was given
+    if (!importSourceFallback) {
+      return html`<div />`;
+    } else if (typeof importSourceFallback == "string") {
+      return html`<div>${importSourceFallback}</div>`;
+    } else {
+      return html`<${StandardElement} model=${importSourceFallback} />`;
     }
+  } else {
+    return html`<${RenderImportedElement}
+      model=${model}
+      importSource=${importSource}
+    />`;
+  }
+}
+
+function RenderImportedElement() {
+  const config = React.useContext(LayoutConfigContext);
+  const mountPoint = React.useRef(null);
+  const sourceBinding = React.useRef(null);
+
+  React.useEffect(() => {
+    sourceBinding.current = importSource.bind(mountPoint.current);
+    return () => {
+      sourceBinding.current.unmount();
+    };
   }, []);
 
   // this effect must run every time in case the model has changed
-  react.useEffect(() => {
-    importSource.then(({ createElement, renderElement }) => {
-      renderElement(
-        createElement(
-          model.tagName,
-          elementAttributes(model, config.sendEvent),
-          model.children
-        ),
-        mountPoint.current
-      );
-    });
-  });
+  React.useEffect(() => sourceBinding.current.render(model));
 
-  react.useEffect(
-    () => () =>
-      importSource.then(({ unmountElement }) =>
-        unmountElement(mountPoint.current)
-      ),
-    []
-  );
-
-  if (!fallback) {
-    return html`<div ref=${mountPoint} />`;
-  } else if (typeof fallback == "string") {
-    // need the second div there so we can removeChild above
-    return html`<div ref=${mountPoint}><div>${fallback}</div></div>`;
-  } else {
-    return html`<div ref=${mountPoint}>
-      <${StandardElement} model=${fallback} />
-    </div>`;
-  }
+  return html`<div ref=${mountPoint} />`;
 }
 
 export function elementChildren(modelChildren) {
   if (!modelChildren) {
     return [];
   } else {
-    return modelChildren.map((child, index) => {
+    return modelChildren.map((child) => {
       switch (typeof child) {
         case "object":
-          return html`<${Element}
-            key=${child.key || index.toString()}
-            model=${child}
-          />`;
+          return html`<${Element} key=${child.key} model=${child} />`;
         case "string":
           return child;
       }
@@ -146,43 +132,55 @@ function eventHandler(sendEvent, eventSpec) {
         return value;
       }
     });
-    const sentEvent = new Promise((resolve, reject) => {
-      const msg = {
-        data: data,
-        target: eventSpec["target"],
-      };
-      sendEvent(msg);
-      resolve(msg);
+    sendEvent({
+      data: data,
+      target: eventSpec["target"],
     });
   };
 }
 
-function loadFromImportSource(config, importSource) {
+function loadImportSource(config, importSource) {
   return config
     .loadImportSource(importSource.source, importSource.sourceType)
     .then((module) => {
-      if (
-        typeof module.createElement == "function" &&
-        typeof module.renderElement == "function" &&
-        typeof module.unmountElement == "function"
-      ) {
+      if (typeof module.bind == "function") {
         return {
-          createElement: (type, props, children) =>
-            module.createElement(module[type], props, children, config),
-          renderElement: module.renderElement,
-          unmountElement: module.unmountElement,
+          bind: (node) => {
+            const binding = module.bind(node, config);
+            if (
+              typeof binding.render == "function" &&
+              typeof binding.unmount == "function"
+            ) {
+              return {
+                render: (model) => {
+                  binding.render(
+                    module[model.tagName],
+                    elementAttributes(model, config.sendEvent),
+                    model.children
+                  );
+                },
+                unmount: binding.unmount,
+              };
+            } else {
+              console.error(
+                `${importSource.source} returned an impropper binding`
+              );
+            }
+          },
         };
       } else {
-        console.error(`${module} does not expose the required interfaces`);
+        console.error(
+          `${importSource.source} did not export a function 'bind'`
+        );
       }
     });
 }
 
 function useInplaceJsonPatch(doc) {
-  const ref = react.useRef(doc);
+  const ref = React.useRef(doc);
   const forceUpdate = useForceUpdate();
 
-  const applyPatch = react.useCallback(
+  const applyPatch = React.useCallback(
     (path, patch) => {
       applyPatchInplace(ref.current, path, patch);
       forceUpdate();
@@ -194,12 +192,12 @@ function useInplaceJsonPatch(doc) {
 }
 
 function useForceUpdate() {
-  const [, updateState] = react.useState();
-  return react.useCallback(() => updateState({}), []);
+  const [, updateState] = React.useState();
+  return React.useCallback(() => updateState({}), []);
 }
 
 function useConst(func) {
-  const ref = react.useRef();
+  const ref = React.useRef();
 
   if (!ref.current) {
     ref.current = func();

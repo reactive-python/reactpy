@@ -86,7 +86,7 @@ def module_from_template(
     Parameters:
         template:
             The name of the framework template to use with the given ``package``
-            (``react`` | ``preact``).
+            (only ``react`` is supported at the moment).
         package:
             The name of a package to load. May include a file extension (defaults to
             ``.js`` if not given)
