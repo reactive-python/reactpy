@@ -56,44 +56,67 @@ For projects that will be shared with others, we recommend bundling your Javascr
 Rollup_ or Webpack_ into a `web module`_. IDOM also provides a `template repository`_
 that can be used as a blueprint to build a library of React components.
 
-To work as intended, the Javascript bundle must provide named exports for the following
-functions as well as any components that will be rendered.
-
-.. note::
-
-    The exported components do not have to be React-based since you'll have full control
-    over the rendering mechanism.
+To work as intended, the Javascript bundle must export a function ``bind()`` that
+adheres to the following interface:
 
 .. code-block:: typescript
 
-    type createElement = (component: any, props: Object) => any;
-    type renderElement = (element: any, container: HTMLElement) => void;
-    type unmountElement = (element: HTMLElement) => void;
+    type EventData = {
+        target: string;
+        data: Array<any>;
+    }
 
-These functions can be thought of as being analogous to those from React.
+    type LayoutContext = {
+        sendEvent(data: EventData) => void;
+        loadImportSource(source: string, sourceType: "NAME" | "URL") => Module;
+    }
 
-- ``createElement`` ➜ |react.createElement|_
-- ``renderElement`` ➜ |reactDOM.render|_
-- ``unmountElement`` ➜ |reactDOM.unmountComponentAtNode|_
+    type bind = (node: HTMLElement, context: LayoutContext) => ({
+        render(component: any, props: Object, children: Array<any>): void;
+        unmount(): void;
+    });
 
-.. |react.createElement| replace:: ``react.createElement``
-.. _react.createElement: https://reactjs.org/docs/react-api.html#createelement
+.. note::
 
-.. |reactDOM.render| replace:: ``reactDOM.render``
-.. _reactDOM.render: https://reactjs.org/docs/react-dom.html#render
+    - ``node`` is the ``HTMLElement`` that ``render()`` should mount to.
 
-.. |reactDOM.unmountComponentAtNode| replace:: ``reactDOM.unmountComponentAtNode``
-.. _reactDOM.unmountComponentAtNode: https://reactjs.org/docs/react-api.html#createelement
+    - ``context`` can send events back to the server and load "import sources"
+      (like a custom component module).
 
-And will be called in the following manner, where ``component`` is a named export of
-your module:
+    - ``component`` is a named export of the current module.
 
-.. code-block::
+    - ``props`` is an object containing attributes and callbacks for the given
+      ``component``.
+
+    - ``children`` is an array of unrendered VDOM elements.
+
+The interface returned by ``bind()`` can be thought of as being similar to that of
+React.
+
+- ``render`` ➜ |React.createElement|_ and |ReactDOM.render|_
+- ``unmount`` ➜ |ReactDOM.unmountComponentAtNode|_
+
+.. |React.createElement| replace:: ``React.createElement``
+.. _React.createElement: https://reactjs.org/docs/react-api.html#createelement
+
+.. |ReactDOM.render| replace:: ``ReactDOM.render``
+.. _ReactDOM.render: https://reactjs.org/docs/react-dom.html#render
+
+.. |ReactDOM.unmountComponentAtNode| replace:: ``ReactDOM.unmountComponentAtNode``
+.. _ReactDOM.unmountComponentAtNode: https://reactjs.org/docs/react-api.html#createelement
+
+It will be used in the following manner:
+
+.. code-block:: javascript
+
+    // once on mount
+    const binding = bind(node, context);
 
     // on every render
-    renderElement(createElement(component, props), container);
-    // on unmount
-    unmountElement(container);
+    binding.render(component, props, children);
+
+    // once on unmount
+    binding.unmount();
 
 The simplest way to try this out yourself though, is to hook in a simple hand-crafted
 Javascript module that has the requisite interface. In the example to follow we'll
@@ -190,14 +213,14 @@ To start, let's take a look at the file structure we'll be building:
 
 .. code-block:: javascript
 
-    import * as react from "react";
-    import * as reactDOM from "react-dom";
+    import * as React from "react";
+    import * as ReactDOM from "react-dom";
 
     // exports required to interface with IDOM
     export const createElement = (component, props) =>
-      react.createElement(component, props);
-    export const renderElement = reactDOM.render;
-    export const unmountElement = reactDOM.unmountComponentAtNode;
+      React.createElement(component, props);
+    export const renderElement = ReactDOM.render;
+    export const unmountElement = ReactDOM.unmountComponentAtNode;
 
     // exports for your components
     export YourFirstComponent(props) {...};

@@ -1600,12 +1600,66 @@ function Layout({ saveUpdateHook, sendEvent, loadImportSource }) {
   }
 }
 
-function Element({ model, key }) {
+function Element({ model }) {
   if (model.importSource) {
     return html`<${ImportedElement} model=${model} />`;
   } else {
     return html`<${StandardElement} model=${model} />`;
   }
+}
+
+function StandardElement({ model }) {
+  const config = react.useContext(LayoutConfigContext);
+  const children = elementChildren(model.children);
+  const attributes = elementAttributes(model, config.sendEvent);
+  // Use createElement here to avoid warning about variable numbers of children not
+  // having keys. Warning about this must now be the responsibility of the server
+  // providing the models instead of the client rendering them.
+  return react.createElement(model.tagName, attributes, ...children);
+}
+
+function ImportedElement({ model }) {
+  const config = react.useContext(LayoutConfigContext);
+
+  const importSourceFallback = model.importSource.fallback;
+  const [importSource, setImportSource] = react.useState(null);
+
+  if (!importSource) {
+    // load the import source in the background
+    loadImportSource$1(config, model.importSource).then(setImportSource);
+
+    // display a fallback if one was given
+    if (!importSourceFallback) {
+      return html`<div />`;
+    } else if (typeof importSourceFallback == "string") {
+      return html`<div>${importSourceFallback}</div>`;
+    } else {
+      return html`<${StandardElement} model=${importSourceFallback} />`;
+    }
+  } else {
+    return html`<${RenderImportedElement}
+      model=${model}
+      importSource=${importSource}
+    />`;
+  }
+}
+
+function RenderImportedElement() {
+  react.useContext(LayoutConfigContext);
+  const mountPoint = react.useRef(null);
+  const sourceBinding = react.useRef(null);
+
+  react.useEffect(() => {
+    sourceBinding.current = importSource.bind(mountPoint.current);
+    return () => {
+      sourceBinding.current.unmount();
+    };
+  }, []);
+
+  // this effect must run every time in case the model has changed
+  react.useEffect(() => sourceBinding.current.render(model));
+
+
 }
 
 function elementChildren(modelChildren) {
@@ -1620,71 +1674,6 @@ function elementChildren(modelChildren) {
           return child;
       }
     });
-  }
-}
-
-function StandardElement({ model }) {
-  const config = react.useContext(LayoutConfigContext);
-  const children = elementChildren(model.children);
-  const attributes = elementAttributes(model, config.sendEvent);
-  if (model.children && model.children.length) {
-    return html`<${model.tagName} ...${attributes}>${children}<//>`;
-  } else {
-    return html`<${model.tagName} ...${attributes} />`;
-  }
-}
-
-function ImportedElement({ model }) {
-  const config = react.useContext(LayoutConfigContext);
-  config.sendEvent;
-  const mountPoint = react.useRef(null);
-  const fallback = model.importSource.fallback;
-  const importSource = useConst(() =>
-    loadFromImportSource(config, model.importSource)
-  );
-
-  react.useEffect(() => {
-    if (fallback) {
-      importSource.then(() => {
-        reactDom.unmountComponentAtNode(mountPoint.current);
-        if (mountPoint.current.children) {
-          mountPoint.current.removeChild(mountPoint.current.children[0]);
-        }
-      });
-    }
-  }, []);
-
-  // this effect must run every time in case the model has changed
-  react.useEffect(() => {
-    importSource.then(({ createElement, renderElement }) => {
-      renderElement(
-        createElement(
-          model.tagName,
-          elementAttributes(model, config.sendEvent),
-          model.children
-        ),
-        mountPoint.current
-      );
-    });
-  });
-
-  react.useEffect(
-    () => () =>
-      importSource.then(({ unmountElement }) =>
-        unmountElement(mountPoint.current)
-      ),
-    []
-  );
-
-  if (!fallback) {
-    return html`<div ref=${mountPoint} />`;
-  } else if (typeof fallback == "string") {
-    // need the second div there so we can removeChild above
-    return html`<div ref=${mountPoint}><div>${fallback}</div></div>`;
-  } else {
-    return html`<div ref=${mountPoint}>
-      <${StandardElement} model=${fallback} />
-    </div>`;
   }
 }
 
@@ -1715,34 +1704,46 @@ function eventHandler(sendEvent, eventSpec) {
         return value;
       }
     });
-    new Promise((resolve, reject) => {
-      const msg = {
-        data: data,
-        target: eventSpec["target"],
-      };
-      sendEvent(msg);
-      resolve(msg);
+    sendEvent({
+      data: data,
+      target: eventSpec["target"],
     });
   };
 }
 
-function loadFromImportSource(config, importSource) {
+function loadImportSource$1(config, importSource) {
   return config
     .loadImportSource(importSource.source, importSource.sourceType)
     .then((module) => {
-      if (
-        typeof module.createElement == "function" &&
-        typeof module.renderElement == "function" &&
-        typeof module.unmountElement == "function"
-      ) {
+      if (typeof module.bind == "function") {
         return {
-          createElement: (type, props, children) =>
-            module.createElement(module[type], props, children, config),
-          renderElement: module.renderElement,
-          unmountElement: module.unmountElement,
+          bind: (node) => {
+            const binding = module.bind(node, config);
+            if (
+              typeof binding.render == "function" &&
+              typeof binding.unmount == "function"
+            ) {
+              return {
+                render: (model) => {
+                  binding.render(
+                    module[model.tagName],
+                    elementAttributes(model, config.sendEvent),
+                    model.children
+                  );
+                },
+                unmount: binding.unmount,
+              };
+            } else {
+              console.error(
+                `${importSource.source} returned an impropper binding`
+              );
+            }
+          },
         };
       } else {
-        console.error(`${module} does not expose the required interfaces`);
+        console.error(
+          `${importSource.source} did not export a function 'bind'`
+        );
       }
     });
 }
@@ -1765,16 +1766,6 @@ function useInplaceJsonPatch(doc) {
 function useForceUpdate() {
   const [, updateState] = react.useState();
   return react.useCallback(() => updateState({}), []);
-}
-
-function useConst(func) {
-  const ref = react.useRef();
-
-  if (!ref.current) {
-    ref.current = func();
-  }
-
-  return ref.current;
 }
 
 function mountLayout(mountElement, layoutProps) {

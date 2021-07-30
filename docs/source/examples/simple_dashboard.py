@@ -6,7 +6,7 @@ import idom
 from idom.widgets import Input
 
 
-victory = idom.web.module_from_template("react", "victory", fallback="loading...")
+victory = idom.web.module_from_template("react", "victory", fallback="⌛")
 VictoryLine = idom.web.export(victory, "VictoryLine")
 
 
@@ -77,8 +77,8 @@ def NumberInput(label, value, set_value_callback, domain):
         set_value_callback(value)
 
     return idom.html.fieldset(
-        {"class": "number-input-container"},
-        [idom.html.legend({"style": {"font-size": "medium"}}, label)],
+        {"className": "number-input-container"},
+        [idom.html.legend({"style": {"fontSize": "medium"}}, label)],
         Input(update_value, "number", value, attributes=attrs, cast=float),
         Input(update_value, "range", value, attributes=attrs, cast=float),
     )
