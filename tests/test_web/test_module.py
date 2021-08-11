@@ -79,7 +79,7 @@ def test_module_from_template_where_template_does_not_exist():
 
 
 def test_module_from_template(driver, display):
-    victory = idom.web.module_from_template("react", "victory@35.4.0")
+    victory = idom.web.module_from_template("react", "victory-bar@35.4.0")
     VictoryBar = idom.web.export(victory, "VictoryBar")
     display(VictoryBar)
     wait = WebDriverWait(driver, 10)

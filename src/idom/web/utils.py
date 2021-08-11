@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 def module_name_suffix(name: str) -> str:
+    if name.startswith("@"):
+        name = name[1:]
     head, _, tail = name.partition("@")  # handle version identifier
     version, _, tail = tail.partition("/")  # get section after version
     return PurePosixPath(tail or head).suffix or ".js"
