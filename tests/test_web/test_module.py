@@ -144,7 +144,7 @@ def test_web_module_from_file_symlink(tmp_path):
 
 
 def test_module_missing_exports():
-    module = WebModule("test", NAME_SOURCE, None, {"a", "b", "c"}, None)
+    module = WebModule("test", NAME_SOURCE, None, {"a", "b", "c"}, None, False)
 
     with pytest.raises(ValueError, match="does not export 'x'"):
         idom.web.export(module, "x")

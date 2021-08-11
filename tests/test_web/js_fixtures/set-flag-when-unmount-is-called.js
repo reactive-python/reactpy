@@ -1,5 +1,9 @@
-export function createElement(component, props) {
-  return component(props);
+export function bind(node, config) {
+  return {
+    render: (component, props, children) =>
+      renderElement(component(props), node),
+    unmount: () => unmountElement(node),
+  }
 }
 
 export function renderElement(element, container) {
