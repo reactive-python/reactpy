@@ -77,6 +77,7 @@ VDOM_JSON_SCHEMA = {
                     "if": {"not": {"type": "null"}},
                     "then": {"$ref": "#/definitions/elementOrString"},
                 },
+                "unmountBeforeUpdate": {"type": "boolean"},
             },
             "required": ["source"],
         },
@@ -289,6 +290,7 @@ class ImportSourceDict(TypedDict):
     source: str
     fallback: Any
     sourceType: str  # noqa
+    unmountBeforeUpdate: bool  # noqa
 
 
 class _OptionalVdomJson(TypedDict, total=False):

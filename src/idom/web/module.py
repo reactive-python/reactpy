@@ -36,6 +36,7 @@ def module_from_url(
     fallback: Optional[Any] = None,
     resolve_exports: bool = IDOM_DEBUG_MODE.current,
     resolve_exports_depth: int = 5,
+    unmount_before_update: bool = False,
 ) -> WebModule:
     """Load a :class:`WebModule` from a :data:`URL_SOURCE`
 
@@ -49,6 +50,11 @@ def module_from_url(
             Whether to try and find all the named exports of this module.
         resolve_exports_depth:
             How deeply to search for those exports.
+        unmount_before_update:
+            Cause the component to be unmounted before each update. This option should
+            only be used if the imported package failes to re-render when props change.
+            Using this option has negative performance consequences since all DOM
+            elements must be changed on each render. See :issue:`461` for more info.
     """
     return WebModule(
         source=url,
@@ -60,6 +66,7 @@ def module_from_url(
             if resolve_exports
             else None
         ),
+        unmount_before_update=unmount_before_update,
     )
 
 
@@ -70,6 +77,7 @@ def module_from_template(
     fallback: Optional[Any] = None,
     resolve_exports: bool = IDOM_DEBUG_MODE.current,
     resolve_exports_depth: int = 5,
+    unmount_before_update: bool = False,
 ) -> WebModule:
     """Create a :class:`WebModule` from a framework template
 
@@ -98,6 +106,11 @@ def module_from_template(
             Whether to try and find all the named exports of this module.
         resolve_exports_depth:
             How deeply to search for those exports.
+        unmount_before_update:
+            Cause the component to be unmounted before each update. This option should
+            only be used if the imported package failes to re-render when props change.
+            Using this option has negative performance consequences since all DOM
+            elements must be changed on each render. See :issue:`461` for more info.
     """
     # We do this since the package may be any valid URL path. Thus we may need to strip
     # object parameters or query information so we save the resulting template under the
@@ -129,6 +142,7 @@ def module_from_template(
             if resolve_exports
             else None
         ),
+        unmount_before_update=unmount_before_update,
     )
 
 
@@ -139,6 +153,7 @@ def module_from_file(
     resolve_exports: bool = IDOM_DEBUG_MODE.current,
     resolve_exports_depth: int = 5,
     symlink: bool = False,
+    unmount_before_update: bool = False,
 ) -> WebModule:
     """Load a :class:`WebModule` from a :data:`URL_SOURCE` using a known framework
 
@@ -156,6 +171,11 @@ def module_from_file(
             Whether to try and find all the named exports of this module.
         resolve_exports_depth:
             How deeply to search for those exports.
+        unmount_before_update:
+            Cause the component to be unmounted before each update. This option should
+            only be used if the imported package failes to re-render when props change.
+            Using this option has negative performance consequences since all DOM
+            elements must be changed on each render. See :issue:`461` for more info.
     """
     source_file = Path(file)
     target_file = _web_module_path(name)
@@ -179,6 +199,7 @@ def module_from_file(
             if resolve_exports
             else None
         ),
+        unmount_before_update=unmount_before_update,
     )
 
 
@@ -189,6 +210,7 @@ class WebModule:
     default_fallback: Optional[Any]
     export_names: Optional[Set[str]]
     file: Optional[Path]
+    unmount_before_update: bool
 
 
 @overload
@@ -250,7 +272,10 @@ def export(
 
 
 def _make_export(
-    web_module: WebModule, name: str, fallback: Optional[Any], allow_children: bool
+    web_module: WebModule,
+    name: str,
+    fallback: Optional[Any],
+    allow_children: bool,
 ) -> VdomDictConstructor:
     return partial(
         make_vdom_constructor(
@@ -261,6 +286,7 @@ def _make_export(
             source=web_module.source,
             sourceType=web_module.source_type,
             fallback=(fallback or web_module.default_fallback),
+            unmountBeforeUpdate=web_module.unmount_before_update,
         ),
     )
 

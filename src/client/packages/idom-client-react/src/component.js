@@ -72,20 +72,25 @@ function ImportedElement({ model }) {
   }
 }
 
-function RenderImportedElement() {
+function RenderImportedElement({ model, importSource }) {
   const config = React.useContext(LayoutConfigContext);
   const mountPoint = React.useRef(null);
   const sourceBinding = React.useRef(null);
 
   React.useEffect(() => {
     sourceBinding.current = importSource.bind(mountPoint.current);
-    return () => {
-      sourceBinding.current.unmount();
-    };
+    if (!importSource.data.unmountBeforeUpdate) {
+      return sourceBinding.current.unmount;
+    }
   }, []);
 
   // this effect must run every time in case the model has changed
-  React.useEffect(() => sourceBinding.current.render(model));
+  React.useEffect(() => {
+    sourceBinding.current.render(model);
+    if (importSource.data.unmountBeforeUpdate) {
+      return sourceBinding.current.unmount;
+    }
+  });
 
   return html`<div ref=${mountPoint} />`;
 }
@@ -145,6 +150,7 @@ function loadImportSource(config, importSource) {
     .then((module) => {
       if (typeof module.bind == "function") {
         return {
+          data: importSource,
           bind: (node) => {
             const binding = module.bind(node, config);
             if (
