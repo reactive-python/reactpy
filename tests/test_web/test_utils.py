@@ -4,6 +4,7 @@ import pytest
 import responses
 
 from idom.web.utils import (
+    module_name_suffix,
     resolve_module_exports_from_file,
     resolve_module_exports_from_source,
     resolve_module_exports_from_url,
@@ -11,6 +12,23 @@ from idom.web.utils import (
 
 
 JS_FIXTURES_DIR = Path(__file__).parent / "js_fixtures"
+
+
+@pytest.mark.parametrize(
+    "name, suffix",
+    [
+        ("module", ".js"),
+        ("module.ext", ".ext"),
+        ("module@x.y.z", ".js"),
+        ("module.ext@x.y.z", ".ext"),
+        ("@namespace/module", ".js"),
+        ("@namespace/module.ext", ".ext"),
+        ("@namespace/module@x.y.z", ".js"),
+        ("@namespace/module.ext@x.y.z", ".ext"),
+    ],
+)
+def test_module_name_suffix(name, suffix):
+    assert module_name_suffix(name) == suffix
 
 
 @responses.activate
