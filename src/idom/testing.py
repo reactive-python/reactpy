@@ -44,7 +44,7 @@ __all__ = [
 def create_simple_selenium_web_driver(
     driver_type: Type[WebDriver] = Chrome,
     driver_options: Optional[Any] = None,
-    implicit_wait_timeout: float = 5.0,
+    implicit_wait_timeout: float = 10.0,
     page_load_timeout: float = 5.0,
     window_size: Tuple[int, int] = (1080, 800),
 ) -> WebDriver:
