@@ -182,6 +182,13 @@ def latest_pull_requests(session: Session) -> None:
     session.run("python", "scripts/latest_pull_requests.py", *session.posargs)
 
 
+@nox.session(reuse_venv=True)
+def latest_closed_issues(session: Session) -> None:
+    """A basic script for outputing changelog info"""
+    session.install("requests", "python-dateutil")
+    session.run("python", "scripts/latest_closed_issues.py", *session.posargs)
+
+
 def install_requirements_file(session: Session, name: str) -> None:
     file_path = HERE / "requirements" / (name + ".txt")
     assert file_path.exists(), f"requirements file {file_path} does not exist"
