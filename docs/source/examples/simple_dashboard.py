@@ -9,7 +9,8 @@ from idom.widgets import Input
 victory = idom.web.module_from_template(
     "react",
     "victory-line",
-    fallback="loading...",
+    fallback="⌛",
+    # not usually required (see issue #461 for more info)
     unmount_before_update=True,
 )
 VictoryLine = idom.web.export(victory, "VictoryLine")

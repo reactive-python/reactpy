@@ -50,24 +50,17 @@ Try interacting with the sliders 📈
 .. example:: simple_dashboard
 
 
-Install Javascript Modules
---------------------------
+Dynamically Loaded React Components
+-----------------------------------
 
-Simply install your javascript library of choice using the ``idom`` CLI:
-
-.. code-block:: bash
-
-    idom install victory
-
-Then import the module with :mod:`~idom.web.module`:
+This method is not recommended for use in production applications, but it's great while
+you're experimenting:
 
 .. example:: victory_chart
 
 
 Define Javascript Modules
 -------------------------
-
-Assuming you already installed ``victory`` as in the :ref:`Install Javascript Modules` section:
 
 Click the bars to trigger an event 👇
 
@@ -76,8 +69,6 @@ Click the bars to trigger an event 👇
 
 Material UI Slider
 ------------------
-
-Assuming you already installed ``@material-ui/core`` as in the :ref:`Install Javascript Modules` section:
 
 Move the slider and see the event information update 👇
 
