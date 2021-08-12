@@ -622,10 +622,7 @@ async def test_schedule_render_from_unmounted_hook(caplog):
         await layout.render()
 
     assert re.match(
-        (
-            "Did not render component with model state ID .*? - component already "
-            "unmounted or does not belong to this layout"
-        ),
+        r"Did not render component with model state ID .*? - component already unmounted",
         caplog.records[0].message,
     )
 

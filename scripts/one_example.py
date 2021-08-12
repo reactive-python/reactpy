@@ -65,7 +65,7 @@ def main():
 
 
 def _print_available_options():
-    for found_example_file in examples_dir.glob("*.py"):
+    for found_example_file in sorted(examples_dir.glob("*.py")):
         print("-", found_example_file.stem)
 
 

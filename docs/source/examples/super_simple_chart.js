@@ -3,10 +3,16 @@ import htm from "https://unpkg.com/htm?module";
 
 const html = htm.bind(h);
 
-export { h as createElement, render as renderElement };
-
-export function unmountElement(container) {
-  render(null, container);
+export function bind(node, config) {
+  return {
+    render: (component, props, children) => {
+      if (children) {
+        console.error("Children not supported");
+      }
+      render(h(component, props), node);
+    },
+    unmount: () => render(null, node),
+  }
 }
 
 export function SuperSimpleChart(props) {

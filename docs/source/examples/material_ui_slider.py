@@ -3,7 +3,7 @@ import json
 import idom
 
 
-mui = idom.web.module_from_template("react", "@material-ui/core", fallback="⌛")
+mui = idom.web.module_from_template("react", "@material-ui/core@^5.0", fallback="⌛")
 Slider = idom.web.export(mui, "Slider")
 
 

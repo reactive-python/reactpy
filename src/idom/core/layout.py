@@ -136,8 +136,8 @@ class Layout:
                 model_state = self._model_states_by_life_cycle_state_id[model_state_id]
             except KeyError:
                 logger.info(
-                    f"Did not render component with model state ID {model_state_id!r} "
-                    "- component already unmounted or does not belong to this layout"
+                    "Did not render component with model state ID "
+                    "{model_state_id!r} - component already unmounted"
                 )
             else:
                 return self._create_layout_update(model_state)
