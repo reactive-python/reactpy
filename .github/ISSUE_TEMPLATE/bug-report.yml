@@ -1,6 +1,6 @@
 name: Bug Report
-description: File an issue
-title: "[BUG] <title>"
+description: A detailed description of a problem you are experiencing
+title: "..."
 labels: [bug, triage]
 body:
 - type: checkboxes
