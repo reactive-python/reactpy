@@ -49,7 +49,7 @@ def use_state(
 ) -> Tuple[
     _StateType, Callable[[Union[_StateType, Callable[[_StateType], _StateType]]], None]
 ]:
-    """See the full :ref:`use_state` docs for details
+    """See the full :ref:`Use State` docs for details
 
     Parameters:
         initial_value:
@@ -117,7 +117,7 @@ def use_effect(
     function: Optional[_EffectApplyFunc] = None,
     args: Optional[Sequence[Any]] = None,
 ) -> Optional[Callable[[_EffectApplyFunc], None]]:
-    """See the full :ref:`use_effect` docs for details
+    """See the full :ref:`Use Effect` docs for details
 
     Parameters:
         function:
@@ -178,7 +178,7 @@ def use_reducer(
     reducer: Callable[[_StateType, _ActionType], _StateType],
     initial_value: _StateType,
 ) -> Tuple[_StateType, Callable[[_ActionType], None]]:
-    """See the full :ref:`use_reducer` docs for details
+    """See the full :ref:`Use Reducer` docs for details
 
     Parameters:
         reducer:
@@ -225,7 +225,7 @@ def use_callback(
     function: Optional[_CallbackFunc] = None,
     args: Optional[Sequence[Any]] = (),
 ) -> Union[_CallbackFunc, Callable[[_CallbackFunc], _CallbackFunc]]:
-    """See the full :ref:`use_callback` docs for details
+    """See the full :ref:`Use Callback` docs for details
 
     Parameters:
         function: the function whose identity will be preserved
@@ -270,7 +270,7 @@ def use_memo(
     function: Optional[Callable[[], _StateType]] = None,
     args: Optional[Sequence[Any]] = None,
 ) -> Union[_StateType, Callable[[Callable[[], _StateType]], _StateType]]:
-    """See the full :ref:`use_memo` docs for details
+    """See the full :ref:`Use Memo` docs for details
 
     Parameters:
         function: The function to be memoized.
@@ -335,7 +335,7 @@ class _Memo(Generic[_StateType]):
 
 
 def use_ref(initial_value: _StateType) -> Ref[_StateType]:
-    """See the full :ref:`use_state` docs for details
+    """See the full :ref:`Use State` docs for details
 
     Parameters:
         initial_value: The value initially assigned to the reference.
