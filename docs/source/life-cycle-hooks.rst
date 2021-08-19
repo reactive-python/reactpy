@@ -17,10 +17,8 @@ cases the :ref:`Basic Hooks` should be enough, however the remaining
 Basic Hooks
 ===========
 
-Common hooks that should fulfill a majority of use cases.
 
-
-use_state
+Use State
 ---------
 
 .. code-block::
@@ -45,8 +43,8 @@ of ``new_state``.
 .. note::
 
     The identity of ``set_state`` is guaranteed to be preserved across renders. This
-    means it can safely be omitted from dependency lists in :ref:`use_effect` or
-    :ref:`use_callback`.
+    means it can safely be omitted from dependency lists in :ref:`Use Effect` or
+    :ref:`Use Callback`.
 
 
 Functional Updates
@@ -92,7 +90,7 @@ result in a re-render:
     set_state(state)
 
 
-use_effect
+Use Effect
 ----------
 
 .. code-block::
@@ -186,18 +184,15 @@ There are **three important subtleties** to note about using asynchronous effect
 Supplementary Hooks
 ===================
 
-Hooks that fulfill some less common, but still important use cases using variations of
-the :ref:`Basic Hooks`.
 
-
-use_reducer
+Use Reducer
 -----------
 
 .. code-block::
 
     state, dispatch_action = use_reducer(reducer, initial_state)
 
-An alternative and derivative of :ref:`use_state` the ``use_reducer`` hook, instead of
+An alternative and derivative of :ref:`Use State` the ``use_reducer`` hook, instead of
 directly assigning a new state, allows you to specify an action which will transition
 the previous state into the next state. This transition is defined by a reducer function
 of the form ``(current_state, action) -> new_state``. The ``use_reducer`` hook then
@@ -218,17 +213,17 @@ We can rework the :ref:`Functional Updates` counter example to use ``use_reducer
 
     The identity of the ``dispatch_action`` function is guaranteed to be preserved
     across re-renders throughout the lifetime of the component. This means it can safely
-    be omitted from dependency lists in :ref:`use_effect` or :ref:`use_callback`.
+    be omitted from dependency lists in :ref:`Use Effect` or :ref:`Use Callback`.
 
 
-use_callback
+Use Callback
 ------------
 
 .. code-block::
 
     memoized_callback = use_callback(lambda: do_something(a, b), [a, b])
 
-A derivative of :ref:`use_memo`, the ``use_callback`` hook returns a
+A derivative of :ref:`Use Memo`, the ``use_callback`` hook returns a
 `memoized <memoization>`_ callback. This is useful when passing callbacks to child
 components which check reference equality to prevent unnecessary renders. The of
 ``memoized_callback`` will only change when the given dependencies do.
@@ -243,7 +238,7 @@ components which check reference equality to prevent unnecessary renders. The of
 
 
 
-use_memo
+Use Memo
 --------
 
 .. code-block::
@@ -277,7 +272,7 @@ after) and should not incur side effects.
     to help enforce this.
 
 
-use_ref
+Use Ref
 -------
 
 .. code-block::
@@ -290,7 +285,7 @@ The identity of the ``Ref`` object will be preserved for the lifetime of the com
 
 A ``Ref`` is most useful if you need to incur side effects since updating its
 ``.current`` attribute doesn't trigger a re-render of the component. You'll often use this
-hook alongside :ref:`use_effect` or in response to component event handlers.
+hook alongside :ref:`Use Effect` or in response to component event handlers.
 :ref:`The Game Snake` provides a good use case for ``use_ref``.
 
 
