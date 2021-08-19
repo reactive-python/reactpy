@@ -25,7 +25,7 @@ class IteractiveWidget(Directive):
                 f"""
                 <div>
                     <div id="{container_id}" class="interactive widget-container center-content" style="" />
-                    <script async type="module">
+                    <script type="module">
                         import {{ mountWidgetExample }} from "{_IDOM_STATIC_HOST}/_static/custom.js";
                         mountWidgetExample("{container_id}", "{view_id}", "{_IDOM_EXAMPLE_HOST}");
                     </script>
