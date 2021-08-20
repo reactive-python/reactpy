@@ -18,8 +18,7 @@ body:
   attributes:
     label: Implementation Details
     description: |
-      A thorough explanation for how the new behavior will be implemented and the old
-      behavior will be deprecated.
+      A thorough explanation for how the new behavior will be implemented and the old behavior will be deprecated.
   validations:
     required: false
 - type: checkboxes
