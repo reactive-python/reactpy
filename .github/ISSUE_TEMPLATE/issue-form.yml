@@ -5,13 +5,13 @@ body:
 - type: textarea
   attributes:
     label: Old Behavior
-    description: A concise description of how things currently work.
+    description: Describe how things currently work.
   validations:
     required: false
 - type: textarea
   attributes:
     label: New Behavior
-    description: A concise description of how things ought to work.
+    description: Describe how things ought to work.
   validations:
     required: false
 - type: textarea
