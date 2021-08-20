@@ -1,5 +1,5 @@
-name: Change Plan
-description: A detailed enhancement proposal (ONLY START AFTER DISCUSSION PLEASE 🙏)
+name: Draft a Change
+description: Create a detailed plan for enhancement (ONLY START AFTER DISCUSSION PLEASE 🙏)
 labels: [triage]
 body:
 - type: textarea
