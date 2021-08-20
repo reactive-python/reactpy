@@ -1,0 +1,30 @@
+name: Change Plan
+description: A detailed enhancement proposal (ONLY START AFTER DISCUSSION PLEASE 🙏)
+labels: [triage]
+body:
+- type: textarea
+  attributes:
+    label: Old Behavior
+    description: A concise description of how things currently work.
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: New Behavior
+    description: A concise description of how things ought to work.
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: Implementation Details
+    description: |
+      A thorough explanation for how the new behavior will be implemented and the old
+      behavior will be deprecated.
+  validations:
+    required: false
+- type: checkboxes
+  attributes:
+    label: Code of Conduct
+    options:
+      - label: I agree to follow the [Code of Conduct](https://github.com/idom-team/idom/blob/main/CODE_OF_CONDUCT.md).
+        required: true
