@@ -91,7 +91,7 @@ adheres to the following interface:
     - ``childModels`` is an array of unrendered VDOM elements. Passing them in this raw
       form allows for other frameworks besides react to render them as needed. If you
       are using react, you can just use the ``idom-client-react`` library to process
-      them. See :ref:`Distributing Javascript via PyPI` for an example usage.
+      them. See :ref:`Distributing Javascript via PyPI_` for an example usage.
 
 The interface returned by ``bind()`` can be thought of as being similar to that of
 React.
