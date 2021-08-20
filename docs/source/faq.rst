@@ -36,7 +36,7 @@ work, even those that don't rely on React.
 How does IDOM communicate with the client?
 ------------------------------------------
 
-IDOM sends diffs of a Virtual Document Object Model (:ref:`VDOM <VDOM Mimetype>`) to the
+IDOM sends diffs of a Virtual Document Object Model (:ref:`VDOM`) to the
 client. For more details, see the description in
 `this article <https://ryanmorshead.com/articles/2021/idom-react-but-its-python/article/#virtual-document-object-model>`__.
 

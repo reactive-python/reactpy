@@ -72,7 +72,7 @@ adheres to the following interface:
     }
 
     type bind = (node: HTMLElement, context: LayoutContext) => ({
-        render(component: any, props: Object, children: Array<any>): void;
+        render(component: any, props: Object, childModels: Array<any>): void;
         unmount(): void;
     });
 
@@ -88,7 +88,10 @@ adheres to the following interface:
     - ``props`` is an object containing attributes and callbacks for the given
       ``component``.
 
-    - ``children`` is an array of unrendered VDOM elements.
+    - ``childModels`` is an array of unrendered VDOM elements. Passing them in this raw
+      form allows for other frameworks besides react to render them as needed. If you
+      are using react, you can just use the ``idom-client-react`` library to process
+      them. See :ref:`Distributing Javascript via PyPI` for an example usage.
 
 The interface returned by ``bind()`` can be thought of as being similar to that of
 React.
@@ -215,12 +218,26 @@ To start, let's take a look at the file structure we'll be building:
 
     import * as React from "react";
     import * as ReactDOM from "react-dom";
+    import { LayoutConfigContext, elementChildren } from "idom-client-react";
 
-    // exports required to interface with IDOM
-    export const createElement = (component, props) =>
-      React.createElement(component, props);
-    export const renderElement = ReactDOM.render;
-    export const unmountElement = ReactDOM.unmountComponentAtNode;
+    export function bind(node, config) {
+        return {
+            render: (component, props, childModels) =>
+            ReactDOM.render(createElement(config, component, props, childModels), node),
+            unmount: () => ReactDOM.unmountComponentAtNode(node),
+        };
+    }
+
+    function createElement(config, component, props, childModels) {
+        // Render child models with idom-client-react
+        return React.createElement(
+            LayoutConfigContext.Provider,
+            { value: config },
+            React.createElement(
+            component, props, ...elementChildren(children)
+            )
+        )
+    }
 
     // exports for your components
     export YourFirstComponent(props) {...};
@@ -248,6 +265,7 @@ Your ``package.json`` should include the following:
       "dependencies": {
         "react": "^17.0.1",
         "react-dom": "^17.0.1",
+        "idom-client-react": "^0.8.5",
         ...
       },
       ...

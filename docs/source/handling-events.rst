@@ -3,7 +3,7 @@ Handling Events
 
 When :ref:`Getting Started`, we saw how IDOM makes it possible to write server-side code
 that defines basic views and can react to client-side events. The simplest way to listen
-and respond to events is by assigning a callable object to a :ref:`VDOM <VDOM Mimetype>`
+and respond to events is by assigning a callable object to a :ref:`VDOM`
 an attribute where event signals are sent. This is relatively similar to
 `handling events in React`_:
 

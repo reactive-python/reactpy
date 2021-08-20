@@ -2,8 +2,7 @@ Specifications
 ==============
 
 Describes various data structures and protocols used to define and communicate virtual
-document object models (:ref:`VDOM <VDOM Mimetype>`). The definitions to below follow in
-the footsteps of
+document object models (:ref:`VDOM`). The definitions below follow in the footsteps of
 `a specification <https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md>`_
 created by `Nteract <https://nteract.io>`_ and which was built into
 `JupyterLab <https://jupyterlab.readthedocs.io/en/stable/>`_. While IDOM's specification
@@ -11,8 +10,8 @@ for VDOM is fairly well established, it should not be relied until it's been ful
 adopted by the aforementioned organizations.
 
 
-VDOM Mimetype
--------------
+VDOM
+----
 
 A set of definitions that explain how IDOM creates a virtual representation of
 the document object model. We'll begin by looking at a bit of HTML that we'll convert
@@ -149,7 +148,10 @@ type name. The various properties for the ``onChange`` handler are:
   `here <https://developer.mozilla.org/en-US/docs/Web/API/Event/stopPropagation>`__.
 
 
-To clearly describe the VDOM schema we've created a `JSON Schema <https://json-schema.org/>`_:
+VDOM JSON Schema
+................
+
+To clearly describe the VDOM spec we've created a `JSON Schema <https://json-schema.org/>`_:
 
 .. literalinclude:: ./vdom-json-schema.json
    :language: json

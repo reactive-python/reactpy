@@ -88,7 +88,7 @@ VDOM_JSON_SCHEMA = {
         },
     },
 }
-"""JSON Schema describing serialized VDOM - see :ref:`VDOM Mimetype` for more info"""
+"""JSON Schema describing serialized VDOM - see :ref:`VDOM` for more info"""
 
 
 # we can't add a docstring to this because Sphinx doesn't know how to find its source
@@ -283,7 +283,7 @@ class _VdomDictRequired(TypedDict, total=True):
 
 
 class VdomDict(_VdomDictRequired, _VdomDictOptional):
-    """A VDOM dictionary - see :ref:`VDOM Mimetype` for more info"""
+    """A :ref:`VDOM` dictionary"""
 
 
 class ImportSourceDict(TypedDict):
@@ -306,10 +306,7 @@ class _RequiredVdomJson(TypedDict, total=True):
 
 
 class VdomJson(_RequiredVdomJson, _OptionalVdomJson):
-    """A JSON serializable form of :class:`VdomDict` compliant with :data:`VDOM_JSON_SCHEMA`
-
-    For more information on this form see :ref:`VDOM Mimetype`.
-    """
+    """A JSON serializable form of :class:`VdomDict` matching the :data:`VDOM_JSON_SCHEMA`"""
 
 
 class _JsonEventTarget(TypedDict):

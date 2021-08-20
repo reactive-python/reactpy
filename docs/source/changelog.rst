@@ -1,6 +1,43 @@
 Changelog
 =========
 
+
+0.32.0
+------
+
+In addition to a variety of bug fixes and other minor improvements, there's a breaking
+change to the custom component interface - instead of exporting multiple functions that
+render custom components, we simply expect a single ``bind()`` function.
+binding function then must return an object with a ``render()`` and ``unmount()``
+function. This change was made in order to better support the rendering of child models.
+See :ref:`Custom JavaScript Components` for details on the new interface.
+
+**Closed Issues**
+
+- Docs broken on Firefox - :issue:`469`
+- URL resolution for web modules does not consider urls starting with / - :issue:`460`
+- Query params in package name for module_from_template not stripped - :issue:`455`
+- Make docs section margins larger - :issue:`450`
+- Search broken in docs - :issue:`443`
+- Move src/idom/client out of Python package - :issue:`429`
+- Use composition instead of classes with Layout and LifeCycleHook  - :issue:`412`
+- Remove Python language extension - :issue:`282`
+- Add keys to models so React doesn't complain of child arrays requiring them -
+  :issue:`255`
+- Fix binder link in docs - :issue:`231`
+
+**Pull Requests**
+
+- Update issue form - :pull:`471`
+- improve heading legibility - :pull:`470`
+- fix search in docs by upgrading sphinx - :pull:`462`
+- rework custom component interface with bind() func - :pull:`458`
+- parse package as url path in module_from_template - :pull:`456`
+- add file extensions to import - :pull:`439`
+- fix key warnings - :pull:`438`
+- fix #429 - move client JS to top of src/ dir - :pull:`430`
+
+
 0.31.0
 ------
 

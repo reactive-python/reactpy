@@ -173,7 +173,7 @@ Communication Scheme
 --------------------
 
 To communicate between its back-end Python server and Javascript client, IDOM uses
-something called a Virtual Document Object Model (:ref:`VDOM <VDOM Mimetype>`) to
+something called a Virtual Document Object Model (:ref:`VDOM`) to
 construct a representation of the view. The VDOM is constructed on the Python side by
 components. Then, as it evolves, IDOM's layout computes VDOM-diffs and wires them to its
 Javascript client where it is ultimately displayed:

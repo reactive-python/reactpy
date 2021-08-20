@@ -12,7 +12,7 @@ the adage "the best code is no code at all," we make the related claim that "the
 way to manage state is to have no state at all."
 
 With IDOM the core of your application will be built on the back of basic functions and
-coroutines that return :ref:`VDOM <VDOM Mimetype>` models and which do so without state
+coroutines that return :ref:`VDOM` models and which do so without state
 and without `side effects`_. We call these kinds of model rendering functions
 :ref:`Pure Components`. For example, one might want a function which
 accepted a list of strings and turned it into a series of paragraph elements:
@@ -54,7 +54,7 @@ whose body contains a hook usage. We'll demonstrate that with a simple
 Component Layout
 ----------------
 
-Displaying components requires you to turn them into :ref:`VDOM <VDOM Mimetype>`. This
+Displaying components requires you to turn them into :ref:`VDOM`. This
 transformation, known as "rendering a component", is done by a
 :class:`~idom.core.proto.LayoutType`. Layouts are responsible for rendering components
 and scheduling their re-renders when they change. IDOM's concrete
