@@ -15,7 +15,7 @@ from idom.testing import StaticEventHandler
 
 
 EVENT_NAME = "onEvent"
-EVENT_HANDLER = StaticEventHandler()
+STATIC_EVENT_HANDLER = StaticEventHandler()
 
 
 def test_vdom_json_patch_create_from_apply_to():
@@ -53,13 +53,13 @@ def make_send_recv_callbacks(events_to_inject):
 
 
 def make_events_and_expected_model():
-    events = [LayoutEvent(EVENT_HANDLER.target, [])] * 4
+    events = [LayoutEvent(STATIC_EVENT_HANDLER.target, [])] * 4
     expected_model = {
         "tagName": "div",
         "attributes": {"count": 4},
         "eventHandlers": {
             EVENT_NAME: {
-                "target": EVENT_HANDLER.target,
+                "target": STATIC_EVENT_HANDLER.target,
                 "preventDefault": False,
                 "stopPropagation": False,
             }
@@ -84,14 +84,14 @@ def Counter():
         (lambda old_count, diff: old_count + diff),
         initial_value=0,
     )
-    handler = EVENT_HANDLER.use(lambda: change_count(1))
+    handler = STATIC_EVENT_HANDLER.use(lambda: change_count(1))
     return idom.html.div({EVENT_NAME: handler, "count": count})
 
 
 async def test_dispatch_single_view():
     events, expected_model = make_events_and_expected_model()
     changes, send, recv = make_send_recv_callbacks(events)
-    await dispatch_single_view(Layout(Counter()), send, recv)
+    await asyncio.wait_for(dispatch_single_view(Layout(Counter()), send, recv), 1)
     assert_changes_produce_expected_model(changes, expected_model)
 
 
