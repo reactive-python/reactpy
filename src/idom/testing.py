@@ -21,13 +21,14 @@ from typing import (
     Union,
 )
 from urllib.parse import urlencode, urlunparse
+from uuid import uuid4
 from weakref import ref
 
 from selenium.webdriver import Chrome
 from selenium.webdriver.remote.webdriver import WebDriver
 
 from idom.config import IDOM_WED_MODULES_DIR
-from idom.core.events import EventHandler
+from idom.core.events import EventHandler, to_event_handler_function
 from idom.core.hooks import LifeCycleHook, current_hook
 from idom.server.prefab import hotswap_server
 from idom.server.proto import Server, ServerFactory
@@ -276,16 +277,15 @@ class StaticEventHandler:
     """
 
     def __init__(self) -> None:
-        self._handler = EventHandler()
+        self.target = uuid4().hex
 
-    @property
-    def target(self) -> str:
-        return self._handler.target
-
-    def use(self, function: Callable[..., Any]) -> EventHandler:
-        self._handler.clear()
-        self._handler.add(function)
-        return self._handler
+    def use(self, function: Callable[..., Any], *args, **kwargs) -> EventHandler:
+        return EventHandler(
+            to_event_handler_function(function),
+            *args,
+            target=self.target,
+            **kwargs,
+        )
 
 
 def clear_idom_web_modules_dir() -> None:

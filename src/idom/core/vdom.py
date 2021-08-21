@@ -25,8 +25,12 @@ from mypy_extensions import TypedDict
 from typing_extensions import Protocol
 
 from idom.config import IDOM_DEBUG_MODE
-
-from .events import EventHandler
+from idom.core.events import (
+    EventHandler,
+    merge_event_handlers,
+    to_event_handler_function,
+)
+from idom.core.proto import EventHandlerDict, EventHandlerMapping, EventHandlerType
 
 
 logger = logging.getLogger()
@@ -102,7 +106,7 @@ def validate_vdom(value: Any) -> VdomJson:
 
 
 _AttributesAndChildrenArg = Union[Mapping[str, Any], str, Iterable[Any], Any]
-_EventHandlersArg = Optional[Mapping[str, EventHandler]]
+_EventHandlersArg = Optional[EventHandlerMapping]
 _ImportSourceArg = Optional["ImportSourceDict"]
 
 
@@ -136,6 +140,9 @@ def vdom(
     model: VdomDict = {"tagName": tag}
 
     attributes, children = coalesce_attributes_and_children(attributes_and_children)
+    attributes, event_handlers = separate_attributes_and_event_handlers(
+        attributes, event_handlers or {}
+    )
 
     if attributes:
         model["attributes"] = attributes
@@ -143,11 +150,11 @@ def vdom(
     if children:
         model["children"] = children
 
+    if event_handlers:
+        model["eventHandlers"] = event_handlers
+
     if key:
         model["key"] = key
-
-    if event_handlers is not None:
-        model["eventHandlers"] = event_handlers
 
     if import_source is not None:
         model["importSource"] = import_source
@@ -226,6 +233,40 @@ def coalesce_attributes_and_children(
     return attributes, children
 
 
+def separate_attributes_and_event_handlers(
+    attributes: Mapping[str, Any], event_handlers: EventHandlerMapping
+) -> Tuple[Dict[str, Any], EventHandlerDict]:
+    separated_attributes = {}
+    separated_event_handlers: Dict[str, List[EventHandler]] = {}
+
+    for k, v in event_handlers.items():
+        separated_event_handlers[k] = [v]
+
+    for k, v in attributes.items():
+        if callable(v):
+            handler = EventHandler(to_event_handler_function(v))
+        elif (
+            # isinstance check on protocols is slow, function attr check is a quick filter
+            hasattr(v, "function")
+            and isinstance(v, EventHandlerType)
+        ):
+            handler = v
+        else:
+            separated_attributes[k] = v
+            continue
+
+        if k not in separated_event_handlers:
+            separated_event_handlers[k] = [handler]
+        else:
+            separated_event_handlers[k].append(handler)
+
+    flat_event_handlers_dict = {
+        k: merge_event_handlers(h) for k, h in separated_event_handlers.items()
+    }
+
+    return separated_attributes, flat_event_handlers_dict
+
+
 def _is_attributes(value: Any) -> bool:
     return isinstance(value, Mapping) and "tagName" not in value
 
@@ -273,8 +314,8 @@ if IDOM_DEBUG_MODE.current:
 class _VdomDictOptional(TypedDict, total=False):
     key: str  # noqa
     children: Sequence[Any]  # noqa
-    attributes: Mapping[str, Any]  # noqa
-    eventHandlers: Mapping[str, EventHandler]  # noqa
+    attributes: Dict[str, Any]  # noqa
+    eventHandlers: EventHandlerDict  # noqa
     importSource: ImportSourceDict  # noqa
 
 

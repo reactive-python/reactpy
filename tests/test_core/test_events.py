@@ -4,10 +4,10 @@ from idom.core.events import EventHandler
 
 
 def test_event_handler_repr():
-    handler = EventHandler()
-    assert (
-        repr(handler)
-        == f"EventHandler(prevent_default=False, stop_propagation=False, target={handler.target!r})"
+    handler = EventHandler(lambda: None)
+    assert repr(handler) == (
+        f"EventHandler(function={handler.function}, prevent_default=False, "
+        f"stop_propagation=False, target={handler.target!r})"
     )
 
 
@@ -42,61 +42,35 @@ async def test_register_multiple_handlers_to_same_event():
     async def handler_2():
         calls.append(2)
 
-    await events["onChange"]([])
+    await events["onChange"].function([])
 
     assert calls == [1, 2]
 
 
 def test_event_handler_props():
-    handler_0 = EventHandler()
+    handler_0 = EventHandler(lambda: None)
     assert handler_0.stop_propagation is False
     assert handler_0.prevent_default is False
 
-    handler_1 = EventHandler(prevent_default=True)
+    handler_1 = EventHandler(lambda: None, prevent_default=True)
     assert handler_1.stop_propagation is False
     assert handler_1.prevent_default is True
 
-    handler_2 = EventHandler(stop_propagation=True)
+    handler_2 = EventHandler(lambda: None, stop_propagation=True)
     assert handler_2.stop_propagation is True
     assert handler_2.prevent_default is False
 
 
-async def test_multiple_callbacks_per_event_handler():
-    calls = []
-
-    event_handler = EventHandler()
-
-    @event_handler.add
-    async def callback_1(event):
-        calls.append(1)
-
-    @event_handler.add
-    async def callback_2(event):
-        calls.append(2)
-
-    await event_handler([{}])
-
-    assert calls == [1, 2]
+def test_to_event_handler_function():
+    assert False
 
 
-def test_remove_event_handlers():
-    async def my_coro_callback(event):
-        ...
+def test_merge_event_handlers():
+    assert False
 
-    events = EventHandler()
-    events.add(my_coro_callback)
-    assert my_coro_callback in events
-    events.remove(my_coro_callback)
-    assert my_coro_callback not in events
 
-    def my_callback(event):
-        ...
-
-    events = EventHandler()
-    events.add(my_callback)
-    assert my_callback in events
-    events.remove(my_callback)
-    assert my_callback not in events
+def test_merge_event_handler_funcs():
+    assert False
 
 
 def test_can_prevent_event_default_operation(driver, display):
@@ -148,7 +122,7 @@ def test_can_stop_event_propogation(driver, display):
         inner_events = idom.Events()
         inner_events.on("Click", stop_propagation=True)
 
-        async def outer_click_is_not_triggered():
+        async def outer_click_is_not_triggered(event):
             assert False
 
         inner = idom.html.div(
@@ -166,6 +140,7 @@ def test_can_stop_event_propogation(driver, display):
             },
             [inner],
         )
+        print(inner["eventHandlers"])
         return outer
 
     display(DivInDiv)

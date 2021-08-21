@@ -29,9 +29,8 @@ from weakref import ref as weakref
 from idom.config import IDOM_DEBUG_MODE, IDOM_FEATURE_INDEX_AS_DEFAULT_KEY
 from idom.utils import Ref
 
-from .events import EventHandler
 from .hooks import LifeCycleHook
-from .proto import ComponentType
+from .proto import ComponentType, EventHandlerDict
 from .vdom import VdomJson, validate_vdom
 
 
@@ -85,7 +84,7 @@ class Layout:
 
     def __enter__(self: _Self) -> _Self:
         # create attributes here to avoid access before entering context manager
-        self._event_handlers: Dict[str, EventHandler] = {}
+        self._event_handlers: EventHandlerDict = {}
 
         self._rendering_queue: _ThreadSafeQueue[_LifeCycleStateId] = _ThreadSafeQueue()
         root_model_state = _new_root_model_state(self.root, self._rendering_queue.put)
@@ -120,7 +119,7 @@ class Layout:
 
         if handler is not None:
             try:
-                await handler(event.data)
+                await handler.function(event.data)
             except Exception:
                 logger.exception(f"Failed to execute event handler {handler}")
         else:
@@ -245,22 +244,11 @@ class Layout:
         raw_model: Dict[str, Any],
     ) -> None:
         # extract event handlers from 'eventHandlers' and 'attributes'
-        handlers_by_event: Dict[str, EventHandler] = {}
-
-        if "eventHandlers" in raw_model:
-            handlers_by_event.update(raw_model["eventHandlers"])
+        handlers_by_event: EventHandlerDict = raw_model.get("eventHandlers", {})
 
         if "attributes" in raw_model:
             attrs = raw_model["attributes"].copy()
             new_state.model.current["attributes"] = attrs
-            for k, v in list(attrs.items()):
-                if callable(v):
-                    if not isinstance(v, EventHandler):
-                        h = handlers_by_event[k] = EventHandler()
-                        h.add(attrs.pop(k))
-                    else:
-                        h = attrs.pop(k)
-                        handlers_by_event[k] = h
 
         if old_state is None:
             self._render_model_event_handlers_without_old_state(
@@ -277,7 +265,10 @@ class Layout:
 
         model_event_handlers = new_state.model.current["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
-            target = old_state.targets_by_event.get(event, handler.target)
+            target = old_state.targets_by_event.get(
+                event,
+                uuid4().hex if handler.target is None else handler.target,
+            )
             new_state.targets_by_event[event] = target
             self._event_handlers[target] = handler
             model_event_handlers[event] = {
@@ -291,14 +282,14 @@ class Layout:
     def _render_model_event_handlers_without_old_state(
         self,
         new_state: _ModelState,
-        handlers_by_event: Dict[str, EventHandler],
+        handlers_by_event: EventHandlerDict,
     ) -> None:
         if not handlers_by_event:
             return None
 
         model_event_handlers = new_state.model.current["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
-            target = handler.target
+            target = uuid4().hex if handler.target is None else handler.target
             new_state.targets_by_event[event] = target
             self._event_handlers[target] = handler
             model_event_handlers[event] = {
