@@ -90,11 +90,15 @@ class EventHandler:
         self.target = target
 
     def __eq__(self, other: Any) -> bool:
-        for slot in self.__slots__:
-            if not slot.startswith("_"):
-                if not hasattr(other, slot):
-                    return False
-                elif not getattr(other, slot) == getattr(self, slot):
+        undefined = object()
+        for attr in (
+            "function",
+            "prevent_default",
+            "stop_propagation",
+            "target",
+        ):
+            if not attr.startswith("_"):
+                if not getattr(other, attr, undefined) == getattr(self, attr):
                     return False
         return True
 
@@ -182,7 +186,7 @@ def merge_event_handler_funcs(
 ) -> EventHandlerFunc:
     """Make one event handler function from many"""
     if not functions:
-        raise ValueError("No handler functions to merge")
+        raise ValueError("No event handler functions to merge")
     elif len(functions) == 1:
         return functions[0]
 
