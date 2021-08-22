@@ -79,7 +79,7 @@ def test_simple_node_construction(actual, expected):
     assert actual == expected
 
 
-def test_callable_attributes_are_cast_to_event_handlers():
+async def test_callable_attributes_are_cast_to_event_handlers():
     params_from_calls = []
 
     node = idom.vdom("div", {"onEvent": lambda *args: params_from_calls.append(args)})
@@ -89,6 +89,31 @@ def test_callable_attributes_are_cast_to_event_handlers():
 
     handler = event_handlers["onEvent"]
     assert event_handlers == {"onEvent": EventHandler(handler.function)}
+
+    await handler.function([1, 2])
+    await handler.function([3, 4, 5])
+    assert params_from_calls == [(1, 2), (3, 4, 5)]
+
+
+async def test_event_handlers_and_callable_attributes_are_automatically_merged():
+    calls = []
+
+    node = idom.vdom(
+        "div",
+        {"onEvent": lambda: calls.append("callable_attr")},
+        event_handlers={
+            "onEvent": EventHandler(lambda data: calls.append("normal_event_handler"))
+        },
+    )
+
+    event_handlers = node.pop("eventHandlers")
+    assert node == {"tagName": "div"}
+
+    handler = event_handlers["onEvent"]
+    assert event_handlers == {"onEvent": EventHandler(handler.function)}
+
+    await handler.function([])
+    assert calls == ["normal_event_handler", "callable_attr"]
 
 
 def test_make_vdom_constructor():

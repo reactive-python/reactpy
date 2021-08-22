@@ -21,7 +21,7 @@ from typing import (
 from typing_extensions import Protocol, runtime_checkable
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .vdom import VdomDict
 
 

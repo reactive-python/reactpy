@@ -1,5 +1,12 @@
+import pytest
+
 import idom
-from idom.core.events import EventHandler
+from idom.core.events import (
+    EventHandler,
+    merge_event_handler_funcs,
+    merge_event_handlers,
+    to_event_handler_function,
+)
 
 
 def test_event_handler_repr():
@@ -11,29 +18,128 @@ def test_event_handler_repr():
 
 
 def test_event_handler_props():
-    handler_0 = EventHandler(lambda: None)
+    handler_0 = EventHandler(lambda data: None)
     assert handler_0.stop_propagation is False
     assert handler_0.prevent_default is False
+    assert handler_0.target is None
 
-    handler_1 = EventHandler(lambda: None, prevent_default=True)
+    handler_1 = EventHandler(lambda data: None, prevent_default=True)
     assert handler_1.stop_propagation is False
     assert handler_1.prevent_default is True
+    assert handler_1.target is None
 
-    handler_2 = EventHandler(lambda: None, stop_propagation=True)
+    handler_2 = EventHandler(lambda data: None, stop_propagation=True)
     assert handler_2.stop_propagation is True
     assert handler_2.prevent_default is False
+    assert handler_2.target is None
+
+    handler_3 = EventHandler(lambda data: None, target="123")
+    assert handler_3.stop_propagation is False
+    assert handler_3.prevent_default is False
+    assert handler_3.target == "123"
 
 
-def test_to_event_handler_function():
-    assert False
+def test_event_handler_equivalence():
+    async def func(data):
+        return None
+
+    assert EventHandler(func) == EventHandler(func)
+
+    assert EventHandler(lambda data: None) != EventHandler(lambda data: None)
+
+    assert EventHandler(func, stop_propagation=True) != EventHandler(
+        func, stop_propagation=False
+    )
+
+    assert EventHandler(func, prevent_default=True) != EventHandler(
+        func, prevent_default=False
+    )
+
+    assert EventHandler(func, target="123") != EventHandler(func, target="456")
 
 
-def test_merge_event_handlers():
-    assert False
+async def test_to_event_handler_function():
+    call_args = idom.Ref(None)
+
+    async def coro(*args):
+        call_args.current = args
+
+    def func(*args):
+        call_args.current = args
+
+    await to_event_handler_function(coro, positional_args=True)([1, 2, 3])
+    assert call_args.current == (1, 2, 3)
+
+    await to_event_handler_function(func, positional_args=True)([1, 2, 3])
+    assert call_args.current == (1, 2, 3)
+
+    await to_event_handler_function(coro, positional_args=False)([1, 2, 3])
+    assert call_args.current == ([1, 2, 3],)
+
+    await to_event_handler_function(func, positional_args=False)([1, 2, 3])
+    assert call_args.current == ([1, 2, 3],)
 
 
-def test_merge_event_handler_funcs():
-    assert False
+async def test_merge_event_handler_empty_list():
+    with pytest.raises(ValueError, match="No event handlers to merge"):
+        merge_event_handlers([])
+
+
+@pytest.mark.parametrize(
+    "kwargs_1, kwargs_2",
+    [
+        ({"stop_propagation": True}, {"stop_propagation": False}),
+        ({"prevent_default": True}, {"prevent_default": False}),
+        ({"target": "this"}, {"target": "that"}),
+    ],
+)
+async def test_merge_event_handlers_raises_on_mismatch(kwargs_1, kwargs_2):
+    def func(data):
+        return None
+
+    with pytest.raises(ValueError, match="Cannot merge handlers"):
+        merge_event_handlers(
+            [
+                EventHandler(func, **kwargs_1),
+                EventHandler(func, **kwargs_2),
+            ]
+        )
+
+
+async def test_merge_event_handlers():
+    handler = EventHandler(lambda data: None)
+    assert merge_event_handlers([handler]) is handler
+
+    calls = []
+    merged_handler = merge_event_handlers(
+        [
+            EventHandler(lambda data: calls.append("first")),
+            EventHandler(lambda data: calls.append("second")),
+        ]
+    )
+    await merged_handler.function({})
+    assert calls == ["first", "second"]
+
+
+def test_merge_event_handler_funcs_empty_list():
+    with pytest.raises(ValueError, match="No event handler functions to merge"):
+        merge_event_handler_funcs([])
+
+
+async def test_merge_event_handler_funcs():
+    calls = []
+
+    async def some_func(data):
+        calls.append("some_func")
+
+    async def some_other_func(data):
+        calls.append("some_other_func")
+
+    assert merge_event_handler_funcs([some_func]) is some_func
+
+    merged_handler = merge_event_handler_funcs([some_func, some_other_func])
+    await merged_handler([])
+    assert calls == ["some_func", "some_other_func"]
 
 
 def test_can_prevent_event_default_operation(driver, display):
