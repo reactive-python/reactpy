@@ -21,9 +21,3 @@ body:
       A thorough explanation for how the new behavior will be implemented and the old behavior will be deprecated.
   validations:
     required: false
-- type: checkboxes
-  attributes:
-    label: Code of Conduct
-    options:
-      - label: I agree to follow the [Code of Conduct](https://github.com/idom-team/idom/blob/main/CODE_OF_CONDUCT.md).
-        required: true
