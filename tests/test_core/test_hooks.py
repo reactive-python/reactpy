@@ -255,7 +255,7 @@ def test_simple_input_with_use_state(driver, display):
     assert message_ref.current == "this is a test"
 
 
-def test_double_set_state(driver, display):
+def test_double_set_state(driver, driver_wait, display):
     @idom.component
     def SomeComponent():
         state_1, set_state_1 = idom.hooks.use_state(0)
@@ -282,13 +282,13 @@ def test_double_set_state(driver, display):
 
     button.click()
 
-    assert first.get_attribute("value") == "1"
-    assert second.get_attribute("value") == "1"
+    assert driver_wait.until(lambda _: first.get_attribute("value") == "1")
+    assert driver_wait.until(lambda _: second.get_attribute("value") == "1")
 
     button.click()
 
-    assert first.get_attribute("value") == "2"
-    assert second.get_attribute("value") == "2"
+    assert driver_wait.until(lambda _: first.get_attribute("value") == "2")
+    assert driver_wait.until(lambda _: second.get_attribute("value") == "2")
 
 
 async def test_use_effect_callback_occurs_after_full_render_is_complete():
