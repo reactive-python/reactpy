@@ -237,12 +237,15 @@ def separate_attributes_and_event_handlers(
     attributes: Mapping[str, Any], event_handlers: EventHandlerMapping
 ) -> Tuple[Dict[str, Any], EventHandlerDict]:
     separated_attributes = {}
-    separated_event_handlers: Dict[str, List[EventHandler]] = {}
+    separated_event_handlers: Dict[str, List[EventHandlerType]] = {}
 
     for k, v in event_handlers.items():
         separated_event_handlers[k] = [v]
 
     for k, v in attributes.items():
+
+        handler: EventHandlerType
+
         if callable(v):
             handler = EventHandler(to_event_handler_function(v))
         elif (

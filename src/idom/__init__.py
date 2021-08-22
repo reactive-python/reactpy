@@ -13,7 +13,7 @@ __author__ = "idom-team"
 from . import config, html, log, web
 from .core import hooks
 from .core.component import Component, component
-from .core.events import Events, event
+from .core.events import EventHandler, event
 from .core.layout import Layout
 from .core.vdom import VdomDict, vdom
 from .server.prefab import run
@@ -22,21 +22,21 @@ from .widgets import hotswap, multiview
 
 
 __all__ = [
-    "config",
-    "html",
-    "log",
-    "web",
-    "hooks",
-    "Component",
     "component",
-    "Events",
+    "Component",
+    "config",
     "event",
-    "Layout",
-    "VdomDict",
-    "vdom",
-    "run",
-    "Ref",
-    "html_to_vdom",
+    "EventHandler",
+    "hooks",
     "hotswap",
+    "html_to_vdom",
+    "html",
+    "Layout",
+    "log",
     "multiview",
+    "Ref",
+    "run",
+    "vdom",
+    "VdomDict",
+    "web",
 ]

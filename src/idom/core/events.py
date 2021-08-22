@@ -5,11 +5,11 @@ Events
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Callable, Iterator, List, Mapping, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence
 
 from anyio import create_task_group
 
-from idom.core.proto import EventHandlerDict, EventHandlerFunc, EventHandlerType
+from idom.core.proto import EventHandlerFunc, EventHandlerType
 
 
 def event(
@@ -47,7 +47,7 @@ def event(
 
     def setup(function: Callable[..., Any]) -> EventHandler:
         return EventHandler(
-            to_event_handler_function(function),
+            to_event_handler_function(function, positional_args=True),
             stop_propagation,
             prevent_default,
         )
@@ -84,10 +84,19 @@ class EventHandler:
         prevent_default: bool = False,
         target: Optional[str] = None,
     ) -> None:
-        self.function = function
+        self.function = to_event_handler_function(function, positional_args=False)
         self.prevent_default = prevent_default
         self.stop_propagation = stop_propagation
         self.target = target
+
+    def __eq__(self, other: Any) -> bool:
+        for slot in self.__slots__:
+            if not slot.startswith("_"):
+                if not hasattr(other, slot):
+                    return False
+                elif not getattr(other, slot) == getattr(self, slot):
+                    return False
+        return True
 
     def __repr__(self) -> str:
         public_names = [name for name in self.__slots__ if not name.startswith("_")]
@@ -95,141 +104,43 @@ class EventHandler:
         return f"{type(self).__name__}({items})"
 
 
-async def _no_op(data: List[Any]) -> None:
-    return None
-
-
-class Events(Mapping[str, EventHandler]):
-    """A container for event handlers.
-
-    Assign this object to the ``"eventHandlers"`` field of an element model.
-    """
-
-    __slots__ = "_handlers"
-
-    def __init__(self) -> None:
-        self._handlers: EventHandlerDict = {}
-
-    def on(
-        self,
-        event: str,
-        stop_propagation: Optional[bool] = None,
-        prevent_default: Optional[bool] = None,
-    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-        """A decorator for adding an event handler.
-
-        Parameters:
-            event:
-                The camel-case name of the event, the word "on" is automatically
-                prepended. So passing "keyDown" would refer to the event "onKeyDown".
-            stop_propagation:
-                Block the event from propagating further up the DOM.
-            prevent_default:
-                Stops the default action associate with the event from taking place.
-
-        Returns:
-            A decorator which accepts an event handler function as its first argument.
-            The parameters of the event handler function may indicate event attributes
-            which should be sent back from the frontend. See :class:`EventHandler` for
-            more info.
-
-        Examples:
-            Simple "onClick" event handler:
-
-            .. code-block:: python
-
-                def clickable_element():
-                    events = Events()
-
-                    @events.on("click")
-                    def handler(event):
-                        # do something on a click event
-                        ...
-
-                    return idom.vdom("button", "hello!", eventHandlers=events)
-        """
-        if not event.startswith("on"):
-            event = "on" + event[:1].upper() + event[1:]
-
-        if event not in self._handlers:
-            # do this so it's possible to stop event propagation or default behavior
-            # without making the user have to pass a no op event handler themselves
-            self._handlers[event] = EventHandler(
-                _no_op,
-                stop_propagation,
-                prevent_default,
-            )
-
-        def setup(function: Callable[..., Any]) -> Callable[..., Any]:
-            old_handler = self._handlers[event]
-
-            if old_handler.function is _no_op:
-                return EventHandler(
-                    to_event_handler_function(function),
-                    bool(stop_propagation),
-                    bool(prevent_default),
-                )
-
-            new_stop_propagation = (
-                old_handler.stop_propagation
-                if stop_propagation is None
-                else stop_propagation
-            )
-            new_prevent_default = (
-                old_handler.prevent_default
-                if prevent_default is None
-                else prevent_default
-            )
-
-            self._handlers[event] = merge_event_handlers(
-                [
-                    old_handler,
-                    EventHandler(
-                        to_event_handler_function(function),
-                        new_stop_propagation,
-                        new_prevent_default,
-                    ),
-                ]
-            )
-
-            return function
-
-        return setup
-
-    def __contains__(self, key: Any) -> bool:
-        return key in self._handlers
-
-    def __len__(self) -> int:
-        return len(self._handlers)
-
-    def __iter__(self) -> Iterator[str]:
-        return iter(self._handlers)
-
-    def __getitem__(self, key: str) -> EventHandler:
-        return self._handlers[key]
-
-    def __repr__(self) -> str:  # pragma: no cover
-        return repr(self._handlers)
-
-
-def to_event_handler_function(function: Callable[..., Any]) -> EventHandlerFunc:
+def to_event_handler_function(
+    function: Callable[..., Any],
+    positional_args: bool = True,
+) -> EventHandlerFunc:
     """Make a :data:`~idom.core.proto.EventHandlerFunc` from a function or coroutine
 
     Parameters:
         function:
             A function or coroutine accepting a number of positional arguments.
+        positional_args:
+            Whether to pass the event parameters a positional args or as a list.
     """
-    if asyncio.iscoroutinefunction(function):
-        return lambda data: function(*data)
-    else:
+    if positional_args:
+        if asyncio.iscoroutinefunction(function):
 
-        async def wrapper(data: List[Any]) -> None:
-            return function(*data)
+            async def wrapper(data: List[Any]) -> None:
+                await function(*data)
+
+        else:
+
+            async def wrapper(data: List[Any]) -> None:
+                function(*data)
 
         return wrapper
+    elif not asyncio.iscoroutinefunction(function):
+
+        async def wrapper(data: List[Any]) -> None:
+            function(data)
+
+        return wrapper
+    else:
+        return function
 
 
-def merge_event_handlers(event_handlers: Sequence[EventHandlerType]) -> EventHandler:
+def merge_event_handlers(
+    event_handlers: Sequence[EventHandlerType],
+) -> EventHandlerType:
     """Merge multiple event handlers into one
 
     Raises a ValueError if any handlers have conflicting

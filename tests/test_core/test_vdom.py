@@ -3,15 +3,12 @@ from fastjsonschema import JsonSchemaException
 
 import idom
 from idom.config import IDOM_DEBUG_MODE
+from idom.core.events import EventHandler
 from idom.core.vdom import make_vdom_constructor, validate_vdom
 
 
-fake_events = idom.Events()
-
-
-@fake_events.on("Click")
-async def handler(event):
-    pass
+FAKE_EVENT_HANDLER = EventHandler(lambda data: None)
+FAKE_EVENT_HANDLER_DICT = {"onEvent": FAKE_EVENT_HANDLER}
 
 
 @pytest.mark.parametrize(
@@ -34,8 +31,12 @@ async def handler(event):
             },
         ),
         (
-            idom.vdom("div", event_handlers=fake_events),
-            {"tagName": "div", "eventHandlers": fake_events},
+            idom.vdom("div", event_handlers=FAKE_EVENT_HANDLER_DICT),
+            {"tagName": "div", "eventHandlers": FAKE_EVENT_HANDLER_DICT},
+        ),
+        (
+            idom.vdom("div", {"onEvent": FAKE_EVENT_HANDLER}),
+            {"tagName": "div", "eventHandlers": FAKE_EVENT_HANDLER_DICT},
         ),
         (
             idom.vdom("div", idom.html.h1("hello"), idom.html.h2("world")),
@@ -76,6 +77,18 @@ async def handler(event):
 )
 def test_simple_node_construction(actual, expected):
     assert actual == expected
+
+
+def test_callable_attributes_are_cast_to_event_handlers():
+    params_from_calls = []
+
+    node = idom.vdom("div", {"onEvent": lambda *args: params_from_calls.append(args)})
+
+    event_handlers = node.pop("eventHandlers")
+    assert node == {"tagName": "div"}
+
+    handler = event_handlers["onEvent"]
+    assert event_handlers == {"onEvent": EventHandler(handler.function)}
 
 
 def test_make_vdom_constructor():

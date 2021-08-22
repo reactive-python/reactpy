@@ -9,7 +9,6 @@ from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     Callable,
     Dict,
     List,
@@ -71,8 +70,12 @@ EventHandlerMapping = Mapping[str, "EventHandlerType"]
 EventHandlerDict = Dict[str, "EventHandlerType"]
 """A dict mapping between event names to their handlers"""
 
-EventHandlerFunc = Callable[[List[Any]], Awaitable[None]]
-"""A coroutine which can handle event data"""
+
+class EventHandlerFunc(Protocol):
+    """A coroutine which can handle event data"""
+
+    async def __call__(self, data: List[Any]) -> None:
+        ...
 
 
 @runtime_checkable

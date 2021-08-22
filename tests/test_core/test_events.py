@@ -1,5 +1,4 @@
 import idom
-from idom import hooks
 from idom.core.events import EventHandler
 
 
@@ -9,42 +8,6 @@ def test_event_handler_repr():
         f"EventHandler(function={handler.function}, prevent_default=False, "
         f"stop_propagation=False, target={handler.target!r})"
     )
-
-
-def test_simple_events_object():
-    events = idom.Events()
-
-    @events.on("Click")
-    async def click_handler():
-        pass
-
-    @events.on("keyPress")
-    async def key_press_handler():
-        pass
-
-    assert isinstance(events["onClick"], EventHandler)
-    assert isinstance(events["onKeyPress"], EventHandler)
-    assert "onClick" in events
-    assert "onKeyPress" in events
-    assert len(events) == 2
-
-
-async def test_register_multiple_handlers_to_same_event():
-    events = idom.Events()
-
-    calls = []
-
-    @events.on("change")
-    async def handler_1():
-        calls.append(1)
-
-    @events.on("change")
-    async def handler_2():
-        calls.append(2)
-
-    await events["onChange"].function([])
-
-    assert calls == [1, 2]
 
 
 def test_event_handler_props():
@@ -91,17 +54,14 @@ def test_can_prevent_event_default_operation(driver, display):
 
 
 def test_simple_click_event(driver, display):
-    clicked = idom.Ref(False)
-
     @idom.component
     def Button():
-        hook = hooks.current_hook()
+        clicked, set_clicked = idom.hooks.use_state(False)
 
         async def on_click(event):
-            clicked.current = True
-            hook.schedule_render()
+            set_clicked(True)
 
-        if not clicked.current:
+        if not clicked:
             return idom.html.button({"onClick": on_click, "id": "click"}, ["Click Me!"])
         else:
             return idom.html.p({"id": "complete"}, ["Complete"])
@@ -112,38 +72,46 @@ def test_simple_click_event(driver, display):
     button.click()
     driver.find_element_by_id("complete")
 
-    # we care what happens in the final delete when there's no value
-    assert clicked.current
 
+def test_can_stop_event_propogation(driver, driver_wait, display):
+    clicked = idom.Ref(False)
 
-def test_can_stop_event_propogation(driver, display):
     @idom.component
     def DivInDiv():
-        inner_events = idom.Events()
-        inner_events.on("Click", stop_propagation=True)
+        @idom.event(stop_propagation=True)
+        def inner_click_no_op(event):
+            clicked.current = True
 
-        async def outer_click_is_not_triggered(event):
+        def outer_click_is_not_triggered(event):
             assert False
 
-        inner = idom.html.div(
-            {
-                "style": {"height": "30px", "width": "30px", "backgroundColor": "blue"},
-                "id": "inner",
-            },
-            event_handlers=inner_events,
-        )
         outer = idom.html.div(
             {
-                "style": {"height": "35px", "width": "35px", "backgroundColor": "red"},
+                "style": {
+                    "height": "35px",
+                    "width": "35px",
+                    "backgroundColor": "red",
+                },
                 "onClick": outer_click_is_not_triggered,
                 "id": "outer",
             },
-            [inner],
+            idom.html.div(
+                {
+                    "style": {
+                        "height": "30px",
+                        "width": "30px",
+                        "backgroundColor": "blue",
+                    },
+                    "onClick": inner_click_no_op,
+                    "id": "inner",
+                },
+            ),
         )
-        print(inner["eventHandlers"])
         return outer
 
     display(DivInDiv)
 
     inner = driver.find_element_by_id("inner")
     inner.click()
+
+    driver_wait.until(lambda _: clicked.current)

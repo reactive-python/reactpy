@@ -53,9 +53,6 @@ def Input(
     attrs = attributes or {}
     value, set_value = idom.hooks.use_state(value)
 
-    events = idom.Events()
-
-    @events.on("change")
     def on_change(event: Dict[str, Any]) -> None:
         value = event["value"]
         set_value(value)
@@ -63,7 +60,7 @@ def Input(
             return
         callback(value if cast is None else cast(value))
 
-    return html.input({"type": type, "value": value, **attrs}, event_handlers=events)
+    return html.input({**attrs, "type": type, "value": value, "onChange": on_change})
 
 
 MountFunc = Callable[[ComponentConstructor], None]
