@@ -279,12 +279,17 @@ class StaticEventHandler:
     def __init__(self) -> None:
         self.target = uuid4().hex
 
-    def use(self, function: Callable[..., Any], *args, **kwargs) -> EventHandler:
+    def use(
+        self,
+        function: Callable[..., Any],
+        stop_propagation: bool = False,
+        prevent_default: bool = False,
+    ) -> EventHandler:
         return EventHandler(
             to_event_handler_function(function),
-            *args,
-            target=self.target,
-            **kwargs,
+            stop_propagation,
+            prevent_default,
+            self.target,
         )
 
 

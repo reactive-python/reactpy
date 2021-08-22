@@ -38,7 +38,6 @@ def test_hostwap_update_on_change(driver, display):
     def ButtonSwapsDivs():
         count = idom.Ref(0)
 
-        @idom.event
         async def on_click(event):
             mount(make_next_count_constructor(count))
 
