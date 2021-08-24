@@ -4,20 +4,20 @@ labels: [triage]
 body:
 - type: textarea
   attributes:
-    label: Old Behavior
-    description: Describe how things currently work, why they should change, and any relevant prior discussion.
+    label: Current Situation
+    description: Discuss how things currently are, why they should change, and any relevant prior discussion/context.
   validations:
     required: false
 - type: textarea
   attributes:
-    label: New Behavior
-    description: Describe how things ought to work, and why that will address the reasons for change mentioned above.
+    label: Proposed Changes
+    description: Describe how things ought to be, and why that will address the reasons for change mentioned above.
   validations:
     required: false
 - type: textarea
   attributes:
     label: Implementation Details
     description: |
-      A thorough explanation for how the new behavior will be implemented and the old behavior will be deprecated.
+      A thorough explanation for how the proposed change will be implemented and, if relevant, old behaviors deprecated.
   validations:
     required: false
