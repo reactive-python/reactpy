@@ -72,7 +72,7 @@ Material UI Slider
 
 Move the slider and see the event information update 👇
 
-.. example:: material_ui_slider
+.. example:: material_ui_switch
 
 
 .. Links

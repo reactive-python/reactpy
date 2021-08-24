@@ -1,3 +1,5 @@
+.. _Javascript Component:
+
 Javascript Components
 =====================
 

@@ -200,8 +200,9 @@ If you're thinking critically about IDOM's use of a virtual DOM, you may have th
 
 And yes, while the performance of IDOM is sufficient for most use cases, there are
 inevitably scenarios where this could be an issue. Thankfully though, just like its
-peers, IDOM makes it possible to seemlesly integrate :ref:`Custom Javascript Components`.
-They can be custom built for your use case, or you can just leverage the existing
-Javascript ecosystem without any extra work:
+peers, IDOM makes it possible to seemlesly integrate :ref:`Javascript Components`. They
+can be :ref:`custom built <Custom Javascript Components>` for your use case, or you can
+just leverage the existing Javascript ecosystem
+:ref:`without any extra work <Dynamically Loaded Components>`:
 
-.. example:: material_ui_slider
+.. example:: material_ui_switch
