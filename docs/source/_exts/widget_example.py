@@ -40,7 +40,7 @@ class WidgetExample(SphinxDirective):
             ),
             "Live Example": _interactive_widget(
                 name=example_name,
-                use_activate_button="live-example-is-default-tab" not in self.options,
+                with_activate_button="live-example-is-default-tab" not in self.options,
             ),
         }
 
@@ -103,10 +103,10 @@ def _literal_include_js(name, linenos):
     )
 
 
-def _interactive_widget(name, use_activate_button):
+def _interactive_widget(name, with_activate_button):
     return _interactive_widget_template.format(
         name=name,
-        activate_button_opt="" if use_activate_button else ":no-activate-button:",
+        activate_button_opt="" if with_activate_button else ":no-activate-button:",
     )
 
 
