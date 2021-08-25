@@ -54,9 +54,9 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.autosectionlabel",
     # third party extensions
-    "sphinx_panels",
     "sphinx_copybutton",
     "sphinx_reredirects",
+    "sphinx_design",
     # custom extensions
     "async_doctest",
     "autogen_api_docs",

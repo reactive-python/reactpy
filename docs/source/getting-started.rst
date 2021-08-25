@@ -1,8 +1,7 @@
 Getting Started
 ===============
 
-Let's look at the example that you may have seen
-:ref:`at a glance <At a Glance>` on the homepage:
+Let's break down the following example:
 
 .. example:: slideshow
     :linenos:

@@ -19,13 +19,13 @@
   color: #ffffff !important;
   text-transform: uppercase;
   text-decoration: none;
-  background: #3980b9;
-  border: 2px solid #3980b9 !important;
+  background: #526cfe;
+  border: 2px solid #526cfe !important;
   transition: all 0.1s ease 0s;
   box-shadow: 0 5px 10px var(--color-foreground-border);
 }
 .enable-widget-button:hover {
-  color: #3980b9 !important;
+  color: #526cfe !important;
   background: #ffffff;
   transition: all 0.1s ease 0s;
 }

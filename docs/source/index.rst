@@ -40,18 +40,60 @@ IDOM
     Community <https://github.com/idom-team/idom/discussions>
     Issues <https://github.com/idom-team/idom/issues>
 
-A package for building highly interactive user interfaces in pure Python inspired by
-`ReactJS <https://reactjs.org/>`__.
+A package for building responsive user interfaces in pure Python.
 
+- Create full stack applications without writing a single line of Javascript.
+- Rapidly develop :ref:`interactive data dashboards <Simple Dashboard>` with ease.
+- Works with the existing Javascript without any extra work.
+- Use battle-tested :ref:`declarative <Declarative Components>` design patterns inspired
+  by `ReactJS <https://reactjs.org>`__.
+- Write :ref:`custom Javascript components` when you need client-side performance
+- Ecosystem independence - use IDOM :ref:`wherever <ecosystem independence>` you might need it
 
-At a Glance
------------
+.. grid:: 1 1 2 2
+    :gutter: 1
 
-Let's use IDOM to create a simple slideshow which changes whenever a
-user clicks an image:
+    .. grid-item::
 
-.. example:: slideshow
+        .. grid:: 1 1 1 1
+            :gutter: 1
 
-Try selecting the "Live Example" tab in the view above and enabling the widget.
+            .. grid-item-card::
 
-Once activated try clicking the displayed image to make it change 🖱️
+                .. interactive-widget:: click_count
+                    :no-activate-button:
+
+            .. grid-item-card::
+
+                .. interactive-widget:: material_ui_button_on_click
+                    :no-activate-button:
+
+            .. grid-item-card::
+
+                .. interactive-widget:: matplotlib_plot
+                    :no-activate-button:
+
+            .. grid-item-card::
+
+                .. interactive-widget:: audio_player
+                    :no-activate-button:
+
+    .. grid-item::
+
+        .. grid:: 1 1 1 1
+            :gutter: 1
+
+            .. grid-item-card::
+
+                .. interactive-widget:: material_ui_switch
+                    :no-activate-button:
+
+            .. grid-item-card::
+
+                .. interactive-widget:: simple_dashboard
+                    :no-activate-button:
+
+            .. grid-item-card::
+
+                .. interactive-widget:: slideshow
+                    :no-activate-button:

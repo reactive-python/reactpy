@@ -1,7 +1,7 @@
 import os
 
 from docutils.nodes import raw
-from docutils.parsers.rst import Directive
+from docutils.parsers.rst import Directive, directives
 from sphinx.application import Sphinx
 
 
@@ -15,6 +15,10 @@ class IteractiveWidget(Directive):
     required_arguments = 1
     _next_id = 0
 
+    option_spec = {
+        "no-activate-button": directives.flag,
+    }
+
     def run(self):
         IteractiveWidget._next_id += 1
         container_id = f"idom-widget-{IteractiveWidget._next_id}"
@@ -27,7 +31,12 @@ class IteractiveWidget(Directive):
                     <div id="{container_id}" class="interactive widget-container center-content" style="" />
                     <script type="module">
                         import {{ mountWidgetExample }} from "{_IDOM_STATIC_HOST}/_static/custom.js";
-                        mountWidgetExample("{container_id}", "{view_id}", "{_IDOM_EXAMPLE_HOST}");
+                        mountWidgetExample(
+                            "{container_id}",
+                            "{view_id}",
+                            "{_IDOM_EXAMPLE_HOST}",
+                            {"false" if "no-activate-button" in self.options else "true"},
+                        );
                     </script>
                 </div>
                 """,

@@ -59,4 +59,4 @@ to demonstrate this is the ``currentTime`` attribute of ``audio`` and ``video``
 elements. Normally this would be accessible via ``event.target.currenTime``, but here
 it's simply passed in under the key ``currentTime``:
 
-.. example:: play_audio_sound
+.. example:: audio_player

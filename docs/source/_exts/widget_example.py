@@ -4,7 +4,7 @@ from docutils.parsers.rst import directives
 from docutils.statemachine import StringList
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
-from sphinx_panels.tabs import TabbedDirective
+from sphinx_design.tabs import TabSetDirective
 
 
 here = Path(__file__).parent
@@ -17,7 +17,10 @@ class WidgetExample(SphinxDirective):
     required_arguments = 1
     _next_id = 0
 
-    option_spec = {"linenos": directives.flag}
+    option_spec = {
+        "linenos": directives.flag,
+        "live-example-is-default-tab": directives.flag,
+    }
 
     def run(self):
         example_name = self.arguments[0]
@@ -30,45 +33,39 @@ class WidgetExample(SphinxDirective):
                 f"Missing example file named {py_ex_path} referenced by document {src_file}:{line_num}"
             )
 
-        py_code_tab = TabbedDirective(
-            "WidgetExample",
-            ["Python Code"],
-            {},
-            _literal_include_py_lines(
+        labeled_tab_items = {
+            "Python Code": _literal_include_py(
                 name=example_name,
                 linenos=show_linenos,
             ),
-            self.lineno - 1,
-            self.content_offset,
-            "",
-            self.state,
-            self.state_machine,
-        ).run()
+            "Live Example": _interactive_widget(
+                name=example_name,
+                use_activate_button="live-example-is-default-tab" not in self.options,
+            ),
+        }
 
         if (examples / f"{example_name}.js").exists():
-            js_code_tab = TabbedDirective(
-                "WidgetExample",
-                ["Javascript Code"],
-                {},
-                _literal_include_js_lines(
-                    name=example_name,
-                    linenos=show_linenos,
-                ),
-                self.lineno - 1,
-                self.content_offset,
-                "",
-                self.state,
-                self.state_machine,
-            ).run()
-        else:
-            js_code_tab = []
+            labeled_tab_items["Javascript Code"] = _literal_include_js(
+                name=example_name,
+                linenos=show_linenos,
+            )
 
-        example_tab = TabbedDirective(
+        tab_label_order = (
+            ["Live Example", "Python Code", "Javascript Code"]
+            if "live-example-is-default-tab" in self.options
+            else ["Python Code", "Javascript Code", "Live Example"]
+        )
+
+        return TabSetDirective(
             "WidgetExample",
-            ["Live Example"],
+            [],
             {},
-            _string_to_nested_lines(
-                _interactive_widget_template.format(name=example_name)
+            _make_tab_items(
+                [
+                    (label, labeled_tab_items[label])
+                    for label in tab_label_order
+                    if label in labeled_tab_items
+                ]
             ),
             self.lineno - 1,
             self.content_offset,
@@ -77,33 +74,52 @@ class WidgetExample(SphinxDirective):
             self.state_machine,
         ).run()
 
-        return py_code_tab + js_code_tab + example_tab
 
-
-def _literal_include_py_lines(name, linenos):
-    return _string_to_nested_lines(
-        _literal_include_template.format(
-            name=name,
-            ext="py",
-            language="python",
-            linenos=":linenos:" if linenos else "",
+def _make_tab_items(labeled_content_tuples):
+    tab_items = ""
+    for label, content in labeled_content_tuples:
+        tab_items += _tab_item_template.format(
+            label=label,
+            content=content.replace("\n", "\n    "),
         )
+    return _string_to_nested_lines(tab_items)
+
+
+def _literal_include_py(name, linenos):
+    return _literal_include_template.format(
+        name=name,
+        ext="py",
+        language="python",
+        linenos=":linenos:" if linenos else "",
     )
 
 
-def _literal_include_js_lines(name, linenos):
-    return _string_to_nested_lines(
-        _literal_include_template.format(
-            name=name,
-            ext="js",
-            language="javascript",
-            linenos=":linenos:" if linenos else "",
-        )
+def _literal_include_js(name, linenos):
+    return _literal_include_template.format(
+        name=name,
+        ext="js",
+        language="javascript",
+        linenos=":linenos:" if linenos else "",
     )
+
+
+def _interactive_widget(name, use_activate_button):
+    return _interactive_widget_template.format(
+        name=name,
+        activate_button_opt="" if use_activate_button else ":no-activate-button:",
+    )
+
+
+_tab_item_template = """
+.. tab-item:: {label}
+
+    {content}
+"""
 
 
 _interactive_widget_template = """
 .. interactive-widget:: {name}
+    {activate_button_opt}
 """
 
 

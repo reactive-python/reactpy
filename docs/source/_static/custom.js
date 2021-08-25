@@ -1884,12 +1884,30 @@ const HTTP_PROTO = LOC.protocol;
 const WS_PROTO = HTTP_PROTO === "https:" ? "wss:" : "ws:";
 const IDOM_MODULES_PATH = "/_modules";
 
-function mountWidgetExample(mountID, viewID, idomServerHost) {
-  const idom_url = "//" + (idomServerHost || LOC.host);
-  const http_idom_url = HTTP_PROTO + idom_url;
-  const ws_idom_url = WS_PROTO + idom_url;
+function mountWidgetExample(
+  mountID,
+  viewID,
+  idomServerHost,
+  useActivateButton
+) {
+  const idomUrl  = "//" + (idomServerHost || LOC.host);
+  const httpIdomUrl = HTTP_PROTO + idomUrl ;
+  const wsIdomUrl = WS_PROTO + idomUrl ;
 
   const mountEl = document.getElementById(mountID);
+
+  console.log(useActivateButton);
+
+  if (!useActivateButton) {
+    mountLayoutWithWebSocket(
+      mountEl,
+      wsIdomUrl + `/_idom/stream?view_id=${viewID}`,
+      (source, sourceType) =>
+        loadImportSource(httpIdomUrl, source, sourceType)
+    );
+    return;
+  }
+
   const enableWidgetButton = document.createElement("button");
   enableWidgetButton.appendChild(document.createTextNode("Enable Widget"));
   enableWidgetButton.setAttribute("class", "enable-widget-button");
@@ -1901,9 +1919,9 @@ function mountWidgetExample(mountID, viewID, idomServerHost) {
         mountEl.setAttribute("class", "interactive widget-container");
         mountLayoutWithWebSocket(
           mountEl,
-          ws_idom_url + `/_idom/stream?view_id=${viewID}`,
+          wsIdomUrl + `/_idom/stream?view_id=${viewID}`,
           (source, sourceType) =>
-            loadImportSource(http_idom_url, source, sourceType)
+            loadImportSource(httpIdomUrl, source, sourceType)
         );
       }
     })
