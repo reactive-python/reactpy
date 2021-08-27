@@ -1,7 +1,11 @@
 {
-  "workspaces": [
-    "./packages/*"
-  ],
+  "dependencies": {
+    "idom-client-react": "file:packages/idom-client-react"
+  },
+  "devDependencies": {
+    "prettier": "^2.2.1",
+    "snowpack": "^3.5.2"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -12,11 +16,8 @@
     "format": "npm --workspaces run format",
     "test": "npm --workspaces test"
   },
-  "devDependencies": {
-    "prettier": "^2.2.1",
-    "snowpack": "^3.5.2"
-  },
-  "dependencies": {
-    "idom-client-react": "file:packages/idom-client-react"
-  }
+  "version": "0.32.0",
+  "workspaces": [
+    "./packages/*"
+  ]
 }

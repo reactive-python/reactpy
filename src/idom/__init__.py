@@ -1,15 +1,3 @@
-from pkg_resources import DistributionNotFound as _DistributionNotFound
-from pkg_resources import get_distribution as _get_distribution
-
-
-try:
-    __version__: str = _get_distribution(__name__).version
-except _DistributionNotFound:  # pragma: no cover
-    # package is not installed
-    __version__ = "0.0.0"
-
-__author__ = "idom-team"
-
 from . import config, html, log, web
 from .core import hooks
 from .core.component import Component, component
@@ -20,6 +8,9 @@ from .server.prefab import run
 from .utils import Ref, html_to_vdom
 from .widgets import hotswap, multiview
 
+
+__author__ = "idom-team"
+__version__ = "0.32.0"  # DO NOT MODIFY
 
 __all__ = [
     "component",

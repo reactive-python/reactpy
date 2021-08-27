@@ -2,6 +2,7 @@
 -r requirements/build-pkg.txt
 -r requirements/check-style.txt
 -r requirements/check-types.txt
+-r requirements/make-release.txt
 -r requirements/pkg-deps.txt
 -r requirements/pkg-extras.txt
 -r requirements/test-env.txt

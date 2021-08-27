@@ -1,33 +1,33 @@
 {
-  "name": "idom-client-react",
-  "description": "A client for IDOM implemented in React",
-  "version": "0.10.0",
   "author": "Ryan Morshead",
-  "license": "MIT",
-  "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/idom-team/idom"
+  "dependencies": {
+    "fast-json-patch": "^3.0.0-1",
+    "htm": "^3.0.3"
   },
-  "main": "src/index.js",
-  "files": [
-    "src/**/*.js"
-  ],
-  "scripts": {
-    "format": "prettier --write ./src",
-    "test": "uvu tests"
-  },
+  "description": "A client for IDOM implemented in React",
   "devDependencies": {
     "jsdom": "16.3.0",
     "prettier": "^2.2.1",
     "uvu": "^0.5.1"
   },
-  "dependencies": {
-    "fast-json-patch": "^3.0.0-1",
-    "htm": "^3.0.3"
-  },
+  "files": [
+    "src/**/*.js"
+  ],
+  "license": "MIT",
+  "main": "src/index.js",
+  "name": "idom-client-react",
   "peerDependencies": {
     "react": ">=16",
     "react-dom": ">=16"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/idom-team/idom"
+  },
+  "scripts": {
+    "format": "prettier --write ./src",
+    "test": "uvu tests"
+  },
+  "type": "module",
+  "version": "0.32.0"
 }

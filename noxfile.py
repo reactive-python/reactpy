@@ -10,7 +10,7 @@ import nox
 from nox.sessions import Session
 
 
-HERE = Path(__file__).parent
+ROOT = Path(__file__).parent
 POSARGS_PATTERN = re.compile(r"^(\w+)\[(.+)\]$")
 
 
@@ -39,7 +39,7 @@ def example(session: Session) -> None:
     """Run an example"""
     if not session.posargs:
         print("No example name given. Choose from:")
-        for found_example_file in (HERE / "docs" / "source" / "examples").glob("*.py"):
+        for found_example_file in (ROOT / "docs" / "source" / "examples").glob("*.py"):
             print("-", found_example_file.stem)
         return None
 
@@ -175,6 +175,51 @@ def test_docs(session: Session) -> None:
     session.run("sphinx-build", "-b", "doctest", "docs/source", "docs/build")
 
 
+@nox.session
+def tag(session: Session):
+    try:
+        session.run(
+            "git",
+            "diff",
+            "--cached",
+            "--exit-code",
+            silent=True,
+            external=True,
+        )
+    except Exception:
+        session.error("Cannot create a tag - tROOT are uncommited changes")
+
+    version = (ROOT / "VERSION").read_text().strip()
+    install_requirements_file(session, "make-release")
+    session.run("pysemver", "check", version)
+
+    changelog_file = ROOT / "docs" / "source" / "changelog.rst"
+    for line in changelog_file.read_text().splitlines():
+        if line == version:
+            break
+    else:
+        session.error(f"No changelog entry for {version} in {changelog_file}")
+
+    session.run("git", "tag", version, external=True)
+
+    if "push" in session.posargs:
+        session.run("git", "push", "--tags", external=True)
+
+
+@nox.session
+def update_version(session: Session) -> None:
+    if len(session.posargs) > 1:
+        session.error("To many arguments")
+
+    try:
+        version = session.posargs[0]
+    except IndexError:
+        session.error("No version tag given")
+
+    install_requirements_file(session, "make-release")
+    session.run("python", "scripts/update_versions.py", version)
+
+
 @nox.session(reuse_venv=True)
 def latest_pull_requests(session: Session) -> None:
     """A basic script for outputing changelog info"""
@@ -190,7 +235,7 @@ def latest_closed_issues(session: Session) -> None:
 
 
 def install_requirements_file(session: Session, name: str) -> None:
-    file_path = HERE / "requirements" / (name + ".txt")
+    file_path = ROOT / "requirements" / (name + ".txt")
     assert file_path.exists(), f"requirements file {file_path} does not exist"
     session.install("-r", str(file_path))
 
