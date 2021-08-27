@@ -26,11 +26,21 @@ def GameView():
     )
 
     if game_state == GameState.won:
-        return idom.html.div(idom.html.h1("You won!"), start_button)
+        menu = idom.html.div(idom.html.h3("You won!"), start_button)
     elif game_state == GameState.lost:
-        return idom.html.div(idom.html.h1("You lost"), start_button)
+        menu = idom.html.div(idom.html.h3("You lost"), start_button)
     else:
-        return idom.html.div(idom.html.h1("Click to play"), start_button)
+        menu = idom.html.div(idom.html.h3("Click to play"), start_button)
+
+    menu_style = idom.html.style(
+        """
+        .snake-game-menu h3 {
+            margin-top: 0px !important;
+        }
+        """
+    )
+
+    return idom.html.div({"className": "snake-game-menu"}, menu_style, menu)
 
 
 class Direction(enum.Enum):
@@ -52,6 +62,7 @@ def GameLoop(grid_size, block_scale, set_game_state):
 
     grid = create_grid(grid_size, block_scale)
 
+    @idom.event(prevent_default=True)
     def on_direction_change(event):
         if hasattr(Direction, event["key"]):
             maybe_new_direction = Direction[event["key"]].value

@@ -65,10 +65,23 @@ A package for building responsive user interfaces in pure Python.
 
             .. grid-item-card::
 
-                .. interactive-widget:: matplotlib_plot
+                .. interactive-widget:: snake_game
                     :no-activate-button:
 
+            .. grid-item-card::
 
+                .. interactive-widget:: slideshow
+                    :no-activate-button:
+
+            .. grid-item-card::
+
+                .. interactive-widget:: audio_player
+                    :no-activate-button:
+
+            .. grid-item-card::
+
+                .. interactive-widget:: todo
+                    :no-activate-button:
 
     .. grid-item::
 
@@ -80,12 +93,14 @@ A package for building responsive user interfaces in pure Python.
                 .. interactive-widget:: simple_dashboard
                     :no-activate-button:
 
+
+
             .. grid-item-card::
 
-                .. interactive-widget:: slideshow
+                .. interactive-widget:: matplotlib_plot
                     :no-activate-button:
 
             .. grid-item-card::
 
-                .. interactive-widget:: audio_player
+                .. interactive-widget:: material_ui_button_on_click
                     :no-activate-button:
