@@ -237,7 +237,7 @@ page. Under the hood this is using
 
 To run some of the examples in the documentation as if they were tests run:
 
-.. code-block::
+.. code-block:: bash
 
     nox -s test_docs
 
@@ -254,18 +254,119 @@ You should then navigate to  to see the documentation.
 Release Process
 ---------------
 
-Under construction...
+1. Update version
+2. Add changelog entry
+
+   - Include merged pull requests
+   - Include closed issues
+
+3. Commit final release changes
+4. Create a release tag
+5. Manually author a release in GitHub
+
+
+Update Release Version
+......................
+
+To update the version for all core Javascript and Python packages in IDOM run:
+
+.. code-block:: bash
+
+    nox -s update_version -- <new-version>
+
+.. note::
+
+    The new version must adhere to `SemVer <https://semver.org/>`__. Once IDOM
+    becomes stable we will shift to using `CalVer <https://calver.org/>`__.
+
+
+Create Changelog Entry
+......................
+
+Immediately after updating the version you'll need to create a changelog entry for the
+release. This should **always** include a human authored summary of the changes it
+includes. For example, new or deprecated features, performance improvements, and bug
+fixes (whatever is relevant). To help with this, there are some useful tools for
+gathering the Pull Requests and Issues that have been merged and resolved since the last
+release. While reviewing these items can help in writing a human authored release
+summary, you **must not** resort to a bullet list of Pull Request and Issue
+descriptions. Putting these two together, the format of a changelog entry should look a
+bit like this:
+
+.. code-block:: text
+
+    X.Y.Z
+    -----
+
+    The release summary...
+
+    **Closed Issues**
+
+    - Some issue - :issue:`123`
+    - Another issue - :issue:`456`
+
+    **Pull Requests**
+
+    - Some pull request - :pull:`123`
+    - Another pull request - :pull:`456`
+
+    **Deprecated Features**
+
+    - Description one
+    - Description two
+
+To create the list of pull requests and closed issues you can copy the output of the
+following commands using the ``<format>`` of your choosing (``rst``, ``md``, ``text``):
+
+.. note::
+
+    You should currate the list - not everything needs to be included.
+
+.. code-block:: bash
+
+    nox -s latest_closed_issues -- <format>
+    nox -s latest_pull_requests -- <format>
+
+Once the version has been updated and the changelog entry completed, you should commit
+the changes.
+
+
+Creating The Release
+....................
+
+The final release process involves two steps:
+
+1. Creating a tag for the release
+2. Authoring a release in GitHub
+
+To create the release tag you can run the following command:
+
+.. note::
+
+    To just create the tag without pushing, omit the trailing ``push`` argument
+
+.. code-block:: bash
+
+    nox -s tag -- push
+
+Last, you must create a
+`"Release" <https://docs.github.com/en/github/administering-a-repository/releasing-projects-on-github/managing-releases-in-a-repository>`__
+in GitHub. Because we pushed a tag using the command above, there should already be a
+saved draft which needs a title and desription. The title should simply be the version
+(same as the tag), and the description should, at minimum, be a markdown version of the
+already authored :ref:`Changelog summary <Create Changelog Entry>`.
 
 
 Other Core Repositories
 -----------------------
 
 IDOM depends on several other core projects. For documentation on them you should refer
-to their respective documentation in the links below
+to their respective documentation in the links below:
 
-- https://github.com/idom-team/idom-client-react - Javascript client for IDOM
 - https://github.com/idom-team/flake8-idom-hooks - Enforces the :ref:`Rules of Hooks`
-
+- https://github.com/idom-team/idom-jupyter - IDOM integration for Jupyter
+- https://github.com/idom-team/idom-dash - IDOM integration for Plotly Dash
+- https://github.com/idom-team/django-idom - IDOM integration for Django
 
 .. Links
 .. =====
