@@ -10,23 +10,30 @@ import {
   elementChildren,
 } from "$CDN/idom-client-react";
 
-export function bind(node, config) {
+export function bind(node, config, sourceInfo) {
   return {
     render: (component, props, children) =>
-      ReactDOM.render(createElement(config, component, props, children), node),
+      ReactDOM.render(
+        createElement(config, sourceInfo, component, props, children),
+        node
+      ),
     unmount: () => ReactDOM.unmountComponentAtNode(node),
   };
 }
 
-function createElement(config, component, props, children) {
+function createElement(config, sourceInfo, component, props, children) {
   return React.createElement(
     LayoutConfigContext.Provider,
     { value: config },
-    React.createElement(component, props, ...createChildren(children, config))
+    React.createElement(
+      component,
+      props,
+      ...createChildren(config, sourceInfo, children)
+    )
   );
 }
 
-function createChildren(children, config) {
+function createChildren(config, sourceInfo, children) {
   if (!children) {
     return [];
   }
@@ -34,35 +41,40 @@ function createChildren(children, config) {
     if (typeof child == "string") {
       return child;
     } else if (child.importSource) {
-      return createElementFromThisImportSource(child, config);
+      return createElementFromThisImportSource(config, sourceInfo, child);
     } else {
       return React.createElement(Element, { model: child });
     }
   });
 }
 
-function createElementFromThisImportSource(model, config) {
-  const Component = ThisImportSource[model.tagName];
-  if (!Component) {
+function createElementFromThisImportSource(config, sourceInfo, model) {
+  if (
+    model.importSource.source != sourceInfo.source ||
+    model.importSource.sourceType != sourceInfo.sourceType
+  ) {
     console.error(
       `Cannot create ${model.tagName} from different import source ` +
         `${model.importSource.source} (type: ${model.importSource.sourceType})`
     );
+    return React.createElement("pre", {}, "error");
   }
   return React.createElement(
-    Component,
+    ThisImportSource[model.tagName],
     elementAttributes(model, (event) => {
-      event.data = event.data.filter(value => {
+      event.data = event.data.filter((value) => {
         try {
           JSON.stringify(value);
         } catch (err) {
-          console.error(`Failed to serialize some event data for ${model.tagName}`)
+          console.error(
+            `Failed to serialize some event data for ${model.tagName}`
+          );
           return false;
         }
         return true;
-      })
+      });
       config.sendEvent(event);
     }),
-    ...createChildren(model.children, config)
+    ...createChildren(config, sourceInfo, model.children)
   );
 }
