@@ -43,3 +43,42 @@ def test_automatic_reconnect(create_driver):
         # check that we can resume normal operation
         set_state.current(1)
         driver.find_element_by_id("new-component-1")
+
+
+def test_style_can_be_changed(display, driver, driver_wait):
+    """This test was introduced to verify the client does not mutate the model
+
+    A bug was introduced where the client-side model was mutated and React was relying
+    on the model to have been copied in order to determine if something had changed.
+
+    See for more info: https://github.com/idom-team/idom/issues/480
+    """
+
+    @idom.component
+    def ButtonWithChangingColor():
+        color_toggle, set_color_toggle = idom.hooks.use_state(True)
+        color = "red" if color_toggle else "blue"
+        return idom.html.button(
+            {
+                "id": "my-button",
+                "onClick": lambda event: set_color_toggle(not color_toggle),
+                "style": {"backgroundColor": color, "color": "white"},
+            },
+            f"color: {color}",
+        )
+
+    display(ButtonWithChangingColor)
+
+    button = driver.find_element_by_id("my-button")
+
+    assert get_style(button)["background-color"] == "red"
+
+    for color in ["blue", "red"] * 2:
+        button.click()
+        driver_wait.until(lambda _: get_style(button)["background-color"] == color)
+
+
+def get_style(element):
+    items = element.get_attribute("style").split(";")
+    pairs = [item.split(":", 1) for item in map(str.strip, items) if item]
+    return {key.strip(): value.strip() for key, value in pairs}

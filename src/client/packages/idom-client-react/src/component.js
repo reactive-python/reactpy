@@ -4,7 +4,7 @@ import htm from "htm";
 
 import serializeEvent from "./event-to-object.js";
 
-import { applyPatchInplace, joinUrl } from "./utils.js";
+import { useJsonPatchCallback } from "./utils.js";
 
 const html = htm.bind(React.createElement);
 export const LayoutConfigContext = React.createContext({
@@ -13,7 +13,7 @@ export const LayoutConfigContext = React.createContext({
 });
 
 export function Layout({ saveUpdateHook, sendEvent, loadImportSource }) {
-  const [model, patchModel] = useInplaceJsonPatch({});
+  const [model, patchModel] = useJsonPatchCallback({});
 
   React.useEffect(() => saveUpdateHook(patchModel), [patchModel]);
 
@@ -180,34 +180,4 @@ function loadImportSource(config, importSource) {
         );
       }
     });
-}
-
-function useInplaceJsonPatch(doc) {
-  const ref = React.useRef(doc);
-  const forceUpdate = useForceUpdate();
-
-  const applyPatch = React.useCallback(
-    (path, patch) => {
-      applyPatchInplace(ref.current, path, patch);
-      forceUpdate();
-    },
-    [ref, forceUpdate]
-  );
-
-  return [ref.current, applyPatch];
-}
-
-function useForceUpdate() {
-  const [, updateState] = React.useState();
-  return React.useCallback(() => updateState({}), []);
-}
-
-function useConst(func) {
-  const ref = React.useRef();
-
-  if (!ref.current) {
-    ref.current = func();
-  }
-
-  return ref.current;
 }
