@@ -9,6 +9,11 @@
   background-color: var(--color-code-background);
   min-height: 75px;
 }
+
+.widget-container > div {
+  width: 100%;
+}
+
 .center-content {
   display: flex;
   align-items: center;

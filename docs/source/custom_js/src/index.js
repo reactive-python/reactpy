@@ -17,8 +17,6 @@ export function mountWidgetExample(
 
   const mountEl = document.getElementById(mountID);
 
-  console.log(useActivateButton);
-
   if (!useActivateButton) {
     mountLayoutWithWebSocket(
       mountEl,
