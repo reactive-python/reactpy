@@ -51,9 +51,7 @@ def GameLoop(grid_size, block_scale, set_game_state):
     food, set_food = use_snake_food(grid_size, snake)
 
     grid = create_grid(grid_size, block_scale)
-    grid_events = grid["eventHandlers"] = idom.Events()
 
-    @grid_events.on("KeyDown", prevent_default=True)
     def on_direction_change(event):
         if hasattr(Direction, event["key"]):
             maybe_new_direction = Direction[event["key"]].value
@@ -62,6 +60,8 @@ def GameLoop(grid_size, block_scale, set_game_state):
             )
             if direction_vector_sum != (0, 0):
                 direction.current = maybe_new_direction
+
+    grid_wrapper = idom.html.div({"onKeyDown": on_direction_change}, grid)
 
     assign_grid_block_color(grid, food, "blue")
 
@@ -101,7 +101,7 @@ def GameLoop(grid_size, block_scale, set_game_state):
 
         set_snake(new_snake)
 
-    return grid
+    return grid_wrapper
 
 
 def use_snake_food(grid_size, current_snake):
