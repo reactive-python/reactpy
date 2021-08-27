@@ -23,7 +23,11 @@ def Todo():
     task_input = idom.html.input({"onKeyDown": add_new_task})
     task_table = idom.html.table(tasks)
 
-    return idom.html.div(task_input, task_table)
+    return idom.html.div(
+        idom.html.p("press enter to add a task:"),
+        task_input,
+        task_table,
+    )
 
 
 idom.run(Todo)
