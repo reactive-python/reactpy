@@ -73,7 +73,12 @@ adheres to the following interface:
         loadImportSource(source: string, sourceType: "NAME" | "URL") => Module;
     }
 
-    type bind = (node: HTMLElement, context: LayoutContext) => ({
+    type ImportSource = {
+        source: string;
+        sourceType: string;
+    }
+
+    type bind = (node: HTMLElement, context: LayoutContext, source: ImportSource) => ({
         render(component: any, props: Object, childModels: Array<any>): void;
         unmount(): void;
     });
