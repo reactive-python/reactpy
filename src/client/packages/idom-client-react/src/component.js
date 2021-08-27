@@ -110,7 +110,7 @@ export function elementChildren(modelChildren) {
   }
 }
 
-function elementAttributes(model, sendEvent) {
+export function elementAttributes(model, sendEvent) {
   const attributes = Object.assign({}, model.attributes);
 
   if (model.eventHandlers) {
