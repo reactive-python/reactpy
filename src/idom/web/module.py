@@ -125,7 +125,7 @@ def module_from_template(
     if not template_file.exists():
         raise ValueError(f"No template for {template_file_name!r} exists")
 
-    target_file = _web_module_path(package_name)
+    target_file = _web_module_path(package_name, "from-template")
     if not target_file.exists():
         target_file.parent.mkdir(parents=True, exist_ok=True)
         target_file.write_text(
@@ -133,7 +133,7 @@ def module_from_template(
         )
 
     return WebModule(
-        source=package_name + module_name_suffix(package_name),
+        source="from-template/" + package_name + module_name_suffix(package_name),
         source_type=NAME_SOURCE,
         default_fallback=fallback,
         file=target_file,
@@ -291,7 +291,10 @@ def _make_export(
     )
 
 
-def _web_module_path(name: str) -> Path:
+def _web_module_path(name: str, prefix: str = "") -> Path:
     name += module_name_suffix(name)
-    path = IDOM_WED_MODULES_DIR.current.joinpath(*name.split("/"))
+    directory = IDOM_WED_MODULES_DIR.current
+    if prefix:
+        directory /= prefix
+    path = directory.joinpath(*name.split("/"))
     return path.with_suffix(path.suffix)
