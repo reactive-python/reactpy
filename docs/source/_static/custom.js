@@ -1632,6 +1632,33 @@ function Element({ model }) {
   }
 }
 
+function elementChildren(modelChildren) {
+  if (!modelChildren) {
+    return [];
+  } else {
+    return modelChildren.map((child) => {
+      switch (typeof child) {
+        case "object":
+          return html`<${Element} key=${child.key} model=${child} />`;
+        case "string":
+          return child;
+      }
+    });
+  }
+}
+
+function elementAttributes(model, sendEvent) {
+  const attributes = Object.assign({}, model.attributes);
+
+  if (model.eventHandlers) {
+    for (const [eventName, eventSpec] of Object.entries(model.eventHandlers)) {
+      attributes[eventName] = eventHandler(sendEvent, eventSpec);
+    }
+  }
+
+  return attributes;
+}
+
 function StandardElement({ model }) {
   const config = react.useContext(LayoutConfigContext);
   const children = elementChildren(model.children);
@@ -1691,33 +1718,6 @@ function RenderImportedElement({ model, importSource }) {
   return html`<div ref=${mountPoint} />`;
 }
 
-function elementChildren(modelChildren) {
-  if (!modelChildren) {
-    return [];
-  } else {
-    return modelChildren.map((child) => {
-      switch (typeof child) {
-        case "object":
-          return html`<${Element} key=${child.key} model=${child} />`;
-        case "string":
-          return child;
-      }
-    });
-  }
-}
-
-function elementAttributes(model, sendEvent) {
-  const attributes = Object.assign({}, model.attributes);
-
-  if (model.eventHandlers) {
-    for (const [eventName, eventSpec] of Object.entries(model.eventHandlers)) {
-      attributes[eventName] = eventHandler(sendEvent, eventSpec);
-    }
-  }
-
-  return attributes;
-}
-
 function eventHandler(sendEvent, eventSpec) {
   return function () {
     const data = Array.from(arguments).map((value) => {
@@ -1748,7 +1748,11 @@ function loadImportSource$1(config, importSource) {
         return {
           data: importSource,
           bind: (node) => {
-            const binding = module.bind(node, config);
+            const shortImportSource = {
+              source: importSource.source,
+              sourceType: importSource.sourceType,
+            };
+            const binding = module.bind(node, config, shortImportSource);
             if (
               typeof binding.render == "function" &&
               typeof binding.unmount == "function"
