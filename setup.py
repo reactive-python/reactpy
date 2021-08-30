@@ -67,6 +67,20 @@ package = {
 
 
 # -----------------------------------------------------------------------------
+# Library Version
+# -----------------------------------------------------------------------------
+
+pkg_root_init_file = package_dir / "__init__.py"
+for line in pkg_root_init_file.read_text().split("\n"):
+    if line.startswith("__version__ = "):
+        package["version"] = eval(line.split("=", 1)[1])
+        break
+else:
+    print(f"No version found in {pkg_root_init_file}")
+    sys.exit(1)
+
+
+# -----------------------------------------------------------------------------
 # Requirements
 # -----------------------------------------------------------------------------
 
