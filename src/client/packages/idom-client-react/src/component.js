@@ -17,19 +17,21 @@ export function Layout({ saveUpdateHook, sendEvent, loadImportSource }) {
 
   React.useEffect(() => saveUpdateHook(patchModel), [patchModel]);
 
-  if (model.tagName) {
-    return html`
-      <${LayoutConfigContext.Provider} value=${{ sendEvent, loadImportSource }}>
-        <${Element} model=${model} />
-      <//>
-    `;
-  } else {
-    return html`<div />`;
-  }
+  return html`
+    <${LayoutConfigContext.Provider} value=${{ sendEvent, loadImportSource }}>
+      <${Element} model=${model} />
+    <//>
+  `;
 }
 
 export function Element({ model }) {
-  if (model.importSource) {
+  if (!model.tagName) {
+    if (model.error) {
+      return html`<pre>${model.error}</pre>`
+    } else {
+      return null
+    }
+  } else if (model.importSource) {
     return html`<${ImportedElement} model=${model} />`;
   } else {
     return html`<${StandardElement} model=${model} />`;

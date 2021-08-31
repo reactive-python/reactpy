@@ -201,8 +201,14 @@ class Layout:
             self._render_model(old_state, new_state, raw_model)
         except Exception as error:
             logger.exception(f"Failed to render {component}")
-            new_state.model.current = {"tagName": "__error__", "children": [str(error)]}
-
+            new_state.model.current = {
+                "tagName": "",
+                "error": (
+                    f"{type(error).__name__}: {error}"
+                    if IDOM_DEBUG_MODE.current
+                    else ""
+                ),
+            }
         try:
             parent = new_state.parent
         except AttributeError:
