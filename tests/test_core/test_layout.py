@@ -134,10 +134,7 @@ async def test_layout_render_error_has_partial_update():
                     "path": "/children",
                     "value": [
                         {"tagName": "div", "children": ["hello"]},
-                        {
-                            "tagName": "__error__",
-                            "children": ["Something went wrong :("],
-                        },
+                        {"tagName": "", "error": "ValueError: Something went wrong :("},
                         {"tagName": "div", "children": ["hello"]},
                     ],
                 },

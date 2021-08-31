@@ -45,12 +45,19 @@ VDOM_JSON_SCHEMA = {
             "properties": {
                 "tagName": {"type": "string"},
                 "key": {"type": "string"},
+                "error": {"type": "string"},
                 "children": {"$ref": "#/definitions/elementChildren"},
                 "attributes": {"type": "object"},
                 "eventHandlers": {"$ref": "#/definitions/elementEventHandlers"},
                 "importSource": {"$ref": "#/definitions/importSource"},
             },
+            # The 'tagName' is required because its presence is a useful indicator of
+            # whether a dictionary describes a VDOM model or not.
             "required": ["tagName"],
+            "dependentSchemas": {
+                # When 'error' is given, the 'tagName' should be empty.
+                "error": {"properties": {"tagName": {"maxLength": 0}}}
+            },
         },
         "elementChildren": {
             "type": "array",
@@ -315,9 +322,9 @@ if IDOM_DEBUG_MODE.current:
 
 
 class _VdomDictOptional(TypedDict, total=False):
-    key: str  # noqa
-    children: Sequence[Any]  # noqa
-    attributes: Dict[str, Any]  # noqa
+    key: str
+    children: Sequence[Any]
+    attributes: Dict[str, Any]
     eventHandlers: EventHandlerDict  # noqa
     importSource: ImportSourceDict  # noqa
 
@@ -338,9 +345,10 @@ class ImportSourceDict(TypedDict):
 
 
 class _OptionalVdomJson(TypedDict, total=False):
-    key: str  # noqa
-    children: List[Any]  # noqa
-    attributes: Dict[str, Any]  # noqa
+    key: str
+    error: str
+    children: List[Any]
+    attributes: Dict[str, Any]
     eventHandlers: Dict[str, _JsonEventTarget]  # noqa
     importSource: _JsonImportSource  # noqa
 
