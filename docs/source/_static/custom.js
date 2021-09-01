@@ -620,187 +620,6 @@ function checkDCE() {
 
 var n=function(t,s,r,e){var u;s[0]=0;for(var h=1;h<s.length;h++){var p=s[h++],a=s[h]?(s[0]|=p?1:2,r[s[h++]]):s[++h];3===p?e[0]=a:4===p?e[1]=Object.assign(e[1]||{},a):5===p?(e[1]=e[1]||{})[s[++h]]=a:6===p?e[1][s[++h]]+=a+"":p?(u=t.apply(a,n(t,a,r,["",null])),e.push(u),a[0]?s[0]|=2:(s[h-2]=0,s[h]=u)):e.push(a);}return e},t=new Map;function htm(s){var r=t.get(this);return r||(r=new Map,t.set(this,r)),(r=n(this,r.get(s)||(r.set(s,r=function(n){for(var t,s,r=1,e="",u="",h=[0],p=function(n){1===r&&(n||(e=e.replace(/^\s*\n\s*|\s*\n\s*$/g,"")))?h.push(0,n,e):3===r&&(n||e)?(h.push(3,n,e),r=2):2===r&&"..."===e&&n?h.push(4,n,0):2===r&&e&&!n?h.push(5,0,!0,e):r>=5&&((e||!n&&5===r)&&(h.push(r,0,e,s),r=6),n&&(h.push(r,n,0,s),r=6)),e="";},a=0;a<n.length;a++){a&&(1===r&&p(),p(a));for(var l=0;l<n[a].length;l++)t=n[a][l],1===r?"<"===t?(p(),h=[h],r=3):e+=t:4===r?"--"===e&&">"===t?(r=1,e=""):e=t+e[0]:u?t===u?u="":e+=t:'"'===t||"'"===t?u=t:">"===t?(p(),r=1):r&&("="===t?(r=5,s=e,e=""):"/"===t&&(r<5||">"===n[a][l+1])?(p(),3===r&&(h=h[0]),r=h,(h=h[0]).push(2,0,r),r=0):" "===t||"\t"===t||"\n"===t||"\r"===t?(p(),r=2):e+=t),3===r&&"!--"===e&&(r=4,h=h[0]);}return p(),h}(s)),r),arguments,[])).length>1?r:r[0]}
 
-function serializeEvent(event) {
-  const data = {};
-
-  if (event.type in eventTransforms) {
-    Object.assign(data, eventTransforms[event.type](event));
-  }
-
-  const target = event.target;
-  if (target.tagName in targetTransforms) {
-    targetTransforms[target.tagName].forEach((trans) =>
-      Object.assign(data, trans(target))
-    );
-  }
-
-  return data;
-}
-
-const targetTransformCategories = {
-  hasValue: (target) => ({
-    value: target.value,
-  }),
-  hasCurrentTime: (target) => ({
-    currentTime: target.currentTime,
-  }),
-  hasFiles: (target) => {
-    if (target?.type == "file") {
-      return {
-        files: Array.from(target.files).map((file) => ({
-          lastModified: file.lastModified,
-          name: file.name,
-          size: file.size,
-          type: file.type,
-        })),
-      };
-    } else {
-      return {};
-    }
-  },
-};
-
-const targetTagCategories = {
-  hasValue: ["BUTTON", "INPUT", "OPTION", "LI", "METER", "PROGRESS", "PARAM"],
-  hasCurrentTime: ["AUDIO", "VIDEO"],
-  hasFiles: ["INPUT"],
-};
-
-const targetTransforms = {};
-
-Object.keys(targetTagCategories).forEach((category) => {
-  targetTagCategories[category].forEach((type) => {
-    const transforms = targetTransforms[type] || (targetTransforms[type] = []);
-    transforms.push(targetTransformCategories[category]);
-  });
-});
-
-const eventTransformCategories = {
-  clipboard: (event) => ({
-    clipboardData: event.clipboardData,
-  }),
-  composition: (event) => ({
-    data: event.data,
-  }),
-  keyboard: (event) => ({
-    altKey: event.altKey,
-    charCode: event.charCode,
-    ctrlKey: event.ctrlKey,
-    key: event.key,
-    keyCode: event.keyCode,
-    locale: event.locale,
-    location: event.location,
-    metaKey: event.metaKey,
-    repeat: event.repeat,
-    shiftKey: event.shiftKey,
-    which: event.which,
-  }),
-  mouse: (event) => ({
-    altKey: event.altKey,
-    button: event.button,
-    buttons: event.buttons,
-    clientX: event.clientX,
-    clientY: event.clientY,
-    ctrlKey: event.ctrlKey,
-    metaKey: event.metaKey,
-    pageX: event.pageX,
-    pageY: event.pageY,
-    screenX: event.screenX,
-    screenY: event.screenY,
-    shiftKey: event.shiftKey,
-  }),
-  pointer: (event) => ({
-    pointerId: event.pointerId,
-    width: event.width,
-    height: event.height,
-    pressure: event.pressure,
-    tiltX: event.tiltX,
-    tiltY: event.tiltY,
-    pointerType: event.pointerType,
-    isPrimary: event.isPrimary,
-  }),
-  selection: () => {
-    return { selectedText: window.getSelection().toString() };
-  },
-  touch: (event) => ({
-    altKey: event.altKey,
-    ctrlKey: event.ctrlKey,
-    metaKey: event.metaKey,
-    shiftKey: event.shiftKey,
-  }),
-  ui: (event) => ({
-    detail: event.detail,
-  }),
-  wheel: (event) => ({
-    deltaMode: event.deltaMode,
-    deltaX: event.deltaX,
-    deltaY: event.deltaY,
-    deltaZ: event.deltaZ,
-  }),
-  animation: (event) => ({
-    animationName: event.animationName,
-    pseudoElement: event.pseudoElement,
-    elapsedTime: event.elapsedTime,
-  }),
-  transition: (event) => ({
-    propertyName: event.propertyName,
-    pseudoElement: event.pseudoElement,
-    elapsedTime: event.elapsedTime,
-  }),
-};
-
-const eventTypeCategories = {
-  clipboard: ["copy", "cut", "paste"],
-  composition: ["compositionend", "compositionstart", "compositionupdate"],
-  keyboard: ["keydown", "keypress", "keyup"],
-  mouse: [
-    "click",
-    "contextmenu",
-    "doubleclick",
-    "drag",
-    "dragend",
-    "dragenter",
-    "dragexit",
-    "dragleave",
-    "dragover",
-    "dragstart",
-    "drop",
-    "mousedown",
-    "mouseenter",
-    "mouseleave",
-    "mousemove",
-    "mouseout",
-    "mouseover",
-    "mouseup",
-  ],
-  pointer: [
-    "pointerdown",
-    "pointermove",
-    "pointerup",
-    "pointercancel",
-    "gotpointercapture",
-    "lostpointercapture",
-    "pointerenter",
-    "pointerleave",
-    "pointerover",
-    "pointerout",
-  ],
-  selection: ["select"],
-  touch: ["touchcancel", "touchend", "touchmove", "touchstart"],
-  ui: ["scroll"],
-  wheel: ["wheel"],
-  animation: ["animationstart", "animationend", "animationiteration"],
-  transition: ["transitionend"],
-};
-
-const eventTransforms = {};
-
-Object.keys(eventTypeCategories).forEach((category) => {
-  eventTypeCategories[category].forEach((type) => {
-    eventTransforms[type] = eventTransformCategories[category];
-  });
-});
-
 /*!
  * https://github.com/Starcounter-Jack/JSON-Patch
  * (c) 2017 Joachim Wester
@@ -1570,31 +1389,50 @@ var jsonpatch = Object.assign({}, core, duplex, {
 });
 
 function useJsonPatchCallback(initial) {
-  const model = react.useRef(initial);
+  const doc = react.useRef(initial);
   const forceUpdate = useForceUpdate();
 
   const applyPatch = react.useCallback(
-    (pathPrefix, patch) => {
-      if (pathPrefix) {
-        patch = patch.map((op) =>
-          Object.assign({}, op, { path: pathPrefix + op.path })
-        );
+    (path, patch) => {
+      if (!path) {
+        // We CANNOT mutate the part of the document because React checks some
+        // attributes of the model (e.g. model.attributes.style is checked for
+        // identity).
+        doc.current = applyNonMutativePatch(doc, patch);
+      } else {
+        // We CAN mutate the document here though because we know that nothing above
+        // The patch `path` is changing. Thus, maintaining the identity for that section
+        // of the model is accurate.
+        applyMutativePatch(doc.current, [
+          {
+            op: "replace",
+            path: path,
+            // We CANNOT mutate the part of the document where the actual patch is being
+            // applied. Instead we create a copy because React checks some attributes of
+            // the model (e.g. model.attributes.style is checked for identity). The part
+            // of the document above the `path` can be mutated though because we know it
+            // has not changed.
+            value: applyNonMutativePatch(
+              jsonpatch.getValueByPointer(doc.current, path),
+              patch
+            ),
+          },
+        ]);
       }
-      // Always return a newDocument because React checks some attributes of the model
-      // (e.g. model.attributes.style is checked for identity)
-      model.current = jsonpatch.applyPatch(
-        model.current,
-        patch,
-        false,
-        false,
-        true
-      ).newDocument;
       forceUpdate();
     },
-    [model]
+    [doc]
   );
 
-  return [model.current, applyPatch];
+  return [doc.current, applyPatch];
+}
+
+function applyNonMutativePatch(doc, patch) {
+  return jsonpatch.applyPatch(doc, patch, false, false, true).newDocument;
+}
+
+function applyMutativePatch(doc, patch) {
+  jsonpatch.applyPatch(doc, patch, false, true, true).newDocument;
 }
 
 function useForceUpdate() {
@@ -1602,123 +1440,217 @@ function useForceUpdate() {
   return react.useCallback(() => updateState({}), []);
 }
 
-const html = htm.bind(react.createElement);
-const LayoutConfigContext = react.createContext({
-  sendEvent: undefined,
-  loadImportSource: undefined,
+function serializeEvent(event) {
+  const data = {};
+
+  if (event.type in eventTransforms) {
+    Object.assign(data, eventTransforms[event.type](event));
+  }
+
+  const target = event.target;
+  if (target.tagName in targetTransforms) {
+    targetTransforms[target.tagName].forEach((trans) =>
+      Object.assign(data, trans(target))
+    );
+  }
+
+  return data;
+}
+
+const targetTransformCategories = {
+  hasValue: (target) => ({
+    value: target.value,
+  }),
+  hasCurrentTime: (target) => ({
+    currentTime: target.currentTime,
+  }),
+  hasFiles: (target) => {
+    if (target?.type === "file") {
+      return {
+        files: Array.from(target.files).map((file) => ({
+          lastModified: file.lastModified,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        })),
+      };
+    } else {
+      return {};
+    }
+  },
+};
+
+const targetTagCategories = {
+  hasValue: ["BUTTON", "INPUT", "OPTION", "LI", "METER", "PROGRESS", "PARAM"],
+  hasCurrentTime: ["AUDIO", "VIDEO"],
+  hasFiles: ["INPUT"],
+};
+
+const targetTransforms = {};
+
+Object.keys(targetTagCategories).forEach((category) => {
+  targetTagCategories[category].forEach((type) => {
+    const transforms = targetTransforms[type] || (targetTransforms[type] = []);
+    transforms.push(targetTransformCategories[category]);
+  });
 });
 
-function Layout({ saveUpdateHook, sendEvent, loadImportSource }) {
-  const [model, patchModel] = useJsonPatchCallback({});
+const eventTransformCategories = {
+  clipboard: (event) => ({
+    clipboardData: event.clipboardData,
+  }),
+  composition: (event) => ({
+    data: event.data,
+  }),
+  keyboard: (event) => ({
+    altKey: event.altKey,
+    charCode: event.charCode,
+    ctrlKey: event.ctrlKey,
+    key: event.key,
+    keyCode: event.keyCode,
+    locale: event.locale,
+    location: event.location,
+    metaKey: event.metaKey,
+    repeat: event.repeat,
+    shiftKey: event.shiftKey,
+    which: event.which,
+  }),
+  mouse: (event) => ({
+    altKey: event.altKey,
+    button: event.button,
+    buttons: event.buttons,
+    clientX: event.clientX,
+    clientY: event.clientY,
+    ctrlKey: event.ctrlKey,
+    metaKey: event.metaKey,
+    pageX: event.pageX,
+    pageY: event.pageY,
+    screenX: event.screenX,
+    screenY: event.screenY,
+    shiftKey: event.shiftKey,
+  }),
+  pointer: (event) => ({
+    pointerId: event.pointerId,
+    width: event.width,
+    height: event.height,
+    pressure: event.pressure,
+    tiltX: event.tiltX,
+    tiltY: event.tiltY,
+    pointerType: event.pointerType,
+    isPrimary: event.isPrimary,
+  }),
+  selection: () => {
+    return { selectedText: window.getSelection().toString() };
+  },
+  touch: (event) => ({
+    altKey: event.altKey,
+    ctrlKey: event.ctrlKey,
+    metaKey: event.metaKey,
+    shiftKey: event.shiftKey,
+  }),
+  ui: (event) => ({
+    detail: event.detail,
+  }),
+  wheel: (event) => ({
+    deltaMode: event.deltaMode,
+    deltaX: event.deltaX,
+    deltaY: event.deltaY,
+    deltaZ: event.deltaZ,
+  }),
+  animation: (event) => ({
+    animationName: event.animationName,
+    pseudoElement: event.pseudoElement,
+    elapsedTime: event.elapsedTime,
+  }),
+  transition: (event) => ({
+    propertyName: event.propertyName,
+    pseudoElement: event.pseudoElement,
+    elapsedTime: event.elapsedTime,
+  }),
+};
 
-  react.useEffect(() => saveUpdateHook(patchModel), [patchModel]);
+const eventTypeCategories = {
+  clipboard: ["copy", "cut", "paste"],
+  composition: ["compositionend", "compositionstart", "compositionupdate"],
+  keyboard: ["keydown", "keypress", "keyup"],
+  mouse: [
+    "click",
+    "contextmenu",
+    "doubleclick",
+    "drag",
+    "dragend",
+    "dragenter",
+    "dragexit",
+    "dragleave",
+    "dragover",
+    "dragstart",
+    "drop",
+    "mousedown",
+    "mouseenter",
+    "mouseleave",
+    "mousemove",
+    "mouseout",
+    "mouseover",
+    "mouseup",
+  ],
+  pointer: [
+    "pointerdown",
+    "pointermove",
+    "pointerup",
+    "pointercancel",
+    "gotpointercapture",
+    "lostpointercapture",
+    "pointerenter",
+    "pointerleave",
+    "pointerover",
+    "pointerout",
+  ],
+  selection: ["select"],
+  touch: ["touchcancel", "touchend", "touchmove", "touchstart"],
+  ui: ["scroll"],
+  wheel: ["wheel"],
+  animation: ["animationstart", "animationend", "animationiteration"],
+  transition: ["transitionend"],
+};
 
-  if (model.tagName) {
-    return html`
-      <${LayoutConfigContext.Provider} value=${{ sendEvent, loadImportSource }}>
-        <${Element} model=${model} />
-      <//>
-    `;
-  } else {
-    return html`<div />`;
-  }
-}
+const eventTransforms = {};
 
-function Element({ model }) {
-  if (model.importSource) {
-    return html`<${ImportedElement} model=${model} />`;
-  } else {
-    return html`<${StandardElement} model=${model} />`;
-  }
-}
+Object.keys(eventTypeCategories).forEach((category) => {
+  eventTypeCategories[category].forEach((type) => {
+    eventTransforms[type] = eventTransformCategories[category];
+  });
+});
 
-function elementChildren(modelChildren) {
-  if (!modelChildren) {
+function createElementChildren(model, createElement) {
+  if (!model.children) {
     return [];
   } else {
-    return modelChildren.map((child) => {
-      switch (typeof child) {
-        case "object":
-          return html`<${Element} key=${child.key} model=${child} />`;
-        case "string":
-          return child;
-      }
-    });
+    return model.children
+      .filter((x) => x) // filter nulls
+      .map((child) => {
+        switch (typeof child) {
+          case "object":
+            return createElement(child);
+          case "string":
+            return child;
+        }
+      });
   }
 }
 
-function elementAttributes(model, sendEvent) {
+function createElementAttributes(model, sendEvent) {
   const attributes = Object.assign({}, model.attributes);
 
   if (model.eventHandlers) {
     for (const [eventName, eventSpec] of Object.entries(model.eventHandlers)) {
-      attributes[eventName] = eventHandler(sendEvent, eventSpec);
+      attributes[eventName] = createEventHandler(sendEvent, eventSpec);
     }
   }
 
   return attributes;
 }
 
-function StandardElement({ model }) {
-  const config = react.useContext(LayoutConfigContext);
-  const children = elementChildren(model.children);
-  const attributes = elementAttributes(model, config.sendEvent);
-  // Use createElement here to avoid warning about variable numbers of children not
-  // having keys. Warning about this must now be the responsibility of the server
-  // providing the models instead of the client rendering them.
-  return react.createElement(model.tagName, attributes, ...children);
-}
-
-function ImportedElement({ model }) {
-  const config = react.useContext(LayoutConfigContext);
-
-  const importSourceFallback = model.importSource.fallback;
-  const [importSource, setImportSource] = react.useState(null);
-
-  if (!importSource) {
-    // load the import source in the background
-    loadImportSource$1(config, model.importSource).then(setImportSource);
-
-    // display a fallback if one was given
-    if (!importSourceFallback) {
-      return html`<div />`;
-    } else if (typeof importSourceFallback == "string") {
-      return html`<div>${importSourceFallback}</div>`;
-    } else {
-      return html`<${StandardElement} model=${importSourceFallback} />`;
-    }
-  } else {
-    return html`<${RenderImportedElement}
-      model=${model}
-      importSource=${importSource}
-    />`;
-  }
-}
-
-function RenderImportedElement({ model, importSource }) {
-  react.useContext(LayoutConfigContext);
-  const mountPoint = react.useRef(null);
-  const sourceBinding = react.useRef(null);
-
-  react.useEffect(() => {
-    sourceBinding.current = importSource.bind(mountPoint.current);
-    if (!importSource.data.unmountBeforeUpdate) {
-      return sourceBinding.current.unmount;
-    }
-  }, []);
-
-  // this effect must run every time in case the model has changed
-  react.useEffect(() => {
-    sourceBinding.current.render(model);
-    if (importSource.data.unmountBeforeUpdate) {
-      return sourceBinding.current.unmount;
-    }
-  });
-
-  return html`<div ref=${mountPoint} />`;
-}
-
-function eventHandler(sendEvent, eventSpec) {
+function createEventHandler(sendEvent, eventSpec) {
   return function () {
     const data = Array.from(arguments).map((value) => {
       if (typeof value === "object" && value.nativeEvent) {
@@ -1740,31 +1672,35 @@ function eventHandler(sendEvent, eventSpec) {
   };
 }
 
-function loadImportSource$1(config, importSource) {
-  return config
+function loadModelImportSource(layoutContext, importSource) {
+  return layoutContext
     .loadImportSource(importSource.source, importSource.sourceType)
     .then((module) => {
-      if (typeof module.bind == "function") {
+      if (typeof module.bind === "function") {
         return {
           data: importSource,
           bind: (node) => {
-            const shortImportSource = {
+            ({
               source: importSource.source,
               sourceType: importSource.sourceType,
-            };
-            const binding = module.bind(node, config, shortImportSource);
+            });
+            const binding = module.bind(node, layoutContext);
             if (
-              typeof binding.render == "function" &&
-              typeof binding.unmount == "function"
+              typeof binding.create === "function" &&
+              typeof binding.render === "function" &&
+              typeof binding.unmount === "function"
             ) {
               return {
-                render: (model) => {
+                render: (model) =>
                   binding.render(
-                    module[model.tagName],
-                    elementAttributes(model, config.sendEvent),
-                    model.children
-                  );
-                },
+                    createElementFromModuleBinding(
+                      layoutContext,
+                      importSource,
+                      module,
+                      binding,
+                      model
+                    )
+                  ),
                 unmount: binding.unmount,
               };
             } else {
@@ -1780,6 +1716,163 @@ function loadImportSource$1(config, importSource) {
         );
       }
     });
+}
+
+function createElementFromModuleBinding(
+  layoutContext,
+  currentImportSource,
+  module,
+  binding,
+  model
+) {
+  let type;
+  if (model.importSource) {
+    if (!isImportSourceEqual(currentImportSource, model.importSource)) {
+      console.error(
+        "Parent element import source " +
+          stringifyImportSource(currentImportSource) +
+          " does not match child's import source " +
+          stringifyImportSource(model.importSource)
+      );
+      return null;
+    } else if (!module[model.tagName]) {
+      console.error(
+        "Module from source " +
+          stringifyImportSource(currentImportSource) +
+          ` does not export ${model.tagName}`
+      );
+      return null;
+    } else {
+      type = module[model.tagName];
+    }
+  } else {
+    type = model.tagName;
+  }
+  return binding.create(
+    type,
+    createElementAttributes(model, layoutContext.sendEvent),
+    createElementChildren(model, (child) =>
+      createElementFromModuleBinding(
+        layoutContext,
+        currentImportSource,
+        module,
+        binding,
+        child
+      )
+    )
+  );
+}
+
+function isImportSourceEqual(source1, source2) {
+  return (
+    source1.source === source2.source &&
+    source1.sourceType === source2.sourceType
+  );
+}
+
+function stringifyImportSource(importSource) {
+  return JSON.stringify({
+    source: importSource.source,
+    sourceType: importSource.sourceType,
+  });
+}
+
+const html = htm.bind(react.createElement);
+const LayoutContext = react.createContext({
+  sendEvent: undefined,
+  loadImportSource: undefined,
+});
+
+function Layout({ saveUpdateHook, sendEvent, loadImportSource }) {
+  const [model, patchModel] = useJsonPatchCallback({});
+
+  react.useEffect(() => saveUpdateHook(patchModel), [patchModel]);
+
+  return html`
+    <${LayoutContext.Provider} value=${{ sendEvent, loadImportSource }}>
+      <${Element} model=${model} />
+    <//>
+  `;
+}
+
+function Element({ model }) {
+  if (!model.tagName) {
+    if (model.error) {
+      return html`<pre>${model.error}</pre>`;
+    } else {
+      return null;
+    }
+  } else if (model.importSource) {
+    return html`<${ImportedElement} model=${model} />`;
+  } else {
+    return html`<${StandardElement} model=${model} />`;
+  }
+}
+
+function StandardElement({ model }) {
+  const layoutContext = react.useContext(LayoutContext);
+  // Use createElement here to avoid warning about variable numbers of children not
+  // having keys. Warning about this must now be the responsibility of the server
+  // providing the models instead of the client rendering them.
+  return react.createElement(
+    model.tagName,
+    createElementAttributes(model, layoutContext.sendEvent),
+    ...createElementChildren(
+      model,
+      (model) => html`<${Element} key=${model.key} model=${model} />`
+    )
+  );
+}
+
+function ImportedElement({ model }) {
+  const layoutContext = react.useContext(LayoutContext);
+
+  const importSourceFallback = model.importSource.fallback;
+  const [importSource, setImportSource] = react.useState(null);
+
+  if (!importSource) {
+    // load the import source in the background
+    loadModelImportSource(layoutContext, model.importSource).then(
+      setImportSource
+    );
+
+    // display a fallback if one was given
+    if (!importSourceFallback) {
+      return html`<div />`;
+    } else if (typeof importSourceFallback === "string") {
+      return html`<div>${importSourceFallback}</div>`;
+    } else {
+      return html`<${StandardElement} model=${importSourceFallback} />`;
+    }
+  } else {
+    return html`<${_ImportedElement}
+      model=${model}
+      importSource=${importSource}
+    />`;
+  }
+}
+
+function _ImportedElement({ model, importSource }) {
+  react.useContext(LayoutContext);
+  const mountPoint = react.useRef(null);
+  const sourceBinding = react.useRef(null);
+
+  react.useEffect(() => {
+    sourceBinding.current = importSource.bind(mountPoint.current);
+    if (!importSource.data.unmountBeforeUpdate) {
+      return sourceBinding.current.unmount;
+    }
+  }, []);
+
+  // this effect must run every time in case the model has changed
+  react.useEffect(() => {
+    sourceBinding.current.render(model);
+    if (importSource.data.unmountBeforeUpdate) {
+      return sourceBinding.current.unmount;
+    }
+  });
+
+  return html`<div ref=${mountPoint} />`;
 }
 
 function mountLayout(mountElement, layoutProps) {
@@ -1872,7 +1965,7 @@ function _nextReconnectTimeout(maxReconnectTimeout, mountState) {
     Math.floor(Math.random() * mountState.reconnectTimeoutRange) || 1;
   mountState.reconnectTimeoutRange =
     (mountState.reconnectTimeoutRange + 5) % maxReconnectTimeout;
-  if (mountState.reconnectAttempts == 4) {
+  if (mountState.reconnectAttempts === 4) {
     window.alert(
       "Server connection was lost. Attempts to reconnect are being made in the background."
     );

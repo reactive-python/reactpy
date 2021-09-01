@@ -5,8 +5,8 @@ const html = htm.bind(h);
 
 export function bind(node, config) {
   return {
-    render: (component, props, children) =>
-      render(h(component, props), node),
+    create: (type, props, children) => h(type, props, ...children),
+    render: (element) => render(element, node),
     unmount: () => render(null, node),
   }
 }

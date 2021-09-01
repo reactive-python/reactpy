@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import { Layout } from "./component.js";
+import { Layout } from "./components.js";
 
 export function mountLayout(mountElement, layoutProps) {
   ReactDOM.render(React.createElement(Layout, layoutProps), mountElement);
@@ -92,7 +92,7 @@ function _nextReconnectTimeout(maxReconnectTimeout, mountState) {
     Math.floor(Math.random() * mountState.reconnectTimeoutRange) || 1;
   mountState.reconnectTimeoutRange =
     (mountState.reconnectTimeoutRange + 5) % maxReconnectTimeout;
-  if (mountState.reconnectAttempts == 4) {
+  if (mountState.reconnectAttempts === 4) {
     window.alert(
       "Server connection was lost. Attempts to reconnect are being made in the background."
     );

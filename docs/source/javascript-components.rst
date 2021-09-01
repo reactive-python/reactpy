@@ -73,13 +73,9 @@ adheres to the following interface:
         loadImportSource(source: string, sourceType: "NAME" | "URL") => Module;
     }
 
-    type SourceInfo = {
-        source: string;
-        sourceType: string;
-    }
-
-    type bind = (node: HTMLElement, context: LayoutContext, source: SourceInfo) => ({
-        render(component: any, props: Object, childModels: Array<any>): void;
+    type bind = (node: HTMLElement, context: LayoutContext) => ({
+        create(type: any, props: Object, children: Array<any>): any;
+        render(element): void;
         unmount(): void;
     });
 
@@ -90,20 +86,20 @@ adheres to the following interface:
     - ``context`` can send events back to the server and load "import sources"
       (like a custom component module).
 
-    - ``component`` is a named export of the current module.
+    - ``type``is a named export of the current module, or a string (e.g. ``"div"``,
+      ``"button"``, etc.)
 
     - ``props`` is an object containing attributes and callbacks for the given
       ``component``.
 
-    - ``childModels`` is an array of unrendered VDOM elements. Passing them in this raw
-      form allows for other frameworks besides react to render them as needed. If you
-      are using react, you can just use the ``idom-client-react`` library to process
-      them. See :ref:`Distributing Javascript via PyPI_` for an example usage.
+    - ``children`` is an array of elements which were constructed by recursively calling
+      ``create``.
 
 The interface returned by ``bind()`` can be thought of as being similar to that of
 React.
 
-- ``render`` ➜ |React.createElement|_ and |ReactDOM.render|_
+- ``create`` ➜ |React.createElement|_
+- ``render`` ➜ |ReactDOM.render|_
 - ``unmount`` ➜ |ReactDOM.unmountComponentAtNode|_
 
 .. |React.createElement| replace:: ``React.createElement``
@@ -123,7 +119,8 @@ It will be used in the following manner:
     const binding = bind(node, context);
 
     // on every render
-    binding.render(component, props, children);
+    let element = binding.create(type, props, children)
+    binding.render(element);
 
     // once on unmount
     binding.unmount();
@@ -225,25 +222,14 @@ To start, let's take a look at the file structure we'll be building:
 
     import * as React from "react";
     import * as ReactDOM from "react-dom";
-    import { LayoutConfigContext, elementChildren } from "idom-client-react";
 
     export function bind(node, config) {
         return {
-            render: (component, props, childModels) =>
-            ReactDOM.render(createElement(config, component, props, childModels), node),
+            create: (component, props, children) =>
+                React.createElement(component, props, ...children),
+            render: (element) => ReactDOM.render(element, node),
             unmount: () => ReactDOM.unmountComponentAtNode(node),
         };
-    }
-
-    function createElement(config, component, props, childModels) {
-        // Render child models with idom-client-react
-        return React.createElement(
-            LayoutConfigContext.Provider,
-            { value: config },
-            React.createElement(
-            component, props, ...elementChildren(children)
-            )
-        )
     }
 
     // exports for your components

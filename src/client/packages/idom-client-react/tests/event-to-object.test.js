@@ -1,6 +1,6 @@
 import { test } from "uvu";
 import * as assert from "uvu/assert";
-import serializeEvent from "../src/event-to-object.js";
+import { serializeEvent } from "../src/event-to-object.js";
 import "./tooling/setup.js";
 
 const allTargetData = {

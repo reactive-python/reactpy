@@ -28,9 +28,14 @@ def apply_standard_pip_upgrades(
 @nox.session(reuse_venv=True)
 @apply_standard_pip_upgrades
 def format(session: Session) -> None:
+    # format Python
     install_requirements_file(session, "check-style")
     session.run("black", ".")
     session.run("isort", ".")
+
+    # format Javascript
+    session.chdir(ROOT / "src" / "client")
+    session.run("npm", "run", "format", external=True)
 
 
 @nox.session(reuse_venv=True)

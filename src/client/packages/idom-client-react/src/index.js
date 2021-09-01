@@ -1,2 +1,2 @@
 export * from "./mount.js";
-export * from "./component.js";
+export * from "./components.js";
