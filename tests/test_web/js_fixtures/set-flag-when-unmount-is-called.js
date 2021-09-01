@@ -1,7 +1,7 @@
 export function bind(node, config) {
   return {
-    render: (component, props, children) =>
-      renderElement(component(props), node),
+    create: (type, props, children) => type(props),
+    render: (element) => renderElement(element, node),
     unmount: () => unmountElement(node),
   }
 }

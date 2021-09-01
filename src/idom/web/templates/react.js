@@ -1,80 +1,47 @@
 export * from "$CDN/$PACKAGE";
-import * as ThisImportSource from "$CDN/$PACKAGE";
 
 import * as React from "$CDN/react";
 import * as ReactDOM from "$CDN/react-dom";
-import {
-  LayoutConfigContext,
-  Element,
-  elementAttributes,
-  elementChildren,
-} from "$CDN/idom-client-react";
 
-export function bind(node, config, sourceInfo) {
+export function bind(node, config) {
   return {
-    render: (component, props, children) =>
-      ReactDOM.render(
-        createElement(config, sourceInfo, component, props, children),
-        node
-      ),
+    create: (component, props, children) =>
+      React.createElement(component, wrapEventHandlers(props), ...children),
+    render: (element) => ReactDOM.render(element, node),
     unmount: () => ReactDOM.unmountComponentAtNode(node),
   };
 }
 
-function createElement(config, sourceInfo, component, props, children) {
-  return React.createElement(
-    LayoutConfigContext.Provider,
-    { value: config },
-    React.createElement(
-      component,
-      props,
-      ...createChildren(config, sourceInfo, children)
-    )
-  );
-}
-
-function createChildren(config, sourceInfo, children) {
-  if (!children) {
-    return [];
-  }
-  return children.map((child) => {
-    if (typeof child == "string") {
-      return child;
-    } else if (child.importSource) {
-      return createElementFromThisImportSource(config, sourceInfo, child);
-    } else {
-      return React.createElement(Element, { model: child });
+function wrapEventHandlers(props) {
+  const newProps = Object.assign({}, props);
+  for (const [key, value] of Object.entries(props)) {
+    if (typeof value === "function") {
+      newProps[key] = makeJsonSafeEventHandler(value);
     }
-  });
+  }
+  return newProps;
 }
 
-function createElementFromThisImportSource(config, sourceInfo, model) {
-  if (
-    model.importSource.source != sourceInfo.source ||
-    model.importSource.sourceType != sourceInfo.sourceType
-  ) {
-    console.error(
-      `Cannot create ${model.tagName} from different import source ` +
-        `${model.importSource.source} (type: ${model.importSource.sourceType})`
-    );
-    return React.createElement("pre", {}, "error");
-  }
-  return React.createElement(
-    ThisImportSource[model.tagName],
-    elementAttributes(model, (event) => {
-      event.data = event.data.filter((value) => {
-        try {
-          JSON.stringify(value);
-        } catch (err) {
-          console.error(
-            `Failed to serialize some event data for ${model.tagName}`
-          );
-          return false;
+function makeJsonSafeEventHandler(oldHandler) {
+  // Since we can't really know what the event handlers get passed we have to check if
+  // they are JSON serializable or not. We can allow normal synthetic events to pass
+  // through since the original handler already knows how to serialize those for us.
+  return function safeEventHandler() {
+    oldHandler(
+      ...Array.from(arguments).filter((value) => {
+        if (typeof value === "object" && value.nativeEvent) {
+          // this is probably a standard React synthetic event
+          return true;
+        } else {
+          try {
+            JSON.stringify(value);
+          } catch (err) {
+            console.error("Failed to serialize some event data");
+            return false;
+          }
+          return true;
         }
-        return true;
-      });
-      config.sendEvent(event);
-    }),
-    ...createChildren(config, sourceInfo, model.children)
-  );
+      })
+    );
+  };
 }

@@ -5,12 +5,8 @@ const html = htm.bind(h);
 
 export function bind(node, config) {
   return {
-    render: (component, props, children) => {
-      if (children) {
-        console.error("Children not supported");
-      }
-      render(h(component, props), node);
-    },
+    create: (component, props, children) => h(component, props, ...children),
+    render: (element) => render(element, node),
     unmount: () => render(null, node),
   }
 }

@@ -1,4 +1,4 @@
-function serializeEvent(event) {
+export function serializeEvent(event) {
   const data = {};
 
   if (event.type in eventTransforms) {
@@ -23,7 +23,7 @@ const targetTransformCategories = {
     currentTime: target.currentTime,
   }),
   hasFiles: (target) => {
-    if (target?.type == "file") {
+    if (target?.type === "file") {
       return {
         files: Array.from(target.files).map((file) => ({
           lastModified: file.lastModified,
@@ -178,5 +178,3 @@ Object.keys(eventTypeCategories).forEach((category) => {
     eventTransforms[type] = eventTransformCategories[category];
   });
 });
-
-export default serializeEvent;
