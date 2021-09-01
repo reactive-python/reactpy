@@ -7,21 +7,9 @@ from __future__ import annotations
 
 import inspect
 import logging
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, cast
 
 from fastjsonschema import compile as compile_json_schema
-from mypy_extensions import TypedDict
 from typing_extensions import Protocol
 
 from idom.config import IDOM_DEBUG_MODE
@@ -30,7 +18,15 @@ from idom.core.events import (
     merge_event_handlers,
     to_event_handler_function,
 )
-from idom.core.proto import EventHandlerDict, EventHandlerMapping, EventHandlerType
+from idom.core.proto import (
+    EventHandlerDict,
+    EventHandlerMapping,
+    EventHandlerType,
+    ImportSourceDict,
+    VdomAttributesAndChildren,
+    VdomDict,
+    VdomJson,
+)
 
 
 logger = logging.getLogger()
@@ -106,23 +102,41 @@ VDOM_JSON_SCHEMA = {
 _COMPILED_VDOM_VALIDATOR = compile_json_schema(VDOM_JSON_SCHEMA)
 
 
-def validate_vdom(value: Any) -> VdomJson:
+def validate_vdom_json(value: Any) -> VdomJson:
     """Validate serialized VDOM - see :attr:`VDOM_JSON_SCHEMA` for more info"""
     _COMPILED_VDOM_VALIDATOR(value)
     return cast(VdomJson, value)
 
 
-_AttributesAndChildrenArg = Union[Mapping[str, Any], str, Iterable[Any], Any]
-_EventHandlersArg = Optional[EventHandlerMapping]
-_ImportSourceArg = Optional["ImportSourceDict"]
+def is_vdom(value: Any) -> bool:
+    """Return whether a value is a :class:`VdomDict`
+
+    This employs a very simple heuristic - something is VDOM if:
+
+    1. It is a ``dict`` instance
+    2. It contains the key ``"tagName"``
+    3. The value of the key ``"tagName"`` is a string
+
+    .. note::
+
+        Performing an ``isinstance(value, VdomDict)`` check is too restrictive since the
+        user would be forced to import ``VdomDict`` every time they needed to declare a
+        VDOM element. Giving the user more flexibility, at the cost of this check's
+        accuracy, is worth it.
+    """
+    return (
+        isinstance(value, dict)
+        and "tagName" in value
+        and isinstance(value["tagName"], str)
+    )
 
 
 def vdom(
     tag: str,
-    *attributes_and_children: _AttributesAndChildrenArg,
+    *attributes_and_children: VdomAttributesAndChildren,
     key: str = "",
-    event_handlers: _EventHandlersArg = None,
-    import_source: _ImportSourceArg = None,
+    event_handlers: Optional[EventHandlerMapping] = None,
+    import_source: Optional[ImportSourceDict] = None,
 ) -> VdomDict:
     """A helper function for creating VDOM dictionaries.
 
@@ -169,17 +183,20 @@ def vdom(
     return model
 
 
-class VdomDictConstructor(Protocol):
+class _VdomDictConstructor(Protocol):
     def __call__(
         self,
-        *args: _AttributesAndChildrenArg,
-        event_handlers: _EventHandlersArg = None,
-        import_source: _ImportSourceArg = None,
+        *attributes_and_children: VdomAttributesAndChildren,
+        key: str = ...,
+        event_handlers: Optional[EventHandlerMapping] = ...,
+        import_source: Optional[ImportSourceDict] = ...,
     ) -> VdomDict:
         ...
 
 
-def make_vdom_constructor(tag: str, allow_children: bool = True) -> VdomDictConstructor:
+def make_vdom_constructor(
+    tag: str, allow_children: bool = True
+) -> _VdomDictConstructor:
     """Return a constructor for VDOM dictionaries with the given tag name.
 
     The resulting callable will have the same interface as :func:`vdom` but without its
@@ -187,10 +204,10 @@ def make_vdom_constructor(tag: str, allow_children: bool = True) -> VdomDictCons
     """
 
     def constructor(
-        *attributes_and_children: _AttributesAndChildrenArg,
+        *attributes_and_children: VdomAttributesAndChildren,
         key: str = "",
-        event_handlers: _EventHandlersArg = None,
-        import_source: _ImportSourceArg = None,
+        event_handlers: Optional[EventHandlerMapping] = None,
+        import_source: Optional[ImportSourceDict] = None,
     ) -> VdomDict:
         model = vdom(
             tag,
@@ -319,54 +336,3 @@ if IDOM_DEBUG_MODE.current:
                     logger.error(f"Key not specified for dynamic child {child}")
 
         return False
-
-
-class _VdomDictOptional(TypedDict, total=False):
-    key: str
-    children: Sequence[Any]
-    attributes: Dict[str, Any]
-    eventHandlers: EventHandlerDict  # noqa
-    importSource: ImportSourceDict  # noqa
-
-
-class _VdomDictRequired(TypedDict, total=True):
-    tagName: str  # noqa
-
-
-class VdomDict(_VdomDictRequired, _VdomDictOptional):
-    """A :ref:`VDOM` dictionary"""
-
-
-class ImportSourceDict(TypedDict):
-    source: str
-    fallback: Any
-    sourceType: str  # noqa
-    unmountBeforeUpdate: bool  # noqa
-
-
-class _OptionalVdomJson(TypedDict, total=False):
-    key: str
-    error: str
-    children: List[Any]
-    attributes: Dict[str, Any]
-    eventHandlers: Dict[str, _JsonEventTarget]  # noqa
-    importSource: _JsonImportSource  # noqa
-
-
-class _RequiredVdomJson(TypedDict, total=True):
-    tagName: str  # noqa
-
-
-class VdomJson(_RequiredVdomJson, _OptionalVdomJson):
-    """A JSON serializable form of :class:`VdomDict` matching the :data:`VDOM_JSON_SCHEMA`"""
-
-
-class _JsonEventTarget(TypedDict):
-    target: str
-    preventDefault: bool  # noqa
-    stopPropagation: bool  # noqa
-
-
-class _JsonImportSource(TypedDict):
-    source: str
-    fallback: Any

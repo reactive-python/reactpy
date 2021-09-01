@@ -10,8 +10,7 @@ import warnings
 from functools import wraps
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
-from .proto import ComponentType
-from .vdom import VdomDict
+from .proto import ComponentType, VdomDict
 
 
 def component(

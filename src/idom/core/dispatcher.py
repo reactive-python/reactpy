@@ -26,11 +26,10 @@ from weakref import WeakSet
 from anyio import create_task_group
 from jsonpatch import apply_patch, make_patch
 
-from idom.core.vdom import VdomJson
 from idom.utils import Ref
 
 from .layout import LayoutEvent, LayoutUpdate
-from .proto import LayoutType
+from .proto import LayoutType, VdomJson
 
 
 logger = getLogger(__name__)

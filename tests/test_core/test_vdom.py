@@ -4,11 +4,26 @@ from fastjsonschema import JsonSchemaException
 import idom
 from idom.config import IDOM_DEBUG_MODE
 from idom.core.events import EventHandler
-from idom.core.vdom import make_vdom_constructor, validate_vdom
+from idom.core.proto import VdomDict
+from idom.core.vdom import is_vdom, make_vdom_constructor, validate_vdom_json
 
 
 FAKE_EVENT_HANDLER = EventHandler(lambda data: None)
 FAKE_EVENT_HANDLER_DICT = {"onEvent": FAKE_EVENT_HANDLER}
+
+
+@pytest.mark.parametrize(
+    "result, value",
+    [
+        (False, {}),
+        (False, {"tagName": None}),
+        (False, VdomDict()),
+        (True, {"tagName": ""}),
+        (True, VdomDict(tagName="")),
+    ],
+)
+def test_is_vdom(result, value):
+    assert is_vdom(value) == result
 
 
 @pytest.mark.parametrize(
@@ -195,7 +210,7 @@ def test_make_vdom_constructor():
     ],
 )
 def test_valid_vdom(value):
-    validate_vdom(value)
+    validate_vdom_json(value)
 
 
 @pytest.mark.parametrize(
@@ -294,7 +309,7 @@ def test_valid_vdom(value):
 )
 def test_invalid_vdom(value, error_message_pattern):
     with pytest.raises(JsonSchemaException, match=error_message_pattern):
-        validate_vdom(value)
+        validate_vdom_json(value)
 
 
 @pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="Only logs in debug mode")
