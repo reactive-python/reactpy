@@ -12,8 +12,16 @@ from pathlib import Path
 from typing import Any, List, NewType, Optional, Set, Tuple, Union, overload
 from urllib.parse import urlparse
 
+from typing_extensions import Protocol
+
 from idom.config import IDOM_DEBUG_MODE, IDOM_WED_MODULES_DIR
-from idom.core.vdom import ImportSourceDict, VdomDictConstructor, make_vdom_constructor
+from idom.core.proto import (
+    EventHandlerMapping,
+    ImportSourceDict,
+    VdomAttributesAndChildren,
+    VdomDict,
+)
+from idom.core.vdom import make_vdom_constructor
 
 from .utils import (
     module_name_suffix,
@@ -203,6 +211,16 @@ def module_from_file(
     )
 
 
+class _VdomDictConstructor(Protocol):
+    def __call__(
+        self,
+        *attributes_and_children: VdomAttributesAndChildren,
+        key: str = ...,
+        event_handlers: Optional[EventHandlerMapping] = ...,
+    ) -> VdomDict:
+        ...
+
+
 @dataclass(frozen=True)
 class WebModule:
     source: str
@@ -219,7 +237,7 @@ def export(
     export_names: str,
     fallback: Optional[Any],
     allow_children: bool,
-) -> VdomDictConstructor:
+) -> _VdomDictConstructor:
     ...
 
 
@@ -229,7 +247,7 @@ def export(
     export_names: Union[List[str], Tuple[str]],
     fallback: Optional[Any],
     allow_children: bool,
-) -> List[VdomDictConstructor]:
+) -> List[_VdomDictConstructor]:
     ...
 
 
@@ -238,7 +256,7 @@ def export(
     export_names: Union[str, List[str], Tuple[str]],
     fallback: Optional[Any] = None,
     allow_children: bool = True,
-) -> Union[VdomDictConstructor, List[VdomDictConstructor]]:
+) -> Union[_VdomDictConstructor, List[_VdomDictConstructor]]:
     """Return one or more VDOM constructors from a :class:`WebModule`
 
     Parameters:
@@ -276,7 +294,7 @@ def _make_export(
     name: str,
     fallback: Optional[Any],
     allow_children: bool,
-) -> VdomDictConstructor:
+) -> _VdomDictConstructor:
     return partial(
         make_vdom_constructor(
             name,

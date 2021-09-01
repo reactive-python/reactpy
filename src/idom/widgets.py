@@ -12,8 +12,7 @@ import idom
 from . import html
 from .core import hooks
 from .core.component import component
-from .core.proto import ComponentConstructor
-from .core.vdom import VdomDict
+from .core.proto import ComponentConstructor, VdomDict
 from .utils import Ref
 
 
@@ -60,7 +59,8 @@ def Input(
             return
         callback(value if cast is None else cast(value))
 
-    return html.input({**attrs, "type": type, "value": value, "onChange": on_change})
+    attributes = {**attrs, "type": type, "value": value, "onChange": on_change}
+    return html.input(attributes)
 
 
 MountFunc = Callable[[ComponentConstructor], None]

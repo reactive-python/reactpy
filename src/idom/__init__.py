@@ -3,7 +3,7 @@ from .core import hooks
 from .core.component import Component, component
 from .core.events import EventHandler, event
 from .core.layout import Layout
-from .core.vdom import VdomDict, vdom
+from .core.vdom import vdom
 from .server.prefab import run
 from .utils import Ref, html_to_vdom
 from .widgets import hotswap, multiview
@@ -28,6 +28,5 @@ __all__ = [
     "Ref",
     "run",
     "vdom",
-    "VdomDict",
     "web",
 ]

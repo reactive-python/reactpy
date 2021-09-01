@@ -299,7 +299,7 @@ to allow users to enable this behavior early.
 - minor doc updates - :commit:`e5511d9`
 - add tests for callback identity preservation with keys - :commit:`72e03ec`
 - add 'key' to VDOM spec - :commit:`c3236fe`
-- Rename validate_serialized_vdom to validate_vdom - :commit:`d04faf9`
+- Rename validate_serialized_vdom to validate_vdom_json - :commit:`d04faf9`
 - EventHandler should not serialize itself - :commit:`f7a59f2`
 - fix docs typos - :commit:`42b2e20`
 - fixes: #331 - add roadmap to docs - :commit:`4226c12`

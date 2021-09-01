@@ -30,8 +30,8 @@ from idom.config import IDOM_DEBUG_MODE, IDOM_FEATURE_INDEX_AS_DEFAULT_KEY
 from idom.utils import Ref
 
 from .hooks import LifeCycleHook
-from .proto import ComponentType, EventHandlerDict
-from .vdom import VdomJson, validate_vdom
+from .proto import ComponentType, EventHandlerDict, VdomJson
+from .vdom import validate_vdom_json
 
 
 logger = getLogger(__name__)
@@ -154,7 +154,7 @@ class Layout:
             # Ensure that the model is valid VDOM on each render
             root_id = self._root_life_cycle_state_id
             root_model = self._model_states_by_life_cycle_state_id[root_id]
-            validate_vdom(root_model.model.current)
+            validate_vdom_json(root_model.model.current)
             return result
 
     def _create_layout_update(self, old_state: _ModelState) -> LayoutUpdate:
