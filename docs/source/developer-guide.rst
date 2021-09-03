@@ -360,11 +360,9 @@ already authored :ref:`Changelog summary <Create Changelog Entry>`.
 Other Core Repositories
 -----------------------
 
-IDOM depends on, or is used by several other core projects. For documentation on them
-you should refer to their respective documentation in the links below:
+IDOM depends on several other core projects. For documentation on them you should refer
+to their respective documentation in the links below:
 
-- https://github.com/idom-team/idom-react-component-cookiecutter - A template repo for
-  making :ref:`Custom Javascript Components`.
 - https://github.com/idom-team/flake8-idom-hooks - Enforces the :ref:`Rules of Hooks`
 - https://github.com/idom-team/idom-jupyter - IDOM integration for Jupyter
 - https://github.com/idom-team/idom-dash - IDOM integration for Plotly Dash
