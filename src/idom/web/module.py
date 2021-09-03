@@ -9,7 +9,7 @@ import shutil
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import Any, List, NewType, Optional, Set, Tuple, Union, overload
+from typing import Any, Dict, List, NewType, Optional, Set, Tuple, Union, overload
 from urllib.parse import urlparse
 
 from typing_extensions import Protocol
@@ -99,10 +99,14 @@ def module_from_template(
         warning.cIt's best to author a module adhering to the
         :ref:`Custom Javascript Component` interface instead.
 
+    **Templates**
+
+    - ``react``: for modules exporting React components
+    - ``react-default``: for React modules that use ``export default``
+
     Parameters:
         template:
-            The name of the framework template to use with the given ``package``
-            (only ``react`` is supported at the moment).
+            The name of the framework template to use with the given ``package``.
         package:
             The name of a package to load. May include a file extension (defaults to
             ``.js`` if not given)
@@ -137,7 +141,7 @@ def module_from_template(
     if not target_file.exists():
         target_file.parent.mkdir(parents=True, exist_ok=True)
         target_file.write_text(
-            template_file.read_text().replace("$PACKAGE", package).replace("$CDN", cdn)
+            _resolve_template(template_file, {"$PACKAGE": package, "$CDN": cdn})
         )
 
     return WebModule(
@@ -316,3 +320,24 @@ def _web_module_path(name: str, prefix: str = "") -> Path:
         directory /= prefix
     path = directory.joinpath(*name.split("/"))
     return path.with_suffix(path.suffix)
+
+
+def _resolve_template(file: Path, substitutions: Dict[str, str]) -> str:
+    # NOTE: If this needs to be any more complex than it is, we should really
+    # reconsider this solution. Either use a real templating solution like Jinja
+    # or do something else entirely.
+    resolved_lines = []
+    for line in file.read_text().splitlines():
+        if line.startswith("$TEMPLATE:"):
+            relative_path = line.split(":", 1)[1].strip()
+            inner_template_file = file.parent.joinpath(*relative_path.split("/"))
+            resolved_lines.append(_resolve_template(inner_template_file, {}))
+        else:
+            resolved_lines.append(line)
+
+    result = "\n".join(resolved_lines)
+    if substitutions:
+        for k, v in substitutions.items():
+            result = result.replace(k, v)
+
+    return result
