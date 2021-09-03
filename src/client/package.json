@@ -14,10 +14,10 @@
   "scripts": {
     "build": "snowpack build",
     "format": "npm --workspaces run format",
-    "test": "npm --workspaces test",
-    "publish": "npm --workspaces publish"
+    "publish": "npm --workspaces publish",
+    "test": "npm --workspaces test"
   },
-  "version": "0.32.0",
+  "version": "0.33.0",
   "workspaces": [
     "./packages/*"
   ]

@@ -2,6 +2,49 @@ Changelog
 =========
 
 
+0.33.0
+------
+
+The most significant fix in this release is for a regression which manifested in
+:issue:`480`, :issue:`489`, and :issue:`451` which resulted from an issue in the way
+JSON patches were being applied client-side. This was ultimately resolved by
+:pull:`490`. While it's difficult to test this without a more thorough Javascript
+suite, we added a test that should hopefully catch this in the future by proxy.
+
+The most important breaking change, is yet another which modifies the Custom Javascript
+Component interface. We now add a ``create()`` function to the ``bind()`` interface that
+allows IDOM's client to recursively create components from that (and only that) import
+source. Prior to this, the interface was given unrendered models for child elements. The
+imported module was then responsible for rendering them. This placed a large burden on
+the author to understand how to handle these unrendered child models. In addition, in
+the React template used by ``module_from_template`` we needed to import a version of
+``idom-client-react`` from the CDN - this had already caused some issues where the
+template required a version of ``idom-client-react`` in the which had not been released
+yet.
+
+**Closed Issues**
+
+- Client-side error in mount-01d35dc3.js - :issue:`489`
+- Style Cannot Be Updated - :issue:`480`
+- Displaying error messages in the client via `__error__` tag can leak secrets - :issue:`454`
+- Examples broken in docs  - :issue:`451`
+- Rework docs landing page - :issue:`446`
+- eventHandlers should be a mapping of generic callables - :issue:`423`
+- Allow customization of built-in IDOM client - :issue:`253`
+
+**Pull Requests**
+
+- move VdomDict and VdomJson to proto - :pull:`492`
+- only send error info in debug mode - :pull:`491`
+- correcly apply client-side JSON patch - :pull:`490`
+- add script to set version of all packages in IDOM - :pull:`483`
+- Pass import source to bind - :pull:`482`
+- Do not mutate client-side model - :pull:`481`
+- assume import source children come from same source - :pull:`479`
+- make an EventHandlerType protocol - :pull:`476`
+- Update issue form - :pull:`471`
+
+
 0.32.0
 ------
 
