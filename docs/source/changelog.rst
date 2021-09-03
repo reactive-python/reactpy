@@ -2,6 +2,18 @@ Changelog
 =========
 
 
+0.33.1
+------
+
+A hot fix for a regression introduced in ``0.33.0`` where the root element of the layout
+could not be updated. See :issue:`498` for more info. A regression test for this will
+be introduced in a future release.
+
+**Pull Requests**
+
+- Fix 498 pt1 - :pull:`501`
+
+
 0.33.0
 ------
 
