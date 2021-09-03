@@ -1,4 +1,4 @@
-typing-extensions >=3.7.4
+typing-extensions >=3.10
 mypy-extensions >=0.4.3
 anyio >=3.0
 jsonpatch >=1.26

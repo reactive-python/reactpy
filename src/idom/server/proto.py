@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from threading import Thread
 from typing import Optional, TypeVar
 
 from typing_extensions import Protocol
@@ -32,7 +33,7 @@ class Server(Protocol[_App]):
     def run(self, host: str, port: int) -> None:
         """Start running the server"""
 
-    def run_in_thread(self, host: str, port: int) -> None:
+    def run_in_thread(self, host: str, port: int) -> Thread:
         """Run the server in a thread"""
 
     def wait_until_started(self, timeout: Optional[float] = None) -> None:
