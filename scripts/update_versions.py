@@ -1,7 +1,5 @@
 import json
-import sys
 from pathlib import Path
-from typing import List
 
 import semver
 
@@ -17,7 +15,7 @@ JS_PACKAGE_JSON_FILES = [
 VERSION_INFO = semver.VersionInfo.parse(VERSION_FILE.read_text().strip())
 
 
-def main(args: List[str]) -> None:
+def main() -> None:
     version_str = str(VERSION_INFO)
     update_py_version(version_str)
     update_js_versions(version_str)
@@ -43,4 +41,4 @@ def update_js_versions(new_version: str) -> None:
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()

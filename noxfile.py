@@ -194,7 +194,7 @@ def tag(session: Session):
     except Exception:
         session.error("Cannot create a tag - tROOT are uncommited changes")
 
-    version = (ROOT / "VERSION").read_text().strip()
+    version = get_version()
     install_requirements_file(session, "make-release")
     session.run("pysemver", "check", version)
 
@@ -217,12 +217,21 @@ def update_version(session: Session) -> None:
         session.error("To many arguments")
 
     try:
-        version = session.posargs[0]
+        new_version = session.posargs[0]
     except IndexError:
         session.error("No version tag given")
 
     install_requirements_file(session, "make-release")
-    session.run("python", "scripts/update_versions.py", version)
+
+    # check that version is valid semver
+    session.run("pysemver", "check", new_version)
+
+    old_version = get_version()
+    session.log(f"Old version: {old_version}")
+    session.log(f"New version: {new_version}")
+    set_version(new_version)
+
+    session.run("python", "scripts/update_versions.py")
 
 
 @nox.session(reuse_venv=True)
@@ -250,3 +259,11 @@ def install_idom_dev(session: Session, extras: str = "stable") -> None:
         session.install("-e", f".[{extras}]")
     else:
         session.posargs.remove("--no-install")
+
+
+def get_version() -> str:
+    return (ROOT / "VERSION").read_text().strip()
+
+
+def set_version(new: str) -> None:
+    (ROOT / "VERSION").write_text(new.strip() + "\n")
