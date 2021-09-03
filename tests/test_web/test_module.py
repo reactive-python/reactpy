@@ -168,3 +168,26 @@ def test_module_exports_multiple_components(driver, display):
     display(lambda: Header2({"id": "my-h2"}, "My Header 2"))
 
     driver.find_element_by_id("my-h2")
+
+
+def test_imported_components_can_render_children(driver, display):
+    module = idom.web.module_from_file(
+        "component-can-have-child", JS_FIXTURES_DIR / "component-can-have-child.js"
+    )
+    Parent, Child = idom.web.export(module, ["Parent", "Child"])
+
+    display(
+        lambda: Parent(
+            Child({"index": 1}),
+            Child({"index": 2}),
+            Child({"index": 3}),
+        )
+    )
+
+    parent = driver.find_element_by_id("the-parent")
+    children = parent.find_elements_by_tag_name("li")
+
+    assert len(children) == 3
+
+    for index, child in enumerate(children):
+        assert child.get_attribute("id") == f"child-{index + 1}"
