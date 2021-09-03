@@ -6,7 +6,9 @@ from importlib import import_module
 from pathlib import Path
 from socket import socket
 from threading import Event, Thread
-from typing import Any, Callable, List, Optional, TypeVar, cast
+from typing import Any, Callable, List, Optional
+
+from typing_extensions import ParamSpec
 
 import idom
 
@@ -22,21 +24,23 @@ _SUPPORTED_PACKAGES = [
     "tornado",
 ]
 
-_Func = TypeVar("_Func", bound=Callable[..., None])
+
+_FuncParams = ParamSpec("_FuncParams")
 
 
-def threaded(function: _Func) -> _Func:
+def threaded(function: Callable[_FuncParams, None]) -> Callable[_FuncParams, Thread]:  # type: ignore
     @wraps(function)
-    def wrapper(*args: Any, **kwargs: Any) -> None:
+    def wrapper(*args: Any, **kwargs: Any) -> Thread:
         def target() -> None:
             asyncio.set_event_loop(asyncio.new_event_loop())
             function(*args, **kwargs)
 
-        Thread(target=target, daemon=True).start()
+        thread = Thread(target=target, daemon=True)
+        thread.start()
 
-        return None
+        return thread
 
-    return cast(_Func, wrapper)
+    return wrapper
 
 
 def wait_on_event(description: str, event: Event, timeout: Optional[float]) -> None:
