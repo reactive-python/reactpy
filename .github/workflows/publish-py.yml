@@ -1,12 +1,11 @@
 # This workflows will upload a Python Package using Twine when a release is created
 # For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
 
-name: Release Package
+name: Publish Python
 
 on:
   release:
-    types:
-      - published
+    types: [published]
 
 jobs:
   release-package:
@@ -15,14 +14,14 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2-beta
         with:
-          node-version: "14"
+          node-version: "14.x"
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
           python-version: "3.x"
       - name: Install latest NPM
         run: |
-          npm install -g npm@latest
+          npm install -g npm@7.22.0
           npm --version
       - name: Install dependencies
         run: |
