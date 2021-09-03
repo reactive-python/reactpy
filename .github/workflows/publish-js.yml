@@ -1,7 +1,7 @@
 # This workflows will upload a Javscript Package using NPM to npmjs.org when a release is created
 # For more information see: https://docs.github.com/en/actions/guides/publishing-nodejs-packages
 
-name: Publish Python
+name: Publish Javascript
 
 on:
   release:
