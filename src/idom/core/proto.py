@@ -168,5 +168,5 @@ class EventHandlerType(Protocol):
 
     .. note::
 
-        When ``None`` it is left to a :class:`LayoutType` to auto generate a unique ID.
+        When ``None``, it is left to a :class:`LayoutType` to auto generate a unique ID.
     """
