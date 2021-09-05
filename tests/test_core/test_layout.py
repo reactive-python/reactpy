@@ -44,7 +44,7 @@ async def test_layout_cannot_be_used_outside_context_manager(caplog):
         layout.update(component)
 
     with pytest.raises(Exception):
-        await render_json_patch(layout)
+        await layout.render()
 
 
 async def test_simple_layout():
@@ -193,7 +193,7 @@ async def test_components_are_garbage_collected():
         return idom.html.div()
 
     with idom.Layout(Outer()) as layout:
-        await render_json_patch(layout)
+        await layout.render()
 
         assert len(live_components) == 2
 
@@ -203,7 +203,7 @@ async def test_components_are_garbage_collected():
         # changed component in the set of `live_components` the old `Inner` deleted and new
         # `Inner` added.
         outer_component_hook.latest.schedule_render()
-        await render_json_patch(layout)
+        await layout.render()
 
         assert len(live_components - last_live_components) == 1
 
@@ -236,7 +236,7 @@ async def test_root_component_life_cycle_hook_is_garbage_collected():
         return idom.html.div()
 
     with idom.Layout(Root()) as layout:
-        await render_json_patch(layout)
+        await layout.render()
 
         assert len(live_hooks) == 1
 
@@ -280,7 +280,7 @@ async def test_life_cycle_hooks_are_garbage_collected():
         return idom.html.div()
 
     with idom.Layout(Outer()) as layout:
-        await render_json_patch(layout)
+        await layout.render()
 
         assert len(live_hooks) == 2
         last_live_hooks = live_hooks.copy()
@@ -288,7 +288,7 @@ async def test_life_cycle_hooks_are_garbage_collected():
         # We expect the hook for `InnerOne` to be garbage collected since it the
         # component will get replaced.
         set_inner_component(InnerTwo())
-        await render_json_patch(layout)
+        await layout.render()
         assert len(live_hooks - last_live_hooks) == 1
 
     # The layout still holds a reference to the root so that's only deleted once we
@@ -317,14 +317,14 @@ async def test_double_updated_component_is_not_double_rendered():
         return idom.html.div()
 
     with idom.Layout(AnyComponent()) as layout:
-        await render_json_patch(layout)
+        await layout.render()
 
         assert run_count.current == 1
 
         hook.latest.schedule_render()
         hook.latest.schedule_render()
 
-        await render_json_patch(layout)
+        await layout.render()
         try:
             await asyncio.wait_for(
                 layout.render(),
@@ -349,7 +349,7 @@ async def test_update_path_to_component_that_is_not_direct_child_is_correct():
         return idom.html.div()
 
     with idom.Layout(Parent()) as layout:
-        await render_json_patch(layout)
+        await layout.render()
 
         hook.latest.schedule_render()
 
@@ -407,7 +407,7 @@ async def test_model_key_preserves_callback_identity_for_common_elements(caplog)
         return idom.html.div(children)
 
     with idom.Layout(MyComponent()) as layout:
-        await render_json_patch(layout)
+        await layout.render()
         for i in range(3):
             event = LayoutEvent(good_handler.target, [])
             await layout.deliver(event)
@@ -416,7 +416,7 @@ async def test_model_key_preserves_callback_identity_for_common_elements(caplog)
             # reset after checking
             called_good_trigger.current = False
 
-            await render_json_patch(layout)
+            await layout.render()
 
     assert not caplog.records
 
@@ -455,7 +455,7 @@ async def test_model_key_preserves_callback_identity_for_components():
         return idom.html.button({"onClick": callback, "id": "good"}, "good")
 
     with idom.Layout(RootComponent()) as layout:
-        await render_json_patch(layout)
+        await layout.render()
         for _ in range(3):
             event = LayoutEvent(good_handler.target, [])
             await layout.deliver(event)
@@ -464,7 +464,7 @@ async def test_model_key_preserves_callback_identity_for_components():
             # reset after checking
             called_good_trigger.current = False
 
-            await render_json_patch(layout)
+            await layout.render()
 
 
 async def test_component_can_return_another_component_directly():
@@ -511,18 +511,18 @@ async def test_hooks_for_keyed_components_get_garbage_collected():
         return idom.html.div(key)
 
     with idom.Layout(Outer()) as layout:
-        await render_json_patch(layout)
+        await layout.render()
 
         pop_item.current()
-        await render_json_patch(layout)
+        await layout.render()
         assert garbage_collect_items == [3]
 
         pop_item.current()
-        await render_json_patch(layout)
+        await layout.render()
         assert garbage_collect_items == [3, 2]
 
         pop_item.current()
-        await render_json_patch(layout)
+        await layout.render()
         assert garbage_collect_items == [3, 2, 1]
 
 
@@ -534,7 +534,7 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
         )
 
     with idom.Layout(ComponentReturnsDuplicateKeys()) as layout:
-        await render_json_patch(layout)
+        await layout.render()
 
     with pytest.raises(ValueError, match=r"Duplicate keys \['duplicate'\] at '/'"):
         raise next(iter(caplog.records)).exc_info[1]
@@ -555,11 +555,11 @@ async def test_keyed_components_preserve_hook_on_parent_update():
         return idom.html.div(key)
 
     with idom.Layout(Outer()) as layout:
-        await render_json_patch(layout)
+        await layout.render()
         old_inner_hook = inner_hook.latest
 
         outer_hook.latest.schedule_render()
-        await render_json_patch(layout)
+        await layout.render()
         assert old_inner_hook is inner_hook.latest
 
 
@@ -575,7 +575,7 @@ async def test_log_error_on_bad_event_handler(caplog):
         return idom.html.button({"onClick": raise_error})
 
     with idom.Layout(ComponentWithBadEventHandler()) as layout:
-        await render_json_patch(layout)
+        await layout.render()
         event = LayoutEvent(bad_handler.target, [])
         await layout.deliver(event)
 
