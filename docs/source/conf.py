@@ -34,7 +34,6 @@ extlinks = {
     "pull": ("https://github.com/idom-team/idom/pull/%s", "#"),
     "discussion": ("https://github.com/idom-team/idom/discussions/%s", "#"),
     "commit": ("https://github.com/idom-team/idom/commit/%s", ""),
-    "release": ("https://pypi.org/project/idom/%s", "v%s"),
 }
 
 # -- General configuration ---------------------------------------------------

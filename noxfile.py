@@ -198,15 +198,14 @@ def tag(session: Session):
     install_requirements_file(session, "make-release")
     session.run("pysemver", "check", version)
 
-    expected_title = f":release:`{version}`"
     changelog_file = ROOT / "docs" / "source" / "changelog.rst"
     for line in changelog_file.read_text().splitlines():
-        if line == expected_title:
+        if line == version:
             break
     else:
         session.error(
             f"No changelog entry for {version} in {changelog_file} - "
-            f"make sure you have a title section called {expected_title}."
+            f"make sure you have a title section called {version}."
         )
 
     session.run("git", "tag", version, external=True)
