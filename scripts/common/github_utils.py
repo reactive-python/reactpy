@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Iterator
+from typing import Any, Iterator, Optional
 
 import requests
 from dateutil.parser import isoparse
 
 
 REPO_NAME = "idom-team/idom"
-STR_DATE_FORMAT = r"%Y-%m-%d"
 
 
 def last_release_date() -> datetime:
@@ -16,8 +15,19 @@ def last_release_date() -> datetime:
     return isoparse(response.json()["published_at"])
 
 
-def date_range_query(start: datetime, stop: datetime = datetime.now()) -> str:
-    return start.strftime(STR_DATE_FORMAT) + ".." + stop.strftime(STR_DATE_FORMAT)
+def date_range_query(
+    start: Optional[datetime] = None,
+    stop: Optional[datetime] = None,
+) -> str:
+    assert start or stop, "No date range given"
+
+    if stop is None:
+        return ">" + start.isoformat()
+
+    if start is None:
+        return "<=" + stop.isoformat()
+
+    return start.isoformat() + ".." + stop.isoformat()
 
 
 def search_idom_repo(query: str) -> Iterator[Any]:

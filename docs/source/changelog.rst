@@ -2,8 +2,19 @@ Changelog
 =========
 
 
-0.33.1
-------
+:release:`0.33.2`
+-----------------
+
+A release to fix a memory leak caused by event handlers that were not being removed
+when components updated.
+
+**Closed Issues**
+
+- Non-root component event handlers cause memory leaks - :issue:`510`
+
+
+:release:`0.33.1`
+-----------------
 
 A hot fix for a regression introduced in ``0.33.0`` where the root element of the layout
 could not be updated. See :issue:`498` for more info. A regression test for this will
@@ -14,8 +25,8 @@ be introduced in a future release.
 - Fix 498 pt1 - :pull:`501`
 
 
-0.33.0
-------
+:release:`0.33.0`
+-----------------
 
 The most significant fix in this release is for a regression which manifested in
 :issue:`480`, :issue:`489`, and :issue:`451` which resulted from an issue in the way
@@ -57,8 +68,8 @@ yet.
 - Update issue form - :pull:`471`
 
 
-0.32.0
-------
+:release:`0.32.0`
+-----------------
 
 In addition to a variety of bug fixes and other minor improvements, there's a breaking
 change to the custom component interface - instead of exporting multiple functions that
@@ -93,8 +104,8 @@ See :ref:`Custom JavaScript Components` for details on the new interface.
 - fix #429 - move client JS to top of src/ dir - :pull:`430`
 
 
-0.31.0
-------
+:release:`0.31.0`
+-----------------
 
 The :class:`~idom.core.layout.Layout` is now a prototype, and ``Layout.update`` is no
 longer a public API. This is combined with a much more significant refactor of the
@@ -129,8 +140,8 @@ Instead, a unique ID is generated internally which is associated with the
 - fix #419 and #412 - :pull:`422`
 
 
-0.30.1
-------
+:release:`0.30.1`
+-----------------
 
 Removes the usage of the :func:`id` function for generating unique ideas because there
 were situations where the IDs bound to the lifetime of an object are problematic. Also
@@ -145,8 +156,8 @@ lead to confusing bugs.
 - add changelog entry for :ref:`0.30.0` - :pull:`415`
 
 
-0.30.0
-------
+:release:`0.30.0`
+-----------------
 
 With recent changes to the custom component interface, it's now possible to remove all
 runtime reliance on NPM. Doing so has many virtuous knock-on effects:
@@ -189,8 +200,8 @@ desired library from a CDN.
 - Remove all runtime reliance on NPM - :pull:`398`
 
 
-0.29.0
-------
+:release:`0.29.0`
+-----------------
 
 Contains breaking changes, the most significant of which are:
 
@@ -220,8 +231,8 @@ Contains breaking changes, the most significant of which are:
 - correctly serialize File object - :commit:`a2398dc`
 
 
-0.28.0
-------
+:release:`0.28.0`
+-----------------
 
 Includes a wide variety of improvements:
 
@@ -274,8 +285,8 @@ and breaking changes, the most significant of which are:
 - pass children as props to mount() - :commit:`9494bc0`
 
 
-0.27.0
-------
+:release:`0.27.0`
+-----------------
 
 Introduces changes to the interface for custom Javascript components. This now allows
 JS modules to export a ``mount(element, component, props)`` function which can be used
@@ -291,8 +302,8 @@ variety of component implementations.
 - federate modules with mount function - :commit:`bf63a62`
 
 
-0.26.0
-------
+:release:`0.26.0`
+-----------------
 
 A collection of minor fixes and changes that, as a whole, add up to something requiring
 a minor release. The most significant addition is a fix for situations where a
@@ -309,8 +320,9 @@ update deletes the original button.
 - check component has model state before render - :commit:`6a50d56`
 - rename daemon to run_in_thread + misc - :commit:`417b687`
 
-0.25.0
-------
+
+:release:`0.25.0`
+-----------------
 
 Completely refactors :ref:`Layout Dispatchers <Layout Dispatcher>` by switching from a
 class-based approach to one that leverages pure functions. While the logic itself isn't
@@ -329,8 +341,9 @@ of ``anyio``.
 - require anyio>=3.0 - :commit:`24aed28`
 - refactor dispatchers - :commit:`ce8e060`
 
-0.24.0
-------
+
+:release:`0.24.0`
+-----------------
 
 This release contains an update that allows components and elements to have "identity".
 That is, their state can be preserved across updates. Before this point, only the state
@@ -359,15 +372,17 @@ to allow users to enable this behavior early.
 - fix docs typos - :commit:`42b2e20`
 - fixes: #331 - add roadmap to docs - :commit:`4226c12`
 
-0.23.1
-------
+
+:release:`0.23.1`
+-----------------
 
 **Highlighted Commits:**
 
 - fix non-deterministic return order in install() - :commit:`494d5c2`
 
-0.23.0
-------
+
+:release:`0.23.0`
+-----------------
 
 **Highlighted Commits:**
 

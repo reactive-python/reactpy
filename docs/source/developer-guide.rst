@@ -295,8 +295,8 @@ bit like this:
 
 .. code-block:: text
 
-    X.Y.Z
-    -----
+    :release:`X.Y.Z`
+    ----------------
 
     The release summary...
 

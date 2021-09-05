@@ -20,5 +20,5 @@
     "format": "prettier --write ./src",
     "test": "echo 'no tests'"
   },
-  "version": "0.33.1"
+  "version": "0.33.2"
 }

@@ -1398,7 +1398,7 @@ function useJsonPatchCallback(initial) {
         // We CANNOT mutate the part of the document because React checks some
         // attributes of the model (e.g. model.attributes.style is checked for
         // identity).
-        doc.current = applyNonMutativePatch(doc, patch);
+        doc.current = applyNonMutativePatch(doc.current, patch);
       } else {
         // We CAN mutate the document here though because we know that nothing above
         // The patch `path` is changing. Thus, maintaining the identity for that section
