@@ -404,6 +404,9 @@ class Layout:
         while to_unmount:
             model_state = to_unmount.pop()
 
+            for target in model_state.targets_by_event.values():
+                del self._event_handlers[target]
+
             if hasattr(model_state, "life_cycle_state"):
                 life_cycle_state = model_state.life_cycle_state
                 del self._model_states_by_life_cycle_state_id[life_cycle_state.id]
@@ -583,7 +586,7 @@ class _ModelState:
         self.targets_by_event = targets_by_event
         """The element's event handler target strings indexed by their event name"""
 
-        # === Conditionally Evailable Attributes ===
+        # === Conditionally Available Attributes ===
         # It's easier to conditionally assign than to force a null check on every usage
 
         if parent is not None:
