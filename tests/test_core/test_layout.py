@@ -2,6 +2,7 @@ import asyncio
 import gc
 import re
 from weakref import finalize
+from weakref import ref as weakref
 
 import pytest
 
@@ -524,6 +525,50 @@ async def test_hooks_for_keyed_components_get_garbage_collected():
         pop_item.current()
         await layout.render()
         assert garbage_collect_items == [3, 2, 1]
+
+
+async def test_event_handler_at_component_root_is_garbage_collected():
+    event_handler = idom.Ref()
+
+    @idom.component
+    def HasEventHandlerAtRoot():
+        value, set_value = idom.hooks.use_state(False)
+        set_value(not value)  # trigger renders forever
+        event_handler.current = weakref(set_value)
+        button = idom.html.button({"onClick": set_value}, "state is: ", value)
+        event_handler.current = weakref(button["eventHandlers"]["onClick"].function)
+        return button
+
+    with idom.Layout(HasEventHandlerAtRoot()) as layout:
+        await layout.render()
+
+        for i in range(3):
+            last_event_handler = event_handler.current
+            # after this render we should have release the reference to the last handler
+            await layout.render()
+            assert last_event_handler() is None
+
+
+async def test_event_handler_deep_in_component_layout_is_garbage_collected():
+    event_handler = idom.Ref()
+
+    @idom.component
+    def HasNestedEventHandler():
+        value, set_value = idom.hooks.use_state(False)
+        set_value(not value)  # trigger renders forever
+        event_handler.current = weakref(set_value)
+        button = idom.html.button({"onClick": set_value}, "state is: ", value)
+        event_handler.current = weakref(button["eventHandlers"]["onClick"].function)
+        return idom.html.div(idom.html.div(button))
+
+    with idom.Layout(HasNestedEventHandler()) as layout:
+        await layout.render()
+
+        for i in range(3):
+            last_event_handler = event_handler.current
+            # after this render we should have release the reference to the last handler
+            await layout.render()
+            assert last_event_handler() is None
 
 
 async def test_duplicate_sibling_keys_causes_error(caplog):
