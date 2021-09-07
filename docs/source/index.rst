@@ -43,12 +43,17 @@ IDOM
 A package for building responsive user interfaces in pure Python.
 
 - Create full stack applications without writing a single line of Javascript.
-- Rapidly develop :ref:`interactive data dashboards <Simple Dashboard>` with ease.
-- Works with the existing Javascript without any extra work.
-- Use battle-tested :ref:`declarative <Declarative Components>` design patterns inspired
-  by `ReactJS <https://reactjs.org>`__.
-- Write :ref:`custom Javascript components` when you need client-side performance
-- Ecosystem independence - use IDOM :ref:`wherever <ecosystem independence>` you might need it
+- Rapidly and easily develop :ref:`interactive data dashboards <Simple Dashboard>`.
+- Use many existing Javascript packages without any extra work.
+- Leverage time-tested :ref:`declarative <Declarative Components>` design patterns
+  inspired by `ReactJS <https://reactjs.org>`__.
+- Write :ref:`custom Javascript components` when you need client-side performance.
+- Is :ref:`ecosystem independent <ecosystem independence>` - works with
+  `Jupyter <https://github.com/idom-team/idom-jupyter>`__,
+  `Dash <https://github.com/idom-team/idom-dash>`__,
+  `Django <https://github.com/idom-team/django-idom>`__, and more.
+- Add to existing applications with the
+  `Javascript client <https://github.com/idom-team/idom/tree/main/src/client>`__.
 
 .. grid:: 1 1 2 2
     :gutter: 1
