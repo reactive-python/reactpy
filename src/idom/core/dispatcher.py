@@ -36,7 +36,21 @@ logger = getLogger(__name__)
 
 
 SendCoroutine = Callable[["VdomJsonPatch"], Awaitable[None]]
+"""Send model patches given by a dispatcher"""
+
 RecvCoroutine = Callable[[], Awaitable[LayoutEvent]]
+"""Called by a dispatcher to return a :class:`idom.core.layout.LayoutEvent`
+
+The event will then trigger an :class:`idom.core.proto.EventHandlerType` in a layout.
+"""
+
+
+class Stop(BaseException):
+    """Stop dispatching changes and events
+
+    Raising this error will tell dispatchers to gracefully exit. Typically this is
+    called by code running inside a layout to tell it to stop rendering.
+    """
 
 
 async def dispatch_single_view(
@@ -46,9 +60,12 @@ async def dispatch_single_view(
 ) -> None:
     """Run a dispatch loop for a single view instance"""
     with layout:
-        async with create_task_group() as task_group:
-            task_group.start_soon(_single_outgoing_loop, layout, send)
-            task_group.start_soon(_single_incoming_loop, layout, recv)
+        try:
+            async with create_task_group() as task_group:
+                task_group.start_soon(_single_outgoing_loop, layout, send)
+                task_group.start_soon(_single_incoming_loop, layout, recv)
+        except Stop:
+            logger.info("Stopped dispatch task")
 
 
 SharedViewDispatcher = Callable[[SendCoroutine, RecvCoroutine], Awaitable[None]]
@@ -63,9 +80,8 @@ async def create_shared_view_dispatcher(
     with layout:
         (
             dispatch_shared_view,
-            model_state,
-            all_patch_queues,
-        ) = await _make_shared_view_dispatcher(layout)
+            send_patch,
+        ) = await _create_shared_view_dispatcher(layout)
 
         dispatch_tasks: List[Future[None]] = []
 
@@ -95,34 +111,35 @@ async def create_shared_view_dispatcher(
             else:
                 patch = VdomJsonPatch.create_from(update_future.result())
 
-            model_state.current = patch.apply_to(model_state.current)
-            # push updates to all dispatcher callbacks
-            for queue in all_patch_queues:
-                queue.put_nowait(patch)
+            send_patch(patch)
 
 
 def ensure_shared_view_dispatcher_future(
     layout: LayoutType[LayoutUpdate, LayoutEvent],
 ) -> Tuple[Future[None], SharedViewDispatcher]:
-    """Ensure the future of a dispatcher created by :func:`create_shared_view_dispatcher`"""
+    """Ensure the future of a dispatcher made by :func:`create_shared_view_dispatcher`
+
+    This returns a future that can be awaited to block until all dispatch tasks have
+    completed as well as the dispatcher coroutine itself which is used to start dispatch
+    tasks.
+
+    This is required in situations where usage of the async context manager from
+    :func:`create_shared_view_dispatcher` is not possible. Typically this happens when
+    integrating IDOM with other frameworks, servers, or applications.
+    """
     dispatcher_future: Future[SharedViewDispatcher] = Future()
 
     async def dispatch_shared_view_forever() -> None:
         with layout:
             (
                 dispatch_shared_view,
-                model_state,
-                all_patch_queues,
-            ) = await _make_shared_view_dispatcher(layout)
+                send_patch,
+            ) = await _create_shared_view_dispatcher(layout)
 
             dispatcher_future.set_result(dispatch_shared_view)
 
             while True:
-                patch = await render_json_patch(layout)
-                model_state.current = patch.apply_to(model_state.current)
-                # push updates to all dispatcher callbacks
-                for queue in all_patch_queues:
-                    queue.put_nowait(patch)
+                send_patch(await render_json_patch(layout))
 
     async def dispatch(send: SendCoroutine, recv: RecvCoroutine) -> None:
         await (await dispatcher_future)(send, recv)
@@ -159,28 +176,37 @@ class VdomJsonPatch(NamedTuple):
         return cls(update.path, make_patch(update.old or {}, update.new).patch)
 
 
-async def _make_shared_view_dispatcher(
+async def _create_shared_view_dispatcher(
     layout: LayoutType[LayoutUpdate, LayoutEvent],
-) -> Tuple[SharedViewDispatcher, Ref[Any], WeakSet[Queue[VdomJsonPatch]]]:
+) -> Tuple[SharedViewDispatcher, Callable[[VdomJsonPatch], None]]:
     update = await layout.render()
     model_state = Ref(update.new)
 
     # We push updates to queues instead of pushing directly to send() callbacks in
-    # order to isolate the render loop from any errors dispatch callbacks might
-    # raise.
+    # order to isolate send_patch() from any errors send() callbacks might raise.
     all_patch_queues: WeakSet[Queue[VdomJsonPatch]] = WeakSet()
 
     async def dispatch_shared_view(send: SendCoroutine, recv: RecvCoroutine) -> None:
         patch_queue: Queue[VdomJsonPatch] = Queue()
-        async with create_task_group() as inner_task_group:
-            all_patch_queues.add(patch_queue)
-            effective_update = LayoutUpdate("", None, model_state.current)
-            await send(VdomJsonPatch.create_from(effective_update))
-            inner_task_group.start_soon(_single_incoming_loop, layout, recv)
-            inner_task_group.start_soon(_shared_outgoing_loop, send, patch_queue)
+        try:
+            async with create_task_group() as inner_task_group:
+                all_patch_queues.add(patch_queue)
+                effective_update = LayoutUpdate("", None, model_state.current)
+                await send(VdomJsonPatch.create_from(effective_update))
+                inner_task_group.start_soon(_single_incoming_loop, layout, recv)
+                inner_task_group.start_soon(_shared_outgoing_loop, send, patch_queue)
+        except Stop:
+            logger.info("Stopped dispatch task")
+        finally:
+            all_patch_queues.remove(patch_queue)
         return None
 
-    return dispatch_shared_view, model_state, all_patch_queues
+    def send_patch(patch: VdomJsonPatch) -> None:
+        model_state.current = patch.apply_to(model_state.current)
+        for queue in all_patch_queues:
+            queue.put_nowait(patch)
+
+    return dispatch_shared_view, send_patch
 
 
 async def _single_outgoing_loop(
