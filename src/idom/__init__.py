@@ -1,6 +1,7 @@
 from . import config, html, log, web
 from .core import hooks
 from .core.component import Component, component
+from .core.dispatcher import Stop
 from .core.events import EventHandler, event
 from .core.layout import Layout
 from .core.vdom import vdom
@@ -27,6 +28,7 @@ __all__ = [
     "multiview",
     "Ref",
     "run",
+    "Stop",
     "vdom",
     "web",
 ]
