@@ -92,11 +92,6 @@ function _nextReconnectTimeout(maxReconnectTimeout, mountState) {
     Math.floor(Math.random() * mountState.reconnectTimeoutRange) || 1;
   mountState.reconnectTimeoutRange =
     (mountState.reconnectTimeoutRange + 5) % maxReconnectTimeout;
-  if (mountState.reconnectAttempts === 4) {
-    window.alert(
-      "Server connection was lost. Attempts to reconnect are being made in the background."
-    );
-  }
   return timeout;
 }
 
