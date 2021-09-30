@@ -70,12 +70,12 @@ A package for building responsive user interfaces in pure Python.
 
             .. grid-item-card::
 
-                .. interactive-widget:: snake_game
+                .. interactive-widget:: network_graph
                     :no-activate-button:
 
             .. grid-item-card::
 
-                .. interactive-widget:: cytoscape
+                .. interactive-widget:: snake_game
                     :no-activate-button:
 
             .. grid-item-card::

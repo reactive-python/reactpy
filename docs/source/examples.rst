@@ -62,15 +62,15 @@ you're experimenting:
 Define Javascript Modules
 -------------------------
 
-Click the bars to trigger an event 👇
+Shows a very simple chart implemented in vanilla Javascript:
 
 .. example:: super_simple_chart
 
 
-Material UI Slider
+Material UI Button
 ------------------
 
-Move the slider and see the event information update 👇
+Click the button to change the indicator 👇
 
 .. example:: material_ui_switch
 
@@ -81,6 +81,14 @@ Pigeon Maps
 Click the map to create pinned location 📍:
 
 .. example:: pigeon_maps
+
+
+Cytoscape Notework Graph
+------------------------
+
+You can move the nodes in the graph 🕸️:
+
+.. example:: network_graph
 
 
 .. Links
