@@ -18,7 +18,11 @@ def module_name_suffix(name: str) -> str:
     return PurePosixPath(tail or head).suffix or ".js"
 
 
-def resolve_module_exports_from_file(file: Path, max_depth: int) -> Set[str]:
+def resolve_module_exports_from_file(
+    file: Path,
+    max_depth: int,
+    is_re_export: bool = False,
+) -> Set[str]:
     if max_depth == 0:
         logger.warning(f"Did not resolve all exports for {file} - max depth reached")
         return set()
@@ -26,19 +30,29 @@ def resolve_module_exports_from_file(file: Path, max_depth: int) -> Set[str]:
         logger.warning(f"Did not resolve exports for unknown file {file}")
         return set()
 
-    export_names, references = resolve_module_exports_from_source(file.read_text())
+    export_names, references = resolve_module_exports_from_source(
+        file.read_text(), exclude_default=is_re_export
+    )
 
     for ref in references:
         if urlparse(ref).scheme:  # is an absolute URL
-            export_names.update(resolve_module_exports_from_url(ref, max_depth - 1))
+            export_names.update(
+                resolve_module_exports_from_url(ref, max_depth - 1, is_re_export=True)
+            )
         else:
             path = file.parent.joinpath(*ref.split("/"))
-            export_names.update(resolve_module_exports_from_file(path, max_depth - 1))
+            export_names.update(
+                resolve_module_exports_from_file(path, max_depth - 1, is_re_export=True)
+            )
 
     return export_names
 
 
-def resolve_module_exports_from_url(url: str, max_depth: int) -> Set[str]:
+def resolve_module_exports_from_url(
+    url: str,
+    max_depth: int,
+    is_re_export: bool = False,
+) -> Set[str]:
     if max_depth == 0:
         logger.warning(f"Did not resolve all exports for {url} - max depth reached")
         return set()
@@ -50,16 +64,22 @@ def resolve_module_exports_from_url(url: str, max_depth: int) -> Set[str]:
         logger.warning("Did not resolve exports for url " + url + reason)
         return set()
 
-    export_names, references = resolve_module_exports_from_source(text)
+    export_names, references = resolve_module_exports_from_source(
+        text, exclude_default=is_re_export
+    )
 
     for ref in references:
         url = _resolve_relative_url(url, ref)
-        export_names.update(resolve_module_exports_from_url(url, max_depth - 1))
+        export_names.update(
+            resolve_module_exports_from_url(url, max_depth - 1, is_re_export=True)
+        )
 
     return export_names
 
 
-def resolve_module_exports_from_source(content: str) -> Tuple[Set[str], Set[str]]:
+def resolve_module_exports_from_source(
+    content: str, exclude_default: bool
+) -> Tuple[Set[str], Set[str]]:
     names: Set[str] = set()
     references: Set[str] = set()
 
@@ -69,7 +89,9 @@ def resolve_module_exports_from_source(content: str) -> Tuple[Set[str], Set[str]
     # Exporting functions and classes
     names.update(_JS_FUNC_OR_CLS_EXPORT_PATTERN.findall(content))
 
+    print(content)
     for export in _JS_GENERAL_EXPORT_PATTERN.findall(content):
+        print(export)
         export = export.rstrip(";").strip()
         # Exporting individual features
         if export.startswith("let "):
@@ -100,7 +122,14 @@ def resolve_module_exports_from_source(content: str) -> Tuple[Set[str], Set[str]
             )
         elif not (export.startswith("function ") or export.startswith("class ")):
             logger.warning(f"Unknown export type {export!r}")
-    return {n.strip() for n in names}, {r.strip() for r in references}
+
+    names = {n.strip() for n in names}
+    references = {r.strip() for r in references}
+
+    if exclude_default and "default" in names:
+        names.remove("default")
+
+    return names, references
 
 
 def _resolve_relative_url(base_url: str, rel_url: str) -> str:
@@ -126,5 +155,5 @@ _JS_FUNC_OR_CLS_EXPORT_PATTERN = re.compile(
     r";?\s*export\s+(?:function|class)\s+([a-zA-Z_$][0-9a-zA-Z_$]*)"
 )
 _JS_GENERAL_EXPORT_PATTERN = re.compile(
-    r";?\s*export(?=\s+|{)(.*?)(?:;|$)", re.MULTILINE
+    r"(?:^|;)\s*export(?=\s+|{)(.*?)(?=;|$)", re.MULTILINE
 )

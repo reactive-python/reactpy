@@ -127,13 +127,15 @@ def test_resolve_module_exports_from_url_log_on_bad_response(caplog):
     ],
 )
 def test_resolve_module_default_exports_from_source(text):
-    names, references = resolve_module_exports_from_source(text)
+    names, references = resolve_module_exports_from_source(text, exclude_default=False)
     assert names == {"default"} and not references
 
 
 def test_resolve_module_exports_from_source():
     fixture_file = JS_FIXTURES_DIR / "exports-syntax.js"
-    names, references = resolve_module_exports_from_source(fixture_file.read_text())
+    names, references = resolve_module_exports_from_source(
+        fixture_file.read_text(), exclude_default=False
+    )
     assert (
         names
         == (
@@ -145,3 +147,11 @@ def test_resolve_module_exports_from_source():
         )
         and references == {"https://source1.com", "https://source2.com"}
     )
+
+
+def test_log_on_unknown_export_type(caplog):
+    assert resolve_module_exports_from_source(
+        "export something unknown;", exclude_default=False
+    ) == (set(), set())
+    assert len(caplog.records) == 1
+    assert caplog.records[0].message.startswith("Unknown export type ")
