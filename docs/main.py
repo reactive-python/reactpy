@@ -46,18 +46,16 @@ def make_component():
             # Modify the run function so when we exec the file
             # instead of running a server we mount the view.
             idom.run = partial(mount.add, file.stem)
-
-            with file.open() as f:
-                try:
-                    exec(
-                        f.read(),
-                        {
-                            "__file__": str(file),
-                            "__name__": f"__main__.examples.{file.stem}",
-                        },
-                    )
-                except Exception as error:
-                    raise RuntimeError(f"Failed to execute {file}") from error
+            try:
+                exec(
+                    file.read_text(),
+                    {
+                        "__file__": str(file.absolute()),
+                        "__name__": f"__main__.examples.{file.stem}",
+                    },
+                )
+            except Exception as error:
+                raise RuntimeError(f"Failed to execute {file}") from error
     finally:
         idom.run = original_run
 
