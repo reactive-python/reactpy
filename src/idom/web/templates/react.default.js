@@ -1,4 +1,4 @@
-export default from "$CDN/$PACKAGE";
+export { default } from "$CDN/$PACKAGE";
 export * from "$CDN/$PACKAGE";
 
 import * as React from "$CDN/react";
