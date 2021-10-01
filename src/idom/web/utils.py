@@ -89,9 +89,7 @@ def resolve_module_exports_from_source(
     # Exporting functions and classes
     names.update(_JS_FUNC_OR_CLS_EXPORT_PATTERN.findall(content))
 
-    print(content)
     for export in _JS_GENERAL_EXPORT_PATTERN.findall(content):
-        print(export)
         export = export.rstrip(";").strip()
         # Exporting individual features
         if export.startswith("let "):
@@ -155,5 +153,5 @@ _JS_FUNC_OR_CLS_EXPORT_PATTERN = re.compile(
     r";?\s*export\s+(?:function|class)\s+([a-zA-Z_$][0-9a-zA-Z_$]*)"
 )
 _JS_GENERAL_EXPORT_PATTERN = re.compile(
-    r"(?:^|;)\s*export(?=\s+|{)(.*?)(?=;|$)", re.MULTILINE
+    r"(?:^|;|})\s*export(?=\s+|{)(.*?)(?=;|$)", re.MULTILINE
 )

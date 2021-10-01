@@ -76,7 +76,7 @@ def docs(session: Session) -> None:
         "html",
         "docs/source",
         "docs/build",
-        env={"PYTHONPATH": os.getcwd()},
+        env={"PYTHONPATH": os.getcwd(), "IDOM_DEBUG_MODE": "1"},
     )
 
 
