@@ -2,6 +2,29 @@ Changelog
 =========
 
 
+0.33.3
+------
+
+Contains a small number of bug fixes and improvements. The most signicifact change is
+the addition of a warning stating that `IDOM_FEATURE_INDEX_AS_DEFAULT_KEY=1` will become
+the default in a future release. Beyond that, a lesser improvement makes it possible to
+use the default export from a Javascript module when calling `module_from_template` by
+specifying `exports_default=True` as a parameter. A
+
+**Closed Issues**
+
+- Memory leak in SharedClientStateServer - :issue:`511`
+- Cannot use default export in react template - :issue:`502`
+- Add warning that element index will be used as the default key in a future release - :issue:`428`
+
+**Pull Requests**
+
+- warn that IDOM_FEATURE_INDEX_AS_DEFAULT_KEY=1 will be the default - :pull:`515`
+- clean up patch queues after exit - :pull:`514`
+- Remove Reconnecting WS alert - :pull:`513`
+- Fix 502 - :pull:`503`
+
+
 0.33.2
 ------
 

@@ -236,6 +236,9 @@ def update_version(session: Session) -> None:
 
     session.run("python", "scripts/update_versions.py")
 
+    # trigger npm install to update package-lock.json
+    session.install("-e", ".")
+
 
 @nox.session(reuse_venv=True)
 def latest_pull_requests(session: Session) -> None:

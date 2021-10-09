@@ -11,7 +11,7 @@ from .widgets import hotswap, multiview
 
 
 __author__ = "idom-team"
-__version__ = "0.33.2"  # DO NOT MODIFY
+__version__ = "0.33.3"  # DO NOT MODIFY
 
 __all__ = [
     "component",
