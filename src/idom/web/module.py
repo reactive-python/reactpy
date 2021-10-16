@@ -176,6 +176,7 @@ def module_from_file(
     resolve_exports_depth: int = 5,
     symlink: bool = False,
     unmount_before_update: bool = False,
+    replace_existing: bool = False,
 ) -> WebModule:
     """Load a :class:`WebModule` from a :data:`URL_SOURCE` using a known framework
 
@@ -198,19 +199,26 @@ def module_from_file(
             only be used if the imported package failes to re-render when props change.
             Using this option has negative performance consequences since all DOM
             elements must be changed on each render. See :issue:`461` for more info.
+        replace_existing:
+            Whether to replace the source for a module with the same name if
+            if already exists. Otherwise raise an error.
     """
     source_file = Path(file)
     target_file = _web_module_path(name)
     if not source_file.exists():
         raise FileNotFoundError(f"Source file does not exist: {source_file}")
     elif target_file.exists() or target_file.is_symlink():
-        raise FileExistsError(f"{name!r} already exists as {target_file.resolve()}")
-    else:
-        target_file.parent.mkdir(parents=True, exist_ok=True)
-        if symlink:
-            target_file.symlink_to(source_file)
+        if not replace_existing:
+            raise FileExistsError(f"{name!r} already exists as {target_file.resolve()}")
         else:
-            shutil.copy(source_file, target_file)
+            target_file.unlink()
+
+    target_file.parent.mkdir(parents=True, exist_ok=True)
+    if symlink:
+        target_file.symlink_to(source_file)
+    else:
+        shutil.copy(source_file, target_file)
+
     return WebModule(
         source=name + module_name_suffix(name),
         source_type=NAME_SOURCE,

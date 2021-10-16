@@ -143,6 +143,21 @@ def test_web_module_from_file_symlink(tmp_path):
     assert module.file.resolve().read_text() == "hello world!"
 
 
+def test_web_module_from_file_replace_existing(tmp_path):
+    file1 = tmp_path / "temp1.js"
+    file1.touch()
+
+    idom.web.module_from_file("temp", file1)
+
+    file2 = tmp_path / "temp2.js"
+    file2.touch()
+
+    with pytest.raises(FileExistsError, match="already exists"):
+        idom.web.module_from_file("temp", file2)
+
+    idom.web.module_from_file("temp", file2, replace_existing=True)
+
+
 def test_module_missing_exports():
     module = WebModule("test", NAME_SOURCE, None, {"a", "b", "c"}, None, False)
 
