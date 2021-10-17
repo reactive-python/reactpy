@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import asyncio
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from logging import getLogger
 from typing import (
@@ -35,6 +36,8 @@ from .vdom import validate_vdom_json
 
 
 logger = getLogger(__name__)
+
+RENDER_POOL = ThreadPoolExecutor()
 
 
 class LayoutUpdate(NamedTuple):
@@ -129,6 +132,7 @@ class Layout:
 
     async def render(self) -> LayoutUpdate:
         """Await the next available render. This will block until a component is updated"""
+        loop = asyncio.get_running_loop()
         while True:
             model_state_id = await self._rendering_queue.get()
             try:
@@ -139,7 +143,9 @@ class Layout:
                     "{model_state_id!r} - component already unmounted"
                 )
             else:
-                return self._create_layout_update(model_state)
+                return await loop.run_in_executor(
+                    RENDER_POOL, self._create_layout_update, model_state
+                )
 
     if IDOM_DEBUG_MODE.current:
         # If in debug mode inject a function that ensures all returned updates
