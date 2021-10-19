@@ -1,4 +1,4 @@
-API Reference
+User API
 =============
 
 .. automodule:: idom.config

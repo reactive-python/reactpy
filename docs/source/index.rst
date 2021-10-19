@@ -3,38 +3,48 @@ IDOM
 
 .. toctree::
     :hidden:
-    :caption: User Guide
+    :caption: Tutorials
 
-    installation
-    getting-started
-    handling-events
-    life-cycle-hooks
-    auto/api-reference
-    examples
-    faq
+    tutorials/installation
+    tutorials/breaking-down-an-example
+    tutorials/handling-events
+    tutorials/javascript-components
 
 .. toctree::
     :hidden:
-    :caption: Advanced Topics
+    :caption: Guides
 
-    core-abstractions
-    javascript-components
-    architectural-patterns
-    specifications
+    guides/simple-examples
+    guides/making-a-game
+    guides/matplotlib-plot
+    guides/basic-dashboard
+    guides/using-3rd-party-js
+    guides/writing-your-own-js
+
+.. toctree::
+    :hidden:
+    :caption: References
+
+    references/life-cycle-hooks
+    references/core-abstractions
+    references/architectural-patterns
+    references/user-apis
+    references/specifications
+    references/faq
 
 .. toctree::
     :hidden:
     :caption: Development
 
-    contributing
-    developer-guide
-    auto/developer-apis
-    changelog
-    roadmap
+    development/contributing
+    development/developer-guide
+    references/developer-apis
+    development/changelog
+    development/roadmap
 
 .. toctree::
     :hidden:
-    :caption: External Resources
+    :caption: Resources
 
     Source Code <https://github.com/idom-team/idom>
     Community <https://github.com/idom-team/idom/discussions>
