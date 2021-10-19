@@ -9,16 +9,16 @@ from sphinx.application import Sphinx
 HERE = Path(__file__).parent
 PACKAGE_SRC = HERE.parent.parent.parent / "src"
 
-AUTO_DIR = HERE.parent / "auto"
-AUTO_DIR.mkdir(exist_ok=True)
+REFERENCES_DIR = HERE.parent / "references"
+REFERENCES_DIR.mkdir(exist_ok=True)
 
-PUBLIC_API_REFERENCE_FILE = AUTO_DIR / "api-reference.rst"
-PRIVATE_API_REFERENCE_FILE = AUTO_DIR / "developer-apis.rst"
+PUBLIC_API_REFERENCE_FILE = REFERENCES_DIR / "user-apis.rst"
+PRIVATE_API_REFERENCE_FILE = REFERENCES_DIR / "developer-apis.rst"
 
 
-PUBLIC_TITLE = "API Reference\n=============\n"
+PUBLIC_TITLE = "User API\n=============\n"
 PUBLIC_MISC_TITLE = "Misc Modules\n------------\n"
-PRIVATE_TITLE = "Developer APIs\n==============\n"
+PRIVATE_TITLE = "Developer API\n==============\n"
 PRIVATE_MISC_TITLE = "Misc Dev Modules\n----------------\n"
 
 AUTODOC_TEMPLATE = ".. automodule:: {module}\n    :members:\n"

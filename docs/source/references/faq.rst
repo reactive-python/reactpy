@@ -1,5 +1,5 @@
-FAQ
-===
+Common Questions
+================
 
 See our `Discussion Forum <https://github.com/idom-team/idom/discussions>`__ for more
 questions and answers.

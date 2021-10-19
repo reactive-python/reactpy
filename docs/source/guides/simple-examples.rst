@@ -1,5 +1,8 @@
-Getting Started
+Simple Examples
 ===============
+
+Simple Slideshow
+----------------
 
 Let's break down the following example:
 
@@ -93,3 +96,16 @@ WebSocket. To display the layout we can navigate to http://localhost:8765/client
 .. _VDOM mimetype specification: https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md
 .. _ReactJS: https://reactjs.org/docs/faq-internals.html
 .. _React Hooks: https://reactjs.org/docs/hooks-overview.html
+
+
+Click Counter
+-------------
+
+.. example:: click_count
+
+To Do List
+==========
+
+Try typing in the text box and pressing 'Enter' 📋
+
+.. example:: todo
