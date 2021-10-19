@@ -1,6 +1,6 @@
 from . import config, html, log, web
 from .core import hooks
-from .core.component import Component, component
+from .core.component import component, set_state
 from .core.dispatcher import Stop
 from .core.events import EventHandler, event
 from .core.layout import Layout
@@ -15,7 +15,6 @@ __version__ = "0.33.3"  # DO NOT MODIFY
 
 __all__ = [
     "component",
-    "Component",
     "config",
     "event",
     "EventHandler",
@@ -29,6 +28,7 @@ __all__ = [
     "Ref",
     "run",
     "Stop",
+    "set_state",
     "vdom",
     "web",
 ]
