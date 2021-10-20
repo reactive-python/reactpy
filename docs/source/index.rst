@@ -3,32 +3,42 @@ IDOM
 
 .. toctree::
     :hidden:
-    :caption: Tutorials
+    :caption: Getting Started
 
-    tutorials/installation
-    tutorials/breaking-down-an-example
-    tutorials/handling-events
-    tutorials/javascript-components
+    getting-started/installation
+    getting-started/hello-world
+    getting-started/rendering-elements
+    getting-started/component-basics
+    getting-started/state-management
+    getting-started/handling-events
+    getting-started/conditional-rendering
+    getting-started/lists-and-keys
 
 .. toctree::
     :hidden:
-    :caption: Guides
+    :caption: Life Cycle Hooks
 
-    guides/simple-examples
-    guides/making-a-game
-    guides/matplotlib-plot
-    guides/basic-dashboard
-    guides/using-3rd-party-js
-    guides/writing-your-own-js
+    life-cycle-hooks/intro-to-hooks
+    life-cycle-hooks/state-hook
+    life-cycle-hooks/effect-hook
+    life-cycle-hooks/rules-of-hooks
+    life-cycle-hooks/write-your-own
+    life-cycle-hooks/hooks-api
+
+.. toctree::
+    :hidden:
+    :caption: Advanced Topics
+
+    advanced-topics/javascript-components
+    advanced-topics/core-abstractions
 
 .. toctree::
     :hidden:
     :caption: References
 
-    references/life-cycle-hooks
-    references/core-abstractions
-    references/architectural-patterns
-    references/user-apis
+    references/gallery
+    autogen/user-apis
+    references/why-idom
     references/specifications
     references/faq
 
@@ -38,7 +48,7 @@ IDOM
 
     development/contributing
     development/developer-guide
-    references/developer-apis
+    autogen/developer-apis
     development/changelog
     development/roadmap
 

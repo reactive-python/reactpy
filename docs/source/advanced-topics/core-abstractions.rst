@@ -26,11 +26,11 @@ accepted a list of strings and turned it into a series of paragraph elements:
 Stateful Components
 -------------------
 
-A Stateful Component is one which uses a :ref:`Life Cycle Hooks`. These life cycle hooks
-allow you to add state to otherwise stateless functions. To create a stateful component
-you'll need to apply the :func:`~idom.core.component.component` decorator to a coroutine_
-whose body contains a hook usage. We'll demonstrate that with a simple
-:ref:`click counter`:
+A Stateful Component is one which uses a :ref:`Life Cycle Hooks <Introduction to
+Hooks>`. These life cycle hooks allow you to add state to otherwise stateless functions.
+To create a stateful component you'll need to apply the
+:func:`~idom.core.component.component` decorator to a coroutine_ whose body contains a
+hook usage. We'll demonstrate that with a simple :ref:`click counter`:
 
 .. testcode::
 

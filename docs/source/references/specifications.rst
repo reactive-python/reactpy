@@ -153,7 +153,7 @@ VDOM JSON Schema
 
 To clearly describe the VDOM spec we've created a `JSON Schema <https://json-schema.org/>`_:
 
-.. literalinclude:: ./vdom-json-schema.json
+.. literalinclude:: /_static/vdom-json-schema.json
    :language: json
 
 

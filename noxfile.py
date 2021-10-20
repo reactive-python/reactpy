@@ -66,7 +66,7 @@ def docs(session: Session) -> None:
         # watch python source too
         "--watch=src/idom",
         # for some reason this matches absolute paths
-        "--ignore=**/references/*-apis.rst",
+        "--ignore=**/autogen/*",
         "--ignore=**/_static/custom.js",
         "--ignore=**/node_modules/*",
         "--ignore=**/package-lock.json",
