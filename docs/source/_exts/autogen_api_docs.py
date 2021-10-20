@@ -9,11 +9,11 @@ from sphinx.application import Sphinx
 HERE = Path(__file__).parent
 PACKAGE_SRC = HERE.parent.parent.parent / "src"
 
-REFERENCES_DIR = HERE.parent / "references"
-REFERENCES_DIR.mkdir(exist_ok=True)
+AUTOGEN_DIR = HERE.parent / "autogen"
+AUTOGEN_DIR.mkdir(exist_ok=True)
 
-PUBLIC_API_REFERENCE_FILE = REFERENCES_DIR / "user-apis.rst"
-PRIVATE_API_REFERENCE_FILE = REFERENCES_DIR / "developer-apis.rst"
+PUBLIC_API_REFERENCE_FILE = AUTOGEN_DIR / "user-apis.rst"
+PRIVATE_API_REFERENCE_FILE = AUTOGEN_DIR / "developer-apis.rst"
 
 
 PUBLIC_TITLE = "User API\n=============\n"

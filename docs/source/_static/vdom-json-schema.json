@@ -1,0 +1,122 @@
+{
+  "$ref": "#/definitions/element",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "definitions": {
+    "element": {
+      "dependentSchemas": {
+        "error": {
+          "properties": {
+            "tagName": {
+              "maxLength": 0
+            }
+          }
+        }
+      },
+      "properties": {
+        "attributes": {
+          "type": "object"
+        },
+        "children": {
+          "$ref": "#/definitions/elementChildren"
+        },
+        "error": {
+          "type": "string"
+        },
+        "eventHandlers": {
+          "$ref": "#/definitions/elementEventHandlers"
+        },
+        "importSource": {
+          "$ref": "#/definitions/importSource"
+        },
+        "key": {
+          "type": "string"
+        },
+        "tagName": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "tagName"
+      ],
+      "type": "object"
+    },
+    "elementChildren": {
+      "items": {
+        "$ref": "#/definitions/elementOrString"
+      },
+      "type": "array"
+    },
+    "elementEventHandlers": {
+      "patternProperties": {
+        ".*": {
+          "$ref": "#/definitions/eventHander"
+        }
+      },
+      "type": "object"
+    },
+    "elementOrString": {
+      "if": {
+        "type": "object"
+      },
+      "then": {
+        "$ref": "#/definitions/element"
+      },
+      "type": [
+        "object",
+        "string"
+      ]
+    },
+    "eventHander": {
+      "properties": {
+        "preventDefault": {
+          "type": "boolean"
+        },
+        "stopPropagation": {
+          "type": "boolean"
+        },
+        "target": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "target"
+      ],
+      "type": "object"
+    },
+    "importSource": {
+      "properties": {
+        "fallback": {
+          "if": {
+            "not": {
+              "type": "null"
+            }
+          },
+          "then": {
+            "$ref": "#/definitions/elementOrString"
+          },
+          "type": [
+            "object",
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "type": "string"
+        },
+        "sourceType": {
+          "enum": [
+            "URL",
+            "NAME"
+          ]
+        },
+        "unmountBeforeUpdate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "type": "object"
+    }
+  }
+}
