@@ -331,7 +331,7 @@ async def test_use_effect_cleanup_occurs_before_next_effect():
     @idom.component
     @component_hook.capture
     def ComponentWithEffect():
-        @idom.hooks.use_effect
+        @idom.hooks.use_effect(args=None)
         def effect():
             if cleanup_triggered.current:
                 cleanup_triggered_before_next_effect.current = True
@@ -485,7 +485,7 @@ async def test_use_async_effect():
 
     with idom.Layout(ComponentWithAsyncEffect()) as layout:
         await layout.render()
-        await effect_ran.wait()
+        await asyncio.wait_for(effect_ran.wait(), 1)
 
 
 async def test_use_async_effect_cleanup():
@@ -496,7 +496,7 @@ async def test_use_async_effect_cleanup():
     @idom.component
     @component_hook.capture
     def ComponentWithAsyncEffect():
-        @idom.hooks.use_effect
+        @idom.hooks.use_effect(args=None)  # force this to run every time
         async def effect():
             effect_ran.set()
             return cleanup_ran.set
@@ -506,7 +506,7 @@ async def test_use_async_effect_cleanup():
     with idom.Layout(ComponentWithAsyncEffect()) as layout:
         await layout.render()
 
-        await effect_ran.wait()
+        cleanup_ran.wait()
         component_hook.latest.schedule_render()
 
         await layout.render()
@@ -524,7 +524,7 @@ async def test_use_async_effect_cancel(caplog):
     @idom.component
     @component_hook.capture
     def ComponentWithLongWaitingEffect():
-        @idom.hooks.use_effect
+        @idom.hooks.use_effect(args=None)  # force this to run every time
         async def effect():
             effect_ran.set()
             try:
@@ -575,7 +575,7 @@ async def test_error_in_effect_cleanup_is_gracefully_handled(caplog):
     @idom.component
     @component_hook.capture
     def ComponentWithEffect():
-        @idom.hooks.use_effect
+        @idom.hooks.use_effect(args=None)  # force this to run every time
         def ok_effect():
             def bad_cleanup():
                 raise ValueError("Something went wong :(")
@@ -765,7 +765,7 @@ async def test_use_memo_always_runs_if_args_are_none():
     @idom.component
     @component_hook.capture
     def ComponentWithMemo():
-        value = idom.hooks.use_memo(lambda: next(iter_values))
+        value = idom.hooks.use_memo(lambda: next(iter_values), args=None)
         used_values.append(value)
         return idom.html.div()
 
@@ -860,3 +860,59 @@ def test_bad_schedule_render_callback(caplog):
 
     first_log_line = next(iter(caplog.records)).msg.split("\n", 1)[0]
     assert re.match(f"Failed to schedule render via {bad_callback}", first_log_line)
+
+
+async def test_use_effect_automatically_infers_closure_args():
+    set_count = idom.Ref()
+    did_effect = asyncio.Event()
+
+    @idom.component
+    def CounterWithEffect():
+        count, set_count.current = idom.hooks.use_state(0)
+
+        @idom.hooks.use_effect
+        def some_effect_that_uses_count():
+            """should automatically trigger on count change"""
+            count  # use count in this closure
+            did_effect.set()
+
+        return idom.html.div()
+
+    with idom.Layout(CounterWithEffect()) as layout:
+        await layout.render()
+        await did_effect.wait()
+        did_effect.clear()
+
+        for i in range(1, 3):
+            set_count.current(i)
+            await layout.render()
+            await did_effect.wait()
+            did_effect.clear()
+
+
+async def test_use_memo_automatically_infers_closure_args():
+    set_count = idom.Ref()
+    did_memo = asyncio.Event()
+
+    @idom.component
+    def CounterWithEffect():
+        count, set_count.current = idom.hooks.use_state(0)
+
+        @idom.hooks.use_memo
+        def some_memo_func_that_uses_count():
+            """should automatically trigger on count change"""
+            count  # use count in this closure
+            did_memo.set()
+
+        return idom.html.div()
+
+    with idom.Layout(CounterWithEffect()) as layout:
+        await layout.render()
+        await did_memo.wait()
+        did_memo.clear()
+
+        for i in range(1, 3):
+            set_count.current(i)
+            await layout.render()
+            await did_memo.wait()
+            did_memo.clear()

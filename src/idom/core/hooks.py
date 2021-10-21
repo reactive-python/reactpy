@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 from logging import getLogger
 from threading import get_ident as get_thread_id
+from types import FunctionType
 from typing import (
     Any,
     Awaitable,
@@ -101,21 +102,23 @@ _EffectApplyFunc = Union[_SyncEffectFunc, _AsyncEffectFunc]
 
 @overload
 def use_effect(
-    function: None = None, args: Optional[Sequence[Any]] = None
+    function: None = None,
+    args: Sequence[Any] | "ellipsis" | None = ...,
 ) -> Callable[[_EffectApplyFunc], None]:
     ...
 
 
 @overload
 def use_effect(
-    function: _EffectApplyFunc, args: Optional[Sequence[Any]] = None
+    function: _EffectApplyFunc,
+    args: Sequence[Any] | "ellipsis" | None = ...,
 ) -> None:
     ...
 
 
 def use_effect(
     function: Optional[_EffectApplyFunc] = None,
-    args: Optional[Sequence[Any]] = None,
+    args: Sequence[Any] | "ellipsis" | None = ...,
 ) -> Optional[Callable[[_EffectApplyFunc], None]]:
     """See the full :ref:`Use Effect` docs for details
 
@@ -130,6 +133,8 @@ def use_effect(
         If not function is provided, a decorator. Otherwise ``None``.
     """
     hook = current_hook()
+
+    args = _try_to_infer_closure_args(function, args)
     memoize = use_memo(args=args)
     last_clean_callback: Ref[Optional[_EffectCleanFunc]] = use_ref(None)
 
@@ -209,21 +214,23 @@ _CallbackFunc = TypeVar("_CallbackFunc", bound=Callable[..., Any])
 
 @overload
 def use_callback(
-    function: None = None, args: Optional[Sequence[Any]] = None
+    function: None = None,
+    args: Sequence[Any] | "ellipsis" | None = ...,
 ) -> Callable[[_CallbackFunc], _CallbackFunc]:
     ...
 
 
 @overload
 def use_callback(
-    function: _CallbackFunc, args: Optional[Sequence[Any]] = None
+    function: _CallbackFunc,
+    args: Sequence[Any] | "ellipsis" | None = ...,
 ) -> _CallbackFunc:
     ...
 
 
 def use_callback(
     function: Optional[_CallbackFunc] = None,
-    args: Optional[Sequence[Any]] = (),
+    args: Sequence[Any] | "ellipsis" | None = ...,
 ) -> Union[_CallbackFunc, Callable[[_CallbackFunc], _CallbackFunc]]:
     """See the full :ref:`Use Callback` docs for details
 
@@ -234,6 +241,7 @@ def use_callback(
     Returns:
         The current function
     """
+    args = _try_to_infer_closure_args(function, args)
     memoize = use_memo(args=args)
 
     def setup(function: _CallbackFunc) -> _CallbackFunc:
@@ -254,21 +262,23 @@ class _LambdaCaller(Protocol):
 
 @overload
 def use_memo(
-    function: None = None, args: Optional[Sequence[Any]] = None
+    function: None = None,
+    args: Sequence[Any] | "ellipsis" | None = ...,
 ) -> _LambdaCaller:
     ...
 
 
 @overload
 def use_memo(
-    function: Callable[[], _StateType], args: Optional[Sequence[Any]] = None
+    function: Callable[[], _StateType],
+    args: Sequence[Any] | "ellipsis" | None = ...,
 ) -> _StateType:
     ...
 
 
 def use_memo(
     function: Optional[Callable[[], _StateType]] = None,
-    args: Optional[Sequence[Any]] = None,
+    args: Sequence[Any] | "ellipsis" | None = ...,
 ) -> Union[_StateType, Callable[[Callable[[], _StateType]], _StateType]]:
     """See the full :ref:`Use Memo` docs for details
 
@@ -279,6 +289,8 @@ def use_memo(
     Returns:
         The current state
     """
+    args = _try_to_infer_closure_args(function, args)
+
     memo: _Memo[_StateType] = _use_const(_Memo)
 
     if memo.empty():
@@ -348,6 +360,23 @@ def use_ref(initial_value: _StateType) -> Ref[_StateType]:
 
 def _use_const(function: Callable[[], _StateType]) -> _StateType:
     return current_hook().use_state(function)
+
+
+def _try_to_infer_closure_args(
+    func: Callable[..., Any] | None,
+    args: Sequence[Any] | "ellipsis" | None,
+) -> Sequence[Any] | None:
+    if args is ...:
+        if isinstance(func, FunctionType):
+            return (
+                [cell.cell_contents for cell in func.__closure__]
+                if func.__closure__
+                else []
+            )
+        else:
+            return None
+    else:
+        return cast("Sequence[Any] | None", args)
 
 
 _current_life_cycle_hook: Dict[int, "LifeCycleHook"] = {}
