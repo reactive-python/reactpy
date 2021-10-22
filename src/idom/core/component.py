@@ -119,10 +119,10 @@ _Wrapped = TypeVar("_Wrapped", bound=Any)
 def _wrap_class(cls: type[_Wrapped]) -> type[_Wrapped]:
     """Modifies the given class such that it can operate as a stateful component
 
-    Adds the following attributes to the class:
+    Adds the following attributes and methods to the class:
 
     - ``key``
-    - ``state``
+    - ``_state``
     - ``_set_state``
 
     And wraps the following methods with extra logic that is opaque to the user:
@@ -130,30 +130,49 @@ def _wrap_class(cls: type[_Wrapped]) -> type[_Wrapped]:
     - ``__init__``
     - ``render``
     """
-
     if hasattr(cls, "__slots__") and "__dict__" not in cls.__slots__:
-        missing_slots = list({"key", "state", "_set_state"}.difference(cls.__slots__))
-        if missing_slots:
-            raise ValueError("Component classes requires __slots__ for {missing_slots}")
+        raise ValueError("Component class requries a '__dict__' slot")
 
     old_init = getattr(cls, "__init__", object.__init__)
     old_render = cls.render
 
+    declared_state = getattr(cls, "state", None)
+    # overwrite state with immutable property
+    cls.state = property(lambda self: self._state)
+
+    # derive initial state factory from declared state
+    if hasattr(declared_state, "__get__"):
+
+        def make_initial_state(self):
+            declared_state.__get__(self, type(self))
+
+    else:
+
+        def make_initial_state(self):
+            return declared_state
+
     @wraps(old_init)
     def new_init(self: Any, *args: Any, key: Any | None = None, **kwargs: Any) -> None:
         self.key = key
-        self.state = None
         old_init(self, *args, **kwargs)
 
     @wraps(old_render)
     def new_render(self: Any) -> Any:
-        self.state, self._set_state = use_state(self.state)  # noqa: ROH101
-        use_effect(getattr(self, "effect", None), args=[])  # noqa: ROH101
-        return old_render(self)
+        initial_state = lambda: make_initial_state(self)  # noqa: E731
+        self._state, self._set_state = use_state(initial_state)  # noqa: ROH101
+
+        use_effect(getattr(self, "render_effect", None), args=None)  # noqa: ROH101
+        use_effect(getattr(self, "mount_effect", None), args=[])  # noqa: ROH101
+
+        model = old_render(self)
+        if isinstance(model, ComponentType):
+            model = {"tagName": "div", "children": [model]}
+        return model
 
     # wrap the original methods
     cls.__init__ = _OwnerInheritorDescriptor(new_init, old_init)
     cls.render = _OwnerInheritorDescriptor(new_render, old_render)
+
     # manually set up descriptor
     cls.__init__.__set_name__(cls, "__init__")
     cls.render.__set_name__(cls, "render")
