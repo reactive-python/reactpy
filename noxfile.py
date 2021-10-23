@@ -44,7 +44,7 @@ def example(session: Session) -> None:
     """Run an example"""
     if not session.posargs:
         print("No example name given. Choose from:")
-        for found_example_file in (ROOT / "docs" / "source" / "examples").glob("*.py"):
+        for found_example_file in (ROOT / "docs" / "source" / "_examples").glob("*.py"):
             print("-", found_example_file.stem)
         return None
 
@@ -66,7 +66,7 @@ def docs(session: Session) -> None:
         # watch python source too
         "--watch=src/idom",
         # for some reason this matches absolute paths
-        "--ignore=**/autogen/*",
+        "--ignore=**/_autogen/*",
         "--ignore=**/_static/custom.js",
         "--ignore=**/node_modules/*",
         "--ignore=**/package-lock.json",

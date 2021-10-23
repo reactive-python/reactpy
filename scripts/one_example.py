@@ -9,7 +9,7 @@ from idom.widgets import hotswap
 
 
 here = Path(__file__).parent
-examples_dir = here.parent / "docs" / "source" / "examples"
+examples_dir = here.parent / "docs" / "source" / "_examples"
 sys.path.insert(0, str(examples_dir))
 
 for file in examples_dir.iterdir():

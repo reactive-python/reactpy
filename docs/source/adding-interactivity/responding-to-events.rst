@@ -1,4 +1,4 @@
-The State Hook (WIP)
+Responding to Events
 ====================
 
 Under construction :)

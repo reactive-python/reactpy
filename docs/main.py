@@ -30,7 +30,7 @@ def make_app():
 def make_component():
     mount, component = multiview()
 
-    examples_dir = HERE / "source" / "examples"
+    examples_dir = HERE / "source" / "_examples"
     sys.path.insert(0, str(examples_dir))
 
     original_run = idom.run

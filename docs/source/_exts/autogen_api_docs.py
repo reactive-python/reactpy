@@ -9,7 +9,7 @@ from sphinx.application import Sphinx
 HERE = Path(__file__).parent
 PACKAGE_SRC = HERE.parent.parent.parent / "src"
 
-AUTOGEN_DIR = HERE.parent / "autogen"
+AUTOGEN_DIR = HERE.parent / "_autogen"
 AUTOGEN_DIR.mkdir(exist_ok=True)
 
 PUBLIC_API_REFERENCE_FILE = AUTOGEN_DIR / "user-apis.rst"
