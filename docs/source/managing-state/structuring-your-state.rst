@@ -1,4 +1,4 @@
-State Management (WIP)
+Structuring Your State
 ======================
 
 Under construction :)

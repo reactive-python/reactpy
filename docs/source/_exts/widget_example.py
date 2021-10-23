@@ -8,7 +8,7 @@ from sphinx_design.tabs import TabSetDirective
 
 
 here = Path(__file__).parent
-examples = here.parent / "examples"
+examples = here.parent / "_examples"
 
 
 class WidgetExample(SphinxDirective):
@@ -124,7 +124,7 @@ _interactive_widget_template = """
 
 
 _literal_include_template = """
-.. literalinclude:: /examples/{name}.{ext}
+.. literalinclude:: /_examples/{name}.{ext}
     :language: {language}
     {linenos}
 """

@@ -6,38 +6,61 @@ IDOM
     :caption: Getting Started
 
     getting-started/installation
-    getting-started/hello-world
-    getting-started/rendering-elements
-    getting-started/component-basics
-    getting-started/state-management
-    getting-started/handling-events
-    getting-started/conditional-rendering
-    getting-started/lists-and-keys
+    getting-started/running-idom
 
 .. toctree::
     :hidden:
-    :caption: Life Cycle Hooks
+    :caption: Creating Interfaces
 
-    life-cycle-hooks/intro-to-hooks
-    life-cycle-hooks/state-hook
-    life-cycle-hooks/effect-hook
-    life-cycle-hooks/rules-of-hooks
-    life-cycle-hooks/write-your-own
-    life-cycle-hooks/hooks-api
+    creating-interfaces/intro-to-html
+    creating-interfaces/your-first-component
+    creating-interfaces/parametrizing-components
+    creating-interfaces/conditional-rendering
+    creating-interfaces/dynamic-layout-structure
 
 .. toctree::
     :hidden:
-    :caption: Advanced Topics
+    :caption: Adding Interactivity
 
-    advanced-topics/javascript-components
-    advanced-topics/core-abstractions
+    adding-interactivity/responding-to-events
+    adding-interactivity/stateful-components
+    adding-interactivity/state-as-a-snapshot
+    adding-interactivity/dangers-of-mutability
+    adding-interactivity/batched-updates
+
+.. toctree::
+    :hidden:
+    :caption: Managing State
+
+    managing-state/logical-flow-of-state
+    managing-state/structuring-your-state
+    managing-state/shared-component-state
+    managing-state/when-to-reset-state
+
+.. toctree::
+    :hidden:
+    :caption: Escape Hatches
+
+    escape-hatches/class-components
+    escape-hatches/javascript-components
+    escape-hatches/distributing-javascript
+
+
+.. toctree::
+    :hidden:
+    :caption: Understanding IDOM
+
+    understanding-idom/core-abstractions
+
+
 
 .. toctree::
     :hidden:
     :caption: References
 
     references/gallery
-    autogen/user-apis
+    references/hooks-api
+    _autogen/user-apis
     references/why-idom
     references/specifications
     references/faq
@@ -48,7 +71,7 @@ IDOM
 
     development/contributing
     development/developer-guide
-    autogen/developer-apis
+    _autogen/developer-apis
     development/changelog
     development/roadmap
 
@@ -60,75 +83,7 @@ IDOM
     Community <https://github.com/idom-team/idom/discussions>
     Issues <https://github.com/idom-team/idom/issues>
 
-A package for building responsive user interfaces in pure Python.
-
-- Create full stack applications without writing a single line of Javascript.
-- Rapidly and easily develop :ref:`interactive data dashboards <Simple Dashboard>`.
-- Use many existing Javascript packages without any extra work.
-- Leverage time-tested :ref:`declarative <Declarative Components>` design patterns
-  inspired by `ReactJS <https://reactjs.org>`__.
-- Write :ref:`custom Javascript components` when you need client-side performance.
-- Is :ref:`ecosystem independent <ecosystem independence>` - works with
-  `Jupyter <https://github.com/idom-team/idom-jupyter>`__,
-  `Dash <https://github.com/idom-team/idom-dash>`__,
-  `Django <https://github.com/idom-team/django-idom>`__, and more.
-- Add to existing applications with the
-  `Javascript client <https://github.com/idom-team/idom/tree/main/src/client>`__.
-
-.. grid:: 1 1 2 2
-    :gutter: 1
-
-    .. grid-item::
-
-        .. grid:: 1 1 1 1
-            :gutter: 1
-
-            .. grid-item-card::
-
-                .. interactive-widget:: pigeon_maps
-                    :no-activate-button:
-
-            .. grid-item-card::
-
-                .. interactive-widget:: network_graph
-                    :no-activate-button:
-
-            .. grid-item-card::
-
-                .. interactive-widget:: snake_game
-                    :no-activate-button:
-
-            .. grid-item-card::
-
-                .. interactive-widget:: slideshow
-                    :no-activate-button:
-
-            .. grid-item-card::
-
-                .. interactive-widget:: audio_player
-                    :no-activate-button:
-
-    .. grid-item::
-
-        .. grid:: 1 1 1 1
-            :gutter: 1
-
-            .. grid-item-card::
-
-                .. interactive-widget:: simple_dashboard
-                    :no-activate-button:
-
-            .. grid-item-card::
-
-                .. interactive-widget:: matplotlib_plot
-                    :no-activate-button:
-
-            .. grid-item-card::
-
-                .. interactive-widget:: material_ui_button_on_click
-                    :no-activate-button:
-
-            .. grid-item-card::
-
-                .. interactive-widget:: todo
-                    :no-activate-button:
+IDOM is a powerful Python web framework for building **interactive websites without
+needing a single line of Javascript**. It does this by breaking down complex
+applications into nestable and reusable chunks of code called "components" that allow
+you to focus on what your application does rather then how it does it.

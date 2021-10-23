@@ -1,4 +1,4 @@
-Lists and Keys (WIP)
+Your First Component
 ====================
 
 Under construction :)

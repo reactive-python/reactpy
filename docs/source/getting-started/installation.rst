@@ -32,15 +32,8 @@ If you need to you can install more than one option by separating them with comm
     you'll need to use `django-idom <https://github.com/idom-team/django-idom>`__
     instead.
 
-Install Test Tooling
---------------------
 
-IDOM also provides some useful tools to ensure your applications run correctly. You
-can install these with ``pip`` similarly to the server implementations above:
+Add to Existing Applications
+----------------------------
 
-.. code-block:: bash
-
-    pip install idom[testing]
-
-This will install ``selenium`` which is useful when unit testing along with
-``flake8-idom-hooks`` which is used to enforce the :ref:`Rules of Hooks`.
+Under construction :)

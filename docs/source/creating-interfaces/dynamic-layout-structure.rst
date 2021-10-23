@@ -1,4 +1,4 @@
-Rendering Elements (WIP)
+Dynamic Layout Structure
 ========================
 
 Under construction :)
