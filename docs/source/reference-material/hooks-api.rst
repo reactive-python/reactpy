@@ -1,6 +1,6 @@
-===================
-Hooks API Reference
-===================
+=========
+Hooks API
+=========
 
 Hooks are functions that allow you to "hook into" the life cycle events and state of
 Components. Their usage should always follow the :ref:`Rules of Hooks`. For most use

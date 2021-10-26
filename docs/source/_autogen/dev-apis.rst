@@ -1,4 +1,4 @@
-Developer API
+Dev API
 ==============
 
 .. automodule:: idom._option

@@ -1,5 +1,12 @@
-Contributing
-============
+Contributing to IDOM
+====================
+
+.. toctree::
+    :hidden:
+
+    developer-guide
+    changelog
+    roadmap
 
 .. note::
 
