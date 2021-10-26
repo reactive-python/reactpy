@@ -13,12 +13,12 @@ AUTOGEN_DIR = HERE.parent / "_autogen"
 AUTOGEN_DIR.mkdir(exist_ok=True)
 
 PUBLIC_API_REFERENCE_FILE = AUTOGEN_DIR / "user-apis.rst"
-PRIVATE_API_REFERENCE_FILE = AUTOGEN_DIR / "developer-apis.rst"
+PRIVATE_API_REFERENCE_FILE = AUTOGEN_DIR / "dev-apis.rst"
 
 
 PUBLIC_TITLE = "User API\n=============\n"
 PUBLIC_MISC_TITLE = "Misc Modules\n------------\n"
-PRIVATE_TITLE = "Developer API\n==============\n"
+PRIVATE_TITLE = "Dev API\n==============\n"
 PRIVATE_MISC_TITLE = "Misc Dev Modules\n----------------\n"
 
 AUTODOC_TEMPLATE = ".. automodule:: {module}\n    :members:\n"

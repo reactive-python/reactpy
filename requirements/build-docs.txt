@@ -6,3 +6,4 @@ sphinx-copybutton ==0.3.0
 sphinx-autobuild ==2020.9.1
 sphinx-reredirects ==0.0.1
 sphinx-design ==0.0.12
+myst-parser ==0.15.2
