@@ -105,6 +105,22 @@ autodoc_typehints = "description"
 
 # -- Extension Configuration ------------------------------------------------------
 
+# -- MyST Parser --
+
+myst_enable_extensions = [
+    # "amsmath",
+    "colon_fence",
+    # "deflist",
+    # "dollarmath",
+    # "html_admonition",
+    # "html_image",
+    # "linkify",
+    # "replacements",
+    # "smartquotes",
+    # "substitution",
+    # "tasklist",
+]
+
 # -- sphinx_panel --
 
 # Used to stop the extension from loading bootstrap twice since the `pydata_sphinx_theme`
