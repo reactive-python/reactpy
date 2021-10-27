@@ -36,7 +36,7 @@ function mountLayoutWithReconnectingWebSocket(
   const updateHookPromise = new LazyPromise();
 
   socket.onopen = (event) => {
-    console.log(`Connected.`);
+    console.info(`IDOM WebSocket connected.`);
 
     if (mountState.everMounted) {
       ReactDOM.unmountComponentAtNode(element);
@@ -57,7 +57,7 @@ function mountLayoutWithReconnectingWebSocket(
 
   socket.onclose = (event) => {
     if (!maxReconnectTimeout) {
-      console.log(`Connection lost.`);
+      console.info(`IDOM WebSocket connection lost.`);
       return;
     }
 
@@ -66,7 +66,7 @@ function mountLayoutWithReconnectingWebSocket(
       mountState
     );
 
-    console.log(`Connection lost, reconnecting in ${reconnectTimeout} seconds`);
+    console.info(`IDOM WebSocket connection lost. Reconnecting in ${reconnectTimeout} seconds...`);
 
     setTimeout(function () {
       mountState.reconnectAttempts++;
