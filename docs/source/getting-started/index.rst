@@ -6,4 +6,3 @@ Getting Started
 
     installation
     running-idom
-    why-idom

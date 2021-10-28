@@ -18,7 +18,6 @@ RUN pip install --upgrade pip
 # Install IDOM
 # ------------
 ADD requirements ./requirements
-ADD .git ./.git
 ADD src ./src
 ADD scripts ./scripts
 ADD setup.py ./

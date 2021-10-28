@@ -1,9 +1,9 @@
 sphinx ==4.1.2
 sphinx-autodoc-typehints ==1.7.0
-furo ==2021.07.28.b40
+furo ==2021.10.09
 setuptools_scm
 sphinx-copybutton ==0.3.0
 sphinx-autobuild ==2020.9.1
 sphinx-reredirects ==0.0.1
 sphinx-design ==0.0.12
-myst-parser ==0.15.2
+sphinx-resolve-py-references ==0.1.0

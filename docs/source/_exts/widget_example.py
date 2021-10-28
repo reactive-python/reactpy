@@ -19,12 +19,15 @@ class WidgetExample(SphinxDirective):
 
     option_spec = {
         "linenos": directives.flag,
-        "live-example-is-default-tab": directives.flag,
+        "result-is-default-tab": directives.flag,
+        "activate-result": directives.flag,
     }
 
     def run(self):
         example_name = self.arguments[0]
         show_linenos = "linenos" in self.options
+        live_example_is_default_tab = "result-is-default-tab" in self.options
+        activate_result = "activate-result" in self.options
 
         py_ex_path = examples / f"{example_name}.py"
         if not py_ex_path.exists():
@@ -34,26 +37,32 @@ class WidgetExample(SphinxDirective):
             )
 
         labeled_tab_items = {
-            "Python Code": _literal_include_py(
+            "python": _literal_include_py(
                 name=example_name,
                 linenos=show_linenos,
             ),
-            "Live Example": _interactive_widget(
+            "result": _interactive_widget(
                 name=example_name,
-                with_activate_button="live-example-is-default-tab" not in self.options,
+                with_activate_button=not activate_result,
             ),
         }
 
+        labeled_tab_titles = {
+            "python": "Python",
+            "javascript": "Javascript",
+            "result": "▶️ Result",
+        }
+
         if (examples / f"{example_name}.js").exists():
-            labeled_tab_items["Javascript Code"] = _literal_include_js(
+            labeled_tab_items["javascript"] = _literal_include_js(
                 name=example_name,
                 linenos=show_linenos,
             )
 
         tab_label_order = (
-            ["Live Example", "Python Code", "Javascript Code"]
-            if "live-example-is-default-tab" in self.options
-            else ["Python Code", "Javascript Code", "Live Example"]
+            ["result", "python", "javascript"]
+            if live_example_is_default_tab
+            else ["python", "javascript", "result"]
         )
 
         return TabSetDirective(
@@ -62,7 +71,7 @@ class WidgetExample(SphinxDirective):
             {},
             _make_tab_items(
                 [
-                    (label, labeled_tab_items[label])
+                    (labeled_tab_titles[label], labeled_tab_items[label])
                     for label in tab_label_order
                     if label in labeled_tab_items
                 ]

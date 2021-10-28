@@ -28,7 +28,7 @@ export function mountWidgetExample(
   }
 
   const enableWidgetButton = document.createElement("button");
-  enableWidgetButton.appendChild(document.createTextNode("Enable Widget"));
+  enableWidgetButton.appendChild(document.createTextNode("Activate"));
   enableWidgetButton.setAttribute("class", "enable-widget-button");
 
   enableWidgetButton.addEventListener("click", () =>
