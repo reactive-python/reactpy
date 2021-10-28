@@ -7,14 +7,16 @@ Slideshow
 Try clicking the image 🖱️
 
 .. example:: slideshow
-    :live-example-is-default-tab:
+    :result-is-default-tab:
+    :activate-result:
 
 
 Click Counter
 -------------
 
 .. example:: click_count
-    :live-example-is-default-tab:
+    :result-is-default-tab:
+    :activate-result:
 
 
 To Do List
@@ -23,7 +25,8 @@ To Do List
 Try typing in the text box and pressing 'Enter' 📋
 
 .. example:: todo
-    :live-example-is-default-tab:
+    :result-is-default-tab:
+    :activate-result:
 
 
 The Game Snake
@@ -34,7 +37,8 @@ Click to start playing and use the arrow keys to move 🎮
 Slow internet may cause inconsistent frame pacing 😅
 
 .. example:: snake_game
-    :live-example-is-default-tab:
+    :result-is-default-tab:
+    :activate-result:
 
 
 Matplotlib Plot
@@ -43,7 +47,8 @@ Matplotlib Plot
 Pick the polynomial coefficients (separate each coefficient by a space) 🔢:
 
 .. example:: matplotlib_plot
-    :live-example-is-default-tab:
+    :result-is-default-tab:
+    :activate-result:
 
 
 Simple Dashboard
@@ -52,7 +57,8 @@ Simple Dashboard
 Try interacting with the sliders 📈
 
 .. example:: simple_dashboard
-    :live-example-is-default-tab:
+    :result-is-default-tab:
+    :activate-result:
 
 
 Dynamically Loaded React Components
@@ -62,7 +68,8 @@ This method is not recommended for use in production applications, but it's grea
 you're experimenting:
 
 .. example:: victory_chart
-    :live-example-is-default-tab:
+    :result-is-default-tab:
+    :activate-result:
 
 
 Define Javascript Modules
@@ -71,7 +78,8 @@ Define Javascript Modules
 Shows a very simple chart implemented in vanilla Javascript:
 
 .. example:: super_simple_chart
-    :live-example-is-default-tab:
+    :result-is-default-tab:
+    :activate-result:
 
 
 Material UI Button
@@ -80,7 +88,8 @@ Material UI Button
 Click the button to change the indicator 👇
 
 .. example:: material_ui_switch
-    :live-example-is-default-tab:
+    :result-is-default-tab:
+    :activate-result:
 
 
 Pigeon Maps
@@ -89,7 +98,8 @@ Pigeon Maps
 Click the map to create pinned location 📍:
 
 .. example:: pigeon_maps
-    :live-example-is-default-tab:
+    :result-is-default-tab:
+    :activate-result:
 
 
 Cytoscape Network Graph
@@ -98,7 +108,8 @@ Cytoscape Network Graph
 You can move the nodes in the graph 🕸️:
 
 .. example:: network_graph
-    :live-example-is-default-tab:
+    :result-is-default-tab:
+    :activate-result:
 
 
 .. Links
