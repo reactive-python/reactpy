@@ -10,6 +10,7 @@ from logging import getLogger
 from threading import get_ident as get_thread_id
 from types import FunctionType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Awaitable,
     Callable,
@@ -29,6 +30,11 @@ from typing import (
 from typing_extensions import Protocol
 
 from idom.utils import Ref
+
+
+if not TYPE_CHECKING:
+    # make flake8 think that this variable exists
+    ellipsis = type(...)
 
 
 __all__ = [
@@ -103,7 +109,7 @@ _EffectApplyFunc = Union[_SyncEffectFunc, _AsyncEffectFunc]
 @overload
 def use_effect(
     function: None = None,
-    args: Sequence[Any] | "ellipsis" | None = ...,
+    args: Sequence[Any] | ellipsis | None = ...,
 ) -> Callable[[_EffectApplyFunc], None]:
     ...
 
@@ -111,14 +117,14 @@ def use_effect(
 @overload
 def use_effect(
     function: _EffectApplyFunc,
-    args: Sequence[Any] | "ellipsis" | None = ...,
+    args: Sequence[Any] | ellipsis | None = ...,
 ) -> None:
     ...
 
 
 def use_effect(
     function: Optional[_EffectApplyFunc] = None,
-    args: Sequence[Any] | "ellipsis" | None = ...,
+    args: Sequence[Any] | ellipsis | None = ...,
 ) -> Optional[Callable[[_EffectApplyFunc], None]]:
     """See the full :ref:`Use Effect` docs for details
 
@@ -215,7 +221,7 @@ _CallbackFunc = TypeVar("_CallbackFunc", bound=Callable[..., Any])
 @overload
 def use_callback(
     function: None = None,
-    args: Sequence[Any] | "ellipsis" | None = ...,
+    args: Sequence[Any] | ellipsis | None = ...,
 ) -> Callable[[_CallbackFunc], _CallbackFunc]:
     ...
 
@@ -223,14 +229,14 @@ def use_callback(
 @overload
 def use_callback(
     function: _CallbackFunc,
-    args: Sequence[Any] | "ellipsis" | None = ...,
+    args: Sequence[Any] | ellipsis | None = ...,
 ) -> _CallbackFunc:
     ...
 
 
 def use_callback(
     function: Optional[_CallbackFunc] = None,
-    args: Sequence[Any] | "ellipsis" | None = ...,
+    args: Sequence[Any] | ellipsis | None = ...,
 ) -> Union[_CallbackFunc, Callable[[_CallbackFunc], _CallbackFunc]]:
     """See the full :ref:`Use Callback` docs for details
 
@@ -263,7 +269,7 @@ class _LambdaCaller(Protocol):
 @overload
 def use_memo(
     function: None = None,
-    args: Sequence[Any] | "ellipsis" | None = ...,
+    args: Sequence[Any] | ellipsis | None = ...,
 ) -> _LambdaCaller:
     ...
 
@@ -271,14 +277,14 @@ def use_memo(
 @overload
 def use_memo(
     function: Callable[[], _StateType],
-    args: Sequence[Any] | "ellipsis" | None = ...,
+    args: Sequence[Any] | ellipsis | None = ...,
 ) -> _StateType:
     ...
 
 
 def use_memo(
     function: Optional[Callable[[], _StateType]] = None,
-    args: Sequence[Any] | "ellipsis" | None = ...,
+    args: Sequence[Any] | ellipsis | None = ...,
 ) -> Union[_StateType, Callable[[Callable[[], _StateType]], _StateType]]:
     """See the full :ref:`Use Memo` docs for details
 
@@ -364,7 +370,7 @@ def _use_const(function: Callable[[], _StateType]) -> _StateType:
 
 def _try_to_infer_closure_args(
     func: Callable[..., Any] | None,
-    args: Sequence[Any] | "ellipsis" | None,
+    args: Sequence[Any] | ellipsis | None,
 ) -> Sequence[Any] | None:
     if args is ...:
         if isinstance(func, FunctionType):
