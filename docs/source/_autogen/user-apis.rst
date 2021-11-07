@@ -61,6 +61,9 @@ User API
 Misc Modules
 ------------
 
+.. automodule:: idom.sample
+    :members:
+
 .. automodule:: idom.server.proto
     :members:
 

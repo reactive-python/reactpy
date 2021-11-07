@@ -5,6 +5,7 @@ from .core.dispatcher import Stop
 from .core.events import EventHandler, event
 from .core.layout import Layout
 from .core.vdom import vdom
+from .sample import run_sample_app
 from .server.prefab import run
 from .utils import Ref, html_to_vdom
 from .widgets import hotswap, multiview
@@ -28,6 +29,7 @@ __all__ = [
     "multiview",
     "Ref",
     "run",
+    "run_sample_app",
     "Stop",
     "vdom",
     "web",
