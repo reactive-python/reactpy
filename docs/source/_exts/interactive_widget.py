@@ -17,6 +17,7 @@ class IteractiveWidget(Directive):
 
     option_spec = {
         "no-activate-button": directives.flag,
+        "margin": float,
     }
 
     def run(self):
@@ -28,7 +29,11 @@ class IteractiveWidget(Directive):
                 "",
                 f"""
                 <div>
-                    <div id="{container_id}" class="interactive widget-container center-content" style="" />
+                    <div
+                        id="{container_id}"
+                        class="interactive widget-container center-content"
+                        style="margin-bottom: {self.options.get("margin", 0)}px;"
+                    />
                     <script type="module">
                         import {{ mountWidgetExample }} from "{_IDOM_STATIC_HOST}/_static/custom.js";
                         mountWidgetExample(
