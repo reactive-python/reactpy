@@ -6,6 +6,7 @@ Reference Material
 
     gallery
     hooks-api
+    javascript-api
     /_autogen/user-apis
     /_autogen/dev-apis
     specifications

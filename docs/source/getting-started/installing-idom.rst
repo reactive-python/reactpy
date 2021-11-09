@@ -38,7 +38,7 @@ Package that's been linked below:
 .. list-table::
     :header-rows: 1
     :align: center
-    :width: 100%
+    :widths: auto
 
     * - Framework
       - Required Package
@@ -51,10 +51,3 @@ Package that's been linked below:
 
     * - `Plotly Dash <https://dash.plotly.com/>`__
       - `idom-dash <https://github.com/idom-team/idom-dash>`__
-
-
-
-Add to Existing Applications
-----------------------------
-
-Under construction :)

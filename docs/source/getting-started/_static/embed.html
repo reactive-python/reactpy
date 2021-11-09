@@ -1,0 +1,8 @@
+<div id="idom-app" />
+<script type="module">
+  import { mountLayoutWithWebSocket } from "https://esm.sh/idom-client-react@0.33.3";
+  mountLayoutWithWebSocket(
+    document.getElementById("idom-app"),
+    "wss://idom-docs.herokuapp.com/_idom/stream?view_id=todo"
+  );
+</script>
