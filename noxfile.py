@@ -79,6 +79,7 @@ def docs(session: Session) -> None:
         env={
             "PYTHONPATH": os.getcwd(),
             "IDOM_DEBUG_MODE": os.environ.get("IDOM_DEBUG_MODE", "1"),
+            "IDOM_CHECK_VDOM_SPEC": os.environ.get("IDOM_CHECK_VDOM_SPEC", "0"),
         },
     )
 

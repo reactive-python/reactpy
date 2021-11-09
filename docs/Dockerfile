@@ -39,4 +39,5 @@ RUN sphinx-build -b html docs/source docs/build
 # -----------------
 ENV PORT 5000
 ENV IDOM_DEBUG_MODE=1
+ENV IDOM_CHECK_VDOM_SPEC=0
 CMD python docs/main.py
