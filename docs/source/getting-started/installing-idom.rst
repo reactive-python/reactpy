@@ -8,9 +8,15 @@ The simplest way to install idom is to do so using the ``stable`` option:
     pip install "idom[stable]"
 
 This includes a set of default dependencies that will support a builtin web server
-implementation. If you want to install IDOM without these dependencies you may simply
-``pip install idom`` or, alternatively, if you want a specific web server implementation
-you can select on of the other installation options below:
+implementation.
+
+
+Installing Other Servers
+------------------------
+
+If you want to install IDOM without these dependencies you may simply ``pip install
+idom`` or, alternatively, if you want a specific web server implementation you can
+select on of the other installation options below:
 
 - ``fastapi`` - https://fastapi.tiangolo.com
 - ``flask`` - https://palletsprojects.com/p/flask/
@@ -29,25 +35,34 @@ Once this is complete you should be able to :ref:`run IDOM applications <Running
 Installing In Other Frameworks
 ------------------------------
 
-IDOM can be run in a variety of contexts. These tend to be supported through the
-installation of additional Python packages. We briefly discuss how to
-:ref:`run IDOM in other frameworks <Running In Other Frameworks>`, but for specific
-information, you should refer to the specific documentation for the each Required
-Package that's been linked below:
+While IDOM can run in a variety of contexts, sometimes web frameworks require extra work
+in orer to integrate with them. In these cases, the IDOM team distributes bindings for
+these frameworks as separate Python packages. For documentation on how to install and
+use these, follow the links below:
 
-.. list-table::
-    :header-rows: 1
-    :align: center
-    :widths: auto
+.. raw:: html
 
-    * - Framework
-      - Required Package
+    <style>
+        .card-logo-image {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
 
-    * - `Django <https://docs.djangoproject.com/en/3.2/>`__
-      - `django-idom <https://github.com/idom-team/django-idom>`__
+.. grid:: 3
 
-    * - `Jupyter <https://jupyter.readthedocs.io/en/latest/>`__
-      - `idom-jupyter <https://github.com/idom-team/idom-jupyter>`__
+    .. grid-item-card::
+        :link: https://github.com/idom-team/django-idom
+        :img-background: _static/logo-django.svg
+        :class-card: card-logo-image
 
-    * - `Plotly Dash <https://dash.plotly.com/>`__
-      - `idom-dash <https://github.com/idom-team/idom-dash>`__
+    .. grid-item-card::
+        :link: https://github.com/idom-team/idom-jupyter
+        :img-background: _static/logo-jupyter.svg
+        :class-card: card-logo-image
+
+    .. grid-item-card::
+        :link: https://github.com/idom-team/idom-dash
+        :img-background: _static/logo-plotly.svg
+        :class-card: card-logo-image

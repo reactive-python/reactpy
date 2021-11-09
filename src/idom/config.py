@@ -24,8 +24,24 @@ IDOM_DEBUG_MODE = _Option(
 The string values ``1`` and ``0`` are mapped to ``True`` and ``False`` respectively.
 
 When debug is on, extra validation measures are applied that negatively impact
-performance but can be used to catch bugs. Additionally, the default log level for IDOM
-is set to ``DEBUG``.
+performance but can be used to catch bugs during development. Additionally, the default
+log level for IDOM is set to ``DEBUG``.
+"""
+
+IDOM_CHECK_VDOM_SPEC = _Option(
+    "IDOM_CHECK_VDOM_SPEC",
+    default=IDOM_DEBUG_MODE.current,
+    mutable=False,
+    validator=lambda x: bool(int(x)),
+)
+"""This immutable option turns on/off checks which ensure VDOM is rendered to spec
+
+The string values ``1`` and ``0`` are mapped to ``True`` and ``False`` respectively.
+
+By default this check is off. When ``IDOM_DEBUG_MODE=1`` this will be turned on but can
+be manually disablled by setting ``IDOM_CHECK_VDOM_SPEC=0`` in addition.
+
+For more info on the VDOM spec, see here: :ref:`VDOM JSON Schema`
 """
 
 # Because these web modules will be linked dynamically at runtime this can be temporary

@@ -88,11 +88,14 @@ IDOM within a Jupyter Notebook, this is where you can learn how to do those thin
 
 .. grid:: 2
 
-    .. grid-item::
+    .. grid-item-card::
+        :link: getting-started/index
+        :link-type: doc
 
         .. image:: _static/install-and-run-idom.gif
 
-    .. grid-item::
+    .. grid-item-card::
+        :link: https://mybinder.org/v2/gh/idom-team/idom-jupyter/main?filepath=notebooks%2Fintroduction.ipynb
 
         .. image:: _static/idom-in-jupyterlab.gif
 

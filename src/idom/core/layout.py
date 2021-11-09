@@ -26,7 +26,11 @@ from typing import (
 from uuid import uuid4
 from weakref import ref as weakref
 
-from idom.config import IDOM_DEBUG_MODE, IDOM_FEATURE_INDEX_AS_DEFAULT_KEY
+from idom.config import (
+    IDOM_CHECK_VDOM_SPEC,
+    IDOM_DEBUG_MODE,
+    IDOM_FEATURE_INDEX_AS_DEFAULT_KEY,
+)
 from idom.utils import Ref
 
 from .hooks import LifeCycleHook
@@ -141,10 +145,10 @@ class Layout:
             else:
                 return self._create_layout_update(model_state)
 
-    if IDOM_DEBUG_MODE.current:
+    if IDOM_CHECK_VDOM_SPEC.current:
         # If in debug mode inject a function that ensures all returned updates
-        # contain valid VDOM models. We only do this in debug mode in order to
-        # avoid unnecessarily impacting performance.
+        # contain valid VDOM models. We only do this in debug mode or when this check
+        # is explicitely turned in order to avoid unnecessarily impacting performance.
 
         _debug_render = render
 
