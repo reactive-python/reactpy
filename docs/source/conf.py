@@ -149,8 +149,8 @@ redirects = {
 # a list of builtin themes.
 #
 html_theme = "furo"
-html_logo = "_static/idom-logo.svg"
-html_favicon = "_static/idom-logo-square-small.svg"
+html_logo = "_static/branding/idom-logo.svg"
+html_favicon = "_static/branding/idom-logo-square-small.svg"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

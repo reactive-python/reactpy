@@ -1,5 +1,5 @@
-Developer Guide
-===============
+Contributor Guide
+=================
 
 .. note::
 

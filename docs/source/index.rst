@@ -16,7 +16,7 @@ IDOM
     :caption: Other Resources
 
     understanding-idom/index
-    contributing/index
+    developing-idom/index
     reference-material/index
 
 .. toctree::
@@ -90,11 +90,11 @@ IDOM within a Jupyter Notebook, this is where you can learn how to do those thin
 
     .. grid-item::
 
-        .. image:: /_static/install-and-run-idom.gif
+        .. image:: _static/install-and-run-idom.gif
 
     .. grid-item::
 
-        .. image:: /_static/idom-in-jupyterlab.gif
+        .. image:: _static/idom-in-jupyterlab.gif
 
 
 Chapter 1 - :ref:`Creating Interfaces`

@@ -6,7 +6,6 @@ Getting Started
 
     installing-idom
     running-idom
-    testing-idom
 
 The fastest way to get started with IDOM is to install it with ``pip``:
 
@@ -28,7 +27,6 @@ This should automatically open up a browser window to a page that looks like thi
 
 .. dropdown:: Encountered a problem?
     :animate: fade-in
-    :color: warning
 
     If you get a ``RuntimeError`` similar to the following:
 
@@ -41,11 +39,29 @@ This should automatically open up a browser window to a page that looks like thi
     For anything else, report your issue in IDOM's
     `discussion forum <https://github.com/idom-team/idom/discussions/categories/help>`__.
 
-Once you've confirmed that the sample application works as expected you can follow along
-with :ref:`the lessons <Learning IDOM>` in the rest of this documentation.
+.. grid:: 2
+    :gutter: 1
 
+    .. grid-item-card:: :octicon:`tools` Installation Details
+        :link: installing-idom
+        :link-type: doc
 
-Try IDOM Now!
--------------
+        Learn more about the different ways to install and configure IDOM
 
-link to binder...
+    .. grid-item-card:: :octicon:`play` Running IDOM
+        :link: running-idom
+        :link-type: doc
+
+        See how to run IDOM with different servers or make a custom server
+        implementation
+
+    .. grid-item-card:: :octicon:`rocket` Creating Interfaces
+        :link: ../creating-interfaces/index
+        :link-type: doc
+
+        Discover how to create interactive applications with IDOM!
+
+    .. grid-item-card:: :octicon:`people` Discussion Forum
+        :link: https://github.com/idom-team/idom/discussions
+
+        Report issues, ask questions, share ideas, or show projects

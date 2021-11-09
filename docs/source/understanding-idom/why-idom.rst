@@ -14,7 +14,7 @@ which describe the logic of computations without explicitly stating their contro
 .. _Declarative: https://www.youtube.com/watch?v=yGh0bjzj4IQ
 .. _Frontend-Frameworks-Popularity: https://gist.github.com/tkrotoff/b1caa4c3a185629299ec234d2314e190
 
-.. image:: /_static/npm-download-trends.png
+.. image:: _static/npm-download-trends.png
 
 So what does this have to do with Python and IDOM? Well, because browsers are the de
 facto "operating system of the internet", even back-end languages like Python have had
@@ -90,7 +90,7 @@ live views being served from a web socket:
 
 .. _idom-client-react: https://github.com/idom-team/idom/tree/main/src/idom/client/packages/idom-client-react
 
-.. image:: /_static/live-examples-in-docs.gif
+.. image:: _static/live-examples-in-docs.gif
 
 
 Declarative Components
@@ -178,14 +178,14 @@ construct a representation of the view. The VDOM is constructed on the Python si
 components. Then, as it evolves, IDOM's layout computes VDOM-diffs and wires them to its
 Javascript client where it is ultimately displayed:
 
-.. image:: /_static/idom-flow-diagram.svg
+.. image:: _static/idom-flow-diagram.svg
 
 By contrast, IDOM's peers take an approach that aligns fairly closely with the
 Model-View-Controller_ design pattern - the controller lives server-side (though not
 always), the model is what's synchronized between the server and client, and the view is
 run client-side in Javascript. To draw it out might look something like this:
 
-.. image:: /_static/mvc-flow-diagram.svg
+.. image:: _static/mvc-flow-diagram.svg
 
 .. _Model-View-Controller: https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller
 
