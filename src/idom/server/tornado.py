@@ -32,9 +32,14 @@ _RouteHandlerSpecs = List[Tuple[str, Type[RequestHandler], Any]]
 class Config(TypedDict, total=False):
     """Render server config for :class:`TornadoRenderServer` subclasses"""
 
-    url_prefix: str
-    serve_static_files: bool
     redirect_root_to_index: bool
+    """Whether to redirect the root URL (with prefix) to ``index.html``"""
+
+    serve_static_files: bool
+    """Whether or not to serve static files (i.e. web modules)"""
+
+    url_prefix: str
+    """The URL prefix where IDOM resources will be served from"""
 
 
 def PerClientStateServer(

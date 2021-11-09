@@ -31,16 +31,16 @@ run your application by setting the ``IDOM_DEBUG_MODE`` environment variable.
 
     .. tab-item:: Command Prompt
 
-        .. code-block::
+        .. code-block:: text
 
             set IDOM_DEBUG_MODE=1
             python my_idom_app.py
 
     .. tab-item:: PowerShell
 
-        .. code-block::
+        .. code-block:: powershell
 
-            $env:IDOM_DEBUG_MODE = '1'
+            $env:IDOM_DEBUG_MODE = "1"
             python my_idom_app.py
 
 .. dropdown:: Turn debug mode off in production!
@@ -79,9 +79,11 @@ parameter of ``run()``:
     from idom import component, html, run
     from idom.server.sanic import PerClientStateServer
 
+
     @component
     def App():
         return html.h1(f"Hello, World!")
+
 
     run(App, server_type=PerClientStateServer)
 
@@ -112,10 +114,12 @@ code:
     from idom import component, hooks, html, run
     from idom.server.sanic import SharedClientStateServer
 
+
     @component
     def Slider():
         value, set_value = hooks.use_state(50)
         return html.input({"type": "range", "min": 1, "max": 100, "value": value})
+
 
     run(Slider, server_type=SharedClientStateServer)
 
@@ -131,21 +135,24 @@ Presently the following server implementations support the ``SharedClientStateSe
 - :func:`idom.server.sanic.SharedClientStateServer`
 
 
-Configuring Server Settings
----------------------------
+Common Server Settings
+----------------------
 
 Each server implementation has its own high-level settings that are defined by its
-respective ``Config`` (a typed dictionary). These configuration dictionaries can then
-be passed to the ``run()`` function via the ``config`` parameter:
+respective ``Config`` (a typed dictionary). As a general rule, these ``Config`` types
+expose the same options across implementations. These configuration dictionaries can
+then be passed to the ``run()`` function via the ``config`` parameter:
 
 .. code-block::
 
     from idom import run, component, html
     from idom.server.sanic import PerClientStateServer, Config
 
+
     @component
     def App():
         return html.h1(f"Hello, World!")
+
 
     server_config = Config(
         cors=False,
@@ -164,8 +171,8 @@ Here's the list of available configuration types:
 - :class:`idom.server.tornado.Config`
 
 
-Implementation Specific Server Settings
----------------------------------------
+Specific Server Settings
+------------------------
 
 The ``Config`` :ref:`described above <Configuring Server Settings` is meant to be an
 implementation agnostic - all ``Config`` objects support a similar set of options.
@@ -190,9 +197,11 @@ do the following:
     app.config.REQUEST_TIMEOUT = 60
     app.config.RESPONSE_TIMEOUT = 60
 
+
     @component
     def SomeView():
         return html.form({"action": })
+
 
     run(SomeView, server_type=PerClientStateServer, app=app)
 
@@ -214,9 +223,11 @@ instance of your existing application:
 
     existing_app = Sanic(__name__)
 
+
     @component
     def IdomView():
         return html.h1("This is an IDOM App")
+
 
     PerClientStateServer(IdomView, app=existing_app, config=Config(url_prefix="app"))
 

@@ -139,8 +139,9 @@ autodoc_member_order = "bysource"
 # -- sphinx_reredirects --
 
 redirects = {
-    "package-api": "auto/api-reference.html",
-    "configuration-options": "auto/api-reference.html#configuration-options",
+    "package-api": "_autogen/user-apis.html",
+    "configuration-options": "_autogen/dev-apis.html#configuration-options",
+    "examples": "creating-interfaces/index.html",
 }
 
 # -- Options for HTML output -------------------------------------------------

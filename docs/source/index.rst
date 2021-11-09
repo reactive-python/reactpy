@@ -29,9 +29,10 @@ IDOM
 
 
 IDOM is a Python web framework for building **interactive websites without needing a
-single line of Javascript**. It does this by breaking down complex applications into
-nestable and reusable chunks of code called :ref:`"components" <Your First Component>`
-that allow you to focus on what your application does rather than how it does it.
+single line of Javascript**. This is accomplished by breaking down complex applications
+into nestable and reusable chunks of code called :ref:`"components" <Your First
+Component>` that allow you to focus on what your application does rather than how it
+does it.
 
 IDOM is also ecosystem independent. It can be added to existing applications built on a
 variety of sync and async web servers, as well as integrated with other frameworks like
@@ -89,13 +90,12 @@ IDOM within a Jupyter Notebook, this is where you can learn how to do those thin
 .. grid:: 2
 
     .. grid-item-card::
-        :link: getting-started/index
-        :link-type: doc
+        :link: getting-started/index.html#quick-install
 
         .. image:: _static/install-and-run-idom.gif
 
     .. grid-item-card::
-        :link: https://mybinder.org/v2/gh/idom-team/idom-jupyter/main?filepath=notebooks%2Fintroduction.ipynb
+        :link: https://mybinder.org/v2/gh/idom-team/idom-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb
 
         .. image:: _static/idom-in-jupyterlab.gif
 

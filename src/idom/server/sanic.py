@@ -41,9 +41,19 @@ class Config(TypedDict, total=False):
     """Config for :class:`SanicRenderServer`"""
 
     cors: Union[bool, Dict[str, Any]]
-    url_prefix: str
-    serve_static_files: bool
+    """Enable or configure Cross Origin Resource Sharing (CORS)
+
+    For more information see docs for ``sanic_cors.CORS``
+    """
+
     redirect_root_to_index: bool
+    """Whether to redirect the root URL (with prefix) to ``index.html``"""
+
+    serve_static_files: bool
+    """Whether or not to serve static files (i.e. web modules)"""
+
+    url_prefix: str
+    """The URL prefix where IDOM resources will be served from"""
 
 
 def PerClientStateServer(
