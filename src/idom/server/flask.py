@@ -37,11 +37,26 @@ logger = logging.getLogger(__name__)
 class Config(TypedDict, total=False):
     """Render server config for :class:`FlaskRenderServer`"""
 
-    import_name: str
-    url_prefix: str
     cors: Union[bool, Dict[str, Any]]
-    serve_static_files: bool
+    """Enable or configure Cross Origin Resource Sharing (CORS)
+
+    For more information see docs for ``flask_cors.CORS``
+    """
+
+    import_name: str
+    """The module where the application instance was created
+
+    For more info see :class:`flask.Flask`.
+    """
+
     redirect_root_to_index: bool
+    """Whether to redirect the root URL (with prefix) to ``index.html``"""
+
+    serve_static_files: bool
+    """Whether or not to serve static files (i.e. web modules)"""
+
+    url_prefix: str
+    """The URL prefix where IDOM resources will be served from"""
 
 
 def PerClientStateServer(

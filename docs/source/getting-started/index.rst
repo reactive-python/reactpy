@@ -7,13 +7,24 @@ Getting Started
     installing-idom
     running-idom
 
-The fastest way to get started with IDOM is to install it with ``pip``:
+The fastest way to get started with IDOM is to try it out in a Juptyer Notebook:
+
+.. card::
+    :link: https://mybinder.org/v2/gh/idom-team/idom-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb
+
+    .. image:: /_static/idom-in-jupyterlab.gif
+
+
+Quick Install
+-------------
+
+The next fastest option is to install IDOM with ``pip``:
 
 .. code-block:: bash
 
     pip install "idom[stable]"
 
-Then, to check that everything is working you can run the sample application:
+To check that everything is working you can run the sample application:
 
 .. code-block:: bash
 

@@ -1,13 +1,13 @@
 Installing IDOM
 ===============
 
-The simplest way to install idom is to do so using the ``stable`` option:
+The easiest way to ``pip`` install idom is to do so using the ``stable`` option:
 
 .. code-block:: bash
 
     pip install "idom[stable]"
 
-This includes a set of default dependencies that will support a builtin web server
+This includes a set of default dependencies for one of the builtin web server
 implementation.
 
 
@@ -46,7 +46,9 @@ use these, follow the links below:
         .card-logo-image {
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-content: center;
+            padding: 10px;
+            background-color: #000000f2;
         }
     </style>
 
