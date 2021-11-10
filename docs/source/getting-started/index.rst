@@ -7,12 +7,33 @@ Getting Started
     installing-idom
     running-idom
 
+.. dropdown:: :octicon:`bookmark-fill;2em` What You'll Learn
+    :color: info
+    :animate: fade-in
+
+    .. grid:: 2
+
+        .. grid-item-card:: :octicon:`tools` Installing IDOM
+            :link: installing-idom
+            :link-type: doc
+
+            Learn about the different ways to install IDOM
+
+        .. grid-item-card:: :octicon:`play` Running IDOM
+            :link: running-idom
+            :link-type: doc
+
+            See how to run IDOM with different servers or make a custom server
+            implementation
+
 The fastest way to get started with IDOM is to try it out in a Juptyer Notebook:
 
 .. card::
     :link: https://mybinder.org/v2/gh/idom-team/idom-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb
 
     .. image:: /_static/idom-in-jupyterlab.gif
+        :scale: 72%
+        :align: center
 
 
 Quick Install
@@ -36,43 +57,43 @@ This should automatically open up a browser window to a page that looks like thi
     :no-activate-button:
     :margin: 12
 
-.. dropdown:: Encountered a problem?
-    :animate: fade-in
+If you get a ``RuntimeError`` similar to the following:
 
-    If you get a ``RuntimeError`` similar to the following:
+.. code-block:: text
 
-    .. code-block:: text
+    Found none of the following builtin server implementations...
 
-        Found none of the following builtin server implementations...
+Then be sure you installed ``"idom[stable]"`` and not just ``idom``.
 
-    Then be sure you installed ``"idom[stable]"`` and not just ``idom``.
+For anything else, report your issue in IDOM's
+`discussion forum <https://github.com/idom-team/idom/discussions/categories/help>`__.
 
-    For anything else, report your issue in IDOM's
-    `discussion forum <https://github.com/idom-team/idom/discussions/categories/help>`__.
+.. card::
+    :link: installing-idom
+    :link-type: doc
 
-.. grid:: 2
-    :gutter: 1
+    :octicon:`book` Read More
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+    Learn about the different ways to install IDOM
 
-    .. grid-item-card:: :octicon:`tools` Installation Details
-        :link: installing-idom
-        :link-type: doc
 
-        Learn more about the different ways to install and configure IDOM
+Quick Start
+-----------
 
-    .. grid-item-card:: :octicon:`play` Running IDOM
-        :link: running-idom
-        :link-type: doc
+Once you've :ref:`installed IDOM <quick install>`. The simplest way to run IDOM is with
+the :func:`~idom.server.prefab.run` function. By default this will execute your
+application using one of the builtin server implementations whose dependencies have all
+been installed. Running a tiny "hello world" application just requires the following
+code:
 
-        See how to run IDOM with different servers or make a custom server
-        implementation
+.. example:: hello_world
+    :activate-result:
 
-    .. grid-item-card:: :octicon:`rocket` Creating Interfaces
-        :link: ../creating-interfaces/index
-        :link-type: doc
+.. card::
+    :link: running-idom
+    :link-type: doc
 
-        Discover how to create interactive applications with IDOM!
-
-    .. grid-item-card:: :octicon:`people` Discussion Forum
-        :link: https://github.com/idom-team/idom/discussions
-
-        Report issues, ask questions, share ideas, or show projects
+    :octicon:`book` Read More
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+    See how to run IDOM with different servers or make a custom server
+    implementation

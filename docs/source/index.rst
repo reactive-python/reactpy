@@ -46,9 +46,8 @@ about the component itself.
 At a Glance
 -----------
 
-To get you acquainted with IDOM, take a look at the tiny
-`"hello world" <https://en.wikipedia.org/wiki/%22Hello,_World!%22_program>`__
-application below:
+To get a rough idea of how to write apps in IDOM, take a look at the tiny `"hello world"
+<https://en.wikipedia.org/wiki/%22Hello,_World!%22_program>`__ application below:
 
 .. example:: hello_world
     :activate-result:
@@ -82,7 +81,7 @@ Chapter 0 - :ref:`Getting Started`
 -----------------------------------
 
 If you want to follow along with examples in the sections that follow, you'll want to
-start here so you can :ref:`install IDOM <installation>`. This section also contains
+start here so you can :ref:`install IDOM <Installing IDOM>`. This section also contains
 more detailed information about how to :ref:`run IDOM <Running IDOM>` in different
 contexts. For example, if you want to embed IDOM into an existing application, or run
 IDOM within a Jupyter Notebook, this is where you can learn how to do those things.
@@ -95,7 +94,7 @@ IDOM within a Jupyter Notebook, this is where you can learn how to do those thin
         .. image:: _static/install-and-run-idom.gif
 
     .. grid-item-card::
-        :link: https://mybinder.org/v2/gh/idom-team/idom-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb
+        :link: getting-started/index.html
 
         .. image:: _static/idom-in-jupyterlab.gif
 

@@ -146,6 +146,9 @@ redirects = {
 
 # -- Options for HTML output -------------------------------------------------
 
+# Set the page title
+html_title = "IDOM Docs"
+
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
@@ -215,16 +218,14 @@ htmlhelp_basename = "IDOMdoc"
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (master_doc, "IDOM.tex", "IDOM Documentation", "Ryan Morshead", "manual")
-]
+latex_documents = [(master_doc, "IDOM.tex", html_title, "Ryan Morshead", "manual")]
 
 
 # -- Options for manual page output ------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "idom", "IDOM Documentation", [author], 1)]
+man_pages = [(master_doc, "idom", html_title, [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -236,7 +237,7 @@ texinfo_documents = [
     (
         master_doc,
         "IDOM",
-        "IDOM Documentation",
+        html_title,
         author,
         "IDOM",
         "One line description of project.",
