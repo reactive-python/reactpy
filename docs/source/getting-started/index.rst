@@ -17,14 +17,15 @@ Getting Started
             :link: installing-idom
             :link-type: doc
 
-            Learn about the different ways to install IDOM
+            Learn how IDOM can be installed in a variety of different ways - with different web
+            servers and even in different frameworks.
 
         .. grid-item-card:: :octicon:`play` Running IDOM
             :link: running-idom
             :link-type: doc
 
-            See how to run IDOM with different servers or make a custom server
-            implementation
+            See the ways that IDOM can be run with servers or be embedded in existing
+            applications.
 
 The fastest way to get started with IDOM is to try it out in a Juptyer Notebook:
 
@@ -36,8 +37,8 @@ The fastest way to get started with IDOM is to try it out in a Juptyer Notebook:
         :align: center
 
 
-Quick Install
--------------
+Section 1: Installing IDOM
+--------------------------
 
 The next fastest option is to install IDOM with ``pip``:
 
@@ -74,11 +75,12 @@ For anything else, report your issue in IDOM's
 
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
-    Learn about the different ways to install IDOM
+    Learn how IDOM can be installed in a variety of different ways - with different web
+    servers and even in different frameworks.
 
 
-Quick Start
------------
+Section 2: Running IDOM
+-----------------------
 
 Once you've :ref:`installed IDOM <quick install>`. The simplest way to run IDOM is with
 the :func:`~idom.server.prefab.run` function. By default this will execute your
@@ -95,5 +97,5 @@ code:
 
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
-    See how to run IDOM with different servers or make a custom server
-    implementation
+    See the ways that IDOM can be run with servers or be embedded in existing
+    applications.

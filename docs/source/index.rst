@@ -18,6 +18,7 @@ IDOM
     understanding-idom/index
     developing-idom/index
     reference-material/index
+    licenses
 
 .. toctree::
     :hidden:
