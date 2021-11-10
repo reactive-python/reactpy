@@ -48,7 +48,8 @@ use these, follow the links below:
             justify-content: center;
             align-content: center;
             padding: 10px;
-            background-color: #000000f2;
+            background-color: var(--color-background-primary);
+            border: 2px solid var(--color-background-border);
         }
     </style>
 

@@ -43,7 +43,7 @@ run your application by setting the ``IDOM_DEBUG_MODE`` environment variable.
             $env:IDOM_DEBUG_MODE = "1"
             python my_idom_app.py
 
-.. dropdown:: Turn debug mode off in production!
+.. dropdown:: Leave debug mode off in production!
     :color: danger
     :animate: fade-in
 
@@ -134,6 +134,10 @@ Presently the following server implementations support the ``SharedClientStateSe
 - :func:`idom.server.fastapi.SharedClientStateServer`
 - :func:`idom.server.sanic.SharedClientStateServer`
 
+.. note::
+
+    If you need to, your can :ref:`write your own server implementation <writing your
+    own server>`.
 
 Common Server Settings
 ----------------------
@@ -260,7 +264,8 @@ embedding one the examples from this documentation into your own webpage:
 .. note::
 
     For more information on how to use the client see the :ref:`Javascript API`
-    reference.
+    reference. Or if you need to, your can :ref:`write your own server implementation
+    <writing your own server>`.
 
 As mentioned though, this is connecting to the server that is hosting this
 documentation. If you want to connect to a view from your own server, you'll need to
@@ -286,3 +291,4 @@ After running ``python main.py``, you should be able to navigate to
 ``http://127.0.0.1:8000/index.html`` and see:
 
 .. image:: _static/embed-idom-view/screenshot.png
+

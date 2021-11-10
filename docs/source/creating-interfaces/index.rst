@@ -4,7 +4,7 @@ Creating Interfaces
 .. toctree::
     :hidden:
 
-    intro-to-html
+    html-with-idom
     your-first-component
     parametrizing-components
     conditional-rendering
@@ -17,10 +17,10 @@ Creating Interfaces
     .. grid:: 2
 
         .. grid-item-card:: :octicon:`mortar-board` Intro to HTML
-            :link: intro-to-html
+            :link: html-with-idom
             :link-type: doc
 
-            Learn the basics of HTML and how to create it in IDOM
+            Learn how to construct HTML layouts with IDOM.
 
         .. grid-item-card:: :octicon:`package` Your First Component
             :link: your-first-component
@@ -48,8 +48,66 @@ Creating Interfaces
             Understand how IDOM keeps track of changing layout structures.
 
 IDOM is a Python package for making user interfaces (UI). These interfaces are built
-from small units of functionality like buttons text and images. IDOM allows you to
-combine these units into reusable, nestable :ref:`"components" <your first component>`.
-In the sections that follow you'll learn how these UI units are created and organized
-into components. Then, you'll use components to customize and conditionally display more
-complex UIs.
+from small elements of functionality like buttons text and images. IDOM allows you to
+combine these elements into reusable, nestable :ref:`"components" <your first
+component>`. In the sections that follow you'll learn how these UI elements are created
+and organized into components. Then, you'll use components to customize and
+conditionally display more complex UIs.
+
+
+Section 1: HTML with IDOM
+-------------------------
+
+In a typical Python-base web application the resonsibility of defining the view along
+with its backing data and logic are distributed between a client and server
+respectively. With IDOM, both these tasks are centralized in a single place. This is
+done by allowing HTML interfaces to be constructed in Python. Let's consider the HTML
+sample below:
+
+.. code-block:: html
+
+    <h1>My Todo List</h1>
+    <ul>
+        <li>Design a cool new app</li>
+        <li>Build it</li>
+        <li>Share it with the world!</li>
+    </ul>
+
+To recreate the same thing in IDOM you would write:
+
+.. code-block::
+
+    from idom import html
+
+    html.div(
+        html.h1("My Todo List"),
+        html.ul(
+            html.li("Design a cool new app"),
+            html.li("Build it"),
+            html.li("Share it with the world!"),
+        )
+    )
+
+.. card::
+    :link: html-with-idom
+    :link-type: doc
+
+    :octicon:`book` Read More
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+    Learn how to construct HTML layouts with IDOM.
+
+
+Section 2: Your First Component
+-------------------------------
+
+
+Section 3: Parametrizing Components
+-----------------------------------
+
+
+Section 4: Conditional Rendering
+--------------------------------
+
+
+Section 5: Dynamic Layout Structure
+-----------------------------------
