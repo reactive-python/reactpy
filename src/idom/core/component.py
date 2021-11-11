@@ -74,6 +74,6 @@ class Component:
         else:
             items = ", ".join(f"{k}={v!r}" for k, v in args.items())
             if items:
-                return f"{self._func.__name__}({id(self)}, {items})"
+                return f"{self._func.__name__}({id(self):02x}, {items})"
             else:
-                return f"{self._func.__name__}({id(self)})"
+                return f"{self._func.__name__}({id(self):02x})"

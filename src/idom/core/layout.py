@@ -83,7 +83,7 @@ class Layout:
     def __init__(self, root: "ComponentType") -> None:
         super().__init__()
         if not isinstance(root, ComponentType):
-            raise TypeError("Expected an ComponentType, not %r" % root)
+            raise TypeError(f"Expected a ComponentType, not {type(root)!r}.")
         self.root = root
 
     def __enter__(self: _Self) -> _Self:
