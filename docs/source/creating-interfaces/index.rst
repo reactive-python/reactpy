@@ -5,7 +5,7 @@ Creating Interfaces
     :hidden:
 
     html-with-idom
-    your-first-component
+    your-first-components
     parametrizing-components
     conditional-rendering
     dynamic-element-children
@@ -23,11 +23,11 @@ Creating Interfaces
             Learn how to construct HTML layouts with IDOM and the underlying data
             structure we use to represent them.
 
-        .. grid-item-card:: :octicon:`package` Your First Component
-            :link: your-first-component
+        .. grid-item-card:: :octicon:`package` Your First Components
+            :link: your-first-components
             :link-type: doc
 
-            Discover what components are and why their one of IDOM's foundational
+            Discover what components are and why they're one of IDOM's foundational
             concepts.
 
         .. grid-item-card:: :octicon:`plug` Parametrizing Components
@@ -63,9 +63,9 @@ Section 1: HTML with IDOM
 
 In a typical Python-base web application the resonsibility of defining the view along
 with its backing data and logic are distributed between a client and server
-respectively. With IDOM, both these tasks are centralized in a single place. This is
-done by allowing HTML interfaces to be constructed in Python. Let's consider the HTML
-sample below:
+respectively. With IDOM, both these tasks are centralized in a single place. The most
+foundational pilar of this capability is formed by allowing HTML interfaces to be
+constructed in Python. Let's consider the HTML sample below:
 
 .. code-block:: html
 
@@ -102,8 +102,34 @@ To recreate the same thing in IDOM you would write:
     use to represent them.
 
 
-Section 2: Your First Component
--------------------------------
+Section 2: Your First Components
+--------------------------------
+
+The next building block in our journey with IDOM are components. At their core,
+components are just a normal Python functions that return :ref:`HTML <HTML with IDOM>`.
+The one special thing about them that we need to be concerned with now, is that to
+create them they require the addition of the :func:`~idom.core.component.component`
+decorator. Take a quick look at this "hello world" example you make have seen earlier to
+check out what this looks like in practice:
+
+.. example:: hello_world
+    :activate-result:
+
+.. note::
+
+    Not all functions that return HTML need to be decorated with the ``@component``
+    decorator - when and where they are required will be discussed when we start
+    :ref:`adding interactivity`.
+
+.. card::
+    :link: html-with-idom
+    :link-type: doc
+
+    :octicon:`book` Read More
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Discover what components are and why they're one of IDOM's foundational concepts.
+
 
 
 Section 3: Parametrizing Components

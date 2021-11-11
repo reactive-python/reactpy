@@ -8,7 +8,7 @@ def test_component_repr():
 
     mc1 = MyComponent(1, 2, 3, x=4, y=5)
 
-    expected = f"MyComponent({id(mc1)}, a=1, b=(2, 3), c={{'x': 4, 'y': 5}})"
+    expected = f"MyComponent({id(mc1):02x}, a=1, b=(2, 3), c={{'x': 4, 'y': 5}})"
     assert repr(mc1) == expected
 
     # not enough args supplied to function

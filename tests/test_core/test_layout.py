@@ -20,7 +20,7 @@ def test_layout_repr():
 
     my_component = MyComponent()
     layout = idom.Layout(my_component)
-    assert str(layout) == f"Layout(MyComponent({id(my_component)}))"
+    assert str(layout) == f"Layout(MyComponent({id(my_component):02x}))"
 
 
 def test_layout_expects_abstract_component():
