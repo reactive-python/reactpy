@@ -27,12 +27,16 @@ Getting Started
             See the ways that IDOM can be run with servers or be embedded in existing
             applications.
 
-The fastest way to get started with IDOM is to try it out in a Juptyer Notebook:
+The fastest way to get started with IDOM is to try it out in a Juptyer Notebook. If you
+want to use a Notebook to work through the examples shown in this documentation, you'll
+want to replace calls to ``idom.run(App)`` with a line at the end of each cell that
+constructs the ``App()`` in question. If that doesn't make sense, the introductory
+notebook linked below will demonstrate how to do this:
 
 .. card::
     :link: https://mybinder.org/v2/gh/idom-team/idom-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb
 
-    .. image:: /_static/idom-in-jupyterlab.gif
+    .. image:: _static/idom-in-jupyterlab.gif
         :scale: 72%
         :align: center
 
@@ -75,6 +79,7 @@ For anything else, report your issue in IDOM's
 
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
     Learn how IDOM can be installed in a variety of different ways - with different web
     servers and even in different frameworks.
 
@@ -97,5 +102,6 @@ code:
 
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
     See the ways that IDOM can be run with servers or be embedded in existing
     applications.

@@ -1,4 +1,4 @@
-Writing Your Own client
+Writing Your Own Client
 =======================
 
 Under construction :)
