@@ -1,4 +1,4 @@
-Dynamic Layout Structure
+Dynamic Element Children
 ========================
 
 Under construction :)

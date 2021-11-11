@@ -8,7 +8,7 @@ Creating Interfaces
     your-first-component
     parametrizing-components
     conditional-rendering
-    dynamic-layout-structure
+    dynamic-element-children
 
 .. dropdown:: :octicon:`bookmark-fill;2em` What You'll Learn
     :color: info
@@ -16,11 +16,12 @@ Creating Interfaces
 
     .. grid:: 2
 
-        .. grid-item-card:: :octicon:`mortar-board` Intro to HTML
+        .. grid-item-card:: :octicon:`mortar-board` HTML with IDOM
             :link: html-with-idom
             :link-type: doc
 
-            Learn how to construct HTML layouts with IDOM.
+            Learn how to construct HTML layouts with IDOM and the underlying data
+            structure we use to represent them.
 
         .. grid-item-card:: :octicon:`package` Your First Component
             :link: your-first-component
@@ -39,13 +40,15 @@ Creating Interfaces
             :link: conditional-rendering
             :link-type: doc
 
-            Use what you've learned so far to add conditional logic to your components.
+            Use what you've learned so far to render display different views depending
+            on a what a component's inputs are.
 
-        .. grid-item-card:: :octicon:`versions` Dynamic Layout Structure
-            :link: dynamic-layout-structure
+        .. grid-item-card:: :octicon:`versions` Dynamic Element Children
+            :link: dynamic-element-children
             :link-type: doc
 
-            Understand how IDOM keeps track of changing layout structures.
+            Understand how to correctly render using lists of child elements that
+            may change in length or order
 
 IDOM is a Python package for making user interfaces (UI). These interfaces are built
 from small elements of functionality like buttons text and images. IDOM allows you to
@@ -94,7 +97,9 @@ To recreate the same thing in IDOM you would write:
 
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
-    Learn how to construct HTML layouts with IDOM.
+
+    Learn how to construct HTML layouts with IDOM and the underlying data structure we
+    use to represent them.
 
 
 Section 2: Your First Component
@@ -109,5 +114,5 @@ Section 4: Conditional Rendering
 --------------------------------
 
 
-Section 5: Dynamic Layout Structure
+Section 5: Dynamic Element Children
 -----------------------------------

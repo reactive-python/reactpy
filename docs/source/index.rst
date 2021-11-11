@@ -71,14 +71,15 @@ function.
 Learning IDOM
 -------------
 
-This documentation is broken up into chapters that introduce you to concepts step by
-step with detailed explanations and lots of examples. You should feel free to dive into
-any section that seems interesting. While each chapter assumes knowledge from those
-that came before, when you encounter a concept you're unfamiliar with you should look
-for links that will help direct you to the place where it was originally taught.
+This documentation is broken up into chapters and sections that introduce you to
+concepts step by step with detailed explanations and lots of examples. You should feel
+free to dive into any content that seems interesting. While each chapter assumes
+knowledge from those that came before, when you encounter a concept you're unfamiliar
+with you should look for links that will help direct you to the place where it was
+originally taught.
 
 
-Chapter 0 - :ref:`Getting Started`
+Chapter 1 - :ref:`Getting Started`
 -----------------------------------
 
 If you want to follow along with examples in the sections that follow, you'll want to
@@ -89,36 +90,60 @@ IDOM within a Jupyter Notebook, this is where you can learn how to do those thin
 
 .. grid:: 2
 
-    .. grid-item-card::
-        :link: getting-started/index.html#quick-install
+    .. grid-item::
 
         .. image:: _static/install-and-run-idom.gif
 
-    .. grid-item-card::
-        :link: getting-started/index.html
+    .. grid-item::
 
-        .. image:: _static/idom-in-jupyterlab.gif
+        .. image:: getting-started/_static/idom-in-jupyterlab.gif
+
+.. card::
+    :link: getting-started/index
+    :link-type: doc
+
+    :octicon:`book` Read More
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Learn how IDOM can be installed and run in a variety of different ways - with
+    different web servers and frameworks as well as being embedded into existing apps.
 
 
-Chapter 1 - :ref:`Creating Interfaces`
+Chapter 2 - :ref:`Creating Interfaces`
 --------------------------------------
 
-...
+IDOM is a Python package for making user interfaces (UI). These interfaces are built
+from small elements of functionality like buttons text and images. IDOM allows you to
+combine these elements into reusable, nestable :ref:`"components" <your first
+component>`. In the sections that follow you'll learn how these UI elements are created
+and organized into components. Then, you'll use components to customize and
+conditionally display more complex UIs.
+
+Some sort of examples here...
+
+.. card::
+    :link: creating-interfaces/index
+    :link-type: doc
+
+    :octicon:`book` Read More
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Learn stuff...
 
 
-Chapter 2 - :ref:`Adding Interactivity`
+Chapter 3 - :ref:`Adding Interactivity`
 ---------------------------------------
 
 ...
 
 
-Chapter 3 - :ref:`Managing State`
+Chapter 4 - :ref:`Managing State`
 ---------------------------------
 
 ...
 
 
-Chapter 4 - :ref:`Escape Hatches`
+Chapter 5 - :ref:`Escape Hatches`
 ---------------------------------
 
 ...
