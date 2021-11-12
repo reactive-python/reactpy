@@ -9,7 +9,7 @@ from sphinx_autobuild.cli import (
     get_parser,
 )
 
-from docs.main import IDOM_MODEL_SERVER_URL_PREFIX, make_app, make_component
+from docs.app import IDOM_MODEL_SERVER_URL_PREFIX, make_app, make_examples_component
 from idom.server.sanic import PerClientStateServer
 from idom.testing import clear_idom_web_modules_dir
 
@@ -28,7 +28,7 @@ def wrap_builder(old_builder):
         clear_idom_web_modules_dir()
 
         server = PerClientStateServer(
-            make_component(),
+            make_examples_component(),
             {"cors": True, "url_prefix": IDOM_MODEL_SERVER_URL_PREFIX},
             make_app(),
         )

@@ -31,6 +31,7 @@ RUN pip install -e .[all]
 # --------------
 ADD docs/main.py ./docs/
 ADD docs/source ./docs/source
+ADD examples ./examples
 
 RUN pip install -r requirements/build-docs.txt
 RUN sphinx-build -b html docs/source docs/build
@@ -40,4 +41,4 @@ RUN sphinx-build -b html docs/source docs/build
 ENV PORT 5000
 ENV IDOM_DEBUG_MODE=1
 ENV IDOM_CHECK_VDOM_SPEC=0
-CMD python docs/main.py
+CMD python -c "import docs; docs.run()"

@@ -71,8 +71,7 @@ constructed in Python. Let's consider the HTML sample below:
 
     <h1>My Todo List</h1>
     <ul>
-        <li>Design a cool new app</li>
-        <li>Build it</li>
+        <li>Build a cool new app</li>
         <li>Share it with the world!</li>
     </ul>
 
@@ -107,19 +106,37 @@ Section 2: Your First Components
 
 The next building block in our journey with IDOM are components. At their core,
 components are just a normal Python functions that return :ref:`HTML <HTML with IDOM>`.
-The one special thing about them that we need to be concerned with now, is that to
-create them they require the addition of the :func:`~idom.core.component.component`
-decorator. Take a quick look at this "hello world" example you make have seen earlier to
-check out what this looks like in practice:
+The one special thing about them that we'll concern ourselves with now, is that to
+create them we need to add an ``@component`` `decorator
+<https://realpython.com/primer-on-python-decorators/>`__. To see what this looks like in
+practice we'll put the todo list HTML from above into a component:
 
-.. example:: hello_world
+.. example:: creating_interfaces.static_todo_list
     :activate-result:
 
 .. note::
 
     Not all functions that return HTML need to be decorated with the ``@component``
-    decorator - when and where they are required will be discussed when we start
-    :ref:`adding interactivity`.
+    decorator. We'll discuss when and where they are required when we start :ref:`adding
+    interactivity`.
+
+If you explore a little bit on your own you'll find that, when called, functions which
+are decorated in this way don't return what you might initially expect:
+
+.. testsetup::
+
+    from idom import ComponentType, component, html
+
+    @idom.component
+    def App():
+        # doesn't matter what we return here
+        return ...
+
+.. testcode::
+
+    from idom import ComponentType
+
+    assert isinstance(App(), ComponentType)
 
 .. card::
     :link: html-with-idom
@@ -129,7 +146,6 @@ check out what this looks like in practice:
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Discover what components are and why they're one of IDOM's foundational concepts.
-
 
 
 Section 3: Parametrizing Components
