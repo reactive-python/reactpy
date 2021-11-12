@@ -194,7 +194,10 @@ def multiview() -> Tuple[MultiViewMount, ComponentConstructor]:
 
     @component
     def MultiView(view_id: str) -> Any:
-        return views[view_id]()
+        try:
+            return views[view_id]()
+        except KeyError:
+            raise ValueError(f"Unknown view {view_id!r}")
 
     return MultiViewMount(views), MultiView
 

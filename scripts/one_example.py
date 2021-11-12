@@ -1,72 +1,81 @@
 import sys
 import time
 from os.path import getmtime
-from pathlib import Path
-from threading import Thread
+from threading import Event, Thread
 
 import idom
+from docs.examples import (
+    all_example_names,
+    get_py_example_file_by_name,
+    load_one_example,
+)
 from idom.widgets import hotswap
 
 
-here = Path(__file__).parent
-examples_dir = here.parent / "docs" / "source" / "_examples"
-sys.path.insert(0, str(examples_dir))
-
-for file in examples_dir.iterdir():
-    if not file.is_file() or not file.suffix == ".py" or file.stem.startswith("_"):
-        continue
+EXAMPLE_NAME_SET = all_example_names()
+EXAMPLE_NAME_LIST = tuple(sorted(EXAMPLE_NAME_SET))
 
 
 def on_file_change(path, callback):
+    did_call_back_once = Event()
+
     def watch_for_change():
         last_modified = 0
         while True:
             modified_at = getmtime(path)
             if modified_at != last_modified:
                 callback()
+                did_call_back_once.set()
                 last_modified = modified_at
             time.sleep(1)
 
     Thread(target=watch_for_change, daemon=True).start()
+    did_call_back_once.wait()
 
 
 def main():
-    try:
-        ex_name = sys.argv[1]
-    except IndexError:
-        print("No example argument given. Choose from:")
-        _print_available_options()
-        return
+    ex_name = _example_name_input()
 
-    example_file = examples_dir / (ex_name + ".py")
-
-    if not example_file.exists():
-        print(f"No example {ex_name!r} exists. Choose from:")
-        _print_available_options()
-        return
-
-    idom_run = idom.run
-    idom.run, component = hotswap(update_on_change=True)
+    mount, component = hotswap(update_on_change=True)
 
     def update_component():
-        print(f"Reloading {ex_name}")
-        with example_file.open() as f:
-            exec(
-                f.read(),
-                {
-                    "__file__": str(file),
-                    "__name__": f"__main__.examples.{file.stem}",
-                },
-            )
+        print(f"Loading example: {ex_name!r}")
+        mount(load_one_example(ex_name))
 
-    on_file_change(example_file, update_component)
+    on_file_change(get_py_example_file_by_name(ex_name), update_component)
 
-    idom_run(component, port=8000)
+    idom.run(component, port=8000)
+
+
+def _example_name_input() -> str:
+    if len(sys.argv) == 1:
+        print("No example argument given. Choose from:")
+        _print_available_options()
+        sys.exit(1)
+
+    ex_name = sys.argv[1]
+
+    if ex_name in EXAMPLE_NAME_SET:
+        return ex_name
+
+    try:
+        ex_num = int(ex_name)
+    except TypeError:
+        print(f"No example {ex_name!r} exists. Choose from:")
+        _print_available_options()
+        sys.exit(1)
+
+    ex_index = ex_num - 1
+    try:
+        return EXAMPLE_NAME_LIST[ex_index]
+    except IndexError:
+        print(f"No example #{ex_num} exists.")
+        sys.exit(1)
 
 
 def _print_available_options():
-    for found_example_file in sorted(examples_dir.glob("*.py")):
-        print("-", found_example_file.stem)
+    for i, name in enumerate(EXAMPLE_NAME_LIST):
+        print(f"{i + 1}.", name)
 
 
 if __name__ == "__main__":

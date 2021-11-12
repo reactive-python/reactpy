@@ -6,9 +6,11 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 from sphinx_design.tabs import TabSetDirective
 
+from docs.examples import get_js_example_file_by_name, get_py_example_file_by_name
 
-here = Path(__file__).parent
-examples = here.parent / "_examples"
+
+HERE = Path(__file__)
+EXAMPLES_DIR = HERE.parent.parent / "_examples"
 
 
 class WidgetExample(SphinxDirective):
@@ -29,7 +31,7 @@ class WidgetExample(SphinxDirective):
         live_example_is_default_tab = "result-is-default-tab" in self.options
         activate_result = "activate-result" in self.options
 
-        py_ex_path = examples / f"{example_name}.py"
+        py_ex_path = get_py_example_file_by_name(example_name)
         if not py_ex_path.exists():
             src_file, line_num = self.get_source_info()
             raise ValueError(
@@ -37,8 +39,8 @@ class WidgetExample(SphinxDirective):
             )
 
         labeled_tab_items = {
-            "python": _literal_include_py(
-                name=example_name,
+            "python": _literal_include(
+                name=str(py_ex_path.relative_to(EXAMPLES_DIR)),
                 linenos=show_linenos,
             ),
             "result": _interactive_widget(
@@ -53,9 +55,10 @@ class WidgetExample(SphinxDirective):
             "result": "▶️ Result",
         }
 
-        if (examples / f"{example_name}.js").exists():
-            labeled_tab_items["javascript"] = _literal_include_js(
-                name=example_name,
+        js_ex_path = get_js_example_file_by_name(example_name)
+        if js_ex_path.exists():
+            labeled_tab_items["javascript"] = _literal_include(
+                name=str(js_ex_path.relative_to(EXAMPLES_DIR)),
                 linenos=show_linenos,
             )
 
@@ -94,20 +97,17 @@ def _make_tab_items(labeled_content_tuples):
     return _string_to_nested_lines(tab_items)
 
 
-def _literal_include_py(name, linenos):
+def _literal_include(name, linenos):
+    if name.endswith(".py"):
+        language = "python"
+    elif name.endswith(".js"):
+        language = "javascript"
+    else:
+        raise ValueError("Unknown extension type")
+
     return _literal_include_template.format(
         name=name,
-        ext="py",
-        language="python",
-        linenos=":linenos:" if linenos else "",
-    )
-
-
-def _literal_include_js(name, linenos):
-    return _literal_include_template.format(
-        name=name,
-        ext="js",
-        language="javascript",
+        language=language,
         linenos=":linenos:" if linenos else "",
     )
 
@@ -133,7 +133,7 @@ _interactive_widget_template = """
 
 
 _literal_include_template = """
-.. literalinclude:: /_examples/{name}.{ext}
+.. literalinclude:: /_examples/{name}
     :language: {language}
     {linenos}
 """

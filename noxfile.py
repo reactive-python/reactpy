@@ -42,15 +42,14 @@ def format(session: Session) -> None:
 @apply_standard_pip_upgrades
 def example(session: Session) -> None:
     """Run an example"""
-    if not session.posargs:
-        print("No example name given. Choose from:")
-        for found_example_file in (ROOT / "docs" / "source" / "_examples").glob("*.py"):
-            print("-", found_example_file.stem)
-        return None
-
     session.install("matplotlib")
     install_idom_dev(session)
-    session.run("python", "scripts/one_example.py", *session.posargs)
+    session.run(
+        "python",
+        "scripts/one_example.py",
+        *session.posargs,
+        env=get_idom_script_env(),
+    )
 
 
 @nox.session(reuse_venv=True)
@@ -76,11 +75,7 @@ def docs(session: Session) -> None:
         "html",
         "docs/source",
         "docs/build",
-        env={
-            "PYTHONPATH": os.getcwd(),
-            "IDOM_DEBUG_MODE": os.environ.get("IDOM_DEBUG_MODE", "1"),
-            "IDOM_CHECK_VDOM_SPEC": os.environ.get("IDOM_CHECK_VDOM_SPEC", "0"),
-        },
+        env=get_idom_script_env(),
     )
 
 
@@ -277,3 +272,11 @@ def get_version() -> str:
 
 def set_version(new: str) -> None:
     (ROOT / "VERSION").write_text(new.strip() + "\n")
+
+
+def get_idom_script_env() -> dict[str, str]:
+    return {
+        "PYTHONPATH": os.getcwd(),
+        "IDOM_DEBUG_MODE": os.environ.get("IDOM_DEBUG_MODE", "1"),
+        "IDOM_CHECK_VDOM_SPEC": os.environ.get("IDOM_CHECK_VDOM_SPEC", "0"),
+    }
