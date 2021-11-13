@@ -4,35 +4,43 @@ HTML With IDOM
 In a typical Python-base web application the resonsibility of defining the view along
 with its backing data and logic are distributed between a client and server
 respectively. With IDOM, both these tasks are centralized in a single place. This is
-done by allowing HTML interfaces to be constructed in Python. Let's consider the HTML
-sample below:
+done by allowing HTML interfaces to be constructed in Python. Take a look at the two
+code examples below. The one on the left shows how to make a basic title and todo list
+using standard HTML while the one of the right uses IDOM in Python:
 
-.. code-block:: html
+.. grid:: 2
+    :margin: 0
+    :padding: 0
 
-    <h1>My Todo List</h1>
-    <ul>
-        <li>Build a cool new app</li>
-        <li>Share it with the world!</li>
-    </ul>
+    .. grid-item::
 
-We can recreate the same thing with IDOM using functions attached to the
-:mod:`idom.html` module. These function share the same names as their corresponding HTML
-tags. For example, the `<h1/>` element above has a similarly named :func:`idom.html.h1`
-function. Given this we can write the following:
+        .. code-block:: html
 
-.. testcode::
+            <h1>My Todo List</h1>
+            <ul>
+                <li>Build a cool new app</li>
+                <li>Share it with the world!</li>
+            </ul>
 
-    from idom import html
+    .. grid-item::
 
-    html.h1("My Todo List")
-    html.ul(
-        html.li("Build a cool new app"),
-        html.li("Share it with the world!"),
-    )
+        .. testcode::
 
-That looks similar, but it's not very useful, we haven't captured the results from these
-function calls in a variable. To do this we need to wraps up layout above into a single
-:func:`idom.html.div` and assign it to a variable:
+            from idom import html
+
+            html.h1("My Todo List")
+            html.ul(
+                html.li("Build a cool new app"),
+                html.li("Share it with the world!"),
+            )
+
+What this shows is that you can recreate the same HTML layouts with IDOM using functions
+from the :mod:`idom.html` module. These function share the same names as their
+corresponding HTML tags. For example, the ``<h1/>`` element above has a similarly named
+:func:`~idom.html.h1` function. With that said, while the code above looks similar, it's
+not very useful because we haven't captured the results from these function calls in a
+variable. To do this we need to wraps up layout above into a single
+:func:`~idom.html.div` and assign it to a variable:
 
 .. testcode::
 
@@ -45,28 +53,31 @@ function calls in a variable. To do this we need to wraps up layout above into a
     )
 
 Having done this we can inspect what is contained in our new ``layout`` variable. As it
-turns out, it holds a dictionary:
+turns out, it holds a dictionary. Printing it produces the following output:
 
 .. testcode::
 
-    assert isinstance(layout, dict)
-
-And if we print the contents with :mod:`pprint` it should look like:
-
-.. testcode::
-
-    from pprint import pprint
-    pprint(layout, sort_dicts=False)
+    print(layout)
 
 .. testoutput::
+    :options: +NORMALIZE_WHITESPACE
 
-    {'tagName': 'div',
-    'children': [{'tagName': 'h1', 'children': ['My Todo List']},
-                {'tagName': 'ul',
-                'children': [{'tagName': 'li',
-                                'children': ['Build a cool new app']},
-                                {'tagName': 'li',
-                                'children': ['Share it with the world!']}]}]}
+    {
+        'tagName': 'div',
+        'children': [
+            {
+                'tagName': 'h1',
+                'children': ['My Todo List']
+            },
+            {
+                'tagName': 'ul',
+                'children': [
+                    {'tagName': 'li', 'children': ['Build a cool new app']},
+                    {'tagName': 'li', 'children': ['Share it with the world!']}
+                ]
+            }
+        ]
+    }
 
 This may look complicated, but let's take a moment to consider what's going on here. We
 have a series of nested dictionaries that, in some way, represents the HTML structure

@@ -43,15 +43,9 @@ run your application by setting the ``IDOM_DEBUG_MODE`` environment variable.
             $env:IDOM_DEBUG_MODE = "1"
             python my_idom_app.py
 
-.. dropdown:: Leave debug mode off in production!
-    :color: danger
-    :animate: fade-in
+.. danger::
 
-    Turning on ``IDOM_DEBUG_MODE`` will:
-
-    - leak secrets
-    - display error messages to your users
-    - add extra checks that slow down your app
+    Leave debug mode off in production!
 
 Among other things, running in this mode:
 
@@ -290,5 +284,9 @@ existing Python app:
 After running ``python main.py``, you should be able to navigate to
 ``http://127.0.0.1:8000/index.html`` and see:
 
-.. image:: _static/embed-idom-view/screenshot.png
+.. card::
+    :text-align: center
+
+    .. image:: _static/embed-idom-view/screenshot.png
+        :width: 500px
 

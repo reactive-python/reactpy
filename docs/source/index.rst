@@ -18,7 +18,7 @@ IDOM
     understanding-idom/index
     developing-idom/index
     reference-material/index
-    licenses
+    credits-and-licenses
 
 .. toctree::
     :hidden:

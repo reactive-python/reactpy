@@ -10,7 +10,7 @@ from .server.utils import find_available_port, find_builtin_server_type
 @component
 def App() -> VdomDict:
     return html.div(
-        {"style": {"padding": "15px", "border": "1px solid grey"}},
+        {"style": {"padding": "15px"}},
         html.h1("Sample Application"),
         html.p(
             "This is a basic application made with IDOM. Click ",
