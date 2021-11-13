@@ -6,13 +6,15 @@ with its backing data and logic are distributed between a client and server
 respectively. With IDOM, both these tasks are centralized in a single place. This is
 done by allowing HTML interfaces to be constructed in Python. Take a look at the two
 code examples below. The one on the left shows how to make a basic title and todo list
-using standard HTML while the one of the right uses IDOM in Python:
+using standard HTML, the one of the right uses IDOM in Python, and below is a view of
+what the HTML would look like if displayed:
 
 .. grid:: 2
     :margin: 0
     :padding: 0
 
     .. grid-item::
+        :columns: 6
 
         .. code-block:: html
 
@@ -23,6 +25,7 @@ using standard HTML while the one of the right uses IDOM in Python:
             </ul>
 
     .. grid-item::
+        :columns: 6
 
         .. testcode::
 
@@ -34,12 +37,25 @@ using standard HTML while the one of the right uses IDOM in Python:
                 html.li("Share it with the world!"),
             )
 
+    .. grid-item-card::
+        :columns: 12
+
+        .. raw:: html
+
+            <div style="width: 50%; margin: auto;">
+                <h2 style="margin-top: 0px !important;">My Todo List</h2>
+                <ul>
+                    <li>Build a cool new app</li>
+                    <li>Share it with the world!</li>
+                </ul>
+            </div>
+
 What this shows is that you can recreate the same HTML layouts with IDOM using functions
 from the :mod:`idom.html` module. These function share the same names as their
 corresponding HTML tags. For example, the ``<h1/>`` element above has a similarly named
 :func:`~idom.html.h1` function. With that said, while the code above looks similar, it's
 not very useful because we haven't captured the results from these function calls in a
-variable. To do this we need to wraps up layout above into a single
+variable. To do this we need to wrap up the layout above into a single
 :func:`~idom.html.div` and assign it to a variable:
 
 .. testcode::
@@ -52,44 +68,51 @@ variable. To do this we need to wraps up layout above into a single
         ),
     )
 
-Having done this we can inspect what is contained in our new ``layout`` variable. As it
-turns out, it holds a dictionary. Printing it produces the following output:
+
+Adding HTML Attributes
+----------------------
+
+That's all well and good, but there's more to HTML than just text. What if we wanted to
+display an image? In HTMl we'd use the `<img/>` element and add attributes to it order
+to specify a URL to its ``src`` and use some ``style`` to modify and position it:
+
+.. code-block:: html
+
+    <img
+        src="https://picsum.photos/500/300"
+        style="width: 70%; margin-left: 15%;"
+    />
+
+In IDOM we add these attributes to elements using dictionaries. There are some notable
+differences though. The biggest being the fact that all names in IDOM use ``camelCase``
+instead of dash-sepearted words. For example, ``margin-left`` becomes ``marginLeft``.
+Additionally, instead of specifying ``style`` using a string, we use a dictionary:
 
 .. testcode::
 
-    print(layout)
+    html.img(
+        {
+            "src": "https://picsum.photos/500/300",
+            "style": {"width": "70%", "marginLeft": "15%"},
+        }
+    )
 
-.. testoutput::
-    :options: +NORMALIZE_WHITESPACE
+.. raw:: html
 
-    {
-        'tagName': 'div',
-        'children': [
-            {
-                'tagName': 'h1',
-                'children': ['My Todo List']
-            },
-            {
-                'tagName': 'ul',
-                'children': [
-                    {'tagName': 'li', 'children': ['Build a cool new app']},
-                    {'tagName': 'li', 'children': ['Share it with the world!']}
-                ]
-            }
-        ]
-    }
+    <img
+        src="https://picsum.photos/500/300"
+        style="width: 70%; margin-left: 15%;"
+    />
 
-This may look complicated, but let's take a moment to consider what's going on here. We
-have a series of nested dictionaries that, in some way, represents the HTML structure
-given above. If we look at their contents we should see a common form. Each has a
-``tagName`` key which contains, as the name would suggest, the tag name of an HTML
-element. Then within the ``children`` key is a list that either contains strings or
-other dictionaries that represent HTML elements.
 
-What we're seeing here is called a "virtual document object model" or :ref:`VDOM`. This
-is just a fancy way of saying we have a representation of the document object model or
-`DOM
-<https://en.wikipedia.org/wiki/Document_Object_Model#:~:text=The%20Document%20Object%20Model%20(DOM,document%20with%20a%20logical%20tree.&text=Nodes%20can%20have%20event%20handlers%20attached%20to%20them.>`__
-that is not the actual DOM. We'll talk more about this concept :ref:`in the future
-<Communication Scheme>`, but for now, just understand that in IDOM, we represent the
-HTML document object model using dictionaries that we call VDOM.
+----------
+
+
+.. card::
+    :link: /understanding-idom/representing-html
+    :link-type: doc
+
+    :octicon:`book` Read More
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Dive into the data structures IDOM uses to represent HTML
