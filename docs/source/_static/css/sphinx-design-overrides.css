@@ -6,3 +6,9 @@ body {
   --sd-color-warning-text: var(--color-admonition-title--warning);
   --sd-color-danger-text: var(--color-admonition-title--danger);
 }
+
+.sd-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}

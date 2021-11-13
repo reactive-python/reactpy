@@ -10,6 +10,7 @@ Getting Started
 .. dropdown:: :octicon:`bookmark-fill;2em` What You'll Learn
     :color: info
     :animate: fade-in
+    :open:
 
     .. grid:: 2
 
@@ -58,9 +59,10 @@ To check that everything is working you can run the sample application:
 
 This should automatically open up a browser window to a page that looks like this:
 
-.. interactive-widget:: sample_app
-    :no-activate-button:
-    :margin: 12
+.. card::
+
+    .. interactive-widget:: sample_app
+        :no-activate-button:
 
 If you get a ``RuntimeError`` similar to the following:
 

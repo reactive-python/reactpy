@@ -13,6 +13,7 @@ Creating Interfaces
 .. dropdown:: :octicon:`bookmark-fill;2em` What You'll Learn
     :color: info
     :animate: fade-in
+    :open:
 
     .. grid:: 2
 

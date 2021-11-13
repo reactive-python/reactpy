@@ -1,0 +1,8 @@
+body {
+  --admonition-title-font-size: 0.9rem !important;
+  --admonition-font-size: 0.9rem !important;
+}
+
+.admonition-title {
+  font-weight: bold !important;
+}
