@@ -5,4 +5,5 @@ Understanding IDOM
     :hidden:
 
     why-idom
+    representing-html
     core-abstractions

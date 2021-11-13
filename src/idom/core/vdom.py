@@ -222,7 +222,11 @@ def make_vdom_constructor(
 
     # replicate common function attributes
     constructor.__name__ = tag
-    constructor.__doc__ = f"Return a new ``<{tag}/>`` :class:`VdomDict` element"
+    constructor.__doc__ = (
+        "Return a new "
+        f"`<{tag}> <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/{tag}>`__ "
+        "element represented by a :class:`VdomDict`."
+    )
 
     frame = inspect.currentframe()
     if frame is not None and frame.f_back is not None and frame.f_back is not None:
