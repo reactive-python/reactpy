@@ -115,7 +115,7 @@ def _literal_include(name, linenos):
 def _interactive_widget(name, with_activate_button):
     return _interactive_widget_template.format(
         name=name,
-        activate_button_opt="" if with_activate_button else ":no-activate-button:",
+        activate_button_opt="" if with_activate_button else ":activate-result:",
     )
 
 
