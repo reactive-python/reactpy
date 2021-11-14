@@ -115,12 +115,6 @@ practice we'll put the todo list HTML from above into a component:
 .. example:: creating_interfaces.static_todo_list
     :activate-result:
 
-.. note::
-
-    Not all functions that return HTML need to be decorated with the ``@component``
-    decorator. We'll discuss when and where they are required when we start :ref:`adding
-    interactivity`.
-
 If you explore a little bit on your own you'll find that, when called, functions which
 are decorated in this way don't return what you might initially expect:
 

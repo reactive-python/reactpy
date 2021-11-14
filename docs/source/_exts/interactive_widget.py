@@ -16,7 +16,7 @@ class IteractiveWidget(Directive):
     _next_id = 0
 
     option_spec = {
-        "no-activate-button": directives.flag,
+        "activate-result": directives.flag,
         "margin": float,
     }
 
@@ -40,7 +40,7 @@ class IteractiveWidget(Directive):
                             "{container_id}",
                             "{view_id}",
                             "{_IDOM_EXAMPLE_HOST}",
-                            {"false" if "no-activate-button" in self.options else "true"},
+                            {"false" if "activate-result" in self.options else "true"},
                         );
                     </script>
                 </div>

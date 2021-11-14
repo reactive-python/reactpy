@@ -79,8 +79,9 @@ to specify a URL to its ``src`` and use some ``style`` to modify and position it
 .. code-block:: html
 
     <img
-        src="https://picsum.photos/500/300"
-        style="width: 70%; margin-left: 15%;"
+        src="https://i.pinimg.com/564x/29/66/4d/29664d24bc793085a7671d7fc02a33f4.jpg"
+        style="width: 50%; margin-left: 25%;"
+        alt="Martha Argerich"
     />
 
 In IDOM we add these attributes to elements using dictionaries. There are some notable
@@ -92,16 +93,18 @@ Additionally, instead of specifying ``style`` using a string, we use a dictionar
 
     html.img(
         {
-            "src": "https://picsum.photos/500/300",
-            "style": {"width": "70%", "marginLeft": "15%"},
+            "src": "https://i.pinimg.com/564x/29/66/4d/29664d24bc793085a7671d7fc02a33f4.jpg
+            "style": {"width": "50%", "marginLeft": "25%"},
+            "alt": "Martha Argerich",
         }
     )
 
 .. raw:: html
 
     <img
-        src="https://picsum.photos/500/300"
-        style="width: 70%; margin-left: 15%;"
+        src="https://i.pinimg.com/564x/29/66/4d/29664d24bc793085a7671d7fc02a33f4.jpg"
+        style="width: 50%; margin-left: 25%;"
+        alt="Martha Argerich"
     />
 
 
