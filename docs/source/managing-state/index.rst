@@ -4,6 +4,7 @@ Managing State
 .. toctree::
     :hidden:
 
+    keeping-components-pure
     logical-flow-of-state
     structuring-your-state
     shared-component-state

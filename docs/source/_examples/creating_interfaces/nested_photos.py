@@ -5,7 +5,7 @@ from idom import component, html, run
 def Photo():
     return html.img(
         {
-            "src": "https://i.pinimg.com/564x/d6/96/c4/d696c4d3db31609c1abb05c52f305ec1.jpg",
+            "src": "https://picsum.photos/id/274/500/300",
             "style": {"width": "30%"},
             "alt": "Ray Charles",
         }
