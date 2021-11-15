@@ -6,8 +6,6 @@ Creating Interfaces
 
     html-with-idom
     your-first-components
-    parametrizing-components
-    conditional-rendering
     dynamic-element-children
 
 .. dropdown:: :octicon:`bookmark-fill;2em` What You'll Learn
@@ -21,35 +19,19 @@ Creating Interfaces
             :link: html-with-idom
             :link-type: doc
 
-            Learn how to construct HTML layouts with IDOM and the underlying data
-            structure we use to represent them.
+            Learn how to construct HTML layouts with IDOM.
 
         .. grid-item-card:: :octicon:`package` Your First Components
             :link: your-first-components
             :link-type: doc
 
-            Discover what components are and why they're one of IDOM's foundational
-            concepts.
-
-        .. grid-item-card:: :octicon:`plug` Parametrizing Components
-            :link: parametrizing-components
-            :link-type: doc
-
-            Leverage the reusability of components by passing them arguments
-
-        .. grid-item-card:: :octicon:`code-square` Conditional Rendering
-            :link: conditional-rendering
-            :link-type: doc
-
-            Use what you've learned so far to render display different views depending
-            on a what a component's inputs are.
+            Discover how to define and use components.
 
         .. grid-item-card:: :octicon:`versions` Dynamic Element Children
             :link: dynamic-element-children
             :link-type: doc
 
-            Understand how to correctly render using lists of child elements that
-            may change in length or order
+            Correctly render lists of child elements that may change in length or order.
 
 IDOM is a Python package for making user interfaces (UI). These interfaces are built
 from small elements of functionality like buttons text and images. IDOM allows you to
@@ -112,35 +94,8 @@ create them we need to add an ``@component`` `decorator
 <https://realpython.com/primer-on-python-decorators/>`__. To see what this looks like in
 practice we'll put the todo list HTML from above into a component:
 
-.. example:: creating_interfaces.static_todo_list
+.. example:: creating_interfaces.simple_photo
     :activate-result:
-
-If you explore a little bit on your own you'll find that, when called, functions which
-are decorated in this way don't return what you might initially expect:
-
-.. testsetup::
-
-    from idom import ComponentType, component, html
-
-    @idom.component
-    def App():
-        # doesn't matter what we return here
-        return ...
-
-.. testcode::
-
-    from idom import ComponentType
-
-    assert isinstance(App(), ComponentType)
-
-.. card::
-    :link: html-with-idom
-    :link-type: doc
-
-    :octicon:`book` Read More
-    ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-    Discover what components are and why they're one of IDOM's foundational concepts.
 
 
 Section 3: Parametrizing Components

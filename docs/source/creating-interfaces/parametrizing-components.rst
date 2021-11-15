@@ -1,4 +1,0 @@
-Parametrizing Components
-========================
-
-Under construction :)

@@ -11,16 +11,11 @@ components can then be reused throughout your application.
 Defining a Component
 --------------------
 
-At their core, components are just a normal Python functions that return HTML. There's
-only two special things which we'll concer ourselves with there:
-
-- We need to add a ``@component`` `decorator
-  <https://realpython.com/primer-on-python-decorators/>`__
-  to component function.
-
-- By convention, we name component functions like classes - with ``CamelCase``.
-
-So for example, if we wanted write and then :ref:`display <Running IDOM>` a ``Photo``
+At their core, components are just normal Python functions that return HTML. To define a
+component you just need to add a ``@component`` `decorator
+<https://realpython.com/primer-on-python-decorators/>`__ to a function. Then, by
+convention, we name component functions like classes - with ``CamelCase``. So for
+example, if we wanted to write and then :ref:`display <Running IDOM>` a ``Photo``
 component we might write:
 
 .. example:: creating_interfaces.simple_photo
@@ -40,7 +35,49 @@ component we might write:
 Using a Component
 -----------------
 
-Having defined our ``Photo`` component we can now nest it inside of other components:
+Having defined our ``Photo`` component we can now nest it inside of other components. We
+can define a "parent" ``Gallery`` component that returns one or more ``Profile``
+components. This is part of what makes components so powerful - you can define a
+component once and use it wherever and however you need to:
 
 .. example:: creating_interfaces.nested_photos
+    :activate-result:
+
+
+Parametrizing Components
+------------------------
+
+Since components are just regular functions, you can add parameters to them. This allows
+parent components to pass information to child components. Where standard HTML elements
+are parametrized by dictionaries, since components behave like typical functions you can
+give them positional and keyword arguments as you would normally:
+
+.. example:: creating_interfaces.parametrized_photos
+    :activate-result:
+
+
+Conditional Rendering
+---------------------
+
+Your components will often need to display different things depending on different
+conditions. Let's imagine that we had a basic todo list where only some of the items
+have been completed. Below we have a basic implementation for such a list except that
+the ``Item`` component doesn't change based on whether it's ``done``:
+
+.. example:: creating_interfaces.todo_list
+    :activate-result:
+
+Let's imagine that we want to add a ✔ to the items which have been marked ``done=True``.
+One way to do this might be to write an ``if`` statement where we return one ``li``
+element if the item is ``done`` and a different one if it's not:
+
+.. example:: creating_interfaces.bad_conditional_todo_list
+    :activate-result:
+
+As you can see this accomplishes our goal! However, notice how similar ``html.li(name, "
+✔")`` and ``html.li(name)`` are. While in this case it isn't especially harmful, we
+could make our code a little easier to read and maintain by using an "inline" ``if``
+statement.
+
+.. example:: creating_interfaces.good_conditional_todo_list
     :activate-result:
