@@ -7,6 +7,7 @@
 # http://www.sphinx-doc.org/en/master/config
 
 import sys
+from doctest import NORMALIZE_WHITESPACE
 from pathlib import Path
 
 
@@ -101,6 +102,10 @@ highlight_language = "python3"
 
 # Controls how sphinx.ext.autodoc represents typehints in the function signature
 autodoc_typehints = "description"
+
+# -- Doc Test Configuration -------------------------------------------------------
+
+doctest_default_flags = NORMALIZE_WHITESPACE
 
 # -- Extension Configuration ------------------------------------------------------
 

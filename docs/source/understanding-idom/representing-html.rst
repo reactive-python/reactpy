@@ -37,7 +37,6 @@ following output:
     print(layout)
 
 .. testoutput::
-    :options: +NORMALIZE_WHITESPACE
 
     {
         'tagName': 'div',

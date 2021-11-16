@@ -6,7 +6,6 @@ Component
 from __future__ import annotations
 
 import inspect
-import warnings
 from functools import wraps
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
@@ -26,11 +25,9 @@ def component(
         inspect.Parameter.KEYWORD_ONLY,
         inspect.Parameter.POSITIONAL_OR_KEYWORD,
     )
-    if key_is_kwarg:  # pragma: no cover
-        warnings.warn(
-            f"Component render function {function} uses reserved parameter 'key' - this "
-            "will produce an error in a future release",
-            DeprecationWarning,
+    if key_is_kwarg:
+        raise TypeError(
+            f"Component render function {function} uses reserved parameter 'key'"
         )
 
     @wraps(function)
