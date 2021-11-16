@@ -7,4 +7,5 @@ Understanding IDOM
     representing-html
     what-are-components
     the-rendering-pipeline
+    why-idom-needs-keys
     layout-render-servers

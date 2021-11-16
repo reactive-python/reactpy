@@ -6,7 +6,7 @@ Creating Interfaces
 
     html-with-idom
     your-first-components
-    dynamic-element-children
+    rendering-data
 
 .. dropdown:: :octicon:`bookmark-fill;2em` What You'll Learn
     :color: info
@@ -19,19 +19,19 @@ Creating Interfaces
             :link: html-with-idom
             :link-type: doc
 
-            Learn how to construct HTML layouts with IDOM.
+            Construct HTML layouts with IDOM.
 
         .. grid-item-card:: :octicon:`package` Your First Components
             :link: your-first-components
             :link-type: doc
 
-            Discover how to define and use components.
+            Define and use components.
 
-        .. grid-item-card:: :octicon:`versions` Dynamic Element Children
-            :link: dynamic-element-children
+        .. grid-item-card:: :octicon:`versions` Rendering Data
+            :link: rendering-data
             :link-type: doc
 
-            Correctly render lists of child elements that may change in length or order.
+            Render HTML elements and components from raw data
 
 IDOM is a Python package for making user interfaces (UI). These interfaces are built
 from small elements of functionality like buttons text and images. IDOM allows you to
@@ -92,19 +92,11 @@ components are just a normal Python functions that return :ref:`HTML <HTML with 
 The one special thing about them that we'll concern ourselves with now, is that to
 create them we need to add an ``@component`` `decorator
 <https://realpython.com/primer-on-python-decorators/>`__. To see what this looks like in
-practice we'll put the todo list HTML from above into a component:
+practice we'll quickly make a ``Photo`` component:
 
 .. example:: creating_interfaces.simple_photo
     :activate-result:
 
 
-Section 3: Parametrizing Components
------------------------------------
-
-
-Section 4: Conditional Rendering
---------------------------------
-
-
-Section 5: Dynamic Element Children
------------------------------------
+Section 3: Rendering Data
+-------------------------
