@@ -15,23 +15,24 @@ Creating Interfaces
 
     .. grid:: 2
 
-        .. grid-item-card:: :octicon:`mortar-board` HTML with IDOM
+        .. grid-item-card:: :octicon:`code-square` HTML with IDOM
             :link: html-with-idom
             :link-type: doc
 
-            Construct HTML layouts with IDOM.
+            Construct HTML layouts from the basic units of user interface functionality.
 
         .. grid-item-card:: :octicon:`package` Your First Components
             :link: your-first-components
             :link-type: doc
 
-            Define and use components.
+            Define reusable building blocks that it easier to construct complex
+            interfaces.
 
-        .. grid-item-card:: :octicon:`versions` Rendering Data
+        .. grid-item-card:: :octicon:`database` Rendering Data
             :link: rendering-data
             :link-type: doc
 
-            Render HTML elements and components from raw data
+            Use data to organize and render HTML elements and components.
 
 IDOM is a Python package for making user interfaces (UI). These interfaces are built
 from small elements of functionality like buttons text and images. IDOM allows you to
@@ -80,8 +81,7 @@ To recreate the same thing in IDOM you would write:
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Learn how to construct HTML layouts with IDOM and the underlying data structure we
-    use to represent them.
+    Construct HTML layouts from the basic units of user interface functionality.
 
 
 Section 2: Your First Components
@@ -97,6 +97,34 @@ practice we'll quickly make a ``Photo`` component:
 .. example:: creating_interfaces.simple_photo
     :activate-result:
 
+.. card::
+    :link: your-first-components
+    :link-type: doc
+
+    :octicon:`book` Read More
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Define reusable building blocks that it easier to construct complex interfaces.
+
 
 Section 3: Rendering Data
 -------------------------
+
+The last pillar of knowledge you need before you can start making :ref:`interactive
+interfaces <adding interactivity>` is the ability to render sections of the UI given a
+collection of data. This will require you to understand how elements which are derived
+from data in this way must be orgnized with :ref:`"keys" <Organizing Items With Keys>`.
+One case where we might want to do this is if items in a todo list come from a list of
+data that we want to sort and filter:
+
+.. example:: creating_interfaces.todo_list_with_keys
+    :activate-result:
+
+.. card::
+    :link: rendering-data
+    :link-type: doc
+
+    :octicon:`book` Read More
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Use data to organize and render HTML elements and components.
