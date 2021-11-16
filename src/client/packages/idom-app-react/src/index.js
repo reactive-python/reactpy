@@ -1,32 +1,19 @@
-import { mountLayoutWithWebSocket } from "idom-client-react";
+import {
+  mountWithLayoutServer,
+  LayoutServerInfo,
+  logDebugServerStdout,
+} from "idom-client-react";
 
 export function mount(mountPoint) {
-  mountLayoutWithWebSocket(
-    mountPoint,
-    getWebSocketEndpoint(),
-    loadImportSource,
-    shouldReconnect() ? 45 : 0
-  );
-}
+  const serverInfo = new LayoutServerInfo({
+    host: document.location.hostname,
+    port: document.location.port,
+    path: "/",
+    query: queryParams.user.toString(),
+    secture: document.location.protocol == "https",
+  });
 
-function getWebSocketEndpoint() {
-  const uri = document.location.hostname + ":" + document.location.port;
-  const url = (uri + document.location.pathname).split("/").slice(0, -1);
-  url[url.length - 1] = "stream";
-  const secure = document.location.protocol === "https:";
-
-  let protocol;
-  if (secure) {
-    protocol = "wss:";
-  } else {
-    protocol = "ws:";
-  }
-
-  return protocol + "//" + url.join("/") + "?" + queryParams.user.toString();
-}
-
-function loadImportSource(source, sourceType) {
-  return import(sourceType == "NAME" ? `/modules/${source}` : source);
+  mountWithLayoutServer(mountPoint, serverInfo, shouldReconnect() ? 45 : 0);
 }
 
 function shouldReconnect() {
