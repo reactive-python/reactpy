@@ -6,8 +6,15 @@
 }
 .widget-container {
   padding: 15px;
+  overflow: auto;
   background-color: var(--color-code-background);
   min-height: 75px;
+}
+
+.widget-container .printout {
+  margin-top: 20px;
+  border-top: solid 2px var(--color-foreground-border);
+  padding-top: 20px;
 }
 
 .widget-container > div {

@@ -33,8 +33,12 @@ def format(session: Session) -> None:
     session.run("black", ".")
     session.run("isort", ".")
 
-    # format Javascript
+    # format client Javascript
     session.chdir(ROOT / "src" / "client")
+    session.run("npm", "run", "format", external=True)
+
+    # format docs Javascript
+    session.chdir(ROOT / "docs" / "source" / "_custom_js")
     session.run("npm", "run", "format", external=True)
 
 

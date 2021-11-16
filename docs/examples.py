@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from io import StringIO
 from pathlib import Path
 from traceback import format_exc
 from typing import Callable, Iterator
@@ -32,6 +33,7 @@ def load_one_example(file_or_name: Path | str) -> Callable[[], ComponentType]:
         raise FileNotFoundError(str(file))
 
     captured_component_constructor = None
+    capture_print, ShowPrint = _printout_viewer()
 
     def capture_component(component_constructor):
         nonlocal captured_component_constructor
@@ -40,7 +42,7 @@ def load_one_example(file_or_name: Path | str) -> Callable[[], ComponentType]:
     idom.run = capture_component
     try:
         code = compile(file.read_text(), str(file.absolute()), "exec")
-        exec(code, {})
+        exec(code, {"print": capture_print})
     except Exception:
         return _make_error_display()
     finally:
@@ -49,7 +51,12 @@ def load_one_example(file_or_name: Path | str) -> Callable[[], ComponentType]:
     if captured_component_constructor is None:
         return _make_example_did_not_run(str(file))
     else:
-        return captured_component_constructor
+
+        @idom.component
+        def Wrapper():
+            return idom.html.div(captured_component_constructor(), ShowPrint())
+
+        return Wrapper
 
 
 def get_example_name_from_file(file: Path) -> str:
@@ -62,6 +69,37 @@ def get_py_example_file_by_name(name: str) -> Path:
 
 def get_js_example_file_by_name(name: str) -> Path:
     return EXAMPLES_DIR.joinpath(*name.split(".")).with_suffix(".js")
+
+
+def _printout_viewer():
+    print_callbacks: set[Callable[[str], None]] = set()
+
+    @idom.component
+    def ShowPrint():
+        buffer = idom.hooks.use_state(StringIO)[0]
+        update = _use_force_update()
+
+        @idom.hooks.use_effect
+        def add_buffer():
+            print_callbacks.add(buffer.write)
+            update()
+
+        value = buffer.getvalue()
+        return idom.html.pre({"class": "printout"}, value) if value else idom.html.div()
+
+    def capture_print(*args, **kwargs):
+        buffer = StringIO()
+        print(*args, file=buffer, **kwargs)
+        value = buffer.getvalue()
+        for cb in print_callbacks:
+            cb(value)
+
+    return capture_print, ShowPrint
+
+
+def _use_force_update():
+    toggle, set_toggle = idom.hooks.use_state(False)
+    return lambda: set_toggle(not toggle)
 
 
 def _make_example_did_not_run(example_name):

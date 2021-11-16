@@ -1,8 +1,4 @@
-import {
-  mountWithLayoutServer,
-  LayoutServerInfo,
-  logDebugServerStdout,
-} from "idom-client-react";
+import { mountWithLayoutServer, LayoutServerInfo } from "idom-client-react";
 
 export function mount(mountPoint) {
   const serverInfo = new LayoutServerInfo({

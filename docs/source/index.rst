@@ -135,16 +135,40 @@ raw data:
 Chapter 3 - :ref:`Adding Interactivity`
 ---------------------------------------
 
-...
+.. card::
+    :link: adding-interactivity/index
+    :link-type: doc
+
+    :octicon:`book` Read More
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    ...
+
 
 
 Chapter 4 - :ref:`Managing State`
 ---------------------------------
 
-...
+.. card::
+    :link: managing-state/index
+    :link-type: doc
+
+    :octicon:`book` Read More
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    ...
+
 
 
 Chapter 5 - :ref:`Escape Hatches`
 ---------------------------------
 
-...
+.. card::
+    :link: escape-hatches/index
+    :link-type: doc
+
+    :octicon:`book` Read More
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    ...
+
