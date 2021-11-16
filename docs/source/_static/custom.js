@@ -1977,10 +1977,37 @@ function LazyPromise() {
   });
 }
 
-const LOC = window.location;
-const HTTP_PROTO = LOC.protocol;
-const WS_PROTO = HTTP_PROTO === "https:" ? "wss:" : "ws:";
-const IDOM_MODULES_PATH = "/_modules";
+function mountWithLayoutServer(
+  element,
+  serverInfo,
+  maxReconnectTimeout
+) {
+  const loadImportSource = (source, sourceType) =>
+    import(sourceType == "NAME" ? serverInfo.path.module(source) : source);
+
+  mountLayoutWithWebSocket(
+    element,
+    serverInfo.path.stream,
+    loadImportSource,
+    maxReconnectTimeout
+  );
+}
+
+function LayoutServerInfo({ host, port, path, query, secure }) {
+  const wsProtocol = "ws" + (secure ? "s" : "");
+  const httpProtocol = "http" + (secure ? "s" : "");
+
+  const uri = host + ":" + port;
+  const url = (uri + path).split("/").slice(0, -1).join("/");
+
+  const wsBaseUrl = wsProtocol + "://" + url;
+  const httpBaseUrl = httpProtocol + "://" + url;
+
+  this.path = {
+    stream: wsBaseUrl + "/stream" + "?" + query,
+    module: (source) => httpBaseUrl + `/modules/${source}`,
+  };
+}
 
 function mountWidgetExample(
   mountID,
@@ -1988,19 +2015,26 @@ function mountWidgetExample(
   idomServerHost,
   useActivateButton
 ) {
-  const idomUrl  = "//" + (idomServerHost || LOC.host);
-  const httpIdomUrl = HTTP_PROTO + idomUrl ;
-  const wsIdomUrl = WS_PROTO + idomUrl ;
+  let idomHost, idomPort;
+  if (idomServerHost) {
+    [idomHost, idomPort] = idomServerHost.split(":", 2);
+  } else {
+    idomHost = window.location.hostname;
+    idomPort = window.location.port;
+  }
+
+  const serverInfo = new LayoutServerInfo({
+    host: idomHost,
+    port: idomPort,
+    path: "/_idom/",
+    query: `view_id=${viewID}`,
+    secure: window.location.protocol == "https",
+  });
 
   const mountEl = document.getElementById(mountID);
 
   if (!useActivateButton) {
-    mountLayoutWithWebSocket(
-      mountEl,
-      wsIdomUrl + `/_idom/stream?view_id=${viewID}`,
-      (source, sourceType) =>
-        loadImportSource(httpIdomUrl, source, sourceType)
-    );
+    mountWithLayoutServer(mountEl, serverInfo);
     return;
   }
 
@@ -2013,12 +2047,7 @@ function mountWidgetExample(
       {
         mountEl.removeChild(enableWidgetButton);
         mountEl.setAttribute("class", "interactive widget-container");
-        mountLayoutWithWebSocket(
-          mountEl,
-          wsIdomUrl + `/_idom/stream?view_id=${viewID}`,
-          (source, sourceType) =>
-            loadImportSource(httpIdomUrl, source, sourceType)
-        );
+        mountWithLayoutServer(mountEl, serverInfo);
       }
     })
   );
@@ -2044,14 +2073,6 @@ function mountWidgetExample(
   }
 
   mountEl.appendChild(enableWidgetButton);
-}
-
-function loadImportSource(baseUrl, source, sourceType) {
-  if (sourceType == "NAME") {
-    return import(baseUrl + IDOM_MODULES_PATH + "/" + source);
-  } else {
-    return import(source);
-  }
 }
 
 export { mountWidgetExample };

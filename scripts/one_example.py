@@ -44,7 +44,7 @@ def main():
 
     on_file_change(get_py_example_file_by_name(ex_name), update_component)
 
-    idom.run(component, port=8000)
+    idom.run(component)
 
 
 def _example_name_input() -> str:
@@ -60,7 +60,7 @@ def _example_name_input() -> str:
 
     try:
         ex_num = int(ex_name)
-    except TypeError:
+    except ValueError:
         print(f"No example {ex_name!r} exists. Choose from:")
         _print_available_options()
         sys.exit(1)
