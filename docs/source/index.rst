@@ -105,8 +105,8 @@ IDOM within a Jupyter Notebook, this is where you can learn how to do those thin
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Learn how IDOM can be installed and run in a variety of different ways - with
-    different web servers and frameworks as well as being embedded into existing apps.
+    Install IDOM and run it in a variety of different ways - with different web servers
+    and frameworks. You'll even embed IDOM into an existing app.
 
 
 Chapter 2 - :ref:`Creating Interfaces`
@@ -115,11 +115,12 @@ Chapter 2 - :ref:`Creating Interfaces`
 IDOM is a Python package for making user interfaces (UI). These interfaces are built
 from small elements of functionality like buttons text and images. IDOM allows you to
 combine these elements into reusable, nestable :ref:`"components" <your first
-component>`. In the sections that follow you'll learn how these UI elements are created
-and organized into components. Then, you'll use components to customize and
-conditionally display more complex UIs.
+components>`. In the sections that follow you'll learn how these UI elements are created
+and organized into components. Then, you'll use this knowledge to create interfaces from
+raw data:
 
-Some sort of examples here...
+.. example:: creating_interfaces.todo_list_with_keys
+    :activate-result:
 
 .. card::
     :link: creating-interfaces/index
@@ -128,7 +129,7 @@ Some sort of examples here...
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Learn stuff...
+    Learn to construct user interfaces from basic HTML elements and reusable components.
 
 
 Chapter 3 - :ref:`Adding Interactivity`

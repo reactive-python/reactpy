@@ -1,5 +1,5 @@
-Your First Component
-====================
+Your First Components
+=====================
 
 As we learned :ref:`earlier <HTML with IDOM>` we can use IDOM to make rich structured
 documents out of standard HTML elements. As these documents become larger and more
