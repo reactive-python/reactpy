@@ -1,9 +1,6 @@
-import { mountLayoutWithWebSocket } from "idom-client-react";
+import { mountWithLayoutServer, LayoutServerInfo } from "idom-client-react";
 
-const LOC = window.location;
-const HTTP_PROTO = LOC.protocol;
-const WS_PROTO = HTTP_PROTO === "https:" ? "wss:" : "ws:";
-const IDOM_MODULES_PATH = "/_modules";
+let didMountDebug = false;
 
 export function mountWidgetExample(
   mountID,
@@ -11,19 +8,26 @@ export function mountWidgetExample(
   idomServerHost,
   useActivateButton
 ) {
-  const idomUrl  = "//" + (idomServerHost || LOC.host);
-  const httpIdomUrl = HTTP_PROTO + idomUrl ;
-  const wsIdomUrl = WS_PROTO + idomUrl ;
+  let idomHost, idomPort;
+  if (idomServerHost) {
+    [idomHost, idomPort] = idomServerHost.split(":", 2);
+  } else {
+    idomHost = window.location.hostname;
+    idomPort = window.location.port;
+  }
+
+  const serverInfo = new LayoutServerInfo({
+    host: idomHost,
+    port: idomPort,
+    path: "/_idom/",
+    query: `view_id=${viewID}`,
+    secure: window.location.protocol == "https",
+  });
 
   const mountEl = document.getElementById(mountID);
 
   if (!useActivateButton) {
-    mountLayoutWithWebSocket(
-      mountEl,
-      wsIdomUrl + `/_idom/stream?view_id=${viewID}`,
-      (source, sourceType) =>
-        loadImportSource(httpIdomUrl, source, sourceType)
-    );
+    mountWithLayoutServer(mountEl, serverInfo);
     return;
   }
 
@@ -36,12 +40,7 @@ export function mountWidgetExample(
       {
         mountEl.removeChild(enableWidgetButton);
         mountEl.setAttribute("class", "interactive widget-container");
-        mountLayoutWithWebSocket(
-          mountEl,
-          wsIdomUrl + `/_idom/stream?view_id=${viewID}`,
-          (source, sourceType) =>
-            loadImportSource(httpIdomUrl, source, sourceType)
-        );
+        mountWithLayoutServer(mountEl, serverInfo);
       }
     })
   );
@@ -67,12 +66,4 @@ export function mountWidgetExample(
   }
 
   mountEl.appendChild(enableWidgetButton);
-}
-
-function loadImportSource(baseUrl, source, sourceType) {
-  if (sourceType == "NAME") {
-    return import(baseUrl + IDOM_MODULES_PATH + "/" + source);
-  } else {
-    return import(source);
-  }
 }
