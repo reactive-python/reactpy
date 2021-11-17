@@ -37,7 +37,7 @@ Creating Interfaces
 IDOM is a Python package for making user interfaces (UI). These interfaces are built
 from small elements of functionality like buttons text and images. IDOM allows you to
 combine these elements into reusable, nestable :ref:`"components" <your first
-component>`. In the sections that follow you'll learn how these UI elements are created
+components>`. In the sections that follow you'll learn how these UI elements are created
 and organized into components. Then, you'll use components to customize and
 conditionally display more complex UIs.
 

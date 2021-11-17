@@ -32,7 +32,7 @@ IDOM
 IDOM is a Python web framework for building **interactive websites without needing a
 single line of Javascript**. This is accomplished by breaking down complex applications
 into nestable and reusable chunks of code called :ref:`"components" <Your First
-Component>` that allow you to focus on what your application does rather than how it
+Components>` that allow you to focus on what your application does rather than how it
 does it.
 
 IDOM is also ecosystem independent. It can be added to existing applications built on a
@@ -63,7 +63,7 @@ which will define the content the application displays. Specifically, it display
 of HTML element called an ``h1`` `section heading
 <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Heading_Elements>`__.
 Importantly though, a ``@component`` decorator has been applied to the ``App`` function
-to turn it into a :ref:`component <Your First Component>`. Finally, we :ref:`run
+to turn it into a :ref:`component <Your First Components>`. Finally, we :ref:`run
 <Running IDOM>` an application server by passing the ``App`` component to the ``run()``
 function.
 

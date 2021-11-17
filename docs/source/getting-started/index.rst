@@ -89,8 +89,8 @@ For anything else, report your issue in IDOM's
 Section 2: Running IDOM
 -----------------------
 
-Once you've :ref:`installed IDOM <quick install>`. The simplest way to run IDOM is with
-the :func:`~idom.server.prefab.run` function. By default this will execute your
+Once you've :ref:`installed IDOM <Installing IDOM>`. The simplest way to run IDOM is
+with the :func:`~idom.server.prefab.run` function. By default this will execute your
 application using one of the builtin server implementations whose dependencies have all
 been installed. Running a tiny "hello world" application just requires the following
 code:
