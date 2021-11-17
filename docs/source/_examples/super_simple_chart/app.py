@@ -3,14 +3,13 @@ from pathlib import Path
 from idom import component, run, web
 
 
-file = Path(__file__).parent / "super_simple_chart.js"
+file = Path(__file__).parent / "super-simple-chart.js"
 ssc = web.module_from_file("super-simple-chart", file, fallback="⌛")
 SuperSimpleChart = web.export(ssc, "SuperSimpleChart")
 
 
 @component
 def App():
-    print(__name__)
     return SuperSimpleChart(
         {
             "data": [

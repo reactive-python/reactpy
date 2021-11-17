@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 from docutils.parsers.rst import directives
 from docutils.statemachine import StringList
@@ -6,11 +7,7 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 from sphinx_design.tabs import TabSetDirective
 
-from docs.examples import get_js_example_file_by_name, get_py_example_file_by_name
-
-
-HERE = Path(__file__)
-EXAMPLES_DIR = HERE.parent.parent / "_examples"
+from docs.examples import EXAMPLES_DIR, get_example_files_by_name
 
 
 class WidgetExample(SphinxDirective):
@@ -31,54 +28,54 @@ class WidgetExample(SphinxDirective):
         live_example_is_default_tab = "result-is-default-tab" in self.options
         activate_result = "activate-result" in self.options
 
-        py_ex_path = get_py_example_file_by_name(example_name)
-        if not py_ex_path.exists():
+        ex_files = get_example_files_by_name(example_name)
+        if not ex_files:
             src_file, line_num = self.get_source_info()
             raise ValueError(
-                f"Missing example file named {py_ex_path} referenced by document {src_file}:{line_num}"
+                f"Missing example named {example_name!r} "
+                f"referenced by document {src_file}:{line_num}"
             )
 
-        labeled_tab_items = {
-            "python": _literal_include(
-                name=str(py_ex_path.relative_to(EXAMPLES_DIR)),
-                linenos=show_linenos,
-            ),
-            "result": _interactive_widget(
+        labeled_tab_items: list[tuple[str, Any]] = []
+        if len(ex_files) == 1:
+            labeled_tab_items.append(
+                (
+                    "app.py",
+                    _literal_include(
+                        path=ex_files[0],
+                        linenos=show_linenos,
+                    ),
+                )
+            )
+        else:
+            for path in sorted(ex_files, key=lambda p: p.name):
+                labeled_tab_items.append(
+                    (
+                        path.name,
+                        _literal_include(
+                            path=path,
+                            linenos=show_linenos,
+                        ),
+                    )
+                )
+
+        result_tab_item = (
+            "▶️ result",
+            _interactive_widget(
                 name=example_name,
                 with_activate_button=not activate_result,
             ),
-        }
-
-        labeled_tab_titles = {
-            "python": "Python",
-            "javascript": "Javascript",
-            "result": "▶️ Result",
-        }
-
-        js_ex_path = get_js_example_file_by_name(example_name)
-        if js_ex_path.exists():
-            labeled_tab_items["javascript"] = _literal_include(
-                name=str(js_ex_path.relative_to(EXAMPLES_DIR)),
-                linenos=show_linenos,
-            )
-
-        tab_label_order = (
-            ["result", "python", "javascript"]
-            if live_example_is_default_tab
-            else ["python", "javascript", "result"]
         )
+        if live_example_is_default_tab:
+            labeled_tab_items.insert(0, result_tab_item)
+        else:
+            labeled_tab_items.append(result_tab_item)
 
         return TabSetDirective(
             "WidgetExample",
             [],
             {},
-            _make_tab_items(
-                [
-                    (labeled_tab_titles[label], labeled_tab_items[label])
-                    for label in tab_label_order
-                    if label in labeled_tab_items
-                ]
-            ),
+            _make_tab_items(labeled_tab_items),
             self.lineno - 1,
             self.content_offset,
             "",
@@ -97,16 +94,18 @@ def _make_tab_items(labeled_content_tuples):
     return _string_to_nested_lines(tab_items)
 
 
-def _literal_include(name, linenos):
-    if name.endswith(".py"):
-        language = "python"
-    elif name.endswith(".js"):
-        language = "javascript"
-    else:
-        raise ValueError("Unknown extension type")
+def _literal_include(path: Path, linenos: bool):
+    try:
+        language = {
+            ".py": "python",
+            ".js": "javascript",
+            ".json": "json",
+        }[path.suffix]
+    except KeyError:
+        raise ValueError(f"Unknown extension type {path.suffix!r}")
 
     return _literal_include_template.format(
-        name=name,
+        name=str(path.relative_to(EXAMPLES_DIR)),
         language=language,
         linenos=":linenos:" if linenos else "",
     )
