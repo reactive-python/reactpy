@@ -6,7 +6,7 @@ def Button():
     def handle_event(event):
         print(event)
 
-    return html.button({"onClick": handle_event}, "Print event to terminal")
+    return html.button({"onClick": handle_event}, "Click me!")
 
 
 run(Button)

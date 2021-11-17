@@ -41,10 +41,17 @@ def load_one_example(file_or_name: Path | str) -> Callable[[], ComponentType]:
 
     idom.run = capture_component
     try:
-        code = compile(file.read_text(), str(file.absolute()), "exec")
-        exec(code, {"print": capture_print})
+        code = compile(file.read_text(), str(file), "exec")
+        exec(
+            code,
+            {
+                "print": capture_print,
+                "__file__": str(file),
+                "__name__": file.stem,
+            },
+        )
     except Exception:
-        return _make_error_display()
+        return _make_error_display(format_exc())
     finally:
         idom.run = RUN_IDOM
 
@@ -110,9 +117,9 @@ def _make_example_did_not_run(example_name):
     return ExampleDidNotRun
 
 
-def _make_error_display():
+def _make_error_display(message):
     @idom.component
     def ShowError():
-        return idom.html.pre(format_exc())
+        return idom.html.pre(message)
 
     return ShowError

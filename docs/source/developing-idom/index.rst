@@ -7,6 +7,7 @@ Developing IDOM
     contributor-guide
     changelog
     roadmap
+    /_autogen/dev-apis
 
 .. note::
 
