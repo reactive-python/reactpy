@@ -7,7 +7,7 @@ Reference Material
     gallery
     hooks-api
     javascript-api
+    browser-events
     /_autogen/user-apis
-    /_autogen/dev-apis
     specifications
     faq

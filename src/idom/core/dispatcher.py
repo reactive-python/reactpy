@@ -5,7 +5,7 @@ Dispatchers
 
 from __future__ import annotations
 
-from asyncio import Future, Queue
+from asyncio import Future, Queue, ensure_future
 from asyncio.tasks import FIRST_COMPLETED, ensure_future, gather, wait
 from contextlib import asynccontextmanager
 from logging import getLogger
@@ -220,7 +220,7 @@ async def _single_incoming_loop(
     layout: LayoutType[LayoutUpdate, LayoutEvent], recv: RecvCoroutine
 ) -> None:
     while True:
-        await layout.deliver(await recv())
+        ensure_future(layout.deliver(await recv()))
 
 
 async def _shared_outgoing_loop(

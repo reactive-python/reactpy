@@ -5,17 +5,40 @@ Events
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Callable, List, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence, overload
 
 from anyio import create_task_group
+from typing_extensions import Literal
 
 from idom.core.proto import EventHandlerFunc, EventHandlerType
 
 
+@overload
 def event(
+    function: Callable[..., Any],
+    *,
+    stop_propagation: bool = ...,
+    prevent_default: bool = ...,
+) -> EventHandler:
+    ...
+
+
+@overload
+def event(
+    function: Literal[None] = None,
+    *,
+    stop_propagation: bool = ...,
+    prevent_default: bool = ...,
+) -> Callable[[Callable[..., Any]], EventHandler]:
+    ...
+
+
+def event(
+    function: Callable[..., Any] | None = None,
+    *,
     stop_propagation: bool = False,
     prevent_default: bool = False,
-) -> Callable[[Callable[..., Any]], EventHandler]:
+) -> EventHandler | Callable[[Callable[..., Any]], EventHandler]:
     """A decorator for constructing an :class:`EventHandler`.
 
     While you're always free to add callbacks by assigning them to an element's attributes
@@ -52,7 +75,10 @@ def event(
             prevent_default,
         )
 
-    return setup
+    if function is not None:
+        return setup(function)
+    else:
+        return setup
 
 
 class EventHandler:

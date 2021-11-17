@@ -1,5 +1,5 @@
 # extra=stable,sanic
-sanic <21
+sanic <19.12.0
 sanic-cors
 
 # extra=fastapi
