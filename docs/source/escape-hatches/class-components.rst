@@ -1,4 +1,6 @@
 Class Components
 ================
 
-Under construction :)
+.. note::
+
+    Under construction 👷

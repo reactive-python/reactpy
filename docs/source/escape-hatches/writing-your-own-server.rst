@@ -1,4 +1,6 @@
 Writing Your Own Server
 =======================
 
-Under construction :)
+.. note::
+
+    Under construction 👷

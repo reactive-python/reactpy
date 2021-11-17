@@ -1,4 +1,6 @@
 Writing Your Own Client
 =======================
 
-Under construction :)
+.. note::
+
+    Under construction 👷

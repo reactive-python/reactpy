@@ -172,7 +172,7 @@ Here's the list of available configuration types:
 Specific Server Settings
 ------------------------
 
-The ``Config`` :ref:`described above <Configuring Server Settings` is meant to be an
+The ``Config`` :ref:`described above <Configuring Server Settings>` is meant to be an
 implementation agnostic - all ``Config`` objects support a similar set of options.
 However, there are inevitably cases where you need to set up your chosen server using
 implementation specific details. For example, you might want to add an extra route to

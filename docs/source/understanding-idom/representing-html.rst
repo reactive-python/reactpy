@@ -1,5 +1,9 @@
-How IDOM Represents HTML
-========================
+Representing HTML
+=================
+
+.. note::
+
+    Under construction 👷
 
 We've already discussed how to contruct HTML with IDOM in a :ref:`previous section <HTML
 with IDOM>`, but we skimmed over the question of the data structure we use to represent
@@ -67,5 +71,3 @@ is just a fancy way of saying we have a representation of the document object mo
 `DOM
 <https://en.wikipedia.org/wiki/Document_Object_Model#:~:text=The%20Document%20Object%20Model%20(DOM,document%20with%20a%20logical%20tree.&text=Nodes%20can%20have%20event%20handlers%20attached%20to%20them.>`__
 that is not the actual DOM.
-
-Under construction :)

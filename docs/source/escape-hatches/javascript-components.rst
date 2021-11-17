@@ -31,9 +31,9 @@ Dynamically Loaded Components
 
 .. note::
 
-    This method is not recommended in production systems - see
-    :ref:`Distributing Javascript Components` for more info. Instead, it's best used
-    during exploratory phases of development.
+    This method is not recommended in production systems - see :ref:`Distributing
+    Javascript` for more info. Instead, it's best used during exploratory phases of
+    development.
 
 IDOM makes it easy to draft your code when you're in the early stages of development by
 using a CDN_ to dynamically load Javascript packages on the fly. In this example we'll

@@ -10,4 +10,6 @@ Escape Hatches
     writing-your-own-server
     writing-your-own-client
 
-Under construction :)
+.. note::
+
+    Under construction 👷

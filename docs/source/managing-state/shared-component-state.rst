@@ -1,4 +1,6 @@
 Shared Component State
 ======================
 
-Under construction :)
+.. note::
+
+    Under construction 👷
