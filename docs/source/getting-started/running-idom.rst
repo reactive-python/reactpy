@@ -172,7 +172,7 @@ Here's the list of available configuration types:
 Specific Server Settings
 ------------------------
 
-The ``Config`` :ref:`described above <Configuring Server Settings>` is meant to be an
+The ``Config`` :ref:`described above <Common Server Settings>` is meant to be an
 implementation agnostic - all ``Config`` objects support a similar set of options.
 However, there are inevitably cases where you need to set up your chosen server using
 implementation specific details. For example, you might want to add an extra route to
@@ -263,11 +263,11 @@ embedding one the examples from this documentation into your own webpage:
 
 As mentioned though, this is connecting to the server that is hosting this
 documentation. If you want to connect to a view from your own server, you'll need to
-change the URL above to one you provide. One way to do this might be to :ref:`add IDOM
-to your existing python web server`. Another would be to run IDOM in adjacent web server
-instance that you coordinate with something like `NGINX <https://www.nginx.com/>`__. For
-the sake of simplicity, we'll assume you do something similar to the following in an
-existing Python app:
+change the URL above to one you provide. One way to do this might be to :ref:`add to an
+existing web server`. Another would be to run IDOM in an adjacent web server instance
+that you coordinate with something like `NGINX <https://www.nginx.com/>`__. For the sake
+of simplicity, we'll assume you do something similar to the following in an existing
+Python app:
 
 .. tab-set::
 
