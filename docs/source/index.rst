@@ -55,7 +55,7 @@ To get a rough idea of how to write apps in IDOM, take a look at the tiny `"hell
 
 .. note::
 
-    Try clicking the **▶️ Result** tab to see what this displays!
+    Try clicking the **▶️ result** tab to see what this displays!
 
 So what exactly does this code do? First, it imports a few tools from ``idom`` that will
 get used to describe and execute an application. Then, we create an ``App`` function

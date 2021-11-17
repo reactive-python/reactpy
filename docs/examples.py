@@ -15,17 +15,28 @@ RUN_IDOM = idom.run
 
 
 def load_examples() -> Iterator[tuple[str, Callable[[], ComponentType]]]:
-    for file in EXAMPLES_DIR.rglob("*.py"):
-        yield get_example_name_from_file(file), load_one_example(file)
+    for name in all_example_names():
+        yield name, load_one_example(name)
 
 
 def all_example_names() -> set[str]:
-    return {get_example_name_from_file(file) for file in EXAMPLES_DIR.rglob("*.py")}
+    names = set()
+    for file in EXAMPLES_DIR.rglob("*.py"):
+        if file.name != "app.py" and (file.parent / "app.py").exists():
+            # this isn't the main example file
+            continue
+        path = file.relative_to(EXAMPLES_DIR)
+        if path.name == "app.py":
+            path = path.parent
+        else:
+            path = path.with_suffix("")
+        names.add(".".join(path.parts))
+    return names
 
 
 def load_one_example(file_or_name: Path | str) -> Callable[[], ComponentType]:
     if isinstance(file_or_name, str):
-        file = get_py_example_file_by_name(file_or_name)
+        file = get_main_example_file_by_name(file_or_name)
     else:
         file = file_or_name
 
@@ -66,16 +77,24 @@ def load_one_example(file_or_name: Path | str) -> Callable[[], ComponentType]:
         return Wrapper
 
 
-def get_example_name_from_file(file: Path) -> str:
-    return ".".join(file.relative_to(EXAMPLES_DIR).with_suffix("").parts)
+def get_main_example_file_by_name(name: str) -> Path:
+    path = _get_root_example_path_by_name(name)
+    if path.is_dir():
+        return path / "app.py"
+    else:
+        return path.with_suffix(".py")
 
 
-def get_py_example_file_by_name(name: str) -> Path:
-    return EXAMPLES_DIR.joinpath(*name.split(".")).with_suffix(".py")
+def get_example_files_by_name(name: str) -> list[Path]:
+    path = _get_root_example_path_by_name(name)
+    if path.is_dir():
+        return list(path.glob("*"))
+    path = path.with_suffix(".py")
+    return [path] if path.exists() else []
 
 
-def get_js_example_file_by_name(name: str) -> Path:
-    return EXAMPLES_DIR.joinpath(*name.split(".")).with_suffix(".js")
+def _get_root_example_path_by_name(name: str) -> Path:
+    return EXAMPLES_DIR.joinpath(*name.split("."))
 
 
 def _printout_viewer():
