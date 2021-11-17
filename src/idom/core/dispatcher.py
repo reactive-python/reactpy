@@ -220,6 +220,8 @@ async def _single_incoming_loop(
     layout: LayoutType[LayoutUpdate, LayoutEvent], recv: RecvCoroutine
 ) -> None:
     while True:
+        # We need to fire and forget here so that we avoid waiting on the completion
+        # of this event handler before receiving and running the next one.
         ensure_future(layout.deliver(await recv()))
 
 

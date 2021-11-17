@@ -22,7 +22,8 @@ Adding Interactivity
             :link: responding-to-events
             :link-type: doc
 
-            ...
+            Define event handlers and learn about the available event types they can be
+            bound to.
 
         .. grid-item-card:: :octicon:`package-dependencies` Components With State
             :link: components-with-state
@@ -54,7 +55,12 @@ Adding Interactivity
 Section 1: Responding to Events
 -------------------------------
 
-...
+IDOM lets you add event handlers to your parts of the interface. This means that you can
+define  synchronous or asynchronous functions that are triggered when a particular user
+interaction occurs like clicking, hovering, of focusing on form inputs, and more.
+
+.. example:: adding_interactivity.button_prints_message
+    :activate-result:
 
 .. card::
     :link: responding-to-events
@@ -63,7 +69,8 @@ Section 1: Responding to Events
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    ...
+    Define event handlers and learn about the available event types they can be bound
+    to.
 
 
 Section 2: Components with State
