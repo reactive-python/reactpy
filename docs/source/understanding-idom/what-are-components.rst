@@ -1,4 +1,6 @@
 What Are Components?
 ====================
 
-Under construction :)
+.. note::
+
+    Under construction 👷

@@ -1,4 +1,6 @@
 When to Reset State
 ===================
 
-Under construction :)
+.. note::
+
+    Under construction 👷

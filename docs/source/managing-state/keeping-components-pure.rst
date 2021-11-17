@@ -1,4 +1,6 @@
 Keeping Components Pure
 =======================
 
-Under construction :)
+.. note::
+
+    Under construction 👷

@@ -11,4 +11,6 @@ Managing State
     when-to-reset-state
     writing-tests
 
-Under construction :)
+.. note::
+
+    Under construction 👷

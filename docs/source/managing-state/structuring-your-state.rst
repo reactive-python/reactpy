@@ -1,4 +1,6 @@
 Structuring Your State
 ======================
 
-Under construction :)
+.. note::
+
+    Under construction 👷
