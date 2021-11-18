@@ -12,3 +12,8 @@ body {
   flex-direction: column;
   align-items: stretch;
 }
+
+.sd-tab-content .highlight pre {
+  max-height: 700px;
+  overflow: auto;
+}
