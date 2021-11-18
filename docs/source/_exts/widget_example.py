@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +18,6 @@ class WidgetExample(SphinxDirective):
     _next_id = 0
 
     option_spec = {
-        "linenos": directives.flag,
         "result-is-default-tab": directives.flag,
         "activate-result": directives.flag,
     }
@@ -107,8 +107,29 @@ def _literal_include(path: Path, linenos: bool):
     return _literal_include_template.format(
         name=str(path.relative_to(EXAMPLES_DIR)),
         language=language,
-        linenos=":linenos:" if linenos else "",
+        options=_join_options(_get_file_options(path)),
     )
+
+
+def _join_options(option_strings: list[str]) -> str:
+    return "\n    ".join(option_strings)
+
+
+OPTION_PATTERN = re.compile(r"#\s:[\w-]+:.*")
+
+
+def _get_file_options(file: Path) -> list[str]:
+    options = []
+
+    for line in file.read_text().split("\n"):
+        file.name != "app.py" or print(repr(line))
+        if line.strip() and not OPTION_PATTERN.match(line):
+            break
+        option_string = line[1:].strip()
+        if option_string:
+            options.append(option_string)
+
+    return options
 
 
 def _interactive_widget(name, with_activate_button):
@@ -134,7 +155,7 @@ _interactive_widget_template = """
 _literal_include_template = """
 .. literalinclude:: /_examples/{name}
     :language: {language}
-    {linenos}
+    {options}
 """
 
 
