@@ -1,8 +1,9 @@
 Responding to Events
 ====================
 
-IDOM lets you add event handlers to your parts of the interface. This means that you can
-assign functions that are triggered when a particular user interaction occurs like
+IDOM lets you add event handlers to your parts of the interface. These events handlers
+are functions which can be assigned to a part of a UI such that, when a user iteracts
+with the interface, those functions get triggered. Examples of interaction include
 clicking, hovering, of focusing on form inputs, and more.
 
 

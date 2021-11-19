@@ -347,11 +347,10 @@ update deletes the original button.
 0.25.0
 ------
 
-Completely refactors :ref:`Layout Dispatchers <Layout Dispatcher>` by switching from a
-class-based approach to one that leverages pure functions. While the logic itself isn't
-any simpler, it was easier to implement, and now hopefully understand, correctly. This
-conversion was motivated by several bugs that had cropped up related to improper usage
-of ``anyio``.
+Completely refactors layout dispatcher by switching from a class-based approach to one
+that leverages pure functions. While the logic itself isn't any simpler, it was easier
+to implement, and now hopefully understand, correctly. This conversion was motivated by
+several bugs that had cropped up related to improper usage of ``anyio``.
 
 **Issues Fixed:**
 

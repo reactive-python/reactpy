@@ -88,9 +88,9 @@ Presently IDOM's core library supports the following server implementations:
 - :mod:`idom.server.flask`
 - :mod:`idom.server.tornado`
 
-.. note::
+.. hint::
 
-    To install them, see the ref:`Installing Other Servers` section.
+    To install them, see the :ref:`Installing Other Servers` section.
 
 
 Available Server Types
