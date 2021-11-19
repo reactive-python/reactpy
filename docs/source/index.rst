@@ -53,7 +53,7 @@ To get a rough idea of how to write apps in IDOM, take a look at the tiny `"hell
 .. example:: hello_world
     :activate-result:
 
-.. note::
+.. hint::
 
     Try clicking the **▶️ result** tab to see what this displays!
 

@@ -122,9 +122,12 @@ def _get_file_options(file: Path) -> list[str]:
     options = []
 
     for line in file.read_text().split("\n"):
-        file.name != "app.py" or print(repr(line))
-        if line.strip() and not OPTION_PATTERN.match(line):
+        if not line.strip():
+            continue
+        if not line.startswith("#"):
             break
+        if not OPTION_PATTERN.match(line):
+            continue
         option_string = line[1:].strip()
         if option_string:
             options.append(option_string)

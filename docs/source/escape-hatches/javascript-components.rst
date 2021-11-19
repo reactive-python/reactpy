@@ -43,8 +43,8 @@ be using the ubiquitous React-based UI framework `Material UI`_.
 
 So now that we can display a Material UI Button we probably want to make it do
 something. Thankfully there's nothing new to learn here, you can pass event handlers to
-the button just as you did when :ref:`getting started <handling events>`. Thus, all we
-need to do is add an ``onClick`` handler to the component:
+the button just as you did when :ref:`getting started <responding to events>`. Thus, all
+we need to do is add an ``onClick`` handler to the component:
 
 .. example:: material_ui_button_on_click
 

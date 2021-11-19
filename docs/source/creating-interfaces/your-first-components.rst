@@ -13,19 +13,19 @@ Defining a Component
 
 At their core, components are just normal Python functions that return HTML. To define a
 component you just need to add a ``@component`` `decorator
-<https://realpython.com/primer-on-python-decorators/>`__ to a function. Then, by
-convention, we name component functions like classes - with ``CamelCase``. So for
-example, if we wanted to write and then :ref:`display <Running IDOM>` a ``Photo``
-component we might write:
+<https://realpython.com/primer-on-python-decorators/>`__ to a function. Functions
+decorator in this way are known as **render function** and, by convention, we name them
+like classes - with ``CamelCase``. So for example, if we wanted to write, and then
+:ref:`display <Running IDOM>` a ``Photo`` component, we might write:
 
 .. example:: creating_interfaces.simple_photo
     :activate-result:
 
 .. warning::
 
-    If we had not decorated our ``Photo`` function with the ``@component`` decorator,
-    the server would start, but as soon as we tried to view the page it would be blank.
-    The servers logs would then indicate:
+    If we had not decorated our ``Photo``'s render function with the ``@component``
+    decorator, the server would start, but as soon as we tried to view the page it would
+    be blank. The servers logs would then indicate:
 
     .. code-block:: text
 
