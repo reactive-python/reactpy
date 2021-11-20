@@ -128,13 +128,19 @@ Thus, in this example:
 - ``set_index`` - is a **state setter** for changing that value and triggering a re-render
   of the component.
 
-.. note::
+The convention is that, if you name your state variable ``thing``, your state setter
+should be named ``set_thing``. While you could name them anything you want, adhereing to
+the convention makes things easier to understand across projects.
 
-    The convention is that, if you name your state variable ``thing``, your state setter
-    should be named ``set_thing``. While you could name them anything you want,
-    adhereing to the convention makes things easier to understand across projects.
+----
 
-To understand how this works in context, let's break down our example:
+To understand how this works in context, let's break down our example by examining key
+moments in the execution of the ``App`` component. Each numbered tab in the section
+below highlights a line of code where something of interest occurs:
+
+.. hint::
+
+    Try clicking through the numbered tabs to each highlighted step of execution
 
 .. tab-set::
 
@@ -148,6 +154,10 @@ To understand how this works in context, let's break down our example:
             :lines: 12-33
             :emphasize-lines: 2
 
+        At this point, we've just begun to render the ``App`` component. As yet, IDOM is
+        not aware that this component has any state or what view it will display. This
+        will change in a moment though when we move to the next line...
+
     .. tab-item:: 2
 
         .. raw:: html
@@ -157,6 +167,12 @@ To understand how this works in context, let's break down our example:
         .. literalinclude:: /_examples/adding_interactivity/adding_state_variable/app.py
             :lines: 12-33
             :emphasize-lines: 3
+
+        The ``App`` component has just declared some state. IDOM now knows that it must
+        remember the ``index`` and trigger an update of this component when
+        ``set_index`` is called. Currently the value of ``index`` is ``0`` as per the
+        default value given to ``use_state``. Thus, the resulting view will display
+        information about the first item in our ``sculpture_data`` list.
 
     .. tab-item:: 3
 
@@ -168,6 +184,11 @@ To understand how this works in context, let's break down our example:
             :lines: 12-33
             :emphasize-lines: 5
 
+        We've now defined an event handler that we intend to assign to a button in the
+        view. This will respond once the user clicks that button. The action this
+        handler performs is to update the value of ``index`` and schedule our ``App``
+        component to update.
+
     .. tab-item:: 4
 
         .. raw:: html
@@ -178,6 +199,12 @@ To understand how this works in context, let's break down our example:
             :lines: 12-33
             :emphasize-lines: 16
 
+        The ``handle_click`` function we defined above has now been assigned to a button
+        in the view and we are about to display information about the first item in out
+        ``sculpture_data`` list. When the view is ultimately displayed, if a user clicks
+        the "Next" button, the handler we just assigned will be triggered. Until that
+        point though, the application will remain static.
+
     .. tab-item:: 5
 
         .. raw:: html
@@ -186,6 +213,11 @@ To understand how this works in context, let's break down our example:
 
         .. literalinclude:: /_examples/adding_interactivity/adding_state_variable/app.py
             :lines: 12-33
+            :emphasize-lines: 5
+
+        A user has just clicked the button 🖱️! IDOM has sent information about the event
+        to the ``handle_click`` function and it is about to execute. In a moment we will
+        update the state of this component and schedule a re-render.
 
     .. tab-item:: 6
 
@@ -197,6 +229,12 @@ To understand how this works in context, let's break down our example:
             :lines: 12-33
             :emphasize-lines: 6
 
+        We've just now told IDOM that we want to update the state of our ``App`` and
+        that it needs to be re-rendered. More specifically, we are incrementing its
+        ``index``, and once ``App`` re-renders the index *will* be ``1``. Importantly,
+        at this point, **the value of ``index`` is still ``0``**! This will only change
+        once the component begins to re-render.
+
     .. tab-item:: 7
 
         .. raw:: html
@@ -206,6 +244,10 @@ To understand how this works in context, let's break down our example:
         .. literalinclude:: /_examples/adding_interactivity/adding_state_variable/app.py
             :lines: 12-33
             :emphasize-lines: 2
+
+        The scheduled re-render of ``App`` has just begun. IDOM has now updated its
+        internal state store such that, the next time we call ``use_state`` we will get
+        back the updated value of ``index``.
 
     .. tab-item:: 8
 
@@ -217,15 +259,34 @@ To understand how this works in context, let's break down our example:
             :lines: 12-33
             :emphasize-lines: 3
 
+        With IDOM's state store updated, as we call ``use_state``, instead of returning
+        ``0`` for the value of ``index`` as it did before, IDOM now returns the value
+        ``1``. With this change the view we display will be altered - instead of
+        displaying data for the first item in our ``sculpture_data`` list we will now
+        display information about the second.
+
     .. tab-item:: 9
 
-        **Repeat...**
+        .. raw:: html
 
-        ...
+            <h2>Repeat...</h2>
 
-.. hint::
+        .. literalinclude:: /_examples/adding_interactivity/adding_state_variable/app.py
+            :lines: 12-33
 
-    Try clicking through the numbered tabs to each highlighted step of execution
+        From this point on, the steps remain the same. The only difference being the
+        progressively incrementing ``index`` each time the user clicks the "Next" button
+        and the view which is altered to to reflect the currently indexed item in the
+        ``sculpture_data`` list.
+
+        .. note::
+
+            Once we reach the end of the ``sculpture_data`` list the view will return
+            back to the first item since we create a ``bounded_index`` by doing a modulo
+            of the index with the length of the list (``index % len(sculpture_data)``).
+            Ideally we would do this bounding at the time we call ``set_index`` to
+            prevent ``index`` from incrementing to infinity, but to keep things simple
+            in this examples, we've kept this logic separate.
 
 Multiple State Declarations
 ---------------------------
