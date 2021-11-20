@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.9
 
 WORKDIR /app/
 
@@ -29,9 +29,9 @@ RUN pip install -e .[all]
 
 # Build the Docs
 # --------------
-ADD docs/main.py ./docs/
+ADD docs/app.py ./docs/
+ADD docs/examples.py ./docs/
 ADD docs/source ./docs/source
-ADD examples ./examples
 
 RUN pip install -r requirements/build-docs.txt
 RUN sphinx-build -b html docs/source docs/build
