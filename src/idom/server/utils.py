@@ -43,6 +43,20 @@ def threaded(function: Callable[_FuncParams, None]) -> Callable[_FuncParams, Thr
     return wrapper
 
 
+def threaded_no_event_loop(function: Callable[_FuncParams, None]) -> Callable[_FuncParams, Thread]:  # type: ignore
+    @wraps(function)
+    def wrapper(*args: Any, **kwargs: Any) -> Thread:
+        def target() -> None:
+            function(*args, **kwargs)
+
+        thread = Thread(target=target, daemon=True)
+        thread.start()
+
+        return thread
+
+    return wrapper
+
+
 def wait_on_event(description: str, event: Event, timeout: Optional[float]) -> None:
     if not event.wait(timeout):
         raise TimeoutError(f"Did not {description} within {timeout} seconds")

@@ -7,6 +7,7 @@ from weakref import ref as weakref
 import pytest
 
 import idom
+from idom.config import IDOM_DEBUG_MODE
 from idom.core.dispatcher import render_json_patch
 from idom.core.layout import LayoutEvent
 from idom.testing import HookCatcher, StaticEventHandler
@@ -24,9 +25,9 @@ def test_layout_repr():
 
 
 def test_layout_expects_abstract_component():
-    with pytest.raises(TypeError, match="Expected an ComponentType"):
+    with pytest.raises(TypeError, match="Expected a ComponentType"):
         idom.Layout(None)
-    with pytest.raises(TypeError, match="Expected an ComponentType"):
+    with pytest.raises(TypeError, match="Expected a ComponentType"):
         idom.Layout(idom.html.div())
 
 
@@ -74,12 +75,12 @@ async def test_nested_component_layout():
     child_set_state = idom.Ref(None)
 
     @idom.component
-    def Parent(key):
+    def Parent():
         state, parent_set_state.current = idom.hooks.use_state(0)
         return idom.html.div(state, Child(key="c"))
 
     @idom.component
-    def Child(key):
+    def Child():
         state, child_set_state.current = idom.hooks.use_state(0)
         return idom.html.div(state)
 
@@ -112,7 +113,11 @@ async def test_nested_component_layout():
         assert changes == [{"op": "replace", "path": "/children/0", "value": "1"}]
 
 
-async def test_layout_render_error_has_partial_update():
+@pytest.mark.skipif(
+    not IDOM_DEBUG_MODE.current,
+    reason="errors only reported in debug mode",
+)
+async def test_layout_render_error_has_partial_update_with_error_message():
     @idom.component
     def Main():
         return idom.html.div([OkChild(), BadChild(), OkChild()])
@@ -136,6 +141,42 @@ async def test_layout_render_error_has_partial_update():
                     "value": [
                         {"tagName": "div", "children": ["hello"]},
                         {"tagName": "", "error": "ValueError: Something went wrong :("},
+                        {"tagName": "div", "children": ["hello"]},
+                    ],
+                },
+                {"op": "add", "path": "/tagName", "value": "div"},
+            ],
+        )
+
+
+@pytest.mark.skipif(
+    IDOM_DEBUG_MODE.current,
+    reason="errors only reported in debug mode",
+)
+async def test_layout_render_error_has_partial_update_without_error_message():
+    @idom.component
+    def Main():
+        return idom.html.div([OkChild(), BadChild(), OkChild()])
+
+    @idom.component
+    def OkChild():
+        return idom.html.div(["hello"])
+
+    @idom.component
+    def BadChild():
+        raise ValueError("Something went wrong :(")
+
+    with idom.Layout(Main()) as layout:
+        patch = await render_json_patch(layout)
+        assert_same_items(
+            patch.changes,
+            [
+                {
+                    "op": "add",
+                    "path": "/children",
+                    "value": [
+                        {"tagName": "div", "children": ["hello"]},
+                        {"tagName": "", "error": ""},
                         {"tagName": "div", "children": ["hello"]},
                     ],
                 },
@@ -431,7 +472,10 @@ async def test_model_key_preserves_callback_identity_for_components():
     def RootComponent():
         reverse_children, set_reverse_children = use_toggle()
 
-        children = [Trigger(set_reverse_children, key=name) for name in ["good", "bad"]]
+        children = [
+            Trigger(set_reverse_children, name=name, key=name)
+            for name in ["good", "bad"]
+        ]
 
         if reverse_children:
             children.reverse()
@@ -439,8 +483,8 @@ async def test_model_key_preserves_callback_identity_for_components():
         return idom.html.div(children)
 
     @idom.component
-    def Trigger(set_reverse_children, key):
-        if key == "good":
+    def Trigger(set_reverse_children, name):
+        if name == "good":
 
             @good_handler.use
             def callback():
@@ -501,15 +545,15 @@ async def test_hooks_for_keyed_components_get_garbage_collected():
     def Outer():
         items, set_items = idom.hooks.use_state([1, 2, 3])
         pop_item.current = lambda: set_items(items[:-1])
-        return idom.html.div(Inner(key=k) for k in items)
+        return idom.html.div(Inner(key=k, finalizer_id=k) for k in items)
 
     @idom.component
-    def Inner(key):
-        if key not in registered_finalizers:
+    def Inner(finalizer_id):
+        if finalizer_id not in registered_finalizers:
             hook = idom.hooks.current_hook()
-            finalize(hook, lambda: garbage_collect_items.append(key))
-            registered_finalizers.add(key)
-        return idom.html.div(key)
+            finalize(hook, lambda: garbage_collect_items.append(finalizer_id))
+            registered_finalizers.add(finalizer_id)
+        return idom.html.div(finalizer_id)
 
     with idom.Layout(Outer()) as layout:
         await layout.render()
@@ -596,8 +640,8 @@ async def test_keyed_components_preserve_hook_on_parent_update():
 
     @idom.component
     @inner_hook.capture
-    def Inner(key):
-        return idom.html.div(key)
+    def Inner():
+        return idom.html.div()
 
     with idom.Layout(Outer()) as layout:
         await layout.render()
@@ -635,15 +679,15 @@ async def test_schedule_render_from_unmounted_hook(caplog):
     @idom.component
     def Parent():
         state, parent_set_state.current = idom.hooks.use_state(1)
-        return Child(key=state)
+        return Child(key=state, state=state)
 
     child_hook = HookCatcher()
 
     @idom.component
     @child_hook.capture
-    def Child(key):
-        idom.hooks.use_effect(lambda: lambda: print("unmount", key))
-        return idom.html.div(key)
+    def Child(state):
+        idom.hooks.use_effect(lambda: lambda: print("unmount", state))
+        return idom.html.div(state)
 
     with idom.Layout(Parent()) as layout:
         await layout.render()
@@ -678,7 +722,7 @@ async def test_layout_element_cannot_become_a_component(caplog):
         return idom.html.div(child_nodes[child_type])
 
     @idom.component
-    def Child(key):
+    def Child():
         return idom.html.div()
 
     child_nodes = {
@@ -706,7 +750,7 @@ async def test_layout_component_cannot_become_an_element(caplog):
         return idom.html.div(child_nodes[child_type])
 
     @idom.component
-    def Child(key):
+    def Child():
         return idom.html.div()
 
     child_nodes = {

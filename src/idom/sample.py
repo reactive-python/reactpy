@@ -1,9 +1,8 @@
 import webbrowser
-from typing import NoReturn
 
 from . import html
 from .core.component import component
-from .core.vdom import VdomDict
+from .core.proto import VdomDict
 from .server.utils import find_available_port, find_builtin_server_type
 
 
@@ -23,7 +22,7 @@ def App() -> VdomDict:
     )
 
 
-def run_sample_app(open_browser: bool = False) -> NoReturn:
+def run_sample_app(open_browser: bool = False) -> None:
     """Run a sample application."""
     host = "127.0.0.1"
     port = find_available_port(host)
