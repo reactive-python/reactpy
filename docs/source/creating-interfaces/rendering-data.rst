@@ -191,6 +191,8 @@ exact same way that it does for standard HTML elements:
 
     .. testcode::
 
+        from idom import component
+
         @component
         def FunctionWithKeyParam(key):
             ...

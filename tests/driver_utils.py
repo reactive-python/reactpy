@@ -12,7 +12,7 @@ def send_keys(element: WebElement, keys: Any) -> None:
 
 def no_such_element(driver: WebDriver, method: str, param: Any) -> bool:
     try:
-        getattr(driver, f"find_element_by_{method}")(param)
+        driver.find_element(method, param)
     except NoSuchElementException:
         return True
     else:
