@@ -35,17 +35,17 @@ def test_that_js_module_unmount_is_called(driver, display):
 
     display(ShowCurrentComponent)
 
-    driver.find_element_by_id("some-component")
+    driver.find_element("id", "some-component")
 
     set_current_component.current(
         idom.html.h1({"id": "some-other-component"}, "some other component")
     )
 
     # the new component has been displayed
-    driver.find_element_by_id("some-other-component")
+    driver.find_element("id", "some-other-component")
 
     # the unmount callback for the old component was called
-    driver.find_element_by_id("unmount-flag")
+    driver.find_element("id", "unmount-flag")
 
 
 def test_module_from_url(driver):
@@ -70,7 +70,7 @@ def test_module_from_url(driver):
     with ServerMountPoint(PerClientStateServer, app=app) as mount_point:
         mount_point.mount(ShowSimpleButton)
         driver.get(mount_point.url())
-        driver.find_element_by_id("my-button")
+        driver.find_element("id", "my-button")
 
 
 def test_module_from_template_where_template_does_not_exist():
@@ -108,7 +108,7 @@ def test_module_from_file(driver, driver_wait, display):
 
     display(ShowSimpleButton)
 
-    button = driver.find_element_by_id("my-button")
+    button = driver.find_element("id", "my-button")
     button.click()
     driver_wait.until(lambda d: is_clicked.current)
 
@@ -178,11 +178,11 @@ def test_module_exports_multiple_components(driver, display):
 
     display(lambda: Header1({"id": "my-h1"}, "My Header 1"))
 
-    driver.find_element_by_id("my-h1")
+    driver.find_element("id", "my-h1")
 
     display(lambda: Header2({"id": "my-h2"}, "My Header 2"))
 
-    driver.find_element_by_id("my-h2")
+    driver.find_element("id", "my-h2")
 
 
 def test_imported_components_can_render_children(driver, display):
@@ -199,7 +199,7 @@ def test_imported_components_can_render_children(driver, display):
         )
     )
 
-    parent = driver.find_element_by_id("the-parent")
+    parent = driver.find_element("id", "the-parent")
     children = parent.find_elements_by_tag_name("li")
 
     assert len(children) == 3

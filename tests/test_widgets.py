@@ -51,13 +51,13 @@ def test_hostwap_update_on_change(driver, display):
 
     display(ButtonSwapsDivs)
 
-    client_incr_button = driver.find_element_by_id("incr-button")
+    client_incr_button = driver.find_element("id", "incr-button")
 
-    driver.find_element_by_id("hotswap-1")
+    driver.find_element("id", "hotswap-1")
     client_incr_button.click()
-    driver.find_element_by_id("hotswap-2")
+    driver.find_element("id", "hotswap-2")
     client_incr_button.click()
-    driver.find_element_by_id("hotswap-3")
+    driver.find_element("id", "hotswap-3")
 
 
 IMAGE_SRC_BYTES = b"""
@@ -71,14 +71,14 @@ BASE64_IMAGE_SRC = b64encode(IMAGE_SRC_BYTES).decode()
 def test_image_from_string(driver, display):
     src = IMAGE_SRC_BYTES.decode()
     display(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
-    client_img = driver.find_element_by_id("a-circle-1")
+    client_img = driver.find_element("id", "a-circle-1")
     assert BASE64_IMAGE_SRC in client_img.get_attribute("src")
 
 
 def test_image_from_bytes(driver, display):
     src = IMAGE_SRC_BYTES
     display(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
-    client_img = driver.find_element_by_id("a-circle-1")
+    client_img = driver.find_element("id", "a-circle-1")
     assert BASE64_IMAGE_SRC in client_img.get_attribute("src")
 
 
@@ -94,7 +94,7 @@ def test_input_callback(driver, driver_wait, display):
         )
     )
 
-    client_inp = driver.find_element_by_id("inp")
+    client_inp = driver.find_element("id", "inp")
     assert client_inp.get_attribute("value") == "initial-value"
 
     client_inp.clear()
@@ -132,8 +132,8 @@ def test_input_ignore_empty(driver, driver_wait, display):
 
     display(InputWrapper)
 
-    client_inp_ignore = driver.find_element_by_id("inp-ignore")
-    client_inp_not_ignore = driver.find_element_by_id("inp-not-ignore")
+    client_inp_ignore = driver.find_element("id", "inp-ignore")
+    client_inp_not_ignore = driver.find_element("id", "inp-not-ignore")
 
     send_keys(client_inp_ignore, Keys.BACKSPACE)
     time.sleep(0.1)  # waiting and deleting again seems to decrease flakiness
