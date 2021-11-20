@@ -51,7 +51,7 @@ def display(driver, server_mount_point):
         )
         driver.get(server_mount_point.url(query=query))
         if check_mount:
-            driver.find_element("id", component_id)
+            driver.find_element_by_id(component_id)
         return component_id
 
     yield mount_and_display

@@ -21,10 +21,10 @@ def test_automatic_reconnect(create_driver):
         mount_point.mount(OldComponent)
         driver.get(mount_point.url())
         # ensure the element is displayed before stopping the server
-        driver.find_element("id", "old-component")
+        driver.find_element_by_id("old-component")
 
     # the server is disconnected but the last view state is still shown
-    driver.find_element("id", "old-component")
+    driver.find_element_by_id("old-component")
 
     set_state = idom.Ref(None)
 
@@ -38,11 +38,11 @@ def test_automatic_reconnect(create_driver):
 
         # Note the lack of a page refresh before looking up this new component. The
         # client should attempt to reconnect and display the new view automatically.
-        driver.find_element("id", "new-component-0")
+        driver.find_element_by_id("new-component-0")
 
         # check that we can resume normal operation
         set_state.current(1)
-        driver.find_element("id", "new-component-1")
+        driver.find_element_by_id("new-component-1")
 
 
 def test_style_can_be_changed(display, driver, driver_wait):
@@ -69,7 +69,7 @@ def test_style_can_be_changed(display, driver, driver_wait):
 
     display(ButtonWithChangingColor)
 
-    button = driver.find_element("id", "my-button")
+    button = driver.find_element_by_id("my-button")
 
     assert get_style(button)["background-color"] == "red"
 

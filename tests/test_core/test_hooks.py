@@ -117,9 +117,9 @@ def test_use_state_with_constructor(driver, display, driver_wait):
 
     display(Outer)
 
-    outer = driver.find_element("id", "outer")
-    inner = driver.find_element("id", "inner")
-    count = driver.find_element("id", "count-view")
+    outer = driver.find_element_by_id("outer")
+    inner = driver.find_element_by_id("inner")
+    count = driver.find_element_by_id("count-view")
 
     driver_wait.until(lambda d: constructor_call_count.current == 1)
     driver_wait.until(lambda d: count.get_attribute("innerHTML") == "0")
@@ -157,7 +157,7 @@ def test_set_state_with_reducer_instead_of_value(driver, display):
 
     display(Counter)
 
-    client_counter = driver.find_element("id", "counter")
+    client_counter = driver.find_element_by_id("counter")
 
     for i in range(3):
         assert client_counter.get_attribute("innerHTML") == f"Count: {i}"
@@ -207,8 +207,8 @@ def test_set_state_checks_identity_not_equality(driver, display, driver_wait):
 
     display(TestComponent)
 
-    client_r_1_button = driver.find_element("id", "r_1")
-    client_r_2_button = driver.find_element("id", "r_2")
+    client_r_1_button = driver.find_element_by_id("r_1")
+    client_r_2_button = driver.find_element_by_id("r_2")
 
     assert render_count.current == 1
     assert event_count.current == 0
@@ -248,9 +248,9 @@ def test_simple_input_with_use_state(driver, display):
 
     display(Input)
 
-    button = driver.find_element("id", "input")
+    button = driver.find_element_by_id("input")
     button.send_keys("this is a test")
-    driver.find_element("id", "complete")
+    driver.find_element_by_id("complete")
 
     assert message_ref.current == "this is a test"
 
@@ -273,9 +273,9 @@ def test_double_set_state(driver, driver_wait, display):
 
     display(SomeComponent)
 
-    button = driver.find_element("id", "button")
-    first = driver.find_element("id", "first")
-    second = driver.find_element("id", "second")
+    button = driver.find_element_by_id("button")
+    first = driver.find_element_by_id("first")
+    second = driver.find_element_by_id("second")
 
     assert first.get_attribute("value") == "0"
     assert second.get_attribute("value") == "0"
