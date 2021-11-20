@@ -153,7 +153,7 @@ def test_can_prevent_event_default_operation(driver, display):
 
     display(Input)
 
-    inp = driver.find_element_by_id("input")
+    inp = driver.find_element("id", "input")
     inp.send_keys("hello")
     # the default action of updating the element's value did not take place
     assert inp.get_attribute("value") == ""
@@ -174,9 +174,9 @@ def test_simple_click_event(driver, display):
 
     display(Button)
 
-    button = driver.find_element_by_id("click")
+    button = driver.find_element("id", "click")
     button.click()
-    driver.find_element_by_id("complete")
+    driver.find_element("id", "complete")
 
 
 def test_can_stop_event_propogation(driver, driver_wait, display):
@@ -217,7 +217,7 @@ def test_can_stop_event_propogation(driver, driver_wait, display):
 
     display(DivInDiv)
 
-    inner = driver.find_element_by_id("inner")
+    inner = driver.find_element("id", "inner")
     inner.click()
 
     driver_wait.until(lambda _: clicked.current)

@@ -50,7 +50,7 @@ def test_display_simple_hello_world(driver, display):
 
     display(Hello)
 
-    assert driver.find_element_by_id("hello")
+    assert driver.find_element("id", "hello")
 
 
 def test_pre_tags_are_rendered_correctly(driver, display):
@@ -65,7 +65,7 @@ def test_pre_tags_are_rendered_correctly(driver, display):
 
     display(PreFormated)
 
-    pre = driver.find_element_by_id("pre-form-test")
+    pre = driver.find_element("id", "pre-form-test")
 
     assert (
         pre.get_attribute("innerHTML")
