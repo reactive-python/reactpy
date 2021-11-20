@@ -85,7 +85,7 @@ class ServerMountPoint(Generic[_Mount, _Server]):
         **other_options: Any,
     ) -> None:
         self.host = host
-        self.port = port or find_available_port(host)
+        self.port = port or find_available_port(host, allow_reuse_waiting_ports=False)
         self._mount_and_server_constructor: "Callable[[], Tuple[_Mount, _Server]]" = (
             lambda: mount_and_server_constructor(
                 server_type,
