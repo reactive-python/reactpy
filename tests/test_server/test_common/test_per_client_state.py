@@ -31,12 +31,12 @@ def test_display_simple_hello_world(driver, display):
 
     display(Hello)
 
-    assert driver.find_element_by_id("hello")
+    assert driver.find_element("id", "hello")
 
     # test that we can reconnect succefully
     driver.refresh()
 
-    assert driver.find_element_by_id("hello")
+    assert driver.find_element("id", "hello")
 
 
 def test_display_simple_click_counter(driver, driver_wait, display):
@@ -56,7 +56,7 @@ def test_display_simple_click_counter(driver, driver_wait, display):
 
     display(Counter)
 
-    client_counter = driver.find_element_by_id("counter")
+    client_counter = driver.find_element("id", "counter")
 
     for i in range(3):
         driver_wait.until(
@@ -69,4 +69,4 @@ def test_module_from_template(driver, display):
     victory = idom.web.module_from_template("react", "victory-bar@35.4.0")
     VictoryBar = idom.web.export(victory, "VictoryBar")
     display(VictoryBar)
-    driver.find_element_by_class_name("VictoryContainer")
+    driver.find_element("class_name", "VictoryContainer")
