@@ -16,10 +16,25 @@ PUBLIC_API_REFERENCE_FILE = AUTOGEN_DIR / "user-apis.rst"
 PRIVATE_API_REFERENCE_FILE = AUTOGEN_DIR / "dev-apis.rst"
 
 
-PUBLIC_TITLE = "User API\n=============\n"
-PUBLIC_MISC_TITLE = "Misc Modules\n------------\n"
-PRIVATE_TITLE = "Dev API\n==============\n"
-PRIVATE_MISC_TITLE = "Misc Dev Modules\n----------------\n"
+PUBLIC_TITLE = """\
+User API
+========
+"""
+
+PUBLIC_MISC_TITLE = """\
+Misc Modules
+------------
+"""
+
+PRIVATE_TITLE = """\
+Dev API
+=======
+"""
+
+PRIVATE_MISC_TITLE = """\
+Misc Dev Modules
+----------------
+"""
 
 AUTODOC_TEMPLATE = ".. automodule:: {module}\n    :members:\n"
 

@@ -1,5 +1,5 @@
 User API
-=============
+========
 
 .. automodule:: idom.config
     :members:
