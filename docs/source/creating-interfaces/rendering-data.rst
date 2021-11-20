@@ -52,7 +52,7 @@ This list of elements can then be passed into a parent ``<ul>`` element:
 
 The last thing we have to do is return this from a component:
 
-.. example:: creating_interfaces.todo_from_list
+.. example:: creating_interfaces/todo_from_list
     :activate-result:
 
 
@@ -105,7 +105,7 @@ and then ordering the elements based on the ``priority``:
 
 We could then add this code to our ``DataList`` component:
 
-.. example:: creating_interfaces.sorted_and_filtered_todo_list
+.. example:: creating_interfaces/sorted_and_filtered_todo_list
     :activate-result:
 
 
@@ -149,7 +149,7 @@ change. In our case, if we decided to change whether we want to ``filter_by_prio
 or ``sort_by_priority`` the items in our ``<ul>`` element would change. Given this,
 here's how we'd change our component:
 
-.. example:: creating_interfaces.todo_list_with_keys
+.. example:: creating_interfaces/todo_list_with_keys
     :activate-result:
 
 

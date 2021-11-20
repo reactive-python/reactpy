@@ -12,9 +12,13 @@ sculpture_data = json.loads(DATA_PATH.read_text())
 @component
 def Gallery():
     index, set_index = hooks.use_state(0)
+    show_more, set_show_more = hooks.use_state(False)
 
-    def handle_click(event):
+    def handle_next_click(event):
         set_index(index + 1)
+
+    def handle_more_click(event):
+        set_show_more(not show_more)
 
     bounded_index = index % len(sculpture_data)
     sculpture = sculpture_data[bounded_index]
@@ -25,11 +29,17 @@ def Gallery():
     url = sculpture["url"]
 
     return html.div(
-        html.button({"onClick": handle_click}, "Next"),
+        html.button({"onClick": handle_next_click}, "Next"),
         html.h2(name, " by ", artist),
         html.p(f"({bounded_index + 1} or {len(sculpture_data)})"),
         html.img({"src": url, "alt": alt, "style": {"height": "200px"}}),
-        html.p(description),
+        html.div(
+            html.button(
+                {"onClick": handle_more_click},
+                f"{'Show' if show_more else 'Hide'} details",
+            ),
+            (html.p(description) if show_more else ""),
+        ),
     )
 
 

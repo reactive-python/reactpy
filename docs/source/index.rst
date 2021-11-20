@@ -119,7 +119,7 @@ components>`. In the sections that follow you'll learn how these UI elements are
 and organized into components. Then, you'll use this knowledge to create interfaces from
 raw data:
 
-.. example:: creating_interfaces.todo_list_with_keys
+.. example:: creating_interfaces/todo_list_with_keys
     :activate-result:
 
 .. card::
