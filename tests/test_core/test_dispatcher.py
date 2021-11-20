@@ -176,3 +176,45 @@ async def test_private_create_shared_view_dispatcher_cleans_up_patch_queues():
         # queue has not been cleaned up and that the patch we just pushed was added to
         # it.
         assert not sys.getrefcount(patch) > patch_ref_count
+
+
+async def test_dispatcher_handles_more_than_one_event_at_a_time():
+    block_and_never_set = asyncio.Event()
+    will_block = asyncio.Event()
+    second_event_did_execute = asyncio.Event()
+
+    blocked_handler = StaticEventHandler()
+    non_blocked_handler = StaticEventHandler()
+
+    @idom.component
+    def ComponentWithTwoEventHandlers():
+        @blocked_handler.use
+        async def block_forever():
+            will_block.set()
+            await block_and_never_set.wait()
+
+        @non_blocked_handler.use
+        async def handle_event():
+            second_event_did_execute.set()
+
+        return idom.html.div(
+            idom.html.button({"onClick": block_forever}),
+            idom.html.button({"onClick": handle_event}),
+        )
+
+    send_queue = asyncio.Queue()
+    recv_queue = asyncio.Queue()
+
+    asyncio.ensure_future(
+        dispatch_single_view(
+            idom.Layout(ComponentWithTwoEventHandlers()),
+            send_queue.put,
+            recv_queue.get,
+        )
+    )
+
+    await recv_queue.put(LayoutEvent(blocked_handler.target, []))
+    await will_block.wait()
+
+    await recv_queue.put(LayoutEvent(non_blocked_handler.target, []))
+    await second_event_did_execute.wait()
