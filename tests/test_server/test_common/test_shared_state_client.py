@@ -54,21 +54,21 @@ def test_shared_client_state(create_driver, server_mount_point):
     driver_1.get(server_mount_point.url())
     driver_2.get(server_mount_point.url())
 
-    client_1_button = driver_1.find_element_by_id("incr-button")
-    client_2_button = driver_2.find_element_by_id("incr-button")
+    client_1_button = driver_1.find_element("id", "incr-button")
+    client_2_button = driver_2.find_element("id", "incr-button")
 
-    driver_1.find_element_by_id("count-is-0")
-    driver_2.find_element_by_id("count-is-0")
+    driver_1.find_element("id", "count-is-0")
+    driver_2.find_element("id", "count-is-0")
 
     client_1_button.click()
 
-    driver_1.find_element_by_id("count-is-1")
-    driver_2.find_element_by_id("count-is-1")
+    driver_1.find_element("id", "count-is-1")
+    driver_2.find_element("id", "count-is-1")
 
     client_2_button.click()
 
-    driver_1.find_element_by_id("count-is-2")
-    driver_2.find_element_by_id("count-is-2")
+    driver_1.find_element("id", "count-is-2")
+    driver_2.find_element("id", "count-is-2")
 
     assert was_garbage_collected.wait(1)
     was_garbage_collected.clear()
@@ -79,18 +79,18 @@ def test_shared_client_state(create_driver, server_mount_point):
     driver_1.refresh()
     driver_2.refresh()
 
-    client_1_button = driver_1.find_element_by_id("incr-button")
-    client_2_button = driver_2.find_element_by_id("incr-button")
+    client_1_button = driver_1.find_element("id", "incr-button")
+    client_2_button = driver_2.find_element("id", "incr-button")
 
     client_1_button.click()
 
-    driver_1.find_element_by_id("count-is-3")
-    driver_2.find_element_by_id("count-is-3")
+    driver_1.find_element("id", "count-is-3")
+    driver_2.find_element("id", "count-is-3")
 
     client_1_button.click()
 
-    driver_1.find_element_by_id("count-is-4")
-    driver_2.find_element_by_id("count-is-4")
+    driver_1.find_element("id", "count-is-4")
+    driver_2.find_element("id", "count-is-4")
 
     client_2_button.click()
 
