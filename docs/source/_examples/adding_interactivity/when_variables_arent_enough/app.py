@@ -16,7 +16,7 @@ sculpture_data = json.loads(DATA_PATH.read_text())
 
 
 @component
-def App():
+def Gallery():
     index = 0
 
     def handle_click(event):
@@ -39,4 +39,4 @@ def App():
     )
 
 
-run(App)
+run(Gallery)

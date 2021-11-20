@@ -59,7 +59,7 @@ IDOM lets you add event handlers to your parts of the interface. This means that
 define  synchronous or asynchronous functions that are triggered when a particular user
 interaction occurs like clicking, hovering, of focusing on form inputs, and more.
 
-.. example:: adding_interactivity.button_prints_message
+.. example:: adding_interactivity/button_prints_message
     :activate-result:
 
 .. card::

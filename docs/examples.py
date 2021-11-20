@@ -30,7 +30,7 @@ def all_example_names() -> set[str]:
             path = path.parent
         else:
             path = path.with_suffix("")
-        names.add(".".join(path.parts))
+        names.add("/".join(path.parts))
     return names
 
 
@@ -89,12 +89,13 @@ def get_example_files_by_name(name: str) -> list[Path]:
     path = _get_root_example_path_by_name(name)
     if path.is_dir():
         return list(path.glob("*"))
-    path = path.with_suffix(".py")
-    return [path] if path.exists() else []
+    else:
+        path = path.with_suffix(".py")
+        return [path] if path.exists() else []
 
 
 def _get_root_example_path_by_name(name: str) -> Path:
-    return EXAMPLES_DIR.joinpath(*name.split("."))
+    return EXAMPLES_DIR.joinpath(*name.split("/"))
 
 
 def _printout_viewer():

@@ -16,7 +16,7 @@ Below is a gallery of images about sculpture. Clicking the "Next" button should
 increment the ``index`` and, as a result, change what image is displayed. However, this
 does not work:
 
-.. example:: adding_interactivity.when_variables_arent_enough
+.. example:: adding_interactivity/when_variables_arent_enough
     :activate-result:
 
 .. note::
@@ -84,7 +84,7 @@ After making those changes we should get:
 We'll talk more about what this is doing :ref:`shortly <your first hook>`, but for
 now let's just verify that this does in fact fix the problems from before:
 
-.. example:: adding_interactivity.adding_state_variable
+.. example:: adding_interactivity/adding_state_variable
     :activate-result:
 
 
@@ -135,7 +135,7 @@ the convention makes things easier to understand across projects.
 ----
 
 To understand how this works in context, let's break down our example by examining key
-moments in the execution of the ``App`` component. Each numbered tab in the section
+moments in the execution of the ``Gallery`` component. Each numbered tab in the section
 below highlights a line of code where something of interest occurs:
 
 .. hint::
@@ -154,9 +154,9 @@ below highlights a line of code where something of interest occurs:
             :lines: 12-33
             :emphasize-lines: 2
 
-        At this point, we've just begun to render the ``App`` component. As yet, IDOM is
-        not aware that this component has any state or what view it will display. This
-        will change in a moment though when we move to the next line...
+        At this point, we've just begun to render the ``Gallery`` component. As yet,
+        IDOM is not aware that this component has any state or what view it will
+        display. This will change in a moment though when we move to the next line...
 
     .. tab-item:: 2
 
@@ -168,8 +168,8 @@ below highlights a line of code where something of interest occurs:
             :lines: 12-33
             :emphasize-lines: 3
 
-        The ``App`` component has just declared some state. IDOM now knows that it must
-        remember the ``index`` and trigger an update of this component when
+        The ``Gallery`` component has just declared some state. IDOM now knows that it
+        must remember the ``index`` and trigger an update of this component when
         ``set_index`` is called. Currently the value of ``index`` is ``0`` as per the
         default value given to ``use_state``. Thus, the resulting view will display
         information about the first item in our ``sculpture_data`` list.
@@ -186,7 +186,7 @@ below highlights a line of code where something of interest occurs:
 
         We've now defined an event handler that we intend to assign to a button in the
         view. This will respond once the user clicks that button. The action this
-        handler performs is to update the value of ``index`` and schedule our ``App``
+        handler performs is to update the value of ``index`` and schedule our ``Gallery``
         component to update.
 
     .. tab-item:: 4
@@ -229,11 +229,11 @@ below highlights a line of code where something of interest occurs:
             :lines: 12-33
             :emphasize-lines: 6
 
-        We've just now told IDOM that we want to update the state of our ``App`` and
+        We've just now told IDOM that we want to update the state of our ``Gallery`` and
         that it needs to be re-rendered. More specifically, we are incrementing its
-        ``index``, and once ``App`` re-renders the index *will* be ``1``. Importantly,
-        at this point, **the value of ``index`` is still ``0``**! This will only change
-        once the component begins to re-render.
+        ``index``, and once ``Gallery`` re-renders the index *will* be ``1``.
+        Importantly, at this point, **the value of ``index`` is still ``0``**! This will
+        only change once the component begins to re-render.
 
     .. tab-item:: 7
 
@@ -245,7 +245,7 @@ below highlights a line of code where something of interest occurs:
             :lines: 12-33
             :emphasize-lines: 2
 
-        The scheduled re-render of ``App`` has just begun. IDOM has now updated its
+        The scheduled re-render of ``Gallery`` has just begun. IDOM has now updated its
         internal state store such that, the next time we call ``use_state`` we will get
         back the updated value of ``index``.
 
@@ -288,5 +288,65 @@ below highlights a line of code where something of interest occurs:
             prevent ``index`` from incrementing to infinity, but to keep things simple
             in this examples, we've kept this logic separate.
 
+
 Multiple State Declarations
 ---------------------------
+
+The powerful thing about hooks like :func:`~idom.core.hooks.use_state` is that you're
+not limited to just one state declaration. You can call ``use_state()`` as many times as
+you need to in one component. For example, in the example below we've added a
+``show_more`` state variable along with a few other modifications (e.g. renaming
+``handle_click``) to make the description for each sculpture optionally displayed. Only
+when the user clicks the "Show details" button is this description shown:
+
+.. example:: adding_interactivity/multiple_state_variables
+    :activate-result:
+
+It's generally a good idea to define separate state variables if the data they represent
+is unrelated. In this case, ``index`` corresponds to what sculpture information is being
+displayed and ``show_more`` is solely concerned with whether the description for a given
+sculpture is shown. Put other way ``index`` is concerned with *what* information is
+displayed while ``show_more`` is concerned with *how* it is displayed. Conversely
+though, if you have a form with many fields, it probably makes sense to have a single
+objec that holds the data for all the fields rather than an object per-field.
+
+.. note::
+
+    This topic is discussed more in the :ref:`structuring your state` section.
+
+
+State is Isolated and Private
+-----------------------------
+
+State is local to a component instance on the screen. In other words, if you render the
+same component twice, each copy will have completely isolated state! Changing one of
+them will not affect the other.
+
+In this example, the ``Gallery`` component from earlier is rendered twice with no
+changes to its logic. Try clicking the buttons inside each of the galleries. Notice that
+their state is independent:
+
+.. example:: adding_interactivity/isolated_state
+    :activate-result:
+    :result-is-default-tab:
+
+This is what makes state different from regular variables that you might declare at the
+top of your module. State is not tied to a particular function call or a place in the
+code, but it’s “local” to the specific place on the screen. You rendered two ``Gallery``
+components, so their state is stored separately.
+
+Also notice how the Page component doesn’t “know” anything about the Gallery state or
+even whether it has any. Unlike props, state is fully private to the component declaring
+it. The parent component can’t change it. This lets you add state to any component or
+remove it without impacting the rest of the components.
+
+.. card::
+    :link: /managing-state/shared-component-state
+    :link-type: doc
+
+    :octicon:`book` Read More
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    What if you wanted both galleries to keep their states in sync? The right way to do
+    it in IDOM is to remove state from child components and add it to their closest
+    shared parent.
