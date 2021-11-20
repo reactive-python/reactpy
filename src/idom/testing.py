@@ -31,7 +31,7 @@ from idom.config import IDOM_WED_MODULES_DIR
 from idom.core.events import EventHandler, to_event_handler_function
 from idom.core.hooks import LifeCycleHook, current_hook
 from idom.server.prefab import hotswap_server
-from idom.server.proto import Server, ServerFactory
+from idom.server.proto import ServerFactory, ServerType
 from idom.server.utils import find_available_port
 
 
@@ -60,7 +60,7 @@ def create_simple_selenium_web_driver(
 
 _Self = TypeVar("_Self", bound="ServerMountPoint[Any, Any]")
 _Mount = TypeVar("_Mount")
-_Server = TypeVar("_Server", bound=Server[Any])
+_Server = TypeVar("_Server", bound=ServerType[Any])
 _App = TypeVar("_App")
 _Config = TypeVar("_Config")
 
