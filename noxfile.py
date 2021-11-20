@@ -119,6 +119,13 @@ def test(session: Session) -> None:
 
 
 @nox.session
+def test_short(session: Session) -> None:
+    """Run the complete test suite"""
+    session.notify("test_suite", posargs=session.posargs)
+    session.notify("test_docs")
+
+
+@nox.session
 @apply_standard_pip_upgrades
 def test_suite(session: Session) -> None:
     """Run the Python-based test suite"""

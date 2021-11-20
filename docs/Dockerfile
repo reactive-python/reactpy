@@ -27,18 +27,24 @@ ADD README.md ./
 
 RUN pip install -e .[all]
 
+# Add License
+# -----------
+Add LICENSE /app/
+
 # Build the Docs
 # --------------
+ADD run_docs.py ./
+ADD docs/__init__.py ./docs/
 ADD docs/app.py ./docs/
 ADD docs/examples.py ./docs/
 ADD docs/source ./docs/source
 
 RUN pip install -r requirements/build-docs.txt
-RUN sphinx-build -b html docs/source docs/build
+RUN sphinx-build -W -b html docs/source docs/build
 
 # Define Entrypoint
 # -----------------
 ENV PORT 5000
 ENV IDOM_DEBUG_MODE=1
 ENV IDOM_CHECK_VDOM_SPEC=0
-CMD python -c "import docs; docs.run()"
+CMD python scripts/run_docs.py

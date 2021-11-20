@@ -54,7 +54,7 @@ jobs:
       - name: Install Python Dependencies
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
-        run: nox -s test -- --headless --no-cov
+        run: nox -s test_short -- --headless --no-cov
   test-javascript:
     runs-on: ubuntu-latest
     steps:
