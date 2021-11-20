@@ -25,7 +25,7 @@ bottom is the corresponding code to create it in IDOM:
     from idom import html
 
     layout = html.div(
-        html.h1("My Todo List")
+        html.h1("My Todo List"),
         html.ul(
             html.li("Build a cool new app"),
             html.li("Share it with the world!"),
@@ -36,13 +36,14 @@ Since we've captured our HTML into out the ``layout`` variable, we can inspect w
 contains. And, as it turns out, it holds a dictionary. Printing it produces the
 following output:
 
+.. testsetup::
+
+    from pprint import pprint
+    print = lambda *args, **kwargs: pprint(*args, **kwargs, sort_dicts=False)
+
 .. testcode::
 
-    print(layout)
-
-.. testoutput::
-
-    {
+    assert layout == {
         'tagName': 'div',
         'children': [
             {

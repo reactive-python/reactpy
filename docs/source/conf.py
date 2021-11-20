@@ -7,7 +7,7 @@
 # http://www.sphinx-doc.org/en/master/config
 
 import sys
-from doctest import NORMALIZE_WHITESPACE
+from doctest import DONT_ACCEPT_TRUE_FOR_1, ELLIPSIS, NORMALIZE_WHITESPACE
 from pathlib import Path
 
 
@@ -105,7 +105,7 @@ autodoc_typehints = "description"
 
 # -- Doc Test Configuration -------------------------------------------------------
 
-doctest_default_flags = NORMALIZE_WHITESPACE
+doctest_default_flags = NORMALIZE_WHITESPACE | ELLIPSIS | DONT_ACCEPT_TRUE_FOR_1
 
 # -- Extension Configuration ------------------------------------------------------
 

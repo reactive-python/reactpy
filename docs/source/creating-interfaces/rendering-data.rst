@@ -83,19 +83,20 @@ and then ordering the elements based on the ``priority``:
 
 .. testcode::
 
+    x = 1
+
+.. testcode::
+
     filter_by_priority = 1
     sort_by_priority = True
 
+    filtered_tasks = tasks
     if filter_by_priority is not None:
-        tasks = [t for t in tasks if t["priority"] <= filter_by_priority]
+        filtered_tasks = [t for t in filtered_tasks if t["priority"] <= filter_by_priority]
     if sort_by_priority:
-        tasks = list(sorted(tasks, key=lambda t: t["priority"]))
+        filtered_tasks = list(sorted(filtered_tasks, key=lambda t: t["priority"]))
 
-    print(tasks)
-
-.. testoutput::
-
-    [
+    assert filtered_tasks == [
         {'text': 'Make breakfast', 'priority': 0},
         {'text': 'Feed the dog', 'priority': 0},
         {'text': 'Go on a run', 'priority': 1},
@@ -181,7 +182,7 @@ exact same way that it does for standard HTML elements:
         {"id": 7, "text": "Read a book"},
     ]
 
-    list_element = [ListItem(t["text], key=t["id"]) for t in tasks]
+    list_element = [ListItem(t["text"], key=t["id"]) for t in tasks]
 
 
 .. warning::
@@ -199,6 +200,8 @@ exact same way that it does for standard HTML elements:
 
     .. testoutput::
 
+        Traceback (most recent call last):
+        ...
         TypeError: Component render function ... uses reserved parameter 'key'
 
 
