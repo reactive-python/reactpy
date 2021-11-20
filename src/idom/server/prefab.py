@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional, Tuple, TypeVar
 from idom.core.proto import ComponentConstructor
 from idom.widgets import MountFunc, MultiViewMount, hotswap, multiview
 
-from .proto import Server, ServerFactory
+from .proto import ServerFactory, ServerType
 from .utils import find_available_port, find_builtin_server_type
 
 
@@ -28,7 +28,7 @@ def run(
     run_kwargs: Optional[Dict[str, Any]] = None,
     app: Optional[Any] = None,
     daemon: bool = False,
-) -> Server[_App]:
+) -> ServerType[_App]:
     """A utility for quickly running a render server with minimal boilerplate
 
     Parameters:
@@ -77,7 +77,7 @@ def multiview_server(
     server_config: Optional[_Config] = None,
     run_kwargs: Optional[Dict[str, Any]] = None,
     app: Optional[Any] = None,
-) -> Tuple[MultiViewMount, Server[_App]]:
+) -> Tuple[MultiViewMount, ServerType[_App]]:
     """Set up a server where views can be dynamically added.
 
     In other words this allows the user to work with IDOM in an imperative manner. Under
@@ -120,7 +120,7 @@ def hotswap_server(
     run_kwargs: Optional[Dict[str, Any]] = None,
     app: Optional[Any] = None,
     sync_views: bool = False,
-) -> Tuple[MountFunc, Server[_App]]:
+) -> Tuple[MountFunc, ServerType[_App]]:
     """Set up a server where views can be dynamically swapped out.
 
     In other words this allows the user to work with IDOM in an imperative manner. Under

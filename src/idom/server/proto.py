@@ -20,11 +20,11 @@ class ServerFactory(Protocol[_App, _Config]):
         constructor: ComponentConstructor,
         config: Optional[_Config] = None,
         app: Optional[_App] = None,
-    ) -> Server[_App]:
+    ) -> ServerType[_App]:
         ...
 
 
-class Server(Protocol[_App]):
+class ServerType(Protocol[_App]):
     """A thin wrapper around a web server that provides a common operational interface"""
 
     app: _App
