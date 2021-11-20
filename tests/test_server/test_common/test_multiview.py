@@ -40,10 +40,10 @@ def test_multiview_server(driver_get, driver, server_mount_point):
     )
 
     driver_get({"view_id": manual_id})
-    driver.find_element("id", "e1")
+    driver.find_element_by_id("e1")
 
     driver_get({"view_id": auto_view_id})
-    driver.find_element("id", "e2")
+    driver.find_element_by_id("e2")
 
     server_mount_point.mount.remove(auto_view_id)
     server_mount_point.mount.remove(manual_id)
