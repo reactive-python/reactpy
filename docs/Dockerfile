@@ -33,7 +33,6 @@ Add LICENSE /app/
 
 # Build the Docs
 # --------------
-ADD run_docs.py ./
 ADD docs/__init__.py ./docs/
 ADD docs/app.py ./docs/
 ADD docs/examples.py ./docs/
