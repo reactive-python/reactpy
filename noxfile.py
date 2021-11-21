@@ -85,6 +85,7 @@ def docs(session: Session) -> None:
 
 @nox.session
 def docs_in_docker(session: Session) -> None:
+    """Build a docker image for the documentation and run it to mimic production"""
     session.run(
         "docker",
         "build",
@@ -120,7 +121,7 @@ def test(session: Session) -> None:
 
 @nox.session
 def test_short(session: Session) -> None:
-    """Run the complete test suite"""
+    """Run a shortened version of the test suite"""
     session.notify("test_suite", posargs=session.posargs)
     session.notify("test_docs")
 
@@ -192,6 +193,7 @@ def test_docs(session: Session) -> None:
 
 @nox.session
 def tag(session: Session):
+    """Create a new git tag"""
     try:
         session.run(
             "git",
@@ -226,6 +228,7 @@ def tag(session: Session):
 
 @nox.session
 def update_version(session: Session) -> None:
+    """Update the version of all Python and Javascript packages in this repo"""
     if len(session.posargs) > 1:
         session.error("To many arguments")
 
