@@ -174,7 +174,7 @@ def vdom(
     if event_handlers:
         model["eventHandlers"] = event_handlers
 
-    if key:
+    if key != "":
         model["key"] = key
 
     if import_source is not None:
@@ -337,6 +337,6 @@ if IDOM_DEBUG_MODE.current:
                 if (isinstance(child, ComponentType) and child.key is None) or (
                     isinstance(child, Mapping) and "key" not in child
                 ):
-                    logger.error(f"Key not specified for dynamic child {child}")
+                    logger.error(f"Key not specified for child in list {child}")
 
         return False

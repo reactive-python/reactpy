@@ -336,7 +336,7 @@ def test_debug_log_cannot_verify_keypath_for_genereators(caplog):
 def test_debug_log_dynamic_children_must_have_keys(caplog):
     idom.vdom("div", [idom.vdom("div")])
     assert len(caplog.records) == 1
-    assert caplog.records[0].message.startswith("Key not specified for dynamic child")
+    assert caplog.records[0].message.startswith("Key not specified for child")
 
     caplog.records.clear()
 
@@ -346,4 +346,4 @@ def test_debug_log_dynamic_children_must_have_keys(caplog):
 
     idom.vdom("div", [MyComponent()])
     assert len(caplog.records) == 1
-    assert caplog.records[0].message.startswith("Key not specified for dynamic child")
+    assert caplog.records[0].message.startswith("Key not specified for child")
