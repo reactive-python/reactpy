@@ -29,38 +29,42 @@ Adding Interactivity
             :link: components-with-state
             :link-type: doc
 
-            ...
+            Allow components to change what they display by saving and updating their
+            state.
 
         .. grid-item-card:: :octicon:`device-camera-video` State as a Snapshot
             :link: state-as-a-snapshot
             :link-type: doc
 
-            ...
+            Under construction 🚧
 
         .. grid-item-card:: :octicon:`issue-opened` Dangers of Mutability
             :link: dangers-of-mutability
             :link-type: doc
 
-            ...
+            Under construction 🚧
 
         .. grid-item-card:: :octicon:`versions` Batched Updates
             :link: batched-updates
             :link-type: doc
 
-            ...
-
-...
+            Under construction 🚧
 
 
 Section 1: Responding to Events
 -------------------------------
 
 IDOM lets you add event handlers to your parts of the interface. This means that you can
-define  synchronous or asynchronous functions that are triggered when a particular user
+define synchronous or asynchronous functions that are triggered when a particular user
 interaction occurs like clicking, hovering, of focusing on form inputs, and more.
 
 .. example:: adding_interactivity/button_prints_message
     :activate-result:
+
+It may feel weird to define a function within a function like this, but doing so allows
+the ``handle_event`` function to access information from within the scope of the
+component. That's important if you want to use any arguments that may have beend passed
+your component in the handler.
 
 .. card::
     :link: responding-to-events
@@ -76,6 +80,23 @@ interaction occurs like clicking, hovering, of focusing on form inputs, and more
 Section 2: Components with State
 --------------------------------
 
+Components often need to change what’s on the screen as a result of an interaction. For
+example, typing into the form should update the input field, clicking a “Comment” button
+should bring up a text input field, clicking “Buy” should put a product in the shopping
+cart. Components need to “remember” things like the current input value, the current
+image, the shopping cart. In IDOM, this kind of component-specific memory is created and
+updated with a "hook" called ``use_state()`` that creates a **state variable** and
+**state setter** respectively:
+
+.. example:: adding_interactivity/adding_state_variable
+    :activate-result:
+
+In IDOM, ``use_state``, as well as any other function whose name starts with ``use``, is
+called a "hook". These are special functions that should only be called while IDOM is
+:ref:`rendering <the rendering process>`. They let you "hook into" the different
+capabilities of IDOM's components of which ``use_state`` is just one (well get into the
+other :ref:`later <managing state>`).
+
 .. card::
     :link: components-with-state
     :link-type: doc
@@ -83,7 +104,7 @@ Section 2: Components with State
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    ...
+    Allow components to change what they display by saving and updating their state.
 
 
 Section 3: State as a Snapshot

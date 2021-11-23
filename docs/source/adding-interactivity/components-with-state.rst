@@ -4,8 +4,8 @@ Components With State
 Components often need to change what’s on the screen as a result of an interaction. For
 example, typing into the form should update the input field, clicking “next” on an image
 carousel should change which image is displayed, clicking “buy” should put a product in
-the shopping cart. Components need to “remember” things: the current input value, the
-current image, the shopping cart. In IDOM, this kind of component-specific memory is
+the shopping cart. Components need to “remember” things like the current input value,
+the current image, the shopping cart. In IDOM, this kind of component-specific memory is
 called state.
 
 
@@ -52,14 +52,15 @@ which provides:
 Adding State to Components
 --------------------------
 
-To use the ``use_state()`` hook to create a state variable and setter in the
-:ref:`example above <When Variables Aren't Enough>` we'll first import it:
+To create a state variable and state setter with :func:`~idom.core.hooks.use_state` hook
+as described above, we'll begin by importing it:
 
 .. testcode::
 
     from idom import use_state
 
-Then we'll make the following changes to our code from before:
+Then we'll make the following changes to our code :ref:`from before <When Variables
+Aren't Enough>`:
 
 .. code-block:: diff
 

@@ -1,5 +1,7 @@
-Managing State
-==============
+.. _Managing State:
+
+Managing State 🚧
+=================
 
 .. toctree::
     :hidden:
@@ -11,6 +13,4 @@ Managing State
     when-to-reset-state
     writing-tests
 
-.. note::
-
-    Under construction 👷
+Under construction 🚧

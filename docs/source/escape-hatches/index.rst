@@ -1,5 +1,7 @@
-Escape Hatches
-==============
+.. _Escape Hatches:
+
+Escape Hatches 🚧
+=================
 
 .. toctree::
     :hidden:
@@ -12,4 +14,4 @@ Escape Hatches
 
 .. note::
 
-    Under construction 👷
+    Under construction 🚧

@@ -10,12 +10,12 @@ IDOM
     adding-interactivity/index
     managing-state/index
     escape-hatches/index
+    understanding-idom/index
 
 .. toctree::
     :hidden:
     :caption: Other Resources
 
-    understanding-idom/index
     developing-idom/index
     reference-material/index
     credits-and-licenses
@@ -135,6 +135,23 @@ raw data:
 Chapter 3 - :ref:`Adding Interactivity`
 ---------------------------------------
 
+Components often need to change what’s on the screen as a result of an interaction. For
+example, typing into the form should update the input field, clicking a “Comment” button
+should bring up a text input field, clicking “Buy” should put a product in the shopping
+cart. Components need to “remember” things like the current input value, the current
+image, the shopping cart. In IDOM, this kind of component-specific memory is created and
+updated with a "hook" called ``use_state()`` that creates a **state variable** and
+**state setter** respectively:
+
+.. example:: adding_interactivity/adding_state_variable
+    :activate-result:
+
+In IDOM, ``use_state``, as well as any other function whose name starts with ``use``, is
+called a "hook". These are special functions that should only be called while IDOM is
+:ref:`rendering <the rendering process>`. They let you "hook into" the different
+capabilities of IDOM's components of which ``use_state`` is just one (well get into the
+other :ref:`later <managing state>`).
+
 .. card::
     :link: adding-interactivity/index
     :link-type: doc
@@ -142,7 +159,7 @@ Chapter 3 - :ref:`Adding Interactivity`
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    ...
+    Under construction 🚧
 
 
 
@@ -156,7 +173,7 @@ Chapter 4 - :ref:`Managing State`
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    ...
+    Under construction 🚧
 
 
 
@@ -170,5 +187,18 @@ Chapter 5 - :ref:`Escape Hatches`
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    ...
+    Under construction 🚧
+
+
+Chapter 6 - :ref:`Understanding IDOM`
+-------------------------------------
+
+.. card::
+    :link: escape-hatches/index
+    :link-type: doc
+
+    :octicon:`book` Read More
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Under construction 🚧
 
