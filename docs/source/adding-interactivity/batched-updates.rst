@@ -1,4 +1,6 @@
-Batched Updates
-===============
+Batched Updates 🚧
+==================
 
-Under constructions :)
+.. note::
+
+    Under construction 🚧

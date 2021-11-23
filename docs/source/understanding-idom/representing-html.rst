@@ -3,7 +3,7 @@ Representing HTML
 
 .. note::
 
-    Under construction 👷
+    Under construction 🚧
 
 We've already discussed how to contruct HTML with IDOM in a :ref:`previous section <HTML
 with IDOM>`, but we skimmed over the question of the data structure we use to represent

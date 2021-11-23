@@ -162,7 +162,7 @@ JSON Patch
 
 Updates to VDOM modules are sent using the `JSON Patch`_ specification.
 
-... this section is still under construction :)
+... this section is still Under construction 🚧
 
 
 .. Links

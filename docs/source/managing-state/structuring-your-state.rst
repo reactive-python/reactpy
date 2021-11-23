@@ -3,4 +3,4 @@ Structuring Your State
 
 .. note::
 
-    Under construction 👷
+    Under construction 🚧

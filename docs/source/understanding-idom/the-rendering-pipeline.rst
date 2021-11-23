@@ -5,4 +5,4 @@ The Rendering Pipeline
 
 .. note::
 
-    Under construction 👷
+    Under construction 🚧

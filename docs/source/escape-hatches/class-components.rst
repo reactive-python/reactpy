@@ -3,4 +3,4 @@ Class Components
 
 .. note::
 
-    Under construction 👷
+    Under construction 🚧

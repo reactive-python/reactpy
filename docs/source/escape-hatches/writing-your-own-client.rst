@@ -3,4 +3,4 @@ Writing Your Own Client
 
 .. note::
 
-    Under construction 👷
+    Under construction 🚧

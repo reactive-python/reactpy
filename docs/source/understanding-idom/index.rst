@@ -1,5 +1,7 @@
-Understanding IDOM
-==================
+.. _Understanding IDOM:
+
+Understanding IDOM 🚧
+=====================
 
 .. toctree::
     :hidden:
