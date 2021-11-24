@@ -1,5 +1,7 @@
-Class Components
-================
+.. _Class Components:
+
+Class Components 🚧
+===================
 
 .. note::
 
