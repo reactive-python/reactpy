@@ -4,11 +4,7 @@ from os.path import getmtime
 from threading import Event, Thread
 
 import idom
-from docs.examples import (
-    all_example_names,
-    get_py_example_file_by_name,
-    load_one_example,
-)
+from docs.examples import all_example_names, get_example_files_by_name, load_one_example
 from idom.widgets import hotswap
 
 
@@ -42,7 +38,8 @@ def main():
         print(f"Loading example: {ex_name!r}")
         mount(load_one_example(ex_name))
 
-    on_file_change(get_py_example_file_by_name(ex_name), update_component)
+    for file in get_example_files_by_name(ex_name):
+        on_file_change(file, update_component)
 
     idom.run(component)
 

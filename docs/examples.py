@@ -103,16 +103,25 @@ def _printout_viewer():
 
     @idom.component
     def ShowPrint():
-        buffer = idom.hooks.use_state(StringIO)[0]
-        update = _use_force_update()
+        lines, set_lines = idom.hooks.use_state(())
 
-        @idom.hooks.use_effect
-        def add_buffer():
-            print_callbacks.add(buffer.write)
-            update()
+        def set_buffer(text: str):
+            if len(lines) > 10:
+                # limit printout size - protects against malicious actors
+                # plus it gives you some nice scrolling printout
+                set_lines(lines[1:] + (text,))
+            else:
+                set_lines(lines + (text,))
 
-        value = buffer.getvalue()
-        return idom.html.pre({"class": "printout"}, value) if value else idom.html.div()
+        @idom.hooks.use_effect(args=[set_buffer])
+        def add_set_buffer_callback():
+            print_callbacks.add(set_buffer)
+            return lambda: print_callbacks.remove(set_buffer)
+
+        if not lines:
+            return idom.html.div()
+        else:
+            return idom.html.pre({"class": "printout"}, "".join(lines))
 
     def capture_print(*args, **kwargs):
         buffer = StringIO()

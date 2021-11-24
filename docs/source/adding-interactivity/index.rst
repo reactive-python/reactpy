@@ -110,6 +110,17 @@ other :ref:`later <managing state>`).
 Section 3: State as a Snapshot
 ------------------------------
 
+As we :ref:`learned earlier <Components with State>`, state setters behave a little
+differently than you might exepct at first glance. Instead of updating your current
+handle on the corresponding state variable it schedules a re-render of the component
+which owns the state:
+
+.. code-block::
+
+    print(count)
+    set_count(count + 1)
+    print(count)
+
 .. card::
     :link: state-as-a-snapshot
     :link-type: doc
