@@ -1,3 +1,5 @@
+.. _Batched Updates:
+
 Batched Updates 🚧
 ==================
 

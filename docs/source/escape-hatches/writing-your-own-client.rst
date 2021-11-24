@@ -1,5 +1,7 @@
-Writing Your Own Client
-=======================
+.. _Writing Your Own Client:
+
+Writing Your Own Client 🚧
+==========================
 
 .. note::
 

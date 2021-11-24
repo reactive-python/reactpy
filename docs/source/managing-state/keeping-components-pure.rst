@@ -1,5 +1,7 @@
-Keeping Components Pure
-=======================
+.. _Keeping Components Pure:
+
+Keeping Components Pure 🚧
+==========================
 
 .. note::
 

@@ -1,5 +1,7 @@
-What Are Components?
-====================
+.. _What Are Components:
+
+What Are Components? 🚧
+=======================
 
 .. note::
 

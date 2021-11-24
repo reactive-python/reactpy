@@ -1,5 +1,7 @@
-Shared Component State
-======================
+.. _Shared Component State:
+
+Shared Component State 🚧
+=========================
 
 .. note::
 

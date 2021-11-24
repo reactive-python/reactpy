@@ -1,5 +1,7 @@
-Structuring Your State
-======================
+.. _Structuring Your State:
+
+Structuring Your State 🚧
+=========================
 
 .. note::
 
