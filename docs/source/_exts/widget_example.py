@@ -10,7 +10,7 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 from sphinx_design.tabs import TabSetDirective
 
-from docs.examples import EXAMPLES_DIR, get_example_files_by_name
+from docs.examples import SOURCE_DIR, get_example_files_by_name
 
 
 class WidgetExample(SphinxDirective):
@@ -25,13 +25,16 @@ class WidgetExample(SphinxDirective):
     }
 
     def run(self):
-        print(self.get_source_info())
         example_name = self.arguments[0]
         show_linenos = "linenos" in self.options
         live_example_is_default_tab = "result-is-default-tab" in self.options
         activate_result = "activate-result" in self.options
 
-        ex_files = get_example_files_by_name(example_name)
+        ex_files = get_example_files_by_name(
+            example_name,
+            # only used if example name starts with "/"
+            relative_to=self.get_source_info()[0],
+        )
         if not ex_files:
             src_file, line_num = self.get_source_info()
             raise ValueError(
@@ -108,7 +111,7 @@ def _literal_include(path: Path, linenos: bool):
         raise ValueError(f"Unknown extension type {path.suffix!r}")
 
     return _literal_include_template.format(
-        name=str(path.relative_to(EXAMPLES_DIR)),
+        name=str(path.relative_to(SOURCE_DIR)),
         language=language,
         options=_join_options(_get_file_options(path)),
     )
@@ -170,4 +173,4 @@ def _string_to_nested_lines(content):
 
 
 def setup(app: Sphinx) -> None:
-    app.add_directive("example", WidgetExample)
+    app.add_directive("idom", WidgetExample)

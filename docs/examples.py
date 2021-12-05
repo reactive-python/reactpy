@@ -10,7 +10,8 @@ from idom import ComponentType
 
 
 HERE = Path(__file__)
-EXAMPLES_DIR = HERE.parent / "source" / "_examples"
+SOURCE_DIR = HERE.parent / "source"
+CONF_FILE = SOURCE_DIR / "conf.py"
 RUN_IDOM = idom.run
 
 
@@ -21,24 +22,46 @@ def load_examples() -> Iterator[tuple[str, Callable[[], ComponentType]]]:
 
 def all_example_names() -> set[str]:
     names = set()
-    for file in EXAMPLES_DIR.rglob("*.py"):
-        if file.name != "app.py" and (file.parent / "app.py").exists():
-            # this isn't the main example file
-            continue
-        path = file.relative_to(EXAMPLES_DIR)
-        if path.name == "app.py":
-            path = path.parent
-        else:
-            path = path.with_suffix("")
-        names.add("/".join(path.parts))
+    for file in _iter_example_files():
+        path = file.parent if file.name == "app.py" else file
+        names.add("/".join(path.relative_to(SOURCE_DIR).with_suffix("").parts))
     return names
 
 
 def load_one_example(file_or_name: Path | str) -> Callable[[], ComponentType]:
     return lambda: (
-        # we do this to ensure each instance is fresh
+        # we use a lambda to ensure each instance is fresh
         _load_one_example(file_or_name)
     )
+
+
+def get_main_example_file_by_name(
+    name: str, relative_to: str | Path = SOURCE_DIR
+) -> Path:
+    path = _get_root_example_path_by_name(name, relative_to)
+    if path.is_dir():
+        return path / "app.py"
+    else:
+        return path.with_suffix(".py")
+
+
+def get_example_files_by_name(
+    name: str, relative_to: str | Path = SOURCE_DIR
+) -> list[Path]:
+    path = _get_root_example_path_by_name(name, relative_to)
+    if path.is_dir():
+        return list(path.glob("*"))
+    else:
+        path = path.with_suffix(".py")
+        return [path] if path.exists() else []
+
+
+def _iter_example_files() -> Iterator[Path]:
+    for path in SOURCE_DIR.iterdir():
+        if path.is_dir() and not path.name.startswith("_"):
+            yield from path.rglob("*.py")
+        elif path != CONF_FILE:
+            yield path
 
 
 def _load_one_example(file_or_name: Path | str) -> ComponentType:
@@ -95,25 +118,13 @@ def _load_one_example(file_or_name: Path | str) -> ComponentType:
     return Wrapper()
 
 
-def get_main_example_file_by_name(name: str) -> Path:
-    path = _get_root_example_path_by_name(name)
-    if path.is_dir():
-        return path / "app.py"
+def _get_root_example_path_by_name(name: str, relative_to: str | Path) -> Path:
+    if not name.startswith("/"):
+        rel_path = Path(relative_to)
+        rel_path = rel_path.parent if rel_path.is_file() else rel_path
     else:
-        return path.with_suffix(".py")
-
-
-def get_example_files_by_name(name: str) -> list[Path]:
-    path = _get_root_example_path_by_name(name)
-    if path.is_dir():
-        return list(path.glob("*"))
-    else:
-        path = path.with_suffix(".py")
-        return [path] if path.exists() else []
-
-
-def _get_root_example_path_by_name(name: str) -> Path:
-    return EXAMPLES_DIR.joinpath(*name.split("/"))
+        rel_path = SOURCE_DIR
+    return rel_path.joinpath(*name.split("/"))
 
 
 class _PrintBuffer:
