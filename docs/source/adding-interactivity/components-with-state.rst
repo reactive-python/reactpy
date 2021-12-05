@@ -17,7 +17,6 @@ increment the ``index`` and, as a result, change what image is displayed. Howeve
 does not work:
 
 .. idom:: _examples/when_variables_arent_enough
-    :activate-result:
 
 .. note::
 
@@ -86,7 +85,6 @@ We'll talk more about what this is doing :ref:`shortly <your first hook>`, but f
 now let's just verify that this does in fact fix the problems from before:
 
 .. idom:: _examples/adding_state_variable
-    :activate-result:
 
 
 Your First Hook
@@ -103,6 +101,8 @@ While hooks are just normal functions, but it's helpful to think of them as
 words, you'll "use" hooks at the top of your component in the same way you might
 "import" modules at the top of your Python files.
 
+
+.. _Introduction to use_state:
 
 Introduction to ``use_state``
 -----------------------------
@@ -301,7 +301,6 @@ you need to in one component. For example, in the example below we've added a
 when the user clicks the "Show details" button is this description shown:
 
 .. idom:: _examples/multiple_state_variables
-    :activate-result:
 
 It's generally a good idea to define separate state variables if the data they represent
 is unrelated. In this case, ``index`` corresponds to what sculpture information is being
@@ -328,8 +327,7 @@ changes to its logic. Try clicking the buttons inside each of the galleries. Not
 their state is independent:
 
 .. idom:: _examples/isolated_state
-    :activate-result:
-    :result-is-default-tab:
+        :result-is-default-tab:
 
 This is what makes state different from regular variables that you might declare at the
 top of your module. State is not tied to a particular function call or a place in the

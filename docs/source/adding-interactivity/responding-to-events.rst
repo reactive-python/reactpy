@@ -13,7 +13,6 @@ Adding Event Handlers
 To start out we'll just display a button that, for the moment, doesn't do anything:
 
 .. idom:: _examples/button_does_nothing
-    :activate-result:
 
 To add an event handler to this button we'll do three things:
 
@@ -22,7 +21,6 @@ To add an event handler to this button we'll do three things:
 3. Add an ``"onClick": handle_event`` attribute to the ``<button>`` element.
 
 .. idom:: _examples/button_prints_event
-    :activate-result:
 
 .. note::
 
@@ -35,7 +33,6 @@ component. That's important if you want to use any arguments that may have beend
 your component in the handler:
 
 .. idom:: _examples/button_prints_message
-    :activate-result:
 
 With all that said, since our ``handle_event`` function isn't doing that much work, if
 we wanted to streamline our component definition, we could pass in our event handler as a
@@ -81,7 +78,6 @@ common while still giving its usages customizablity. Consider the case below whe
 want to create a generic ``Button`` component that can be used for a variety of purpose:
 
 .. idom:: _examples/button_handler_as_arg
-    :activate-result:
 
 
 Async Event Handlers
@@ -95,7 +91,6 @@ message in the first button. However, because the event handler is asynchronous,
 handler for the second button is still able to respond:
 
 .. idom:: _examples/button_async_handlers
-    :activate-result:
 
 
 Event Data Serialization
@@ -109,7 +104,6 @@ elements. Normally this would be accessible via ``event.target.currenTime``, but
 it's simply passed in under the key ``currentTime``:
 
 .. idom:: _examples/audio_player
-    :activate-result:
 
 
 Client-side Event Behavior
@@ -130,7 +124,6 @@ using the :func:`~idom.core.events.event` decorator and setting ``prevent_defaul
 example, we can stop a link from going to the specified URL:
 
 .. idom:: _examples/prevent_default_event_actions
-    :activate-result:
 
 Unfortunately this means you cannot conditionally prevent default behavior in response
 to event data without writing :ref:`Custom Javascript Components`.
@@ -148,4 +141,3 @@ will cause the handler for the outer blue one to fire. Conversely, when it's off
 the handler for the red element will fire.
 
 .. idom:: _examples/stop_event_propagation
-    :activate-result:

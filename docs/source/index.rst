@@ -51,7 +51,6 @@ To get a rough idea of how to write apps in IDOM, take a look at the tiny `"hell
 <https://en.wikipedia.org/wiki/%22Hello,_World!%22_program>`__ application below:
 
 .. idom:: getting-started/_examples/hello_world
-    :activate-result:
 
 .. hint::
 
@@ -120,7 +119,6 @@ and organized into components. Then, you'll use this knowledge to create interfa
 raw data:
 
 .. idom:: creating-interfaces/_examples/todo_list_with_keys
-    :activate-result:
 
 .. card::
     :link: creating-interfaces/index
@@ -144,7 +142,6 @@ updated with a "hook" called ``use_state()`` that creates a **state variable** a
 **state setter** respectively:
 
 .. idom:: adding-interactivity/_examples/adding_state_variable
-    :activate-result:
 
 In IDOM, ``use_state``, as well as any other function whose name starts with ``use``, is
 called a "hook". These are special functions that should only be called while IDOM is
