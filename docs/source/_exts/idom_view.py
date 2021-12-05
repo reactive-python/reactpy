@@ -58,4 +58,4 @@ class IteractiveWidget(SphinxDirective):
 
 
 def setup(app: Sphinx) -> None:
-    app.add_directive("interactive-widget", IteractiveWidget)
+    app.add_directive("idom-view", IteractiveWidget)

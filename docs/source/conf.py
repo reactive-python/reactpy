@@ -62,9 +62,9 @@ extensions = [
     "async_doctest",
     "autogen_api_docs",
     "copy_vdom_json_schema",
-    "interactive_widget",
+    "idom_view",
     "patched_html_translator",
-    "widget_example",
+    "idom_example",
     "build_custom_js",
 ]
 

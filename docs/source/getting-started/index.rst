@@ -61,7 +61,7 @@ This should automatically open up a browser window to a page that looks like thi
 
 .. card::
 
-    .. interactive-widget:: _examples/sample_app
+    .. idom-view:: _examples/sample_app
         :activate-result:
 
 If you get a ``RuntimeError`` similar to the following:
