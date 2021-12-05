@@ -10,7 +10,11 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 from sphinx_design.tabs import TabSetDirective
 
-from docs.examples import SOURCE_DIR, get_example_files_by_name
+from docs.examples import (
+    SOURCE_DIR,
+    get_example_files_by_name,
+    get_normalized_example_name,
+)
 
 
 class WidgetExample(SphinxDirective):
@@ -25,16 +29,17 @@ class WidgetExample(SphinxDirective):
     }
 
     def run(self):
-        example_name = self.arguments[0]
+        example_name = get_normalized_example_name(
+            self.arguments[0],
+            # only used if example name starts with "/"
+            self.get_source_info()[0],
+        )
+
         show_linenos = "linenos" in self.options
         live_example_is_default_tab = "result-is-default-tab" in self.options
         activate_result = "activate-result" in self.options
 
-        ex_files = get_example_files_by_name(
-            example_name,
-            # only used if example name starts with "/"
-            relative_to=self.get_source_info()[0],
-        )
+        ex_files = get_example_files_by_name(example_name)
         if not ex_files:
             src_file, line_num = self.get_source_info()
             raise ValueError(
@@ -162,7 +167,7 @@ _interactive_widget_template = """
 
 
 _literal_include_template = """
-.. literalinclude:: /_examples/{name}
+.. literalinclude:: /{name}
     :language: {language}
     {options}
 """

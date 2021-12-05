@@ -1,15 +1,18 @@
 import os
 
 from docutils.nodes import raw
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
+from sphinx.util.docutils import SphinxDirective
+
+from docs.examples import get_normalized_example_name
 
 
 _IDOM_EXAMPLE_HOST = os.environ.get("IDOM_DOC_EXAMPLE_SERVER_HOST", "")
 _IDOM_STATIC_HOST = os.environ.get("IDOM_DOC_STATIC_SERVER_HOST", "/docs").rstrip("/")
 
 
-class IteractiveWidget(Directive):
+class IteractiveWidget(SphinxDirective):
 
     has_content = False
     required_arguments = 1
@@ -23,7 +26,11 @@ class IteractiveWidget(Directive):
     def run(self):
         IteractiveWidget._next_id += 1
         container_id = f"idom-widget-{IteractiveWidget._next_id}"
-        view_id = self.arguments[0]
+        view_id = get_normalized_example_name(
+            self.arguments[0],
+            # only used if example name starts with "/"
+            self.get_source_info()[0],
+        )
         return [
             raw(
                 "",

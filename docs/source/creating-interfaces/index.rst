@@ -94,7 +94,7 @@ create them we need to add an ``@component`` `decorator
 <https://realpython.com/primer-on-python-decorators/>`__. To see what this looks like in
 practice we'll quickly make a ``Photo`` component:
 
-.. example:: creating_interfaces/simple_photo
+.. idom:: _examples/simple_photo
     :activate-result:
 
 .. card::
@@ -117,7 +117,7 @@ from data in this way must be orgnized with :ref:`"keys" <Organizing Items With 
 One case where we might want to do this is if items in a todo list come from a list of
 data that we want to sort and filter:
 
-.. example:: creating_interfaces/todo_list_with_keys
+.. idom:: _examples/todo_list_with_keys
     :activate-result:
 
 .. card::

@@ -46,7 +46,7 @@ def main():
 
 def _example_name_input() -> str:
     if len(sys.argv) == 1:
-        print("No example argument given. Choose from:")
+        print("No example argument given. Provide an example's number or name:")
         _print_available_options()
         sys.exit(1)
 
@@ -58,7 +58,7 @@ def _example_name_input() -> str:
     try:
         ex_num = int(ex_name)
     except ValueError:
-        print(f"No example {ex_name!r} exists. Choose from:")
+        print(f"No example {ex_name!r} exists. Provide an example's number or name:")
         _print_available_options()
         sys.exit(1)
 

@@ -18,7 +18,7 @@ decorator in this way are known as **render function** and, by convention, we na
 like classes - with ``CamelCase``. So consider what we would do if we wanted to write,
 and then :ref:`display <Running IDOM>` a ``Photo`` component:
 
-.. example:: creating_interfaces/simple_photo
+.. idom:: _examples/simple_photo
     :activate-result:
 
 .. warning::
@@ -40,7 +40,7 @@ can define a "parent" ``Gallery`` component that returns one or more ``Profile``
 components. This is part of what makes components so powerful - you can define a
 component once and use it wherever and however you need to:
 
-.. example:: creating_interfaces/nested_photos
+.. idom:: _examples/nested_photos
     :activate-result:
 
 
@@ -52,7 +52,7 @@ parent components to pass information to child components. Where standard HTML e
 are parametrized by dictionaries, since components behave like typical functions you can
 give them positional and keyword arguments as you would normally:
 
-.. example:: creating_interfaces/parametrized_photos
+.. idom:: _examples/parametrized_photos
     :activate-result:
 
 
@@ -64,14 +64,14 @@ conditions. Let's imagine that we had a basic todo list where only some of the i
 have been completed. Below we have a basic implementation for such a list except that
 the ``Item`` component doesn't change based on whether it's ``done``:
 
-.. example:: creating_interfaces/todo_list
+.. idom:: _examples/todo_list
     :activate-result:
 
 Let's imagine that we want to add a ✔ to the items which have been marked ``done=True``.
 One way to do this might be to write an ``if`` statement where we return one ``li``
 element if the item is ``done`` and a different one if it's not:
 
-.. example:: creating_interfaces/bad_conditional_todo_list
+.. idom:: _examples/bad_conditional_todo_list
     :activate-result:
 
 As you can see this accomplishes our goal! However, notice how similar ``html.li(name, "
@@ -79,5 +79,5 @@ As you can see this accomplishes our goal! However, notice how similar ``html.li
 could make our code a little easier to read and maintain by using an "inline" ``if``
 statement.
 
-.. example:: creating_interfaces/good_conditional_todo_list
+.. idom:: _examples/good_conditional_todo_list
     :activate-result:

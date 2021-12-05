@@ -50,7 +50,7 @@ At a Glance
 To get a rough idea of how to write apps in IDOM, take a look at the tiny `"hello world"
 <https://en.wikipedia.org/wiki/%22Hello,_World!%22_program>`__ application below:
 
-.. example:: hello_world
+.. idom:: getting-started/_examples/hello_world
     :activate-result:
 
 .. hint::
@@ -119,7 +119,7 @@ components>`. In the sections that follow you'll learn how these UI elements are
 and organized into components. Then, you'll use this knowledge to create interfaces from
 raw data:
 
-.. example:: creating_interfaces/todo_list_with_keys
+.. idom:: creating-interfaces/_examples/todo_list_with_keys
     :activate-result:
 
 .. card::
@@ -143,7 +143,7 @@ image, the shopping cart. In IDOM, this kind of component-specific memory is cre
 updated with a "hook" called ``use_state()`` that creates a **state variable** and
 **state setter** respectively:
 
-.. example:: adding_interactivity/adding_state_variable
+.. idom:: adding-interactivity/_examples/adding_state_variable
     :activate-result:
 
 In IDOM, ``use_state``, as well as any other function whose name starts with ``use``, is
