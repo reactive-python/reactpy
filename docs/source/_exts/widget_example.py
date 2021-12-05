@@ -25,6 +25,7 @@ class WidgetExample(SphinxDirective):
     }
 
     def run(self):
+        print(self.get_source_info())
         example_name = self.arguments[0]
         show_linenos = "linenos" in self.options
         live_example_is_default_tab = "result-is-default-tab" in self.options

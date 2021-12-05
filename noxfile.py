@@ -253,6 +253,12 @@ def update_version(session: Session) -> None:
     session.install("-e", ".")
 
 
+@nox.session
+def build_js(session: Session) -> None:
+    session.chdir(ROOT / "src" / "client")
+    session.run("npm", "run", "build", external=True)
+
+
 @nox.session(reuse_venv=True)
 def latest_pull_requests(session: Session) -> None:
     """A basic script for outputing changelog info"""

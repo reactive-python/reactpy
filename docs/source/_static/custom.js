@@ -1483,7 +1483,17 @@ const targetTransformCategories = {
 };
 
 const targetTagCategories = {
-  hasValue: ["BUTTON", "INPUT", "OPTION", "LI", "METER", "PROGRESS", "PARAM"],
+  hasValue: [
+    "BUTTON",
+    "INPUT",
+    "OPTION",
+    "LI",
+    "METER",
+    "PROGRESS",
+    "PARAM",
+    "SELECT",
+    "TEXTAREA",
+  ],
   hasCurrentTime: ["AUDIO", "VIDEO"],
   hasFiles: ["INPUT"],
 };
@@ -1941,7 +1951,9 @@ function mountLayoutWithReconnectingWebSocket(
       mountState
     );
 
-    console.info(`IDOM WebSocket connection lost. Reconnecting in ${reconnectTimeout} seconds...`);
+    console.info(
+      `IDOM WebSocket connection lost. Reconnecting in ${reconnectTimeout} seconds...`
+    );
 
     setTimeout(function () {
       mountState.reconnectAttempts++;

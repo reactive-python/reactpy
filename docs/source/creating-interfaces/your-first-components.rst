@@ -15,8 +15,8 @@ At their core, components are just normal Python functions that return HTML. To 
 component you just need to add a ``@component`` `decorator
 <https://realpython.com/primer-on-python-decorators/>`__ to a function. Functions
 decorator in this way are known as **render function** and, by convention, we name them
-like classes - with ``CamelCase``. So for example, if we wanted to write, and then
-:ref:`display <Running IDOM>` a ``Photo`` component, we might write:
+like classes - with ``CamelCase``. So consider what we would do if we wanted to write,
+and then :ref:`display <Running IDOM>` a ``Photo`` component:
 
 .. example:: creating_interfaces/simple_photo
     :activate-result:

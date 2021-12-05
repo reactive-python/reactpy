@@ -39,7 +39,17 @@ const targetTransformCategories = {
 };
 
 const targetTagCategories = {
-  hasValue: ["BUTTON", "INPUT", "OPTION", "LI", "METER", "PROGRESS", "PARAM"],
+  hasValue: [
+    "BUTTON",
+    "INPUT",
+    "OPTION",
+    "LI",
+    "METER",
+    "PROGRESS",
+    "PARAM",
+    "SELECT",
+    "TEXTAREA",
+  ],
   hasCurrentTime: ["AUDIO", "VIDEO"],
   hasFiles: ["INPUT"],
 };
