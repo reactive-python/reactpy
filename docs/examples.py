@@ -35,8 +35,16 @@ def load_one_example(file_or_name: Path | str) -> Callable[[], ComponentType]:
     )
 
 
+def get_normalized_example_name(
+    name: str, relative_to: str | Path | None = SOURCE_DIR
+) -> str:
+    return "/".join(
+        _get_root_example_path_by_name(name, relative_to).relative_to(SOURCE_DIR).parts
+    )
+
+
 def get_main_example_file_by_name(
-    name: str, relative_to: str | Path = SOURCE_DIR
+    name: str, relative_to: str | Path | None = SOURCE_DIR
 ) -> Path:
     path = _get_root_example_path_by_name(name, relative_to)
     if path.is_dir():
@@ -46,7 +54,7 @@ def get_main_example_file_by_name(
 
 
 def get_example_files_by_name(
-    name: str, relative_to: str | Path = SOURCE_DIR
+    name: str, relative_to: str | Path | None = SOURCE_DIR
 ) -> list[Path]:
     path = _get_root_example_path_by_name(name, relative_to)
     if path.is_dir():
@@ -58,9 +66,10 @@ def get_example_files_by_name(
 
 def _iter_example_files() -> Iterator[Path]:
     for path in SOURCE_DIR.iterdir():
-        if path.is_dir() and not path.name.startswith("_"):
-            yield from path.rglob("*.py")
-        elif path != CONF_FILE:
+        if path.is_dir():
+            if not path.name.startswith("_") or path.name == "_examples":
+                yield from path.rglob("*.py")
+        elif path != CONF_FILE and path.suffix == ".py":
             yield path
 
 
@@ -118,8 +127,8 @@ def _load_one_example(file_or_name: Path | str) -> ComponentType:
     return Wrapper()
 
 
-def _get_root_example_path_by_name(name: str, relative_to: str | Path) -> Path:
-    if not name.startswith("/"):
+def _get_root_example_path_by_name(name: str, relative_to: str | Path | None) -> Path:
+    if not name.startswith("/") and relative_to is not None:
         rel_path = Path(relative_to)
         rel_path = rel_path.parent if rel_path.is_file() else rel_path
     else:

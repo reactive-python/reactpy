@@ -61,7 +61,7 @@ This should automatically open up a browser window to a page that looks like thi
 
 .. card::
 
-    .. interactive-widget:: sample_app
+    .. interactive-widget:: _examples/sample_app
         :activate-result:
 
 If you get a ``RuntimeError`` similar to the following:
@@ -95,7 +95,7 @@ application using one of the builtin server implementations whose dependencies h
 been installed. Running a tiny "hello world" application just requires the following
 code:
 
-.. example:: hello_world
+.. idom:: _examples/hello_world
     :activate-result:
 
 .. card::

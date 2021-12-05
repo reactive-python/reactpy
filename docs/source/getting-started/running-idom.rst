@@ -6,7 +6,7 @@ default this will execute your application using one of the builtin server
 implementations whose dependencies have all been installed. Running a tiny "hello world"
 application just requires the following code:
 
-.. example:: hello_world
+.. idom:: _examples/hello_world
     :activate-result:
 
 .. note::
@@ -55,7 +55,7 @@ Among other things, running in this mode:
 
 Errors will be displayed where the uppermost component is located in the view:
 
-.. example:: debug_error_example
+.. idom:: _examples/debug_error_example
     :activate-result:
 
 

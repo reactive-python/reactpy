@@ -16,7 +16,7 @@ Below is a gallery of images about sculpture. Clicking the "Next" button should
 increment the ``index`` and, as a result, change what image is displayed. However, this
 does not work:
 
-.. example:: adding_interactivity/when_variables_arent_enough
+.. idom:: _examples/when_variables_arent_enough
     :activate-result:
 
 .. note::
@@ -85,7 +85,7 @@ After making those changes we should get:
 We'll talk more about what this is doing :ref:`shortly <your first hook>`, but for
 now let's just verify that this does in fact fix the problems from before:
 
-.. example:: adding_interactivity/adding_state_variable
+.. idom:: _examples/adding_state_variable
     :activate-result:
 
 
@@ -151,7 +151,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>Initial render</h2>
 
-        .. literalinclude:: /_examples/adding_interactivity/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/app.py
             :lines: 12-33
             :emphasize-lines: 2
 
@@ -165,7 +165,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>Initial state declaration</h2>
 
-        .. literalinclude:: /_examples/adding_interactivity/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/app.py
             :lines: 12-33
             :emphasize-lines: 3
 
@@ -181,7 +181,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>Define event handler</h2>
 
-        .. literalinclude:: /_examples/adding_interactivity/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/app.py
             :lines: 12-33
             :emphasize-lines: 5
 
@@ -196,7 +196,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>Return the view</h2>
 
-        .. literalinclude:: /_examples/adding_interactivity/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/app.py
             :lines: 12-33
             :emphasize-lines: 16
 
@@ -212,7 +212,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>User interaction</h2>
 
-        .. literalinclude:: /_examples/adding_interactivity/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/app.py
             :lines: 12-33
             :emphasize-lines: 5
 
@@ -226,7 +226,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>New state is set</h2>
 
-        .. literalinclude:: /_examples/adding_interactivity/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/app.py
             :lines: 12-33
             :emphasize-lines: 6
 
@@ -242,7 +242,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>Next render begins</h2>
 
-        .. literalinclude:: /_examples/adding_interactivity/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/app.py
             :lines: 12-33
             :emphasize-lines: 2
 
@@ -256,7 +256,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>Next state is acquired</h2>
 
-        .. literalinclude:: /_examples/adding_interactivity/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/app.py
             :lines: 12-33
             :emphasize-lines: 3
 
@@ -272,7 +272,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>Repeat...</h2>
 
-        .. literalinclude:: /_examples/adding_interactivity/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/app.py
             :lines: 12-33
 
         From this point on, the steps remain the same. The only difference being the
@@ -300,7 +300,7 @@ you need to in one component. For example, in the example below we've added a
 ``handle_click``) to make the description for each sculpture optionally displayed. Only
 when the user clicks the "Show details" button is this description shown:
 
-.. example:: adding_interactivity/multiple_state_variables
+.. idom:: _examples/multiple_state_variables
     :activate-result:
 
 It's generally a good idea to define separate state variables if the data they represent
@@ -327,7 +327,7 @@ In this example, the ``Gallery`` component from earlier is rendered twice with n
 changes to its logic. Try clicking the buttons inside each of the galleries. Notice that
 their state is independent:
 
-.. example:: adding_interactivity/isolated_state
+.. idom:: _examples/isolated_state
     :activate-result:
     :result-is-default-tab:
 

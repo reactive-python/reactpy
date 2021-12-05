@@ -39,14 +39,14 @@ IDOM makes it easy to draft your code when you're in the early stages of develop
 using a CDN_ to dynamically load Javascript packages on the fly. In this example we'll
 be using the ubiquitous React-based UI framework `Material UI`_.
 
-.. example:: material_ui_button_no_action
+.. idom:: _examples/material_ui_button_no_action
 
 So now that we can display a Material UI Button we probably want to make it do
 something. Thankfully there's nothing new to learn here, you can pass event handlers to
 the button just as you did when :ref:`getting started <responding to events>`. Thus, all
 we need to do is add an ``onClick`` handler to the component:
 
-.. example:: material_ui_button_on_click
+.. idom:: _examples/material_ui_button_on_click
 
 
 .. _Custom Javascript Component:
@@ -132,7 +132,7 @@ Javascript that can run directly in the browser. This means we can't use fancy s
 like `JSX <https://reactjs.org/docs/introducing-jsx.html>`__ and instead will use
 `htm <https://github.com/developit/htm>`__ to simulate JSX in plain Javascript.
 
-.. example:: super_simple_chart
+.. idom:: _examples/super_simple_chart
 
 
 .. Links

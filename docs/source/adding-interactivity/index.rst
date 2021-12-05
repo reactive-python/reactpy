@@ -59,7 +59,7 @@ IDOM lets you add event handlers to your parts of the interface. This means that
 define synchronous or asynchronous functions that are triggered when a particular user
 interaction occurs like clicking, hovering, of focusing on form inputs, and more.
 
-.. example:: adding_interactivity/button_prints_message
+.. idom:: _examples/button_prints_message
     :activate-result:
 
 It may feel weird to define a function within a function like this, but doing so allows
@@ -89,7 +89,7 @@ image, the shopping cart. In IDOM, this kind of component-specific memory is cre
 updated with a "hook" called ``use_state()`` that creates a **state variable** and
 **state setter** respectively:
 
-.. example:: adding_interactivity/adding_state_variable
+.. idom:: _examples/adding_state_variable
     :activate-result:
 
 In IDOM, ``use_state``, as well as any other function whose name starts with ``use``, is
@@ -131,14 +131,17 @@ seconds after the "Send" button is clicked. So what would happen if we changed t
 recipient between the time the "Send" button was clicked and the moment the message is
 actually sent?
 
-.. example:: adding_interactivity/print_chat_message
+.. idom:: _examples/print_chat_message
     :activate-result:
 
 As it turns out, changing the message recipient after pressing send does not change
 where the message ulitmately goes. However, one could imagine a bug where the recipient
 of a message is determined at the time the message is sent rather than at the time the
-"Send" button it clicked. In many cases, IDOM avoids this class of bug entirely because
-it treats state as a snapshot.
+"Send" button it clicked. Thus changing the recipient after pressing send would change
+where the message got sent.
+
+In many cases, IDOM avoids this class of bug entirely because it treats state as a
+snapshot.
 
 .. card::
     :link: state-as-a-snapshot

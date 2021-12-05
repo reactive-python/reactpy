@@ -12,7 +12,7 @@ Adding Event Handlers
 
 To start out we'll just display a button that, for the moment, doesn't do anything:
 
-.. example:: adding_interactivity/button_does_nothing
+.. idom:: _examples/button_does_nothing
     :activate-result:
 
 To add an event handler to this button we'll do three things:
@@ -21,7 +21,7 @@ To add an event handler to this button we'll do three things:
 2. Add logic to ``handle_event`` that will print the ``event`` it receives to the console.
 3. Add an ``"onClick": handle_event`` attribute to the ``<button>`` element.
 
-.. example:: adding_interactivity/button_prints_event
+.. idom:: _examples/button_prints_event
     :activate-result:
 
 .. note::
@@ -34,7 +34,7 @@ the ``handle_event`` function to access information from within the scope of the
 component. That's important if you want to use any arguments that may have beend passed
 your component in the handler:
 
-.. example:: adding_interactivity/button_prints_message
+.. idom:: _examples/button_prints_message
     :activate-result:
 
 With all that said, since our ``handle_event`` function isn't doing that much work, if
@@ -80,7 +80,7 @@ generic component definition. This allows the component to focus on the things w
 common while still giving its usages customizablity. Consider the case below where we
 want to create a generic ``Button`` component that can be used for a variety of purpose:
 
-.. example:: adding_interactivity/button_handler_as_arg
+.. idom:: _examples/button_handler_as_arg
     :activate-result:
 
 
@@ -94,7 +94,7 @@ synchronous one. In the layout below we sleep for several seconds before printin
 message in the first button. However, because the event handler is asynchronous, the
 handler for the second button is still able to respond:
 
-.. example:: adding_interactivity/button_async_handlers
+.. idom:: _examples/button_async_handlers
     :activate-result:
 
 
@@ -108,7 +108,7 @@ to demonstrate this is the ``currentTime`` attribute of ``audio`` and ``video``
 elements. Normally this would be accessible via ``event.target.currenTime``, but here
 it's simply passed in under the key ``currentTime``:
 
-.. example:: adding_interactivity/audio_player
+.. idom:: _examples/audio_player
     :activate-result:
 
 
@@ -129,7 +129,7 @@ must declare whether to prevent default behavior ahead of time. This can be acco
 using the :func:`~idom.core.events.event` decorator and setting ``prevent_default``. For
 example, we can stop a link from going to the specified URL:
 
-.. example:: adding_interactivity/prevent_default_event_actions
+.. idom:: _examples/prevent_default_event_actions
     :activate-result:
 
 Unfortunately this means you cannot conditionally prevent default behavior in response
@@ -147,5 +147,5 @@ inside a parent blue ``div``. When propogation is turned on, clicking the red el
 will cause the handler for the outer blue one to fire. Conversely, when it's off, only
 the handler for the red element will fire.
 
-.. example:: adding_interactivity/stop_event_propagation
+.. idom:: _examples/stop_event_propagation
     :activate-result:
