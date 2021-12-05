@@ -53,7 +53,6 @@ This list of elements can then be passed into a parent ``<ul>`` element:
 The last thing we have to do is return this from a component:
 
 .. idom:: _examples/todo_from_list
-    :activate-result:
 
 
 Filtering and Sorting Elements
@@ -107,7 +106,6 @@ and then ordering the elements based on the ``priority``:
 We could then add this code to our ``DataList`` component:
 
 .. idom:: _examples/sorted_and_filtered_todo_list
-    :activate-result:
 
 
 Organizing Items With Keys
@@ -151,7 +149,6 @@ or ``sort_by_priority`` the items in our ``<ul>`` element would change. Given th
 here's how we'd change our component:
 
 .. idom:: _examples/todo_list_with_keys
-    :activate-result:
 
 
 Keys for Components

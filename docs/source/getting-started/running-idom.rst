@@ -7,7 +7,6 @@ implementations whose dependencies have all been installed. Running a tiny "hell
 application just requires the following code:
 
 .. idom:: _examples/hello_world
-    :activate-result:
 
 .. note::
 
@@ -56,7 +55,6 @@ Among other things, running in this mode:
 Errors will be displayed where the uppermost component is located in the view:
 
 .. idom:: _examples/debug_error_example
-    :activate-result:
 
 
 Choosing a Server Implementation

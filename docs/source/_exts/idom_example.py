@@ -25,7 +25,7 @@ class WidgetExample(SphinxDirective):
 
     option_spec = {
         "result-is-default-tab": directives.flag,
-        "activate-result": directives.flag,
+        "activate-button": directives.flag,
     }
 
     def run(self):
@@ -37,7 +37,7 @@ class WidgetExample(SphinxDirective):
 
         show_linenos = "linenos" in self.options
         live_example_is_default_tab = "result-is-default-tab" in self.options
-        activate_result = "activate-result" in self.options
+        activate_result = "activate-button" not in self.options
 
         ex_files = get_example_files_by_name(example_name)
         if not ex_files:

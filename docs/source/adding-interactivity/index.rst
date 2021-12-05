@@ -60,7 +60,6 @@ define synchronous or asynchronous functions that are triggered when a particula
 interaction occurs like clicking, hovering, of focusing on form inputs, and more.
 
 .. idom:: _examples/button_prints_message
-    :activate-result:
 
 It may feel weird to define a function within a function like this, but doing so allows
 the ``handle_event`` function to access information from within the scope of the
@@ -90,7 +89,6 @@ updated with a "hook" called ``use_state()`` that creates a **state variable** a
 **state setter** respectively:
 
 .. idom:: _examples/adding_state_variable
-    :activate-result:
 
 In IDOM, ``use_state``, as well as any other function whose name starts with ``use``, is
 called a "hook". These are special functions that should only be called while IDOM is
@@ -132,7 +130,6 @@ recipient between the time the "Send" button was clicked and the moment the mess
 actually sent?
 
 .. idom:: _examples/print_chat_message
-    :activate-result:
 
 As it turns out, changing the message recipient after pressing send does not change
 where the message ulitmately goes. However, one could imagine a bug where the recipient

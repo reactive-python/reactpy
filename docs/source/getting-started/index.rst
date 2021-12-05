@@ -62,7 +62,6 @@ This should automatically open up a browser window to a page that looks like thi
 .. card::
 
     .. idom-view:: _examples/sample_app
-        :activate-result:
 
 If you get a ``RuntimeError`` similar to the following:
 
@@ -96,7 +95,6 @@ been installed. Running a tiny "hello world" application just requires the follo
 code:
 
 .. idom:: _examples/hello_world
-    :activate-result:
 
 .. card::
     :link: running-idom
