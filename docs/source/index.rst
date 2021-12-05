@@ -39,9 +39,9 @@ IDOM is also ecosystem independent. It can be added to existing applications bui
 variety of sync and async web servers, as well as integrated with other frameworks like
 Django, Jupyter, and Plotly Dash. Not only does this mean you're free to choose what
 technology stack to run on, but on top of that, you can run the exact same components
-wherever you need them. For example, you can take a component originally developed in a
-Jupyter Notebook and embed it in your production application without changing anything
-about the component itself.
+wherever you need them. Consider the case where, you can take a component originally
+developed in a Jupyter Notebook and embed it in your production application without
+changing anything about the component itself.
 
 
 At a Glance

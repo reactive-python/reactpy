@@ -224,7 +224,7 @@ below highlights a line of code where something of interest occurs:
 
         .. raw:: html
 
-            <h2>Event handler triggers</h2>
+            <h2>New state is set</h2>
 
         .. literalinclude:: /_examples/adding_interactivity/adding_state_variable/app.py
             :lines: 12-33

@@ -35,6 +35,13 @@ def all_example_names() -> set[str]:
 
 
 def load_one_example(file_or_name: Path | str) -> Callable[[], ComponentType]:
+    return lambda: (
+        # we do this to ensure each instance is fresh
+        _load_one_example(file_or_name)
+    )
+
+
+def _load_one_example(file_or_name: Path | str) -> ComponentType:
     if isinstance(file_or_name, str):
         file = get_main_example_file_by_name(file_or_name)
     else:
@@ -43,8 +50,14 @@ def load_one_example(file_or_name: Path | str) -> Callable[[], ComponentType]:
     if not file.exists():
         raise FileNotFoundError(str(file))
 
+    print_buffer = _PrintBuffer()
+
+    def capture_print(*args, **kwargs):
+        buffer = StringIO()
+        print(*args, file=buffer, **kwargs)
+        print_buffer.write(buffer.getvalue())
+
     captured_component_constructor = None
-    capture_print, ShowPrint = _printout_viewer()
 
     def capture_component(component_constructor):
         nonlocal captured_component_constructor
@@ -68,13 +81,18 @@ def load_one_example(file_or_name: Path | str) -> Callable[[], ComponentType]:
 
     if captured_component_constructor is None:
         return _make_example_did_not_run(str(file))
-    else:
 
-        @idom.component
-        def Wrapper():
-            return idom.html.div(captured_component_constructor(), ShowPrint())
+    @idom.component
+    def Wrapper():
+        return idom.html.div(captured_component_constructor(), PrintView())
 
-        return Wrapper
+    @idom.component
+    def PrintView():
+        text, set_text = idom.hooks.use_state(print_buffer.getvalue())
+        print_buffer.set_callback(set_text)
+        return idom.html.pre({"class": "printout"}, text) if text else idom.html.div()
+
+    return Wrapper()
 
 
 def get_main_example_file_by_name(name: str) -> Path:
@@ -98,44 +116,26 @@ def _get_root_example_path_by_name(name: str) -> Path:
     return EXAMPLES_DIR.joinpath(*name.split("/"))
 
 
-def _printout_viewer():
-    print_callbacks: set[Callable[[str], None]] = set()
+class _PrintBuffer:
+    def __init__(self, max_lines: int = 10):
+        self._callback = None
+        self._lines = ()
+        self._max_lines = max_lines
 
-    @idom.component
-    def ShowPrint():
-        lines, set_lines = idom.hooks.use_state(())
+    def set_callback(self, function: Callable[[str], None]) -> None:
+        self._callback = function
+        return None
 
-        def set_buffer(text: str):
-            if len(lines) > 10:
-                # limit printout size - protects against malicious actors
-                # plus it gives you some nice scrolling printout
-                set_lines(lines[1:] + (text,))
-            else:
-                set_lines(lines + (text,))
+    def getvalue(self) -> str:
+        return "".join(self._lines)
 
-        @idom.hooks.use_effect(args=[set_buffer])
-        def add_set_buffer_callback():
-            print_callbacks.add(set_buffer)
-            return lambda: print_callbacks.remove(set_buffer)
-
-        if not lines:
-            return idom.html.div()
+    def write(self, text: str) -> None:
+        if len(self._lines) == self._max_lines:
+            self._lines = self._lines[1:] + (text,)
         else:
-            return idom.html.pre({"class": "printout"}, "".join(lines))
-
-    def capture_print(*args, **kwargs):
-        buffer = StringIO()
-        print(*args, file=buffer, **kwargs)
-        value = buffer.getvalue()
-        for cb in print_callbacks:
-            cb(value)
-
-    return capture_print, ShowPrint
-
-
-def _use_force_update():
-    toggle, set_toggle = idom.hooks.use_state(False)
-    return lambda: set_toggle(not toggle)
+            self._lines += (text,)
+        if self._callback is not None:
+            self._callback(self.getvalue())
 
 
 def _make_example_did_not_run(example_name):

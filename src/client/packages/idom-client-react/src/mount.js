@@ -66,7 +66,9 @@ function mountLayoutWithReconnectingWebSocket(
       mountState
     );
 
-    console.info(`IDOM WebSocket connection lost. Reconnecting in ${reconnectTimeout} seconds...`);
+    console.info(
+      `IDOM WebSocket connection lost. Reconnecting in ${reconnectTimeout} seconds...`
+    );
 
     setTimeout(function () {
       mountState.reconnectAttempts++;

@@ -36,7 +36,8 @@ Adding Interactivity
             :link: state-as-a-snapshot
             :link-type: doc
 
-            Under construction 🚧
+            Learn why IDOM does not change component state the moment it is set, but
+            instead schedules a re-render.
 
         .. grid-item-card:: :octicon:`issue-opened` Dangers of Mutability
             :link: dangers-of-mutability
@@ -112,14 +113,32 @@ Section 3: State as a Snapshot
 
 As we :ref:`learned earlier <Components with State>`, state setters behave a little
 differently than you might exepct at first glance. Instead of updating your current
-handle on the corresponding state variable it schedules a re-render of the component
-which owns the state:
+handle on the setter's corresponding variable, it schedules a re-render of the component
+which owns the state.
 
 .. code-block::
 
-    print(count)
-    set_count(count + 1)
-    print(count)
+    count, set_count = use_state(0)
+    print(count)  # prints: 0
+    set_count(count + 1)  # schedule a re-render where count is 1
+    print(count)  # still prints: 0
+
+This behavior of IDOM means that each render of a component is like taking a snapshot of
+the UI based on the component's state at that time. Treating state in this way can help
+reduce subtle bugs. For example, in the code below there's a simple chat app with a
+message input and recipient selector. The catch is that the message actually gets sent 5
+seconds after the "Send" button is clicked. So what would happen if we changed the
+recipient between the time the "Send" button was clicked and the moment the message is
+actually sent?
+
+.. example:: adding_interactivity/print_chat_message
+    :activate-result:
+
+As it turns out, changing the message recipient after pressing send does not change
+where the message ulitmately goes. However, one could imagine a bug where the recipient
+of a message is determined at the time the message is sent rather than at the time the
+"Send" button it clicked. In many cases, IDOM avoids this class of bug entirely because
+it treats state as a snapshot.
 
 .. card::
     :link: state-as-a-snapshot

@@ -100,14 +100,18 @@ Table Content
 Forms
 -----
 
+- :func:`button`
+- :func:`fieldset`
+- :func:`form`
+- :func:`input`
+- :func:`label`
+- :func:`legend`
 - :func:`meter`
+- :func:`option`
 - :func:`output`
 - :func:`progress`
-- :func:`input`
-- :func:`button`
-- :func:`label`
-- :func:`fieldset`
-- :func:`legend`
+- :func:`select`
+- :func:`textarea`
 
 
 Interactive Elements
@@ -201,14 +205,18 @@ thead = make_vdom_constructor("thead")
 tr = make_vdom_constructor("tr")
 
 # Forms
+button = make_vdom_constructor("button")
+fieldset = make_vdom_constructor("fieldset")
+form = make_vdom_constructor("form")
+input = make_vdom_constructor("input", allow_children=False)
+label = make_vdom_constructor("label")
+legend = make_vdom_constructor("legend")
 meter = make_vdom_constructor("meter")
+option = make_vdom_constructor("option")
 output = make_vdom_constructor("output")
 progress = make_vdom_constructor("progress")
-input = make_vdom_constructor("input", allow_children=False)
-button = make_vdom_constructor("button")
-label = make_vdom_constructor("label")
-fieldset = make_vdom_constructor("fieldset")
-legend = make_vdom_constructor("legend")
+select = make_vdom_constructor("select")
+textarea = make_vdom_constructor("textarea")
 
 # Interactive elements
 details = make_vdom_constructor("details")
