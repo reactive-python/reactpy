@@ -161,7 +161,7 @@ _tab_item_template = """
 
 
 _interactive_widget_template = """
-.. interactive-widget:: {name}
+.. idom-view:: {name}
     {activate_button_opt}
 """
 
