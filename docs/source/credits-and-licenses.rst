@@ -6,7 +6,7 @@ influence from https://reactjs.org which uses the `Creative Commons Attribution 
 International
 <https://raw.githubusercontent.com/reactjs/reactjs.org/b2d5613b6ae20855ced7c83067b604034bebbb44/LICENSE-DOCS.md>`__
 license. While many things have been transformed, we paraphrase and, in some places,
-copy language or examples where React's behavior is directly mirroried by IDOM's.
+copy language or examples where IDOM's behavior mirrors that of React's.
 
 
 Source Code License

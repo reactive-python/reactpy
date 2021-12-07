@@ -80,6 +80,8 @@ want to create a generic ``Button`` component that can be used for a variety of 
 .. idom:: _examples/button_handler_as_arg
 
 
+.. _Async Event Handler:
+
 Async Event Handlers
 --------------------
 

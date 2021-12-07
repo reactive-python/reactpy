@@ -7,8 +7,8 @@ Adding Interactivity
     responding-to-events
     components-with-state
     state-as-a-snapshot
+    compounding-state-updates
     dangers-of-mutability
-    batched-updates
 
 
 .. dropdown:: :octicon:`bookmark-fill;2em` What You'll Learn
@@ -39,14 +39,14 @@ Adding Interactivity
             Learn why IDOM does not change component state the moment it is set, but
             instead schedules a re-render.
 
-        .. grid-item-card:: :octicon:`issue-opened` Dangers of Mutability
-            :link: dangers-of-mutability
+        .. grid-item-card:: :octicon:`versions` Compounding State Updates
+            :link: compounding-state-updates
             :link-type: doc
 
             Under construction 🚧
 
-        .. grid-item-card:: :octicon:`versions` Batched Updates
-            :link: batched-updates
+        .. grid-item-card:: :octicon:`issue-opened` Dangers of Mutability
+            :link: dangers-of-mutability
             :link-type: doc
 
             Under construction 🚧
@@ -147,14 +147,15 @@ snapshot.
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    ...
+    Learn why IDOM does not change component state the moment it is set, but instead
+    schedules a re-render.
 
 
-Section 4: Dangers of Mutability
---------------------------------
+Section 4: Compounding State Updates
+------------------------------------
 
 .. card::
-    :link: dangers-of-mutability
+    :link: compounding-state-updates
     :link-type: doc
 
     :octicon:`book` Read More
@@ -163,11 +164,11 @@ Section 4: Dangers of Mutability
     ...
 
 
-Section 3: Batched Updates
---------------------------
+Section 5: Dangers of Mutability
+--------------------------------
 
 .. card::
-    :link: batched-updates
+    :link: dangers-of-mutability
     :link-type: doc
 
     :octicon:`book` Read More
