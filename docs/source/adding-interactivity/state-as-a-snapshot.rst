@@ -148,7 +148,7 @@ render. As a result, you don't need to worry about whether state has changed whi
 code in an event handler is running.
 
 .. card::
-    :link: compounding-state-updates
+    :link: multiple-state-updates
     :link-type: doc
 
     :octicon:`book` Read More
