@@ -58,7 +58,7 @@ def get_example_files_by_name(
 ) -> list[Path]:
     path = _get_root_example_path_by_name(name, relative_to)
     if path.is_dir():
-        return list(path.glob("*"))
+        return [p for p in path.glob("*") if not p.is_dir()]
     else:
         path = path.with_suffix(".py")
         return [path] if path.exists() else []
@@ -163,7 +163,7 @@ def _make_example_did_not_run(example_name):
     def ExampleDidNotRun():
         return idom.html.code(f"Example {example_name} did not run")
 
-    return ExampleDidNotRun
+    return ExampleDidNotRun()
 
 
 def _make_error_display(message):
@@ -171,4 +171,4 @@ def _make_error_display(message):
     def ShowError():
         return idom.html.pre(message)
 
-    return ShowError
+    return ShowError()

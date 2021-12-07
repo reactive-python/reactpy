@@ -7,7 +7,7 @@ Adding Interactivity
     responding-to-events
     components-with-state
     state-as-a-snapshot
-    compounding-state-updates
+    multiple-state-updates
     dangers-of-mutability
 
 
@@ -39,8 +39,8 @@ Adding Interactivity
             Learn why IDOM does not change component state the moment it is set, but
             instead schedules a re-render.
 
-        .. grid-item-card:: :octicon:`versions` Compounding State Updates
-            :link: compounding-state-updates
+        .. grid-item-card:: :octicon:`versions` Multiple State Updates
+            :link: multiple-state-updates
             :link-type: doc
 
             Under construction 🚧
@@ -151,11 +151,11 @@ snapshot.
     schedules a re-render.
 
 
-Section 4: Compounding State Updates
+Section 4: Multiple State Updates
 ------------------------------------
 
 .. card::
-    :link: compounding-state-updates
+    :link: multiple-state-updates
     :link-type: doc
 
     :octicon:`book` Read More
