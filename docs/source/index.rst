@@ -1,3 +1,9 @@
+.. note::
+
+    This documentation is still under construction 🚧. We welcome your `feedback
+    <https://github.com/idom-team/idom/discussions>`__!
+
+
 IDOM
 ====
 
@@ -156,8 +162,7 @@ other :ref:`later <managing state>`).
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Under construction 🚧
-
+    Learn how user interfaces can be made to respond to user interaction in real-time.
 
 
 Chapter 4 - :ref:`Managing State`

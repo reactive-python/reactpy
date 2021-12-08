@@ -26,6 +26,13 @@ Try typing in the text box and pressing 'Enter' 📋
     :result-is-default-tab:
 
 
+Simple Image Movement
+---------------------
+
+.. idom:: _examples/character_movement
+    :result-is-default-tab:
+
+
 The Game Snake
 --------------
 

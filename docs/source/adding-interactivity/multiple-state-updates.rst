@@ -88,29 +88,22 @@ this is functionally equivalent to the following:
 
     set_number(increment(increment(increment(number))))
 
-So why might you want to do this? Well, in this case, we're using the same function on
-each call to ``set_number``, but what if you had more function. Perhaps you might want
-to do introduce ``squared`` or ``decrement`` functions:
+So why might you want to do this? Why not just compute ``set_number(number + 3)`` from
+the start? The easiest way to explain the use case is with an example. Imagine that we
+introduced a delay before ``set_number(number + 1)``. What would happen if we clicked
+the "Increment" button more than once before the delay in the first triggered event
+completed?
 
-.. code-block::
+.. idom:: _examples/delay_before_set_count
 
-    set_number(increment)
-    set_number(squared)
-    set_number(decrement)
+From an :ref:`earlier lesson <State And Delayed Reactions>`, we learned that introducing
+delays do not change the fact that state variables do not change until the next render.
+As a result, despite clicking many times before the delay completes, the ``number`` only
+increments by one. To solve this we can use updater functions:
 
-Which would equate to:
+.. idom:: _examples/delay_before_count_updater
 
-.. code-block::
-
-    set_number(decrement(squared(increment(number))))
-
-This example also presents a scenario with much simpler state. Consider an example where
-the state is more complex. In the scenario below, we need to represent and manipulate
-state that represents the position of a character in a scene. Then imagine that we want
-to allow the user to queue their actions and then apply them all at once. The simplest
-way to do this is to factor out the functions which manualuate this state into
-functions, add them to an ``actions`` queue when the user requests, and finally, once
-the user clicks "Apply Actions", iterator over the ``actions`` and call ``set_position``
-with each action function:
-
-.. idom:: _examples/character_movement
+Now when you click the "Increment" button, each click, though delayed, corresponds to
+``number`` being increased. This is because the ``old_number`` in the updater function
+uses the value which was assigned by the last call to ``set_number`` rather than relying
+in the static ``number`` state variable.

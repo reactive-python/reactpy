@@ -1,7 +1,5 @@
-.. _Managing State:
-
-Managing State 🚧
-=================
+Managing State
+==============
 
 .. toctree::
     :hidden:
