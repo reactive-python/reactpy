@@ -10,8 +10,16 @@ def ColorButton():
         set_color("pink")
         set_color("blue")
 
-    return html.button(
-        {"onClick": handle_click, "style": {"backgroundColor": color}}, "Set Color"
+    def handle_reset(event):
+        set_color("gray")
+
+    return html.div(
+        html.button(
+            {"onClick": handle_click, "style": {"backgroundColor": color}}, "Set Color"
+        ),
+        html.button(
+            {"onClick": handle_reset, "style": {"backgroundColor": color}}, "Reset"
+        ),
     )
 
 

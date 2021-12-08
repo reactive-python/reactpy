@@ -36,14 +36,15 @@ Adding Interactivity
             :link: state-as-a-snapshot
             :link-type: doc
 
-            Learn why IDOM does not change component state the moment it is set, but
-            instead schedules a re-render.
+            Learn why state updates schedules a re-render, instead of being applied
+            immediately.
 
         .. grid-item-card:: :octicon:`versions` Multiple State Updates
             :link: multiple-state-updates
             :link-type: doc
 
-            Under construction 🚧
+            Learn how updates to a components state can be batched, or applied
+            incrementally.
 
         .. grid-item-card:: :octicon:`issue-opened` Dangers of Mutability
             :link: dangers-of-mutability
@@ -147,12 +148,31 @@ snapshot.
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Learn why IDOM does not change component state the moment it is set, but instead
-    schedules a re-render.
+    Learn why state updates schedules a re-render, instead of being applied immediately.
 
 
 Section 4: Multiple State Updates
-------------------------------------
+---------------------------------
+
+As we saw in an earlier example, :ref:`setting state triggers renders`. In other words,
+changes to state only take effect in the next render, not in the current one. Further,
+changes to state are batched, calling a particular state setter 3 times won't trigger 3
+renders, it will only trigger 1. This means that multiple state assignments are batched
+- so long as the event handler is synchronous (i.e. the event handler is not an
+``async`` function), IDOM waits until all the code in an event handler has run before
+processing state and starting the next render:
+
+.. idom:: _examples/set_color_3_times
+
+Sometimes though, you need to update a state variable more than once before the next
+render. In these cases, instead of having updates batched, you instead want them to be
+applied incrementally. That is, the next update can be made to depend on the prior one.
+To accomplish this, instead of passing the next state value directly (e.g.
+``set_state(new_state)``), we may pass an **"updater function"** of the form
+``compute_new_state(old_state)`` to the state setter (e.g.
+``set_state(compute_new_state)``):
+
+.. idom:: _examples/set_state_function
 
 .. card::
     :link: multiple-state-updates
@@ -161,7 +181,7 @@ Section 4: Multiple State Updates
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    ...
+    Learn how updates to a components state can be batched, or applied incrementally.
 
 
 Section 5: Dangers of Mutability

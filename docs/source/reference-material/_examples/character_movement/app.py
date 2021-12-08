@@ -33,16 +33,7 @@ def translate(x=0, y=0):
 
 @component
 def Scene():
-    actions, set_actions = use_state(())
     position, set_position = use_state(Position(100, 100, 0))
-
-    def handle_apply_actions(event):
-        for act_function in actions:
-            set_position(act_function)
-        set_actions(())
-
-    def make_action_handler(act_function):
-        return lambda event: set_actions(actions + (act_function,))
 
     return html.div(
         {"style": {"width": "225px"}},
@@ -67,13 +58,12 @@ def Scene():
                 },
             ),
         ),
-        html.button({"onClick": make_action_handler(translate(x=-10))}, "Move Left"),
-        html.button({"onClick": make_action_handler(translate(x=10))}, "Move Right"),
-        html.button({"onClick": make_action_handler(translate(y=-10))}, "Move Up"),
-        html.button({"onClick": make_action_handler(translate(y=10))}, "Move Down"),
-        html.button({"onClick": make_action_handler(rotate(-30))}, "Rotate Left"),
-        html.button({"onClick": make_action_handler(rotate(30))}, "Rotate Right"),
-        html.button({"onClick": handle_apply_actions}, html.b("Apply Actions")),
+        html.button({"onClick": lambda e: set_position(translate(x=-10))}, "Move Left"),
+        html.button({"onClick": lambda e: set_position(translate(x=10))}, "Move Right"),
+        html.button({"onClick": lambda e: set_position(translate(y=-10))}, "Move Up"),
+        html.button({"onClick": lambda e: set_position(translate(y=10))}, "Move Down"),
+        html.button({"onClick": lambda e: set_position(rotate(-30))}, "Rotate Left"),
+        html.button({"onClick": lambda e: set_position(rotate(30))}, "Rotate Right"),
     )
 
 
