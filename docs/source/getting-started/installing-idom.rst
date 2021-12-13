@@ -53,7 +53,16 @@ run IDOM in the supported frameworks, follow the links below:
             background-color: var(--color-background-primary);
             border: 2px solid var(--color-background-border);
         }
+
+        .transparent-text-color {
+            color: transparent;
+        }
     </style>
+
+.. role:: transparent-text-color
+
+.. We add transparent-text-color to the text so it's not visible, but it's still
+.. searchable.
 
 .. grid:: 3
 
@@ -62,15 +71,21 @@ run IDOM in the supported frameworks, follow the links below:
         :img-background: _static/logo-django.svg
         :class-card: card-logo-image
 
+        :transparent-text-color:`Django`
+
     .. grid-item-card::
         :link: https://github.com/idom-team/idom-jupyter
         :img-background: _static/logo-jupyter.svg
         :class-card: card-logo-image
 
+        :transparent-text-color:`Jupyter`
+
     .. grid-item-card::
         :link: https://github.com/idom-team/idom-dash
         :img-background: _static/logo-plotly.svg
         :class-card: card-logo-image
+
+        :transparent-text-color:`Plotly Dash`
 
 
 Installing for Development
