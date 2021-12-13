@@ -46,28 +46,31 @@ run IDOM in the supported frameworks, follow the links below:
 
     <style>
         .card-logo-image {
+            display: flex;
+            justify-content: center;
+            align-content: center;
             padding: 10px;
-            width: 50%;
-            left: 25%;
             background-color: var(--color-background-primary);
             border: 2px solid var(--color-background-border);
         }
     </style>
 
-.. card::
-    :link: https://github.com/idom-team/django-idom
-    :img-background: _static/logo-django.svg
-    :class-card: card-logo-image
+.. grid:: 3
 
-.. card::
-    :link: https://github.com/idom-team/idom-jupyter
-    :img-background: _static/logo-jupyter.svg
-    :class-card: card-logo-image
+    .. grid-item-card::
+        :link: https://github.com/idom-team/django-idom
+        :img-background: _static/logo-django.svg
+        :class-card: card-logo-image
 
-.. card::
-    :link: https://github.com/idom-team/idom-dash
-    :img-background: _static/logo-plotly.svg
-    :class-card: card-logo-image
+    .. grid-item-card::
+        :link: https://github.com/idom-team/idom-jupyter
+        :img-background: _static/logo-jupyter.svg
+        :class-card: card-logo-image
+
+    .. grid-item-card::
+        :link: https://github.com/idom-team/idom-dash
+        :img-background: _static/logo-plotly.svg
+        :class-card: card-logo-image
 
 
 Installing for Development
