@@ -4,8 +4,7 @@ Contributor Guide
 .. note::
 
     If you have any questions during set up or development post on our
-    `discussion board <https://github.com/idom-team/idom/discussions>`__ and we'll
-    answer them.
+    :discussion-type:`discussion board <question>` and we'll answer them.
 
 This project uses the `GitHub Flow`_ (more detail :ref:`below <Making a Pull Request>`)
 for collaboration and consists primarily of Python code and Javascript code. A variety
@@ -124,7 +123,7 @@ If you modify any Javascript, you'll need to re-install IDOM:
 
     pip install -e .
 
-However you may also ``cd`` to the ``src/idom/client/app`` directory which contains a
+However you may also ``cd`` to the ``src/client`` directory which contains a
 ``package.json`` that you can use to run standard ``npm`` commands from.
 
 
@@ -363,12 +362,17 @@ Other Core Repositories
 IDOM depends on, or is used by several other core projects. For documentation on them
 you should refer to their respective documentation in the links below:
 
-- https://github.com/idom-team/idom-react-component-cookiecutter - A template repo for
-  making :ref:`Custom Javascript Components`.
-- https://github.com/idom-team/flake8-idom-hooks - Enforces the :ref:`Rules of Hooks`
-- https://github.com/idom-team/idom-jupyter - IDOM integration for Jupyter
-- https://github.com/idom-team/idom-dash - IDOM integration for Plotly Dash
-- https://github.com/idom-team/django-idom - IDOM integration for Django
+- `idom-react-component-cookiecutter
+  <https://github.com/idom-team/idom-react-component-cookiecutter>`__ - Template repo
+  for making :ref:`Custom Javascript Components`.
+- `flake8-idom-hooks <https://github.com/idom-team/flake8-idom-hooks>`__ - Enforces the
+  :ref:`Rules of Hooks`
+- `idom-jupyter <https://github.com/idom-team/idom-jupyter>`__ - IDOM integration for
+  Jupyter
+- `idom-dash <https://github.com/idom-team/idom-dash>`__ - IDOM integration for Plotly
+  Dash
+- `django-idom <https://github.com/idom-team/django-idom>`__ - IDOM integration for
+  Django
 
 .. Links
 .. =====

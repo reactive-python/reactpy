@@ -31,10 +31,26 @@ author = "Ryan Morshead"
 # -- Common External Links ---------------------------------------------------
 
 extlinks = {
-    "issue": ("https://github.com/idom-team/idom/issues/%s", "#"),
-    "pull": ("https://github.com/idom-team/idom/pull/%s", "#"),
-    "discussion": ("https://github.com/idom-team/idom/discussions/%s", "#"),
-    "commit": ("https://github.com/idom-team/idom/commit/%s", ""),
+    "issue": (
+        "https://github.com/idom-team/idom/issues/%s",
+        "#",
+    ),
+    "pull": (
+        "https://github.com/idom-team/idom/pull/%s",
+        "#",
+    ),
+    "discussion": (
+        "https://github.com/idom-team/idom/discussions/%s",
+        "#",
+    ),
+    "discussion-type": (
+        "https://github.com/idom-team/idom/discussions/categories/%s",
+        "",
+    ),
+    "commit": (
+        "https://github.com/idom-team/idom/commit/%s",
+        "",
+    ),
 }
 
 # -- General configuration ---------------------------------------------------

@@ -102,7 +102,7 @@ Not all event data is serialized. The most notable example of this is the lack o
 ``target`` key in the dictionary sent back to the handler. Instead, data which is not
 inherhently JSON serializable must be treated on a case-by-case basis. A simple case
 to demonstrate this is the ``currentTime`` attribute of ``audio`` and ``video``
-elements. Normally this would be accessible via ``event.target.currenTime``, but here
+elements. Normally this would be accessible via ``event.target.currentTime``, but here
 it's simply passed in under the key ``currentTime``:
 
 .. idom:: _examples/audio_player
@@ -135,11 +135,10 @@ Stop Event Propogation
 ......................
 
 Similarly to :ref:`preventing default behavior <Preventing Default Event Actions>`, you
-can use the :func:`~idom.core.events.event` decorator to forward declare whether or not
-you want events from a child element propogate up through the document to parent
-elements by setting ``stop_propagation``. In the example below we place a red ``div``
-inside a parent blue ``div``. When propogation is turned on, clicking the red element
-will cause the handler for the outer blue one to fire. Conversely, when it's off, only
-the handler for the red element will fire.
+can use the :func:`~idom.core.events.event` decorator to prevent events originating in a
+child element from propagating to parent elements by setting ``stop_propagation``. In
+the example below we place a red ``div`` inside a parent blue ``div``. When propogation
+is turned on, clicking the red element will cause the handler for the outer blue one to
+trigger. Conversely, when it's off, only the handler for the red element will trigger.
 
 .. idom:: _examples/stop_event_propagation
