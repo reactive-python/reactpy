@@ -149,7 +149,7 @@ def _get_file_options(file: Path) -> list[str]:
 def _interactive_widget(name, with_activate_button):
     return _interactive_widget_template.format(
         name=name,
-        activate_button_opt="" if with_activate_button else ":activate-result:",
+        activate_button_opt=":activate-button:" if with_activate_button else "",
     )
 
 

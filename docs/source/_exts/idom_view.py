@@ -19,7 +19,7 @@ class IteractiveWidget(SphinxDirective):
     _next_id = 0
 
     option_spec = {
-        "activate-result": directives.flag,
+        "activate-button": directives.flag,
         "margin": float,
     }
 
@@ -47,7 +47,7 @@ class IteractiveWidget(SphinxDirective):
                             "{container_id}",
                             "{view_id}",
                             "{_IDOM_EXAMPLE_HOST}",
-                            {"false" if "activate-result" in self.options else "true"},
+                            {"true" if "activate-button" in self.options else "false"},
                         );
                     </script>
                 </div>

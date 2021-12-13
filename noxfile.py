@@ -11,6 +11,7 @@ from nox.sessions import Session
 
 
 ROOT = Path(__file__).parent
+SRC = ROOT / "src"
 POSARGS_PATTERN = re.compile(r"^(\w+)\[(.+)\]$")
 
 
@@ -34,7 +35,7 @@ def format(session: Session) -> None:
     session.run("isort", ".")
 
     # format client Javascript
-    session.chdir(ROOT / "src" / "client")
+    session.chdir(SRC / "client")
     session.run("npm", "run", "format", external=True)
 
     # format docs Javascript
@@ -113,22 +114,24 @@ def docs_in_docker(session: Session) -> None:
 @nox.session
 def test(session: Session) -> None:
     """Run the complete test suite"""
-    session.notify("test_suite", posargs=session.posargs)
+    session.notify("test_python", posargs=session.posargs)
     session.notify("test_types")
     session.notify("test_style")
     session.notify("test_docs")
+    session.notify("test_javascript")
 
 
 @nox.session
 def test_short(session: Session) -> None:
     """Run a shortened version of the test suite"""
-    session.notify("test_suite", posargs=session.posargs)
+    session.notify("test_python", posargs=session.posargs)
     session.notify("test_docs")
+    session.notify("test_javascript")
 
 
 @nox.session
 @apply_standard_pip_upgrades
-def test_suite(session: Session) -> None:
+def test_python(session: Session) -> None:
     """Run the Python-based test suite"""
     session.env["IDOM_DEBUG_MODE"] = "1"
     install_requirements_file(session, "test-env")
@@ -189,6 +192,15 @@ def test_docs(session: Session) -> None:
         "docs/build",
     )
     session.run("sphinx-build", "-b", "doctest", "docs/source", "docs/build")
+
+
+@nox.session
+def test_javascript(session: Session) -> None:
+    """Run the Javascript-based test suite and ensure it bundles succesfully"""
+    session.chdir(SRC / "client")
+    session.run("npm", "install", external=True)
+    session.run("npm", "run", "test", external=True)
+    session.run("npm", "run", "build", external=True)
 
 
 @nox.session
@@ -255,7 +267,7 @@ def update_version(session: Session) -> None:
 
 @nox.session
 def build_js(session: Session) -> None:
-    session.chdir(ROOT / "src" / "client")
+    session.chdir(SRC / "client")
     session.run("npm", "run", "build", external=True)
 
 

@@ -1,8 +1,7 @@
 FAQ
 ===
 
-See our `Discussion Forum <https://github.com/idom-team/idom/discussions>`__ for more
-questions and answers.
+See our :discussion-type:`Discussion Forum <question>` for more questions and answers.
 
 
 Do UI components run client-side?

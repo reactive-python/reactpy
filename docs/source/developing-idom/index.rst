@@ -49,6 +49,8 @@ you can help move this project and community forward!
         See the long term goals of the IDOM team
 
 
+.. _everyone can contribute:
+
 Everyone Can Contribute!
 ------------------------
 
@@ -61,6 +63,5 @@ who can:
 - Report bugs
 - Participate in general discussions
 
-Still aren't sure what you have to offer? Just
-`ask us <https://github.com/idom-team/idom/discussions>`__ and we'll help you make your
-first contribution.
+Still aren't sure what you have to offer? Just :discussion-type:`ask us <question>` and
+we'll help you make your first contribution.

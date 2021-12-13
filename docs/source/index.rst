@@ -1,11 +1,11 @@
-.. note::
+.. card::
 
     This documentation is still under construction 🚧. We welcome your `feedback
     <https://github.com/idom-team/idom/discussions>`__!
 
 
-IDOM
-====
+What is IDOM?
+=============
 
 .. toctree::
     :hidden:
@@ -119,10 +119,9 @@ Chapter 2 - :ref:`Creating Interfaces`
 
 IDOM is a Python package for making user interfaces (UI). These interfaces are built
 from small elements of functionality like buttons text and images. IDOM allows you to
-combine these elements into reusable, nestable :ref:`"components" <your first
-components>`. In the sections that follow you'll learn how these UI elements are created
-and organized into components. Then, you'll use this knowledge to create interfaces from
-raw data:
+combine these elements into reusable :ref:`"components" <your first components>`. In the
+sections that follow you'll learn how these UI elements are created and organized into
+components. Then, you'll use this knowledge to create interfaces from raw data:
 
 .. idom:: creating-interfaces/_examples/todo_list_with_keys
 
