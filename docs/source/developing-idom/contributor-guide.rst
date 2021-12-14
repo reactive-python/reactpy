@@ -372,3 +372,4 @@ you should refer to their respective documentation in the links below:
 .. _Flake8: https://flake8.pycqa.org/en/latest/
 .. _ISort: https://pycqa.github.io/isort/
 .. _UVU: https://github.com/lukeed/uvu
+.. _Prettier: https://prettier.io/
