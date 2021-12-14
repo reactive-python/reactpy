@@ -2,4 +2,5 @@ build
 
 # VS Code RST extension builds here by default
 source/_build
+source/_static/custom.js
 source/vdom-json-schema.json

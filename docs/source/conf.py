@@ -13,13 +13,14 @@ from pathlib import Path
 
 # -- Path Setup --------------------------------------------------------------
 
-here = Path(__file__).parent
+THIS_DIR = Path(__file__).parent
+ROOT_DIR = THIS_DIR.parent.parent
 
 # project path
-sys.path.insert(0, str(here.parent.parent))
+sys.path.insert(0, str(ROOT_DIR))
 
 # extension path
-sys.path.insert(0, str(here / "_exts"))
+sys.path.insert(0, str(THIS_DIR / "_exts"))
 
 
 # -- Project information -----------------------------------------------------
@@ -174,8 +175,8 @@ html_title = "IDOM Docs"
 # a list of builtin themes.
 #
 html_theme = "furo"
-html_logo = "_static/branding/idom-logo.svg"
-html_favicon = "_static/branding/idom-logo-square-small.svg"
+html_logo = str(ROOT_DIR / "branding" / "svg" / "idom-logo.svg")
+html_favicon = str(ROOT_DIR / "branding" / "svg" / "idom-logo-square-small.svg")
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -190,8 +191,10 @@ html_static_path = ["_static"]
 
 # These paths are either relative to html_static_path
 # or fully qualified paths (eg. https://...)
-css_dir = here / "_static" / "css"
-html_css_files = [str(p.relative_to(here / "_static")) for p in css_dir.glob("*.css")]
+css_dir = THIS_DIR / "_static" / "css"
+html_css_files = [
+    str(p.relative_to(THIS_DIR / "_static")) for p in css_dir.glob("*.css")
+]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
