@@ -7,39 +7,10 @@ Contributor Guide
     :discussion-type:`discussion board <question>` and we'll answer them.
 
 This project uses the `GitHub Flow`_ (more detail :ref:`below <Making a Pull Request>`)
-for collaboration and consists primarily of Python code and Javascript code. A variety
-of tools are used to aid in its development. Below is a brief list of the most commonly
-used tools:
-
-.. list-table::
-    :header-rows: 1
-
-    *   - Tool
-        - Used For
-
-    *   - Git_
-        - version control
-
-    *   - Nox_
-        - automating development tasks.
-
-    *   - PyTest_
-        - executing the Python-based test suite
-
-    *   - pre-commit_
-        - helping impose basic style guidelines
-
-    *   - NPM_
-        - managing and installing Javascript packages
-
-    *   - Selenium_ and ChromeDriver_
-        - to control the browser while testing
-
-    *   - `GitHub Actions`_
-        - hosting and running our CI/CD suite
-
-    *   - Docker_ and Heroku_
-        - containerizing and hosting this documentation
+for collaboration and consists primarily of Python code and Javascript code. A
+:ref:`variety of tools <Development Environment>` are used to aid in its development.
+Any code contributed to IDOM is validated by a :ref:` series of tests <Running The
+Tests>` to ensure its quality and correctness.
 
 
 Making a Pull Request
@@ -193,10 +164,10 @@ fails, the installation of the Python package with ``pip`` will too.
 Code Quality Checks
 -------------------
 
-Several tools are run on the Python codebase to help validate its quality. For the most
-part, if you set up your :ref:`Development Environment` with ``pre-commit`` to check
-your work before you commit it, then you'll be notified when changes need to be made or,
-in the best case, changes will be made automatically for you.
+Several tools are run on the codebase to help validate its quality. For the most part,
+if you set up your :ref:`Development Environment` with pre-commit_ to check your work
+before you commit it, then you'll be notified when changes need to be made or, in the
+best case, changes will be made automatically for you.
 
 The following are currently being used:
 
@@ -204,15 +175,15 @@ The following are currently being used:
 - Black_ - an opinionated code formatter
 - Flake8_ - a style guide enforcement tool
 - ISort_ - a utility for alphabetically sorting imports
+- Prettier_ - a tool for autimatically formatting Javascript code
 
 The most strict measure of quality enforced on the codebase is 100% coverage. This means
 that every line of coded added to IDOM requires a test case that exercises it. This
 doesn't prevent all bugs, but it should ensure that we catch the most common ones.
 
 If you need help understanding why code you've submitted does not pass these checks,
-then be sure to ask, either in the
-`Community Forum <https://github.com/idom-team/idom/discussions>`__ or in your
-:ref:`Pull Request <Making a Pull Request>`.
+then be sure to ask, either in the :discussion-type:`Community Forum <question>` or in
+your :ref:`Pull Request <Making a Pull Request>`.
 
 .. note::
 
