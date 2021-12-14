@@ -1,5 +1,5 @@
-Gallery
-=======
+Examples
+========
 
 Slideshow
 ---------

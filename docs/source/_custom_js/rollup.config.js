@@ -13,6 +13,7 @@ export default {
     commonjs(),
     replace({
       "process.env.NODE_ENV": JSON.stringify("production"),
+      preventAssignment: true,
     }),
   ],
   onwarn: function (warning) {

@@ -86,7 +86,7 @@ adheres to the following interface:
     - ``context`` can send events back to the server and load "import sources"
       (like a custom component module).
 
-    - ``type``is a named export of the current module, or a string (e.g. ``"div"``,
+    - ``type`` is a named export of the current module, or a string (e.g. ``"div"``,
       ``"button"``, etc.)
 
     - ``props`` is an object containing attributes and callbacks for the given

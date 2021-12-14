@@ -37,6 +37,7 @@ ADD docs/__init__.py ./docs/
 ADD docs/app.py ./docs/
 ADD docs/examples.py ./docs/
 ADD docs/source ./docs/source
+ADD branding ./branding
 
 RUN pip install -r requirements/build-docs.txt
 RUN sphinx-build -W -b html docs/source docs/build

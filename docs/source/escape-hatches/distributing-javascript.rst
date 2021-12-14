@@ -52,7 +52,7 @@ briefly look at what's required. At a high level, we must consider how to...
 
 1. bundle your Javascript into an `ECMAScript Module`)
 2. include that Javascript bundle in a Python package
-3. use it as a component in your applciation using IDOM
+3. use it as a component in your application using IDOM
 
 In the descriptions to follow we'll be assuming that:
 
