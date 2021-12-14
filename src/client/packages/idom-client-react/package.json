@@ -26,6 +26,7 @@
   },
   "scripts": {
     "format": "prettier --write ./src",
+    "check-format": "prettier --check ./src",
     "test": "uvu tests"
   },
   "type": "module",

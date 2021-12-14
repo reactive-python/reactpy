@@ -11,31 +11,28 @@ on:
     - cron: "0 0 * * *"
 
 jobs:
-  test-python:
+  test-python-coverage:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: nanasess/setup-chromedriver@master
       - uses: actions/setup-node@v2-beta
         with:
-          node-version: "14.x"
+          node-version: "14"
       - name: Use Latest Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.9
-      - name: Install latest NPM
-        run: |
-          npm install -g npm@7.22.0
-          npm --version
+          python-version: "3.10"
       - name: Install Python Dependencies
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
-        run: nox -s test -- --headless
-  test-python-versions:
+        env: {"CI": "true"}
+        run: nox -s test_python_suite -- --headless
+  test-python-environments:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v2
@@ -47,43 +44,12 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install latest NPM
-        run: |
-          npm install -g npm@7.22.0
-          npm --version
       - name: Install Python Dependencies
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
-        run: nox -s test_short -- --headless --no-cov
-  test-javascript:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "14"
-      - name: Install latest NPM
-        run: |
-          npm install -g npm@7.22.0
-          npm --version
-      - name: Test Javascript
-        working-directory: ./src/client
-        run: |
-          npm install
-          npm test
-          npm run build
-  test-documentation-image:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out src from Git
-        uses: actions/checkout@v2
-      - name: Get history and tags for SCM versioning to work
-        run: |
-          git fetch --prune --unshallow
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-      - name: Build Docker Image
-        run: docker build . --file docs/Dockerfile
-  test-build-package:
+        env: {"CI": "true"}
+        run: nox -s test_python -- --headless --no-cov
+  test-docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -93,14 +59,21 @@ jobs:
       - name: Use Latest Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.9
-      - name: Install latest NPM
-        run: |
-          npm install -g npm@7.22.0
-          npm --version
+          python-version: "3.9"
       - name: Install Python Dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements/build-pkg.txt
-      - name: Test Build Creation
-        run: python setup.py bdist_wheel sdist
+        run: pip install -r requirements/test-run.txt
+      - name: Run Tests
+        env: {"CI": "true"}
+        run: nox -s test_docs
+  test-javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: "14"
+      - name: Install Python Dependencies
+        run: pip install -r requirements/test-run.txt
+      - name: Run Tests
+        env: {"CI": "true"}
+        run: nox -s test_javascript
