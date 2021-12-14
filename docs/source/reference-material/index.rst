@@ -4,7 +4,7 @@ Reference Material
 .. toctree::
     :hidden:
 
-    gallery
+    examples
     hooks-api
     javascript-api
     browser-events

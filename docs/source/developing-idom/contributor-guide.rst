@@ -9,7 +9,7 @@ Contributor Guide
 This project uses the `GitHub Flow`_ (more detail :ref:`below <Making a Pull Request>`)
 for collaboration and consists primarily of Python code and Javascript code. A
 :ref:`variety of tools <Development Environment>` are used to aid in its development.
-Any code contributed to IDOM is validated by a :ref:` series of tests <Running The
+Any code contributed to IDOM is validated by a :ref:`series of tests <Running The
 Tests>` to ensure its quality and correctness.
 
 

@@ -26,7 +26,7 @@ After clicking "Next", if you check the server logs, you'll discover an
 ``UnboundLocalError`` error. It turns out that in this case, the ``index = index + 1``
 statement is similar to `trying to set global variables
 <https://stackoverflow.com/questions/9264763/dont-understand-why-unboundlocalerror-occurs-closure>`__.
-Tehcnically there's a way to `fix this error
+Technically there's a way to `fix this error
 <https://docs.python.org/3/reference/simple_stmts.html#nonlocal>`__, but even if we did,
 that still wouldn't fix the underlying problems:
 
@@ -233,7 +233,7 @@ below highlights a line of code where something of interest occurs:
         We've just now told IDOM that we want to update the state of our ``Gallery`` and
         that it needs to be re-rendered. More specifically, we are incrementing its
         ``index``, and once ``Gallery`` re-renders the index *will* be ``1``.
-        Importantly, at this point, **the value of ``index`` is still ``0``**! This will
+        Importantly, at this point, the value of ``index`` is still ``0``! This will
         only change once the component begins to re-render.
 
     .. tab-item:: 7
