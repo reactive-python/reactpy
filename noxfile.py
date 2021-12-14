@@ -56,7 +56,7 @@ def apply_standard_pip_upgrades(session: Session) -> None:
 @do_first
 def install_latest_npm_in_ci(session: Session) -> None:
     if os.environ.get("CI") in TRUE_VALUES:
-        session.log("Running in CI environment")
+        session.log("Running in CI environment - installing latest NPM")
         session.run("npm", "install", "-g", "npm@latest", external=True)
 
 
