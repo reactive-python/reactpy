@@ -7,7 +7,7 @@
   },
   "description": "A client application for IDOM implemented in React",
   "devDependencies": {
-    "prettier": "^2.2.1"
+    "prettier": "^2.5.1"
   },
   "license": "MIT",
   "main": "src/index.js",
