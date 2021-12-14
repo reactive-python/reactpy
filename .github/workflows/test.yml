@@ -22,17 +22,17 @@ jobs:
       - name: Use Latest Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.10"
+          python-version: "3.9"
       - name: Install Python Dependencies
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
-        env: {"CI": "true"}
+        env: { "CI": "true" }
         run: nox -s test_python_suite -- --headless
   test-python-environments:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.7", "3.8", "3.9"]
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v2
@@ -47,7 +47,7 @@ jobs:
       - name: Install Python Dependencies
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
-        env: {"CI": "true"}
+        env: { "CI": "true" }
         run: nox -s test_python -- --headless --no-cov
   test-docs:
     runs-on: ubuntu-latest
@@ -63,7 +63,7 @@ jobs:
       - name: Install Python Dependencies
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
-        env: {"CI": "true"}
+        env: { "CI": "true" }
         run: nox -s test_docs
   test-javascript:
     runs-on: ubuntu-latest
@@ -75,5 +75,5 @@ jobs:
       - name: Install Python Dependencies
         run: pip install -r requirements/test-run.txt
       - name: Run Tests
-        env: {"CI": "true"}
+        env: { "CI": "true" }
         run: nox -s test_javascript
