@@ -18,6 +18,7 @@
   },
   "scripts": {
     "format": "prettier --write ./src",
+    "check-format": "prettier --check ./src",
     "test": "echo 'no tests'"
   },
   "version": "0.33.3"

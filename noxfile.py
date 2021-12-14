@@ -4,7 +4,7 @@ import functools
 import os
 import re
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, TypeVar
 
 import nox
 from nox.sessions import Session
@@ -13,22 +13,56 @@ from nox.sessions import Session
 ROOT = Path(__file__).parent
 SRC = ROOT / "src"
 POSARGS_PATTERN = re.compile(r"^(\w+)\[(.+)\]$")
+TRUE_VALUES = {"true", "True", "TRUE", "1"}
 
 
-def apply_standard_pip_upgrades(
-    function: Callable[[Session], Any]
-) -> Callable[[Session], Any]:
-    @functools.wraps(function)
-    def wrapper(session: Session) -> None:
-        session.install("--upgrade", "pip", "setuptools", "wheel")
-        return function(session)
+_Return = TypeVar("_Return")
 
-    return wrapper
+
+def do_first(
+    first_session_func: Callable[[Session], None]
+) -> Callable[[Callable[[Session], _Return]], Callable[[Session], _Return]]:
+    """Decorator for functions defining session actions that should happen first
+
+    >>> @do_first
+    >>> def setup(session):
+    >>>     ...  # do some setup
+    >>>
+    >>> @setup
+    >>> def the_actual_session(session):
+    >>>     ...  # so actual work
+
+    This makes it quick an easy to define common setup actions.
+    """
+
+    def setup(
+        second_session_func: Callable[[Session], _Return]
+    ) -> Callable[[Session], _Return]:
+        @functools.wraps(second_session_func)
+        def wrapper(session: Session) -> Any:
+            first_session_func(session)
+            return second_session_func(session)
+
+        return wrapper
+
+    return setup
+
+
+@do_first
+def apply_standard_pip_upgrades(session: Session) -> None:
+    session.install("--upgrade", "pip")
+
+
+@do_first
+def install_latest_npm_in_ci(session: Session) -> None:
+    if os.environ.get("CI") in TRUE_VALUES:
+        session.run("npm", "install", "-g", "npm@latest")
 
 
 @nox.session(reuse_venv=True)
 @apply_standard_pip_upgrades
 def format(session: Session) -> None:
+    """Auto format Python and Javascript code"""
     # format Python
     install_requirements_file(session, "check-style")
     session.run("black", ".")
@@ -58,6 +92,7 @@ def example(session: Session) -> None:
 
 
 @nox.session(reuse_venv=True)
+@install_latest_npm_in_ci
 @apply_standard_pip_upgrades
 def docs(session: Session) -> None:
     """Build and display documentation in the browser (automatically reloads on change)"""
@@ -115,23 +150,31 @@ def docs_in_docker(session: Session) -> None:
 def test(session: Session) -> None:
     """Run the complete test suite"""
     session.notify("test_python", posargs=session.posargs)
-    session.notify("test_types")
-    session.notify("test_style")
     session.notify("test_docs")
     session.notify("test_javascript")
 
 
 @nox.session
-def test_short(session: Session) -> None:
-    """Run a shortened version of the test suite"""
-    session.notify("test_python", posargs=session.posargs)
-    session.notify("test_docs")
-    session.notify("test_javascript")
-
-
-@nox.session
-@apply_standard_pip_upgrades
 def test_python(session: Session) -> None:
+    """Run all Python checks"""
+    session.notify("test_python_suite", posargs=session.posargs)
+    session.notify("test_python_types")
+    session.notify("test_python_style")
+    session.notify("test_python_build")
+
+
+@nox.session
+def test_javascript(session: Session) -> None:
+    """Run all Javascript checks"""
+    session.notify("test_javascript_suite")
+    session.notify("test_javascript_build")
+    session.notify("test_javascript_style")
+
+
+@nox.session
+@install_latest_npm_in_ci
+@apply_standard_pip_upgrades
+def test_python_suite(session: Session) -> None:
     """Run the Python-based test suite"""
     session.env["IDOM_DEBUG_MODE"] = "1"
     install_requirements_file(session, "test-env")
@@ -149,8 +192,8 @@ def test_python(session: Session) -> None:
 
 @nox.session
 @apply_standard_pip_upgrades
-def test_types(session: Session) -> None:
-    """Perform a static type analysis of the codebase"""
+def test_python_types(session: Session) -> None:
+    """Perform a static type analysis of the Python codebase"""
     install_requirements_file(session, "check-types")
     install_requirements_file(session, "pkg-deps")
     install_requirements_file(session, "pkg-extras")
@@ -159,8 +202,8 @@ def test_types(session: Session) -> None:
 
 @nox.session
 @apply_standard_pip_upgrades
-def test_style(session: Session) -> None:
-    """Check that style guidelines are being followed"""
+def test_python_style(session: Session) -> None:
+    """Check that Python style guidelines are being followed"""
     install_requirements_file(session, "check-style")
     session.run("flake8", "src/idom", "tests", "docs")
     black_default_exclude = r"\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist"
@@ -175,6 +218,15 @@ def test_style(session: Session) -> None:
 
 
 @nox.session
+@apply_standard_pip_upgrades
+def test_python_build(session: Session) -> None:
+    """Test whether the Python package can be build for distribution"""
+    install_requirements_file(session, "build-pkg")
+    session.run("python", "setup.py", "bdist_wheel", "sdist")
+
+
+@nox.session
+@install_latest_npm_in_ci
 @apply_standard_pip_upgrades
 def test_docs(session: Session) -> None:
     """Verify that the docs build and that doctests pass"""
@@ -192,19 +244,47 @@ def test_docs(session: Session) -> None:
         "docs/build",
     )
     session.run("sphinx-build", "-b", "doctest", "docs/source", "docs/build")
+    # ensure docker image build works too
+    session.run("docker", "build", ".", "--file", "docs/Dockerfile", external=True)
+
+
+@do_first
+@install_latest_npm_in_ci
+def setup_client_env(session: Session) -> None:
+    session.chdir(SRC / "client")
+    session.run("npm", "install", external=True)
 
 
 @nox.session
-def test_javascript(session: Session) -> None:
+@setup_client_env
+def test_javascript_suite(session: Session) -> None:
     """Run the Javascript-based test suite and ensure it bundles succesfully"""
-    session.chdir(SRC / "client")
-    session.run("npm", "install", external=True)
     session.run("npm", "run", "test", external=True)
+
+
+@nox.session
+@setup_client_env
+def test_javascript_build(session: Session) -> None:
+    """Run the Javascript-based test suite and ensure it bundles succesfully"""
+    session.run("npm", "run", "test", external=True)
+
+
+@nox.session
+@setup_client_env
+def test_javascript_style(session: Session) -> None:
+    """Check that Javascript style guidelines are being followed"""
+    session.run("npm", "run", "check-format", external=True)
+
+
+@nox.session
+def build_js(session: Session) -> None:
+    """Build javascript client code"""
+    session.chdir(SRC / "client")
     session.run("npm", "run", "build", external=True)
 
 
 @nox.session
-def tag(session: Session):
+def tag(session: Session) -> None:
     """Create a new git tag"""
     try:
         session.run(
@@ -263,12 +343,6 @@ def update_version(session: Session) -> None:
 
     # trigger npm install to update package-lock.json
     session.install("-e", ".")
-
-
-@nox.session
-def build_js(session: Session) -> None:
-    session.chdir(SRC / "client")
-    session.run("npm", "run", "build", external=True)
 
 
 @nox.session(reuse_venv=True)

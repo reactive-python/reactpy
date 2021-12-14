@@ -12,7 +12,8 @@
     "build": "snowpack build",
     "format": "npm --workspaces run format",
     "publish": "npm --workspaces publish",
-    "test": "npm --workspaces test"
+    "test": "npm --workspaces test",
+    "check-format": "npm --workspaces run check-format"
   },
   "version": "0.33.3",
   "workspaces": [

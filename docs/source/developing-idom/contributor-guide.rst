@@ -94,6 +94,9 @@ In order to develop IDOM locally you'll first need to install the following:
     *   - NPM >= 7.13
         - https://docs.npmjs.com/try-the-latest-stable-version-of-npm
 
+    *   - Docker
+        - https://docs.docker.com/get-docker/
+
 .. note::
 
     NodeJS distributes a version of NPM, but you'll want to get the latest
