@@ -109,7 +109,7 @@ _EffectApplyFunc = Union[_SyncEffectFunc, _AsyncEffectFunc]
 @overload
 def use_effect(
     function: None = None,
-    args: Sequence[Any] | ellipsis | None = ...,
+    dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> Callable[[_EffectApplyFunc], None]:
     ...
 
@@ -117,31 +117,33 @@ def use_effect(
 @overload
 def use_effect(
     function: _EffectApplyFunc,
-    args: Sequence[Any] | ellipsis | None = ...,
+    dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> None:
     ...
 
 
 def use_effect(
     function: Optional[_EffectApplyFunc] = None,
-    args: Sequence[Any] | ellipsis | None = ...,
+    dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> Optional[Callable[[_EffectApplyFunc], None]]:
     """See the full :ref:`Use Effect` docs for details
 
     Parameters:
         function:
             Applies the effect and can return a clean-up function
-        args:
-            Dependencies for the effect. If provided the effect will only trigger when
-            these args change.
+        dependencies:
+            Dependencies for the effect. The effect will only trigger if the identity
+            of any value in the given sequence changes (i.e. their :func:`id` is
+            different). By default these are inferred based on local variables that are
+            referenced by the given function.
 
     Returns:
         If not function is provided, a decorator. Otherwise ``None``.
     """
     hook = current_hook()
 
-    args = _try_to_infer_closure_args(function, args)
-    memoize = use_memo(args=args)
+    dependencies = _try_to_infer_closure_values(function, dependencies)
+    memoize = use_memo(dependencies=dependencies)
     last_clean_callback: Ref[Optional[_EffectCleanFunc]] = use_ref(None)
 
     def add_effect(function: _EffectApplyFunc) -> None:
@@ -221,7 +223,7 @@ _CallbackFunc = TypeVar("_CallbackFunc", bound=Callable[..., Any])
 @overload
 def use_callback(
     function: None = None,
-    args: Sequence[Any] | ellipsis | None = ...,
+    dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> Callable[[_CallbackFunc], _CallbackFunc]:
     ...
 
@@ -229,26 +231,31 @@ def use_callback(
 @overload
 def use_callback(
     function: _CallbackFunc,
-    args: Sequence[Any] | ellipsis | None = ...,
+    dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> _CallbackFunc:
     ...
 
 
 def use_callback(
     function: Optional[_CallbackFunc] = None,
-    args: Sequence[Any] | ellipsis | None = ...,
+    dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> Union[_CallbackFunc, Callable[[_CallbackFunc], _CallbackFunc]]:
     """See the full :ref:`Use Callback` docs for details
 
     Parameters:
-        function: the function whose identity will be preserved
-        args: The identity the ``function`` will be udpated when these ``args`` change.
+        function:
+            The function whose identity will be preserved
+        dependencies:
+            Dependencies of the callback. The identity the ``function`` will be udpated
+            if the identity of any value in the given sequence changes (i.e. their
+            :func:`id` is different). By default these are inferred based on local
+            variables that are referenced by the given function.
 
     Returns:
         The current function
     """
-    args = _try_to_infer_closure_args(function, args)
-    memoize = use_memo(args=args)
+    dependencies = _try_to_infer_closure_values(function, dependencies)
+    memoize = use_memo(dependencies=dependencies)
 
     def setup(function: _CallbackFunc) -> _CallbackFunc:
         return memoize(lambda: function)
@@ -269,7 +276,7 @@ class _LambdaCaller(Protocol):
 @overload
 def use_memo(
     function: None = None,
-    args: Sequence[Any] | ellipsis | None = ...,
+    dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> _LambdaCaller:
     ...
 
@@ -277,41 +284,46 @@ def use_memo(
 @overload
 def use_memo(
     function: Callable[[], _StateType],
-    args: Sequence[Any] | ellipsis | None = ...,
+    dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> _StateType:
     ...
 
 
 def use_memo(
     function: Optional[Callable[[], _StateType]] = None,
-    args: Sequence[Any] | ellipsis | None = ...,
+    dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> Union[_StateType, Callable[[Callable[[], _StateType]], _StateType]]:
     """See the full :ref:`Use Memo` docs for details
 
     Parameters:
-        function: The function to be memoized.
-        args: The ``function`` will be recomputed when these args change.
+        function:
+            The function to be memoized.
+        dependencies:
+            Dependencies for the memoized function. The memo will only be recomputed if
+            the identity of any value in the given sequence changes (i.e. their
+            :func:`id` is different). By default these are inferred based on local
+            variables that are referenced by the given function.
 
     Returns:
         The current state
     """
-    args = _try_to_infer_closure_args(function, args)
+    dependencies = _try_to_infer_closure_values(function, dependencies)
 
     memo: _Memo[_StateType] = _use_const(_Memo)
 
     if memo.empty():
         # we need to initialize on the first run
         changed = True
-        memo.args = () if args is None else args
-    elif args is None:
+        memo.deps = () if dependencies is None else dependencies
+    elif dependencies is None:
         changed = True
-        memo.args = ()
+        memo.deps = ()
     elif (
-        len(memo.args) != len(args)
-        # if args are same length check identity for each item
-        or any(current is not new for current, new in zip(memo.args, args))
+        len(memo.deps) != len(dependencies)
+        # if deps are same length check identity for each item
+        or any(current is not new for current, new in zip(memo.deps, dependencies))
     ):
-        memo.args = args
+        memo.deps = dependencies
         changed = True
     else:
         changed = False
@@ -338,10 +350,10 @@ def use_memo(
 class _Memo(Generic[_StateType]):
     """Simple object for storing memoization data"""
 
-    __slots__ = "value", "args"
+    __slots__ = "value", "deps"
 
     value: _StateType
-    args: Sequence[Any]
+    deps: Sequence[Any]
 
     def empty(self) -> bool:
         try:
@@ -368,11 +380,11 @@ def _use_const(function: Callable[[], _StateType]) -> _StateType:
     return current_hook().use_state(function)
 
 
-def _try_to_infer_closure_args(
+def _try_to_infer_closure_values(
     func: Callable[..., Any] | None,
-    args: Sequence[Any] | ellipsis | None,
+    values: Sequence[Any] | ellipsis | None,
 ) -> Sequence[Any] | None:
-    if args is ...:
+    if values is ...:
         if isinstance(func, FunctionType):
             return (
                 [cell.cell_contents for cell in func.__closure__]
@@ -382,7 +394,7 @@ def _try_to_infer_closure_args(
         else:
             return None
     else:
-        return cast("Sequence[Any] | None", args)
+        return cast("Sequence[Any] | None", values)
 
 
 _current_life_cycle_hook: Dict[int, "LifeCycleHook"] = {}

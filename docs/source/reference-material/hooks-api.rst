@@ -124,7 +124,7 @@ then closing a connection:
 .. code-block::
 
     def establish_connection():
-        connection = open_connection(url)
+        connection = open_connection()
         return lambda: close_connection(connection)
 
     use_effect(establish_connection)
@@ -139,19 +139,21 @@ Conditional Effects
 ...................
 
 By default, effects are triggered after every successful render to ensure that all state
-referenced by the effect is up to date. However you can limit the number of times an
-effect is fired by specifying exactly what state the effect depends on. In doing so
-the effect will only occur when the given state changes:
+referenced by the effect is up to date. However, when an effect function references
+non-global variables, the effect will only if the value of that variable changes. For
+example, imagine that we had an effect that connected to a ``url`` state variable:
 
 .. code-block::
+
+    url, set_url = use_state("https://example.com")
 
     def establish_connection():
         connection = open_connection(url)
         return lambda: close_connection(connection)
 
-    use_effect(establish_connection, [url])
+    use_effect(establish_connection)
 
-Now a new connection will only be established if a new ``url`` is provided.
+Here, a new connection will be established whenever a new ``url`` is set.
 
 
 Async Effects
@@ -179,6 +181,20 @@ There are **three important subtleties** to note about using asynchronous effect
 
 3. An asynchronous effect may occur any time after the update which added this effect
    and before the next effect following a subsequent update.
+
+
+Manual Effect Conditions
+........................
+
+In some cases, you may want to explicitely declare when an effect should be triggered.
+You can do this by passing ``dependencies`` to ``use_effect``. Each of the following values
+produce different effect behaviors:
+
+- ``use_effect(..., dependencies=None)`` - triggers and cleans up on every render.
+- ``use_effect(..., dependencies=[])`` - only triggers on the first and cleans up after
+  the last render.
+- ``use_effect(..., dependencies=[x, y])`` - triggers on the first render and on subsequent renders if
+  ``x`` or ``y`` have changed.
 
 
 Supplementary Hooks
@@ -221,21 +237,17 @@ Use Callback
 
 .. code-block::
 
-    memoized_callback = use_callback(lambda: do_something(a, b), [a, b])
+    memoized_callback = use_callback(lambda: do_something(a, b))
 
 A derivative of :ref:`Use Memo`, the ``use_callback`` hook returns a
 `memoized <memoization>`_ callback. This is useful when passing callbacks to child
-components which check reference equality to prevent unnecessary renders. The of
-``memoized_callback`` will only change when the given dependencies do.
+components which check reference equality to prevent unnecessary renders. The
+``memoized_callback`` will only change when any local variables is references do.
 
 .. note::
 
-    The list of "dependencies" are not passed as arguments to the function. Ostensibly
-    though, that is what they represent. Thus any variable referenced by the function
-    must be listed as dependencies. We're
-    `working on a linter <https://github.com/idom-team/idom/issues/202>`_ to help
-    enforce this.
-
+    You may manually specify what values the callback depends on in the :ref:`same way
+    as effects <Manual Effect Conditions>` using the ``args`` parameter.
 
 
 Use Memo
@@ -243,16 +255,14 @@ Use Memo
 
 .. code-block::
 
-    memoized_value = use_memo(lambda: compute_something_expensive(a, b), [a, b])
+    memoized_value = use_memo(lambda: compute_something_expensive(a, b))
 
 Returns a `memoized <memoization>`_ value. By passing a constructor function accepting
 no arguments and an array of dependencies for that constructor, the ``use_callback``
 hook will return the value computed by the constructor. The ``memoized_value`` will only
-be recomputed when a value in the array of dependencies changes. This optimizes
-performance because you don't need to ``compute_something_expensive`` on every render.
-
-If the array of dependencies is ``None`` then the constructor will be called on every
-render.
+be recomputed if a local variable referenced by the constructor changes (e.g. ``a`` or
+``b`` here). This optimizes performance because you don't need to
+``compute_something_expensive`` on every render.
 
 Unlike ``use_effect`` the constructor function is called during each render (instead of
 after) and should not incur side effects.
@@ -265,11 +275,8 @@ after) and should not incur side effects.
 
 .. note::
 
-    The list of "dependencies" are not passed as arguments to the function ostensibly
-    though, that is what they represent. Thus any variable referenced by the function
-    must be listed as dependencies. We're
-    `working on a linter <https://github.com/idom-team/idom/issues/202>`_
-    to help enforce this.
+    You may manually specify what values the callback depends on in the :ref:`same way
+    as effects <Manual Effect Conditions>` using the ``args`` parameter.
 
 
 Use Ref
