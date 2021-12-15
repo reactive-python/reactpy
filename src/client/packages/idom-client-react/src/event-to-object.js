@@ -5,27 +5,40 @@ export function serializeEvent(event) {
     Object.assign(data, eventTransforms[event.type](event));
   }
 
-  const target = event.target;
-  if (target.tagName in targetTransforms) {
-    targetTransforms[target.tagName].forEach((trans) =>
-      Object.assign(data, trans(target))
-    );
-  }
+  data.target = serializeDomElement(event.target);
+  data.currentTarget =
+    event.target === event.currentTarget
+      ? data.target
+      : serializeDomElement(event.currentTarget);
+  data.relatedTarget = serializeDomElement(event.relatedTarget);
 
   return data;
 }
 
-const targetTransformCategories = {
-  hasValue: (target) => ({
-    value: target.value,
+function serializeDomElement(element) {
+  let elementData = null;
+  if (element) {
+    elementData = defaultElementTransform(element);
+    if (element.tagName in elementTransforms) {
+      elementTransforms[element.tagName].forEach((trans) =>
+        Object.assign(elementData, trans(element))
+      );
+    }
+  }
+  return elementData;
+}
+
+const elementTransformCategories = {
+  hasValue: (element) => ({
+    value: element.value,
   }),
-  hasCurrentTime: (target) => ({
-    currentTime: target.currentTime,
+  hasCurrentTime: (element) => ({
+    currentTime: element.currentTime,
   }),
-  hasFiles: (target) => {
-    if (target?.type === "file") {
+  hasFiles: (element) => {
+    if (element?.type === "file") {
       return {
-        files: Array.from(target.files).map((file) => ({
+        files: Array.from(element.files).map((file) => ({
           lastModified: file.lastModified,
           name: file.name,
           size: file.size,
@@ -38,7 +51,11 @@ const targetTransformCategories = {
   },
 };
 
-const targetTagCategories = {
+function defaultElementTransform(element) {
+  return { boundingClientRect: element.getBoundingClientRect() };
+}
+
+const elementTagCategories = {
   hasValue: [
     "BUTTON",
     "INPUT",
@@ -54,12 +71,13 @@ const targetTagCategories = {
   hasFiles: ["INPUT"],
 };
 
-const targetTransforms = {};
+const elementTransforms = {};
 
-Object.keys(targetTagCategories).forEach((category) => {
-  targetTagCategories[category].forEach((type) => {
-    const transforms = targetTransforms[type] || (targetTransforms[type] = []);
-    transforms.push(targetTransformCategories[category]);
+Object.keys(elementTagCategories).forEach((category) => {
+  elementTagCategories[category].forEach((type) => {
+    const transforms =
+      elementTransforms[type] || (elementTransforms[type] = []);
+    transforms.push(elementTransformCategories[category]);
   });
 });
 
