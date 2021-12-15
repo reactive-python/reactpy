@@ -247,7 +247,7 @@ components which check reference equality to prevent unnecessary renders. The
 .. note::
 
     You may manually specify what values the callback depends on in the :ref:`same way
-    as effects <Manual Effect Conditions>` using the ``args`` parameter.
+    as effects <Manual Effect Conditions>` using the ``dependencies`` parameter.
 
 
 Use Memo
@@ -276,7 +276,7 @@ after) and should not incur side effects.
 .. note::
 
     You may manually specify what values the callback depends on in the :ref:`same way
-    as effects <Manual Effect Conditions>` using the ``args`` parameter.
+    as effects <Manual Effect Conditions>` using the ``dependencies`` parameter.
 
 
 Use Ref
