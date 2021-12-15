@@ -331,7 +331,7 @@ async def test_use_effect_cleanup_occurs_before_next_effect():
     @idom.component
     @component_hook.capture
     def ComponentWithEffect():
-        @idom.hooks.use_effect(args=None)
+        @idom.hooks.use_effect(dependencies=None)
         def effect():
             if cleanup_triggered.current:
                 cleanup_triggered_before_next_effect.current = True
@@ -394,7 +394,7 @@ async def test_use_effect_cleanup_occurs_on_will_unmount():
         assert cleanup_triggered_before_next_render.current
 
 
-async def test_memoized_effect_on_recreated_if_args_change():
+async def test_memoized_effect_on_recreated_if_dependencies_change():
     component_hook = HookCatcher()
     set_state_callback = idom.Ref(None)
     effect_run_count = idom.Ref(0)
@@ -407,7 +407,7 @@ async def test_memoized_effect_on_recreated_if_args_change():
     def ComponentWithMemoizedEffect():
         state, set_state_callback.current = idom.hooks.use_state(first_value)
 
-        @idom.hooks.use_effect(args=[state])
+        @idom.hooks.use_effect(dependencies=[state])
         def effect():
             effect_run_count.current += 1
 
@@ -447,7 +447,7 @@ async def test_memoized_effect_cleanup_only_triggered_before_new_effect():
     def ComponentWithEffect():
         state, set_state_callback.current = idom.hooks.use_state(first_value)
 
-        @idom.hooks.use_effect(args=[state])
+        @idom.hooks.use_effect(dependencies=[state])
         def effect():
             def cleanup():
                 cleanup_trigger_count.current += 1
@@ -496,7 +496,7 @@ async def test_use_async_effect_cleanup():
     @idom.component
     @component_hook.capture
     def ComponentWithAsyncEffect():
-        @idom.hooks.use_effect(args=None)  # force this to run every time
+        @idom.hooks.use_effect(dependencies=None)  # force this to run every time
         async def effect():
             effect_ran.set()
             return cleanup_ran.set
@@ -524,7 +524,7 @@ async def test_use_async_effect_cancel(caplog):
     @idom.component
     @component_hook.capture
     def ComponentWithLongWaitingEffect():
-        @idom.hooks.use_effect(args=None)  # force this to run every time
+        @idom.hooks.use_effect(dependencies=None)  # force this to run every time
         async def effect():
             effect_ran.set()
             try:
@@ -575,7 +575,7 @@ async def test_error_in_effect_cleanup_is_gracefully_handled(caplog):
     @idom.component
     @component_hook.capture
     def ComponentWithEffect():
-        @idom.hooks.use_effect(args=None)  # force this to run every time
+        @idom.hooks.use_effect(dependencies=None)  # force this to run every time
         def ok_effect():
             def bad_cleanup():
                 raise ValueError("Something went wong :(")
@@ -709,7 +709,7 @@ async def test_use_callback_memoization():
     def ComponentWithRef():
         state, set_state_hook.current = idom.hooks.use_state(0)
 
-        @idom.hooks.use_callback(args=[state])  # use the deco form for coverage
+        @idom.hooks.use_callback(dependencies=[state])  # use the deco form for coverage
         def cb():
             return None
 
@@ -756,7 +756,7 @@ async def test_use_memo():
     assert len(used_values) == 3
 
 
-async def test_use_memo_always_runs_if_args_are_none():
+async def test_use_memo_always_runs_if_dependencies_are_none():
     component_hook = HookCatcher()
     used_values = []
 
@@ -765,7 +765,7 @@ async def test_use_memo_always_runs_if_args_are_none():
     @idom.component
     @component_hook.capture
     def ComponentWithMemo():
-        value = idom.hooks.use_memo(lambda: next(iter_values), args=None)
+        value = idom.hooks.use_memo(lambda: next(iter_values), dependencies=None)
         used_values.append(value)
         return idom.html.div()
 
@@ -779,19 +779,19 @@ async def test_use_memo_always_runs_if_args_are_none():
     assert used_values == [1, 2, 3]
 
 
-async def test_use_memo_with_stored_args_is_empty_tuple_after_args_are_none():
+async def test_use_memo_with_stored_deps_is_empty_tuple_after_deps_are_none():
     component_hook = HookCatcher()
     used_values = []
 
     iter_values = iter([1, 2, 3])
-    args_used_in_memo = idom.Ref(())
+    deps_used_in_memo = idom.Ref(())
 
     @idom.component
     @component_hook.capture
     def ComponentWithMemo():
         value = idom.hooks.use_memo(
             lambda: next(iter_values),
-            args_used_in_memo.current,  # noqa: ROH202
+            deps_used_in_memo.current,  # noqa: ROH202
         )
         used_values.append(value)
         return idom.html.div()
@@ -799,16 +799,16 @@ async def test_use_memo_with_stored_args_is_empty_tuple_after_args_are_none():
     with idom.Layout(ComponentWithMemo()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
-        args_used_in_memo.current = None
+        deps_used_in_memo.current = None
         await layout.render()
         component_hook.latest.schedule_render()
-        args_used_in_memo.current = ()
+        deps_used_in_memo.current = ()
         await layout.render()
 
     assert used_values == [1, 2, 2]
 
 
-async def test_use_memo_never_runs_if_args_args_empty_list():
+async def test_use_memo_never_runs_if_deps_is_empty_list():
     component_hook = HookCatcher()
     used_values = []
 
@@ -862,7 +862,7 @@ def test_bad_schedule_render_callback(caplog):
     assert re.match(f"Failed to schedule render via {bad_callback}", first_log_line)
 
 
-async def test_use_effect_automatically_infers_closure_args():
+async def test_use_effect_automatically_infers_closure_values():
     set_count = idom.Ref()
     did_effect = asyncio.Event()
 
@@ -890,7 +890,7 @@ async def test_use_effect_automatically_infers_closure_args():
             did_effect.clear()
 
 
-async def test_use_memo_automatically_infers_closure_args():
+async def test_use_memo_automatically_infers_closure_values():
     set_count = idom.Ref()
     did_memo = asyncio.Event()
 
