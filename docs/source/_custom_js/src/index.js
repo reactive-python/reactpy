@@ -21,7 +21,7 @@ export function mountWidgetExample(
     port: idomPort,
     path: "/_idom/",
     query: `view_id=${viewID}`,
-    secure: window.location.protocol == "https",
+    secure: window.location.protocol == "https:",
   });
 
   const mountEl = document.getElementById(mountID);
