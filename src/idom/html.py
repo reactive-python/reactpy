@@ -1,16 +1,10 @@
 """
-Standard HTML Elements
-======================
-
-
-External sources
-----------------
+**External sources**
 
 - :func:`link`
 
 
-Content Sectioning
-------------------
+**Content Sectioning**
 
 - :func:`style`
 - :func:`address`
@@ -29,8 +23,8 @@ Content Sectioning
 - :func:`section`
 
 
-Text Content
-------------
+**Text Content**
+
 - :func:`blockquote`
 - :func:`dd`
 - :func:`div`
@@ -46,8 +40,7 @@ Text Content
 - :func:`ul`
 
 
-Inline Text Semantics
----------------------
+**Inline Text Semantics**
 
 - :func:`a`
 - :func:`abbr`
@@ -73,8 +66,7 @@ Inline Text Semantics
 - :func:`var`
 
 
-Image and video
----------------
+**Image and video**
 
 - :func:`img`
 - :func:`audio`
@@ -82,8 +74,7 @@ Image and video
 - :func:`source`
 
 
-Table Content
--------------
+**Table Content**
 
 - :func:`caption`
 - :func:`col`
@@ -97,8 +88,7 @@ Table Content
 - :func:`tr`
 
 
-Forms
------
+**Forms**
 
 - :func:`button`
 - :func:`fieldset`
@@ -114,8 +104,7 @@ Forms
 - :func:`textarea`
 
 
-Interactive Elements
---------------------
+**Interactive Elements**
 
 - :func:`details`
 - :func:`dialog`

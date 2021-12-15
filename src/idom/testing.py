@@ -1,8 +1,3 @@
-"""
-Test Tooling
-============
-"""
-
 import logging
 import re
 import shutil

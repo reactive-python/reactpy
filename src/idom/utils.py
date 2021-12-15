@@ -1,8 +1,3 @@
-"""
-General Utilities
-=================
-"""
-
 from html.parser import HTMLParser as _HTMLParser
 from typing import Any, Callable, Dict, Generic, List, Optional, Tuple, TypeVar
 

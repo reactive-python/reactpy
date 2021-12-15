@@ -6,9 +6,9 @@ Reference Material
 
     examples
     hooks-api
+    /_auto/apis
     javascript-api
     browser-events
-    /_autogen/user-apis
     specifications
     faq
 

@@ -1,8 +1,3 @@
-"""
-Dispatchers
-===========
-"""
-
 from __future__ import annotations
 
 from asyncio import Future, Queue, ensure_future

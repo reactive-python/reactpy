@@ -1,8 +1,3 @@
-"""
-Server Prefabs
-==============
-"""
-
 import logging
 from typing import Any, Dict, Optional, Tuple, TypeVar
 
