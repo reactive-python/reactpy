@@ -29,6 +29,7 @@ from idom.config import (
 )
 from idom.utils import Ref
 
+from ._event_proxy import _wrap_in_warning_event_proxies
 from .hooks import LifeCycleHook
 from .proto import ComponentType, EventHandlerDict, VdomJson
 from .vdom import validate_vdom_json
@@ -119,7 +120,7 @@ class Layout:
 
         if handler is not None:
             try:
-                await handler.function(event.data)
+                await handler.function(_wrap_in_warning_event_proxies(event.data))
             except Exception:
                 logger.exception(f"Failed to execute event handler {handler}")
         else:
