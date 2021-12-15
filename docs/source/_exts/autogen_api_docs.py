@@ -2,101 +2,137 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Collection, Iterator
 
 from sphinx.application import Sphinx
 
 
 HERE = Path(__file__).parent
-PACKAGE_SRC = HERE.parent.parent.parent / "src"
+SRC = HERE.parent.parent.parent / "src"
+PYTHON_PACKAGE = SRC / "idom"
 
-AUTOGEN_DIR = HERE.parent / "_autogen"
-AUTOGEN_DIR.mkdir(exist_ok=True)
+AUTO_DIR = HERE.parent / "_auto"
+AUTO_DIR.mkdir(exist_ok=True)
 
-PUBLIC_API_REFERENCE_FILE = AUTOGEN_DIR / "user-apis.rst"
-PRIVATE_API_REFERENCE_FILE = AUTOGEN_DIR / "dev-apis.rst"
+API_FILE = AUTO_DIR / "apis.rst"
 
+# All valid RST section symbols - it shouldn't be realistically possible to exhaust them
+SECTION_SYMBOLS = r"""!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
 
-PUBLIC_TITLE = """\
-User API
-========
+AUTODOC_TEMPLATE_WITH_MEMBERS = """\
+.. automodule:: {module}
+    :members:
 """
 
-PUBLIC_MISC_TITLE = """\
-Misc Modules
-------------
+AUTODOC_TEMPLATE_WITHOUT_MEMBERS = """\
+.. automodule:: {module}
 """
 
-PRIVATE_TITLE = """\
-Dev API
-=======
+TITLE = """\
+==========
+Python API
+==========
 """
-
-PRIVATE_MISC_TITLE = """\
-Misc Dev Modules
-----------------
-"""
-
-AUTODOC_TEMPLATE = ".. automodule:: {module}\n    :members:\n"
 
 
 def generate_api_docs():
-    docs = {
-        "public.main": [PUBLIC_TITLE],
-        "public.misc": [PUBLIC_MISC_TITLE],
-        "private.main": [PRIVATE_TITLE],
-        "private.misc": [PRIVATE_MISC_TITLE],
-    }
+    content = [TITLE]
 
-    for file in sorted(pathlib_walk(PACKAGE_SRC, ignore_dirs=["node_modules"])):
-        if not file.suffix == ".py" or file.stem.startswith("__"):
-            # skip non-Python files along with __init__ and __main__
-            continue
-        public_vs_private = "private" if is_private_module(file) else "public"
-        main_vs_misc = "main" if file_starts_with_docstring(file) else "misc"
-        key = f"{public_vs_private}.{main_vs_misc}"
-        docs[key].append(make_autodoc_section(file, public_vs_private == "private"))
+    for file in walk_python_files(PYTHON_PACKAGE, ignore_dirs={"__pycache__"}):
+        if file.name == "__init__.py":
+            if file.parent != PYTHON_PACKAGE:
+                content.append(make_package_section(file))
+        else:
+            content.append(make_module_section(file))
 
-    public_content = docs["public.main"]
-    if len(docs["public.misc"]) > 1:
-        public_content += docs["public.misc"]
-
-    private_content = docs["private.main"]
-    if len(docs["private.misc"]) > 1:
-        private_content += docs["private.misc"]
-
-    PUBLIC_API_REFERENCE_FILE.write_text("\n".join(public_content))
-    PRIVATE_API_REFERENCE_FILE.write_text("\n".join(private_content))
+    API_FILE.write_text("\n".join(content))
 
 
-def pathlib_walk(root: Path, ignore_dirs: list[str]):
-    for path in root.iterdir():
+def make_package_section(file: Path) -> str:
+    parent_dir = file.parent
+    symbol = get_section_symbol(parent_dir)
+    section_name = f"``{parent_dir.name}``"
+    module_name = get_module_name(parent_dir)
+    return (
+        section_name
+        + "\n"
+        + (symbol * len(section_name))
+        + "\n"
+        + AUTODOC_TEMPLATE_WITHOUT_MEMBERS.format(module=module_name)
+    )
+
+
+def make_module_section(file: Path) -> str:
+    symbol = get_section_symbol(file)
+    section_name = f"``{file.stem}``"
+    module_name = get_module_name(file)
+    return (
+        section_name
+        + "\n"
+        + (symbol * len(section_name))
+        + "\n"
+        + AUTODOC_TEMPLATE_WITH_MEMBERS.format(module=module_name)
+    )
+
+
+def get_module_name(path: Path) -> str:
+    return ".".join(path.with_suffix("").relative_to(PYTHON_PACKAGE.parent).parts)
+
+
+def get_section_symbol(path: Path) -> str:
+    rel_path_parts = path.relative_to(PYTHON_PACKAGE).parts
+    assert len(rel_path_parts) < len(SECTION_SYMBOLS), "package structure is too deep"
+    return SECTION_SYMBOLS[len(rel_path_parts)]
+
+
+def walk_python_files(root: Path, ignore_dirs: Collection[str]) -> Iterator[Path]:
+    """Iterate over Python files
+
+    We yield in a particular order to get the correction title section structure. Given
+    a directory structure of the form::
+
+        project/
+            __init__.py
+            /package
+                __init__.py
+                module_a.py
+            module_b.py
+
+    We yield the files in this order::
+
+        project/__init__.py
+        project/package/__init__.py
+        project/package/module_a.py
+        project/module_b.py
+
+    In this way we generate the section titles in the appropriate order::
+
+        project
+        =======
+
+        project.package
+        ---------------
+
+        project.package.module_a
+        ------------------------
+
+    """
+    for path in sorted(
+        root.iterdir(),
+        key=lambda path: (
+            # __init__.py files first
+            int(not path.name == "__init__.py"),
+            # then directories
+            int(not path.is_dir()),
+            # sort by file name last
+            path.name,
+        ),
+    ):
         if path.is_dir():
-            if path.name in ignore_dirs:
-                continue
-            yield from pathlib_walk(path, ignore_dirs)
-        else:
+            if (path / "__init__.py").exists() and path.name not in ignore_dirs:
+                yield from walk_python_files(path, ignore_dirs)
+        elif path.suffix == ".py":
             yield path
-
-
-def is_private_module(path: Path) -> bool:
-    return any(p.startswith("_") for p in path.parts)
-
-
-def make_autodoc_section(path: Path, is_public) -> str:
-    rel_path = path.relative_to(PACKAGE_SRC)
-    module_name = ".".join(rel_path.with_suffix("").parts)
-    return AUTODOC_TEMPLATE.format(module=module_name, underline="-" * len(module_name))
-
-
-def file_starts_with_docstring(path: Path) -> bool:
-    for line in path.read_text().split("\n"):
-        if line.startswith("#"):
-            continue
-        if line.startswith('"""') or line.startswith("'''"):
-            return True
-        else:
-            break
-    return False
 
 
 def setup(app: Sphinx) -> None:

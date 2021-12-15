@@ -70,7 +70,6 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
     "sphinx.ext.extlinks",
-    "sphinx.ext.autosectionlabel",
     # third party extensions
     "sphinx_copybutton",
     "sphinx_reredirects",
@@ -83,6 +82,7 @@ extensions = [
     "patched_html_translator",
     "idom_example",
     "build_custom_js",
+    "custom_autosectionlabel",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -126,27 +126,9 @@ doctest_default_flags = NORMALIZE_WHITESPACE | ELLIPSIS | DONT_ACCEPT_TRUE_FOR_1
 
 # -- Extension Configuration ------------------------------------------------------
 
-# -- MyST Parser --
+# -- sphinx.ext.autosectionlabel ---
 
-myst_enable_extensions = [
-    # "amsmath",
-    "colon_fence",
-    # "deflist",
-    # "dollarmath",
-    # "html_admonition",
-    # "html_image",
-    # "linkify",
-    # "replacements",
-    # "smartquotes",
-    # "substitution",
-    # "tasklist",
-]
-
-# -- sphinx_panel --
-
-# Used to stop the extension from loading bootstrap twice since the `pydata_sphinx_theme`
-# already adds it for use.
-panels_add_bootstrap_css = False
+autosectionlabel_skip_docs = ["_auto/apis"]
 
 # -- sphinx.ext.autodoc --
 
