@@ -25,7 +25,7 @@ def ExpandableNumberInputs(values, set_values):
     for i in range(len(values)):
 
         def set_value_at_index(event, index=i):
-            new_value = float(event["value"] or 0)
+            new_value = float(event["target"]["value"] or 0)
             set_values(values[:index] + [new_value] + values[index + 1 :])
 
         inputs.append(poly_coef_input(i + 1, set_value_at_index))

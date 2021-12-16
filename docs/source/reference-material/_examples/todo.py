@@ -7,7 +7,7 @@ def Todo():
 
     async def add_new_task(event):
         if event["key"] == "Enter":
-            set_items(items + [event["value"]])
+            set_items(items + [event["target"]["value"]])
 
     tasks = []
 

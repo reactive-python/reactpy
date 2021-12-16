@@ -49,7 +49,7 @@ def Input(
     value, set_value = idom.hooks.use_state(value)
 
     def on_change(event: Dict[str, Any]) -> None:
-        value = event["value"]
+        value = event["target"]["value"]
         set_value(value)
         if not value and ignore_empty:
             return
