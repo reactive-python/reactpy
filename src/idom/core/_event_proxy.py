@@ -1,4 +1,4 @@
-from typing import Any, Sequence
+from typing import Any, Dict, Sequence
 from warnings import warn
 
 
@@ -6,7 +6,7 @@ def _wrap_in_warning_event_proxies(values: Sequence[Any]) -> Sequence[Any]:
     return [_EventProxy(x) if isinstance(x, dict) else x for x in values]
 
 
-class _EventProxy(dict[Any, Any]):
+class _EventProxy(Dict[Any, Any]):
     def __getitem__(self, key: Any) -> Any:  # pragma: no cover
         try:
             return super().__getitem__(key)

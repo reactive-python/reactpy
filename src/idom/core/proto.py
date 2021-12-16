@@ -138,7 +138,7 @@ EventHandlerDict = Dict[str, "EventHandlerType"]
 class EventHandlerFunc(Protocol):
     """A coroutine which can handle event data"""
 
-    async def __call__(self, data: List[Any]) -> None:
+    async def __call__(self, data: Sequence[Any]) -> None:
         ...
 
 
