@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: "3.9"
       - name: Install Python Dependencies
-        run: pip install -r requirements/test-run.txt
+        run: pip install -r requirements/nox-deps.txt
       - name: Run Tests
         env: { "CI": "true" }
         run: nox -s test_python_suite -- --headless
@@ -45,7 +45,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Python Dependencies
-        run: pip install -r requirements/test-run.txt
+        run: pip install -r requirements/nox-deps.txt
       - name: Run Tests
         env: { "CI": "true" }
         run: nox -s test_python -- --headless --no-cov
@@ -61,7 +61,7 @@ jobs:
         with:
           python-version: "3.9"
       - name: Install Python Dependencies
-        run: pip install -r requirements/test-run.txt
+        run: pip install -r requirements/nox-deps.txt
       - name: Run Tests
         env: { "CI": "true" }
         run: nox -s test_docs
@@ -73,7 +73,7 @@ jobs:
         with:
           node-version: "14"
       - name: Install Python Dependencies
-        run: pip install -r requirements/test-run.txt
+        run: pip install -r requirements/nox-deps.txt
       - name: Run Tests
         env: { "CI": "true" }
         run: nox -s test_javascript

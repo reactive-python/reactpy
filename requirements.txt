@@ -6,4 +6,4 @@
 -r requirements/pkg-deps.txt
 -r requirements/pkg-extras.txt
 -r requirements/test-env.txt
--r requirements/test-run.txt
+-r requirements/nox-deps.txt
