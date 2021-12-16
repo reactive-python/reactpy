@@ -223,7 +223,7 @@ def test_python_style(session: Session) -> None:
 def test_python_build(session: Session) -> None:
     """Test whether the Python package can be build for distribution"""
     install_requirements_file(session, "build-pkg")
-    session.run("python", "setup.py", "bdist_wheel", "sdist")
+    session.run("python", "-m", "build", "--sdist", "--wheel", "--outdir", "dist", ".")
 
 
 @nox.session
