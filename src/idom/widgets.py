@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from base64 import b64encode
-from typing import Any, Callable, Dict, Optional, Set, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, Set, Tuple, Union
 
 import idom
 
@@ -136,13 +136,10 @@ def hotswap(update_on_change: bool = False) -> Tuple[MountFunc, ComponentConstru
 
 
 _Func = Callable[..., Any]
-_FuncVar = TypeVar("_FuncVar", bound=_Func)
 
 
-def _use_callable(initial_func: _FuncVar) -> Tuple[_FuncVar, Callable[[_Func], None]]:
-    state: Tuple[_FuncVar, Callable[[_Func], None]] = hooks.use_state(
-        lambda: initial_func
-    )
+def _use_callable(initial_func: _Func) -> Tuple[_Func, Callable[[_Func], None]]:
+    state = hooks.use_state(lambda: initial_func)
     return state[0], lambda new: state[1](lambda old: new)
 
 

@@ -46,10 +46,31 @@ logger = getLogger(__name__)
 _StateType = TypeVar("_StateType")
 
 
+@overload
 def use_state(
-    initial_value: Union[_StateType, Callable[[], _StateType]],
+    initial_value: Callable[[], _StateType],
 ) -> Tuple[
-    _StateType, Callable[[Union[_StateType, Callable[[_StateType], _StateType]]], None]
+    _StateType,
+    Callable[[_StateType | Callable[[_StateType], _StateType]], None],
+]:
+    ...
+
+
+@overload
+def use_state(
+    initial_value: _StateType,
+) -> Tuple[
+    _StateType,
+    Callable[[_StateType | Callable[[_StateType], _StateType]], None],
+]:
+    ...
+
+
+def use_state(
+    initial_value: _StateType | Callable[[], _StateType],
+) -> Tuple[
+    _StateType,
+    Callable[[_StateType | Callable[[_StateType], _StateType]], None],
 ]:
     """See the full :ref:`Use State` docs for details
 
