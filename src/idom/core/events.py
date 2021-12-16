@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Callable, List, Optional, Sequence, overload
+from typing import Any, Callable, Optional, Sequence, overload
 
 from anyio import create_task_group
 from typing_extensions import Literal
@@ -145,18 +145,18 @@ def to_event_handler_function(
     if positional_args:
         if asyncio.iscoroutinefunction(function):
 
-            async def wrapper(data: List[Any]) -> None:
+            async def wrapper(data: Sequence[Any]) -> None:
                 await function(*data)
 
         else:
 
-            async def wrapper(data: List[Any]) -> None:
+            async def wrapper(data: Sequence[Any]) -> None:
                 function(*data)
 
         return wrapper
     elif not asyncio.iscoroutinefunction(function):
 
-        async def wrapper(data: List[Any]) -> None:
+        async def wrapper(data: Sequence[Any]) -> None:
             function(data)
 
         return wrapper
@@ -212,7 +212,7 @@ def merge_event_handler_funcs(
     elif len(functions) == 1:
         return functions[0]
 
-    async def await_all_event_handlers(data: List[Any]) -> None:
+    async def await_all_event_handlers(data: Sequence[Any]) -> None:
         async with create_task_group() as group:
             for func in functions:
                 group.start_soon(func, data)
