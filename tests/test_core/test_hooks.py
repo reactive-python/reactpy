@@ -238,8 +238,8 @@ def test_simple_input_with_use_state(driver, display):
         message_ref.current = message
 
         async def on_change(event):
-            if event["value"] == "this is a test":
-                set_message(event["value"])
+            if event["target"]["value"] == "this is a test":
+                set_message(event["target"]["value"])
 
         if message is None:
             return idom.html.input({"id": "input", "onChange": on_change})
@@ -506,7 +506,6 @@ async def test_use_async_effect_cleanup():
     with idom.Layout(ComponentWithAsyncEffect()) as layout:
         await layout.render()
 
-        cleanup_ran.wait()
         component_hook.latest.schedule_render()
 
         await layout.render()

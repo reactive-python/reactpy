@@ -25,7 +25,7 @@ def App():
             {
                 "placeholder": "Your message here...",
                 "value": message,
-                "onChange": lambda event: set_message(event["value"]),
+                "onChange": lambda event: set_message(event["target"]["value"]),
             }
         ),
         html.button({"type": "submit"}, "Send"),

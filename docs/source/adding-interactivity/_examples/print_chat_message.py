@@ -22,7 +22,7 @@ def App():
             html.select(
                 {
                     "value": recipient,
-                    "onChange": lambda event: set_recipient(event["value"]),
+                    "onChange": lambda event: set_recipient(event["target"]["value"]),
                 },
                 html.option({"value": "Alice"}, "Alice"),
                 html.option({"value": "Bob"}, "Bob"),
@@ -33,7 +33,7 @@ def App():
                 "type": "text",
                 "placeholder": "Your message...",
                 "value": message,
-                "onChange": lambda event: set_message(event["value"]),
+                "onChange": lambda event: set_message(event["target"]["value"]),
             }
         ),
         html.button({"type": "submit"}, "Send"),
