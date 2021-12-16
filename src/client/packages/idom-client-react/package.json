@@ -7,6 +7,7 @@
   "description": "A client for IDOM implemented in React",
   "devDependencies": {
     "jsdom": "16.3.0",
+    "lodash": "^4.17.21",
     "prettier": "^2.5.1",
     "uvu": "^0.5.1"
   },
@@ -25,8 +26,8 @@
     "url": "https://github.com/idom-team/idom"
   },
   "scripts": {
-    "format": "prettier --write ./src",
-    "check-format": "prettier --check ./src",
+    "format": "prettier --write ./src ./tests",
+    "check-format": "prettier --check ./src ./tests",
     "test": "uvu tests"
   },
   "type": "module",

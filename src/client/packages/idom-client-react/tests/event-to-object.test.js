@@ -1,7 +1,42 @@
 import { test } from "uvu";
+import lodash from "lodash";
 import * as assert from "uvu/assert";
 import { serializeEvent } from "../src/event-to-object.js";
 import "./tooling/setup.js";
+
+function assertEqualSerializedEventData(eventData, expectedSerializedData) {
+  const mockBoundingRect = {
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    x: 0,
+    y: 0,
+    width: 0,
+  };
+
+  const mockElement = {
+    tagName: null,
+    getBoundingClientRect: () => mockBoundingRect,
+  };
+
+  const commonEventData = {
+    target: mockElement,
+    currentTarget: mockElement,
+    relatedTarget: mockElement,
+  };
+
+  const commonSerializedEventData = {
+    target: { boundingClientRect: mockBoundingRect },
+    currentTarget: { boundingClientRect: mockBoundingRect },
+    relatedTarget: { boundingClientRect: mockBoundingRect },
+  };
+
+  assert.equal(
+    serializeEvent(lodash.merge({}, commonEventData, eventData)),
+    lodash.merge({}, commonSerializedEventData, expectedSerializedData)
+  );
+}
 
 const allTargetData = {
   files: [
@@ -21,33 +56,38 @@ const allTargetData = {
   {
     case: "adds 'files' and 'value' attributes for INPUT if type=file",
     tagName: "INPUT",
-    otherAttrs: { type: "file" },
+    addTargetAttrs: { type: "file" },
     output: {
-      files: allTargetData.files,
-      value: allTargetData.value,
+      target: {
+        files: allTargetData.files,
+        value: allTargetData.value,
+      },
     },
   },
   ...["BUTTON", "INPUT", "OPTION", "LI", "METER", "PROGRESS", "PARAM"].map(
     (tagName) => ({
       case: `adds 'value' attribute for ${tagName} element`,
       tagName,
-      output: { value: allTargetData.value },
+      output: { target: { value: allTargetData.value } },
     })
   ),
   ...["AUDIO", "VIDEO"].map((tagName) => ({
     case: `adds 'currentTime' attribute for ${tagName} element`,
     tagName,
-    output: { currentTime: allTargetData.currentTime },
+    output: { target: { currentTime: allTargetData.currentTime } },
   })),
 ].forEach((expectation) => {
   test(`serializeEvent() ${expectation.case}`, () => {
     const eventData = {
-      target: { ...allTargetData, tagName: expectation.tagName },
+      target: {
+        ...allTargetData,
+        tagName: expectation.tagName,
+      },
     };
-    if (expectation.otherAttrs) {
-      Object.assign(eventData.target, expectation.otherAttrs);
+    if (expectation.addTargetAttrs) {
+      Object.assign(eventData.target, expectation.addTargetAttrs);
     }
-    assert.equal(serializeEvent(eventData), expectation.output);
+    assertEqualSerializedEventData(eventData, expectation.output);
   });
 });
 
@@ -247,8 +287,8 @@ const allEventData = {
   },
 ].forEach((expectation) => {
   test(`serializeEvent() adds ${expectation.case} attributes`, () => {
-    assert.equal(
-      serializeEvent({ ...allEventData, type: expectation.eventType }),
+    assertEqualSerializedEventData(
+      { ...allEventData, type: expectation.eventType },
       expectation.output
     );
   });
@@ -267,9 +307,12 @@ test("serializeEvent() adds text of current selection", () => {
   const start = document.getElementById("start");
   const end = document.getElementById("end");
   window.getSelection().setBaseAndExtent(start, 0, end, 0);
-  assert.equal(serializeEvent({ ...allEventData, type: "select" }), {
-    selectedText: "START\nMIDDLE\n",
-  });
+  assertEqualSerializedEventData(
+    { ...allEventData, type: "select" },
+    {
+      selectedText: "START\nMIDDLE\n",
+    }
+  );
 });
 
 test.run();
