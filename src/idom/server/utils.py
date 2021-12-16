@@ -28,7 +28,7 @@ _SUPPORTED_PACKAGES = [
 _FuncParams = ParamSpec("_FuncParams")
 
 
-def threaded(function: Callable[_FuncParams, None]) -> Callable[_FuncParams, Thread]:  # type: ignore
+def threaded(function: Callable[_FuncParams, None]) -> Callable[_FuncParams, Thread]:
     @wraps(function)
     def wrapper(*args: Any, **kwargs: Any) -> Thread:
         def target() -> None:
