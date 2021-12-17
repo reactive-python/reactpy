@@ -26,10 +26,10 @@
     "url": "https://github.com/idom-team/idom"
   },
   "scripts": {
-    "format": "prettier --write ./src ./tests",
     "check-format": "prettier --check ./src ./tests",
+    "format": "prettier --write ./src ./tests",
     "test": "uvu tests"
   },
   "type": "module",
-  "version": "0.33.3"
+  "version": "0.34.0"
 }

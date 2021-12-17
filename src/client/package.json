@@ -9,12 +9,12 @@
   },
   "scripts": {
     "build": "snowpack build",
+    "check-format": "npm --workspaces run check-format",
     "format": "npm --workspaces run format",
     "publish": "npm --workspaces publish",
-    "test": "npm --workspaces test",
-    "check-format": "npm --workspaces run check-format"
+    "test": "npm --workspaces test"
   },
-  "version": "0.33.3",
+  "version": "0.34.0",
   "workspaces": [
     "./packages/*"
   ]

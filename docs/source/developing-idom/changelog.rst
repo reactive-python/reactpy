@@ -2,6 +2,33 @@ Changelog
 =========
 
 
+0.34.0
+------
+
+This release contains a variety of minor fixes and improvements which came out of
+rewriting the documentation. The most significant of these changes is the remove of
+target element attributes from the top-level of event data dictionaries. For example,
+instead of being able to find the value of an input at ``event["value"]`` it will
+instead be found at ``event["target"]["value"]``. For a short period we will issue a
+:class:`DeprecationWarning` when target attributes are requested at the top-level of the
+event dictionary. As part of this change we also add ``event["currentTarget"]`` and
+``event["relatedTarget"]`` keys to the event dictionary as well as a
+``event[some_target]["boundingClientRect"]`` where ``some_target`` may be ``"target"``,
+``"currentTarget"`` or ``"relatedTarget"``.
+
+**Closed Issues**
+
+- Move target attributes to ``event['target']`` - :issue:`548`
+
+**Pull Requests**
+
+- Correctly Handle Target Event Data - :pull:`550`
+- Clean up WS console logging - :pull:`522`
+- automatically infer closure arguments - :pull:`520`
+- Documentation Rewrite - :pull:`519`
+- add option to replace existing when creating a module - :pull:`516`
+
+
 0.33.3
 ------
 

@@ -303,7 +303,7 @@ def tag(session: Session) -> None:
     install_requirements_file(session, "make-release")
     session.run("pysemver", "check", version)
 
-    changelog_file = ROOT / "docs" / "source" / "changelog.rst"
+    changelog_file = ROOT / "docs" / "source" / "developing-idom" / "changelog.rst"
     for line in changelog_file.read_text().splitlines():
         if line == version:
             break
