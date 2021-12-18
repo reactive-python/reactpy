@@ -46,33 +46,63 @@ def main():
 
 def _example_name_input() -> str:
     if len(sys.argv) == 1:
-        print("No example argument given. Provide an example's number or name:")
-        _print_available_options()
+        _print_error(
+            "No example argument given. Provide an example's number from above."
+        )
         sys.exit(1)
 
-    ex_name = sys.argv[1]
-
-    if ex_name in EXAMPLE_NAME_SET:
-        return ex_name
+    ex_num = sys.argv[1]
 
     try:
-        ex_num = int(ex_name)
+        ex_num = int(ex_num)
     except ValueError:
-        print(f"No example {ex_name!r} exists. Provide an example's number or name:")
-        _print_available_options()
+        _print_error(
+            f"No example {ex_num!r} exists. Provide an example's number as an integer."
+        )
         sys.exit(1)
 
     ex_index = ex_num - 1
     try:
         return EXAMPLE_NAME_LIST[ex_index]
     except IndexError:
-        print(f"No example #{ex_num} exists.")
+        _print_error(f"No example #{ex_num} exists. Choose from an option above.")
         sys.exit(1)
 
 
+def _print_error(*args) -> None:
+    _print_available_options()
+    print(*args)
+
+
 def _print_available_options():
+    examples_by_path = {}
     for i, name in enumerate(EXAMPLE_NAME_LIST):
-        print(f"{i + 1}.", name)
+        if "/" not in name:
+            path = ""
+        else:
+            path, name = name.rsplit("/", 1)
+        examples_by_path.setdefault(path, []).append(name)
+
+    number = 1
+    print()
+    for path, names in examples_by_path.items():
+        title = " ".join(
+            map(
+                str.title,
+                path.replace("/_examples", "")
+                .replace("/", " > ")
+                .replace("-", " ")
+                .replace("_", " ")
+                .upper()
+                .split(),
+            )
+        )
+        print(title)
+        print("-" * len(title))
+        for name in names:
+            print(f"{number}. ", name)
+            number += 1
+        print()
 
 
 if __name__ == "__main__":

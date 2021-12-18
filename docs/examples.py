@@ -22,7 +22,7 @@ def load_examples() -> Iterator[tuple[str, Callable[[], ComponentType]]]:
 
 def all_example_names() -> set[str]:
     names = set()
-    for file in _iter_example_files():
+    for file in _iter_example_files(SOURCE_DIR):
         path = file.parent if file.name == "app.py" else file
         names.add("/".join(path.relative_to(SOURCE_DIR).with_suffix("").parts))
     return names
@@ -64,12 +64,12 @@ def get_example_files_by_name(
         return [path] if path.exists() else []
 
 
-def _iter_example_files() -> Iterator[Path]:
-    for path in SOURCE_DIR.iterdir():
+def _iter_example_files(root: Path) -> Iterator[Path]:
+    for path in root.iterdir():
         if path.is_dir():
             if not path.name.startswith("_") or path.name == "_examples":
-                yield from path.rglob("*.py")
-        elif path != CONF_FILE and path.suffix == ".py":
+                yield from _iter_example_files(path)
+        elif path.suffix == ".py" and path != CONF_FILE:
             yield path
 
 
