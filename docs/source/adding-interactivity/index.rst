@@ -124,7 +124,7 @@ which owns the state.
 
 This behavior of IDOM means that each render of a component is like taking a snapshot of
 the UI based on the component's state at that time. Treating state in this way can help
-reduce subtle bugs. For example, in the code below there's a simple chat app with a
+reduce subtle bugs. For instance, in the code below there's a simple chat app with a
 message input and recipient selector. The catch is that the message actually gets sent 5
 seconds after the "Send" button is clicked. So what would happen if we changed the
 recipient between the time the "Send" button was clicked and the moment the message is

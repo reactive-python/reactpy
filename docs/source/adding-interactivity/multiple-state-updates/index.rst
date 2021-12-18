@@ -41,9 +41,9 @@ handlers have finished running.
 
 This behavior of IDOM to "batch" state changes that take place inside a single event
 handler, do not extend across event handlers. In other words, distinct events will
-always produce distinct renders. For example, if clicking a button increments a counter
-by one, no matter how fast the user clicks, the view will never jump from 1 to 3 - it
-will always display 1, then 2, and then 3.
+always produce distinct renders. To give an example, if clicking a button increments a
+counter by one, no matter how fast the user clicks, the view will never jump from 1 to 3
+- it will always display 1, then 2, and then 3.
 
 
 Incremental Updates

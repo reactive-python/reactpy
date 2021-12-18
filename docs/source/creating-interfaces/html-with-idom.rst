@@ -52,7 +52,7 @@ what the HTML would look like if displayed:
 
 What this shows is that you can recreate the same HTML layouts with IDOM using functions
 from the :mod:`idom.html` module. These function share the same names as their
-corresponding HTML tags. For example, the ``<h1/>`` element above has a similarly named
+corresponding HTML tags. For instance, the ``<h1/>`` element above has a similarly named
 :func:`~idom.html.h1` function. With that said, while the code above looks similar, it's
 not very useful because we haven't captured the results from these function calls in a
 variable. To do this we need to wrap up the layout above into a single

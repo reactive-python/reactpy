@@ -173,13 +173,13 @@ Specific Server Settings
 The ``Config`` :ref:`described above <Common Server Settings>` is meant to be an
 implementation agnostic - all ``Config`` objects support a similar set of options.
 However, there are inevitably cases where you need to set up your chosen server using
-implementation specific details. For example, you might want to add an extra route to
+implementation specific details. For instance, you might want to add an extra route to
 the server your using in order to provide extra resources to your application.
 
 Doing this kind of set up can be achieved by passing in an instance of your chosen
-server implementation into the ``app`` parameter of the ``run()`` function. For example,
-if I'm making my application with ``sanic`` and I want to add an extra route I would
-do the following:
+server implementation into the ``app`` parameter of the ``run()`` function. To
+illustrate, if I'm making my application with ``sanic`` and I want to add an extra route
+I would do the following:
 
 .. code-block::
 
