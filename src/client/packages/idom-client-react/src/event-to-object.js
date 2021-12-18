@@ -81,14 +81,14 @@ Object.keys(elementTagCategories).forEach((category) => {
   });
 });
 
-const eventTransformCategories = {
-  clipboard: (event) => ({
+function EventTransformCategories() {
+  this.clipboard = (event) => ({
     clipboardData: event.clipboardData,
-  }),
-  composition: (event) => ({
+  });
+  this.composition = (event) => ({
     data: event.data,
-  }),
-  keyboard: (event) => ({
+  });
+  this.keyboard = (event) => ({
     altKey: event.altKey,
     charCode: event.charCode,
     ctrlKey: event.ctrlKey,
@@ -100,8 +100,8 @@ const eventTransformCategories = {
     repeat: event.repeat,
     shiftKey: event.shiftKey,
     which: event.which,
-  }),
-  mouse: (event) => ({
+  });
+  this.mouse = (event) => ({
     altKey: event.altKey,
     button: event.button,
     buttons: event.buttons,
@@ -114,8 +114,9 @@ const eventTransformCategories = {
     screenX: event.screenX,
     screenY: event.screenY,
     shiftKey: event.shiftKey,
-  }),
-  pointer: (event) => ({
+  });
+  this.pointer = (event) => ({
+    ...this.mouse(event),
     pointerId: event.pointerId,
     width: event.width,
     height: event.height,
@@ -124,36 +125,36 @@ const eventTransformCategories = {
     tiltY: event.tiltY,
     pointerType: event.pointerType,
     isPrimary: event.isPrimary,
-  }),
-  selection: () => {
+  });
+  this.selection = () => {
     return { selectedText: window.getSelection().toString() };
-  },
-  touch: (event) => ({
+  };
+  this.touch = (event) => ({
     altKey: event.altKey,
     ctrlKey: event.ctrlKey,
     metaKey: event.metaKey,
     shiftKey: event.shiftKey,
-  }),
-  ui: (event) => ({
+  });
+  this.ui = (event) => ({
     detail: event.detail,
-  }),
-  wheel: (event) => ({
+  });
+  this.wheel = (event) => ({
     deltaMode: event.deltaMode,
     deltaX: event.deltaX,
     deltaY: event.deltaY,
     deltaZ: event.deltaZ,
-  }),
-  animation: (event) => ({
+  });
+  this.animation = (event) => ({
     animationName: event.animationName,
     pseudoElement: event.pseudoElement,
     elapsedTime: event.elapsedTime,
-  }),
-  transition: (event) => ({
+  });
+  this.transition = (event) => ({
     propertyName: event.propertyName,
     pseudoElement: event.pseudoElement,
     elapsedTime: event.elapsedTime,
-  }),
-};
+  });
+}
 
 const eventTypeCategories = {
   clipboard: ["copy", "cut", "paste"],
@@ -201,6 +202,7 @@ const eventTypeCategories = {
 
 const eventTransforms = {};
 
+const eventTransformCategories = new EventTransformCategories();
 Object.keys(eventTypeCategories).forEach((category) => {
   eventTypeCategories[category].forEach((type) => {
     eventTransforms[type] = eventTransformCategories[category];
