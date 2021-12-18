@@ -146,7 +146,7 @@ image, the shopping cart. In IDOM, this kind of component-specific memory is cre
 updated with a "hook" called ``use_state()`` that creates a **state variable** and
 **state setter** respectively:
 
-.. idom:: adding-interactivity/_examples/adding_state_variable
+.. idom:: adding-interactivity/components-with-state/_examples/adding_state_variable
 
 In IDOM, ``use_state``, as well as any other function whose name starts with ``use``, is
 called a "hook". These are special functions that should only be called while IDOM is

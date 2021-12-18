@@ -15,7 +15,7 @@ This is why, in the example below, even though it might seem like clicking the
 "Increment" button would cause the ``number`` to increase by ``3``, it only does by
 ``1``:
 
-.. idom:: _examples/set_counter_3_times
+.. idom:: ../state-as-a-snapshot/_examples/set_counter_3_times
 
 The reason this happens is because, so long as the event handler is synchronous (i.e.
 the event handler is not an ``async`` function), IDOM waits until all the code in an

@@ -28,6 +28,8 @@ This is different from something like a :class:`str` which is immutable. Instead
 modifying the underlying data of an existing value, a new one must be created to
 facilitate change:
 
+.. code-block::
+
     x = "Hello"
     y = x + " world!"
     assert x is not y
@@ -49,6 +51,7 @@ Why Avoid Mutation?
 
 Unfortunately, IDOM does not understand that when a value is mutated, it may have
 changed. As a result, mutating values will not trigger re-renders. Thus, you must be
-careful to avoid mutation whenever you want IDOM to re-render a component.
+careful to avoid mutation whenever you want IDOM to re-render a component. For example,
+in the code below
 
-.. idom:: _examples/moving_dot
+.. idom:: _examples/moving_dot_broken

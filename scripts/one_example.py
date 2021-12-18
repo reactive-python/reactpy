@@ -86,16 +86,10 @@ def _print_available_options():
     number = 1
     print()
     for path, names in examples_by_path.items():
-        title = " ".join(
-            map(
-                str.title,
-                path.replace("/_examples", "")
-                .replace("/", " > ")
-                .replace("-", " ")
-                .replace("_", " ")
-                .upper()
-                .split(),
-            )
+        title = " > ".join(
+            section.replace("-", " ").replace("_", " ").title()
+            for section in path.split("/")
+            if not section.startswith("_")
         )
         print(title)
         print("-" * len(title))

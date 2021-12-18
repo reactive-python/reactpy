@@ -3,16 +3,17 @@ from idom import component, html, run, use_state
 
 @component
 def MovingDot():
-    position, set_position = use_state({"x": 0, "y": 0})
+    position, _ = use_state({"x": 0, "y": 0})
 
-    def handle_click(event):
-        position["x"] = event["clientX"]
-        position["y"] = event["clientY"]
-        set_position(position)
+    def handle_pointer_move(event):
+        outer_div_info = event["currentTarget"]
+        outer_div_bounds = outer_div_info["boundingClientRect"]
+        position["x"] = event["clientX"] - outer_div_bounds["x"]
+        position["y"] = event["clientY"] - outer_div_bounds["y"]
 
     return html.div(
         {
-            "onClick": handle_click,
+            "onPointerMove": handle_pointer_move,
             "style": {
                 "position": "relative",
                 "height": "200px",
