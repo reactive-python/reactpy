@@ -15,7 +15,7 @@ What is a Mutation?
 In Python, values may be either "mutable" or "immutable". Mutable objects are those
 whose underlying data can be changed after they are created, and immutable objects are
 those which cannot. A "mutation" then, is the act of changing the underlying data of a
-mutable value. For example, a :class:`dict` is a mutable type of value. In the code
+mutable value. In particular, a :class:`dict` is a mutable type of value. In the code
 below, an initially empty dictionary is created. Then, a key and value is added to it:
 
 .. code-block::
