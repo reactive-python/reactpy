@@ -5,17 +5,19 @@ from idom import component, html, run, use_state
 def MovingDot():
     position, set_position = use_state({"x": 0, "y": 0})
 
-    def handle_click(event):
+    async def handle_pointer_move(event):
+        outer_div_info = event["currentTarget"]
+        outer_div_bounds = outer_div_info["boundingClientRect"]
         set_position(
             {
-                "x": event["clientX"],
-                "y": event["clientY"],
+                "x": event["clientX"] - outer_div_bounds["x"],
+                "y": event["clientY"] - outer_div_bounds["y"],
             }
         )
 
     return html.div(
         {
-            "onClick": handle_click,
+            "onPointerMove": handle_pointer_move,
             "style": {
                 "position": "relative",
                 "height": "200px",

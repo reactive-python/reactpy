@@ -4,11 +4,11 @@ Adding Interactivity
 .. toctree::
     :hidden:
 
-    responding-to-events
-    components-with-state
-    state-as-a-snapshot
-    multiple-state-updates
-    dangers-of-mutability
+    responding-to-events/index
+    components-with-state/index
+    state-as-a-snapshot/index
+    multiple-state-updates/index
+    dangers-of-mutability/index
 
 
 .. dropdown:: :octicon:`bookmark-fill;2em` What You'll Learn
@@ -19,35 +19,35 @@ Adding Interactivity
     .. grid:: 2
 
         .. grid-item-card:: :octicon:`bell` Responding to Events
-            :link: responding-to-events
+            :link: responding-to-events/index
             :link-type: doc
 
             Define event handlers and learn about the available event types they can be
             bound to.
 
         .. grid-item-card:: :octicon:`package-dependencies` Components With State
-            :link: components-with-state
+            :link: components-with-state/index
             :link-type: doc
 
             Allow components to change what they display by saving and updating their
             state.
 
         .. grid-item-card:: :octicon:`device-camera-video` State as a Snapshot
-            :link: state-as-a-snapshot
+            :link: state-as-a-snapshot/index
             :link-type: doc
 
             Learn why state updates schedules a re-render, instead of being applied
             immediately.
 
         .. grid-item-card:: :octicon:`versions` Multiple State Updates
-            :link: multiple-state-updates
+            :link: multiple-state-updates/index
             :link-type: doc
 
             Learn how updates to a components state can be batched, or applied
             incrementally.
 
         .. grid-item-card:: :octicon:`issue-opened` Dangers of Mutability
-            :link: dangers-of-mutability
+            :link: dangers-of-mutability/index
             :link-type: doc
 
             Under construction 🚧
@@ -60,7 +60,7 @@ IDOM lets you add event handlers to your parts of the interface. This means that
 define synchronous or asynchronous functions that are triggered when a particular user
 interaction occurs like clicking, hovering, of focusing on form inputs, and more.
 
-.. idom:: _examples/button_prints_message
+.. idom:: responding-to-events/_examples/button_prints_message
 
 It may feel weird to define a function within a function like this, but doing so allows
 the ``handle_event`` function to access information from within the scope of the
@@ -68,7 +68,7 @@ component. That's important if you want to use any arguments that may have beend
 your component in the handler.
 
 .. card::
-    :link: responding-to-events
+    :link: responding-to-events/index
     :link-type: doc
 
     :octicon:`book` Read More
@@ -89,7 +89,7 @@ image, the shopping cart. In IDOM, this kind of component-specific memory is cre
 updated with a "hook" called ``use_state()`` that creates a **state variable** and
 **state setter** respectively:
 
-.. idom:: _examples/adding_state_variable
+.. idom:: components-with-state/_examples/adding_state_variable
 
 In IDOM, ``use_state``, as well as any other function whose name starts with ``use``, is
 called a "hook". These are special functions that should only be called while IDOM is
@@ -98,7 +98,7 @@ capabilities of IDOM's components of which ``use_state`` is just one (well get i
 other :ref:`later <managing state>`).
 
 .. card::
-    :link: components-with-state
+    :link: components-with-state/index
     :link-type: doc
 
     :octicon:`book` Read More
@@ -130,7 +130,7 @@ seconds after the "Send" button is clicked. So what would happen if we changed t
 recipient between the time the "Send" button was clicked and the moment the message is
 actually sent?
 
-.. idom:: _examples/print_chat_message
+.. idom:: state-as-a-snapshot/_examples/print_chat_message
 
 As it turns out, changing the message recipient after pressing send does not change
 where the message ulitmately goes. However, one could imagine a bug where the recipient
@@ -142,7 +142,7 @@ In many cases, IDOM avoids this class of bug entirely because it treats state as
 snapshot.
 
 .. card::
-    :link: state-as-a-snapshot
+    :link: state-as-a-snapshot/index
     :link-type: doc
 
     :octicon:`book` Read More
@@ -162,7 +162,7 @@ renders, it will only trigger 1. This means that multiple state assignments are 
 ``async`` function), IDOM waits until all the code in an event handler has run before
 processing state and starting the next render:
 
-.. idom:: _examples/set_color_3_times
+.. idom:: multiple-state-updates/_examples/set_color_3_times
 
 Sometimes though, you need to update a state variable more than once before the next
 render. In these cases, instead of having updates batched, you instead want them to be
@@ -172,10 +172,10 @@ To accomplish this, instead of passing the next state value directly (e.g.
 ``compute_new_state(old_state)`` to the state setter (e.g.
 ``set_state(compute_new_state)``):
 
-.. idom:: _examples/set_state_function
+.. idom:: multiple-state-updates/_examples/set_state_function
 
 .. card::
-    :link: multiple-state-updates
+    :link: multiple-state-updates/index
     :link-type: doc
 
     :octicon:`book` Read More
@@ -188,7 +188,7 @@ Section 5: Dangers of Mutability
 --------------------------------
 
 .. card::
-    :link: dangers-of-mutability
+    :link: dangers-of-mutability/index
     :link-type: doc
 
     :octicon:`book` Read More
