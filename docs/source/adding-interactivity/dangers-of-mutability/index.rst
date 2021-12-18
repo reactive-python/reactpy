@@ -52,6 +52,95 @@ Why Avoid Mutation?
 Unfortunately, IDOM does not understand that when a value is mutated, it may have
 changed. As a result, mutating values will not trigger re-renders. Thus, you must be
 careful to avoid mutation whenever you want IDOM to re-render a component. For example,
-in the code below
+the intention of the code below is to make the red dot move when you touch or hover over
+the preview area. However it doesn't - the dot remains stationary:
 
 .. idom:: _examples/moving_dot_broken
+
+The problem is with this section of code:
+
+.. literalinclude:: _examples/moving_dot_broken.py
+    :language: python
+    :lines: 13-14
+    :linenos:
+    :lineno-start: 13
+
+This code mutates the ``position`` dictionary from the prior render instead of using the
+state variable's associated state setter. Without calling setter IDOM has no idea that
+the variable's data has been modified. While it can be possible to get away with
+mutating state variables, it's highly dicsouraged. Doing so can cause strange and
+unpredictable behavior. As a result, you should always treat the data within a state
+variable as immutable.
+
+To actually trigger a render we need to call the state setter. To do that we'll assign
+it to ``set_position`` instead of the unused ``_`` variable we have above. Then we can
+call it by passing a *new* dictionary with the values for the next render. Notice how,
+by making these alterations to the code, that the dot now follows your pointer when
+you touch or hover over the preview:
+
+.. idom:: _examples/moving_dot
+
+
+.. dropdown:: Local mutation can be alright
+    :color: info
+    :animate: fade-in
+
+    While code like this causes problems:
+
+    .. code-block::
+
+        position["x"] = event["clientX"] - outer_div_bounds["x"]
+        position["y"] = event["clientY"] - outer_div_bounds["y"]
+
+    It's ok if you mutate a fresh dictionary that you have *just* created before calling
+    the state setter:
+
+    .. code-block::
+
+        new_position = {}
+        new_position["x"] = event["clientX"] - outer_div_bounds["x"]
+        new_position["y"] = event["clientY"] - outer_div_bounds["y"]
+        set_position(new_position)
+
+    It's actually nearly equivalent to having written:
+
+    .. code-block::
+
+        set_position(
+            {
+                "x": event["clientX"] - outer_div_bounds["x"],
+                "y": event["clientY"] - outer_div_bounds["y"],
+            }
+        )
+
+    Mutation is only a problem when you change data assigned to existing state
+    variables. Mutating an object you’ve just created is okay because no other code
+    references it yet. Changing it isn’t going to accidentally impact something that
+    depends on it. This is called a “local mutation.” You can even do local mutation
+    while rendering. Very convenient and completely okay!
+
+Python provides a number of mutable built in data types:
+
+- :ref:`Dictionaries <working with dictionaries>`
+- :ref:`Lists <working with lists>`
+- :ref:`Sets <working with sets>`
+
+Below we suggest a number of strategies for safely working with these types...
+
+
+Working with Dictionaries
+-------------------------
+
+There are a number of different ways to idiomatically construct dictionaries
+
+
+Working with Lists
+------------------
+
+
+Working with Sets
+-----------------
+
+
+Working with Nested Data
+------------------------

@@ -1,3 +1,5 @@
+# :linenos:
+
 from idom import component, html, run, use_state
 
 

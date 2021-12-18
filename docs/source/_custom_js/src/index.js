@@ -25,7 +25,16 @@ export function mountWidgetExample(
   });
 
   const mountEl = document.getElementById(mountID);
+  let isMounted = false;
+  triggerIfInViewport(mountEl, () => {
+    if (!isMounted) {
+      activateView(mountEl, serverInfo, useActivateButton);
+      isMounted = true;
+    }
+  });
+}
 
+function activateView(mountEl, serverInfo, useActivateButton) {
   if (!useActivateButton) {
     mountWithLayoutServer(mountEl, serverInfo);
     return;
@@ -66,4 +75,20 @@ export function mountWidgetExample(
   }
 
   mountEl.appendChild(enableWidgetButton);
+}
+
+function triggerIfInViewport(element, callback) {
+  const observer = new window.IntersectionObserver(
+    ([entry]) => {
+      if (entry.isIntersecting) {
+        callback();
+      }
+    },
+    {
+      root: null,
+      threshold: 0.1, // set offset 0.1 means trigger if atleast 10% of element in viewport
+    }
+  );
+
+  observer.observe(element);
 }
