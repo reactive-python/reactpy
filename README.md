@@ -1,64 +1,39 @@
-# IDOM
+# IDOM &middot; [![Tests](https://github.com/idom-team/idom/workflows/Test/badge.svg?event=push)](https://github.com/idom-team/idom/actions?query=workflow%3ATest) [![PyPI Version](https://img.shields.io/pypi/v/idom.svg)](https://pypi.python.org/pypi/idom) [![License](https://img.shields.io/badge/License-MIT-purple.svg)](https://github.com/idom-team/idom/blob/main/LICENSE)
 
-<a href="https://github.com/idom-team/idom/actions?query=workflow%3ATest">
-  <img alt="Tests" src="https://github.com/idom-team/idom/workflows/Test/badge.svg?event=push" />
-</a>
-<a href="https://pypi.python.org/pypi/idom">
-  <img alt="Version Info" src="https://img.shields.io/pypi/v/idom.svg"/>
-</a>
-<a href="https://github.com/idom-team/idom/blob/main/LICENSE">
-  <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-purple.svg">
-</a>
+IDOM is a Python package for making user interfaces. These interfaces are built from
+small elements of functionality like buttons text and images. IDOM allows you to combine
+these elements into reusable "components" that can be composed together to create
+complex views.
 
-A package for building highly interactive user interfaces in pure Python inspired by
-[ReactJS](https://reactjs.org/).
-
-**Be sure to [read the Documentation](https://idom-docs.herokuapp.com)**
-
-IDOM is still young. If you have ideas or find a bug, be sure to post an
-[issue](https://github.com/idom-team/idom/issues)
-or create a
-[pull request](https://github.com/idom-team/idom/pulls). Thanks in advance!
-
-<h3>
-  <a
-    target="_blank"
-    href="https://mybinder.org/v2/gh/idom-team/idom-jupyter/main?filepath=notebooks%2Fintroduction.ipynb"
-  >
-    Try it Now
-    <img alt="Binder" valign="bottom" height="25px"
-    src="https://mybinder.org/badge_logo.svg"
-    />
-  </a>
-</h3>
-
-Click the badge above to get started! It will take you to a [Jupyter Notebooks](https://jupyter.org/)
-hosted by [Binder](https://mybinder.org/) with some great examples.
-
-### Or Install it Now
-
-```bash
-pip install idom[stable]
-```
+Ecosystem independence is also a core feature of IDOM. It can be added to existing
+applications built on a variety of sync and async web servers, as well as integrated
+with other frameworks like Django, Jupyter, and Plotly Dash. Not only does this mean
+you're free to choose what technology stack to run on, but on top of that, you can run
+the exact same components wherever you need them. For example, you can take a component
+originally developed in a Jupyter Notebook and embed it in your production application
+without changing anything about the component itself.
 
 # At a Glance
 
-IDOM can be used to create a simple slideshow which changes whenever a user clicks an image.
+To get a rough idea of how to write apps in IDOM, take a look at the tiny "hello
+world" application below:
 
 ```python
-import idom
+from idom import component, html, run
 
-@idom.component
-def Slideshow():
-    index, set_index = idom.hooks.use_state(0)
-    url = f"https://picsum.photos/800/300?image={index}"
-    return idom.html.img({"src": url, "onClick": lambda event: set_index(index + 1)})
+@component
+def App():
+    return html.h1("Hello, World!")
 
-idom.run(Slideshow, port=8765)
+run(App)
 ```
 
-Running this will serve our slideshow to `"https://localhost:8765/client/index.html"`
+# Resources
 
-<img src='https://picsum.photos/800/300?random'/>
+Follow the links below to find out more about this project
 
-You can even display the same thing in a Jupyter Notebook, just use [`idom_jupyter`](https://github.com/idom-team/idom-jupyter):
+- [Try it Now](https://mybinder.org/v2/gh/idom-team/idom-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb) - check out IDOM in a Jupyter Notebook.
+- [Documentation](https://idom-docs.herokuapp.com/) - learn how to install, run, and use IDOM.
+- [Community Forum](https://github.com/idom-team/idom/discussions) - ask questions, share ideas, and show off projects.
+- [Contributor Guide](https://idom-docs.herokuapp.com/docs/developing-idom/contributor-guide.html) - see how you can help develop this project.
+- [Code of Conduct](https://github.com/idom-team/idom/blob/main/CODE_OF_CONDUCT.md) - standards for interacting with this community.

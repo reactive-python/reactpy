@@ -41,13 +41,13 @@ into nestable and reusable chunks of code called :ref:`"components" <Your First
 Components>` that allow you to focus on what your application does rather than how it
 does it.
 
-IDOM is also ecosystem independent. It can be added to existing applications built on a
-variety of sync and async web servers, as well as integrated with other frameworks like
-Django, Jupyter, and Plotly Dash. Not only does this mean you're free to choose what
-technology stack to run on, but on top of that, you can run the exact same components
-wherever you need them. Consider the case where, you can take a component originally
-developed in a Jupyter Notebook and embed it in your production application without
-changing anything about the component itself.
+Ecosystem independence is also a core feature of IDOM. It can be added to existing
+applications built on a variety of sync and async web servers, as well as integrated
+with other frameworks like Django, Jupyter, and Plotly Dash. Not only does this mean
+you're free to choose what technology stack to run on, but on top of that, you can run
+the exact same components wherever you need them. For example, you can take a component
+originally developed in a Jupyter Notebook and embed it in your production application
+without changing anything about the component itself.
 
 
 At a Glance
