@@ -1,9 +1,9 @@
 # IDOM &middot; [![Tests](https://github.com/idom-team/idom/workflows/Test/badge.svg?event=push)](https://github.com/idom-team/idom/actions?query=workflow%3ATest) [![PyPI Version](https://img.shields.io/pypi/v/idom.svg)](https://pypi.python.org/pypi/idom) [![License](https://img.shields.io/badge/License-MIT-purple.svg)](https://github.com/idom-team/idom/blob/main/LICENSE)
 
-IDOM is a Python package for making user interfaces. These interfaces are built from
-small elements of functionality like buttons text and images. IDOM allows you to combine
-these elements into reusable "components" that can be composed together to create
-complex views.
+IDOM is a Python web framework for building **interactive websites without needing a
+single line of Javascript**. These sites are built from small elements of functionality
+like buttons text and images. IDOM allows you to combine these elements into reusable
+"components" that can be composed together to create complex views.
 
 Ecosystem independence is also a core feature of IDOM. It can be added to existing
 applications built on a variety of sync and async web servers, as well as integrated

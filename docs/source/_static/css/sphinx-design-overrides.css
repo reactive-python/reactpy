@@ -17,3 +17,7 @@ body {
   max-height: 700px;
   overflow: auto;
 }
+
+.sd-card-title .sd-badge {
+  font-size: 1em;
+}

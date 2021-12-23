@@ -16,7 +16,7 @@ Adding Interactivity
     :animate: fade-in
     :open:
 
-    .. grid:: 2
+    .. grid:: 1 1 2 2
 
         .. grid-item-card:: :octicon:`bell` Responding to Events
             :link: responding-to-events/index
