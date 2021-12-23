@@ -8,10 +8,10 @@ def ArtistList():
     )
 
     def handle_sort_click(event):
-        set(list(sorted(set_artists)))
+        set_artists(list(sorted(artists)))
 
     def handle_reverse_click(event):
-        set(list(reversed(set_artists)))
+        set_artists(list(reversed(artists)))
 
     return html.div(
         html.h1("Inspiring sculptors:"),
