@@ -119,28 +119,199 @@ you touch or hover over the preview:
     depends on it. This is called a “local mutation.” You can even do local mutation
     while rendering. Very convenient and completely okay!
 
-Python provides a number of mutable built in data types:
-
-- :ref:`Dictionaries <working with dictionaries>`
-- :ref:`Lists <working with lists>`
-- :ref:`Sets <working with sets>`
-
-Below we suggest a number of strategies for safely working with these types...
-
 
 Working with Dictionaries
 -------------------------
 
-There are a number of different ways to idiomatically construct dictionaries
+Below are some operations to :bdg-danger:`avoid` and stragies to :bdg-info:`prefer` when
+working with dictionaries...
+
+
+Updating Dictionary Items
+.........................
+
+.. grid:: 1 1 2 2
+    :gutter: 1
+
+    .. grid-item-card:: :bdg-danger:`Avoid`
+
+        .. code-block::
+
+            d["key"] = value
+
+            d.update(key=value)
+
+            d.setdefault("key", value)
+
+    .. grid-item-card:: :bdg-info:`Prefer`
+
+        .. code-block::
+
+            {**d, "key": value}
+
+            # Python >= 3.9
+            d | {"key": value}
+
+            # Equivalent to setdefault()
+            {"key": value, **d}
+
+
+Removing Dictionary Items
+.........................
+
+.. grid:: 1 1 2 2
+    :gutter: 1
+
+    .. grid-item-card:: :bdg-danger:`Avoid`
+
+        .. code-block::
+
+            d["key"] = value
+
+            d.update(key=value)
+
+            d.setdefault("key", value)
+
+    .. grid-item-card:: :bdg-info:`Prefer`
+
+        .. code-block::
+
+            {
+                k: v
+                for k, v in d.items()
+                if k != "key"
+            }
 
 
 Working with Lists
 ------------------
 
+Below are some operations to :bdg-danger:`avoid` and stragies to :bdg-info:`prefer` when
+working with lists...
+
+
+Replacing List Items
+....................
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card:: :bdg-danger:`Avoid`
+
+        .. code-block::
+
+            l[index] = value
+
+            l[start:end] = values
+
+    .. grid-item-card:: :bdg-info:`Prefer`
+
+        .. code-block::
+
+            l[:index] + [value] + l[index + 1:]
+
+            l[:start] + values + l[end + 1:]
+
+
+Inserting List Items
+....................
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card:: :bdg-danger:`Avoid`
+
+        .. code-block::
+
+            l.append(value)
+
+            l.extend(values)
+
+            l.insert(index, value)
+
+    .. grid-item-card:: :bdg-info:`Prefer`
+
+        .. code-block::
+
+            l + [value]
+
+            l + values
+
+            l[:index] + [value] + l[index:]
+
+
+Removing List Items
+...................
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card:: :bdg-danger:`Avoid`
+
+        .. code-block::
+
+            del l[index]
+
+            l.pop(index)
+
+            l.clear()
+
+    .. grid-item-card:: :bdg-info:`Prefer`
+
+        .. code-block::
+
+            l[:index - 1] + l[index:]
+
+            []
+
+
+Re-ordering List Items
+......................
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card:: :bdg-danger:`Avoid`
+
+        .. code-block::
+
+            l.sort()
+
+            l.reverse()
+
+    .. grid-item-card:: :bdg-info:`Prefer`
+
+        .. code-block::
+
+            list(sorted(l))
+
+            list(reversed(l))
+
 
 Working with Sets
 -----------------
 
+Below are some operations to :bdg-danger:`avoid` and stragies to :bdg-info:`prefer` when
+working with sets...
 
-Working with Nested Data
-------------------------
+Ading Set Items
+...............
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card:: :bdg-danger:`Avoid`
+
+        .. code-block::
+
+            l[index] = value
+
+            l[start:end] = values
+
+    .. grid-item-card:: :bdg-info:`Prefer`
+
+        .. code-block::
+
+            l[:index] + [value] + l[index + 1:]
+
+            l[:start] + values + l[end + 1:]
+
+
+Useful Packages
+---------------
+

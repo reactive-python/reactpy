@@ -9,7 +9,7 @@ code examples below. The one on the left shows how to make a basic title and tod
 using standard HTML, the one of the right uses IDOM in Python, and below is a view of
 what the HTML would look like if displayed:
 
-.. grid:: 2
+.. grid:: 1 1 2 2
     :margin: 0
     :padding: 0
 
