@@ -13,7 +13,7 @@ Creating Interfaces
     :animate: fade-in
     :open:
 
-    .. grid:: 1 1 2 2
+    .. grid:: 1 2 2 2
 
         .. grid-item-card:: :octicon:`code-square` HTML with IDOM
             :link: html-with-idom
