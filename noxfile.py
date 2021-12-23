@@ -116,7 +116,7 @@ def docs(session: Session) -> None:
         "html",
         "docs/source",
         "docs/build",
-        env=get_idom_script_env(),
+        env={**os.environ, **get_idom_script_env()},
     )
 
 

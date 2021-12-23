@@ -254,18 +254,6 @@ Working with Lists
 
 Below are some ways to update lists without mutating them:
 
-.. card:: Replacing Items
-    :link: replacing-list-items
-    :link-type: ref
-
-    Avoid using item  or slice assignment. Instead try the strategies below:
-
-    .. code-block::
-
-        l[:index] + [value] + l[index + 1:]
-
-        l[:start] + values + l[end + 1:]
-
 .. card:: Inserting Items
     :link: inserting-list-items
     :link-type: ref
@@ -293,6 +281,17 @@ Below are some ways to update lists without mutating them:
 
         l[:index - 1] + l[index:]
 
+.. card:: Replacing Items
+    :link: replacing-list-items
+    :link-type: ref
+
+    Avoid using item  or slice assignment. Instead try the strategies below:
+
+    .. code-block::
+
+        l[:index] + [value] + l[index + 1:]
+
+        l[:start] + values + l[end + 1:]
 
 ..card:: Re-ordering Items
     :link: re-ordering-list-items
@@ -306,30 +305,6 @@ Below are some ways to update lists without mutating them:
         list(sorted(l))
 
         list(reversed(l))
-
-
-.. _replacing-list-items:
-
-Replacing List Items
-....................
-
-.. grid:: 1 1 1 2
-
-    .. grid-item-card:: :bdg-danger:`Avoid`
-
-        .. code-block::
-
-            l[index] = value
-
-            l[start:end] = values
-
-    .. grid-item-card:: :bdg-info:`Prefer`
-
-        .. code-block::
-
-            l[:index] + [value] + l[index + 1:]
-
-            l[:start] + values + l[end + 1:]
 
 
 .. _inserting-list-items:
@@ -361,6 +336,8 @@ Inserting List Items
 
             l[:index] + [value] + l[index:]
 
+.. idom:: _examples/list_insert
+
 
 .. _removing-list-items:
 
@@ -382,6 +359,34 @@ Removing List Items
         .. code-block::
 
             l[:index - 1] + l[index:]
+
+.. idom:: _examples/list_remove
+
+
+.. _replacing-list-items:
+
+Replacing List Items
+....................
+
+.. grid:: 1 1 1 2
+
+    .. grid-item-card:: :bdg-danger:`Avoid`
+
+        .. code-block::
+
+            l[index] = value
+
+            l[start:end] = values
+
+    .. grid-item-card:: :bdg-info:`Prefer`
+
+        .. code-block::
+
+            l[:index] + [value] + l[index + 1:]
+
+            l[:start] + values + l[end + 1:]
+
+.. idom:: _examples/list_replace
 
 
 .. _re-ordering-list-items:
@@ -406,6 +411,8 @@ Re-ordering List Items
             list(sorted(l))
 
             list(reversed(l))
+
+.. idom:: _examples/list_re_order
 
 
 Working with Sets
