@@ -46,6 +46,8 @@ Thus far, all the values we've been working with have been immutable. These incl
 have not had to consider the consiquences of mutations.
 
 
+.. _Why Avoid Mutation:
+
 Why Avoid Mutation?
 -------------------
 
@@ -123,54 +125,104 @@ you touch or hover over the preview:
 Working with Dictionaries
 -------------------------
 
-Below are some operations to :bdg-danger:`avoid` and stragies to :bdg-info:`prefer` when
-working with dictionaries...
+Below are some ways to update dictionaries without mutating them:
 
+.. card:: Updating Items
+    :link: updating-dictionary-items
+    :link-type: ref
+
+    Avoid using item assignment, ``dict.update``, or ``dict.setdefault``. Instead try
+    the strategies below:
+
+    .. code-block::
+
+        {**d, "key": value}
+
+        # Python >= 3.9
+        d | {"key": value}
+
+        # Equivalent to setdefault()
+        {"key": value, **d}
+
+.. card:: Removing Items
+    :link: removing-dictionary-items
+    :link-type: ref
+
+    Avoid using item deletion or ``dict.pop`` instead try the strategies below:
+
+    .. code-block::
+
+        {
+            k: v
+            for k, v in d.items()
+            if k != key
+        }
+
+        # Better for removing multiple items
+        {
+            k: d[k]
+            for k in set(d).difference([key])
+        }
+
+
+.. _updating-dictionary-items:
 
 Updating Dictionary Items
 .........................
 
-.. grid:: 1 1 2 2
+.. grid:: 1 1 1 2
     :gutter: 1
 
     .. grid-item-card:: :bdg-danger:`Avoid`
 
         .. code-block::
 
-            d["key"] = value
+            d[key] = value
 
-            d.update(key=value)
+            d.update({key: value})
 
-            d.setdefault("key", value)
+            d.setdefault(key, value)
 
     .. grid-item-card:: :bdg-info:`Prefer`
 
         .. code-block::
 
-            {**d, "key": value}
+            {**d, key: value}
 
             # Python >= 3.9
-            d | {"key": value}
+            d | {key: value}
 
             # Equivalent to setdefault()
-            {"key": value, **d}
+            {key: value, **d}
 
+As we saw in an :ref:`earlier example <why avoid mutation>`, instead of mutating
+dictionaries to update their items you should instead create a copy that contains the
+desired changes.
+
+However, sometimes you may only want to update some of the information in a dictionary
+which is held by a state variable. Consider the case below where we have a form for
+updating user information with a preview of the currently entered data. We can
+accomplish this using `"unpacking" <https://www.python.org/dev/peps/pep-0448/>`__ with
+the ``**`` syntax:
+
+.. idom:: _examples/dict_update
+
+
+.. _removing-dictionary-items:
 
 Removing Dictionary Items
 .........................
 
-.. grid:: 1 1 2 2
+.. grid:: 1 1 1 2
     :gutter: 1
 
     .. grid-item-card:: :bdg-danger:`Avoid`
 
         .. code-block::
 
-            d["key"] = value
+            del d[key]
 
-            d.update(key=value)
-
-            d.setdefault("key", value)
+            d.pop(key)
 
     .. grid-item-card:: :bdg-info:`Prefer`
 
@@ -179,8 +231,22 @@ Removing Dictionary Items
             {
                 k: v
                 for k, v in d.items()
-                if k != "key"
+                if k != key
             }
+
+            # Better for removing multiple items
+            {
+                k: d[k]
+                for k in set(d).difference([key])
+            }
+
+This scenario doesn't come up very frequently. When it does though, the best way to
+remove items from dictionaries is to create a copy of the original, but with a filtered
+set of keys. One way to do this is with a dictionary comprehension. The example below
+shows an interface where you're able to enter a new term and definition. Once added,
+you can click a delete button to remove the term and definition:
+
+.. idom:: _examples/dict_remove
 
 
 Working with Lists
@@ -193,7 +259,7 @@ working with lists...
 Replacing List Items
 ....................
 
-.. grid:: 1 1 2 2
+.. grid:: 1 1 1 2
 
     .. grid-item-card:: :bdg-danger:`Avoid`
 
@@ -215,7 +281,7 @@ Replacing List Items
 Inserting List Items
 ....................
 
-.. grid:: 1 1 2 2
+.. grid:: 1 1 1 2
 
     .. grid-item-card:: :bdg-danger:`Avoid`
 
@@ -231,6 +297,8 @@ Inserting List Items
 
         .. code-block::
 
+            [*l, value]
+
             l + [value]
 
             l + values
@@ -241,7 +309,7 @@ Inserting List Items
 Removing List Items
 ...................
 
-.. grid:: 1 1 2 2
+.. grid:: 1 1 1 2
 
     .. grid-item-card:: :bdg-danger:`Avoid`
 
@@ -251,21 +319,17 @@ Removing List Items
 
             l.pop(index)
 
-            l.clear()
-
     .. grid-item-card:: :bdg-info:`Prefer`
 
         .. code-block::
 
             l[:index - 1] + l[index:]
 
-            []
-
 
 Re-ordering List Items
 ......................
 
-.. grid:: 1 1 2 2
+.. grid:: 1 1 1 2
 
     .. grid-item-card:: :bdg-danger:`Avoid`
 
@@ -290,10 +354,32 @@ Working with Sets
 Below are some operations to :bdg-danger:`avoid` and stragies to :bdg-info:`prefer` when
 working with sets...
 
-Ading Set Items
-...............
+Adding Set Items
+................
 
-.. grid:: 1 1 2 2
+.. grid:: 1 1 1 2
+
+    .. grid-item-card:: :bdg-danger:`Avoid`
+
+        .. code-block::
+
+            l[index] = value
+
+            l[start:end] = values
+
+    .. grid-item-card:: :bdg-info:`Prefer`
+
+        .. code-block::
+
+            l[:index] + [value] + l[index + 1:]
+
+            l[:start] + values + l[end + 1:]
+
+
+Removing Set Items
+..................
+
+.. grid:: 1 1 1 2
 
     .. grid-item-card:: :bdg-danger:`Avoid`
 

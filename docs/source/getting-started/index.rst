@@ -12,7 +12,7 @@ Getting Started
     :animate: fade-in
     :open:
 
-    .. grid:: 1 1 2 2
+    .. grid:: 1 2 2 2
 
         .. grid-item-card:: :octicon:`tools` Installing IDOM
             :link: installing-idom

@@ -93,7 +93,7 @@ more detailed information about how to :ref:`run IDOM <Running IDOM>` in differe
 contexts. For example, if you want to embed IDOM into an existing application, or run
 IDOM within a Jupyter Notebook, this is where you can learn how to do those things.
 
-.. grid:: 1 1 2 2
+.. grid:: 1 2 2 2
 
     .. grid-item::
 

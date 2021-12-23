@@ -21,7 +21,7 @@ or simply sharing your work with your colleagues and friends. We're excited to s
 you can help move this project and community forward!
 
 
-.. grid:: 1 1 2 2
+.. grid:: 1 2 2 2
     :gutter: 1
 
     .. grid-item-card:: :octicon:`people` Discussion Forum
