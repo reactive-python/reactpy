@@ -148,7 +148,7 @@ Below are some ways to update dictionaries without mutating them:
     :link: removing-dictionary-items
     :link-type: ref
 
-    Avoid using item deletion or ``dict.pop`` instead try the strategies below:
+    Avoid using item deletion or ``dict.pop``. Instead try the strategies below:
 
     .. code-block::
 
@@ -252,9 +252,63 @@ you can click a delete button to remove the term and definition:
 Working with Lists
 ------------------
 
-Below are some operations to :bdg-danger:`avoid` and stragies to :bdg-info:`prefer` when
-working with lists...
+Below are some ways to update lists without mutating them:
 
+.. card:: Replacing Items
+    :link: replacing-list-items
+    :link-type: ref
+
+    Avoid using item  or slice assignment. Instead try the strategies below:
+
+    .. code-block::
+
+        l[:index] + [value] + l[index + 1:]
+
+        l[:start] + values + l[end + 1:]
+
+.. card:: Inserting Items
+    :link: inserting-list-items
+    :link-type: ref
+
+    Avoid using ``list.append``, ``list.extend``, and ``list.insert``. Instead try the
+    strategies below:
+
+    .. code-block::
+
+        [*l, value]
+
+        l + [value]
+
+        l + values
+
+        l[:index] + [value] + l[index:]
+
+.. card:: Removing Items
+    :link: removing-list-items
+    :link-type: ref
+
+    Avoid using item deletion or ``list.pop``. Instead try the strategy below:
+
+    .. code-block::
+
+        l[:index - 1] + l[index:]
+
+
+..card:: Re-ordering Items
+    :link: re-ordering-list-items
+    :link-type: ref
+
+
+    Avoid using ``list.sort`` or ``list.reverse``. Instead try the strategies below:
+
+    .. code-block::
+
+        list(sorted(l))
+
+        list(reversed(l))
+
+
+.. _replacing-list-items:
 
 Replacing List Items
 ....................
@@ -277,6 +331,8 @@ Replacing List Items
 
             l[:start] + values + l[end + 1:]
 
+
+.. _inserting-list-items:
 
 Inserting List Items
 ....................
@@ -306,6 +362,8 @@ Inserting List Items
             l[:index] + [value] + l[index:]
 
 
+.. _removing-list-items:
+
 Removing List Items
 ...................
 
@@ -325,6 +383,8 @@ Removing List Items
 
             l[:index - 1] + l[index:]
 
+
+.. _re-ordering-list-items:
 
 Re-ordering List Items
 ......................
@@ -351,8 +411,37 @@ Re-ordering List Items
 Working with Sets
 -----------------
 
-Below are some operations to :bdg-danger:`avoid` and stragies to :bdg-info:`prefer` when
-working with sets...
+Below are ways to update sets without mutating them:
+
+.. card:: Adding Items
+    :link: adding-set-items
+    :link-type: ref
+
+    Avoid using item assignment, ``set.add`` or ``set.update``. Instead try the
+    strategies below:
+
+    .. code-block::
+
+        s.union({value})
+
+        s.union(values)
+
+.. card:: Removing Items
+    :link: removing-set-items
+    :link-type: ref
+
+    Avoid using item deletion or ``dict.pop``. Instead try the strategies below:
+
+    .. code-block::
+
+        s.difference({value})
+
+        s.difference(values)
+
+        s.intersection(values)
+
+
+.. _adding-set-items:
 
 Adding Set Items
 ................
@@ -363,18 +452,20 @@ Adding Set Items
 
         .. code-block::
 
-            l[index] = value
+            s.add(value)
 
-            l[start:end] = values
+            s.update(values)
 
     .. grid-item-card:: :bdg-info:`Prefer`
 
         .. code-block::
 
-            l[:index] + [value] + l[index + 1:]
+            s.union({value})
 
-            l[:start] + values + l[end + 1:]
+            s.union(values)
 
+
+.. _removing-set-items:
 
 Removing Set Items
 ..................
@@ -385,17 +476,21 @@ Removing Set Items
 
         .. code-block::
 
-            l[index] = value
+            s.remove(value)
 
-            l[start:end] = values
+            s.difference_update(values)
+
+            s.intersection_update(values)
 
     .. grid-item-card:: :bdg-info:`Prefer`
 
         .. code-block::
 
-            l[:index] + [value] + l[index + 1:]
+            s.difference({value})
 
-            l[:start] + values + l[end + 1:]
+            s.difference(values)
+
+            s.intersection(values)
 
 
 Useful Packages
