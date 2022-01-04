@@ -142,25 +142,33 @@ async def test_layout_render_error_has_partial_update_with_error_message():
 
     @idom.component
     def BadChild():
-        raise ValueError("Something went wrong :(")
+        raise ValueError("error from bad child")
 
-    with idom.Layout(Main()) as layout:
-        patch = await render_json_patch(layout)
-        assert_same_items(
-            patch.changes,
-            [
-                {
-                    "op": "add",
-                    "path": "/children",
-                    "value": [
-                        {"tagName": "div", "children": ["hello"]},
-                        {"tagName": "", "error": "ValueError: Something went wrong :("},
-                        {"tagName": "div", "children": ["hello"]},
-                    ],
-                },
-                {"op": "add", "path": "/tagName", "value": "div"},
-            ],
-        )
+    with assert_idom_logged(
+        match_error="error from bad child",
+        clear_matched_records=True,
+    ):
+
+        with idom.Layout(Main()) as layout:
+            patch = await render_json_patch(layout)
+            assert_same_items(
+                patch.changes,
+                [
+                    {
+                        "op": "add",
+                        "path": "/children",
+                        "value": [
+                            {"tagName": "div", "children": ["hello"]},
+                            {
+                                "tagName": "",
+                                "error": "ValueError: error from bad child",
+                            },
+                            {"tagName": "div", "children": ["hello"]},
+                        ],
+                    },
+                    {"op": "add", "path": "/tagName", "value": "div"},
+                ],
+            )
 
 
 @pytest.mark.skipif(
