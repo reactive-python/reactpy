@@ -181,6 +181,8 @@ def test_python_suite(session: Session) -> None:
     install_requirements_file(session, "test-env")
 
     posargs = session.posargs
+    posargs += ["--reruns", "3", "--reruns-delay", "1"]
+
     if "--no-cov" in session.posargs:
         session.log("Coverage won't be checked")
         session.install(".[all]")

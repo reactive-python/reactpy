@@ -1,8 +1,9 @@
+ipython
 pytest
 pytest-asyncio
 pytest-cov
 pytest-mock
+pytest-rerunfailures
 pytest-timeout
-selenium
-ipython
 responses
+selenium
