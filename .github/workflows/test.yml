@@ -48,7 +48,7 @@ jobs:
         run: pip install -r requirements/nox-deps.txt
       - name: Run Tests
         env: { "CI": "true" }
-        run: nox -s test_python -- --headless --maxfail=3 --no-cov
+        run: nox -s test_python --stop-on-first-error -- --headless --maxfail=3 --no-cov
   test-docs:
     runs-on: ubuntu-latest
     steps:
