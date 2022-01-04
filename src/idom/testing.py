@@ -202,9 +202,10 @@ def assert_idom_logged(
                 message_pattern.findall(record.getMessage())
                 # error type matches
                 and (
-                    not error_type
+                    error_type is None
                     or (
                         record.exc_info is not None
+                        and record.exc_info[0] is not None
                         and issubclass(record.exc_info[0], error_type)
                     )
                 )
