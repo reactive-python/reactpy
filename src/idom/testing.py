@@ -224,7 +224,7 @@ def assert_idom_logged(
                 if clear_matched_records:
                     handler.records.remove(record)
 
-        if not found:
+        if not found:  # pragma: no cover
             conditions = []
             if match_message:
                 conditions.append(f"log message pattern {match_message!r}")
