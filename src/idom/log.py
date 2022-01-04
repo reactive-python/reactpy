@@ -1,17 +1,12 @@
 import logging
 import sys
 from logging.config import dictConfig
-from typing import Any
 
 from .config import IDOM_DEBUG_MODE
 
 
-root_logger = logging.getLogger("idom")
-
-
-def logging_config_defaults() -> Any:
-    """Get default logging configuration"""
-    return {
+dictConfig(
+    {
         "version": 1,
         "disable_existing_loggers": False,
         "loggers": {
@@ -35,10 +30,12 @@ def logging_config_defaults() -> Any:
             }
         },
     }
+)
 
 
-dictConfig(logging_config_defaults())
+ROOT_LOGGER = logging.getLogger("idom")
+"""IDOM's root logger instance"""
 
 
 if IDOM_DEBUG_MODE.current:
-    root_logger.debug("IDOM is in debug mode")
+    ROOT_LOGGER.debug("IDOM is in debug mode")
