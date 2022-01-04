@@ -22,7 +22,7 @@ from anyio import create_task_group
 
 from idom.utils import Ref
 
-from ._fixed_jsonpatch import apply_patch, make_patch
+from ._fixed_jsonpatch import apply_patch, make_patch  # type: ignore
 from .layout import LayoutEvent, LayoutUpdate
 from .proto import LayoutType, VdomJson
 
