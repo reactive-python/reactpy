@@ -27,7 +27,7 @@ jobs:
         run: pip install -r requirements/nox-deps.txt
       - name: Run Tests
         env: { "CI": "true" }
-        run: nox -s test_python_suite -- --headless
+        run: nox -s test_python_suite -- --headless --maxfail=3
   test-python-environments:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -48,7 +48,7 @@ jobs:
         run: pip install -r requirements/nox-deps.txt
       - name: Run Tests
         env: { "CI": "true" }
-        run: nox -s test_python -- --headless --no-cov
+        run: nox -s test_python -- --headless --maxfail=3 --no-cov
   test-docs:
     runs-on: ubuntu-latest
     steps:
