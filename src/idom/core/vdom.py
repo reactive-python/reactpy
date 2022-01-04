@@ -329,9 +329,11 @@ if IDOM_DEBUG_MODE.current:
             )
         else:
             for child in value:
-                if (isinstance(child, ComponentType) and child.key is None) or (
-                    isinstance(child, Mapping) and "key" not in child
-                ):
+                if isinstance(child, ComponentType) and child.key is None:
                     logger.error(f"Key not specified for child in list {child}")
+                elif isinstance(child, Mapping) and "key" not in child:
+                    # remove 'children' to reduce log spam
+                    child_copy = {**child, "children": ...}
+                    logger.error(f"Key not specified for child in list {child_copy}")
 
         return False
