@@ -19,10 +19,10 @@ from typing import (
 from weakref import WeakSet
 
 from anyio import create_task_group
-from jsonpatch import apply_patch, make_patch
 
 from idom.utils import Ref
 
+from ._fixed_jsonpatch import apply_patch, make_patch
 from .layout import LayoutEvent, LayoutUpdate
 from .proto import LayoutType, VdomJson
 

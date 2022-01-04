@@ -538,7 +538,7 @@ def _update_element_model_state(
         key=old_model_state.key,
         model=Ref(),  # does not copy the model
         patch_path=old_model_state.patch_path,
-        children_by_key=old_model_state.children_by_key.copy(),
+        children_by_key={},
         targets_by_event={},
     )
 
