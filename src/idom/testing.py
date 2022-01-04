@@ -1,13 +1,18 @@
+from __future__ import annotations
+
 import logging
 import re
 import shutil
+from contextlib import contextmanager
 from functools import wraps
+from traceback import format_exception
 from types import TracebackType
 from typing import (
     Any,
     Callable,
     Dict,
     Generic,
+    Iterator,
     List,
     Optional,
     Tuple,
@@ -28,6 +33,8 @@ from idom.core.hooks import LifeCycleHook, current_hook
 from idom.server.prefab import hotswap_server
 from idom.server.proto import ServerFactory, ServerType
 from idom.server.utils import find_available_port
+
+from .log import ROOT_LOGGER
 
 
 __all__ = [
@@ -166,6 +173,86 @@ class ServerMountPoint(Generic[_Mount, _Server]):
         return None
 
 
+@contextmanager
+def assert_idom_logged(
+    match_message: str = "",
+    error_type: type[Exception] | None = None,
+    match_error: str = "",
+    clear_matched_records: bool = False,
+) -> Iterator[None]:
+    """Assert that IDOM produced a log matching the described message or error.
+
+    Args:
+        match_message: Must match a logged message.
+        error_type: Checks the type of logged exceptions.
+        match_error: Must match an error message.
+        clear_matched_records: Whether to remove logged records that match.
+    """
+    message_pattern = re.compile(match_message)
+    error_pattern = re.compile(match_error)
+
+    try:
+        with capture_idom_logs() as handler:
+            yield None
+    finally:
+        found = False
+        for record in list(handler.records):
+            if (
+                # record message matches
+                message_pattern.findall(record.getMessage())
+                # error type matches
+                and (
+                    not error_type
+                    or (
+                        record.exc_info is not None
+                        and issubclass(record.exc_info[0], error_type)
+                    )
+                )
+                # error message pattern matches
+                and (
+                    not match_error
+                    or (
+                        record.exc_info is not None
+                        and error_pattern.findall(
+                            "".join(format_exception(*record.exc_info))
+                        )
+                    )
+                )
+            ):
+                found = True
+                if clear_matched_records:
+                    handler.records.remove(record)
+
+        if not found:
+            conditions = []
+            if match_message:
+                conditions.append(f"log message pattern {match_message!r}")
+            if error_type:
+                conditions.append(f"exception type {error_type}")
+            if match_error:
+                conditions.append(f"error message pattern {match_error!r}")
+            raise AssertionError(
+                "Could not find a log record matching the given "
+                + " and ".join(conditions)
+            )
+
+
+@contextmanager
+def capture_idom_logs() -> Iterator[_LogRecordCaptor]:
+    """Capture logs from IDOM"""
+    if _LOG_RECORD_CAPTOR_SINGLTON in ROOT_LOGGER.handlers:
+        # this is being handled by an outer capture context
+        yield _LOG_RECORD_CAPTOR_SINGLTON
+        return None
+
+    ROOT_LOGGER.addHandler(_LOG_RECORD_CAPTOR_SINGLTON)
+    try:
+        yield _LOG_RECORD_CAPTOR_SINGLTON
+    finally:
+        ROOT_LOGGER.removeHandler(_LOG_RECORD_CAPTOR_SINGLTON)
+        _LOG_RECORD_CAPTOR_SINGLTON.records = []
+
+
 class _LogRecordCaptor(logging.NullHandler):
     def __init__(self) -> None:
         self.records: List[logging.LogRecord] = []
@@ -174,6 +261,9 @@ class _LogRecordCaptor(logging.NullHandler):
     def handle(self, record: logging.LogRecord) -> bool:
         self.records.append(record)
         return True
+
+
+_LOG_RECORD_CAPTOR_SINGLTON = _LogRecordCaptor()
 
 
 class HookCatcher:

@@ -10,8 +10,22 @@ import idom
 from idom.config import IDOM_DEBUG_MODE
 from idom.core.dispatcher import render_json_patch
 from idom.core.layout import LayoutEvent
-from idom.testing import HookCatcher, StaticEventHandler
+from idom.testing import (
+    HookCatcher,
+    StaticEventHandler,
+    assert_idom_logged,
+    capture_idom_logs,
+)
 from tests.general_utils import assert_same_items
+
+
+@pytest.fixture(autouse=True)
+def no_logged_errors():
+    with capture_idom_logs() as handler:
+        yield
+        for record in handler.records:
+            if record.exc_info:
+                raise record.exc_info[1]
 
 
 def test_layout_repr():
@@ -164,25 +178,30 @@ async def test_layout_render_error_has_partial_update_without_error_message():
 
     @idom.component
     def BadChild():
-        raise ValueError("Something went wrong :(")
+        raise ValueError("error from bad child")
 
-    with idom.Layout(Main()) as layout:
-        patch = await render_json_patch(layout)
-        assert_same_items(
-            patch.changes,
-            [
-                {
-                    "op": "add",
-                    "path": "/children",
-                    "value": [
-                        {"tagName": "div", "children": ["hello"]},
-                        {"tagName": "", "error": ""},
-                        {"tagName": "div", "children": ["hello"]},
-                    ],
-                },
-                {"op": "add", "path": "/tagName", "value": "div"},
-            ],
-        )
+    with assert_idom_logged(
+        match_error="error from bad child",
+        clear_matched_records=True,
+    ):
+
+        with idom.Layout(Main()) as layout:
+            patch = await render_json_patch(layout)
+            assert_same_items(
+                patch.changes,
+                [
+                    {
+                        "op": "add",
+                        "path": "/children",
+                        "value": [
+                            {"tagName": "div", "children": ["hello"]},
+                            {"tagName": "", "error": ""},
+                            {"tagName": "div", "children": ["hello"]},
+                        ],
+                    },
+                    {"op": "add", "path": "/tagName", "value": "div"},
+                ],
+            )
 
 
 async def test_render_raw_vdom_dict_with_single_component_object_as_children():
@@ -622,11 +641,13 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
             idom.html.div(key="duplicate"), idom.html.div(key="duplicate")
         )
 
-    with idom.Layout(ComponentReturnsDuplicateKeys()) as layout:
-        await layout.render()
-
-    with pytest.raises(ValueError, match=r"Duplicate keys \['duplicate'\] at '/'"):
-        raise next(iter(caplog.records)).exc_info[1]
+    with assert_idom_logged(
+        error_type=ValueError,
+        match_error=r"Duplicate keys \['duplicate'\] at '/'",
+        clear_matched_records=True,
+    ):
+        with idom.Layout(ComponentReturnsDuplicateKeys()) as layout:
+            await layout.render()
 
 
 async def test_keyed_components_preserve_hook_on_parent_update():
@@ -652,7 +673,7 @@ async def test_keyed_components_preserve_hook_on_parent_update():
         assert old_inner_hook is inner_hook.latest
 
 
-async def test_log_error_on_bad_event_handler(caplog):
+async def test_log_error_on_bad_event_handler():
     bad_handler = StaticEventHandler()
 
     @idom.component
@@ -663,14 +684,15 @@ async def test_log_error_on_bad_event_handler(caplog):
 
         return idom.html.button({"onClick": raise_error})
 
-    with idom.Layout(ComponentWithBadEventHandler()) as layout:
-        await layout.render()
-        event = LayoutEvent(bad_handler.target, [])
-        await layout.deliver(event)
+    with assert_idom_logged(
+        match_error="bad event handler",
+        clear_matched_records=True,
+    ):
 
-    assert next(iter(caplog.records)).message.startswith(
-        "Failed to execute event handler"
-    )
+        with idom.Layout(ComponentWithBadEventHandler()) as layout:
+            await layout.render()
+            event = LayoutEvent(bad_handler.target, [])
+            await layout.deliver(event)
 
 
 async def test_schedule_render_from_unmounted_hook(caplog):
@@ -689,31 +711,29 @@ async def test_schedule_render_from_unmounted_hook(caplog):
         idom.hooks.use_effect(lambda: lambda: print("unmount", state))
         return idom.html.div(state)
 
-    with idom.Layout(Parent()) as layout:
-        await layout.render()
-
-        old_hook = child_hook.latest
-
-        # cause initial child to be unmounted
-        parent_set_state.current(2)
-        await layout.render()
-
-        # trigger render for hook that's been unmounted
-        old_hook.schedule_render()
-
-        # schedule one more render just to make it so `layout.render()` doesn't hang
-        # when the scheduled render above gets skipped
-        parent_set_state.current(3)
-
-        await layout.render()
-
-    assert re.match(
+    with assert_idom_logged(
         r"Did not render component with model state ID .*? - component already unmounted",
-        caplog.records[0].message,
-    )
+    ):
+        with idom.Layout(Parent()) as layout:
+            await layout.render()
+
+            old_hook = child_hook.latest
+
+            # cause initial child to be unmounted
+            parent_set_state.current(2)
+            await layout.render()
+
+            # trigger render for hook that's been unmounted
+            old_hook.schedule_render()
+
+            # schedule one more render just to make it so `layout.render()` doesn't hang
+            # when the scheduled render above gets skipped
+            parent_set_state.current(3)
+
+            await layout.render()
 
 
-async def test_layout_element_cannot_become_a_component(caplog):
+async def test_layout_element_cannot_become_a_component():
     set_child_type = idom.Ref()
 
     @idom.component
@@ -730,18 +750,21 @@ async def test_layout_element_cannot_become_a_component(caplog):
         "component": Child(key="the-same-key"),
     }
 
-    with idom.Layout(Root()) as layout:
-        await layout.render()
+    with assert_idom_logged(
+        error_type=ValueError,
+        match_error="prior element with this key wasn't a component",
+        clear_matched_records=True,
+    ):
 
-        set_child_type.current("component")
+        with idom.Layout(Root()) as layout:
+            await layout.render()
 
-        await layout.render()
+            set_child_type.current("component")
 
-    error = caplog.records[0].exc_info[1]
-    assert "prior element with this key wasn't a component" in str(error)
+            await layout.render()
 
 
-async def test_layout_component_cannot_become_an_element(caplog):
+async def test_layout_component_cannot_become_an_element():
     set_child_type = idom.Ref()
 
     @idom.component
@@ -758,12 +781,50 @@ async def test_layout_component_cannot_become_an_element(caplog):
         "component": Child(key="the-same-key"),
     }
 
-    with idom.Layout(Root()) as layout:
+    with assert_idom_logged(
+        error_type=ValueError,
+        match_error="prior element with this key was a component",
+        clear_matched_records=True,
+    ):
+
+        with idom.Layout(Root()) as layout:
+            await layout.render()
+
+            set_child_type.current("element")
+
+            await layout.render()
+
+
+async def test_layout_does_not_copy_element_children_by_key():
+    # this is a regression test for a subtle bug:
+    # https://github.com/idom-team/idom/issues/556
+
+    set_items = idom.Ref()
+
+    @idom.component
+    def SomeComponent():
+        items, set_items.current = idom.use_state([1, 2, 3])
+        return idom.html.div(
+            [
+                idom.html.div(
+                    idom.html.input({"onChange": lambda event: None}),
+                    key=str(i),
+                )
+                for i in items
+            ]
+        )
+
+    with idom.Layout(SomeComponent()) as layout:
         await layout.render()
 
-        set_child_type.current("element")
+        set_items.current([2, 3])
 
         await layout.render()
 
-    error = caplog.records[0].exc_info[1]
-    assert "prior element with this key was a component" in str(error)
+        set_items.current([3])
+
+        await layout.render()
+
+        set_items.current([])
+
+        await layout.render()
