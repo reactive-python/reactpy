@@ -554,8 +554,8 @@ Removing Set Items
             s & values
 
 To remove items from sets you can use the various binary operators or their associated
-methods to return new sets without mutating them. As before when :ref:`adding items to
-sets` you need to avoid using the inline assignment operators since that will
+methods to return new sets without mutating them. As before when :ref:`adding set items`
+you need to avoid using the inline assignment operators since that will
 (counterintuitively) mutate the original set rather than given you a new one:
 
 .. idom:: _examples/set_remove
