@@ -50,7 +50,7 @@ Adding Interactivity
             :link: dangers-of-mutability/index
             :link-type: doc
 
-            Under construction 🚧
+            See the pitfalls of working with mutable data types and how to avoid them.
 
 
 Section 1: Responding to Events
@@ -187,6 +187,19 @@ To accomplish this, instead of passing the next state value directly (e.g.
 Section 5: Dangers of Mutability
 --------------------------------
 
+While state can hold any type of value, you should be careful to avoid directly
+modifying objects that you declare as state with IDOM. In other words, you must not
+:ref:`"mutate" <What is a Mutation>` values which are held as state. Rather, to change
+these values you should use new ones or create copies.
+
+This is because IDOM does not understand that when a value is mutated, it may have
+changed. As a result, mutating values will not trigger re-renders. Thus, you must be
+careful to avoid mutation whenever you want IDOM to re-render a component. For example,
+instead of mutating dictionaries to update their items you should instead create a
+copy that contains the desired changes:
+
+.. idom:: dangers-of-mutability/_examples/dict_update
+
 .. card::
     :link: dangers-of-mutability/index
     :link-type: doc
@@ -194,4 +207,4 @@ Section 5: Dangers of Mutability
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    ...
+    See the pitfalls of working with mutable data types and how to avoid them.
