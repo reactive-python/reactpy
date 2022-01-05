@@ -5,6 +5,7 @@ from .core.dispatcher import Stop
 from .core.events import EventHandler, event
 from .core.hooks import (
     use_callback,
+    use_debug_value,
     use_effect,
     use_memo,
     use_reducer,
@@ -42,6 +43,7 @@ __all__ = [
     "run",
     "Stop",
     "use_callback",
+    "use_debug_value",
     "use_effect",
     "use_memo",
     "use_reducer",

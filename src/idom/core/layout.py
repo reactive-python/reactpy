@@ -644,6 +644,15 @@ class _LifeCycleState(NamedTuple):
     """The current component instance"""
 
 
+if IDOM_DEBUG_MODE.current:
+    # When in debug mode we bind a hook's associated component
+    # to it so we can have more information when logging.
+
+    class _LifeCycleState(_LifeCycleState):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            self.hook.component = self.component
+
+
 _Type = TypeVar("_Type")
 
 

@@ -4,9 +4,10 @@ import re
 import pytest
 
 import idom
+from idom.config import IDOM_DEBUG_MODE
 from idom.core.dispatcher import render_json_patch
 from idom.core.hooks import LifeCycleHook
-from idom.testing import HookCatcher
+from idom.testing import HookCatcher, assert_idom_did_log, assert_idom_did_not_log
 from tests.general_utils import assert_same_items
 
 
@@ -915,3 +916,80 @@ async def test_use_memo_automatically_infers_closure_values():
             await layout.render()
             await did_memo.wait()
             did_memo.clear()
+
+
+@pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="only logs in debug mode")
+async def test_use_debug_mode():
+    set_message = idom.Ref()
+    component_hook = HookCatcher()
+
+    @idom.component
+    @component_hook.capture
+    def SomeComponent():
+        message, set_message.current = idom.use_state("hello")
+        idom.use_debug_value(f"message is {message!r}")
+        return idom.html.div()
+
+    with idom.Layout(SomeComponent()) as layout:
+
+        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
+            await layout.render()
+
+        set_message.current("bye")
+
+        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+        component_hook.latest.schedule_render()
+
+        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+
+@pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="only logs in debug mode")
+async def test_use_debug_mode_with_factory():
+    set_message = idom.Ref()
+    component_hook = HookCatcher()
+
+    @idom.component
+    @component_hook.capture
+    def SomeComponent():
+        message, set_message.current = idom.use_state("hello")
+        idom.use_debug_value(lambda: f"message is {message!r}")
+        return idom.html.div()
+
+    with idom.Layout(SomeComponent()) as layout:
+
+        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
+            await layout.render()
+
+        set_message.current("bye")
+
+        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+        component_hook.latest.schedule_render()
+
+        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+
+@pytest.mark.skipif(IDOM_DEBUG_MODE.current, reason="logs in debug mode")
+async def test_use_debug_mode_does_not_log_if_not_in_debug_mode():
+    set_message = idom.Ref()
+
+    @idom.component
+    def SomeComponent():
+        message, set_message.current = idom.use_state("hello")
+        idom.use_debug_value(lambda: f"message is {message!r}")
+        return idom.html.div()
+
+    with idom.Layout(SomeComponent()) as layout:
+
+        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'hello'"):
+            await layout.render()
+
+        set_message.current("bye")
+
+        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()

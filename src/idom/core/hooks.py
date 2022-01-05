@@ -24,7 +24,10 @@ from typing import (
 
 from typing_extensions import Protocol
 
+from idom.config import IDOM_DEBUG_MODE
 from idom.utils import Ref
+
+from .proto import ComponentType
 
 
 if not TYPE_CHECKING:
@@ -392,6 +395,54 @@ def use_ref(initial_value: _StateType) -> Ref[_StateType]:
     return _use_const(lambda: Ref(initial_value))
 
 
+if IDOM_DEBUG_MODE.current:
+
+    def use_debug_value(
+        message: Any | Callable[[], Any],
+        dependencies: Sequence[Any] | ellipsis | None = ...,
+    ) -> None:
+        """Log debug information when the given message changes.
+
+        Differently from other hooks, a message is considered to have changed if the
+        old and new values are ``!=``. Because this comparison is performed on every
+        render of the component, it may be worth considering the performance cost in
+        some situations.
+
+        Parameters:
+            message:
+                The value to log or a memoized function for generating the value.
+            dependencies:
+                Dependencies for the memoized function. The message will only be
+                recomputed if the identity of any value in the given sequence changes
+                (i.e. their :func:`id` is different). By default these are inferred
+                based on local variables that are referenced by the given function.
+
+        .. note::
+
+            This hook only logs if :data:`~idom.config.IDOM_DEBUG_MODE` is active.
+        """
+        old_ref = _use_const(Ref)
+        memo_func = message if callable(message) else lambda: message
+        new = use_memo(memo_func, dependencies)
+
+        try:
+            old = old_ref.current
+        except AttributeError:
+            old = object()
+
+        if old != new:
+            old_ref.current = new
+            logger.debug(f"{current_hook().component} {new}")
+
+else:  # pragma: no cover
+
+    def use_debug_value(
+        message: Any | Callable[[], Any],
+        dependencies: Sequence[Any] | ellipsis | None = ...,
+    ) -> None:
+        """This hook does nothing because :data:`~idom.config.IDOM_DEBUG_MODE` is off"""
+
+
 def _use_const(function: Callable[[], _StateType]) -> _StateType:
     return current_hook().use_state(function)
 
@@ -506,6 +557,11 @@ class LifeCycleHook:
         "_event_effects",
         "__weakref__",
     )
+
+    if IDOM_DEBUG_MODE.current:
+        __slots__ += ("component",)
+        component: ComponentType
+        """Only exists if in :data:`~idom.config.IDOM_DEBUG_MODE` is active."""
 
     def __init__(
         self,
