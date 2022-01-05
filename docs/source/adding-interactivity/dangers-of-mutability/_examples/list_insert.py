@@ -10,7 +10,7 @@ def ArtistList():
         set_artist_to_add(event["target"]["value"])
 
     def handle_click(event):
-        if artist_to_add not in artists:
+        if artist_to_add and artist_to_add not in artists:
             set_artists([*artists, artist_to_add])
             set_artist_to_add("")
 

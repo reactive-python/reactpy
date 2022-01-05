@@ -141,7 +141,7 @@ Below are some ways to update dictionaries without mutating them:
         # Python >= 3.9
         d | {"key": value}
 
-        # Equivalent to setdefault()
+        # Equivalent to dict.setdefault()
         {"key": value, **d}
 
 .. card:: Removing Items
@@ -163,6 +163,9 @@ Below are some ways to update dictionaries without mutating them:
             k: d[k]
             for k in set(d).difference([key])
         }
+
+
+----
 
 
 .. _updating-dictionary-items:
@@ -293,10 +296,9 @@ Below are some ways to update lists without mutating them:
 
         l[:start] + values + l[end + 1:]
 
-..card:: Re-ordering Items
+.. card:: Re-ordering Items
     :link: re-ordering-list-items
     :link-type: ref
-
 
     Avoid using ``list.sort`` or ``list.reverse``. Instead try the strategies below:
 
@@ -305,6 +307,9 @@ Below are some ways to update lists without mutating them:
         list(sorted(l))
 
         list(reversed(l))
+
+
+----
 
 
 .. _inserting-list-items:
@@ -324,6 +329,9 @@ Inserting List Items
 
             l.insert(index, value)
 
+            # Adding a list "in-place" mutates!
+            l += [value]
+
     .. grid-item-card:: :bdg-info:`Prefer`
 
         .. code-block::
@@ -335,6 +343,11 @@ Inserting List Items
             l + values
 
             l[:index] + [value] + l[index:]
+
+Instead of mutating a list to add items to it, we need to create a new list which has
+the items we want to append instead. There are several ways to do this for one or more
+values however it's often simplest to use `"unpacking"
+<https://www.python.org/dev/peps/pep-0448/>`__ with the ``*`` syntax.
 
 .. idom:: _examples/list_insert
 
@@ -358,7 +371,12 @@ Removing List Items
 
         .. code-block::
 
-            l[:index - 1] + l[index:]
+            l[:index] + l[index + 1:]
+
+Unfortunately, the syntax for creating a copy of a list with one of its items removed is
+not quite as clean. You must select the portion the list prior to the item which should
+be removed (``l[:index]``) and the portion after the item (``l[index + 1:]``) and add
+them together:
 
 .. idom:: _examples/list_remove
 
@@ -386,6 +404,11 @@ Replacing List Items
 
             l[:start] + values + l[end + 1:]
 
+In a similar manner to :ref:`removing list items`, to replace an item in a list, you
+must select the portion before and after the item in question. But this time, instead
+of adding those two selections together, you must insert that values you want to replace
+between them:
+
 .. idom:: _examples/list_replace
 
 
@@ -411,6 +434,12 @@ Re-ordering List Items
             list(sorted(l))
 
             list(reversed(l))
+
+There are many different ways that list items could be re-ordered, but two of the most
+common are reversing or sorting items. Instead of calling the associated methods on a
+list object, you should use the builtin functions :func:`sorted` and :func:`reversed`
+and pass the resulting iterator into the :class:`list` constructor to create a sorted
+or reversed copy of the given list:
 
 .. idom:: _examples/list_re_order
 
@@ -448,6 +477,9 @@ Below are ways to update sets without mutating them:
         s.intersection(values)
 
 
+----
+
+
 .. _adding-set-items:
 
 Adding Set Items
@@ -460,16 +492,27 @@ Adding Set Items
         .. code-block::
 
             s.add(value)
+            s |= {value}  # "in-place" operators mutate!
 
             s.update(values)
+            s |= values  # "in-place" operators mutate!
 
     .. grid-item-card:: :bdg-info:`Prefer`
 
         .. code-block::
 
             s.union({value})
+            s | {value}
 
             s.union(values)
+            s | values
+
+Sets have some nice ways for evolving them without requiring mutation. The binary
+or operator ``|`` serves as a succinct way to compute the union of two sets. However,
+you should be careful to not use an in-place assignment with this operator as that will
+(counterintuitively) mutate the original set rather than creating a new one.
+
+.. idom:: _examples/set_update
 
 
 .. _removing-set-items:
@@ -486,8 +529,14 @@ Removing Set Items
             s.remove(value)
 
             s.difference_update(values)
+            s -= values  # "in-place" operators mutate!
+
+            s.symetric_difference_update(values)
+            s ^= values  # "in-place" operators mutate!
 
             s.intersection_update(values)
+            s &= values  # "in-place" operators mutate!
+
 
     .. grid-item-card:: :bdg-info:`Prefer`
 
@@ -496,10 +545,25 @@ Removing Set Items
             s.difference({value})
 
             s.difference(values)
+            s - values
+
+            s.symetric_difference(values)
+            s ^ values
 
             s.intersection(values)
+            s & values
+
+To remove items from sets you can use the various binary operators or their associated
+methods to return new sets without mutating them. As before when :ref:`adding items to
+sets` you need to avoid using the inline assignment operators since that will
+(counterintuitively) mutate the original set rather than given you a new one:
+
+.. idom:: _examples/set_remove
 
 
 Useful Packages
 ---------------
 
+Under construction 🚧
+
+https://pypi.org/project/pyrsistent/
