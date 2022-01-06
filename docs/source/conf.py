@@ -171,9 +171,9 @@ ogp_custom_meta_tags = [
     f'<meta property="og:title" content="{title}">',
     f'<meta property="og:description" content="{description}">',
     # Twitter Meta Tags
-    f'<meta name="twitter:card" content="summary_large_image">',
-    f'<meta name="twitter:creator" content="@rmorshea">',
-    f'<meta name="twitter:site" content="@rmorshea">',
+    '<meta name="twitter:card" content="summary_large_image">',
+    '<meta name="twitter:creator" content="@rmorshea">',
+    '<meta name="twitter:site" content="@rmorshea">',
 ]
 
 
