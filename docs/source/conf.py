@@ -26,6 +26,12 @@ sys.path.insert(0, str(THIS_DIR / "_exts"))
 # -- Project information -----------------------------------------------------
 
 project = "IDOM"
+title = "IDOM Docs"
+description = (
+    "IDOM is a Python web framework for building interactive websites without needing "
+    "a single line of Javascript. It can be run standalone, in a Jupyter Notebook, or "
+    "as part of an existing application."
+)
 copyright = "2020, Ryan Morshead"
 author = "Ryan Morshead"
 
@@ -74,6 +80,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_reredirects",
     "sphinx_design",
+    "sphinxext.opengraph",
     # custom extensions
     "async_doctest",
     "autogen_api_docs",
@@ -126,9 +133,11 @@ doctest_default_flags = NORMALIZE_WHITESPACE | ELLIPSIS | DONT_ACCEPT_TRUE_FOR_1
 
 # -- Extension Configuration ------------------------------------------------------
 
+
 # -- sphinx.ext.autosectionlabel ---
 
 autosectionlabel_skip_docs = ["_auto/apis"]
+
 
 # -- sphinx.ext.autodoc --
 
@@ -140,6 +149,7 @@ autodoc_default_options = {
 # order autodoc members by their order in the source
 autodoc_member_order = "bysource"
 
+
 # -- sphinx_reredirects --
 
 redirects = {
@@ -148,10 +158,29 @@ redirects = {
     "examples": "creating-interfaces/index.html",
 }
 
+
+# -- sphinxext.opengraph --
+
+ogp_site_url = "https://idom-docs.herokuapp.com/"
+ogp_image = "https://raw.githubusercontent.com/idom-team/idom/main/branding/png/idom-logo-black.png"
+# We manually specify this below
+# ogp_description_length = 200
+ogp_type = "website"
+ogp_custom_meta_tags = [
+    # Open Graph Meta Tags
+    f'<meta property="og:title" content="{title}">',
+    f'<meta property="og:description" content="{description}">',
+    # Twitter Meta Tags
+    f'<meta name="twitter:card" content="summary_large_image">',
+    f'<meta name="twitter:creator" content="@rmorshea">',
+    f'<meta name="twitter:site" content="@rmorshea">',
+]
+
+
 # -- Options for HTML output -------------------------------------------------
 
 # Set the page title
-html_title = "IDOM Docs"
+html_title = title
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.

@@ -7,3 +7,4 @@ sphinx-autobuild ==2020.9.1
 sphinx-reredirects ==0.0.1
 sphinx-design ==0.0.13
 sphinx-resolve-py-references ==0.1.0
+sphinxext-opengraph ==0.5.1
