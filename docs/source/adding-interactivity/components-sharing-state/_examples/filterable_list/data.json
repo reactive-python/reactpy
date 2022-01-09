@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Sushi",
+    "description": "Sushi is a traditional Japanese dish of prepared vinegared rice",
+  },
+  {
+    "name": "Dal",
+    "description": "The most common way of preparing dal is in the form of a soup to which onions, tomatoes and various spices may be added",
+  },
+  {
+    "name": "Pierogi",
+    "description": "Pierogi are filled dumplings made by wrapping unleavened dough around a savoury or sweet filling and cooking in boiling water",
+  },
+  {
+    "name": "Shish Kebab",
+    "description": "Shish kebab is a popular meal of skewered and grilled cubes of meat",
+  },
+  {
+    "name": "Dim sum",
+    "description": "Dim sum is a large range of small dishes that Cantonese people traditionally enjoy in restaurants for breakfast and lunch",
+  }
+]
