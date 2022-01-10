@@ -1,5 +1,5 @@
-name: Draft a Change
-description: Create a detailed plan for enhancement (ONLY START AFTER DISCUSSION PLEASE 🙏).
+name: Plan an Action
+description: Create a detailed plan of action (ONLY START AFTER DISCUSSION PLEASE 🙏).
 labels: [triage]
 body:
 - type: textarea
@@ -10,7 +10,7 @@ body:
     required: false
 - type: textarea
   attributes:
-    label: Proposed Changes
+    label: Proposed Actions
     description: Describe how things ought to be, and why that will address the reasons for change mentioned above.
   validations:
     required: false
