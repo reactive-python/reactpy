@@ -197,7 +197,7 @@ def assert_idom_logged(
     error_pattern = re.compile(match_error)
 
     try:
-        with capture_idom_logs(use_existing=clear_matched_records) as log_records:
+        with capture_idom_logs(yield_existing=clear_matched_records) as log_records:
             yield None
     except Exception:
         raise
@@ -281,16 +281,18 @@ def _raise_log_message_error(
 
 
 @contextmanager
-def capture_idom_logs(use_existing: bool = False) -> Iterator[list[logging.LogRecord]]:
+def capture_idom_logs(
+    yield_existing: bool = False,
+) -> Iterator[list[logging.LogRecord]]:
     """Capture logs from IDOM
 
     Parameters:
-        use_existing:
+        yield_existing:
             If already inside an existing capture context yield the same list of logs.
             This is useful if you need to mutate the list of logs to affect behavior in
             the outer context.
     """
-    if use_existing:
+    if yield_existing:
         for handler in reversed(ROOT_LOGGER.handlers):
             if isinstance(handler, _LogRecordCaptor):
                 yield handler.records
