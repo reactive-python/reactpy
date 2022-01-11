@@ -71,6 +71,7 @@ def poly_coef_input(index, callback):
                 "onChange": callback,
             },
         ),
+        key=index,
     )
 
 

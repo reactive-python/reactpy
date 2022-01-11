@@ -195,8 +195,8 @@ def module_from_file(
             Using this option has negative performance consequences since all DOM
             elements must be changed on each render. See :issue:`461` for more info.
         replace_existing:
-            Whether to replace the source for a module with the same name if
-            if already exists. Otherwise raise an error.
+            Whether to replace the source for a module with the same name if it already
+            exists. Otherwise raise an error.
     """
     source_file = Path(file)
     target_file = _web_module_path(name)

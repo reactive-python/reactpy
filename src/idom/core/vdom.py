@@ -129,7 +129,7 @@ def is_vdom(value: Any) -> bool:
 def vdom(
     tag: str,
     *attributes_and_children: VdomAttributesAndChildren,
-    key: str = "",
+    key: str | int | None = None,
     event_handlers: Optional[EventHandlerMapping] = None,
     import_source: Optional[ImportSourceDict] = None,
 ) -> VdomDict:
@@ -169,7 +169,7 @@ def vdom(
     if event_handlers:
         model["eventHandlers"] = event_handlers
 
-    if key != "":
+    if key is not None:
         model["key"] = key
 
     if import_source is not None:
@@ -182,7 +182,7 @@ class _VdomDictConstructor(Protocol):
     def __call__(
         self,
         *attributes_and_children: VdomAttributesAndChildren,
-        key: str = ...,
+        key: str | int | None = ...,
         event_handlers: Optional[EventHandlerMapping] = ...,
         import_source: Optional[ImportSourceDict] = ...,
     ) -> VdomDict:
@@ -200,7 +200,7 @@ def make_vdom_constructor(
 
     def constructor(
         *attributes_and_children: VdomAttributesAndChildren,
-        key: str = "",
+        key: str | int | None = None,
         event_handlers: Optional[EventHandlerMapping] = None,
         import_source: Optional[ImportSourceDict] = None,
     ) -> VdomDict:
@@ -333,7 +333,11 @@ if IDOM_DEBUG_MODE.current:
                     logger.error(f"Key not specified for child in list {child}")
                 elif isinstance(child, Mapping) and "key" not in child:
                     # remove 'children' to reduce log spam
-                    child_copy = {**child, "children": ...}
+                    child_copy = {**child, "children": _EllipsisRepr()}
                     logger.error(f"Key not specified for child in list {child_copy}")
 
         return False
+
+    class _EllipsisRepr:
+        def __repr__(self) -> str:
+            return "..."

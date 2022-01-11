@@ -18,7 +18,12 @@ def GameView():
     game_state, set_game_state = idom.hooks.use_state(GameState.init)
 
     if game_state == GameState.play:
-        return GameLoop(grid_size=6, block_scale=50, set_game_state=set_game_state)
+        return GameLoop(
+            grid_size=6,
+            block_scale=50,
+            set_game_state=set_game_state,
+            key="game loop",
+        )
 
     start_button = idom.html.button(
         {"onClick": lambda event: set_game_state(GameState.play)},
@@ -40,7 +45,12 @@ def GameView():
         """
     )
 
-    return idom.html.div({"className": "snake-game-menu"}, menu_style, menu)
+    return idom.html.div(
+        {"className": "snake-game-menu"},
+        menu_style,
+        menu,
+        key="menu",
+    )
 
 
 class Direction(enum.Enum):
@@ -154,14 +164,18 @@ def create_grid(grid_size, block_scale):
         [
             idom.html.div(
                 {"style": {"height": f"{block_scale}px"}},
-                [create_grid_block("black", block_scale) for i in range(grid_size)],
+                [
+                    create_grid_block("black", block_scale, key=i)
+                    for i in range(grid_size)
+                ],
+                key=i,
             )
             for i in range(grid_size)
         ],
     )
 
 
-def create_grid_block(color, block_scale):
+def create_grid_block(color, block_scale, key):
     return idom.html.div(
         {
             "style": {
@@ -170,7 +184,8 @@ def create_grid_block(color, block_scale):
                 "backgroundColor": color,
                 "outline": "1px solid grey",
             }
-        }
+        },
+        key=key,
     )
 
 
