@@ -28,7 +28,7 @@ def Search(value, set_value):
 @component
 def Table(value, set_value):
     rows = []
-    for row in data:
+    for row in food_data:
         name = html.td(row["name"])
         descr = html.td(row["description"])
         tr = html.tr(name, descr, value)
