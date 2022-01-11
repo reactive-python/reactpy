@@ -3,7 +3,7 @@ import logging
 import pytest
 
 from idom import testing
-from idom.log import ROOT_LOGGER as logger
+from idom.log import ROOT_LOGGER
 
 
 def test_assert_idom_logged_does_not_supress_errors():
@@ -14,10 +14,10 @@ def test_assert_idom_logged_does_not_supress_errors():
 
 def test_assert_idom_logged_message():
     with testing.assert_idom_logged(match_message="my message"):
-        logger.info("my message")
+        ROOT_LOGGER.info("my message")
 
     with testing.assert_idom_logged(match_message=r".*"):
-        logger.info("my message")
+        ROOT_LOGGER.info("my message")
 
 
 def test_assert_idom_logged_error():
@@ -29,7 +29,7 @@ def test_assert_idom_logged_error():
         try:
             raise ValueError("my value error")
         except ValueError:
-            logger.exception("log message")
+            ROOT_LOGGER.exception("log message")
 
     with pytest.raises(
         AssertionError,
@@ -44,7 +44,7 @@ def test_assert_idom_logged_error():
                 # change error type
                 raise RuntimeError("my value error")
             except RuntimeError:
-                logger.exception("log message")
+                ROOT_LOGGER.exception("log message")
 
     with pytest.raises(
         AssertionError,
@@ -59,7 +59,7 @@ def test_assert_idom_logged_error():
                 # change error message
                 raise ValueError("something else")
             except ValueError:
-                logger.exception("log message")
+                ROOT_LOGGER.exception("log message")
 
     with pytest.raises(
         AssertionError,
@@ -74,7 +74,7 @@ def test_assert_idom_logged_error():
                 # change error message
                 raise ValueError("my error message")
             except ValueError:
-                logger.exception("something else")
+                ROOT_LOGGER.exception("something else")
 
 
 def test_assert_idom_logged_assertion_error_message():
@@ -92,14 +92,14 @@ def test_assert_idom_logged_assertion_error_message():
 
 
 def test_assert_idom_logged_ignores_level():
-    original_level = logger.level
-    logger.setLevel(logging.INFO)
+    original_level = ROOT_LOGGER.level
+    ROOT_LOGGER.setLevel(logging.INFO)
     try:
         with testing.assert_idom_logged(match_message=r".*"):
             # this log would normally be ignored
-            logger.debug("my message")
+            ROOT_LOGGER.debug("my message")
     finally:
-        logger.setLevel(original_level)
+        ROOT_LOGGER.setLevel(original_level)
 
 
 def test_assert_idom_did_not_log():
@@ -107,7 +107,7 @@ def test_assert_idom_did_not_log():
         pass
 
     with testing.assert_idom_did_not_log(match_message=r"something else"):
-        logger.info("my message")
+        ROOT_LOGGER.info("my message")
 
     with pytest.raises(
         AssertionError,
@@ -122,4 +122,4 @@ def test_assert_idom_did_not_log():
             try:
                 raise Exception("something")
             except Exception:
-                logger.exception("something")
+                ROOT_LOGGER.exception("something")
