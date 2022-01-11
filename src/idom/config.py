@@ -58,7 +58,7 @@ set of publically available APIs for working with the client.
 
 IDOM_FEATURE_INDEX_AS_DEFAULT_KEY = _Option(
     "IDOM_FEATURE_INDEX_AS_DEFAULT_KEY",
-    default=False,
+    default=True,
     mutable=False,
     validator=lambda x: bool(int(x)),
 )
