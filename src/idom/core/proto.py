@@ -22,11 +22,14 @@ ComponentConstructor = Callable[..., "ComponentType"]
 """Simple function returning a new component"""
 
 
+Key = Union[str, int]
+
+
 @runtime_checkable
 class ComponentType(Protocol):
     """The expected interface for all component-like objects"""
 
-    key: Optional[Any]
+    key: Key | None
     """An identifier which is unique amongst a component's immediate siblings"""
 
     def render(self) -> VdomDict:
@@ -74,7 +77,7 @@ VdomAttributesAndChildren = Union[
 
 
 class _VdomDictOptional(TypedDict, total=False):
-    key: str
+    key: Key | None
     children: Sequence[
         # recursive types are not allowed yet:
         # https://github.com/python/mypy/issues/731
@@ -101,7 +104,7 @@ class ImportSourceDict(TypedDict):
 
 
 class _OptionalVdomJson(TypedDict, total=False):
-    key: str
+    key: Key
     error: str
     children: List[Any]
     attributes: Dict[str, Any]
