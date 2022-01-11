@@ -6,7 +6,7 @@ import pytest
 import idom
 from idom.core.dispatcher import render_json_patch
 from idom.core.hooks import LifeCycleHook
-from idom.testing import HookCatcher
+from idom.testing import HookCatcher, assert_idom_did_log
 from tests.general_utils import assert_same_items
 
 
@@ -79,8 +79,12 @@ async def test_set_state_callback_identity_is_preserved():
         assert first_hook is h
 
 
-def test_use_state_with_constructor(driver, display, driver_wait):
+async def test_use_state_with_constructor():
     constructor_call_count = idom.Ref(0)
+
+    set_outer_state = idom.Ref()
+    set_inner_key = idom.Ref()
+    set_inner_state = idom.Ref()
 
     def make_default():
         constructor_call_count.current += 1
@@ -88,80 +92,55 @@ def test_use_state_with_constructor(driver, display, driver_wait):
 
     @idom.component
     def Outer():
-        hook = idom.hooks.current_hook()
-
-        async def on_click(event):
-            hook.schedule_render()
-
-        return idom.html.div(
-            idom.html.button(
-                {"onClick": on_click, "id": "outer"}, "update outer (rerun constructor)"
-            ),
-            Inner(),
-        )
+        state, set_outer_state.current = idom.use_state(0)
+        inner_key, set_inner_key.current = idom.use_state("first")
+        return idom.html.div(state, Inner(key=inner_key))
 
     @idom.component
     def Inner():
-        count, set_count = idom.hooks.use_state(make_default)
+        state, set_inner_state.current = idom.use_state(make_default)
+        return idom.html.div(state)
 
-        async def on_click(event):
-            set_count(count + 1)
+    with idom.Layout(Outer()) as layout:
+        await layout.render()
 
-        return idom.html.div(
-            idom.html.button(
-                {"onClick": on_click, "id": "inner"},
-                "update inner with state constructor",
-            ),
-            idom.html.p({"id": "count-view"}, count),
-        )
+        assert constructor_call_count.current == 1
 
-    display(Outer)
+        set_outer_state.current(1)
+        await layout.render()
 
-    outer = driver.find_element("id", "outer")
-    inner = driver.find_element("id", "inner")
-    count = driver.find_element("id", "count-view")
+        assert constructor_call_count.current == 1
 
-    driver_wait.until(lambda d: constructor_call_count.current == 1)
-    driver_wait.until(lambda d: count.get_attribute("innerHTML") == "0")
+        set_inner_state.current(1)
+        await layout.render()
 
-    inner.click()
+        assert constructor_call_count.current == 1
 
-    driver_wait.until(lambda d: constructor_call_count.current == 1)
-    driver_wait.until(lambda d: count.get_attribute("innerHTML") == "1")
+        set_inner_key.current("second")
+        await layout.render()
 
-    outer.click()
-
-    driver_wait.until(lambda d: constructor_call_count.current == 2)
-    driver_wait.until(lambda d: count.get_attribute("innerHTML") == "0")
-
-    inner.click()
-
-    driver_wait.until(lambda d: constructor_call_count.current == 2)
-    driver_wait.until(lambda d: count.get_attribute("innerHTML") == "1")
+        assert constructor_call_count.current == 2
 
 
-def test_set_state_with_reducer_instead_of_value(driver, display):
+async def test_set_state_with_reducer_instead_of_value():
+    count = idom.Ref()
+    set_count = idom.Ref()
+
     def increment(count):
         return count + 1
 
     @idom.component
     def Counter():
-        count, set_count = idom.hooks.use_state(0)
-        return idom.html.button(
-            {
-                "id": "counter",
-                "onClick": lambda event: set_count(increment),
-            },
-            f"Count: {count}",
-        )
+        count.current, set_count.current = idom.hooks.use_state(0)
+        return idom.html.div(count.current)
 
-    display(Counter)
+    with idom.Layout(Counter()) as layout:
+        await layout.render()
 
-    client_counter = driver.find_element("id", "counter")
-
-    for i in range(3):
-        assert client_counter.get_attribute("innerHTML") == f"Count: {i}"
-        client_counter.click()
+        for i in range(4):
+            assert count.current == i
+            set_count.current(increment)
+            await layout.render()
 
 
 def test_set_state_checks_identity_not_equality(driver, display, driver_wait):
@@ -356,15 +335,15 @@ async def test_use_effect_cleanup_occurs_before_next_effect():
 
 
 async def test_use_effect_cleanup_occurs_on_will_unmount():
-    outer_component_hook = HookCatcher()
+    set_key = idom.Ref()
     component_did_render = idom.Ref(False)
     cleanup_triggered = idom.Ref(False)
     cleanup_triggered_before_next_render = idom.Ref(False)
 
     @idom.component
-    @outer_component_hook.capture
     def OuterComponent():
-        return ComponentWithEffect()
+        key, set_key.current = idom.use_state("first")
+        return ComponentWithEffect(key=key)
 
     @idom.component
     def ComponentWithEffect():
@@ -387,7 +366,7 @@ async def test_use_effect_cleanup_occurs_on_will_unmount():
 
         assert not cleanup_triggered.current
 
-        outer_component_hook.latest.schedule_render()
+        set_key.current("second")
         await layout.render()
 
         assert cleanup_triggered.current
@@ -592,13 +571,13 @@ async def test_error_in_effect_cleanup_is_gracefully_handled(caplog):
     assert re.match("Post-render effect .*?", first_log_line)
 
 
-async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled(caplog):
-    outer_component_hook = HookCatcher()
+async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled():
+    set_key = idom.Ref()
 
     @idom.component
-    @outer_component_hook.capture
     def OuterComponent():
-        return ComponentWithEffect()
+        key, set_key.current = idom.use_state("first")
+        return ComponentWithEffect(key=key)
 
     @idom.component
     def ComponentWithEffect():
@@ -611,13 +590,14 @@ async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled(caplog)
 
         return idom.html.div()
 
-    with idom.Layout(OuterComponent()) as layout:
-        await layout.render()
-        outer_component_hook.latest.schedule_render()
-        await layout.render()  # no error
-
-    first_log_line = next(iter(caplog.records)).msg.split("\n", 1)[0]
-    assert re.match("Pre-unmount effect .*? failed", first_log_line)
+    with assert_idom_did_log(
+        match_message=r"Pre-unmount effect .*? failed",
+        error_type=ValueError,
+    ):
+        with idom.Layout(OuterComponent()) as layout:
+            await layout.render()
+            set_key.current("second")
+            await layout.render()  # no error
 
 
 async def test_use_reducer():

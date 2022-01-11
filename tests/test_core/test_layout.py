@@ -13,7 +13,7 @@ from idom.core.layout import LayoutEvent
 from idom.testing import (
     HookCatcher,
     StaticEventHandler,
-    assert_idom_logged,
+    assert_idom_did_log,
     capture_idom_logs,
 )
 from tests.general_utils import assert_same_items
@@ -21,9 +21,9 @@ from tests.general_utils import assert_same_items
 
 @pytest.fixture(autouse=True)
 def no_logged_errors():
-    with capture_idom_logs() as handler:
+    with capture_idom_logs() as logs:
         yield
-        for record in handler.records:
+        for record in logs:
             if record.exc_info:
                 raise record.exc_info[1]
 
@@ -144,7 +144,7 @@ async def test_layout_render_error_has_partial_update_with_error_message():
     def BadChild():
         raise ValueError("error from bad child")
 
-    with assert_idom_logged(
+    with assert_idom_did_log(
         match_error="error from bad child",
         clear_matched_records=True,
     ):
@@ -188,7 +188,7 @@ async def test_layout_render_error_has_partial_update_without_error_message():
     def BadChild():
         raise ValueError("error from bad child")
 
-    with assert_idom_logged(
+    with assert_idom_did_log(
         match_error="error from bad child",
         clear_matched_records=True,
     ):
@@ -335,17 +335,12 @@ async def test_life_cycle_hooks_are_garbage_collected():
     @add_to_live_hooks
     def Outer():
         nonlocal set_inner_component
-        inner_component, set_inner_component = idom.hooks.use_state(InnerOne())
+        inner_component, set_inner_component = idom.hooks.use_state(Inner(key="first"))
         return inner_component
 
     @idom.component
     @add_to_live_hooks
-    def InnerOne():
-        return idom.html.div()
-
-    @idom.component
-    @add_to_live_hooks
-    def InnerTwo():
+    def Inner():
         return idom.html.div()
 
     with idom.Layout(Outer()) as layout:
@@ -354,9 +349,9 @@ async def test_life_cycle_hooks_are_garbage_collected():
         assert len(live_hooks) == 2
         last_live_hooks = live_hooks.copy()
 
-        # We expect the hook for `InnerOne` to be garbage collected since it the
-        # component will get replaced.
-        set_inner_component(InnerTwo())
+        # We expect the hook for `InnerOne` to be garbage collected since the component
+        # will get replaced.
+        set_inner_component(Inner(key="second"))
         await layout.render()
         assert len(live_hooks - last_live_hooks) == 1
 
@@ -649,7 +644,7 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
             idom.html.div(key="duplicate"), idom.html.div(key="duplicate")
         )
 
-    with assert_idom_logged(
+    with assert_idom_did_log(
         error_type=ValueError,
         match_error=r"Duplicate keys \['duplicate'\] at '/'",
         clear_matched_records=True,
@@ -692,7 +687,7 @@ async def test_log_error_on_bad_event_handler():
 
         return idom.html.button({"onClick": raise_error})
 
-    with assert_idom_logged(
+    with assert_idom_did_log(
         match_error="bad event handler",
         clear_matched_records=True,
     ):
@@ -719,7 +714,7 @@ async def test_schedule_render_from_unmounted_hook(caplog):
         idom.hooks.use_effect(lambda: lambda: print("unmount", state))
         return idom.html.div(state)
 
-    with assert_idom_logged(
+    with assert_idom_did_log(
         r"Did not render component with model state ID .*? - component already unmounted",
     ):
         with idom.Layout(Parent()) as layout:
@@ -758,7 +753,7 @@ async def test_layout_element_cannot_become_a_component():
         "component": Child(key="the-same-key"),
     }
 
-    with assert_idom_logged(
+    with assert_idom_did_log(
         error_type=ValueError,
         match_error="prior element with this key wasn't a component",
         clear_matched_records=True,
@@ -789,7 +784,7 @@ async def test_layout_component_cannot_become_an_element():
         "component": Child(key="the-same-key"),
     }
 
-    with assert_idom_logged(
+    with assert_idom_did_log(
         error_type=ValueError,
         match_error="prior element with this key was a component",
         clear_matched_records=True,
