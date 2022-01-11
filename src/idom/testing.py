@@ -179,7 +179,7 @@ class LogAssertionError(AssertionError):
 
 
 @contextmanager
-def assert_idom_did_log(
+def assert_idom_logged(
     match_message: str = "",
     error_type: type[Exception] | None = None,
     match_error: str = "",
@@ -247,9 +247,9 @@ def assert_idom_did_not_log(
     match_error: str = "",
     clear_matched_records: bool = False,
 ) -> Iterator[None]:
-    """Assert the inverse of :func:`assert_idom_did_log`"""
+    """Assert the inverse of :func:`assert_idom_logged`"""
     try:
-        with assert_idom_did_log(
+        with assert_idom_logged(
             match_message, error_type, match_error, clear_matched_records
         ):
             yield None
@@ -297,11 +297,15 @@ def capture_idom_logs(use_existing: bool = False) -> Iterator[list[logging.LogRe
                 return None
 
     handler = _LogRecordCaptor()
+    original_level = ROOT_LOGGER.level
+
+    ROOT_LOGGER.setLevel(logging.DEBUG)
     ROOT_LOGGER.addHandler(handler)
     try:
         yield handler.records
     finally:
         ROOT_LOGGER.removeHandler(handler)
+        ROOT_LOGGER.setLevel(original_level)
 
 
 class _LogRecordCaptor(logging.NullHandler):
@@ -312,9 +316,6 @@ class _LogRecordCaptor(logging.NullHandler):
     def handle(self, record: logging.LogRecord) -> bool:
         self.records.append(record)
         return True
-
-
-_LOG_RECORD_CAPTOR_SINGLTON = _LogRecordCaptor()
 
 
 class HookCatcher:
