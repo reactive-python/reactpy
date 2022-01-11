@@ -63,8 +63,10 @@ IDOM_FEATURE_INDEX_AS_DEFAULT_KEY = _Option(
 )
 """Use the index of elements/components amongst their siblings as the default key.
 
-In a future release this flag's default value will be set to true, and after that, this
-flag will be removed entirely and the indices will always be the default key.
+The flag's default value is set to true. To return to legacy behavior set
+``IDOM_FEATURE_INDEX_AS_DEFAULT_KEY=0``. In a future release, this flag will be removed
+entirely and the indices will always be the default key.
 
-For more information on changes to this feature flag see: https://github.com/idom-team/idom/issues/351
+For more information on changes to this feature flag see:
+https://github.com/idom-team/idom/issues/351
 """
