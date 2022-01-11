@@ -6,7 +6,7 @@ import pytest
 import idom
 from idom.core.dispatcher import render_json_patch
 from idom.core.hooks import LifeCycleHook
-from idom.testing import HookCatcher, assert_idom_did_log
+from idom.testing import HookCatcher, assert_idom_logged
 from tests.general_utils import assert_same_items
 
 
@@ -590,7 +590,7 @@ async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled():
 
         return idom.html.div()
 
-    with assert_idom_did_log(
+    with assert_idom_logged(
         match_message=r"Pre-unmount effect .*? failed",
         error_type=ValueError,
     ):
