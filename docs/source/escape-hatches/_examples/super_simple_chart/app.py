@@ -4,7 +4,13 @@ from idom import component, run, web
 
 
 file = Path(__file__).parent / "super-simple-chart.js"
-ssc = web.module_from_file("super-simple-chart", file, fallback="⌛")
+ssc = web.module_from_file(
+    "super-simple-chart",
+    file,
+    fallback="⌛",
+    # normally this option is not required
+    replace_existing=True,
+)
 SuperSimpleChart = web.export(ssc, "SuperSimpleChart")
 
 

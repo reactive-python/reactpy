@@ -698,10 +698,10 @@ _STRING_TYPE = _ElementType(3)
 
 if IDOM_FEATURE_INDEX_AS_DEFAULT_KEY.current:
 
-    def _default_key(index: int) -> Any:  # pragma: no cover
+    def _default_key(index: int) -> Any:
         return index
 
 else:
 
-    def _default_key(index: int) -> Any:
+    def _default_key(index: int) -> Any:  # pragma: no cover
         return object()

@@ -21,9 +21,9 @@ from tests.general_utils import assert_same_items
 
 @pytest.fixture(autouse=True)
 def no_logged_errors():
-    with capture_idom_logs() as handler:
+    with capture_idom_logs() as logs:
         yield
-        for record in handler.records:
+        for record in logs:
             if record.exc_info:
                 raise record.exc_info[1]
 
@@ -335,17 +335,12 @@ async def test_life_cycle_hooks_are_garbage_collected():
     @add_to_live_hooks
     def Outer():
         nonlocal set_inner_component
-        inner_component, set_inner_component = idom.hooks.use_state(InnerOne())
+        inner_component, set_inner_component = idom.hooks.use_state(Inner(key="first"))
         return inner_component
 
     @idom.component
     @add_to_live_hooks
-    def InnerOne():
-        return idom.html.div()
-
-    @idom.component
-    @add_to_live_hooks
-    def InnerTwo():
+    def Inner():
         return idom.html.div()
 
     with idom.Layout(Outer()) as layout:
@@ -354,9 +349,9 @@ async def test_life_cycle_hooks_are_garbage_collected():
         assert len(live_hooks) == 2
         last_live_hooks = live_hooks.copy()
 
-        # We expect the hook for `InnerOne` to be garbage collected since it the
-        # component will get replaced.
-        set_inner_component(InnerTwo())
+        # We expect the hook for `InnerOne` to be garbage collected since the component
+        # will get replaced.
+        set_inner_component(Inner(key="second"))
         await layout.render()
         assert len(live_hooks - last_live_hooks) == 1
 

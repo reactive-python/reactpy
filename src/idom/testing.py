@@ -14,6 +14,7 @@ from typing import (
     Generic,
     Iterator,
     List,
+    NoReturn,
     Optional,
     Tuple,
     Type,
@@ -173,6 +174,10 @@ class ServerMountPoint(Generic[_Mount, _Server]):
         return None
 
 
+class LogAssertionError(AssertionError):
+    """An assertion error raised in relation to log messages."""
+
+
 @contextmanager
 def assert_idom_logged(
     match_message: str = "",
@@ -192,11 +197,13 @@ def assert_idom_logged(
     error_pattern = re.compile(match_error)
 
     try:
-        with capture_idom_logs() as handler:
+        with capture_idom_logs(yield_existing=clear_matched_records) as log_records:
             yield None
-    finally:
+    except Exception:
+        raise
+    else:
         found = False
-        for record in list(handler.records):
+        for record in list(log_records):
             if (
                 # record message matches
                 message_pattern.findall(record.getMessage())
@@ -222,36 +229,85 @@ def assert_idom_logged(
             ):
                 found = True
                 if clear_matched_records:
-                    handler.records.remove(record)
+                    log_records.remove(record)
 
         if not found:  # pragma: no cover
-            conditions = []
-            if match_message:
-                conditions.append(f"log message pattern {match_message!r}")
-            if error_type:
-                conditions.append(f"exception type {error_type}")
-            if match_error:
-                conditions.append(f"error message pattern {match_error!r}")
-            raise AssertionError(
-                "Could not find a log record matching the given "
-                + " and ".join(conditions)
+            _raise_log_message_error(
+                "Could not find a log record matching the given",
+                match_message,
+                error_type,
+                match_error,
             )
 
 
 @contextmanager
-def capture_idom_logs() -> Iterator[_LogRecordCaptor]:
-    """Capture logs from IDOM"""
-    if _LOG_RECORD_CAPTOR_SINGLTON in ROOT_LOGGER.handlers:
-        # this is being handled by an outer capture context
-        yield _LOG_RECORD_CAPTOR_SINGLTON
-        return None
-
-    ROOT_LOGGER.addHandler(_LOG_RECORD_CAPTOR_SINGLTON)
+def assert_idom_did_not_log(
+    match_message: str = "",
+    error_type: type[Exception] | None = None,
+    match_error: str = "",
+    clear_matched_records: bool = False,
+) -> Iterator[None]:
+    """Assert the inverse of :func:`assert_idom_logged`"""
     try:
-        yield _LOG_RECORD_CAPTOR_SINGLTON
+        with assert_idom_logged(
+            match_message, error_type, match_error, clear_matched_records
+        ):
+            yield None
+    except LogAssertionError:
+        pass
+    else:
+        _raise_log_message_error(
+            "Did find a log record matching the given",
+            match_message,
+            error_type,
+            match_error,
+        )
+
+
+def _raise_log_message_error(
+    prefix: str,
+    match_message: str = "",
+    error_type: type[Exception] | None = None,
+    match_error: str = "",
+) -> NoReturn:
+    conditions = []
+    if match_message:
+        conditions.append(f"log message pattern {match_message!r}")
+    if error_type:
+        conditions.append(f"exception type {error_type}")
+    if match_error:
+        conditions.append(f"error message pattern {match_error!r}")
+    raise LogAssertionError(prefix + " " + " and ".join(conditions))
+
+
+@contextmanager
+def capture_idom_logs(
+    yield_existing: bool = False,
+) -> Iterator[list[logging.LogRecord]]:
+    """Capture logs from IDOM
+
+    Parameters:
+        yield_existing:
+            If already inside an existing capture context yield the same list of logs.
+            This is useful if you need to mutate the list of logs to affect behavior in
+            the outer context.
+    """
+    if yield_existing:
+        for handler in reversed(ROOT_LOGGER.handlers):
+            if isinstance(handler, _LogRecordCaptor):
+                yield handler.records
+                return None
+
+    handler = _LogRecordCaptor()
+    original_level = ROOT_LOGGER.level
+
+    ROOT_LOGGER.setLevel(logging.DEBUG)
+    ROOT_LOGGER.addHandler(handler)
+    try:
+        yield handler.records
     finally:
-        ROOT_LOGGER.removeHandler(_LOG_RECORD_CAPTOR_SINGLTON)
-        _LOG_RECORD_CAPTOR_SINGLTON.records = []
+        ROOT_LOGGER.removeHandler(handler)
+        ROOT_LOGGER.setLevel(original_level)
 
 
 class _LogRecordCaptor(logging.NullHandler):
@@ -262,9 +318,6 @@ class _LogRecordCaptor(logging.NullHandler):
     def handle(self, record: logging.LogRecord) -> bool:
         self.records.append(record)
         return True
-
-
-_LOG_RECORD_CAPTOR_SINGLTON = _LogRecordCaptor()
 
 
 class HookCatcher:

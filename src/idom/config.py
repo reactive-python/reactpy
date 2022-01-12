@@ -5,7 +5,6 @@ variables or, for those which allow it, a programatic interface.
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from warnings import warn
 
 from ._option import Option as _Option
 
@@ -58,25 +57,16 @@ set of publically available APIs for working with the client.
 
 IDOM_FEATURE_INDEX_AS_DEFAULT_KEY = _Option(
     "IDOM_FEATURE_INDEX_AS_DEFAULT_KEY",
-    default=False,
+    default=True,
     mutable=False,
     validator=lambda x: bool(int(x)),
 )
 """Use the index of elements/components amongst their siblings as the default key.
 
-In a future release this flag's default value will be set to true, and after that, this
-flag will be removed entirely and the indices will always be the default key.
+The flag's default value is set to true. To return to legacy behavior set
+``IDOM_FEATURE_INDEX_AS_DEFAULT_KEY=0``. In a future release, this flag will be removed
+entirely and the indices will always be the default key.
 
-For more information on changes to this feature flag see: https://github.com/idom-team/idom/issues/351
+For more information on changes to this feature flag see:
+https://github.com/idom-team/idom/issues/351
 """
-
-if not IDOM_FEATURE_INDEX_AS_DEFAULT_KEY.current:
-    warn(
-        "In the next release, the feature flag IDOM_FEATURE_INDEX_AS_DEFAULT_KEY will "
-        "be activated by default. To try this out before the next release simply set "
-        "IDOM_FEATURE_INDEX_AS_DEFAULT_KEY=1 as an environment variable. After this "
-        "change, you can revert to the old behavior by setting it to 0 instead. If you "
-        "have questions or issues with this change report them here: "
-        "https://github.com/idom-team/idom/issues/351",
-        DeprecationWarning,
-    )
