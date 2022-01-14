@@ -22,6 +22,7 @@ _SUPPORTED_PACKAGES = [
     "fastapi",
     "flask",
     "tornado",
+    "starlette",
 ]
 
 

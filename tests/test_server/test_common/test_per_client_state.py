@@ -4,6 +4,7 @@ import idom
 from idom.server import fastapi as idom_fastapi
 from idom.server import flask as idom_flask
 from idom.server import sanic as idom_sanic
+from idom.server import starlette as idom_starlette
 from idom.server import tornado as idom_tornado
 from idom.testing import ServerMountPoint
 
@@ -12,10 +13,11 @@ from idom.testing import ServerMountPoint
     params=[
         # add new PerClientStateServer implementations here to
         # run a suite of tests which check basic functionality
-        idom_sanic.PerClientStateServer,
-        idom_flask.PerClientStateServer,
-        idom_tornado.PerClientStateServer,
         idom_fastapi.PerClientStateServer,
+        idom_flask.PerClientStateServer,
+        idom_sanic.PerClientStateServer,
+        idom_starlette.PerClientStateServer,
+        idom_tornado.PerClientStateServer,
     ],
     ids=lambda cls: f"{cls.__module__}.{cls.__name__}",
 )
