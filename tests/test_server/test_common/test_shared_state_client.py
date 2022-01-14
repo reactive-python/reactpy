@@ -6,6 +6,7 @@ import pytest
 import idom
 from idom.server import fastapi as idom_fastapi
 from idom.server import sanic as idom_sanic
+from idom.server import starlette as idom_starlette
 from idom.testing import ServerMountPoint
 
 
@@ -15,6 +16,7 @@ from idom.testing import ServerMountPoint
         # run a suite of tests which check basic functionality
         idom_sanic.SharedClientStateServer,
         idom_fastapi.SharedClientStateServer,
+        idom_starlette.SharedClientStateServer,
     ],
     ids=lambda cls: f"{cls.__module__}.{cls.__name__}",
 )
