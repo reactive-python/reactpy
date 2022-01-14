@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import filecmp
 import shutil
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import partial
 from pathlib import Path
 from string import Template
+from tempfile import NamedTemporaryFile
 from typing import Any, List, NewType, Optional, Set, Tuple, Union, overload
 from urllib.parse import urlparse
 
@@ -74,6 +76,9 @@ def module_from_url(
     )
 
 
+_FROM_TEMPLATE_DIR = "__from_template__"
+
+
 def module_from_template(
     template: str,
     package: str,
@@ -83,6 +88,7 @@ def module_from_template(
     resolve_exports: bool = IDOM_DEBUG_MODE.current,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
+    replace_existing: bool = False,
 ) -> WebModule:
     """Create a :class:`WebModule` from a framework template
 
@@ -121,6 +127,9 @@ def module_from_template(
             only be used if the imported package failes to re-render when props change.
             Using this option has negative performance consequences since all DOM
             elements must be changed on each render. See :issue:`461` for more info.
+        replace_existing:
+            Whether to replace the source for a module with the same name if it already
+            exists and has different content. Otherwise raise an error.
     """
     # We do this since the package may be any valid URL path. Thus we may need to strip
     # object parameters or query information so we save the resulting template under the
@@ -140,27 +149,30 @@ def module_from_template(
     if not template_file.exists():
         raise ValueError(f"No template for {template_file_name!r} exists")
 
-    target_file = _web_module_path(package_name, "from-template")
-    if not target_file.exists():
-        target_file.parent.mkdir(parents=True, exist_ok=True)
-        target_file.write_text(
-            Template(template_file.read_text()).substitute(
-                {"PACKAGE": package, "CDN": cdn}
-            )
+    variables = {"PACKAGE": package, "CDN": cdn}
+    content = Template(template_file.read_text()).substitute(variables)
+
+    with NamedTemporaryFile(mode="r+") as file:
+        file.write(content)
+        file.seek(0)  # set the cursor back to begining of file
+
+        module = module_from_file(
+            (
+                _FROM_TEMPLATE_DIR
+                + "/"
+                + package_name
+                + module_name_suffix(package_name)
+            ),
+            file.name,
+            fallback,
+            resolve_exports,
+            resolve_exports_depth,
+            symlink=False,
+            unmount_before_update=unmount_before_update,
+            replace_existing=replace_existing,
         )
 
-    return WebModule(
-        source="from-template/" + package_name + module_name_suffix(package_name),
-        source_type=NAME_SOURCE,
-        default_fallback=fallback,
-        file=target_file,
-        export_names=(
-            resolve_module_exports_from_file(target_file, resolve_exports_depth)
-            if resolve_exports
-            else None
-        ),
-        unmount_before_update=unmount_before_update,
-    )
+    return replace(module, file=None)
 
 
 def module_from_file(
@@ -196,23 +208,29 @@ def module_from_file(
             elements must be changed on each render. See :issue:`461` for more info.
         replace_existing:
             Whether to replace the source for a module with the same name if it already
-            exists. Otherwise raise an error.
+            exists and has different content. Otherwise raise an error.
     """
     source_file = Path(file)
     target_file = _web_module_path(name)
     if not source_file.exists():
         raise FileNotFoundError(f"Source file does not exist: {source_file}")
-    elif target_file.exists() or target_file.is_symlink():
-        if not replace_existing:
-            raise FileExistsError(f"{name!r} already exists as {target_file.resolve()}")
-        else:
-            target_file.unlink()
 
-    target_file.parent.mkdir(parents=True, exist_ok=True)
-    if symlink:
-        target_file.symlink_to(source_file)
-    else:
-        shutil.copy(source_file, target_file)
+    if not target_file.exists():
+        _copy_file(target_file, source_file, symlink)
+    elif not (
+        symlink
+        and target_file.is_symlink()
+        and target_file.resolve() == source_file.resolve()
+    ):
+        if replace_existing:
+            target_file.unlink()
+            _copy_file(target_file, source_file, symlink)
+        elif not filecmp.cmp(
+            str(source_file.resolve()),
+            str(target_file.resolve()),
+            shallow=False,
+        ):
+            raise FileExistsError(f"{name!r} already exists as {target_file.resolve()}")
 
     return WebModule(
         source=name + module_name_suffix(name),
@@ -226,6 +244,14 @@ def module_from_file(
         ),
         unmount_before_update=unmount_before_update,
     )
+
+
+def _copy_file(target: Path, source: Path, symlink: bool) -> None:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if symlink:
+        target.symlink_to(source)
+    else:
+        shutil.copy(source, target)
 
 
 class _VdomDictConstructor(Protocol):
@@ -326,10 +352,8 @@ def _make_export(
     )
 
 
-def _web_module_path(name: str, prefix: str = "") -> Path:
+def _web_module_path(name: str) -> Path:
     name += module_name_suffix(name)
     directory = IDOM_WED_MODULES_DIR.current
-    if prefix:
-        directory /= prefix
     path = directory.joinpath(*name.split("/"))
     return path.with_suffix(path.suffix)
