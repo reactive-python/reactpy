@@ -252,8 +252,8 @@ class WebModule:
 def export(
     web_module: WebModule,
     export_names: str,
-    fallback: Optional[Any],
-    allow_children: bool,
+    fallback: Optional[Any] = ...,
+    allow_children: bool = ...,
 ) -> _VdomDictConstructor:
     ...
 
@@ -261,16 +261,16 @@ def export(
 @overload
 def export(
     web_module: WebModule,
-    export_names: Union[List[str], Tuple[str]],
-    fallback: Optional[Any],
-    allow_children: bool,
+    export_names: Union[List[str], Tuple[str, ...]],
+    fallback: Optional[Any] = ...,
+    allow_children: bool = ...,
 ) -> List[_VdomDictConstructor]:
     ...
 
 
 def export(
     web_module: WebModule,
-    export_names: Union[str, List[str], Tuple[str]],
+    export_names: Union[str, List[str], Tuple[str, ...]],
     fallback: Optional[Any] = None,
     allow_children: bool = True,
 ) -> Union[_VdomDictConstructor, List[_VdomDictConstructor]]:
