@@ -6,7 +6,6 @@ Adding Interactivity
 
     responding-to-events/index
     components-with-state/index
-    components-sharing-state/index
     state-as-a-snapshot/index
     multiple-state-updates/index
     dangers-of-mutability/index
@@ -108,20 +107,7 @@ other :ref:`later <managing state>`).
     Allow components to change what they display by saving and updating their state.
 
 
-Section 3: Components Sharing State
------------------------------------
-
-Sometimes you want the state of two components to always change together. To do it, you
-need to be able to share state between those two components, to share state between 
-componets move state to the nearest parent. In React world this is known as "lifting
-state up" and it is a very common thing to do. Let's look at 2 examples, also from 
-`React <https://beta.reactjs.org/learn/sharing-state-between-components>`__, 
-but translated to IDOM.
-
-.. idom:: components-sharing-state/_examples/filterable_list
-
-
-Section 4: State as a Snapshot
+Section 3: State as a Snapshot
 ------------------------------
 
 As we :ref:`learned earlier <Components with State>`, state setters behave a little
@@ -165,7 +151,7 @@ snapshot.
     Learn why state updates schedules a re-render, instead of being applied immediately.
 
 
-Section 5: Multiple State Updates
+Section 4: Multiple State Updates
 ---------------------------------
 
 As we saw in an earlier example, :ref:`setting state triggers renders`. In other words,
@@ -198,7 +184,7 @@ To accomplish this, instead of passing the next state value directly (e.g.
     Learn how updates to a components state can be batched, or applied incrementally.
 
 
-Section 6: Dangers of Mutability
+Section 5: Dangers of Mutability
 --------------------------------
 
 While state can hold any type of value, you should be careful to avoid directly
