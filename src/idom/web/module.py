@@ -242,7 +242,7 @@ def module_from_string(
     resolve_exports: bool = IDOM_DEBUG_MODE.current,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
-):
+) -> WebModule:
     """Load a :class:`WebModule` whose ``content`` comes from a string.
 
     Parameters:
