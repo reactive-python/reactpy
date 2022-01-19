@@ -116,7 +116,7 @@ see the server log a bunch of errors that look something like:
 
 .. code-block:: text
 
-    Key not specified for dynamic child {'tagName': 'li', 'children': ['Do some coding']}
+    Key not specified for child in list {'tagName': 'li', 'children': ...}
 
 What this is telling you is that we haven't specified a unique ``key`` for each of the
 items in our todo list. In order to silence this warning we need to expand our data

@@ -1,6 +1,51 @@
 Changelog
 =========
 
+The IDOM team manages their short and long term plans with `GitHub Projects
+<https://github.com/orgs/idom-team/projects/1>`__. If you have questions about what the
+team are working on, or have feedback on how issues should be prioritized, feel free to
+:discussion-type:`open up a discussion <question>`.
+
+
+0.35.0
+------
+
+The highlight of this release is that the default :ref:`"key" <Organizing Items With
+Keys>` of all elements will be their index amongst their neighbors. Previously this
+behavior could be engaged by setting ``IDOM_FEATURE_INDEX_AS_DEFAULT_KEY=1`` when
+running IDOM. In this release though, you will need to explicitely turn off this feature
+(i.e. ``=0``) to return to the old behavior. With this change, some may notice
+additional error logs which warn that:
+
+.. code-block:: text
+
+  Key not specified for child in list ...
+
+This is saying is that an element or component which was created in a list does not have
+a unique ``key``. For more information on how to mitigate this warning refer to the docs
+on :ref:`Organizing Items With Keys`.
+
+**Closed Issues**
+
+- Support Starlette Server - :issue:`588`
+- Fix unhandled case in module_from_template - :issue:`584`
+- Hide "Children" within IDOM_DEBUG_MODE key warnings - :issue:`562`
+- Bug in Element Key Identity - :issue:`556`
+- Add iFrame to idom.html - :issue:`542`
+- Create a use_linked_inputs widget instead of Input - :issue:`475`
+- React warning from module_from_template - :issue:`440`
+- Use Index as Default Key - :issue:`351`
+
+**Pull Requests**
+
+- add ``use_linked_inputs`` - :pull:`593`
+- add starlette server implementation - :pull:`590`
+- Log on web module replacement instead of error - :pull:`586`
+- Make Index Default Key - :pull:`579`
+- reduce log spam from missing keys in children - :pull:`564`
+- fix bug in element key identity - :pull:`563`
+- add more standard html elements - :pull:`554`
+
 
 0.34.0
 ------
