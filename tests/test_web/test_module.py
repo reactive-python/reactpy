@@ -229,6 +229,6 @@ def test_imported_components_can_render_children(driver, display):
 
 
 def test_module_from_string():
-    idom.web.module_from_string("temp", "")
+    idom.web.module_from_string("temp", "old")
     with assert_idom_logged(r"Existing web module .* will be replaced with"):
-        idom.web.module_from_string("temp", "")
+        idom.web.module_from_string("temp", "new")
