@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import filecmp
 import logging
 import shutil
 from dataclasses import dataclass
@@ -189,18 +190,14 @@ def module_from_file(
         symlink:
             Whether the web module should be saved as a symlink to the given ``file``.
     """
-    source_file = Path(file)
+    source_file = Path(file).resolve()
     target_file = _web_module_path(name)
     if not source_file.exists():
         raise FileNotFoundError(f"Source file does not exist: {source_file}")
 
     if not target_file.exists():
         _copy_file(target_file, source_file, symlink)
-    elif not (
-        symlink
-        and target_file.is_symlink()
-        and target_file.resolve() == source_file.resolve()
-    ):
+    elif not _equal_files(source_file, target_file):
         logger.info(
             f"Existing web module {name!r} will "
             f"be replaced with {target_file.resolve()}"
@@ -220,6 +217,14 @@ def module_from_file(
         ),
         unmount_before_update=unmount_before_update,
     )
+
+
+def _equal_files(f1: Path, f2: Path) -> bool:
+    f1 = f1.resolve()
+    f2 = f2.resolve()
+    return (
+        (f1.is_symlink() or f2.is_symlink()) and (f1.resolve() == f2.resolve())
+    ) or filecmp.cmp(str(f1), str(f2), shallow=False)
 
 
 def _copy_file(target: Path, source: Path, symlink: bool) -> None:
@@ -259,7 +264,7 @@ def module_from_string(
     """
     target_file = _web_module_path(name)
 
-    if target_file.exists():
+    if target_file.exists() and target_file.read_text() != content:
         logger.info(
             f"Existing web module {name!r} will "
             f"be replaced with {target_file.resolve()}"
