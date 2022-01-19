@@ -7,6 +7,14 @@ team are working on, or have feedback on how issues should be prioritized, feel 
 :discussion-type:`open up a discussion <question>`.
 
 
+0.35.1
+------
+
+Re-add accidentally deleted ``py.typed`` file to distribution. See `PEP-561
+<https://www.python.org/dev/peps/pep-0561/#packaging-type-information>`__ for info on
+this marker file.
+
+
 0.35.0
 ------
 
