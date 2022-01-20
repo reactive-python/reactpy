@@ -8,7 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 import idom
 from idom.server.sanic import PerClientStateServer
-from idom.testing import ServerMountPoint
+from idom.testing import ServerMountPoint, assert_idom_did_not_log, assert_idom_logged
 from idom.web.module import NAME_SOURCE, WebModule
 
 
@@ -126,8 +126,14 @@ def test_module_from_file_source_conflict(tmp_path):
     second_file = tmp_path / "second.js"
     second_file.touch()
 
-    with pytest.raises(FileExistsError, match="already exists"):
-        idom.web.module_from_file("temp", second_file)
+    # ok, same content
+    idom.web.module_from_file("temp", second_file)
+
+    third_file = tmp_path / "third.js"
+    third_file.write_text("something-different")
+
+    with assert_idom_logged(r"Existing web module .* will be replaced with"):
+        idom.web.module_from_file("temp", third_file)
 
 
 def test_web_module_from_file_symlink(tmp_path):
@@ -143,6 +149,22 @@ def test_web_module_from_file_symlink(tmp_path):
     assert module.file.resolve().read_text() == "hello world!"
 
 
+def test_web_module_from_file_symlink_twice(tmp_path):
+    file_1 = tmp_path / "temp_1.js"
+    file_1.touch()
+
+    idom.web.module_from_file("temp", file_1, symlink=True)
+
+    with assert_idom_did_not_log(r"Existing web module .* will be replaced with"):
+        idom.web.module_from_file("temp", file_1, symlink=True)
+
+    file_2 = tmp_path / "temp_2.js"
+    file_2.write_text("something")
+
+    with assert_idom_logged(r"Existing web module .* will be replaced with"):
+        idom.web.module_from_file("temp", file_2, symlink=True)
+
+
 def test_web_module_from_file_replace_existing(tmp_path):
     file1 = tmp_path / "temp1.js"
     file1.touch()
@@ -150,12 +172,10 @@ def test_web_module_from_file_replace_existing(tmp_path):
     idom.web.module_from_file("temp", file1)
 
     file2 = tmp_path / "temp2.js"
-    file2.touch()
+    file2.write_text("something")
 
-    with pytest.raises(FileExistsError, match="already exists"):
+    with assert_idom_logged(r"Existing web module .* will be replaced with"):
         idom.web.module_from_file("temp", file2)
-
-    idom.web.module_from_file("temp", file2, replace_existing=True)
 
 
 def test_module_missing_exports():
@@ -200,9 +220,15 @@ def test_imported_components_can_render_children(driver, display):
     )
 
     parent = driver.find_element("id", "the-parent")
-    children = parent.find_elements_by_tag_name("li")
+    children = parent.find_elements("tag name", "li")
 
     assert len(children) == 3
 
     for index, child in enumerate(children):
         assert child.get_attribute("id") == f"child-{index + 1}"
+
+
+def test_module_from_string():
+    idom.web.module_from_string("temp", "old")
+    with assert_idom_logged(r"Existing web module .* will be replaced with"):
+        idom.web.module_from_string("temp", "new")
