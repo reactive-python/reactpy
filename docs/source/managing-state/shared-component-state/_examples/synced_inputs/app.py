@@ -1,4 +1,4 @@
-from idom import component, html, run, hooks
+from idom import component, hooks, html, run
 
 
 @component
