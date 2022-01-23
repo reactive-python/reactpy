@@ -1,2 +1,3 @@
 recursive-include src/idom/client *
 recursive-include src/idom/web/templates *
+include src/idom/py.typed

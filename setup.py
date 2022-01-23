@@ -23,12 +23,13 @@ else:
 
 
 # the name of the project
-name = "idom"
+NAME = "idom"
 
 # basic paths used to gather files
-root_dir = Path(__file__).parent
-src_dir = root_dir / "src"
-package_dir = src_dir / name
+ROOT_DIR = Path(__file__).parent
+SRC_DIR = ROOT_DIR / "src"
+PKG_DIR = SRC_DIR / NAME
+JS_DIR = SRC_DIR / "client"
 
 
 # -----------------------------------------------------------------------------
@@ -37,9 +38,9 @@ package_dir = src_dir / name
 
 
 package = {
-    "name": name,
+    "name": NAME,
     "python_requires": ">=3.7",
-    "packages": find_packages(str(src_dir)),
+    "packages": find_packages(str(SRC_DIR)),
     "package_dir": {"": "src"},
     "description": "It's React, but in Python",
     "author": "Ryan Morshead",
@@ -70,7 +71,7 @@ package = {
 # Library Version
 # -----------------------------------------------------------------------------
 
-pkg_root_init_file = package_dir / "__init__.py"
+pkg_root_init_file = PKG_DIR / "__init__.py"
 for line in pkg_root_init_file.read_text().split("\n"):
     if line.startswith('__version__ = "') and line.endswith('"  # DO NOT MODIFY'):
         package["version"] = (
@@ -96,7 +97,7 @@ else:
 
 
 requirements = []
-with (root_dir / "requirements" / "pkg-deps.txt").open() as f:
+with (ROOT_DIR / "requirements" / "pkg-deps.txt").open() as f:
     for line in map(str.strip, f):
         if not line.startswith("#"):
             requirements.append(line)
@@ -104,7 +105,7 @@ package["install_requires"] = requirements
 
 _current_extras = []
 extra_requirements = {"all": []}  # type: ignore
-extra_requirements_path = root_dir / "requirements" / "pkg-extras.txt"
+extra_requirements_path = ROOT_DIR / "requirements" / "pkg-extras.txt"
 with extra_requirements_path.open() as f:
     for line in map(str.strip, f):
         if line.startswith("#") and line[1:].strip().startswith("extra="):
@@ -129,7 +130,7 @@ package["extras_require"] = extra_requirements
 # -----------------------------------------------------------------------------
 
 
-with (root_dir / "README.md").open() as f:
+with (ROOT_DIR / "README.md").open() as f:
     long_description = f.read()
 
 package["long_description"] = long_description
@@ -146,14 +147,13 @@ def build_javascript_first(cls):
         def run(self):
             log.info("Installing Javascript...")
             try:
-                js_dir = str(src_dir / "client")
                 npm = shutil.which("npm")  # this is required on windows
                 if npm is None:
                     raise RuntimeError("NPM is not installed.")
                 for args in (f"{npm} install", f"{npm} run build"):
                     args_list = args.split()
                     log.info(f"> {list2cmdline(args_list)}")
-                    subprocess.run(args_list, cwd=js_dir, check=True)
+                    subprocess.run(args_list, cwd=str(JS_DIR), check=True)
             except Exception:
                 log.error("Failed to install Javascript")
                 log.error(traceback.format_exc())

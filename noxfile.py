@@ -299,7 +299,7 @@ def tag(session: Session) -> None:
             external=True,
         )
     except Exception:
-        session.error("Cannot create a tag - tROOT are uncommited changes")
+        session.error("Cannot create a tag - there are uncommited changes")
 
     version = get_version()
     install_requirements_file(session, "make-release")
@@ -308,6 +308,7 @@ def tag(session: Session) -> None:
     changelog_file = ROOT / "docs" / "source" / "developing-idom" / "changelog.rst"
     for line in changelog_file.read_text().splitlines():
         if line == version:
+            session.log(f"Found changelog section for version {version}")
             break
     else:
         session.error(

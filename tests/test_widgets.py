@@ -1,4 +1,3 @@
-import time
 from base64 import b64encode
 from pathlib import Path
 
@@ -82,71 +81,102 @@ def test_image_from_bytes(driver, display):
     assert BASE64_IMAGE_SRC in client_img.get_attribute("src")
 
 
-def test_input_callback(driver, driver_wait, display):
-    inp_ref = idom.Ref(None)
+def test_use_linked_inputs(driver, driver_wait, display):
+    @idom.component
+    def SomeComponent():
+        i_1, i_2 = idom.widgets.use_linked_inputs([{"id": "i_1"}, {"id": "i_2"}])
+        return idom.html.div(i_1, i_2)
 
-    display(
-        lambda: idom.widgets.Input(
-            lambda value: setattr(inp_ref, "current", value),
-            "text",
-            "initial-value",
-            {"id": "inp"},
-        )
-    )
+    display(SomeComponent)
 
-    client_inp = driver.find_element("id", "inp")
-    assert client_inp.get_attribute("value") == "initial-value"
+    input_1 = driver.find_element("id", "i_1")
+    input_2 = driver.find_element("id", "i_2")
 
-    client_inp.clear()
-    send_keys(client_inp, "new-value-1")
-    driver_wait.until(lambda dvr: inp_ref.current == "new-value-1")
+    send_keys(input_1, "hello")
 
-    client_inp.clear()
-    send_keys(client_inp, "new-value-2")
-    driver_wait.until(lambda dvr: client_inp.get_attribute("value") == "new-value-2")
+    driver_wait.until(lambda d: input_1.get_attribute("value") == "hello")
+    driver_wait.until(lambda d: input_2.get_attribute("value") == "hello")
+
+    send_keys(input_2, " world")
+
+    driver_wait.until(lambda d: input_1.get_attribute("value") == "hello world")
+    driver_wait.until(lambda d: input_2.get_attribute("value") == "hello world")
 
 
-def test_input_ignore_empty(driver, driver_wait, display):
-    # ignore empty since that's an invalid float
-    inp_ingore_ref = idom.Ref("1")
-    inp_not_ignore_ref = idom.Ref("1")
+def test_use_linked_inputs_on_change(driver, driver_wait, display):
+    value = idom.Ref(None)
 
     @idom.component
-    def InputWrapper():
-        return idom.html.div(
-            idom.widgets.Input(
-                lambda value: setattr(inp_ingore_ref, "current", value),
-                "number",
-                inp_ingore_ref.current,
-                {"id": "inp-ignore"},
-                ignore_empty=True,
-            ),
-            idom.widgets.Input(
-                lambda value: setattr(inp_not_ignore_ref, "current", value),
-                "number",
-                inp_not_ignore_ref.current,
-                {"id": "inp-not-ignore"},
-                ignore_empty=False,
-            ),
+    def SomeComponent():
+        i_1, i_2 = idom.widgets.use_linked_inputs(
+            [{"id": "i_1"}, {"id": "i_2"}],
+            on_change=value.set_current,
         )
+        return idom.html.div(i_1, i_2)
 
-    display(InputWrapper)
+    display(SomeComponent)
 
-    client_inp_ignore = driver.find_element("id", "inp-ignore")
-    client_inp_not_ignore = driver.find_element("id", "inp-not-ignore")
+    input_1 = driver.find_element("id", "i_1")
+    input_2 = driver.find_element("id", "i_2")
 
-    send_keys(client_inp_ignore, Keys.BACKSPACE)
-    time.sleep(0.1)  # waiting and deleting again seems to decrease flakiness
-    send_keys(client_inp_ignore, Keys.BACKSPACE)
+    send_keys(input_1, "hello")
 
-    send_keys(client_inp_not_ignore, Keys.BACKSPACE)
-    time.sleep(0.1)  # waiting and deleting again seems to decrease flakiness
-    send_keys(client_inp_not_ignore, Keys.BACKSPACE)
+    driver_wait.until(lambda d: value.current == "hello")
 
-    driver_wait.until(lambda drv: client_inp_ignore.get_attribute("value") == "")
-    driver_wait.until(lambda drv: client_inp_not_ignore.get_attribute("value") == "")
+    send_keys(input_2, " world")
 
-    # ignored empty value on change
-    assert inp_ingore_ref.current == "1"
-    # did not ignore empty value on change
-    assert inp_not_ignore_ref.current == ""
+    driver_wait.until(lambda d: value.current == "hello world")
+
+
+def test_use_linked_inputs_on_change_with_cast(driver, driver_wait, display):
+    value = idom.Ref(None)
+
+    @idom.component
+    def SomeComponent():
+        i_1, i_2 = idom.widgets.use_linked_inputs(
+            [{"id": "i_1"}, {"id": "i_2"}], on_change=value.set_current, cast=int
+        )
+        return idom.html.div(i_1, i_2)
+
+    display(SomeComponent)
+
+    input_1 = driver.find_element("id", "i_1")
+    input_2 = driver.find_element("id", "i_2")
+
+    send_keys(input_1, "1")
+
+    driver_wait.until(lambda d: value.current == 1)
+
+    send_keys(input_2, "2")
+
+    driver_wait.until(lambda d: value.current == 12)
+
+
+def test_use_linked_inputs_ignore_empty(driver, driver_wait, display):
+    value = idom.Ref(None)
+
+    @idom.component
+    def SomeComponent():
+        i_1, i_2 = idom.widgets.use_linked_inputs(
+            [{"id": "i_1"}, {"id": "i_2"}],
+            on_change=value.set_current,
+            ignore_empty=True,
+        )
+        return idom.html.div(i_1, i_2)
+
+    display(SomeComponent)
+
+    input_1 = driver.find_element("id", "i_1")
+    input_2 = driver.find_element("id", "i_2")
+
+    send_keys(input_1, "1")
+
+    driver_wait.until(lambda d: value.current == "1")
+
+    send_keys(input_2, Keys.BACKSPACE)
+
+    assert value.current == "1"
+
+    send_keys(input_1, "2")
+
+    driver_wait.until(lambda d: value.current == "2")

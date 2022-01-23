@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import filecmp
+import logging
 import shutil
 from dataclasses import dataclass
 from functools import partial
@@ -25,6 +27,8 @@ from .utils import (
     resolve_module_exports_from_url,
 )
 
+
+logger = logging.getLogger(__name__)
 
 SourceType = NewType("SourceType", str)
 
@@ -72,6 +76,9 @@ def module_from_url(
         ),
         unmount_before_update=unmount_before_update,
     )
+
+
+_FROM_TEMPLATE_DIR = "__from_template__"
 
 
 def module_from_template(
@@ -140,25 +147,15 @@ def module_from_template(
     if not template_file.exists():
         raise ValueError(f"No template for {template_file_name!r} exists")
 
-    target_file = _web_module_path(package_name, "from-template")
-    if not target_file.exists():
-        target_file.parent.mkdir(parents=True, exist_ok=True)
-        target_file.write_text(
-            Template(template_file.read_text()).substitute(
-                {"PACKAGE": package, "CDN": cdn}
-            )
-        )
+    variables = {"PACKAGE": package, "CDN": cdn}
+    content = Template(template_file.read_text()).substitute(variables)
 
-    return WebModule(
-        source="from-template/" + package_name + module_name_suffix(package_name),
-        source_type=NAME_SOURCE,
-        default_fallback=fallback,
-        file=target_file,
-        export_names=(
-            resolve_module_exports_from_file(target_file, resolve_exports_depth)
-            if resolve_exports
-            else None
-        ),
+    return module_from_string(
+        _FROM_TEMPLATE_DIR + "/" + package_name + module_name_suffix(package_name),
+        content,
+        fallback,
+        resolve_exports,
+        resolve_exports_depth,
         unmount_before_update=unmount_before_update,
     )
 
@@ -169,20 +166,16 @@ def module_from_file(
     fallback: Optional[Any] = None,
     resolve_exports: bool = IDOM_DEBUG_MODE.current,
     resolve_exports_depth: int = 5,
-    symlink: bool = False,
     unmount_before_update: bool = False,
-    replace_existing: bool = False,
+    symlink: bool = False,
 ) -> WebModule:
-    """Load a :class:`WebModule` from a :data:`URL_SOURCE` using a known framework
+    """Load a :class:`WebModule` from a given ``file``
 
     Parameters:
-        template:
-            The name of the template to use with the given ``package``
-        package:
-            The name of a package to load. May include a file extension (defaults to
-            ``.js`` if not given)
-        cdn:
-            Where the package should be loaded from. The CDN must distribute ESM modules
+        name:
+            The name of the package
+        file:
+            The file from which the content of the web module will be created.
         fallback:
             What to temporarilly display while the module is being loaded.
         resolve_imports:
@@ -194,25 +187,23 @@ def module_from_file(
             only be used if the imported package failes to re-render when props change.
             Using this option has negative performance consequences since all DOM
             elements must be changed on each render. See :issue:`461` for more info.
-        replace_existing:
-            Whether to replace the source for a module with the same name if it already
-            exists. Otherwise raise an error.
+        symlink:
+            Whether the web module should be saved as a symlink to the given ``file``.
     """
-    source_file = Path(file)
+    source_file = Path(file).resolve()
     target_file = _web_module_path(name)
     if not source_file.exists():
         raise FileNotFoundError(f"Source file does not exist: {source_file}")
-    elif target_file.exists() or target_file.is_symlink():
-        if not replace_existing:
-            raise FileExistsError(f"{name!r} already exists as {target_file.resolve()}")
-        else:
-            target_file.unlink()
 
-    target_file.parent.mkdir(parents=True, exist_ok=True)
-    if symlink:
-        target_file.symlink_to(source_file)
-    else:
-        shutil.copy(source_file, target_file)
+    if not target_file.exists():
+        _copy_file(target_file, source_file, symlink)
+    elif not _equal_files(source_file, target_file):
+        logger.info(
+            f"Existing web module {name!r} will "
+            f"be replaced with {target_file.resolve()}"
+        )
+        target_file.unlink()
+        _copy_file(target_file, source_file, symlink)
 
     return WebModule(
         source=name + module_name_suffix(name),
@@ -221,6 +212,75 @@ def module_from_file(
         file=target_file,
         export_names=(
             resolve_module_exports_from_file(source_file, resolve_exports_depth)
+            if resolve_exports
+            else None
+        ),
+        unmount_before_update=unmount_before_update,
+    )
+
+
+def _equal_files(f1: Path, f2: Path) -> bool:
+    f1 = f1.resolve()
+    f2 = f2.resolve()
+    return (
+        (f1.is_symlink() or f2.is_symlink()) and (f1.resolve() == f2.resolve())
+    ) or filecmp.cmp(str(f1), str(f2), shallow=False)
+
+
+def _copy_file(target: Path, source: Path, symlink: bool) -> None:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if symlink:
+        target.symlink_to(source)
+    else:
+        shutil.copy(source, target)
+
+
+def module_from_string(
+    name: str,
+    content: str,
+    fallback: Optional[Any] = None,
+    resolve_exports: bool = IDOM_DEBUG_MODE.current,
+    resolve_exports_depth: int = 5,
+    unmount_before_update: bool = False,
+) -> WebModule:
+    """Load a :class:`WebModule` whose ``content`` comes from a string.
+
+    Parameters:
+        name:
+            The name of the package
+        content:
+            The contents of the web module
+        fallback:
+            What to temporarilly display while the module is being loaded.
+        resolve_imports:
+            Whether to try and find all the named exports of this module.
+        resolve_exports_depth:
+            How deeply to search for those exports.
+        unmount_before_update:
+            Cause the component to be unmounted before each update. This option should
+            only be used if the imported package failes to re-render when props change.
+            Using this option has negative performance consequences since all DOM
+            elements must be changed on each render. See :issue:`461` for more info.
+    """
+    target_file = _web_module_path(name)
+
+    if target_file.exists() and target_file.read_text() != content:
+        logger.info(
+            f"Existing web module {name!r} will "
+            f"be replaced with {target_file.resolve()}"
+        )
+        target_file.unlink()
+
+    target_file.parent.mkdir(parents=True, exist_ok=True)
+    target_file.write_text(content)
+
+    return WebModule(
+        source=name + module_name_suffix(name),
+        source_type=NAME_SOURCE,
+        default_fallback=fallback,
+        file=target_file,
+        export_names=(
+            resolve_module_exports_from_file(target_file, resolve_exports_depth)
             if resolve_exports
             else None
         ),
@@ -326,10 +386,8 @@ def _make_export(
     )
 
 
-def _web_module_path(name: str, prefix: str = "") -> Path:
+def _web_module_path(name: str) -> Path:
     name += module_name_suffix(name)
     directory = IDOM_WED_MODULES_DIR.current
-    if prefix:
-        directory /= prefix
     path = directory.joinpath(*name.split("/"))
     return path.with_suffix(path.suffix)
