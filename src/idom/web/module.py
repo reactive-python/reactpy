@@ -151,7 +151,7 @@ def module_from_template(
     content = Template(template_file.read_text()).substitute(variables)
 
     return module_from_string(
-        _FROM_TEMPLATE_DIR + "/" + package_name + module_name_suffix(package_name),
+        _FROM_TEMPLATE_DIR + "/" + package_name,
         content,
         fallback,
         resolve_exports,
@@ -190,6 +190,8 @@ def module_from_file(
         symlink:
             Whether the web module should be saved as a symlink to the given ``file``.
     """
+    name += module_name_suffix(name)
+
     source_file = Path(file).resolve()
     target_file = _web_module_path(name)
     if not source_file.exists():
@@ -206,7 +208,7 @@ def module_from_file(
         _copy_file(target_file, source_file, symlink)
 
     return WebModule(
-        source=name + module_name_suffix(name),
+        source=name,
         source_type=NAME_SOURCE,
         default_fallback=fallback,
         file=target_file,
@@ -262,6 +264,8 @@ def module_from_string(
             Using this option has negative performance consequences since all DOM
             elements must be changed on each render. See :issue:`461` for more info.
     """
+    name += module_name_suffix(name)
+
     target_file = _web_module_path(name)
 
     if target_file.exists() and target_file.read_text() != content:
@@ -275,7 +279,7 @@ def module_from_string(
     target_file.write_text(content)
 
     return WebModule(
-        source=name + module_name_suffix(name),
+        source=name,
         source_type=NAME_SOURCE,
         default_fallback=fallback,
         file=target_file,
@@ -387,7 +391,6 @@ def _make_export(
 
 
 def _web_module_path(name: str) -> Path:
-    name += module_name_suffix(name)
     directory = IDOM_WED_MODULES_DIR.current
     path = directory.joinpath(*name.split("/"))
     return path.with_suffix(path.suffix)
