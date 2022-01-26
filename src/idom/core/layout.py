@@ -100,7 +100,7 @@ class Layout:
     def __exit__(self, *exc: Any) -> None:
         root_csid = self._root_life_cycle_state_id
         root_model_state = self._model_states_by_life_cycle_state_id[root_csid]
-        self._unmount_model_states([root_model_state])
+        self._deep_unmount_model_states([root_model_state])
 
         # delete attributes here to avoid access after exiting context manager
         del self._event_handlers
@@ -166,7 +166,7 @@ class Layout:
 
         # hook effects must run after the update is complete
         for model_state in _iter_model_state_children(new_state):
-            if hasattr(model_state, "life_cycle_state"):
+            if model_state.is_component_state:
                 model_state.life_cycle_state.hook.component_did_render()
 
         old_model: Optional[VdomJson]
@@ -271,10 +271,10 @@ class Layout:
 
         model_event_handlers = new_state.model.current["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
-            target = old_state.targets_by_event.get(
-                event,
-                uuid4().hex if handler.target is None else handler.target,
-            )
+            if event in old_state.targets_by_event:
+                target = old_state.targets_by_event[event]
+            else:
+                target = uuid4().hex if handler.target is None else handler.target
             new_state.targets_by_event[event] = target
             self._event_handlers[target] = handler
             model_event_handlers[event] = {
@@ -320,7 +320,7 @@ class Layout:
                 self._render_model_children_without_old_state(new_state, raw_children)
             return None
         elif not raw_children:
-            self._unmount_model_states(list(old_state.children_by_key.values()))
+            self._deep_unmount_model_states(list(old_state.children_by_key.values()))
             return None
 
         child_type_key_tuples = list(_process_child_type_and_key(raw_children))
@@ -335,12 +335,13 @@ class Layout:
 
         old_keys = set(old_state.children_by_key).difference(new_keys)
         if old_keys:
-            self._unmount_model_states(
+            self._deep_unmount_model_states(
                 [old_state.children_by_key[key] for key in old_keys]
             )
 
         new_children = new_state.model.current["children"] = []
         for index, (child, child_type, key) in enumerate(child_type_key_tuples):
+            old_child_state = old_state.children_by_key.get(key)
             if child_type is _DICT_TYPE:
                 old_child_state = old_state.children_by_key.get(key)
                 if old_child_state is None:
@@ -350,6 +351,8 @@ class Layout:
                         key,
                     )
                 else:
+                    if old_child_state.is_component_state:
+                        self._shallow_unmount_model_state(old_child_state)
                     new_child_state = _update_element_model_state(
                         old_child_state,
                         new_state,
@@ -374,9 +377,13 @@ class Layout:
                         new_state,
                         index,
                         child,
+                        self._rendering_queue.put,
                     )
                 self._render_component(old_child_state, new_child_state, child)
             else:
+                old_child_state = old_state.children_by_key.get(key)
+                if old_child_state is not None:
+                    self._deep_unmount_model_states([old_child_state])
                 new_children.append(child)
 
     def _render_model_children_without_old_state(
@@ -399,20 +406,21 @@ class Layout:
             else:
                 new_children.append(child)
 
-    def _unmount_model_states(self, old_states: List[_ModelState]) -> None:
+    def _deep_unmount_model_states(self, old_states: List[_ModelState]) -> None:
         to_unmount = old_states[::-1]  # unmount in reversed order of rendering
         while to_unmount:
             model_state = to_unmount.pop()
-
-            for target in model_state.targets_by_event.values():
-                del self._event_handlers[target]
-
-            if hasattr(model_state, "life_cycle_state"):
-                life_cycle_state = model_state.life_cycle_state
-                del self._model_states_by_life_cycle_state_id[life_cycle_state.id]
-                life_cycle_state.hook.component_will_unmount()
-
+            self._shallow_unmount_model_state(model_state)
             to_unmount.extend(model_state.children_by_key.values())
+
+    def _shallow_unmount_model_state(self, old_state: _ModelState) -> None:
+        for target in old_state.targets_by_event.values():
+            del self._event_handlers[target]
+
+        if old_state.is_component_state:
+            life_cycle_state = old_state.life_cycle_state
+            del self._model_states_by_life_cycle_state_id[life_cycle_state.id]
+            life_cycle_state.hook.component_will_unmount()
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.root})"
@@ -459,7 +467,6 @@ def _make_component_model_state(
 
 
 def _copy_component_model_state(old_model_state: _ModelState) -> _ModelState:
-
     # use try/except here because not having a parent is rare (only the root state)
     try:
         parent: Optional[_ModelState] = old_model_state.parent
@@ -483,15 +490,8 @@ def _update_component_model_state(
     new_parent: _ModelState,
     new_index: int,
     new_component: ComponentType,
+    schedule_render: Callable[[_LifeCycleStateId], None],
 ) -> _ModelState:
-    try:
-        old_life_cycle_state = old_model_state.life_cycle_state
-    except AttributeError:
-        raise ValueError(
-            f"Failed to render layout at {old_model_state.patch_path!r} with key "
-            f"{old_model_state.key!r} - prior element with this key wasn't a component"
-        )
-
     return _ModelState(
         parent=new_parent,
         index=new_index,
@@ -500,7 +500,11 @@ def _update_component_model_state(
         patch_path=old_model_state.patch_path,
         children_by_key={},
         targets_by_event={},
-        life_cycle_state=_update_life_cycle_state(old_life_cycle_state, new_component),
+        life_cycle_state=(
+            _update_life_cycle_state(old_model_state.life_cycle_state, new_component)
+            if old_model_state.is_component_state
+            else _make_life_cycle_state(new_component, schedule_render)
+        ),
     )
 
 
@@ -525,12 +529,6 @@ def _update_element_model_state(
     new_parent: _ModelState,
     new_index: int,
 ) -> _ModelState:
-    if hasattr(old_model_state, "life_cycle_state"):
-        raise ValueError(
-            f"Failed to render layout at {old_model_state.patch_path!r} with key "
-            f"{old_model_state.key!r} - prior element with this key was a component"
-        )
-
     return _ModelState(
         parent=new_parent,
         index=new_index,
@@ -596,6 +594,10 @@ class _ModelState:
         if life_cycle_state is not None:
             self.life_cycle_state = life_cycle_state
             """The state for the element's component (if it has one)"""
+
+    @property
+    def is_component_state(self) -> bool:
+        return hasattr(self, "life_cycle_state")
 
     @property
     def parent(self) -> _ModelState:
