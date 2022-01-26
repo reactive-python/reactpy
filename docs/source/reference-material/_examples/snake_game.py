@@ -18,12 +18,7 @@ def GameView():
     game_state, set_game_state = idom.hooks.use_state(GameState.init)
 
     if game_state == GameState.play:
-        return GameLoop(
-            grid_size=6,
-            block_scale=50,
-            set_game_state=set_game_state,
-            key="game loop",
-        )
+        return GameLoop(grid_size=6, block_scale=50, set_game_state=set_game_state)
 
     start_button = idom.html.button(
         {"onClick": lambda event: set_game_state(GameState.play)},
@@ -45,12 +40,7 @@ def GameView():
         """
     )
 
-    return idom.html.div(
-        {"className": "snake-game-menu"},
-        menu_style,
-        menu,
-        key="menu",
-    )
+    return idom.html.div({"className": "snake-game-menu"}, menu_style, menu)
 
 
 class Direction(enum.Enum):

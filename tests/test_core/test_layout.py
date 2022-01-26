@@ -9,6 +9,7 @@ import pytest
 import idom
 from idom.config import IDOM_DEBUG_MODE
 from idom.core.dispatcher import render_json_patch
+from idom.core.hooks import use_effect
 from idom.core.layout import LayoutEvent
 from idom.testing import (
     HookCatcher,
@@ -736,66 +737,45 @@ async def test_schedule_render_from_unmounted_hook(caplog):
             await layout.render()
 
 
-async def test_layout_element_cannot_become_a_component():
-    set_child_type = idom.Ref()
+async def test_elements_and_components_with_the_same_key_can_be_interchanged():
+    set_toggle = idom.Ref()
+    effects = []
+
+    def use_toggle():
+        state, set_state = idom.hooks.use_state(True)
+        return state, lambda: set_state(not state)
 
     @idom.component
     def Root():
-        child_type, set_child_type.current = idom.hooks.use_state("element")
-        return idom.html.div(child_nodes[child_type])
+        toggle, set_toggle.current = use_toggle()
+        if toggle:
+            return idom.html.div(SomeComponent("x"))
+        else:
+            return idom.html.div(idom.html.div(SomeComponent("y")))
 
     @idom.component
-    def Child():
-        return idom.html.div()
+    def SomeComponent(name):
+        @use_effect
+        def some_effect():
+            effects.append("mount " + name)
+            return lambda: effects.append("unmount " + name)
 
-    child_nodes = {
-        "element": idom.html.div(key="the-same-key"),
-        "component": Child(key="the-same-key"),
-    }
+        return idom.html.div(name)
 
-    with assert_idom_logged(
-        error_type=ValueError,
-        match_error="prior element with this key wasn't a component",
-        clear_matched_records=True,
-    ):
+    with idom.Layout(Root()) as layout:
+        await layout.render()
 
-        with idom.Layout(Root()) as layout:
-            await layout.render()
+        assert effects == ["mount x"]
 
-            set_child_type.current("component")
+        set_toggle.current()
+        await layout.render()
 
-            await layout.render()
+        assert effects == ["mount x", "unmount x", "mount y"]
 
+        set_toggle.current()
+        await layout.render()
 
-async def test_layout_component_cannot_become_an_element():
-    set_child_type = idom.Ref()
-
-    @idom.component
-    def Root():
-        child_type, set_child_type.current = idom.hooks.use_state("component")
-        return idom.html.div(child_nodes[child_type])
-
-    @idom.component
-    def Child():
-        return idom.html.div()
-
-    child_nodes = {
-        "element": idom.html.div(key="the-same-key"),
-        "component": Child(key="the-same-key"),
-    }
-
-    with assert_idom_logged(
-        error_type=ValueError,
-        match_error="prior element with this key was a component",
-        clear_matched_records=True,
-    ):
-
-        with idom.Layout(Root()) as layout:
-            await layout.render()
-
-            set_child_type.current("element")
-
-            await layout.render()
+        assert effects == ["mount x", "unmount x", "mount y", "unmount y", "mount x"]
 
 
 async def test_layout_does_not_copy_element_children_by_key():
