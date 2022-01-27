@@ -1,5 +1,6 @@
 import asyncio
 import gc
+import random
 import re
 from weakref import finalize
 from weakref import ref as weakref
@@ -811,3 +812,29 @@ async def test_layout_does_not_copy_element_children_by_key():
         set_items.current([])
 
         await layout.render()
+
+
+async def test_changing_key_of_parent_element_unmounts_children():
+    random.seed(0)
+
+    root_hook = HookCatcher()
+    state = idom.Ref(None)
+
+    @idom.component
+    @root_hook.capture
+    def Root():
+        return idom.html.div(HasState(), key=str(random.random()))
+
+    @idom.component
+    def HasState():
+        state.current = idom.hooks.use_state(random.random)[0]
+        return idom.html.div()
+
+    with idom.Layout(Root()) as layout:
+        await layout.render()
+
+        for i in range(5):
+            last_state = state.current
+            root_hook.latest.schedule_render()
+            await layout.render()
+            assert last_state != state.current

@@ -234,14 +234,21 @@ class Layout:
         raw_model: Any,
     ) -> None:
         new_state.model.current = {"tagName": raw_model["tagName"]}
+        if "key" in raw_model:
+            new_state.key = new_state.model.current["key"] = raw_model["key"]
+        if "importSource" in raw_model:
+            new_state.model.current["importSource"] = raw_model["importSource"]
+
+        if old_state is not None and old_state.key != new_state.key:
+            self._unmount_model_states([old_state])
+            if new_state.is_component_state:
+                self._model_states_by_life_cycle_state_id[
+                    new_state.life_cycle_state.id
+                ] = new_state
+            old_state = None
 
         self._render_model_attributes(old_state, new_state, raw_model)
         self._render_model_children(old_state, new_state, raw_model.get("children", []))
-
-        if "key" in raw_model:
-            new_state.model.current["key"] = raw_model["key"]
-        if "importSource" in raw_model:
-            new_state.model.current["importSource"] = raw_model["importSource"]
 
     def _render_model_attributes(
         self,
@@ -603,6 +610,9 @@ class _ModelState:
         parent = self._parent_ref()
         assert parent is not None, "detached model state"
         return parent
+
+    def __repr__(self) -> str:
+        return f"ModelState({ {s: getattr(self, s, None) for s in self.__slots__} })"
 
 
 def _make_life_cycle_state(
