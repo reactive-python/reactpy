@@ -7,6 +7,21 @@ team are working on, or have feedback on how issues should be prioritized, feel 
 :discussion-type:`open up a discussion <question>`.
 
 
+0.35.4
+------
+
+Keys for elements at the root of a component were not being tracked. Thus key changes
+for elements at the root did not trigger unmounts.
+
+**Closed Issues**
+
+- Change Key of Parent Element Does Not Unmount Children - :issue:`622`
+
+**Pull Requests**
+
+- fix issue with key-based identity - :pull:`623`
+
+
 0.35.3
 ------
 
