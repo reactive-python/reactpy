@@ -611,7 +611,7 @@ class _ModelState:
         assert parent is not None, "detached model state"
         return parent
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return f"ModelState({ {s: getattr(self, s, None) for s in self.__slots__} })"
 
 
