@@ -7,6 +7,28 @@ team are working on, or have feedback on how issues should be prioritized, feel 
 :discussion-type:`open up a discussion <question>`.
 
 
+0.35.2
+------
+
+This release includes several bug fixes. The most significant of which is the ability to
+change the type of an element in the try (i.e. to and from being a component) without
+getting an error. Originally the errors were introduced because it was though changing
+element type would not be desireable. This was not the case though - swapping types
+turns out to be quite common and useful.
+
+**Closed Issues**
+
+- Allow Children with the Same Key to Vary in Type - :issue:`613`
+- Client Always Looks for Server at "/"  - :issue:`611`
+- Web modules get double file extensions with v0.35.x - :issue:`605`
+
+**Pull Requests**
+
+- allow elements with the same key to change type - :pull:`614`
+- make connection to websocket relative path - :pull:`612`
+- fix double file extension - :pull:`606`
+
+
 0.35.1
 ------
 
