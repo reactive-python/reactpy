@@ -150,7 +150,8 @@
 - :func:`template`
 """
 
-from .core.vdom import VdomDict, make_vdom_constructor
+from .core.proto import VdomDict
+from .core.vdom import make_vdom_constructor
 
 
 # Dcument metadata
@@ -247,13 +248,6 @@ math = make_vdom_constructor("math")
 # Scripting
 canvas = make_vdom_constructor("canvas")
 noscript = make_vdom_constructor("noscript")
-script = make_vdom_constructor("script")
-
-# Demarcating edits
-del_ = make_vdom_constructor("del")
-ins = make_vdom_constructor("ins")
-
-# Scripting
 
 
 def script(content: str) -> VdomDict:
@@ -269,6 +263,10 @@ def script(content: str) -> VdomDict:
     """
     return {"tagName": "script", "children": [content]}
 
+
+# Demarcating edits
+del_ = make_vdom_constructor("del")
+ins = make_vdom_constructor("ins")
 
 # Table content
 caption = make_vdom_constructor("caption")
