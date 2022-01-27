@@ -100,7 +100,7 @@ class Layout:
     def __exit__(self, *exc: Any) -> None:
         root_csid = self._root_life_cycle_state_id
         root_model_state = self._model_states_by_life_cycle_state_id[root_csid]
-        self._deep_unmount_model_states([root_model_state])
+        self._unmount_model_states([root_model_state])
 
         # delete attributes here to avoid access after exiting context manager
         del self._event_handlers
@@ -320,7 +320,7 @@ class Layout:
                 self._render_model_children_without_old_state(new_state, raw_children)
             return None
         elif not raw_children:
-            self._deep_unmount_model_states(list(old_state.children_by_key.values()))
+            self._unmount_model_states(list(old_state.children_by_key.values()))
             return None
 
         child_type_key_tuples = list(_process_child_type_and_key(raw_children))
@@ -335,7 +335,7 @@ class Layout:
 
         old_keys = set(old_state.children_by_key).difference(new_keys)
         if old_keys:
-            self._deep_unmount_model_states(
+            self._unmount_model_states(
                 [old_state.children_by_key[key] for key in old_keys]
             )
 
@@ -352,7 +352,7 @@ class Layout:
                     )
                 else:
                     if old_child_state.is_component_state:
-                        self._shallow_unmount_model_state(old_child_state)
+                        self._unmount_model_states([old_child_state])
                     new_child_state = _update_element_model_state(
                         old_child_state,
                         new_state,
@@ -383,7 +383,7 @@ class Layout:
             else:
                 old_child_state = old_state.children_by_key.get(key)
                 if old_child_state is not None:
-                    self._deep_unmount_model_states([old_child_state])
+                    self._unmount_model_states([old_child_state])
                 new_children.append(child)
 
     def _render_model_children_without_old_state(
@@ -406,21 +406,20 @@ class Layout:
             else:
                 new_children.append(child)
 
-    def _deep_unmount_model_states(self, old_states: List[_ModelState]) -> None:
+    def _unmount_model_states(self, old_states: List[_ModelState]) -> None:
         to_unmount = old_states[::-1]  # unmount in reversed order of rendering
         while to_unmount:
             model_state = to_unmount.pop()
-            self._shallow_unmount_model_state(model_state)
+
+            for target in model_state.targets_by_event.values():
+                del self._event_handlers[target]
+
+            if model_state.is_component_state:
+                life_cycle_state = model_state.life_cycle_state
+                del self._model_states_by_life_cycle_state_id[life_cycle_state.id]
+                life_cycle_state.hook.component_will_unmount()
+
             to_unmount.extend(model_state.children_by_key.values())
-
-    def _shallow_unmount_model_state(self, old_state: _ModelState) -> None:
-        for target in old_state.targets_by_event.values():
-            del self._event_handlers[target]
-
-        if old_state.is_component_state:
-            life_cycle_state = old_state.life_cycle_state
-            del self._model_states_by_life_cycle_state_id[life_cycle_state.id]
-            life_cycle_state.hook.component_will_unmount()
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.root})"
