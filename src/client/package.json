@@ -14,7 +14,7 @@
     "publish": "npm --workspaces publish",
     "test": "npm --workspaces test"
   },
-  "version": "0.35.2",
+  "version": "0.35.3",
   "workspaces": [
     "./packages/*"
   ]

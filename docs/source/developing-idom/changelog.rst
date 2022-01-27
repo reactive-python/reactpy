@@ -7,6 +7,18 @@ team are working on, or have feedback on how issues should be prioritized, feel 
 :discussion-type:`open up a discussion <question>`.
 
 
+0.35.3
+------
+
+As part of :pull:`614`, elements which changed type were not deeply unmounted. This
+behavior is probably undesireable though since the state for children of the element
+in question would persist (probably unexpectedly).
+
+**Pull Requests**
+
+- Always deeply unmount - :pull:`620`
+
+
 0.35.2
 ------
 
