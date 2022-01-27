@@ -150,7 +150,7 @@
 - :func:`template`
 """
 
-from .core.vdom import make_vdom_constructor
+from .core.vdom import VdomDict, make_vdom_constructor
 
 
 # Dcument metadata
@@ -252,6 +252,22 @@ script = make_vdom_constructor("script")
 # Demarcating edits
 del_ = make_vdom_constructor("del")
 ins = make_vdom_constructor("ins")
+
+# Scripting
+
+
+def script(content: str) -> VdomDict:
+    """Create a new `<{script}> <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script>`__ element.
+
+    Parameters:
+        content: The text of the script should evaluate to a function. This function
+        will be called when the script is initially created or when the content of the
+        script changes. The function may optionally return a teardown function that is
+        called when the script element is removed from the tree, or when the script
+        content changes.
+    """
+    return {"tagName": "script", "children": [content]}
+
 
 # Table content
 caption = make_vdom_constructor("caption")
