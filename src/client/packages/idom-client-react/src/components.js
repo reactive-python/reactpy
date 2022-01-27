@@ -34,8 +34,6 @@ export function Element({ model }) {
     } else {
       return null;
     }
-  } else if (model.tagName == "script") {
-    return html`<${ScriptElement} script=${model.children[0]} />`;
   } else if (model.importSource) {
     return html`<${ImportedElement} model=${model} />`;
   } else {
@@ -56,12 +54,6 @@ function StandardElement({ model }) {
       (model) => html`<${Element} key=${model.key} model=${model} />`
     )
   );
-}
-
-function ScriptElement({ script }) {
-  const el = React.useRef();
-  React.useEffect(eval(script), [script]);
-  return null;
 }
 
 function ImportedElement({ model }) {
