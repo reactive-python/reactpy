@@ -2,12 +2,18 @@ from idom import component, html, use_state
 from idom.utils import Ref
 
 
+def use_toggle():
+    state, set_state = use_state(True)
+    return state, lambda: set_state(not state)
+
+
+def use_counter():
+    state, set_state = use_state(1)
+    return state, lambda: set_state(state + 1)
+
+
 def test_script_mount_unmount(driver, driver_wait, display):
     toggle_is_mounted = Ref()
-
-    def use_toggle():
-        state, set_state = use_state(True)
-        return state, lambda: set_state(not state)
 
     @component
     def Root():
@@ -52,10 +58,6 @@ def test_script_mount_unmount(driver, driver_wait, display):
 
 def test_script_re_run_on_content_change(driver, driver_wait, display):
     incr_count = Ref()
-
-    def use_counter():
-        state, set_state = use_state(1)
-        return state, lambda: set_state(state + 1)
 
     @component
     def HasScript():
