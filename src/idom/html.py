@@ -150,6 +150,7 @@
 - :func:`template`
 """
 
+from .core.proto import VdomDict
 from .core.vdom import make_vdom_constructor
 
 
@@ -247,7 +248,21 @@ math = make_vdom_constructor("math")
 # Scripting
 canvas = make_vdom_constructor("canvas")
 noscript = make_vdom_constructor("noscript")
-script = make_vdom_constructor("script")
+
+
+def script(content: str) -> VdomDict:
+    """Create a new `<{script}> <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script>`__ element.
+
+    Parameters:
+        content:
+            The text of the script should evaluate to a function. This function will be
+            called when the script is initially created or when the content of the
+            script changes. The function may optionally return a teardown function that
+            is called when the script element is removed from the tree, or when the
+            script content changes.
+    """
+    return {"tagName": "script", "children": [content]}
+
 
 # Demarcating edits
 del_ = make_vdom_constructor("del")
