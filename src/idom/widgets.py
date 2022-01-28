@@ -1,7 +1,20 @@
 from __future__ import annotations
 
 from base64 import b64encode
-from typing import Any, Callable, Dict, Optional, Set, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+)
+
+from typing_extensions import Protocol
 
 import idom
 
@@ -35,28 +48,63 @@ def image(
     return {"tagName": "img", "attributes": {"src": src, **(attributes or {})}}
 
 
-@component
-def Input(
-    callback: Callable[[str], None],
-    type: str,
-    value: str = "",
-    attributes: Optional[Dict[str, Any]] = None,
-    cast: Optional[Callable[[str], Any]] = None,
+_Value = TypeVar("_Value")
+
+
+def use_linked_inputs(
+    attributes: Sequence[Dict[str, Any]],
+    on_change: Callable[[_Value], None] = lambda value: None,
+    cast: _CastFunc[_Value] = lambda value: value,
+    initial_value: str = "",
     ignore_empty: bool = True,
-) -> VdomDict:
-    """Utility for making an ``<input/>`` with a callback"""
-    attrs = attributes or {}
-    value, set_value = idom.hooks.use_state(value)
+) -> List[VdomDict]:
+    """Return a list of linked inputs equal to the number of given attributes.
 
-    def on_change(event: Dict[str, Any]) -> None:
-        value = event["target"]["value"]
-        set_value(value)
-        if not value and ignore_empty:
-            return
-        callback(value if cast is None else cast(value))
+    Parameters:
+        attributes:
+            That attributes of each returned input element. If the number of generated
+            inputs is variable, you may need to assign each one a
+            :ref:`key <Organizing Items With Keys>` by including a ``"key"`` in each
+            attribute dictionary.
+        on_change:
+            A callback which is triggered when any input is changed. This callback need
+            not update the 'value' field in the attributes of the inputs since that is
+            handled automatically.
+        cast:
+            Cast the 'value' of changed inputs that is passed to ``on_change``.
+        initial_value:
+            Initialize the 'value' field of the inputs.
+        ignore_empty:
+            Do not trigger ``on_change`` if the 'value' is an empty string.
+    """
+    value, set_value = idom.hooks.use_state(initial_value)
 
-    attributes = {**attrs, "type": type, "value": value, "onChange": on_change}
-    return html.input(attributes)
+    def sync_inputs(event: Dict[str, Any]) -> None:
+        new_value = event["value"]
+        set_value(new_value)
+        if not new_value and ignore_empty:
+            return None
+        on_change(cast(new_value))
+
+    inputs: list[VdomDict] = []
+    for attrs in attributes:
+        # we're going to mutate this so copy it
+        attrs = attrs.copy()
+
+        key = attrs.pop("key", None)
+        attrs.update({"onChange": sync_inputs, "value": value})
+
+        inputs.append(html.input(attrs, key=key))
+
+    return inputs
+
+
+_CastTo = TypeVar("_CastTo", covariant=True)
+
+
+class _CastFunc(Protocol[_CastTo]):
+    def __call__(self, value: str) -> _CastTo:
+        ...
 
 
 MountFunc = Callable[[ComponentConstructor], None]

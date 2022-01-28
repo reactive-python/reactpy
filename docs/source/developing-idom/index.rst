@@ -6,7 +6,6 @@ Developing IDOM
 
     contributor-guide
     changelog
-    roadmap
 
 .. note::
 
@@ -42,8 +41,8 @@ you can help move this project and community forward!
         Discover the features and fixes included in each release
 
     .. grid-item-card:: :octicon:`milestone` Roadmap
-        :link: roadmap
-        :link-type: doc
+        :link: https://github.com/orgs/idom-team/projects/1
+        :link-type: url
 
         See the long term goals of the IDOM team
 
