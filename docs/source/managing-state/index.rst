@@ -22,5 +22,3 @@ componets move state to the nearest parent. In React world this is known as "lif
 state up" and it is a very common thing to do. Let's look at 2 examples, also from 
 `React <https://beta.reactjs.org/learn/sharing-state-between-components>`__, 
 but translated to IDOM.
-
-.. idom:: shared-component-state/_examples/filterable_list
