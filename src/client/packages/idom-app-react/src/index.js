@@ -4,7 +4,7 @@ export function mount(mountPoint) {
   const serverInfo = new LayoutServerInfo({
     host: document.location.hostname,
     port: document.location.port,
-    path: "/",
+    path: "../",
     query: queryParams.user.toString(),
     secture: document.location.protocol == "https",
   });
