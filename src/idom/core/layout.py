@@ -216,11 +216,6 @@ class Layout:
             pass
         else:
             key, index = new_state.key, new_state.index
-            if old_state is not None:
-                assert key == old_state.key, (
-                    "state mismatch during component update - "
-                    f"key {key!r}!={old_state.key!r} "
-                )
             parent.children_by_key[key] = new_state
             # need to do insertion in case where old_state is None and we're appending
             parent.model.current["children"][index : index + 1] = [
