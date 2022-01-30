@@ -150,8 +150,12 @@
 - :func:`template`
 """
 
+from __future__ import annotations
+
+from typing import Any, Mapping
+
 from .core.proto import VdomDict
-from .core.vdom import make_vdom_constructor
+from .core.vdom import coalesce_attributes_and_children, make_vdom_constructor
 
 
 # Dcument metadata
@@ -250,18 +254,46 @@ canvas = make_vdom_constructor("canvas")
 noscript = make_vdom_constructor("noscript")
 
 
-def script(content: str) -> VdomDict:
+def script(
+    *attributes_and_children: Mapping[str, Any] | str,
+    key: str | int | None = None,
+) -> VdomDict:
     """Create a new `<{script}> <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script>`__ element.
 
-    Parameters:
-        content:
-            The text of the script should evaluate to a function. This function will be
-            called when the script is initially created or when the content of the
-            script changes. The function may optionally return a teardown function that
-            is called when the script element is removed from the tree, or when the
-            script content changes.
+    This behaves slightly differently than a normal script element in that it may be run
+    multiple times if its key changes (depending on specific browser behaviors). If no
+    key is given, the key is inferred to be the content of the script or, lastly its
+    'src' attribute if that is given.
+
+    If no attributes are given, the content of the script may evaluate to a function.
+    This function will be called when the script is initially created or when the
+    content of the script changes. The function may itself optionally return a teardown
+    function that is called when the script element is removed from the tree, or when
+    the script content changes.
     """
-    return {"tagName": "script", "children": [content]}
+    model: VdomDict = {"tagName": "script"}
+
+    attributes, children = coalesce_attributes_and_children(attributes_and_children)
+
+    if children:
+        if len(children) > 1:
+            raise ValueError("'script' nodes may have, at most, one child.")
+        elif not isinstance(children[0], str):
+            raise ValueError("The child of a 'script' must be a string.")
+        else:
+            model["children"] = children
+            if key is None:
+                key = children[0]
+
+    if attributes:
+        model["attributes"] = attributes
+        if key is None and not children and "src" in attributes:
+            key = attributes["src"]
+
+    if key is not None:
+        model["key"] = key
+
+    return model
 
 
 # Demarcating edits

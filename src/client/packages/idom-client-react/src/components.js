@@ -35,7 +35,7 @@ export function Element({ model }) {
       return null;
     }
   } else if (model.tagName == "script") {
-    return html`<${ScriptElement} script=${model.children[0]} />`;
+    return html`<${ScriptElement} model=${model} />`;
   } else if (model.importSource) {
     return html`<${ImportedElement} model=${model} />`;
   } else {
@@ -58,10 +58,31 @@ function StandardElement({ model }) {
   );
 }
 
-function ScriptElement({ script }) {
-  const el = React.useRef();
-  React.useEffect(eval(script), [script]);
-  return null;
+function ScriptElement({ model }) {
+  const ref = React.useRef();
+  React.useEffect(() => {
+    if (model?.children?.length > 1) {
+      console.error("Too many children for 'script' element.");
+    }
+
+    let scriptContent = model?.children?.[0];
+
+    let scriptElement;
+    if (model.attributes) {
+      scriptElement = document.createElement("script");
+      for (const [k, v] of Object.entries(model.attributes)) {
+        scriptElement.setAttribute(k, v);
+      }
+      scriptElement.appendChild(document.createTextNode(scriptContent));
+      ref.current.appendChild(scriptElement);
+    } else {
+      let scriptResult = eval(scriptContent);
+      if (typeof scriptResult == "function") {
+        return scriptResult();
+      }
+    }
+  }, [model.key]);
+  return html`<div ref=${ref} />`;
 }
 
 function ImportedElement({ model }) {
