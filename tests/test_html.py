@@ -1,4 +1,6 @@
-from idom import component, html, use_state
+import pytest
+
+from idom import component, config, html, use_state
 from idom.utils import Ref
 
 
@@ -7,8 +9,8 @@ def use_toggle():
     return state, lambda: set_state(not state)
 
 
-def use_counter():
-    state, set_state = use_state(1)
+def use_counter(initial_value):
+    state, set_state = use_state(initial_value)
     return state, lambda: set_state(state + 1)
 
 
@@ -61,7 +63,7 @@ def test_script_re_run_on_content_change(driver, driver_wait, display):
 
     @component
     def HasScript():
-        count, incr_count.current = use_counter()
+        count, incr_count.current = use_counter(1)
         return html.div(
             html.div({"id": "mount-count", "data-value": 0}),
             html.div({"id": "unmount-count", "data-value": 0}),
@@ -92,3 +94,51 @@ def test_script_re_run_on_content_change(driver, driver_wait, display):
 
     driver_wait.until(lambda d: mount_count.get_attribute("data-value") == "3")
     driver_wait.until(lambda d: unmount_count.get_attribute("data-value") == "2")
+
+
+def test_script_from_src(driver, driver_wait, display):
+    incr_src_id = Ref()
+    file_name_template = "__some_js_script_{src_id}__.js"
+
+    @component
+    def HasScript():
+        src_id, incr_src_id.current = use_counter(0)
+        if src_id == 0:
+            # on initial display we haven't added the file yet.
+            return html.div()
+        else:
+            return html.div(
+                html.div({"id": "run-count", "data-value": 0}),
+                html.script(
+                    {"src": f"/modules/{file_name_template.format(src_id=src_id)}"}
+                ),
+            )
+
+    display(HasScript)
+
+    for i in range(1, 4):
+        script_file = config.IDOM_WED_MODULES_DIR.current / file_name_template.format(
+            src_id=i
+        )
+        script_file.write_text(
+            f"""
+            let runCountEl = document.getElementById("run-count");
+            runCountEl.setAttribute("data-value", {i});
+            """
+        )
+
+        incr_src_id.current()
+
+        run_count = driver.find_element("id", "run-count")
+
+        driver_wait.until(lambda d: (run_count.get_attribute("data-value") == "1"))
+
+
+def test_script_may_only_have_one_child():
+    with pytest.raises(ValueError, match="'script' nodes may have, at most, one child"):
+        html.script("one child", "two child")
+
+
+def test_child_of_script_must_be_string():
+    with pytest.raises(ValueError, match="The child of a 'script' must be a string"):
+        html.script(1)
