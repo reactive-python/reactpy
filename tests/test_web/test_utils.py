@@ -136,17 +136,13 @@ def test_resolve_module_exports_from_source():
     names, references = resolve_module_exports_from_source(
         fixture_file.read_text(), exclude_default=False
     )
-    assert (
-        names
-        == (
-            {f"name{i}" for i in range(1, 21)}
-            | {
-                "functionName",
-                "ClassName",
-            }
-        )
-        and references == {"https://source1.com", "https://source2.com"}
-    )
+    assert names == (
+        {f"name{i}" for i in range(1, 21)}
+        | {
+            "functionName",
+            "ClassName",
+        }
+    ) and references == {"https://source1.com", "https://source2.com"}
 
 
 def test_log_on_unknown_export_type(caplog):

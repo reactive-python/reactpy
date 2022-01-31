@@ -72,7 +72,7 @@ def test_is_vdom(result, value):
             {"tagName": "div", "children": [0, 1, 2]},
         ),
         (
-            idom.vdom("div", map(lambda x: x ** 2, [1, 2, 3])),
+            idom.vdom("div", map(lambda x: x**2, [1, 2, 3])),
             {"tagName": "div", "children": [1, 4, 9]},
         ),
         (

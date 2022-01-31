@@ -7,6 +7,30 @@ team are working on, or have feedback on how issues should be prioritized, feel 
 :discussion-type:`open up a discussion <question>`.
 
 
+0.36.0
+------
+
+This release includes an important fix for errors produced after :pull:`623` was merged.
+In addition there is not a new ``http.script`` element which can behave similarly to a
+standard HTML ``<script>`` or, if no attributes are given, operate similarly to an
+effect. If no attributes are given, and when the script evaluates to a function, that
+function will be called the first time it is mounted and any time the content of the
+script is subsequently changed. If the function then returns another function, that
+returned function will be called when the script is removed from the view, or just
+before the content of the script changes.
+
+**Closed Issues**
+
+- State mismatch during component update - :issue:`629`
+- Implement a script tag - :issue:`544`
+
+**Pull Requests**
+
+- make scripts behave more like normal html script element - :pull:`632`
+- Fix state mismatch during component update - :pull:`631`
+- implement script element - :pull:`617`
+
+
 0.35.4
 ------
 
