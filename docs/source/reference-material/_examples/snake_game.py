@@ -83,7 +83,7 @@ def GameLoop(grid_size, block_scale, set_game_state):
     if snake[-1] in snake[:-1]:
         assign_grid_block_color(grid, snake[-1], "red")
         new_game_state = GameState.lost
-    elif len(snake) == grid_size ** 2:
+    elif len(snake) == grid_size**2:
         assign_grid_block_color(grid, snake[-1], "yellow")
         new_game_state = GameState.won
 
