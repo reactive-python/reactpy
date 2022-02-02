@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 from typing_extensions import Protocol
 
-from idom.config import IDOM_DEBUG_MODE, IDOM_WED_MODULES_DIR
+from idom.config import IDOM_DEBUG_MODE, IDOM_WEB_MODULES_DIR
 from idom.core.proto import (
     EventHandlerMapping,
     ImportSourceDict,
@@ -391,6 +391,6 @@ def _make_export(
 
 
 def _web_module_path(name: str) -> Path:
-    directory = IDOM_WED_MODULES_DIR.current
+    directory = IDOM_WEB_MODULES_DIR.current
     path = directory.joinpath(*name.split("/"))
     return path.with_suffix(path.suffix)

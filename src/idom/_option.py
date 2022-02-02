@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import warnings
 from logging import getLogger
 from typing import Any, Callable, Generic, TypeVar, cast
 
@@ -89,3 +90,22 @@ class Option(Generic[_O]):
 
     def __repr__(self) -> str:
         return f"Option({self._name}={self.current!r})"
+
+
+class DeprecatedOption(Option[_O]):  # pragma: no cover
+    def __init__(self, new_name: str | None, *args: Any, **kwargs: Any) -> None:
+        self.new_name = new_name
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            super().__init__(*args, **kwargs)
+
+    @property
+    def current(self) -> _O:
+        if self.new_name is None:
+            warnings.warn(f"{self.name!r} has been removed", DeprecationWarning)
+        else:
+            warnings.warn(
+                f"{self.name!r} has been renamed to {self.new_name!r}",
+                DeprecationWarning,
+            )
+        return super().current

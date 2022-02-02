@@ -20,7 +20,7 @@ from uvicorn.server import Server as UvicornServer
 from uvicorn.supervisors.multiprocess import Multiprocess
 from uvicorn.supervisors.statreload import StatReload as ChangeReload
 
-from idom.config import IDOM_DEBUG_MODE, IDOM_WED_MODULES_DIR
+from idom.config import IDOM_DEBUG_MODE, IDOM_WEB_MODULES_DIR
 from idom.core.dispatcher import (
     RecvCoroutine,
     SendCoroutine,
@@ -211,7 +211,7 @@ def _setup_common_routes(config: Config, app: Starlette) -> None:
         app.mount(
             f"{url_prefix}/modules",
             StaticFiles(
-                directory=str(IDOM_WED_MODULES_DIR.current),
+                directory=str(IDOM_WEB_MODULES_DIR.current),
                 html=True,
                 check_dir=False,
             ),

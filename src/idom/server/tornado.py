@@ -13,7 +13,7 @@ from tornado.web import Application, RedirectHandler, RequestHandler, StaticFile
 from tornado.websocket import WebSocketHandler
 from typing_extensions import TypedDict
 
-from idom.config import IDOM_WED_MODULES_DIR
+from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.dispatcher import VdomJsonPatch, dispatch_single_view
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.proto import ComponentConstructor
@@ -133,7 +133,7 @@ def _setup_common_routes(config: Config) -> _RouteHandlerSpecs:
             (
                 r"/modules/(.*)",
                 StaticFileHandler,
-                {"path": str(IDOM_WED_MODULES_DIR.current)},
+                {"path": str(IDOM_WEB_MODULES_DIR.current)},
             )
         )
         if config["redirect_root_to_index"]:
