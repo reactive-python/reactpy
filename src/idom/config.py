@@ -6,6 +6,7 @@ variables or, for those which allow it, a programatic interface.
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from ._option import DeprecatedOption as _DeprecatedOption
 from ._option import Option as _Option
 
 
@@ -43,8 +44,16 @@ For more info on the VDOM spec, see here: :ref:`VDOM JSON Schema`
 # Because these web modules will be linked dynamically at runtime this can be temporary
 _DEFAULT_WEB_MODULES_DIR = TemporaryDirectory()
 
-IDOM_WED_MODULES_DIR = _Option(
-    "IDOM_WED_MODULES_DIR",
+IDOM_WED_MODULES_DIR: _Option[Path] = _DeprecatedOption(
+    new_name="IDOM_WEB_MODULES_DIR",
+    name="IDOM_WED_MODULES_DIR",
+    default=Path(_DEFAULT_WEB_MODULES_DIR.name),
+    validator=Path,
+)
+"""This has been renamed to :data:`IDOM_WEB_MODULES_DIR`"""
+
+IDOM_WEB_MODULES_DIR = _Option(
+    "IDOM_WEB_MODULES_DIR",
     default=Path(_DEFAULT_WEB_MODULES_DIR.name),
     validator=Path,
 )
