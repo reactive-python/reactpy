@@ -350,17 +350,10 @@ def update_version(session: Session) -> None:
 
 
 @nox.session(reuse_venv=True)
-def latest_pull_requests(session: Session) -> None:
-    """A basic script for outputing changelog info"""
+def changes_since_release(session: Session) -> None:
+    """Output the latest changes since the last release"""
     session.install("requests", "python-dateutil")
-    session.run("python", "scripts/latest_pull_requests.py", *session.posargs)
-
-
-@nox.session(reuse_venv=True)
-def latest_closed_issues(session: Session) -> None:
-    """A basic script for outputing changelog info"""
-    session.install("requests", "python-dateutil")
-    session.run("python", "scripts/latest_closed_issues.py", *session.posargs)
+    session.run("python", "scripts/changes_since_release.py", *session.posargs)
 
 
 def install_requirements_file(session: Session, name: str) -> None:
