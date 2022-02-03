@@ -104,13 +104,10 @@ class DeprecatedOption(Option[_O]):  # pragma: no cover
 
     @property  # type: ignore
     def _current(self) -> _O:  # type: ignore
-        if self._new_opt.name is None:
-            warnings.warn(f"{self.name!r} has been removed", DeprecationWarning)
-        else:
-            warnings.warn(
-                f"{self.name!r} has been renamed to {self._new_opt.name!r}",
-                DeprecationWarning,
-            )
+        warnings.warn(
+            f"{self.name!r} has been renamed to {self._new_opt.name!r}",
+            DeprecationWarning,
+        )
         return self._new_opt.current
 
     @_current.setter
