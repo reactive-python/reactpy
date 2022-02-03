@@ -10,18 +10,18 @@ team are working on, or have feedback on how issues should be prioritized, feel 
 0.36.1
 ------
 
-Inclused bug fixes and renames the configuration option `IDOM_WED_MODULES_DIR` to
-`IDOM_WEB_MODULES_DIR` with a corresponding deprecation warning.
+Inclused bug fixes and renames the configuration option ``IDOM_WED_MODULES_DIR`` to
+``IDOM_WEB_MODULES_DIR`` with a corresponding deprecation warning.
 
 **Closed Issues**
 
-- Fix Key Error When Cleaning Up Event Handlers - #640
-- Update Script Tag Behavior - #628
+- Fix Key Error When Cleaning Up Event Handlers - :issue:`640`
+- Update Script Tag Behavior - :issue:`628`
 
 **Merged Pull Requests**
 
-- mark old state as None if unmounting - #641
-- rename IDOM_WED_MODULES_DIR to IDOM_WEB_MODULES_DIR - #638
+- mark old state as None if unmounting - :pull:`641`
+- rename IDOM_WED_MODULES_DIR to IDOM_WEB_MODULES_DIR - :pull:`638`
 
 
 0.36.0
