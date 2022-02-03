@@ -93,7 +93,7 @@ class Option(Generic[_O]):
 
 
 class DeprecatedOption(Option[_O]):  # pragma: no cover
-    def __init__(self, new_opt: Option | None, name: str) -> None:
+    def __init__(self, new_opt: Option[_O], name: str) -> None:
         # copy over attrs
         attrs = new_opt.__dict__.copy()
         attrs.pop("_current", None)
@@ -102,8 +102,8 @@ class DeprecatedOption(Option[_O]):  # pragma: no cover
         self._name = name
         self._new_opt = new_opt
 
-    @property
-    def _current(self) -> _O:
+    @property  # type: ignore
+    def _current(self) -> _O:  # type: ignore
         if self._new_opt.name is None:
             warnings.warn(f"{self.name!r} has been removed", DeprecationWarning)
         else:
