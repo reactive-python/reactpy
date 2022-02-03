@@ -7,6 +7,14 @@ team are working on, or have feedback on how issues should be prioritized, feel 
 :discussion-type:`open up a discussion <question>`.
 
 
+0.36.2
+------
+
+Hot fix for newly introduced ``DeprecatedOption``:
+
+- :commit:`c146dfb264cbc3d2256a62efdfe9ccf62c795b01`
+
+
 0.36.1
 ------
 
