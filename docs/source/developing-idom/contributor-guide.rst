@@ -297,8 +297,7 @@ following commands using the ``<format>`` of your choosing (``rst``, ``md``, ``t
 
 .. code-block:: bash
 
-    nox -s latest_closed_issues -- <format>
-    nox -s latest_pull_requests -- <format>
+    nox -s changes_since_release -- <format>
 
 Once the version has been updated and the changelog entry completed, you should commit
 the changes.
