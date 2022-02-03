@@ -109,3 +109,15 @@ class DeprecatedOption(Option[_O]):  # pragma: no cover
                 DeprecationWarning,
             )
         return super().current
+
+    @current.setter
+    def current(self, new: _O) -> None:
+        if self.new_name is None:
+            warnings.warn(f"{self.name!r} has been removed", DeprecationWarning)
+        else:
+            warnings.warn(
+                f"{self.name!r} has been renamed to {self.new_name!r}",
+                DeprecationWarning,
+            )
+        self.set_current(new)
+        return None
