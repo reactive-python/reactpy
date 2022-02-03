@@ -44,14 +44,6 @@ For more info on the VDOM spec, see here: :ref:`VDOM JSON Schema`
 # Because these web modules will be linked dynamically at runtime this can be temporary
 _DEFAULT_WEB_MODULES_DIR = TemporaryDirectory()
 
-IDOM_WED_MODULES_DIR: _Option[Path] = _DeprecatedOption(
-    new_name="IDOM_WEB_MODULES_DIR",
-    name="IDOM_WED_MODULES_DIR",
-    default=Path(_DEFAULT_WEB_MODULES_DIR.name),
-    validator=Path,
-)
-"""This has been renamed to :data:`IDOM_WEB_MODULES_DIR`"""
-
 IDOM_WEB_MODULES_DIR = _Option(
     "IDOM_WEB_MODULES_DIR",
     default=Path(_DEFAULT_WEB_MODULES_DIR.name),
@@ -63,6 +55,12 @@ This directory **MUST** be treated as a black box. Downstream applications **MUS
 assume anything about the structure of this directory see :mod:`idom.web.module` for a
 set of publically available APIs for working with the client.
 """
+
+IDOM_WED_MODULES_DIR: _Option[Path] = _DeprecatedOption(
+    new_opt=IDOM_WEB_MODULES_DIR,
+    name="IDOM_WED_MODULES_DIR",
+)
+"""This has been renamed to :data:`IDOM_WEB_MODULES_DIR`"""
 
 IDOM_FEATURE_INDEX_AS_DEFAULT_KEY = _Option(
     "IDOM_FEATURE_INDEX_AS_DEFAULT_KEY",

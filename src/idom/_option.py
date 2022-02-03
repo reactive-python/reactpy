@@ -93,31 +93,26 @@ class Option(Generic[_O]):
 
 
 class DeprecatedOption(Option[_O]):  # pragma: no cover
-    def __init__(self, new_name: str | None, *args: Any, **kwargs: Any) -> None:
-        self.new_name = new_name
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            super().__init__(*args, **kwargs)
+    def __init__(self, new_opt: Option | None, name: str) -> None:
+        # copy over attrs
+        attrs = new_opt.__dict__.copy()
+        attrs.pop("_current", None)
+        self.__dict__.update(new_opt.__dict__)
+        # then set the ones needed here
+        self._name = name
+        self._new_opt = new_opt
 
     @property
-    def current(self) -> _O:
-        if self.new_name is None:
+    def _current(self) -> _O:
+        if self._new_opt.name is None:
             warnings.warn(f"{self.name!r} has been removed", DeprecationWarning)
         else:
             warnings.warn(
-                f"{self.name!r} has been renamed to {self.new_name!r}",
+                f"{self.name!r} has been renamed to {self._new_opt.name!r}",
                 DeprecationWarning,
             )
-        return super().current
+        return self._new_opt.current
 
-    @current.setter
-    def current(self, new: _O) -> None:
-        if self.new_name is None:
-            warnings.warn(f"{self.name!r} has been removed", DeprecationWarning)
-        else:
-            warnings.warn(
-                f"{self.name!r} has been renamed to {self.new_name!r}",
-                DeprecationWarning,
-            )
-        self.set_current(new)
-        return None
+    @_current.setter
+    def _current(self, new: _O) -> None:
+        self._new_opt.current = new
