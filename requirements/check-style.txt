@@ -5,3 +5,5 @@ flake8-print
 flake8-tidy-imports
 isort >=5.7.0
 pep8-naming
+# pydocstyle
+git+https://github.com/PyCQA/pydocstyle.git@bd4993345a241bd0d5128f21de56394b1cde3714#egg=pydocstyle
