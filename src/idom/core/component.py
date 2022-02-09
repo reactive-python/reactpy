@@ -51,6 +51,10 @@ class Component:
         self._kwargs = kwargs
         self.key = key
 
+    @property
+    def definition_id(self) -> int:
+        return id(self._func)
+
     def render(self) -> VdomDict:
         model = self._func(*self._args, **self._kwargs)
         if isinstance(model, ComponentType):

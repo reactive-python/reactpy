@@ -511,6 +511,10 @@ def _update_component_model_state(
         life_cycle_state=(
             _update_life_cycle_state(old_model_state.life_cycle_state, new_component)
             if old_model_state.is_component_state
+            and (
+                old_model_state.life_cycle_state.component.definition_id
+                == new_component.definition_id
+            )
             else _make_life_cycle_state(new_component, schedule_render)
         ),
     )
