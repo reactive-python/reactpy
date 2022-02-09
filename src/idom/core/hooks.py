@@ -501,7 +501,7 @@ class LifeCycleHook:
         "_schedule_render_later",
         "_current_state_index",
         "_state",
-        "_rendered_atleast_once",
+        "_rendered_at_least_once",
         "_is_rendering",
         "_event_effects",
         "__weakref__",
@@ -514,7 +514,7 @@ class LifeCycleHook:
         self._schedule_render_callback = schedule_render
         self._schedule_render_later = False
         self._is_rendering = False
-        self._rendered_atleast_once = False
+        self._rendered_at_least_once = False
         self._current_state_index = 0
         self._state: Tuple[Any, ...] = ()
         self._event_effects: Dict[EffectType, List[Callable[[], None]]] = {
@@ -530,18 +530,18 @@ class LifeCycleHook:
         return None
 
     def use_state(self, function: Callable[[], _StateType]) -> _StateType:
-        if not self._rendered_atleast_once:
+        if not self._rendered_at_least_once:
             # since we're not intialized yet we're just appending state
             result = function()
             self._state += (result,)
         else:
-            # once finalized we iterate over each succesively used piece of state
+            # once finalized we iterate over each successively used piece of state
             result = self._state[self._current_state_index]
         self._current_state_index += 1
         return result
 
     def add_effect(self, effect_type: EffectType, function: Callable[[], None]) -> None:
-        """Trigger a function on the occurance of the given effect type"""
+        """Trigger a function on the occurrence of the given effect type"""
         self._event_effects[effect_type].append(function)
 
     def component_will_render(self) -> None:
@@ -562,7 +562,7 @@ class LifeCycleHook:
         self._is_rendering = False
         if self._schedule_render_later:
             self._schedule_render()
-        self._rendered_atleast_once = True
+        self._rendered_at_least_once = True
         self._current_state_index = 0
 
     def component_will_unmount(self) -> None:
@@ -585,7 +585,7 @@ class LifeCycleHook:
 
     def unset_current(self) -> None:
         """Unset this hook as the active hook in this thread"""
-        # this assertion should never fail - primarilly useful for debug
+        # this assertion should never fail - primarily useful for debug
         assert _current_life_cycle_hook[get_thread_id()] is self
         del _current_life_cycle_hook[get_thread_id()]
 
