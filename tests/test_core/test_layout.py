@@ -11,7 +11,7 @@ import idom
 from idom import html
 from idom.config import IDOM_DEBUG_MODE
 from idom.core.dispatcher import render_json_patch
-from idom.core.hooks import use_effect
+from idom.core.hooks import use_effect, use_state
 from idom.core.layout import LayoutEvent
 from idom.testing import (
     HookCatcher,
@@ -877,3 +877,49 @@ async def test_switching_node_type_with_event_handlers():
 
         assert element_static_handler.target in layout._event_handlers
         assert component_static_handler.target not in layout._event_handlers
+
+
+async def test_switching_component_definition():
+    toggle_component = idom.Ref()
+    first_used_state = idom.Ref(None)
+    second_used_state = idom.Ref(None)
+
+    @idom.component
+    def Root():
+        toggle, toggle_component.current = use_toggle(True)
+        if toggle:
+            return FirstComponent()
+        else:
+            return SecondComponent()
+
+    @idom.component
+    def FirstComponent():
+        first_used_state.current = use_state("first")[0]
+        # reset state after unmount
+        use_effect(lambda: lambda: first_used_state.set_current(None))
+        return html.div()
+
+    @idom.component
+    def SecondComponent():
+        second_used_state.current = use_state("second")[0]
+        # reset state after unmount
+        use_effect(lambda: lambda: second_used_state.set_current(None))
+        return html.div()
+
+    with idom.Layout(Root()) as layout:
+        await layout.render()
+
+        assert first_used_state.current == "first"
+        assert second_used_state.current is None
+
+        toggle_component.current()
+        await layout.render()
+
+        assert first_used_state.current is None
+        assert second_used_state.current == "second"
+
+        toggle_component.current()
+        await layout.render()
+
+        assert first_used_state.current == "first"
+        assert second_used_state.current is None

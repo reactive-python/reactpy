@@ -380,6 +380,19 @@ class Layout:
                         child,
                         self._rendering_queue.put,
                     )
+                elif old_child_state.is_component_state and (
+                    old_child_state.life_cycle_state.component.definition_id
+                    != child.definition_id
+                ):
+                    self._unmount_model_states([old_child_state])
+                    old_child_state = None
+                    new_child_state = _make_component_model_state(
+                        new_state,
+                        index,
+                        key,
+                        child,
+                        self._rendering_queue.put,
+                    )
                 else:
                     new_child_state = _update_component_model_state(
                         old_child_state,
@@ -511,10 +524,6 @@ def _update_component_model_state(
         life_cycle_state=(
             _update_life_cycle_state(old_model_state.life_cycle_state, new_component)
             if old_model_state.is_component_state
-            and (
-                old_model_state.life_cycle_state.component.definition_id
-                == new_component.definition_id
-            )
             else _make_life_cycle_state(new_component, schedule_render)
         ),
     )
