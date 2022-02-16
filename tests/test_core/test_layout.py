@@ -10,6 +10,7 @@ import pytest
 import idom
 from idom import html
 from idom.config import IDOM_DEBUG_MODE
+from idom.core.component import component
 from idom.core.dispatcher import render_json_patch
 from idom.core.hooks import use_effect, use_state
 from idom.core.layout import LayoutEvent
@@ -923,3 +924,56 @@ async def test_switching_component_definition():
 
         assert first_used_state.current == "first"
         assert second_used_state.current is None
+
+
+async def test_element_keys_inside_components_do_not_reset_state_of_component():
+    """This is a regression test for a bug.
+
+    You would not expect that calling `set_child_key_num` would trigger state to be
+    reset in any `Child()` components but there was a bug where that happened.
+    """
+
+    effect_calls_without_state = []
+    set_child_key_num = StaticEventHandler()
+    did_call_effect = asyncio.Event()
+
+    @component
+    def Parent():
+        state, set_state = use_state(0)
+        return html.div(
+            html.button(
+                {"onClick": set_child_key_num.use(lambda: set_state(state + 1))},
+                "click me",
+            ),
+            Child("some-key"),
+            Child(f"key-{state}"),
+        )
+
+    @component
+    def Child(child_key):
+        state, set_state = use_state(0)
+
+        @use_effect
+        async def record_if_state_is_reset():
+            if state:
+                return
+            effect_calls_without_state.append(child_key)
+            set_state(1)
+            did_call_effect.set()
+
+        return html.div(
+            child_key,
+            key=child_key,
+        )
+
+    with idom.Layout(Parent()) as layout:
+        await layout.render()
+        await did_call_effect.wait()
+        assert effect_calls_without_state == ["some-key", "key-0"]
+        did_call_effect.clear()
+
+        for i in range(1, 5):
+            await layout.deliver(LayoutEvent(set_child_key_num.target, []))
+            await layout.render()
+            assert effect_calls_without_state == ["some-key", "key-0"]
+            did_call_effect.clear()
