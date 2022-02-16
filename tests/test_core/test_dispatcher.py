@@ -57,15 +57,20 @@ def make_send_recv_callbacks(events_to_inject):
 def make_events_and_expected_model():
     events = [LayoutEvent(STATIC_EVENT_HANDLER.target, [])] * 4
     expected_model = {
-        "tagName": "div",
-        "attributes": {"count": 4},
-        "eventHandlers": {
-            EVENT_NAME: {
-                "target": STATIC_EVENT_HANDLER.target,
-                "preventDefault": False,
-                "stopPropagation": False,
+        "tagName": "",
+        "children": [
+            {
+                "tagName": "div",
+                "attributes": {"count": 4},
+                "eventHandlers": {
+                    EVENT_NAME: {
+                        "target": STATIC_EVENT_HANDLER.target,
+                        "preventDefault": False,
+                        "stopPropagation": False,
+                    }
+                },
             }
-        },
+        ],
     }
     return events, expected_model
 

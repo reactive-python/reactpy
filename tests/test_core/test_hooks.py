@@ -7,7 +7,7 @@ import idom
 from idom.core.dispatcher import render_json_patch
 from idom.core.hooks import LifeCycleHook
 from idom.testing import HookCatcher, assert_idom_logged
-from tests.general_utils import assert_same_items
+from tests.assert_utils import assert_same_items
 
 
 async def test_must_be_rendering_in_layout_to_use_hooks():
@@ -38,21 +38,25 @@ async def test_simple_stateful_component():
         assert_same_items(
             patch_1.changes,
             [
-                {"op": "add", "path": "/children", "value": ["0"]},
-                {"op": "add", "path": "/tagName", "value": "div"},
+                {"op": "add", "path": "/tagName", "value": ""},
+                {
+                    "op": "add",
+                    "path": "/children",
+                    "value": [{"children": ["0"], "tagName": "div"}],
+                },
             ],
         )
 
         patch_2 = await render_json_patch(layout)
         assert patch_2.path == ""
         assert patch_2.changes == [
-            {"op": "replace", "path": "/children/0", "value": "1"}
+            {"op": "replace", "path": "/children/0/children/0", "value": "1"}
         ]
 
         patch_3 = await render_json_patch(layout)
         assert patch_3.path == ""
         assert patch_3.changes == [
-            {"op": "replace", "path": "/children/0", "value": "2"}
+            {"op": "replace", "path": "/children/0/children/0", "value": "2"}
         ]
 
 

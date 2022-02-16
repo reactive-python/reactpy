@@ -56,8 +56,7 @@ class Component:
         return id(self._func)
 
     def render(self) -> VdomDict:
-        model = self._func(*self._args, **self._kwargs)
-        return {"tagName": "div", "children": [model]}
+        return self._func(*self._args, **self._kwargs)
 
     def __repr__(self) -> str:
         sig = inspect.signature(self._func)

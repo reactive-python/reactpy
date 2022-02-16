@@ -20,6 +20,10 @@ export function Layout({ saveUpdateHook, sendEvent, loadImportSource }) {
 
   React.useEffect(() => saveUpdateHook(patchModel), [patchModel]);
 
+  if (!Object.keys(model).length) {
+    return html`<${React.Fragment} />`;
+  }
+
   return html`
     <${LayoutContext.Provider} value=${{ sendEvent, loadImportSource }}>
       <${Element} model=${model} />
@@ -28,7 +32,7 @@ export function Layout({ saveUpdateHook, sendEvent, loadImportSource }) {
 }
 
 export function Element({ model }) {
-  if (!model.tagName) {
+  if (model.error !== undefined) {
     if (model.error) {
       return html`<pre>${model.error}</pre>`;
     } else {
@@ -45,11 +49,19 @@ export function Element({ model }) {
 
 function StandardElement({ model }) {
   const layoutContext = React.useContext(LayoutContext);
+
+  let type;
+  if (model.tagName == "") {
+    type = React.Fragment;
+  } else {
+    type = model.tagName;
+  }
+
   // Use createElement here to avoid warning about variable numbers of children not
   // having keys. Warning about this must now be the responsibility of the server
   // providing the models instead of the client rendering them.
   return React.createElement(
-    model.tagName,
+    type,
     createElementAttributes(model, layoutContext.sendEvent),
     ...createElementChildren(
       model,
