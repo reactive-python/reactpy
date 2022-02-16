@@ -199,6 +199,12 @@ class Layout:
                 raw_model = component.render()
             finally:
                 life_cycle_hook.unset_current()
+
+            # wrap the model in a fragment (i.e. tagName="") to ensure components have
+            # a separate node in the model state tree. This could be removed if this
+            # components are given a node in the tree some other way
+            raw_model = {"tagName": "", "children": [raw_model]}
+
             self._render_model(old_state, new_state, raw_model)
         except Exception as error:
             logger.exception(f"Failed to render {component}")

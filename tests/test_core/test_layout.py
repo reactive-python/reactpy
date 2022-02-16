@@ -20,7 +20,7 @@ from idom.testing import (
     assert_idom_logged,
     capture_idom_logs,
 )
-from tests.general_utils import assert_same_items
+from tests.assert_utils import assert_same_items
 
 
 @pytest.fixture(autouse=True)
@@ -79,13 +79,21 @@ async def test_simple_layout():
         path, changes = await render_json_patch(layout)
 
         assert path == ""
-        assert changes == [{"op": "add", "path": "/tagName", "value": "div"}]
+        assert_same_items(
+            changes,
+            [
+                {"op": "add", "path": "/children", "value": [{"tagName": "div"}]},
+                {"op": "add", "path": "/tagName", "value": ""},
+            ],
+        )
 
         set_state_hook.current("table")
         path, changes = await render_json_patch(layout)
 
         assert path == ""
-        assert changes == [{"op": "replace", "path": "/tagName", "value": "table"}]
+        assert changes == [
+            {"op": "replace", "path": "/children/0/tagName", "value": "table"}
+        ]
 
 
 async def test_nested_component_layout():
@@ -112,9 +120,20 @@ async def test_nested_component_layout():
                 {
                     "op": "add",
                     "path": "/children",
-                    "value": ["0", {"tagName": "div", "children": ["0"]}],
+                    "value": [
+                        {
+                            "children": [
+                                "0",
+                                {
+                                    "children": [{"children": ["0"], "tagName": "div"}],
+                                    "tagName": "",
+                                },
+                            ],
+                            "tagName": "div",
+                        }
+                    ],
                 },
-                {"op": "add", "path": "/tagName", "value": "div"},
+                {"op": "add", "path": "/tagName", "value": ""},
             ],
         )
 
@@ -122,13 +141,17 @@ async def test_nested_component_layout():
         path, changes = await render_json_patch(layout)
 
         assert path == ""
-        assert changes == [{"op": "replace", "path": "/children/0", "value": "1"}]
+        assert changes == [
+            {"op": "replace", "path": "/children/0/children/0", "value": "1"}
+        ]
 
         child_set_state.current(1)
         path, changes = await render_json_patch(layout)
 
         assert path == "/children/1"
-        assert changes == [{"op": "replace", "path": "/children/0", "value": "1"}]
+        assert changes == [
+            {"op": "replace", "path": "/children/0/children/0", "value": "1"}
+        ]
 
 
 @pytest.mark.skipif(
@@ -202,16 +225,21 @@ async def test_layout_render_error_has_partial_update_without_error_message():
             assert_same_items(
                 patch.changes,
                 [
+                    {"op": "add", "path": "/tagName", "value": ""},
                     {
                         "op": "add",
                         "path": "/children",
                         "value": [
-                            {"tagName": "div", "children": ["hello"]},
-                            {"tagName": "", "error": ""},
-                            {"tagName": "div", "children": ["hello"]},
+                            {
+                                "children": [
+                                    {"children": [...], "tagName": ""},
+                                    {"error": "", "tagName": ""},
+                                    {"children": [...], "tagName": ""},
+                                ],
+                                "tagName": "div",
+                            }
                         ],
                     },
-                    {"op": "add", "path": "/tagName", "value": "div"},
                 ],
             )
 
@@ -233,9 +261,24 @@ async def test_render_raw_vdom_dict_with_single_component_object_as_children():
                 {
                     "op": "add",
                     "path": "/children",
-                    "value": [{"tagName": "div", "children": [{"tagName": "h1"}]}],
+                    "value": [
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {
+                                            "children": [{"tagName": "h1"}],
+                                            "tagName": "div",
+                                        }
+                                    ],
+                                    "tagName": "",
+                                }
+                            ],
+                            "tagName": "div",
+                        }
+                    ],
                 },
-                {"op": "add", "path": "/tagName", "value": "div"},
+                {"op": "add", "path": "/tagName", "value": ""},
             ],
         )
 
@@ -422,7 +465,7 @@ async def test_update_path_to_component_that_is_not_direct_child_is_correct():
         hook.latest.schedule_render()
 
         update = await render_json_patch(layout)
-        assert update.path == "/children/0/children/0"
+        assert update.path == "/children/0/children/0/children/0"
 
 
 async def test_log_on_dispatch_to_missing_event_handler(caplog):
