@@ -39,7 +39,7 @@ class ComponentType(Protocol):
         Usually the :func:`id` of this class or an underlying function.
         """
 
-    def render(self) -> VdomDict:
+    def render(self) -> VdomDict | ComponentType | None:
         """Render the component's :class:`VdomDict`."""
 
 
