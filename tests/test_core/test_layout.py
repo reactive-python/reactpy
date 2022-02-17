@@ -185,15 +185,30 @@ async def test_layout_render_error_has_partial_update_with_error_message():
                         "op": "add",
                         "path": "/children",
                         "value": [
-                            {"tagName": "div", "children": ["hello"]},
                             {
-                                "tagName": "",
-                                "error": "ValueError: error from bad child",
-                            },
-                            {"tagName": "div", "children": ["hello"]},
+                                "tagName": "div",
+                                "children": [
+                                    {
+                                        "tagName": "",
+                                        "children": [
+                                            {"tagName": "div", "children": ["hello"]}
+                                        ],
+                                    },
+                                    {
+                                        "tagName": "",
+                                        "error": "ValueError: error from bad child",
+                                    },
+                                    {
+                                        "tagName": "",
+                                        "children": [
+                                            {"tagName": "div", "children": ["hello"]}
+                                        ],
+                                    },
+                                ],
+                            }
                         ],
                     },
-                    {"op": "add", "path": "/tagName", "value": "div"},
+                    {"op": "add", "path": "/tagName", "value": ""},
                 ],
             )
 
