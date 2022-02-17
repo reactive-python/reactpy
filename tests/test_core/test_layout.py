@@ -148,7 +148,7 @@ async def test_nested_component_layout():
         child_set_state.current(1)
         path, changes = await render_json_patch(layout)
 
-        assert path == "/children/1"
+        assert path == "/children/0/children/1"
         assert changes == [
             {"op": "replace", "path": "/children/0/children/0", "value": "1"}
         ]
@@ -225,21 +225,31 @@ async def test_layout_render_error_has_partial_update_without_error_message():
             assert_same_items(
                 patch.changes,
                 [
-                    {"op": "add", "path": "/tagName", "value": ""},
                     {
                         "op": "add",
                         "path": "/children",
                         "value": [
                             {
                                 "children": [
-                                    {"children": [...], "tagName": ""},
+                                    {
+                                        "children": [
+                                            {"children": ["hello"], "tagName": "div"}
+                                        ],
+                                        "tagName": "",
+                                    },
                                     {"error": "", "tagName": ""},
-                                    {"children": [...], "tagName": ""},
+                                    {
+                                        "children": [
+                                            {"children": ["hello"], "tagName": "div"}
+                                        ],
+                                        "tagName": "",
+                                    },
                                 ],
                                 "tagName": "div",
                             }
                         ],
                     },
+                    {"op": "add", "path": "/tagName", "value": ""},
                 ],
             )
 
@@ -598,9 +608,14 @@ async def test_component_can_return_another_component_directly():
                 {
                     "op": "add",
                     "path": "/children",
-                    "value": [{"children": ["hello"], "tagName": "div"}],
+                    "value": [
+                        {
+                            "children": [{"children": ["hello"], "tagName": "div"}],
+                            "tagName": "",
+                        }
+                    ],
                 },
-                {"op": "add", "path": "/tagName", "value": "div"},
+                {"op": "add", "path": "/tagName", "value": ""},
             ],
         )
 
@@ -685,18 +700,31 @@ async def test_event_handler_deep_in_component_layout_is_garbage_collected():
 
 
 async def test_duplicate_sibling_keys_causes_error(caplog):
+    hook = HookCatcher()
+
     @idom.component
+    @hook.capture
     def ComponentReturnsDuplicateKeys():
         return idom.html.div(
-            idom.html.div(key="duplicate"), idom.html.div(key="duplicate")
+            idom.html.div(key="duplicate"),
+            idom.html.div(key="duplicate"),
         )
 
-    with assert_idom_logged(
-        error_type=ValueError,
-        match_error=r"Duplicate keys \['duplicate'\] at '/'",
-        clear_matched_records=True,
-    ):
-        with idom.Layout(ComponentReturnsDuplicateKeys()) as layout:
+    with idom.Layout(ComponentReturnsDuplicateKeys()) as layout:
+        with assert_idom_logged(
+            error_type=ValueError,
+            match_error=r"Duplicate keys \['duplicate'\] at '/children/0'",
+            clear_matched_records=True,
+        ):
+            await layout.render()
+
+        hook.latest.schedule_render()
+
+        with assert_idom_logged(
+            error_type=ValueError,
+            match_error=r"Duplicate keys \['duplicate'\] at '/children/0'",
+            clear_matched_records=True,
+        ):
             await layout.render()
 
 

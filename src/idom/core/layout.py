@@ -417,10 +417,18 @@ class Layout:
     def _render_model_children_without_old_state(
         self, new_state: _ModelState, raw_children: List[Any]
     ) -> None:
+        child_type_key_tuples = list(_process_child_type_and_key(raw_children))
+
+        new_keys = {item[2] for item in child_type_key_tuples}
+        if len(new_keys) != len(raw_children):
+            key_counter = Counter(item[2] for item in child_type_key_tuples)
+            duplicate_keys = [key for key, count in key_counter.items() if count > 1]
+            raise ValueError(
+                f"Duplicate keys {duplicate_keys} at {new_state.patch_path or '/'!r}"
+            )
+
         new_children = new_state.model.current["children"] = []
-        for index, (child, child_type, key) in enumerate(
-            _process_child_type_and_key(raw_children)
-        ):
+        for index, (child, child_type, key) in enumerate(child_type_key_tuples):
             if child_type is _DICT_TYPE:
                 child_state = _make_element_model_state(new_state, index, key)
                 self._render_model(None, child_state, child)

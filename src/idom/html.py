@@ -1,4 +1,8 @@
 """
+**Fragment**
+
+- :func:`_`
+
 **Dcument metadata**
 
 - :func:`base`
@@ -148,6 +152,8 @@
 
 - :func:`slot`
 - :func:`template`
+
+.. autofunction:: _
 """
 
 from __future__ import annotations
@@ -156,6 +162,14 @@ from typing import Any, Mapping
 
 from .core.proto import VdomDict
 from .core.vdom import coalesce_attributes_and_children, make_vdom_constructor
+
+
+def _(*children: Any) -> VdomDict:
+    """An HTML fragment - this element will not appear in the DOM"""
+    attributes, children = coalesce_attributes_and_children(children)
+    if attributes:
+        raise ValueError("Fragments cannot have attributes")
+    return {"tagName": "", "children": children}
 
 
 # Dcument metadata
