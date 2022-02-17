@@ -6,7 +6,7 @@ WORKDIR /app/
 # --------------
 RUN curl -sL https://deb.nodesource.com/setup_14.x  | bash -
 RUN apt-get install -yq nodejs build-essential
-RUN npm install -g npm@7.13.0
+RUN npm install -g npm@8.5.0
 
 # Create Python Venv
 # ------------------

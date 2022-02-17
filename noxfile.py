@@ -248,7 +248,16 @@ def test_docs(session: Session) -> None:
     )
     session.run("sphinx-build", "-b", "doctest", "docs/source", "docs/build")
     # ensure docker image build works too
-    session.run("docker", "build", ".", "--file", "docs/Dockerfile", external=True)
+    # session.run(
+    #    "docker",
+    #    "build",
+    #    ".",
+    #    "--file",
+    #    "docs/Dockerfile",
+    #    "--tag",
+    #   "idom-docs:latest",
+    #    external=True,
+    # )
 
 
 @do_first
