@@ -18,6 +18,7 @@ from typing import (
     Set,
     Tuple,
     TypeVar,
+    cast,
 )
 from uuid import uuid4
 from weakref import ref as weakref
@@ -31,7 +32,7 @@ from idom.utils import Ref
 
 from ._event_proxy import _wrap_in_warning_event_proxies
 from .hooks import LifeCycleHook
-from .proto import ComponentType, EventHandlerDict, VdomJson
+from .proto import ComponentType, EventHandlerDict, VdomDict, VdomJson
 from .vdom import validate_vdom_json
 
 
@@ -199,7 +200,15 @@ class Layout:
                 raw_model = component.render()
             finally:
                 life_cycle_hook.unset_current()
-            self._render_model(old_state, new_state, raw_model)
+
+            # wrap the model in a fragment (i.e. tagName="") to ensure components have
+            # a separate node in the model state tree. This could be removed if this
+            # components are given a node in the tree some other way
+            wrapper_model: VdomDict = {"tagName": ""}
+            if raw_model is not None:
+                wrapper_model["children"] = [raw_model]
+
+            self._render_model(old_state, new_state, wrapper_model)
         except Exception as error:
             logger.exception(f"Failed to render {component}")
             new_state.model.current = {
@@ -233,15 +242,6 @@ class Layout:
             new_state.key = new_state.model.current["key"] = raw_model["key"]
         if "importSource" in raw_model:
             new_state.model.current["importSource"] = raw_model["importSource"]
-
-        if old_state is not None and old_state.key != new_state.key:
-            self._unmount_model_states([old_state])
-            if new_state.is_component_state:
-                self._model_states_by_life_cycle_state_id[
-                    new_state.life_cycle_state.id
-                ] = new_state
-            old_state = None
-
         self._render_model_attributes(old_state, new_state, raw_model)
         self._render_model_children(old_state, new_state, raw_model.get("children", []))
 
@@ -371,6 +371,7 @@ class Layout:
                 new_children.append(new_child_state.model.current)
                 new_state.children_by_key[key] = new_child_state
             elif child_type is _COMPONENT_TYPE:
+                child = cast(ComponentType, child)
                 old_child_state = old_state.children_by_key.get(key)
                 if old_child_state is None:
                     new_child_state = _make_component_model_state(
@@ -381,8 +382,7 @@ class Layout:
                         self._rendering_queue.put,
                     )
                 elif old_child_state.is_component_state and (
-                    old_child_state.life_cycle_state.component.definition_id
-                    != child.definition_id
+                    old_child_state.life_cycle_state.component.type != child.type
                 ):
                     self._unmount_model_states([old_child_state])
                     old_child_state = None
@@ -411,10 +411,18 @@ class Layout:
     def _render_model_children_without_old_state(
         self, new_state: _ModelState, raw_children: List[Any]
     ) -> None:
+        child_type_key_tuples = list(_process_child_type_and_key(raw_children))
+
+        new_keys = {item[2] for item in child_type_key_tuples}
+        if len(new_keys) != len(raw_children):
+            key_counter = Counter(item[2] for item in child_type_key_tuples)
+            duplicate_keys = [key for key, count in key_counter.items() if count > 1]
+            raise ValueError(
+                f"Duplicate keys {duplicate_keys} at {new_state.patch_path or '/'!r}"
+            )
+
         new_children = new_state.model.current["children"] = []
-        for index, (child, child_type, key) in enumerate(
-            _process_child_type_and_key(raw_children)
-        ):
+        for index, (child, child_type, key) in enumerate(child_type_key_tuples):
             if child_type is _DICT_TYPE:
                 child_state = _make_element_model_state(new_state, index, key)
                 self._render_model(None, child_state, child)

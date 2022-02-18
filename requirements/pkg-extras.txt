@@ -12,6 +12,7 @@ uvicorn[standard] >=0.13.4
 
 # extra=flask
 flask<2.0
+markupsafe<2.1
 flask-cors
 flask-sockets
 

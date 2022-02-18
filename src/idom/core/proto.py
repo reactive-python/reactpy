@@ -32,15 +32,14 @@ class ComponentType(Protocol):
     key: Key | None
     """An identifier which is unique amongst a component's immediate siblings"""
 
-    @property
-    def definition_id(self) -> int:
-        """A globally unique identifier for this component definition.
+    type: type[Any] | Callable[..., Any]
+    """The function or class defining the behavior of this component
 
-        Usually the :func:`id` of this class or an underlying function.
-        """
+    This is used to see if two component instances share the same definition.
+    """
 
-    def render(self) -> VdomDict:
-        """Render the component's :class:`VdomDict`."""
+    def render(self) -> VdomDict | ComponentType | None:
+        """Render the component's view model."""
 
 
 _Self = TypeVar("_Self")
@@ -88,7 +87,7 @@ class _VdomDictOptional(TypedDict, total=False):
     children: Sequence[
         # recursive types are not allowed yet:
         # https://github.com/python/mypy/issues/731
-        Union[ComponentType, Dict[str, Any], str]
+        Union[ComponentType, Dict[str, Any], str, Any]
     ]
     attributes: VdomAttributes
     eventHandlers: EventHandlerDict  # noqa
