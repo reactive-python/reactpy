@@ -7,6 +7,23 @@ team are working on, or have feedback on how issues should be prioritized, feel 
 :discussion-type:`open up a discussion <question>`.
 
 
+0.36.3
+------
+
+Misc bug fixes along with a minor improvement that allows components to return ``None``
+to render nothing.
+
+**Closed Issues**
+
+- All child states wiped upon any child key change - :issue:`652`
+- Allow NoneType returns within components - :issue:`538`
+
+**Merged Pull Requests**
+
+- fix #652 - :pull:`672`
+- Fix 663 - :pull:`667`
+
+
 0.36.2
 ------
 

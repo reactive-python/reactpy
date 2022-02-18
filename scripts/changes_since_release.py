@@ -12,20 +12,20 @@ from common.github_utils import (
 
 SECTION_FORMAT_TEMPLATES = {
     "md": lambda title: f"# {title}",
-    "rst": lambda title: f"**{title}**",
+    "rst": lambda title: f"**{title}**\n",
     "text": lambda title: f"{title}\n{'-' * len(title)}",
 }
 
 
 ISSUE_FORMAT_TEMPLATES = {
     "md": lambda title, number, **_: f"- {title} - [#{number}](https://github.com/{REPO_NAME}/issues/{number})",
-    "rst": lambda title, number, **_: f"- {title} - :pull:`{number}`",
+    "rst": lambda title, number, **_: f"- {title} - :issue:`{number}`",
     "text": lambda title, number, **_: f"- {title} - #{number}",
 }
 
 PULL_REQUEST_FORMAT_TEMPLATES = {
     "md": lambda title, number, **_: f"- {title} - [#{number}](https://github.com/{REPO_NAME}/pull/{number})",
-    "rst": lambda title, number, **_: f"- {title} - :issue:`{number}`",
+    "rst": lambda title, number, **_: f"- {title} - :pull:`{number}`",
     "text": lambda title, number, **_: f"- {title} - #{number}",
 }
 
