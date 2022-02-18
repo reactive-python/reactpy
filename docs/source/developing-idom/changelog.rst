@@ -7,6 +7,31 @@ team are working on, or have feedback on how issues should be prioritized, feel 
 :discussion-type:`open up a discussion <question>`.
 
 
+0.36.2
+------
+
+Hot fix for newly introduced ``DeprecatedOption``:
+
+- :commit:`c146dfb264cbc3d2256a62efdfe9ccf62c795b01`
+
+
+0.36.1
+------
+
+Includes bug fixes and renames the configuration option ``IDOM_WED_MODULES_DIR`` to
+``IDOM_WEB_MODULES_DIR`` with a corresponding deprecation warning.
+
+**Closed Issues**
+
+- Fix Key Error When Cleaning Up Event Handlers - :issue:`640`
+- Update Script Tag Behavior - :issue:`628`
+
+**Merged Pull Requests**
+
+- mark old state as None if unmounting - :pull:`641`
+- rename IDOM_WED_MODULES_DIR to IDOM_WEB_MODULES_DIR - :pull:`638`
+
+
 0.36.0
 ------
 

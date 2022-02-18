@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import warnings
 from logging import getLogger
 from typing import Any, Callable, Generic, TypeVar, cast
 
@@ -89,3 +90,26 @@ class Option(Generic[_O]):
 
     def __repr__(self) -> str:
         return f"Option({self._name}={self.current!r})"
+
+
+class DeprecatedOption(Option[_O]):  # pragma: no cover
+    def __init__(self, new_opt: Option[_O], name: str) -> None:
+        # copy over attrs
+        attrs = new_opt.__dict__.copy()
+        attrs.pop("_current", None)
+        self.__dict__.update(new_opt.__dict__)
+        # then set the ones needed here
+        self._name = name
+        self._new_opt = new_opt
+
+    @property  # type: ignore
+    def _current(self) -> _O:  # type: ignore
+        warnings.warn(
+            f"{self.name!r} has been renamed to {self._new_opt.name!r}",
+            DeprecationWarning,
+        )
+        return self._new_opt.current
+
+    @_current.setter
+    def _current(self, new: _O) -> None:
+        self._new_opt.current = new

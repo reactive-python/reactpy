@@ -32,6 +32,13 @@ class ComponentType(Protocol):
     key: Key | None
     """An identifier which is unique amongst a component's immediate siblings"""
 
+    @property
+    def definition_id(self) -> int:
+        """A globally unique identifier for this component definition.
+
+        Usually the :func:`id` of this class or an underlying function.
+        """
+
     def render(self) -> VdomDict:
         """Render the component's :class:`VdomDict`."""
 

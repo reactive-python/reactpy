@@ -117,7 +117,7 @@ def test_script_from_src(driver, driver_wait, display):
     display(HasScript)
 
     for i in range(1, 4):
-        script_file = config.IDOM_WED_MODULES_DIR.current / file_name_template.format(
+        script_file = config.IDOM_WEB_MODULES_DIR.current / file_name_template.format(
             src_id=i
         )
         script_file.write_text(

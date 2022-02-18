@@ -355,17 +355,37 @@ class Layout:
                 else:
                     if old_child_state.is_component_state:
                         self._unmount_model_states([old_child_state])
-                    new_child_state = _update_element_model_state(
-                        old_child_state,
-                        new_state,
-                        index,
-                    )
+                        new_child_state = _make_element_model_state(
+                            new_state,
+                            index,
+                            key,
+                        )
+                        old_child_state = None
+                    else:
+                        new_child_state = _update_element_model_state(
+                            old_child_state,
+                            new_state,
+                            index,
+                        )
                 self._render_model(old_child_state, new_child_state, child)
                 new_children.append(new_child_state.model.current)
                 new_state.children_by_key[key] = new_child_state
             elif child_type is _COMPONENT_TYPE:
                 old_child_state = old_state.children_by_key.get(key)
                 if old_child_state is None:
+                    new_child_state = _make_component_model_state(
+                        new_state,
+                        index,
+                        key,
+                        child,
+                        self._rendering_queue.put,
+                    )
+                elif old_child_state.is_component_state and (
+                    old_child_state.life_cycle_state.component.definition_id
+                    != child.definition_id
+                ):
+                    self._unmount_model_states([old_child_state])
+                    old_child_state = None
                     new_child_state = _make_component_model_state(
                         new_state,
                         index,

@@ -28,7 +28,7 @@ from weakref import ref
 from selenium.webdriver import Chrome
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from idom.config import IDOM_WED_MODULES_DIR
+from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.events import EventHandler, to_event_handler_function
 from idom.core.hooks import LifeCycleHook, current_hook
 from idom.server.prefab import hotswap_server
@@ -433,5 +433,5 @@ class StaticEventHandler:
 
 
 def clear_idom_web_modules_dir() -> None:
-    for path in IDOM_WED_MODULES_DIR.current.iterdir():
+    for path in IDOM_WEB_MODULES_DIR.current.iterdir():
         shutil.rmtree(path) if path.is_dir() else path.unlink()

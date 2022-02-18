@@ -14,10 +14,3 @@ body:
     description: Describe what ought to be done, and why that will address the reasons for action mentioned above.
   validations:
     required: false
-- type: textarea
-  attributes:
-    label: Work Items
-    description: |
-      An itemized list or detailed description of the work to be done to based on the proposed actions above.
-  validations:
-    required: false

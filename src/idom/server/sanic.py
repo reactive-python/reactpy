@@ -13,7 +13,7 @@ from sanic import Blueprint, Sanic, request, response
 from sanic_cors import CORS
 from websockets import WebSocketCommonProtocol
 
-from idom.config import IDOM_WED_MODULES_DIR
+from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.dispatcher import (
     RecvCoroutine,
     SendCoroutine,
@@ -186,7 +186,7 @@ def _setup_common_routes(blueprint: Blueprint, config: Config) -> None:
 
     if config["serve_static_files"]:
         blueprint.static("/client", str(CLIENT_BUILD_DIR))
-        blueprint.static("/modules", str(IDOM_WED_MODULES_DIR.current))
+        blueprint.static("/modules", str(IDOM_WEB_MODULES_DIR.current))
 
         if config["redirect_root_to_index"]:
 
