@@ -39,7 +39,7 @@ class Component:
 
     def __init__(
         self,
-        function: Callable[..., Union[ComponentType, VdomDict]],
+        function: Callable[..., ComponentType | VdomDict | None],
         key: Optional[Any],
         args: Tuple[Any, ...],
         kwargs: Dict[str, Any],

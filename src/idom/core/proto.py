@@ -87,7 +87,7 @@ class _VdomDictOptional(TypedDict, total=False):
     children: Sequence[
         # recursive types are not allowed yet:
         # https://github.com/python/mypy/issues/731
-        Union[ComponentType, Dict[str, Any], str]
+        Union[ComponentType, Dict[str, Any], str, Any]
     ]
     attributes: VdomAttributes
     eventHandlers: EventHandlerDict  # noqa

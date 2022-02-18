@@ -166,10 +166,10 @@ from .core.vdom import coalesce_attributes_and_children, make_vdom_constructor
 
 def _(*children: Any) -> VdomDict:
     """An HTML fragment - this element will not appear in the DOM"""
-    attributes, children = coalesce_attributes_and_children(children)
+    attributes, coalesced_children = coalesce_attributes_and_children(children)
     if attributes:
         raise TypeError("Fragments cannot have attributes")
-    return {"tagName": "", "children": children}
+    return {"tagName": "", "children": coalesced_children}
 
 
 # Dcument metadata
