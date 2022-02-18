@@ -32,7 +32,7 @@ from idom.utils import Ref
 
 from ._event_proxy import _wrap_in_warning_event_proxies
 from .hooks import LifeCycleHook
-from .proto import ComponentType, EventHandlerDict, VdomJson
+from .proto import ComponentType, EventHandlerDict, VdomDict, VdomJson
 from .vdom import validate_vdom_json
 
 
@@ -204,7 +204,7 @@ class Layout:
             # wrap the model in a fragment (i.e. tagName="") to ensure components have
             # a separate node in the model state tree. This could be removed if this
             # components are given a node in the tree some other way
-            wrapper_model = {"tagName": ""}
+            wrapper_model: VdomDict = {"tagName": ""}
             if raw_model is not None:
                 wrapper_model["children"] = [raw_model]
 
