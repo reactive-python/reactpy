@@ -168,7 +168,7 @@ def _(*children: Any) -> VdomDict:
     """An HTML fragment - this element will not appear in the DOM"""
     attributes, children = coalesce_attributes_and_children(children)
     if attributes:
-        raise ValueError("Fragments cannot have attributes")
+        raise TypeError("Fragments cannot have attributes")
     return {"tagName": "", "children": children}
 
 

@@ -8,28 +8,26 @@ from .proto import ComponentType, VdomDict
 
 
 def component(
-    function: Callable[..., Union[ComponentType, VdomDict]]
+    function: Callable[..., Union[ComponentType, VdomDict | None]]
 ) -> Callable[..., "Component"]:
-    """A decorator for defining an :class:`Component`.
+    """A decorator for defining a new component.
 
     Parameters:
-        function: The function that will render a :class:`VdomDict`.
+        function: The component's :meth:`idom.core.proto.ComponentType.render` function.
     """
     sig = inspect.signature(function)
-    key_is_kwarg = "key" in sig.parameters and sig.parameters["key"].kind in (
+
+    if "key" in sig.parameters and sig.parameters["key"].kind in (
         inspect.Parameter.KEYWORD_ONLY,
         inspect.Parameter.POSITIONAL_OR_KEYWORD,
-    )
-    if key_is_kwarg:
+    ):
         raise TypeError(
             f"Component render function {function} uses reserved parameter 'key'"
         )
 
     @wraps(function)
     def constructor(*args: Any, key: Optional[Any] = None, **kwargs: Any) -> Component:
-        if key_is_kwarg:
-            kwargs["key"] = key
-        return Component(function, key, args, kwargs)
+        return Component(function, key, args, kwargs, sig)
 
     return constructor
 
@@ -37,7 +35,7 @@ def component(
 class Component:
     """An object for rending component models."""
 
-    __slots__ = "__weakref__", "_func", "_args", "_kwargs", "key"
+    __slots__ = "__weakref__", "_func", "_args", "_kwargs", "_sig", "key", "type"
 
     def __init__(
         self,
@@ -45,28 +43,25 @@ class Component:
         key: Optional[Any],
         args: Tuple[Any, ...],
         kwargs: Dict[str, Any],
+        sig: inspect.Signature,
     ) -> None:
-        self._args = args
-        self._func = function
-        self._kwargs = kwargs
         self.key = key
+        self.type = function
+        self._args = args
+        self._kwargs = kwargs
+        self._sig = sig
 
-    @property
-    def definition_id(self) -> int:
-        return id(self._func)
-
-    def render(self) -> VdomDict:
-        return self._func(*self._args, **self._kwargs)
+    def render(self) -> VdomDict | ComponentType | None:
+        return self.type(*self._args, **self._kwargs)
 
     def __repr__(self) -> str:
-        sig = inspect.signature(self._func)
         try:
-            args = sig.bind(*self._args, **self._kwargs).arguments
+            args = self._sig.bind(*self._args, **self._kwargs).arguments
         except TypeError:
-            return f"{self._func.__name__}(...)"
+            return f"{self.type.__name__}(...)"
         else:
             items = ", ".join(f"{k}={v!r}" for k, v in args.items())
             if items:
-                return f"{self._func.__name__}({id(self):02x}, {items})"
+                return f"{self.type.__name__}({id(self):02x}, {items})"
             else:
-                return f"{self._func.__name__}({id(self):02x})"
+                return f"{self.type.__name__}({id(self):02x})"
