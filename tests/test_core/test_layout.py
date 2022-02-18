@@ -13,13 +13,14 @@ from idom.config import IDOM_DEBUG_MODE
 from idom.core.component import component
 from idom.core.dispatcher import render_json_patch
 from idom.core.hooks import use_effect, use_state
-from idom.core.layout import LayoutEvent
+from idom.core.layout import Layout, LayoutEvent
 from idom.testing import (
     HookCatcher,
     StaticEventHandler,
     assert_idom_logged,
     capture_idom_logs,
 )
+from idom.utils import Ref
 from tests.assert_utils import assert_same_items
 
 
@@ -94,6 +95,15 @@ async def test_simple_layout():
         assert changes == [
             {"op": "replace", "path": "/children/0/tagName", "value": "table"}
         ]
+
+
+async def test_component_can_return_none():
+    @idom.component
+    def SomeComponent():
+        return None
+
+    with idom.Layout(SomeComponent()) as layout:
+        assert (await layout.render()).new == {"tagName": ""}
 
 
 async def test_nested_component_layout():
@@ -716,14 +726,18 @@ async def test_event_handler_deep_in_component_layout_is_garbage_collected():
 
 async def test_duplicate_sibling_keys_causes_error(caplog):
     hook = HookCatcher()
+    should_error = True
 
     @idom.component
     @hook.capture
     def ComponentReturnsDuplicateKeys():
-        return idom.html.div(
-            idom.html.div(key="duplicate"),
-            idom.html.div(key="duplicate"),
-        )
+        if should_error:
+            return idom.html.div(
+                idom.html.div(key="duplicate"),
+                idom.html.div(key="duplicate"),
+            )
+        else:
+            return idom.html.div()
 
     with idom.Layout(ComponentReturnsDuplicateKeys()) as layout:
         with assert_idom_logged(
@@ -735,6 +749,11 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
 
         hook.latest.schedule_render()
 
+        should_error = False
+        await layout.render()
+
+        should_error = True
+        hook.latest.schedule_render()
         with assert_idom_logged(
             error_type=ValueError,
             match_error=r"Duplicate keys \['duplicate'\] at '/children/0'",
@@ -838,9 +857,9 @@ async def test_elements_and_components_with_the_same_key_can_be_interchanged():
     def Root():
         toggle, set_toggle.current = use_toggle()
         if toggle:
-            return idom.html.div(SomeComponent("x"))
+            return SomeComponent("x")
         else:
-            return idom.html.div(idom.html.div(SomeComponent("y")))
+            return idom.html.div(SomeComponent("y"))
 
     @idom.component
     def SomeComponent(name):
@@ -1063,3 +1082,82 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
             await layout.render()
             assert effect_calls_without_state == ["some-key", "key-0"]
             did_call_effect.clear()
+
+
+async def test_changing_key_of_component_resets_state():
+    set_key = Ref()
+    did_init_state = Ref(0)
+    hook = HookCatcher()
+
+    @component
+    @hook.capture
+    def Root():
+        key, set_key.current = use_state("key-1")
+        return Child(key=key)
+
+    @component
+    def Child():
+        use_state(lambda: did_init_state.set_current(did_init_state.current + 1))
+
+    with Layout(Root()) as layout:
+        await layout.render()
+        assert did_init_state.current == 1
+
+        set_key.current("key-2")
+        await layout.render()
+        assert did_init_state.current == 2
+
+        hook.latest.schedule_render()
+        await layout.render()
+        assert did_init_state.current == 2
+
+
+async def test_changing_event_handlers_in_the_next_render():
+    set_event_name = Ref()
+    event_handler = StaticEventHandler()
+    did_trigger = Ref(False)
+
+    @component
+    def Root():
+        event_name, set_event_name.current = use_state("first")
+        return html.button(
+            {event_name: event_handler.use(lambda: did_trigger.set_current(True))}
+        )
+
+    with Layout(Root()) as layout:
+        await layout.render()
+        await layout.deliver(LayoutEvent(event_handler.target, []))
+        assert did_trigger.current
+        did_trigger.current = False
+
+        set_event_name.current("second")
+        await layout.render()
+        await layout.deliver(LayoutEvent(event_handler.target, []))
+        assert did_trigger.current
+        did_trigger.current = False
+
+
+async def test_change_element_to_string_causes_unmount():
+    set_toggle = Ref()
+    did_unmount = Ref(False)
+
+    @component
+    def Root():
+        toggle, set_toggle.current = use_toggle(True)
+        if toggle:
+            return html.div(Child())
+        else:
+            return html.div("some-string")
+
+    @component
+    def Child():
+        use_effect(lambda: lambda: did_unmount.set_current(True))
+
+    with Layout(Root()) as layout:
+        await layout.render()
+
+        set_toggle.current()
+
+        await layout.render()
+
+        assert did_unmount.current

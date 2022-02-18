@@ -142,3 +142,12 @@ def test_script_may_only_have_one_child():
 def test_child_of_script_must_be_string():
     with pytest.raises(ValueError, match="The child of a 'script' must be a string"):
         html.script(1)
+
+
+def test_simple_fragment():
+    assert html._(1, 2, 3) == {"tagName": "", "children": [1, 2, 3]}
+
+
+def test_fragment_can_have_no_attributes():
+    with pytest.raises(TypeError, match="Fragments cannot have attributes"):
+        html._({"some-attribute": 1})
