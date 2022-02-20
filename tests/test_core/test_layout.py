@@ -1161,3 +1161,81 @@ async def test_change_element_to_string_causes_unmount():
         await layout.render()
 
         assert did_unmount.current
+
+
+class ComponentShouldRender:
+    def __init__(self, child, should_render):
+        self.child = child or html.div()
+        self.should_render = should_render
+        self.key = None
+        self.type = self.__class__
+
+    def render(self):
+        return html.div(self.child)
+
+
+async def test_component_should_render_always_true():
+    render_count = idom.Ref(0)
+    root_hook = HookCatcher()
+
+    @idom.component
+    @root_hook.capture
+    def Root():
+        return ComponentShouldRender(SomeComponent(), should_render=lambda new: True)
+
+    @idom.component
+    def SomeComponent():
+        render_count.current += 1
+        return html.div()
+
+    with idom.Layout(Root()) as layout:
+        for _ in range(4):
+            await layout.render()
+            root_hook.latest.schedule_render()
+
+    assert render_count.current == 4
+
+
+async def test_component_should_render_always_false():
+    render_count = idom.Ref(0)
+    root_hook = HookCatcher()
+
+    @idom.component
+    @root_hook.capture
+    def Root():
+        return ComponentShouldRender(SomeComponent(), should_render=lambda new: False)
+
+    @idom.component
+    def SomeComponent():
+        render_count.current += 1
+        return html.div()
+
+    with idom.Layout(Root()) as layout:
+        for _ in range(4):
+            await layout.render()
+            root_hook.latest.schedule_render()
+
+    assert render_count.current == 1
+
+
+async def test_component_error_in_should_render_is_handled_gracefully():
+    root_hook = HookCatcher()
+
+    @idom.component
+    @root_hook.capture
+    def Root():
+        def bad_should_render(new):
+            raise ValueError("The error message")
+
+        return ComponentShouldRender(html.div(), should_render=bad_should_render)
+
+    with assert_idom_logged(
+        match_message=r".* component failed to check if .* should be rendered",
+        error_type=ValueError,
+        match_error="The error message",
+        clear_matched_records=True,
+    ):
+        with idom.Layout(Root()) as layout:
+            await layout.render()
+            root_hook.latest.schedule_render()
+            await layout.render()

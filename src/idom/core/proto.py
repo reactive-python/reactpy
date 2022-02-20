@@ -25,6 +25,9 @@ ComponentConstructor = Callable[..., "ComponentType"]
 Key = Union[str, int]
 
 
+_OwnType = TypeVar("_OwnType")
+
+
 @runtime_checkable
 class ComponentType(Protocol):
     """The expected interface for all component-like objects"""
@@ -40,6 +43,9 @@ class ComponentType(Protocol):
 
     def render(self) -> VdomDict | ComponentType | None:
         """Render the component's view model."""
+
+    def should_render(self: _OwnType, new: _OwnType) -> bool:
+        """Whether the new component instance should be rendered."""
 
 
 _Self = TypeVar("_Self")
