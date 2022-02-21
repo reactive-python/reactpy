@@ -326,17 +326,17 @@ class HookCatcher:
     Example:
         .. code-block::
 
-            hooks = HookCatcher(index_by_kwarg="key")
+            hooks = HookCatcher(index_by_kwarg="thing")
 
             @idom.component
             @hooks.capture
-            def MyComponent(key):
+            def MyComponent(thing):
                 ...
 
-            ... # render the component
+            ...  # render the component
 
-            # grab the last render of where MyComponent(key='some_key')
-            hooks.index["some_key"]
+            # grab the last render of where MyComponent(thing='something')
+            hooks.index["something"]
             # or grab the hook from the component's last render
             hooks.latest
 

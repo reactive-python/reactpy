@@ -1,13 +1,15 @@
-Shared Component State
-======================
+Sharing Component State
+=======================
 
+.. note::
 
-Sometimes you want the state of two components to always change together. To do it, you
-need to be able to share state between those two components, to share state between
-components move state to the nearest parent. In React world this is known as "lifting
-state up" and it is a very common thing to do. Let's look at 2 examples, also from
-`React <https://beta.reactjs.org/learn/sharing-state-between-components>`__,
-but translated to IDOM.
+    Parts of this document are still under construction 🚧
+
+Sometimes, you want the state of two components to always change together. To do it,
+remove state from both of them, move it to their closest common parent, and then pass it
+down to them via props. This is known as “lifting state up”, and it’s one of the most
+common things you will do writing code with IDOM.
+
 
 Synced Inputs
 -------------
@@ -17,6 +19,7 @@ state. The state is shared via the parent component ``SyncedInputs``. Check the 
 and ``set_value`` variables.
 
 .. idom:: _examples/synced_inputs
+
 
 Filterable  List
 ----------------

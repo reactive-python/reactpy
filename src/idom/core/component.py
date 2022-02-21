@@ -9,7 +9,7 @@ from .proto import ComponentType, VdomDict
 
 def component(
     function: Callable[..., Union[ComponentType, VdomDict | None]]
-) -> Callable[..., "Component"]:
+) -> Callable[..., Component]:
     """A decorator for defining a new component.
 
     Parameters:
@@ -53,6 +53,9 @@ class Component:
 
     def render(self) -> VdomDict | ComponentType | None:
         return self.type(*self._args, **self._kwargs)
+
+    def should_render(self, new: Component) -> bool:
+        return True
 
     def __repr__(self) -> str:
         try:

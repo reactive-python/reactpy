@@ -1,6 +1,6 @@
 .. _Structuring Your State:
 
-Structuring Your State 🚧
+How to Structure State 🚧
 =========================
 
 .. note::
