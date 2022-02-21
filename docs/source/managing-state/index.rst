@@ -4,9 +4,12 @@ Managing State
 .. toctree::
     :hidden:
 
-    structuring-your-state/index
-    shared-component-state/index
+    how-to-structure-state/index
+    sharing-component-state/index
     when-and-how-to-reset-state/index
+    simplifying-updates-with-reducers/index
+    deeply-sharing-state-with-contexts/index
+    combining-contexts-and-reducers/index
 
 .. dropdown:: :octicon:`bookmark-fill;2em` What You'll Learn
     :color: info
@@ -15,14 +18,15 @@ Managing State
 
     .. grid:: 1 2 2 2
 
-        .. grid-item-card:: :octicon:`code-square` Structuring Your State
-            :link: structuring-your-state/index
+        .. grid-item-card:: :octicon:`organization` How to Structure State
+            :link: how-to-structure-state/index
             :link-type: doc
 
-            Make it easy to reason about your application by organizing its state.
+            Make it easy to reason about your application with strategies for organizing
+            state.
 
-        .. grid-item-card:: :octicon:`link` Shared Component State
-            :link: shared-component-state/index
+        .. grid-item-card:: :octicon:`link` Sharing Component State
+            :link: sharing-component-state/index
             :link-type: doc
 
             Allow components to vary vary together, by lifting state into common
@@ -35,8 +39,37 @@ Managing State
             Control if and how state is preserved by understanding it's relationship to
             the "UI tree".
 
+        .. grid-item-card:: :octicon:`plug` Simplifying Updates with Reducers
+            :link: simplifying-updates-with-reducers/index
+            :link-type: doc
 
-Section 4: Shared Component State
+            Consolidate state update logic outside your component in a single function,
+            called a “reducer".
+
+        .. grid-item-card:: :octicon:`broadcast` Deeply Sharing State with Contexts
+            :link: deeply-sharing-state-with-contexts/index
+            :link-type: doc
+
+            Instead of passing shared state down deep component trees, bring state into
+            "contexts" instead.
+
+        .. grid-item-card:: :octicon:`rocket` Combining Contexts and Reducers
+            :link: combining-contexts-and-reducers/index
+            :link-type: doc
+
+            You can combine reducers and context together to manage state of a complex
+            screen.
+
+
+Section 1: How to Structure State
+---------------------------------
+
+.. note::
+
+    Under construction 🚧
+
+
+Section 2: Shared Component State
 ---------------------------------
 
 Sometimes, you want the state of two components to always change together. To do it,
@@ -49,13 +82,46 @@ state, the state represents the food name. Note how the component ``Table`` gets
 at each change of state. The component is observing the state and reacting to state
 changes automatically, just like it would do in React.
 
-.. idom:: shared-component-state/_examples/synced_inputs
+.. idom:: sharing-component-state/_examples/synced_inputs
 
 .. card::
-    :link: shared-component-state/index
+    :link: sharing-component-state/index
     :link-type: doc
 
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Allow components to vary vary together, by lifting state into common parents.
+
+
+Section 3: When and How to Reset State
+--------------------------------------
+
+.. note::
+
+    Under construction 🚧
+
+
+Section 4: Simplifying Updates with Reducers
+--------------------------------------------
+
+.. note::
+
+    Under construction 🚧
+
+
+Section 5: Deeply Sharing State with Contexts
+---------------------------------------------
+
+.. note::
+
+    Under construction 🚧
+
+
+
+Section 6: Combining Contexts and Reducers
+------------------------------------------
+
+.. note::
+
+    Under construction 🚧
