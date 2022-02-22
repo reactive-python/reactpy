@@ -123,7 +123,7 @@ combine these elements into reusable :ref:`"components" <your first components>`
 sections that follow you'll learn how these UI elements are created and organized into
 components. Then, you'll use this knowledge to create interfaces from raw data:
 
-.. idom:: creating-interfaces/_examples/todo_list_with_keys
+.. idom:: creating-interfaces/rendering-data/_examples/todo_list_with_keys
 
 .. card::
     :link: creating-interfaces/index

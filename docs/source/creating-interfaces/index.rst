@@ -4,9 +4,9 @@ Creating Interfaces
 .. toctree::
     :hidden:
 
-    html-with-idom
-    your-first-components
-    rendering-data
+    html-with-idom/index
+    your-first-components/index
+    rendering-data/index
 
 .. dropdown:: :octicon:`bookmark-fill;2em` What You'll Learn
     :color: info
@@ -16,20 +16,20 @@ Creating Interfaces
     .. grid:: 1 2 2 2
 
         .. grid-item-card:: :octicon:`code-square` HTML with IDOM
-            :link: html-with-idom
+            :link: html-with-idom/index
             :link-type: doc
 
             Construct HTML layouts from the basic units of user interface functionality.
 
         .. grid-item-card:: :octicon:`package` Your First Components
-            :link: your-first-components
+            :link: your-first-components/index
             :link-type: doc
 
             Define reusable building blocks that it easier to construct complex
             interfaces.
 
         .. grid-item-card:: :octicon:`database` Rendering Data
-            :link: rendering-data
+            :link: rendering-data/index
             :link-type: doc
 
             Use data to organize and render HTML elements and components.
@@ -75,7 +75,7 @@ To recreate the same thing in IDOM you would write:
     )
 
 .. card::
-    :link: html-with-idom
+    :link: html-with-idom/index
     :link-type: doc
 
     :octicon:`book` Read More
@@ -94,10 +94,10 @@ create them we need to add an ``@component`` `decorator
 <https://realpython.com/primer-on-python-decorators/>`__. To see what this looks like in
 practice we'll quickly make a ``Photo`` component:
 
-.. idom:: _examples/simple_photo
+.. idom:: your-first-components/_examples/simple_photo
 
 .. card::
-    :link: your-first-components
+    :link: your-first-components/index
     :link-type: doc
 
     :octicon:`book` Read More
@@ -116,10 +116,10 @@ from data in this way must be orgnized with :ref:`"keys" <Organizing Items With 
 One case where we might want to do this is if items in a todo list come from a list of
 data that we want to sort and filter:
 
-.. idom:: _examples/todo_list_with_keys
+.. idom:: rendering-data/_examples/todo_list_with_keys
 
 .. card::
-    :link: rendering-data
+    :link: rendering-data/index
     :link-type: doc
 
     :octicon:`book` Read More

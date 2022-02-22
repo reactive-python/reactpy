@@ -42,6 +42,61 @@ component once and use it wherever and however you need to:
 .. idom:: _examples/nested_photos
 
 
+Return a Single Root Element
+----------------------------
+
+Components must return a "single root element". That one root element may have children,
+but you cannot for example, return a list of element from a component and expect it to
+be rendered correctly. If you want to return multiple elements you must wrap them in
+something like a :func:`html.div <idom.html.div>`:
+
+.. idom:: _examples/wrap_in_div
+
+If don't want to add an extra ``div`` you can use a "fragment" instead with the
+:func:`html._ <idom.html._>` function:
+
+.. idom:: _examples/wrap_in_fragment
+
+Fragments allow you to group elements together without leaving any trace in the UI. For
+example, the first code sample written with IDOM will produce the second HTML code
+block:
+
+.. grid:: 1 2 2 2
+    :margin: 0
+    :padding: 0
+
+    .. grid-item::
+
+        .. testcode::
+
+            html.ul(
+                html._(
+                    html.li("Group 1 Item 1"),
+                    html.li("Group 1 Item 2"),
+                    html.li("Group 1 Item 3"),
+                ),
+                html._(
+                    html.li("Group 2 Item 1"),
+                    html.li("Group 2 Item 2"),
+                    html.li("Group 2 Item 3"),
+                )
+            )
+
+    .. grid-item::
+
+        .. code-block:: html
+
+            <ul>
+              <li>Group 1 Item 1</li>
+              <li>Group 1 Item 2</li>
+              <li>Group 1 Item 3</li>
+              <li>Group 2 Item 1</li>
+              <li>Group 2 Item 2</li>
+              <li>Group 2 Item 3</li>
+            </ul>
+
+
+
 Parametrizing Components
 ------------------------
 
