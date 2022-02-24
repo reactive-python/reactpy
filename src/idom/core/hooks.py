@@ -690,6 +690,7 @@ class LifeCycleHook:
 
         if self._schedule_render_later:
             self._schedule_render()
+        self._schedule_render_later = False
 
     def affect_component_will_unmount(self) -> None:
         """The component is about to be removed from the layout"""
