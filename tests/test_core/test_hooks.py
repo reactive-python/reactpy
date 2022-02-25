@@ -1161,5 +1161,5 @@ async def test_set_state_during_render():
         assert render_count.current == 2
 
         # there should be no more renders to perform
-        with pytest.raises(asyncio.exceptions.TimeoutError):
+        with pytest.raises(asyncio.TimeoutError):
             await asyncio.wait_for(layout.render(), timeout=0.1)
