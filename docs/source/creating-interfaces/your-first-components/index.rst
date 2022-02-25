@@ -69,6 +69,8 @@ block:
 
         .. testcode::
 
+            from idom import html
+
             html.ul(
                 html._(
                     html.li("Group 1 Item 1"),
