@@ -1,20 +1,19 @@
 HTML With IDOM
 ==============
 
-In a typical Python-base web application the resonsibility of defining the view along
+In a typical Python-base web application the responsibility of defining the view along
 with its backing data and logic are distributed between a client and server
 respectively. With IDOM, both these tasks are centralized in a single place. This is
 done by allowing HTML interfaces to be constructed in Python. Take a look at the two
-code examples below. The one on the left shows how to make a basic title and todo list
-using standard HTML, the one of the right uses IDOM in Python, and below is a view of
-what the HTML would look like if displayed:
+code examples below. The first one shows how to make a basic title and todo list using
+standard HTML, the second uses IDOM in Python, and below is a view of what the HTML
+would look like if displayed:
 
 .. grid:: 1 1 2 2
     :margin: 0
     :padding: 0
 
     .. grid-item::
-        :columns: 6
 
         .. code-block:: html
 
@@ -25,7 +24,6 @@ what the HTML would look like if displayed:
             </ul>
 
     .. grid-item::
-        :columns: 6
 
         .. testcode::
 
@@ -86,7 +84,7 @@ to specify a URL to its ``src`` and use some ``style`` to modify and position it
 
 In IDOM we add these attributes to elements using dictionaries. There are some notable
 differences though. The biggest being the fact that all names in IDOM use ``camelCase``
-instead of dash-sepearted words. For example, ``margin-left`` becomes ``marginLeft``.
+instead of dash-separated words. For example, ``margin-left`` becomes ``marginLeft``.
 Additionally, instead of specifying ``style`` using a string, we use a dictionary:
 
 .. testcode::
