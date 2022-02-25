@@ -7,7 +7,9 @@ import idom
 from idom import html
 from idom.core.dispatcher import render_json_patch
 from idom.core.hooks import COMPONENT_DID_RENDER_EFFECT, LifeCycleHook, current_hook
+from idom.core.layout import Layout
 from idom.testing import HookCatcher, assert_idom_logged
+from idom.utils import Ref
 from tests.assert_utils import assert_same_items
 
 
@@ -1139,3 +1141,25 @@ async def test_error_in_effect_cleanup_is_gracefully_handled():
             await layout.render()
             component_hook.latest.schedule_render()
             await layout.render()  # no error
+
+
+async def test_set_state_during_render():
+    render_count = Ref(0)
+
+    @idom.component
+    def SetStateDuringRender():
+        render_count.current += 1
+        state, set_state = idom.use_state(0)
+        if not state:
+            set_state(state + 1)
+        return html.div(state)
+
+    with Layout(SetStateDuringRender()) as layout:
+        await layout.render()
+        assert render_count.current == 1
+        await layout.render()
+        assert render_count.current == 2
+
+        # there should be no more renders to perform
+        with pytest.raises(asyncio.exceptions.TimeoutError):
+            await asyncio.wait_for(layout.render(), timeout=0.1)
