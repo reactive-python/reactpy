@@ -241,7 +241,7 @@ The following are currently being used:
 - Black_ - an opinionated code formatter
 - Flake8_ - a style guide enforcement tool
 - ISort_ - a utility for alphabetically sorting imports
-- Prettier_ - a tool for autimatically formatting Javascript code
+- Prettier_ - a tool for automatically formatting Javascript code
 
 The most strict measure of quality enforced on the codebase is 100% coverage. This means
 that every line of coded added to IDOM requires a test case that exercises it. This
@@ -339,7 +339,7 @@ To create the release tag you can run the following command:
 Last, you must create a `"Release"
 <https://docs.github.com/en/github/administering-a-repository/releasing-projects-on-github/managing-releases-in-a-repository>`__
 in GitHub. Because we pushed a tag using the command above, there should already be a
-saved draft which needs a title and desription. The title should simply be the version
+saved draft which needs a title and description. The title should simply be the version
 (same as the tag), and the description should simply use GitHub's "Auto-generated
 release notes".
 

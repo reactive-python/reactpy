@@ -33,7 +33,7 @@ Added:
 
 ----
 
-Releases below do not use the "Keep a Changelog" style guidlines.
+Releases below do not use the "Keep a Changelog" style guidelines.
 
 ----
 
@@ -122,7 +122,7 @@ for elements at the root did not trigger unmounts.
 ------
 
 As part of :pull:`614`, elements which changed type were not deeply unmounted. This
-behavior is probably undesireable though since the state for children of the element
+behavior is probably undesirable though since the state for children of the element
 in question would persist (probably unexpectedly).
 
 **Pull Requests**
@@ -166,7 +166,7 @@ this marker file.
 The highlight of this release is that the default :ref:`"key" <Organizing Items With
 Keys>` of all elements will be their index amongst their neighbors. Previously this
 behavior could be engaged by setting ``IDOM_FEATURE_INDEX_AS_DEFAULT_KEY=1`` when
-running IDOM. In this release though, you will need to explicitely turn off this feature
+running IDOM. In this release though, you will need to explicitly turn off this feature
 (i.e. ``=0``) to return to the old behavior. With this change, some may notice
 additional error logs which warn that:
 
@@ -230,7 +230,7 @@ event dictionary. As part of this change we also add ``event["currentTarget"]`` 
 0.33.3
 ------
 
-Contains a small number of bug fixes and improvements. The most signicifact change is
+Contains a small number of bug fixes and improvements. The most significant change is
 the addition of a warning stating that `IDOM_FEATURE_INDEX_AS_DEFAULT_KEY=1` will become
 the default in a future release. Beyond that, a lesser improvement makes it possible to
 use the default export from a Javascript module when calling `module_from_template` by
@@ -307,7 +307,7 @@ yet.
 
 - move VdomDict and VdomJson to proto - :pull:`492`
 - only send error info in debug mode - :pull:`491`
-- correcly apply client-side JSON patch - :pull:`490`
+- correctly apply client-side JSON patch - :pull:`490`
 - add script to set version of all packages in IDOM - :pull:`483`
 - Pass import source to bind - :pull:`482`
 - Do not mutate client-side model - :pull:`481`
@@ -369,12 +369,12 @@ The latter behavior is the most egregious design issue since there's absolutely 
 indication that the component instance can be swapped out (not even a comment).
 
 The new refactor no longer binds component or layout instances to a ``LifeCycleHook``.
-Instead, the hook simply receives an unparametrized callback that can be triggered to
+Instead, the hook simply receives an un-parametrized callback that can be triggered to
 schedule a render. While some error logs lose clarity (since we can't say what component
 caused them). This change precludes a need for the layout to ever mutate the hook.
 
-To accomodate this change, the internal representation of the layout's state had to
-change. Previsouly, a class-based approach was take, where methods of the state-holding
+To accommodate this change, the internal representation of the layout's state had to
+change. Previously, a class-based approach was take, where methods of the state-holding
 classes were meant to handle all use cases. Now we rely much more heavily on very simple
 (and mostly static) data structures that have purpose built constructor functions that
 much more narrowly address each use case.
@@ -527,7 +527,7 @@ and breaking changes, the most significant of which are:
 - refactor flask - :commit:`94681b6`
 - refactor tornado + misc fixes to sanic/fastapi - :commit:`16c9209`
 - refactor fastapi using server protocol - :commit:`0cc03ba`
-- recactor sanic server - :commit:`43d4b4f`
+- refactor sanic server - :commit:`43d4b4f`
 - use server protocol instead of inheritance - :commit:`abe0fde`
 - support currentTime attr of audio/video elements - :commit:`975b54a`
 - pass children as props to mount() - :commit:`9494bc0`
@@ -584,7 +584,7 @@ several bugs that had cropped up related to improper usage of ``anyio``.
 
 **Highlighted Commits:**
 
-- improve docs + simplify multiview - :commit:`4129b60`
+- improve docs + simplify multi-view - :commit:`4129b60`
 - require anyio>=3.0 - :commit:`24aed28`
 - refactor dispatchers - :commit:`ce8e060`
 

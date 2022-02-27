@@ -16,7 +16,7 @@ Below is a gallery of images about sculpture. Clicking the "Next" button should
 increment the ``index`` and, as a result, change what image is displayed. However, this
 does not work:
 
-.. idom:: _examples/when_variables_arent_enough
+.. idom:: _examples/when_variables_are_not_enough
 
 .. note::
 
@@ -42,7 +42,7 @@ that still wouldn't fix the underlying problems:
 To address these problems, IDOM provides the :func:`~idom.core.hooks.use_state` "hook"
 which provides:
 
-1. A **state variable** whose data is retained aross renders.
+1. A **state variable** whose data is retained across renders.
 
 2. A **state setter** function that can be used to update that variable and trigger a
    render.
@@ -130,7 +130,7 @@ Thus, in this example:
   of the component.
 
 The convention is that, if you name your state variable ``thing``, your state setter
-should be named ``set_thing``. While you could name them anything you want, adhereing to
+should be named ``set_thing``. While you could name them anything you want, adhering to
 the convention makes things easier to understand across projects.
 
 ----
@@ -308,7 +308,7 @@ displayed and ``show_more`` is solely concerned with whether the description for
 sculpture is shown. Put other way ``index`` is concerned with *what* information is
 displayed while ``show_more`` is concerned with *how* it is displayed. Conversely
 though, if you have a form with many fields, it probably makes sense to have a single
-objec that holds the data for all the fields rather than an object per-field.
+object that holds the data for all the fields rather than an object per-field.
 
 .. note::
 
