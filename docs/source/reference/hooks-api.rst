@@ -164,11 +164,11 @@ supports ``async`` functions:
 
 .. code-block::
 
-    async def nonblocking_effect():
+    async def non_blocking_effect():
         resource = await do_something_asynchronously()
         return lambda: blocking_close(resource)
 
-    use_effect(nonblocking_effect)
+    use_effect(non_blocking_effect)
 
 
 There are **three important subtleties** to note about using asynchronous effects:
