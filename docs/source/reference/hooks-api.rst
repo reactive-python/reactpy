@@ -164,11 +164,11 @@ supports ``async`` functions:
 
 .. code-block::
 
-    async def nonblocking_effect():
+    async def non_blocking_effect():
         resource = await do_something_asynchronously()
         return lambda: blocking_close(resource)
 
-    use_effect(nonblocking_effect)
+    use_effect(non_blocking_effect)
 
 
 There are **three important subtleties** to note about using asynchronous effects:
@@ -311,7 +311,6 @@ The identity of the ``Ref`` object will be preserved for the lifetime of the com
 A ``Ref`` is most useful if you need to incur side effects since updating its
 ``.current`` attribute doesn't trigger a re-render of the component. You'll often use this
 hook alongside :ref:`Use Effect` or in response to component event handlers.
-:ref:`The Game Snake` provides a good use case for ``use_ref``.
 
 
 .. links

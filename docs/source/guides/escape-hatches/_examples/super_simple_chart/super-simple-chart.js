@@ -8,7 +8,7 @@ export function bind(node, config) {
     create: (component, props, children) => h(component, props, ...children),
     render: (element) => render(element, node),
     unmount: () => render(null, node),
-  }
+  };
 }
 
 export function SuperSimpleChart(props) {

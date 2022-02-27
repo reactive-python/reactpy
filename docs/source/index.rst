@@ -9,30 +9,34 @@ What is IDOM?
 
 .. toctree::
     :hidden:
-    :caption: User Guide
+    :caption: Guides
 
-    getting-started/index
-    creating-interfaces/index
-    adding-interactivity/index
-    managing-state/index
-    escape-hatches/index
-    understanding-idom/index
-
-.. toctree::
-    :hidden:
-    :caption: Other Resources
-
-    developing-idom/index
-    reference-material/index
-    credits-and-licenses
+    guides/getting-started/index
+    guides/creating-interfaces/index
+    guides/adding-interactivity/index
+    guides/managing-state/index
+    guides/escape-hatches/index
+    guides/understanding-idom/index
 
 .. toctree::
     :hidden:
-    :caption: External Links
+    :caption: Reference
 
+    reference/browser-events
+    reference/hooks-api
+    _auto/apis
+    reference/javascript-api
+    reference/specifications
+
+.. toctree::
+    :hidden:
+    :caption: About
+
+    about/changelog
+    about/contributor-guide
+    about/credits-and-licenses
     Source Code <https://github.com/idom-team/idom>
     Community <https://github.com/idom-team/idom/discussions>
-    Issues <https://github.com/idom-team/idom/issues>
 
 
 IDOM is a Python web framework for building **interactive websites without needing a
@@ -56,7 +60,7 @@ At a Glance
 To get a rough idea of how to write apps in IDOM, take a look at the tiny `"hello world"
 <https://en.wikipedia.org/wiki/%22Hello,_World!%22_program>`__ application below:
 
-.. idom:: getting-started/_examples/hello_world
+.. idom:: guides/getting-started/_examples/hello_world
 
 .. hint::
 
@@ -101,10 +105,10 @@ IDOM within a Jupyter Notebook, this is where you can learn how to do those thin
 
     .. grid-item::
 
-        .. image:: getting-started/_static/idom-in-jupyterlab.gif
+        .. image:: guides/getting-started/_static/idom-in-jupyterlab.gif
 
 .. card::
-    :link: getting-started/index
+    :link: guides/getting-started/index
     :link-type: doc
 
     :octicon:`book` Read More
@@ -123,10 +127,10 @@ combine these elements into reusable :ref:`"components" <your first components>`
 sections that follow you'll learn how these UI elements are created and organized into
 components. Then, you'll use this knowledge to create interfaces from raw data:
 
-.. idom:: creating-interfaces/rendering-data/_examples/todo_list_with_keys
+.. idom:: guides/creating-interfaces/rendering-data/_examples/todo_list_with_keys
 
 .. card::
-    :link: creating-interfaces/index
+    :link: guides/creating-interfaces/index
     :link-type: doc
 
     :octicon:`book` Read More
@@ -146,7 +150,7 @@ image, the shopping cart. In IDOM, this kind of component-specific memory is cre
 updated with a "hook" called ``use_state()`` that creates a **state variable** and
 **state setter** respectively:
 
-.. idom:: adding-interactivity/components-with-state/_examples/adding_state_variable
+.. idom:: guides/adding-interactivity/components-with-state/_examples/adding_state_variable
 
 In IDOM, ``use_state``, as well as any other function whose name starts with ``use``, is
 called a "hook". These are special functions that should only be called while IDOM is
@@ -155,7 +159,7 @@ capabilities of IDOM's components of which ``use_state`` is just one (well get i
 other :ref:`later <managing state>`).
 
 .. card::
-    :link: adding-interactivity/index
+    :link: guides/adding-interactivity/index
     :link-type: doc
 
     :octicon:`book` Read More
@@ -168,7 +172,7 @@ Chapter 4 - :ref:`Managing State`
 ---------------------------------
 
 .. card::
-    :link: managing-state/index
+    :link: guides/managing-state/index
     :link-type: doc
 
     :octicon:`book` Read More
@@ -182,7 +186,7 @@ Chapter 5 - :ref:`Escape Hatches`
 ---------------------------------
 
 .. card::
-    :link: escape-hatches/index
+    :link: guides/escape-hatches/index
     :link-type: doc
 
     :octicon:`book` Read More
@@ -195,7 +199,7 @@ Chapter 6 - :ref:`Understanding IDOM`
 -------------------------------------
 
 .. card::
-    :link: escape-hatches/index
+    :link: guides/escape-hatches/index
     :link-type: doc
 
     :octicon:`book` Read More

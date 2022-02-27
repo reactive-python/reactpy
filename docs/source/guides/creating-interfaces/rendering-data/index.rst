@@ -76,7 +76,7 @@ priority. Thus, we need to change the data structure we're using to represent ou
     ]
 
 With this we can now imaging writing some filtering and sorting logic using Python's
-:func:`filter` and :func:`sorted` functions respecitvely. We'll do this by only
+:func:`filter` and :func:`sorted` functions respectively. We'll do this by only
 displaying items whose ``priority`` is less than or equal to some ``filter_by_priority``
 and then ordering the elements based on the ``priority``:
 
@@ -231,7 +231,7 @@ with the correct UI element.
             html.ul([html.li(data["text"], key=data["id"]) for data in data_2]),
         )
 
-.. dropdown:: Keys must be unique amonst siblings
+.. dropdown:: Keys must be unique amongst siblings
     :color: danger
 
     Keys must be unique among siblings.
@@ -288,7 +288,7 @@ use for each ``key``?
 
 
 .. card::
-    :link: /understanding-idom/why-idom-needs-keys
+    :link: /guides/understanding-idom/why-idom-needs-keys
     :link-type: doc
 
     :octicon:`book` Read More

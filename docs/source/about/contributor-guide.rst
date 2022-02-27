@@ -3,14 +3,39 @@ Contributor Guide
 
 .. note::
 
+    The
+    `Code of Conduct <https://github.com/idom-team/idom/blob/main/CODE_OF_CONDUCT.md>`__
+    applies in all community spaces. If you are not familiar with our Code of Conduct
+    policy, take a minute to read it before making your first contribution.
+
+The IDOM team welcomes contributions and contributors of all kinds - whether they come
+as code changes, participation in the discussions, opening issues and pointing out bugs,
+or simply sharing your work with your colleagues and friends. We're excited to see how
+you can help move this project and community forward!
+
+
+.. _everyone can contribute:
+
+Everyone Can Contribute!
+------------------------
+
+Trust us, there's so many ways to support the project. We're always looking for people
+who can:
+
+- Improve our documentation
+- Teach and tell others about IDOM
+- Share ideas for new features
+- Report bugs
+- Participate in general discussions
+
+Still aren't sure what you have to offer? Just :discussion-type:`ask us <question>` and
+we'll help you make your first contribution.
+
+
+.. note::
+
     If you have any questions during set up or development post on our
     :discussion-type:`discussion board <question>` and we'll answer them.
-
-This project uses the `GitHub Flow`_ (more detail :ref:`below <Making a Pull Request>`)
-for collaboration and consists primarily of Python code and Javascript code. A
-:ref:`variety of tools <Development Environment>` are used to aid in its development.
-Any code contributed to IDOM is validated by a :ref:`series of tests <Running The
-Tests>` to ensure its quality and correctness.
 
 
 Making a Pull Request
@@ -40,6 +65,47 @@ about how to get started. To make a change to IDOM you'll do the following:
     We'll review your changes, run some :ref:`tests <Running The Tests>` and
     :ref:`equality checks <Code Quality Checks>` and, with any luck, accept your request.
     At that point your contribution will be merged into the main codebase!
+
+Create a Changelog Entry
+........................
+
+As part of your pull request, you'll want to edit the :ref:`Changelog` by adding an
+entry describing what you've changed or improved. You should write an entry in the style
+of `Keep a Changelog <https://keepachangelog.com/>`__ that falls under one of the
+following categories, and add it to the :ref:`Unreleased` section of the changelog:
+
+- **Added** - for new features.
+- **Changed** - for changes in existing functionality.
+- **Deprecated** - for soon-to-be removed features.
+- **Removed** - for now removed features.
+- **Fixed** - for any bug fixes.
+- **Documented** - for improvements to this documentation.
+- **Security** - in case of vulnerabilities.
+
+If one of the sections doesn't exist, add it. If it does already, add a bullet point
+under the relevant section. Here's a short example of what an unreleased changelog entry
+might look like:
+
+.. code-block:: rst
+
+    Unreleased
+    ----------
+
+    **Added**
+
+    - A really cool new feature - :pull:`123`
+
+    **Changed**
+
+    - The behavior of some existing feature - :pull:`456`
+
+    **Fixed**
+
+    - Some really bad bug - :issue:`789`
+
+.. note::
+
+    ``:issue:`` and ``:pull:`` refer to issue and pull request ticket numbers.
 
 
 Development Environment
@@ -104,7 +170,7 @@ However you may also ``cd`` to the ``src/client`` directory which contains a
 Running The Tests
 -----------------
 
-The test suite for IDOM uses Nox_ and NPM_ in order to validate:
+The test suite for IDOM is executed with Nox_. The suite covers:
 
 1. Server-side Python code with PyTest_
 
@@ -112,11 +178,7 @@ The test suite for IDOM uses Nox_ and NPM_ in order to validate:
 
 3. Client-side Javascript code with UVU_
 
-
-Running Python Tests
-....................
-
-To run the full suite of Python tests you'll need to install:
+To run the full suite of tests you'll need to install:
 
 - `Google Chrome`_
 
@@ -126,8 +188,7 @@ To run the full suite of Python tests you'll need to install:
 
     Be sure the version of `Google Chrome`_ and ChromeDriver_ you install are compatible.
 
-Once you've installed the aforementioned browser and web driver you should be able to
-run:
+Once you've installed the aforementioned browser and web driver you'll be able to run:
 
 .. code-block:: bash
 
@@ -138,27 +199,6 @@ If you prefer to run the tests using a headless browser:
 .. code-block:: bash
 
     nox -s test -- --headless
-
-You can pass other options to pytest in a similar manner:
-
-.. code-block:: bash
-
-    nox -s test -- arg --flag --key=value
-
-
-Running Javascript Tests
-........................
-
-If you've already run ``npm install`` inside the ``src/idom/client/app`` directory, you
-can execute the suite of workspace tests under ``packages/*`` with:
-
-.. code-block::
-
-    npm test
-
-As a final check, you might want to run ``npm run build``. This command is run in the
-top-level ``setup.py`` installation script for the Python package, so if this command
-fails, the installation of the Python package with ``pip`` will too.
 
 
 Code Quality Checks
@@ -175,11 +215,12 @@ The following are currently being used:
 - Black_ - an opinionated code formatter
 - Flake8_ - a style guide enforcement tool
 - ISort_ - a utility for alphabetically sorting imports
-- Prettier_ - a tool for autimatically formatting Javascript code
+- Prettier_ - a tool for automatically formatting various file types
 
-The most strict measure of quality enforced on the codebase is 100% coverage. This means
-that every line of coded added to IDOM requires a test case that exercises it. This
-doesn't prevent all bugs, but it should ensure that we catch the most common ones.
+The most strict measure of quality enforced on the codebase is 100% test coverage in
+Python files. This means that every line of coded added to IDOM requires a test case
+that exercises it. This doesn't prevent all bugs, but it should ensure that we catch the
+most common ones.
 
 If you need help understanding why code you've submitted does not pass these checks,
 then be sure to ask, either in the :discussion-type:`Community Forum <question>` or in
@@ -196,7 +237,7 @@ your :ref:`Pull Request <Making a Pull Request>`.
 Building The Documentation
 --------------------------
 
-To build and display the documentation simply run:
+To build and display the documentation locally run:
 
 .. code-block:: bash
 
@@ -215,13 +256,13 @@ To run some of the examples in the documentation as if they were tests run:
     nox -s test_docs
 
 Building the documentation as it's deployed in production requires Docker_. Once you've
-installed, you can run:
+installed Docker, you can run:
 
 .. code-block:: bash
 
     nox -s docs_in_docker
 
-You should then navigate to  to see the documentation.
+Where you can then navigate to http://localhost:5000..
 
 
 Release Process
@@ -249,58 +290,7 @@ To update the version for all core Javascript and Python packages in IDOM run:
 
 .. note::
 
-    The new version must adhere to `SemVer <https://semver.org/>`__. Once IDOM
-    becomes stable we will shift to using `CalVer <https://calver.org/>`__.
-
-
-Create Changelog Entry
-......................
-
-Immediately after updating the version you'll need to create a changelog entry for the
-release. This should **always** include a human authored summary of the changes it
-includes. For example, new or deprecated features, performance improvements, and bug
-fixes (whatever is relevant). To help with this, there are some useful tools for
-gathering the Pull Requests and Issues that have been merged and resolved since the last
-release. While reviewing these items can help in writing a human authored release
-summary, you **must not** resort to a bullet list of Pull Request and Issue
-descriptions. Putting these two together, the format of a changelog entry should look a
-bit like this:
-
-.. code-block:: text
-
-    X.Y.Z
-    -----
-
-    The release summary...
-
-    **Closed Issues**
-
-    - Some issue - :issue:`123`
-    - Another issue - :issue:`456`
-
-    **Pull Requests**
-
-    - Some pull request - :pull:`123`
-    - Another pull request - :pull:`456`
-
-    **Deprecated Features**
-
-    - Description one
-    - Description two
-
-To create the list of pull requests and closed issues you can copy the output of the
-following commands using the ``<format>`` of your choosing (``rst``, ``md``, ``text``):
-
-.. note::
-
-    You should currate the list - not everything needs to be included.
-
-.. code-block:: bash
-
-    nox -s changes_since_release -- <format>
-
-Once the version has been updated and the changelog entry completed, you should commit
-the changes.
+    The new version must adhere to `SemVer <https://semver.org/>`__.
 
 
 Creating The Release
@@ -321,12 +311,12 @@ To create the release tag you can run the following command:
 
     nox -s tag -- push
 
-Last, you must create a
-`"Release" <https://docs.github.com/en/github/administering-a-repository/releasing-projects-on-github/managing-releases-in-a-repository>`__
+Last, you must create a `"Release"
+<https://docs.github.com/en/github/administering-a-repository/releasing-projects-on-github/managing-releases-in-a-repository>`__
 in GitHub. Because we pushed a tag using the command above, there should already be a
-saved draft which needs a title and desription. The title should simply be the version
-(same as the tag), and the description should, at minimum, be a markdown version of the
-already authored :ref:`Changelog summary <Create Changelog Entry>`.
+saved draft which needs a title and description. The title should simply be the version
+(same as the tag), and the description should simply use GitHub's "Auto-generated
+release notes".
 
 
 Other Core Repositories
