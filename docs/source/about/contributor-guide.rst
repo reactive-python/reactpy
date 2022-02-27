@@ -170,7 +170,7 @@ However you may also ``cd`` to the ``src/client`` directory which contains a
 Running The Tests
 -----------------
 
-The test suite for IDOM uses Nox_ and NPM_ in order to validate:
+The test suite for IDOM is executed with Nox_. The suite covers:
 
 1. Server-side Python code with PyTest_
 
@@ -178,11 +178,7 @@ The test suite for IDOM uses Nox_ and NPM_ in order to validate:
 
 3. Client-side Javascript code with UVU_
 
-
-Running Python Tests
-....................
-
-To run the full suite of Python tests you'll need to install:
+To run the full suite of tests you'll need to install:
 
 - `Google Chrome`_
 
@@ -192,8 +188,7 @@ To run the full suite of Python tests you'll need to install:
 
     Be sure the version of `Google Chrome`_ and ChromeDriver_ you install are compatible.
 
-Once you've installed the aforementioned browser and web driver you should be able to
-run:
+Once you've installed the aforementioned browser and web driver you'll be able to run:
 
 .. code-block:: bash
 
@@ -204,27 +199,6 @@ If you prefer to run the tests using a headless browser:
 .. code-block:: bash
 
     nox -s test -- --headless
-
-You can pass other options to pytest in a similar manner:
-
-.. code-block:: bash
-
-    nox -s test -- arg --flag --key=value
-
-
-Running Javascript Tests
-........................
-
-If you've already run ``npm install`` inside the ``src/idom/client/app`` directory, you
-can execute the suite of workspace tests under ``packages/*`` with:
-
-.. code-block::
-
-    npm test
-
-As a final check, you might want to run ``npm run build``. This command is run in the
-top-level ``setup.py`` installation script for the Python package, so if this command
-fails, the installation of the Python package with ``pip`` will too.
 
 
 Code Quality Checks
@@ -241,11 +215,12 @@ The following are currently being used:
 - Black_ - an opinionated code formatter
 - Flake8_ - a style guide enforcement tool
 - ISort_ - a utility for alphabetically sorting imports
-- Prettier_ - a tool for automatically formatting Javascript code
+- Prettier_ - a tool for automatically formatting various file types
 
-The most strict measure of quality enforced on the codebase is 100% coverage. This means
-that every line of coded added to IDOM requires a test case that exercises it. This
-doesn't prevent all bugs, but it should ensure that we catch the most common ones.
+The most strict measure of quality enforced on the codebase is 100% test coverage in
+Python files. This means that every line of coded added to IDOM requires a test case
+that exercises it. This doesn't prevent all bugs, but it should ensure that we catch the
+most common ones.
 
 If you need help understanding why code you've submitted does not pass these checks,
 then be sure to ask, either in the :discussion-type:`Community Forum <question>` or in
@@ -262,7 +237,7 @@ your :ref:`Pull Request <Making a Pull Request>`.
 Building The Documentation
 --------------------------
 
-To build and display the documentation simply run:
+To build and display the documentation locally run:
 
 .. code-block:: bash
 
@@ -281,13 +256,13 @@ To run some of the examples in the documentation as if they were tests run:
     nox -s test_docs
 
 Building the documentation as it's deployed in production requires Docker_. Once you've
-installed, you can run:
+installed Docker, you can run:
 
 .. code-block:: bash
 
     nox -s docs_in_docker
 
-You should then navigate to  to see the documentation.
+Where you can then navigate to http://localhost:5000..
 
 
 Release Process
