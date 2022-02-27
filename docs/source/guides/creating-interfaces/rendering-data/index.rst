@@ -288,7 +288,7 @@ use for each ``key``?
 
 
 .. card::
-    :link: /understanding-idom/why-idom-needs-keys
+    :link: /guides/understanding-idom/why-idom-needs-keys
     :link-type: doc
 
     :octicon:`book` Read More

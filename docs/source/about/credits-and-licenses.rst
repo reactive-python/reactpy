@@ -12,5 +12,5 @@ copy language or examples where IDOM's behavior mirrors that of React's.
 Source Code License
 -------------------
 
-.. literalinclude:: ../../LICENSE
+.. literalinclude:: ../../../LICENSE
    :language: text

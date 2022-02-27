@@ -110,7 +110,7 @@ Additionally, instead of specifying ``style`` using a string, we use a dictionar
 
 
 .. card::
-    :link: /understanding-idom/representing-html
+    :link: /guides/understanding-idom/representing-html
     :link-type: doc
 
     :octicon:`book` Read More

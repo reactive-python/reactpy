@@ -1,11 +1,41 @@
 Changelog
 =========
 
-The IDOM team manages their short and long term plans with `GitHub Projects
-<https://github.com/orgs/idom-team/projects/1>`__. If you have questions about what the
-team are working on, or have feedback on how issues should be prioritized, feel free to
-:discussion-type:`open up a discussion <question>`.
+.. note::
 
+    The IDOM team manages their short and long term plans with `GitHub Projects
+    <https://github.com/orgs/idom-team/projects/1>`__. If you have questions about what
+    the team are working on, or have feedback on how issues should be prioritized, feel
+    free to :discussion-type:`open up a discussion <question>`.
+
+All notable changes to this project will be recorded in this document. The style of
+which is based on `Keep a Changelog <https://keepachangelog.com/>`__. The versioning
+scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__.
+
+
+Unreleased
+----------
+
+While this release doesn't warrant a minor version bump, the last release should have
+been. Thus, to make up for that, this release will be a minor bump. It includes misc
+bug fixes, and several feature adds, the most important of which is the addition of the
+``use_context`` hook.
+
+Added:
+
+- Support for keys in HTML fragments - :issue:`682`
+
+**Merged Pull Requests**
+
+- reset schedule_render_later flag after triggering - :pull:`688`
+- support keys in HTML fragments - :pull:`683`
+- Add Use Context Hook - :pull:`585`
+
+----
+
+Releases below do not use the "Keep a Changelog" style guidlines.
+
+----
 
 0.36.3
 ------

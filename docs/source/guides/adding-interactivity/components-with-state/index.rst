@@ -340,7 +340,7 @@ it. The parent component can’t change it. This lets you add state to any compo
 remove it without impacting the rest of the components.
 
 .. card::
-    :link: /managing-state/sharing-component-state/index
+    :link: /guides/managing-state/sharing-component-state/index
     :link-type: doc
 
     :octicon:`book` Read More

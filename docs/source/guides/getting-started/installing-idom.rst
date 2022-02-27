@@ -105,7 +105,7 @@ are always excited to :ref:`welcome <everyone can contribute>` new contributions
 contributors of all kinds
 
 .. card::
-    :link: /developing-idom/index
+    :link: /about/contributor-guide
     :link-type: doc
 
     :octicon:`book` Read More

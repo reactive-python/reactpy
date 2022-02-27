@@ -35,9 +35,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "tagName"
-      ],
+      "required": ["tagName"],
       "type": "object"
     },
     "elementChildren": {
@@ -61,10 +59,7 @@
       "then": {
         "$ref": "#/definitions/element"
       },
-      "type": [
-        "object",
-        "string"
-      ]
+      "type": ["object", "string"]
     },
     "eventHander": {
       "properties": {
@@ -78,9 +73,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "target"
-      ],
+      "required": ["target"],
       "type": "object"
     },
     "importSource": {
@@ -94,28 +87,19 @@
           "then": {
             "$ref": "#/definitions/elementOrString"
           },
-          "type": [
-            "object",
-            "string",
-            "null"
-          ]
+          "type": ["object", "string", "null"]
         },
         "source": {
           "type": "string"
         },
         "sourceType": {
-          "enum": [
-            "URL",
-            "NAME"
-          ]
+          "enum": ["URL", "NAME"]
         },
         "unmountBeforeUpdate": {
           "type": "boolean"
         }
       },
-      "required": [
-        "source"
-      ],
+      "required": ["source"],
       "type": "object"
     }
   }
