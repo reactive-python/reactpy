@@ -339,7 +339,6 @@ def tag(session: Session) -> None:
         )
 
     if session.interactive:
-        session.log()
         response = input("confirm (yes/no): ").lower()
         if response != "yes":
             return None
