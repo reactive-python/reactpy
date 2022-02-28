@@ -289,6 +289,25 @@ def build_js(session: Session) -> None:
 @nox.session
 def tag(session: Session) -> None:
     """Create a new git tag"""
+    try:
+        session.run(
+            "git",
+            "diff",
+            "--cached",
+            "--exit-code",
+            silent=True,
+            external=True,
+        )
+        session.run(
+            "git",
+            "diff",
+            "--exit-code",
+            silent=True,
+            external=True,
+        )
+    except Exception:
+        session.error("Cannot create a tag - there are uncommited changes")
+
     if len(session.posargs) > 1:
         session.error("To many arguments")
 
@@ -312,17 +331,6 @@ def tag(session: Session) -> None:
     # trigger npm install to update package-lock.json
     session.install("-e", ".")
 
-    try:
-        session.run(
-            "git",
-            "diff",
-            "--cached",
-            "--exit-code",
-            external=True,
-        )
-    except Exception:
-        session.error("Cannot create a tag - there are uncommited changes")
-
     version = get_version()
     install_requirements_file(session, "make-release")
     session.run("pysemver", "check", version)
@@ -339,15 +347,15 @@ def tag(session: Session) -> None:
         )
 
     if session.interactive:
-        response = input("confirm (yes/no): ").lower()
+        response = input("Confirm (yes/no): ").lower()
         if response != "yes":
-            return None
+            session.error("Did not create tag")
 
     # stage, commit, tag, and push version bump
-    session.run("git", "add", "--all")
-    session.run("git", "commit", "-m", repr(f"update version to {new_version}"))
+    session.run("git", "add", "--all", external=True)
+    session.run("git", "commit", "-m", repr(f"version {new_version}"), external=True)
     session.run("git", "tag", version, external=True)
-    session.run("git", "push", "--tags", external=True)
+    session.run("git", "push", "origin", "main", "--tags", external=True)
 
 
 @nox.session(reuse_venv=True)

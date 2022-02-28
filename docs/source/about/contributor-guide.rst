@@ -268,61 +268,33 @@ Where you can then navigate to http://localhost:5000..
 Release Process
 ---------------
 
-1. :ref:`Update version <Update Release Version>`
-2. Create a release tag
-3. Manually author a release in GitHub
+Creating a release for IDOM involves two steps:
 
+1. Tagging a version
+2. Publishing a release
 
-Update Release Version
-......................
+To **tag a version** you'll run the following command:
 
-To simultaneously update the version for:
+.. code-block:: bash
+
+    nox -s tag -- <the-new-version>
+
+Which will update the version for:
 
 - Python packages
 - Javascript packages
-- The :ref:`changelog`
+- The changelog
 
-Run the following command:
+You'll be then prompted to confirm the auto-generated updates before those changes will
+be staged, committed, and pushed along with a new tag matching ``<the-new-version>``
+which was specified earlier.
 
-.. code-block:: bash
-
-    nox -s update_version -- <new-version>
-
-.. note::
-
-    The ``<new-version>`` must adhere to `SemVer <https://semver.org/>`__.
-
-Then commit those changes:
-
-.. code-block:: bash
-
-    git commit -m 'update version to <new-version>'
-
-
-Creating The Release
-....................
-
-The final release process involves two steps:
-
-1. Creating a tag for the release
-2. Authoring a release in GitHub
-
-To create the release tag you can run the following command:
-
-.. note::
-
-    To just create the tag without pushing, omit the trailing ``push`` argument
-
-.. code-block:: bash
-
-    nox -s tag -- push
-
-Last, you must create a `"Release"
-<https://docs.github.com/en/github/administering-a-repository/releasing-projects-on-github/managing-releases-in-a-repository>`__
-in GitHub. Because we pushed a tag using the command above, there should already be a
-saved draft which needs a title and description. The title should simply be the version
-(same as the tag), and the description should simply use GitHub's "Auto-generated
-release notes".
+Lastly, to **publish a release** `create one in GitHub
+<https://docs.github.com/en/github/administering-a-repository/releasing-projects-on-github/managing-releases-in-a-repository>`__.
+Because we pushed a tag using the command above, there should already be a saved tag you
+can target when authoring the release. The release needs a title and description. The
+title should simply be the version (same as the tag), and the description should simply
+use GitHub's "Auto-generated release notes".
 
 
 Other Core Repositories
