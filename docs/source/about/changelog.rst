@@ -16,6 +16,12 @@ scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__.
 Unreleased
 ----------
 
+Nothing yet...
+
+
+0.37.1-a1
+---------
+
 Fixed:
 
 - ``onChange`` event for inputs missing key strokes :issue:`684`
