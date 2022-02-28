@@ -268,21 +268,21 @@ Where you can then navigate to http://localhost:5000..
 Release Process
 ---------------
 
-1. Update version
-2. Add changelog entry
-
-   - Include merged pull requests
-   - Include closed issues
-
-3. Commit final release changes
-4. Create a release tag
-5. Manually author a release in GitHub
+1. :ref:`Update version <Update Release Version>`
+2. Create a release tag
+3. Manually author a release in GitHub
 
 
 Update Release Version
 ......................
 
-To update the version for all core Javascript and Python packages in IDOM run:
+To simultaneously update the version for:
+
+- Python packages
+- Javascript packages
+- The :ref:`changelog`
+
+Run the following command:
 
 .. code-block:: bash
 
@@ -290,7 +290,13 @@ To update the version for all core Javascript and Python packages in IDOM run:
 
 .. note::
 
-    The new version must adhere to `SemVer <https://semver.org/>`__.
+    The ``<new-version>`` must adhere to `SemVer <https://semver.org/>`__.
+
+Then commit those changes:
+
+.. code-block:: bash
+
+    git commit -m 'update version to <new-version>'
 
 
 Creating The Release

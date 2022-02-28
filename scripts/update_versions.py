@@ -45,20 +45,20 @@ def update_changelog_version(new_version: str) -> None:
     old_content = CHANGELOG_FILE.read_text().split("\n")
 
     new_content = []
-    for index in range(0, len(old_content), 2):
+    for index in range(len(old_content) - 1):
         if index == len(old_content) - 2:
             # reached end of file
             continue
 
-        old_lines = old_content[index : index + 2]
-        if old_lines[0] == "Unreleased" and old_lines[1] == ("-" * len(old_lines[0])):
+        this_line, next_line = old_content[index : index + 2]
+        if this_line == "Unreleased" and next_line == ("-" * len(this_line)):
             new_content.append(_UNRELEASED_SECTION)
             new_content.append(new_version)
             new_content.append("-" * len(new_version))
             new_content.extend(old_content[index + 2 :])
             break
         else:
-            new_content.extend(old_lines)
+            new_content.append(this_line)
     else:
         raise ValueError(f"Did not find 'Unreleased' section in {CHANGELOG_FILE}")
 

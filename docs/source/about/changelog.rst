@@ -16,6 +16,12 @@ scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__.
 Unreleased
 ----------
 
+Nothing yet...
+
+
+0.37.0
+------
+
 Added:
 
 - Support for keys in HTML fragments - :issue:`682`
