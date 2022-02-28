@@ -1,9 +1,34 @@
+import React from "react";
+
+import { LayoutContext } from "./contexts.js";
+
 import {
   createElementAttributes,
   createElementChildren,
 } from "./element-utils.js";
 
-export function loadModelImportSource(layoutContext, importSource) {
+export function useImportSource(modelImportSource) {
+  const layoutContext = React.useContext(LayoutContext);
+  const [importSource, setImportSource] = React.useState(null);
+
+  React.useEffect(() => {
+    let unmounted = false;
+
+    loadModelImportSource(layoutContext, modelImportSource).then((src) => {
+      if (!unmounted) {
+        setImportSource(src);
+      }
+    });
+
+    return () => {
+      unmounted = true;
+    };
+  }, [layoutContext, modelImportSource, setImportSource]);
+
+  return importSource;
+}
+
+function loadModelImportSource(layoutContext, importSource) {
   return layoutContext
     .loadImportSource(importSource.source, importSource.sourceType)
     .then((module) => {

@@ -16,20 +16,15 @@ scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__.
 Unreleased
 ----------
 
-While this release doesn't warrant a minor version bump, the last release should have
-been. Thus, to make up for that, this release will be a minor bump. It includes misc
-bug fixes, and several feature adds, the most important of which is the addition of the
-``use_context`` hook.
-
 Added:
 
 - Support for keys in HTML fragments - :issue:`682`
+- Use Context Hook - :pull:`585`
 
-**Merged Pull Requests**
+Fixed:
 
-- reset schedule_render_later flag after triggering - :pull:`688`
-- support keys in HTML fragments - :pull:`683`
-- Add Use Context Hook - :pull:`585`
+- React warning about set state in unmounted component - :issue:`690`
+- Missing reset of schedule_render_later flag - :pull:`688`
 
 ----
 
