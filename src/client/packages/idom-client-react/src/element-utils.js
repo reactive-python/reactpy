@@ -22,19 +22,25 @@ export function createElementAttributes(model, sendEvent) {
 
   if (model.eventHandlers) {
     for (const [eventName, eventSpec] of Object.entries(model.eventHandlers)) {
-      attributes[eventName] = createEventHandler(sendEvent, eventSpec);
+      attributes[eventName] = createEventHandler(
+        eventName,
+        sendEvent,
+        eventSpec
+      );
     }
   }
 
   return attributes;
 }
 
-function createEventHandler(sendEvent, eventSpec) {
+function createEventHandler(eventName, sendEvent, eventSpec) {
   return function () {
     const data = Array.from(arguments).map((value) => {
       if (typeof value === "object" && value.nativeEvent) {
         if (eventSpec["preventDefault"]) {
           value.preventDefault();
+        } else if (eventName === "onChange") {
+          value.nativeEvent.target.value = value.target.value;
         }
         if (eventSpec["stopPropagation"]) {
           value.stopPropagation();
