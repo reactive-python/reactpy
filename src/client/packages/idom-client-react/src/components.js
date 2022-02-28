@@ -3,17 +3,15 @@ import ReactDOM from "react-dom";
 import htm from "htm";
 
 import { useJsonPatchCallback } from "./json-patch.js";
-import { loadModelImportSource } from "./import-source.js";
+import { useImportSource } from "./import-source.js";
+import { LayoutContext } from "./contexts.js";
+
 import {
   createElementAttributes,
   createElementChildren,
 } from "./element-utils.js";
 
 const html = htm.bind(React.createElement);
-export const LayoutContext = React.createContext({
-  sendEvent: undefined,
-  loadImportSource: undefined,
-});
 
 export function Layout({ saveUpdateHook, sendEvent, loadImportSource }) {
   const [model, patchModel] = useJsonPatchCallback({});
@@ -101,14 +99,9 @@ function ImportedElement({ model }) {
   const layoutContext = React.useContext(LayoutContext);
 
   const importSourceFallback = model.importSource.fallback;
-  const [importSource, setImportSource] = React.useState(null);
+  const importSource = useImportSource(model.importSource);
 
   if (!importSource) {
-    // load the import source in the background
-    loadModelImportSource(layoutContext, model.importSource).then(
-      setImportSource
-    );
-
     // display a fallback if one was given
     if (!importSourceFallback) {
       return html`<div />`;
