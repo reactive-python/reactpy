@@ -39,8 +39,6 @@ function createEventHandler(eventName, sendEvent, eventSpec) {
       if (typeof value === "object" && value.nativeEvent) {
         if (eventSpec["preventDefault"]) {
           value.preventDefault();
-        } else if (eventName === "onChange") {
-          value.nativeEvent.target.value = value.target.value;
         }
         if (eventSpec["stopPropagation"]) {
           value.stopPropagation();

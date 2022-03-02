@@ -16,7 +16,9 @@ scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__.
 Unreleased
 ----------
 
-Nothing yet...
+Fixed:
+
+- Revert :pull:`694` and by making ``value`` uncontrolled client-side - :issue:`684`
 
 
 0.37.1-a1
@@ -24,7 +26,7 @@ Nothing yet...
 
 Fixed:
 
-- ``onChange`` event for inputs missing key strokes :issue:`684`
+- ``onChange`` event for inputs missing key strokes - :issue:`684`
 
 
 0.37.0
