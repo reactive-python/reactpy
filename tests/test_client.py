@@ -1,7 +1,10 @@
+import asyncio
+import time
 from pathlib import Path
 
 import idom
 from idom.testing import ServerMountPoint
+from tests.driver_utils import send_keys
 
 
 JS_DIR = Path(__file__).parent / "js"
@@ -71,14 +74,44 @@ def test_style_can_be_changed(display, driver, driver_wait):
 
     button = driver.find_element("id", "my-button")
 
-    assert get_style(button)["background-color"] == "red"
+    assert _get_style(button)["background-color"] == "red"
 
     for color in ["blue", "red"] * 2:
         button.click()
-        driver_wait.until(lambda _: get_style(button)["background-color"] == color)
+        driver_wait.until(lambda _: _get_style(button)["background-color"] == color)
 
 
-def get_style(element):
+def _get_style(element):
     items = element.get_attribute("style").split(";")
     pairs = [item.split(":", 1) for item in map(str.strip, items) if item]
     return {key.strip(): value.strip() for key, value in pairs}
+
+
+def test_slow_server_response_on_input_change(display, driver, driver_wait):
+    """A delay server-side could cause input values to be overwritten.
+
+    For more info see: https://github.com/idom-team/idom/issues/684
+    """
+
+    delay = 0.2
+
+    @idom.component
+    def SomeComponent():
+        value, set_value = idom.hooks.use_state("")
+
+        async def handle_change(event):
+            await asyncio.sleep(delay)
+            set_value(event["target"]["value"])
+
+        return idom.html.input({"onChange": handle_change, "id": "test-input"})
+
+    display(SomeComponent)
+
+    inp = driver.find_element("id", "test-input")
+
+    text = "hello"
+    send_keys(inp, text)
+
+    time.sleep(delay * len(text) * 1.1)
+
+    driver_wait.until(lambda _: inp.get_attribute("value") == "hello")
