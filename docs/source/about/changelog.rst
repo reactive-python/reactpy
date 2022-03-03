@@ -16,6 +16,12 @@ scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__.
 Unreleased
 ----------
 
+Nothing yet...
+
+
+0.37.1-a2
+---------
+
 Fixed:
 
 - Revert :pull:`694` and by making ``value`` uncontrolled client-side - :issue:`684`
