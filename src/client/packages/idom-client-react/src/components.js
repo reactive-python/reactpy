@@ -81,7 +81,7 @@ function UserInputElement({ model }) {
   // order to allow all changes committed by the user to be recorded in the order they
   // occur. If we don't the user may commit multiple changes before we render next
   // causing the content of prior changes to be overwritten by subsequent changes.
-  const value = props.value;
+  let value = props.value;
   delete props.value;
 
   // Instead of controlling the value, we set it in an effect.
@@ -90,6 +90,25 @@ function UserInputElement({ model }) {
       ref.current.value = value;
     }
   }, [ref.current, value]);
+
+  // Track a buffer of observed values in order to avoid flicker
+  const observedValues = React.useState([])[0];
+  if (observedValues) {
+    if (value === observedValues[0]) {
+      observedValues.shift();
+      value = observedValues[observedValues.length - 1];
+    } else {
+      observedValues.length = 0;
+    }
+  }
+
+  const givenOnChange = props.onChange;
+  if (typeof givenOnChange === "function") {
+    props.onChange = (event) => {
+      observedValues.push(event.target.value);
+      givenOnChange(event);
+    };
+  }
 
   // Use createElement here to avoid warning about variable numbers of children not
   // having keys. Warning about this must now be the responsibility of the server
