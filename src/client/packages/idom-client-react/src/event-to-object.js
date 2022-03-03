@@ -49,6 +49,13 @@ const elementTransformCategories = {
       return {};
     }
   },
+  hasElements: (element) => {
+    const result = {};
+    Object.keys(element).forEach((key) => {
+      result[key] = serializeDomElement(element.elements[key])
+    });
+    return result;
+  }
 };
 
 function defaultElementTransform(element) {
@@ -69,6 +76,7 @@ const elementTagCategories = {
   ],
   hasCurrentTime: ["AUDIO", "VIDEO"],
   hasFiles: ["INPUT"],
+  hasElements: ["FORM"],
 };
 
 const elementTransforms = {};

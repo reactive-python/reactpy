@@ -76,6 +76,11 @@ const allTargetData = {
     tagName,
     output: { target: { currentTime: allTargetData.currentTime } },
   })),
+  ...["FORM"].map((tagName) => ({
+    case: `adds 'value' attribute for ${tagName} element`,
+    tagName,
+    output: { target: { value: allTargetData.value } },
+  })),
 ].forEach((expectation) => {
   test(`serializeEvent() ${expectation.case}`, () => {
     const eventData = {
@@ -113,6 +118,7 @@ const allEventData = {
   clientX: "clientX",
   clientY: "clientY",
   ctrlKey: "ctrlKey",
+  form: "form",
   metaKey: "metaKey",
   pageX: "pageX",
   pageY: "pageY",
