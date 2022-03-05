@@ -102,11 +102,25 @@ function UserInputElement({ model }) {
     }
   }
 
+  const eventToSend = React.useRef(null);
+
   const givenOnChange = props.onChange;
   if (typeof givenOnChange === "function") {
     props.onChange = (event) => {
-      observedValues.push(event.target.value);
-      givenOnChange(event);
+      const priorEvent = eventToSend.current;
+      eventToSend.current = { ...event };
+
+      if (priorEvent) return;
+
+      setTimeout(
+        () => {
+          observedValues.push(eventToSend.current.target.value);
+          givenOnChange(eventToSend.current);
+          eventToSend.current = null;
+        },
+        // buffer events by 100ms
+        100
+      );
     };
   }
 
