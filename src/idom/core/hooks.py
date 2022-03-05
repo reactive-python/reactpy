@@ -27,7 +27,7 @@ from typing_extensions import Protocol
 from idom.utils import Ref
 
 from ._thread_local import ThreadLocal
-from .proto import Key, VdomDict
+from .types import Key, VdomDict
 from .vdom import vdom
 
 

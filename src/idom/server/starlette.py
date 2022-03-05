@@ -30,7 +30,7 @@ from idom.core.dispatcher import (
     ensure_shared_view_dispatcher_future,
 )
 from idom.core.layout import Layout, LayoutEvent
-from idom.core.proto import ComponentConstructor
+from idom.core.types import ComponentConstructor
 
 from .utils import CLIENT_BUILD_DIR, poll, threaded
 

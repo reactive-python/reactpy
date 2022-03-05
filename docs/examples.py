@@ -6,7 +6,7 @@ from traceback import format_exc
 from typing import Callable, Iterator
 
 import idom
-from idom import ComponentType
+from idom.types import ComponentType
 
 
 HERE = Path(__file__)

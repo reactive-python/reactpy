@@ -6,7 +6,7 @@ from typing import Any, Callable, Optional, Sequence, overload
 from anyio import create_task_group
 from typing_extensions import Literal
 
-from idom.core.proto import EventHandlerFunc, EventHandlerType
+from idom.core.types import EventHandlerFunc, EventHandlerType
 
 
 @overload

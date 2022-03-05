@@ -34,7 +34,7 @@ from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.events import EventHandler, to_event_handler_function
 from idom.core.hooks import LifeCycleHook, current_hook
 from idom.server.prefab import hotswap_server
-from idom.server.proto import ServerFactory, ServerType
+from idom.server.types import ServerFactory, ServerType
 from idom.server.utils import find_available_port
 
 from .log import ROOT_LOGGER

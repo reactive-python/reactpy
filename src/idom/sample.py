@@ -3,11 +3,11 @@ from __future__ import annotations
 import webbrowser
 from typing import Any
 
-from idom.server.proto import ServerType
+from idom.server.types import ServerType
 
 from . import html
 from .core.component import component
-from .core.proto import VdomDict
+from .core.types import VdomDict
 from .server.utils import find_available_port, find_builtin_server_type
 
 

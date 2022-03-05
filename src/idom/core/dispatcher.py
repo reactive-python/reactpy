@@ -24,7 +24,7 @@ from idom.utils import Ref
 
 from ._fixed_jsonpatch import apply_patch, make_patch  # type: ignore
 from .layout import LayoutEvent, LayoutUpdate
-from .proto import LayoutType, VdomJson
+from .types import LayoutType, VdomJson
 
 
 logger = getLogger(__name__)

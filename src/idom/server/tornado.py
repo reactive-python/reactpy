@@ -16,7 +16,7 @@ from typing_extensions import TypedDict
 from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.dispatcher import VdomJsonPatch, dispatch_single_view
 from idom.core.layout import Layout, LayoutEvent
-from idom.core.proto import ComponentConstructor
+from idom.core.types import ComponentConstructor
 
 from .utils import CLIENT_BUILD_DIR, threaded, wait_on_event
 

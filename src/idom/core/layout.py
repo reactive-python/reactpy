@@ -32,7 +32,7 @@ from idom.utils import Ref
 
 from ._event_proxy import _wrap_in_warning_event_proxies
 from .hooks import LifeCycleHook
-from .proto import ComponentType, EventHandlerDict, VdomDict, VdomJson
+from .types import ComponentType, EventHandlerDict, VdomDict, VdomJson
 from .vdom import validate_vdom_json
 
 
