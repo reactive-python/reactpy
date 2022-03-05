@@ -16,7 +16,7 @@ scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__.
 Unreleased
 ----------
 
-Nothing yet...
+No changes.
 
 
 0.37.1-a2
