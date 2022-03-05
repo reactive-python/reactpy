@@ -22,10 +22,12 @@ SECTION_SYMBOLS = r"""!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
 AUTODOC_TEMPLATE_WITH_MEMBERS = """\
 .. automodule:: {module}
     :members:
+    :ignore-module-all:
 """
 
 AUTODOC_TEMPLATE_WITHOUT_MEMBERS = """\
 .. automodule:: {module}
+    :ignore-module-all:
 """
 
 TITLE = """\

@@ -1,3 +1,9 @@
+"""Exports common types from:
+
+- :mod:`idom.core.types`
+- :mod:`idom.server.types`
+"""
+
 from .core.types import (
     ComponentConstructor,
     ComponentType,
