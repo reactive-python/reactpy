@@ -1,8 +1,8 @@
-from . import config, html, log, web
+from . import config, html, log, types, web
 from .core import hooks
-from .core.component import Component, component
+from .core.component import component
 from .core.dispatcher import Stop
-from .core.events import EventHandler, event
+from .core.events import event
 from .core.hooks import (
     create_context,
     use_callback,
@@ -14,7 +14,6 @@ from .core.hooks import (
     use_state,
 )
 from .core.layout import Layout
-from .core.proto import ComponentType, VdomDict
 from .core.vdom import vdom
 from .sample import run_sample_app
 from .server.prefab import run
@@ -27,12 +26,9 @@ __version__ = "0.37.1"  # DO NOT MODIFY
 
 __all__ = [
     "component",
-    "Component",
-    "ComponentType",
     "config",
     "create_context",
     "event",
-    "EventHandler",
     "hooks",
     "hotswap",
     "html_to_vdom",
@@ -44,6 +40,7 @@ __all__ = [
     "run_sample_app",
     "run",
     "Stop",
+    "types",
     "use_callback",
     "use_context",
     "use_effect",
@@ -52,6 +49,5 @@ __all__ = [
     "use_ref",
     "use_state",
     "vdom",
-    "VdomDict",
     "web",
 ]

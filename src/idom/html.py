@@ -160,7 +160,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from .core.proto import Key, VdomDict
+from .core.types import Key, VdomDict
 from .core.vdom import coalesce_attributes_and_children, make_vdom_constructor
 
 

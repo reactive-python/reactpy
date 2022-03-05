@@ -12,7 +12,7 @@ from typing_extensions import ParamSpec
 
 import idom
 
-from .proto import ServerFactory
+from .types import ServerFactory
 
 
 CLIENT_BUILD_DIR = Path(idom.__file__).parent / "client"

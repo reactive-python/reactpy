@@ -13,7 +13,7 @@ from idom.core.events import (
     merge_event_handlers,
     to_event_handler_function,
 )
-from idom.core.proto import (
+from idom.core.types import (
     EventHandlerDict,
     EventHandlerMapping,
     EventHandlerType,
@@ -320,7 +320,7 @@ if IDOM_DEBUG_MODE.current:
         if _debug_is_single_child(value):
             return True
 
-        from .proto import ComponentType
+        from .types import ComponentType
 
         if hasattr(value, "__iter__") and not hasattr(value, "__len__"):
             logger.error(

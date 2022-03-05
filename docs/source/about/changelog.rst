@@ -10,13 +10,17 @@ Changelog
 
 All notable changes to this project will be recorded in this document. The style of
 which is based on `Keep a Changelog <https://keepachangelog.com/>`__. The versioning
-scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__.
+scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__. For
+more info, see the :ref:`Contributor Guide <Create a Changelog Entry>`.
 
 
 Unreleased
 ----------
 
-Nothing yet...
+Changed:
+
+- The name of ``proto`` modules to ``types`` and added a top level ``idom.types`` module
+  - :pull:`701`
 
 
 0.37.1

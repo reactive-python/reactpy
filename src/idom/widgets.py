@@ -21,7 +21,7 @@ import idom
 from . import html
 from .core import hooks
 from .core.component import component
-from .core.proto import ComponentConstructor, VdomDict
+from .core.types import ComponentConstructor, VdomDict
 from .utils import Ref
 
 

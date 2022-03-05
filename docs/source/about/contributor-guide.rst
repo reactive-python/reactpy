@@ -69,10 +69,11 @@ about how to get started. To make a change to IDOM you'll do the following:
 Create a Changelog Entry
 ........................
 
-As part of your pull request, you'll want to edit the :ref:`Changelog` by adding an
-entry describing what you've changed or improved. You should write an entry in the style
-of `Keep a Changelog <https://keepachangelog.com/>`__ that falls under one of the
-following categories, and add it to the :ref:`Unreleased` section of the changelog:
+As part of your pull request, you'll want to edit the `Changelog
+<https://github.com/idom-team/idom/blob/main/docs/source/about/changelog.rst>`__ by
+adding an entry describing what you've changed or improved. You should write an entry in
+the style of `Keep a Changelog <https://keepachangelog.com/>`__ that falls under one of
+the following categories, and add it to the :ref:`Unreleased` section of the changelog:
 
 - **Added** - for new features.
 - **Changed** - for changes in existing functionality.

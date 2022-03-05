@@ -180,3 +180,15 @@ class EventHandlerType(Protocol):
 
         When ``None``, it is left to a :class:`LayoutType` to auto generate a unique ID.
     """
+
+
+class VdomDictConstructor(Protocol):
+    """Standard function for constructing a :class:`VdomDict`"""
+
+    def __call__(
+        self,
+        *attributes_and_children: VdomAttributesAndChildren,
+        key: str = ...,
+        event_handlers: Optional[EventHandlerMapping] = ...,
+    ) -> VdomDict:
+        ...

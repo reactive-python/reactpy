@@ -4,7 +4,7 @@ import inspect
 from functools import wraps
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
-from .proto import ComponentType, VdomDict
+from .types import ComponentType, VdomDict
 
 
 def component(

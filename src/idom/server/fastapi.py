@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 
-from idom.core.proto import ComponentConstructor
+from idom.core.types import ComponentConstructor
 
 from .starlette import (
     Config,

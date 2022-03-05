@@ -4,7 +4,7 @@ from fastjsonschema import JsonSchemaException
 import idom
 from idom.config import IDOM_DEBUG_MODE
 from idom.core.events import EventHandler
-from idom.core.proto import VdomDict
+from idom.core.types import VdomDict
 from idom.core.vdom import is_vdom, make_vdom_constructor, validate_vdom_json
 
 
