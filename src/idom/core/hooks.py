@@ -561,7 +561,11 @@ class LifeCycleHook:
 
         .. testcode::
 
-            from idom.core.hooks import LifeCycleHook, DID_RENDER_EFFECT
+            from idom.core.hooks import (
+                current_hook,
+                LifeCycleHook,
+                COMPONENT_DID_RENDER_EFFECT,
+            )
 
 
             # this function will come from a layout implementation
@@ -569,7 +573,7 @@ class LifeCycleHook:
 
             # --- start life cycle ---
 
-            hook = hooks.LifeCycle(schedule_render)
+            hook = LifeCycleHook(schedule_render)
 
             # --- start render cycle ---
 
@@ -582,11 +586,11 @@ class LifeCycleHook:
                 ...
 
                 # the component may access the current hook
-                assert hooks.current_hook() is hook
+                assert current_hook() is hook
 
                 # and save state or add effects
                 current_hook().use_state(lambda: ...)
-                current_hook().use_effect(DID_RENDER_EFFECT, lambda: ...)
+                current_hook().add_effect(COMPONENT_DID_RENDER_EFFECT, lambda: ...)
             finally:
                 hook.unset_current()
 
