@@ -3,27 +3,16 @@ import socket
 import time
 from contextlib import closing
 from functools import wraps
-from importlib import import_module
 from pathlib import Path
 from threading import Event, Thread
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Optional
 
 from typing_extensions import ParamSpec
 
 import idom
 
-from .types import ServerFactory
-
 
 CLIENT_BUILD_DIR = Path(idom.__file__).parent / "client"
-
-_SUPPORTED_PACKAGES = [
-    "sanic",
-    "fastapi",
-    "flask",
-    "tornado",
-    "starlette",
-]
 
 
 _FuncParams = ParamSpec("_FuncParams")
@@ -64,36 +53,6 @@ def poll(
     else:
         while not function():
             time.sleep(frequency)
-
-
-def find_builtin_server_type(type_name: str) -> ServerFactory[Any, Any]:
-    """Find first installed server implementation
-
-    Raises:
-        :class:`RuntimeError` if one cannot be found
-    """
-    installed_builtins: List[str] = []
-    for name in _SUPPORTED_PACKAGES:
-        try:
-            import_module(name)
-        except ImportError:  # pragma: no cover
-            continue
-        else:
-            builtin_module = import_module(f"idom.server.{name}")
-            installed_builtins.append(builtin_module.__name__)
-        try:
-            return getattr(builtin_module, type_name)  # type: ignore
-        except AttributeError:  # pragma: no cover
-            pass
-    else:  # pragma: no cover
-        if not installed_builtins:
-            raise RuntimeError(
-                f"Found none of the following builtin server implementations {_SUPPORTED_PACKAGES}"
-            )
-        else:
-            raise ImportError(
-                f"No server type {type_name!r} found in installed implementations {installed_builtins}"
-            )
 
 
 def find_available_port(
