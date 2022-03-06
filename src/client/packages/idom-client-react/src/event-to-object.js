@@ -50,12 +50,19 @@ const elementTransformCategories = {
     }
   },
   hasElements: (element) => {
-    const result = {};
-    Object.keys(element).forEach((key) => {
-      result[key] = serializeDomElement(element.elements[key])
-    });
-    return result;
-  }
+    const { elements } = element;
+    const indices = [...Array(elements.length).keys()];
+    return {
+      elements: indices.map((index) => serializeDomElement(elements[index])),
+    };
+  },
+  hasName: (element) => {
+    const { name } = element;
+    // In some edge cases, "name" may not be a string. For example, in the case of
+    // `<form><input name="name"></form>`, the "name" attribute of the `<form>` will
+    // be the `<input>` element.
+    return typeof name === "string" ? { name } : {};
+  },
 };
 
 function defaultElementTransform(element) {
@@ -77,6 +84,21 @@ const elementTagCategories = {
   hasCurrentTime: ["AUDIO", "VIDEO"],
   hasFiles: ["INPUT"],
   hasElements: ["FORM"],
+  hasName: [
+    "BUTTON",
+    "FORM",
+    "FIELDSET",
+    "IFRAME",
+    "INPUT",
+    "KEYGEN",
+    "OBJECT",
+    "OUTPUT",
+    "SELECT",
+    "TEXTAREA",
+    "MAP",
+    "META",
+    "PARAM",
+  ],
 };
 
 const elementTransforms = {};
