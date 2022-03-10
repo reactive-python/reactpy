@@ -6,7 +6,7 @@ When needed, you can import JavaScript components from [NPM](https://idom-docs.h
 
 Due to our ecosystem independent design, IDOM can be added to existing projects built on a variety of sync and async web frameworks. For example, you can take components originally developed in Jupyter and embed them into an existing Flask application.
 
-Currently supported web frameworks include: `FastAPI`, `Flask`, `Sanic`, `Tornado`, `Django`, `Jupyter`, and `Plotly Dash`.
+Currently supported web frameworks include: `FastAPI`, `Flask`, `Sanic`, `Tornado`, `Django`, `Jupyter`, and `Plotly-Dash`.
 
 # At a Glance
 
