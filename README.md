@@ -4,7 +4,7 @@ IDOM is a Python framework for building **interactive websites without needing a
 
 When needed, you can import JavaScript from [NPM](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#dynamically-loaded-components) into your Python components. If you want to develop a component entirely within JavaScript, you can utilize the [JavaScript Components API](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#custom-javascript-components) for additional flexibility.
 
-Due to our ecosystem independent design, IDOM can be added to existing projects built on a variety of sync and async web frameworks. For example, you can take components originally developed in Jupyter and embed them into an existing Flask application.
+IDOM's ecosystem independent design allows it to be added to existing projects built on a variety of sync and async web frameworks. For example, you can take components originally developed in Jupyter and embed them into an existing Flask application.
 
 Currently supported web frameworks include: `FastAPI`, `Flask`, `Sanic`, `Tornado`, `Django`, `Plotly-Dash`, and `Jupyter`.
 
