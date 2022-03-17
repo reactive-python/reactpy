@@ -9,6 +9,7 @@ from threading import Event as ThreadEvent
 from typing import Any, List, Optional, Tuple, Type, Union
 from urllib.parse import urljoin
 
+from tornado.httpserver import HTTPServer
 from tornado.platform.asyncio import AsyncIOMainLoop
 from tornado.web import Application, RedirectHandler, RequestHandler, StaticFileHandler
 from tornado.websocket import WebSocketHandler
@@ -19,7 +20,7 @@ from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
 
-from .utils import CLIENT_BUILD_DIR, threaded, wait_on_event
+from .utils import CLIENT_BUILD_DIR
 
 
 def configure(
@@ -52,11 +53,23 @@ def create_development_app() -> Application:
 async def serve_development_app(
     app: Application, host: str, port: int, started: asyncio.Event
 ) -> None:
-    loop = AsyncIOMainLoop()
-    loop.install()
-    app.listen(port, host)
-    loop.add_callback(lambda: loop.asyncio_loop.call_soon_threadsafe(started.set))
-    await loop.run_in_executor(ThreadPoolExecutor())
+    # setup up tornado to use asyncio
+    AsyncIOMainLoop().install()
+
+    server = HTTPServer(app)
+    server.listen(port, host)
+
+    # at this point the server is accepting connection
+    started.set()
+
+    try:
+        # block forever - tornado has already set up its own background tasks
+        await asyncio.get_event_loop().create_future()
+    finally:
+        # stop accepting new connections
+        server.stop()
+        # wait for existing connections to complete
+        await server.close_all_connections()
 
 
 class Options(TypedDict, total=False):

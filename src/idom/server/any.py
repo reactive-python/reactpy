@@ -27,7 +27,7 @@ def run(
     host: str = "127.0.0.1",
     port: int | None = None,
     open_browser: bool = True,
-    implementation: ServerImplementation = sys.modules[__name__],
+    implementation: ServerImplementation[Any] = sys.modules[__name__],
 ) -> None:
     """Run a component with a development server"""
 
@@ -40,7 +40,7 @@ def run(
     app = implementation.create_development_app()
     implementation.configure(app, component)
 
-    coros: list[Awaitable] = []
+    coros: list[Awaitable[Any]] = []
 
     host = host
     port = port or find_available_port(host)
@@ -56,7 +56,7 @@ def run(
 
         coros.append(_open_browser_after_server())
 
-    asyncio.get_event_loop().run_forever(asyncio.gather(*coros))
+    asyncio.get_event_loop().run_until_complete(asyncio.gather(*coros))
 
 
 def configure(app: Any, component: RootComponentConstructor) -> None:
@@ -78,7 +78,7 @@ async def serve_development_app(
     )
 
 
-def _get_any_implementation() -> ServerImplementation:
+def _get_any_implementation() -> ServerImplementation[Any]:
     """Get the first available server implementation"""
     global _DEFAULT_IMPLEMENTATION
 
@@ -94,10 +94,10 @@ def _get_any_implementation() -> ServerImplementation:
         return implementation
 
 
-_DEFAULT_IMPLEMENTATION: ServerImplementation | None = None
+_DEFAULT_IMPLEMENTATION: ServerImplementation[Any] | None = None
 
 
-def all_implementations() -> Iterator[ServerImplementation]:
+def all_implementations() -> Iterator[ServerImplementation[Any]]:
     """Yield all available server implementations"""
     for name in SUPPORTED_PACKAGES:
         try:

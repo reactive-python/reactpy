@@ -10,7 +10,7 @@ _App = TypeVar("_App")
 
 
 @runtime_checkable
-class ServerImplementation(Protocol):
+class ServerImplementation(Protocol[_App]):
     """Common interface for IDOM's builti-in server implementations"""
 
     def configure(self, app: _App, component: RootComponentConstructor) -> None:

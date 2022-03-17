@@ -72,11 +72,11 @@ class ServerMountPoint:
     """A context manager for imperatively mounting views to a render server when testing"""
 
     _log_handler: "_LogRecordCaptor"
-    _server_future: asyncio.Task
+    _server_future: asyncio.Task[Any]
 
     def __init__(
         self,
-        server_implementation: ServerImplementation = any_server,
+        server_implementation: ServerImplementation[Any] = any_server,
         host: str = "127.0.0.1",
         port: Optional[int] = None,
     ) -> None:
