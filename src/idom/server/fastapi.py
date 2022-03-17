@@ -1,54 +1,39 @@
-from typing import Optional
+from __future__ import annotations
 
 from fastapi import FastAPI
 
+from idom.config import IDOM_DEBUG_MODE
 from idom.core.types import ComponentConstructor
 
 from .starlette import (
-    Config,
-    StarletteServer,
+    Options,
     _setup_common_routes,
-    _setup_config_and_app,
-    _setup_shared_view_dispatcher_route,
+    _setup_options,
     _setup_single_view_dispatcher_route,
+    serve_development_app,
 )
 
 
-def PerClientStateServer(
-    constructor: ComponentConstructor,
-    config: Optional[Config] = None,
-    app: Optional[FastAPI] = None,
-) -> StarletteServer:
-    """Return a :class:`StarletteServer` where each client has its own state.
+__all__ = "configure", "serve_development_app", "create_development_app"
 
-    Implements the :class:`~idom.server.proto.ServerFactory` protocol
+
+def configure(
+    app: FastAPI,
+    constructor: ComponentConstructor,
+    options: Options | None = None,
+) -> None:
+    """Prepare a :class:`FastAPI` server to serve the given component
 
     Parameters:
+        app: An application instance
         constructor: A component constructor
         config: Options for configuring server behavior
-        app: An application instance (otherwise a default instance is created)
+
     """
-    config, app = _setup_config_and_app(config, app, FastAPI)
-    _setup_common_routes(config, app)
-    _setup_single_view_dispatcher_route(config["url_prefix"], app, constructor)
-    return StarletteServer(app)
+    options = _setup_options(options)
+    _setup_common_routes(options, app)
+    _setup_single_view_dispatcher_route(options["url_prefix"], app, constructor)
 
 
-def SharedClientStateServer(
-    constructor: ComponentConstructor,
-    config: Optional[Config] = None,
-    app: Optional[FastAPI] = None,
-) -> StarletteServer:
-    """Return a :class:`StarletteServer` where each client shares state.
-
-    Implements the :class:`~idom.server.proto.ServerFactory` protocol
-
-    Parameters:
-        constructor: A component constructor
-        config: Options for configuring server behavior
-        app: An application instance (otherwise a default instance is created)
-    """
-    config, app = _setup_config_and_app(config, app, FastAPI)
-    _setup_common_routes(config, app)
-    _setup_shared_view_dispatcher_route(config["url_prefix"], app, constructor)
-    return StarletteServer(app)
+def create_development_app() -> FastAPI:
+    return FastAPI(debug=IDOM_DEBUG_MODE.current)

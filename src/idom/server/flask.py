@@ -7,7 +7,7 @@ from asyncio import Queue as AsyncQueue
 from queue import Queue as ThreadQueue
 from threading import Event as ThreadEvent
 from threading import Thread
-from typing import Any, Callable, Dict, NamedTuple, Optional, Tuple, Union, cast
+from typing import Any, Callable, Dict, NamedTuple, Optional, Union, cast
 from urllib.parse import parse_qs as parse_query_string
 
 from flask import Blueprint, Flask, redirect, request, send_from_directory, url_for
@@ -30,7 +30,37 @@ from .utils import CLIENT_BUILD_DIR, threaded, wait_on_event
 logger = logging.getLogger(__name__)
 
 
-class Config(TypedDict, total=False):
+def configure(
+    app: Flask, component: ComponentConstructor, options: Options | None = None
+) -> FlaskServer:
+    """Return a :class:`FlaskServer` where each client has its own state.
+
+    Implements the :class:`~idom.server.proto.ServerFactory` protocol
+
+    Parameters:
+        constructor: A component constructor
+        options: Options for configuring server behavior
+        app: An application instance (otherwise a default instance is created)
+    """
+    options = _setup_options(options)
+    blueprint = Blueprint("idom", __name__, url_prefix=options["url_prefix"])
+    _setup_common_routes(blueprint, options)
+    _setup_single_view_dispatcher_route(app, options, component)
+    app.register_blueprint(blueprint)
+    return FlaskServer(app)
+
+
+def create_development_app() -> Flask:
+    return Flask(__name__)
+
+
+async def serve_development_app(
+    app: Flask, host: str, port: int, started: asyncio.Event
+) -> None:
+    ...
+
+
+class Options(TypedDict, total=False):
     """Render server config for :class:`FlaskRenderServer`"""
 
     cors: Union[bool, Dict[str, Any]]
@@ -55,28 +85,6 @@ class Config(TypedDict, total=False):
     """The URL prefix where IDOM resources will be served from"""
 
 
-def PerClientStateServer(
-    constructor: ComponentConstructor,
-    config: Optional[Config] = None,
-    app: Optional[Flask] = None,
-) -> FlaskServer:
-    """Return a :class:`FlaskServer` where each client has its own state.
-
-    Implements the :class:`~idom.server.proto.ServerFactory` protocol
-
-    Parameters:
-        constructor: A component constructor
-        config: Options for configuring server behavior
-        app: An application instance (otherwise a default instance is created)
-    """
-    config, app = _setup_config_and_app(config, app)
-    blueprint = Blueprint("idom", __name__, url_prefix=config["url_prefix"])
-    _setup_common_routes(blueprint, config)
-    _setup_single_view_dispatcher_route(app, config, constructor)
-    app.register_blueprint(blueprint)
-    return FlaskServer(app)
-
-
 class FlaskServer:
     """A thin wrapper for running a Flask application
 
@@ -95,7 +103,7 @@ class FlaskServer:
 
     def run(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
         if IDOM_DEBUG_MODE.current:
-            logging.basicConfig(level=logging.DEBUG)  # pragma: no cover
+            logging.basicOptions(level=logging.DEBUG)  # pragma: no cover
         logger.info(f"Running at http://{host}:{port}")
         self._wsgi_server = _StartCallbackWSGIServer(
             self._did_start.set,
@@ -123,28 +131,23 @@ class FlaskServer:
             server.stop(timeout)
 
 
-def _setup_config_and_app(
-    config: Optional[Config], app: Optional[Flask]
-) -> Tuple[Config, Flask]:
-    return (
-        {
-            "url_prefix": "",
-            "cors": False,
-            "serve_static_files": True,
-            "redirect_root_to_index": True,
-            **(config or {}),  # type: ignore
-        },
-        app or Flask(__name__),
-    )
+def _setup_options(options: Options | None) -> Options:
+    return {
+        "url_prefix": "",
+        "cors": False,
+        "serve_static_files": True,
+        "redirect_root_to_index": True,
+        **(options or {}),  # type: ignore
+    }
 
 
-def _setup_common_routes(blueprint: Blueprint, config: Config) -> None:
-    cors_config = config["cors"]
-    if cors_config:  # pragma: no cover
-        cors_params = cors_config if isinstance(cors_config, dict) else {}
+def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
+    cors_options = options["cors"]
+    if cors_options:  # pragma: no cover
+        cors_params = cors_options if isinstance(cors_options, dict) else {}
         CORS(blueprint, **cors_params)
 
-    if config["serve_static_files"]:
+    if options["serve_static_files"]:
 
         @blueprint.route("/client/<path:path>")
         def send_client_dir(path: str) -> Any:
@@ -154,7 +157,7 @@ def _setup_common_routes(blueprint: Blueprint, config: Config) -> None:
         def send_modules_dir(path: str) -> Any:
             return send_from_directory(str(IDOM_WEB_MODULES_DIR.current), path)
 
-        if config["redirect_root_to_index"]:
+        if options["redirect_root_to_index"]:
 
             @blueprint.route("/")
             def redirect_to_index() -> Any:
@@ -168,11 +171,11 @@ def _setup_common_routes(blueprint: Blueprint, config: Config) -> None:
 
 
 def _setup_single_view_dispatcher_route(
-    app: Flask, config: Config, constructor: ComponentConstructor
+    app: Flask, options: Options, constructor: ComponentConstructor
 ) -> None:
     sockets = Sockets(app)
 
-    @sockets.route(_join_url_paths(config["url_prefix"], "/stream"))  # type: ignore
+    @sockets.route(_join_url_paths(options["url_prefix"], "/stream"))  # type: ignore
     def model_stream(ws: WebSocket) -> None:
         def send(value: Any) -> None:
             ws.send(json.dumps(value))

@@ -6,7 +6,7 @@ from typing import Any
 from . import html
 from .core.component import component
 from .core.types import VdomDict
-from .server.develop import develop
+from .server.any import run
 
 
 @component
@@ -37,4 +37,4 @@ def run_sample_app(
         port: the port on the host to serve from
         open_browser: whether to open a browser window after starting the server
     """
-    develop(App, None, host, port, open_browser=open_browser)
+    run(App, host, port, open_browser=open_browser)
