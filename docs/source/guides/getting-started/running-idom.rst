@@ -157,7 +157,7 @@ then be passed to the ``run()`` function via the ``config`` parameter:
         redirect_root_to_index=True,
     )
 
-    run(App, server_type=PerClientStateServer, config=server_config)
+    run(App, server_type=PerClientStateServer, server_config=server_config)
 
 Here's the list of available configuration types:
 
