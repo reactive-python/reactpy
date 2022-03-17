@@ -21,7 +21,7 @@ from .core.types import (
     VdomDict,
     VdomJson,
 )
-from .server.types import ServerFactory, ServerType
+from .server.types import ServerImplementation
 
 
 __all__ = [
@@ -40,6 +40,5 @@ __all__ = [
     "VdomChildren",
     "VdomDict",
     "VdomJson",
-    "ServerFactory",
-    "ServerType",
+    "ServerImplementation",
 ]

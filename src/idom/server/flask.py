@@ -13,10 +13,9 @@ from urllib.parse import parse_qs as parse_query_string
 from flask import Blueprint, Flask, redirect, request, send_from_directory, url_for
 from flask_cors import CORS
 from flask_sockets import Sockets
-from gevent import pywsgi
-from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket.websocket import WebSocket
 from typing_extensions import TypedDict
+from werkzeug.serving import ThreadedWSGIServer
 
 import idom
 from idom.config import IDOM_DEBUG_MODE, IDOM_WEB_MODULES_DIR
@@ -24,7 +23,7 @@ from idom.core.dispatcher import dispatch_single_view
 from idom.core.layout import LayoutEvent, LayoutUpdate
 from idom.core.types import ComponentConstructor, ComponentType
 
-from .utils import CLIENT_BUILD_DIR, threaded, wait_on_event
+from .utils import CLIENT_BUILD_DIR
 
 
 logger = logging.getLogger(__name__)
@@ -32,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 def configure(
     app: Flask, component: ComponentConstructor, options: Options | None = None
-) -> FlaskServer:
+) -> None:
     """Return a :class:`FlaskServer` where each client has its own state.
 
     Implements the :class:`~idom.server.proto.ServerFactory` protocol
@@ -47,17 +46,45 @@ def configure(
     _setup_common_routes(blueprint, options)
     _setup_single_view_dispatcher_route(app, options, component)
     app.register_blueprint(blueprint)
-    return FlaskServer(app)
 
 
 def create_development_app() -> Flask:
+    """Create an application instance for development purposes"""
     return Flask(__name__)
 
 
 async def serve_development_app(
     app: Flask, host: str, port: int, started: asyncio.Event
 ) -> None:
-    ...
+    """Run an application using a development server"""
+    loop = asyncio.get_event_loop()
+
+    @app.before_first_request
+    def set_started():
+        loop.call_soon_threadsafe(started.set)
+
+    server = ThreadedWSGIServer(host, port, app)
+
+    stopped = asyncio.Event()
+
+    def run_server():
+        try:
+            server.serve_forever()
+        finally:
+            loop.call_soon_threadsafe(stopped.set)
+
+    thread = Thread(target=run_server, daemon=True)
+
+    try:
+        await stopped.wait()
+    finally:
+        # we may have exitted because this task was cancelled
+        server.shutdown()
+        # the thread should eventually join
+        thread.join(timeout=3)
+        # just double check it happened
+        if thread.is_alive():
+            raise RuntimeError("Failed to shutdown server.")
 
 
 class Options(TypedDict, total=False):
@@ -83,52 +110,6 @@ class Options(TypedDict, total=False):
 
     url_prefix: str
     """The URL prefix where IDOM resources will be served from"""
-
-
-class FlaskServer:
-    """A thin wrapper for running a Flask application
-
-    See :class:`idom.server.proto.Server` for more info
-    """
-
-    _wsgi_server: pywsgi.WSGIServer
-
-    def __init__(self, app: Flask) -> None:
-        self.app = app
-        self._did_start = ThreadEvent()
-
-        @app.before_first_request
-        def server_did_start() -> None:
-            self._did_start.set()
-
-    def run(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
-        if IDOM_DEBUG_MODE.current:
-            logging.basicOptions(level=logging.DEBUG)  # pragma: no cover
-        logger.info(f"Running at http://{host}:{port}")
-        self._wsgi_server = _StartCallbackWSGIServer(
-            self._did_start.set,
-            (host, port),
-            self.app,
-            *args,
-            handler_class=WebSocketHandler,
-            **kwargs,
-        )
-        self._wsgi_server.serve_forever()
-
-    run_in_thread = threaded(run)
-
-    def wait_until_started(self, timeout: Optional[float] = 3.0) -> None:
-        wait_on_event(f"start {self.app}", self._did_start, timeout)
-
-    def stop(self, timeout: Optional[float] = 3.0) -> None:
-        try:
-            server = self._wsgi_server
-        except AttributeError:  # pragma: no cover
-            raise RuntimeError(
-                f"Application is not running or was not started by {self}"
-            )
-        else:
-            server.stop(timeout)
 
 
 def _setup_options(options: Options | None) -> Options:
@@ -271,25 +252,6 @@ class _DispatcherThreadInfo(NamedTuple):
     dispatch_future: "asyncio.Future[Any]"
     thread_send_queue: "ThreadQueue[LayoutUpdate]"
     async_recv_queue: "AsyncQueue[LayoutEvent]"
-
-
-class _StartCallbackWSGIServer(pywsgi.WSGIServer):  # type: ignore
-    def __init__(
-        self, before_first_request: Callable[[], None], *args: Any, **kwargs: Any
-    ) -> None:
-        self._before_first_request_callback = before_first_request
-        super().__init__(*args, **kwargs)
-
-    def update_environ(self) -> None:
-        """
-        Called before the first request is handled to fill in WSGI environment values.
-
-        This includes getting the correct server name and port.
-        """
-        super().update_environ()
-        # BUG: https://github.com/nedbat/coveragepy/issues/1012
-        # Coverage isn't able to support concurrency coverage for both threading and gevent
-        self._before_first_request_callback()  # pragma: no cover
 
 
 def _join_url_paths(*args: str) -> str:
