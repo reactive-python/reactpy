@@ -4,6 +4,7 @@ import asyncio
 import json
 from asyncio import Queue as AsyncQueue
 from asyncio.futures import Future
+from concurrent.futures import ThreadPoolExecutor
 from threading import Event as ThreadEvent
 from typing import Any, List, Optional, Tuple, Type, Union
 from urllib.parse import urljoin
@@ -21,11 +22,45 @@ from idom.core.types import ComponentConstructor
 from .utils import CLIENT_BUILD_DIR, threaded, wait_on_event
 
 
-_RouteHandlerSpecs = List[Tuple[str, Type[RequestHandler], Any]]
+def configure(
+    app: Application,
+    component: ComponentConstructor,
+    options: Options | None = None,
+) -> TornadoServer:
+    """Return a :class:`TornadoServer` where each client has its own state.
+
+    Implements the :class:`~idom.server.proto.ServerFactory` protocol
+
+    Parameters:
+        app: A tornado ``Application`` instance.
+        component: A root component constructor
+        options: Options for configuring how the component is mounted to the server.
+    """
+    options = _setup_options(options)
+    _add_handler(
+        app,
+        options,
+        _setup_common_routes(options) + _setup_single_view_dispatcher_route(component),
+    )
+    return TornadoServer(app)
 
 
-class Config(TypedDict, total=False):
-    """Render server config for :class:`TornadoRenderServer` subclasses"""
+def create_development_app() -> Application:
+    return Application(debug=True)
+
+
+async def serve_development_app(
+    app: Application, host: str, port: int, started: asyncio.Event
+) -> None:
+    loop = AsyncIOMainLoop()
+    loop.install()
+    app.listen(port, host)
+    loop.add_callback(lambda: loop.asyncio_loop.call_soon_threadsafe(started.set))
+    await loop.run_in_executor(ThreadPoolExecutor())
+
+
+class Options(TypedDict, total=False):
+    """Render server options for :class:`TornadoRenderServer` subclasses"""
 
     redirect_root_to_index: bool
     """Whether to redirect the root URL (with prefix) to ``index.html``"""
@@ -37,27 +72,7 @@ class Config(TypedDict, total=False):
     """The URL prefix where IDOM resources will be served from"""
 
 
-def PerClientStateServer(
-    constructor: ComponentConstructor,
-    config: Optional[Config] = None,
-    app: Optional[Application] = None,
-) -> TornadoServer:
-    """Return a :class:`TornadoServer` where each client has its own state.
-
-    Implements the :class:`~idom.server.proto.ServerFactory` protocol
-
-    Parameters:
-        constructor: A component constructor
-        config: Options for configuring server behavior
-        app: An application instance (otherwise a default instance is created)
-    """
-    config, app = _setup_config_and_app(config, app)
-    _add_handler(
-        app,
-        config,
-        _setup_common_routes(config) + _setup_single_view_dispatcher_route(constructor),
-    )
-    return TornadoServer(app)
+_RouteHandlerSpecs = List[Tuple[str, Type[RequestHandler], Any]]
 
 
 class TornadoServer:
@@ -105,23 +120,18 @@ class TornadoServer:
             wait_on_event(f"stop {self.app}", did_stop, timeout)
 
 
-def _setup_config_and_app(
-    config: Optional[Config], app: Optional[Application]
-) -> Tuple[Config, Application]:
-    return (
-        {
-            "url_prefix": "",
-            "serve_static_files": True,
-            "redirect_root_to_index": True,
-            **(config or {}),  # type: ignore
-        },
-        app or Application(),
-    )
+def _setup_options(options: Options | None) -> Options:
+    return {
+        "url_prefix": "",
+        "serve_static_files": True,
+        "redirect_root_to_index": True,
+        **(options or {}),  # type: ignore
+    }
 
 
-def _setup_common_routes(config: Config) -> _RouteHandlerSpecs:
+def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
     handlers: _RouteHandlerSpecs = []
-    if config["serve_static_files"]:
+    if options["serve_static_files"]:
         handlers.append(
             (
                 r"/client/(.*)",
@@ -136,16 +146,16 @@ def _setup_common_routes(config: Config) -> _RouteHandlerSpecs:
                 {"path": str(IDOM_WEB_MODULES_DIR.current)},
             )
         )
-        if config["redirect_root_to_index"]:
+        if options["redirect_root_to_index"]:
             handlers.append(("/", RedirectHandler, {"url": "./client/index.html"}))
     return handlers
 
 
 def _add_handler(
-    app: Application, config: Config, handlers: _RouteHandlerSpecs
+    app: Application, options: Options, handlers: _RouteHandlerSpecs
 ) -> None:
     prefixed_handlers: List[Any] = [
-        (urljoin(config["url_prefix"], route_pattern),) + tuple(handler_info)
+        (urljoin(options["url_prefix"], route_pattern),) + tuple(handler_info)
         for route_pattern, *handler_info in handlers
     ]
     app.add_handlers(r".*", prefixed_handlers)
@@ -157,13 +167,13 @@ def _setup_single_view_dispatcher_route(
     return [
         (
             "/stream",
-            PerClientStateModelStreamHandler,
+            ModelStreamHandler,
             {"component_constructor": constructor},
         )
     ]
 
 
-class PerClientStateModelStreamHandler(WebSocketHandler):
+class ModelStreamHandler(WebSocketHandler):
     """A web-socket handler that serves up a new model stream to each new client"""
 
     _dispatch_future: Future[None]

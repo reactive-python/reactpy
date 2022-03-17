@@ -24,7 +24,7 @@ from idom.core.dispatcher import (
     dispatch_single_view,
 )
 from idom.core.layout import Layout, LayoutEvent
-from idom.core.types import ComponentConstructor
+from idom.core.types import RootComponentConstructor
 
 from .utils import CLIENT_BUILD_DIR
 
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 def configure(
     app: Starlette,
-    constructor: ComponentConstructor,
+    constructor: RootComponentConstructor,
     options: Options | None = None,
 ) -> None:
     """Return a :class:`StarletteServer` where each client has its own state.
@@ -46,7 +46,7 @@ def configure(
         constructor: A component constructor
         options: Options for configuring server behavior
     """
-    options, app = _setup_options(options)
+    options = _setup_options(options)
     _setup_common_routes(options, app)
     _setup_single_view_dispatcher_route(options["url_prefix"], app, constructor)
 
@@ -154,7 +154,7 @@ def _setup_common_routes(options: Options, app: Starlette) -> None:
 
 
 def _setup_single_view_dispatcher_route(
-    url_prefix: str, app: Starlette, constructor: ComponentConstructor
+    url_prefix: str, app: Starlette, constructor: RootComponentConstructor
 ) -> None:
     @app.websocket_route(f"{url_prefix}/stream")
     async def model_stream(socket: WebSocket) -> None:

@@ -21,6 +21,9 @@ from typing_extensions import Protocol, TypedDict, runtime_checkable
 ComponentConstructor = Callable[..., "ComponentType"]
 """Simple function returning a new component"""
 
+RootComponentConstructor = Callable[[], "ComponentType"]
+"""The root component should be constructed by a function accepting no arguments."""
+
 
 Key = Union[str, int]
 

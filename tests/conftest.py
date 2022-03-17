@@ -63,12 +63,12 @@ def driver_get(driver, server_mount_point):
 
 
 @pytest.fixture
-def server_mount_point():
+async def server_mount_point():
     """An IDOM layout mount function and server as a tuple
 
     The ``mount`` and ``server`` fixtures use this.
     """
-    with ServerMountPoint() as mount_point:
+    async with ServerMountPoint() as mount_point:
         yield mount_point
 
 

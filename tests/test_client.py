@@ -10,7 +10,7 @@ from tests.driver_utils import send_keys
 JS_DIR = Path(__file__).parent / "js"
 
 
-def test_automatic_reconnect(create_driver):
+async def test_automatic_reconnect(create_driver):
     # we need to wait longer here because the automatic reconnect is not instance
     driver = create_driver(implicit_wait_timeout=10, page_load_timeout=10)
 
@@ -20,7 +20,7 @@ def test_automatic_reconnect(create_driver):
 
     mount_point = ServerMountPoint()
 
-    with mount_point:
+    async with mount_point:
         mount_point.mount(OldComponent)
         driver.get(mount_point.url())
         # ensure the element is displayed before stopping the server

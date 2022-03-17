@@ -18,7 +18,7 @@ from idom.core.dispatcher import (
     dispatch_single_view,
 )
 from idom.core.layout import Layout, LayoutEvent
-from idom.core.types import ComponentConstructor
+from idom.core.types import RootComponentConstructor
 
 from .utils import CLIENT_BUILD_DIR
 
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 def configure(
-    app: Sanic, component: ComponentConstructor, options: Options | None = None
+    app: Sanic, component: RootComponentConstructor, options: Options | None = None
 ) -> None:
     """Configure an application instance to display the given component"""
     options = _setup_options(options)
@@ -107,7 +107,7 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
 
 
 def _setup_single_view_dispatcher_route(
-    blueprint: Blueprint, constructor: ComponentConstructor
+    blueprint: Blueprint, constructor: RootComponentConstructor
 ) -> None:
     @blueprint.websocket("/stream")  # type: ignore
     async def model_stream(

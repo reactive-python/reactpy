@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from idom.config import IDOM_DEBUG_MODE
-from idom.core.types import ComponentConstructor
+from idom.core.types import RootComponentConstructor
 
 from .starlette import (
     Options,
@@ -19,7 +19,7 @@ __all__ = "configure", "serve_development_app", "create_development_app"
 
 def configure(
     app: FastAPI,
-    constructor: ComponentConstructor,
+    constructor: RootComponentConstructor,
     options: Options | None = None,
 ) -> None:
     """Prepare a :class:`FastAPI` server to serve the given component

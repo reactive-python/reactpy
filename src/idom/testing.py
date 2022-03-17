@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 import shutil
@@ -33,9 +34,10 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.events import EventHandler, to_event_handler_function
 from idom.core.hooks import LifeCycleHook, current_hook
-from idom.server.prefab import hotswap_server
-from idom.server.types import ServerFactory, ServerType
+from idom.server import any as any_server
+from idom.server.types import ServerImplementation
 from idom.server.utils import find_available_port
+from idom.widgets import MountFunc, hotswap
 
 from .log import ROOT_LOGGER
 
@@ -63,45 +65,26 @@ def create_simple_selenium_web_driver(
     return driver
 
 
-_Self = TypeVar("_Self", bound="ServerMountPoint[Any, Any]")
-_Mount = TypeVar("_Mount")
-_Server = TypeVar("_Server", bound=ServerType[Any])
-_App = TypeVar("_App")
-_Config = TypeVar("_Config")
+_Self = TypeVar("_Self", bound="ServerMountPoint")
 
 
-class ServerMountPoint(Generic[_Mount, _Server]):
+class ServerMountPoint:
     """A context manager for imperatively mounting views to a render server when testing"""
 
-    mount: _Mount
-    server: _Server
-
     _log_handler: "_LogRecordCaptor"
+    _server_future: asyncio.Task
 
     def __init__(
         self,
-        server_type: Optional[ServerFactory[_App, _Config]] = None,
+        server_implementation: ServerImplementation = any_server,
         host: str = "127.0.0.1",
         port: Optional[int] = None,
-        server_config: Optional[_Config] = None,
-        run_kwargs: Optional[Dict[str, Any]] = None,
-        mount_and_server_constructor: "Callable[..., Tuple[_Mount, _Server]]" = hotswap_server,  # type: ignore
-        app: Optional[_App] = None,
-        **other_options: Any,
+        update_on_mount: bool = False,
     ) -> None:
+        self.server_implementation = server_implementation
         self.host = host
         self.port = port or find_available_port(host, allow_reuse_waiting_ports=False)
-        self._mount_and_server_constructor: "Callable[[], Tuple[_Mount, _Server]]" = (
-            lambda: mount_and_server_constructor(
-                server_type,
-                self.host,
-                self.port,
-                server_config,
-                run_kwargs,
-                app,
-                **other_options,
-            )
-        )
+        self._update_on_mount = update_on_mount
 
     @property
     def log_records(self) -> List[logging.LogRecord]:
@@ -155,24 +138,38 @@ class ServerMountPoint(Generic[_Mount, _Server]):
                     found.append(error)
         return found
 
-    def __enter__(self: _Self) -> _Self:
+    async def __aenter__(self: _Self) -> _Self:
+        self.mount, root_component = hotswap(self._update_on_mount)
+
         self._log_handler = _LogRecordCaptor()
         logging.getLogger().addHandler(self._log_handler)
-        self.mount, self.server = self._mount_and_server_constructor()
+        app = self.server_implementation.create_development_app()
+        self.server_implementation.configure(app, root_component)
+
+        started = asyncio.Event()
+        self._server_future = asyncio.ensure_future(
+            self.server_implementation.serve_development_app(
+                app, self.host, self.port, started
+            )
+        )
+
+        await asyncio.wait_for(started.wait(), timeout=3)
+
         return self
 
-    def __exit__(
+    async def __aexit__(
         self,
         exc_type: Optional[Type[BaseException]],
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
-        self.server.stop()
+        self._server_future.cancel()
+
         logging.getLogger().removeHandler(self._log_handler)
-        del self.mount, self.server
         logged_errors = self.list_logged_exceptions(del_log_records=False)
         if logged_errors:  # pragma: no cover
             raise logged_errors[0]
+
         return None
 
 

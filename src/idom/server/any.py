@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 import warnings
 import webbrowser
 from importlib import import_module
 from typing import Any, Awaitable, Iterator
 
-from idom.types import ComponentConstructor
+from idom.types import RootComponentConstructor
 
 from .types import ServerImplementation
 from .utils import find_available_port
@@ -22,10 +23,11 @@ SUPPORTED_PACKAGES = (
 
 
 def run(
-    component: ComponentConstructor,
+    component: RootComponentConstructor,
     host: str = "127.0.0.1",
     port: int | None = None,
     open_browser: bool = True,
+    implementation: ServerImplementation = sys.modules[__name__],
 ) -> None:
     """Run a component with a development server"""
 
@@ -35,8 +37,8 @@ def run(
         stacklevel=2,
     )
 
-    app = create_development_app()
-    configure(app, component)
+    app = implementation.create_development_app()
+    implementation.configure(app, component)
 
     coros: list[Awaitable] = []
 
@@ -44,7 +46,7 @@ def run(
     port = port or find_available_port(host)
     started = asyncio.Event()
 
-    coros.append(serve_development_app(app, host, port, started))
+    coros.append(implementation.serve_development_app(app, host, port, started))
 
     if open_browser:
 
@@ -57,25 +59,29 @@ def run(
     asyncio.get_event_loop().run_forever(asyncio.gather(*coros))
 
 
-def configure(app: Any, component: ComponentConstructor) -> None:
+def configure(app: Any, component: RootComponentConstructor) -> None:
     """Configure the given app instance to display the given component"""
-    return get_implementation().configure(app, component)
+    return _get_any_implementation().configure(app, component)
 
 
 def create_development_app() -> Any:
     """Create an application instance for development purposes"""
-    return get_implementation().create_development_app()
+    return _get_any_implementation().create_development_app()
 
 
 async def serve_development_app(
     app: Any, host: str, port: int, started: asyncio.Event
 ) -> None:
     """Run an application using a development server"""
-    return await get_implementation().serve_development_app(app, host, port, started)
+    return await _get_any_implementation().serve_development_app(
+        app, host, port, started
+    )
 
 
-def get_implementation() -> ServerImplementation:
+def _get_any_implementation() -> ServerImplementation:
     """Get the first available server implementation"""
+    global _DEFAULT_IMPLEMENTATION
+
     if _DEFAULT_IMPLEMENTATION is not None:
         return _DEFAULT_IMPLEMENTATION
 
@@ -84,7 +90,6 @@ def get_implementation() -> ServerImplementation:
     except StopIteration:
         raise RuntimeError("No built-in server implementation installed.")
     else:
-        global _DEFAULT_IMPLEMENTATION
         _DEFAULT_IMPLEMENTATION = implementation
         return implementation
 

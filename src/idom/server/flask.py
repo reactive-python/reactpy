@@ -21,7 +21,7 @@ import idom
 from idom.config import IDOM_DEBUG_MODE, IDOM_WEB_MODULES_DIR
 from idom.core.dispatcher import dispatch_single_view
 from idom.core.layout import LayoutEvent, LayoutUpdate
-from idom.core.types import ComponentConstructor, ComponentType
+from idom.core.types import ComponentType, RootComponentConstructor
 
 from .utils import CLIENT_BUILD_DIR
 
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def configure(
-    app: Flask, component: ComponentConstructor, options: Options | None = None
+    app: Flask, component: RootComponentConstructor, options: Options | None = None
 ) -> None:
     """Return a :class:`FlaskServer` where each client has its own state.
 
@@ -152,7 +152,7 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
 
 
 def _setup_single_view_dispatcher_route(
-    app: Flask, options: Options, constructor: ComponentConstructor
+    app: Flask, options: Options, constructor: RootComponentConstructor
 ) -> None:
     sockets = Sockets(app)
 

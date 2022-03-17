@@ -3,7 +3,7 @@ from typing import Callable, TypeVar
 
 from typing_extensions import Protocol, runtime_checkable
 
-from idom.core.types import ComponentType
+from idom.core.types import RootComponentConstructor
 
 
 _App = TypeVar("_App")
@@ -13,7 +13,7 @@ _App = TypeVar("_App")
 class ServerImplementation(Protocol):
     """Common interface for IDOM's builti-in server implementations"""
 
-    def configure(self, app: _App, component: Callable[[], ComponentType]) -> None:
+    def configure(self, app: _App, component: RootComponentConstructor) -> None:
         """Configure the given app instance to display the given component"""
 
     def create_development_app(self) -> _App:
