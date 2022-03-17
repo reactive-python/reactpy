@@ -79,12 +79,11 @@ class ServerMountPoint:
         server_implementation: ServerImplementation = any_server,
         host: str = "127.0.0.1",
         port: Optional[int] = None,
-        update_on_mount: bool = False,
     ) -> None:
         self.server_implementation = server_implementation
         self.host = host
         self.port = port or find_available_port(host, allow_reuse_waiting_ports=False)
-        self._update_on_mount = update_on_mount
+        self.mount, self._root_component = hotswap()
 
     @property
     def log_records(self) -> List[logging.LogRecord]:
@@ -139,12 +138,10 @@ class ServerMountPoint:
         return found
 
     async def __aenter__(self: _Self) -> _Self:
-        self.mount, root_component = hotswap(self._update_on_mount)
-
         self._log_handler = _LogRecordCaptor()
         logging.getLogger().addHandler(self._log_handler)
         app = self.server_implementation.create_development_app()
-        self.server_implementation.configure(app, root_component)
+        self.server_implementation.configure(app, self._root_component)
 
         started = asyncio.Event()
         self._server_future = asyncio.ensure_future(
@@ -163,6 +160,8 @@ class ServerMountPoint:
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
+        self.mount(None)  # reset the view
+
         self._server_future.cancel()
 
         logging.getLogger().removeHandler(self._log_handler)

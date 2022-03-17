@@ -15,8 +15,8 @@ from tornado.websocket import WebSocketHandler
 from typing_extensions import TypedDict
 
 from idom.config import IDOM_WEB_MODULES_DIR
-from idom.core.dispatcher import VdomJsonPatch, dispatch_single_view
 from idom.core.layout import Layout, LayoutEvent
+from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
 
 from .utils import CLIENT_BUILD_DIR, threaded, wait_on_event
@@ -194,7 +194,7 @@ class ModelStreamHandler(WebSocketHandler):
 
         self._message_queue = message_queue
         self._dispatch_future = asyncio.ensure_future(
-            dispatch_single_view(
+            serve_json_patch(
                 Layout(self._component_constructor(**query_params)),
                 send,
                 recv,

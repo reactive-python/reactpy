@@ -11,9 +11,9 @@ import idom
 from idom import html
 from idom.config import IDOM_DEBUG_MODE
 from idom.core.component import component
-from idom.core.dispatcher import render_json_patch
 from idom.core.hooks import use_effect, use_state
 from idom.core.layout import Layout, LayoutEvent
+from idom.core.serve import render_json_patch
 from idom.testing import (
     HookCatcher,
     StaticEventHandler,

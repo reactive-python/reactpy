@@ -5,9 +5,9 @@ import pytest
 
 import idom
 from idom import html
-from idom.core.dispatcher import render_json_patch
 from idom.core.hooks import COMPONENT_DID_RENDER_EFFECT, LifeCycleHook, current_hook
 from idom.core.layout import Layout
+from idom.core.serve import render_json_patch
 from idom.testing import HookCatcher, assert_idom_logged
 from idom.utils import Ref
 from tests.assert_utils import assert_same_items

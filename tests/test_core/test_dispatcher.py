@@ -5,14 +5,14 @@ from typing import Any, Sequence
 import pytest
 
 import idom
-from idom.core.dispatcher import (
+from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
+from idom.core.serve import (
     VdomJsonPatch,
     _create_shared_view_dispatcher,
     create_shared_view_dispatcher,
-    dispatch_single_view,
     ensure_shared_view_dispatcher_future,
+    serve_json_patch,
 )
-from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 from idom.testing import StaticEventHandler
 
 
@@ -95,10 +95,10 @@ def Counter():
     return idom.html.div({EVENT_NAME: handler, "count": count})
 
 
-async def test_dispatch_single_view():
+async def test_dispatch():
     events, expected_model = make_events_and_expected_model()
     changes, send, recv = make_send_recv_callbacks(events)
-    await asyncio.wait_for(dispatch_single_view(Layout(Counter()), send, recv), 1)
+    await asyncio.wait_for(serve_json_patch(Layout(Counter()), send, recv), 1)
     assert_changes_produce_expected_model(changes, expected_model)
 
 
@@ -211,7 +211,7 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
     recv_queue = asyncio.Queue()
 
     asyncio.ensure_future(
-        dispatch_single_view(
+        serve_json_patch(
             idom.Layout(ComponentWithTwoEventHandlers()),
             send_queue.put,
             recv_queue.get,

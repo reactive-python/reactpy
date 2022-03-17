@@ -19,8 +19,8 @@ from werkzeug.serving import ThreadedWSGIServer
 
 import idom
 from idom.config import IDOM_DEBUG_MODE, IDOM_WEB_MODULES_DIR
-from idom.core.dispatcher import dispatch_single_view
 from idom.core.layout import LayoutEvent, LayoutUpdate
+from idom.core.serve import serve_json_patch
 from idom.core.types import ComponentType, RootComponentConstructor
 
 from .utils import CLIENT_BUILD_DIR
@@ -168,7 +168,7 @@ def _setup_single_view_dispatcher_route(
             else:
                 return None
 
-        dispatch_single_view_in_thread(constructor(**_get_query_params(ws)), send, recv)
+        dispatch_in_thread(constructor(**_get_query_params(ws)), send, recv)
 
 
 def _get_query_params(ws: WebSocket) -> Dict[str, Any]:
@@ -178,7 +178,7 @@ def _get_query_params(ws: WebSocket) -> Dict[str, Any]:
     }
 
 
-def dispatch_single_view_in_thread(
+def dispatch_in_thread(
     component: ComponentType,
     send: Callable[[Any], None],
     recv: Callable[[], Optional[LayoutEvent]],
@@ -200,7 +200,7 @@ def dispatch_single_view_in_thread(
             return await async_recv_queue.get()
 
         async def main() -> None:
-            await dispatch_single_view(idom.Layout(component), send_coro, recv_coro)
+            await serve_json_patch(idom.Layout(component), send_coro, recv_coro)
 
         main_future = asyncio.ensure_future(main())
 

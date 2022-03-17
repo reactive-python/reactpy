@@ -11,13 +11,13 @@ from sanic_cors import CORS
 from websockets import WebSocketCommonProtocol
 
 from idom.config import IDOM_WEB_MODULES_DIR
-from idom.core.dispatcher import (
+from idom.core.layout import Layout, LayoutEvent
+from idom.core.serve import (
     RecvCoroutine,
     SendCoroutine,
     VdomJsonPatch,
-    dispatch_single_view,
+    serve_json_patch,
 )
-from idom.core.layout import Layout, LayoutEvent
 from idom.core.types import RootComponentConstructor
 
 from .utils import CLIENT_BUILD_DIR
@@ -115,7 +115,7 @@ def _setup_single_view_dispatcher_route(
     ) -> None:
         send, recv = _make_send_recv_callbacks(socket)
         component_params = {k: request.args.get(k) for k in request.args}
-        await dispatch_single_view(Layout(constructor(**component_params)), send, recv)
+        await serve_json_patch(Layout(constructor(**component_params)), send, recv)
 
 
 def _make_send_recv_callbacks(

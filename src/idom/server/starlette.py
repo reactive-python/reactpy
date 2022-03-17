@@ -16,14 +16,14 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from uvicorn.config import Config as UvicornConfig
 from uvicorn.server import Server as UvicornServer
 
-from idom.config import IDOM_DEBUG_MODE, IDOM_WEB_MODULES_DIR
-from idom.core.dispatcher import (
+from idom.config import IDOM_WEB_MODULES_DIR
+from idom.core.layout import Layout, LayoutEvent
+from idom.core.serve import (
     RecvCoroutine,
     SendCoroutine,
     VdomJsonPatch,
-    dispatch_single_view,
+    serve_json_patch,
 )
-from idom.core.layout import Layout, LayoutEvent
 from idom.core.types import RootComponentConstructor
 
 from .utils import CLIENT_BUILD_DIR
@@ -161,7 +161,7 @@ def _setup_single_view_dispatcher_route(
         await socket.accept()
         send, recv = _make_send_recv_callbacks(socket)
         try:
-            await dispatch_single_view(
+            await serve_json_patch(
                 Layout(constructor(**dict(socket.query_params))), send, recv
             )
         except WebSocketDisconnect as error:

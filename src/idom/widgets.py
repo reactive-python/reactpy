@@ -144,7 +144,7 @@ def hotswap(update_on_change: bool = False) -> Tuple[MountFunc, ComponentConstru
 
             # displaying the output now will show DivTwo
     """
-    constructor_ref: Ref[Callable[[], Any]] = Ref(lambda: {"tagName": "div"})
+    constructor_ref: Ref[Callable[[], Any]] = Ref(lambda: None)
 
     if update_on_change:
         set_constructor_callbacks: Set[Callable[[Callable[[], Any]], None]] = set()
@@ -176,8 +176,8 @@ def hotswap(update_on_change: bool = False) -> Tuple[MountFunc, ComponentConstru
         def HotSwap() -> Any:
             return constructor_ref.current()
 
-        def swap(constructor: Callable[[], Any]) -> None:
-            constructor_ref.current = constructor
+        def swap(constructor: Callable[[], Any] | None) -> None:
+            constructor_ref.current = constructor or (lambda: None)
             return None
 
     return swap, HotSwap
