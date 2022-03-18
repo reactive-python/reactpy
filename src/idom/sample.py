@@ -11,7 +11,7 @@ from .server.any import run
 
 @component
 def App() -> VdomDict:
-    return html._(
+    return html.div(
         {"style": {"padding": "15px"}},
         html.h1("Sample Application"),
         html.p(

@@ -10,7 +10,7 @@ from idom.core.layout import Layout
 from idom.core.serve import render_json_patch
 from idom.testing import HookCatcher, assert_idom_logged
 from idom.utils import Ref
-from tests.assert_utils import assert_same_items
+from tests.utils.asserts import assert_same_items
 
 
 async def test_must_be_rendering_in_layout_to_use_hooks():

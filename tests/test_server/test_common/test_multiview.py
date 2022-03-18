@@ -7,7 +7,7 @@ from idom.server import flask as idom_flask
 from idom.server import sanic as idom_sanic
 from idom.server import starlette as idom_starlette
 from idom.testing import ServerMountPoint
-from tests.driver_utils import no_such_element
+from tests.utils.browser import no_such_element
 
 
 @pytest.fixture(

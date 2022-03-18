@@ -1,9 +1,9 @@
 ipython
 pytest
-pytest-asyncio
+pytest-asyncio>=0.17
 pytest-cov
 pytest-mock
 pytest-rerunfailures
 pytest-timeout
 responses
-selenium
+playwright

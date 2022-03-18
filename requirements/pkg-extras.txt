@@ -1,5 +1,5 @@
 # extra=stable,sanic
-sanic <19.12.0
+sanic
 sanic-cors
 
 # extra=fastapi
@@ -7,7 +7,7 @@ fastapi >=0.63.0
 uvicorn[standard] >=0.13.4
 
 # extra=starlette
-fastapi >=0.16.0
+starlette >=0.13.6
 uvicorn[standard] >=0.13.4
 
 # extra=flask

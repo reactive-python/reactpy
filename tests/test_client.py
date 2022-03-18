@@ -4,7 +4,7 @@ from pathlib import Path
 
 import idom
 from idom.testing import ServerMountPoint
-from tests.driver_utils import send_keys
+from tests.utils.browser import send_keys
 
 
 JS_DIR = Path(__file__).parent / "js"

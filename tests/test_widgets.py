@@ -4,7 +4,7 @@ from pathlib import Path
 from selenium.webdriver.common.keys import Keys
 
 import idom
-from tests.driver_utils import send_keys
+from tests.utils.browser import send_keys
 
 
 HERE = Path(__file__).parent
