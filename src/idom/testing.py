@@ -4,7 +4,7 @@ import asyncio
 import logging
 import re
 import shutil
-from contextlib import contextmanager
+from contextlib import AsyncExitStack, contextmanager
 from functools import wraps
 from traceback import format_exception
 from types import TracebackType
@@ -12,7 +12,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Generic,
     Iterator,
     List,
     NoReturn,
@@ -26,18 +25,17 @@ from urllib.parse import urlencode, urlunparse
 from uuid import uuid4
 from weakref import ref
 
-from selenium.webdriver.chrome.options import Options as ChromeOptions
-from selenium.webdriver.chrome.webdriver import WebDriver as Chrome
-from selenium.webdriver.common.options import BaseOptions
-from selenium.webdriver.remote.webdriver import WebDriver
+from playwright.async_api import Browser, BrowserContext, Page, async_playwright
 
+from idom import html
 from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.events import EventHandler, to_event_handler_function
 from idom.core.hooks import LifeCycleHook, current_hook
-from idom.server import any as any_server
+from idom.server import default as default_server
 from idom.server.types import ServerImplementation
 from idom.server.utils import find_available_port
-from idom.widgets import MountFunc, hotswap
+from idom.types import RootComponentConstructor
+from idom.widgets import hotswap
 
 from .log import ROOT_LOGGER
 
@@ -45,42 +43,93 @@ from .log import ROOT_LOGGER
 __all__ = [
     "find_available_port",
     "create_simple_selenium_web_driver",
-    "ServerMountPoint",
+    "ServerFixture",
 ]
 
-
-def create_simple_selenium_web_driver(
-    driver_type: Type[WebDriver] = Chrome,
-    driver_options: BaseOptions = ChromeOptions(),
-    implicit_wait_timeout: float = 10.0,
-    page_load_timeout: float = 5.0,
-    window_size: Tuple[int, int] = (1080, 800),
-) -> WebDriver:
-    driver = driver_type(options=driver_options)
-
-    driver.set_window_size(*window_size)
-    driver.set_page_load_timeout(page_load_timeout)
-    driver.implicitly_wait(implicit_wait_timeout)
-
-    return driver
+_Self = TypeVar("_Self")
 
 
-_Self = TypeVar("_Self", bound="ServerMountPoint")
+class DisplayFixture:
+    """A fixture for running web-based tests using ``playwright``"""
+
+    _exit_stack: AsyncExitStack
+    _context: BrowserContext
+
+    def __init__(
+        self,
+        server: ServerFixture | None = None,
+        browser: Browser | None = None,
+    ) -> None:
+        if server is not None:
+            self.server = server
+        if browser is not None:
+            self.browser = browser
+
+        self._next_view_id = 0
+
+    async def show(
+        self,
+        component: RootComponentConstructor,
+        query: dict[str, Any] | None = None,
+    ) -> Page:
+        self._next_view_id += 1
+        view_id = f"display-{self._next_view_id}"
+        self.server.mount(lambda: html.div({"id": view_id}, component()))
+
+        page = await self._context.new_page()
+
+        await page.goto(self.server.url(query=query))
+        await page.wait_for_selector(f"#{view_id}")
+
+        return page
+
+    async def __aenter__(self: _Self) -> _Self:
+        es = self._exit_stack = AsyncExitStack()
+
+        if not hasattr(self, "browser"):
+            pw = await es.enter_async_context(async_playwright())
+            self.browser = await pw.chromium.launch()
+
+        self._context = await self.browser.new_context()
+        es.push_async_callback(self._context.close)
+
+        if not hasattr(self, "server"):
+            self.server = ServerFixture(**self._server_options)
+            await es.enter_async_context(self.server)
+
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        await self._exit_stack.aclose()
 
 
-class ServerMountPoint:
-    """A context manager for imperatively mounting views to a render server when testing"""
+class ServerFixture:
+    """A test fixture for running a server and imperatively displaying views
+
+    This fixture is typically used alongside async web drivers like ``playwight``.
+
+    Example:
+        .. code-block::
+
+            async with ServerFixture() as server:
+                server.mount(MyComponent)
+    """
 
     _log_handler: "_LogRecordCaptor"
     _server_future: asyncio.Task[Any]
 
     def __init__(
         self,
-        server_implementation: ServerImplementation[Any] = any_server,
         host: str = "127.0.0.1",
         port: Optional[int] = None,
+        implementation: ServerImplementation[Any] = default_server,
     ) -> None:
-        self.server_implementation = server_implementation
+        self.server_implementation = implementation
         self.host = host
         self.port = port or find_available_port(host, allow_reuse_waiting_ports=False)
         self.mount, self._root_component = hotswap()
@@ -150,7 +199,12 @@ class ServerMountPoint:
             )
         )
 
-        await asyncio.wait_for(started.wait(), timeout=3)
+        try:
+            await asyncio.wait_for(started.wait(), timeout=3)
+        except Exception:
+            # see if we can await the future for a more helpful error
+            await asyncio.wait_for(self._server_future, timeout=3)
+            raise
 
         return self
 
@@ -163,6 +217,11 @@ class ServerMountPoint:
         self.mount(None)  # reset the view
 
         self._server_future.cancel()
+
+        try:
+            await asyncio.wait_for(self._server_future, timeout=3)
+        except asyncio.CancelledError:
+            pass
 
         logging.getLogger().removeHandler(self._log_handler)
         logged_errors = self.list_logged_exceptions(del_log_records=False)

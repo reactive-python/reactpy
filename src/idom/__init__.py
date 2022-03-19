@@ -16,7 +16,7 @@ from .core.layout import Layout
 from .core.serve import Stop
 from .core.vdom import vdom
 from .sample import run_sample_app
-from .server.any import run
+from .server.utils import run
 from .utils import Ref, html_to_vdom
 from .widgets import hotswap, multiview
 

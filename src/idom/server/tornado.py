@@ -4,9 +4,7 @@ import asyncio
 import json
 from asyncio import Queue as AsyncQueue
 from asyncio.futures import Future
-from concurrent.futures import ThreadPoolExecutor
-from threading import Event as ThreadEvent
-from typing import Any, List, Optional, Tuple, Type, Union
+from typing import Any, List, Tuple, Type, Union
 from urllib.parse import urljoin
 
 from tornado.httpserver import HTTPServer
@@ -27,7 +25,7 @@ def configure(
     app: Application,
     component: ComponentConstructor,
     options: Options | None = None,
-) -> TornadoServer:
+) -> None:
     """Return a :class:`TornadoServer` where each client has its own state.
 
     Implements the :class:`~idom.server.proto.ServerFactory` protocol
@@ -43,7 +41,6 @@ def configure(
         options,
         _setup_common_routes(options) + _setup_single_view_dispatcher_route(component),
     )
-    return TornadoServer(app)
 
 
 def create_development_app() -> Application:
@@ -86,51 +83,6 @@ class Options(TypedDict, total=False):
 
 
 _RouteHandlerSpecs = List[Tuple[str, Type[RequestHandler], Any]]
-
-
-class TornadoServer:
-    """A thin wrapper for running a Tornado application
-
-    See :class:`idom.server.proto.Server` for more info
-    """
-
-    _loop: asyncio.AbstractEventLoop
-
-    def __init__(self, app: Application) -> None:
-        self.app = app
-        self._did_start = ThreadEvent()
-
-    def run(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
-        self._loop = asyncio.get_event_loop()
-        AsyncIOMainLoop().install()
-        self.app.listen(port, host, *args, **kwargs)
-        self._did_start.set()
-        asyncio.get_event_loop().run_forever()
-
-    @threaded
-    def run_in_thread(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
-        self.run(host, port, *args, **kwargs)
-
-    def wait_until_started(self, timeout: Optional[float] = 3.0) -> None:
-        self._did_start.wait(timeout)
-
-    def stop(self, timeout: Optional[float] = 3.0) -> None:
-        try:
-            loop = self._loop
-        except AttributeError:  # pragma: no cover
-            raise RuntimeError(
-                f"Application is not running or was not started by {self}"
-            )
-        else:
-            did_stop = ThreadEvent()
-
-            def stop() -> None:
-                loop.stop()
-                did_stop.set()
-
-            loop.call_soon_threadsafe(stop)
-
-            wait_on_event(f"stop {self.app}", did_stop, timeout)
 
 
 def _setup_options(options: Options | None) -> Options:

@@ -8,7 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 import idom
 from idom.server.sanic import PerClientStateServer
-from idom.testing import ServerMountPoint, assert_idom_did_not_log, assert_idom_logged
+from idom.testing import ServerFixture, assert_idom_did_not_log, assert_idom_logged
 from idom.web.module import NAME_SOURCE, WebModule
 
 
@@ -67,7 +67,7 @@ def test_module_from_url(driver):
     def ShowSimpleButton():
         return SimpleButton({"id": "my-button"})
 
-    with ServerMountPoint(PerClientStateServer, app=app) as mount_point:
+    with ServerFixture(PerClientStateServer, app=app) as mount_point:
         mount_point.mount(ShowSimpleButton)
         driver.get(mount_point.url())
         driver.find_element("id", "my-button")

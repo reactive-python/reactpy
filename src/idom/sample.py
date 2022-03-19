@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import webbrowser
-from typing import Any
-
 from . import html
 from .core.component import component
 from .core.types import VdomDict
-from .server.any import run
+from .server.utils import run
 
 
 @component

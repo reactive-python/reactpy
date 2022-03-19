@@ -6,8 +6,8 @@ from idom.server import fastapi as idom_fastapi
 from idom.server import flask as idom_flask
 from idom.server import sanic as idom_sanic
 from idom.server import starlette as idom_starlette
-from idom.testing import ServerMountPoint
-from tests.utils.browser import no_such_element
+from idom.testing import ServerFixture
+from tests.tooling.browser import no_such_element
 
 
 @pytest.fixture(
@@ -15,7 +15,7 @@ from tests.utils.browser import no_such_element
     ids=lambda cls: f"{cls.__module__}.{cls.__name__}",
 )
 async def server_mount_point(request):
-    async with ServerMountPoint(request.param) as mount_point:
+    async with ServerFixture(request.param) as mount_point:
         yield mount_point
 
 

@@ -1,11 +1,67 @@
+from __future__ import annotations
+
+import asyncio
 import socket
+import sys
+import warnings
+import webbrowser
 from contextlib import closing
+from importlib import import_module
 from pathlib import Path
+from typing import Any, Awaitable, Iterator
 
 import idom
+from idom.types import RootComponentConstructor
+
+from .types import ServerImplementation
 
 
 CLIENT_BUILD_DIR = Path(idom.__file__).parent / "client"
+
+SUPPORTED_PACKAGES = (
+    "starlette",
+    "fastapi",
+    "sanic",
+    "tornado",
+    "flask",
+)
+
+
+def run(
+    component: RootComponentConstructor,
+    host: str = "127.0.0.1",
+    port: int | None = None,
+    open_browser: bool = True,
+    implementation: ServerImplementation[Any] = sys.modules[__name__],
+) -> None:
+    """Run a component with a development server"""
+
+    warnings.warn(
+        "You are running a development server, be sure to change this before deploying in production!",
+        UserWarning,
+        stacklevel=2,
+    )
+
+    app = implementation.create_development_app()
+    implementation.configure(app, component)
+
+    coros: list[Awaitable[Any]] = []
+
+    host = host
+    port = port or find_available_port(host)
+    started = asyncio.Event()
+
+    coros.append(implementation.serve_development_app(app, host, port, started))
+
+    if open_browser:
+
+        async def _open_browser_after_server() -> None:
+            await started.wait()
+            webbrowser.open(f"http://{host}:{port}")
+
+        coros.append(_open_browser_after_server())
+
+    asyncio.get_event_loop().run_until_complete(asyncio.gather(*coros))
 
 
 def find_available_port(
@@ -33,3 +89,38 @@ def find_available_port(
     raise RuntimeError(
         f"Host {host!r} has no available port in range {port_max}-{port_max}"
     )
+
+
+def default_implementation() -> ServerImplementation[Any]:
+    """Get the first available server implementation"""
+    global _DEFAULT_IMPLEMENTATION
+
+    if _DEFAULT_IMPLEMENTATION is not None:
+        return _DEFAULT_IMPLEMENTATION
+
+    try:
+        implementation = next(all_implementations())
+    except StopIteration:
+        raise RuntimeError("No built-in server implementation installed.")
+    else:
+        _DEFAULT_IMPLEMENTATION = implementation
+        return implementation
+
+
+_DEFAULT_IMPLEMENTATION: ServerImplementation[Any] | None = None
+
+
+def all_implementations() -> Iterator[ServerImplementation[Any]]:
+    """Yield all available server implementations"""
+    for name in SUPPORTED_PACKAGES:
+        try:
+            module = import_module(f"idom.server.{name}")
+        except ImportError:  # pragma: no cover
+            continue
+
+        if not isinstance(module, ServerImplementation):
+            raise TypeError(  # pragma: no cover
+                f"{module.__name__!r} is an invalid implementation"
+            )
+
+        yield module

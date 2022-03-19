@@ -15,12 +15,13 @@ flask<2.0
 markupsafe<2.1
 flask-cors
 flask-sockets
+a2wsgi
 
 # tornado
 tornado
 
 # extra=testing
-selenium
+playwright
 
 # extra=matplotlib
 matplotlib

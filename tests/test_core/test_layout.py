@@ -21,7 +21,7 @@ from idom.testing import (
     capture_idom_logs,
 )
 from idom.utils import Ref
-from tests.utils.asserts import assert_same_items
+from tests.tooling.asserts import assert_same_items
 
 
 @pytest.fixture(autouse=True)

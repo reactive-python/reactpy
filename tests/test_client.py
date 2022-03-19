@@ -3,8 +3,8 @@ import time
 from pathlib import Path
 
 import idom
-from idom.testing import ServerMountPoint
-from tests.utils.browser import send_keys
+from idom.testing import ServerFixture
+from tests.tooling.browser import send_keys
 
 
 JS_DIR = Path(__file__).parent / "js"
@@ -18,7 +18,7 @@ async def test_automatic_reconnect(create_driver):
     def OldComponent():
         return idom.html.p({"id": "old-component"}, "old")
 
-    mount_point = ServerMountPoint()
+    mount_point = ServerFixture()
 
     async with mount_point:
         mount_point.mount(OldComponent)

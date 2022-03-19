@@ -1,59 +1,50 @@
 from __future__ import annotations
 
-import os
-from dataclasses import dataclass
-from typing import Awaitable, Callable, List
-
 import pytest
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
+from playwright.async_api import async_playwright
 
-import idom
-from idom.testing import ServerMountPoint, clear_idom_web_modules_dir
-from tests.utils.browser import launch_browser, open_display
-
-
-def pytest_collection_modifyitems(
-    session: pytest.Session, config: Config, items: List[pytest.Item]
-) -> None:
-    _skip_web_driver_tests_on_windows(items)
+from idom.server.utils import all_implementations
+from idom.testing import DisplayFixture, ServerFixture, clear_idom_web_modules_dir
+from tests.tooling.loop import open_event_loop
 
 
 def pytest_addoption(parser: Parser) -> None:
     parser.addoption(
-        "--headless",
-        dest="headless",
+        "--open-browser",
+        dest="open_browser",
         action="store_true",
-        help="Whether to run browser tests in headless mode.",
+        help="Open a browser window when runnging web-based tests",
     )
 
 
 @pytest.fixture
-async def display(browser):
-    async with open_display(browser, idom.server.any) as display:
+async def display(server, browser):
+    async with DisplayFixture(server, browser) as display:
         yield display
 
 
-@pytest.fixture
+@pytest.fixture(scope="session", params=list(all_implementations()))
+async def server(request):
+    async with ServerFixture(implementation=request.param) as server:
+        yield server
+
+
+@pytest.fixture(scope="session")
 async def browser(pytestconfig: Config):
-    async with launch_browser(headless=bool(pytestconfig.option.headless)) as browser:
-        yield browser
+    async with async_playwright() as pw:
+        yield await pw.chromium.launch(
+            headless=not bool(pytestconfig.option.open_browser)
+        )
+
+
+@pytest.fixture(scope="session")
+def event_loop():
+    with open_event_loop() as loop:
+        yield loop
 
 
 @pytest.fixture(autouse=True)
-def _clear_web_modules_dir_after_test():
+def clear_web_modules_dir_after_test():
     clear_idom_web_modules_dir()
-
-
-def _skip_web_driver_tests_on_windows(items: List[pytest.Item]) -> None:
-    if os.name == "nt":
-        for item in items:
-            if isinstance(item, pytest.Function):
-                if {"display", "driver", "create_driver"}.intersection(
-                    item.fixturenames
-                ):
-                    item.add_marker(
-                        pytest.mark.skip(
-                            reason="WebDriver tests are not working on Windows",
-                        )
-                    )

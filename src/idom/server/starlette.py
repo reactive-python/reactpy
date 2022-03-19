@@ -26,6 +26,7 @@ from idom.core.serve import (
 )
 from idom.core.types import RootComponentConstructor
 
+from ._asgi import serve_development_asgi
 from .utils import CLIENT_BUILD_DIR
 
 
@@ -63,25 +64,7 @@ async def serve_development_app(
     started: asyncio.Event,
 ) -> None:
     """Run a development server for starlette"""
-    server = UvicornServer(UvicornConfig(app, host=host, port=port, loop="asyncio"))
-
-    async def check_if_started():
-        while not server.started:
-            await asyncio.sleep(0.2)
-        started.set()
-
-    _, pending = await asyncio.wait(
-        [server.serve(), check_if_started()],
-        return_when=FIRST_EXCEPTION,
-    )
-
-    for task in pending:
-        task.cancel()
-
-    try:
-        await asyncio.gather(*list(pending))
-    except CancelledError:
-        pass
+    await serve_development_asgi(app, host, port, started)
 
 
 class Options(TypedDict, total=False):

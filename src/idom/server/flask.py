@@ -13,12 +13,13 @@ from urllib.parse import parse_qs as parse_query_string
 from flask import Blueprint, Flask, redirect, request, send_from_directory, url_for
 from flask_cors import CORS
 from flask_sockets import Sockets
+from gevent import pywsgi
+from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket.websocket import WebSocket
 from typing_extensions import TypedDict
-from werkzeug.serving import ThreadedWSGIServer
 
 import idom
-from idom.config import IDOM_DEBUG_MODE, IDOM_WEB_MODULES_DIR
+from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.layout import LayoutEvent, LayoutUpdate
 from idom.core.serve import serve_json_patch
 from idom.core.types import ComponentType, RootComponentConstructor
@@ -58,28 +59,34 @@ async def serve_development_app(
 ) -> None:
     """Run an application using a development server"""
     loop = asyncio.get_event_loop()
-
-    @app.before_first_request
-    def set_started():
-        loop.call_soon_threadsafe(started.set)
-
-    server = ThreadedWSGIServer(host, port, app)
-
     stopped = asyncio.Event()
 
+    server: pywsgi.WSGIServer
+
     def run_server():
+        nonlocal server
+        server = pywsgi.WSGIServer(
+            (host, port),
+            app,
+            handler_class=WebSocketHandler,
+        )
+        server.start()
+        loop.call_soon_threadsafe(started.set)
         try:
             server.serve_forever()
         finally:
             loop.call_soon_threadsafe(stopped.set)
 
     thread = Thread(target=run_server, daemon=True)
+    thread.start()
+
+    await started.wait()
 
     try:
         await stopped.wait()
     finally:
         # we may have exitted because this task was cancelled
-        server.shutdown()
+        server.stop(3)
         # the thread should eventually join
         thread.join(timeout=3)
         # just double check it happened

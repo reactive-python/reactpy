@@ -3,12 +3,14 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
+import socket
 from typing import Any, Dict, Tuple, Union
 
 from mypy_extensions import TypedDict
 from sanic import Blueprint, Sanic, request, response
 from sanic_cors import CORS
-from websockets import WebSocketCommonProtocol
+from websockets.legacy.protocol import WebSocketCommonProtocol
 
 from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.layout import Layout, LayoutEvent
@@ -48,12 +50,17 @@ async def serve_development_app(
     app: Sanic, host: str, port: int, started: asyncio.Event
 ) -> None:
     """Run a development server for :mod:`sanic`"""
-
-    @app.listener("after_server_start")
-    async def after_started():
+    try:
+        server = await app.create_server(
+            host, port, return_asyncio_server=True, debug=True
+        )
+        await server.startup()
+        await server.start_serving()
         started.set()
-
-    await app.create_server(host, port, debug=True)
+        await server.serve_forever()
+    except KeyboardInterrupt:
+        app.shutdown_tasks(3)
+        app.stop()
 
 
 class Options(TypedDict, total=False):
