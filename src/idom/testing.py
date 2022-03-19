@@ -2,20 +2,27 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import operator
 import re
 import shutil
+import time
 from contextlib import AsyncExitStack, contextmanager
-from functools import wraps
+from functools import partial, wraps
+from inspect import isawaitable, iscoroutinefunction
 from traceback import format_exception
 from types import TracebackType
 from typing import (
     Any,
+    Awaitable,
     Callable,
+    Coroutine,
     Dict,
+    Generic,
     Iterator,
     List,
     NoReturn,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -26,6 +33,7 @@ from uuid import uuid4
 from weakref import ref
 
 from playwright.async_api import Browser, BrowserContext, Page, async_playwright
+from typing_extensions import ParamSpec
 
 from idom import html
 from idom.config import IDOM_WEB_MODULES_DIR
@@ -47,6 +55,59 @@ __all__ = [
 ]
 
 _Self = TypeVar("_Self")
+
+
+def assert_same_items(left: Sequence[Any], right: Sequence[Any]) -> None:
+    """Check that two unordered sequences are equal (only works if reprs are equal)"""
+    sorted_left = list(sorted(left, key=repr))
+    sorted_right = list(sorted(right, key=repr))
+    assert sorted_left == sorted_right
+
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+_DEFAULT_TIMEOUT = 3.0
+
+
+class poll(Generic[_R]):
+    """Wait until the result of an sync or async function meets some condition"""
+
+    def __init__(
+        self,
+        function: Callable[_P, Awaitable[_R] | _R],
+        *args: _P.args,
+        **kwargs: _P.kwargs,
+    ) -> None:
+        if iscoroutinefunction(function):
+
+            async def until(
+                condition: Callable[[_R], bool], timeout: float = _DEFAULT_TIMEOUT
+            ) -> _R:
+                started_at = time.time()
+                while not condition(await function(*args, **kwargs)):
+                    if (time.time() - started_at) > timeout:
+                        raise TimeoutError()
+
+        else:
+
+            def until(
+                condition: Callable[[_R], bool] | Any, timeout: float = _DEFAULT_TIMEOUT
+            ) -> _R:
+                started_at = time.time()
+                while not condition(function(*args, **kwargs)):
+                    if (time.time() - started_at) > timeout:
+                        raise TimeoutError()
+
+        self.until: Callable[[Callable[[_R], bool]], Any] = until
+        """Check that the coroutines result meets a condition within the timeout"""
+
+    def eq(self, right: Any, timeout: float = _DEFAULT_TIMEOUT) -> Any:
+        """Wait until the result is equal to the given value"""
+        return self.until(lambda left: left == right, timeout)
+
+    def ne(self, right: Any, timeout: float = _DEFAULT_TIMEOUT) -> Any:
+        """Wait until the result is not equal to the given value"""
+        return self.until(lambda left: left != right, timeout)
 
 
 class DisplayFixture:
