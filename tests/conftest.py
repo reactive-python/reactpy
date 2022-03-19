@@ -20,8 +20,8 @@ def pytest_addoption(parser: Parser) -> None:
 
 
 @pytest.fixture
-async def display(server, browser):
-    async with DisplayFixture(server, browser) as display:
+async def display(server, page):
+    async with DisplayFixture(server, page) as display:
         yield display
 
 
@@ -29,6 +29,15 @@ async def display(server, browser):
 async def server(request):
     async with ServerFixture(implementation=request.param) as server:
         yield server
+
+
+@pytest.fixture(scope="session")
+async def page(browser):
+    pg = await browser.new_page()
+    try:
+        yield pg
+    finally:
+        await pg.close()
 
 
 @pytest.fixture(scope="session")

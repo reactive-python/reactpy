@@ -114,18 +114,19 @@ class DisplayFixture:
     """A fixture for running web-based tests using ``playwright``"""
 
     _exit_stack: AsyncExitStack
-    _context: BrowserContext
 
     def __init__(
         self,
         server: ServerFixture | None = None,
-        browser: Browser | None = None,
+        driver: Browser | BrowserContext | Page | None = None,
     ) -> None:
         if server is not None:
             self.server = server
-        if browser is not None:
-            self.browser = browser
-
+        if driver is not None:
+            if isinstance(driver, Page):
+                self._page = driver
+            else:
+                self._browser = browser
         self._next_view_id = 0
 
     async def show(
@@ -137,22 +138,21 @@ class DisplayFixture:
         view_id = f"display-{self._next_view_id}"
         self.server.mount(lambda: html.div({"id": view_id}, component()))
 
-        page = await self._context.new_page()
+        await self._page.goto(self.server.url(query=query))
+        await self._page.wait_for_selector(f"#{view_id}")
 
-        await page.goto(self.server.url(query=query))
-        await page.wait_for_selector(f"#{view_id}")
-
-        return page
+        return self._page
 
     async def __aenter__(self: _Self) -> _Self:
         es = self._exit_stack = AsyncExitStack()
 
-        if not hasattr(self, "browser"):
-            pw = await es.enter_async_context(async_playwright())
-            self.browser = await pw.chromium.launch()
-
-        self._context = await self.browser.new_context()
-        es.push_async_callback(self._context.close)
+        if not hasattr(self, "_page"):
+            if not hasattr(self, "_browser"):
+                pw = await es.enter_async_context(async_playwright())
+                browser = await pw.chromium.launch()
+            else:
+                browser = self._browser
+            self._page = await browser.new_page()
 
         if not hasattr(self, "server"):
             self.server = ServerFixture(**self._server_options)
@@ -166,6 +166,7 @@ class DisplayFixture:
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
+        self.server.mount(None)
         await self._exit_stack.aclose()
 
 
