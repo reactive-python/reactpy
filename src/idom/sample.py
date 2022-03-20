@@ -3,7 +3,6 @@ from __future__ import annotations
 from . import html
 from .core.component import component
 from .core.types import VdomDict
-from .server.utils import run
 
 
 @component
@@ -20,18 +19,3 @@ def App() -> VdomDict:
             " to learn more.",
         ),
     )
-
-
-def run_sample_app(
-    host: str = "127.0.0.1",
-    port: int | None = None,
-    open_browser: bool = False,
-) -> None:
-    """Run a sample application.
-
-    Args:
-        host: host where the server should run
-        port: the port on the host to serve from
-        open_browser: whether to open a browser window after starting the server
-    """
-    run(App, host, port, open_browser=open_browser)

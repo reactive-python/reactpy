@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import socket
-import sys
 import warnings
 import webbrowser
 from contextlib import closing
@@ -32,7 +31,7 @@ def run(
     host: str = "127.0.0.1",
     port: int | None = None,
     open_browser: bool = True,
-    implementation: ServerImplementation[Any] = sys.modules[__name__],
+    implementation: ServerImplementation[Any] | None = None,
 ) -> None:
     """Run a component with a development server"""
 
@@ -41,6 +40,9 @@ def run(
         UserWarning,
         stacklevel=2,
     )
+
+    if implementation is None:
+        from . import default as implementation
 
     app = implementation.create_development_app()
     implementation.configure(app, component)
@@ -89,25 +91,6 @@ def find_available_port(
     raise RuntimeError(
         f"Host {host!r} has no available port in range {port_max}-{port_max}"
     )
-
-
-def default_implementation() -> ServerImplementation[Any]:
-    """Get the first available server implementation"""
-    global _DEFAULT_IMPLEMENTATION
-
-    if _DEFAULT_IMPLEMENTATION is not None:
-        return _DEFAULT_IMPLEMENTATION
-
-    try:
-        implementation = next(all_implementations())
-    except StopIteration:
-        raise RuntimeError("No built-in server implementation installed.")
-    else:
-        _DEFAULT_IMPLEMENTATION = implementation
-        return implementation
-
-
-_DEFAULT_IMPLEMENTATION: ServerImplementation[Any] | None = None
 
 
 def all_implementations() -> Iterator[ServerImplementation[Any]]:

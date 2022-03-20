@@ -56,7 +56,7 @@ To check that everything is working you can run the sample application:
 
 .. code-block:: bash
 
-    python -c "import idom; idom.run_sample_app(open_browser=True)"
+    python -c "import idom; idom.run(idom.sample.App, open_browser=True)"
 
 This should automatically open up a browser window to a page that looks like this:
 
