@@ -1,12 +1,12 @@
 # IDOM &middot; [![Tests](https://github.com/idom-team/idom/workflows/Test/badge.svg?event=push)](https://github.com/idom-team/idom/actions?query=workflow%3ATest) [![PyPI Version](https://img.shields.io/pypi/v/idom.svg)](https://pypi.python.org/pypi/idom) [![License](https://img.shields.io/badge/License-MIT-purple.svg)](https://github.com/idom-team/idom/blob/main/LICENSE)
 
-IDOM is a Python framework for building **interactive websites without needing a single line of JavaScript**. Web elements you provide (ex. `button`, `div`, `image`) are combined into reusable "components". Components [can be nested together](https://idom-docs.herokuapp.com/docs/guides/creating-interfaces/your-first-components/index.html#conditional-rendering) and utilize [ReactJS-style hooks](https://idom-docs.herokuapp.com/docs/reference/hooks-api.html) to create complex web pages. Ultimately, all IDOM components are communicated to the browser and then rendered by ReactJS.
+IDOM is a Python framework for building **interactive websites without needing a single line of JavaScript**. Web elements you provide (ex. `button`, `div`, `image`) are combined into [reusable "components"](https://idom-docs.herokuapp.com/docs/guides/creating-interfaces/your-first-components/index.html#parametrizing-components). Using our ReactJS backed design, you can utilize [hooks](https://idom-docs.herokuapp.com/docs/reference/hooks-api.html) and [events](https://idom-docs.herokuapp.com/docs/guides/adding-interactivity/responding-to-events/index.html#async-event-handlers) to create infinitely complex web pages.
 
-When needed, you can import JavaScript from [NPM](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#dynamically-loaded-components) into your Python components. If you want to develop a component entirely within JavaScript, you can utilize the [JavaScript Components API](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#custom-javascript-components) for additional flexibility.
+When needed, you can import JavaScript from [NPM](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#dynamically-loaded-components) directly into your Python components. However, if you want to develop a component entirely within JavaScript, the [JavaScript Components API](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#custom-javascript-components) exists for additional flexibility.
 
-Due to our ecosystem independent design, IDOM can be added to existing projects built on a variety of sync and async web frameworks. For example, you can take components originally developed in Jupyter and embed them into an existing Flask application.
+Due to our ecosystem independent design, IDOM components can be reused across a variety of sync and async web frameworks.
 
-Currently supported web frameworks include: `FastAPI`, `Flask`, `Sanic`, `Tornado`, `Django`, `Plotly-Dash`, and `Jupyter`.
+Natively supported web frameworks include: `FastAPI`, `Flask`, `Sanic`, `Tornado`, [`Django`](https://github.com/idom-team/django-idom), [`Plotly-Dash`](https://github.com/idom-team/idom-dash), and [`Jupyter`](https://github.com/idom-team/idom-jupyter).
 
 # At a Glance
 
