@@ -2,7 +2,7 @@
 
 IDOM is a Python framework for building **interactive websites without needing a single line of JavaScript**. Web elements you provide (ex. `button`, `div`, `image`) are combined into [reusable "components"](https://idom-docs.herokuapp.com/docs/guides/creating-interfaces/your-first-components/index.html#parametrizing-components). Using IDOM's [ReactJS](https://reactjs.org/) backed design, components can utilize [hooks](https://idom-docs.herokuapp.com/docs/reference/hooks-api.html) and [events](https://idom-docs.herokuapp.com/docs/guides/adding-interactivity/responding-to-events/index.html#async-event-handlers) to create infinitely complex web pages.
 
-When needed, IDOM can use JavaScript components directly from [NPM](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#dynamically-loaded-components). Components can also be [developed entirely within JavaScript](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#custom-javascript-components) for additional flexibility.
+When needed, IDOM can use JavaScript components directly from [NPM](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#dynamically-loaded-components). Components can also be [developed entirely in JavaScript](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#custom-javascript-components) for additional flexibility.
 
 IDOM's ecosystem independent design allows components to be reused across a variety of sync and async web frameworks.
 
