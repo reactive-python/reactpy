@@ -127,12 +127,12 @@ async def test_use_linked_inputs_on_change(display: DisplayFixture):
 
     poll_value = poll(lambda: value.current)
 
-    poll_value.eq("hello")
+    poll_value.until_equals("hello")
 
     await input_2.focus()
     await input_2.type(" world", delay=20)
 
-    poll_value.eq("hello world")
+    poll_value.until_equals("hello world")
 
 
 async def test_use_linked_inputs_on_change_with_cast(display: DisplayFixture):
@@ -154,12 +154,12 @@ async def test_use_linked_inputs_on_change_with_cast(display: DisplayFixture):
 
     poll_value = poll(lambda: value.current)
 
-    poll_value.eq(1)
+    poll_value.until_equals(1)
 
     await input_2.focus()
     await input_2.type("2")
 
-    poll_value.eq(12)
+    poll_value.until_equals(12)
 
 
 async def test_use_linked_inputs_ignore_empty(display: DisplayFixture):
@@ -183,13 +183,13 @@ async def test_use_linked_inputs_ignore_empty(display: DisplayFixture):
 
     poll_value = poll(lambda: value.current)
 
-    poll_value.eq("1")
+    poll_value.until_equals("1")
 
     await input_2.focus()
     await input_2.press("Backspace")
 
-    poll_value.eq("1")
+    poll_value.until_equals("1")
 
     await input_1.type("2")
 
-    poll_value.eq("2")
+    poll_value.until_equals("2")

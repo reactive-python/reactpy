@@ -82,32 +82,40 @@ class poll(Generic[_R]):
 
             async def until(
                 condition: Callable[[_R], bool], timeout: float = _DEFAULT_TIMEOUT
-            ) -> _R:
+            ) -> None:
                 started_at = time.time()
-                while not condition(await function(*args, **kwargs)):
-                    if (time.time() - started_at) > timeout:
-                        raise TimeoutError()
+                while True:
+                    result = await function(*args, **kwargs)
+                    if condition(result):
+                        break
+                    elif (time.time() - started_at) > timeout:
+                        raise TimeoutError(
+                            f"Condition not met within {timeout} "
+                            f"seconds - last value was {result!r}"
+                        )
 
         else:
 
             def until(
                 condition: Callable[[_R], bool] | Any, timeout: float = _DEFAULT_TIMEOUT
-            ) -> _R:
+            ) -> None:
                 started_at = time.time()
-                while not condition(function(*args, **kwargs)):
-                    if (time.time() - started_at) > timeout:
-                        raise TimeoutError()
+                while True:
+                    result = function(*args, **kwargs)
+                    if condition(result):
+                        break
+                    elif (time.time() - started_at) > timeout:
+                        raise TimeoutError(
+                            f"Condition not met within {timeout} "
+                            f"seconds - last value was {result!r}"
+                        )
 
         self.until: Callable[[Callable[[_R], bool]], Any] = until
         """Check that the coroutines result meets a condition within the timeout"""
 
-    def eq(self, right: Any, timeout: float = _DEFAULT_TIMEOUT) -> Any:
+    def until_equals(self, right: Any, timeout: float = _DEFAULT_TIMEOUT) -> Any:
         """Wait until the result is equal to the given value"""
         return self.until(lambda left: left == right, timeout)
-
-    def ne(self, right: Any, timeout: float = _DEFAULT_TIMEOUT) -> Any:
-        """Wait until the result is not equal to the given value"""
-        return self.until(lambda left: left != right, timeout)
 
 
 class DisplayFixture:
@@ -126,7 +134,7 @@ class DisplayFixture:
             if isinstance(driver, Page):
                 self._page = driver
             else:
-                self._browser = browser
+                self._browser = driver
         self._next_view_id = 0
 
     async def show(
@@ -139,7 +147,7 @@ class DisplayFixture:
         self.server.mount(lambda: html.div({"id": view_id}, component()))
 
         await self._page.goto(self.server.url(query=query))
-        await self._page.wait_for_selector(f"#{view_id}")
+        await self._page.wait_for_selector(f"#{view_id}", state="attached")
 
         return self._page
 

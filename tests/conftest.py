@@ -25,9 +25,9 @@ async def display(server, page):
         yield display
 
 
-@pytest.fixture(scope="session", params=list(all_implementations()))
-async def server(request):
-    async with ServerFixture(implementation=request.param) as server:
+@pytest.fixture(scope="session")
+async def server():
+    async with ServerFixture() as server:
         yield server
 
 

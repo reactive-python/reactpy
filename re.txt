@@ -1,0 +1,12 @@
+def test_(.*?)\(.*driver.*\):
+async def test_$1(display: DisplayFixture):
+
+display\((.*?)\)
+page = await display.show($1)
+
+driver\.find_element\("id", "(.*?)"\)
+await display.wait_for_selector("#$1")
+
+driver_wait\.until\(lambda .*: (\w*)\.get_attribute\("(.*?)"\) == (.*)\)
+assert (await $1.evaluate("node => node['$2']")) == $3
+await poll($1.evaluate, "node => node['$2']").until_equals($3)
