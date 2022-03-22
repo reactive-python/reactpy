@@ -17,7 +17,7 @@ from .core.serve import Stop
 from .core.vdom import vdom
 from .server.utils import run
 from .utils import Ref, html_to_vdom
-from .widgets import hotswap, multiview
+from .widgets import hotswap
 
 
 __author__ = "idom-team"
@@ -34,7 +34,6 @@ __all__ = [
     "html",
     "Layout",
     "log",
-    "multiview",
     "Ref",
     "run",
     "Stop",

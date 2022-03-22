@@ -17,6 +17,7 @@ from uvicorn.config import Config as UvicornConfig
 from uvicorn.server import Server as UvicornServer
 
 from idom.config import IDOM_WEB_MODULES_DIR
+from idom.core.hooks import use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import (
     RecvCoroutine,
@@ -27,6 +28,7 @@ from idom.core.serve import (
 from idom.core.types import RootComponentConstructor
 
 from ._asgi import serve_development_asgi
+from ._conn import Connection
 from .utils import CLIENT_BUILD_DIR
 
 
@@ -65,6 +67,13 @@ async def serve_development_app(
 ) -> None:
     """Run a development server for starlette"""
     await serve_development_asgi(app, host, port, started)
+
+
+def use_connection() -> WebSocket:
+    value = use_context(Connection)
+    if value is None:
+        raise RuntimeError("No established connection.")
+    return value
 
 
 class Options(TypedDict, total=False):
@@ -145,7 +154,9 @@ def _setup_single_view_dispatcher_route(
         send, recv = _make_send_recv_callbacks(socket)
         try:
             await serve_json_patch(
-                Layout(constructor(**dict(socket.query_params))), send, recv
+                Layout(Connection(constructor(), value=socket)),
+                send,
+                recv,
             )
         except WebSocketDisconnect as error:
             logger.info(f"WebSocket disconnect: {error.code}")

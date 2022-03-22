@@ -10,7 +10,16 @@ from threading import Thread
 from typing import Any, Callable, Dict, NamedTuple, Optional, Union, cast
 from urllib.parse import parse_qs as parse_query_string
 
-from flask import Blueprint, Flask, redirect, request, send_from_directory, url_for
+from flask import (
+    Blueprint,
+    Flask,
+    Request,
+    copy_current_request_context,
+    redirect,
+    request,
+    send_from_directory,
+    url_for,
+)
 from flask_cors import CORS
 from flask_sockets import Sockets
 from gevent import pywsgi
@@ -20,10 +29,12 @@ from typing_extensions import TypedDict
 
 import idom
 from idom.config import IDOM_WEB_MODULES_DIR
+from idom.core.hooks import use_context
 from idom.core.layout import LayoutEvent, LayoutUpdate
 from idom.core.serve import serve_json_patch
 from idom.core.types import ComponentType, RootComponentConstructor
 
+from ._conn import Connection
 from .utils import CLIENT_BUILD_DIR
 
 
@@ -92,6 +103,13 @@ async def serve_development_app(
         # just double check it happened
         if thread.is_alive():
             raise RuntimeError("Failed to shutdown server.")
+
+
+def use_connection() -> Request:
+    value = use_context(Connection)
+    if value is None:
+        raise RuntimeError("No established connection.")
+    return value
 
 
 class Options(TypedDict, total=False):
@@ -175,14 +193,7 @@ def _setup_single_view_dispatcher_route(
             else:
                 return None
 
-        dispatch_in_thread(constructor(**_get_query_params(ws)), send, recv)
-
-
-def _get_query_params(ws: WebSocket) -> Dict[str, Any]:
-    return {
-        k: v if len(v) > 1 else v[0]
-        for k, v in parse_query_string(ws.environ["QUERY_STRING"]).items()
-    }
+        dispatch_in_thread(constructor(), send, recv)
 
 
 def dispatch_in_thread(
@@ -193,6 +204,7 @@ def dispatch_in_thread(
     dispatch_thread_info_created = ThreadEvent()
     dispatch_thread_info_ref: idom.Ref[Optional[_DispatcherThreadInfo]] = idom.Ref(None)
 
+    @copy_current_request_context
     def run_dispatcher() -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -207,7 +219,9 @@ def dispatch_in_thread(
             return await async_recv_queue.get()
 
         async def main() -> None:
-            await serve_json_patch(idom.Layout(component), send_coro, recv_coro)
+            await serve_json_patch(
+                idom.Layout(Connection(component, value=request)), send_coro, recv_coro
+            )
 
         main_future = asyncio.ensure_future(main())
 

@@ -4,6 +4,7 @@
 - :mod:`idom.server.types`
 """
 
+from .core.hooks import Context
 from .core.types import (
     ComponentConstructor,
     ComponentType,
@@ -28,6 +29,7 @@ from .server.types import ServerImplementation
 __all__ = [
     "ComponentConstructor",
     "ComponentType",
+    "Context",
     "EventHandlerDict",
     "EventHandlerFunc",
     "EventHandlerMapping",

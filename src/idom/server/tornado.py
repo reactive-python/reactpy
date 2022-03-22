@@ -8,16 +8,19 @@ from typing import Any, List, Tuple, Type, Union
 from urllib.parse import urljoin
 
 from tornado.httpserver import HTTPServer
+from tornado.httputil import HTTPServerRequest
 from tornado.platform.asyncio import AsyncIOMainLoop
 from tornado.web import Application, RedirectHandler, RequestHandler, StaticFileHandler
 from tornado.websocket import WebSocketHandler
 from typing_extensions import TypedDict
 
 from idom.config import IDOM_WEB_MODULES_DIR
+from idom.core.hooks import use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
 
+from ._conn import Connection
 from .utils import CLIENT_BUILD_DIR
 
 
@@ -67,6 +70,13 @@ async def serve_development_app(
         server.stop()
         # wait for existing connections to complete
         await server.close_all_connections()
+
+
+def use_connection() -> HTTPServerRequest:
+    value = use_context(Connection)
+    if value is None:
+        raise RuntimeError("No established connection.")
+    return value
 
 
 class Options(TypedDict, total=False):
@@ -160,7 +170,7 @@ class ModelStreamHandler(WebSocketHandler):
         self._message_queue = message_queue
         self._dispatch_future = asyncio.ensure_future(
             serve_json_patch(
-                Layout(self._component_constructor(**query_params)),
+                Layout(Connection(self._component_constructor(), value=self.request)),
                 send,
                 recv,
             )

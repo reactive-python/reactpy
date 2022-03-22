@@ -22,6 +22,7 @@ from idom.core.serve import (
 )
 from idom.core.types import RootComponentConstructor
 
+from ._conn import Connection
 from .utils import CLIENT_BUILD_DIR
 
 
@@ -61,6 +62,13 @@ async def serve_development_app(
     except KeyboardInterrupt:
         app.shutdown_tasks(3)
         app.stop()
+
+
+def use_connection() -> request.Request:
+    value = use_connection(Connection)
+    if value is None:
+        raise RuntimeError("No established connection.")
+    return value
 
 
 class Options(TypedDict, total=False):
@@ -122,7 +130,11 @@ def _setup_single_view_dispatcher_route(
     ) -> None:
         send, recv = _make_send_recv_callbacks(socket)
         component_params = {k: request.args.get(k) for k in request.args}
-        await serve_json_patch(Layout(constructor(**component_params)), send, recv)
+        await serve_json_patch(
+            Layout(Connection(constructor(**component_params), value=request)),
+            send,
+            recv,
+        )
 
 
 def _make_send_recv_callbacks(

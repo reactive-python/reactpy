@@ -206,19 +206,19 @@ def use_effect(
 
 def create_context(
     default_value: _StateType, name: str | None = None
-) -> type[_Context[_StateType]]:
+) -> type[Context[_StateType]]:
     """Return a new context type for use in :func:`use_context`"""
 
-    class Context(_Context[_StateType]):
+    class _Context(Context[_StateType]):
         _default_value = default_value
 
     if name is not None:
-        Context.__name__ = name
+        _Context.__name__ = name
 
-    return Context
+    return _Context
 
 
-def use_context(context_type: type[_Context[_StateType]]) -> _StateType:
+def use_context(context_type: type[Context[_StateType]]) -> _StateType:
     """Get the current value for the given context type.
 
     See the full :ref:`Use Context` docs for more information.
@@ -228,7 +228,7 @@ def use_context(context_type: type[_Context[_StateType]]) -> _StateType:
     # that newly present current context. When we update it though, we don't need to
     # schedule a new render since we're already rending right now. Thus we can't do this
     # with use_state() since we'd incur an extra render when calling set_state.
-    context_ref: Ref[_Context[_StateType] | None] = use_ref(None)
+    context_ref: Ref[Context[_StateType] | None] = use_ref(None)
 
     if context_ref.current is None:
         provided_context = context_type._current.get()
@@ -244,7 +244,7 @@ def use_context(context_type: type[_Context[_StateType]]) -> _StateType:
 
     @use_effect
     def subscribe_to_context_change() -> Callable[[], None]:
-        def set_context(new: _Context[_StateType]) -> None:
+        def set_context(new: Context[_StateType]) -> None:
             # We don't need to check if `new is not context_ref.current` because we only
             # trigger this callback when the value of a context, and thus the context
             # itself changes. Therefore we can always schedule a render.
@@ -260,13 +260,13 @@ def use_context(context_type: type[_Context[_StateType]]) -> _StateType:
 _UNDEFINED: Any = object()
 
 
-class _Context(Generic[_StateType]):
+class Context(Generic[_StateType]):
 
     # This should be _StateType instead of Any, but it can't due to this limitation:
     # https://github.com/python/mypy/issues/5144
     _default_value: ClassVar[Any]
 
-    _current: ClassVar[ThreadLocal[_Context[Any] | None]]
+    _current: ClassVar[ThreadLocal[Context[Any] | None]]
 
     def __init_subclass__(cls) -> None:
         # every context type tracks which of its instances are currently in use
@@ -281,7 +281,7 @@ class _Context(Generic[_StateType]):
         self.children = children
         self.value: _StateType = self._default_value if value is _UNDEFINED else value
         self.key = key
-        self.subscribers: set[Callable[[_Context[_StateType]], None]] = set()
+        self.subscribers: set[Callable[[Context[_StateType]], None]] = set()
         self.type = self.__class__
 
     def render(self) -> VdomDict:
@@ -297,7 +297,7 @@ class _Context(Generic[_StateType]):
 
         return vdom("", *self.children)
 
-    def should_render(self, new: _Context[_StateType]) -> bool:
+    def should_render(self, new: Context[_StateType]) -> bool:
         if self.value is not new.value:
             new.subscribers.update(self.subscribers)
             for set_context in self.subscribers:

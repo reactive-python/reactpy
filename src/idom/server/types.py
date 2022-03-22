@@ -1,5 +1,5 @@
 import asyncio
-from typing import Callable, TypeVar
+from typing import Any, TypeVar
 
 from typing_extensions import Protocol, runtime_checkable
 
@@ -23,3 +23,6 @@ class ServerImplementation(Protocol[_App]):
         self, app: _App, host: str, port: int, started: asyncio.Event
     ) -> None:
         """Run an application using a development server"""
+
+    def use_connection() -> Any:
+        """Get information about a currently active request to the server"""

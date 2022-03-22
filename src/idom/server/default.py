@@ -28,6 +28,10 @@ async def serve_development_app(
     )
 
 
+def use_connection() -> Any:
+    return _default_implementation().use_connection()
+
+
 def _default_implementation() -> ServerImplementation[Any]:
     """Get the first available server implementation"""
     global _DEFAULT_IMPLEMENTATION
