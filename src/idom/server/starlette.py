@@ -70,6 +70,7 @@ async def serve_development_app(
 
 
 def use_connection() -> WebSocket:
+    """Get the current ``WebSocket`` connection"""
     value = use_context(Connection)
     if value is None:
         raise RuntimeError("No established connection.")

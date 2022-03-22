@@ -65,6 +65,7 @@ async def serve_development_app(
 
 
 def use_connection() -> request.Request:
+    """Get the current ``Request``"""
     value = use_connection(Connection)
     if value is None:
         raise RuntimeError("No established connection.")

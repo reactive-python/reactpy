@@ -73,6 +73,7 @@ async def serve_development_app(
 
 
 def use_connection() -> HTTPServerRequest:
+    """Get the current ``HTTPServerRequest``"""
     value = use_context(Connection)
     if value is None:
         raise RuntimeError("No established connection.")
