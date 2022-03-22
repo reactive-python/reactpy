@@ -4,7 +4,6 @@ from pathlib import Path
 
 import idom
 from idom.testing import ServerFixture
-from tests.tooling.browser import send_keys
 
 
 JS_DIR = Path(__file__).parent / "js"

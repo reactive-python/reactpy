@@ -1,25 +1,13 @@
 import pytest
 
 import idom
-from idom.server import fastapi as idom_fastapi
-from idom.server import flask as idom_flask
-from idom.server import sanic as idom_sanic
-from idom.server import starlette as idom_starlette
-from idom.server import tornado as idom_tornado
+from idom.server.utils import all_implementations
 from idom.testing import ServerFixture
 
 
 @pytest.fixture(
-    params=[
-        # add new PerClientStateServer implementations here to
-        # run a suite of tests which check basic functionality
-        idom_fastapi.PerClientStateServer,
-        idom_flask.PerClientStateServer,
-        idom_sanic.PerClientStateServer,
-        idom_starlette.PerClientStateServer,
-        idom_tornado.PerClientStateServer,
-    ],
-    ids=lambda cls: f"{cls.__module__}.{cls.__name__}",
+    params=list(all_implementations()),
+    ids=lambda imp: imp.__name__,
 )
 def server_mount_point(request):
     with ServerFixture(request.param) as mount_point:
