@@ -7,3 +7,4 @@ pytest-rerunfailures
 pytest-timeout
 responses
 playwright
+pytest-playwright

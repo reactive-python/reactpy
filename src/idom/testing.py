@@ -113,6 +113,10 @@ class poll(Generic[_R]):
         self.until: Callable[[Callable[[_R], bool]], Any] = until
         """Check that the coroutines result meets a condition within the timeout"""
 
+    def until_is(self, right: Any, timeout: float = _DEFAULT_TIMEOUT) -> Any:
+        """Wait until the result is identical to the given value"""
+        return self.until(lambda left: left is right, timeout)
+
     def until_equals(self, right: Any, timeout: float = _DEFAULT_TIMEOUT) -> Any:
         """Wait until the result is equal to the given value"""
         return self.until(lambda left: left == right, timeout)
@@ -197,12 +201,21 @@ class ServerFixture:
         self,
         host: str = "127.0.0.1",
         port: Optional[int] = None,
+        app: Any | None = None,
         implementation: ServerImplementation[Any] = default_server,
     ) -> None:
         self.server_implementation = implementation
         self.host = host
         self.port = port or find_available_port(host, allow_reuse_waiting_ports=False)
         self.mount, self._root_component = hotswap()
+
+        if app is not None:
+            if implementation is None:
+                raise ValueError(
+                    "If an application instance its corresponding "
+                    "server implementation must be provided too."
+                )
+        self._app = app
 
     @property
     def log_records(self) -> List[logging.LogRecord]:
@@ -259,7 +272,7 @@ class ServerFixture:
     async def __aenter__(self: _Self) -> _Self:
         self._log_handler = _LogRecordCaptor()
         logging.getLogger().addHandler(self._log_handler)
-        app = self.server_implementation.create_development_app()
+        app = self._app or self.server_implementation.create_development_app()
         self.server_implementation.configure(app, self._root_component)
 
         started = asyncio.Event()

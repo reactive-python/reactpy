@@ -1,4 +1,5 @@
 from pathlib import Path
+from sys import implementation
 
 import pytest
 from sanic import Sanic
@@ -7,15 +8,21 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
 import idom
-from idom.server.sanic import PerClientStateServer
-from idom.testing import ServerFixture, assert_idom_did_not_log, assert_idom_logged
+from idom.server import sanic as sanic_implementation
+from idom.testing import (
+    DisplayFixture,
+    ServerFixture,
+    assert_idom_did_not_log,
+    assert_idom_logged,
+    poll,
+)
 from idom.web.module import NAME_SOURCE, WebModule
 
 
 JS_FIXTURES_DIR = Path(__file__).parent / "js_fixtures"
 
 
-def test_that_js_module_unmount_is_called(driver, display):
+async def test_that_js_module_unmount_is_called(display: DisplayFixture):
     SomeComponent = idom.web.export(
         idom.web.module_from_file(
             "set-flag-when-unmount-is-called",
@@ -33,23 +40,23 @@ def test_that_js_module_unmount_is_called(driver, display):
         )
         return current_component
 
-    display(ShowCurrentComponent)
+    page = await display.show(ShowCurrentComponent)
 
-    driver.find_element("id", "some-component")
+    await page.wait_for_selector("#some-component", state="attached")
 
     set_current_component.current(
         idom.html.h1({"id": "some-other-component"}, "some other component")
     )
 
     # the new component has been displayed
-    driver.find_element("id", "some-other-component")
+    await page.wait_for_selector("#some-other-component", state="attached")
 
     # the unmount callback for the old component was called
-    driver.find_element("id", "unmount-flag")
+    await page.wait_for_selector("#unmount-flag", state="attached")
 
 
-def test_module_from_url(driver):
-    app = Sanic(__name__)
+async def test_module_from_url(browser):
+    app = Sanic("test_module_from_url")
 
     # instead of directing the URL to a CDN, we just point it to this static file
     app.static(
@@ -67,10 +74,10 @@ def test_module_from_url(driver):
     def ShowSimpleButton():
         return SimpleButton({"id": "my-button"})
 
-    with ServerFixture(PerClientStateServer, app=app) as mount_point:
-        mount_point.mount(ShowSimpleButton)
-        driver.get(mount_point.url())
-        driver.find_element("id", "my-button")
+    async with ServerFixture(app=app, implementation=sanic_implementation) as server:
+        async with DisplayFixture(server, browser) as display:
+            page = await display.show(ShowSimpleButton)
+            await page.wait_for_selector("#my-button")
 
 
 def test_module_from_template_where_template_does_not_exist():
@@ -78,19 +85,14 @@ def test_module_from_template_where_template_does_not_exist():
         idom.web.module_from_template("does-not-exist", "something.js")
 
 
-def test_module_from_template(driver, display):
+async def test_module_from_template(display: DisplayFixture):
     victory = idom.web.module_from_template("react", "victory-bar@35.4.0")
     VictoryBar = idom.web.export(victory, "VictoryBar")
-    display(VictoryBar)
-    wait = WebDriverWait(driver, 10)
-    wait.until(
-        expected_conditions.visibility_of_element_located(
-            (By.CLASS_NAME, "VictoryContainer")
-        )
-    )
+    page = await display.show(VictoryBar)
+    await page.wait_for_selector(".VictoryContainer")
 
 
-def test_module_from_file(driver, driver_wait, display):
+async def test_module_from_file(display: DisplayFixture):
     SimpleButton = idom.web.export(
         idom.web.module_from_file(
             "simple-button", JS_FIXTURES_DIR / "simple-button.js"
@@ -106,11 +108,11 @@ def test_module_from_file(driver, driver_wait, display):
             {"id": "my-button", "onClick": lambda event: is_clicked.set_current(True)}
         )
 
-    display(ShowSimpleButton)
+    page = await display.show(ShowSimpleButton)
 
-    button = driver.find_element("id", "my-button")
-    button.click()
-    driver_wait.until(lambda d: is_clicked.current)
+    button = await page.wait_for_selector("#my-button")
+    await button.click()
+    poll(lambda: is_clicked.current).until_is(True)
 
 
 def test_module_from_file_source_conflict(tmp_path):
@@ -188,7 +190,7 @@ def test_module_missing_exports():
         idom.web.export(module, ["x", "y"])
 
 
-def test_module_exports_multiple_components(driver, display):
+async def test_module_exports_multiple_components(display: DisplayFixture):
     Header1, Header2 = idom.web.export(
         idom.web.module_from_file(
             "exports-two-components", JS_FIXTURES_DIR / "exports-two-components.js"
@@ -196,22 +198,22 @@ def test_module_exports_multiple_components(driver, display):
         ["Header1", "Header2"],
     )
 
-    display(lambda: Header1({"id": "my-h1"}, "My Header 1"))
+    page = await display.show(lambda: Header1({"id": "my-h1"}, "My Header 1"))
 
-    driver.find_element("id", "my-h1")
+    await page.wait_for_selector("#my-h1", state="attached")
 
-    display(lambda: Header2({"id": "my-h2"}, "My Header 2"))
+    page = await display.show(lambda: Header2({"id": "my-h2"}, "My Header 2"))
 
-    driver.find_element("id", "my-h2")
+    await page.wait_for_selector("#my-h2", state="attached")
 
 
-def test_imported_components_can_render_children(driver, display):
+async def test_imported_components_can_render_children(display: DisplayFixture):
     module = idom.web.module_from_file(
         "component-can-have-child", JS_FIXTURES_DIR / "component-can-have-child.js"
     )
     Parent, Child = idom.web.export(module, ["Parent", "Child"])
 
-    display(
+    page = await display.show(
         lambda: Parent(
             Child({"index": 1}),
             Child({"index": 2}),
@@ -219,13 +221,13 @@ def test_imported_components_can_render_children(driver, display):
         )
     )
 
-    parent = driver.find_element("id", "the-parent")
-    children = parent.find_elements("tag name", "li")
+    parent = await page.wait_for_selector("#the-parent", state="attached")
+    children = await parent.query_selector_all("li")
 
     assert len(children) == 3
 
     for index, child in enumerate(children):
-        assert child.get_attribute("id") == f"child-{index + 1}"
+        assert (await child.get_attribute("id")) == f"child-{index + 1}"
 
 
 def test_module_from_string():

@@ -5,7 +5,8 @@ display\((.*?)\)
 page = await display.show($1)
 
 driver\.find_element\("id", "(.*?)"\)
-await display.wait_for_selector("#$1")
+await page.wait_for_selector("#$1")
+await page.wait_for_selector("#$1", state="attached")
 
 driver_wait\.until\(lambda .*: (\w*)\.get_attribute\("(.*?)"\) == (.*)\)
 assert (await $1.evaluate("node => node['$2']")) == $3
