@@ -1,6 +1,7 @@
 import { mountWithLayoutServer, LayoutServerInfo } from "idom-client-react";
 
 export function mount(mountPoint) {
+  console.log("Mounted");
   const serverInfo = new LayoutServerInfo({
     host: document.location.hostname,
     port: document.location.port,
