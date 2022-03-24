@@ -19,6 +19,7 @@ export function mountWithLayoutServer(
 }
 
 export function LayoutServerInfo({ host, port, path, query, secure }) {
+  console.log(secure)
   const wsProtocol = "ws" + (Boolean(secure) ? "s" : "");
   const httpProtocol = "http" + (Boolean(secure) ? "s" : "");
 
