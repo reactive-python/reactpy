@@ -6,7 +6,7 @@ import operator
 import re
 import shutil
 import time
-from contextlib import AsyncExitStack, contextmanager
+from contextlib import AsyncExitStack, ExitStack, contextmanager
 from functools import partial, wraps
 from inspect import isawaitable, iscoroutinefunction
 from traceback import format_exception
@@ -194,8 +194,9 @@ class ServerFixture:
                 server.mount(MyComponent)
     """
 
-    _log_handler: "_LogRecordCaptor"
+    _records: list[logging.LogRecord]
     _server_future: asyncio.Task[Any]
+    _exit_stack = ExitStack()
 
     def __init__(
         self,
@@ -220,7 +221,7 @@ class ServerFixture:
     @property
     def log_records(self) -> List[logging.LogRecord]:
         """A list of captured log records"""
-        return self._log_handler.records
+        return self._records
 
     def url(self, path: str = "", query: Optional[Any] = None) -> str:
         """Return a URL string pointing to the host and point of the server
@@ -270,8 +271,9 @@ class ServerFixture:
         return found
 
     async def __aenter__(self: _Self) -> _Self:
-        self._log_handler = _LogRecordCaptor()
-        logging.getLogger().addHandler(self._log_handler)
+        self._exit_stack = ExitStack()
+        self._records = self._exit_stack.enter_context(capture_idom_logs())
+
         app = self._app or self.server_implementation.create_development_app()
         self.server_implementation.configure(app, self._root_component)
 
@@ -281,6 +283,8 @@ class ServerFixture:
                 app, self.host, self.port, started
             )
         )
+
+        self._exit_stack.callback(self._server_future.cancel)
 
         try:
             await asyncio.wait_for(started.wait(), timeout=3)
@@ -297,19 +301,18 @@ class ServerFixture:
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
-        self.mount(None)  # reset the view
+        self._exit_stack.close()
 
-        self._server_future.cancel()
+        self.mount(None)  # reset the view
 
         try:
             await asyncio.wait_for(self._server_future, timeout=3)
         except asyncio.CancelledError:
             pass
 
-        logging.getLogger().removeHandler(self._log_handler)
         logged_errors = self.list_logged_exceptions(del_log_records=False)
         if logged_errors:  # pragma: no cover
-            raise logged_errors[0]
+            raise LogAssertionError("Unexpected logged exception") from logged_errors[0]
 
         return None
 
@@ -323,7 +326,7 @@ def assert_idom_logged(
     match_message: str = "",
     error_type: type[Exception] | None = None,
     match_error: str = "",
-    clear_matched_records: bool = False,
+    clear_after: bool = True,
 ) -> Iterator[None]:
     """Assert that IDOM produced a log matching the described message or error.
 
@@ -331,53 +334,49 @@ def assert_idom_logged(
         match_message: Must match a logged message.
         error_type: Checks the type of logged exceptions.
         match_error: Must match an error message.
-        clear_matched_records: Whether to remove logged records that match.
+        clear_after: Whether to remove logged records that match.
     """
     message_pattern = re.compile(match_message)
     error_pattern = re.compile(match_error)
 
-    try:
-        with capture_idom_logs(yield_existing=clear_matched_records) as log_records:
+    with capture_idom_logs(clear_after=clear_after) as log_records:
+        try:
             yield None
-    except Exception:
-        raise
-    else:
-        found = False
-        for record in list(log_records):
-            if (
-                # record message matches
-                message_pattern.findall(record.getMessage())
-                # error type matches
-                and (
-                    error_type is None
-                    or (
-                        record.exc_info is not None
-                        and record.exc_info[0] is not None
-                        and issubclass(record.exc_info[0], error_type)
-                    )
-                )
-                # error message pattern matches
-                and (
-                    not match_error
-                    or (
-                        record.exc_info is not None
-                        and error_pattern.findall(
-                            "".join(format_exception(*record.exc_info))
+        except Exception:
+            raise
+        else:
+            for record in list(log_records):
+                if (
+                    # record message matches
+                    message_pattern.findall(record.getMessage())
+                    # error type matches
+                    and (
+                        error_type is None
+                        or (
+                            record.exc_info is not None
+                            and record.exc_info[0] is not None
+                            and issubclass(record.exc_info[0], error_type)
                         )
                     )
+                    # error message pattern matches
+                    and (
+                        not match_error
+                        or (
+                            record.exc_info is not None
+                            and error_pattern.findall(
+                                "".join(format_exception(*record.exc_info))
+                            )
+                        )
+                    )
+                ):
+                    break
+            else:  # pragma: no cover
+                _raise_log_message_error(
+                    "Could not find a log record matching the given",
+                    match_message,
+                    error_type,
+                    match_error,
                 )
-            ):
-                found = True
-                if clear_matched_records:
-                    log_records.remove(record)
-
-        if not found:  # pragma: no cover
-            _raise_log_message_error(
-                "Could not find a log record matching the given",
-                match_message,
-                error_type,
-                match_error,
-            )
 
 
 @contextmanager
@@ -385,13 +384,11 @@ def assert_idom_did_not_log(
     match_message: str = "",
     error_type: type[Exception] | None = None,
     match_error: str = "",
-    clear_matched_records: bool = False,
+    clear_after: bool = True,
 ) -> Iterator[None]:
     """Assert the inverse of :func:`assert_idom_logged`"""
     try:
-        with assert_idom_logged(
-            match_message, error_type, match_error, clear_matched_records
-        ):
+        with assert_idom_logged(match_message, error_type, match_error, clear_after):
             yield None
     except LogAssertionError:
         pass
@@ -421,43 +418,33 @@ def _raise_log_message_error(
 
 
 @contextmanager
-def capture_idom_logs(
-    yield_existing: bool = False,
-) -> Iterator[list[logging.LogRecord]]:
+def capture_idom_logs(clear_after: bool = True) -> Iterator[list[logging.LogRecord]]:
     """Capture logs from IDOM
 
-    Parameters:
-        yield_existing:
-            If already inside an existing capture context yield the same list of logs.
-            This is useful if you need to mutate the list of logs to affect behavior in
-            the outer context.
+    Args:
+        clear_after:
+            Clear any records which were produced in this context when exiting.
     """
-    if yield_existing:
-        for handler in reversed(ROOT_LOGGER.handlers):
-            if isinstance(handler, _LogRecordCaptor):
-                yield handler.records
-                return None
-
-    handler = _LogRecordCaptor()
     original_level = ROOT_LOGGER.level
-
     ROOT_LOGGER.setLevel(logging.DEBUG)
-    ROOT_LOGGER.addHandler(handler)
     try:
-        yield handler.records
+        if _LOG_RECORD_CAPTOR in ROOT_LOGGER.handlers:
+            start_index = len(_LOG_RECORD_CAPTOR.records)
+            try:
+                yield _LOG_RECORD_CAPTOR.records
+            finally:
+                end_index = len(_LOG_RECORD_CAPTOR.records)
+                _LOG_RECORD_CAPTOR.records[start_index:end_index] = []
+            return None
+
+        ROOT_LOGGER.addHandler(_LOG_RECORD_CAPTOR)
+        try:
+            yield _LOG_RECORD_CAPTOR.records
+        finally:
+            ROOT_LOGGER.removeHandler(_LOG_RECORD_CAPTOR)
+            _LOG_RECORD_CAPTOR.records.clear()
     finally:
-        ROOT_LOGGER.removeHandler(handler)
         ROOT_LOGGER.setLevel(original_level)
-
-
-class _LogRecordCaptor(logging.NullHandler):
-    def __init__(self) -> None:
-        self.records: List[logging.LogRecord] = []
-        super().__init__()
-
-    def handle(self, record: logging.LogRecord) -> bool:
-        self.records.append(record)
-        return True
 
 
 class HookCatcher:
@@ -575,3 +562,16 @@ class StaticEventHandler:
 def clear_idom_web_modules_dir() -> None:
     for path in IDOM_WEB_MODULES_DIR.current.iterdir():
         shutil.rmtree(path) if path.is_dir() else path.unlink()
+
+
+class _LogRecordCaptor(logging.NullHandler):
+    def __init__(self) -> None:
+        self.records: List[logging.LogRecord] = []
+        super().__init__()
+
+    def handle(self, record: logging.LogRecord) -> bool:
+        self.records.append(record)
+        return True
+
+
+_LOG_RECORD_CAPTOR = _LogRecordCaptor()

@@ -212,8 +212,7 @@ def create_context(
     class _Context(Context[_StateType]):
         _default_value = default_value
 
-    if name is not None:
-        _Context.__name__ = name
+    _Context.__name__ = name or "Context"
 
     return _Context
 

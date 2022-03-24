@@ -5,7 +5,12 @@ from _pytest.config import Config
 from _pytest.config.argparsing import Parser
 from playwright.async_api import async_playwright
 
-from idom.testing import DisplayFixture, ServerFixture, clear_idom_web_modules_dir
+from idom.testing import (
+    DisplayFixture,
+    ServerFixture,
+    capture_idom_logs,
+    clear_idom_web_modules_dir,
+)
 from tests.tooling.loop import open_event_loop
 
 
@@ -55,3 +60,15 @@ def event_loop():
 @pytest.fixture(autouse=True)
 def clear_web_modules_dir_after_test():
     clear_idom_web_modules_dir()
+
+
+@pytest.fixture(autouse=True)
+def assert_no_logged_exceptions():
+    with capture_idom_logs() as records:
+        yield
+    try:
+        for r in records:
+            if r.exc_info is not None:
+                raise r.exc_info[1]
+    finally:
+        records.clear()

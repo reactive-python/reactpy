@@ -183,7 +183,7 @@ async def test_layout_render_error_has_partial_update_with_error_message():
 
     with assert_idom_logged(
         match_error="error from bad child",
-        clear_matched_records=True,
+        clear_after=True,
     ):
 
         with idom.Layout(Main()) as layout:
@@ -242,7 +242,7 @@ async def test_layout_render_error_has_partial_update_without_error_message():
 
     with assert_idom_logged(
         match_error="error from bad child",
-        clear_matched_records=True,
+        clear_after=True,
     ):
 
         with idom.Layout(Main()) as layout:
@@ -743,7 +743,7 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
         with assert_idom_logged(
             error_type=ValueError,
             match_error=r"Duplicate keys \['duplicate'\] at '/children/0'",
-            clear_matched_records=True,
+            clear_after=True,
         ):
             await layout.render()
 
@@ -757,7 +757,7 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
         with assert_idom_logged(
             error_type=ValueError,
             match_error=r"Duplicate keys \['duplicate'\] at '/children/0'",
-            clear_matched_records=True,
+            clear_after=True,
         ):
             await layout.render()
 
@@ -798,7 +798,7 @@ async def test_log_error_on_bad_event_handler():
 
     with assert_idom_logged(
         match_error="bad event handler",
-        clear_matched_records=True,
+        clear_after=True,
     ):
 
         with idom.Layout(ComponentWithBadEventHandler()) as layout:
@@ -807,7 +807,7 @@ async def test_log_error_on_bad_event_handler():
             await layout.deliver(event)
 
 
-async def test_schedule_render_from_unmounted_hook(caplog):
+async def test_schedule_render_from_unmounted_hook():
     parent_set_state = idom.Ref()
 
     @idom.component
@@ -1233,7 +1233,7 @@ async def test_component_error_in_should_render_is_handled_gracefully():
         match_message=r".* component failed to check if .* should be rendered",
         error_type=ValueError,
         match_error="The error message",
-        clear_matched_records=True,
+        clear_after=True,
     ):
         with idom.Layout(Root()) as layout:
             await layout.render()

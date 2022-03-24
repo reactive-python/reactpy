@@ -832,16 +832,14 @@ async def test_use_ref():
     assert len(used_refs) == 2
 
 
-def test_bad_schedule_render_callback(caplog):
+def test_bad_schedule_render_callback():
     def bad_callback():
         raise ValueError("something went wrong")
 
-    hook = LifeCycleHook(bad_callback)
-
-    hook.schedule_render()
-
-    first_log_line = next(iter(caplog.records)).msg.split("\n", 1)[0]
-    assert re.match(f"Failed to schedule render via {bad_callback}", first_log_line)
+    with assert_idom_logged(
+        match_message=f"Failed to schedule render via {bad_callback}"
+    ):
+        LifeCycleHook(bad_callback).schedule_render()
 
 
 async def test_use_effect_automatically_infers_closure_values():

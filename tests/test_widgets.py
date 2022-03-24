@@ -1,4 +1,3 @@
-import asyncio
 from base64 import b64encode
 from pathlib import Path
 
@@ -7,10 +6,6 @@ from idom.testing import DisplayFixture, poll
 
 
 HERE = Path(__file__).parent
-
-
-def test_multiview_repr():
-    assert str(idom.widgets.MultiViewMount({})) == "MultiViewMount({})"
 
 
 async def test_hostwap_update_on_change(display: DisplayFixture):
