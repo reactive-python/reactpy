@@ -7,7 +7,7 @@ export function mount(mountPoint) {
     port: document.location.port,
     path: "../",
     query: queryParams.user.toString(),
-    secure: document.location.protocol == "https",
+    secure: document.location.protocol == "https:",
   });
   console.log(document.location.protocol)
   mountWithLayoutServer(mountPoint, serverInfo, shouldReconnect() ? 45 : 0);
