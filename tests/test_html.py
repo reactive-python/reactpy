@@ -39,9 +39,9 @@ async def test_script_mount_unmount(display: DisplayFixture):
             }"""
         )
 
-    page = await display.show(Root)
+    await display.show(Root)
 
-    mount_state = await page.wait_for_selector("#mount-state", state="attached")
+    mount_state = await display.page.wait_for_selector("#mount-state", state="attached")
     poll_mount_state = poll(mount_state.get_attribute, "data-value")
 
     await poll_mount_state.until_equals("true")
@@ -74,12 +74,14 @@ async def test_script_re_run_on_content_change(display: DisplayFixture):
             ),
         )
 
-    page = await display.show(HasScript)
+    await display.show(HasScript)
 
-    mount_count = await page.wait_for_selector("#mount-count", state="attached")
+    mount_count = await display.page.wait_for_selector("#mount-count", state="attached")
     poll_mount_count = poll(mount_count.get_attribute, "data-value")
 
-    unmount_count = await page.wait_for_selector("#unmount-count", state="attached")
+    unmount_count = await display.page.wait_for_selector(
+        "#unmount-count", state="attached"
+    )
     poll_unmount_count = poll(unmount_count.get_attribute, "data-value")
 
     await poll_mount_count.until_equals("1")
@@ -114,7 +116,7 @@ async def test_script_from_src(display: DisplayFixture):
                 ),
             )
 
-    page = await display.show(HasScript)
+    await display.show(HasScript)
 
     for i in range(1, 4):
         script_file = config.IDOM_WEB_MODULES_DIR.current / file_name_template.format(
@@ -129,7 +131,7 @@ async def test_script_from_src(display: DisplayFixture):
 
         incr_src_id.current()
 
-        run_count = await page.wait_for_selector("#run-count", state="attached")
+        run_count = await display.page.wait_for_selector("#run-count", state="attached")
         poll_run_count = poll(run_count.get_attribute, "data-value")
         await poll_run_count.until_equals("1")
 

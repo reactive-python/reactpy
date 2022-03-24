@@ -40,19 +40,19 @@ async def test_that_js_module_unmount_is_called(display: DisplayFixture):
         )
         return current_component
 
-    page = await display.show(ShowCurrentComponent)
+    await display.show(ShowCurrentComponent)
 
-    await page.wait_for_selector("#some-component", state="attached")
+    await display.page.wait_for_selector("#some-component", state="attached")
 
     set_current_component.current(
         idom.html.h1({"id": "some-other-component"}, "some other component")
     )
 
     # the new component has been displayed
-    await page.wait_for_selector("#some-other-component", state="attached")
+    await display.page.wait_for_selector("#some-other-component", state="attached")
 
     # the unmount callback for the old component was called
-    await page.wait_for_selector("#unmount-flag", state="attached")
+    await display.page.wait_for_selector("#unmount-flag", state="attached")
 
 
 async def test_module_from_url(browser):
@@ -76,8 +76,9 @@ async def test_module_from_url(browser):
 
     async with ServerFixture(app=app, implementation=sanic_implementation) as server:
         async with DisplayFixture(server, browser) as display:
-            page = await display.show(ShowSimpleButton)
-            await page.wait_for_selector("#my-button")
+            await display.show(ShowSimpleButton)
+
+            await display.page.wait_for_selector("#my-button")
 
 
 def test_module_from_template_where_template_does_not_exist():
@@ -88,8 +89,9 @@ def test_module_from_template_where_template_does_not_exist():
 async def test_module_from_template(display: DisplayFixture):
     victory = idom.web.module_from_template("react", "victory-bar@35.4.0")
     VictoryBar = idom.web.export(victory, "VictoryBar")
-    page = await display.show(VictoryBar)
-    await page.wait_for_selector(".VictoryContainer")
+    await display.show(VictoryBar)
+
+    await display.page.wait_for_selector(".VictoryContainer")
 
 
 async def test_module_from_file(display: DisplayFixture):
@@ -108,9 +110,9 @@ async def test_module_from_file(display: DisplayFixture):
             {"id": "my-button", "onClick": lambda event: is_clicked.set_current(True)}
         )
 
-    page = await display.show(ShowSimpleButton)
+    await display.show(ShowSimpleButton)
 
-    button = await page.wait_for_selector("#my-button")
+    button = await display.page.wait_for_selector("#my-button")
     await button.click()
     poll(lambda: is_clicked.current).until_is(True)
 
@@ -198,13 +200,13 @@ async def test_module_exports_multiple_components(display: DisplayFixture):
         ["Header1", "Header2"],
     )
 
-    page = await display.show(lambda: Header1({"id": "my-h1"}, "My Header 1"))
+    await display.show(lambda: Header1({"id": "my-h1"}, "My Header 1"))
 
-    await page.wait_for_selector("#my-h1", state="attached")
+    await display.page.wait_for_selector("#my-h1", state="attached")
 
-    page = await display.show(lambda: Header2({"id": "my-h2"}, "My Header 2"))
+    await display.show(lambda: Header2({"id": "my-h2"}, "My Header 2"))
 
-    await page.wait_for_selector("#my-h2", state="attached")
+    await display.page.wait_for_selector("#my-h2", state="attached")
 
 
 async def test_imported_components_can_render_children(display: DisplayFixture):
@@ -213,7 +215,7 @@ async def test_imported_components_can_render_children(display: DisplayFixture):
     )
     Parent, Child = idom.web.export(module, ["Parent", "Child"])
 
-    page = await display.show(
+    await display.show(
         lambda: Parent(
             Child({"index": 1}),
             Child({"index": 2}),
@@ -221,7 +223,7 @@ async def test_imported_components_can_render_children(display: DisplayFixture):
         )
     )
 
-    parent = await page.wait_for_selector("#the-parent", state="attached")
+    parent = await display.page.wait_for_selector("#the-parent", state="attached")
     children = await parent.query_selector_all("li")
 
     assert len(children) == 3

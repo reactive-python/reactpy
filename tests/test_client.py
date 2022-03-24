@@ -1,32 +1,40 @@
 import asyncio
 import time
+from contextlib import AsyncExitStack
 from pathlib import Path
 
+from playwright.async_api import Browser
+
 import idom
-from idom.testing import ServerFixture
+from idom.testing import DisplayFixture, ServerFixture
 
 
 JS_DIR = Path(__file__).parent / "js"
 
 
-async def test_automatic_reconnect(create_driver):
-    # we need to wait longer here because the automatic reconnect is not instance
-    driver = create_driver(implicit_wait_timeout=10, page_load_timeout=10)
+async def test_automatic_reconnect(browser: Browser):
+    page = await browser.new_page()
+
+    # we need to wait longer here because the automatic reconnect is not instant
+    page.set_default_timeout(10000)
 
     @idom.component
     def OldComponent():
         return idom.html.p({"id": "old-component"}, "old")
 
-    mount_point = ServerFixture()
+    async with AsyncExitStack() as exit_stack:
+        server = await exit_stack.enter_async_context(ServerFixture(port=8000))
+        display = await exit_stack.enter_async_context(
+            DisplayFixture(server, driver=page)
+        )
 
-    async with mount_point:
-        mount_point.mount(OldComponent)
-        driver.get(mount_point.url())
+        await display.show(OldComponent)
+
         # ensure the element is displayed before stopping the server
-        driver.find_element("id", "old-component")
+        await page.wait_for_selector("#old-component")
 
     # the server is disconnected but the last view state is still shown
-    driver.find_element("id", "old-component")
+    await page.wait_for_selector("#old-component")
 
     set_state = idom.Ref(None)
 
@@ -35,16 +43,21 @@ async def test_automatic_reconnect(create_driver):
         state, set_state.current = idom.hooks.use_state(0)
         return idom.html.p({"id": f"new-component-{state}"}, f"new-{state}")
 
-    with mount_point:
-        mount_point.mount(NewComponent)
+    async with AsyncExitStack() as exit_stack:
+        server = await exit_stack.enter_async_context(ServerFixture(port=8000))
+        display = await exit_stack.enter_async_context(
+            DisplayFixture(server, driver=page)
+        )
+
+        await display.show(NewComponent)
 
         # Note the lack of a page refresh before looking up this new component. The
         # client should attempt to reconnect and display the new view automatically.
-        driver.find_element("id", "new-component-0")
+        await page.wait_for_selector("#new-component-0")
 
         # check that we can resume normal operation
         set_state.current(1)
-        driver.find_element("id", "new-component-1")
+        await page.wait_for_selector("#new-component-1")
 
 
 def test_style_can_be_changed(display, driver, driver_wait):

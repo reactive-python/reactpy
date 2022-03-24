@@ -22,15 +22,7 @@ async def serve_development_asgi(
             await asyncio.sleep(0.2)
         started.set()
 
-    coros = [server.serve(), check_if_started()]
-    _, pending = await asyncio.wait(
-        list(map(asyncio.create_task, coros)), return_when=FIRST_EXCEPTION
-    )
-
-    for task in pending:
-        task.cancel()
-
     try:
-        await asyncio.gather(*list(pending))
-    except CancelledError:
-        pass
+        await asyncio.gather(server.serve(), check_if_started())
+    finally:
+        await asyncio.wait_for(server.shutdown(), timeout=3)

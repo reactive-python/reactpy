@@ -42,15 +42,15 @@ async def test_hostwap_update_on_change(display: DisplayFixture):
 
         return idom.html.div(incr, hotswap_view)
 
-    page = await display.show(ButtonSwapsDivs)
+    await display.show(ButtonSwapsDivs)
 
-    client_incr_button = await page.wait_for_selector("#incr-button")
+    client_incr_button = await display.page.wait_for_selector("#incr-button")
 
-    await page.wait_for_selector("#hotswap-1")
+    await display.page.wait_for_selector("#hotswap-1")
     await client_incr_button.click()
-    await page.wait_for_selector("#hotswap-2")
+    await display.page.wait_for_selector("#hotswap-2")
     await client_incr_button.click()
-    await page.wait_for_selector("#hotswap-3")
+    await display.page.wait_for_selector("#hotswap-3")
 
 
 IMAGE_SRC_BYTES = b"""
@@ -63,19 +63,15 @@ BASE64_IMAGE_SRC = b64encode(IMAGE_SRC_BYTES).decode()
 
 async def test_image_from_string(display: DisplayFixture):
     src = IMAGE_SRC_BYTES.decode()
-    page = await display.show(
-        lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"})
-    )
-    client_img = await page.wait_for_selector("#a-circle-1")
+    await display.show(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
+    client_img = await display.page.wait_for_selector("#a-circle-1")
     assert BASE64_IMAGE_SRC in (await client_img.get_attribute("src"))
 
 
 async def test_image_from_bytes(display: DisplayFixture):
     src = IMAGE_SRC_BYTES
-    page = await display.show(
-        lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"})
-    )
-    client_img = await page.wait_for_selector("#a-circle-1")
+    await display.show(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
+    client_img = await display.page.wait_for_selector("#a-circle-1")
     assert BASE64_IMAGE_SRC in (await client_img.get_attribute("src"))
 
 
@@ -85,10 +81,10 @@ async def test_use_linked_inputs(display: DisplayFixture):
         i_1, i_2 = idom.widgets.use_linked_inputs([{"id": "i_1"}, {"id": "i_2"}])
         return idom.html.div(i_1, i_2)
 
-    page = await display.show(SomeComponent)
+    await display.show(SomeComponent)
 
-    input_1 = await page.wait_for_selector("#i_1")
-    input_2 = await page.wait_for_selector("#i_2")
+    input_1 = await display.page.wait_for_selector("#i_1")
+    input_2 = await display.page.wait_for_selector("#i_2")
 
     await input_1.type("hello", delay=20)
 
@@ -113,10 +109,10 @@ async def test_use_linked_inputs_on_change(display: DisplayFixture):
         )
         return idom.html.div(i_1, i_2)
 
-    page = await display.show(SomeComponent)
+    await display.show(SomeComponent)
 
-    input_1 = await page.wait_for_selector("#i_1")
-    input_2 = await page.wait_for_selector("#i_2")
+    input_1 = await display.page.wait_for_selector("#i_1")
+    input_2 = await display.page.wait_for_selector("#i_2")
 
     await input_1.type("hello", delay=20)
 
@@ -140,10 +136,10 @@ async def test_use_linked_inputs_on_change_with_cast(display: DisplayFixture):
         )
         return idom.html.div(i_1, i_2)
 
-    page = await display.show(SomeComponent)
+    await display.show(SomeComponent)
 
-    input_1 = await page.wait_for_selector("#i_1")
-    input_2 = await page.wait_for_selector("#i_2")
+    input_1 = await display.page.wait_for_selector("#i_1")
+    input_2 = await display.page.wait_for_selector("#i_2")
 
     await input_1.type("1")
 
@@ -169,10 +165,10 @@ async def test_use_linked_inputs_ignore_empty(display: DisplayFixture):
         )
         return idom.html.div(i_1, i_2)
 
-    page = await display.show(SomeComponent)
+    await display.show(SomeComponent)
 
-    input_1 = await page.wait_for_selector("#i_1")
-    input_2 = await page.wait_for_selector("#i_2")
+    input_1 = await display.page.wait_for_selector("#i_1")
+    input_2 = await display.page.wait_for_selector("#i_2")
 
     await input_1.type("1")
 

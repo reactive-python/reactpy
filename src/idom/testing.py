@@ -136,7 +136,7 @@ class DisplayFixture:
             self.server = server
         if driver is not None:
             if isinstance(driver, Page):
-                self._page = driver
+                self.page = driver
             else:
                 self._browser = driver
         self._next_view_id = 0
@@ -145,29 +145,27 @@ class DisplayFixture:
         self,
         component: RootComponentConstructor,
         query: dict[str, Any] | None = None,
-    ) -> Page:
+    ) -> None:
         self._next_view_id += 1
         view_id = f"display-{self._next_view_id}"
         self.server.mount(lambda: html.div({"id": view_id}, component()))
 
-        await self._page.goto(self.server.url(query=query))
-        await self._page.wait_for_selector(f"#{view_id}", state="attached")
+        await self.page.goto(self.server.url(query=query))
+        await self.page.wait_for_selector(f"#{view_id}", state="attached")
 
-        return self._page
-
-    async def __aenter__(self: _Self) -> _Self:
+    async def __aenter__(self) -> DisplayFixture:
         es = self._exit_stack = AsyncExitStack()
 
-        if not hasattr(self, "_page"):
+        if not hasattr(self, "page"):
             if not hasattr(self, "_browser"):
                 pw = await es.enter_async_context(async_playwright())
                 browser = await pw.chromium.launch()
             else:
                 browser = self._browser
-            self._page = await browser.new_page()
+            self.page = await browser.new_page()
 
         if not hasattr(self, "server"):
-            self.server = ServerFixture(**self._server_options)
+            self.server = ServerFixture()
             await es.enter_async_context(self.server)
 
         return self
@@ -196,7 +194,7 @@ class ServerFixture:
 
     _records: list[logging.LogRecord]
     _server_future: asyncio.Task[Any]
-    _exit_stack = ExitStack()
+    _exit_stack = AsyncExitStack()
 
     def __init__(
         self,
@@ -205,7 +203,6 @@ class ServerFixture:
         app: Any | None = None,
         implementation: ServerImplementation[Any] = default_server,
     ) -> None:
-        self.server_implementation = implementation
         self.host = host
         self.port = port or find_available_port(host, allow_reuse_waiting_ports=False)
         self.mount, self._root_component = hotswap()
@@ -216,7 +213,9 @@ class ServerFixture:
                     "If an application instance its corresponding "
                     "server implementation must be provided too."
                 )
+
         self._app = app
+        self._server_implementation = implementation
 
     @property
     def log_records(self) -> List[logging.LogRecord]:
@@ -270,21 +269,28 @@ class ServerFixture:
                     found.append(error)
         return found
 
-    async def __aenter__(self: _Self) -> _Self:
-        self._exit_stack = ExitStack()
+    async def __aenter__(self) -> ServerFixture:
+        self._exit_stack = AsyncExitStack()
         self._records = self._exit_stack.enter_context(capture_idom_logs())
 
-        app = self._app or self.server_implementation.create_development_app()
-        self.server_implementation.configure(app, self._root_component)
+        app = self._app or self._server_implementation.create_development_app()
+        self._server_implementation.configure(app, self._root_component)
 
         started = asyncio.Event()
-        self._server_future = asyncio.ensure_future(
-            self.server_implementation.serve_development_app(
+        server_future = asyncio.create_task(
+            self._server_implementation.serve_development_app(
                 app, self.host, self.port, started
             )
         )
 
-        self._exit_stack.callback(self._server_future.cancel)
+        async def stop_server():
+            server_future.cancel()
+            try:
+                await asyncio.wait_for(server_future, timeout=3)
+            except asyncio.CancelledError:
+                pass
+
+        self._exit_stack.push_async_callback(stop_server)
 
         try:
             await asyncio.wait_for(started.wait(), timeout=3)
@@ -301,14 +307,9 @@ class ServerFixture:
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
-        self._exit_stack.close()
+        await self._exit_stack.aclose()
 
         self.mount(None)  # reset the view
-
-        try:
-            await asyncio.wait_for(self._server_future, timeout=3)
-        except asyncio.CancelledError:
-            pass
 
         logged_errors = self.list_logged_exceptions(del_log_records=False)
         if logged_errors:  # pragma: no cover
