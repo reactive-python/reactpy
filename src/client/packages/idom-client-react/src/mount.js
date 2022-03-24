@@ -31,7 +31,7 @@ function mountLayoutWithReconnectingWebSocket(
     reconnectTimeoutRange: 0,
   }
 ) {
-  const socket = new WebSocket("wss://127.0.0.1/stream");
+  const socket = new WebSocket(endpoint);
 
   const updateHookPromise = new LazyPromise();
 
