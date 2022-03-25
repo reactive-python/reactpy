@@ -23,6 +23,14 @@ Changed:
   - :pull:`701`
 
 
+0.37.2
+------
+
+Fixed:
+
+- The boolean secure and its statement had typos, thus the wss protocol was not being called when website was served over https.
+
+
 0.37.1
 ------
 
