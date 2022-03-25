@@ -28,7 +28,7 @@ Changed:
 
 Fixed:
 
-- The boolean secure and its statement had typos, thus the wss protocol was not being called when website was served over https.
+- A typo caused IDOM to use the insecure `ws` web-socket protocol on pages loaded with `https` instead of the secure `wss` protocol - :pull:`716`
 
 
 0.37.1
