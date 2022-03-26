@@ -41,7 +41,7 @@ def run(
         stacklevel=2,
     )
 
-    implementation = implementation or _get_default_implementation()
+    implementation = implementation or import_module("idom.server.default")
 
     app = implementation.create_development_app()
     implementation.configure(app, component)
@@ -54,7 +54,7 @@ def run(
 
     coros.append(implementation.serve_development_app(app, host, port, started))
 
-    if open_browser:
+    if open_browser:  # pragma: no cover
 
         async def _open_browser_after_server() -> None:
             await started.wait()
@@ -63,12 +63,6 @@ def run(
         coros.append(_open_browser_after_server())
 
     asyncio.get_event_loop().run_until_complete(asyncio.gather(*coros))
-
-
-def _get_default_implementation() -> ServerImplementation[Any]:
-    from . import default
-
-    return default
 
 
 def find_available_port(

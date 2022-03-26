@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import threading
 from asyncio import wait_for
 from contextlib import contextmanager
@@ -17,7 +18,7 @@ def open_event_loop(as_current: bool = True) -> Iterator[asyncio.AbstractEventLo
     Args:
         as_current: whether to make this loop the current loop in this thread
     """
-    loop = asyncio.SelectorEventLoop()
+    loop = asyncio.new_event_loop()
     try:
         if as_current:
             asyncio.set_event_loop(loop)
@@ -28,9 +29,11 @@ def open_event_loop(as_current: bool = True) -> Iterator[asyncio.AbstractEventLo
             _cancel_all_tasks(loop, as_current)
             if as_current:
                 loop.run_until_complete(wait_for(loop.shutdown_asyncgens(), TIMEOUT))
-                loop.run_until_complete(
-                    wait_for(loop.shutdown_default_executor(), TIMEOUT)
-                )
+                if sys.version_info >= (3, 9):
+                    # shutdown_default_executor only available in Python 3.9+
+                    loop.run_until_complete(
+                        wait_for(loop.shutdown_default_executor(), TIMEOUT)
+                    )
         finally:
             if as_current:
                 asyncio.set_event_loop(None)
