@@ -2,7 +2,6 @@ import asyncio
 import threading
 from asyncio import wait_for
 from contextlib import contextmanager
-from re import L
 from typing import Iterator
 
 from idom.testing import poll
