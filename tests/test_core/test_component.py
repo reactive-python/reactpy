@@ -1,4 +1,5 @@
 import idom
+from idom.testing import DisplayFixture
 
 
 def test_component_repr():
@@ -43,17 +44,17 @@ async def test_component_with_var_args():
     }
 
 
-def test_display_simple_hello_world(driver, display):
+async def test_display_simple_hello_world(display: DisplayFixture):
     @idom.component
     def Hello():
         return idom.html.p({"id": "hello"}, ["Hello World"])
 
-    display(Hello)
+    await display.show(Hello)
 
-    assert driver.find_element("id", "hello")
+    assert display.page.wait_for_selector("#hello")
 
 
-def test_pre_tags_are_rendered_correctly(driver, display):
+async def test_pre_tags_are_rendered_correctly(display: DisplayFixture):
     @idom.component
     def PreFormated():
         return idom.html.pre(
@@ -63,11 +64,10 @@ def test_pre_tags_are_rendered_correctly(driver, display):
             " text",
         )
 
-    display(PreFormated)
+    await display.show(PreFormated)
 
-    pre = driver.find_element("id", "pre-form-test")
+    pre = await display.page.wait_for_selector("#pre-form-test")
 
     assert (
-        pre.get_attribute("innerHTML")
-        == "<span>this<span>is</span>some</span>pre-formated text"
-    )
+        await pre.evaluate("node => node.innerHTML")
+    ) == "<span>this<span>is</span>some</span>pre-formated text"

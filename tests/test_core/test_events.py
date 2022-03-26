@@ -7,6 +7,7 @@ from idom.core.events import (
     merge_event_handlers,
     to_event_handler_function,
 )
+from idom.testing import DisplayFixture, poll
 
 
 def test_event_handler_repr():
@@ -142,7 +143,7 @@ async def test_merge_event_handler_funcs():
     assert calls == ["some_func", "some_other_func"]
 
 
-def test_can_prevent_event_default_operation(driver, display):
+async def test_can_prevent_event_default_operation(display: DisplayFixture):
     @idom.component
     def Input():
         @idom.event(prevent_default=True)
@@ -151,15 +152,15 @@ def test_can_prevent_event_default_operation(driver, display):
 
         return idom.html.input({"onKeyDown": on_key_down, "id": "input"})
 
-    display(Input)
+    await display.show(Input)
 
-    inp = driver.find_element("id", "input")
-    inp.send_keys("hello")
+    inp = await display.page.wait_for_selector("#input")
+    await inp.type("hello")
     # the default action of updating the element's value did not take place
-    assert inp.get_attribute("value") == ""
+    assert (await inp.evaluate("node => node.value")) == ""
 
 
-def test_simple_click_event(driver, display):
+async def test_simple_click_event(display: DisplayFixture):
     @idom.component
     def Button():
         clicked, set_clicked = idom.hooks.use_state(False)
@@ -172,14 +173,14 @@ def test_simple_click_event(driver, display):
         else:
             return idom.html.p({"id": "complete"}, ["Complete"])
 
-    display(Button)
+    await display.show(Button)
 
-    button = driver.find_element("id", "click")
-    button.click()
-    driver.find_element("id", "complete")
+    button = await display.page.wait_for_selector("#click")
+    await button.click()
+    await display.page.wait_for_selector("#complete")
 
 
-def test_can_stop_event_propogation(driver, driver_wait, display):
+async def test_can_stop_event_propogation(display: DisplayFixture):
     clicked = idom.Ref(False)
 
     @idom.component
@@ -215,9 +216,9 @@ def test_can_stop_event_propogation(driver, driver_wait, display):
         )
         return outer
 
-    display(DivInDiv)
+    await display.show(DivInDiv)
 
-    inner = driver.find_element("id", "inner")
-    inner.click()
+    inner = await display.page.wait_for_selector("#inner")
+    await inner.click()
 
-    driver_wait.until(lambda _: clicked.current)
+    poll(lambda: clicked.current).until_is(True)

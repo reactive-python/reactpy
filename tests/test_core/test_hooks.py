@@ -8,7 +8,7 @@ from idom import html
 from idom.core.hooks import COMPONENT_DID_RENDER_EFFECT, LifeCycleHook, current_hook
 from idom.core.layout import Layout
 from idom.core.serve import render_json_patch
-from idom.testing import HookCatcher, assert_idom_logged
+from idom.testing import DisplayFixture, HookCatcher, assert_idom_logged, poll
 from idom.utils import Ref
 from tests.tooling.asserts import assert_same_items
 
@@ -150,7 +150,7 @@ async def test_set_state_with_reducer_instead_of_value():
             await layout.render()
 
 
-def test_set_state_checks_identity_not_equality(driver, display, driver_wait):
+async def test_set_state_checks_identity_not_equality(display: DisplayFixture):
     r_1 = idom.Ref("value")
     r_2 = idom.Ref("value")
 
@@ -191,31 +191,34 @@ def test_set_state_checks_identity_not_equality(driver, display, driver_wait):
             f"Last state: {'r_1' if state is r_1 else 'r_2'}",
         )
 
-    display(TestComponent)
+    await display.show(TestComponent)
 
-    client_r_1_button = driver.find_element("id", "r_1")
-    client_r_2_button = driver.find_element("id", "r_2")
+    client_r_1_button = await display.page.wait_for_selector("#r_1")
+    client_r_2_button = await display.page.wait_for_selector("#r_2")
+
+    poll_event_count = poll(lambda: event_count.current)
+    poll_render_count = poll(lambda: render_count.current)
 
     assert render_count.current == 1
     assert event_count.current == 0
 
-    client_r_1_button.click()
+    await client_r_1_button.click()
 
-    driver_wait.until(lambda d: event_count.current == 1)
-    driver_wait.until(lambda d: render_count.current == 1)
+    poll_event_count.until_equals(1)
+    poll_render_count.until_equals(1)
 
-    client_r_2_button.click()
+    await client_r_2_button.click()
 
-    driver_wait.until(lambda d: event_count.current == 2)
-    driver_wait.until(lambda d: render_count.current == 2)
+    poll_event_count.until_equals(2)
+    poll_render_count.until_equals(2)
 
-    client_r_2_button.click()
+    await client_r_2_button.click()
 
-    driver_wait.until(lambda d: event_count.current == 3)
-    driver_wait.until(lambda d: render_count.current == 2)
+    poll_event_count.until_equals(3)
+    poll_render_count.until_equals(2)
 
 
-def test_simple_input_with_use_state(driver, display):
+async def test_simple_input_with_use_state(display: DisplayFixture):
     message_ref = idom.Ref(None)
 
     @idom.component
@@ -232,16 +235,16 @@ def test_simple_input_with_use_state(driver, display):
         else:
             return idom.html.p({"id": "complete"}, ["Complete"])
 
-    display(Input)
+    await display.show(Input)
 
-    button = driver.find_element("id", "input")
-    button.send_keys("this is a test")
-    driver.find_element("id", "complete")
+    button = await display.page.wait_for_selector("#input")
+    await button.type("this is a test")
+    await display.page.wait_for_selector("#complete")
 
     assert message_ref.current == "this is a test"
 
 
-def test_double_set_state(driver, driver_wait, display):
+async def test_double_set_state(display: DisplayFixture):
     @idom.component
     def SomeComponent():
         state_1, set_state_1 = idom.hooks.use_state(0)
@@ -252,29 +255,33 @@ def test_double_set_state(driver, driver_wait, display):
             set_state_2(state_2 + 1)
 
         return idom.html.div(
-            idom.html.div({"id": "first", "value": state_1}, f"value is: {state_1}"),
-            idom.html.div({"id": "second", "value": state_2}, f"value is: {state_2}"),
+            idom.html.div(
+                {"id": "first", "data-value": state_1}, f"value is: {state_1}"
+            ),
+            idom.html.div(
+                {"id": "second", "data-value": state_2}, f"value is: {state_2}"
+            ),
             idom.html.button({"id": "button", "onClick": double_set_state}, "click me"),
         )
 
-    display(SomeComponent)
+    await display.show(SomeComponent)
 
-    button = driver.find_element("id", "button")
-    first = driver.find_element("id", "first")
-    second = driver.find_element("id", "second")
+    button = await display.page.wait_for_selector("#button")
+    first = await display.page.wait_for_selector("#first")
+    second = await display.page.wait_for_selector("#second")
 
-    assert first.get_attribute("value") == "0"
-    assert second.get_attribute("value") == "0"
+    assert (await first.get_attribute("data-value")) == "0"
+    assert (await second.get_attribute("data-value")) == "0"
 
-    button.click()
+    await button.click()
 
-    assert driver_wait.until(lambda _: first.get_attribute("value") == "1")
-    assert driver_wait.until(lambda _: second.get_attribute("value") == "1")
+    assert (await first.get_attribute("data-value")) == "1"
+    assert (await second.get_attribute("data-value")) == "1"
 
-    button.click()
+    await button.click()
 
-    assert driver_wait.until(lambda _: first.get_attribute("value") == "2")
-    assert driver_wait.until(lambda _: second.get_attribute("value") == "2")
+    assert (await first.get_attribute("data-value")) == "2"
+    assert (await second.get_attribute("data-value")) == "2"
 
 
 async def test_use_effect_callback_occurs_after_full_render_is_complete():
