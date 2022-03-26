@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import asyncio
-from typing import Any, TypeVar
+from typing import Any, MutableMapping, TypeVar
 
 from typing_extensions import Protocol, runtime_checkable
 
-from idom.core.types import RootComponentConstructor
+from idom.types import RootComponentConstructor
 
 
 _App = TypeVar("_App")
@@ -24,5 +26,5 @@ class ServerImplementation(Protocol[_App]):
     ) -> None:
         """Run an application using a development server"""
 
-    def use_connection() -> Any:
-        """Get information about a currently active request to the server"""
+    def use_scope() -> MutableMapping[str, Any]:
+        """Get an ASGI scope or WSGI environment dictionary"""

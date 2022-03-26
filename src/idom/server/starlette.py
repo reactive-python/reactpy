@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from asyncio import FIRST_EXCEPTION, CancelledError
 from typing import Any, Dict, Tuple, Union
 
 from mypy_extensions import TypedDict
@@ -12,12 +11,11 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 from starlette.staticfiles import StaticFiles
+from starlette.types import Scope
 from starlette.websockets import WebSocket, WebSocketDisconnect
-from uvicorn.config import Config as UvicornConfig
-from uvicorn.server import Server as UvicornServer
 
 from idom.config import IDOM_WEB_MODULES_DIR
-from idom.core.hooks import use_context
+from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import (
     RecvCoroutine,
@@ -28,11 +26,14 @@ from idom.core.serve import (
 from idom.core.types import RootComponentConstructor
 
 from ._asgi import serve_development_asgi
-from ._conn import Connection
 from .utils import CLIENT_BUILD_DIR
 
 
 logger = logging.getLogger(__name__)
+
+WebSocketContext: type[Context[WebSocket | None]] = create_context(
+    None, "WebSocketContext"
+)
 
 
 def configure(
@@ -69,12 +70,17 @@ async def serve_development_app(
     await serve_development_asgi(app, host, port, started)
 
 
-def use_connection() -> WebSocket:
-    """Get the current ``WebSocket`` connection"""
-    value = use_context(Connection)
-    if value is None:
-        raise RuntimeError("No established connection.")
-    return value
+def use_websocket() -> WebSocket:
+    """Get the current WebSocket object"""
+    websocket = use_context(WebSocketContext)
+    if websocket is None:
+        raise RuntimeError("No websocket. Are you running with a Starllette server?")
+    return websocket
+
+
+def use_scope() -> Scope:
+    """Get the current ASGI scope dictionary"""
+    return use_websocket().scope
 
 
 class Options(TypedDict, total=False):
@@ -155,7 +161,7 @@ def _setup_single_view_dispatcher_route(
         send, recv = _make_send_recv_callbacks(socket)
         try:
             await serve_json_patch(
-                Layout(Connection(constructor(), value=socket)),
+                Layout(WebSocketContext(constructor(), value=socket)),
                 send,
                 recv,
             )

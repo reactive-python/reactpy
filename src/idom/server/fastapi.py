@@ -11,7 +11,7 @@ from .starlette import (
     _setup_options,
     _setup_single_view_dispatcher_route,
     serve_development_app,
-    use_connection,
+    use_scope,
 )
 
 
@@ -19,7 +19,7 @@ __all__ = (
     "configure",
     "serve_development_app",
     "create_development_app",
-    "use_connection",
+    "use_scope",
 )
 
 

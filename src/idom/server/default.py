@@ -28,8 +28,8 @@ async def serve_development_app(
     )
 
 
-def use_connection() -> Any:
-    return _default_implementation().use_connection()
+def use_scope() -> Any:
+    return _default_implementation().use_scope()
 
 
 def _default_implementation() -> ServerImplementation[Any]:

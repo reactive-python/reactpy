@@ -12,16 +12,21 @@ from tornado.httputil import HTTPServerRequest
 from tornado.platform.asyncio import AsyncIOMainLoop
 from tornado.web import Application, RedirectHandler, RequestHandler, StaticFileHandler
 from tornado.websocket import WebSocketHandler
+from tornado.wsgi import WSGIContainer
 from typing_extensions import TypedDict
 
 from idom.config import IDOM_WEB_MODULES_DIR
-from idom.core.hooks import use_context
+from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
 
-from ._conn import Connection
 from .utils import CLIENT_BUILD_DIR
+
+
+RequestContext: type[Context[HTTPServerRequest | None]] = create_context(
+    None, "RequestContext"
+)
 
 
 def configure(
@@ -72,12 +77,17 @@ async def serve_development_app(
         await server.close_all_connections()
 
 
-def use_connection() -> HTTPServerRequest:
+def use_request() -> HTTPServerRequest:
     """Get the current ``HTTPServerRequest``"""
-    value = use_context(Connection)
-    if value is None:
-        raise RuntimeError("No established connection.")
-    return value
+    request = use_context(RequestContext)
+    if request is None:
+        raise RuntimeError("No request. Are you running with a Tornado server?")
+    return request
+
+
+def use_scope() -> dict[str, Any]:
+    """Get the current WSGI environment dictionary"""
+    return WSGIContainer.environ(use_request())
 
 
 class Options(TypedDict, total=False):
@@ -160,7 +170,6 @@ class ModelStreamHandler(WebSocketHandler):
 
     async def open(self, *args: str, **kwargs: str) -> None:
         message_queue: "AsyncQueue[str]" = AsyncQueue()
-        query_params = {k: v[0].decode() for k, v in self.request.arguments.items()}
 
         async def send(value: VdomJsonPatch) -> None:
             await self.write_message(json.dumps(value))
@@ -171,7 +180,9 @@ class ModelStreamHandler(WebSocketHandler):
         self._message_queue = message_queue
         self._dispatch_future = asyncio.ensure_future(
             serve_json_patch(
-                Layout(Connection(self._component_constructor(), value=self.request)),
+                Layout(
+                    RequestContext(self._component_constructor(), value=self.request)
+                ),
                 send,
                 recv,
             )

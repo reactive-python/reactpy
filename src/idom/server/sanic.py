@@ -9,10 +9,12 @@ from typing import Any, Dict, Tuple, Union
 
 from mypy_extensions import TypedDict
 from sanic import Blueprint, Sanic, request, response
+from sanic.models.asgi import ASGIScope
 from sanic_cors import CORS
 from websockets.legacy.protocol import WebSocketCommonProtocol
 
 from idom.config import IDOM_WEB_MODULES_DIR
+from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import (
     RecvCoroutine,
@@ -22,11 +24,14 @@ from idom.core.serve import (
 )
 from idom.core.types import RootComponentConstructor
 
-from ._conn import Connection
 from .utils import CLIENT_BUILD_DIR
 
 
 logger = logging.getLogger(__name__)
+
+RequestContext: type[Context[request.Request | None]] = create_context(
+    None, "RequestContext"
+)
 
 
 def configure(
@@ -64,12 +69,17 @@ async def serve_development_app(
         app.stop()
 
 
-def use_connection() -> request.Request:
+def use_request() -> request.Request:
     """Get the current ``Request``"""
-    value = use_connection(Connection)
-    if value is None:
-        raise RuntimeError("No established connection.")
-    return value
+    request = use_context(RequestContext)
+    if request is None:
+        raise RuntimeError("No request. Are you running with a Sanic server?")
+    return request
+
+
+def use_scope() -> ASGIScope:
+    """Get the current ASGI scope"""
+    return use_request().app._asgi_app.transport.scope
 
 
 class Options(TypedDict, total=False):
@@ -132,7 +142,7 @@ def _setup_single_view_dispatcher_route(
         send, recv = _make_send_recv_callbacks(socket)
         component_params = {k: request.args.get(k) for k in request.args}
         await serve_json_patch(
-            Layout(Connection(constructor(**component_params), value=request)),
+            Layout(RequestContext(constructor(**component_params), value=request)),
             send,
             recv,
         )

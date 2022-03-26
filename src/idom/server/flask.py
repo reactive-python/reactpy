@@ -9,6 +9,7 @@ from threading import Event as ThreadEvent
 from threading import Thread
 from typing import Any, Callable, Dict, NamedTuple, Optional, Union, cast
 from urllib.parse import parse_qs as parse_query_string
+from wsgiref.types import WSGIEnvironment
 
 from flask import (
     Blueprint,
@@ -29,16 +30,17 @@ from typing_extensions import TypedDict
 
 import idom
 from idom.config import IDOM_WEB_MODULES_DIR
-from idom.core.hooks import use_context
+from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import LayoutEvent, LayoutUpdate
 from idom.core.serve import serve_json_patch
 from idom.core.types import ComponentType, RootComponentConstructor
 
-from ._conn import Connection
 from .utils import CLIENT_BUILD_DIR
 
 
 logger = logging.getLogger(__name__)
+
+RequestContext: type[Context[Request | None]] = create_context(None, "RequestContext")
 
 
 def configure(
@@ -105,12 +107,17 @@ async def serve_development_app(
             raise RuntimeError("Failed to shutdown server.")
 
 
-def use_connection() -> Request:
+def use_request() -> Request:
     """Get the current ``Request``"""
-    value = use_context(Connection)
-    if value is None:
-        raise RuntimeError("No established connection.")
-    return value
+    request = use_context(RequestContext)
+    if request is None:
+        raise RuntimeError("No request. Are you running with a Flask server?")
+    return request
+
+
+def use_scope() -> WSGIEnvironment:
+    """Get the current WSGI environment"""
+    return use_request().environ
 
 
 class Options(TypedDict, total=False):
@@ -221,7 +228,9 @@ def dispatch_in_thread(
 
         async def main() -> None:
             await serve_json_patch(
-                idom.Layout(Connection(component, value=request)), send_coro, recv_coro
+                idom.Layout(RequestContext(component, value=request)),
+                send_coro,
+                recv_coro,
             )
 
         main_future = asyncio.ensure_future(main())
