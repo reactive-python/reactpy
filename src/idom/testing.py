@@ -98,7 +98,7 @@ class poll(Generic[_R]):
                     result = await coro_function(*args, **kwargs)
                     if condition(result):
                         break
-                    elif (time.time() - started_at) > timeout:
+                    elif (time.time() - started_at) > timeout:  # pragma: no cover
                         raise TimeoutError(
                             f"Condition not met within {timeout} "
                             f"seconds - last value was {result!r}"
@@ -116,7 +116,7 @@ class poll(Generic[_R]):
                     result = sync_function(*args, **kwargs)
                     if condition(result):
                         break
-                    elif (time.time() - started_at) > timeout:
+                    elif (time.time() - started_at) > timeout:  # pragma: no cover
                         raise TimeoutError(
                             f"Condition not met within {timeout} "
                             f"seconds - last value was {result!r}"

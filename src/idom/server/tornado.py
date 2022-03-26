@@ -81,7 +81,9 @@ def use_request() -> HTTPServerRequest:
     """Get the current ``HTTPServerRequest``"""
     request = use_context(RequestContext)
     if request is None:
-        raise RuntimeError("No request. Are you running with a Tornado server?")
+        raise RuntimeError(  # pragma: no cover
+            "No request. Are you running with a Tornado server?"
+        )
     return request
 
 

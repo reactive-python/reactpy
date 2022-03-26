@@ -64,7 +64,9 @@ def use_request() -> request.Request:
     """Get the current ``Request``"""
     request = use_context(RequestContext)
     if request is None:
-        raise RuntimeError("No request. Are you running with a Sanic server?")
+        raise RuntimeError(  # pragma: no cover
+            "No request. Are you running with a Sanic server?"
+        )
     return request
 
 
@@ -73,7 +75,7 @@ def use_scope() -> ASGIScope:
     app = use_request().app
     try:
         asgi_app = app._asgi_app
-    except AttributeError:
+    except AttributeError:  # pragma: no cover
         raise RuntimeError("No scope. Sanic may not be running with an ASGI server")
     return asgi_app.transport.scope
 

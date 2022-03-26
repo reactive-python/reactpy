@@ -74,7 +74,9 @@ def use_websocket() -> WebSocket:
     """Get the current WebSocket object"""
     websocket = use_context(WebSocketContext)
     if websocket is None:
-        raise RuntimeError("No websocket. Are you running with a Starllette server?")
+        raise RuntimeError(  # pragma: no cover
+            "No websocket. Are you running with a Starllette server?"
+        )
     return websocket
 
 

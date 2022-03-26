@@ -8,8 +8,6 @@ from queue import Queue as ThreadQueue
 from threading import Event as ThreadEvent
 from threading import Thread
 from typing import Any, Callable, Dict, NamedTuple, Optional, Union, cast
-from urllib.parse import parse_qs as parse_query_string
-from wsgiref.types import WSGIEnvironment
 
 from flask import (
     Blueprint,
@@ -76,7 +74,8 @@ async def serve_development_app(
 
     server: pywsgi.WSGIServer
 
-    def run_server() -> None:
+    def run_server() -> None:  # pragma: no cover
+        # we don't cover this function because coverage doesn't work right in threads
         nonlocal server
         server = pywsgi.WSGIServer(
             (host, port),
@@ -103,7 +102,7 @@ async def serve_development_app(
         # the thread should eventually join
         thread.join(timeout=3)
         # just double check it happened
-        if thread.is_alive():
+        if thread.is_alive():  # pragma: no cover
             raise RuntimeError("Failed to shutdown server.")
 
 
@@ -111,11 +110,13 @@ def use_request() -> Request:
     """Get the current ``Request``"""
     request = use_context(RequestContext)
     if request is None:
-        raise RuntimeError("No request. Are you running with a Flask server?")
+        raise RuntimeError(  # pragma: no cover
+            "No request. Are you running with a Flask server?"
+        )
     return request
 
 
-def use_scope() -> WSGIEnvironment:
+def use_scope() -> dict[str, Any]:
     """Get the current WSGI environment"""
     return use_request().environ
 

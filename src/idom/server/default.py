@@ -41,7 +41,7 @@ def _default_implementation() -> ServerImplementation[Any]:
 
     try:
         implementation = next(all_implementations())
-    except StopIteration:
+    except StopIteration:  # pragma: no cover
         raise RuntimeError("No built-in server implementation installed.")
     else:
         _DEFAULT_IMPLEMENTATION = implementation
