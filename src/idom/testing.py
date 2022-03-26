@@ -45,12 +45,6 @@ from idom.widgets import hotswap
 from .log import ROOT_LOGGER
 
 
-__all__ = [
-    "find_available_port",
-    "create_simple_selenium_web_driver",
-    "ServerFixture",
-]
-
 _Self = TypeVar("_Self")
 
 
@@ -74,7 +68,7 @@ class _UntilFunc(Protocol[_RC]):
         ...
 
 
-class poll(Generic[_R]):
+class poll(Generic[_R]):  # noqa: N801
     """Wait until the result of an sync or async function meets some condition"""
 
     def __init__(

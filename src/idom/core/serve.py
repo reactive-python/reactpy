@@ -1,26 +1,11 @@
 from __future__ import annotations
 
-from asyncio import Future, Queue, ensure_future
-from asyncio.tasks import FIRST_COMPLETED, ensure_future, gather, wait
-from contextlib import asynccontextmanager
+from asyncio import ensure_future
+from asyncio.tasks import ensure_future
 from logging import getLogger
-from typing import (
-    Any,
-    AsyncIterator,
-    Awaitable,
-    Callable,
-    Dict,
-    List,
-    NamedTuple,
-    Sequence,
-    Tuple,
-    cast,
-)
-from weakref import WeakSet
+from typing import Any, Awaitable, Callable, Dict, List, NamedTuple, cast
 
 from anyio import create_task_group
-
-from idom.utils import Ref
 
 from ._fixed_jsonpatch import apply_patch, make_patch  # type: ignore
 from .layout import LayoutEvent, LayoutUpdate

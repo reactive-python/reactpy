@@ -1,4 +1,3 @@
-import json
 from typing import MutableMapping
 
 import pytest
@@ -7,7 +6,7 @@ import idom
 from idom import html
 from idom.server import default as default_implementation
 from idom.server.utils import all_implementations
-from idom.testing import DisplayFixture, ServerFixture, poll
+from idom.testing import DisplayFixture, ServerFixture
 
 
 @pytest.fixture(

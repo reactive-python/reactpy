@@ -1,8 +1,5 @@
 import asyncio
-import sys
 from typing import Any, Sequence
-
-import pytest
 
 import idom
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
