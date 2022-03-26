@@ -1,11 +1,7 @@
 from pathlib import Path
-from sys import implementation
 
 import pytest
 from sanic import Sanic
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.support.ui import WebDriverWait
 
 import idom
 from idom.server import sanic as sanic_implementation
