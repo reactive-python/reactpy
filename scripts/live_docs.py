@@ -1,4 +1,6 @@
+import asyncio
 import os
+import threading
 
 from sphinx_autobuild.cli import (
     Server,
@@ -9,8 +11,8 @@ from sphinx_autobuild.cli import (
     get_parser,
 )
 
-from docs.app import IDOM_MODEL_SERVER_URL_PREFIX, make_app, make_examples_component
-from idom.server.sanic import PerClientStateServer
+from docs.app import IDOM_MODEL_SERVER_URL_PREFIX, Example, make_app, reload_examples
+from idom.server.sanic import configure, serve_development_app
 from idom.testing import clear_idom_web_modules_dir
 
 
@@ -23,20 +25,41 @@ _running_idom_servers = []
 
 def wrap_builder(old_builder):
     # This is the bit that we're injecting to get the example components to reload too
-    def new_builder():
-        [s.stop() for s in _running_idom_servers]
-        clear_idom_web_modules_dir()
 
-        server = PerClientStateServer(
-            make_examples_component(),
-            {"cors": True, "url_prefix": IDOM_MODEL_SERVER_URL_PREFIX},
-            make_app(),
+    app = make_app()
+
+    configure(
+        app,
+        Example,
+        {"cors": True, "url_prefix": IDOM_MODEL_SERVER_URL_PREFIX},
+    )
+
+    thread_started = threading.Event()
+
+    def run_in_thread():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        server_started = asyncio.Event()
+
+        async def set_thread_event_when_started():
+            await server_started.wait()
+            thread_started.set()
+
+        loop.run_until_complete(
+            asyncio.gather(
+                serve_development_app(app, "127.0.0.1", 5555, server_started),
+                set_thread_event_when_started(),
+            )
         )
-        server.run_in_thread("127.0.0.1", 5555, debug=True)
-        _running_idom_servers.append(server)
-        server.wait_until_started()
 
-        old_builder()
+    threading.Thread(target=run_in_thread, daemon=True).start()
+
+    thread_started.wait()
+
+    def new_builder():
+        clear_idom_web_modules_dir()
+        reload_examples()
 
     return new_builder
 

@@ -136,9 +136,8 @@ def _setup_single_view_dispatcher_route(
         request: request.Request, socket: WebSocketCommonProtocol
     ) -> None:
         send, recv = _make_send_recv_callbacks(socket)
-        component_params = {k: request.args.get(k) for k in request.args}
         await serve_json_patch(
-            Layout(RequestContext(constructor(**component_params), value=request)),
+            Layout(RequestContext(constructor(), value=request)),
             send,
             recv,
         )
