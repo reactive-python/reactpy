@@ -3,12 +3,12 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
-import socket
 from typing import Any, Dict, Tuple, Union
+from uuid import uuid4
 
 from mypy_extensions import TypedDict
 from sanic import Blueprint, Sanic, request, response
+from sanic.config import Config
 from sanic.models.asgi import ASGIScope
 from sanic_cors import CORS
 from websockets.legacy.protocol import WebSocketCommonProtocol
@@ -49,7 +49,7 @@ def configure(
 
 def create_development_app() -> Sanic:
     """Return a :class:`Sanic` app instance in debug mode"""
-    return Sanic("idom_development_app")
+    return Sanic(f"idom_development_app_{uuid4().hex}", Config())
 
 
 async def serve_development_app(

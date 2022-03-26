@@ -296,7 +296,7 @@ class ServerFixture:
             await asyncio.wait_for(started.wait(), timeout=3)
         except Exception:
             # see if we can await the future for a more helpful error
-            await asyncio.wait_for(self._server_future, timeout=3)
+            await asyncio.wait_for(server_future, timeout=3)
             raise
 
         return self
