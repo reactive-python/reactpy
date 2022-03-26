@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import pytest
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
@@ -47,6 +49,8 @@ async def page(browser):
 
 @pytest.fixture(scope="session")
 async def browser(pytestconfig: Config):
+    if os.name == "nt":  # pragma: no cover
+        pytest.skip("Browser tests not supported on Windows")
     async with async_playwright() as pw:
         yield await pw.chromium.launch(headless=not bool(pytestconfig.option.headed))
 

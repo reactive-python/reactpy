@@ -1,9 +1,11 @@
 import logging
+import os
 
 import pytest
 
 from idom import testing
 from idom.log import ROOT_LOGGER
+from idom.sample import App as SampleApp
 
 
 def test_assert_idom_logged_does_not_supress_errors():
@@ -123,3 +125,11 @@ def test_assert_idom_did_not_log():
                 raise Exception("something")
             except Exception:
                 ROOT_LOGGER.exception("something")
+
+
+async def test_simple_display_fixture():
+    if os.name == "nt":
+        pytest.skip("Browser tests not supported on Windows")
+    async with testing.DisplayFixture() as display:
+        await display.show(SampleApp)
+        await display.page.wait_for_selector("#sample")
