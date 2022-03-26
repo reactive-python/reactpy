@@ -8,7 +8,7 @@ from .core.types import VdomDict
 @component
 def App() -> VdomDict:
     return html.div(
-        {"style": {"padding": "15px"}},
+        {"id": "sample", "style": {"padding": "15px"}},
         html.h1("Sample Application"),
         html.p(
             "This is a basic application made with IDOM. Click ",

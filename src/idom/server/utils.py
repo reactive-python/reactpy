@@ -41,8 +41,7 @@ def run(
         stacklevel=2,
     )
 
-    if implementation is None:
-        implementation = _get_default_implementation()
+    implementation = implementation or _get_default_implementation()
 
     app = implementation.create_development_app()
     implementation.configure(app, component)

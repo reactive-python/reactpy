@@ -51,7 +51,7 @@ async def test_display_simple_hello_world(display: DisplayFixture):
 
     await display.show(Hello)
 
-    assert display.page.wait_for_selector("#hello")
+    await display.page.wait_for_selector("#hello")
 
 
 async def test_pre_tags_are_rendered_correctly(display: DisplayFixture):
