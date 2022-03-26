@@ -42,7 +42,7 @@ def run(
     )
 
     if implementation is None:
-        from . import default as implementation
+        implementation = _get_default_implementation()
 
     app = implementation.create_development_app()
     implementation.configure(app, component)
@@ -64,6 +64,12 @@ def run(
         coros.append(_open_browser_after_server())
 
     asyncio.get_event_loop().run_until_complete(asyncio.gather(*coros))
+
+
+def _get_default_implementation() -> ServerImplementation[Any]:
+    from . import default
+
+    return default
 
 
 def find_available_port(

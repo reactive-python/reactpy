@@ -107,7 +107,7 @@ class _CastFunc(Protocol[_CastTo]):
         ...
 
 
-MountFunc = Callable[["ComponentConstructor | None"], None]
+MountFunc = Callable[["Callable[[], Any] | None"], None]
 
 
 def hotswap(update_on_change: bool = False) -> Tuple[MountFunc, ComponentConstructor]:

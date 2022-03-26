@@ -26,5 +26,5 @@ class ServerImplementation(Protocol[_App]):
     ) -> None:
         """Run an application using a development server"""
 
-    def use_scope() -> MutableMapping[str, Any]:
+    def use_scope(self) -> MutableMapping[str, Any]:
         """Get an ASGI scope or WSGI environment dictionary"""

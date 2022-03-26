@@ -2,31 +2,29 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import operator
 import re
 import shutil
 import time
-from contextlib import AsyncExitStack, ExitStack, contextmanager
-from functools import partial, wraps
-from inspect import isawaitable, iscoroutinefunction
+from contextlib import AsyncExitStack, contextmanager
+from functools import wraps
+from inspect import iscoroutinefunction
 from traceback import format_exception
 from types import TracebackType
 from typing import (
     Any,
     Awaitable,
     Callable,
-    Coroutine,
-    Dict,
     Generic,
     Iterator,
-    List,
     NoReturn,
     Optional,
+    Protocol,
     Sequence,
     Tuple,
     Type,
     TypeVar,
     Union,
+    cast,
 )
 from urllib.parse import urlencode, urlunparse
 from uuid import uuid4
@@ -66,7 +64,15 @@ def assert_same_items(left: Sequence[Any], right: Sequence[Any]) -> None:
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
+_RC = TypeVar("_RC", covariant=True)
 _DEFAULT_TIMEOUT = 3.0
+
+
+class _UntilFunc(Protocol[_RC]):
+    def __call__(
+        self, condition: Callable[[_RC], bool], timeout: float = _DEFAULT_TIMEOUT
+    ) -> Any:
+        ...
 
 
 class poll(Generic[_R]):
@@ -78,14 +84,18 @@ class poll(Generic[_R]):
         *args: _P.args,
         **kwargs: _P.kwargs,
     ) -> None:
-        if iscoroutinefunction(function):
+        self.until: _UntilFunc[_R]
+        """Check that the coroutines result meets a condition within the timeout"""
 
-            async def until(
+        if iscoroutinefunction(function):
+            coro_function = cast(Callable[_P, Awaitable[_R]], function)
+
+            async def coro_until(
                 condition: Callable[[_R], bool], timeout: float = _DEFAULT_TIMEOUT
             ) -> None:
                 started_at = time.time()
                 while True:
-                    result = await function(*args, **kwargs)
+                    result = await coro_function(*args, **kwargs)
                     if condition(result):
                         break
                     elif (time.time() - started_at) > timeout:
@@ -94,14 +104,16 @@ class poll(Generic[_R]):
                             f"seconds - last value was {result!r}"
                         )
 
+            self.until = coro_until
         else:
+            sync_function = cast(Callable[_P, _R], function)
 
-            def until(
+            def sync_until(
                 condition: Callable[[_R], bool] | Any, timeout: float = _DEFAULT_TIMEOUT
             ) -> None:
                 started_at = time.time()
                 while True:
-                    result = function(*args, **kwargs)
+                    result = sync_function(*args, **kwargs)
                     if condition(result):
                         break
                     elif (time.time() - started_at) > timeout:
@@ -110,8 +122,7 @@ class poll(Generic[_R]):
                             f"seconds - last value was {result!r}"
                         )
 
-        self.until: Callable[[Callable[[_R], bool]], Any] = until
-        """Check that the coroutines result meets a condition within the timeout"""
+            self.until = sync_until
 
     def until_is(self, right: Any, timeout: float = _DEFAULT_TIMEOUT) -> Any:
         """Wait until the result is identical to the given value"""
@@ -119,7 +130,8 @@ class poll(Generic[_R]):
 
     def until_equals(self, right: Any, timeout: float = _DEFAULT_TIMEOUT) -> Any:
         """Wait until the result is equal to the given value"""
-        return self.until(lambda left: left == right, timeout)
+        # not really sure why I need a type ignore comment here
+        return self.until(lambda left: left == right, timeout)  # type: ignore
 
 
 class DisplayFixture:
@@ -156,6 +168,7 @@ class DisplayFixture:
     async def __aenter__(self) -> DisplayFixture:
         es = self._exit_stack = AsyncExitStack()
 
+        browser: Browser | BrowserContext
         if not hasattr(self, "page"):
             if not hasattr(self, "_browser"):
                 pw = await es.enter_async_context(async_playwright())
@@ -218,7 +231,7 @@ class ServerFixture:
         self.implementation = implementation
 
     @property
-    def log_records(self) -> List[logging.LogRecord]:
+    def log_records(self) -> list[logging.LogRecord]:
         """A list of captured log records"""
         return self._records
 
@@ -246,7 +259,7 @@ class ServerFixture:
         types: Union[Type[Any], Tuple[Type[Any], ...]] = Exception,
         log_level: int = logging.ERROR,
         del_log_records: bool = True,
-    ) -> List[BaseException]:
+    ) -> list[BaseException]:
         """Return a list of logged exception matching the given criteria
 
         Args:
@@ -254,7 +267,7 @@ class ServerFixture:
             exclude_exc_types: Any exception types to ignore
             del_log_records: Whether to delete the log records for yielded exceptions
         """
-        found: List[BaseException] = []
+        found: list[BaseException] = []
         compiled_pattern = re.compile(pattern)
         for index, record in enumerate(self.log_records):
             if record.levelno >= log_level and record.exc_info:
@@ -283,7 +296,7 @@ class ServerFixture:
             )
         )
 
-        async def stop_server():
+        async def stop_server() -> None:
             server_future.cancel()
             try:
                 await asyncio.wait_for(server_future, timeout=3)
@@ -476,7 +489,7 @@ class HookCatcher:
 
     def __init__(self, index_by_kwarg: Optional[str] = None):
         self.index_by_kwarg = index_by_kwarg
-        self.index: Dict[Any, LifeCycleHook] = {}
+        self.index: dict[Any, LifeCycleHook] = {}
 
     def capture(self, render_function: Callable[..., Any]) -> Callable[..., Any]:
         """Decorator for capturing a ``LifeCycleHook`` on each render of a component"""
@@ -567,7 +580,7 @@ def clear_idom_web_modules_dir() -> None:
 
 class _LogRecordCaptor(logging.NullHandler):
     def __init__(self) -> None:
-        self.records: List[logging.LogRecord] = []
+        self.records: list[logging.LogRecord] = []
         super().__init__()
 
     def handle(self, record: logging.LogRecord) -> bool:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from asyncio import FIRST_EXCEPTION, CancelledError
+from typing import Any
 
 from asgiref.typing import ASGIApplication
 from uvicorn.config import Config as UvicornConfig
@@ -9,7 +9,7 @@ from uvicorn.server import Server as UvicornServer
 
 
 async def serve_development_asgi(
-    app: ASGIApplication,
+    app: ASGIApplication | Any,
     host: str,
     port: int,
     started: asyncio.Event,
@@ -17,7 +17,7 @@ async def serve_development_asgi(
     """Run a development server for starlette"""
     server = UvicornServer(UvicornConfig(app, host=host, port=port, loop="asyncio"))
 
-    async def check_if_started():
+    async def check_if_started() -> None:
         while not server.started:
             await asyncio.sleep(0.2)
         started.set()

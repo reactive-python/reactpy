@@ -38,7 +38,7 @@ class ComponentType(Protocol):
     key: Key | None
     """An identifier which is unique amongst a component's immediate siblings"""
 
-    type: type[Any] | Callable[..., Any]
+    type: Any
     """The function or class defining the behavior of this component
 
     This is used to see if two component instances share the same definition.
@@ -87,6 +87,7 @@ VdomChildren = Sequence[VdomChild]
 VdomAttributesAndChildren = Union[
     Mapping[str, Any],  # this describes both VdomDict and VdomAttributes
     Iterable[VdomChild],
+    VdomChild,
 ]
 """Useful for the ``*attributes_and_children`` parameter in :func:`idom.core.vdom.vdom`"""
 

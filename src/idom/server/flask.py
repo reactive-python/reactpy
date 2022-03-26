@@ -76,7 +76,7 @@ async def serve_development_app(
 
     server: pywsgi.WSGIServer
 
-    def run_server():
+    def run_server() -> None:
         nonlocal server
         server = pywsgi.WSGIServer(
             (host, port),
