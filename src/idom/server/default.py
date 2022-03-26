@@ -32,6 +32,9 @@ def use_scope() -> Any:
     return _default_implementation().use_scope()
 
 
+_DEFAULT_IMPLEMENTATION: ServerImplementation[Any] | None = None
+
+
 def _default_implementation() -> ServerImplementation[Any]:
     """Get the first available server implementation"""
     global _DEFAULT_IMPLEMENTATION
@@ -46,6 +49,3 @@ def _default_implementation() -> ServerImplementation[Any]:
     else:
         _DEFAULT_IMPLEMENTATION = implementation
         return implementation
-
-
-_DEFAULT_IMPLEMENTATION: ServerImplementation[Any] | None = None
