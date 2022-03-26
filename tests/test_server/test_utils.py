@@ -1,5 +1,6 @@
 import asyncio
 import threading
+import time
 from contextlib import ExitStack
 
 import pytest
@@ -43,6 +44,9 @@ async def test_run(page: Page, exit_stack: ExitStack):
         )
 
     threading.Thread(target=run_in_thread, daemon=True).start()
+
+    # give the server a moment to start
+    time.sleep(0.5)
 
     await page.goto(url)
     await page.wait_for_selector("#sample")

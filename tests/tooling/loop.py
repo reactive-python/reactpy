@@ -5,6 +5,8 @@ from contextlib import contextmanager
 from re import L
 from typing import Iterator
 
+from idom.testing import poll
+
 
 TIMEOUT = 3
 
@@ -33,6 +35,7 @@ def open_event_loop(as_current: bool = True) -> Iterator[asyncio.AbstractEventLo
         finally:
             if as_current:
                 asyncio.set_event_loop(None)
+            poll(loop.is_running).until_is(False)
             loop.close()
 
 
