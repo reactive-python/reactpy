@@ -18,7 +18,6 @@ from typing import (
     Iterator,
     NoReturn,
     Optional,
-    Protocol,
     Sequence,
     Tuple,
     Type,
@@ -31,7 +30,7 @@ from uuid import uuid4
 from weakref import ref
 
 from playwright.async_api import Browser, BrowserContext, Page, async_playwright
-from typing_extensions import ParamSpec
+from typing_extensions import ParamSpec, Protocol
 
 from idom import html
 from idom.config import IDOM_WEB_MODULES_DIR
