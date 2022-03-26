@@ -70,9 +70,9 @@ def clear_web_modules_dir_after_test():
 def assert_no_logged_exceptions():
     with capture_idom_logs() as records:
         yield
-    try:
-        for r in records:
-            if r.exc_info is not None:
-                raise r.exc_info[1]
-    finally:
-        records.clear()
+        try:
+            for r in records:
+                if r.exc_info is not None:
+                    raise r.exc_info[1]
+        finally:
+            records.clear()

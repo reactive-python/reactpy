@@ -6,7 +6,7 @@ import idom
 from idom import html
 from idom.server import default as default_implementation
 from idom.server.utils import all_implementations
-from idom.testing import DisplayFixture, ServerFixture
+from idom.testing import DisplayFixture, ServerFixture, poll
 
 
 @pytest.fixture(
@@ -52,7 +52,7 @@ async def test_display_simple_click_counter(display: DisplayFixture):
     counter = await display.page.wait_for_selector("#counter")
 
     for i in range(5):
-        assert (await counter.text_content()) == f"Count: {i}"
+        await poll(counter.text_content).until_equals(f"Count: {i}")
         await counter.click()
 
 

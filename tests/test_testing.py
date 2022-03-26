@@ -6,6 +6,7 @@ import pytest
 from idom import testing
 from idom.log import ROOT_LOGGER
 from idom.sample import App as SampleApp
+from idom.server import starlette as starlette_implementation
 
 
 def test_assert_idom_logged_does_not_supress_errors():
@@ -133,3 +134,31 @@ async def test_simple_display_fixture():
     async with testing.DisplayFixture() as display:
         await display.show(SampleApp)
         await display.page.wait_for_selector("#sample")
+
+
+def test_if_app_is_given_implementation_must_be_too():
+    with pytest.raises(
+        ValueError,
+        match=r"If an application instance its corresponding server implementation must be provided too",
+    ):
+        testing.ServerFixture(app=starlette_implementation.create_development_app())
+
+    testing.ServerFixture(
+        app=starlette_implementation.create_development_app(),
+        implementation=starlette_implementation,
+    )
+
+
+def test_list_logged_excptions():
+    the_error = None
+    with testing.capture_idom_logs() as records:
+        ROOT_LOGGER.info("A non-error log message")
+
+        try:
+            raise ValueError("An error for testing")
+        except Exception as error:
+            ROOT_LOGGER.exception("Log the error")
+            the_error = error
+
+        logged_errors = testing.logs.list_logged_exceptions(records)
+        assert logged_errors == [the_error]
