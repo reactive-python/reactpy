@@ -179,7 +179,7 @@ def test_python_suite(session: Session) -> None:
     """Run the Python-based test suite"""
     session.env["IDOM_DEBUG_MODE"] = "1"
     install_requirements_file(session, "test-env")
-    session.run("playwright", "install")
+    session.run("playwright", "install", "chromium")
     posargs = session.posargs
     posargs += ["--reruns", "3", "--reruns-delay", "1"]
 
