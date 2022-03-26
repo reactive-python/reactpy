@@ -215,7 +215,7 @@ class ServerFixture:
                 )
 
         self._app = app
-        self._server_implementation = implementation
+        self.implementation = implementation
 
     @property
     def log_records(self) -> List[logging.LogRecord]:
@@ -273,12 +273,12 @@ class ServerFixture:
         self._exit_stack = AsyncExitStack()
         self._records = self._exit_stack.enter_context(capture_idom_logs())
 
-        app = self._app or self._server_implementation.create_development_app()
-        self._server_implementation.configure(app, self._root_component)
+        app = self._app or self.implementation.create_development_app()
+        self.implementation.configure(app, self._root_component)
 
         started = asyncio.Event()
         server_future = asyncio.create_task(
-            self._server_implementation.serve_development_app(
+            self.implementation.serve_development_app(
                 app, self.host, self.port, started
             )
         )

@@ -1,6 +1,10 @@
+import json
+from typing import MutableMapping
+
 import pytest
 
 import idom
+from idom import html
 from idom.server.utils import all_implementations
 from idom.testing import DisplayFixture, ServerFixture, poll
 
@@ -8,6 +12,7 @@ from idom.testing import DisplayFixture, ServerFixture, poll
 @pytest.fixture(
     params=list(all_implementations()),
     ids=lambda imp: imp.__name__,
+    scope="module",
 )
 async def display(page, request):
     async with ServerFixture(implementation=request.param) as server:
@@ -56,3 +61,17 @@ async def test_module_from_template(display: DisplayFixture):
     VictoryBar = idom.web.export(victory, "VictoryBar")
     await display.show(VictoryBar)
     await display.page.wait_for_selector(".VictoryContainer")
+
+
+async def test_use_scope(display: DisplayFixture):
+    scope = idom.Ref()
+
+    @idom.component
+    def ShowScope():
+        scope.current = display.server.implementation.use_scope()
+        return html.pre({"id": "scope"}, str(scope.current))
+
+    await display.show(ShowScope)
+
+    await display.page.wait_for_selector("#scope")
+    assert isinstance(scope.current, MutableMapping)

@@ -24,6 +24,7 @@ from idom.core.serve import (
 )
 from idom.core.types import RootComponentConstructor
 
+from ._asgi import serve_development_asgi
 from .utils import CLIENT_BUILD_DIR
 
 
@@ -56,17 +57,7 @@ async def serve_development_app(
     app: Sanic, host: str, port: int, started: asyncio.Event
 ) -> None:
     """Run a development server for :mod:`sanic`"""
-    try:
-        server = await app.create_server(
-            host, port, return_asyncio_server=True, debug=True
-        )
-        await server.startup()
-        await server.start_serving()
-        started.set()
-        await server.serve_forever()
-    except KeyboardInterrupt:
-        app.shutdown_tasks(3)
-        app.stop()
+    await serve_development_asgi(app, host, port, started)
 
 
 def use_request() -> request.Request:
@@ -79,7 +70,12 @@ def use_request() -> request.Request:
 
 def use_scope() -> ASGIScope:
     """Get the current ASGI scope"""
-    return use_request().app._asgi_app.transport.scope
+    app = use_request().app
+    try:
+        asgi_app = app._asgi_app
+    except AttributeError:
+        raise RuntimeError("No scope. Sanic may not be running with an ASGI server")
+    return asgi_app.transport.scope
 
 
 class Options(TypedDict, total=False):
