@@ -28,15 +28,15 @@ async def serve_development_asgi(
     coros: list[Awaitable[Any]] = [server.serve()]
 
     if started:
-
-        async def check_if_started() -> None:
-            while not server.started:
-                await asyncio.sleep(0.2)
-            started.set()
-
-        coros.append(check_if_started())
+        coros.append(_check_if_started(server, started))
 
     try:
         await asyncio.gather(*coros)
     finally:
         await asyncio.wait_for(server.shutdown(), timeout=3)
+
+
+async def _check_if_started(server: UvicornServer, started: asyncio.Event) -> None:
+    while not server.started:
+        await asyncio.sleep(0.2)
+    started.set()
