@@ -22,10 +22,6 @@ Changed:
 - The name of ``proto`` modules to ``types`` and added a top level ``idom.types`` module
   - :pull:`701`
 
-
-0.37.2
-------
-
 Fixed:
 
 - A typo caused IDOM to use the insecure `ws` web-socket protocol on pages loaded with `https` instead of the secure `wss` protocol - :pull:`716`
