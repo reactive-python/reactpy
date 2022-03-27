@@ -1,6 +1,8 @@
 import asyncio
 import os
 import threading
+import time
+import webbrowser
 
 from sphinx_autobuild.cli import (
     Server,
@@ -95,9 +97,14 @@ def main():
     # Find the free port
     portn = args.port or find_free_port()
     if args.openbrowser is True:
-        server.serve(port=portn, host=args.host, root=outdir, open_url_delay=args.delay)
-    else:
-        server.serve(port=portn, host=args.host, root=outdir)
+
+        def opener():
+            time.sleep(args.delay)
+            webbrowser.open("http://%s:%s/index.html" % (args.host, 8000))
+
+        threading.Thread(target=opener, daemon=True).start()
+
+    server.serve(port=portn, host=args.host, root=outdir)
 
 
 if __name__ == "__main__":
