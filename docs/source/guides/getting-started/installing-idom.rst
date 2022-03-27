@@ -39,7 +39,7 @@ If you need to, you can install more than one option by separating them with com
     pip install "idom[fastapi,flask,sanic,starlette,tornado]"
 
 Once this is complete you should be able to :ref:`run IDOM <Running IDOM>` with your
-:ref:`chosen server implementation <choosing a server implementation>`.
+chosen server implementation.
 
 
 Installing In Other Frameworks

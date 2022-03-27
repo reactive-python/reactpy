@@ -196,8 +196,8 @@ embedding one the examples from this documentation into your own webpage:
 
 As mentioned though, this is connecting to the server that is hosting this
 documentation. If you want to connect to a view from your own server, you'll need to
-change the URL above to one you provide. One way to do this might be to :ref:`add to an
-existing web server`. Another would be to run IDOM in an adjacent web server instance
+change the URL above to one you provide. One way to do this might be to add to an
+existing application. Another would be to run IDOM in an adjacent web server instance
 that you coordinate with something like `NGINX <https://www.nginx.com/>`__. For the sake
 of simplicity, we'll assume you do something similar to the following in an existing
 Python app:
