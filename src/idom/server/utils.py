@@ -35,8 +35,7 @@ def run(
     """Run a component with a development server"""
     logger.warn(
         "You are running a development server. "
-        "Change this before deploying in production!",
-        stacklevel=2,
+        "Change this before deploying in production!"
     )
 
     implementation = implementation or import_module("idom.server.default")
