@@ -3,9 +3,9 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from dataclasses import dataclass
 from typing import Any, Dict, Tuple, Union
 
-from mypy_extensions import TypedDict
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
@@ -50,9 +50,9 @@ def configure(
         constructor: A component constructor
         options: Options for configuring server behavior
     """
-    options = _setup_options(options)
+    options = options or Options()
     _setup_common_routes(options, app)
-    _setup_single_view_dispatcher_route(options["url_prefix"], app, constructor)
+    _setup_single_view_dispatcher_route(options.url_prefix, app, constructor)
 
 
 def create_development_app() -> Starlette:
@@ -85,37 +85,28 @@ def use_scope() -> Scope:
     return use_websocket().scope
 
 
-class Options(TypedDict, total=False):
+@dataclass
+class Options:
     """Optionsuration options for :class:`StarletteRenderServer`"""
 
-    cors: Union[bool, Dict[str, Any]]
+    cors: Union[bool, Dict[str, Any]] = False
     """Enable or configure Cross Origin Resource Sharing (CORS)
 
     For more information see docs for ``starlette.middleware.cors.CORSMiddleware``
     """
 
-    redirect_root_to_index: bool
+    redirect_root: bool = True
     """Whether to redirect the root URL (with prefix) to ``index.html``"""
 
-    serve_static_files: bool
+    serve_static_files: bool = True
     """Whether or not to serve static files (i.e. web modules)"""
 
-    url_prefix: str
+    url_prefix: str = ""
     """The URL prefix where IDOM resources will be served from"""
 
 
-def _setup_options(options: Options | None) -> Options:
-    return {
-        "cors": False,
-        "url_prefix": "",
-        "serve_static_files": True,
-        "redirect_root_to_index": True,
-        **(options or {}),  # type: ignore
-    }
-
-
 def _setup_common_routes(options: Options, app: Starlette) -> None:
-    cors_options = options["cors"]
+    cors_options = options.cors
     if cors_options:  # pragma: no cover
         cors_params = (
             cors_options if isinstance(cors_options, dict) else {"allow_origins": ["*"]}
@@ -124,8 +115,8 @@ def _setup_common_routes(options: Options, app: Starlette) -> None:
 
     # This really should be added to the APIRouter, but there's a bug in Starlette
     # BUG: https://github.com/tiangolo/fastapi/issues/1469
-    url_prefix = options["url_prefix"]
-    if options["serve_static_files"]:
+    url_prefix = options.url_prefix
+    if options.serve_static_files:
         app.mount(
             f"{url_prefix}/client",
             StaticFiles(
@@ -145,7 +136,7 @@ def _setup_common_routes(options: Options, app: Starlette) -> None:
             name="idom_web_module_files",
         )
 
-        if options["redirect_root_to_index"]:
+        if options.redirect_root:
 
             @app.route(f"{url_prefix}/")
             def redirect_to_index(request: Request) -> RedirectResponse:

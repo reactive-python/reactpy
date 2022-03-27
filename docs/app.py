@@ -6,7 +6,7 @@ from sanic import Sanic, response
 
 from idom import component
 from idom.core.types import ComponentConstructor
-from idom.server.sanic import configure, use_request
+from idom.server.sanic import Options, configure, use_request
 
 from .examples import load_examples
 
@@ -26,10 +26,10 @@ def run():
     configure(
         app,
         Example(),
-        {
-            "redirect_root_to_index": False,
-            "url_prefix": IDOM_MODEL_SERVER_URL_PREFIX,
-        },
+        Options(
+            redirect_root=False,
+            url_prefix=IDOM_MODEL_SERVER_URL_PREFIX,
+        ),
     )
 
     app.run(

@@ -37,6 +37,7 @@ class ServerFixture:
         port: Optional[int] = None,
         app: Any | None = None,
         implementation: ServerImplementation[Any] | None = None,
+        options: Any | None = None,
     ) -> None:
         self.host = host
         self.port = port or find_available_port(host, allow_reuse_waiting_ports=False)
@@ -51,6 +52,7 @@ class ServerFixture:
 
         self._app = app
         self.implementation = implementation or default_server
+        self._options = options
 
     @property
     def log_records(self) -> list[logging.LogRecord]:
@@ -102,7 +104,7 @@ class ServerFixture:
         self._records = self._exit_stack.enter_context(capture_idom_logs())
 
         app = self._app or self.implementation.create_development_app()
-        self.implementation.configure(app, self._root_component)
+        self.implementation.configure(app, self._root_component, self._options)
 
         started = asyncio.Event()
         server_future = asyncio.create_task(

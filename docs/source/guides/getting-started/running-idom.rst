@@ -99,11 +99,29 @@ Tornado is run using it's own builtin server rather than an external WSGI or ASG
 server.
 
 
-Configuration Options
----------------------
+Server Configuration Options
+----------------------------
 
 IDOM's various server implementations come with ``Options`` that can be passed to their
-respective ``configure()`` functions. Each provides a similar set of key value pairs
+respective ``configure()`` functions. Those which are common amongst the options are:
+
+- ``url_prefix`` - prefix all routes configured by IDOM
+- ``redirect_root`` - whether to redirect the root of the application to the IDOM view
+- ``serve_static_files`` - whether to server IDOM's static files from it's default route
+
+You'd then pass these options to ``configure()`` in the following way:
+
+.. code-block::
+
+    configure(app, MyComponent, Options(...))
+
+To learn more read the description for your chosen server implementation:
+
+- :class:`idom.server.fastapi.Options`
+- :class:`idom.server.flask.Options`
+- :class:`idom.server.sanic.Options`
+- :class:`idom.server.starlette.Options`
+- :class:`idom.server.tornado.Options`
 
 
 Running IDOM in Debug Mode

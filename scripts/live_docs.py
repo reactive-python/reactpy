@@ -14,7 +14,7 @@ from sphinx_autobuild.cli import (
 )
 
 from docs.app import IDOM_MODEL_SERVER_URL_PREFIX, Example, make_app, reload_examples
-from idom.server.sanic import configure, serve_development_app
+from idom.server.sanic import Options, configure, serve_development_app
 from idom.testing import clear_idom_web_modules_dir
 
 
@@ -33,7 +33,7 @@ def wrap_builder(old_builder):
     configure(
         app,
         Example,
-        {"cors": True, "url_prefix": IDOM_MODEL_SERVER_URL_PREFIX},
+        Options(cors=True, url_prefix=IDOM_MODEL_SERVER_URL_PREFIX),
     )
 
     thread_started = threading.Event()

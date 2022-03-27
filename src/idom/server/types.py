@@ -15,7 +15,12 @@ _App = TypeVar("_App")
 class ServerImplementation(Protocol[_App]):
     """Common interface for IDOM's builti-in server implementations"""
 
-    def configure(self, app: _App, component: RootComponentConstructor) -> None:
+    def configure(
+        self,
+        app: _App,
+        component: RootComponentConstructor,
+        options: Any | None = None,
+    ) -> None:
         """Configure the given app instance to display the given component"""
 
     def create_development_app(self) -> _App:

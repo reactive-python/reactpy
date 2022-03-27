@@ -9,8 +9,12 @@ from .types import ServerImplementation
 from .utils import all_implementations
 
 
-def configure(app: Any, component: RootComponentConstructor) -> None:
+def configure(
+    app: Any, component: RootComponentConstructor, options: None = None
+) -> None:
     """Configure the given app instance to display the given component"""
+    if options is not None:  # pragma: no cover
+        raise ValueError("Default implementation cannot be configured with options")
     return _default_implementation().configure(app, component)
 
 

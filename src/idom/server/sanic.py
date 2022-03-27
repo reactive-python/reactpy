@@ -3,10 +3,10 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from dataclasses import dataclass
 from typing import Any, Dict, Tuple, Union
 from uuid import uuid4
 
-from mypy_extensions import TypedDict
 from sanic import Blueprint, Sanic, request, response
 from sanic.config import Config
 from sanic.models.asgi import ASGIScope
@@ -39,10 +39,8 @@ def configure(
     app: Sanic, component: RootComponentConstructor, options: Options | None = None
 ) -> None:
     """Configure an application instance to display the given component"""
-    options = _setup_options(options)
-    blueprint = Blueprint(
-        f"idom_dispatcher_{id(app)}", url_prefix=options["url_prefix"]
-    )
+    options = options or Options()
+    blueprint = Blueprint(f"idom_dispatcher_{id(app)}", url_prefix=options.url_prefix)
     _setup_common_routes(blueprint, options)
     _setup_single_view_dispatcher_route(blueprint, component)
     app.blueprint(blueprint)
@@ -83,46 +81,37 @@ def use_scope() -> ASGIScope:
     return asgi_app.transport.scope
 
 
-class Options(TypedDict, total=False):
+@dataclass
+class Options:
     """Options for :class:`SanicRenderServer`"""
 
-    cors: Union[bool, Dict[str, Any]]
+    cors: Union[bool, Dict[str, Any]] = False
     """Enable or configure Cross Origin Resource Sharing (CORS)
 
     For more information see docs for ``sanic_cors.CORS``
     """
 
-    redirect_root_to_index: bool
+    redirect_root: bool = True
     """Whether to redirect the root URL (with prefix) to ``index.html``"""
 
-    serve_static_files: bool
+    serve_static_files: bool = True
     """Whether or not to serve static files (i.e. web modules)"""
 
-    url_prefix: str
+    url_prefix: str = ""
     """The URL prefix where IDOM resources will be served from"""
 
 
-def _setup_options(options: Options | None) -> Options:
-    return {
-        "cors": False,
-        "url_prefix": "",
-        "serve_static_files": True,
-        "redirect_root_to_index": True,
-        **(options or {}),  # type: ignore
-    }
-
-
 def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
-    cors_options = options["cors"]
+    cors_options = options.cors
     if cors_options:  # pragma: no cover
         cors_params = cors_options if isinstance(cors_options, dict) else {}
         CORS(blueprint, **cors_params)
 
-    if options["serve_static_files"]:
+    if options.serve_static_files:
         blueprint.static("/client", str(CLIENT_BUILD_DIR))
         blueprint.static("/modules", str(IDOM_WEB_MODULES_DIR.current))
 
-        if options["redirect_root_to_index"]:
+        if options.redirect_root:
 
             @blueprint.route("/")  # type: ignore
             def redirect_to_index(

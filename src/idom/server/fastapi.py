@@ -19,6 +19,9 @@ use_scope = starlette.use_scope  # noqa: ROH101
 use_websocket = starlette.use_websocket  # noqa: ROH101
 """Alias for :func:`starlette.use_websocket`"""
 
+Options = starlette.Options
+"""Alias for :class:`starlette.Options`"""
+
 
 def configure(
     app: FastAPI,
@@ -34,9 +37,7 @@ def configure(
     """
     options = starlette._setup_options(options)
     starlette._setup_common_routes(options, app)
-    starlette._setup_single_view_dispatcher_route(
-        options["url_prefix"], app, constructor
-    )
+    starlette._setup_single_view_dispatcher_route(options.url_prefix, app, constructor)
 
 
 def create_development_app() -> FastAPI:

@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 from asyncio import Queue as AsyncQueue
+from dataclasses import dataclass
 from queue import Queue as ThreadQueue
 from threading import Event as ThreadEvent
 from threading import Thread
@@ -24,7 +25,6 @@ from flask_sockets import Sockets
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket.websocket import WebSocket
-from typing_extensions import TypedDict
 
 import idom
 from idom.config import IDOM_WEB_MODULES_DIR
@@ -53,8 +53,8 @@ def configure(
         options: Options for configuring server behavior
         app: An application instance (otherwise a default instance is created)
     """
-    options = _setup_options(options)
-    blueprint = Blueprint("idom", __name__, url_prefix=options["url_prefix"])
+    options = options or Options()
+    blueprint = Blueprint("idom", __name__, url_prefix=options.url_prefix)
     _setup_common_routes(blueprint, options)
     _setup_single_view_dispatcher_route(app, options, component)
     app.register_blueprint(blueprint)
@@ -126,48 +126,33 @@ def use_scope() -> dict[str, Any]:
     return use_request().environ
 
 
-class Options(TypedDict, total=False):
+@dataclass
+class Options:
     """Render server config for :class:`FlaskRenderServer`"""
 
-    cors: Union[bool, Dict[str, Any]]
+    cors: Union[bool, Dict[str, Any]] = False
     """Enable or configure Cross Origin Resource Sharing (CORS)
 
     For more information see docs for ``flask_cors.CORS``
     """
 
-    import_name: str
-    """The module where the application instance was created
-
-    For more info see :class:`flask.Flask`.
-    """
-
-    redirect_root_to_index: bool
+    redirect_root: bool = True
     """Whether to redirect the root URL (with prefix) to ``index.html``"""
 
-    serve_static_files: bool
+    serve_static_files: bool = True
     """Whether or not to serve static files (i.e. web modules)"""
 
-    url_prefix: str
+    url_prefix: str = ""
     """The URL prefix where IDOM resources will be served from"""
 
 
-def _setup_options(options: Options | None) -> Options:
-    return {
-        "url_prefix": "",
-        "cors": False,
-        "serve_static_files": True,
-        "redirect_root_to_index": True,
-        **(options or {}),  # type: ignore
-    }
-
-
 def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
-    cors_options = options["cors"]
+    cors_options = options.cors
     if cors_options:  # pragma: no cover
         cors_params = cors_options if isinstance(cors_options, dict) else {}
         CORS(blueprint, **cors_params)
 
-    if options["serve_static_files"]:
+    if options.serve_static_files:
 
         @blueprint.route("/client/<path:path>")
         def send_client_dir(path: str) -> Any:
@@ -177,7 +162,7 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
         def send_modules_dir(path: str) -> Any:
             return send_from_directory(str(IDOM_WEB_MODULES_DIR.current), path)
 
-        if options["redirect_root_to_index"]:
+        if options.redirect_root:
 
             @blueprint.route("/")
             def redirect_to_index() -> Any:
@@ -195,7 +180,7 @@ def _setup_single_view_dispatcher_route(
 ) -> None:
     sockets = Sockets(app)
 
-    @sockets.route(_join_url_paths(options["url_prefix"], "/stream"))  # type: ignore
+    @sockets.route(_join_url_paths(options.url_prefix, "/stream"))  # type: ignore
     def model_stream(ws: WebSocket) -> None:
         def send(value: Any) -> None:
             ws.send(json.dumps(value))

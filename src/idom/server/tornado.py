@@ -4,6 +4,7 @@ import asyncio
 import json
 from asyncio import Queue as AsyncQueue
 from asyncio.futures import Future
+from dataclasses import dataclass
 from typing import Any, List, Tuple, Type, Union
 from urllib.parse import urljoin
 
@@ -14,7 +15,6 @@ from tornado.platform.asyncio import AsyncIOMainLoop
 from tornado.web import Application, RedirectHandler, RequestHandler, StaticFileHandler
 from tornado.websocket import WebSocketHandler
 from tornado.wsgi import WSGIContainer
-from typing_extensions import TypedDict
 
 from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.hooks import Context, create_context, use_context
@@ -44,7 +44,7 @@ def configure(
         component: A root component constructor
         options: Options for configuring how the component is mounted to the server.
     """
-    options = _setup_options(options)
+    options = options or Options()
     _add_handler(
         app,
         options,
@@ -99,34 +99,26 @@ def use_scope() -> dict[str, Any]:
     return WSGIContainer.environ(use_request())
 
 
-class Options(TypedDict, total=False):
+@dataclass
+class Options:
     """Render server options for :class:`TornadoRenderServer` subclasses"""
 
-    redirect_root_to_index: bool
+    redirect_root: bool = True
     """Whether to redirect the root URL (with prefix) to ``index.html``"""
 
-    serve_static_files: bool
+    serve_static_files: bool = True
     """Whether or not to serve static files (i.e. web modules)"""
 
-    url_prefix: str
+    url_prefix: str = ""
     """The URL prefix where IDOM resources will be served from"""
 
 
 _RouteHandlerSpecs = List[Tuple[str, Type[RequestHandler], Any]]
 
 
-def _setup_options(options: Options | None) -> Options:
-    return {
-        "url_prefix": "",
-        "serve_static_files": True,
-        "redirect_root_to_index": True,
-        **(options or {}),  # type: ignore
-    }
-
-
 def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
     handlers: _RouteHandlerSpecs = []
-    if options["serve_static_files"]:
+    if options.serve_static_files:
         handlers.append(
             (
                 r"/client/(.*)",
@@ -141,8 +133,10 @@ def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
                 {"path": str(IDOM_WEB_MODULES_DIR.current)},
             )
         )
-        if options["redirect_root_to_index"]:
-            handlers.append(("/", RedirectHandler, {"url": "./client/index.html"}))
+        if options.redirect_root:
+            handlers.append(
+                (options.url_prefix, RedirectHandler, {"url": "./client/index.html"})
+            )
     return handlers
 
 
@@ -150,7 +144,7 @@ def _add_handler(
     app: Application, options: Options, handlers: _RouteHandlerSpecs
 ) -> None:
     prefixed_handlers: List[Any] = [
-        (urljoin(options["url_prefix"], route_pattern),) + tuple(handler_info)
+        (urljoin(options.url_prefix, route_pattern),) + tuple(handler_info)
         for route_pattern, *handler_info in handlers
     ]
     app.add_handlers(r".*", prefixed_handlers)
