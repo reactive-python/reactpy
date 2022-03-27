@@ -17,6 +17,12 @@ more info, see the :ref:`Contributor Guide <Create a Changelog Entry>`.
 Unreleased
 ----------
 
+Nothing yet...
+
+
+0.37.2
+------
+
 Changed:
 
 - The name of ``proto`` modules to ``types`` and added a top level ``idom.types`` module
