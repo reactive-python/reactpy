@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from traceback import format_exception
 from typing import Any, Iterator, NoReturn
 
-from idom.log import ROOT_LOGGER
+from idom.logging import ROOT_LOGGER
 
 
 class LogAssertionError(AssertionError):

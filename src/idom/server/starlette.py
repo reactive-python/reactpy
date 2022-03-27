@@ -64,7 +64,7 @@ async def serve_development_app(
     app: Starlette,
     host: str,
     port: int,
-    started: asyncio.Event,
+    started: asyncio.Event | None = None,
 ) -> None:
     """Run a development server for starlette"""
     await serve_development_asgi(app, host, port, started)

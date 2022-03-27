@@ -22,7 +22,11 @@ class ServerImplementation(Protocol[_App]):
         """Create an application instance for development purposes"""
 
     async def serve_development_app(
-        self, app: _App, host: str, port: int, started: asyncio.Event
+        self,
+        app: _App,
+        host: str,
+        port: int,
+        started: asyncio.Event | None = None,
     ) -> None:
         """Run an application using a development server"""
 

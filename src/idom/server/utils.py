@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import socket
-import warnings
-import webbrowser
 from contextlib import closing
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Awaitable, Iterator
+from typing import Any, Iterator
 
 import idom
 from idom.types import RootComponentConstructor
@@ -15,6 +14,7 @@ from idom.types import RootComponentConstructor
 from .types import ServerImplementation
 
 
+logger = logging.getLogger(__name__)
 CLIENT_BUILD_DIR = Path(idom.__file__).parent / "client"
 
 SUPPORTED_PACKAGES = (
@@ -30,14 +30,12 @@ def run(
     component: RootComponentConstructor,
     host: str = "127.0.0.1",
     port: int | None = None,
-    open_browser: bool = True,
     implementation: ServerImplementation[Any] | None = None,
 ) -> None:
     """Run a component with a development server"""
-
-    warnings.warn(
-        "You are running a development server, be sure to change this before deploying in production!",
-        UserWarning,
+    logger.warn(
+        "You are running a development server. "
+        "Change this before deploying in production!",
         stacklevel=2,
     )
 
@@ -46,23 +44,13 @@ def run(
     app = implementation.create_development_app()
     implementation.configure(app, component)
 
-    coros: list[Awaitable[Any]] = []
-
     host = host
     port = port or find_available_port(host)
-    started = asyncio.Event()
+    logger.info(f"Running at http://{host}:{port}")
 
-    coros.append(implementation.serve_development_app(app, host, port, started))
-
-    if open_browser:  # pragma: no cover
-
-        async def _open_browser_after_server() -> None:
-            await started.wait()
-            webbrowser.open(f"http://{host}:{port}")
-
-        coros.append(_open_browser_after_server())
-
-    asyncio.get_event_loop().run_until_complete(asyncio.gather(*coros))
+    asyncio.get_event_loop().run_until_complete(
+        implementation.serve_development_app(app, host, port)
+    )
 
 
 def find_available_port(

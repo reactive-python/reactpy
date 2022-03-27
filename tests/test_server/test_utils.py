@@ -39,7 +39,6 @@ async def test_run(page: Page, exit_stack: ExitStack):
             SampleApp,
             host,
             port,
-            open_browser=False,
             implementation=flask_implementation,
         )
 

@@ -54,7 +54,10 @@ def create_development_app() -> Sanic:
 
 
 async def serve_development_app(
-    app: Sanic, host: str, port: int, started: asyncio.Event
+    app: Sanic,
+    host: str,
+    port: int,
+    started: asyncio.Event | None = None,
 ) -> None:
     """Run a development server for :mod:`sanic`"""
     await serve_development_asgi(app, host, port, started)

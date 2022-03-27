@@ -1,4 +1,4 @@
-from . import config, html, log, sample, server, types, web
+from . import config, html, logging, sample, server, types, web
 from .core import hooks
 from .core.component import component
 from .core.events import event
@@ -33,7 +33,7 @@ __all__ = [
     "html_to_vdom",
     "html",
     "Layout",
-    "log",
+    "logging",
     "Ref",
     "run",
     "sample",

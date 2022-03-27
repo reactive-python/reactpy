@@ -20,7 +20,10 @@ def create_development_app() -> Any:
 
 
 async def serve_development_app(
-    app: Any, host: str, port: int, started: asyncio.Event
+    app: Any,
+    host: str,
+    port: int,
+    started: asyncio.Event | None = None,
 ) -> None:
     """Run an application using a development server"""
     return await _default_implementation().serve_development_app(

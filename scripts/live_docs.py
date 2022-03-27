@@ -60,6 +60,7 @@ def wrap_builder(old_builder):
     def new_builder():
         clear_idom_web_modules_dir()
         reload_examples()
+        old_builder()
 
     return new_builder
 

@@ -9,6 +9,7 @@ from urllib.parse import urljoin
 
 from tornado.httpserver import HTTPServer
 from tornado.httputil import HTTPServerRequest
+from tornado.log import enable_pretty_logging
 from tornado.platform.asyncio import AsyncIOMainLoop
 from tornado.web import Application, RedirectHandler, RequestHandler, StaticFileHandler
 from tornado.websocket import WebSocketHandler
@@ -56,16 +57,22 @@ def create_development_app() -> Application:
 
 
 async def serve_development_app(
-    app: Application, host: str, port: int, started: asyncio.Event
+    app: Application,
+    host: str,
+    port: int,
+    started: asyncio.Event | None = None,
 ) -> None:
+    enable_pretty_logging()
+
     # setup up tornado to use asyncio
     AsyncIOMainLoop().install()
 
     server = HTTPServer(app)
     server.listen(port, host)
 
-    # at this point the server is accepting connection
-    started.set()
+    if started:
+        # at this point the server is accepting connection
+        started.set()
 
     try:
         # block forever - tornado has already set up its own background tasks

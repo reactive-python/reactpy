@@ -66,7 +66,10 @@ def create_development_app() -> Flask:
 
 
 async def serve_development_app(
-    app: Flask, host: str, port: int, started: asyncio.Event
+    app: Flask,
+    host: str,
+    port: int,
+    started: asyncio.Event | None = None,
 ) -> None:
     """Run an application using a development server"""
     loop = asyncio.get_event_loop()
@@ -83,7 +86,8 @@ async def serve_development_app(
             handler_class=WebSocketHandler,
         )
         server.start()
-        loop.call_soon_threadsafe(started.set)
+        if started:
+            loop.call_soon_threadsafe(started.set)
         try:
             server.serve_forever()
         finally:
@@ -92,7 +96,8 @@ async def serve_development_app(
     thread = Thread(target=run_server, daemon=True)
     thread.start()
 
-    await started.wait()
+    if started:
+        await started.wait()
 
     try:
         await stopped.wait()
