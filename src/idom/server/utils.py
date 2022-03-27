@@ -45,7 +45,8 @@ def run(
 
     host = host
     port = port or find_available_port(host)
-    logger.info(f"Running at http://{host}:{port}")
+
+    logger.info(f"Running with {type(app).__name__!r} at http://{host}:{port}")
 
     asyncio.get_event_loop().run_until_complete(
         implementation.serve_development_app(app, host, port)

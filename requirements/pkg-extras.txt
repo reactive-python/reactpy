@@ -1,4 +1,8 @@
-# extra=stable,sanic
+# extra=starlette
+starlette >=0.13.6
+uvicorn[standard] >=0.13.4
+
+# extra=sanic
 sanic >=21
 sanic-cors
 
@@ -6,22 +10,14 @@ sanic-cors
 fastapi >=0.63.0
 uvicorn[standard] >=0.13.4
 
-# extra=starlette
-starlette >=0.13.6
-uvicorn[standard] >=0.13.4
-
 # extra=flask
 flask<2.0
 markupsafe<2.1
 flask-cors
 flask-sockets
-a2wsgi
 
-# tornado
+# extra=tornado
 tornado
 
 # extra=testing
 playwright
-
-# extra=matplotlib
-matplotlib

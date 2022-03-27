@@ -6,7 +6,7 @@ from contextlib import ExitStack
 import pytest
 from playwright.async_api import Page
 
-from idom.sample import App as SampleApp
+from idom.sample import SampleApp as SampleApp
 from idom.server import flask as flask_implementation
 from idom.server.utils import find_available_port
 from idom.server.utils import run as sync_run

@@ -6,7 +6,7 @@ from .core.types import VdomDict
 
 
 @component
-def App() -> VdomDict:
+def SampleApp() -> VdomDict:
     return html.div(
         {"id": "sample", "style": {"padding": "15px"}},
         html.h1("Sample Application"),

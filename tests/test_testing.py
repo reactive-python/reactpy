@@ -5,7 +5,7 @@ import pytest
 
 from idom import testing
 from idom.logging import ROOT_LOGGER
-from idom.sample import App as SampleApp
+from idom.sample import SampleApp as SampleApp
 from idom.server import starlette as starlette_implementation
 
 

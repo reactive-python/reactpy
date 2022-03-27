@@ -46,19 +46,35 @@ notebook linked below will demonstrate how to do this:
 Section 1: Installing IDOM
 --------------------------
 
-The next fastest option is to install IDOM with ``pip``:
+The next fastest option is to install IDOM along with a supported server (like
+``starlette``) with ``pip``:
 
 .. code-block:: bash
 
-    pip install "idom[stable]"
+    pip install "idom[starlette]"
 
 To check that everything is working you can run the sample application:
 
 .. code-block:: bash
 
-    python -c "import idom; idom.run(idom.sample.App, open_browser=True)"
+    python -c "import idom; idom.run(idom.sample.SampleApp)"
 
-This should automatically open up a browser window to a page that looks like this:
+.. note::
+
+    This launches a simple development server which is good enough for testing, but
+    probably not what you want to use in production. When deploying in production,
+    there's a number of different ways of :ref:`running IDOM <Section 2: Running IDOM>`.
+
+You should then see a few log messages:
+
+.. code-block:: text
+
+    2022-03-27T11:58:59-0700 | WARNING | You are running a development server. Change this before deploying in production!
+    2022-03-27T11:58:59-0700 | INFO | Running with 'Starlette' at http://127.0.0.1:8000
+
+The second log message includes a URL indicating where you should go to view the app.
+That will usually be http://127.0.0.1:8000. Once you go to that URL you should see
+something like this:
 
 .. card::
 
@@ -70,9 +86,8 @@ If you get a ``RuntimeError`` similar to the following:
 
     Found none of the following builtin server implementations...
 
-Then be sure you installed ``"idom[stable]"`` and not just ``idom``.
-
-For anything else, report your issue in IDOM's :discussion-type:`discussion forum
+Then be sure you run ``pip install "idom[starlette]"`` instead of just ``idom``. For
+anything else, report your issue in IDOM's :discussion-type:`discussion forum
 <problem>`.
 
 .. card::

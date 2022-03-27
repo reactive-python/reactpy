@@ -51,7 +51,7 @@ class WidgetExample(SphinxDirective):
         if len(ex_files) == 1:
             labeled_tab_items.append(
                 (
-                    "app.py",
+                    "main.py",
                     _literal_include(
                         path=ex_files[0],
                         linenos=show_linenos,
