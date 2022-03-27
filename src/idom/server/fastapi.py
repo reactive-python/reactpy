@@ -22,23 +22,10 @@ use_websocket = starlette.use_websocket  # noqa: ROH101
 Options = starlette.Options
 """Alias for :class:`idom.server.starlette.Options`"""
 
-
-def configure(
-    app: FastAPI,
-    constructor: RootComponentConstructor,
-    options: starlette.Options | None = None,
-) -> None:
-    """Prepare a :class:`FastAPI` server to serve the given component
-
-    Parameters:
-        app: An application instance
-        constructor: A component constructor
-        config: Options for configuring server behavior
-    """
-    options = starlette._setup_options(options)
-    starlette._setup_common_routes(options, app)
-    starlette._setup_single_view_dispatcher_route(options.url_prefix, app, constructor)
+configure = starlette.configure
+"""Alias for :class:`idom.server.starlette.configure`"""
 
 
 def create_development_app() -> FastAPI:
+    """Create a development ``FastAPI`` application instance."""
     return FastAPI(debug=IDOM_DEBUG_MODE.current)
