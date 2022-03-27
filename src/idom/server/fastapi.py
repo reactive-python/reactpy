@@ -2,9 +2,6 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from idom.config import IDOM_DEBUG_MODE
-from idom.core.types import RootComponentConstructor
-
 from . import starlette
 
 
@@ -28,4 +25,4 @@ configure = starlette.configure
 
 def create_development_app() -> FastAPI:
     """Create a development ``FastAPI`` application instance."""
-    return FastAPI(debug=IDOM_DEBUG_MODE.current)
+    return FastAPI(debug=True)
