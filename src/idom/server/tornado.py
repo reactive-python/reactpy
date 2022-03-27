@@ -135,7 +135,11 @@ def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
         )
         if options.redirect_root:
             handlers.append(
-                (options.url_prefix, RedirectHandler, {"url": "./client/index.html"})
+                (
+                    urljoin("/", options.url_prefix),
+                    RedirectHandler,
+                    {"url": "./client/index.html"},
+                )
             )
     return handlers
 
