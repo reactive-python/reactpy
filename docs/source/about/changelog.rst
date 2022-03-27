@@ -11,8 +11,14 @@ Changelog
 All notable changes to this project will be recorded in this document. The style of
 which is based on `Keep a Changelog <https://keepachangelog.com/>`__. The versioning
 scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__. For
-more info, see the :ref:`Contributor Guide <Create a Changelog Entry>`.
+more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 
+
+.. INSTRUCTIONS FOR CHANGELOG CONTRIBUTORS
+.. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+.. If you're adding a changelog entry, be sure to read the "Creating a Changelog Entry"
+.. section of the documentation before doing so for instructions on how to adhere to the
+.. "Keep a Changelog" style guide (https://keepachangelog.com).
 
 Unreleased
 ----------

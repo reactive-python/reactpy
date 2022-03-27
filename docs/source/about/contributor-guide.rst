@@ -66,8 +66,8 @@ about how to get started. To make a change to IDOM you'll do the following:
     :ref:`equality checks <Code Quality Checks>` and, with any luck, accept your request.
     At that point your contribution will be merged into the main codebase!
 
-Create a Changelog Entry
-........................
+Creating a Changelog Entry
+..........................
 
 As part of your pull request, you'll want to edit the `Changelog
 <https://github.com/idom-team/idom/blob/main/docs/source/about/changelog.rst>`__ by
