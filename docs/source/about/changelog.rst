@@ -33,12 +33,19 @@ Changed:
 
 Added:
 
-- Support for access to underlying server requests via contexts - :issue:`669`
+- Access to underlying server requests via contexts - :issue:`669`
+
+Removed:
+
+- ``idom.widgets.multiview`` since basic routing view ``use_scope`` is now possible
+- All ``SharedClientStateServer`` implementations.
+- All ``PerClientStateServer`` implementations have been replaced with ``configure()``
 
 Fixed:
 
 - IDOM's test suite no longer uses sync web drivers - :issue:`591`
 - Updated Sanic requirement to ``>=21`` - :issue:`678`
+- How we advertise ``idom.run`` - :issue:`657`
 
 
 0.37.2
