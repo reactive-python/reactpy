@@ -23,7 +23,22 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-Nothing yet...
+Changed:
+
+- How IDOM integrates with servers - :pull:`703`
+
+  - ``idom.run`` no longer accepts an app instance to discourage use outside of testing
+  - IDOM's server implementations now provide ``configure()`` functions instead
+  - ``idom.testing`` has been completely reworked in order to support async web drivers
+
+Added:
+
+- Support for access to underlying server requests via contexts - :issue:`669`
+
+Fixed:
+
+- IDOM's test suite no longer uses sync web drivers - :issue:`591`
+- Updated Sanic requirement to ``>=21`` - :issue:`678`
 
 
 0.37.2
