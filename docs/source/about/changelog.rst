@@ -11,13 +11,41 @@ Changelog
 All notable changes to this project will be recorded in this document. The style of
 which is based on `Keep a Changelog <https://keepachangelog.com/>`__. The versioning
 scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__. For
-more info, see the :ref:`Contributor Guide <Create a Changelog Entry>`.
+more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 
+
+.. INSTRUCTIONS FOR CHANGELOG CONTRIBUTORS
+.. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+.. If you're adding a changelog entry, be sure to read the "Creating a Changelog Entry"
+.. section of the documentation before doing so for instructions on how to adhere to the
+.. "Keep a Changelog" style guide (https://keepachangelog.com).
 
 Unreleased
 ----------
 
-Nothing yet...
+Changed:
+
+- How IDOM integrates with servers - :pull:`703`
+
+  - ``idom.run`` no longer accepts an app instance to discourage use outside of testing
+  - IDOM's server implementations now provide ``configure()`` functions instead
+  - ``idom.testing`` has been completely reworked in order to support async web drivers
+
+Added:
+
+- Access to underlying server requests via contexts - :issue:`669`
+
+Removed:
+
+- ``idom.widgets.multiview`` since basic routing view ``use_scope`` is now possible
+- All ``SharedClientStateServer`` implementations.
+- All ``PerClientStateServer`` implementations have been replaced with ``configure()``
+
+Fixed:
+
+- IDOM's test suite no longer uses sync web drivers - :issue:`591`
+- Updated Sanic requirement to ``>=21`` - :issue:`678`
+- How we advertise ``idom.run`` - :issue:`657`
 
 
 0.37.2
@@ -30,7 +58,8 @@ Changed:
 
 Fixed:
 
-- A typo caused IDOM to use the insecure `ws` web-socket protocol on pages loaded with `https` instead of the secure `wss` protocol - :pull:`716`
+- A typo caused IDOM to use the insecure ``ws`` web-socket protocol on pages loaded with
+  ``https`` instead of the secure ``wss`` protocol - :pull:`716`
 
 
 0.37.1

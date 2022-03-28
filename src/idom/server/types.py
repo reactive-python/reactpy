@@ -1,43 +1,39 @@
 from __future__ import annotations
 
-from threading import Thread
-from typing import Optional, TypeVar
+import asyncio
+from typing import Any, MutableMapping, TypeVar
 
-from typing_extensions import Protocol
+from typing_extensions import Protocol, runtime_checkable
 
-from idom.core.types import ComponentConstructor
+from idom.types import RootComponentConstructor
 
 
 _App = TypeVar("_App")
-_Config = TypeVar("_Config", contravariant=True)
 
 
-class ServerFactory(Protocol[_App, _Config]):
-    """Setup a :class:`Server`"""
+@runtime_checkable
+class ServerImplementation(Protocol[_App]):
+    """Common interface for IDOM's builti-in server implementations"""
 
-    def __call__(
+    def configure(
         self,
-        constructor: ComponentConstructor,
-        config: Optional[_Config] = None,
-        app: Optional[_App] = None,
-    ) -> ServerType[_App]:
-        ...
+        app: _App,
+        component: RootComponentConstructor,
+        options: Any | None = None,
+    ) -> None:
+        """Configure the given app instance to display the given component"""
 
+    def create_development_app(self) -> _App:
+        """Create an application instance for development purposes"""
 
-class ServerType(Protocol[_App]):
-    """A thin wrapper around a web server that provides a common operational interface"""
+    async def serve_development_app(
+        self,
+        app: _App,
+        host: str,
+        port: int,
+        started: asyncio.Event | None = None,
+    ) -> None:
+        """Run an application using a development server"""
 
-    app: _App
-    """The server's underlying application"""
-
-    def run(self, host: str, port: int) -> None:
-        """Start running the server"""
-
-    def run_in_thread(self, host: str, port: int) -> Thread:
-        """Run the server in a thread"""
-
-    def wait_until_started(self, timeout: Optional[float] = None) -> None:
-        """Block until the server is able to receive requests"""
-
-    def stop(self, timeout: Optional[float] = None) -> None:
-        """Stop the running server"""
+    def use_scope(self) -> MutableMapping[str, Any]:
+        """Get an ASGI scope or WSGI environment dictionary"""

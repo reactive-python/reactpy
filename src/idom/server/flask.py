@@ -4,147 +4,155 @@ import asyncio
 import json
 import logging
 from asyncio import Queue as AsyncQueue
+from dataclasses import dataclass
 from queue import Queue as ThreadQueue
 from threading import Event as ThreadEvent
 from threading import Thread
-from typing import Any, Callable, Dict, NamedTuple, Optional, Tuple, Union, cast
-from urllib.parse import parse_qs as parse_query_string
+from typing import Any, Callable, Dict, NamedTuple, Optional, Union, cast
 
-from flask import Blueprint, Flask, redirect, request, send_from_directory, url_for
+from flask import (
+    Blueprint,
+    Flask,
+    Request,
+    copy_current_request_context,
+    redirect,
+    request,
+    send_from_directory,
+    url_for,
+)
 from flask_cors import CORS
 from flask_sockets import Sockets
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket.websocket import WebSocket
-from typing_extensions import TypedDict
 
 import idom
-from idom.config import IDOM_DEBUG_MODE, IDOM_WEB_MODULES_DIR
-from idom.core.dispatcher import dispatch_single_view
+from idom.config import IDOM_WEB_MODULES_DIR
+from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import LayoutEvent, LayoutUpdate
-from idom.core.types import ComponentConstructor, ComponentType
+from idom.core.serve import serve_json_patch
+from idom.core.types import ComponentType, RootComponentConstructor
 
-from .utils import CLIENT_BUILD_DIR, threaded, wait_on_event
+from .utils import CLIENT_BUILD_DIR
 
 
 logger = logging.getLogger(__name__)
 
-
-class Config(TypedDict, total=False):
-    """Render server config for :class:`FlaskRenderServer`"""
-
-    cors: Union[bool, Dict[str, Any]]
-    """Enable or configure Cross Origin Resource Sharing (CORS)
-
-    For more information see docs for ``flask_cors.CORS``
-    """
-
-    import_name: str
-    """The module where the application instance was created
-
-    For more info see :class:`flask.Flask`.
-    """
-
-    redirect_root_to_index: bool
-    """Whether to redirect the root URL (with prefix) to ``index.html``"""
-
-    serve_static_files: bool
-    """Whether or not to serve static files (i.e. web modules)"""
-
-    url_prefix: str
-    """The URL prefix where IDOM resources will be served from"""
+RequestContext: type[Context[Request | None]] = create_context(None, "RequestContext")
 
 
-def PerClientStateServer(
-    constructor: ComponentConstructor,
-    config: Optional[Config] = None,
-    app: Optional[Flask] = None,
-) -> FlaskServer:
+def configure(
+    app: Flask, component: RootComponentConstructor, options: Options | None = None
+) -> None:
     """Return a :class:`FlaskServer` where each client has its own state.
 
     Implements the :class:`~idom.server.proto.ServerFactory` protocol
 
     Parameters:
         constructor: A component constructor
-        config: Options for configuring server behavior
+        options: Options for configuring server behavior
         app: An application instance (otherwise a default instance is created)
     """
-    config, app = _setup_config_and_app(config, app)
-    blueprint = Blueprint("idom", __name__, url_prefix=config["url_prefix"])
-    _setup_common_routes(blueprint, config)
-    _setup_single_view_dispatcher_route(app, config, constructor)
+    options = options or Options()
+    blueprint = Blueprint("idom", __name__, url_prefix=options.url_prefix)
+    _setup_common_routes(blueprint, options)
+    _setup_single_view_dispatcher_route(app, options, component)
     app.register_blueprint(blueprint)
-    return FlaskServer(app)
 
 
-class FlaskServer:
-    """A thin wrapper for running a Flask application
+def create_development_app() -> Flask:
+    """Create an application instance for development purposes"""
+    return Flask(__name__)
 
-    See :class:`idom.server.proto.Server` for more info
+
+async def serve_development_app(
+    app: Flask,
+    host: str,
+    port: int,
+    started: asyncio.Event | None = None,
+) -> None:
+    """Run an application using a development server"""
+    loop = asyncio.get_event_loop()
+    stopped = asyncio.Event()
+
+    server: pywsgi.WSGIServer
+
+    def run_server() -> None:  # pragma: no cover
+        # we don't cover this function because coverage doesn't work right in threads
+        nonlocal server
+        server = pywsgi.WSGIServer(
+            (host, port),
+            app,
+            handler_class=WebSocketHandler,
+        )
+        server.start()
+        if started:
+            loop.call_soon_threadsafe(started.set)
+        try:
+            server.serve_forever()
+        finally:
+            loop.call_soon_threadsafe(stopped.set)
+
+    thread = Thread(target=run_server, daemon=True)
+    thread.start()
+
+    if started:
+        await started.wait()
+
+    try:
+        await stopped.wait()
+    finally:
+        # we may have exitted because this task was cancelled
+        server.stop(3)
+        # the thread should eventually join
+        thread.join(timeout=3)
+        # just double check it happened
+        if thread.is_alive():  # pragma: no cover
+            raise RuntimeError("Failed to shutdown server.")
+
+
+def use_request() -> Request:
+    """Get the current ``Request``"""
+    request = use_context(RequestContext)
+    if request is None:
+        raise RuntimeError(  # pragma: no cover
+            "No request. Are you running with a Flask server?"
+        )
+    return request
+
+
+def use_scope() -> dict[str, Any]:
+    """Get the current WSGI environment"""
+    return use_request().environ
+
+
+@dataclass
+class Options:
+    """Render server config for :class:`FlaskRenderServer`"""
+
+    cors: Union[bool, Dict[str, Any]] = False
+    """Enable or configure Cross Origin Resource Sharing (CORS)
+
+    For more information see docs for ``flask_cors.CORS``
     """
 
-    _wsgi_server: pywsgi.WSGIServer
+    redirect_root: bool = True
+    """Whether to redirect the root URL (with prefix) to ``index.html``"""
 
-    def __init__(self, app: Flask) -> None:
-        self.app = app
-        self._did_start = ThreadEvent()
+    serve_static_files: bool = True
+    """Whether or not to serve static files (i.e. web modules)"""
 
-        @app.before_first_request
-        def server_did_start() -> None:
-            self._did_start.set()
-
-    def run(self, host: str, port: int, *args: Any, **kwargs: Any) -> None:
-        if IDOM_DEBUG_MODE.current:
-            logging.basicConfig(level=logging.DEBUG)  # pragma: no cover
-        logger.info(f"Running at http://{host}:{port}")
-        self._wsgi_server = _StartCallbackWSGIServer(
-            self._did_start.set,
-            (host, port),
-            self.app,
-            *args,
-            handler_class=WebSocketHandler,
-            **kwargs,
-        )
-        self._wsgi_server.serve_forever()
-
-    run_in_thread = threaded(run)
-
-    def wait_until_started(self, timeout: Optional[float] = 3.0) -> None:
-        wait_on_event(f"start {self.app}", self._did_start, timeout)
-
-    def stop(self, timeout: Optional[float] = 3.0) -> None:
-        try:
-            server = self._wsgi_server
-        except AttributeError:  # pragma: no cover
-            raise RuntimeError(
-                f"Application is not running or was not started by {self}"
-            )
-        else:
-            server.stop(timeout)
+    url_prefix: str = ""
+    """The URL prefix where IDOM resources will be served from"""
 
 
-def _setup_config_and_app(
-    config: Optional[Config], app: Optional[Flask]
-) -> Tuple[Config, Flask]:
-    return (
-        {
-            "url_prefix": "",
-            "cors": False,
-            "serve_static_files": True,
-            "redirect_root_to_index": True,
-            **(config or {}),  # type: ignore
-        },
-        app or Flask(__name__),
-    )
-
-
-def _setup_common_routes(blueprint: Blueprint, config: Config) -> None:
-    cors_config = config["cors"]
-    if cors_config:  # pragma: no cover
-        cors_params = cors_config if isinstance(cors_config, dict) else {}
+def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
+    cors_options = options.cors
+    if cors_options:  # pragma: no cover
+        cors_params = cors_options if isinstance(cors_options, dict) else {}
         CORS(blueprint, **cors_params)
 
-    if config["serve_static_files"]:
+    if options.serve_static_files:
 
         @blueprint.route("/client/<path:path>")
         def send_client_dir(path: str) -> Any:
@@ -154,7 +162,7 @@ def _setup_common_routes(blueprint: Blueprint, config: Config) -> None:
         def send_modules_dir(path: str) -> Any:
             return send_from_directory(str(IDOM_WEB_MODULES_DIR.current), path)
 
-        if config["redirect_root_to_index"]:
+        if options.redirect_root:
 
             @blueprint.route("/")
             def redirect_to_index() -> Any:
@@ -168,11 +176,11 @@ def _setup_common_routes(blueprint: Blueprint, config: Config) -> None:
 
 
 def _setup_single_view_dispatcher_route(
-    app: Flask, config: Config, constructor: ComponentConstructor
+    app: Flask, options: Options, constructor: RootComponentConstructor
 ) -> None:
     sockets = Sockets(app)
 
-    @sockets.route(_join_url_paths(config["url_prefix"], "/stream"))  # type: ignore
+    @sockets.route(_join_url_paths(options.url_prefix, "/stream"))  # type: ignore
     def model_stream(ws: WebSocket) -> None:
         def send(value: Any) -> None:
             ws.send(json.dumps(value))
@@ -184,17 +192,10 @@ def _setup_single_view_dispatcher_route(
             else:
                 return None
 
-        dispatch_single_view_in_thread(constructor(**_get_query_params(ws)), send, recv)
+        dispatch_in_thread(constructor(), send, recv)
 
 
-def _get_query_params(ws: WebSocket) -> Dict[str, Any]:
-    return {
-        k: v if len(v) > 1 else v[0]
-        for k, v in parse_query_string(ws.environ["QUERY_STRING"]).items()
-    }
-
-
-def dispatch_single_view_in_thread(
+def dispatch_in_thread(
     component: ComponentType,
     send: Callable[[Any], None],
     recv: Callable[[], Optional[LayoutEvent]],
@@ -202,6 +203,7 @@ def dispatch_single_view_in_thread(
     dispatch_thread_info_created = ThreadEvent()
     dispatch_thread_info_ref: idom.Ref[Optional[_DispatcherThreadInfo]] = idom.Ref(None)
 
+    @copy_current_request_context
     def run_dispatcher() -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -216,7 +218,11 @@ def dispatch_single_view_in_thread(
             return await async_recv_queue.get()
 
         async def main() -> None:
-            await dispatch_single_view(idom.Layout(component), send_coro, recv_coro)
+            await serve_json_patch(
+                idom.Layout(RequestContext(component, value=request)),
+                send_coro,
+                recv_coro,
+            )
 
         main_future = asyncio.ensure_future(main())
 
@@ -268,25 +274,6 @@ class _DispatcherThreadInfo(NamedTuple):
     dispatch_future: "asyncio.Future[Any]"
     thread_send_queue: "ThreadQueue[LayoutUpdate]"
     async_recv_queue: "AsyncQueue[LayoutEvent]"
-
-
-class _StartCallbackWSGIServer(pywsgi.WSGIServer):  # type: ignore
-    def __init__(
-        self, before_first_request: Callable[[], None], *args: Any, **kwargs: Any
-    ) -> None:
-        self._before_first_request_callback = before_first_request
-        super().__init__(*args, **kwargs)
-
-    def update_environ(self) -> None:
-        """
-        Called before the first request is handled to fill in WSGI environment values.
-
-        This includes getting the correct server name and port.
-        """
-        super().update_environ()
-        # BUG: https://github.com/nedbat/coveragepy/issues/1012
-        # Coverage isn't able to support concurrency coverage for both threading and gevent
-        self._before_first_request_callback()  # pragma: no cover
 
 
 def _join_url_paths(*args: str) -> str:

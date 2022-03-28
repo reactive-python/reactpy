@@ -4,6 +4,7 @@
 - :mod:`idom.server.types`
 """
 
+from .core.hooks import Context
 from .core.types import (
     ComponentConstructor,
     ComponentType,
@@ -14,6 +15,7 @@ from .core.types import (
     ImportSourceDict,
     Key,
     LayoutType,
+    RootComponentConstructor,
     VdomAttributes,
     VdomAttributesAndChildren,
     VdomChild,
@@ -21,12 +23,13 @@ from .core.types import (
     VdomDict,
     VdomJson,
 )
-from .server.types import ServerFactory, ServerType
+from .server.types import ServerImplementation
 
 
 __all__ = [
     "ComponentConstructor",
     "ComponentType",
+    "Context",
     "EventHandlerDict",
     "EventHandlerFunc",
     "EventHandlerMapping",
@@ -34,12 +37,12 @@ __all__ = [
     "ImportSourceDict",
     "Key",
     "LayoutType",
+    "RootComponentConstructor",
     "VdomAttributes",
     "VdomAttributesAndChildren",
     "VdomChild",
     "VdomChildren",
     "VdomDict",
     "VdomJson",
-    "ServerFactory",
-    "ServerType",
+    "ServerImplementation",
 ]

@@ -11,9 +11,9 @@ import idom
 from idom import html
 from idom.config import IDOM_DEBUG_MODE
 from idom.core.component import component
-from idom.core.dispatcher import render_json_patch
 from idom.core.hooks import use_effect, use_state
 from idom.core.layout import Layout, LayoutEvent
+from idom.core.serve import render_json_patch
 from idom.testing import (
     HookCatcher,
     StaticEventHandler,
@@ -21,7 +21,7 @@ from idom.testing import (
     capture_idom_logs,
 )
 from idom.utils import Ref
-from tests.assert_utils import assert_same_items
+from tests.tooling.asserts import assert_same_items
 
 
 @pytest.fixture(autouse=True)
@@ -181,10 +181,7 @@ async def test_layout_render_error_has_partial_update_with_error_message():
     def BadChild():
         raise ValueError("error from bad child")
 
-    with assert_idom_logged(
-        match_error="error from bad child",
-        clear_matched_records=True,
-    ):
+    with assert_idom_logged(match_error="error from bad child"):
 
         with idom.Layout(Main()) as layout:
             patch = await render_json_patch(layout)
@@ -240,10 +237,7 @@ async def test_layout_render_error_has_partial_update_without_error_message():
     def BadChild():
         raise ValueError("error from bad child")
 
-    with assert_idom_logged(
-        match_error="error from bad child",
-        clear_matched_records=True,
-    ):
+    with assert_idom_logged(match_error="error from bad child"):
 
         with idom.Layout(Main()) as layout:
             patch = await render_json_patch(layout)
@@ -743,7 +737,6 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
         with assert_idom_logged(
             error_type=ValueError,
             match_error=r"Duplicate keys \['duplicate'\] at '/children/0'",
-            clear_matched_records=True,
         ):
             await layout.render()
 
@@ -757,7 +750,6 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
         with assert_idom_logged(
             error_type=ValueError,
             match_error=r"Duplicate keys \['duplicate'\] at '/children/0'",
-            clear_matched_records=True,
         ):
             await layout.render()
 
@@ -796,10 +788,7 @@ async def test_log_error_on_bad_event_handler():
 
         return idom.html.button({"onClick": raise_error})
 
-    with assert_idom_logged(
-        match_error="bad event handler",
-        clear_matched_records=True,
-    ):
+    with assert_idom_logged(match_error="bad event handler"):
 
         with idom.Layout(ComponentWithBadEventHandler()) as layout:
             await layout.render()
@@ -807,7 +796,7 @@ async def test_log_error_on_bad_event_handler():
             await layout.deliver(event)
 
 
-async def test_schedule_render_from_unmounted_hook(caplog):
+async def test_schedule_render_from_unmounted_hook():
     parent_set_state = idom.Ref()
 
     @idom.component
@@ -1233,7 +1222,6 @@ async def test_component_error_in_should_render_is_handled_gracefully():
         match_message=r".* component failed to check if .* should be rendered",
         error_type=ValueError,
         match_error="The error message",
-        clear_matched_records=True,
     ):
         with idom.Layout(Root()) as layout:
             await layout.render()

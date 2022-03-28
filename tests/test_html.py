@@ -1,11 +1,12 @@
 import pytest
 
 from idom import component, config, html, use_state
+from idom.testing import DisplayFixture, poll
 from idom.utils import Ref
 
 
-def use_toggle():
-    state, set_state = use_state(True)
+def use_toggle(initial=True):
+    state, set_state = use_state(initial)
     return state, lambda: set_state(not state)
 
 
@@ -14,20 +15,15 @@ def use_counter(initial_value):
     return state, lambda: set_state(state + 1)
 
 
-def test_script_mount_unmount(driver, driver_wait, display):
+async def test_script_mount_unmount(display: DisplayFixture):
     toggle_is_mounted = Ref()
 
     @component
     def Root():
         is_mounted, toggle_is_mounted.current = use_toggle()
-        if is_mounted:
-            el = HasScript()
-        else:
-            el = html.div()
-
         return html.div(
             html.div({"id": "mount-state", "data-value": False}),
-            el,
+            HasScript() if is_mounted else html.div(),
         )
 
     @component
@@ -43,22 +39,23 @@ def test_script_mount_unmount(driver, driver_wait, display):
             }"""
         )
 
-    display(Root)
+    await display.show(Root)
 
-    mount_state = driver.find_element("id", "mount-state")
+    mount_state = await display.page.wait_for_selector("#mount-state", state="attached")
+    poll_mount_state = poll(mount_state.get_attribute, "data-value")
 
-    driver_wait.until(lambda d: mount_state.get_attribute("data-value") == "true")
-
-    toggle_is_mounted.current()
-
-    driver_wait.until(lambda d: mount_state.get_attribute("data-value") == "false")
+    await poll_mount_state.until_equals("true")
 
     toggle_is_mounted.current()
 
-    driver_wait.until(lambda d: mount_state.get_attribute("data-value") == "true")
+    await poll_mount_state.until_equals("false")
+
+    toggle_is_mounted.current()
+
+    await poll_mount_state.until_equals("true")
 
 
-def test_script_re_run_on_content_change(driver, driver_wait, display):
+async def test_script_re_run_on_content_change(display: DisplayFixture):
     incr_count = Ref()
 
     @component
@@ -77,26 +74,31 @@ def test_script_re_run_on_content_change(driver, driver_wait, display):
             ),
         )
 
-    display(HasScript)
+    await display.show(HasScript)
 
-    mount_count = driver.find_element("id", "mount-count")
-    unmount_count = driver.find_element("id", "unmount-count")
+    mount_count = await display.page.wait_for_selector("#mount-count", state="attached")
+    poll_mount_count = poll(mount_count.get_attribute, "data-value")
 
-    driver_wait.until(lambda d: mount_count.get_attribute("data-value") == "1")
-    driver_wait.until(lambda d: unmount_count.get_attribute("data-value") == "0")
+    unmount_count = await display.page.wait_for_selector(
+        "#unmount-count", state="attached"
+    )
+    poll_unmount_count = poll(unmount_count.get_attribute, "data-value")
+
+    await poll_mount_count.until_equals("1")
+    await poll_unmount_count.until_equals("0")
 
     incr_count.current()
 
-    driver_wait.until(lambda d: mount_count.get_attribute("data-value") == "2")
-    driver_wait.until(lambda d: unmount_count.get_attribute("data-value") == "1")
+    await poll_mount_count.until_equals("2")
+    await poll_unmount_count.until_equals("1")
 
     incr_count.current()
 
-    driver_wait.until(lambda d: mount_count.get_attribute("data-value") == "3")
-    driver_wait.until(lambda d: unmount_count.get_attribute("data-value") == "2")
+    await poll_mount_count.until_equals("3")
+    await poll_unmount_count.until_equals("2")
 
 
-def test_script_from_src(driver, driver_wait, display):
+async def test_script_from_src(display: DisplayFixture):
     incr_src_id = Ref()
     file_name_template = "__some_js_script_{src_id}__.js"
 
@@ -114,7 +116,7 @@ def test_script_from_src(driver, driver_wait, display):
                 ),
             )
 
-    display(HasScript)
+    await display.show(HasScript)
 
     for i in range(1, 4):
         script_file = config.IDOM_WEB_MODULES_DIR.current / file_name_template.format(
@@ -129,9 +131,9 @@ def test_script_from_src(driver, driver_wait, display):
 
         incr_src_id.current()
 
-        run_count = driver.find_element("id", "run-count")
-
-        driver_wait.until(lambda d: (run_count.get_attribute("data-value") == "1"))
+        run_count = await display.page.wait_for_selector("#run-count", state="attached")
+        poll_run_count = poll(run_count.get_attribute, "data-value")
+        await poll_run_count.until_equals("1")
 
 
 def test_script_may_only_have_one_child():

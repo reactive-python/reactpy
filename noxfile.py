@@ -179,7 +179,7 @@ def test_python_suite(session: Session) -> None:
     """Run the Python-based test suite"""
     session.env["IDOM_DEBUG_MODE"] = "1"
     install_requirements_file(session, "test-env")
-
+    session.run("playwright", "install", "chromium")
     posargs = session.posargs
     posargs += ["--reruns", "3", "--reruns-delay", "1"]
 
@@ -353,7 +353,7 @@ def tag(session: Session) -> None:
 
     # stage, commit, tag, and push version bump
     session.run("git", "add", "--all", external=True)
-    session.run("git", "commit", "-m", repr(f"version {new_version}"), external=True)
+    session.run("git", "commit", "-m", f"version {new_version}", external=True)
     session.run("git", "tag", version, external=True)
     session.run("git", "push", "origin", "main", "--tags", external=True)
 

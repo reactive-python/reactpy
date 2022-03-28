@@ -1,7 +1,6 @@
-from . import config, html, log, types, web
+from . import config, html, logging, sample, server, types, web
 from .core import hooks
 from .core.component import component
-from .core.dispatcher import Stop
 from .core.events import event
 from .core.hooks import (
     create_context,
@@ -14,11 +13,11 @@ from .core.hooks import (
     use_state,
 )
 from .core.layout import Layout
+from .core.serve import Stop
 from .core.vdom import vdom
-from .sample import run_sample_app
-from .server.prefab import run
+from .server.utils import run
 from .utils import Ref, html_to_vdom
-from .widgets import hotswap, multiview
+from .widgets import hotswap
 
 
 __author__ = "idom-team"
@@ -34,11 +33,11 @@ __all__ = [
     "html_to_vdom",
     "html",
     "Layout",
-    "log",
-    "multiview",
+    "logging",
     "Ref",
-    "run_sample_app",
     "run",
+    "sample",
+    "server",
     "Stop",
     "types",
     "use_callback",

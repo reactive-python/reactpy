@@ -1,54 +1,28 @@
-from typing import Optional
+from __future__ import annotations
 
 from fastapi import FastAPI
 
-from idom.core.types import ComponentConstructor
-
-from .starlette import (
-    Config,
-    StarletteServer,
-    _setup_common_routes,
-    _setup_config_and_app,
-    _setup_shared_view_dispatcher_route,
-    _setup_single_view_dispatcher_route,
-)
+from . import starlette
 
 
-def PerClientStateServer(
-    constructor: ComponentConstructor,
-    config: Optional[Config] = None,
-    app: Optional[FastAPI] = None,
-) -> StarletteServer:
-    """Return a :class:`StarletteServer` where each client has its own state.
+serve_development_app = starlette.serve_development_app
+"""Alias for :func:`idom.server.starlette.serve_development_app`"""
 
-    Implements the :class:`~idom.server.proto.ServerFactory` protocol
+# see: https://github.com/idom-team/flake8-idom-hooks/issues/12
+use_scope = starlette.use_scope  # noqa: ROH101
+"""Alias for :func:`idom.server.starlette.use_scope`"""
 
-    Parameters:
-        constructor: A component constructor
-        config: Options for configuring server behavior
-        app: An application instance (otherwise a default instance is created)
-    """
-    config, app = _setup_config_and_app(config, app, FastAPI)
-    _setup_common_routes(config, app)
-    _setup_single_view_dispatcher_route(config["url_prefix"], app, constructor)
-    return StarletteServer(app)
+# see: https://github.com/idom-team/flake8-idom-hooks/issues/12
+use_websocket = starlette.use_websocket  # noqa: ROH101
+"""Alias for :func:`idom.server.starlette.use_websocket`"""
+
+Options = starlette.Options
+"""Alias for :class:`idom.server.starlette.Options`"""
+
+configure = starlette.configure
+"""Alias for :class:`idom.server.starlette.configure`"""
 
 
-def SharedClientStateServer(
-    constructor: ComponentConstructor,
-    config: Optional[Config] = None,
-    app: Optional[FastAPI] = None,
-) -> StarletteServer:
-    """Return a :class:`StarletteServer` where each client shares state.
-
-    Implements the :class:`~idom.server.proto.ServerFactory` protocol
-
-    Parameters:
-        constructor: A component constructor
-        config: Options for configuring server behavior
-        app: An application instance (otherwise a default instance is created)
-    """
-    config, app = _setup_config_and_app(config, app, FastAPI)
-    _setup_common_routes(config, app)
-    _setup_shared_view_dispatcher_route(config["url_prefix"], app, constructor)
-    return StarletteServer(app)
+def create_development_app() -> FastAPI:
+    """Create a development ``FastAPI`` application instance."""
+    return FastAPI(debug=True)

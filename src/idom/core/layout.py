@@ -193,6 +193,7 @@ class Layout:
 
         if (
             old_state is not None
+            and hasattr(old_state.model, "current")
             and old_state.is_component_state
             and not _check_should_render(
                 old_state.life_cycle_state.component, component

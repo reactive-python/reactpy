@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 import responses
 
+from idom.testing import assert_idom_logged
 from idom.web.utils import (
     module_name_suffix,
     resolve_module_exports_from_file,
@@ -145,9 +146,8 @@ def test_resolve_module_exports_from_source():
     ) and references == {"https://source1.com", "https://source2.com"}
 
 
-def test_log_on_unknown_export_type(caplog):
-    assert resolve_module_exports_from_source(
-        "export something unknown;", exclude_default=False
-    ) == (set(), set())
-    assert len(caplog.records) == 1
-    assert caplog.records[0].message.startswith("Unknown export type ")
+def test_log_on_unknown_export_type():
+    with assert_idom_logged(match_message="Unknown export type "):
+        assert resolve_module_exports_from_source(
+            "export something unknown;", exclude_default=False
+        ) == (set(), set())

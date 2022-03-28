@@ -1,16 +1,102 @@
 Running IDOM
 ============
 
-The simplest way to run IDOM is with the :func:`~idom.server.prefab.run` function. By
-default this will execute your application using one of the builtin server
-implementations whose dependencies have all been installed. Running a tiny "hello world"
-application just requires the following code:
+The simplest way to run IDOM is with the :func:`~idom.server.utils.run` function. This
+is the method you'll see used throughout this documentation. However, this executes your
+application using a development server which is great for testing, but probably not what
+if you're :ref:`deploying in production <Running IDOM in Production>`. Below are some
+more robust and performant ways of running IDOM with various supported servers.
 
-.. idom:: _examples/hello_world
 
-.. note::
+Running IDOM in Production
+--------------------------
 
-    Try clicking the **▶️ Result** tab to see what this displays!
+The first thing you'll need to do if you want to run IDOM in production is choose a
+server implementation and follow its documentation on how to create and run an
+application. This is the server :ref:`you probably chose <Officially Supported Servers>`
+when installing IDOM. Then you'll need to configure that application with an IDOM view.
+We should the basics how how to run each supported server below, but all implementations
+will follow a pattern similar to the following:
+
+.. code-block::
+
+    from my_chosen_server import Application
+
+    from idom import component, html
+    from idom.server.my_chosen_server import configure
+
+
+    @component
+    def HelloWorld():
+        return html.h1("Hello, world!")
+
+
+    app = Application()
+    configure(app, HelloWorld)
+
+You'll then run this ``app`` using a `ASGI <https://asgi.readthedocs.io/en/latest/>`__ or
+`WSGI <https://wsgi.readthedocs.io/>`__ server from the command line.
+
+
+Running with `FastAPI <https://fastapi.tiangolo.com>`__
+.......................................................
+
+.. idom:: _examples/run_fastapi
+
+Then assuming you put this in ``main.py``, you can run the ``app`` using `Uvicorn
+<https://www.uvicorn.org/>`__:
+
+.. code-block:: bash
+
+    uvicorn main:app
+
+
+Running with `Flask <https://palletsprojects.com/p/flask/>`__
+.............................................................
+
+.. idom:: _examples/run_flask
+
+Then assuming you put this in ``main.py``, you can run the ``app`` using `Gunicorn
+<https://gunicorn.org/>`__:
+
+.. code-block:: bash
+
+    gunicorn main:app
+
+
+Running with `Sanic <https://sanicframework.org>`__
+...................................................
+
+.. idom:: _examples/run_sanic
+
+Then assuming you put this in ``main.py``, you can run the ``app`` using Sanic's builtin
+server:
+
+.. code-block:: bash
+
+    sanic main.app
+
+
+Running with `Starlette <https://www.starlette.io/>`__
+......................................................
+
+.. idom:: _examples/run_starlette
+
+Then assuming you put this in ``main.py``, you can run the application using `Uvicorn
+<https://www.uvicorn.org/>`__:
+
+.. code-block:: bash
+
+    uvicorn main:app
+
+
+Running with `Tornado <https://www.tornadoweb.org/en/stable/>`__
+................................................................
+
+.. idom:: _examples/run_tornado
+
+Tornado is run using it's own builtin server rather than an external WSGI or ASGI
+server.
 
 
 Running IDOM in Debug Mode
@@ -57,180 +143,29 @@ Errors will be displayed where the uppermost component is located in the view:
 .. idom:: _examples/debug_error_example
 
 
-Choosing a Server Implementation
---------------------------------
+Server Configuration Options
+----------------------------
 
-Without extra care, running an IDOM app with the ``run()`` function can be somewhat
-inpredictable since the kind of server being used by default depends on what gets
-discovered first. To be more explicit about which server implementation you want to run
-with you can import your chosen server class and pass it to the ``server_type``
-parameter of ``run()``:
+IDOM's various server implementations come with ``Options`` that can be passed to their
+respective ``configure()`` functions. Those which are common amongst the options are:
 
-.. code-block::
+- ``url_prefix`` - prefix all routes configured by IDOM
+- ``redirect_root`` - whether to redirect the root of the application to the IDOM view
+- ``serve_static_files`` - whether to server IDOM's static files from it's default route
 
-    from idom import component, html, run
-    from idom.server.sanic import PerClientStateServer
-
-
-    @component
-    def App():
-        return html.h1(f"Hello, World!")
-
-
-    run(App, server_type=PerClientStateServer)
-
-Presently IDOM's core library supports the following server implementations:
-
-- :mod:`idom.server.fastapi`
-- :mod:`idom.server.sanic`
-- :mod:`idom.server.flask`
-- :mod:`idom.server.tornado`
-
-.. hint::
-
-    To install them, see the :ref:`Installing Other Servers` section.
-
-
-Available Server Types
-----------------------
-
-Some of server implementations have more than one server type available. The server type
-which exists for all implementations is the ``PerClientStateServer``. This server type
-displays a unique view to each user who visits the site. For those that support it,
-there may also be a ``SharedClientStateServer`` available. This server type presents the
-same view to all users who visit the site. For example, if you were to run the following
-code:
+You'd then pass these options to ``configure()`` in the following way:
 
 .. code-block::
 
-    from idom import component, hooks, html, run
-    from idom.server.sanic import SharedClientStateServer
+    configure(app, MyComponent, Options(...))
 
+To learn more read the description for your chosen server implementation:
 
-    @component
-    def Slider():
-        value, set_value = hooks.use_state(50)
-        return html.input({"type": "range", "min": 1, "max": 100, "value": value})
-
-
-    run(Slider, server_type=SharedClientStateServer)
-
-Two clients could see the slider and see a synchronized view of it. That is, when one
-client moved the slider, the other would see the slider update without their action.
-This might look similar to the video below:
-
-.. image:: _static/shared-client-state-server-slider.gif
-
-Presently the following server implementations support the ``SharedClientStateServer``:
-
-- :func:`idom.server.fastapi.SharedClientStateServer`
-- :func:`idom.server.sanic.SharedClientStateServer`
-
-.. note::
-
-    If you need to, your can :ref:`write your own server implementation <writing your
-    own server>`.
-
-Common Server Settings
-----------------------
-
-Each server implementation has its own high-level settings that are defined by its
-respective ``Config`` (a typed dictionary). As a general rule, these ``Config`` types
-expose the same options across implementations. These configuration dictionaries can
-then be passed to the ``run()`` function via the ``config`` parameter:
-
-.. code-block::
-
-    from idom import run, component, html
-    from idom.server.sanic import PerClientStateServer, Config
-
-
-    @component
-    def App():
-        return html.h1(f"Hello, World!")
-
-
-    server_config = Config(
-        cors=False,
-        url_prefix="",
-        serve_static_files=True,
-        redirect_root_to_index=True,
-    )
-
-    run(App, server_type=PerClientStateServer, server_config=server_config)
-
-Here's the list of available configuration types:
-
-- :class:`idom.server.fastapi.Config`
-- :class:`idom.server.sanic.Config`
-- :class:`idom.server.flask.Config`
-- :class:`idom.server.tornado.Config`
-
-
-Specific Server Settings
-------------------------
-
-The ``Config`` :ref:`described above <Common Server Settings>` is meant to be an
-implementation agnostic - all ``Config`` objects support a similar set of options.
-However, there are inevitably cases where you need to set up your chosen server using
-implementation specific details. For instance, you might want to add an extra route to
-the server your using in order to provide extra resources to your application.
-
-Doing this kind of set up can be achieved by passing in an instance of your chosen
-server implementation into the ``app`` parameter of the ``run()`` function. To
-illustrate, if I'm making my application with ``sanic`` and I want to add an extra route
-I would do the following:
-
-.. code-block::
-
-    from sanic import Sanic
-    from idom import component, html, run
-    from idom.server.sanic import PerClientStateServer
-
-    app = Sanic(__name__)
-
-    # these are implementation specific settings only known to `sanic` servers
-    app.config.REQUEST_TIMEOUT = 60
-    app.config.RESPONSE_TIMEOUT = 60
-
-
-    @component
-    def SomeView():
-        return html.form({"action": })
-
-
-    run(SomeView, server_type=PerClientStateServer, app=app)
-
-
-Add to an Existing Web Server
------------------------------
-
-If you're already serving an application with one of the supported web servers listed
-above, you can add an IDOM to them as a server extension. Instead of using the ``run()``
-function, you'll instantiate one of IDOM's server implementations by passing it an
-instance of your existing application:
-
-.. code-block::
-
-    from sanic import Sanic
-
-    from idom import component, html
-    from idom.server.sanic import PerClientStateServer, Config
-
-    existing_app = Sanic(__name__)
-
-
-    @component
-    def IdomView():
-        return html.h1("This is an IDOM App")
-
-
-    PerClientStateServer(IdomView, app=existing_app, config=Config(url_prefix="app"))
-
-    existing_app.run(host="127.0.0.1", port=8000)
-
-To test that everything is working, you should be able to navigate to
-``https://127.0.0.1:8000/app`` where you should see the results from ``IdomView``.
+- :class:`idom.server.fastapi.Options`
+- :class:`idom.server.flask.Options`
+- :class:`idom.server.sanic.Options`
+- :class:`idom.server.starlette.Options`
+- :class:`idom.server.tornado.Options`
 
 
 Embed in an Existing Webpage
@@ -261,8 +196,8 @@ embedding one the examples from this documentation into your own webpage:
 
 As mentioned though, this is connecting to the server that is hosting this
 documentation. If you want to connect to a view from your own server, you'll need to
-change the URL above to one you provide. One way to do this might be to :ref:`add to an
-existing web server`. Another would be to run IDOM in an adjacent web server instance
+change the URL above to one you provide. One way to do this might be to add to an
+existing application. Another would be to run IDOM in an adjacent web server instance
 that you coordinate with something like `NGINX <https://www.nginx.com/>`__. For the sake
 of simplicity, we'll assume you do something similar to the following in an existing
 Python app:
