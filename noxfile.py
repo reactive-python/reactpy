@@ -353,7 +353,7 @@ def tag(session: Session) -> None:
 
     # stage, commit, tag, and push version bump
     session.run("git", "add", "--all", external=True)
-    session.run("git", "commit", "-m", repr(f"version {new_version}"), external=True)
+    session.run("git", "commit", "-m", f"version {new_version}", external=True)
     session.run("git", "tag", version, external=True)
     session.run("git", "push", "origin", "main", "--tags", external=True)
 
