@@ -23,6 +23,12 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+Nothing yet...
+
+
+0.38.0-a1
+---------
+
 Changed:
 
 - How IDOM integrates with servers - :pull:`703`
