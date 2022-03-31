@@ -59,7 +59,9 @@ class WidgetExample(SphinxDirective):
                 )
             )
         else:
-            for path in sorted(ex_files, key=lambda p: p.name):
+            for path in sorted(
+                ex_files, key=lambda p: "" if p.name == "main.py" else p.name
+            ):
                 labeled_tab_items.append(
                     (
                         path.name,
