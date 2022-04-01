@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 from asyncio import Queue as AsyncQueue
 from dataclasses import dataclass
 from queue import Queue as ThreadQueue
@@ -33,7 +34,7 @@ from idom.core.layout import LayoutEvent, LayoutUpdate
 from idom.core.serve import serve_json_patch
 from idom.core.types import ComponentType, RootComponentConstructor
 
-from .utils import CLIENT_BUILD_DIR
+from .utils import CLIENT_BUILD_DIR, client_build_dir_path
 
 
 logger = logging.getLogger(__name__)
@@ -55,14 +56,20 @@ def configure(
     """
     options = options or Options()
     blueprint = Blueprint("idom", __name__, url_prefix=options.url_prefix)
+
     _setup_common_routes(blueprint, options)
+
+    # this route should take priority so set up it up first
     _setup_single_view_dispatcher_route(app, options, component)
+
     app.register_blueprint(blueprint)
 
 
 def create_development_app() -> Flask:
     """Create an application instance for development purposes"""
-    return Flask(__name__)
+    os.environ["FLASK_DEBUG"] = "true"
+    app = Flask(__name__)
+    return app
 
 
 async def serve_development_app(
@@ -154,9 +161,13 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
 
     if options.serve_static_files:
 
-        @blueprint.route("/client/<path:path>")
-        def send_client_dir(path: str) -> Any:
-            return send_from_directory(str(CLIENT_BUILD_DIR), path)
+        @blueprint.route("/app")
+        @blueprint.route("/app<path:path>")
+        def send_client_dir(path: str = "") -> Any:
+            return send_from_directory(
+                str(CLIENT_BUILD_DIR),
+                client_build_dir_path(path),
+            )
 
         @blueprint.route("/modules/<path:path>")
         def send_modules_dir(path: str) -> Any:
@@ -167,11 +178,7 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
             @blueprint.route("/")
             def redirect_to_index() -> Any:
                 return redirect(
-                    url_for(
-                        "idom.send_client_dir",
-                        path="index.html",
-                        **request.args,
-                    )
+                    url_for("idom.send_client_dir", path="", **request.args)
                 )
 
 
@@ -180,7 +187,7 @@ def _setup_single_view_dispatcher_route(
 ) -> None:
     sockets = Sockets(app)
 
-    @sockets.route(_join_url_paths(options.url_prefix, "/stream"))  # type: ignore
+    @sockets.route(_join_url_paths(options.url_prefix, "/app<path:path>/_stream"))  # type: ignore
     def model_stream(ws: WebSocket) -> None:
         def send(value: Any) -> None:
             ws.send(json.dumps(value))

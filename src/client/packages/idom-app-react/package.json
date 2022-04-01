@@ -2,8 +2,7 @@
   "author": "Ryan Morshead",
   "dependencies": {
     "idom-client-react": "file:packages/idom-client-react",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1"
+    "preact": "^10.7.0"
   },
   "description": "A client application for IDOM implemented in React",
   "devDependencies": {

@@ -22,7 +22,7 @@ from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
 
-from .utils import CLIENT_BUILD_DIR
+from .utils import CLIENT_BUILD_DIR, client_build_dir_path
 
 
 RequestContext: type[Context[HTTPServerRequest | None]] = create_context(
@@ -48,7 +48,11 @@ def configure(
     _add_handler(
         app,
         options,
-        _setup_common_routes(options) + _setup_single_view_dispatcher_route(component),
+        (
+            # this route should take priority so set up it up first
+            _setup_single_view_dispatcher_route(component)
+            + _setup_common_routes(options)
+        ),
     )
 
 
@@ -121,8 +125,8 @@ def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
     if options.serve_static_files:
         handlers.append(
             (
-                r"/client/(.*)",
-                StaticFileHandler,
+                r"/app(.*)",
+                SpaStaticFileHandler,
                 {"path": str(CLIENT_BUILD_DIR)},
             )
         )
@@ -138,7 +142,7 @@ def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
                 (
                     urljoin("/", options.url_prefix),
                     RedirectHandler,
-                    {"url": "./client/index.html"},
+                    {"url": "./app/index.html"},
                 )
             )
     return handlers
@@ -159,11 +163,16 @@ def _setup_single_view_dispatcher_route(
 ) -> _RouteHandlerSpecs:
     return [
         (
-            "/stream",
+            r"/app(.*)/_stream",
             ModelStreamHandler,
             {"component_constructor": constructor},
         )
     ]
+
+
+class SpaStaticFileHandler(StaticFileHandler):
+    async def get(self, path: str, include_body: bool = True) -> None:
+        return await super().get(client_build_dir_path(path), include_body)
 
 
 class ModelStreamHandler(WebSocketHandler):
@@ -175,7 +184,7 @@ class ModelStreamHandler(WebSocketHandler):
     def initialize(self, component_constructor: ComponentConstructor) -> None:
         self._component_constructor = component_constructor
 
-    async def open(self, *args: str, **kwargs: str) -> None:
+    async def open(self, *args, **kwargs) -> None:
         message_queue: "AsyncQueue[str]" = AsyncQueue()
 
         async def send(value: VdomJsonPatch) -> None:

@@ -26,6 +26,12 @@ SUPPORTED_PACKAGES = (
 )
 
 
+def client_build_dir_path(path: str) -> str:
+    start, _, end = path.rpartition("/")
+    file = end or start
+    return file if (CLIENT_BUILD_DIR / file).is_file() else "index.html"
+
+
 def run(
     component: RootComponentConstructor,
     host: str = "127.0.0.1",
@@ -46,7 +52,10 @@ def run(
     host = host
     port = port or find_available_port(host)
 
-    logger.info(f"Running with {type(app).__name__!r} at http://{host}:{port}")
+    app_cls = type(app)
+    logger.info(
+        f"Running with {app_cls.__module__}.{app_cls.__name__} at http://{host}:{port}"
+    )
 
     asyncio.get_event_loop().run_until_complete(
         implementation.serve_development_app(app, host, port)

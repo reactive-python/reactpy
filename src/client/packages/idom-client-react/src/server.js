@@ -8,7 +8,11 @@ export function mountWithLayoutServer(
   maxReconnectTimeout
 ) {
   const loadImportSource = (source, sourceType) =>
-    import(sourceType == "NAME" ? serverInfo.path.module(source) : source);
+    import(
+      sourceType == "NAME" ? serverInfo.path.module(source) : source
+    ).catch(() => {
+      console.error("Import failed");
+    });
 
   mountLayoutWithWebSocket(
     element,
@@ -18,13 +22,13 @@ export function mountWithLayoutServer(
   );
 }
 
-export function LayoutServerInfo({ host, port, path, query, secure }) {
+export function LayoutServerInfo({ host, port, query, secure }) {
   const wsProtocol = "ws" + (secure ? "s" : "");
   const httpProtocol = "http" + (secure ? "s" : "");
 
   const uri = host + ":" + port;
-  path = new URL(path, document.baseURI).pathname;
-  const url = (uri + path).split("/").slice(0, -1).join("/");
+  const path = new URL(document.baseURI).pathname;
+  const url = uri + path;
 
   const wsBaseUrl = wsProtocol + "://" + url;
   const httpBaseUrl = httpProtocol + "://" + url;
@@ -36,7 +40,7 @@ export function LayoutServerInfo({ host, port, path, query, secure }) {
   }
 
   this.path = {
-    stream: wsBaseUrl + "/stream" + query,
+    stream: wsBaseUrl + "/_stream" + query,
     module: (source) => httpBaseUrl + `/modules/${source}`,
   };
 }

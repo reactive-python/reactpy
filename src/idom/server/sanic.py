@@ -41,8 +41,12 @@ def configure(
     """Configure an application instance to display the given component"""
     options = options or Options()
     blueprint = Blueprint(f"idom_dispatcher_{id(app)}", url_prefix=options.url_prefix)
+
     _setup_common_routes(blueprint, options)
+
+    # this route should take priority so set up it up first
     _setup_single_view_dispatcher_route(blueprint, component)
+
     app.blueprint(blueprint)
 
 
@@ -108,7 +112,7 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
         CORS(blueprint, **cors_params)
 
     if options.serve_static_files:
-        blueprint.static("/client", str(CLIENT_BUILD_DIR))
+        blueprint.static("/app", str(CLIENT_BUILD_DIR))
         blueprint.static("/modules", str(IDOM_WEB_MODULES_DIR.current))
 
         if options.redirect_root:
@@ -125,7 +129,7 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
 def _setup_single_view_dispatcher_route(
     blueprint: Blueprint, constructor: RootComponentConstructor
 ) -> None:
-    @blueprint.websocket("/stream")  # type: ignore
+    @blueprint.websocket("/app<path:path>/_stream")  # type: ignore
     async def model_stream(
         request: request.Request, socket: WebSocketCommonProtocol
     ) -> None:
