@@ -1,5 +1,5 @@
 import idom
-from idom.server import tornado as server
+from idom.server import sanic as server
 
 
 @idom.component

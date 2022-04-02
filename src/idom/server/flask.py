@@ -22,10 +22,10 @@ from flask import (
     url_for,
 )
 from flask_cors import CORS
-from flask_sockets import Sockets
+from flask_sock import Sock
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
-from geventwebsocket.websocket import WebSocket
+from simple_websocket import Server as WebSocket
 
 import idom
 from idom.config import IDOM_WEB_MODULES_DIR
@@ -185,9 +185,10 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
 def _setup_single_view_dispatcher_route(
     app: Flask, options: Options, constructor: RootComponentConstructor
 ) -> None:
-    sockets = Sockets(app)
+    sockets = Sock(app)
 
-    @sockets.route(_join_url_paths(options.url_prefix, "/app<path:path>/_stream"))  # type: ignore
+    @sockets.route(_join_url_paths(options.url_prefix, "/app/_stream"))
+    @sockets.route(_join_url_paths(options.url_prefix, "/app/<path:path>/_stream"))
     def model_stream(ws: WebSocket) -> None:
         def send(value: Any) -> None:
             ws.send(json.dumps(value))

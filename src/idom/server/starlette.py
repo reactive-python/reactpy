@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Awaitable, Callable, Dict, Tuple, Union
 
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
@@ -122,7 +122,7 @@ def _setup_common_routes(options: Options, app: Starlette) -> None:
 
     if options.serve_static_files:
 
-        mount_serve_single_page_app_files(app, url_prefix)
+        app.mount(url_prefix + "/app", single_page_app_files())
 
         app.mount(
             f"{url_prefix}/modules",
@@ -145,7 +145,7 @@ def _setup_common_routes(options: Options, app: Starlette) -> None:
                 return RedirectResponse(redirect_url)
 
 
-def mount_serve_single_page_app_files(app: Starlette, url_prefix: str) -> None:
+def single_page_app_files() -> Callable[..., Awaitable[None]]:
     asgi_app = StaticFiles(
         directory=CLIENT_BUILD_DIR,
         html=True,
@@ -159,14 +159,18 @@ def mount_serve_single_page_app_files(app: Starlette, url_prefix: str) -> None:
             send,
         )
 
-    app.mount(url_prefix + "/app", spa_app)
+    return spa_app
 
 
 def _setup_single_view_dispatcher_route(
     url_prefix: str, app: Starlette, constructor: RootComponentConstructor
 ) -> None:
-    @app.websocket_route(url_prefix + "/app{path:path}/_stream")
+    @app.websocket_route(url_prefix + "/app/_stream")
+    @app.websocket_route(url_prefix + "/app/{path:path}/_stream")
     async def model_stream(socket: WebSocket) -> None:
+        path_params: dict[str, str] = socket.scope["path_params"]
+        path_params.setdefault("path", "")
+
         await socket.accept()
         send, recv = _make_send_recv_callbacks(socket)
         try:

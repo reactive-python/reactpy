@@ -25,12 +25,12 @@ from idom.core.serve import (
 from idom.core.types import RootComponentConstructor
 
 from ._asgi import serve_development_asgi
-from .utils import CLIENT_BUILD_DIR
+from .utils import CLIENT_BUILD_DIR, client_build_dir_path
 
 
 logger = logging.getLogger(__name__)
 
-RequestContext: type[Context[request.Request | None]] = create_context(
+ConnectionContext: type[Context[request.Request | None]] = create_context(
     None, "RequestContext"
 )
 
@@ -65,9 +65,9 @@ async def serve_development_app(
     await serve_development_asgi(app, host, port, started)
 
 
-def use_request() -> request.Request:
+def use_connection() -> Connection:
     """Get the current ``Request``"""
-    request = use_context(RequestContext)
+    request = use_context(ConnectionContext)
     if request is None:
         raise RuntimeError(  # pragma: no cover
             "No request. Are you running with a Sanic server?"
@@ -77,7 +77,7 @@ def use_request() -> request.Request:
 
 def use_scope() -> ASGIScope:
     """Get the current ASGI scope"""
-    app = use_request().app
+    app = use_connection().request.app
     try:
         asgi_app = app._asgi_app
     except AttributeError:  # pragma: no cover
@@ -112,7 +112,16 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
         CORS(blueprint, **cors_params)
 
     if options.serve_static_files:
-        blueprint.static("/app", str(CLIENT_BUILD_DIR))
+
+        @blueprint.route("/app")
+        @blueprint.route("/app/<path:path>")
+        async def single_page_app_files(
+            request: request.Request, path: str = ""
+        ) -> response.HTTPResponse:
+            return await response.file(
+                str(CLIENT_BUILD_DIR / client_build_dir_path(path))
+            )
+
         blueprint.static("/modules", str(IDOM_WEB_MODULES_DIR.current))
 
         if options.redirect_root:
@@ -121,24 +130,42 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
             def redirect_to_index(
                 request: request.Request,
             ) -> response.HTTPResponse:
-                return response.redirect(
-                    f"{blueprint.url_prefix}/client/index.html?{request.query_string}"
-                )
+                if request.query_string:
+                    path = f"{blueprint.url_prefix}/app?{request.query_string}"
+                else:
+                    path = f"{blueprint.url_prefix}/app"
+                return response.redirect(path)
 
 
 def _setup_single_view_dispatcher_route(
     blueprint: Blueprint, constructor: RootComponentConstructor
 ) -> None:
-    @blueprint.websocket("/app<path:path>/_stream")  # type: ignore
+    @blueprint.websocket("/app/_stream")
+    @blueprint.websocket("/app/<path:path>/_stream")  # type: ignore
     async def model_stream(
-        request: request.Request, socket: WebSocketCommonProtocol
+        request: request.Request, socket: WebSocketCommonProtocol, path: str = ""
     ) -> None:
         send, recv = _make_send_recv_callbacks(socket)
+        conn = Connection(request, socket, path)
         await serve_json_patch(
-            Layout(RequestContext(constructor(), value=request)),
+            Layout(ConnectionContext(constructor(), value=conn)),
             send,
             recv,
         )
+
+
+@dataclass
+class Connection:
+    """A simple wrapper for holding"""
+
+    request: request.Request
+    """The current request object"""
+
+    socket: WebSocketCommonProtocol
+    """A handle to the current websocket"""
+
+    path: str
+    """The current path being served"""
 
 
 def _make_send_recv_callbacks(
