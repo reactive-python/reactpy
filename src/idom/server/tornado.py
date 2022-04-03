@@ -177,7 +177,7 @@ class ModelStreamHandler(WebSocketHandler):
     def initialize(self, component_constructor: ComponentConstructor) -> None:
         self._component_constructor = component_constructor
 
-    async def open(self, *args, **kwargs) -> None:
+    async def open(self, *args: Any, **kwargs: Any) -> None:
         message_queue: "AsyncQueue[str]" = AsyncQueue()
 
         async def send(value: VdomJsonPatch) -> None:

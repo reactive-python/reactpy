@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from queue import Queue as ThreadQueue
 from threading import Event as ThreadEvent
 from threading import Thread
-from typing import Any, Callable, Dict, NamedTuple, Optional, Union, cast
+from typing import Any, Callable, Dict, NamedTuple, NoReturn, Optional, Union, cast
 
 from flask import (
     Blueprint,
@@ -84,13 +84,12 @@ async def serve_development_app(
 
     server: Ref[BaseWSGIServer] = Ref()
 
-    def run_server() -> None:  # pragma: no cover
-        # we don't cover this function because coverage doesn't work right in threads
+    def run_server() -> None:
         server.current = make_server(host, port, app, threaded=True)
         if started:
             loop.call_soon_threadsafe(started.set)
         try:
-            server.current.serve_forever()
+            server.current.serve_forever()  # type: ignore
         finally:
             loop.call_soon_threadsafe(stopped.set)
 
@@ -178,12 +177,8 @@ def _setup_single_view_dispatcher_route(
         def send(value: Any) -> None:
             ws.send(json.dumps(value))
 
-        def recv() -> Optional[LayoutEvent]:
-            event = ws.receive()
-            if event is not None:
-                return LayoutEvent(**json.loads(event))
-            else:
-                return None
+        def recv() -> LayoutEvent:
+            return LayoutEvent(**json.loads(ws.receive()))
 
         dispatch_in_thread(ws, path, constructor(), send, recv)
 
@@ -197,7 +192,7 @@ def dispatch_in_thread(
     component: ComponentType,
     send: Callable[[Any], None],
     recv: Callable[[], Optional[LayoutEvent]],
-) -> None:
+) -> NoReturn:
     dispatch_thread_info_created = ThreadEvent()
     dispatch_thread_info_ref: idom.Ref[Optional[_DispatcherThreadInfo]] = idom.Ref(None)
 
@@ -255,20 +250,13 @@ def dispatch_in_thread(
     try:
         while True:
             value = recv()
-            if value is None:
-                stop.set()
-                break
-            # BUG: https://github.com/nedbat/coveragepy/issues/1012
-            # Coverage isn't able to support concurrency coverage for both threading and gevent
-            dispatch_thread_info.dispatch_loop.call_soon_threadsafe(  # pragma: no cover
+            dispatch_thread_info.dispatch_loop.call_soon_threadsafe(
                 dispatch_thread_info.async_recv_queue.put_nowait, value
             )
     finally:
         dispatch_thread_info.dispatch_loop.call_soon_threadsafe(
             dispatch_thread_info.dispatch_future.cancel
         )
-
-    return None
 
 
 @dataclass
@@ -290,9 +278,3 @@ class _DispatcherThreadInfo(NamedTuple):
     dispatch_future: "asyncio.Future[Any]"
     thread_send_queue: "ThreadQueue[LayoutUpdate]"
     async_recv_queue: "AsyncQueue[LayoutEvent]"
-
-
-def _join_url_paths(*args: str) -> str:
-    # urllib.parse.urljoin performs more logic than is needed. Thus we need a util func
-    # to join paths as if they were POSIX paths.
-    return "/".join(map(lambda x: str(x).rstrip("/"), filter(None, args)))

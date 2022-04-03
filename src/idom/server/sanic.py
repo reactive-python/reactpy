@@ -32,8 +32,8 @@ from .utils import CLIENT_BUILD_DIR, client_build_dir_path
 
 logger = logging.getLogger(__name__)
 
-ConnectionContext: type[Context[request.Request | None]] = create_context(
-    None, "RequestContext"
+ConnectionContext: type[Context[Connection | None]] = create_context(
+    None, "ConnectionContext"
 )
 
 
@@ -69,12 +69,12 @@ async def serve_development_app(
 
 def use_connection() -> Connection:
     """Get the current :class:`Connection`"""
-    request = use_context(ConnectionContext)
-    if request is None:
+    connection = use_context(ConnectionContext)
+    if connection is None:
         raise RuntimeError(  # pragma: no cover
-            "No request. Are you running with a Sanic server?"
+            "No connection. Are you running with a Sanic server?"
         )
-    return request
+    return connection
 
 
 def use_scope() -> ASGIScope:
@@ -112,17 +112,17 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
 
     if options.serve_static_files:
 
-        @blueprint.route("/")
-        @blueprint.route("/<path:path>")
         async def single_page_app_files(
-            request: request.Request, path: str = ""
+            request: request.Request,
+            path: str = "",
         ) -> response.HTTPResponse:
             path = urllib_parse.unquote(path)
             return await response.file(CLIENT_BUILD_DIR / client_build_dir_path(path))
 
-        @blueprint.route("/_api/modules/<path:path>")
-        @blueprint.route("/<_:path>/_api/modules/<path:path>")
-        async def single_page_app_files(
+        blueprint.add_route(single_page_app_files, "/")
+        blueprint.add_route(single_page_app_files, "/<path:path>")
+
+        async def web_module_files(
             request: request.Request,
             path: str,
             _: str = "",  # this is not used
@@ -131,12 +131,13 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
             path = urllib_parse.unquote(path)
             return await response.file(wm_dir.joinpath(*path.split("/")))
 
+        blueprint.add_route(web_module_files, "/_api/modules/<path:path>")
+        blueprint.add_route(web_module_files, "/<_:path>/_api/modules/<path:path>")
+
 
 def _setup_single_view_dispatcher_route(
     blueprint: Blueprint, constructor: RootComponentConstructor
 ) -> None:
-    @blueprint.websocket("/_api/stream")
-    @blueprint.websocket("/<path:path>/_api/stream")  # type: ignore
     async def model_stream(
         request: request.Request, socket: WebSocketCommonProtocol, path: str = ""
     ) -> None:
@@ -147,6 +148,9 @@ def _setup_single_view_dispatcher_route(
             send,
             recv,
         )
+
+    blueprint.add_websocket_route(model_stream, "/_api/stream")
+    blueprint.add_websocket_route(model_stream, "/<path:path>/_api/stream")
 
 
 @dataclass
