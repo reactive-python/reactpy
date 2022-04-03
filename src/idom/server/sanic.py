@@ -77,9 +77,14 @@ def use_connection() -> Connection:
     return connection
 
 
+def use_request() -> request.Request:
+    """Get the current ``Request``"""
+    return use_connection().request
+
+
 def use_scope() -> ASGIScope:
     """Get the current ASGI scope"""
-    app = use_connection().request.app
+    app = use_request().app
     try:
         asgi_app = app._asgi_app
     except AttributeError:  # pragma: no cover

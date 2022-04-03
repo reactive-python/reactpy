@@ -121,9 +121,14 @@ def use_connection() -> Connection:
     return connection
 
 
+def use_request() -> Request:
+    """Get the current ``Request``"""
+    return use_connection().request
+
+
 def use_scope() -> dict[str, Any]:
     """Get the current WSGI environment"""
-    return use_connection().request.environ
+    return use_request().environ
 
 
 @dataclass
