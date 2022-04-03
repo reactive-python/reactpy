@@ -22,13 +22,15 @@ export function mountWithLayoutServer(
   );
 }
 
-export function LayoutServerInfo({ host, port, query, secure }) {
+export function LayoutServerInfo({ host, port, path, query, secure }) {
   const wsProtocol = "ws" + (secure ? "s" : "");
   const httpProtocol = "http" + (secure ? "s" : "");
 
-  const uri = host + ":" + port;
-  const path = new URL(document.baseURI).pathname;
-  const url = uri + path;
+  let url = host + ":" + port + (path || new URL(document.baseURI).pathname);
+
+  if (url.endsWith("/")) {
+    url = url.slice(0, -1);
+  }
 
   const wsBaseUrl = wsProtocol + "://" + url;
   const httpBaseUrl = httpProtocol + "://" + url;
@@ -40,7 +42,7 @@ export function LayoutServerInfo({ host, port, query, secure }) {
   }
 
   this.path = {
-    stream: wsBaseUrl + "/_stream" + query,
-    module: (source) => httpBaseUrl + `/modules/${source}`,
+    stream: wsBaseUrl + "/_api/stream" + query,
+    module: (source) => httpBaseUrl + `/_api/modules/${source}`,
   };
 }

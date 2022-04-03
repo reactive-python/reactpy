@@ -107,9 +107,6 @@ def use_scope() -> dict[str, Any]:
 class Options:
     """Render server options for :class:`TornadoRenderServer` subclasses"""
 
-    redirect_root: bool = True
-    """Whether to redirect the root URL (with prefix) to ``index.html``"""
-
     serve_static_files: bool = True
     """Whether or not to serve static files (i.e. web modules)"""
 
@@ -122,29 +119,25 @@ _RouteHandlerSpecs = List[Tuple[str, Type[RequestHandler], Any]]
 
 def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
     handlers: _RouteHandlerSpecs = []
+
     if options.serve_static_files:
         handlers.append(
             (
-                r"/app(.*)",
-                SpaStaticFileHandler,
-                {"path": str(CLIENT_BUILD_DIR)},
-            )
-        )
-        handlers.append(
-            (
-                r"/modules/(.*)",
+                r"/.*/?_api/modules/(.*)",
                 StaticFileHandler,
                 {"path": str(IDOM_WEB_MODULES_DIR.current)},
             )
         )
-        if options.redirect_root:
-            handlers.append(
-                (
-                    urljoin("/", options.url_prefix),
-                    RedirectHandler,
-                    {"url": "./app/index.html"},
-                )
+
+        # register last to give lowest priority
+        handlers.append(
+            (
+                r"/(.*)",
+                SpaStaticFileHandler,
+                {"path": str(CLIENT_BUILD_DIR)},
             )
+        )
+
     return handlers
 
 
@@ -163,7 +156,7 @@ def _setup_single_view_dispatcher_route(
 ) -> _RouteHandlerSpecs:
     return [
         (
-            r"/app(.*)/_stream",
+            r"/(.*)/?_api/stream",
             ModelStreamHandler,
             {"component_constructor": constructor},
         )

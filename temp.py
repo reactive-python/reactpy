@@ -1,5 +1,10 @@
+from flask import Flask
+
 import idom
-from idom.server import sanic as server
+from idom.server import flask as server
+
+
+app = Flask(__name__)
 
 
 @idom.component
@@ -9,3 +14,5 @@ def HelloWorld():
 
 
 idom.run(HelloWorld, implementation=server)
+
+# server.configure(app, HelloWorld)

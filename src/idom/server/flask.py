@@ -16,16 +16,13 @@ from flask import (
     Flask,
     Request,
     copy_current_request_context,
-    redirect,
     request,
     send_from_directory,
-    url_for,
 )
 from flask_cors import CORS
 from flask_sock import Sock
-from gevent import pywsgi
-from geventwebsocket.handler import WebSocketHandler
 from simple_websocket import Server as WebSocket
+from werkzeug.serving import BaseWSGIServer, make_server
 
 import idom
 from idom.config import IDOM_WEB_MODULES_DIR
@@ -33,13 +30,16 @@ from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import LayoutEvent, LayoutUpdate
 from idom.core.serve import serve_json_patch
 from idom.core.types import ComponentType, RootComponentConstructor
+from idom.utils import Ref
 
 from .utils import CLIENT_BUILD_DIR, client_build_dir_path
 
 
 logger = logging.getLogger(__name__)
 
-RequestContext: type[Context[Request | None]] = create_context(None, "RequestContext")
+ConnectionContext: type[Context[Connection | None]] = create_context(
+    None, "ConnectionContext"
+)
 
 
 def configure(
@@ -57,10 +57,10 @@ def configure(
     options = options or Options()
     blueprint = Blueprint("idom", __name__, url_prefix=options.url_prefix)
 
-    _setup_common_routes(blueprint, options)
-
     # this route should take priority so set up it up first
-    _setup_single_view_dispatcher_route(app, options, component)
+    _setup_single_view_dispatcher_route(blueprint, options, component)
+
+    _setup_common_routes(blueprint, options)
 
     app.register_blueprint(blueprint)
 
@@ -82,21 +82,15 @@ async def serve_development_app(
     loop = asyncio.get_event_loop()
     stopped = asyncio.Event()
 
-    server: pywsgi.WSGIServer
+    server: Ref[BaseWSGIServer] = Ref()
 
     def run_server() -> None:  # pragma: no cover
         # we don't cover this function because coverage doesn't work right in threads
-        nonlocal server
-        server = pywsgi.WSGIServer(
-            (host, port),
-            app,
-            handler_class=WebSocketHandler,
-        )
-        server.start()
+        server.current = make_server(host, port, app, threaded=True)
         if started:
             loop.call_soon_threadsafe(started.set)
         try:
-            server.serve_forever()
+            server.current.serve_forever()
         finally:
             loop.call_soon_threadsafe(stopped.set)
 
@@ -110,7 +104,7 @@ async def serve_development_app(
         await stopped.wait()
     finally:
         # we may have exitted because this task was cancelled
-        server.stop(3)
+        server.current.shutdown()
         # the thread should eventually join
         thread.join(timeout=3)
         # just double check it happened
@@ -118,19 +112,19 @@ async def serve_development_app(
             raise RuntimeError("Failed to shutdown server.")
 
 
-def use_request() -> Request:
-    """Get the current ``Request``"""
-    request = use_context(RequestContext)
-    if request is None:
+def use_connection() -> Connection:
+    """Get the current :class:`Connection`"""
+    connection = use_context(ConnectionContext)
+    if connection is None:
         raise RuntimeError(  # pragma: no cover
-            "No request. Are you running with a Flask server?"
+            "No connection. Are you running with a Flask server?"
         )
-    return request
+    return connection
 
 
 def use_scope() -> dict[str, Any]:
     """Get the current WSGI environment"""
-    return use_request().environ
+    return use_connection().request.environ
 
 
 @dataclass
@@ -142,9 +136,6 @@ class Options:
 
     For more information see docs for ``flask_cors.CORS``
     """
-
-    redirect_root: bool = True
-    """Whether to redirect the root URL (with prefix) to ``index.html``"""
 
     serve_static_files: bool = True
     """Whether or not to serve static files (i.e. web modules)"""
@@ -161,35 +152,29 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
 
     if options.serve_static_files:
 
-        @blueprint.route("/app")
-        @blueprint.route("/app<path:path>")
+        @blueprint.route("/")
+        @blueprint.route("/<path:path>")
         def send_client_dir(path: str = "") -> Any:
             return send_from_directory(
                 str(CLIENT_BUILD_DIR),
                 client_build_dir_path(path),
             )
 
-        @blueprint.route("/modules/<path:path>")
-        def send_modules_dir(path: str) -> Any:
+        @blueprint.route(r"/_api/modules/<path:path>")
+        @blueprint.route(r"<path:_>/_api/modules/<path:path>")
+        def send_modules_dir(
+            path: str,
+            _: str = "",  # this is not used
+        ) -> Any:
             return send_from_directory(str(IDOM_WEB_MODULES_DIR.current), path)
-
-        if options.redirect_root:
-
-            @blueprint.route("/")
-            def redirect_to_index() -> Any:
-                return redirect(
-                    url_for("idom.send_client_dir", path="", **request.args)
-                )
 
 
 def _setup_single_view_dispatcher_route(
-    app: Flask, options: Options, constructor: RootComponentConstructor
+    blueprint: Blueprint, options: Options, constructor: RootComponentConstructor
 ) -> None:
-    sockets = Sock(app)
+    sock = Sock(blueprint)
 
-    @sockets.route(_join_url_paths(options.url_prefix, "/app/_stream"))
-    @sockets.route(_join_url_paths(options.url_prefix, "/app/<path:path>/_stream"))
-    def model_stream(ws: WebSocket) -> None:
+    def model_stream(ws: WebSocket, path: str = "") -> None:
         def send(value: Any) -> None:
             ws.send(json.dumps(value))
 
@@ -200,10 +185,15 @@ def _setup_single_view_dispatcher_route(
             else:
                 return None
 
-        dispatch_in_thread(constructor(), send, recv)
+        dispatch_in_thread(ws, path, constructor(), send, recv)
+
+    sock.route("/_api/stream", endpoint="without_path")(model_stream)
+    sock.route("/<path:path>/_api/stream", endpoint="with_path")(model_stream)
 
 
 def dispatch_in_thread(
+    websocket: WebSocket,
+    path: str,
     component: ComponentType,
     send: Callable[[Any], None],
     recv: Callable[[], Optional[LayoutEvent]],
@@ -227,7 +217,11 @@ def dispatch_in_thread(
 
         async def main() -> None:
             await serve_json_patch(
-                idom.Layout(RequestContext(component, value=request)),
+                idom.Layout(
+                    ConnectionContext(
+                        component, value=Connection(request, websocket, path)
+                    )
+                ),
                 send_coro,
                 recv_coro,
             )
@@ -275,6 +269,20 @@ def dispatch_in_thread(
         )
 
     return None
+
+
+@dataclass
+class Connection:
+    """A simple wrapper for holding connection information"""
+
+    request: Request
+    """The current request object"""
+
+    websocket: WebSocket
+    """A handle to the current websocket"""
+
+    path: str
+    """The current path being served"""
 
 
 class _DispatcherThreadInfo(NamedTuple):

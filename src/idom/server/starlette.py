@@ -53,7 +53,7 @@ def configure(
     options = options or Options()
 
     # this route should take priority so set up it up first
-    _setup_single_view_dispatcher_route(options.url_prefix, app, constructor)
+    _setup_single_view_dispatcher_route(options, app, constructor)
 
     _setup_common_routes(options, app)
 
@@ -98,9 +98,6 @@ class Options:
     For more information see docs for ``starlette.middleware.cors.CORSMiddleware``
     """
 
-    redirect_root: bool = True
-    """Whether to redirect the root URL (with prefix) to ``index.html``"""
-
     serve_static_files: bool = True
     """Whether or not to serve static files (i.e. web modules)"""
 
@@ -121,39 +118,24 @@ def _setup_common_routes(options: Options, app: Starlette) -> None:
     url_prefix = options.url_prefix
 
     if options.serve_static_files:
+        wm_dir = IDOM_WEB_MODULES_DIR.current
+        web_module_files = StaticFiles(directory=wm_dir, html=True, check_dir=False)
+        app.mount(url_prefix + "/_api/modules", web_module_files)
+        app.mount(url_prefix + "/{_:path}/_api/modules", web_module_files)
 
-        app.mount(url_prefix + "/app", single_page_app_files())
-
-        app.mount(
-            f"{url_prefix}/modules",
-            StaticFiles(
-                directory=str(IDOM_WEB_MODULES_DIR.current),
-                html=True,
-                check_dir=False,
-            ),
-        )
-
-        if options.redirect_root:
-
-            @app.route(url_prefix or "/")
-            def redirect_to_index(request: Request) -> RedirectResponse:
-                redirect_url = url_prefix + "/app"
-                if request.query_params:
-                    redirect_url = f"{url_prefix}/app?{request.query_params}"
-                else:
-                    redirect_url = f"{url_prefix}/app"
-                return RedirectResponse(redirect_url)
+        # register this last so it takes least priority
+        app.mount(url_prefix + "/", single_page_app_files())
 
 
 def single_page_app_files() -> Callable[..., Awaitable[None]]:
-    asgi_app = StaticFiles(
+    static_files_app = StaticFiles(
         directory=CLIENT_BUILD_DIR,
         html=True,
         check_dir=False,
     )
 
     async def spa_app(scope: Scope, receive: Receive, send: Send) -> None:
-        return await asgi_app(
+        return await static_files_app(
             {**scope, "path": client_build_dir_path(scope["path"])},
             receive,
             send,
@@ -163,13 +145,13 @@ def single_page_app_files() -> Callable[..., Awaitable[None]]:
 
 
 def _setup_single_view_dispatcher_route(
-    url_prefix: str, app: Starlette, constructor: RootComponentConstructor
+    options: Options, app: Starlette, constructor: RootComponentConstructor
 ) -> None:
-    @app.websocket_route(url_prefix + "/app/_stream")
-    @app.websocket_route(url_prefix + "/app/{path:path}/_stream")
+    @app.websocket_route(options.url_prefix + "/_api/stream")
+    @app.websocket_route(options.url_prefix + "/{path:path}/_api/stream")
     async def model_stream(socket: WebSocket) -> None:
         path_params: dict[str, str] = socket.scope["path_params"]
-        path_params.setdefault("path", "")
+        path_params["path"] = "/" + path_params.get("path", "")
 
         await socket.accept()
         send, recv = _make_send_recv_callbacks(socket)

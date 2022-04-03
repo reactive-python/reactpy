@@ -5,6 +5,7 @@ import json
 import logging
 from dataclasses import dataclass
 from typing import Any, Dict, Tuple, Union
+from urllib import parse as urllib_parse
 from uuid import uuid4
 
 from sanic import Blueprint, Sanic, request, response
@@ -19,6 +20,7 @@ from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import (
     RecvCoroutine,
     SendCoroutine,
+    Stop,
     VdomJsonPatch,
     serve_json_patch,
 )
@@ -66,7 +68,7 @@ async def serve_development_app(
 
 
 def use_connection() -> Connection:
-    """Get the current ``Request``"""
+    """Get the current :class:`Connection`"""
     request = use_context(ConnectionContext)
     if request is None:
         raise RuntimeError(  # pragma: no cover
@@ -95,9 +97,6 @@ class Options:
     For more information see docs for ``sanic_cors.CORS``
     """
 
-    redirect_root: bool = True
-    """Whether to redirect the root URL (with prefix) to ``index.html``"""
-
     serve_static_files: bool = True
     """Whether or not to serve static files (i.e. web modules)"""
 
@@ -113,35 +112,31 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
 
     if options.serve_static_files:
 
-        @blueprint.route("/app")
-        @blueprint.route("/app/<path:path>")
+        @blueprint.route("/")
+        @blueprint.route("/<path:path>")
         async def single_page_app_files(
             request: request.Request, path: str = ""
         ) -> response.HTTPResponse:
-            return await response.file(
-                str(CLIENT_BUILD_DIR / client_build_dir_path(path))
-            )
+            path = urllib_parse.unquote(path)
+            return await response.file(CLIENT_BUILD_DIR / client_build_dir_path(path))
 
-        blueprint.static("/modules", str(IDOM_WEB_MODULES_DIR.current))
-
-        if options.redirect_root:
-
-            @blueprint.route("/")  # type: ignore
-            def redirect_to_index(
-                request: request.Request,
-            ) -> response.HTTPResponse:
-                if request.query_string:
-                    path = f"{blueprint.url_prefix}/app?{request.query_string}"
-                else:
-                    path = f"{blueprint.url_prefix}/app"
-                return response.redirect(path)
+        @blueprint.route("/_api/modules/<path:path>")
+        @blueprint.route("/<_:path>/_api/modules/<path:path>")
+        async def single_page_app_files(
+            request: request.Request,
+            path: str,
+            _: str = "",  # this is not used
+        ) -> response.HTTPResponse:
+            wm_dir = IDOM_WEB_MODULES_DIR.current
+            path = urllib_parse.unquote(path)
+            return await response.file(wm_dir.joinpath(*path.split("/")))
 
 
 def _setup_single_view_dispatcher_route(
     blueprint: Blueprint, constructor: RootComponentConstructor
 ) -> None:
-    @blueprint.websocket("/app/_stream")
-    @blueprint.websocket("/app/<path:path>/_stream")  # type: ignore
+    @blueprint.websocket("/_api/stream")
+    @blueprint.websocket("/<path:path>/_api/stream")  # type: ignore
     async def model_stream(
         request: request.Request, socket: WebSocketCommonProtocol, path: str = ""
     ) -> None:
@@ -156,12 +151,12 @@ def _setup_single_view_dispatcher_route(
 
 @dataclass
 class Connection:
-    """A simple wrapper for holding"""
+    """A simple wrapper for holding connection information"""
 
     request: request.Request
     """The current request object"""
 
-    socket: WebSocketCommonProtocol
+    websocket: WebSocketCommonProtocol
     """A handle to the current websocket"""
 
     path: str
@@ -175,6 +170,9 @@ def _make_send_recv_callbacks(
         await socket.send(json.dumps(value))
 
     async def sock_recv() -> LayoutEvent:
-        return LayoutEvent(**json.loads(await socket.recv()))
+        data = await socket.recv()
+        if data is None:
+            raise Stop()
+        return LayoutEvent(**json.loads(data))
 
     return sock_send, sock_recv
