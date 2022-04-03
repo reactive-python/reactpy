@@ -181,6 +181,6 @@ async def test_use_linked_inputs_ignore_empty(display: DisplayFixture):
 
     poll_value.until_equals("1")
 
-    await input_1.type("2")
+    await input_2.type("2")
 
     poll_value.until_equals("2")
