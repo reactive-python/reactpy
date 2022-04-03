@@ -12,7 +12,7 @@ from tornado.httpserver import HTTPServer
 from tornado.httputil import HTTPServerRequest
 from tornado.log import enable_pretty_logging
 from tornado.platform.asyncio import AsyncIOMainLoop
-from tornado.web import Application, RedirectHandler, RequestHandler, StaticFileHandler
+from tornado.web import Application, RequestHandler, StaticFileHandler
 from tornado.websocket import WebSocketHandler
 from tornado.wsgi import WSGIContainer
 

@@ -8,8 +8,6 @@ from typing import Any, Awaitable, Callable, Dict, Tuple, Union
 
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
-from starlette.requests import Request
-from starlette.responses import RedirectResponse
 from starlette.staticfiles import StaticFiles
 from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket, WebSocketDisconnect
