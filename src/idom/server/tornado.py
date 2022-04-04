@@ -179,10 +179,15 @@ def _setup_single_view_dispatcher_route(
 ) -> _RouteHandlerSpecs:
     return [
         (
-            r"/(.*)/?_api/stream",
+            r"/(.*)/_api/stream",
             ModelStreamHandler,
             {"component_constructor": constructor},
-        )
+        ),
+        (
+            r"/_api/stream",
+            ModelStreamHandler,
+            {"component_constructor": constructor},
+        ),
     ]
 
 
@@ -202,7 +207,7 @@ class ModelStreamHandler(WebSocketHandler):
     def initialize(self, component_constructor: ComponentConstructor) -> None:
         self._component_constructor = component_constructor
 
-    async def open(self, path: str) -> None:
+    async def open(self, path: str = "") -> None:
         message_queue: "AsyncQueue[str]" = AsyncQueue()
 
         async def send(value: VdomJsonPatch) -> None:
