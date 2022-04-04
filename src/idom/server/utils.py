@@ -8,7 +8,10 @@ from importlib import import_module
 from pathlib import Path
 from typing import Any, Iterator
 
+from werkzeug.security import safe_join
+
 import idom
+from idom.config import IDOM_WEB_MODULES_DIR
 from idom.types import RootComponentConstructor
 
 from .types import ServerImplementation
@@ -24,12 +27,6 @@ SUPPORTED_PACKAGES = (
     "tornado",
     "flask",
 )
-
-
-def client_build_dir_path(path: str) -> str:
-    start, _, end = path.rpartition("/")
-    file = end or start
-    return file if (CLIENT_BUILD_DIR / file).is_file() else "index.html"
 
 
 def run(
@@ -60,6 +57,27 @@ def run(
     asyncio.get_event_loop().run_until_complete(
         implementation.serve_development_app(app, host, port)
     )
+
+
+def safe_client_build_dir_path(path: str) -> Path:
+    """Prevent path traversal out of :data:`CLIENT_BUILD_DIR`"""
+    start, _, end = path.rpartition("/")
+    file = end or start
+    final_path = traversal_safe_path(CLIENT_BUILD_DIR, file)
+    return final_path if final_path.is_file() else (CLIENT_BUILD_DIR / "index.html")
+
+
+def safe_web_modules_dir_path(path: str) -> Path:
+    """Prevent path traversal out of :data:`idom.config.IDOM_WEB_MODULES_DIR`"""
+    return traversal_safe_path(IDOM_WEB_MODULES_DIR.current, *path.split("/"))
+
+
+def traversal_safe_path(root: Path, *unsafe_parts: str | Path) -> Path:
+    """Sanitize user given path using ``werkzeug.security.safe_join``"""
+    path = safe_join(str(root.resolve()), *unsafe_parts)
+    if path is None:
+        raise ValueError("Unsafe path")  # pragma: no cover
+    return Path(path)
 
 
 def find_available_port(

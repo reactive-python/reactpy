@@ -22,7 +22,7 @@ from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
 
-from .utils import CLIENT_BUILD_DIR, client_build_dir_path
+from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
 
 
 RequestContext: type[Context[HTTPServerRequest | None]] = create_context(
@@ -165,7 +165,9 @@ def _setup_single_view_dispatcher_route(
 
 class SpaStaticFileHandler(StaticFileHandler):
     async def get(self, path: str, include_body: bool = True) -> None:
-        return await super().get(client_build_dir_path(path), include_body)
+        # Path safety is the responsibility of tornado.web.StaticFileHandler -
+        # using `safe_client_build_dir_path` is for convenience in this case.
+        return await super().get(safe_client_build_dir_path(path).name, include_body)
 
 
 class ModelStreamHandler(WebSocketHandler):

@@ -14,7 +14,6 @@ from sanic.models.asgi import ASGIScope
 from sanic_cors import CORS
 from websockets.legacy.protocol import WebSocketCommonProtocol
 
-from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import (
@@ -27,7 +26,7 @@ from idom.core.serve import (
 from idom.core.types import RootComponentConstructor
 
 from ._asgi import serve_development_asgi
-from .utils import CLIENT_BUILD_DIR, client_build_dir_path
+from .utils import safe_client_build_dir_path, safe_web_modules_dir_path
 
 
 logger = logging.getLogger(__name__)
@@ -122,7 +121,7 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
             path: str = "",
         ) -> response.HTTPResponse:
             path = urllib_parse.unquote(path)
-            return await response.file(CLIENT_BUILD_DIR / client_build_dir_path(path))
+            return await response.file(safe_client_build_dir_path(path))
 
         blueprint.add_route(single_page_app_files, "/")
         blueprint.add_route(single_page_app_files, "/<path:path>")
@@ -132,9 +131,8 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
             path: str,
             _: str = "",  # this is not used
         ) -> response.HTTPResponse:
-            wm_dir = IDOM_WEB_MODULES_DIR.current
             path = urllib_parse.unquote(path)
-            return await response.file(wm_dir.joinpath(*path.split("/")))
+            return await response.file(safe_web_modules_dir_path(path))
 
         blueprint.add_route(web_module_files, "/_api/modules/<path:path>")
         blueprint.add_route(web_module_files, "/<_:path>/_api/modules/<path:path>")

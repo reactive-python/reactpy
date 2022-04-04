@@ -24,7 +24,7 @@ from idom.core.serve import (
 from idom.core.types import RootComponentConstructor
 
 from ._asgi import serve_development_asgi
-from .utils import CLIENT_BUILD_DIR, client_build_dir_path
+from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
 
 
 logger = logging.getLogger(__name__)
@@ -133,11 +133,10 @@ def single_page_app_files() -> Callable[..., Awaitable[None]]:
     )
 
     async def spa_app(scope: Scope, receive: Receive, send: Send) -> None:
-        return await static_files_app(
-            {**scope, "path": client_build_dir_path(scope["path"])},
-            receive,
-            send,
-        )
+        # Path safety is the responsibility of starlette.staticfiles.StaticFiles -
+        # using `safe_client_build_dir_path` is for convenience in this case.
+        path = safe_client_build_dir_path(scope["path"]).name
+        return await static_files_app({**scope, "path": path}, receive, send)
 
     return spa_app
 

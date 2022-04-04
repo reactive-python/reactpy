@@ -17,7 +17,7 @@ from flask import (
     Request,
     copy_current_request_context,
     request,
-    send_from_directory,
+    send_file,
 )
 from flask_cors import CORS
 from flask_sock import Sock
@@ -25,14 +25,13 @@ from simple_websocket import Server as WebSocket
 from werkzeug.serving import BaseWSGIServer, make_server
 
 import idom
-from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import LayoutEvent, LayoutUpdate
 from idom.core.serve import serve_json_patch
 from idom.core.types import ComponentType, RootComponentConstructor
 from idom.utils import Ref
 
-from .utils import CLIENT_BUILD_DIR, client_build_dir_path
+from .utils import safe_client_build_dir_path, safe_web_modules_dir_path
 
 
 logger = logging.getLogger(__name__)
@@ -159,10 +158,7 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
         @blueprint.route("/")
         @blueprint.route("/<path:path>")
         def send_client_dir(path: str = "") -> Any:
-            return send_from_directory(
-                str(CLIENT_BUILD_DIR),
-                client_build_dir_path(path),
-            )
+            return send_file(safe_client_build_dir_path(path))
 
         @blueprint.route(r"/_api/modules/<path:path>")
         @blueprint.route(r"<path:_>/_api/modules/<path:path>")
@@ -170,7 +166,7 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
             path: str,
             _: str = "",  # this is not used
         ) -> Any:
-            return send_from_directory(str(IDOM_WEB_MODULES_DIR.current), path)
+            return send_file(safe_web_modules_dir_path(path))
 
 
 def _setup_single_view_dispatcher_route(
@@ -258,7 +254,7 @@ def dispatch_in_thread(
             dispatch_thread_info.dispatch_loop.call_soon_threadsafe(
                 dispatch_thread_info.async_recv_queue.put_nowait, value
             )
-    finally:
+    finally:  # pragma: no cover
         dispatch_thread_info.dispatch_loop.call_soon_threadsafe(
             dispatch_thread_info.dispatch_future.cancel
         )
