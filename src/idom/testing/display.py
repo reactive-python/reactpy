@@ -34,14 +34,16 @@ class DisplayFixture:
     async def show(
         self,
         component: RootComponentConstructor,
-        query: dict[str, Any] | None = None,
     ) -> None:
         self._next_view_id += 1
         view_id = f"display-{self._next_view_id}"
         self.server.mount(lambda: html.div({"id": view_id}, component()))
 
-        await self.page.goto(self.server.url(query=query))
+        await self.goto("/")
         await self.page.wait_for_selector(f"#{view_id}", state="attached")
+
+    async def goto(self, path: str, query: Any | None = None) -> None:
+        await self.page.goto(self.server.url(path, query))
 
     async def __aenter__(self) -> DisplayFixture:
         es = self._exit_stack = AsyncExitStack()

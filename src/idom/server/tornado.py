@@ -21,12 +21,13 @@ from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
+from idom.server.types import Location
 
 from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
 
 
-RequestContext: type[Context[HTTPServerRequest | None]] = create_context(
-    None, "RequestContext"
+ConnectionContext: type[Context[HTTPServerRequest | None]] = create_context(
+    None, "ConnectionContext"
 )
 
 
@@ -88,19 +89,41 @@ async def serve_development_app(
         await server.close_all_connections()
 
 
-def use_request() -> HTTPServerRequest:
-    """Get the current ``HTTPServerRequest``"""
-    request = use_context(RequestContext)
-    if request is None:
-        raise RuntimeError(  # pragma: no cover
-            "No request. Are you running with a Tornado server?"
-        )
-    return request
+def use_location() -> Location:
+    """Get the current route as a string"""
+    conn = use_connection()
+    search = conn.request.query
+    return Location(pathname="/" + conn.path, search="?" + search if search else "")
 
 
 def use_scope() -> dict[str, Any]:
     """Get the current WSGI environment dictionary"""
     return WSGIContainer.environ(use_request())
+
+
+def use_request() -> HTTPServerRequest:
+    """Get the current ``HTTPServerRequest``"""
+    return use_connection().request
+
+
+def use_connection() -> Connection:
+    connection = use_context(ConnectionContext)
+    if connection is None:
+        raise RuntimeError(  # pragma: no cover
+            "No connection. Are you running with a Tornado server?"
+        )
+    return connection
+
+
+@dataclass
+class Connection:
+    """A simple wrapper for holding connection information"""
+
+    request: HTTPServerRequest
+    """The current request object"""
+
+    path: str
+    """The current path being served"""
 
 
 @dataclass
@@ -179,7 +202,7 @@ class ModelStreamHandler(WebSocketHandler):
     def initialize(self, component_constructor: ComponentConstructor) -> None:
         self._component_constructor = component_constructor
 
-    async def open(self, *args: Any, **kwargs: Any) -> None:
+    async def open(self, path: str) -> None:
         message_queue: "AsyncQueue[str]" = AsyncQueue()
 
         async def send(value: VdomJsonPatch) -> None:
@@ -192,7 +215,10 @@ class ModelStreamHandler(WebSocketHandler):
         self._dispatch_future = asyncio.ensure_future(
             serve_json_patch(
                 Layout(
-                    RequestContext(self._component_constructor(), value=self.request)
+                    ConnectionContext(
+                        self._component_constructor(),
+                        value=Connection(self.request, path),
+                    )
                 ),
                 send,
                 recv,

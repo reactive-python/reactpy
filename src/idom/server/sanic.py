@@ -24,6 +24,7 @@ from idom.core.serve import (
     serve_json_patch,
 )
 from idom.core.types import RootComponentConstructor
+from idom.server.types import Location
 
 from ._asgi import serve_development_asgi
 from .utils import safe_client_build_dir_path, safe_web_modules_dir_path
@@ -66,19 +67,11 @@ async def serve_development_app(
     await serve_development_asgi(app, host, port, started)
 
 
-def use_connection() -> Connection:
-    """Get the current :class:`Connection`"""
-    connection = use_context(ConnectionContext)
-    if connection is None:
-        raise RuntimeError(  # pragma: no cover
-            "No connection. Are you running with a Sanic server?"
-        )
-    return connection
-
-
-def use_request() -> request.Request:
-    """Get the current ``Request``"""
-    return use_connection().request
+def use_location() -> Location:
+    """Get the current route as a string"""
+    conn = use_connection()
+    search = conn.request.query_string
+    return Location(pathname="/" + conn.path, search="?" + search if search else "")
 
 
 def use_scope() -> ASGIScope:
@@ -89,6 +82,35 @@ def use_scope() -> ASGIScope:
     except AttributeError:  # pragma: no cover
         raise RuntimeError("No scope. Sanic may not be running with an ASGI server")
     return asgi_app.transport.scope
+
+
+def use_request() -> request.Request:
+    """Get the current ``Request``"""
+    return use_connection().request
+
+
+def use_connection() -> Connection:
+    """Get the current :class:`Connection`"""
+    connection = use_context(ConnectionContext)
+    if connection is None:
+        raise RuntimeError(  # pragma: no cover
+            "No connection. Are you running with a Sanic server?"
+        )
+    return connection
+
+
+@dataclass
+class Connection:
+    """A simple wrapper for holding connection information"""
+
+    request: request.Request
+    """The current request object"""
+
+    websocket: WebSocketCommonProtocol
+    """A handle to the current websocket"""
+
+    path: str
+    """The current path being served"""
 
 
 @dataclass
@@ -154,20 +176,6 @@ def _setup_single_view_dispatcher_route(
 
     blueprint.add_websocket_route(model_stream, "/_api/stream")
     blueprint.add_websocket_route(model_stream, "/<path:path>/_api/stream")
-
-
-@dataclass
-class Connection:
-    """A simple wrapper for holding connection information"""
-
-    request: request.Request
-    """The current request object"""
-
-    websocket: WebSocketCommonProtocol
-    """A handle to the current websocket"""
-
-    path: str
-    """The current path being served"""
 
 
 def _make_send_recv_callbacks(

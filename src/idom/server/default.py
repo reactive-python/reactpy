@@ -5,7 +5,7 @@ from typing import Any
 
 from idom.types import RootComponentConstructor
 
-from .types import ServerImplementation
+from .types import Location, ServerImplementation
 from .utils import all_implementations
 
 
@@ -36,7 +36,13 @@ async def serve_development_app(
 
 
 def use_scope() -> Any:
+    """Return the current ASGI/WSGI scope"""
     return _default_implementation().use_scope()
+
+
+def use_location() -> Location:
+    """Return the current route as a string"""
+    return _default_implementation().use_location()
 
 
 _DEFAULT_IMPLEMENTATION: ServerImplementation[Any] | None = None

@@ -1,18 +1,11 @@
-from flask import Flask
-
-import idom
-from idom.server import flask as server
+from idom import component, html, run
+from idom.server import starlette as server
 
 
-app = Flask(__name__)
+@component
+def ShowLocation():
+    loc = server.use_location()
+    return html.h1(str(loc.pathname + loc.search))
 
 
-@idom.component
-def HelloWorld():
-    print(server.use_scope())
-    return idom.html.h1("Hello, world!")
-
-
-idom.run(HelloWorld, implementation=server)
-
-# server.configure(app, HelloWorld)
+run(ShowLocation, implementation=server)

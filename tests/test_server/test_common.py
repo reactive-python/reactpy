@@ -5,6 +5,7 @@ import pytest
 import idom
 from idom import html
 from idom.server import default as default_implementation
+from idom.server.types import Location
 from idom.server.utils import all_implementations
 from idom.testing import DisplayFixture, ServerFixture, poll
 
@@ -75,3 +76,28 @@ async def test_use_scope(display: DisplayFixture):
 
     await display.page.wait_for_selector("#scope")
     assert isinstance(scope.current, MutableMapping)
+
+
+async def test_use_location(display: DisplayFixture):
+    location = idom.Ref()
+    poll_location = poll(lambda: location.current)
+
+    @idom.component
+    def ShowRoute():
+        location.current = display.server.implementation.use_location()
+        return html.pre({"id": "scope"}, str(location.current))
+
+    await display.show(ShowRoute)
+
+    poll_location.until_equals(Location("/", ""))
+
+    for loc in [
+        Location("/something"),
+        Location("/something/file.txt"),
+        Location("/another/something"),
+        Location("/another/something/file.txt"),
+        Location("/another/something/file.txt", "?key=value"),
+        Location("/another/something/file.txt", "?key1=value1&key2=value2"),
+    ]:
+        await display.goto(loc.pathname + loc.search)
+        poll_location.until_equals(loc)

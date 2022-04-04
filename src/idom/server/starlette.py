@@ -22,6 +22,7 @@ from idom.core.serve import (
     serve_json_patch,
 )
 from idom.core.types import RootComponentConstructor
+from idom.server.types import Location
 
 from ._asgi import serve_development_asgi
 from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
@@ -71,6 +72,19 @@ async def serve_development_app(
     await serve_development_asgi(app, host, port, started)
 
 
+def use_location() -> Location:
+    """Get the current route as a string"""
+    scope = use_scope()
+    pathname = "/" + scope["path_params"].get("path", "")
+    search = scope["query_string"].decode()
+    return Location(pathname, "?" + search if search else "")
+
+
+def use_scope() -> Scope:
+    """Get the current ASGI scope dictionary"""
+    return use_websocket().scope
+
+
 def use_websocket() -> WebSocket:
     """Get the current WebSocket object"""
     websocket = use_context(WebSocketContext)
@@ -79,11 +93,6 @@ def use_websocket() -> WebSocket:
             "No websocket. Are you running with a Starllette server?"
         )
     return websocket
-
-
-def use_scope() -> Scope:
-    """Get the current ASGI scope dictionary"""
-    return use_websocket().scope
 
 
 @dataclass
@@ -147,9 +156,6 @@ def _setup_single_view_dispatcher_route(
     @app.websocket_route(options.url_prefix + "/_api/stream")
     @app.websocket_route(options.url_prefix + "/{path:path}/_api/stream")
     async def model_stream(socket: WebSocket) -> None:
-        path_params: dict[str, str] = socket.scope["path_params"]
-        path_params["path"] = "/" + path_params.get("path", "")
-
         await socket.accept()
         send, recv = _make_send_recv_callbacks(socket)
         try:

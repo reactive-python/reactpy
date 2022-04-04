@@ -29,6 +29,7 @@ from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import LayoutEvent, LayoutUpdate
 from idom.core.serve import serve_json_patch
 from idom.core.types import ComponentType, RootComponentConstructor
+from idom.server.types import Location
 from idom.utils import Ref
 
 from .utils import safe_client_build_dir_path, safe_web_modules_dir_path
@@ -110,6 +111,23 @@ async def serve_development_app(
             raise RuntimeError("Failed to shutdown server.")
 
 
+def use_location() -> Location:
+    """Get the current route as a string"""
+    conn = use_connection()
+    search = conn.request.query_string.decode()
+    return Location(pathname="/" + conn.path, search="?" + search if search else "")
+
+
+def use_scope() -> dict[str, Any]:
+    """Get the current WSGI environment"""
+    return use_request().environ
+
+
+def use_request() -> Request:
+    """Get the current ``Request``"""
+    return use_connection().request
+
+
 def use_connection() -> Connection:
     """Get the current :class:`Connection`"""
     connection = use_context(ConnectionContext)
@@ -120,14 +138,18 @@ def use_connection() -> Connection:
     return connection
 
 
-def use_request() -> Request:
-    """Get the current ``Request``"""
-    return use_connection().request
+@dataclass
+class Connection:
+    """A simple wrapper for holding connection information"""
 
+    request: Request
+    """The current request object"""
 
-def use_scope() -> dict[str, Any]:
-    """Get the current WSGI environment"""
-    return use_request().environ
+    websocket: WebSocket
+    """A handle to the current websocket"""
+
+    path: str
+    """The current path being served"""
 
 
 @dataclass
@@ -181,13 +203,13 @@ def _setup_single_view_dispatcher_route(
         def recv() -> LayoutEvent:
             return LayoutEvent(**json.loads(ws.receive()))
 
-        dispatch_in_thread(ws, path, constructor(), send, recv)
+        _dispatch_in_thread(ws, path, constructor(), send, recv)
 
     sock.route("/_api/stream", endpoint="without_path")(model_stream)
     sock.route("/<path:path>/_api/stream", endpoint="with_path")(model_stream)
 
 
-def dispatch_in_thread(
+def _dispatch_in_thread(
     websocket: WebSocket,
     path: str,
     component: ComponentType,
@@ -258,20 +280,6 @@ def dispatch_in_thread(
         dispatch_thread_info.dispatch_loop.call_soon_threadsafe(
             dispatch_thread_info.dispatch_future.cancel
         )
-
-
-@dataclass
-class Connection:
-    """A simple wrapper for holding connection information"""
-
-    request: Request
-    """The current request object"""
-
-    websocket: WebSocket
-    """A handle to the current websocket"""
-
-    path: str
-    """The current path being served"""
 
 
 class _DispatcherThreadInfo(NamedTuple):
