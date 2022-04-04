@@ -77,3 +77,10 @@ entirely and the indices will always be the default key.
 For more information on changes to this feature flag see:
 https://github.com/idom-team/idom/issues/351
 """
+
+IDOM_TESTING_DEFAULT_TIMEOUT = _Option(
+    "IDOM_TESTING_DEFAULT_TIMEOUT",
+    3.0,
+    mutable=False,
+    validator=float,
+)

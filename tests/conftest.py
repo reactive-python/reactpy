@@ -7,6 +7,7 @@ from _pytest.config import Config
 from _pytest.config.argparsing import Parser
 from playwright.async_api import async_playwright
 
+from idom.config import IDOM_TESTING_DEFAULT_TIMEOUT
 from idom.testing import (
     DisplayFixture,
     ServerFixture,
@@ -40,7 +41,7 @@ async def server():
 @pytest.fixture(scope="session")
 async def page(browser):
     pg = await browser.new_page()
-    pg.set_default_timeout(5000)
+    pg.set_default_timeout(IDOM_TESTING_DEFAULT_TIMEOUT.current * 1000)
     try:
         yield pg
     finally:

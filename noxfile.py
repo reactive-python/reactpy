@@ -390,5 +390,8 @@ def get_idom_script_env() -> dict[str, str]:
     return {
         "PYTHONPATH": os.getcwd(),
         "IDOM_DEBUG_MODE": os.environ.get("IDOM_DEBUG_MODE", "1"),
+        "IDOM_TESTING_DEFAULT_TIMEOUT": os.environ.get(
+            "IDOM_TESTING_DEFAULT_TIMEOUT", "6.0"
+        ),
         "IDOM_CHECK_VDOM_SPEC": os.environ.get("IDOM_CHECK_VDOM_SPEC", "0"),
     }

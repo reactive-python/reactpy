@@ -10,7 +10,7 @@ from weakref import ref
 
 from typing_extensions import ParamSpec, Protocol
 
-from idom.config import IDOM_WEB_MODULES_DIR
+from idom.config import IDOM_TESTING_DEFAULT_TIMEOUT, IDOM_WEB_MODULES_DIR
 from idom.core.events import EventHandler, to_event_handler_function
 from idom.core.hooks import LifeCycleHook, current_hook
 
@@ -24,13 +24,10 @@ def clear_idom_web_modules_dir() -> None:
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 _RC = TypeVar("_RC", covariant=True)
-_DEFAULT_TIMEOUT = 3.0
 
 
 class _UntilFunc(Protocol[_RC]):
-    def __call__(
-        self, condition: Callable[[_RC], bool], timeout: float = _DEFAULT_TIMEOUT
-    ) -> Any:
+    def __call__(self, condition: Callable[[_RC], bool], timeout: float = ...) -> Any:
         ...
 
 
@@ -50,7 +47,8 @@ class poll(Generic[_R]):  # noqa: N801
             coro_function = cast(Callable[_P, Awaitable[_R]], function)
 
             async def coro_until(
-                condition: Callable[[_R], bool], timeout: float = _DEFAULT_TIMEOUT
+                condition: Callable[[_R], bool],
+                timeout: float = IDOM_TESTING_DEFAULT_TIMEOUT.current,
             ) -> None:
                 started_at = time.time()
                 while True:
@@ -68,7 +66,8 @@ class poll(Generic[_R]):  # noqa: N801
             sync_function = cast(Callable[_P, _R], function)
 
             def sync_until(
-                condition: Callable[[_R], bool] | Any, timeout: float = _DEFAULT_TIMEOUT
+                condition: Callable[[_R], bool] | Any,
+                timeout: float = IDOM_TESTING_DEFAULT_TIMEOUT.current,
             ) -> None:
                 started_at = time.time()
                 while True:
@@ -83,11 +82,19 @@ class poll(Generic[_R]):  # noqa: N801
 
             self.until = sync_until
 
-    def until_is(self, right: Any, timeout: float = _DEFAULT_TIMEOUT) -> Any:
+    def until_is(
+        self,
+        right: Any,
+        timeout: float = IDOM_TESTING_DEFAULT_TIMEOUT.current,
+    ) -> Any:
         """Wait until the result is identical to the given value"""
         return self.until(lambda left: left is right, timeout)
 
-    def until_equals(self, right: Any, timeout: float = _DEFAULT_TIMEOUT) -> Any:
+    def until_equals(
+        self,
+        right: Any,
+        timeout: float = IDOM_TESTING_DEFAULT_TIMEOUT.current,
+    ) -> Any:
         """Wait until the result is equal to the given value"""
         # not really sure why I need a type ignore comment here
         return self.until(lambda left: left == right, timeout)  # type: ignore
