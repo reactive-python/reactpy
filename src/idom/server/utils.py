@@ -74,7 +74,7 @@ def safe_web_modules_dir_path(path: str) -> Path:
 
 def traversal_safe_path(root: Path, *unsafe_parts: str | Path) -> Path:
     """Sanitize user given path using ``werkzeug.security.safe_join``"""
-    path = safe_join(str(root.resolve()), *unsafe_parts)
+    path = safe_join(str(root.resolve()), *unsafe_parts)  # type: ignore
     if path is None:
         raise ValueError("Unsafe path")  # pragma: no cover
     return Path(path)
