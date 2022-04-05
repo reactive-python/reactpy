@@ -10,8 +10,10 @@ export function mountWithLayoutServer(
   const loadImportSource = (source, sourceType) =>
     import(
       sourceType == "NAME" ? serverInfo.path.module(source) : source
-    ).catch(() => {
-      console.error("Import failed");
+    ).catch((error) => {
+      // Added a catch to silence a build warning caller so we just re-throw.
+      // The caller is actually responsible for catching this error.
+      throw error;
     });
 
   mountLayoutWithWebSocket(
