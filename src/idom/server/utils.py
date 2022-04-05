@@ -71,9 +71,9 @@ def safe_web_modules_dir_path(path: str) -> Path:
     return traversal_safe_path(IDOM_WEB_MODULES_DIR.current, *path.split("/"))
 
 
-def traversal_safe_path(root: Path, *unsafe: str | Path) -> Path:
+def traversal_safe_path(root: str | Path, *unsafe: str | Path) -> Path:
     """Raise a ``ValueError`` if the ``unsafe`` path resolves outside the root dir."""
-    root = root.resolve()
+    root = Path(root).resolve()
     # resolve relative paths and symlinks
     path = root.joinpath(*unsafe).resolve()
 
