@@ -80,7 +80,11 @@ async def test_use_scope(display: DisplayFixture):
 
 async def test_use_location(display: DisplayFixture):
     location = idom.Ref()
-    poll_location = poll(lambda: location.current)
+
+    @poll
+    async def poll_location():
+        """This needs to be async to allow the server to respond"""
+        return location.current
 
     @idom.component
     def ShowRoute():
@@ -89,7 +93,7 @@ async def test_use_location(display: DisplayFixture):
 
     await display.show(ShowRoute)
 
-    poll_location.until_equals(Location("/", ""))
+    await poll_location.until_equals(Location("/", ""))
 
     for loc in [
         Location("/something"),
@@ -100,4 +104,4 @@ async def test_use_location(display: DisplayFixture):
         Location("/another/something/file.txt", "?key1=value1&key2=value2"),
     ]:
         await display.goto(loc.pathname + loc.search)
-        poll_location.until_equals(loc)
+        await poll_location.until_equals(loc)

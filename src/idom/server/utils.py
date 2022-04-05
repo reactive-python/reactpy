@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import socket
 from contextlib import closing
 from importlib import import_module
 from pathlib import Path
 from typing import Any, Iterator
-
-from werkzeug.security import safe_join
 
 import idom
 from idom.config import IDOM_WEB_MODULES_DIR
@@ -72,11 +71,16 @@ def safe_web_modules_dir_path(path: str) -> Path:
     return traversal_safe_path(IDOM_WEB_MODULES_DIR.current, *path.split("/"))
 
 
-def traversal_safe_path(root: Path, *unsafe_parts: str | Path) -> Path:
-    """Sanitize user given path using ``werkzeug.security.safe_join``"""
-    path = safe_join(str(root.resolve()), *unsafe_parts)  # type: ignore
-    if path is None:
-        raise ValueError("Unsafe path")  # pragma: no cover
+def traversal_safe_path(root: Path, *unsafe: str | Path) -> Path:
+    """Raise a ``ValueError`` if the ``unsafe`` path resolves outside the root dir."""
+    root = root.resolve()
+    # resolve relative paths and symlinks
+    path = root.joinpath(*unsafe).resolve()
+
+    if os.path.commonprefix([root, path]) != str(root):
+        # If the common prefix is not root directory we resolved outside the root dir
+        raise ValueError("Unsafe path")
+
     return Path(path)
 
 
