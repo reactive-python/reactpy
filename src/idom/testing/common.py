@@ -5,12 +5,11 @@ import inspect
 import shutil
 import time
 from functools import wraps
-from inspect import iscoroutinefunction
 from typing import Any, Awaitable, Callable, Generic, Optional, TypeVar, cast
 from uuid import uuid4
 from weakref import ref
 
-from typing_extensions import ParamSpec, Protocol
+from typing_extensions import ParamSpec
 
 from idom.config import IDOM_TESTING_DEFAULT_TIMEOUT, IDOM_WEB_MODULES_DIR
 from idom.core.events import EventHandler, to_event_handler_function

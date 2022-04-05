@@ -7,7 +7,6 @@ from contextlib import contextmanager
 from typing import Iterator
 
 from idom.config import IDOM_TESTING_DEFAULT_TIMEOUT
-from idom.testing import poll
 
 
 TIMEOUT = 3
