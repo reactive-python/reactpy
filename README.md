@@ -24,8 +24,8 @@ run(App)
 
 Follow the links below to find out more about this project.
 
--   [Try it Now](https://mybinder.org/v2/gh/idom-team/idom-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb) - check out IDOM in a Jupyter Notebook.
--   [Documentation](https://idom-docs.herokuapp.com/) - learn how to install, run, and use IDOM.
--   [Community Forum](https://github.com/idom-team/idom/discussions) - ask questions, share ideas, and show off projects.
--   [Contributor Guide](https://idom-docs.herokuapp.com/docs/developing-idom/contributor-guide.html) - see how you can help develop this project.
--   [Code of Conduct](https://github.com/idom-team/idom/blob/main/CODE_OF_CONDUCT.md) - standards for interacting with this community.
+- [Try it Now](https://mybinder.org/v2/gh/idom-team/idom-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb) - check out IDOM in a Jupyter Notebook.
+- [Documentation](https://idom-docs.herokuapp.com/) - learn how to install, run, and use IDOM.
+- [Community Forum](https://github.com/idom-team/idom/discussions) - ask questions, share ideas, and show off projects.
+- [Contributor Guide](https://idom-docs.herokuapp.com/docs/developing-idom/contributor-guide.html) - see how you can help develop this project.
+- [Code of Conduct](https://github.com/idom-team/idom/blob/main/CODE_OF_CONDUCT.md) - standards for interacting with this community.
