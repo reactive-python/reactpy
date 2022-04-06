@@ -73,11 +73,13 @@ def safe_web_modules_dir_path(path: str) -> Path:
 
 def traversal_safe_path(root: str | Path, *unsafe: str | Path) -> Path:
     """Raise a ``ValueError`` if the ``unsafe`` path resolves outside the root dir."""
-    root = Path(root).resolve()
-    # resolve relative paths and symlinks
-    path = root.joinpath(*unsafe).resolve()
+    root = os.path.abspath(root)
 
-    if os.path.commonprefix([root, path]) != str(root):
+    # Resolve relative paths but not symlinks - symlinks should be ok since their
+    # presence and where they point is under the control of the developer.
+    path = os.path.abspath(os.path.join(root, *unsafe))
+
+    if os.path.commonprefix([root, path]) != root:
         # If the common prefix is not root directory we resolved outside the root dir
         raise ValueError("Unsafe path")
 

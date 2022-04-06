@@ -2,7 +2,6 @@ import asyncio
 import threading
 import time
 from contextlib import ExitStack
-from pathlib import Path
 
 import pytest
 from playwright.async_api import Page
@@ -64,10 +63,3 @@ async def test_run(page: Page, exit_stack: ExitStack):
 def test_catch_unsafe_relative_path_traversal(tmp_path, bad_path):
     with pytest.raises(ValueError, match="Unsafe path"):
         traversal_safe_path(tmp_path, *bad_path.split("/"))
-
-
-def test_catch_unsafe_symlink_path_traversal(tmp_path):
-    symlink: Path = tmp_path / "file.txt"
-    symlink.symlink_to(tmp_path.parent / "escaped-file.txt")
-    with pytest.raises(ValueError, match="Unsafe path"):
-        traversal_safe_path(tmp_path, "file.txt")
