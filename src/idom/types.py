@@ -4,6 +4,7 @@
 - :mod:`idom.server.types`
 """
 
+from .backend.types import Location, ServerImplementation
 from .core.hooks import Context
 from .core.types import (
     ComponentConstructor,
@@ -23,7 +24,6 @@ from .core.types import (
     VdomDict,
     VdomJson,
 )
-from .server.types import Location, ServerImplementation
 
 
 __all__ = [

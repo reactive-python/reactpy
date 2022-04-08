@@ -1,7 +1,7 @@
 # :lines: 11-
 
 from idom import run
-from idom.server import tornado as tornado_server
+from idom.backend import tornado as tornado_server
 
 
 # the run() function is the entry point for examples
@@ -12,7 +12,7 @@ import tornado.ioloop
 import tornado.web
 
 from idom import component, html
-from idom.server.tornado import configure
+from idom.backend.tornado import configure
 
 
 @component

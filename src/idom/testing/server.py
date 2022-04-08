@@ -7,9 +7,9 @@ from types import TracebackType
 from typing import Any, Optional, Tuple, Type, Union
 from urllib.parse import urlencode, urlunparse
 
-from idom.server import default as default_server
-from idom.server.types import ServerImplementation
-from idom.server.utils import find_available_port
+from idom.backend import default as default_server
+from idom.backend.types import ServerImplementation
+from idom.backend.utils import find_available_port
 from idom.widgets import hotswap
 
 from .logs import LogAssertionError, capture_idom_logs, list_logged_exceptions

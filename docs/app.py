@@ -5,8 +5,8 @@ from pathlib import Path
 from sanic import Sanic, response
 
 from idom import component
+from idom.backend.sanic import Options, configure, use_request
 from idom.core.types import ComponentConstructor
-from idom.server.sanic import Options, configure, use_request
 
 from .examples import get_normalized_example_name, load_examples
 

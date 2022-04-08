@@ -1,5 +1,5 @@
 from idom import component, html, run
-from idom.server import starlette as server
+from idom.backend import starlette as server
 
 
 @component

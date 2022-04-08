@@ -1,7 +1,7 @@
 Running IDOM
 ============
 
-The simplest way to run IDOM is with the :func:`~idom.server.utils.run` function. This
+The simplest way to run IDOM is with the :func:`~idom.backend.utils.run` function. This
 is the method you'll see used throughout this documentation. However, this executes your
 application using a development server which is great for testing, but probably not what
 if you're :ref:`deploying in production <Running IDOM in Production>`. Below are some
@@ -20,10 +20,10 @@ will follow a pattern similar to the following:
 
 .. code-block::
 
-    from my_chosen_server import Application
+    from my_chosen_backend import Application
 
     from idom import component, html
-    from idom.server.my_chosen_server import configure
+    from idom.backend.my_chosen_backend import configure
 
 
     @component
@@ -151,17 +151,17 @@ respective ``configure()`` functions in the following way:
 
 .. code-block::
 
-    from idom.server.<implementation> import configure, Options
+    from idom.backend.<implementation> import configure, Options
 
     configure(app, MyComponent, Options(...))
 
-To learn more read about the options for your chosen server ``<implementation>``:
+To learn more read about the options for your chosen backend ``<implementation>``:
 
-- :class:`idom.server.fastapi.Options`
-- :class:`idom.server.flask.Options`
-- :class:`idom.server.sanic.Options`
-- :class:`idom.server.starlette.Options`
-- :class:`idom.server.tornado.Options`
+- :class:`idom.backend.fastapi.Options`
+- :class:`idom.backend.flask.Options`
+- :class:`idom.backend.sanic.Options`
+- :class:`idom.backend.starlette.Options`
+- :class:`idom.backend.tornado.Options`
 
 
 Embed in an Existing Webpage

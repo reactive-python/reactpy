@@ -12,6 +12,7 @@ from starlette.staticfiles import StaticFiles
 from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
+from idom.backend.types import Location
 from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
@@ -22,7 +23,6 @@ from idom.core.serve import (
     serve_json_patch,
 )
 from idom.core.types import RootComponentConstructor
-from idom.server.types import Location
 
 from ._asgi import serve_development_asgi
 from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
