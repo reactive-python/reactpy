@@ -48,6 +48,11 @@ Changed:
 
 - IDOM's client now uses Preact instead of React - :pull:`721`
 
+- Renamed ``idom.server`` to ``idom.backend`` - :pull:`726`
+
+  Other references to "server implementations" have been renamed to "backend
+  implementations" throughout the documentation and code.
+
 Removed:
 
 - ``redirect_root`` server option - :pull:`721`
