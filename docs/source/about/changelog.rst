@@ -23,7 +23,34 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-Nothing yet...
+Added:
+
+- Implement ``use_location()`` hook - :pull:`721`
+
+  Navigating to any route below the root of the application will be reflected in the
+  ``location.pathname``. This operates in concert with how IDOM's configured routes have
+  changed. This will ultimately work towards resolving :issue:`569`.
+
+Changed:
+
+- The routes IDOM configures on apps have changed - :pull:`721`
+
+  .. code-block:: text
+
+      prefix/_api/modules/*    web modules
+      prefix/_api/stream       websocket endpoint
+      prefix/*                 client react app
+
+  This means that IDOM's client app is available at any route below the configured
+  ``url_prefix`` besides ``prefix/_api``. The ``_api`` route will likely remain a route
+  which is reserved by IDOM. The route navigated to below the ``prefix`` will be shown
+  in ``use_location``.
+
+- IDOM's client now uses Preact instead of React - :pull:`721`
+
+Removed:
+
+- ``redirect_root`` server option - :pull:`721`
 
 
 0.38.0-a1

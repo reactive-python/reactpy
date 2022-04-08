@@ -8,7 +8,7 @@ from idom import component
 from idom.core.types import ComponentConstructor
 from idom.server.sanic import Options, configure, use_request
 
-from .examples import load_examples
+from .examples import get_normalized_example_name, load_examples
 
 
 HERE = Path(__file__).parent
@@ -26,10 +26,7 @@ def run():
     configure(
         app,
         Example(),
-        Options(
-            redirect_root=False,
-            url_prefix=IDOM_MODEL_SERVER_URL_PREFIX,
-        ),
+        Options(url_prefix=IDOM_MODEL_SERVER_URL_PREFIX),
     )
 
     app.run(
@@ -42,7 +39,8 @@ def run():
 
 @component
 def Example():
-    view_id = use_request().get_args().get("view_id")
+    raw_view_id = use_request().get_args().get("view_id")
+    view_id = get_normalized_example_name(raw_view_id)
     return _get_examples()[view_id]()
 
 

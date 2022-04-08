@@ -150,8 +150,6 @@ IDOM's various server implementations come with ``Options`` that can be passed t
 respective ``configure()`` functions. Those which are common amongst the options are:
 
 - ``url_prefix`` - prefix all routes configured by IDOM
-- ``redirect_root`` - whether to redirect the root of the application to the IDOM view
-- ``serve_static_files`` - whether to server IDOM's static files from it's default route
 
 You'd then pass these options to ``configure()`` in the following way:
 

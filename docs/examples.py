@@ -133,7 +133,7 @@ def _get_root_example_path_by_name(name: str, relative_to: str | Path | None) ->
         rel_path = rel_path.parent if rel_path.is_file() else rel_path
     else:
         rel_path = SOURCE_DIR
-    return rel_path.joinpath(*name.split("/"))
+    return rel_path.joinpath(*name.split("/")).resolve()
 
 
 class _PrintBuffer:
