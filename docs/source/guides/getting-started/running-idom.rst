@@ -147,17 +147,15 @@ Server Configuration Options
 ----------------------------
 
 IDOM's various server implementations come with ``Options`` that can be passed to their
-respective ``configure()`` functions. Those which are common amongst the options are:
-
-- ``url_prefix`` - prefix all routes configured by IDOM
-
-You'd then pass these options to ``configure()`` in the following way:
+respective ``configure()`` functions in the following way:
 
 .. code-block::
 
+    from idom.server.<implementation> import configure, Options
+
     configure(app, MyComponent, Options(...))
 
-To learn more read the description for your chosen server implementation:
+To learn more read about the options for your chosen server ``<implementation>``:
 
 - :class:`idom.server.fastapi.Options`
 - :class:`idom.server.flask.Options`
