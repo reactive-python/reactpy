@@ -13,10 +13,10 @@ Running IDOM in Production
 
 The first thing you'll need to do if you want to run IDOM in production is choose a
 backend implementation and follow its documentation on how to create and run an
-application. This is the backend :ref:`you probably chose <Officially Supported
-Backends>` when installing IDOM. Then you'll need to configure that application with an
-IDOM view. We show the basics of how to set up, and then run, each supported backend
-below, but all implementations will follow a pattern similar to the following:
+application. This is the backend :ref:`you probably chose <Built-in Backends>` when
+installing IDOM. Then you'll need to configure that application with an IDOM view. We
+show the basics of how to set up, and then run, each supported backend below, but all
+implementations will follow a pattern similar to the following:
 
 .. code-block::
 

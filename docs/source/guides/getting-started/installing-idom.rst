@@ -42,8 +42,8 @@ Once this is complete you should be able to :ref:`run IDOM <Running IDOM>` with 
 chosen implementation.
 
 
-Using Other Backends
---------------------
+Other Backends
+--------------
 
 While IDOM can run in a variety of contexts, sometimes frameworks require extra work in
 order to integrate with them. In these cases, the IDOM team distributes bindings for
@@ -96,8 +96,8 @@ run IDOM in these supported frameworks, follow the links below:
         :transparent-text-color:`Plotly Dash`
 
 
-Installing for Development
---------------------------
+For Development
+---------------
 
 If you want to contribute to the development of IDOM or modify it, you'll want to
 install a development version of IDOM. This involves cloning the repository where IDOM's
