@@ -5,6 +5,7 @@ import json
 import logging
 from dataclasses import dataclass
 from typing import Any, Dict, Tuple, Union
+from urllib import parse as urllib_parse
 from uuid import uuid4
 
 from sanic import Blueprint, Sanic, request, response
@@ -13,25 +14,26 @@ from sanic.models.asgi import ASGIScope
 from sanic_cors import CORS
 from websockets.legacy.protocol import WebSocketCommonProtocol
 
-from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import (
     RecvCoroutine,
     SendCoroutine,
+    Stop,
     VdomJsonPatch,
     serve_json_patch,
 )
 from idom.core.types import RootComponentConstructor
+from idom.server.types import Location
 
 from ._asgi import serve_development_asgi
-from .utils import CLIENT_BUILD_DIR
+from .utils import safe_client_build_dir_path, safe_web_modules_dir_path
 
 
 logger = logging.getLogger(__name__)
 
-RequestContext: type[Context[request.Request | None]] = create_context(
-    None, "RequestContext"
+ConnectionContext: type[Context[Connection | None]] = create_context(
+    None, "ConnectionContext"
 )
 
 
@@ -41,8 +43,12 @@ def configure(
     """Configure an application instance to display the given component"""
     options = options or Options()
     blueprint = Blueprint(f"idom_dispatcher_{id(app)}", url_prefix=options.url_prefix)
+
     _setup_common_routes(blueprint, options)
+
+    # this route should take priority so set up it up first
     _setup_single_view_dispatcher_route(blueprint, component)
+
     app.blueprint(blueprint)
 
 
@@ -61,14 +67,11 @@ async def serve_development_app(
     await serve_development_asgi(app, host, port, started)
 
 
-def use_request() -> request.Request:
-    """Get the current ``Request``"""
-    request = use_context(RequestContext)
-    if request is None:
-        raise RuntimeError(  # pragma: no cover
-            "No request. Are you running with a Sanic server?"
-        )
-    return request
+def use_location() -> Location:
+    """Get the current route as a string"""
+    conn = use_connection()
+    search = conn.request.query_string
+    return Location(pathname="/" + conn.path, search="?" + search if search else "")
 
 
 def use_scope() -> ASGIScope:
@@ -81,6 +84,35 @@ def use_scope() -> ASGIScope:
     return asgi_app.transport.scope
 
 
+def use_request() -> request.Request:
+    """Get the current ``Request``"""
+    return use_connection().request
+
+
+def use_connection() -> Connection:
+    """Get the current :class:`Connection`"""
+    connection = use_context(ConnectionContext)
+    if connection is None:
+        raise RuntimeError(  # pragma: no cover
+            "No connection. Are you running with a Sanic server?"
+        )
+    return connection
+
+
+@dataclass
+class Connection:
+    """A simple wrapper for holding connection information"""
+
+    request: request.Request
+    """The current request object"""
+
+    websocket: WebSocketCommonProtocol
+    """A handle to the current websocket"""
+
+    path: str
+    """The current path being served"""
+
+
 @dataclass
 class Options:
     """Options for :class:`SanicRenderServer`"""
@@ -90,9 +122,6 @@ class Options:
 
     For more information see docs for ``sanic_cors.CORS``
     """
-
-    redirect_root: bool = True
-    """Whether to redirect the root URL (with prefix) to ``index.html``"""
 
     serve_static_files: bool = True
     """Whether or not to serve static files (i.e. web modules)"""
@@ -108,33 +137,45 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
         CORS(blueprint, **cors_params)
 
     if options.serve_static_files:
-        blueprint.static("/client", str(CLIENT_BUILD_DIR))
-        blueprint.static("/modules", str(IDOM_WEB_MODULES_DIR.current))
 
-        if options.redirect_root:
+        async def single_page_app_files(
+            request: request.Request,
+            path: str = "",
+        ) -> response.HTTPResponse:
+            path = urllib_parse.unquote(path)
+            return await response.file(safe_client_build_dir_path(path))
 
-            @blueprint.route("/")  # type: ignore
-            def redirect_to_index(
-                request: request.Request,
-            ) -> response.HTTPResponse:
-                return response.redirect(
-                    f"{blueprint.url_prefix}/client/index.html?{request.query_string}"
-                )
+        blueprint.add_route(single_page_app_files, "/")
+        blueprint.add_route(single_page_app_files, "/<path:path>")
+
+        async def web_module_files(
+            request: request.Request,
+            path: str,
+            _: str = "",  # this is not used
+        ) -> response.HTTPResponse:
+            path = urllib_parse.unquote(path)
+            return await response.file(safe_web_modules_dir_path(path))
+
+        blueprint.add_route(web_module_files, "/_api/modules/<path:path>")
+        blueprint.add_route(web_module_files, "/<_:path>/_api/modules/<path:path>")
 
 
 def _setup_single_view_dispatcher_route(
     blueprint: Blueprint, constructor: RootComponentConstructor
 ) -> None:
-    @blueprint.websocket("/stream")  # type: ignore
     async def model_stream(
-        request: request.Request, socket: WebSocketCommonProtocol
+        request: request.Request, socket: WebSocketCommonProtocol, path: str = ""
     ) -> None:
         send, recv = _make_send_recv_callbacks(socket)
+        conn = Connection(request, socket, path)
         await serve_json_patch(
-            Layout(RequestContext(constructor(), value=request)),
+            Layout(ConnectionContext(constructor(), value=conn)),
             send,
             recv,
         )
+
+    blueprint.add_websocket_route(model_stream, "/_api/stream")
+    blueprint.add_websocket_route(model_stream, "/<path:path>/_api/stream")
 
 
 def _make_send_recv_callbacks(
@@ -144,6 +185,9 @@ def _make_send_recv_callbacks(
         await socket.send(json.dumps(value))
 
     async def sock_recv() -> LayoutEvent:
-        return LayoutEvent(**json.loads(await socket.recv()))
+        data = await socket.recv()
+        if data is None:
+            raise Stop()
+        return LayoutEvent(**json.loads(data))
 
     return sock_send, sock_recv

@@ -23,7 +23,7 @@ from .core.types import (
     VdomDict,
     VdomJson,
 )
-from .server.types import ServerImplementation
+from .server.types import Location, ServerImplementation
 
 
 __all__ = [
@@ -37,6 +37,7 @@ __all__ = [
     "ImportSourceDict",
     "Key",
     "LayoutType",
+    "Location",
     "RootComponentConstructor",
     "VdomAttributes",
     "VdomAttributesAndChildren",

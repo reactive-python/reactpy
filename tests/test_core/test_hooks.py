@@ -204,18 +204,18 @@ async def test_set_state_checks_identity_not_equality(display: DisplayFixture):
 
     await client_r_1_button.click()
 
-    poll_event_count.until_equals(1)
-    poll_render_count.until_equals(1)
+    await poll_event_count.until_equals(1)
+    await poll_render_count.until_equals(1)
 
     await client_r_2_button.click()
 
-    poll_event_count.until_equals(2)
-    poll_render_count.until_equals(2)
+    await poll_event_count.until_equals(2)
+    await poll_render_count.until_equals(2)
 
     await client_r_2_button.click()
 
-    poll_event_count.until_equals(3)
-    poll_render_count.until_equals(2)
+    await poll_event_count.until_equals(3)
+    await poll_render_count.until_equals(2)
 
 
 async def test_simple_input_with_use_state(display: DisplayFixture):

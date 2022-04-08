@@ -1,16 +1,17 @@
 from __future__ import annotations
 
+import asyncio
+import inspect
 import shutil
 import time
 from functools import wraps
-from inspect import iscoroutinefunction
 from typing import Any, Awaitable, Callable, Generic, Optional, TypeVar, cast
 from uuid import uuid4
 from weakref import ref
 
-from typing_extensions import ParamSpec, Protocol
+from typing_extensions import ParamSpec
 
-from idom.config import IDOM_WEB_MODULES_DIR
+from idom.config import IDOM_TESTING_DEFAULT_TIMEOUT, IDOM_WEB_MODULES_DIR
 from idom.core.events import EventHandler, to_event_handler_function
 from idom.core.hooks import LifeCycleHook, current_hook
 
@@ -24,14 +25,9 @@ def clear_idom_web_modules_dir() -> None:
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 _RC = TypeVar("_RC", covariant=True)
-_DEFAULT_TIMEOUT = 3.0
 
 
-class _UntilFunc(Protocol[_RC]):
-    def __call__(
-        self, condition: Callable[[_RC], bool], timeout: float = _DEFAULT_TIMEOUT
-    ) -> Any:
-        ...
+_DEFAULT_POLL_DELAY = 0.1
 
 
 class poll(Generic[_R]):  # noqa: N801
@@ -43,54 +39,54 @@ class poll(Generic[_R]):  # noqa: N801
         *args: _P.args,
         **kwargs: _P.kwargs,
     ) -> None:
-        self.until: _UntilFunc[_R]
-        """Check that the coroutines result meets a condition within the timeout"""
+        coro: Callable[_P, Awaitable[_R]]
+        if not inspect.iscoroutinefunction(function):
 
-        if iscoroutinefunction(function):
-            coro_function = cast(Callable[_P, Awaitable[_R]], function)
+            async def coro(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+                return cast(_R, function(*args, **kwargs))
 
-            async def coro_until(
-                condition: Callable[[_R], bool], timeout: float = _DEFAULT_TIMEOUT
-            ) -> None:
-                started_at = time.time()
-                while True:
-                    result = await coro_function(*args, **kwargs)
-                    if condition(result):
-                        break
-                    elif (time.time() - started_at) > timeout:  # pragma: no cover
-                        raise TimeoutError(
-                            f"Condition not met within {timeout} "
-                            f"seconds - last value was {result!r}"
-                        )
-
-            self.until = coro_until
         else:
-            sync_function = cast(Callable[_P, _R], function)
+            coro = cast(Callable[_P, Awaitable[_R]], function)
+        self._func = coro
+        self._args = args
+        self._kwargs = kwargs
 
-            def sync_until(
-                condition: Callable[[_R], bool] | Any, timeout: float = _DEFAULT_TIMEOUT
-            ) -> None:
-                started_at = time.time()
-                while True:
-                    result = sync_function(*args, **kwargs)
-                    if condition(result):
-                        break
-                    elif (time.time() - started_at) > timeout:  # pragma: no cover
-                        raise TimeoutError(
-                            f"Condition not met within {timeout} "
-                            f"seconds - last value was {result!r}"
-                        )
+    async def until(
+        self,
+        condition: Callable[[_R], bool],
+        timeout: float = IDOM_TESTING_DEFAULT_TIMEOUT.current,
+        delay: float = _DEFAULT_POLL_DELAY,
+    ) -> None:
+        """Check that the coroutines result meets a condition within the timeout"""
+        started_at = time.time()
+        while True:
+            await asyncio.sleep(delay)
+            result = await self._func(*self._args, **self._kwargs)
+            if condition(result):
+                break
+            elif (time.time() - started_at) > timeout:  # pragma: no cover
+                raise TimeoutError(
+                    f"Condition not met within {timeout} "
+                    f"seconds - last value was {result!r}"
+                )
 
-            self.until = sync_until
-
-    def until_is(self, right: Any, timeout: float = _DEFAULT_TIMEOUT) -> Any:
+    async def until_is(
+        self,
+        right: _R,
+        timeout: float = IDOM_TESTING_DEFAULT_TIMEOUT.current,
+        delay: float = _DEFAULT_POLL_DELAY,
+    ) -> None:
         """Wait until the result is identical to the given value"""
-        return self.until(lambda left: left is right, timeout)
+        return await self.until(lambda left: left is right, timeout, delay)
 
-    def until_equals(self, right: Any, timeout: float = _DEFAULT_TIMEOUT) -> Any:
+    async def until_equals(
+        self,
+        right: _R,
+        timeout: float = IDOM_TESTING_DEFAULT_TIMEOUT.current,
+        delay: float = _DEFAULT_POLL_DELAY,
+    ) -> None:
         """Wait until the result is equal to the given value"""
-        # not really sure why I need a type ignore comment here
-        return self.until(lambda left: left == right, timeout)  # type: ignore
+        return await self.until(lambda left: left == right, timeout, delay)
 
 
 class HookCatcher:

@@ -12,7 +12,7 @@ from tornado.httpserver import HTTPServer
 from tornado.httputil import HTTPServerRequest
 from tornado.log import enable_pretty_logging
 from tornado.platform.asyncio import AsyncIOMainLoop
-from tornado.web import Application, RedirectHandler, RequestHandler, StaticFileHandler
+from tornado.web import Application, RequestHandler, StaticFileHandler
 from tornado.websocket import WebSocketHandler
 from tornado.wsgi import WSGIContainer
 
@@ -21,12 +21,13 @@ from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
+from idom.server.types import Location
 
-from .utils import CLIENT_BUILD_DIR
+from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
 
 
-RequestContext: type[Context[HTTPServerRequest | None]] = create_context(
-    None, "RequestContext"
+ConnectionContext: type[Context[Connection | None]] = create_context(
+    None, "ConnectionContext"
 )
 
 
@@ -48,7 +49,11 @@ def configure(
     _add_handler(
         app,
         options,
-        _setup_common_routes(options) + _setup_single_view_dispatcher_route(component),
+        (
+            # this route should take priority so set up it up first
+            _setup_single_view_dispatcher_route(component)
+            + _setup_common_routes(options)
+        ),
     )
 
 
@@ -84,14 +89,11 @@ async def serve_development_app(
         await server.close_all_connections()
 
 
-def use_request() -> HTTPServerRequest:
-    """Get the current ``HTTPServerRequest``"""
-    request = use_context(RequestContext)
-    if request is None:
-        raise RuntimeError(  # pragma: no cover
-            "No request. Are you running with a Tornado server?"
-        )
-    return request
+def use_location() -> Location:
+    """Get the current route as a string"""
+    conn = use_connection()
+    search = conn.request.query
+    return Location(pathname="/" + conn.path, search="?" + search if search else "")
 
 
 def use_scope() -> dict[str, Any]:
@@ -99,12 +101,34 @@ def use_scope() -> dict[str, Any]:
     return WSGIContainer.environ(use_request())
 
 
+def use_request() -> HTTPServerRequest:
+    """Get the current ``HTTPServerRequest``"""
+    return use_connection().request
+
+
+def use_connection() -> Connection:
+    connection = use_context(ConnectionContext)
+    if connection is None:
+        raise RuntimeError(  # pragma: no cover
+            "No connection. Are you running with a Tornado server?"
+        )
+    return connection
+
+
+@dataclass
+class Connection:
+    """A simple wrapper for holding connection information"""
+
+    request: HTTPServerRequest
+    """The current request object"""
+
+    path: str
+    """The current path being served"""
+
+
 @dataclass
 class Options:
     """Render server options for :class:`TornadoRenderServer` subclasses"""
-
-    redirect_root: bool = True
-    """Whether to redirect the root URL (with prefix) to ``index.html``"""
 
     serve_static_files: bool = True
     """Whether or not to serve static files (i.e. web modules)"""
@@ -118,29 +142,25 @@ _RouteHandlerSpecs = List[Tuple[str, Type[RequestHandler], Any]]
 
 def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
     handlers: _RouteHandlerSpecs = []
+
     if options.serve_static_files:
         handlers.append(
             (
-                r"/client/(.*)",
-                StaticFileHandler,
-                {"path": str(CLIENT_BUILD_DIR)},
-            )
-        )
-        handlers.append(
-            (
-                r"/modules/(.*)",
+                r"/.*/?_api/modules/(.*)",
                 StaticFileHandler,
                 {"path": str(IDOM_WEB_MODULES_DIR.current)},
             )
         )
-        if options.redirect_root:
-            handlers.append(
-                (
-                    urljoin("/", options.url_prefix),
-                    RedirectHandler,
-                    {"url": "./client/index.html"},
-                )
+
+        # register last to give lowest priority
+        handlers.append(
+            (
+                r"/(.*)",
+                SpaStaticFileHandler,
+                {"path": str(CLIENT_BUILD_DIR)},
             )
+        )
+
     return handlers
 
 
@@ -159,11 +179,23 @@ def _setup_single_view_dispatcher_route(
 ) -> _RouteHandlerSpecs:
     return [
         (
-            "/stream",
+            r"/(.*)/_api/stream",
             ModelStreamHandler,
             {"component_constructor": constructor},
-        )
+        ),
+        (
+            r"/_api/stream",
+            ModelStreamHandler,
+            {"component_constructor": constructor},
+        ),
     ]
+
+
+class SpaStaticFileHandler(StaticFileHandler):
+    async def get(self, path: str, include_body: bool = True) -> None:
+        # Path safety is the responsibility of tornado.web.StaticFileHandler -
+        # using `safe_client_build_dir_path` is for convenience in this case.
+        return await super().get(safe_client_build_dir_path(path).name, include_body)
 
 
 class ModelStreamHandler(WebSocketHandler):
@@ -175,7 +207,7 @@ class ModelStreamHandler(WebSocketHandler):
     def initialize(self, component_constructor: ComponentConstructor) -> None:
         self._component_constructor = component_constructor
 
-    async def open(self, *args: str, **kwargs: str) -> None:
+    async def open(self, path: str = "", *args: Any, **kwargs: Any) -> None:
         message_queue: "AsyncQueue[str]" = AsyncQueue()
 
         async def send(value: VdomJsonPatch) -> None:
@@ -188,7 +220,10 @@ class ModelStreamHandler(WebSocketHandler):
         self._dispatch_future = asyncio.ensure_future(
             serve_json_patch(
                 Layout(
-                    RequestContext(self._component_constructor(), value=self.request)
+                    ConnectionContext(
+                        self._component_constructor(),
+                        value=Connection(self.request, path),
+                    )
                 ),
                 send,
                 recv,

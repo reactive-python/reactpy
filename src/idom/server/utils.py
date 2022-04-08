@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import socket
 from contextlib import closing
 from importlib import import_module
@@ -9,6 +10,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 import idom
+from idom.config import IDOM_WEB_MODULES_DIR
 from idom.types import RootComponentConstructor
 
 from .types import ServerImplementation
@@ -46,11 +48,42 @@ def run(
     host = host
     port = port or find_available_port(host)
 
-    logger.info(f"Running with {type(app).__name__!r} at http://{host}:{port}")
+    app_cls = type(app)
+    logger.info(
+        f"Running with {app_cls.__module__}.{app_cls.__name__} at http://{host}:{port}"
+    )
 
     asyncio.get_event_loop().run_until_complete(
         implementation.serve_development_app(app, host, port)
     )
+
+
+def safe_client_build_dir_path(path: str) -> Path:
+    """Prevent path traversal out of :data:`CLIENT_BUILD_DIR`"""
+    start, _, end = (path[:-1] if path.endswith("/") else path).rpartition("/")
+    file = end or start
+    final_path = traversal_safe_path(CLIENT_BUILD_DIR, file)
+    return final_path if final_path.is_file() else (CLIENT_BUILD_DIR / "index.html")
+
+
+def safe_web_modules_dir_path(path: str) -> Path:
+    """Prevent path traversal out of :data:`idom.config.IDOM_WEB_MODULES_DIR`"""
+    return traversal_safe_path(IDOM_WEB_MODULES_DIR.current, *path.split("/"))
+
+
+def traversal_safe_path(root: str | Path, *unsafe: str | Path) -> Path:
+    """Raise a ``ValueError`` if the ``unsafe`` path resolves outside the root dir."""
+    root = os.path.abspath(root)
+
+    # Resolve relative paths but not symlinks - symlinks should be ok since their
+    # presence and where they point is under the control of the developer.
+    path = os.path.abspath(os.path.join(root, *unsafe))
+
+    if os.path.commonprefix([root, path]) != root:
+        # If the common prefix is not root directory we resolved outside the root dir
+        raise ValueError("Unsafe path")
+
+    return Path(path)
 
 
 def find_available_port(

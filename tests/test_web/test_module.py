@@ -110,7 +110,7 @@ async def test_module_from_file(display: DisplayFixture):
 
     button = await display.page.wait_for_selector("#my-button")
     await button.click()
-    poll(lambda: is_clicked.current).until_is(True)
+    await poll(lambda: is_clicked.current).until_is(True)
 
 
 def test_module_from_file_source_conflict(tmp_path):

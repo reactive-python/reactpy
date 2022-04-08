@@ -112,7 +112,7 @@ async def test_script_from_src(display: DisplayFixture):
             return html.div(
                 html.div({"id": "run-count", "data-value": 0}),
                 html.script(
-                    {"src": f"/modules/{file_name_template.format(src_id=src_id)}"}
+                    {"src": f"/_api/modules/{file_name_template.format(src_id=src_id)}"}
                 ),
             )
 

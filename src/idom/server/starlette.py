@@ -4,14 +4,12 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Awaitable, Callable, Dict, Tuple, Union
 
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
-from starlette.requests import Request
-from starlette.responses import RedirectResponse
 from starlette.staticfiles import StaticFiles
-from starlette.types import Scope
+from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from idom.config import IDOM_WEB_MODULES_DIR
@@ -24,9 +22,10 @@ from idom.core.serve import (
     serve_json_patch,
 )
 from idom.core.types import RootComponentConstructor
+from idom.server.types import Location
 
 from ._asgi import serve_development_asgi
-from .utils import CLIENT_BUILD_DIR
+from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
 
 
 logger = logging.getLogger(__name__)
@@ -51,8 +50,11 @@ def configure(
         options: Options for configuring server behavior
     """
     options = options or Options()
+
+    # this route should take priority so set up it up first
+    _setup_single_view_dispatcher_route(options, app, constructor)
+
     _setup_common_routes(options, app)
-    _setup_single_view_dispatcher_route(options.url_prefix, app, constructor)
 
 
 def create_development_app() -> Starlette:
@@ -70,6 +72,19 @@ async def serve_development_app(
     await serve_development_asgi(app, host, port, started)
 
 
+def use_location() -> Location:
+    """Get the current route as a string"""
+    scope = use_scope()
+    pathname = "/" + scope["path_params"].get("path", "")
+    search = scope["query_string"].decode()
+    return Location(pathname, "?" + search if search else "")
+
+
+def use_scope() -> Scope:
+    """Get the current ASGI scope dictionary"""
+    return use_websocket().scope
+
+
 def use_websocket() -> WebSocket:
     """Get the current WebSocket object"""
     websocket = use_context(WebSocketContext)
@@ -78,11 +93,6 @@ def use_websocket() -> WebSocket:
             "No websocket. Are you running with a Starllette server?"
         )
     return websocket
-
-
-def use_scope() -> Scope:
-    """Get the current ASGI scope dictionary"""
-    return use_websocket().scope
 
 
 @dataclass
@@ -94,9 +104,6 @@ class Options:
 
     For more information see docs for ``starlette.middleware.cors.CORSMiddleware``
     """
-
-    redirect_root: bool = True
-    """Whether to redirect the root URL (with prefix) to ``index.html``"""
 
     serve_static_files: bool = True
     """Whether or not to serve static files (i.e. web modules)"""
@@ -116,39 +123,38 @@ def _setup_common_routes(options: Options, app: Starlette) -> None:
     # This really should be added to the APIRouter, but there's a bug in Starlette
     # BUG: https://github.com/tiangolo/fastapi/issues/1469
     url_prefix = options.url_prefix
+
     if options.serve_static_files:
-        app.mount(
-            f"{url_prefix}/client",
-            StaticFiles(
-                directory=str(CLIENT_BUILD_DIR),
-                html=True,
-                check_dir=True,
-            ),
-            name="idom_client_files",
-        )
-        app.mount(
-            f"{url_prefix}/modules",
-            StaticFiles(
-                directory=str(IDOM_WEB_MODULES_DIR.current),
-                html=True,
-                check_dir=False,
-            ),
-            name="idom_web_module_files",
-        )
+        wm_dir = IDOM_WEB_MODULES_DIR.current
+        web_module_files = StaticFiles(directory=wm_dir, html=True, check_dir=False)
+        app.mount(url_prefix + "/_api/modules", web_module_files)
+        app.mount(url_prefix + "/{_:path}/_api/modules", web_module_files)
 
-        if options.redirect_root:
+        # register this last so it takes least priority
+        app.mount(url_prefix + "/", single_page_app_files())
 
-            @app.route(f"{url_prefix}/")
-            def redirect_to_index(request: Request) -> RedirectResponse:
-                return RedirectResponse(
-                    f"{url_prefix}/client/index.html?{request.query_params}"
-                )
+
+def single_page_app_files() -> Callable[..., Awaitable[None]]:
+    static_files_app = StaticFiles(
+        directory=CLIENT_BUILD_DIR,
+        html=True,
+        check_dir=False,
+    )
+
+    async def spa_app(scope: Scope, receive: Receive, send: Send) -> None:
+        # Path safety is the responsibility of starlette.staticfiles.StaticFiles -
+        # using `safe_client_build_dir_path` is for convenience in this case.
+        path = safe_client_build_dir_path(scope["path"]).name
+        return await static_files_app({**scope, "path": path}, receive, send)
+
+    return spa_app
 
 
 def _setup_single_view_dispatcher_route(
-    url_prefix: str, app: Starlette, constructor: RootComponentConstructor
+    options: Options, app: Starlette, constructor: RootComponentConstructor
 ) -> None:
-    @app.websocket_route(f"{url_prefix}/stream")
+    @app.websocket_route(options.url_prefix + "/_api/stream")
+    @app.websocket_route(options.url_prefix + "/{path:path}/_api/stream")
     async def model_stream(socket: WebSocket) -> None:
         await socket.accept()
         send, recv = _make_send_recv_callbacks(socket)

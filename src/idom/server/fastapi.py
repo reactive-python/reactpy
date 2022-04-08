@@ -9,6 +9,10 @@ serve_development_app = starlette.serve_development_app
 """Alias for :func:`idom.server.starlette.serve_development_app`"""
 
 # see: https://github.com/idom-team/flake8-idom-hooks/issues/12
+use_location = starlette.use_location  # noqa: ROH101
+"""Alias for :func:`idom.server.starlette.use_location`"""
+
+# see: https://github.com/idom-team/flake8-idom-hooks/issues/12
 use_scope = starlette.use_scope  # noqa: ROH101
 """Alias for :func:`idom.server.starlette.use_scope`"""
 

@@ -1,11 +1,12 @@
 import asyncio
 import sys
 import threading
+import time
 from asyncio import wait_for
 from contextlib import contextmanager
 from typing import Iterator
 
-from idom.testing import poll
+from idom.config import IDOM_TESTING_DEFAULT_TIMEOUT
 
 
 TIMEOUT = 3
@@ -37,7 +38,14 @@ def open_event_loop(as_current: bool = True) -> Iterator[asyncio.AbstractEventLo
         finally:
             if as_current:
                 asyncio.set_event_loop(None)
-            poll(loop.is_running).until_is(False)
+            start = time.time()
+            while loop.is_running():
+                if (time.time() - start) > IDOM_TESTING_DEFAULT_TIMEOUT.current:
+                    raise TimeoutError(
+                        "Failed to stop loop after "
+                        f"{IDOM_TESTING_DEFAULT_TIMEOUT.current} seconds"
+                    )
+                time.sleep(0.1)
             loop.close()
 
 

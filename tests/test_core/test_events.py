@@ -221,4 +221,4 @@ async def test_can_stop_event_propogation(display: DisplayFixture):
     inner = await display.page.wait_for_selector("#inner")
     await inner.click()
 
-    poll(lambda: clicked.current).until_is(True)
+    await poll(lambda: clicked.current).until_is(True)
