@@ -4,7 +4,7 @@
 - :mod:`idom.server.types`
 """
 
-from .backend.types import Location, ServerImplementation
+from .backend.types import BackendImplementation, Location
 from .core.hooks import Context
 from .core.types import (
     ComponentConstructor,
@@ -45,5 +45,5 @@ __all__ = [
     "VdomChildren",
     "VdomDict",
     "VdomJson",
-    "ServerImplementation",
+    "BackendImplementation",
 ]

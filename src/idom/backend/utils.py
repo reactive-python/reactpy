@@ -13,7 +13,7 @@ import idom
 from idom.config import IDOM_WEB_MODULES_DIR
 from idom.types import RootComponentConstructor
 
-from .types import ServerImplementation
+from .types import BackendImplementation
 
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ def run(
     component: RootComponentConstructor,
     host: str = "127.0.0.1",
     port: int | None = None,
-    implementation: ServerImplementation[Any] | None = None,
+    implementation: BackendImplementation[Any] | None = None,
 ) -> None:
     """Run a component with a development server"""
     logger.warn(
@@ -113,7 +113,7 @@ def find_available_port(
     )
 
 
-def all_implementations() -> Iterator[ServerImplementation[Any]]:
+def all_implementations() -> Iterator[BackendImplementation[Any]]:
     """Yield all available server implementations"""
     for name in SUPPORTED_PACKAGES:
         try:
@@ -121,7 +121,7 @@ def all_implementations() -> Iterator[ServerImplementation[Any]]:
         except ImportError:  # pragma: no cover
             continue
 
-        if not isinstance(module, ServerImplementation):
+        if not isinstance(module, BackendImplementation):
             raise TypeError(  # pragma: no cover
                 f"{module.__name__!r} is an invalid implementation"
             )

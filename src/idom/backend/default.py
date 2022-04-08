@@ -5,7 +5,7 @@ from typing import Any
 
 from idom.types import RootComponentConstructor
 
-from .types import Location, ServerImplementation
+from .types import BackendImplementation, Location
 from .utils import all_implementations
 
 
@@ -45,10 +45,10 @@ def use_location() -> Location:
     return _default_implementation().use_location()
 
 
-_DEFAULT_IMPLEMENTATION: ServerImplementation[Any] | None = None
+_DEFAULT_IMPLEMENTATION: BackendImplementation[Any] | None = None
 
 
-def _default_implementation() -> ServerImplementation[Any]:
+def _default_implementation() -> BackendImplementation[Any]:
     """Get the first available server implementation"""
     global _DEFAULT_IMPLEMENTATION
 

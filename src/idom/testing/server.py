@@ -8,7 +8,7 @@ from typing import Any, Optional, Tuple, Type, Union
 from urllib.parse import urlencode, urlunparse
 
 from idom.backend import default as default_server
-from idom.backend.types import ServerImplementation
+from idom.backend.types import BackendImplementation
 from idom.backend.utils import find_available_port
 from idom.widgets import hotswap
 
@@ -36,7 +36,7 @@ class ServerFixture:
         host: str = "127.0.0.1",
         port: Optional[int] = None,
         app: Any | None = None,
-        implementation: ServerImplementation[Any] | None = None,
+        implementation: BackendImplementation[Any] | None = None,
         options: Any | None = None,
     ) -> None:
         self.host = host

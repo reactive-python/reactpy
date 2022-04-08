@@ -13,7 +13,7 @@ _App = TypeVar("_App")
 
 
 @runtime_checkable
-class ServerImplementation(Protocol[_App]):
+class BackendImplementation(Protocol[_App]):
     """Common interface for IDOM's builti-in server implementations"""
 
     def configure(

@@ -12,11 +12,11 @@ Running IDOM in Production
 --------------------------
 
 The first thing you'll need to do if you want to run IDOM in production is choose a
-server implementation and follow its documentation on how to create and run an
-application. This is the server :ref:`you probably chose <Officially Supported Servers>`
-when installing IDOM. Then you'll need to configure that application with an IDOM view.
-We should the basics how how to run each supported server below, but all implementations
-will follow a pattern similar to the following:
+backend implementation and follow its documentation on how to create and run an
+application. This is the backend :ref:`you probably chose <Officially Supported
+Backends>` when installing IDOM. Then you'll need to configure that application with an
+IDOM view. We show the basics of how to set up, and then run, each supported backend
+below, but all implementations will follow a pattern similar to the following:
 
 .. code-block::
 
@@ -34,8 +34,8 @@ will follow a pattern similar to the following:
     app = Application()
     configure(app, HelloWorld)
 
-You'll then run this ``app`` using a `ASGI <https://asgi.readthedocs.io/en/latest/>`__ or
-`WSGI <https://wsgi.readthedocs.io/>`__ server from the command line.
+You'll then run this ``app`` using an `ASGI <https://asgi.readthedocs.io/en/latest/>`__
+or `WSGI <https://wsgi.readthedocs.io/>`__ server from the command line.
 
 
 Running with `FastAPI <https://fastapi.tiangolo.com>`__
@@ -43,8 +43,8 @@ Running with `FastAPI <https://fastapi.tiangolo.com>`__
 
 .. idom:: _examples/run_fastapi
 
-Then assuming you put this in ``main.py``, you can run the ``app`` using `Uvicorn
-<https://www.uvicorn.org/>`__:
+Then assuming you put this in ``main.py``, you can run the ``app`` using the `Uvicorn
+<https://www.uvicorn.org/>`__ ASGI server:
 
 .. code-block:: bash
 
@@ -56,8 +56,8 @@ Running with `Flask <https://palletsprojects.com/p/flask/>`__
 
 .. idom:: _examples/run_flask
 
-Then assuming you put this in ``main.py``, you can run the ``app`` using `Gunicorn
-<https://gunicorn.org/>`__:
+Then assuming you put this in ``main.py``, you can run the ``app`` using the `Gunicorn
+<https://gunicorn.org/>`__ WSGI server:
 
 .. code-block:: bash
 
@@ -82,8 +82,8 @@ Running with `Starlette <https://www.starlette.io/>`__
 
 .. idom:: _examples/run_starlette
 
-Then assuming you put this in ``main.py``, you can run the application using `Uvicorn
-<https://www.uvicorn.org/>`__:
+Then assuming you put this in ``main.py``, you can run the application using the
+`Uvicorn <https://www.uvicorn.org/>`__ ASGI server:
 
 .. code-block:: bash
 
@@ -143,10 +143,10 @@ Errors will be displayed where the uppermost component is located in the view:
 .. idom:: _examples/debug_error_example
 
 
-Server Configuration Options
-----------------------------
+Backend Configuration Options
+-----------------------------
 
-IDOM's various server implementations come with ``Options`` that can be passed to their
+IDOM's various backend implementations come with ``Options`` that can be passed to their
 respective ``configure()`` functions in the following way:
 
 .. code-block::
@@ -187,8 +187,8 @@ embedding one the examples from this documentation into your own webpage:
 .. note::
 
     For more information on how to use the client see the :ref:`Javascript API`
-    reference. Or if you need to, your can :ref:`write your own server implementation
-    <writing your own server>`.
+    reference. Or if you need to, your can :ref:`write your own backend implementation
+    <writing your own backend>`.
 
 As mentioned though, this is connecting to the server that is hosting this
 documentation. If you want to connect to a view from your own server, you'll need to
