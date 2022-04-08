@@ -6,7 +6,7 @@ from typing import Any, MutableMapping, TypeVar
 
 from typing_extensions import Protocol, runtime_checkable
 
-from idom.types import RootComponentConstructor
+from idom.core.types import RootComponentConstructor
 
 
 _App = TypeVar("_App")
