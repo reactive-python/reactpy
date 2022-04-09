@@ -6,7 +6,7 @@ Following ReactJS styling, you combine web elements _(such as `div`, `img`, `h1`
 
 When needed, IDOM can [use JavaScript components](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#dynamically-loaded-components) directly from NPM. Components can also be [developed in JavaScript](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#custom-javascript-components) for additional flexibility.
 
-IDOM's ecosystem independent design allows components to be reused across a variety of web frameworks, such as `FastAPI`, `Flask`, `Sanic`, `Tornado`, [`Django`](https://github.com/idom-team/django-idom), [`Plotly-Dash`](https://github.com/idom-team/idom-dash), and [`Jupyter`](https://github.com/idom-team/idom-jupyter).
+IDOM's ecosystem independent design allows components to be reused across a variety of web frameworks. Pre-existing support is included for popular frameworks such as `Flask`, `FastAPI`, `Sanic`, `Tornado`, [`Django`](https://github.com/idom-team/django-idom), [`Plotly-Dash`](https://github.com/idom-team/idom-dash), and [`Jupyter`](https://github.com/idom-team/idom-jupyter). However, any Python framework with WebSocket support can be adapted to utilize IDOM.
 
 # At a Glance
 
