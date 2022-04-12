@@ -2,11 +2,16 @@
 
 IDOM is a Python micro-framework that links your web framework of choice to a ReactJS frontend, allowing you to create **interactive websites without needing JavaScript!**
 
-Following ReactJS styling, web elements _(such as `div`, `img`, `h1`)_ are combined into [reusable "components"](https://idom-docs.herokuapp.com/docs/guides/creating-interfaces/your-first-components/index.html#parametrizing-components). These components can utilize [hooks](https://idom-docs.herokuapp.com/docs/reference/hooks-api.html) and [events](https://idom-docs.herokuapp.com/docs/guides/adding-interactivity/responding-to-events/index.html#async-event-handlers) to create infinitely complex web pages.
+Following ReactJS styling, web elements are combined into [reusable "components"](https://idom-docs.herokuapp.com/docs/guides/creating-interfaces/your-first-components/index.html#parametrizing-components). These components can utilize [hooks](https://idom-docs.herokuapp.com/docs/reference/hooks-api.html) and [events](https://idom-docs.herokuapp.com/docs/guides/adding-interactivity/responding-to-events/index.html#async-event-handlers) to create infinitely complex web pages.
 
 When needed, IDOM can [use JavaScript components](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#dynamically-loaded-components) directly from NPM. Components can also be [developed in JavaScript](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#custom-javascript-components) for additional flexibility.
 
-IDOM's ecosystem independent design allows components to be reused across a variety of web frameworks. Pre-existing support is included for popular frameworks such as `Flask`, `FastAPI`, `Sanic`, `Tornado`, [`Django`](https://github.com/idom-team/django-idom), [`Plotly-Dash`](https://github.com/idom-team/idom-dash), and [`Jupyter`](https://github.com/idom-team/idom-jupyter). However, any Python framework with WebSocket support can be adapted to utilize IDOM.
+IDOM's ecosystem independent design allows components to be reused across a variety of web frameworks. Pre-existing support is included for many popular Python frameworks, however, any framework with WebSocket support can be adapted to utilize IDOM. 
+
+| Internal Support | External Support |
+| --- | --- |
+|  [`Flask`, `FastAPI`, `Sanic`, `Tornado`](https://idom-docs.herokuapp.com/docs/guides/getting-started/installing-idom.html#officially-supported-servers) | [`Django`](https://github.com/idom-team/django-idom), [`Plotly-Dash`](https://github.com/idom-team/idom-dash), [`Jupyter`](https://github.com/idom-team/idom-jupyter) |
+
 
 # At a Glance
 
