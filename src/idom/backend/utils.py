@@ -17,7 +17,7 @@ from .types import BackendImplementation
 
 
 logger = logging.getLogger(__name__)
-CLIENT_BUILD_DIR = Path(idom.__file__).parent / "client"
+CLIENT_BUILD_DIR = Path(idom.__file__).parent / "_client"
 
 SUPPORTED_PACKAGES = (
     "starlette",
