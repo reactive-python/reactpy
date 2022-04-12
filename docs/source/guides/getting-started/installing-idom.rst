@@ -1,26 +1,26 @@
 Installing IDOM
 ===============
 
-Installing IDOM with ``pip`` will typically require doing so alongside a built-in
-backend implementation. This can be done by specifying an installation extra using
-square brackets. For example, if we want to run IDOM using the `Starlette
-<https://www.starlette.io/>`__ backend we would run:
+You will typically ``pip`` install IDOM to alongside one of it's natively supported
+backends. For example, if we want to run IDOM using the `Starlette
+<https://www.starlette.io/>`__ backend you would run
 
 .. code-block:: bash
 
     pip install "idom[starlette]"
 
 If you want to install a "pure" version of IDOM without a backend implementation you can
-do so without any installation extras. You might do this if you wanted to use a backend
-which does not have built-in support or if you wanted to manually pin your dependencies:
+do so without any installation extras. You might do this if you wanted to :ref:`use a
+custom backend <using a custom backend>` or if you wanted to manually pin your
+dependencies:
 
 .. code-block:: bash
 
     pip install idom
 
 
-Built-in Backends
------------------
+Native Backends
+---------------
 
 IDOM includes built-in support for a variety backend implementations. To install the
 required dependencies for each you should substitute ``starlette`` from the ``pip

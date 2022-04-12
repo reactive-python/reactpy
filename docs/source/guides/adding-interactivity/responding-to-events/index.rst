@@ -100,7 +100,7 @@ Event Data Serialization
 
 Not all event data is serialized. The most notable example of this is the lack of a
 ``target`` key in the dictionary sent back to the handler. Instead, data which is not
-inherhently JSON serializable must be treated on a case-by-case basis. A simple case
+inherently JSON serializable must be treated on a case-by-case basis. A simple case
 to demonstrate this is the ``currentTime`` attribute of ``audio`` and ``video``
 elements. Normally this would be accessible via ``event.target.currentTime``, but here
 it's simply passed in under the key ``currentTime``:

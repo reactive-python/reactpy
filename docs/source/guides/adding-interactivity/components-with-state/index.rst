@@ -22,7 +22,7 @@ does not work:
 
     Try clicking the button to see that it does not cause a change.
 
-After clicking "Next", if you check the server logs, you'll discover an
+After clicking "Next", if you check your web server's logs, you'll discover an
 ``UnboundLocalError`` error. It turns out that in this case, the ``index = index + 1``
 statement is similar to `trying to set global variables
 <https://stackoverflow.com/questions/9264763/dont-understand-why-unboundlocalerror-occurs-closure>`__.
