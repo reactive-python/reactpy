@@ -32,12 +32,6 @@ Still aren't sure what you have to offer? Just :discussion-type:`ask us <questio
 we'll help you make your first contribution.
 
 
-.. note::
-
-    If you have any questions during set up or development post on our
-    :discussion-type:`discussion board <question>` and we'll answer them.
-
-
 Making a Pull Request
 ---------------------
 
@@ -53,21 +47,25 @@ about how to get started. To make a change to IDOM you'll do the following:
     You use a ``git clone`` command to copy the code from GitHub to your computer.
 
 `Create a new branch <https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging>`__:
-    You'll ``git checkout -b your-first-branch`` to create a new space to start your work
+    You'll ``git checkout -b your-first-branch`` to create a new space to start your work.
 
 :ref:`Prepare your Development Environment <Development Environment>`:
-    We explain in more detail below how to install all IDOM's dependencies
+    We explain in more detail below how to install all IDOM's dependencies.
 
 `Push your changes <https://docs.github.com/en/github/using-git/pushing-commits-to-a-remote-repository>`__:
     Once you've made changes to IDOM, you'll ``git push`` them to your fork.
+
+:ref:`Create a changelog entry <Creating a changelog entry>`:
+    Record your changes in the :ref:`changelog` so we can publicize them in the next release.
 
 `Create a Pull Request <https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request>`__:
     We'll review your changes, run some :ref:`tests <Running The Tests>` and
     :ref:`equality checks <Code Quality Checks>` and, with any luck, accept your request.
     At that point your contribution will be merged into the main codebase!
 
+
 Creating a Changelog Entry
-..........................
+--------------------------
 
 As part of your pull request, you'll want to edit the `Changelog
 <https://github.com/idom-team/idom/blob/main/docs/source/about/changelog.rst>`__ by
@@ -112,6 +110,11 @@ might look like:
 Development Environment
 -----------------------
 
+.. note::
+
+    If you have any questions during set up or development post on our
+    :discussion-type:`discussion board <question>` and we'll answer them.
+
 In order to develop IDOM locally you'll first need to install the following:
 
 .. list-table::
@@ -120,7 +123,7 @@ In order to develop IDOM locally you'll first need to install the following:
     *   - What to Install
         - How to Install
 
-    *   - Git_
+    *   - Git
         - https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 
     *   - Python >= 3.7
