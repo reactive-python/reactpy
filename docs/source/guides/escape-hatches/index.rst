@@ -6,8 +6,8 @@ Escape Hatches
 
     javascript-components
     distributing-javascript
-    writing-your-own-server
-    writing-your-own-client
+    using-a-custom-backend
+    using-a-custom-client
 
 .. note::
 

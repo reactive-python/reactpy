@@ -16,12 +16,12 @@ from tornado.web import Application, RequestHandler, StaticFileHandler
 from tornado.websocket import WebSocketHandler
 from tornado.wsgi import WSGIContainer
 
+from idom.backend.types import Location
 from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
-from idom.server.types import Location
 
 from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
 

@@ -1,4 +1,5 @@
-from . import config, html, logging, sample, server, types, web
+from . import backend, config, html, logging, sample, types, web
+from .backend.utils import run
 from .core import hooks
 from .core.component import component
 from .core.events import event
@@ -15,7 +16,6 @@ from .core.hooks import (
 from .core.layout import Layout
 from .core.serve import Stop
 from .core.vdom import vdom
-from .server.utils import run
 from .utils import Ref, html_to_vdom
 from .widgets import hotswap
 
@@ -37,7 +37,7 @@ __all__ = [
     "Ref",
     "run",
     "sample",
-    "server",
+    "backend",
     "Stop",
     "types",
     "use_callback",

@@ -2,7 +2,7 @@ from sanic import Sanic
 from sanic.response import file
 
 from idom import component, html
-from idom.server.sanic import Options, configure
+from idom.backend.sanic import Options, configure
 
 
 app = Sanic("MyApp")

@@ -6,11 +6,11 @@ from contextlib import ExitStack
 import pytest
 from playwright.async_api import Page
 
+from idom.backend import flask as flask_implementation
+from idom.backend.utils import find_available_port
+from idom.backend.utils import run as sync_run
+from idom.backend.utils import traversal_safe_path
 from idom.sample import SampleApp as SampleApp
-from idom.server import flask as flask_implementation
-from idom.server.utils import find_available_port
-from idom.server.utils import run as sync_run
-from idom.server.utils import traversal_safe_path
 from tests.tooling.loop import open_event_loop
 
 

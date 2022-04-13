@@ -106,9 +106,9 @@ Section 2: Running IDOM
 
 Once you've :ref:`installed IDOM <Installing IDOM>`, you'll want to learn how to run an
 application. Throughout most of the examples in this documentation, you'll see the
-:func:`~idom.server.utils.run` function used. While it's convenient tool for development
-it shouldn't be used in production settings - it's slow, and could leak secrets through
-debug log messages.
+:func:`~idom.backend.utils.run` function used. While it's convenient tool for
+development it shouldn't be used in production settings - it's slow, and could leak
+secrets through debug log messages.
 
 .. idom:: _examples/hello_world
 

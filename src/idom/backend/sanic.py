@@ -14,6 +14,7 @@ from sanic.models.asgi import ASGIScope
 from sanic_cors import CORS
 from websockets.legacy.protocol import WebSocketCommonProtocol
 
+from idom.backend.types import Location
 from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import (
@@ -24,7 +25,6 @@ from idom.core.serve import (
     serve_json_patch,
 )
 from idom.core.types import RootComponentConstructor
-from idom.server.types import Location
 
 from ._asgi import serve_development_asgi
 from .utils import safe_client_build_dir_path, safe_web_modules_dir_path

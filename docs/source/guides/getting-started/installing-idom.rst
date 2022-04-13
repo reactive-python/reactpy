@@ -1,28 +1,28 @@
 Installing IDOM
 ===============
 
-Installing IDOM with ``pip`` will generally require doing so alongside a supported
-server implementation. This can be done by specifying an installation extra using square
-brackets. For example, if we want to run IDOM using `Starlette
-<https://www.starlette.io/>`__ we would run:
+You will typically ``pip`` install IDOM to alongside one of it's natively supported
+backends. For example, if we want to run IDOM using the `Starlette
+<https://www.starlette.io/>`__ backend you would run
 
 .. code-block:: bash
 
     pip install "idom[starlette]"
 
-If you want to install a "pure" version of IDOM without a server implementation you can
-do so without any installation extras. You might do this if you wanted to user a server
-which is not officially supported or if you wanted to manually pin your dependencies:
+If you want to install a "pure" version of IDOM without a backend implementation you can
+do so without any installation extras. You might do this if you wanted to :ref:`use a
+custom backend <using a custom backend>` or if you wanted to manually pin your
+dependencies:
 
 .. code-block:: bash
 
     pip install idom
 
 
-Officially Supported Servers
-----------------------------
+Native Backends
+---------------
 
-IDOM includes built-in support for a variety web server implementations. To install the
+IDOM includes built-in support for a variety backend implementations. To install the
 required dependencies for each you should substitute ``starlette`` from the ``pip
 install`` command above with one of the options below:
 
@@ -39,15 +39,15 @@ If you need to, you can install more than one option by separating them with com
     pip install "idom[fastapi,flask,sanic,starlette,tornado]"
 
 Once this is complete you should be able to :ref:`run IDOM <Running IDOM>` with your
-chosen server implementation.
+chosen implementation.
 
 
-Installing In Other Frameworks
-------------------------------
+Other Backends
+--------------
 
-While IDOM can run in a variety of contexts, sometimes web frameworks require extra work
-in order to integrate with them. In these cases, the IDOM team distributes bindings for
-various frameworks as separate Python packages. For documentation on how to install and
+While IDOM can run in a variety of contexts, sometimes frameworks require extra work in
+order to integrate with them. In these cases, the IDOM team distributes bindings for
+those frameworks as separate Python packages. For documentation on how to install and
 run IDOM in these supported frameworks, follow the links below:
 
 .. raw:: html
@@ -96,8 +96,8 @@ run IDOM in these supported frameworks, follow the links below:
         :transparent-text-color:`Plotly Dash`
 
 
-Installing for Development
---------------------------
+For Development
+---------------
 
 If you want to contribute to the development of IDOM or modify it, you'll want to
 install a development version of IDOM. This involves cloning the repository where IDOM's

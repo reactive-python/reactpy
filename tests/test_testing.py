@@ -4,9 +4,9 @@ import os
 import pytest
 
 from idom import testing
+from idom.backend import starlette as starlette_implementation
 from idom.logging import ROOT_LOGGER
 from idom.sample import SampleApp as SampleApp
-from idom.server import starlette as starlette_implementation
 
 
 def test_assert_idom_logged_does_not_supress_errors():

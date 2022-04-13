@@ -6,15 +6,15 @@ from typing import Any, MutableMapping, TypeVar
 
 from typing_extensions import Protocol, runtime_checkable
 
-from idom.types import RootComponentConstructor
+from idom.core.types import RootComponentConstructor
 
 
 _App = TypeVar("_App")
 
 
 @runtime_checkable
-class ServerImplementation(Protocol[_App]):
-    """Common interface for IDOM's builti-in server implementations"""
+class BackendImplementation(Protocol[_App]):
+    """Common interface for built-in web server/framework integrations"""
 
     def configure(
         self,

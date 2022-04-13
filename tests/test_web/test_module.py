@@ -4,7 +4,7 @@ import pytest
 from sanic import Sanic
 
 import idom
-from idom.server import sanic as sanic_implementation
+from idom.backend import sanic as sanic_implementation
 from idom.testing import (
     DisplayFixture,
     ServerFixture,

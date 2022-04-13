@@ -14,7 +14,7 @@ from sphinx_autobuild.cli import (
 )
 
 from docs.app import IDOM_MODEL_SERVER_URL_PREFIX, Example, make_app, reload_examples
-from idom.server.sanic import Options, configure, serve_development_app
+from idom.backend.sanic import Options, configure, serve_development_app
 from idom.testing import clear_idom_web_modules_dir
 
 

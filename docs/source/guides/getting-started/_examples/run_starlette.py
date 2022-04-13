@@ -1,7 +1,7 @@
 # :lines: 11-
 
 from idom import run
-from idom.server import starlette as starlette_server
+from idom.backend import starlette as starlette_server
 
 
 # the run() function is the entry point for examples
@@ -11,7 +11,7 @@ starlette_server.configure = lambda _, cmpt: run(cmpt)
 from starlette.applications import Starlette
 
 from idom import component, html
-from idom.server.starlette import configure
+from idom.backend.starlette import configure
 
 
 @component
