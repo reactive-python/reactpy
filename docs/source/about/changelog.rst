@@ -23,6 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+No changes.
+
+
+v0.38.0-a3
+----------
+:octicon:`milestone` *released on 2022-04-15*
+
 **Changed**
 
 - :pull:`730` - Layout context management is not async
