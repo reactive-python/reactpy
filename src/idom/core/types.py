@@ -51,7 +51,6 @@ class ComponentType(Protocol):
         """Whether the new component instance should be rendered."""
 
 
-_Self = TypeVar("_Self")
 _Render = TypeVar("_Render", covariant=True)
 _Event = TypeVar("_Event", contravariant=True)
 
@@ -66,11 +65,14 @@ class LayoutType(Protocol[_Render, _Event]):
     async def deliver(self, event: _Event) -> None:
         """Relay an event to its respective handler"""
 
-    def __enter__(self: _Self) -> _Self:
+    async def __aenter__(self) -> LayoutType[_Render, _Event]:
         """Prepare the layout for its first render"""
 
-    def __exit__(
-        self, exc_type: Type[Exception], exc_value: Exception, traceback: TracebackType
+    async def __aexit__(
+        self,
+        exc_type: Type[Exception],
+        exc_value: Exception,
+        traceback: TracebackType,
     ) -> Optional[bool]:
         """Clean up the view after its final render"""
 
