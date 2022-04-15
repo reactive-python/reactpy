@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from pathlib import Path
 
 import semver
@@ -42,6 +43,7 @@ def update_js_versions(new_version: str) -> None:
 
 
 def update_changelog_version(new_version: str) -> None:
+    today = datetime.now().strftime("%Y-%m-%d")
     old_content = CHANGELOG_FILE.read_text().split("\n")
 
     new_content = []
@@ -53,8 +55,12 @@ def update_changelog_version(new_version: str) -> None:
         this_line, next_line = old_content[index : index + 2]
         if this_line == "Unreleased" and next_line == ("-" * len(this_line)):
             new_content.append(_UNRELEASED_SECTION)
-            new_content.append(new_version)
-            new_content.append("-" * len(new_version))
+
+            title = f"v{new_version}"
+            new_content.append(title)
+            new_content.append("-" * len(title))
+            new_content.append(f":octicon:`milestone` *released on {today}*")
+
             new_content.extend(old_content[index + 2 :])
             break
         else:
@@ -69,7 +75,7 @@ _UNRELEASED_SECTION = """\
 Unreleased
 ----------
 
-Nothing yet...
+No changes.
 
 """
 
