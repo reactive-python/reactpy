@@ -23,6 +23,12 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+Nothing yet...
+
+
+0.38.0-a2
+---------
+
 Added:
 
 - Implement ``use_location()`` hook - :pull:`721`
