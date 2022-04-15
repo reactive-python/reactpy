@@ -23,7 +23,9 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-Nothing yet...
+Changed:
+
+- :pull:`730` - Layout context management is not async
 
 
 0.38.0-a2
@@ -444,7 +446,7 @@ See :ref:`Custom JavaScript Components` for details on the new interface.
 - Make docs section margins larger - :issue:`450`
 - Search broken in docs - :issue:`443`
 - Move src/idom/client out of Python package - :issue:`429`
-- Use composition instead of classes with Layout and LifeCycleHook  - :issue:`412`
+- Use composition instead of classes async with Layout and LifeCycleHook  - :issue:`412`
 - Remove Python language extension - :issue:`282`
 - Add keys to models so React doesn't complain of child arrays requiring them -
   :issue:`255`

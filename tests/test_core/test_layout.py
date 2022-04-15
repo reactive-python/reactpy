@@ -76,7 +76,7 @@ async def test_simple_layout():
         tag, set_state_hook.current = idom.hooks.use_state("div")
         return idom.vdom(tag)
 
-    with idom.Layout(SimpleComponent()) as layout:
+    async with idom.Layout(SimpleComponent()) as layout:
         path, changes = await render_json_patch(layout)
 
         assert path == ""
@@ -102,7 +102,7 @@ async def test_component_can_return_none():
     def SomeComponent():
         return None
 
-    with idom.Layout(SomeComponent()) as layout:
+    async with idom.Layout(SomeComponent()) as layout:
         assert (await layout.render()).new == {"tagName": ""}
 
 
@@ -120,7 +120,7 @@ async def test_nested_component_layout():
         state, child_set_state.current = idom.hooks.use_state(0)
         return idom.html.div(state)
 
-    with idom.Layout(Parent(key="p")) as layout:
+    async with idom.Layout(Parent(key="p")) as layout:
         path, changes = await render_json_patch(layout)
 
         assert path == ""
@@ -183,7 +183,7 @@ async def test_layout_render_error_has_partial_update_with_error_message():
 
     with assert_idom_logged(match_error="error from bad child"):
 
-        with idom.Layout(Main()) as layout:
+        async with idom.Layout(Main()) as layout:
             patch = await render_json_patch(layout)
             assert_same_items(
                 patch.changes,
@@ -239,7 +239,7 @@ async def test_layout_render_error_has_partial_update_without_error_message():
 
     with assert_idom_logged(match_error="error from bad child"):
 
-        with idom.Layout(Main()) as layout:
+        async with idom.Layout(Main()) as layout:
             patch = await render_json_patch(layout)
             assert_same_items(
                 patch.changes,
@@ -282,7 +282,7 @@ async def test_render_raw_vdom_dict_with_single_component_object_as_children():
     def Child():
         return {"tagName": "div", "children": {"tagName": "h1"}}
 
-    with idom.Layout(Main()) as layout:
+    async with idom.Layout(Main()) as layout:
         patch = await render_json_patch(layout)
         assert_same_items(
             patch.changes,
@@ -337,7 +337,7 @@ async def test_components_are_garbage_collected():
     def Inner():
         return idom.html.div()
 
-    with idom.Layout(Outer()) as layout:
+    async with idom.Layout(Outer()) as layout:
         await layout.render()
 
         assert len(live_components) == 2
@@ -380,7 +380,7 @@ async def test_root_component_life_cycle_hook_is_garbage_collected():
     def Root():
         return idom.html.div()
 
-    with idom.Layout(Root()) as layout:
+    async with idom.Layout(Root()) as layout:
         await layout.render()
 
         assert len(live_hooks) == 1
@@ -419,7 +419,7 @@ async def test_life_cycle_hooks_are_garbage_collected():
     def Inner():
         return idom.html.div()
 
-    with idom.Layout(Outer()) as layout:
+    async with idom.Layout(Outer()) as layout:
         await layout.render()
 
         assert len(live_hooks) == 2
@@ -456,7 +456,7 @@ async def test_double_updated_component_is_not_double_rendered():
         run_count.current += 1
         return idom.html.div()
 
-    with idom.Layout(AnyComponent()) as layout:
+    async with idom.Layout(AnyComponent()) as layout:
         await layout.render()
 
         assert run_count.current == 1
@@ -488,7 +488,7 @@ async def test_update_path_to_component_that_is_not_direct_child_is_correct():
     def Child():
         return idom.html.div()
 
-    with idom.Layout(Parent()) as layout:
+    async with idom.Layout(Parent()) as layout:
         await layout.render()
 
         hook.latest.schedule_render()
@@ -502,7 +502,7 @@ async def test_log_on_dispatch_to_missing_event_handler(caplog):
     def SomeComponent():
         return idom.html.div()
 
-    with idom.Layout(SomeComponent()) as layout:
+    async with idom.Layout(SomeComponent()) as layout:
         await layout.deliver(LayoutEvent(target="missing", data=[]))
 
     assert re.match(
@@ -546,7 +546,7 @@ async def test_model_key_preserves_callback_identity_for_common_elements(caplog)
 
         return idom.html.div(children)
 
-    with idom.Layout(MyComponent()) as layout:
+    async with idom.Layout(MyComponent()) as layout:
         await layout.render()
         for i in range(3):
             event = LayoutEvent(good_handler.target, [])
@@ -597,7 +597,7 @@ async def test_model_key_preserves_callback_identity_for_components():
 
         return idom.html.button({"onClick": callback, "id": "good"}, "good")
 
-    with idom.Layout(RootComponent()) as layout:
+    async with idom.Layout(RootComponent()) as layout:
         await layout.render()
         for _ in range(3):
             event = LayoutEvent(good_handler.target, [])
@@ -619,7 +619,7 @@ async def test_component_can_return_another_component_directly():
     def Inner():
         return idom.html.div("hello")
 
-    with idom.Layout(Outer()) as layout:
+    async with idom.Layout(Outer()) as layout:
         update = await render_json_patch(layout)
         assert_same_items(
             update.changes,
@@ -658,7 +658,7 @@ async def test_hooks_for_keyed_components_get_garbage_collected():
             registered_finalizers.add(finalizer_id)
         return idom.html.div(finalizer_id)
 
-    with idom.Layout(Outer()) as layout:
+    async with idom.Layout(Outer()) as layout:
         await layout.render()
 
         pop_item.current()
@@ -686,7 +686,7 @@ async def test_event_handler_at_component_root_is_garbage_collected():
         event_handler.current = weakref(button["eventHandlers"]["onClick"].function)
         return button
 
-    with idom.Layout(HasEventHandlerAtRoot()) as layout:
+    async with idom.Layout(HasEventHandlerAtRoot()) as layout:
         await layout.render()
 
         for i in range(3):
@@ -708,7 +708,7 @@ async def test_event_handler_deep_in_component_layout_is_garbage_collected():
         event_handler.current = weakref(button["eventHandlers"]["onClick"].function)
         return idom.html.div(idom.html.div(button))
 
-    with idom.Layout(HasNestedEventHandler()) as layout:
+    async with idom.Layout(HasNestedEventHandler()) as layout:
         await layout.render()
 
         for i in range(3):
@@ -733,7 +733,7 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
         else:
             return idom.html.div()
 
-    with idom.Layout(ComponentReturnsDuplicateKeys()) as layout:
+    async with idom.Layout(ComponentReturnsDuplicateKeys()) as layout:
         with assert_idom_logged(
             error_type=ValueError,
             match_error=r"Duplicate keys \['duplicate'\] at '/children/0'",
@@ -768,7 +768,7 @@ async def test_keyed_components_preserve_hook_on_parent_update():
     def Inner():
         return idom.html.div()
 
-    with idom.Layout(Outer()) as layout:
+    async with idom.Layout(Outer()) as layout:
         await layout.render()
         old_inner_hook = inner_hook.latest
 
@@ -790,7 +790,7 @@ async def test_log_error_on_bad_event_handler():
 
     with assert_idom_logged(match_error="bad event handler"):
 
-        with idom.Layout(ComponentWithBadEventHandler()) as layout:
+        async with idom.Layout(ComponentWithBadEventHandler()) as layout:
             await layout.render()
             event = LayoutEvent(bad_handler.target, [])
             await layout.deliver(event)
@@ -815,7 +815,7 @@ async def test_schedule_render_from_unmounted_hook():
     with assert_idom_logged(
         r"Did not render component with model state ID .*? - component already unmounted",
     ):
-        with idom.Layout(Parent()) as layout:
+        async with idom.Layout(Parent()) as layout:
             await layout.render()
 
             old_hook = child_hook.latest
@@ -859,7 +859,7 @@ async def test_elements_and_components_with_the_same_key_can_be_interchanged():
 
         return idom.html.div(name)
 
-    with idom.Layout(Root()) as layout:
+    async with idom.Layout(Root()) as layout:
         await layout.render()
 
         assert effects == ["mount x"]
@@ -894,7 +894,7 @@ async def test_layout_does_not_copy_element_children_by_key():
             ]
         )
 
-    with idom.Layout(SomeComponent()) as layout:
+    async with idom.Layout(SomeComponent()) as layout:
         await layout.render()
 
         set_items.current([2, 3])
@@ -926,7 +926,7 @@ async def test_changing_key_of_parent_element_unmounts_children():
         state.current = idom.hooks.use_state(random.random)[0]
         return idom.html.div()
 
-    with idom.Layout(Root()) as layout:
+    async with idom.Layout(Root()) as layout:
         await layout.render()
 
         for i in range(5):
@@ -955,7 +955,7 @@ async def test_switching_node_type_with_event_handlers():
         handler = component_static_handler.use(lambda: None)
         return html.button({"onAnotherEvent": handler})
 
-    with idom.Layout(Root()) as layout:
+    async with idom.Layout(Root()) as layout:
         await layout.render()
 
         assert element_static_handler.target in layout._event_handlers
@@ -1001,7 +1001,7 @@ async def test_switching_component_definition():
         use_effect(lambda: lambda: second_used_state.set_current(None))
         return html.div()
 
-    with idom.Layout(Root()) as layout:
+    async with idom.Layout(Root()) as layout:
         await layout.render()
 
         assert first_used_state.current == "first"
@@ -1060,7 +1060,7 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
             key=child_key,
         )
 
-    with idom.Layout(Parent()) as layout:
+    async with idom.Layout(Parent()) as layout:
         await layout.render()
         await did_call_effect.wait()
         assert effect_calls_without_state == ["some-key", "key-0"]
@@ -1088,7 +1088,7 @@ async def test_changing_key_of_component_resets_state():
     def Child():
         use_state(lambda: did_init_state.set_current(did_init_state.current + 1))
 
-    with Layout(Root()) as layout:
+    async with Layout(Root()) as layout:
         await layout.render()
         assert did_init_state.current == 1
 
@@ -1113,7 +1113,7 @@ async def test_changing_event_handlers_in_the_next_render():
             {event_name: event_handler.use(lambda: did_trigger.set_current(True))}
         )
 
-    with Layout(Root()) as layout:
+    async with Layout(Root()) as layout:
         await layout.render()
         await layout.deliver(LayoutEvent(event_handler.target, []))
         assert did_trigger.current
@@ -1142,7 +1142,7 @@ async def test_change_element_to_string_causes_unmount():
     def Child():
         use_effect(lambda: lambda: did_unmount.set_current(True))
 
-    with Layout(Root()) as layout:
+    async with Layout(Root()) as layout:
         await layout.render()
 
         set_toggle.current()
@@ -1177,7 +1177,7 @@ async def test_component_should_render_always_true():
         render_count.current += 1
         return html.div()
 
-    with idom.Layout(Root()) as layout:
+    async with idom.Layout(Root()) as layout:
         for _ in range(4):
             await layout.render()
             root_hook.latest.schedule_render()
@@ -1199,7 +1199,7 @@ async def test_component_should_render_always_false():
         render_count.current += 1
         return html.div()
 
-    with idom.Layout(Root()) as layout:
+    async with idom.Layout(Root()) as layout:
         for _ in range(4):
             await layout.render()
             root_hook.latest.schedule_render()
@@ -1223,7 +1223,7 @@ async def test_component_error_in_should_render_is_handled_gracefully():
         error_type=ValueError,
         match_error="The error message",
     ):
-        with idom.Layout(Root()) as layout:
+        async with idom.Layout(Root()) as layout:
             await layout.render()
             root_hook.latest.schedule_render()
             await layout.render()

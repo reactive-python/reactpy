@@ -39,7 +39,7 @@ async def serve_json_patch(
     recv: RecvCoroutine,
 ) -> None:
     """Run a dispatch loop for a single view instance"""
-    with layout:
+    async with layout:
         try:
             async with create_task_group() as task_group:
                 task_group.start_soon(_single_outgoing_loop, layout, send)

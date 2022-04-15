@@ -92,15 +92,15 @@ might look like:
 
     **Added**
 
-    - A really cool new feature - :pull:`123`
+    - :pull:`123` - A really cool new feature
 
     **Changed**
 
-    - The behavior of some existing feature - :pull:`456`
+    - :pull:`456` - The behavior of some existing feature
 
     **Fixed**
 
-    - Some really bad bug - :issue:`789`
+    - :issue:`789` - Some really bad bug
 
 .. note::
 
