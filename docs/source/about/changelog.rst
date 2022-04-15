@@ -534,7 +534,7 @@ lead to confusing bugs.
 
 - warn if key is param of component render function - :pull:`421`
 - fix :issue:`417` and :issue:`413` - :pull:`418`
-- add changelog entry for :ref:`0.30.0` - :pull:`415`
+- add changelog entry for :ref:`v0.30.0` - :pull:`415`
 
 
 v0.30.0
