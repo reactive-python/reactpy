@@ -23,25 +23,25 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-Changed:
+**Changed**
 
 - :pull:`730` - Layout context management is not async
 
 
-0.38.0-a2
----------
+v0.38.0-a2
+----------
+:octicon:`milestone` *released on 2022-04-14*
 
-Added:
+**Added**
 
-- Implement ``use_location()`` hook - :pull:`721`
+- :pull:`721` - Implement ``use_location()`` hook. Navigating to any route below the
+  root of the application will be reflected in the ``location.pathname``. This operates
+  in concert with how IDOM's configured routes have changed. This will ultimately work
+  towards resolving :issue:`569`.
 
-  Navigating to any route below the root of the application will be reflected in the
-  ``location.pathname``. This operates in concert with how IDOM's configured routes have
-  changed. This will ultimately work towards resolving :issue:`569`.
+**Changed**
 
-Changed:
-
-- The routes IDOM configures on apps have changed - :pull:`721`
+- :pull:`721` - The routes IDOM configures on apps have changed
 
   .. code-block:: text
 
@@ -54,94 +54,98 @@ Changed:
   which is reserved by IDOM. The route navigated to below the ``prefix`` will be shown
   in ``use_location``.
 
-- IDOM's client now uses Preact instead of React - :pull:`721`
+- :pull:`721` - IDOM's client now uses Preact instead of React
 
-- Renamed ``idom.server`` to ``idom.backend`` - :pull:`726`
+- :pull:`726` - Renamed ``idom.server`` to ``idom.backend``. Other references to "server
+  implementations" have been renamed to "backend implementations" throughout the
+  documentation and code.
 
-  Other references to "server implementations" have been renamed to "backend
-  implementations" throughout the documentation and code.
+**Removed**
 
-Removed:
-
-- ``redirect_root`` server option - :pull:`721`
-
-
-0.38.0-a1
----------
-
-Changed:
-
-- How IDOM integrates with servers - :pull:`703`
-
-  - ``idom.run`` no longer accepts an app instance to discourage use outside of testing
-  - IDOM's server implementations now provide ``configure()`` functions instead
-  - ``idom.testing`` has been completely reworked in order to support async web drivers
-
-Added:
-
-- Access to underlying server requests via contexts - :issue:`669`
-
-Removed:
-
-- ``idom.widgets.multiview`` since basic routing view ``use_scope`` is now possible
-- All ``SharedClientStateServer`` implementations.
-- All ``PerClientStateServer`` implementations have been replaced with ``configure()``
-
-Fixed:
-
-- IDOM's test suite no longer uses sync web drivers - :issue:`591`
-- Updated Sanic requirement to ``>=21`` - :issue:`678`
-- How we advertise ``idom.run`` - :issue:`657`
+- :pull:`721` - ``redirect_root`` server option
 
 
-0.37.2
-------
+v0.38.0-a1
+----------
+:octicon:`milestone` *released on 2022-03-27*
 
-Changed:
+**Changed**
 
-- The name of ``proto`` modules to ``types`` and added a top level ``idom.types`` module
-  - :pull:`701`
+- :pull:`703` - How IDOM integrates with servers. ``idom.run`` no longer accepts an app
+  instance to discourage use outside of testing. IDOM's server implementations now
+  provide ``configure()`` functions instead. ``idom.testing`` has been completely
+  reworked in order to support async web drivers
+- :pull:`703` - ``PerClientStateServer`` has been functionally replaced by ``configure``
 
-Fixed:
+**Added**
 
-- A typo caused IDOM to use the insecure ``ws`` web-socket protocol on pages loaded with
-  ``https`` instead of the secure ``wss`` protocol - :pull:`716`
+- :issue:`669` - Access to underlying server requests via contexts
+
+**Removed**
+
+- :issue:`669` - Removed ``idom.widgets.multiview`` since basic routing view ``use_scope`` is
+  now possible as well as all ``SharedClientStateServer`` implementations.
+
+**Fixed**
+
+- :issue:`591` - IDOM's test suite no longer uses sync web drivers
+- :issue:`678` - Updated Sanic requirement to ``>=21``
+- :issue:`657` - How we advertise ``idom.run``
 
 
-0.37.1
-------
+v0.37.2
+-------
+:octicon:`milestone` *released on 2022-03-27*
+
+**Changed**
+
+- :pull:`701` - The name of ``proto`` modules to ``types`` and added a top level
+  ``idom.types`` module
+
+**Fixed**
+
+- :pull:`716` - A typo caused IDOM to use the insecure ``ws`` web-socket protocol on
+  pages loaded with ``https`` instead of the secure ``wss`` protocol
+
+
+v0.37.1
+-------
+:octicon:`milestone` *released on 2022-03-05*
 
 No changes.
 
 
-0.37.1-a2
----------
+v0.37.1-a2
+----------
+:octicon:`milestone` *released on 2022-03-02*
 
-Fixed:
+**Fixed:**
 
-- Revert :pull:`694` and by making ``value`` uncontrolled client-side - :issue:`684`
-
-
-0.37.1-a1
----------
-
-Fixed:
-
-- ``onChange`` event for inputs missing key strokes - :issue:`684`
+- :issue:`684` - Revert :pull:`694` and by making ``value`` uncontrolled client-side
 
 
-0.37.0
-------
+v0.37.1-a1
+----------
+:octicon:`milestone` *released on 2022-02-28*
 
-Added:
+**Fixed:**
 
-- Support for keys in HTML fragments - :issue:`682`
-- Use Context Hook - :pull:`585`
+- :issue:`684` - ``onChange`` event for inputs missing key strokes
 
-Fixed:
 
-- React warning about set state in unmounted component - :issue:`690`
-- Missing reset of schedule_render_later flag - :pull:`688`
+v0.37.0
+-------
+:octicon:`milestone` *released on 2022-02-27*
+
+**Added:**
+
+- :issue:`682` - Support for keys in HTML fragments
+- :pull:`585` - Use Context Hook
+
+**Fixed:**
+
+- :issue:`690` - React warning about set state in unmounted component
+- :pull:`688` - Missing reset of schedule_render_later flag
 
 ----
 
@@ -149,8 +153,9 @@ Releases below do not use the "Keep a Changelog" style guidelines.
 
 ----
 
-0.36.3
-------
+v0.36.3
+-------
+:octicon:`milestone` *released on 2022-02-18*
 
 Misc bug fixes along with a minor improvement that allows components to return ``None``
 to render nothing.
@@ -166,16 +171,18 @@ to render nothing.
 - Fix 663 - :pull:`667`
 
 
-0.36.2
-------
+v0.36.2
+-------
+:octicon:`milestone` *released on 2022-02-02*
 
 Hot fix for newly introduced ``DeprecatedOption``:
 
 - :commit:`c146dfb264cbc3d2256a62efdfe9ccf62c795b01`
 
 
-0.36.1
-------
+v0.36.1
+-------
+:octicon:`milestone` *released on 2022-02-02*
 
 Includes bug fixes and renames the configuration option ``IDOM_WED_MODULES_DIR`` to
 ``IDOM_WEB_MODULES_DIR`` with a corresponding deprecation warning.
@@ -191,8 +198,9 @@ Includes bug fixes and renames the configuration option ``IDOM_WED_MODULES_DIR``
 - rename IDOM_WED_MODULES_DIR to IDOM_WEB_MODULES_DIR - :pull:`638`
 
 
-0.36.0
-------
+v0.36.0
+-------
+:octicon:`milestone` *released on 2022-01-30*
 
 This release includes an important fix for errors produced after :pull:`623` was merged.
 In addition there is not a new ``http.script`` element which can behave similarly to a
@@ -215,8 +223,9 @@ before the content of the script changes.
 - implement script element - :pull:`617`
 
 
-0.35.4
-------
+v0.35.4
+-------
+:octicon:`milestone` *released on 2022-01-27*
 
 Keys for elements at the root of a component were not being tracked. Thus key changes
 for elements at the root did not trigger unmounts.
@@ -230,8 +239,9 @@ for elements at the root did not trigger unmounts.
 - fix issue with key-based identity - :pull:`623`
 
 
-0.35.3
-------
+v0.35.3
+-------
+:octicon:`milestone` *released on 2022-01-27*
 
 As part of :pull:`614`, elements which changed type were not deeply unmounted. This
 behavior is probably undesirable though since the state for children of the element
@@ -242,8 +252,9 @@ in question would persist (probably unexpectedly).
 - Always deeply unmount - :pull:`620`
 
 
-0.35.2
-------
+v0.35.2
+-------
+:octicon:`milestone` *released on 2022-01-26*
 
 This release includes several bug fixes. The most significant of which is the ability to
 change the type of an element in the try (i.e. to and from being a component) without
@@ -264,16 +275,18 @@ turns out to be quite common and useful.
 - fix double file extension - :pull:`606`
 
 
-0.35.1
-------
+v0.35.1
+-------
+:octicon:`milestone` *released on 2022-01-18*
 
 Re-add accidentally deleted ``py.typed`` file to distribution. See `PEP-561
 <https://www.python.org/dev/peps/pep-0561/#packaging-type-information>`__ for info on
 this marker file.
 
 
-0.35.0
-------
+v0.35.0
+-------
+:octicon:`milestone` *released on 2022-01-18*
 
 The highlight of this release is that the default :ref:`"key" <Organizing Items With
 Keys>` of all elements will be their index amongst their neighbors. Previously this
@@ -312,8 +325,9 @@ on :ref:`Organizing Items With Keys`.
 - add more standard html elements - :pull:`554`
 
 
-0.34.0
-------
+v0.34.0
+-------
+:octicon:`milestone` *released on 2021-12-16*
 
 This release contains a variety of minor fixes and improvements which came out of
 rewriting the documentation. The most significant of these changes is the remove of
@@ -339,8 +353,9 @@ event dictionary. As part of this change we also add ``event["currentTarget"]`` 
 - add option to replace existing when creating a module - :pull:`516`
 
 
-0.33.3
-------
+v0.33.3
+-------
+:octicon:`milestone` *released on 2021-10-08*
 
 Contains a small number of bug fixes and improvements. The most significant change is
 the addition of a warning stating that `IDOM_FEATURE_INDEX_AS_DEFAULT_KEY=1` will become
@@ -362,8 +377,9 @@ specifying `exports_default=True` as a parameter. A
 - Fix 502 - :pull:`503`
 
 
-0.33.2
-------
+v0.33.2
+-------
+:octicon:`milestone` *released on 2021-09-05*
 
 A release to fix a memory leak caused by event handlers that were not being removed
 when components updated.
@@ -373,8 +389,9 @@ when components updated.
 - Non-root component event handlers cause memory leaks - :issue:`510`
 
 
-0.33.1
-------
+v0.33.1
+-------
+:octicon:`milestone` *released on 2021-09-02*
 
 A hot fix for a regression introduced in ``0.33.0`` where the root element of the layout
 could not be updated. See :issue:`498` for more info. A regression test for this will
@@ -385,8 +402,9 @@ be introduced in a future release.
 - Fix 498 pt1 - :pull:`501`
 
 
-0.33.0
-------
+v0.33.0
+-------
+:octicon:`milestone` *released on 2021-09-02*
 
 The most significant fix in this release is for a regression which manifested in
 :issue:`480`, :issue:`489`, and :issue:`451` which resulted from an issue in the way
@@ -428,8 +446,9 @@ yet.
 - Update issue form - :pull:`471`
 
 
-0.32.0
-------
+v0.32.0
+-------
+:octicon:`milestone` *released on 2021-08-20*
 
 In addition to a variety of bug fixes and other minor improvements, there's a breaking
 change to the custom component interface - instead of exporting multiple functions that
@@ -464,8 +483,9 @@ See :ref:`Custom JavaScript Components` for details on the new interface.
 - fix #429 - move client JS to top of src/ dir - :pull:`430`
 
 
-0.31.0
-------
+v0.31.0
+-------
+:octicon:`milestone` *released on 2021-07-14*
 
 The :class:`~idom.core.layout.Layout` is now a prototype, and ``Layout.update`` is no
 longer a public API. This is combined with a much more significant refactor of the
@@ -500,8 +520,9 @@ Instead, a unique ID is generated internally which is associated with the
 - fix #419 and #412 - :pull:`422`
 
 
-0.30.1
-------
+v0.30.1
+-------
+:octicon:`milestone` *released on 2021-07-13*
 
 Removes the usage of the :func:`id` function for generating unique ideas because there
 were situations where the IDs bound to the lifetime of an object are problematic. Also
@@ -513,11 +534,12 @@ lead to confusing bugs.
 
 - warn if key is param of component render function - :pull:`421`
 - fix :issue:`417` and :issue:`413` - :pull:`418`
-- add changelog entry for :ref:`0.30.0` - :pull:`415`
+- add changelog entry for :ref:`v0.30.0` - :pull:`415`
 
 
-0.30.0
-------
+v0.30.0
+-------
+:octicon:`milestone` *released on 2021-06-28*
 
 With recent changes to the custom component interface, it's now possible to remove all
 runtime reliance on NPM. Doing so has many virtuous knock-on effects:
@@ -560,8 +582,9 @@ desired library from a CDN.
 - Remove all runtime reliance on NPM - :pull:`398`
 
 
-0.29.0
-------
+v0.29.0
+-------
+:octicon:`milestone` *released on 2021-06-20*
 
 Contains breaking changes, the most significant of which are:
 
@@ -591,8 +614,9 @@ Contains breaking changes, the most significant of which are:
 - correctly serialize File object - :commit:`a2398dc`
 
 
-0.28.0
-------
+v0.28.0
+-------
+:octicon:`milestone` *released on 2021-06-01*
 
 Includes a wide variety of improvements:
 
@@ -645,8 +669,9 @@ and breaking changes, the most significant of which are:
 - pass children as props to mount() - :commit:`9494bc0`
 
 
-0.27.0
-------
+v0.27.0
+-------
+:octicon:`milestone` *released on 2021-05-14*
 
 Introduces changes to the interface for custom Javascript components. This now allows
 JS modules to export a ``mount(element, component, props)`` function which can be used
@@ -662,8 +687,9 @@ variety of component implementations.
 - federate modules with mount function - :commit:`bf63a62`
 
 
-0.26.0
-------
+v0.26.0
+-------
+:octicon:`milestone` *released on 2021-05-07*
 
 A collection of minor fixes and changes that, as a whole, add up to something requiring
 a minor release. The most significant addition is a fix for situations where a
@@ -681,8 +707,9 @@ update deletes the original button.
 - rename daemon to run_in_thread + misc - :commit:`417b687`
 
 
-0.25.0
-------
+v0.25.0
+-------
+:octicon:`milestone` *released on 2021-04-30*
 
 Completely refactors layout dispatcher by switching from a class-based approach to one
 that leverages pure functions. While the logic itself isn't any simpler, it was easier
@@ -701,8 +728,9 @@ several bugs that had cropped up related to improper usage of ``anyio``.
 - refactor dispatchers - :commit:`ce8e060`
 
 
-0.24.0
-------
+v0.24.0
+-------
+:octicon:`milestone` *released on 2021-04-18*
 
 This release contains an update that allows components and elements to have "identity".
 That is, their state can be preserved across updates. Before this point, only the state
@@ -732,16 +760,18 @@ to allow users to enable this behavior early.
 - fixes: #331 - add roadmap to docs - :commit:`4226c12`
 
 
-0.23.1
-------
+v0.23.1
+-------
+:octicon:`milestone` *released on 2021-04-02*
 
 **Highlighted Commits:**
 
 - fix non-deterministic return order in install() - :commit:`494d5c2`
 
 
-0.23.0
-------
+v0.23.0
+-------
+:octicon:`milestone` *released on 2021-04-01*
 
 **Highlighted Commits:**
 

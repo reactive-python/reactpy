@@ -82,8 +82,9 @@ the following categories, and add it to the :ref:`Unreleased` section of the cha
 - **Security** - in case of vulnerabilities.
 
 If one of the sections doesn't exist, add it. If it does already, add a bullet point
-under the relevant section. Here's a short example of what an unreleased changelog entry
-might look like:
+under the relevant section. Your description should begin with a reference to the
+relevant issue or pull request number. Here's a short example of what an unreleased
+changelog entry might look like:
 
 .. code-block:: rst
 
@@ -102,7 +103,7 @@ might look like:
 
     - :issue:`789` - Some really bad bug
 
-.. note::
+.. hint::
 
     ``:issue:`` and ``:pull:`` refer to issue and pull request ticket numbers.
 

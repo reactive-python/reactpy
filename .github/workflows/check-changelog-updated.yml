@@ -1,0 +1,20 @@
+name: Check Changelog
+on:
+  pull_request:
+    types: [assigned, opened, synchronize, reopened, labeled, unlabeled]
+    branches:
+      - main
+jobs:
+  build:
+    name: Check Actions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Changelog check
+        uses: Zomzog/changelog-checker@v1.2.0
+        with:
+          fileName: docs/source/about/changelog.rst
+          noChangelogLabel: "flag: no changelog" # default `no changelog`
+          checkNotification: Simple # default `Detailed`
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
