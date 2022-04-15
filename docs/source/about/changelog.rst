@@ -23,7 +23,9 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-Nothing yet...
+Changed:
+
+- :pull:`730` - Layout context management is not async
 
 
 0.38.0-a2
