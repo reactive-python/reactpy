@@ -337,13 +337,12 @@ def tag(session: Session) -> None:
 
     changelog_file = ROOT / "docs" / "source" / "about" / "changelog.rst"
     for line in changelog_file.read_text().splitlines():
-        if line == version:
+        if line == f"v{version}":
             session.log(f"Found changelog section for version {version}")
             break
     else:
         session.error(
-            f"No changelog entry for {version} in {changelog_file} - "
-            f"make sure you have a title section called {version}."
+            f"Something went wrong - could not find a title section for {version}"
         )
 
     if session.interactive:
