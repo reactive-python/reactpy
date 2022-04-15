@@ -61,9 +61,6 @@ class LayoutEvent(NamedTuple):
     """A list of event data passed to the event handler."""
 
 
-_Self = TypeVar("_Self", bound="Layout")
-
-
 class Layout:
     """Responsible for "rendering" components. That is, turning them into VDOM."""
 
@@ -84,7 +81,7 @@ class Layout:
             raise TypeError(f"Expected a ComponentType, not {type(root)!r}.")
         self.root = root
 
-    def __enter__(self: _Self) -> _Self:
+    async def __aenter__(self) -> Layout:
         # create attributes here to avoid access before entering context manager
         self._event_handlers: EventHandlerDict = {}
 
@@ -98,7 +95,7 @@ class Layout:
 
         return self
 
-    def __exit__(self, *exc: Any) -> None:
+    async def __aexit__(self, *exc: Any) -> None:
         root_csid = self._root_life_cycle_state_id
         root_model_state = self._model_states_by_life_cycle_state_id[root_csid]
         self._unmount_model_states([root_model_state])
