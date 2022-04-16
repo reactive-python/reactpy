@@ -107,6 +107,7 @@ class DeprecatedOption(Option[_O]):  # pragma: no cover
         warnings.warn(
             f"{self.name!r} has been renamed to {self._new_opt.name!r}",
             DeprecationWarning,
+            stacklevel=3,
         )
         return self._new_opt.current
 

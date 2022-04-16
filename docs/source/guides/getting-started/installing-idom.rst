@@ -42,8 +42,8 @@ Once this is complete you should be able to :ref:`run IDOM <Running IDOM>` with 
 chosen implementation.
 
 
-Other Backends
---------------
+Other Platforms
+---------------
 
 While IDOM can run in a variety of contexts, sometimes frameworks require extra work in
 order to integrate with them. In these cases, the IDOM team distributes bindings for

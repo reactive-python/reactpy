@@ -1,17 +1,18 @@
 # IDOM &middot; [![Tests](https://github.com/idom-team/idom/workflows/Test/badge.svg?event=push)](https://github.com/idom-team/idom/actions?query=workflow%3ATest) [![PyPI Version](https://img.shields.io/pypi/v/idom.svg)](https://pypi.python.org/pypi/idom) [![License](https://img.shields.io/badge/License-MIT-purple.svg)](https://github.com/idom-team/idom/blob/main/LICENSE)
 
-IDOM is a Python micro-framework that links your web framework of choice to a ReactJS frontend, allowing you to create **interactive websites without needing JavaScript!**
+IDOM is a Python library for creating user interfaces.
 
-Following ReactJS styling, web elements are combined into [reusable "components"](https://idom-docs.herokuapp.com/docs/guides/creating-interfaces/your-first-components/index.html#parametrizing-components). These components can utilize [hooks](https://idom-docs.herokuapp.com/docs/reference/hooks-api.html) and [events](https://idom-docs.herokuapp.com/docs/guides/adding-interactivity/responding-to-events/index.html#async-event-handlers) to create infinitely complex web pages.
+Any application created with IDOM sits atop a foundation of
+[“components”](https://idom-docs.herokuapp.com/docs/guides/creating-interfaces/your-first-components/index.html) - reusable chunks of code built from small [elements of functionality](https://idom-docs.herokuapp.com/docs/guides/creating-interfaces/html-with-idom/index.html) like buttons, text,
+and images. Within each component you can then [add interactivity](https://idom-docs.herokuapp.com/docs/guides/adding-interactivity/index.html) through declarative state
+hooks and event handlers.
 
-When needed, IDOM can [use JavaScript components](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#dynamically-loaded-components) directly from NPM. Components can also be [developed in JavaScript](https://idom-docs.herokuapp.com/docs/guides/escape-hatches/javascript-components.html#custom-javascript-components) for additional flexibility.
-
-IDOM's ecosystem independent design allows components to be reused across a variety of web frameworks. Pre-existing support is included for many popular Python frameworks, however, any framework with WebSocket support can be adapted to utilize IDOM. 
-
-| Supported Frameworks | Supported Frameworks (External) |
-| --- | --- |
-|  [`Flask`, `FastAPI`, `Sanic`, `Tornado`](https://idom-docs.herokuapp.com/docs/guides/getting-started/installing-idom.html#officially-supported-servers) | [`Django`](https://github.com/idom-team/django-idom), [`Plotly-Dash`](https://github.com/idom-team/idom-dash), [`Jupyter`](https://github.com/idom-team/idom-jupyter) |
-
+IDOM is most commonly used to **create web-based interactive interfaces without
+writing any JavaScript!** This is done in conjunction with [supported web
+frameworks](https://idom-docs.herokuapp.com/docs/guides/getting-started/installing-idom.html#native-backends)
+like FastAPI, Flask, and Tornado, or with [other
+platforms](https://idom-docs.herokuapp.com/docs/guides/getting-started/installing-idom.html#other-platforms)
+like Jupyter, Django, and Plotly Dash.
 
 # At a Glance
 

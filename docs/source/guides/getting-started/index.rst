@@ -46,7 +46,7 @@ notebook linked below will demonstrate how to do this:
 Section 1: Installing IDOM
 --------------------------
 
-The next fastest option is to install IDOM along with a supported server (like
+The next fastest option is to install IDOM along with a supported backend (like
 ``starlette``) with ``pip``:
 
 .. code-block:: bash
