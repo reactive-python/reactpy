@@ -30,7 +30,7 @@ v0.38.1
 -------
 :octicon:`milestone` *released on 2022-04-15*
 
-Fixed:
+**Fixed**
 
 - `idom-team/idom-jupyter#22 <https://github.com/idom-team/idom-jupyter/issues/22>` -
   a missing file extension was causing a problem with WebPack.
