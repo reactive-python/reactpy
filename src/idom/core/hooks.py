@@ -611,7 +611,7 @@ class LifeCycleHook:
 
             # --- start render cycle ---
 
-            hook.affect_component_will_render()
+            hook.affect_component_will_render(...)
 
             hook.set_current()
 
