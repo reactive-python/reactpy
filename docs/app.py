@@ -25,7 +25,7 @@ def run():
 
     configure(
         app,
-        Example(),
+        Example,
         Options(url_prefix=IDOM_MODEL_SERVER_URL_PREFIX),
     )
 
