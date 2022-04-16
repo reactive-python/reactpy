@@ -2,8 +2,8 @@ from .common import HookCatcher, StaticEventHandler, clear_idom_web_modules_dir,
 from .display import DisplayFixture
 from .logs import (
     LogAssertionError,
+    assert_idom_did_log,
     assert_idom_did_not_log,
-    assert_idom_logged,
     capture_idom_logs,
 )
 from .server import ServerFixture
@@ -11,7 +11,7 @@ from .server import ServerFixture
 
 __all__ = [
     "assert_idom_did_not_log",
-    "assert_idom_logged",
+    "assert_idom_did_log",
     "capture_idom_logs",
     "clear_idom_web_modules_dir",
     "DisplayFixture",

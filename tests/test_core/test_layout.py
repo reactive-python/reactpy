@@ -17,7 +17,7 @@ from idom.core.serve import render_json_patch
 from idom.testing import (
     HookCatcher,
     StaticEventHandler,
-    assert_idom_logged,
+    assert_idom_did_log,
     capture_idom_logs,
 )
 from idom.utils import Ref
@@ -181,7 +181,7 @@ async def test_layout_render_error_has_partial_update_with_error_message():
     def BadChild():
         raise ValueError("error from bad child")
 
-    with assert_idom_logged(match_error="error from bad child"):
+    with assert_idom_did_log(match_error="error from bad child"):
 
         async with idom.Layout(Main()) as layout:
             patch = await render_json_patch(layout)
@@ -237,7 +237,7 @@ async def test_layout_render_error_has_partial_update_without_error_message():
     def BadChild():
         raise ValueError("error from bad child")
 
-    with assert_idom_logged(match_error="error from bad child"):
+    with assert_idom_did_log(match_error="error from bad child"):
 
         async with idom.Layout(Main()) as layout:
             patch = await render_json_patch(layout)
@@ -734,7 +734,7 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
             return idom.html.div()
 
     async with idom.Layout(ComponentReturnsDuplicateKeys()) as layout:
-        with assert_idom_logged(
+        with assert_idom_did_log(
             error_type=ValueError,
             match_error=r"Duplicate keys \['duplicate'\] at '/children/0'",
         ):
@@ -747,7 +747,7 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
 
         should_error = True
         hook.latest.schedule_render()
-        with assert_idom_logged(
+        with assert_idom_did_log(
             error_type=ValueError,
             match_error=r"Duplicate keys \['duplicate'\] at '/children/0'",
         ):
@@ -788,7 +788,7 @@ async def test_log_error_on_bad_event_handler():
 
         return idom.html.button({"onClick": raise_error})
 
-    with assert_idom_logged(match_error="bad event handler"):
+    with assert_idom_did_log(match_error="bad event handler"):
 
         async with idom.Layout(ComponentWithBadEventHandler()) as layout:
             await layout.render()
@@ -812,7 +812,7 @@ async def test_schedule_render_from_unmounted_hook():
         idom.hooks.use_effect(lambda: lambda: print("unmount", state))
         return idom.html.div(state)
 
-    with assert_idom_logged(
+    with assert_idom_did_log(
         r"Did not render component with model state ID .*? - component already unmounted",
     ):
         async with idom.Layout(Parent()) as layout:
@@ -1218,7 +1218,7 @@ async def test_component_error_in_should_render_is_handled_gracefully():
 
         return ComponentShouldRender(html.div(), should_render=bad_should_render)
 
-    with assert_idom_logged(
+    with assert_idom_did_log(
         match_message=r".* component failed to check if .* should be rendered",
         error_type=ValueError,
         match_error="The error message",

@@ -8,8 +8,8 @@ from idom.backend import sanic as sanic_implementation
 from idom.testing import (
     DisplayFixture,
     ServerFixture,
+    assert_idom_did_log,
     assert_idom_did_not_log,
-    assert_idom_logged,
     poll,
 )
 from idom.web.module import NAME_SOURCE, WebModule
@@ -132,7 +132,7 @@ def test_module_from_file_source_conflict(tmp_path):
     third_file = tmp_path / "third.js"
     third_file.write_text("something-different")
 
-    with assert_idom_logged(r"Existing web module .* will be replaced with"):
+    with assert_idom_did_log(r"Existing web module .* will be replaced with"):
         idom.web.module_from_file("temp", third_file)
 
 
@@ -161,7 +161,7 @@ def test_web_module_from_file_symlink_twice(tmp_path):
     file_2 = tmp_path / "temp_2.js"
     file_2.write_text("something")
 
-    with assert_idom_logged(r"Existing web module .* will be replaced with"):
+    with assert_idom_did_log(r"Existing web module .* will be replaced with"):
         idom.web.module_from_file("temp", file_2, symlink=True)
 
 
@@ -174,7 +174,7 @@ def test_web_module_from_file_replace_existing(tmp_path):
     file2 = tmp_path / "temp2.js"
     file2.write_text("something")
 
-    with assert_idom_logged(r"Existing web module .* will be replaced with"):
+    with assert_idom_did_log(r"Existing web module .* will be replaced with"):
         idom.web.module_from_file("temp", file2)
 
 
@@ -230,5 +230,5 @@ async def test_imported_components_can_render_children(display: DisplayFixture):
 
 def test_module_from_string():
     idom.web.module_from_string("temp", "old")
-    with assert_idom_logged(r"Existing web module .* will be replaced with"):
+    with assert_idom_did_log(r"Existing web module .* will be replaced with"):
         idom.web.module_from_string("temp", "new")

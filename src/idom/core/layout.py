@@ -199,7 +199,7 @@ class Layout:
             new_state.model.current = old_state.model.current
         else:
             life_cycle_hook = life_cycle_state.hook
-            life_cycle_hook.affect_component_will_render()
+            life_cycle_hook.affect_component_will_render(component)
             try:
                 life_cycle_hook.set_current()
                 try:

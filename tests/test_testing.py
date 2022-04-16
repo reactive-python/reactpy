@@ -11,20 +11,20 @@ from idom.sample import SampleApp as SampleApp
 
 def test_assert_idom_logged_does_not_supress_errors():
     with pytest.raises(RuntimeError, match="expected error"):
-        with testing.assert_idom_logged():
+        with testing.assert_idom_did_log():
             raise RuntimeError("expected error")
 
 
 def test_assert_idom_logged_message():
-    with testing.assert_idom_logged(match_message="my message"):
+    with testing.assert_idom_did_log(match_message="my message"):
         ROOT_LOGGER.info("my message")
 
-    with testing.assert_idom_logged(match_message=r".*"):
+    with testing.assert_idom_did_log(match_message=r".*"):
         ROOT_LOGGER.info("my message")
 
 
 def test_assert_idom_logged_error():
-    with testing.assert_idom_logged(
+    with testing.assert_idom_did_log(
         match_message="log message",
         error_type=ValueError,
         match_error="my value error",
@@ -38,7 +38,7 @@ def test_assert_idom_logged_error():
         AssertionError,
         match=r"Could not find a log record matching the given",
     ):
-        with testing.assert_idom_logged(
+        with testing.assert_idom_did_log(
             match_message="log message",
             error_type=ValueError,
             match_error="my value error",
@@ -53,7 +53,7 @@ def test_assert_idom_logged_error():
         AssertionError,
         match=r"Could not find a log record matching the given",
     ):
-        with testing.assert_idom_logged(
+        with testing.assert_idom_did_log(
             match_message="log message",
             error_type=ValueError,
             match_error="my value error",
@@ -68,7 +68,7 @@ def test_assert_idom_logged_error():
         AssertionError,
         match=r"Could not find a log record matching the given",
     ):
-        with testing.assert_idom_logged(
+        with testing.assert_idom_did_log(
             match_message="log message",
             error_type=ValueError,
             match_error="my value error",
@@ -85,7 +85,7 @@ def test_assert_idom_logged_assertion_error_message():
         AssertionError,
         match=r"Could not find a log record matching the given",
     ):
-        with testing.assert_idom_logged(
+        with testing.assert_idom_did_log(
             # put in all possible params full assertion error message
             match_message=r".*",
             error_type=Exception,
@@ -98,7 +98,7 @@ def test_assert_idom_logged_ignores_level():
     original_level = ROOT_LOGGER.level
     ROOT_LOGGER.setLevel(logging.INFO)
     try:
-        with testing.assert_idom_logged(match_message=r".*"):
+        with testing.assert_idom_did_log(match_message=r".*"):
             # this log would normally be ignored
             ROOT_LOGGER.debug("my message")
     finally:
