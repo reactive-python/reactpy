@@ -23,6 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+No changes.
+
+
+v0.38.0-a4
+----------
+:octicon:`milestone` *released on 2022-04-15*
+
 **Added**
 
 - :pull:`733` - ``use_debug_value`` hook
