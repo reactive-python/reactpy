@@ -23,7 +23,10 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+Fixed:
+
+- `idom-team/idom-jupyter#22 <https://github.com/idom-team/idom-jupyter/issues/22>` -
+  a missing file extension was causing a problem with WebPack.
 
 
 v0.38.0
