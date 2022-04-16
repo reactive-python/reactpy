@@ -1184,7 +1184,7 @@ async def test_use_debug_mode():
         idom.use_debug_value(f"message is {message!r}")
         return idom.html.div()
 
-    with idom.Layout(SomeComponent()) as layout:
+    async with idom.Layout(SomeComponent()) as layout:
 
         with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
             await layout.render()
@@ -1212,7 +1212,7 @@ async def test_use_debug_mode_with_factory():
         idom.use_debug_value(lambda: f"message is {message!r}")
         return idom.html.div()
 
-    with idom.Layout(SomeComponent()) as layout:
+    async with idom.Layout(SomeComponent()) as layout:
 
         with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
             await layout.render()
@@ -1238,7 +1238,7 @@ async def test_use_debug_mode_does_not_log_if_not_in_debug_mode():
         idom.use_debug_value(lambda: f"message is {message!r}")
         return idom.html.div()
 
-    with idom.Layout(SomeComponent()) as layout:
+    async with idom.Layout(SomeComponent()) as layout:
 
         with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'hello'"):
             await layout.render()
