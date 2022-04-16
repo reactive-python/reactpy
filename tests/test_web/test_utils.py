@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 import responses
 
-from idom.testing import assert_idom_logged
+from idom.testing import assert_idom_did_log
 from idom.web.utils import (
     module_name_suffix,
     resolve_module_exports_from_file,
@@ -147,7 +147,7 @@ def test_resolve_module_exports_from_source():
 
 
 def test_log_on_unknown_export_type():
-    with assert_idom_logged(match_message="Unknown export type "):
+    with assert_idom_did_log(match_message="Unknown export type "):
         assert resolve_module_exports_from_source(
             "export something unknown;", exclude_default=False
         ) == (set(), set())

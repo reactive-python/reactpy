@@ -5,10 +5,12 @@ import pytest
 
 import idom
 from idom import html
+from idom.config import IDOM_DEBUG_MODE
 from idom.core.hooks import COMPONENT_DID_RENDER_EFFECT, LifeCycleHook, current_hook
 from idom.core.layout import Layout
 from idom.core.serve import render_json_patch
-from idom.testing import DisplayFixture, HookCatcher, assert_idom_logged, poll
+from idom.testing import DisplayFixture, HookCatcher, assert_idom_did_log, poll
+from idom.testing.logs import assert_idom_did_not_log
 from idom.utils import Ref
 from tests.tooling.asserts import assert_same_items
 
@@ -553,7 +555,7 @@ async def test_error_in_effect_is_gracefully_handled(caplog):
 
         return idom.html.div()
 
-    with assert_idom_logged(match_message=r"Layout post-render effect .* failed"):
+    with assert_idom_did_log(match_message=r"Layout post-render effect .* failed"):
         async with idom.Layout(ComponentWithEffect()) as layout:
             await layout.render()  # no error
 
@@ -574,7 +576,7 @@ async def test_error_in_effect_cleanup_is_gracefully_handled(caplog):
 
         return idom.html.div()
 
-    with assert_idom_logged(match_error=r"Layout post-render effect .* failed"):
+    with assert_idom_did_log(match_error=r"Layout post-render effect .* failed"):
         async with idom.Layout(ComponentWithEffect()) as layout:
             await layout.render()
             component_hook.latest.schedule_render()
@@ -600,7 +602,7 @@ async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled():
 
         return idom.html.div()
 
-    with assert_idom_logged(
+    with assert_idom_did_log(
         match_message=r"Pre-unmount effect .*? failed",
         error_type=ValueError,
     ):
@@ -843,7 +845,7 @@ def test_bad_schedule_render_callback():
     def bad_callback():
         raise ValueError("something went wrong")
 
-    with assert_idom_logged(
+    with assert_idom_did_log(
         match_message=f"Failed to schedule render via {bad_callback}"
     ):
         LifeCycleHook(bad_callback).schedule_render()
@@ -1137,7 +1139,7 @@ async def test_error_in_effect_cleanup_is_gracefully_handled():
         hook.add_effect(COMPONENT_DID_RENDER_EFFECT, bad_effect)
         return idom.html.div()
 
-    with assert_idom_logged(
+    with assert_idom_did_log(
         match_message="Component post-render effect .*? failed",
         error_type=ValueError,
         match_error="The error message",
@@ -1168,3 +1170,80 @@ async def test_set_state_during_render():
         # there should be no more renders to perform
         with pytest.raises(asyncio.TimeoutError):
             await asyncio.wait_for(layout.render(), timeout=0.1)
+
+
+@pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="only logs in debug mode")
+async def test_use_debug_mode():
+    set_message = idom.Ref()
+    component_hook = HookCatcher()
+
+    @idom.component
+    @component_hook.capture
+    def SomeComponent():
+        message, set_message.current = idom.use_state("hello")
+        idom.use_debug_value(f"message is {message!r}")
+        return idom.html.div()
+
+    async with idom.Layout(SomeComponent()) as layout:
+
+        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
+            await layout.render()
+
+        set_message.current("bye")
+
+        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+        component_hook.latest.schedule_render()
+
+        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+
+@pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="only logs in debug mode")
+async def test_use_debug_mode_with_factory():
+    set_message = idom.Ref()
+    component_hook = HookCatcher()
+
+    @idom.component
+    @component_hook.capture
+    def SomeComponent():
+        message, set_message.current = idom.use_state("hello")
+        idom.use_debug_value(lambda: f"message is {message!r}")
+        return idom.html.div()
+
+    async with idom.Layout(SomeComponent()) as layout:
+
+        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
+            await layout.render()
+
+        set_message.current("bye")
+
+        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+        component_hook.latest.schedule_render()
+
+        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+
+@pytest.mark.skipif(IDOM_DEBUG_MODE.current, reason="logs in debug mode")
+async def test_use_debug_mode_does_not_log_if_not_in_debug_mode():
+    set_message = idom.Ref()
+
+    @idom.component
+    def SomeComponent():
+        message, set_message.current = idom.use_state("hello")
+        idom.use_debug_value(lambda: f"message is {message!r}")
+        return idom.html.div()
+
+    async with idom.Layout(SomeComponent()) as layout:
+
+        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'hello'"):
+            await layout.render()
+
+        set_message.current("bye")
+
+        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()

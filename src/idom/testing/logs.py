@@ -14,7 +14,7 @@ class LogAssertionError(AssertionError):
 
 
 @contextmanager
-def assert_idom_logged(
+def assert_idom_did_log(
     match_message: str = "",
     error_type: type[Exception] | None = None,
     match_error: str = "",
@@ -77,7 +77,7 @@ def assert_idom_did_not_log(
 ) -> Iterator[None]:
     """Assert the inverse of :func:`assert_idom_logged`"""
     try:
-        with assert_idom_logged(match_message, error_type, match_error):
+        with assert_idom_did_log(match_message, error_type, match_error):
             yield None
     except LogAssertionError:
         pass

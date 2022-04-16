@@ -24,10 +24,11 @@ from typing import (
 
 from typing_extensions import Protocol
 
+from idom.config import IDOM_DEBUG_MODE
 from idom.utils import Ref
 
 from ._thread_local import ThreadLocal
-from .types import Key, VdomDict
+from .types import ComponentType, Key, VdomDict
 from .vdom import vdom
 
 
@@ -202,6 +203,40 @@ def use_effect(
         return None
     else:
         return add_effect
+
+
+def use_debug_value(
+    message: Any | Callable[[], Any],
+    dependencies: Sequence[Any] | ellipsis | None = ...,
+) -> None:
+    """Log debug information when the given message changes.
+
+    .. note::
+        This hook only logs if :data:`~idom.config.IDOM_DEBUG_MODE` is active.
+
+    Unlike other hooks, a message is considered to have changed if the old and new
+    values are ``!=``. Because this comparison is performed on every render of the
+    component, it may be worth considering the performance cost in some situations.
+
+    Parameters:
+        message:
+            The value to log or a memoized function for generating the value.
+        dependencies:
+            Dependencies for the memoized function. The message will only be recomputed
+            if the identity of any value in the given sequence changes (i.e. their
+            :func:`id` is different). By default these are inferred based on local
+            variables that are referenced by the given function.
+    """
+    if not IDOM_DEBUG_MODE.current:
+        return  # pragma: no cover
+
+    old: Ref[Any] = _use_const(lambda: Ref(object()))
+    memo_func = message if callable(message) else lambda: message
+    new = use_memo(memo_func, dependencies)
+
+    if old.current != new:
+        old.current = new
+        logger.debug(f"{current_hook().component} {new}")
 
 
 def create_context(
@@ -576,7 +611,7 @@ class LifeCycleHook:
 
             # --- start render cycle ---
 
-            hook.affect_component_will_render()
+            hook.affect_component_will_render(...)
 
             hook.set_current()
 
@@ -614,15 +649,18 @@ class LifeCycleHook:
     """
 
     __slots__ = (
+        "__weakref__",
+        "_current_state_index",
+        "_event_effects",
+        "_is_rendering",
+        "_rendered_atleast_once",
         "_schedule_render_callback",
         "_schedule_render_later",
-        "_current_state_index",
         "_state",
-        "_rendered_atleast_once",
-        "_is_rendering",
-        "_event_effects",
-        "__weakref__",
+        "component",
     )
+
+    component: ComponentType
 
     def __init__(
         self,
@@ -662,13 +700,17 @@ class LifeCycleHook:
         """Trigger a function on the occurance of the given effect type"""
         self._event_effects[effect_type].append(function)
 
-    def affect_component_will_render(self) -> None:
+    def affect_component_will_render(self, component: ComponentType) -> None:
         """The component is about to render"""
+        self.component = component
+
         self._is_rendering = True
         self._event_effects[COMPONENT_WILL_UNMOUNT_EFFECT].clear()
 
     def affect_component_did_render(self) -> None:
         """The component completed a render"""
+        del self.component
+
         component_did_render_effects = self._event_effects[COMPONENT_DID_RENDER_EFFECT]
         for effect in component_did_render_effects:
             try:
