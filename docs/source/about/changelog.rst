@@ -26,6 +26,13 @@ Unreleased
 No changes.
 
 
+v0.38.0
+-------
+:octicon:`milestone` *released on 2022-04-15*
+
+No changes.
+
+
 v0.38.0-a4
 ----------
 :octicon:`milestone` *released on 2022-04-15*
