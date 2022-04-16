@@ -23,7 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Added**
+
+- :pull:`733` - ``use_debug_value`` hook
+
+**Changed**
+
+- :pull:`733` - renamed ``assert_idom_logged`` testing util to ``assert_idom_did_log``
 
 
 v0.38.0-a3
