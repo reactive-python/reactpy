@@ -22,7 +22,7 @@ does not work:
 
     Try clicking the button to see that it does not cause a change.
 
-After clicking "Next", if you check the server logs, you'll discover an
+After clicking "Next", if you check your web server's logs, you'll discover an
 ``UnboundLocalError`` error. It turns out that in this case, the ``index = index + 1``
 statement is similar to `trying to set global variables
 <https://stackoverflow.com/questions/9264763/dont-understand-why-unboundlocalerror-occurs-closure>`__.
@@ -151,7 +151,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>Initial render</h2>
 
-        .. literalinclude:: _examples/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/main.py
             :lines: 12-33
             :emphasize-lines: 2
 
@@ -165,7 +165,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>Initial state declaration</h2>
 
-        .. literalinclude:: _examples/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/main.py
             :lines: 12-33
             :emphasize-lines: 3
 
@@ -181,7 +181,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>Define event handler</h2>
 
-        .. literalinclude:: _examples/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/main.py
             :lines: 12-33
             :emphasize-lines: 5
 
@@ -196,7 +196,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>Return the view</h2>
 
-        .. literalinclude:: _examples/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/main.py
             :lines: 12-33
             :emphasize-lines: 16
 
@@ -212,7 +212,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>User interaction</h2>
 
-        .. literalinclude:: _examples/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/main.py
             :lines: 12-33
             :emphasize-lines: 5
 
@@ -226,7 +226,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>New state is set</h2>
 
-        .. literalinclude:: _examples/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/main.py
             :lines: 12-33
             :emphasize-lines: 6
 
@@ -242,7 +242,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>Next render begins</h2>
 
-        .. literalinclude:: _examples/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/main.py
             :lines: 12-33
             :emphasize-lines: 2
 
@@ -256,7 +256,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>Next state is acquired</h2>
 
-        .. literalinclude:: _examples/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/main.py
             :lines: 12-33
             :emphasize-lines: 3
 
@@ -272,7 +272,7 @@ below highlights a line of code where something of interest occurs:
 
             <h2>Repeat...</h2>
 
-        .. literalinclude:: _examples/adding_state_variable/app.py
+        .. literalinclude:: _examples/adding_state_variable/main.py
             :lines: 12-33
 
         From this point on, the steps remain the same. The only difference being the

@@ -179,7 +179,7 @@ def test_python_suite(session: Session) -> None:
     """Run the Python-based test suite"""
     session.env["IDOM_DEBUG_MODE"] = "1"
     install_requirements_file(session, "test-env")
-
+    session.run("playwright", "install", "chromium")
     posargs = session.posargs
     posargs += ["--reruns", "3", "--reruns-delay", "1"]
 
@@ -337,13 +337,12 @@ def tag(session: Session) -> None:
 
     changelog_file = ROOT / "docs" / "source" / "about" / "changelog.rst"
     for line in changelog_file.read_text().splitlines():
-        if line == version:
+        if line == f"v{version}":
             session.log(f"Found changelog section for version {version}")
             break
     else:
         session.error(
-            f"No changelog entry for {version} in {changelog_file} - "
-            f"make sure you have a title section called {version}."
+            f"Something went wrong - could not find a title section for {version}"
         )
 
     if session.interactive:
@@ -353,7 +352,7 @@ def tag(session: Session) -> None:
 
     # stage, commit, tag, and push version bump
     session.run("git", "add", "--all", external=True)
-    session.run("git", "commit", "-m", repr(f"version {new_version}"), external=True)
+    session.run("git", "commit", "-m", f"version {new_version}", external=True)
     session.run("git", "tag", version, external=True)
     session.run("git", "push", "origin", "main", "--tags", external=True)
 
@@ -390,5 +389,8 @@ def get_idom_script_env() -> dict[str, str]:
     return {
         "PYTHONPATH": os.getcwd(),
         "IDOM_DEBUG_MODE": os.environ.get("IDOM_DEBUG_MODE", "1"),
+        "IDOM_TESTING_DEFAULT_TIMEOUT": os.environ.get(
+            "IDOM_TESTING_DEFAULT_TIMEOUT", "6.0"
+        ),
         "IDOM_CHECK_VDOM_SPEC": os.environ.get("IDOM_CHECK_VDOM_SPEC", "0"),
     }

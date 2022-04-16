@@ -5,12 +5,14 @@ import pytest
 
 import idom
 from idom import html
-from idom.core.dispatcher import render_json_patch
+from idom.config import IDOM_DEBUG_MODE
 from idom.core.hooks import COMPONENT_DID_RENDER_EFFECT, LifeCycleHook, current_hook
 from idom.core.layout import Layout
-from idom.testing import HookCatcher, assert_idom_logged
+from idom.core.serve import render_json_patch
+from idom.testing import DisplayFixture, HookCatcher, assert_idom_did_log, poll
+from idom.testing.logs import assert_idom_did_not_log
 from idom.utils import Ref
-from tests.assert_utils import assert_same_items
+from tests.tooling.asserts import assert_same_items
 
 
 async def test_must_be_rendering_in_layout_to_use_hooks():
@@ -22,7 +24,7 @@ async def test_must_be_rendering_in_layout_to_use_hooks():
     with pytest.raises(RuntimeError, match="No life cycle hook is active"):
         await SimpleComponentWithHook().render()
 
-    with idom.Layout(SimpleComponentWithHook()) as layout:
+    async with idom.Layout(SimpleComponentWithHook()) as layout:
         await layout.render()
 
 
@@ -35,7 +37,7 @@ async def test_simple_stateful_component():
 
     sse = SimpleStatefulComponent()
 
-    with idom.Layout(sse) as layout:
+    async with idom.Layout(sse) as layout:
         patch_1 = await render_json_patch(layout)
         assert patch_1.path == ""
         assert_same_items(
@@ -75,7 +77,7 @@ async def test_set_state_callback_identity_is_preserved():
 
     sse = SimpleStatefulComponent()
 
-    with idom.Layout(sse) as layout:
+    async with idom.Layout(sse) as layout:
         await layout.render()
         await layout.render()
         await layout.render()
@@ -108,7 +110,7 @@ async def test_use_state_with_constructor():
         state, set_inner_state.current = idom.use_state(make_default)
         return idom.html.div(state)
 
-    with idom.Layout(Outer()) as layout:
+    async with idom.Layout(Outer()) as layout:
         await layout.render()
 
         assert constructor_call_count.current == 1
@@ -141,7 +143,7 @@ async def test_set_state_with_reducer_instead_of_value():
         count.current, set_count.current = idom.hooks.use_state(0)
         return idom.html.div(count.current)
 
-    with idom.Layout(Counter()) as layout:
+    async with idom.Layout(Counter()) as layout:
         await layout.render()
 
         for i in range(4):
@@ -150,7 +152,7 @@ async def test_set_state_with_reducer_instead_of_value():
             await layout.render()
 
 
-def test_set_state_checks_identity_not_equality(driver, display, driver_wait):
+async def test_set_state_checks_identity_not_equality(display: DisplayFixture):
     r_1 = idom.Ref("value")
     r_2 = idom.Ref("value")
 
@@ -191,31 +193,34 @@ def test_set_state_checks_identity_not_equality(driver, display, driver_wait):
             f"Last state: {'r_1' if state is r_1 else 'r_2'}",
         )
 
-    display(TestComponent)
+    await display.show(TestComponent)
 
-    client_r_1_button = driver.find_element("id", "r_1")
-    client_r_2_button = driver.find_element("id", "r_2")
+    client_r_1_button = await display.page.wait_for_selector("#r_1")
+    client_r_2_button = await display.page.wait_for_selector("#r_2")
+
+    poll_event_count = poll(lambda: event_count.current)
+    poll_render_count = poll(lambda: render_count.current)
 
     assert render_count.current == 1
     assert event_count.current == 0
 
-    client_r_1_button.click()
+    await client_r_1_button.click()
 
-    driver_wait.until(lambda d: event_count.current == 1)
-    driver_wait.until(lambda d: render_count.current == 1)
+    await poll_event_count.until_equals(1)
+    await poll_render_count.until_equals(1)
 
-    client_r_2_button.click()
+    await client_r_2_button.click()
 
-    driver_wait.until(lambda d: event_count.current == 2)
-    driver_wait.until(lambda d: render_count.current == 2)
+    await poll_event_count.until_equals(2)
+    await poll_render_count.until_equals(2)
 
-    client_r_2_button.click()
+    await client_r_2_button.click()
 
-    driver_wait.until(lambda d: event_count.current == 3)
-    driver_wait.until(lambda d: render_count.current == 2)
+    await poll_event_count.until_equals(3)
+    await poll_render_count.until_equals(2)
 
 
-def test_simple_input_with_use_state(driver, display):
+async def test_simple_input_with_use_state(display: DisplayFixture):
     message_ref = idom.Ref(None)
 
     @idom.component
@@ -232,16 +237,16 @@ def test_simple_input_with_use_state(driver, display):
         else:
             return idom.html.p({"id": "complete"}, ["Complete"])
 
-    display(Input)
+    await display.show(Input)
 
-    button = driver.find_element("id", "input")
-    button.send_keys("this is a test")
-    driver.find_element("id", "complete")
+    button = await display.page.wait_for_selector("#input")
+    await button.type("this is a test")
+    await display.page.wait_for_selector("#complete")
 
     assert message_ref.current == "this is a test"
 
 
-def test_double_set_state(driver, driver_wait, display):
+async def test_double_set_state(display: DisplayFixture):
     @idom.component
     def SomeComponent():
         state_1, set_state_1 = idom.hooks.use_state(0)
@@ -252,29 +257,33 @@ def test_double_set_state(driver, driver_wait, display):
             set_state_2(state_2 + 1)
 
         return idom.html.div(
-            idom.html.div({"id": "first", "value": state_1}, f"value is: {state_1}"),
-            idom.html.div({"id": "second", "value": state_2}, f"value is: {state_2}"),
+            idom.html.div(
+                {"id": "first", "data-value": state_1}, f"value is: {state_1}"
+            ),
+            idom.html.div(
+                {"id": "second", "data-value": state_2}, f"value is: {state_2}"
+            ),
             idom.html.button({"id": "button", "onClick": double_set_state}, "click me"),
         )
 
-    display(SomeComponent)
+    await display.show(SomeComponent)
 
-    button = driver.find_element("id", "button")
-    first = driver.find_element("id", "first")
-    second = driver.find_element("id", "second")
+    button = await display.page.wait_for_selector("#button")
+    first = await display.page.wait_for_selector("#first")
+    second = await display.page.wait_for_selector("#second")
 
-    assert first.get_attribute("value") == "0"
-    assert second.get_attribute("value") == "0"
+    assert (await first.get_attribute("data-value")) == "0"
+    assert (await second.get_attribute("data-value")) == "0"
 
-    button.click()
+    await button.click()
 
-    assert driver_wait.until(lambda _: first.get_attribute("value") == "1")
-    assert driver_wait.until(lambda _: second.get_attribute("value") == "1")
+    assert (await first.get_attribute("data-value")) == "1"
+    assert (await second.get_attribute("data-value")) == "1"
 
-    button.click()
+    await button.click()
 
-    assert driver_wait.until(lambda _: first.get_attribute("value") == "2")
-    assert driver_wait.until(lambda _: second.get_attribute("value") == "2")
+    assert (await first.get_attribute("data-value")) == "2"
+    assert (await second.get_attribute("data-value")) == "2"
 
 
 async def test_use_effect_callback_occurs_after_full_render_is_complete():
@@ -301,7 +310,7 @@ async def test_use_effect_callback_occurs_after_full_render_is_complete():
         effect_triggers_after_final_render.current = not effect_triggered.current
         return idom.html.div()
 
-    with idom.Layout(OuterComponent()) as layout:
+    async with idom.Layout(OuterComponent()) as layout:
         await layout.render()
 
     assert effect_triggered.current
@@ -329,7 +338,7 @@ async def test_use_effect_cleanup_occurs_before_next_effect():
 
         return idom.html.div()
 
-    with idom.Layout(ComponentWithEffect()) as layout:
+    async with idom.Layout(ComponentWithEffect()) as layout:
         await layout.render()
 
         assert not cleanup_triggered.current
@@ -368,7 +377,7 @@ async def test_use_effect_cleanup_occurs_on_will_unmount():
 
         return idom.html.div()
 
-    with idom.Layout(OuterComponent()) as layout:
+    async with idom.Layout(OuterComponent()) as layout:
         await layout.render()
 
         assert not cleanup_triggered.current
@@ -399,7 +408,7 @@ async def test_memoized_effect_on_recreated_if_dependencies_change():
 
         return idom.html.div()
 
-    with idom.Layout(ComponentWithMemoizedEffect()) as layout:
+    async with idom.Layout(ComponentWithMemoizedEffect()) as layout:
         await layout.render()
 
         assert effect_run_count.current == 1
@@ -442,7 +451,7 @@ async def test_memoized_effect_cleanup_only_triggered_before_new_effect():
 
         return idom.html.div()
 
-    with idom.Layout(ComponentWithEffect()) as layout:
+    async with idom.Layout(ComponentWithEffect()) as layout:
         await layout.render()
 
         assert cleanup_trigger_count.current == 0
@@ -469,7 +478,7 @@ async def test_use_async_effect():
 
         return idom.html.div()
 
-    with idom.Layout(ComponentWithAsyncEffect()) as layout:
+    async with idom.Layout(ComponentWithAsyncEffect()) as layout:
         await layout.render()
         await asyncio.wait_for(effect_ran.wait(), 1)
 
@@ -489,7 +498,7 @@ async def test_use_async_effect_cleanup():
 
         return idom.html.div()
 
-    with idom.Layout(ComponentWithAsyncEffect()) as layout:
+    async with idom.Layout(ComponentWithAsyncEffect()) as layout:
         await layout.render()
 
         component_hook.latest.schedule_render()
@@ -520,7 +529,7 @@ async def test_use_async_effect_cancel(caplog):
 
         return idom.html.div()
 
-    with idom.Layout(ComponentWithLongWaitingEffect()) as layout:
+    async with idom.Layout(ComponentWithLongWaitingEffect()) as layout:
         await layout.render()
 
         await effect_ran.wait()
@@ -546,8 +555,8 @@ async def test_error_in_effect_is_gracefully_handled(caplog):
 
         return idom.html.div()
 
-    with assert_idom_logged(match_message=r"Layout post-render effect .* failed"):
-        with idom.Layout(ComponentWithEffect()) as layout:
+    with assert_idom_did_log(match_message=r"Layout post-render effect .* failed"):
+        async with idom.Layout(ComponentWithEffect()) as layout:
             await layout.render()  # no error
 
 
@@ -567,8 +576,8 @@ async def test_error_in_effect_cleanup_is_gracefully_handled(caplog):
 
         return idom.html.div()
 
-    with assert_idom_logged(match_error=r"Layout post-render effect .* failed"):
-        with idom.Layout(ComponentWithEffect()) as layout:
+    with assert_idom_did_log(match_error=r"Layout post-render effect .* failed"):
+        async with idom.Layout(ComponentWithEffect()) as layout:
             await layout.render()
             component_hook.latest.schedule_render()
             await layout.render()  # no error
@@ -593,11 +602,11 @@ async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled():
 
         return idom.html.div()
 
-    with assert_idom_logged(
+    with assert_idom_did_log(
         match_message=r"Pre-unmount effect .*? failed",
         error_type=ValueError,
     ):
-        with idom.Layout(OuterComponent()) as layout:
+        async with idom.Layout(OuterComponent()) as layout:
             await layout.render()
             set_key.current("second")
             await layout.render()  # no error
@@ -622,7 +631,7 @@ async def test_use_reducer():
         )
         return idom.html.div()
 
-    with idom.Layout(Counter(0)) as layout:
+    async with idom.Layout(Counter(0)) as layout:
         await layout.render()
 
         assert saved_count.current == 0
@@ -652,7 +661,7 @@ async def test_use_reducer_dispatch_callback_identity_is_preserved():
         saved_dispatchers.append(idom.hooks.use_reducer(reducer, 0)[1])
         return idom.html.div()
 
-    with idom.Layout(ComponentWithUseReduce()) as layout:
+    async with idom.Layout(ComponentWithUseReduce()) as layout:
         for _ in range(3):
             await layout.render()
             saved_dispatchers[-1]("increment")
@@ -672,7 +681,7 @@ async def test_use_callback_identity():
         used_callbacks.append(idom.hooks.use_callback(lambda: None))
         return idom.html.div()
 
-    with idom.Layout(ComponentWithRef()) as layout:
+    async with idom.Layout(ComponentWithRef()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
         await layout.render()
@@ -698,7 +707,7 @@ async def test_use_callback_memoization():
         used_callbacks.append(cb)
         return idom.html.div()
 
-    with idom.Layout(ComponentWithRef()) as layout:
+    async with idom.Layout(ComponentWithRef()) as layout:
         await layout.render()
         set_state_hook.current(1)
         await layout.render()
@@ -726,7 +735,7 @@ async def test_use_memo():
         used_values.append(value)
         return idom.html.div()
 
-    with idom.Layout(ComponentWithMemo()) as layout:
+    async with idom.Layout(ComponentWithMemo()) as layout:
         await layout.render()
         set_state_hook.current(1)
         await layout.render()
@@ -751,7 +760,7 @@ async def test_use_memo_always_runs_if_dependencies_are_none():
         used_values.append(value)
         return idom.html.div()
 
-    with idom.Layout(ComponentWithMemo()) as layout:
+    async with idom.Layout(ComponentWithMemo()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
         await layout.render()
@@ -778,7 +787,7 @@ async def test_use_memo_with_stored_deps_is_empty_tuple_after_deps_are_none():
         used_values.append(value)
         return idom.html.div()
 
-    with idom.Layout(ComponentWithMemo()) as layout:
+    async with idom.Layout(ComponentWithMemo()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
         deps_used_in_memo.current = None
@@ -803,7 +812,7 @@ async def test_use_memo_never_runs_if_deps_is_empty_list():
         used_values.append(value)
         return idom.html.div()
 
-    with idom.Layout(ComponentWithMemo()) as layout:
+    async with idom.Layout(ComponentWithMemo()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
         await layout.render()
@@ -823,7 +832,7 @@ async def test_use_ref():
         used_refs.append(idom.hooks.use_ref(1))
         return idom.html.div()
 
-    with idom.Layout(ComponentWithRef()) as layout:
+    async with idom.Layout(ComponentWithRef()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
         await layout.render()
@@ -832,16 +841,14 @@ async def test_use_ref():
     assert len(used_refs) == 2
 
 
-def test_bad_schedule_render_callback(caplog):
+def test_bad_schedule_render_callback():
     def bad_callback():
         raise ValueError("something went wrong")
 
-    hook = LifeCycleHook(bad_callback)
-
-    hook.schedule_render()
-
-    first_log_line = next(iter(caplog.records)).msg.split("\n", 1)[0]
-    assert re.match(f"Failed to schedule render via {bad_callback}", first_log_line)
+    with assert_idom_did_log(
+        match_message=f"Failed to schedule render via {bad_callback}"
+    ):
+        LifeCycleHook(bad_callback).schedule_render()
 
 
 async def test_use_effect_automatically_infers_closure_values():
@@ -860,7 +867,7 @@ async def test_use_effect_automatically_infers_closure_values():
 
         return idom.html.div()
 
-    with idom.Layout(CounterWithEffect()) as layout:
+    async with idom.Layout(CounterWithEffect()) as layout:
         await layout.render()
         await did_effect.wait()
         did_effect.clear()
@@ -888,7 +895,7 @@ async def test_use_memo_automatically_infers_closure_values():
 
         return idom.html.div()
 
-    with idom.Layout(CounterWithEffect()) as layout:
+    async with idom.Layout(CounterWithEffect()) as layout:
         await layout.render()
         await did_memo.wait()
         did_memo.clear()
@@ -913,7 +920,7 @@ async def test_use_context_default_value():
         value.current = idom.use_context(Context)
         return html.div()
 
-    with idom.Layout(ComponentProvidesContext()) as layout:
+    async with idom.Layout(ComponentProvidesContext()) as layout:
         await layout.render()
         assert value.current == "something"
 
@@ -922,7 +929,7 @@ async def test_use_context_default_value():
         value.current = idom.use_context(Context)
         return html.div()
 
-    with idom.Layout(ComponentUsesContext()) as layout:
+    async with idom.Layout(ComponentUsesContext()) as layout:
         await layout.render()
         assert value.current == "something"
 
@@ -953,7 +960,7 @@ async def test_use_context_only_renders_for_value_change():
         render_count.current += 1
         return html.div()
 
-    with idom.Layout(ComponentProvidesContext()) as layout:
+    async with idom.Layout(ComponentProvidesContext()) as layout:
         await layout.render()
         assert render_count.current == 1
 
@@ -990,7 +997,7 @@ async def test_use_context_updates_components_even_if_memoized():
         render_count.current += 1
         return html.div()
 
-    with idom.Layout(ComponentProvidesContext()) as layout:
+    async with idom.Layout(ComponentProvidesContext()) as layout:
         await layout.render()
         assert render_count.current == 1
         assert value.current == 0
@@ -1036,7 +1043,7 @@ async def test_nested_contexts_do_not_conflict():
         inner_render_count.current += 1
         return html.div()
 
-    with idom.Layout(Root()) as layout:
+    async with idom.Layout(Root()) as layout:
         await layout.render()
         assert outer_render_count.current == 1
         assert inner_render_count.current == 1
@@ -1092,7 +1099,7 @@ async def test_neighboring_contexts_do_not_conflict():
         right_used_value.current = idom.use_context(RightContext)
         return idom.html.div()
 
-    with idom.Layout(Root()) as layout:
+    async with idom.Layout(Root()) as layout:
         await layout.render()
         assert left_render_count.current == 1
         assert right_render_count.current == 1
@@ -1132,12 +1139,12 @@ async def test_error_in_effect_cleanup_is_gracefully_handled():
         hook.add_effect(COMPONENT_DID_RENDER_EFFECT, bad_effect)
         return idom.html.div()
 
-    with assert_idom_logged(
+    with assert_idom_did_log(
         match_message="Component post-render effect .*? failed",
         error_type=ValueError,
         match_error="The error message",
     ):
-        with idom.Layout(ComponentWithEffect()) as layout:
+        async with idom.Layout(ComponentWithEffect()) as layout:
             await layout.render()
             component_hook.latest.schedule_render()
             await layout.render()  # no error
@@ -1154,7 +1161,7 @@ async def test_set_state_during_render():
             set_state(state + 1)
         return html.div(state)
 
-    with Layout(SetStateDuringRender()) as layout:
+    async with Layout(SetStateDuringRender()) as layout:
         await layout.render()
         assert render_count.current == 1
         await layout.render()
@@ -1163,3 +1170,80 @@ async def test_set_state_during_render():
         # there should be no more renders to perform
         with pytest.raises(asyncio.TimeoutError):
             await asyncio.wait_for(layout.render(), timeout=0.1)
+
+
+@pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="only logs in debug mode")
+async def test_use_debug_mode():
+    set_message = idom.Ref()
+    component_hook = HookCatcher()
+
+    @idom.component
+    @component_hook.capture
+    def SomeComponent():
+        message, set_message.current = idom.use_state("hello")
+        idom.use_debug_value(f"message is {message!r}")
+        return idom.html.div()
+
+    async with idom.Layout(SomeComponent()) as layout:
+
+        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
+            await layout.render()
+
+        set_message.current("bye")
+
+        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+        component_hook.latest.schedule_render()
+
+        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+
+@pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="only logs in debug mode")
+async def test_use_debug_mode_with_factory():
+    set_message = idom.Ref()
+    component_hook = HookCatcher()
+
+    @idom.component
+    @component_hook.capture
+    def SomeComponent():
+        message, set_message.current = idom.use_state("hello")
+        idom.use_debug_value(lambda: f"message is {message!r}")
+        return idom.html.div()
+
+    async with idom.Layout(SomeComponent()) as layout:
+
+        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
+            await layout.render()
+
+        set_message.current("bye")
+
+        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+        component_hook.latest.schedule_render()
+
+        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+
+@pytest.mark.skipif(IDOM_DEBUG_MODE.current, reason="logs in debug mode")
+async def test_use_debug_mode_does_not_log_if_not_in_debug_mode():
+    set_message = idom.Ref()
+
+    @idom.component
+    def SomeComponent():
+        message, set_message.current = idom.use_state("hello")
+        idom.use_debug_value(lambda: f"message is {message!r}")
+        return idom.html.div()
+
+    async with idom.Layout(SomeComponent()) as layout:
+
+        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'hello'"):
+            await layout.render()
+
+        set_message.current("bye")
+
+        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()

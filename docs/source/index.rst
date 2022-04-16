@@ -73,8 +73,13 @@ of HTML element called an ``h1`` `section heading
 <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Heading_Elements>`__.
 Importantly though, a ``@component`` decorator has been applied to the ``App`` function
 to turn it into a :ref:`component <Your First Components>`. Finally, we :ref:`run
-<Running IDOM>` an application server by passing the ``App`` component to the ``run()``
-function.
+<Running IDOM>` a development web server by passing the ``App`` component to the
+``run()`` function.
+
+.. note::
+
+    See :ref:`Running IDOM in Production` to learn how to use a production-grade server
+    to run IDOM.
 
 
 Learning IDOM

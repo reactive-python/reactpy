@@ -1,9 +1,11 @@
-ipython
 pytest
-pytest-asyncio
+pytest-asyncio>=0.17
 pytest-cov
 pytest-mock
 pytest-rerunfailures
 pytest-timeout
 responses
-selenium
+playwright
+
+# I'm not quite sure why this needs to be installed for tests with Sanic to pass
+sanic-testing

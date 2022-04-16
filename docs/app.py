@@ -4,10 +4,11 @@ from pathlib import Path
 
 from sanic import Sanic, response
 
-from idom.server.sanic import PerClientStateServer
-from idom.widgets import multiview
+from idom import component
+from idom.backend.sanic import Options, configure, use_request
+from idom.core.types import ComponentConstructor
 
-from .examples import load_examples
+from .examples import get_normalized_example_name, load_examples
 
 
 HERE = Path(__file__).parent
@@ -22,13 +23,10 @@ IDOM_MODEL_SERVER_URL_PREFIX = "/_idom"
 def run():
     app = make_app()
 
-    PerClientStateServer(
-        make_examples_component(),
-        {
-            "redirect_root_to_index": False,
-            "url_prefix": IDOM_MODEL_SERVER_URL_PREFIX,
-        },
+    configure(
         app,
+        Example(),
+        Options(url_prefix=IDOM_MODEL_SERVER_URL_PREFIX),
     )
 
     app.run(
@@ -39,8 +37,29 @@ def run():
     )
 
 
+@component
+def Example():
+    raw_view_id = use_request().get_args().get("view_id")
+    view_id = get_normalized_example_name(raw_view_id)
+    return _get_examples()[view_id]()
+
+
+def _get_examples():
+    if not _EXAMPLES:
+        _EXAMPLES.update(load_examples())
+    return _EXAMPLES
+
+
+def reload_examples():
+    _EXAMPLES.clear()
+    _EXAMPLES.update(load_examples())
+
+
+_EXAMPLES: dict[str, ComponentConstructor] = {}
+
+
 def make_app():
-    app = Sanic(__name__)
+    app = Sanic("docs_app")
 
     app.static("/docs", str(HERE / "build"))
 
@@ -49,12 +68,3 @@ def make_app():
         return response.redirect("/docs/index.html")
 
     return app
-
-
-def make_examples_component():
-    mount, component = multiview()
-
-    for example_name, example_component in load_examples():
-        mount.add(example_name, example_component)
-
-    return component

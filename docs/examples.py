@@ -23,7 +23,7 @@ def load_examples() -> Iterator[tuple[str, Callable[[], ComponentType]]]:
 def all_example_names() -> set[str]:
     names = set()
     for file in _iter_example_files(SOURCE_DIR):
-        path = file.parent if file.name == "app.py" else file
+        path = file.parent if file.name == "main.py" else file
         names.add("/".join(path.relative_to(SOURCE_DIR).with_suffix("").parts))
     return names
 
@@ -48,7 +48,7 @@ def get_main_example_file_by_name(
 ) -> Path:
     path = _get_root_example_path_by_name(name, relative_to)
     if path.is_dir():
-        return path / "app.py"
+        return path / "main.py"
     else:
         return path.with_suffix(".py")
 
@@ -133,7 +133,7 @@ def _get_root_example_path_by_name(name: str, relative_to: str | Path | None) ->
         rel_path = rel_path.parent if rel_path.is_file() else rel_path
     else:
         rel_path = SOURCE_DIR
-    return rel_path.joinpath(*name.split("/"))
+    return rel_path.joinpath(*name.split("/")).resolve()
 
 
 class _PrintBuffer:

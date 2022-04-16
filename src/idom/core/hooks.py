@@ -24,10 +24,11 @@ from typing import (
 
 from typing_extensions import Protocol
 
+from idom.config import IDOM_DEBUG_MODE
 from idom.utils import Ref
 
 from ._thread_local import ThreadLocal
-from .types import Key, VdomDict
+from .types import ComponentType, Key, VdomDict
 from .vdom import vdom
 
 
@@ -204,21 +205,54 @@ def use_effect(
         return add_effect
 
 
+def use_debug_value(
+    message: Any | Callable[[], Any],
+    dependencies: Sequence[Any] | ellipsis | None = ...,
+) -> None:
+    """Log debug information when the given message changes.
+
+    .. note::
+        This hook only logs if :data:`~idom.config.IDOM_DEBUG_MODE` is active.
+
+    Unlike other hooks, a message is considered to have changed if the old and new
+    values are ``!=``. Because this comparison is performed on every render of the
+    component, it may be worth considering the performance cost in some situations.
+
+    Parameters:
+        message:
+            The value to log or a memoized function for generating the value.
+        dependencies:
+            Dependencies for the memoized function. The message will only be recomputed
+            if the identity of any value in the given sequence changes (i.e. their
+            :func:`id` is different). By default these are inferred based on local
+            variables that are referenced by the given function.
+    """
+    if not IDOM_DEBUG_MODE.current:
+        return  # pragma: no cover
+
+    old: Ref[Any] = _use_const(lambda: Ref(object()))
+    memo_func = message if callable(message) else lambda: message
+    new = use_memo(memo_func, dependencies)
+
+    if old.current != new:
+        old.current = new
+        logger.debug(f"{current_hook().component} {new}")
+
+
 def create_context(
     default_value: _StateType, name: str | None = None
-) -> type[_Context[_StateType]]:
+) -> type[Context[_StateType]]:
     """Return a new context type for use in :func:`use_context`"""
 
-    class Context(_Context[_StateType]):
+    class _Context(Context[_StateType]):
         _default_value = default_value
 
-    if name is not None:
-        Context.__name__ = name
+    _Context.__name__ = name or "Context"
 
-    return Context
+    return _Context
 
 
-def use_context(context_type: type[_Context[_StateType]]) -> _StateType:
+def use_context(context_type: type[Context[_StateType]]) -> _StateType:
     """Get the current value for the given context type.
 
     See the full :ref:`Use Context` docs for more information.
@@ -228,7 +262,7 @@ def use_context(context_type: type[_Context[_StateType]]) -> _StateType:
     # that newly present current context. When we update it though, we don't need to
     # schedule a new render since we're already rending right now. Thus we can't do this
     # with use_state() since we'd incur an extra render when calling set_state.
-    context_ref: Ref[_Context[_StateType] | None] = use_ref(None)
+    context_ref: Ref[Context[_StateType] | None] = use_ref(None)
 
     if context_ref.current is None:
         provided_context = context_type._current.get()
@@ -244,7 +278,7 @@ def use_context(context_type: type[_Context[_StateType]]) -> _StateType:
 
     @use_effect
     def subscribe_to_context_change() -> Callable[[], None]:
-        def set_context(new: _Context[_StateType]) -> None:
+        def set_context(new: Context[_StateType]) -> None:
             # We don't need to check if `new is not context_ref.current` because we only
             # trigger this callback when the value of a context, and thus the context
             # itself changes. Therefore we can always schedule a render.
@@ -260,13 +294,13 @@ def use_context(context_type: type[_Context[_StateType]]) -> _StateType:
 _UNDEFINED: Any = object()
 
 
-class _Context(Generic[_StateType]):
+class Context(Generic[_StateType]):
 
     # This should be _StateType instead of Any, but it can't due to this limitation:
     # https://github.com/python/mypy/issues/5144
     _default_value: ClassVar[Any]
 
-    _current: ClassVar[ThreadLocal[_Context[Any] | None]]
+    _current: ClassVar[ThreadLocal[Context[Any] | None]]
 
     def __init_subclass__(cls) -> None:
         # every context type tracks which of its instances are currently in use
@@ -281,7 +315,7 @@ class _Context(Generic[_StateType]):
         self.children = children
         self.value: _StateType = self._default_value if value is _UNDEFINED else value
         self.key = key
-        self.subscribers: set[Callable[[_Context[_StateType]], None]] = set()
+        self.subscribers: set[Callable[[Context[_StateType]], None]] = set()
         self.type = self.__class__
 
     def render(self) -> VdomDict:
@@ -297,7 +331,7 @@ class _Context(Generic[_StateType]):
 
         return vdom("", *self.children)
 
-    def should_render(self, new: _Context[_StateType]) -> bool:
+    def should_render(self, new: Context[_StateType]) -> bool:
         if self.value is not new.value:
             new.subscribers.update(self.subscribers)
             for set_context in self.subscribers:
@@ -577,7 +611,7 @@ class LifeCycleHook:
 
             # --- start render cycle ---
 
-            hook.affect_component_will_render()
+            hook.affect_component_will_render(...)
 
             hook.set_current()
 
@@ -615,15 +649,18 @@ class LifeCycleHook:
     """
 
     __slots__ = (
+        "__weakref__",
+        "_current_state_index",
+        "_event_effects",
+        "_is_rendering",
+        "_rendered_atleast_once",
         "_schedule_render_callback",
         "_schedule_render_later",
-        "_current_state_index",
         "_state",
-        "_rendered_atleast_once",
-        "_is_rendering",
-        "_event_effects",
-        "__weakref__",
+        "component",
     )
+
+    component: ComponentType
 
     def __init__(
         self,
@@ -663,13 +700,17 @@ class LifeCycleHook:
         """Trigger a function on the occurance of the given effect type"""
         self._event_effects[effect_type].append(function)
 
-    def affect_component_will_render(self) -> None:
+    def affect_component_will_render(self, component: ComponentType) -> None:
         """The component is about to render"""
+        self.component = component
+
         self._is_rendering = True
         self._event_effects[COMPONENT_WILL_UNMOUNT_EFFECT].clear()
 
     def affect_component_did_render(self) -> None:
         """The component completed a render"""
+        del self.component
+
         component_did_render_effects = self._event_effects[COMPONENT_DID_RENDER_EFFECT]
         for effect in component_did_render_effects:
             try:

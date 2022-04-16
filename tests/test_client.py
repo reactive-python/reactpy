@@ -1,33 +1,39 @@
 import asyncio
-import time
+from contextlib import AsyncExitStack
 from pathlib import Path
 
+from playwright.async_api import Browser
+
 import idom
-from idom.testing import ServerMountPoint
-from tests.driver_utils import send_keys
+from idom.testing import DisplayFixture, ServerFixture
 
 
 JS_DIR = Path(__file__).parent / "js"
 
 
-def test_automatic_reconnect(create_driver):
-    # we need to wait longer here because the automatic reconnect is not instance
-    driver = create_driver(implicit_wait_timeout=10, page_load_timeout=10)
+async def test_automatic_reconnect(browser: Browser):
+    page = await browser.new_page()
+
+    # we need to wait longer here because the automatic reconnect is not instant
+    page.set_default_timeout(10000)
 
     @idom.component
     def OldComponent():
         return idom.html.p({"id": "old-component"}, "old")
 
-    mount_point = ServerMountPoint()
+    async with AsyncExitStack() as exit_stack:
+        server = await exit_stack.enter_async_context(ServerFixture(port=8000))
+        display = await exit_stack.enter_async_context(
+            DisplayFixture(server, driver=page)
+        )
 
-    with mount_point:
-        mount_point.mount(OldComponent)
-        driver.get(mount_point.url())
+        await display.show(OldComponent)
+
         # ensure the element is displayed before stopping the server
-        driver.find_element("id", "old-component")
+        await page.wait_for_selector("#old-component")
 
     # the server is disconnected but the last view state is still shown
-    driver.find_element("id", "old-component")
+    await page.wait_for_selector("#old-component")
 
     set_state = idom.Ref(None)
 
@@ -36,19 +42,24 @@ def test_automatic_reconnect(create_driver):
         state, set_state.current = idom.hooks.use_state(0)
         return idom.html.p({"id": f"new-component-{state}"}, f"new-{state}")
 
-    with mount_point:
-        mount_point.mount(NewComponent)
+    async with AsyncExitStack() as exit_stack:
+        server = await exit_stack.enter_async_context(ServerFixture(port=8000))
+        display = await exit_stack.enter_async_context(
+            DisplayFixture(server, driver=page)
+        )
+
+        await display.show(NewComponent)
 
         # Note the lack of a page refresh before looking up this new component. The
         # client should attempt to reconnect and display the new view automatically.
-        driver.find_element("id", "new-component-0")
+        await page.wait_for_selector("#new-component-0")
 
         # check that we can resume normal operation
         set_state.current(1)
-        driver.find_element("id", "new-component-1")
+        await page.wait_for_selector("#new-component-1")
 
 
-def test_style_can_be_changed(display, driver, driver_wait):
+async def test_style_can_be_changed(display: DisplayFixture):
     """This test was introduced to verify the client does not mutate the model
 
     A bug was introduced where the client-side model was mutated and React was relying
@@ -70,24 +81,24 @@ def test_style_can_be_changed(display, driver, driver_wait):
             f"color: {color}",
         )
 
-    display(ButtonWithChangingColor)
+    await display.show(ButtonWithChangingColor)
 
-    button = driver.find_element("id", "my-button")
+    button = await display.page.wait_for_selector("#my-button")
 
-    assert _get_style(button)["background-color"] == "red"
+    assert (await _get_style(button))["background-color"] == "red"
 
     for color in ["blue", "red"] * 2:
-        button.click()
-        driver_wait.until(lambda _: _get_style(button)["background-color"] == color)
+        await button.click()
+        assert (await _get_style(button))["background-color"] == color
 
 
-def _get_style(element):
-    items = element.get_attribute("style").split(";")
+async def _get_style(element):
+    items = (await element.get_attribute("style")).split(";")
     pairs = [item.split(":", 1) for item in map(str.strip, items) if item]
     return {key.strip(): value.strip() for key, value in pairs}
 
 
-def test_slow_server_response_on_input_change(display, driver, driver_wait):
+async def test_slow_server_response_on_input_change(display: DisplayFixture):
     """A delay server-side could cause input values to be overwritten.
 
     For more info see: https://github.com/idom-team/idom/issues/684
@@ -105,13 +116,9 @@ def test_slow_server_response_on_input_change(display, driver, driver_wait):
 
         return idom.html.input({"onChange": handle_change, "id": "test-input"})
 
-    display(SomeComponent)
+    await display.show(SomeComponent)
 
-    inp = driver.find_element("id", "test-input")
+    inp = await display.page.wait_for_selector("#test-input")
+    await inp.type("hello")
 
-    text = "hello"
-    send_keys(inp, text)
-
-    time.sleep(delay * len(text) * 1.1)
-
-    driver_wait.until(lambda _: inp.get_attribute("value") == "hello")
+    assert (await inp.evaluate("node => node.value")) == "hello"

@@ -21,6 +21,9 @@ from typing_extensions import Protocol, TypedDict, runtime_checkable
 ComponentConstructor = Callable[..., "ComponentType"]
 """Simple function returning a new component"""
 
+RootComponentConstructor = Callable[[], "ComponentType"]
+"""The root component should be constructed by a function accepting no arguments."""
+
 
 Key = Union[str, int]
 
@@ -35,7 +38,7 @@ class ComponentType(Protocol):
     key: Key | None
     """An identifier which is unique amongst a component's immediate siblings"""
 
-    type: type[Any] | Callable[..., Any]
+    type: Any
     """The function or class defining the behavior of this component
 
     This is used to see if two component instances share the same definition.
@@ -48,7 +51,6 @@ class ComponentType(Protocol):
         """Whether the new component instance should be rendered."""
 
 
-_Self = TypeVar("_Self")
 _Render = TypeVar("_Render", covariant=True)
 _Event = TypeVar("_Event", contravariant=True)
 
@@ -63,11 +65,14 @@ class LayoutType(Protocol[_Render, _Event]):
     async def deliver(self, event: _Event) -> None:
         """Relay an event to its respective handler"""
 
-    def __enter__(self: _Self) -> _Self:
+    async def __aenter__(self) -> LayoutType[_Render, _Event]:
         """Prepare the layout for its first render"""
 
-    def __exit__(
-        self, exc_type: Type[Exception], exc_value: Exception, traceback: TracebackType
+    async def __aexit__(
+        self,
+        exc_type: Type[Exception],
+        exc_value: Exception,
+        traceback: TracebackType,
     ) -> Optional[bool]:
         """Clean up the view after its final render"""
 
@@ -84,6 +89,7 @@ VdomChildren = Sequence[VdomChild]
 VdomAttributesAndChildren = Union[
     Mapping[str, Any],  # this describes both VdomDict and VdomAttributes
     Iterable[VdomChild],
+    VdomChild,
 ]
 """Useful for the ``*attributes_and_children`` parameter in :func:`idom.core.vdom.vdom`"""
 

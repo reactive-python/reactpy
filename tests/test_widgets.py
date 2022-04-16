@@ -1,20 +1,14 @@
 from base64 import b64encode
 from pathlib import Path
 
-from selenium.webdriver.common.keys import Keys
-
 import idom
-from tests.driver_utils import send_keys
+from idom.testing import DisplayFixture, poll
 
 
 HERE = Path(__file__).parent
 
 
-def test_multiview_repr():
-    assert str(idom.widgets.MultiViewMount({})) == "MultiViewMount({})"
-
-
-def test_hostwap_update_on_change(driver, display):
+async def test_hostwap_update_on_change(display: DisplayFixture):
     """Ensure shared hotswapping works
 
     This basically means that previously rendered views of a hotswap component get updated
@@ -48,15 +42,15 @@ def test_hostwap_update_on_change(driver, display):
 
         return idom.html.div(incr, hotswap_view)
 
-    display(ButtonSwapsDivs)
+    await display.show(ButtonSwapsDivs)
 
-    client_incr_button = driver.find_element("id", "incr-button")
+    client_incr_button = await display.page.wait_for_selector("#incr-button")
 
-    driver.find_element("id", "hotswap-1")
-    client_incr_button.click()
-    driver.find_element("id", "hotswap-2")
-    client_incr_button.click()
-    driver.find_element("id", "hotswap-3")
+    await display.page.wait_for_selector("#hotswap-1")
+    await client_incr_button.click()
+    await display.page.wait_for_selector("#hotswap-2")
+    await client_incr_button.click()
+    await display.page.wait_for_selector("#hotswap-3")
 
 
 IMAGE_SRC_BYTES = b"""
@@ -67,43 +61,44 @@ IMAGE_SRC_BYTES = b"""
 BASE64_IMAGE_SRC = b64encode(IMAGE_SRC_BYTES).decode()
 
 
-def test_image_from_string(driver, display):
+async def test_image_from_string(display: DisplayFixture):
     src = IMAGE_SRC_BYTES.decode()
-    display(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
-    client_img = driver.find_element("id", "a-circle-1")
-    assert BASE64_IMAGE_SRC in client_img.get_attribute("src")
+    await display.show(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
+    client_img = await display.page.wait_for_selector("#a-circle-1")
+    assert BASE64_IMAGE_SRC in (await client_img.get_attribute("src"))
 
 
-def test_image_from_bytes(driver, display):
+async def test_image_from_bytes(display: DisplayFixture):
     src = IMAGE_SRC_BYTES
-    display(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
-    client_img = driver.find_element("id", "a-circle-1")
-    assert BASE64_IMAGE_SRC in client_img.get_attribute("src")
+    await display.show(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
+    client_img = await display.page.wait_for_selector("#a-circle-1")
+    assert BASE64_IMAGE_SRC in (await client_img.get_attribute("src"))
 
 
-def test_use_linked_inputs(driver, driver_wait, display):
+async def test_use_linked_inputs(display: DisplayFixture):
     @idom.component
     def SomeComponent():
         i_1, i_2 = idom.widgets.use_linked_inputs([{"id": "i_1"}, {"id": "i_2"}])
         return idom.html.div(i_1, i_2)
 
-    display(SomeComponent)
+    await display.show(SomeComponent)
 
-    input_1 = driver.find_element("id", "i_1")
-    input_2 = driver.find_element("id", "i_2")
+    input_1 = await display.page.wait_for_selector("#i_1")
+    input_2 = await display.page.wait_for_selector("#i_2")
 
-    send_keys(input_1, "hello")
+    await input_1.type("hello", delay=20)
 
-    driver_wait.until(lambda d: input_1.get_attribute("value") == "hello")
-    driver_wait.until(lambda d: input_2.get_attribute("value") == "hello")
+    assert (await input_1.evaluate("e => e.value")) == "hello"
+    assert (await input_2.evaluate("e => e.value")) == "hello"
 
-    send_keys(input_2, " world")
+    await input_2.focus()
+    await input_2.type(" world", delay=20)
 
-    driver_wait.until(lambda d: input_1.get_attribute("value") == "hello world")
-    driver_wait.until(lambda d: input_2.get_attribute("value") == "hello world")
+    assert (await input_1.evaluate("e => e.value")) == "hello world"
+    assert (await input_2.evaluate("e => e.value")) == "hello world"
 
 
-def test_use_linked_inputs_on_change(driver, driver_wait, display):
+async def test_use_linked_inputs_on_change(display: DisplayFixture):
     value = idom.Ref(None)
 
     @idom.component
@@ -114,21 +109,24 @@ def test_use_linked_inputs_on_change(driver, driver_wait, display):
         )
         return idom.html.div(i_1, i_2)
 
-    display(SomeComponent)
+    await display.show(SomeComponent)
 
-    input_1 = driver.find_element("id", "i_1")
-    input_2 = driver.find_element("id", "i_2")
+    input_1 = await display.page.wait_for_selector("#i_1")
+    input_2 = await display.page.wait_for_selector("#i_2")
 
-    send_keys(input_1, "hello")
+    await input_1.type("hello", delay=20)
 
-    driver_wait.until(lambda d: value.current == "hello")
+    poll_value = poll(lambda: value.current)
 
-    send_keys(input_2, " world")
+    await poll_value.until_equals("hello")
 
-    driver_wait.until(lambda d: value.current == "hello world")
+    await input_2.focus()
+    await input_2.type(" world", delay=20)
+
+    await poll_value.until_equals("hello world")
 
 
-def test_use_linked_inputs_on_change_with_cast(driver, driver_wait, display):
+async def test_use_linked_inputs_on_change_with_cast(display: DisplayFixture):
     value = idom.Ref(None)
 
     @idom.component
@@ -138,21 +136,24 @@ def test_use_linked_inputs_on_change_with_cast(driver, driver_wait, display):
         )
         return idom.html.div(i_1, i_2)
 
-    display(SomeComponent)
+    await display.show(SomeComponent)
 
-    input_1 = driver.find_element("id", "i_1")
-    input_2 = driver.find_element("id", "i_2")
+    input_1 = await display.page.wait_for_selector("#i_1")
+    input_2 = await display.page.wait_for_selector("#i_2")
 
-    send_keys(input_1, "1")
+    await input_1.type("1")
 
-    driver_wait.until(lambda d: value.current == 1)
+    poll_value = poll(lambda: value.current)
 
-    send_keys(input_2, "2")
+    await poll_value.until_equals(1)
 
-    driver_wait.until(lambda d: value.current == 12)
+    await input_2.focus()
+    await input_2.type("2")
+
+    await poll_value.until_equals(12)
 
 
-def test_use_linked_inputs_ignore_empty(driver, driver_wait, display):
+async def test_use_linked_inputs_ignore_empty(display: DisplayFixture):
     value = idom.Ref(None)
 
     @idom.component
@@ -164,19 +165,22 @@ def test_use_linked_inputs_ignore_empty(driver, driver_wait, display):
         )
         return idom.html.div(i_1, i_2)
 
-    display(SomeComponent)
+    await display.show(SomeComponent)
 
-    input_1 = driver.find_element("id", "i_1")
-    input_2 = driver.find_element("id", "i_2")
+    input_1 = await display.page.wait_for_selector("#i_1")
+    input_2 = await display.page.wait_for_selector("#i_2")
 
-    send_keys(input_1, "1")
+    await input_1.type("1")
 
-    driver_wait.until(lambda d: value.current == "1")
+    poll_value = poll(lambda: value.current)
 
-    send_keys(input_2, Keys.BACKSPACE)
+    await poll_value.until_equals("1")
 
-    assert value.current == "1"
+    await input_2.focus()
+    await input_2.press("Backspace")
 
-    send_keys(input_1, "2")
+    await poll_value.until_equals("1")
 
-    driver_wait.until(lambda d: value.current == "2")
+    await input_2.type("2")
+
+    await poll_value.until_equals("2")

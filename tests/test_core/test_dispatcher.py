@@ -1,18 +1,9 @@
 import asyncio
-import sys
 from typing import Any, Sequence
 
-import pytest
-
 import idom
-from idom.core.dispatcher import (
-    VdomJsonPatch,
-    _create_shared_view_dispatcher,
-    create_shared_view_dispatcher,
-    dispatch_single_view,
-    ensure_shared_view_dispatcher_future,
-)
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
+from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.testing import StaticEventHandler
 
 
@@ -95,92 +86,11 @@ def Counter():
     return idom.html.div({EVENT_NAME: handler, "count": count})
 
 
-async def test_dispatch_single_view():
+async def test_dispatch():
     events, expected_model = make_events_and_expected_model()
     changes, send, recv = make_send_recv_callbacks(events)
-    await asyncio.wait_for(dispatch_single_view(Layout(Counter()), send, recv), 1)
+    await asyncio.wait_for(serve_json_patch(Layout(Counter()), send, recv), 1)
     assert_changes_produce_expected_model(changes, expected_model)
-
-
-async def test_create_shared_state_dispatcher():
-    events, model = make_events_and_expected_model()
-    changes_1, send_1, recv_1 = make_send_recv_callbacks(events)
-    changes_2, send_2, recv_2 = make_send_recv_callbacks(events)
-
-    async with create_shared_view_dispatcher(Layout(Counter())) as dispatcher:
-        dispatcher(send_1, recv_1)
-        dispatcher(send_2, recv_2)
-
-    assert_changes_produce_expected_model(changes_1, model)
-    assert_changes_produce_expected_model(changes_2, model)
-
-
-async def test_ensure_shared_view_dispatcher_future():
-    events, model = make_events_and_expected_model()
-    changes_1, send_1, recv_1 = make_send_recv_callbacks(events)
-    changes_2, send_2, recv_2 = make_send_recv_callbacks(events)
-
-    dispatch_future, dispatch = ensure_shared_view_dispatcher_future(Layout(Counter()))
-
-    await asyncio.gather(
-        dispatch(send_1, recv_1),
-        dispatch(send_2, recv_2),
-        return_exceptions=True,
-    )
-
-    # the dispatch future should run forever, until cancelled
-    with pytest.raises(asyncio.TimeoutError):
-        await asyncio.wait_for(dispatch_future, timeout=1)
-
-    dispatch_future.cancel()
-    await asyncio.gather(dispatch_future, return_exceptions=True)
-
-    assert_changes_produce_expected_model(changes_1, model)
-    assert_changes_produce_expected_model(changes_2, model)
-
-
-async def test_private_create_shared_view_dispatcher_cleans_up_patch_queues():
-    """Report an issue if this test breaks
-
-    Some internals of idom.core.dispatcher may need to be changed in order to make some
-    internal state easier to introspect.
-
-    Ideally we would just check if patch queues are getting cleaned up more directly,
-    but without having access to that, we use some side effects to try and infer whether
-    it happens.
-    """
-
-    @idom.component
-    def SomeComponent():
-        return idom.html.div()
-
-    async def send(patch):
-        raise idom.Stop()
-
-    async def recv():
-        return LayoutEvent("something", [])
-
-    with idom.Layout(SomeComponent()) as layout:
-        dispatch_shared_view, push_patch = await _create_shared_view_dispatcher(layout)
-
-        # Dispatch a view that should exit. After exiting its patch queue should be
-        # cleaned up and removed. Since we only dispatched one view there should be
-        # no patch queues.
-        await dispatch_shared_view(send, recv)  # this should stop immediately
-
-        # We create a patch and check its ref count. We will check this after attempting
-        # to push out the change.
-        patch = VdomJsonPatch("anything", [])
-        patch_ref_count = sys.getrefcount(patch)
-
-        # We push out this change.
-        push_patch(patch)
-
-        # Because there should be no patch queues, we expect that the ref count remains
-        # the same. If the ref count had increased, then we would know that the patch
-        # queue has not been cleaned up and that the patch we just pushed was added to
-        # it.
-        assert not sys.getrefcount(patch) > patch_ref_count
 
 
 async def test_dispatcher_handles_more_than_one_event_at_a_time():
@@ -211,7 +121,7 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
     recv_queue = asyncio.Queue()
 
     asyncio.ensure_future(
-        dispatch_single_view(
+        serve_json_patch(
             idom.Layout(ComponentWithTwoEventHandlers()),
             send_queue.put,
             recv_queue.get,

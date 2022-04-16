@@ -1,3 +1,6 @@
+# --- Build Artifacts ---
+src/idom/_client
+
 # --- Jupyter ---
 *.ipynb_checkpoints
 *Untitled*.ipynb
@@ -37,6 +40,5 @@ pip-wheel-metadata
 .vscode
 
 # --- JS ---
-
 node_modules
-src/idom/client
+

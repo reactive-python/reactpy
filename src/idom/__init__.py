@@ -1,12 +1,13 @@
-from . import config, html, log, types, web
+from . import backend, config, html, logging, sample, types, web
+from .backend.utils import run
 from .core import hooks
 from .core.component import component
-from .core.dispatcher import Stop
 from .core.events import event
 from .core.hooks import (
     create_context,
     use_callback,
     use_context,
+    use_debug_value,
     use_effect,
     use_memo,
     use_reducer,
@@ -14,15 +15,14 @@ from .core.hooks import (
     use_state,
 )
 from .core.layout import Layout
+from .core.serve import Stop
 from .core.vdom import vdom
-from .sample import run_sample_app
-from .server.prefab import run
 from .utils import Ref, html_to_vdom
-from .widgets import hotswap, multiview
+from .widgets import hotswap
 
 
 __author__ = "idom-team"
-__version__ = "0.37.1"  # DO NOT MODIFY
+__version__ = "0.38.1"  # DO NOT MODIFY
 
 __all__ = [
     "component",
@@ -34,15 +34,16 @@ __all__ = [
     "html_to_vdom",
     "html",
     "Layout",
-    "log",
-    "multiview",
+    "logging",
     "Ref",
-    "run_sample_app",
     "run",
+    "sample",
+    "backend",
     "Stop",
     "types",
     "use_callback",
     "use_context",
+    "use_debug_value",
     "use_effect",
     "use_memo",
     "use_reducer",

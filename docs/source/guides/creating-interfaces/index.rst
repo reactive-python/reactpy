@@ -45,7 +45,7 @@ conditionally display more complex UIs.
 Section 1: HTML with IDOM
 -------------------------
 
-In a typical Python-base web application the resonsibility of defining the view along
+In a typical Python-base web application the responsibility of defining the view along
 with its backing data and logic are distributed between a client and server
 respectively. With IDOM, both these tasks are centralized in a single place. The most
 foundational pilar of this capability is formed by allowing HTML interfaces to be
@@ -112,7 +112,7 @@ Section 3: Rendering Data
 The last pillar of knowledge you need before you can start making :ref:`interactive
 interfaces <adding interactivity>` is the ability to render sections of the UI given a
 collection of data. This will require you to understand how elements which are derived
-from data in this way must be orgnized with :ref:`"keys" <Organizing Items With Keys>`.
+from data in this way must be organized with :ref:`"keys" <Organizing Items With Keys>`.
 One case where we might want to do this is if items in a todo list come from a list of
 data that we want to sort and filter:
 

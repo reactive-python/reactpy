@@ -59,6 +59,8 @@ extlinks = {
         "",
     ),
 }
+extlinks_detect_hardcoded_links = True
+
 
 # -- General configuration ---------------------------------------------------
 

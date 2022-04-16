@@ -51,7 +51,7 @@ class WidgetExample(SphinxDirective):
         if len(ex_files) == 1:
             labeled_tab_items.append(
                 (
-                    "app.py",
+                    "main.py",
                     _literal_include(
                         path=ex_files[0],
                         linenos=show_linenos,
@@ -59,7 +59,9 @@ class WidgetExample(SphinxDirective):
                 )
             )
         else:
-            for path in sorted(ex_files, key=lambda p: p.name):
+            for path in sorted(
+                ex_files, key=lambda p: "" if p.name == "main.py" else p.name
+            ):
                 labeled_tab_items.append(
                     (
                         path.name,
