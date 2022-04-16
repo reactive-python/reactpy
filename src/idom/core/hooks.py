@@ -228,7 +228,7 @@ def use_debug_value(
             variables that are referenced by the given function.
     """
     if not IDOM_DEBUG_MODE.current:
-        return
+        return  # pragma: no cover
 
     old: Ref[Any] = _use_const(lambda: Ref(object()))
     memo_func = message if callable(message) else lambda: message
