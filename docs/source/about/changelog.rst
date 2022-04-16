@@ -23,6 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+No changes.
+
+
+v0.38.1
+-------
+:octicon:`milestone` *released on 2022-04-15*
+
 Fixed:
 
 - `idom-team/idom-jupyter#22 <https://github.com/idom-team/idom-jupyter/issues/22>` -
