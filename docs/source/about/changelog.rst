@@ -32,7 +32,7 @@ v0.38.1
 
 **Fixed**
 
-- `idom-team/idom-jupyter#22 <https://github.com/idom-team/idom-jupyter/issues/22>` -
+- `idom-team/idom-jupyter#22 <https://github.com/idom-team/idom-jupyter/issues/22>`__ -
   a missing file extension was causing a problem with WebPack.
 
 
