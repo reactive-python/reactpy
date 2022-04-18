@@ -1,7 +1,7 @@
 """Exports common types from:
 
 - :mod:`idom.core.types`
-- :mod:`idom.server.types`
+- :mod:`idom.backend.types`
 """
 
 from .backend.types import BackendImplementation, Location
