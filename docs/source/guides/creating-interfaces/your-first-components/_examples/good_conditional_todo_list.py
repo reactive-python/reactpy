@@ -3,7 +3,7 @@ from idom import component, html, run
 
 @component
 def Item(name, done):
-    return html.li(name, "" if done else " ✔")
+    return html.li(name, " ✔" if done else "")
 
 
 @component
