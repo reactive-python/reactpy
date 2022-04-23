@@ -25,7 +25,7 @@ Unreleased
 
 **Added**
 
-- added ``selectedOptions`` to a multiple select's onChange event
+- :pull:`746` - added ``selectedOptions`` to a multiple select's onChange event
 
 
 v0.38.1
