@@ -23,7 +23,9 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Added**
+
+- added ``selectedOptions`` to a multiple select's onChange event
 
 
 v0.38.1

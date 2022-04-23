@@ -49,6 +49,13 @@ const elementTransformCategories = {
       return {};
     }
   },
+  hasSelectedOptions: (element) => {
+    if (element?.multiple) {
+      return {
+        selectedOptions: element.selectedOptions,
+      };
+    }
+  },
 };
 
 function defaultElementTransform(element) {
@@ -69,6 +76,7 @@ const elementTagCategories = {
   ],
   hasCurrentTime: ["AUDIO", "VIDEO"],
   hasFiles: ["INPUT"],
+  hasSelectedOptions: ["SELECT"],
 };
 
 const elementTransforms = {};
