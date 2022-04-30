@@ -21,10 +21,10 @@ To get a rough idea of how to write apps in IDOM, take a look at this tiny _Hell
 from idom import component, html, run
 
 @component
-def App():
+def HelloWorld():
     return html.h1("Hello, World!")
 
-run(App)
+run(HelloWorld)
 ```
 
 # Resources
