@@ -1,0 +1,21 @@
+name: Greetings
+
+on: [pull_request]
+
+jobs:
+    greeting:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/first-interaction@v1
+              with:
+                  repo-token: ${{ secrets.GITHUB_TOKEN }}
+                  pr-message: |
+                      Hello @${{ github.actor }}! Please remember the following:
+
+                      - Update the `changelog.rst` if your changes are significant.
+                      - Provide a verbose PR title and description.
+                      - List any GitHub issues that may be closed by this PR.
+                      - Add tests if this PR adds functionality or bugfixes.
+                      - Keep this PR marked as draft until ready for review.
+
+                      Thank you for your contribution!
