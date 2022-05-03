@@ -1,17 +1,19 @@
-name: PR Greetings Message
+name: Greetings Message
 
 on:
     pull_request:
-        types: [opened]
+        types: [opened, synchronize]
 
 jobs:
-    greeting:
+    GreetCommitter:
         runs-on: ubuntu-latest
         steps:
-            - uses: Manoj-Paramsetti/greets-action@1.0
-              with:
+            - name: "Greetings Message"
+              uses: ibakshay/greet-contributors-action@v3
+              env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  PR_message: |
+              with:
+                  content: |
                       Hello @${{ github.actor }}! Please remember the following:
 
                       - Update the `changelog.rst` if your changes are significant.
