@@ -1,15 +1,17 @@
-name: Greetings
+name: PR Greetings Message
 
-on: [pull_request]
+on:
+    pull_request:
+        types: [opened]
 
 jobs:
     greeting:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/first-interaction@v1
+            - uses: Manoj-Paramsetti/greets-action@1.0
               with:
-                  repo-token: ${{ secrets.GITHUB_TOKEN }}
-                  pr-message: |
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  PR_message: |
                       Hello @${{ github.actor }}! Please remember the following:
 
                       - Update the `changelog.rst` if your changes are significant.
