@@ -40,7 +40,7 @@ def run(
         "Change this before deploying in production!"
     )
 
-    implementation = implementation or import_module("idom.server.default")
+    implementation = implementation or import_module("idom.backend.default")
 
     app = implementation.create_development_app()
     implementation.configure(app, component)
