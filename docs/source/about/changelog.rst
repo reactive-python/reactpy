@@ -25,6 +25,14 @@ Unreleased
 
 No changes.
 
+v0.38.2
+-------
+:octicon:`milestone` *released on 2022-06-11*
+
+**Fixed**
+
+- ``idom.run`` would fail to run if not specifying a server implementation.
+
 
 v0.38.1
 -------
