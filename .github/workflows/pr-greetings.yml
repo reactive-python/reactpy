@@ -1,25 +1,25 @@
-name: Greetings Message
+# name: Greetings Message
 
-on:
-    pull_request:
-        types: [opened, synchronize]
+# on:
+#     pull_request:
+#         types: [opened, synchronize]
 
-jobs:
-    GreetCommitter:
-        runs-on: ubuntu-latest
-        steps:
-            - name: "Greetings Message"
-              uses: ibakshay/greet-contributors-action@v3
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              with:
-                  content: |
-                      Hello @${{ github.actor }}! Please remember the following:
+# jobs:
+#     GreetCommitter:
+#         runs-on: ubuntu-latest
+#         steps:
+#             - name: "Greetings Message"
+#               uses: ibakshay/greet-contributors-action@v3
+#               env:
+#                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#               with:
+#                   content: |
+#                       Hello @${{ github.actor }}! Please remember the following:
 
-                      - Update the `changelog.rst` if your changes are significant.
-                      - Provide a verbose PR title and description.
-                      - List any GitHub issues that may be closed by this PR.
-                      - Add tests if this PR adds functionality or bugfixes.
-                      - Keep this PR marked as draft until ready for review.
+#                       - Update the `changelog.rst` if your changes are significant.
+#                       - Provide a verbose PR title and description.
+#                       - List any GitHub issues that may be closed by this PR.
+#                       - Add tests if this PR adds functionality or bugfixes.
+#                       - Keep this PR marked as draft until ready for review.
 
-                      Thank you for your contribution!
+#                       Thank you for your contribution!
