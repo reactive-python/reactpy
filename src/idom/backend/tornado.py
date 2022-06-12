@@ -38,8 +38,6 @@ def configure(
 ) -> None:
     """Return a :class:`TornadoServer` where each client has its own state.
 
-    Implements the :class:`~idom.server.proto.ServerFactory` protocol
-
     Parameters:
         app: A tornado ``Application`` instance.
         component: A root component constructor

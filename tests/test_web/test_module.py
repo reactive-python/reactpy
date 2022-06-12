@@ -7,7 +7,7 @@ import idom
 from idom.backend import sanic as sanic_implementation
 from idom.testing import (
     DisplayFixture,
-    ServerFixture,
+    BackendFixture,
     assert_idom_did_log,
     assert_idom_did_not_log,
     poll,
@@ -70,7 +70,7 @@ async def test_module_from_url(browser):
     def ShowSimpleButton():
         return SimpleButton({"id": "my-button"})
 
-    async with ServerFixture(app=app, implementation=sanic_implementation) as server:
+    async with BackendFixture(app=app, implementation=sanic_implementation) as server:
         async with DisplayFixture(server, browser) as display:
             await display.show(ShowSimpleButton)
 

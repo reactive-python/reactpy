@@ -42,8 +42,6 @@ def configure(
 ) -> None:
     """Return a :class:`StarletteServer` where each client has its own state.
 
-    Implements the :class:`~idom.server.proto.ServerFactory` protocol
-
     Parameters:
         app: An application instance
         constructor: A component constructor

@@ -15,7 +15,7 @@ from idom.widgets import hotswap
 from .logs import LogAssertionError, capture_idom_logs, list_logged_exceptions
 
 
-class ServerFixture:
+class BackendFixture:
     """A test fixture for running a server and imperatively displaying views
 
     This fixture is typically used alongside async web drivers like ``playwight``.
@@ -99,7 +99,7 @@ class ServerFixture:
             del_log_records,
         )
 
-    async def __aenter__(self) -> ServerFixture:
+    async def __aenter__(self) -> BackendFixture:
         self._exit_stack = AsyncExitStack()
         self._records = self._exit_stack.enter_context(capture_idom_logs())
 

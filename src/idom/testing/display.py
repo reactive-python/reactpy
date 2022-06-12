@@ -9,7 +9,7 @@ from playwright.async_api import Browser, BrowserContext, Page, async_playwright
 from idom import html
 from idom.types import RootComponentConstructor
 
-from .server import ServerFixture
+from .backend import BackendFixture
 
 
 class DisplayFixture:
@@ -19,11 +19,11 @@ class DisplayFixture:
 
     def __init__(
         self,
-        server: ServerFixture | None = None,
+        server: BackendFixture | None = None,
         driver: Browser | BrowserContext | Page | None = None,
     ) -> None:
         if server is not None:
-            self.server = server
+            self.backend = server
         if driver is not None:
             if isinstance(driver, Page):
                 self.page = driver
@@ -37,13 +37,13 @@ class DisplayFixture:
     ) -> None:
         self._next_view_id += 1
         view_id = f"display-{self._next_view_id}"
-        self.server.mount(lambda: html.div({"id": view_id}, component()))
+        self.backend.mount(lambda: html.div({"id": view_id}, component()))
 
         await self.goto("/")
         await self.page.wait_for_selector(f"#{view_id}", state="attached")
 
     async def goto(self, path: str, query: Any | None = None) -> None:
-        await self.page.goto(self.server.url(path, query))
+        await self.page.goto(self.backend.url(path, query))
 
     async def __aenter__(self) -> DisplayFixture:
         es = self._exit_stack = AsyncExitStack()
@@ -58,8 +58,8 @@ class DisplayFixture:
             self.page = await browser.new_page()
 
         if not hasattr(self, "server"):
-            self.server = ServerFixture()
-            await es.enter_async_context(self.server)
+            self.backend = BackendFixture()
+            await es.enter_async_context(self.backend)
 
         return self
 
@@ -69,5 +69,5 @@ class DisplayFixture:
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
-        self.server.mount(None)
+        self.backend.mount(None)
         await self._exit_stack.aclose()

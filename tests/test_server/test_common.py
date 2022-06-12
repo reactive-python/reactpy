@@ -7,7 +7,7 @@ from idom import html
 from idom.backend import default as default_implementation
 from idom.backend.types import Location
 from idom.backend.utils import all_implementations
-from idom.testing import DisplayFixture, ServerFixture, poll
+from idom.testing import DisplayFixture, BackendFixture, poll
 
 
 @pytest.fixture(
@@ -16,7 +16,7 @@ from idom.testing import DisplayFixture, ServerFixture, poll
     scope="module",
 )
 async def display(page, request):
-    async with ServerFixture(implementation=request.param) as server:
+    async with BackendFixture(implementation=request.param) as server:
         async with DisplayFixture(server=server, driver=page) as display:
             yield display
 
@@ -69,7 +69,7 @@ async def test_use_scope(display: DisplayFixture):
 
     @idom.component
     def ShowScope():
-        scope.current = display.server.implementation.use_scope()
+        scope.current = display.backend.implementation.use_scope()
         return html.pre({"id": "scope"}, str(scope.current))
 
     await display.show(ShowScope)
@@ -88,7 +88,7 @@ async def test_use_location(display: DisplayFixture):
 
     @idom.component
     def ShowRoute():
-        location.current = display.server.implementation.use_location()
+        location.current = display.backend.implementation.use_location()
         return html.pre({"id": "scope"}, str(location.current))
 
     await display.show(ShowRoute)

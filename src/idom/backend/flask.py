@@ -47,8 +47,6 @@ def configure(
 ) -> None:
     """Return a :class:`FlaskServer` where each client has its own state.
 
-    Implements the :class:`~idom.server.proto.ServerFactory` protocol
-
     Parameters:
         constructor: A component constructor
         options: Options for configuring server behavior

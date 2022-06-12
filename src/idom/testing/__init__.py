@@ -6,7 +6,7 @@ from .logs import (
     assert_idom_did_not_log,
     capture_idom_logs,
 )
-from .server import ServerFixture
+from .backend import BackendFixture
 
 
 __all__ = [
@@ -18,6 +18,6 @@ __all__ = [
     "HookCatcher",
     "LogAssertionError",
     "poll",
-    "ServerFixture",
+    "BackendFixture",
     "StaticEventHandler",
 ]
