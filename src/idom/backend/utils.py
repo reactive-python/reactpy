@@ -35,7 +35,7 @@ def run(
     implementation: BackendImplementation[Any] | None = None,
 ) -> None:
     """Run a component with a development server"""
-    logger.warn(
+    logger.warning(
         "You are running a development server. "
         "Change this before deploying in production!"
     )
