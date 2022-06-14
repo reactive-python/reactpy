@@ -6,8 +6,8 @@ from sanic import Sanic
 import idom
 from idom.backend import sanic as sanic_implementation
 from idom.testing import (
-    DisplayFixture,
     BackendFixture,
+    DisplayFixture,
     assert_idom_did_log,
     assert_idom_did_not_log,
     poll,

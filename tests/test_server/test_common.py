@@ -7,7 +7,7 @@ from idom import html
 from idom.backend import default as default_implementation
 from idom.backend.types import Location
 from idom.backend.utils import all_implementations
-from idom.testing import DisplayFixture, BackendFixture, poll
+from idom.testing import BackendFixture, DisplayFixture, poll
 
 
 @pytest.fixture(

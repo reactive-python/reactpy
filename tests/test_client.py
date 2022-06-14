@@ -5,7 +5,7 @@ from pathlib import Path
 from playwright.async_api import Browser
 
 import idom
-from idom.testing import DisplayFixture, BackendFixture
+from idom.testing import BackendFixture, DisplayFixture
 
 
 JS_DIR = Path(__file__).parent / "js"

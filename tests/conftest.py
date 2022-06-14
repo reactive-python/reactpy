@@ -9,8 +9,8 @@ from playwright.async_api import async_playwright
 
 from idom.config import IDOM_TESTING_DEFAULT_TIMEOUT
 from idom.testing import (
-    DisplayFixture,
     BackendFixture,
+    DisplayFixture,
     capture_idom_logs,
     clear_idom_web_modules_dir,
 )
