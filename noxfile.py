@@ -223,7 +223,7 @@ def test_python_style(session: Session) -> None:
 @nox.session
 @apply_standard_pip_upgrades
 def test_python_build(session: Session) -> None:
-    """Test whether the Python package can be build for distribution"""
+    """Test whether the Python package can be built for distribution"""
     install_requirements_file(session, "build-pkg")
     session.run("python", "-m", "build", "--sdist", "--wheel", "--outdir", "dist", ".")
 
@@ -268,7 +268,7 @@ def test_javascript_suite(session: Session) -> None:
 @nox.session
 @setup_client_env
 def test_javascript_build(session: Session) -> None:
-    """Run the Javascript-based test suite and ensure it bundles succesfully"""
+    """Test whether the Javascript package can be built for distribution"""
     session.run("npm", "run", "test", external=True)
 
 
