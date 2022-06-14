@@ -80,7 +80,7 @@ def use_linked_inputs(
     value, set_value = idom.hooks.use_state(initial_value)
 
     def sync_inputs(event: Dict[str, Any]) -> None:
-        new_value = event["value"]
+        new_value = event["target"]
         set_value(new_value)
         if not new_value and ignore_empty:
             return None
