@@ -126,7 +126,7 @@ def _setup_common_routes(options: Options, app: Starlette) -> None:
 
     if options.serve_static_files:
         wm_dir = IDOM_WEB_MODULES_DIR.current
-        web_module_files = StaticFiles(directory=wm_dir, html=True, check_dir=False)
+        web_module_files = StaticFiles(directory=wm_dir, check_dir=False)
         app.mount(url_prefix + "/_api/modules", web_module_files)
         app.mount(url_prefix + "/{_:path}/_api/modules", web_module_files)
 
