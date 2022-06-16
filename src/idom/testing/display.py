@@ -57,7 +57,7 @@ class DisplayFixture:
                 browser = self._browser
             self.page = await browser.new_page()
 
-        if not hasattr(self, "server"):
+        if not hasattr(self, "backend"):
             self.backend = BackendFixture()
             await es.enter_async_context(self.backend)
 
