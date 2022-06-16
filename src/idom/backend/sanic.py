@@ -154,7 +154,10 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
             _: str = "",  # this is not used
         ) -> response.HTTPResponse:
             path = urllib_parse.unquote(path)
-            return await response.file(safe_web_modules_dir_path(path))
+            return await response.file(
+                safe_web_modules_dir_path(path),
+                mime_type="text/javascript",
+            )
 
         blueprint.add_route(web_module_files, "/_api/modules/<path:path>")
         blueprint.add_route(web_module_files, "/<_:path>/_api/modules/<path:path>")
