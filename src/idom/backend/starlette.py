@@ -40,13 +40,11 @@ def configure(
     constructor: RootComponentConstructor,
     options: Options | None = None,
 ) -> None:
-    """Return a :class:`StarletteServer` where each client has its own state.
-
-    Implements the :class:`~idom.server.proto.ServerFactory` protocol
+    """Configure the necessary IDOM routes on the given app.
 
     Parameters:
         app: An application instance
-        constructor: A component constructor
+        component: A component constructor
         options: Options for configuring server behavior
     """
     options = options or Options()

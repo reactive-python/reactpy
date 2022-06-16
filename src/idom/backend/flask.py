@@ -45,14 +45,12 @@ ConnectionContext: type[Context[Connection | None]] = create_context(
 def configure(
     app: Flask, component: RootComponentConstructor, options: Options | None = None
 ) -> None:
-    """Return a :class:`FlaskServer` where each client has its own state.
-
-    Implements the :class:`~idom.server.proto.ServerFactory` protocol
+    """Configure the necessary IDOM routes on the given app.
 
     Parameters:
-        constructor: A component constructor
+        app: An application instance
+        component: A component constructor
         options: Options for configuring server behavior
-        app: An application instance (otherwise a default instance is created)
     """
     options = options or Options()
     blueprint = Blueprint("idom", __name__, url_prefix=options.url_prefix)

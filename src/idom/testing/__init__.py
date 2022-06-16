@@ -1,3 +1,4 @@
+from .backend import BackendFixture
 from .common import HookCatcher, StaticEventHandler, clear_idom_web_modules_dir, poll
 from .display import DisplayFixture
 from .logs import (
@@ -6,7 +7,6 @@ from .logs import (
     assert_idom_did_not_log,
     capture_idom_logs,
 )
-from .server import ServerFixture
 
 
 __all__ = [
@@ -18,6 +18,6 @@ __all__ = [
     "HookCatcher",
     "LogAssertionError",
     "poll",
-    "ServerFixture",
+    "BackendFixture",
     "StaticEventHandler",
 ]

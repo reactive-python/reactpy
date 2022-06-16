@@ -141,9 +141,9 @@ def test_if_app_is_given_implementation_must_be_too():
         ValueError,
         match=r"If an application instance its corresponding server implementation must be provided too",
     ):
-        testing.ServerFixture(app=starlette_implementation.create_development_app())
+        testing.BackendFixture(app=starlette_implementation.create_development_app())
 
-    testing.ServerFixture(
+    testing.BackendFixture(
         app=starlette_implementation.create_development_app(),
         implementation=starlette_implementation,
     )
