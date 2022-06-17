@@ -9,8 +9,8 @@ from playwright.async_api import async_playwright
 
 from idom.config import IDOM_TESTING_DEFAULT_TIMEOUT
 from idom.testing import (
+    BackendFixture,
     DisplayFixture,
-    ServerFixture,
     capture_idom_logs,
     clear_idom_web_modules_dir,
 )
@@ -34,7 +34,7 @@ async def display(server, page):
 
 @pytest.fixture(scope="session")
 async def server():
-    async with ServerFixture() as server:
+    async with BackendFixture() as server:
         yield server
 
 

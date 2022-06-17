@@ -36,14 +36,12 @@ def configure(
     component: ComponentConstructor,
     options: Options | None = None,
 ) -> None:
-    """Return a :class:`TornadoServer` where each client has its own state.
-
-    Implements the :class:`~idom.server.proto.ServerFactory` protocol
+    """Configure the necessary IDOM routes on the given app.
 
     Parameters:
-        app: A tornado ``Application`` instance.
-        component: A root component constructor
-        options: Options for configuring how the component is mounted to the server.
+        app: An application instance
+        component: A component constructor
+        options: Options for configuring server behavior
     """
     options = options or Options()
     _add_handler(
