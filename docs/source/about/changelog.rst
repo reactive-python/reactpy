@@ -23,7 +23,18 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Fixed**
+
+- :pull:`763` - ``No module named 'idom.server'`` from ``idom.run``
+- :pull:`749` - Setting appropriate MIME type for web modules in `sanic` server implementation
+
+**Changed**
+
+- :pull:`763` - renamed various:
+
+  - ``idom.testing.server -> idom.testing.backend``
+  - ``ServerFixture -> BackendFixture``
+  - ``DisplayFixture.server -> DisplayFixture.backend``
 
 
 v0.38.1
