@@ -122,6 +122,10 @@ def module_from_template(
             Using this option has negative performance consequences since all DOM
             elements must be changed on each render. See :issue:`461` for more info.
     """
+    template_name, _, template_version = template.partition("@")
+    if template_version:
+        template_version = "@" + template_version
+
     # We do this since the package may be any valid URL path. Thus we may need to strip
     # object parameters or query information so we save the resulting template under the
     # correct file name.
@@ -131,7 +135,7 @@ def module_from_template(
     cdn = cdn.rstrip("/")
 
     template_file_name = (
-        template
+        template_name
         + (".default" if exports_default else "")
         + module_name_suffix(package_name)
     )
@@ -140,7 +144,7 @@ def module_from_template(
     if not template_file.exists():
         raise ValueError(f"No template for {template_file_name!r} exists")
 
-    variables = {"PACKAGE": package, "CDN": cdn}
+    variables = {"PACKAGE": package, "CDN": cdn, "VERSION": template_version}
     content = Template(template_file.read_text()).substitute(variables)
 
     return module_from_string(

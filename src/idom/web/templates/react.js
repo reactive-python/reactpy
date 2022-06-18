@@ -1,7 +1,7 @@
 export * from "$CDN/$PACKAGE";
 
-import * as React from "$CDN/react";
-import * as ReactDOM from "$CDN/react-dom";
+import * as React from "$CDN/react$VERSION";
+import * as ReactDOM from "$CDN/react-dom$VERSION";
 
 export function bind(node, config) {
   return {
