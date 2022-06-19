@@ -83,7 +83,9 @@ def test_module_from_template_where_template_does_not_exist():
 
 
 async def test_module_from_template(display: DisplayFixture):
-    victory = idom.web.module_from_template("react", "victory-bar@35.4.0")
+    victory = idom.web.module_from_template("react@18.2.0", "victory-bar@35.4.0")
+
+    assert "react@18.2.0" in victory.file.read_text()
     VictoryBar = idom.web.export(victory, "VictoryBar")
     await display.show(VictoryBar)
 
