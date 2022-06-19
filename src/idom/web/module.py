@@ -79,7 +79,6 @@ def module_from_template(
     package: str,
     cdn: str = "https://esm.sh",
     fallback: Optional[Any] = None,
-    exports_default: bool = False,
     resolve_exports: bool = IDOM_DEBUG_MODE.current,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
@@ -110,8 +109,6 @@ def module_from_template(
             Where the package should be loaded from. The CDN must distribute ESM modules
         fallback:
             What to temporarilly display while the module is being loaded.
-        exports_default:
-            Whether the module has a default export.
         resolve_imports:
             Whether to try and find all the named exports of this module.
         resolve_exports_depth:
@@ -133,11 +130,7 @@ def module_from_template(
     # downstream code assumes no trailing slash
     cdn = cdn.rstrip("/")
 
-    template_file_name = (
-        template_name
-        + (".default" if exports_default else "")
-        + module_name_suffix(package_name)
-    )
+    template_file_name = template_name + module_name_suffix(package_name)
 
     template_file = Path(__file__).parent / "templates" / template_file_name
     if not template_file.exists():
