@@ -93,7 +93,7 @@ def module_from_template(
 
         This approach is not recommended for use in a production setting because the
         framework templates may use unpinned dependencies that could change without
-        warning.cIt's best to author a module adhering to the
+        warning. It's best to author a module adhering to the
         :ref:`Custom Javascript Component` interface instead.
 
     **Templates**
@@ -123,8 +123,7 @@ def module_from_template(
             elements must be changed on each render. See :issue:`461` for more info.
     """
     template_name, _, template_version = template.partition("@")
-    if template_version:
-        template_version = "@" + template_version
+    template_version = "@" + template_version if template_version else ""
 
     # We do this since the package may be any valid URL path. Thus we may need to strip
     # object parameters or query information so we save the resulting template under the

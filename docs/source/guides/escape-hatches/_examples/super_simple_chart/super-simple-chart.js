@@ -48,10 +48,9 @@ function makePath(props, domain, data, options) {
   const getSvgX = (x) => ((x - xMin) / (xMax - xMin)) * width;
   const getSvgY = (y) => height - ((y - yMin) / (yMax - yMin)) * height;
 
-  let pathD = "M " + getSvgX(data[0].x) + " " + getSvgY(data[0].y) + " ";
-  pathD += data.map((point, i) => {
-    return "L " + getSvgX(point.x) + " " + getSvgY(point.y) + " ";
-  });
+  let pathD =
+    `M ${getSvgX(data[0].x)} ${getSvgY(data[0].y)} ` +
+    data.map(({ x, y }, i) => `L ${getSvgX(x)} ${getSvgY(y)}`).join(" ");
 
   return html`<path
     d="${pathD}"
