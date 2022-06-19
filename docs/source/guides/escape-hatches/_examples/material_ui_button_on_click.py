@@ -3,7 +3,11 @@ import json
 import idom
 
 
-mui = idom.web.module_from_template("react", "@material-ui/core@^5.0", fallback="⌛")
+mui = idom.web.module_from_template(
+    "react@^17.0.0",
+    "@material-ui/core@4.12.4",
+    fallback="⌛",
+)
 Button = idom.web.export(mui, "Button")
 
 

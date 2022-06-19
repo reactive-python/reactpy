@@ -79,7 +79,6 @@ def module_from_template(
     package: str,
     cdn: str = "https://esm.sh",
     fallback: Optional[Any] = None,
-    exports_default: bool = False,
     resolve_exports: bool = IDOM_DEBUG_MODE.current,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
@@ -93,7 +92,7 @@ def module_from_template(
 
         This approach is not recommended for use in a production setting because the
         framework templates may use unpinned dependencies that could change without
-        warning.cIt's best to author a module adhering to the
+        warning. It's best to author a module adhering to the
         :ref:`Custom Javascript Component` interface instead.
 
     **Templates**
@@ -110,8 +109,6 @@ def module_from_template(
             Where the package should be loaded from. The CDN must distribute ESM modules
         fallback:
             What to temporarilly display while the module is being loaded.
-        exports_default:
-            Whether the module has a default export.
         resolve_imports:
             Whether to try and find all the named exports of this module.
         resolve_exports_depth:
@@ -122,6 +119,9 @@ def module_from_template(
             Using this option has negative performance consequences since all DOM
             elements must be changed on each render. See :issue:`461` for more info.
     """
+    template_name, _, template_version = template.partition("@")
+    template_version = "@" + template_version if template_version else ""
+
     # We do this since the package may be any valid URL path. Thus we may need to strip
     # object parameters or query information so we save the resulting template under the
     # correct file name.
@@ -130,17 +130,13 @@ def module_from_template(
     # downstream code assumes no trailing slash
     cdn = cdn.rstrip("/")
 
-    template_file_name = (
-        template
-        + (".default" if exports_default else "")
-        + module_name_suffix(package_name)
-    )
+    template_file_name = template_name + module_name_suffix(package_name)
 
     template_file = Path(__file__).parent / "templates" / template_file_name
     if not template_file.exists():
         raise ValueError(f"No template for {template_file_name!r} exists")
 
-    variables = {"PACKAGE": package, "CDN": cdn}
+    variables = {"PACKAGE": package, "CDN": cdn, "VERSION": template_version}
     content = Template(template_file.read_text()).substitute(variables)
 
     return module_from_string(

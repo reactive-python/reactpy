@@ -4,10 +4,8 @@ import idom
 
 
 react_cytoscapejs = idom.web.module_from_template(
-    # we need to use this template because react-cytoscapejs uses a default export
     "react",
     "react-cytoscapejs",
-    exports_default=True,
     fallback="⌛",
 )
 Cytoscape = idom.web.export(react_cytoscapejs, "default")

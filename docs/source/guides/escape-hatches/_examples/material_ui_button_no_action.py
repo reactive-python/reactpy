@@ -1,11 +1,17 @@
-import idom
+from idom import component, run, web
 
 
-mui = idom.web.module_from_template("react", "@material-ui/core@^5.0", fallback="⌛")
-Button = idom.web.export(mui, "Button")
-
-idom.run(
-    idom.component(
-        lambda: Button({"color": "primary", "variant": "contained"}, "Hello World!")
-    )
+mui = web.module_from_template(
+    "react@^17.0.0",
+    "@material-ui/core@4.12.4",
+    fallback="⌛",
 )
+Button = web.export(mui, "Button")
+
+
+@component
+def HelloWorld():
+    return Button({"color": "primary", "variant": "contained"}, "Hello World!")
+
+
+run(HelloWorld)

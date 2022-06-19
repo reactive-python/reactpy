@@ -36,6 +36,14 @@ Unreleased
   - ``ServerFixture -> BackendFixture``
   - ``DisplayFixture.server -> DisplayFixture.backend``
 
+- :pull:`765` - ``exports_default`` parameter is not longer required for
+  ``module_from_template`` when exporting ``default``.
+
+**Added**
+
+- :pull:`765` - ability to specify versions with module templates (e.g.
+  ``module_from_template("react@^17.0.0", ...)``).
+
 
 v0.38.1
 -------

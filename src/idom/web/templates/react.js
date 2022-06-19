@@ -1,7 +1,20 @@
 export * from "$CDN/$PACKAGE";
 
-import * as React from "$CDN/react";
-import * as ReactDOM from "$CDN/react-dom";
+import * as React from "$CDN/react$VERSION";
+import * as ReactDOM from "$CDN/react-dom$VERSION";
+
+export default ({ children, ...props }) => {
+  const [{ component }, setComponent] = React.useState({});
+  React.useEffect(() => {
+    import("$CDN/$PACKAGE").then((module) => {
+      // dynamically load the default export since we don't know if it's exported.
+      setComponent({ component: module.default });
+    });
+  });
+  return component
+    ? React.createElement(component, props, ...(children || []))
+    : null;
+};
 
 export function bind(node, config) {
   return {
