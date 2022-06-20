@@ -23,6 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+No changes.
+
+
+v0.39.0
+-------
+:octicon:`milestone` *released on 2022-06-20*
+
 **Fixed**
 
 - :pull:`763` - ``No module named 'idom.server'`` from ``idom.run``
@@ -36,8 +43,7 @@ Unreleased
   - ``ServerFixture -> BackendFixture``
   - ``DisplayFixture.server -> DisplayFixture.backend``
 
-- :pull:`765` - ``exports_default`` parameter is not longer required for
-  ``module_from_template`` when exporting ``default``.
+- :pull:`765` - ``exports_default`` parameter is removed from ``module_from_template``.
 
 **Added**
 
