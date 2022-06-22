@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
-from typing import Any, MutableMapping, TypeVar
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any, Generic, MutableMapping, TypeVar
 
 from typing_extensions import Protocol, runtime_checkable
 
@@ -56,3 +57,14 @@ class Location:
 
     search: str = ""
     """A search or query string - a '?' followed by the parameters of the URL."""
+
+
+_State = TypeVar("_State")
+
+
+@dataclass
+class SessionState(Generic[_State]):
+    id: str
+    value: _State
+    expiry_date: datetime
+    fresh: bool = field(default_factory=lambda: True)

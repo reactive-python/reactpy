@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Dict, Tuple, Union
 from urllib import parse as urllib_parse
 from uuid import uuid4
@@ -14,7 +14,7 @@ from sanic.models.asgi import ASGIScope
 from sanic_cors import CORS
 from websockets.legacy.protocol import WebSocketCommonProtocol
 
-from idom.backend.types import Location
+from idom.backend.types import Location, SessionState
 from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import (
@@ -27,7 +27,12 @@ from idom.core.serve import (
 from idom.core.types import RootComponentConstructor
 
 from ._asgi import serve_development_asgi
-from .utils import safe_client_build_dir_path, safe_web_modules_dir_path
+from .utils import (
+    SESSION_COOKIE_NAME,
+    SessionManager,
+    safe_client_build_dir_path,
+    safe_web_modules_dir_path,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -47,7 +52,7 @@ def configure(
     _setup_common_routes(blueprint, options)
 
     # this route should take priority so set up it up first
-    _setup_single_view_dispatcher_route(blueprint, component)
+    _setup_single_view_dispatcher_route(blueprint, component, options)
 
     app.blueprint(blueprint)
 
@@ -129,6 +134,9 @@ class Options:
     url_prefix: str = ""
     """The URL prefix where IDOM resources will be served from"""
 
+    session_manager: SessionManager[Any] | None = None
+    """Used to create session cookies to perserve client state"""
+
 
 def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
     cors_options = options.cors
@@ -164,21 +172,54 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
 
 
 def _setup_single_view_dispatcher_route(
-    blueprint: Blueprint, constructor: RootComponentConstructor
+    blueprint: Blueprint,
+    constructor: RootComponentConstructor,
+    options: Options,
 ) -> None:
     async def model_stream(
         request: request.Request, socket: WebSocketCommonProtocol, path: str = ""
     ) -> None:
+        root = ConnectionContext(constructor(), value=Connection(request, socket, path))
+
+        if options.session_manager:
+            root = options.session_manager.context(
+                root, value=request.ctx.idom_sesssion_state
+            )
+
         send, recv = _make_send_recv_callbacks(socket)
-        conn = Connection(request, socket, path)
-        await serve_json_patch(
-            Layout(ConnectionContext(constructor(), value=conn)),
-            send,
-            recv,
-        )
+        await serve_json_patch(Layout(root), send, recv)
 
     blueprint.add_websocket_route(model_stream, "/_api/stream")
     blueprint.add_websocket_route(model_stream, "/<path:path>/_api/stream")
+
+    if options.session_manager:
+        smgr = options.session_manager
+
+        @blueprint.on_request
+        async def set_session_on_request(request: request.Request) -> None:
+            if request.scheme not in ("http", "https"):
+                return
+            session_id = request.cookies.get(SESSION_COOKIE_NAME)
+            request.ctx.idom_session_state = await smgr.get_state(session_id)
+
+        @blueprint.on_response
+        async def set_session_cookie_header(
+            request: request.Request, response: response.ResponseStream
+        ):
+            session_state: SessionState[Any] = request.ctx.idom_session_state
+            # only set cookie if it has not been set before
+            if session_state.fresh:
+                # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie
+                response.cookies[SESSION_COOKIE_NAME] = session_state.id
+                response.cookies[SESSION_COOKIE_NAME]["secure"] = True
+                response.cookies[SESSION_COOKIE_NAME]["httponly"] = True
+                response.cookies[SESSION_COOKIE_NAME]["samesite"] = "strict"
+                response.cookies[SESSION_COOKIE_NAME][
+                    "expires"
+                ] = session_state.expiry_date
+
+                await smgr.update_state(replace(session_state, fresh=False))
+                logger.info(f"Setting cookie {response.cookies[SESSION_COOKIE_NAME]}")
 
 
 def _make_send_recv_callbacks(

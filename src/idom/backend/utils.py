@@ -5,15 +5,18 @@ import logging
 import os
 import socket
 from contextlib import closing
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Awaitable, Callable, Generic, Iterator, TypeVar
 
 import idom
 from idom.config import IDOM_WEB_MODULES_DIR
+from idom.core.hooks import create_context, use_context
 from idom.types import RootComponentConstructor
 
-from .types import BackendImplementation
+from .types import BackendImplementation, SessionState
 
 
 logger = logging.getLogger(__name__)
@@ -26,6 +29,50 @@ SUPPORTED_PACKAGES = (
     "tornado",
     "flask",
 )
+
+
+SESSION_COOKIE_NAME = "IdomSessionId"
+
+
+_State = TypeVar("_State")
+
+
+class SessionManager(Generic[_State]):
+    def __init__(
+        self,
+        create_state: Callable[[], Awaitable[_State]],
+        read_state: Callable[[str], Awaitable[_State | None]],
+        update_state: Callable[[_State], Awaitable[None]],
+    ):
+        self.context = create_context(None)
+        self._create_state = create_state
+        self._read_state = read_state
+        self._update_state = update_state
+
+    def use_context(self) -> _State:
+        return use_context(self.context)
+
+    async def update_state(self, state: SessionState[_State]) -> None:
+        await self._update_state(state)
+        logger.info(f"Updated session {state.id}")
+
+    async def get_state(self, id: str | None = None) -> SessionState[_State] | None:
+        if id is None:
+            state = await self._create_state()
+            logger.info(f"Created new session {state.id!r}")
+        else:
+            state = await self._read_state(id)
+            if state is None:
+                logger.info(f"Could not load session {id!r}")
+                state = await self._create_state()
+                logger.info(f"Created new session {state.id!r}")
+            elif state.expiry_date < datetime.now(timezone.utc):
+                logger.info(f"Session {id!r} expired at {state.expiry_date}")
+                state = await self._create_state()
+                logger.info(f"Created new session {state.id!r}")
+            else:
+                logger.info(f"Loaded existing session {id!r}")
+        return state
 
 
 def run(
