@@ -26,7 +26,7 @@ from werkzeug.serving import BaseWSGIServer, make_server
 
 import idom
 from idom.backend.types import Location
-from idom.core.hooks import Context, create_context, use_context
+from idom.core.hooks import ContextType, create_context, use_context
 from idom.core.layout import LayoutEvent, LayoutUpdate
 from idom.core.serve import serve_json_patch
 from idom.core.types import ComponentType, RootComponentConstructor
@@ -37,9 +37,7 @@ from .utils import safe_client_build_dir_path, safe_web_modules_dir_path
 
 logger = logging.getLogger(__name__)
 
-ConnectionContext: type[Context[Connection | None]] = create_context(
-    None, "ConnectionContext"
-)
+ConnectionContext: ContextType[Connection | None] = create_context(None, "connection")
 
 
 def configure(

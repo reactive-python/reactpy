@@ -18,7 +18,7 @@ from tornado.wsgi import WSGIContainer
 
 from idom.backend.types import Location
 from idom.config import IDOM_WEB_MODULES_DIR
-from idom.core.hooks import Context, create_context, use_context
+from idom.core.hooks import ContextType, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
@@ -26,9 +26,7 @@ from idom.core.types import ComponentConstructor
 from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
 
 
-ConnectionContext: type[Context[Connection | None]] = create_context(
-    None, "ConnectionContext"
-)
+ConnectionContext: ContextType[Connection | None] = create_context(None, "Connection")
 
 
 def configure(

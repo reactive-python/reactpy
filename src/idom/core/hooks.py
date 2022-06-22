@@ -21,6 +21,7 @@ from typing import (
     cast,
     overload,
 )
+from weakref import ref
 
 from typing_extensions import Protocol
 
@@ -240,19 +241,13 @@ def use_debug_value(
 
 
 def create_context(
-    default_value: _StateType, name: str | None = None
-) -> type[Context[_StateType]]:
+    default_value: _StateType, name: str = ""
+) -> ContextType[_StateType]:
     """Return a new context type for use in :func:`use_context`"""
-
-    class _Context(Context[_StateType]):
-        _default_value = default_value
-
-    _Context.__name__ = name or "Context"
-
-    return _Context
+    return ContextType(default_value, name)
 
 
-def use_context(context_type: type[Context[_StateType]]) -> _StateType:
+def use_context(context_type: ContextType[_StateType]) -> _StateType:
     """Get the current value for the given context type.
 
     See the full :ref:`Use Context` docs for more information.
@@ -262,76 +257,89 @@ def use_context(context_type: type[Context[_StateType]]) -> _StateType:
     # that newly present current context. When we update it though, we don't need to
     # schedule a new render since we're already rending right now. Thus we can't do this
     # with use_state() since we'd incur an extra render when calling set_state.
-    context_ref: Ref[Context[_StateType] | None] = use_ref(None)
+    provider_ref: Ref[ContextProvider[_StateType] | None] = use_ref(None)
 
-    if context_ref.current is None:
-        provided_context = context_type._current.get()
-        if provided_context is None:
+    if provider_ref.current is None:
+        provider = context_type.current_provider.get()
+        if provider is None:
             # Cast required because of: https://github.com/python/mypy/issues/5144
-            return cast(_StateType, context_type._default_value)
-        context_ref.current = provided_context
+            return context_type.default_value
+        provider_ref.current = provider
 
     # We need the hook now so that we can schedule an update when
     hook = current_hook()
 
-    context = context_ref.current
+    provider = provider_ref.current
 
     @use_effect
     def subscribe_to_context_change() -> Callable[[], None]:
-        def set_context(new: Context[_StateType]) -> None:
-            # We don't need to check if `new is not context_ref.current` because we only
-            # trigger this callback when the value of a context, and thus the context
-            # itself changes. Therefore we can always schedule a render.
-            context_ref.current = new
+        def set_context(new: ContextType[_StateType]) -> None:
+            # We don't need to check if `new is not provider_ref.current` because we
+            # only trigger this callback when the value of a provider, and thus the
+            # provider itself changes. Therefore we can always schedule a render.
+            provider_ref.current = new
             hook.schedule_render()
 
-        context.subscribers.add(set_context)
-        return lambda: context.subscribers.remove(set_context)
+        provider.subscribers.add(set_context)
+        return lambda: provider.subscribers.remove(set_context)
 
-    return context.value
+    return provider.value
 
 
 _UNDEFINED: Any = object()
 
 
-class Context(Generic[_StateType]):
+class ContextType(Generic[_StateType]):
+    def __init__(self, default_value: _StateType = _UNDEFINED, name: str = "") -> None:
+        self.name = name
+        self.current_provider: ThreadLocal[_StateType] = ThreadLocal(lambda: None)
+        self.default_value = default_value
 
-    # This should be _StateType instead of Any, but it can't due to this limitation:
-    # https://github.com/python/mypy/issues/5144
-    _default_value: ClassVar[Any]
-
-    _current: ClassVar[ThreadLocal[Context[Any] | None]]
-
-    def __init_subclass__(cls) -> None:
-        # every context type tracks which of its instances are currently in use
-        cls._current = ThreadLocal(lambda: None)
-
-    def __init__(
+    def __call__(
         self,
         *children: Any,
         value: _StateType = _UNDEFINED,
         key: Key | None = None,
+    ) -> ContextProvider:
+        return ContextProvider(self, self.name, children, value, key)
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.name or id(self)!r})"
+
+
+class ContextProvider(Generic[_StateType]):
+    def __init__(
+        self,
+        context: ContextType[_StateType],
+        name: str,
+        children: Tuple[Any, ...],
+        value: _StateType = _UNDEFINED,
+        key: Key | None = None,
     ) -> None:
+        self.context = ref(context)
+        self.name = name
         self.children = children
-        self.value: _StateType = self._default_value if value is _UNDEFINED else value
+        self.value: _StateType = context.default_value if value is _UNDEFINED else value
         self.key = key
-        self.subscribers: set[Callable[[Context[_StateType]], None]] = set()
-        self.type = self.__class__
+        self.type = context
+        self.subscribers: set[Callable[[ContextType[_StateType]], None]] = set()
 
     def render(self) -> VdomDict:
-        current_ctx = self.__class__._current
+        context = self.context()
+        assert context is not None, "Context was garbage collected"
+        current_provider = context.current_provider
 
-        prior_ctx = current_ctx.get()
-        current_ctx.set(self)
+        prior_ctx = current_provider.get()
+        current_provider.set(self)
 
         def reset_ctx() -> None:
-            current_ctx.set(prior_ctx)
+            current_provider.set(prior_ctx)
 
         current_hook().add_effect(COMPONENT_DID_RENDER_EFFECT, reset_ctx)
 
         return vdom("", *self.children)
 
-    def should_render(self, new: Context[_StateType]) -> bool:
+    def should_render(self, new: ContextProvider[_StateType]) -> bool:
         if self.value is not new.value:
             new.subscribers.update(self.subscribers)
             for set_context in self.subscribers:
@@ -340,7 +348,7 @@ class Context(Generic[_StateType]):
         return False
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({id(self)})"
+        return f"{type(self).__name__}({self.name or id(self)!r})"
 
 
 _ActionType = TypeVar("_ActionType")

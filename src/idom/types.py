@@ -5,7 +5,7 @@
 """
 
 from .backend.types import BackendImplementation, Location
-from .core.hooks import Context
+from .core.hooks import ContextType
 from .core.types import (
     ComponentConstructor,
     ComponentType,
@@ -29,7 +29,7 @@ from .core.types import (
 __all__ = [
     "ComponentConstructor",
     "ComponentType",
-    "Context",
+    "ContextType",
     "EventHandlerDict",
     "EventHandlerFunc",
     "EventHandlerMapping",

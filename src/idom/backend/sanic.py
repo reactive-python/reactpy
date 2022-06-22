@@ -15,7 +15,7 @@ from sanic_cors import CORS
 from websockets.legacy.protocol import WebSocketCommonProtocol
 
 from idom.backend.types import Location
-from idom.core.hooks import Context, create_context, use_context
+from idom.core.hooks import ContextType, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import (
     RecvCoroutine,
@@ -32,9 +32,7 @@ from .utils import safe_client_build_dir_path, safe_web_modules_dir_path
 
 logger = logging.getLogger(__name__)
 
-ConnectionContext: type[Context[Connection | None]] = create_context(
-    None, "ConnectionContext"
-)
+ConnectionContext: ContextType[Connection | None] = create_context(None, "connection")
 
 
 def configure(

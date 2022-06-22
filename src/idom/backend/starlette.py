@@ -14,7 +14,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from idom.backend.types import Location
 from idom.config import IDOM_WEB_MODULES_DIR
-from idom.core.hooks import Context, create_context, use_context
+from idom.core.hooks import ContextType, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import (
     RecvCoroutine,
@@ -30,9 +30,7 @@ from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
 
 logger = logging.getLogger(__name__)
 
-WebSocketContext: type[Context[WebSocket | None]] = create_context(
-    None, "WebSocketContext"
-)
+WebSocketContext: ContextType[WebSocket | None] = create_context(None, "WebSocket")
 
 
 def configure(
