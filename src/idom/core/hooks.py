@@ -273,7 +273,7 @@ def use_context(context_type: ContextType[_StateType]) -> _StateType:
 
     @use_effect
     def subscribe_to_context_change() -> Callable[[], None]:
-        def set_context(new: ContextType[_StateType]) -> None:
+        def set_context(new: ContextProvider[_StateType]) -> None:
             # We don't need to check if `new is not provider_ref.current` because we
             # only trigger this callback when the value of a provider, and thus the
             # provider itself changes. Therefore we can always schedule a render.
@@ -292,7 +292,7 @@ _UNDEFINED: Any = object()
 class ContextType(Generic[_StateType]):
     def __init__(self, default_value: _StateType = _UNDEFINED, name: str = "") -> None:
         self.name = name
-        self.current_provider: ThreadLocal[_StateType] = ThreadLocal(lambda: None)
+        self.current_provider: ThreadLocal[ContextProvider[_StateType]] = ThreadLocal()
         self.default_value = default_value
 
     def __call__(
@@ -300,7 +300,7 @@ class ContextType(Generic[_StateType]):
         *children: Any,
         value: _StateType = _UNDEFINED,
         key: Key | None = None,
-    ) -> ContextProvider:
+    ) -> ContextProvider[_StateType]:
         return ContextProvider(self, self.name, children, value, key)
 
     def __repr__(self) -> str:
@@ -322,7 +322,7 @@ class ContextProvider(Generic[_StateType]):
         self.value: _StateType = context.default_value if value is _UNDEFINED else value
         self.key = key
         self.type = context
-        self.subscribers: set[Callable[[ContextType[_StateType]], None]] = set()
+        self.subscribers: set[Callable[[ContextProvider[_StateType]], None]] = set()
 
     def render(self) -> VdomDict:
         context = self.context()
@@ -573,7 +573,7 @@ def current_hook() -> LifeCycleHook:
     return hook
 
 
-_current_hook: ThreadLocal[LifeCycleHook | None] = ThreadLocal(lambda: None)
+_current_hook: ThreadLocal[LifeCycleHook | None] = ThreadLocal()
 
 
 EffectType = NewType("EffectType", str)

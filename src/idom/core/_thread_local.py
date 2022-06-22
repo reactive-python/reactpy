@@ -1,5 +1,5 @@
 from threading import Thread, current_thread
-from typing import Callable, Generic, TypeVar
+from typing import Any, Callable, Generic, TypeVar, cast
 from weakref import WeakKeyDictionary
 
 
@@ -9,7 +9,7 @@ _StateType = TypeVar("_StateType")
 class ThreadLocal(Generic[_StateType]):
     """Utility for managing per-thread state information"""
 
-    def __init__(self, default: Callable[[], _StateType]):
+    def __init__(self, default: Callable[[], _StateType] = cast(Any, lambda: None)):
         self._default = default
         self._state: WeakKeyDictionary[Thread, _StateType] = WeakKeyDictionary()
 
