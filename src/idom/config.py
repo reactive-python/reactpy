@@ -80,7 +80,8 @@ https://github.com/idom-team/idom/issues/351
 
 IDOM_TESTING_DEFAULT_TIMEOUT = _Option(
     "IDOM_TESTING_DEFAULT_TIMEOUT",
-    3.0,
+    5.0,
     mutable=False,
     validator=float,
 )
+"""A default timeout for testing utilities in IDOM"""
