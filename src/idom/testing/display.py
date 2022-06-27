@@ -58,7 +58,7 @@ class DisplayFixture:
                 browser = self._browser
             self.page = await browser.new_page()
 
-        self.page.set_default_timeout(IDOM_TESTING_DEFAULT_TIMEOUT * 1000)
+        self.page.set_default_timeout(IDOM_TESTING_DEFAULT_TIMEOUT.current * 1000)
 
         if not hasattr(self, "backend"):
             self.backend = BackendFixture()
