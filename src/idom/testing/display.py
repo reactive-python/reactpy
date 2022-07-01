@@ -7,6 +7,7 @@ from typing import Any
 from playwright.async_api import Browser, BrowserContext, Page, async_playwright
 
 from idom import html
+from idom.config import IDOM_TESTING_DEFAULT_TIMEOUT
 from idom.types import RootComponentConstructor
 
 from .backend import BackendFixture
@@ -56,6 +57,8 @@ class DisplayFixture:
             else:
                 browser = self._browser
             self.page = await browser.new_page()
+
+        self.page.set_default_timeout(IDOM_TESTING_DEFAULT_TIMEOUT.current * 1000)
 
         if not hasattr(self, "backend"):
             self.backend = BackendFixture()

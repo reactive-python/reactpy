@@ -23,7 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Added**
+
+- :pull:`123` - ``asgiref`` as a dependency
+
+**Changed**
+
+- :pull:`123` - set default timeout on playwright page for testing
 
 
 v0.39.0
