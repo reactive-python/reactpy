@@ -26,7 +26,7 @@ from idom.core.types import ComponentConstructor
 from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
 
 
-ConnectionContext: type[Context[Connection | None]] = create_context(
+ConnectionContext: Context[Connection | None] = create_context(
     None, "ConnectionContext"
 )
 

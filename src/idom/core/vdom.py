@@ -23,6 +23,8 @@ from idom.core.types import (
     VdomJson,
 )
 
+from ._f_back import f_module_name
+
 
 logger = logging.getLogger()
 
@@ -223,13 +225,10 @@ def make_vdom_constructor(
         "element represented by a :class:`VdomDict`."
     )
 
-    frame = inspect.currentframe()
-    if frame is not None and frame.f_back is not None and frame.f_back is not None:
-        module = frame.f_back.f_globals.get("__name__")  # module in outer frame
-        if module is not None:
-            qualname = module + "." + tag
-            constructor.__module__ = module
-            constructor.__qualname__ = qualname
+    module_name = f_module_name(1)
+    if module_name:
+        constructor.__module__ = module_name
+        constructor.__qualname__ = f"{module_name}.{tag}"
 
     return constructor
 

@@ -935,11 +935,9 @@ async def test_use_context_default_value():
 
 
 def test_context_repr():
-    Context = idom.create_context(None)
-    assert re.match(r"Context\(.*\)", repr(Context()))
-
-    MyContext = idom.create_context(None, name="MyContext")
-    assert re.match(r"MyContext\(.*\)", repr(MyContext()))
+    sample_context = idom.Context("sample_context", None)
+    assert repr(sample_context) == "Context('sample_context')"
+    assert repr(sample_context()) == "ContextProvider('sample_context')"
 
 
 async def test_use_context_only_renders_for_value_change():

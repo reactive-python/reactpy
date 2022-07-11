@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import asyncio
 from collections import Counter
+from contextlib import ExitStack
 from functools import wraps
 from logging import getLogger
 from typing import (
@@ -158,14 +159,10 @@ class Layout:
 
     def _create_layout_update(self, old_state: _ModelState) -> LayoutUpdate:
         new_state = _copy_component_model_state(old_state)
-
         component = new_state.life_cycle_state.component
-        self._render_component(old_state, new_state, component)
 
-        # hook effects must run after the update is complete
-        for model_state in _iter_model_state_children(new_state):
-            if model_state.is_component_state:
-                model_state.life_cycle_state.hook.affect_layout_did_render()
+        with ExitStack() as exit_stack:
+            self._render_component(exit_stack, old_state, new_state, component)
 
         old_model: Optional[VdomJson]
         try:
@@ -181,6 +178,7 @@ class Layout:
 
     def _render_component(
         self,
+        exit_stack: ExitStack,
         old_state: Optional[_ModelState],
         new_state: _ModelState,
         component: ComponentType,
@@ -200,19 +198,17 @@ class Layout:
         else:
             life_cycle_hook = life_cycle_state.hook
             life_cycle_hook.affect_component_will_render(component)
+            exit_stack.callback(life_cycle_hook.affect_layout_did_render)
+            life_cycle_hook.set_current()
             try:
-                life_cycle_hook.set_current()
-                try:
-                    raw_model = component.render()
-                finally:
-                    life_cycle_hook.unset_current()
+                raw_model = component.render()
                 # wrap the model in a fragment (i.e. tagName="") to ensure components have
                 # a separate node in the model state tree. This could be removed if this
                 # components are given a node in the tree some other way
                 wrapper_model: VdomDict = {"tagName": ""}
                 if raw_model is not None:
                     wrapper_model["children"] = [raw_model]
-                self._render_model(old_state, new_state, wrapper_model)
+                self._render_model(exit_stack, old_state, new_state, wrapper_model)
             except Exception as error:
                 logger.exception(f"Failed to render {component}")
                 new_state.model.current = {
@@ -224,6 +220,7 @@ class Layout:
                     ),
                 }
             finally:
+                life_cycle_hook.unset_current()
                 life_cycle_hook.affect_component_did_render()
 
         try:
@@ -243,6 +240,7 @@ class Layout:
 
     def _render_model(
         self,
+        exit_stack: ExitStack,
         old_state: Optional[_ModelState],
         new_state: _ModelState,
         raw_model: Any,
@@ -253,7 +251,9 @@ class Layout:
         if "importSource" in raw_model:
             new_state.model.current["importSource"] = raw_model["importSource"]
         self._render_model_attributes(old_state, new_state, raw_model)
-        self._render_model_children(old_state, new_state, raw_model.get("children", []))
+        self._render_model_children(
+            exit_stack, old_state, new_state, raw_model.get("children", [])
+        )
 
     def _render_model_attributes(
         self,
@@ -320,6 +320,7 @@ class Layout:
 
     def _render_model_children(
         self,
+        exit_stack: ExitStack,
         old_state: Optional[_ModelState],
         new_state: _ModelState,
         raw_children: Any,
@@ -329,7 +330,9 @@ class Layout:
 
         if old_state is None:
             if raw_children:
-                self._render_model_children_without_old_state(new_state, raw_children)
+                self._render_model_children_without_old_state(
+                    exit_stack, new_state, raw_children
+                )
             return None
         elif not raw_children:
             self._unmount_model_states(list(old_state.children_by_key.values()))
@@ -377,7 +380,7 @@ class Layout:
                             new_state,
                             index,
                         )
-                self._render_model(old_child_state, new_child_state, child)
+                self._render_model(exit_stack, old_child_state, new_child_state, child)
                 new_children.append(new_child_state.model.current)
                 new_state.children_by_key[key] = new_child_state
             elif child_type is _COMPONENT_TYPE:
@@ -411,7 +414,9 @@ class Layout:
                         child,
                         self._rendering_queue.put,
                     )
-                self._render_component(old_child_state, new_child_state, child)
+                self._render_component(
+                    exit_stack, old_child_state, new_child_state, child
+                )
             else:
                 old_child_state = old_state.children_by_key.get(key)
                 if old_child_state is not None:
@@ -419,7 +424,10 @@ class Layout:
                 new_children.append(child)
 
     def _render_model_children_without_old_state(
-        self, new_state: _ModelState, raw_children: List[Any]
+        self,
+        exit_stack: ExitStack,
+        new_state: _ModelState,
+        raw_children: List[Any],
     ) -> None:
         child_type_key_tuples = list(_process_child_type_and_key(raw_children))
 
@@ -435,14 +443,14 @@ class Layout:
         for index, (child, child_type, key) in enumerate(child_type_key_tuples):
             if child_type is _DICT_TYPE:
                 child_state = _make_element_model_state(new_state, index, key)
-                self._render_model(None, child_state, child)
+                self._render_model(exit_stack, None, child_state, child)
                 new_children.append(child_state.model.current)
                 new_state.children_by_key[key] = child_state
             elif child_type is _COMPONENT_TYPE:
                 child_state = _make_component_model_state(
                     new_state, index, key, child, self._rendering_queue.put
                 )
-                self._render_component(None, child_state, child)
+                self._render_component(exit_stack, None, child_state, child)
             else:
                 new_children.append(child)
 
