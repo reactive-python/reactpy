@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 
 from tornado.httpserver import HTTPServer
 from tornado.httputil import HTTPServerRequest
+from tornado.ioloop import IOLoop
 from tornado.log import enable_pretty_logging
 from tornado.platform.asyncio import AsyncIOMainLoop
 from tornado.web import Application, RequestHandler, StaticFileHandler
@@ -67,8 +68,7 @@ async def serve_development_app(
 ) -> None:
     enable_pretty_logging()
 
-    # setup up tornado to use asyncio
-    AsyncIOMainLoop().install()
+    AsyncIOMainLoop.current().install()
 
     server = HTTPServer(app)
     server.listen(port, host)
