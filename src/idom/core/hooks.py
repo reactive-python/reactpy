@@ -252,7 +252,7 @@ def create_context(
     return Context(name, default_value)
 
 
-_UNDEFINED = object()
+_UNDEFINED = cast(Any, object())
 
 
 class Context(Generic[_StateType]):
@@ -267,10 +267,7 @@ class Context(Generic[_StateType]):
         *children: Any,
         value: _StateType = _UNDEFINED,
         key: Key | None = None,
-    ) -> (
-        # users don't need to see that this is a ContextProvider
-        ComponentType
-    ):
+    ) -> ContextProvider[_StateType]:
         return ContextProvider(
             *children,
             value=self.default_value if value is _UNDEFINED else value,
@@ -278,7 +275,7 @@ class Context(Generic[_StateType]):
             type=self,
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{type(self).__name__}({self.name!r})"
 
 
@@ -292,13 +289,14 @@ def use_context(context: Context[_StateType]) -> _StateType:
     provider = hook.get_context_provider(context)
     if provider is None:
         return context.default_value
+    subscribers = provider._subscribers
 
     @use_effect
     def subscribe_to_context_change() -> Callable[[], None]:
-        provider.subscribers.add(hook)
-        return lambda: provider.subscribers.remove(hook)
+        subscribers.add(hook)
+        return lambda: subscribers.remove(hook)
 
-    return provider.value
+    return provider._value
 
 
 class ContextProvider(Generic[_StateType]):
@@ -310,18 +308,18 @@ class ContextProvider(Generic[_StateType]):
         type: Context[_StateType],
     ) -> None:
         self.children = children
-        self.value = value
         self.key = key
-        self.subscribers: set[LifeCycleHook] = set()
         self.type = type
+        self._subscribers: set[LifeCycleHook] = set()
+        self._value = value
 
     def render(self) -> VdomDict:
         current_hook().set_context_provider(self)
         return vdom("", *self.children)
 
     def should_render(self, new: ContextProvider[_StateType]) -> bool:
-        if self.value is not new.value:
-            for hook in self.subscribers:
+        if self._value is not new._value:
+            for hook in self._subscribers:
                 hook.set_context_provider(new)
                 hook.schedule_render()
             return True
