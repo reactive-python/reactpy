@@ -1262,15 +1262,15 @@ async def test_conditionally_rendered_components_can_use_context():
 
     @idom.component
     def FirstCondition():
-        used_context_values.append(idom.use_context(some_context))
+        used_context_values.append(idom.use_context(some_context) + "-1")
 
     @idom.component
     def SecondCondition():
-        used_context_values.append(idom.use_context(some_context))
+        used_context_values.append(idom.use_context(some_context) + "-2")
 
     async with idom.Layout(some_context(SomeComponent(), value="the-value")) as layout:
         await layout.render()
-        assert used_context_values == ["the-value"]
+        assert used_context_values == ["the-value-1"]
         set_state.current(False)
         await layout.render()
-        assert used_context_values == ["the-value", "the-value"]
+        assert used_context_values == ["the-value-1", "the-value-2"]
