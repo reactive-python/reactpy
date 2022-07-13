@@ -1245,3 +1245,32 @@ async def test_use_debug_mode_does_not_log_if_not_in_debug_mode():
 
         with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
             await layout.render()
+
+
+async def test_conditionally_rendered_components_can_use_context():
+    set_state = idom.Ref()
+    used_context_values = []
+    some_context = idom.Context("some_context", None)
+
+    @idom.component
+    def SomeComponent():
+        state, set_state.current = idom.use_state(True)
+        if state:
+            return FirstCondition()
+        else:
+            return SecondCondition()
+
+    @idom.component
+    def FirstCondition():
+        used_context_values.append(idom.use_context(some_context))
+
+    @idom.component
+    def SecondCondition():
+        used_context_values.append(idom.use_context(some_context))
+
+    async with idom.Layout(some_context(SomeComponent(), value="the-value")) as layout:
+        await layout.render()
+        assert used_context_values == ["the-value"]
+        set_state.current(False)
+        await layout.render()
+        assert used_context_values == ["the-value", "the-value"]
