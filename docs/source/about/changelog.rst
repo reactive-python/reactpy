@@ -23,13 +23,18 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-**Added**
+**Fixed**
 
-- :pull:`123` - ``asgiref`` as a dependency
+- :issue:`789` - Conditionally rendered components cannot use contexts
 
 **Changed**
 
 - :pull:`123` - set default timeout on playwright page for testing
+- :pull:`787` - Track contexts in hooks as state
+
+**Added**
+
+- :pull:`123` - ``asgiref`` as a dependency
 
 
 v0.39.0
