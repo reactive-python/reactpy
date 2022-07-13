@@ -481,12 +481,6 @@ def _check_should_render(old: ComponentType, new: ComponentType) -> bool:
         return False
 
 
-def _iter_model_state_children(model_state: _ModelState) -> Iterator[_ModelState]:
-    yield model_state
-    for child in model_state.children_by_key.values():
-        yield from _iter_model_state_children(child)
-
-
 def _new_root_model_state(
     component: ComponentType, schedule_render: Callable[[_LifeCycleStateId], None]
 ) -> _ModelState:

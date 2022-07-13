@@ -7,7 +7,7 @@ from types import FrameType
 def f_module_name(index: int = 0) -> str:
     frame = f_back(index + 1)
     if frame is None:
-        return ""
+        return ""  # pragma: no cover
     name = frame.f_globals.get("__name__", "")
     assert isinstance(name, str), "Expected module name to be a string"
     return name
@@ -20,4 +20,4 @@ def f_back(index: int = 0) -> FrameType | None:
             return frame
         frame = frame.f_back
         index -= 1
-    return None
+    return None  # pragma: no cover
