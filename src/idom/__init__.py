@@ -4,7 +4,6 @@ from .core import hooks
 from .core.component import component
 from .core.events import event
 from .core.hooks import (
-    Context,
     create_context,
     use_callback,
     use_context,
@@ -28,7 +27,6 @@ __version__ = "0.39.0"  # DO NOT MODIFY
 __all__ = [
     "component",
     "config",
-    "Context",
     "create_context",
     "event",
     "hooks",

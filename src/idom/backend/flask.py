@@ -37,9 +37,7 @@ from .utils import safe_client_build_dir_path, safe_web_modules_dir_path
 
 logger = logging.getLogger(__name__)
 
-ConnectionContext: Context[Connection | None] = create_context(
-    None, "ConnectionContext"
-)
+ConnectionContext: Context[Connection | None] = create_context(None)
 
 
 def configure(

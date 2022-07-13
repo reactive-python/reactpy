@@ -20,13 +20,13 @@ from typing import (
     cast,
     overload,
 )
-from warnings import warn
 
 from typing_extensions import Protocol
 
 from idom.config import IDOM_DEBUG_MODE
 from idom.utils import Ref
 
+from ._f_back import f_module_name
 from ._thread_local import ThreadLocal
 from .types import ComponentType, Key, VdomDict
 from .vdom import vdom
@@ -239,43 +239,36 @@ def use_debug_value(
         logger.debug(f"{current_hook().component} {new}")
 
 
-def create_context(
-    default_value: _StateType, name: str = "Context"
-) -> Context[_StateType]:
+def create_context(default_value: _StateType) -> Context[_StateType]:
     """Return a new context type for use in :func:`use_context`"""
-    warn(
-        "The 'create_context' function is deprecated. "
-        "Use the 'Context' class instead. "
-        "This function will be removed in a future release."
-    )
-    return Context(name, default_value)
 
-
-_UNDEFINED = cast(Any, object())
-
-
-class Context(Generic[_StateType]):
-    """Returns a :class:`ContextProvider` component"""
-
-    def __init__(self, name: str, default_value: _StateType) -> None:
-        self.name = name
-        self.default_value = default_value
-
-    def __call__(
-        self,
+    def context(
         *children: Any,
-        value: _StateType = _UNDEFINED,
+        value: _StateType = default_value,
         key: Key | None = None,
     ) -> ContextProvider[_StateType]:
         return ContextProvider(
             *children,
-            value=self.default_value if value is _UNDEFINED else value,
+            value=value,
             key=key,
-            type=self,
+            type=context,
         )
 
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.name!r})"
+    context.__qualname__ = "context"
+
+    return context
+
+
+class Context(Protocol[_StateType]):
+    """Returns a :class:`ContextProvider` component"""
+
+    def __call__(
+        self,
+        *children: Any,
+        value: _StateType = ...,
+        key: Key | None = ...,
+    ) -> ContextProvider[_StateType]:
+        ...
 
 
 def use_context(context: Context[_StateType]) -> _StateType:
@@ -284,10 +277,15 @@ def use_context(context: Context[_StateType]) -> _StateType:
     See the full :ref:`Use Context` docs for more information.
     """
     hook = current_hook()
-
     provider = hook.get_context_provider(context)
+
     if provider is None:
-        return context.default_value
+        try:
+            # force type checker to realize this is just a normal function
+            assert isinstance(context, FunctionType)
+            return cast(_StateType, context.__kwdefaults__["value"])
+        except KeyError:
+            raise TypeError(f"{context} does not implement the Context interface")
     subscribers = provider._subscribers
 
     @use_effect
@@ -325,7 +323,7 @@ class ContextProvider(Generic[_StateType]):
         return False
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.type.name!r})"
+        return f"{type(self).__name__}({self.type!r})"
 
 
 _ActionType = TypeVar("_ActionType")

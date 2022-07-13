@@ -1249,7 +1249,7 @@ async def test_use_debug_mode_does_not_log_if_not_in_debug_mode():
 async def test_conditionally_rendered_components_can_use_context():
     set_state = idom.Ref()
     used_context_values = []
-    some_context = idom.Context("some_context", None)
+    some_context = idom.create_context("some_context", None)
 
     @idom.component
     def SomeComponent():
