@@ -27,7 +27,6 @@ from typing_extensions import Protocol
 from idom.config import IDOM_DEBUG_MODE
 from idom.utils import Ref
 
-from ._f_back import f_module_name
 from ._thread_local import ThreadLocal
 from .types import ComponentType, Key, VdomDict
 from .vdom import vdom
