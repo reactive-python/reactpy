@@ -31,6 +31,7 @@ Unreleased
 
 - :pull:`123` - set default timeout on playwright page for testing
 - :pull:`787` - Track contexts in hooks as state
+- :pull:`787` - remove non-standard ``name`` argument from ``create_context``
 
 **Added**
 
