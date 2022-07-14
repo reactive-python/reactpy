@@ -8,7 +8,6 @@ from typing import (
     Any,
     Awaitable,
     Callable,
-    ClassVar,
     Dict,
     Generic,
     List,
@@ -239,108 +238,94 @@ def use_debug_value(
         logger.debug(f"{current_hook().component} {new}")
 
 
-def create_context(
-    default_value: _StateType, name: str | None = None
-) -> type[Context[_StateType]]:
+def create_context(default_value: _StateType) -> Context[_StateType]:
     """Return a new context type for use in :func:`use_context`"""
 
-    class _Context(Context[_StateType]):
-        _default_value = default_value
+    def context(
+        *children: Any,
+        value: _StateType = default_value,
+        key: Key | None = None,
+    ) -> ContextProvider[_StateType]:
+        return ContextProvider(
+            *children,
+            value=value,
+            key=key,
+            type=context,
+        )
 
-    _Context.__name__ = name or "Context"
+    context.__qualname__ = "context"
 
-    return _Context
+    return context
 
 
-def use_context(context_type: type[Context[_StateType]]) -> _StateType:
+class Context(Protocol[_StateType]):
+    """Returns a :class:`ContextProvider` component"""
+
+    def __call__(
+        self,
+        *children: Any,
+        value: _StateType = ...,
+        key: Key | None = ...,
+    ) -> ContextProvider[_StateType]:
+        ...
+
+
+def use_context(context: Context[_StateType]) -> _StateType:
     """Get the current value for the given context type.
 
     See the full :ref:`Use Context` docs for more information.
     """
-    # We have to use a Ref here since, if initially context_type._current is None, and
-    # then on a subsequent render it is present, we need to be able to dynamically adopt
-    # that newly present current context. When we update it though, we don't need to
-    # schedule a new render since we're already rending right now. Thus we can't do this
-    # with use_state() since we'd incur an extra render when calling set_state.
-    context_ref: Ref[Context[_StateType] | None] = use_ref(None)
-
-    if context_ref.current is None:
-        provided_context = context_type._current.get()
-        if provided_context is None:
-            # Cast required because of: https://github.com/python/mypy/issues/5144
-            return cast(_StateType, context_type._default_value)
-        context_ref.current = provided_context
-
-    # We need the hook now so that we can schedule an update when
     hook = current_hook()
+    provider = hook.get_context_provider(context)
 
-    context = context_ref.current
+    if provider is None:
+        # force type checker to realize this is just a normal function
+        assert isinstance(context, FunctionType), f"{context} is not a Context"
+        # __kwdefault__ can be None if no kwarg only parameters exist
+        assert context.__kwdefaults__ is not None, f"{context} has no 'value' kwarg"
+        # lastly check that 'value' kwarg exists
+        assert "value" in context.__kwdefaults__, f"{context} has no 'value' kwarg"
+        # then we can safely access the context's default value
+        return cast(_StateType, context.__kwdefaults__["value"])
+
+    subscribers = provider._subscribers
 
     @use_effect
     def subscribe_to_context_change() -> Callable[[], None]:
-        def set_context(new: Context[_StateType]) -> None:
-            # We don't need to check if `new is not context_ref.current` because we only
-            # trigger this callback when the value of a context, and thus the context
-            # itself changes. Therefore we can always schedule a render.
-            context_ref.current = new
-            hook.schedule_render()
+        subscribers.add(hook)
+        return lambda: subscribers.remove(hook)
 
-        context.subscribers.add(set_context)
-        return lambda: context.subscribers.remove(set_context)
-
-    return context.value
+    return provider._value
 
 
-_UNDEFINED: Any = object()
-
-
-class Context(Generic[_StateType]):
-
-    # This should be _StateType instead of Any, but it can't due to this limitation:
-    # https://github.com/python/mypy/issues/5144
-    _default_value: ClassVar[Any]
-
-    _current: ClassVar[ThreadLocal[Context[Any] | None]]
-
-    def __init_subclass__(cls) -> None:
-        # every context type tracks which of its instances are currently in use
-        cls._current = ThreadLocal(lambda: None)
-
+class ContextProvider(Generic[_StateType]):
     def __init__(
         self,
         *children: Any,
-        value: _StateType = _UNDEFINED,
-        key: Key | None = None,
+        value: _StateType,
+        key: Key | None,
+        type: Context[_StateType],
     ) -> None:
         self.children = children
-        self.value: _StateType = self._default_value if value is _UNDEFINED else value
         self.key = key
-        self.subscribers: set[Callable[[Context[_StateType]], None]] = set()
-        self.type = self.__class__
+        self.type = type
+        self._subscribers: set[LifeCycleHook] = set()
+        self._value = value
 
     def render(self) -> VdomDict:
-        current_ctx = self.__class__._current
-
-        prior_ctx = current_ctx.get()
-        current_ctx.set(self)
-
-        def reset_ctx() -> None:
-            current_ctx.set(prior_ctx)
-
-        current_hook().add_effect(COMPONENT_DID_RENDER_EFFECT, reset_ctx)
-
+        current_hook().set_context_provider(self)
         return vdom("", *self.children)
 
-    def should_render(self, new: Context[_StateType]) -> bool:
-        if self.value is not new.value:
-            new.subscribers.update(self.subscribers)
-            for set_context in self.subscribers:
-                set_context(new)
+    def should_render(self, new: ContextProvider[_StateType]) -> bool:
+        if self._value is not new._value:
+            for hook in self._subscribers:
+                hook.set_context_provider(new)
+                hook.schedule_render()
             return True
         return False
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({id(self)})"
+        return f"{type(self).__name__}({self.type})"
 
 
 _ActionType = TypeVar("_ActionType")
@@ -558,14 +543,14 @@ def _try_to_infer_closure_values(
 
 def current_hook() -> LifeCycleHook:
     """Get the current :class:`LifeCycleHook`"""
-    hook = _current_hook.get()
-    if hook is None:
+    hook_stack = _hook_stack.get()
+    if not hook_stack:
         msg = "No life cycle hook is active. Are you rendering in a layout?"
         raise RuntimeError(msg)
-    return hook
+    return hook_stack[-1]
 
 
-_current_hook: ThreadLocal[LifeCycleHook | None] = ThreadLocal(lambda: None)
+_hook_stack: ThreadLocal[list[LifeCycleHook]] = ThreadLocal(list)
 
 
 EffectType = NewType("EffectType", str)
@@ -630,9 +615,8 @@ class LifeCycleHook:
 
             hook.affect_component_did_render()
 
-            # This should only be called after any child components yielded by
-            # component_instance.render() have also been rendered because effects of
-            # this type must run after the full set of changes have been resolved.
+            # This should only be called after the full set of changes associated with a
+            # given render have been completed.
             hook.affect_layout_did_render()
 
             # Typically an event occurs and a new render is scheduled, thus begining
@@ -650,6 +634,7 @@ class LifeCycleHook:
 
     __slots__ = (
         "__weakref__",
+        "_context_providers",
         "_current_state_index",
         "_event_effects",
         "_is_rendering",
@@ -666,6 +651,7 @@ class LifeCycleHook:
         self,
         schedule_render: Callable[[], None],
     ) -> None:
+        self._context_providers: dict[Context[Any], ContextProvider[Any]] = {}
         self._schedule_render_callback = schedule_render
         self._schedule_render_later = False
         self._is_rendering = False
@@ -699,6 +685,14 @@ class LifeCycleHook:
     def add_effect(self, effect_type: EffectType, function: Callable[[], None]) -> None:
         """Trigger a function on the occurance of the given effect type"""
         self._event_effects[effect_type].append(function)
+
+    def set_context_provider(self, provider: ContextProvider[Any]) -> None:
+        self._context_providers[provider.type] = provider
+
+    def get_context_provider(
+        self, context: Context[_StateType]
+    ) -> ContextProvider[_StateType] | None:
+        return self._context_providers.get(context)
 
     def affect_component_will_render(self, component: ComponentType) -> None:
         """The component is about to render"""
@@ -753,13 +747,16 @@ class LifeCycleHook:
         This method is called by a layout before entering the render method
         of this hook's associated component.
         """
-        _current_hook.set(self)
+        hook_stack = _hook_stack.get()
+        if hook_stack:
+            parent = hook_stack[-1]
+            self._context_providers.update(parent._context_providers)
+        hook_stack.append(self)
 
     def unset_current(self) -> None:
         """Unset this hook as the active hook in this thread"""
         # this assertion should never fail - primarilly useful for debug
-        assert _current_hook.get() is self
-        _current_hook.set(None)
+        assert _hook_stack.get().pop() is self
 
     def _schedule_render(self) -> None:
         try:

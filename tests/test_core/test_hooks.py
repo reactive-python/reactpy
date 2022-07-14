@@ -1,5 +1,4 @@
 import asyncio
-import re
 
 import pytest
 
@@ -935,11 +934,8 @@ async def test_use_context_default_value():
 
 
 def test_context_repr():
-    Context = idom.create_context(None)
-    assert re.match(r"Context\(.*\)", repr(Context()))
-
-    MyContext = idom.create_context(None, name="MyContext")
-    assert re.match(r"MyContext\(.*\)", repr(MyContext()))
+    sample_context = idom.create_context(None)
+    assert repr(sample_context()) == f"ContextProvider({sample_context})"
 
 
 async def test_use_context_only_renders_for_value_change():
@@ -1068,8 +1064,8 @@ async def test_nested_contexts_do_not_conflict():
 
 
 async def test_neighboring_contexts_do_not_conflict():
-    LeftContext = idom.create_context(None, name="Left")
-    RightContext = idom.create_context(None, name="Right")
+    LeftContext = idom.create_context(None)
+    RightContext = idom.create_context(None)
 
     set_left = idom.Ref()
     set_right = idom.Ref()
@@ -1247,3 +1243,32 @@ async def test_use_debug_mode_does_not_log_if_not_in_debug_mode():
 
         with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
             await layout.render()
+
+
+async def test_conditionally_rendered_components_can_use_context():
+    set_state = idom.Ref()
+    used_context_values = []
+    some_context = idom.create_context(None)
+
+    @idom.component
+    def SomeComponent():
+        state, set_state.current = idom.use_state(True)
+        if state:
+            return FirstCondition()
+        else:
+            return SecondCondition()
+
+    @idom.component
+    def FirstCondition():
+        used_context_values.append(idom.use_context(some_context) + "-1")
+
+    @idom.component
+    def SecondCondition():
+        used_context_values.append(idom.use_context(some_context) + "-2")
+
+    async with idom.Layout(some_context(SomeComponent(), value="the-value")) as layout:
+        await layout.render()
+        assert used_context_values == ["the-value-1"]
+        set_state.current(False)
+        await layout.render()
+        assert used_context_values == ["the-value-1", "the-value-2"]

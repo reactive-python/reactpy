@@ -1027,7 +1027,7 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
     reset in any `Child()` components but there was a bug where that happened.
     """
 
-    effect_calls_without_state = []
+    effect_calls_without_state = set()
     set_child_key_num = StaticEventHandler()
     did_call_effect = asyncio.Event()
 
@@ -1051,7 +1051,7 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
         async def record_if_state_is_reset():
             if state:
                 return
-            effect_calls_without_state.append(child_key)
+            effect_calls_without_state.add(child_key)
             set_state(1)
             did_call_effect.set()
 
@@ -1063,13 +1063,13 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
     async with idom.Layout(Parent()) as layout:
         await layout.render()
         await did_call_effect.wait()
-        assert effect_calls_without_state == ["some-key", "key-0"]
+        assert effect_calls_without_state == {"some-key", "key-0"}
         did_call_effect.clear()
 
         for i in range(1, 5):
             await layout.deliver(LayoutEvent(set_child_key_num.target, []))
             await layout.render()
-            assert effect_calls_without_state == ["some-key", "key-0"]
+            assert effect_calls_without_state == {"some-key", "key-0"}
             did_call_effect.clear()
 
 

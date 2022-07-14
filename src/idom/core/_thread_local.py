@@ -20,6 +20,3 @@ class ThreadLocal(Generic[_StateType]):
         else:
             state = self._state[thread]
         return state
-
-    def set(self, state: _StateType) -> None:
-        self._state[current_thread()] = state

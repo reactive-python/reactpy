@@ -26,9 +26,7 @@ from idom.core.types import ComponentConstructor
 from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
 
 
-ConnectionContext: type[Context[Connection | None]] = create_context(
-    None, "ConnectionContext"
-)
+ConnectionContext: Context[Connection | None] = create_context(None)
 
 
 def configure(
@@ -67,8 +65,7 @@ async def serve_development_app(
 ) -> None:
     enable_pretty_logging()
 
-    # setup up tornado to use asyncio
-    AsyncIOMainLoop().install()
+    AsyncIOMainLoop.current().install()
 
     server = HTTPServer(app)
     server.listen(port, host)

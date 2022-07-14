@@ -30,9 +30,7 @@ from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
 
 logger = logging.getLogger(__name__)
 
-WebSocketContext: type[Context[WebSocket | None]] = create_context(
-    None, "WebSocketContext"
-)
+WebSocketContext: Context[WebSocket | None] = create_context(None)
 
 
 def configure(
