@@ -5,7 +5,12 @@ import pytest
 import idom
 from idom import html
 from idom.config import IDOM_DEBUG_MODE
-from idom.core.hooks import COMPONENT_DID_RENDER_EFFECT, LifeCycleHook, current_hook
+from idom.core.hooks import (
+    COMPONENT_DID_RENDER_EFFECT,
+    LifeCycleHook,
+    current_hook,
+    strictly_equal,
+)
 from idom.core.layout import Layout
 from idom.core.serve import render_json_patch
 from idom.testing import DisplayFixture, HookCatcher, assert_idom_did_log, poll
@@ -1272,3 +1277,26 @@ async def test_conditionally_rendered_components_can_use_context():
         set_state.current(False)
         await layout.render()
         assert used_context_values == ["the-value-1", "the-value-2"]
+
+
+@pytest.mark.parametrize(
+    "x, y, result",
+    [
+        ("text", "text", True),
+        ("text", "not-text", False),
+        (b"text", b"text", True),
+        (b"text", b"not-text", False),
+        (bytearray([1, 2, 3]), bytearray([1, 2, 3]), True),
+        (bytearray([1, 2, 3]), bytearray([1, 2, 3, 4]), False),
+        (1.0, 1.0, True),
+        (1.0, 2.0, False),
+        (1j, 1j, True),
+        (1j, 2j, False),
+        # ints less than 5 and greater than 256 are always identical
+        (-100000, -100000, True),
+        (100000, 100000, True),
+        (123, 456, False),
+    ],
+)
+def test_strictly_equal(x, y, result):
+    assert strictly_equal(x, y) is result
