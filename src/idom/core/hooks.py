@@ -26,7 +26,6 @@ from typing_extensions import Protocol
 from idom.config import IDOM_DEBUG_MODE
 from idom.utils import Ref
 
-from ._f_back import f_module_name
 from ._thread_local import ThreadLocal
 from .types import ComponentType, Key, VdomDict
 from .vdom import vdom
@@ -280,12 +279,15 @@ def use_context(context: Context[_StateType]) -> _StateType:
     provider = hook.get_context_provider(context)
 
     if provider is None:
-        try:
-            # force type checker to realize this is just a normal function
-            assert isinstance(context, FunctionType)
-            return cast(_StateType, context.__kwdefaults__["value"])
-        except KeyError:
-            raise TypeError(f"{context} does not implement the Context interface")
+        # force type checker to realize this is just a normal function
+        assert isinstance(context, FunctionType), f"{context} is not a Context"
+        # __kwdefault__ can be None if no kwarg only parameters exist
+        assert context.__kwdefaults__ is not None, f"{context} has no 'value' kwarg"
+        # lastly check that 'value' kwarg exists
+        assert "value" in context.__kwdefaults__, f"{context} has no 'value' kwarg"
+        # then we can safely access the context's default value
+        return cast(_StateType, context.__kwdefaults__["value"])
+
     subscribers = provider._subscribers
 
     @use_effect
