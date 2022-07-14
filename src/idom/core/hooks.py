@@ -323,7 +323,7 @@ class ContextProvider(Generic[_StateType]):
         return False
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.type!r})"
+        return f"{type(self).__name__}({self.type})"
 
 
 _ActionType = TypeVar("_ActionType")

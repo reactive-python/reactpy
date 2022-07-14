@@ -934,9 +934,8 @@ async def test_use_context_default_value():
 
 
 def test_context_repr():
-    sample_context = idom.Context("sample_context", None)
-    assert repr(sample_context) == "Context('sample_context')"
-    assert repr(sample_context()) == "ContextProvider('sample_context')"
+    sample_context = idom.create_context(None)
+    assert repr(sample_context()) == f"ContextProvider({sample_context})"
 
 
 async def test_use_context_only_renders_for_value_change():
@@ -1065,8 +1064,8 @@ async def test_nested_contexts_do_not_conflict():
 
 
 async def test_neighboring_contexts_do_not_conflict():
-    LeftContext = idom.create_context(None, name="Left")
-    RightContext = idom.create_context(None, name="Right")
+    LeftContext = idom.create_context(None)
+    RightContext = idom.create_context(None)
 
     set_left = idom.Ref()
     set_right = idom.Ref()
@@ -1249,7 +1248,7 @@ async def test_use_debug_mode_does_not_log_if_not_in_debug_mode():
 async def test_conditionally_rendered_components_can_use_context():
     set_state = idom.Ref()
     used_context_values = []
-    some_context = idom.create_context("some_context", None)
+    some_context = idom.create_context(None)
 
     @idom.component
     def SomeComponent():
