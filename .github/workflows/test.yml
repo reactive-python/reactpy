@@ -1,4 +1,4 @@
-name: Test
+name: test
 
 on:
   push:
@@ -11,23 +11,26 @@ on:
     - cron: "0 0 * * *"
 
 jobs:
-  test-python-coverage:
+  python-coverage:
     uses: ./.github/workflows/.nox-session.yml
     with:
+      job-name: "python-{0}"
       session-name: test_python_suite
       session-arguments: --maxfail=3
-  test-python-environments:
+  python-environments:
     uses: ./.github/workflows/.nox-session.yml
     with:
       session-name: test_python_suite
       session-arguments: --maxfail=3 --no-cov
       runs-on-array: '["ubuntu-latest", "macos-latest", "windows-latest"]'
       python-version-array: '["3.7", "3.8", "3.9", "3.10"]'
-  test-docs:
+  docs:
     uses: ./.github/workflows/.nox-session.yml
     with:
+      job-name: "python-{0}"
       session-name: test_docs
-  test-javascript:
+  javascript:
     uses: ./.github/workflows/.nox-session.yml
     with:
+      job-name: "{1}"
       session-name: test_javascript

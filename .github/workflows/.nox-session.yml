@@ -17,9 +17,14 @@ on:
         required: false
         type: string
         default: '["3.x"]'
+      job-name:
+        required: false
+        type: string
+        default: python-{0} {1}
 
 jobs:
   nox-session:
+    name: ${{ format(inputs.job-name, matrix.python-version, matrix.runs-on) }}
     strategy:
       matrix:
         runs-on: ${{fromJson(inputs.runs-on-array)}}
