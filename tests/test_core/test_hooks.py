@@ -1300,3 +1300,79 @@ async def test_conditionally_rendered_components_can_use_context():
 )
 def test_strictly_equal(x, y, result):
     assert strictly_equal(x, y) is result
+
+
+STRICT_EQUALITY_VALUE_CONSTRUCTORS = [
+    lambda: "string-text",
+    lambda: b"byte-text",
+    lambda: bytearray([1, 2, 3]),
+    lambda: bytearray([1, 2, 3]),
+    lambda: 1.0,
+    lambda: 10000000,
+    lambda: 1j,
+]
+
+
+@pytest.mark.parametrize("get_value", STRICT_EQUALITY_VALUE_CONSTRUCTORS)
+async def test_use_state_compares_with_strict_equality(get_value):
+    render_count = idom.Ref(0)
+    set_state = idom.Ref()
+
+    @idom.component
+    def SomeComponent():
+        _, set_state.current = idom.use_state(get_value())
+        render_count.current += 1
+
+    async with idom.Layout(SomeComponent()) as layout:
+        await layout.render()
+        assert render_count.current == 1
+        set_state.current(get_value())
+        with pytest.raises(asyncio.TimeoutError):
+            await asyncio.wait_for(layout.render(), timeout=0.1)
+
+
+@pytest.mark.parametrize("get_value", STRICT_EQUALITY_VALUE_CONSTRUCTORS)
+async def test_use_effect_compares_with_strict_equality(get_value):
+    effect_count = idom.Ref(0)
+    value = idom.Ref("string")
+    hook = HookCatcher()
+
+    @idom.component
+    @hook.capture
+    def SomeComponent():
+        @idom.use_effect(dependencies=[value.current])
+        def incr_effect_count():
+            effect_count.current += 1
+
+    async with idom.Layout(SomeComponent()) as layout:
+        await layout.render()
+        assert effect_count.current == 1
+        value.current = "string"  # new string instance but same value
+        hook.latest.schedule_render()
+        await layout.render()
+        # effect does not trigger
+        assert effect_count.current == 1
+
+
+@pytest.mark.parametrize("get_value", STRICT_EQUALITY_VALUE_CONSTRUCTORS)
+async def test_use_context_compares_with_strict_equality(get_value):
+    hook = HookCatcher()
+    context = idom.create_context(None)
+    inner_render_count = idom.Ref(0)
+
+    @idom.component
+    @hook.capture
+    def OuterComponent():
+        return context(InnerComponent(), value=get_value())
+
+    @idom.component
+    def InnerComponent():
+        idom.use_context(context)
+        inner_render_count.current += 1
+
+    async with idom.Layout(OuterComponent()) as layout:
+        await layout.render()
+        assert inner_render_count.current == 1
+        hook.latest.schedule_render()
+        await layout.render()
+        assert inner_render_count.current == 1
