@@ -1,8 +1,4 @@
-# Description
-
-A summary of the changes.
-
-# Checklist:
+## Checklist
 
 Please update this checklist as you complete each item:
 

@@ -113,7 +113,7 @@ class _CurrentState(Generic[_StateType]):
                 next_value = new(self.value)
             else:
                 next_value = new
-            if next_value is not self.value:
+            if not strictly_equal(next_value, self.value):
                 self.value = next_value
                 hook.schedule_render()
 
@@ -317,7 +317,7 @@ class ContextProvider(Generic[_StateType]):
         return vdom("", *self.children)
 
     def should_render(self, new: ContextProvider[_StateType]) -> bool:
-        if self._value is not new._value:
+        if not strictly_equal(self._value, new._value):
             for hook in self._subscribers:
                 hook.set_context_provider(new)
                 hook.schedule_render()
@@ -465,7 +465,10 @@ def use_memo(
     elif (
         len(memo.deps) != len(dependencies)
         # if deps are same length check identity for each item
-        or any(current is not new for current, new in zip(memo.deps, dependencies))
+        or not all(
+            strictly_equal(current, new)
+            for current, new in zip(memo.deps, dependencies)
+        )
     ):
         memo.deps = dependencies
         changed = True
@@ -765,3 +768,33 @@ class LifeCycleHook:
             logger.exception(
                 f"Failed to schedule render via {self._schedule_render_callback}"
             )
+
+
+def strictly_equal(x: Any, y: Any) -> bool:
+    """Check if two values are identical or, for a limited set or types, equal.
+
+    Only the following types are checked for equality rather than identity:
+
+    - ``int``
+    - ``float``
+    - ``complex``
+    - ``str``
+    - ``bytes``
+    - ``bytearray``
+    - ``memoryview``
+    """
+    return x is y or (type(x) in _NUMERIC_TEXT_BINARY_TYPES and x == y)
+
+
+_NUMERIC_TEXT_BINARY_TYPES = {
+    # numeric
+    int,
+    float,
+    complex,
+    # text
+    str,
+    # binary types
+    bytes,
+    bytearray,
+    memoryview,
+}

@@ -26,6 +26,7 @@ Unreleased
 **Fixed**
 
 - :issue:`789` - Conditionally rendered components cannot use contexts
+- :issue:`773` - Use strict equality check for text, numeric, and binary types in hooks
 
 **Changed**
 
