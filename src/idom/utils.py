@@ -75,7 +75,7 @@ class _HtmlToVdom:
         self.transforms = transforms
 
     def convert(self, html: Union[str, etree._Element]):
-        """Convert an lxml.etree node tree into a VDOM dict."""
+        """Convert html string -> lxml node tree -> VDOM dict."""
         # Keep track of whether this is the root node
         root_node = False
 
@@ -141,7 +141,7 @@ class _HtmlToVdom:
 
     @staticmethod
     def _prune_vdom_fields(vdom: Dict):
-        """Removed unneeded fields from VDOM dict."""
+        """Remove unneeded fields from VDOM dict."""
         if not len(vdom["children"]):
             del vdom["children"]
         if not len(vdom["attributes"]):
