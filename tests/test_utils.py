@@ -67,7 +67,7 @@ def test_html_to_vdom(case):
 
 
 def test_html_to_vdom_transform():
-    source = "<p>hello <a>world</a> and <a>universe</a></p>"
+    source = "<p>hello <a>world</a> and <a>universe</a>lmao</p>"
 
     def make_links_blue(node):
         if node["tagName"] == "a":
@@ -89,6 +89,7 @@ def test_html_to_vdom_transform():
                 "children": ["universe"],
                 "attributes": {"style": {"color": "blue"}},
             },
+            "lmao",
         ],
     }
 

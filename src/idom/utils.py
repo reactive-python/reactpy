@@ -1,3 +1,4 @@
+from itertools import chain
 from typing import Any, Callable, Dict, Generic, List, TypeVar, Union
 
 from lxml import etree
@@ -87,11 +88,9 @@ class _HtmlToVdom:
                 f"HtmlToVdom encountered unsupported type {type(html)} from {html}"
             )
 
-        # Recursively convert the lxml node to a VDOM dict.
+        # Convert the lxml node to a VDOM dict.
         vdom = {"tagName": node.tag}
-        node_children = [node.text] if node.text else []
-        node_children.extend([self.convert(child) for child in node.iterchildren(None)])
-        self._set_key_value(vdom, "children", node_children)
+        self._set_key_value(vdom, "children", self._generate_child_vdom(node))
         self._set_key_value(vdom, "attributes", dict(node.items()))
         self._vdom_mutations(vdom)
 
@@ -133,3 +132,12 @@ class _HtmlToVdom:
                 raise LookupError("Could not find script's contents!")
             if vdom["children"][0]:
                 vdom["key"] = vdom["children"][0]
+
+    def _generate_child_vdom(self, node: etree._Element) -> list:
+        """Recursively generate a list of VDOM children from an lxml node."""
+        children = [node.text] + list(
+            chain(*([self.convert(child), child.tail] for child in node.iterchildren(None)))
+        )
+
+        # Remove None from the list of children from empty text/tail values
+        return list(filter(None, children))
