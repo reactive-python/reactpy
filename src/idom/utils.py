@@ -82,14 +82,14 @@ def html_to_vdom(html: Union[str, etree._Element], *transforms: _ModelTransform)
     # Convert the lxml node to a VDOM dict.
     vdom = {
         "tagName": node.tag,
-        "children": _generate_child_vdom(node, transforms),
+        "children": _generate_vdom_children(node, transforms),
         "attributes": dict(node.items()),
         "eventHandlers": {},
         "importSource": {},
         "key": "",
         "error": "",
     }
-    _vdom_mutations(vdom)
+    _mutate_vdom(vdom)
 
     # Apply any provided transforms.
     for transform in transforms:
@@ -105,7 +105,7 @@ def html_to_vdom(html: Union[str, etree._Element], *transforms: _ModelTransform)
     return vdom
 
 
-def _vdom_mutations(vdom: Dict):
+def _mutate_vdom(vdom: Dict):
     """Performs any necessary mutations on the VDOM attributes to meet VDOM spec
     and/or to make elements properly renderable in React."""
     # Convert style attributes to VDOM spec
@@ -144,9 +144,9 @@ def _prune_vdom_fields(vdom: Dict):
         del vdom["error"]
 
 
-def _generate_child_vdom(
+def _generate_vdom_children(
     node: etree._Element, transforms: Iterable[_ModelTransform]
-) -> List:
+) -> List[Union[Dict, str]]:
     """Recursively generate a list of VDOM children from an lxml node."""
     # Insert text inbetween VDOM children, if necessary
     children = [node.text] + list(
