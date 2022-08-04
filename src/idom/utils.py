@@ -112,7 +112,7 @@ class _HtmlToVdom:
             vdom["tagName"] = ""
 
         # Get rid of empty VDOM fields
-        self._remove_unneeded_vdom(vdom)
+        self._prune_vdom_fields(vdom)
 
         return vdom
 
@@ -140,7 +140,7 @@ class _HtmlToVdom:
                 vdom["key"] = vdom["children"][0]
 
     @staticmethod
-    def _remove_unneeded_vdom(vdom: Dict):
+    def _prune_vdom_fields(vdom: Dict):
         """Removed unneeded fields from VDOM dict."""
         if not len(vdom["children"]):
             del vdom["children"]
