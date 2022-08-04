@@ -67,11 +67,14 @@ def html_to_vdom(html: str, *transforms: _ModelTransform):
     if not isinstance(html, str):
         raise TypeError("html_to_vdom expects a string!")
 
-    return _HtmlToVdom().convert(html, *transforms)
+    return _HtmlToVdom(*transforms).convert(html)
 
 
 class _HtmlToVdom:
-    def convert(self, html: Union[str, etree._Element], *transforms: _ModelTransform):
+    def __init__(self, *transforms: _ModelTransform) -> None:
+        self.transforms = transforms
+
+    def convert(self, html: Union[str, etree._Element]):
         """Convert an lxml.etree node tree into a VDOM dict."""
         # Keep track of whether this is the root node
         root_node = False
@@ -89,26 +92,29 @@ class _HtmlToVdom:
             )
 
         # Convert the lxml node to a VDOM dict.
-        vdom = {"tagName": node.tag}
-        self._set_key_value(vdom, "children", self._generate_child_vdom(node))
-        self._set_key_value(vdom, "attributes", dict(node.items()))
+        vdom = {
+            "tagName": node.tag,
+            "children": self._generate_child_vdom(node),
+            "attributes": dict(node.items()),
+            "eventHandlers": {},
+            "importSource": {},
+            "key": "",
+            "error": "",
+        }
         self._vdom_mutations(vdom)
 
         # Apply any provided transforms.
-        for transform in transforms:
+        for transform in self.transforms:
             vdom = transform(vdom)
 
-        # The root node is always a React Fragment
+        # The root node is rendered as a React Fragment
         if root_node:
             vdom["tagName"] = ""
 
-        return vdom
+        # Get rid of empty VDOM fields
+        self._remove_unneeded_vdom(vdom)
 
-    @staticmethod
-    def _set_key_value(vdom: Dict, key: str, value: Union[Dict, List]):
-        """Sets a key/value on a dictionary only if the iterable value's length is greater than 0."""
-        if len(value):
-            vdom[key] = value
+        return vdom
 
     @staticmethod
     def _vdom_mutations(vdom: Dict):
@@ -133,10 +139,32 @@ class _HtmlToVdom:
             if vdom["children"][0]:
                 vdom["key"] = vdom["children"][0]
 
+    @staticmethod
+    def _remove_unneeded_vdom(vdom: Dict):
+        """Removed unneeded fields from VDOM dict."""
+        if not len(vdom["children"]):
+            del vdom["children"]
+        if not len(vdom["attributes"]):
+            del vdom["attributes"]
+        if not len(vdom["eventHandlers"]):
+            del vdom["eventHandlers"]
+        if not len(vdom["importSource"]):
+            del vdom["importSource"]
+        if not vdom["key"]:
+            del vdom["key"]
+        if not vdom["error"]:
+            del vdom["error"]
+
     def _generate_child_vdom(self, node: etree._Element) -> list:
         """Recursively generate a list of VDOM children from an lxml node."""
+        # Insert text inbetween VDOM children, if necessary
         children = [node.text] + list(
-            chain(*([self.convert(child), child.tail] for child in node.iterchildren(None)))
+            chain(
+                *(
+                    [self.convert(child), child.tail]
+                    for child in node.iterchildren(None)
+                )
+            )
         )
 
         # Remove None from the list of children from empty text/tail values
