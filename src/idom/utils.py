@@ -1,8 +1,11 @@
-from html.parser import HTMLParser as _HTMLParser
-from typing import Any, Callable, Dict, Generic, List, Optional, Tuple, TypeVar
+from typing import Any, Callable, Dict, Generic, TypeVar, Union
+
+from lxml import etree
+from lxml.html import fragment_fromstring
 
 
 _RefValue = TypeVar("_RefValue")
+_ModelTransform = Callable[[Dict[str, Any]], Any]
 _UNDEFINED: Any = object()
 
 
@@ -49,94 +52,63 @@ class Ref(Generic[_RefValue]):
         return f"{type(self).__name__}({current})"
 
 
-_ModelTransform = Callable[[Dict[str, Any]], Any]
+def _set_if_val_exists(object, key, value):
+    """Sets a key on a dictionary if the value's length is greater than 0."""
+    if len(value):
+        object[key] = value
 
 
-def html_to_vdom(source: str, *transforms: _ModelTransform) -> Dict[str, Any]:
-    """Transform HTML into a DOM model
-
-    Parameters:
-        source:
-            The raw HTML as a string
-        transforms:
-            Functions of the form ``transform(old) -> new`` where ``old`` is a VDOM
-            dictionary which will be replaced by ``new``. For example, you could use a
-            transform function to add highlighting to a ``<code/>`` block.
-    """
-    parser = HtmlParser()
-    parser.feed(source)
-    root = parser.model()
-    to_visit = [root]
-    while to_visit:
-        node = to_visit.pop(0)
-        if isinstance(node, dict) and "children" in node:
-            transformed = []
-            for child in node["children"]:
-                if isinstance(child, dict):
-                    for t in transforms:
-                        child = t(child)
-                if child is not None:
-                    transformed.append(child)
-                    to_visit.append(child)
-            node["children"] = transformed
-            if "attributes" in node and not node["attributes"]:
-                del node["attributes"]
-            if "children" in node and not node["children"]:
-                del node["children"]
-    return root
+def _vdom_attributes(object):
+    if "attributes" in object and "style" in object["attributes"]:
+        style = object["attributes"]["style"]
+        if isinstance(style, str):
+            style_dict = {}
+            for k, v in (part.split(":", 1) for part in style.split(";") if part):
+                title_case_key = k.title().replace("-", "")
+                camel_case_key = title_case_key[:1].lower() + title_case_key[1:]
+                style_dict[camel_case_key] = v
+            object["attributes"]["style"] = style_dict
 
 
-class HtmlParser(_HTMLParser):
-    """HTML to VDOM parser
+def _vdom_key(object):
+    if object["tagName"] == "script":
+        if not isinstance(object["children"][0], str):
+            # The script tag contents should be the first child
+            raise TypeError("Could not find script tag contents!")
+        if object["children"][0]:
+            object["key"] = object["children"][0]
 
-    Example:
 
-        .. code-block::
+def html_to_vdom(html: Union[str, etree._Element], *transforms: _ModelTransform):
+    """Convert an lxml.etree node tree into a VDOM dict."""
+    # Keep track of whether this is the root node
+    root_node = False
 
-            parser = HtmlParser()
+    # If the user provided a string, convert it to an lxml.etree node.
+    if isinstance(html, str):
+        parser = etree.HTMLParser()
+        node = fragment_fromstring(html, create_parent=True, parser=parser)
+        root_node = True
+    elif isinstance(html, etree._Element):
+        node = html
+    else:
+        raise TypeError("html_to_vdom expects a string or lxml.etree._Element")
 
-            parser.feed(an_html_string)
-            parser.feed(another_html_string)
-            ...
+    # Convert the lxml.etree node to a VDOM dict.
+    vdom = {"tagName": node.tag}
+    node_children = [node.text] if node.text else []
+    node_children.extend([html_to_vdom(child) for child in node.iterchildren(None)])
+    _set_if_val_exists(vdom, "children", node_children)
+    _set_if_val_exists(vdom, "attributes", dict(node.items()))
+    _vdom_attributes(vdom)
+    _vdom_key(vdom)
 
-            vdom = parser.model()
-    """
+    # Apply any provided transforms.
+    for transform in transforms:
+        vdom = transform(vdom)
 
-    def model(self) -> Dict[str, Any]:
-        """Get the current state of parsed VDOM model"""
-        return self._node_stack[0]
+    # The root node is always a React Fragment
+    if root_node:
+        vdom["tagName"] = ""
 
-    def feed(self, data: str) -> None:
-        """Feed in HTML that will update the :meth:`HtmlParser.model`"""
-        self._node_stack.append(self._make_vdom("div", {}))
-        super().feed(data)
-
-    def reset(self) -> None:
-        """Reset the state of the parser"""
-        self._node_stack: List[Dict[str, Any]] = []
-        super().reset()
-
-    def handle_starttag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]) -> None:
-        new = self._make_vdom(tag, dict(attrs))
-        current = self._node_stack[-1]
-        current["children"].append(new)
-        self._node_stack.append(new)
-
-    def handle_endtag(self, tag: str) -> None:
-        del self._node_stack[-1]
-
-    def handle_data(self, data: str) -> None:
-        self._node_stack[-1]["children"].append(data)
-
-    @staticmethod
-    def _make_vdom(tag: str, attrs: Dict[str, Any]) -> Dict[str, Any]:
-        if "style" in attrs:
-            style = attrs["style"]
-            if isinstance(style, str):
-                style_dict = {}
-                for k, v in (part.split(":", 1) for part in style.split(";") if part):
-                    title_case_key = k.title().replace("-", "")
-                    camel_case_key = title_case_key[:1].lower() + title_case_key[1:]
-                    style_dict[camel_case_key] = v
-                attrs["style"] = style_dict
-        return {"tagName": tag, "attributes": attrs, "children": []}
+    return vdom
