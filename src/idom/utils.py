@@ -121,7 +121,7 @@ class _HtmlToVdom:
         """Performs any necessary mutations on the VDOM attributes to meet VDOM spec
         and/or to make elements properly renderable in React."""
         # Convert style attributes to VDOM spec
-        if "attributes" in vdom and "style" in vdom["attributes"]:
+        if "style" in vdom["attributes"]:
             style = vdom["attributes"]["style"]
             if isinstance(style, str):
                 style_dict = {}
