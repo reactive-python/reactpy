@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Generic, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, List, TypeVar, Union
 
 from lxml import etree
 from lxml.html import fragment_fromstring
@@ -87,14 +87,13 @@ class _HtmlToVdom:
                 f"HtmlToVdom encountered unsupported type {type(html)} from {html}"
             )
 
-        # Recursively convert the lxml.etree node to a VDOM dict.
+        # Recursively convert the lxml node to a VDOM dict.
         vdom = {"tagName": node.tag}
         node_children = [node.text] if node.text else []
         node_children.extend([self.convert(child) for child in node.iterchildren(None)])
-        self._set_if_val_exists(vdom, "children", node_children)
-        self._set_if_val_exists(vdom, "attributes", dict(node.items()))
-        self._vdom_attributes(vdom)
-        self._vdom_key(vdom)
+        self._set_key_value(vdom, "children", node_children)
+        self._set_key_value(vdom, "attributes", dict(node.items()))
+        self._vdom_mutations(vdom)
 
         # Apply any provided transforms.
         for transform in transforms:
@@ -107,28 +106,30 @@ class _HtmlToVdom:
         return vdom
 
     @staticmethod
-    def _set_if_val_exists(object: Dict, key: str, value: Any):
-        """Sets a key on a dictionary if the value's length is greater than 0."""
+    def _set_key_value(vdom: Dict, key: str, value: Union[Dict, List]):
+        """Sets a key/value on a dictionary only if the iterable value's length is greater than 0."""
         if len(value):
-            object[key] = value
+            vdom[key] = value
 
     @staticmethod
-    def _vdom_attributes(object: Dict):
-        if "attributes" in object and "style" in object["attributes"]:
-            style = object["attributes"]["style"]
+    def _vdom_mutations(vdom: Dict):
+        """Performs any necessary mutations on the VDOM attributes to meet VDOM spec
+        and/or to make elements properly renderable in React."""
+        # Convert style attributes to VDOM spec
+        if "attributes" in vdom and "style" in vdom["attributes"]:
+            style = vdom["attributes"]["style"]
             if isinstance(style, str):
                 style_dict = {}
                 for k, v in (part.split(":", 1) for part in style.split(";") if part):
                     title_case_key = k.title().replace("-", "")
                     camel_case_key = title_case_key[:1].lower() + title_case_key[1:]
                     style_dict[camel_case_key] = v
-                object["attributes"]["style"] = style_dict
+                vdom["attributes"]["style"] = style_dict
 
-    @staticmethod
-    def _vdom_key(object):
-        if object["tagName"] == "script":
-            if not isinstance(object["children"][0], str):
+        # Set key attribute for scripts to prevent re-execution during re-renders
+        if vdom["tagName"] == "script":
+            if not isinstance(vdom["children"][0], str):
                 # The script's source should always be the first child
                 raise LookupError("Could not find script's contents!")
-            if object["children"][0]:
-                object["key"] = object["children"][0]
+            if vdom["children"][0]:
+                vdom["key"] = vdom["children"][0]
