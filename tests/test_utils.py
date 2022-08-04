@@ -61,7 +61,7 @@ def test_ref_repr():
 )
 def test_html_to_vdom(case):
     assert html_to_vdom(case["source"]) == {
-        "tagName": "div",
+        "tagName": "",
         "children": [case["model"]],
     }
 
@@ -93,6 +93,6 @@ def test_html_to_vdom_transform():
     }
 
     assert html_to_vdom(source, make_links_blue) == {
-        "tagName": "div",
+        "tagName": "",
         "children": [expected],
     }
