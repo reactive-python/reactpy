@@ -66,10 +66,10 @@ def html_to_vdom(html: str, *transforms: _ModelTransform):
     if not isinstance(html, str):
         raise TypeError("html_to_vdom expects a string!")
 
-    return HtmlToVdom().convert(html, *transforms)
+    return _HtmlToVdom().convert(html, *transforms)
 
 
-class HtmlToVdom:
+class _HtmlToVdom:
     def convert(self, html: Union[str, etree._Element], *transforms: _ModelTransform):
         """Convert an lxml.etree node tree into a VDOM dict."""
         # Keep track of whether this is the root node
@@ -83,7 +83,9 @@ class HtmlToVdom:
         elif isinstance(html, etree._Element):
             node = html
         else:
-            raise TypeError("html_to_vdom expects a string or lxml.etree._Element")
+            raise TypeError(
+                f"HtmlToVdom encountered unsupported type {type(html)} from {html}"
+            )
 
         # Recursively convert the lxml.etree node to a VDOM dict.
         vdom = {"tagName": node.tag}
@@ -105,13 +107,13 @@ class HtmlToVdom:
         return vdom
 
     @staticmethod
-    def _set_if_val_exists(object, key, value):
+    def _set_if_val_exists(object: Dict, key: str, value: Any):
         """Sets a key on a dictionary if the value's length is greater than 0."""
         if len(value):
             object[key] = value
 
     @staticmethod
-    def _vdom_attributes(object):
+    def _vdom_attributes(object: Dict):
         if "attributes" in object and "style" in object["attributes"]:
             style = object["attributes"]["style"]
             if isinstance(style, str):
@@ -126,7 +128,7 @@ class HtmlToVdom:
     def _vdom_key(object):
         if object["tagName"] == "script":
             if not isinstance(object["children"][0], str):
-                # The script tag contents should be the first child
-                raise TypeError("Could not find script tag contents!")
+                # The script's source should always be the first child
+                raise LookupError("Could not find script's contents!")
             if object["children"][0]:
                 object["key"] = object["children"][0]
