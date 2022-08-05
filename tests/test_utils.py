@@ -122,7 +122,7 @@ def test_html_to_vdom_with_style_attr():
 
     expected = {
         "attributes": {"style": {"backgroundColor": "green", "color": "red"}},
-        "children": ["A red paragraph."],
+        "children": ["Hello World."],
         "tagName": "p",
     }
 
