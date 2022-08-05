@@ -113,7 +113,7 @@ def _mutate_vdom(vdom: Dict):
         vdom["attributes"]["style"] = {
             _hypen_to_camel_case(key.strip()): value.strip()
             for key, value in (
-                part.strip().split(":", 1)
+                part.split(":", 1)
                 for part in vdom["attributes"]["style"].split(";")
                 if ":" in part
             )
