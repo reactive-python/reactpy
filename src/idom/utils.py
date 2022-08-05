@@ -147,16 +147,14 @@ def _prune_vdom_fields(vdom: Dict):
 def _generate_vdom_children(
     node: etree._Element, transforms: Iterable[_ModelTransform]
 ) -> List[Union[Dict, str]]:
-    """Recursively generate a list of VDOM children from an lxml node."""
-    # Insert text inbetween VDOM children, if necessary
-    children = [node.text] + list(
+    """Recursively generate a list of VDOM children from an lxml node.
+    Inserts inner text and/or tail text inbetween VDOM children, if necessary."""
+    return ([node.text] if node.text else []) + list(
         chain(
             *(
-                [html_to_vdom(child, *transforms), child.tail]
+                [html_to_vdom(child, *transforms)]
+                + ([child.tail] if child.tail else [])
                 for child in node.iterchildren(None)
             )
         )
     )
-
-    # Remove None from the list of children from empty text/tail values
-    return list(filter(None, children))
