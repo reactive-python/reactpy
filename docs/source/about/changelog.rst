@@ -25,6 +25,7 @@ Unreleased
 
 **Fixed**
 
+- :issue:`777` - Fix edge cases where ``html_to_vdom`` can fail to convert HTML
 - :issue:`789` - Conditionally rendered components cannot use contexts
 - :issue:`773` - Use strict equality check for text, numeric, and binary types in hooks
 - :issue:`801` - Accidental mutation of old model causes invalid JSON Patch
@@ -38,6 +39,7 @@ Unreleased
 **Added**
 
 - :pull:`123` - ``asgiref`` as a dependency
+- :pull:`795` - ``lxml`` as a dependency
 
 
 v0.39.0
