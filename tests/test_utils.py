@@ -97,3 +97,21 @@ def test_html_to_vdom_transform():
         "tagName": "",
         "children": [expected],
     }
+
+
+def test_html_to_vdom_with_null_tag():
+    source = "<p>hello<br>world</p>"
+
+    expected = {
+        "tagName": "p",
+        "children": [
+            "hello",
+            {"tagName": "br"},
+            "world",
+        ],
+    }
+
+    assert html_to_vdom(source) == {
+        "tagName": "",
+        "children": [expected],
+    }
