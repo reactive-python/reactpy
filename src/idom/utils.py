@@ -64,16 +64,14 @@ def html_to_vdom(html: Union[str, etree._Element], *transforms: _ModelTransform)
             transform function to add highlighting to a ``<code/>`` block.
     """
 
-    # Keep track of whether this is the root node
-    root_node = False
-
     # If the user provided a string, convert it to an lxml.etree node.
     if isinstance(html, str):
         parser = etree.HTMLParser()
         node = fragment_fromstring(html, create_parent=True, parser=parser)
-        root_node = True
+        root_node = True  # Only the root node is a HTML string
     elif isinstance(html, etree._Element):
         node = html
+        root_node = False
     else:
         raise TypeError(
             f"HtmlToVdom encountered unsupported type {type(html)} from {html}"
