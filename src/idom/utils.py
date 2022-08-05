@@ -109,15 +109,15 @@ def _mutate_vdom(vdom: Dict):
     """Performs any necessary mutations on the VDOM attributes to meet VDOM spec
     and/or to make elements properly renderable in React."""
     # Convert style attributes to VDOM spec
-    if "style" in vdom["attributes"]:
-        style = vdom["attributes"]["style"]
-        if isinstance(style, str):
-            style_dict = {}
-            for k, v in (part.split(":", 1) for part in style.split(";") if part):
-                title_case_key = k.title().replace("-", "")
-                camel_case_key = title_case_key[:1].lower() + title_case_key[1:]
-                style_dict[camel_case_key] = v
-            vdom["attributes"]["style"] = style_dict
+    if "style" in vdom["attributes"] and isinstance(vdom["attributes"]["style"], str):
+        vdom["attributes"]["style"] = {
+            _hypen_to_camel_case(key.strip()): value.strip()
+            for key, value in (
+                part.strip().split(":", 1)
+                for part in vdom["attributes"]["style"].split(";")
+                if ":" in part
+            )
+        }
 
     # Set key attribute for scripts to prevent re-execution during re-renders
     if vdom["tagName"] == "script":
@@ -158,3 +158,11 @@ def _generate_vdom_children(
             )
         )
     )
+
+
+def _hypen_to_camel_case(css_key: str) -> str:
+    """Convert a hypenated string to camelCase."""
+    first_word, *subsequent_words = css_key.split("-")
+
+    # Use map() to titlecase all subsequent words
+    return "".join([first_word.lower(), *map(str.title, subsequent_words)])

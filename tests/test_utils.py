@@ -115,3 +115,18 @@ def test_html_to_vdom_with_null_tag():
         "tagName": "",
         "children": [expected],
     }
+
+
+def test_html_to_vdom_with_style_attr():
+    source = '<p style="color: red; background-color : green; ">Hello World.</p>'
+
+    expected = {
+        "attributes": {"style": {"backgroundColor": "green", "color": "red"}},
+        "children": ["A red paragraph."],
+        "tagName": "p",
+    }
+
+    assert html_to_vdom(source) == {
+        "tagName": "",
+        "children": [expected],
+    }
