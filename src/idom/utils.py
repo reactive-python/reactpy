@@ -53,7 +53,7 @@ class Ref(Generic[_RefValue]):
         return f"{type(self).__name__}({current})"
 
 
-def html_to_vdom(html: Union[str, etree._Element], *transforms: _ModelTransform):
+def html_to_vdom(html: str, *transforms: _ModelTransform):
     """Transform HTML into a DOM model
     Parameters:
         source:
@@ -64,6 +64,10 @@ def html_to_vdom(html: Union[str, etree._Element], *transforms: _ModelTransform)
             transform function to add highlighting to a ``<code/>`` block.
     """
 
+    return _html_to_vdom(html, *transforms)
+
+def _html_to_vdom(html: Union[str, etree._Element], *transforms: _ModelTransform):
+    """A recursive function to convert HTML to a VDOM model"""
     # If the user provided a string, convert it to an lxml.etree node.
     if isinstance(html, str):
         parser = etree.HTMLParser()
@@ -150,7 +154,7 @@ def _generate_vdom_children(
     return ([node.text] if node.text else []) + list(
         chain(
             *(
-                [html_to_vdom(child, *transforms)]
+                [_html_to_vdom(child, *transforms)]
                 + ([child.tail] if child.tail else [])
                 for child in node.iterchildren(None)
             )
