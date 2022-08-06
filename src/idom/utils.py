@@ -63,23 +63,31 @@ def html_to_vdom(html: str, *transforms: _ModelTransform):
             dictionary which will be replaced by ``new``. For example, you could use a
             transform function to add highlighting to a ``<code/>`` block.
     """
+    if not isinstance(html, str):
+        raise TypeError(f"Encountered unsupported type {type(html)} from {html}")
 
-    return _html_to_vdom(html, *transforms)
-
-def _html_to_vdom(html: Union[str, etree._Element], *transforms: _ModelTransform):
-    """A recursive function to convert HTML to a VDOM model"""
     # If the user provided a string, convert it to an lxml.etree node.
-    if isinstance(html, str):
-        parser = etree.HTMLParser()
-        node = fragment_fromstring(html, create_parent=True, parser=parser)
-        root_node = True  # Only the root node is a HTML string
-    elif isinstance(html, etree._Element):
-        node = html
-        root_node = False
-    else:
-        raise TypeError(
-            f"HtmlToVdom encountered unsupported type {type(html)} from {html}"
-        )
+    node = fragment_fromstring(html, create_parent=True, parser=etree.HTMLParser())
+    vdom = etree_to_vdom(node, *transforms)
+
+    # The root node is rendered as a React Fragment, instead of a div
+    vdom["tagName"] = ""
+
+    return vdom
+
+
+def etree_to_vdom(node: etree._Element, *transforms: _ModelTransform):
+    """Recusively transform an lxml etree node into a DOM model
+    Parameters:
+        source:
+            The ``lxml.etree._Element`` node
+        transforms:
+            Functions of the form ``transform(old) -> new`` where ``old`` is a VDOM
+            dictionary which will be replaced by ``new``. For example, you could use a
+            transform function to add highlighting to a ``<code/>`` block.
+    """
+    if not isinstance(node, etree._Element):
+        raise TypeError(f"Encountered unsupported type {type(node)} from {node}")
 
     # Convert the lxml node to a VDOM dict.
     vdom = {
@@ -96,10 +104,6 @@ def _html_to_vdom(html: Union[str, etree._Element], *transforms: _ModelTransform
     # Apply any provided transforms.
     for transform in transforms:
         vdom = transform(vdom)
-
-    # The root node is rendered as a React Fragment
-    if root_node:
-        vdom["tagName"] = ""
 
     # Get rid of empty VDOM fields
     _prune_vdom_fields(vdom)
@@ -154,7 +158,7 @@ def _generate_vdom_children(
     return ([node.text] if node.text else []) + list(
         chain(
             *(
-                [_html_to_vdom(child, *transforms)]
+                [etree_to_vdom(child, *transforms)]
                 + ([child.tail] if child.tail else [])
                 for child in node.iterchildren(None)
             )
