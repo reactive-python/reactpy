@@ -67,9 +67,10 @@ def html_to_vdom(html: str, *transforms: _ModelTransform):
         raise TypeError(f"Encountered unsupported type {type(html)} from {html}")
 
     # If the user provided a string, convert it to a list of lxml.etree nodes
-    nodes: List = fragments_fromstring(
-        html, no_leading_text=True, parser=etree.HTMLParser()
+    parser = etree.HTMLParser(
+        remove_comments=True, remove_pis=True, remove_blank_text=True
     )
+    nodes: List = fragments_fromstring(html, no_leading_text=True, parser=parser)
     has_root_node = len(nodes) == 1
 
     # Find or create a root node
