@@ -2,7 +2,7 @@ from itertools import chain
 from typing import Any, Callable, Dict, Generic, Iterable, List, TypeVar, Union
 
 from lxml import etree
-from lxml.html import fragment_fromstring
+from lxml.html import fragments_fromstring
 
 
 _RefValue = TypeVar("_RefValue")
@@ -66,12 +66,26 @@ def html_to_vdom(html: str, *transforms: _ModelTransform):
     if not isinstance(html, str):
         raise TypeError(f"Encountered unsupported type {type(html)} from {html}")
 
-    # If the user provided a string, convert it to an lxml.etree node.
-    node = fragment_fromstring(html, create_parent=True, parser=etree.HTMLParser())
-    vdom = etree_to_vdom(node, *transforms)
+    # If the user provided a string, convert it to a list of lxml.etree nodes
+    nodes: List = fragments_fromstring(
+        html, no_leading_text=True, parser=etree.HTMLParser()
+    )
+    has_root_node = len(nodes) == 1
 
-    # The root node is rendered as a React Fragment, instead of a div
-    vdom["tagName"] = ""
+    # Find or create a root node
+    if has_root_node:
+        root_node = nodes[0]
+    else:
+        root_node = etree.Element("div", None, None)
+        for child in nodes:
+            root_node.append(child)
+
+    # Convert the lxml node to a VDOM dict
+    vdom = etree_to_vdom(root_node, *transforms)
+
+    # Change the artificially created root node to a React Fragment, instead of a div
+    if not has_root_node:
+        vdom["tagName"] = ""
 
     return vdom
 
