@@ -60,10 +60,7 @@ def test_ref_repr():
     ],
 )
 def test_html_to_vdom(case):
-    assert html_to_vdom(case["source"]) == {
-        "tagName": "",
-        "children": [case["model"]],
-    }
+    assert html_to_vdom(case["source"]) == case["model"]
 
 
 def test_html_to_vdom_transform():
@@ -93,10 +90,7 @@ def test_html_to_vdom_transform():
         ],
     }
 
-    assert html_to_vdom(source, make_links_blue) == {
-        "tagName": "",
-        "children": [expected],
-    }
+    assert html_to_vdom(source, make_links_blue) == expected
 
 
 def test_html_to_vdom_with_null_tag():
@@ -111,10 +105,7 @@ def test_html_to_vdom_with_null_tag():
         ],
     }
 
-    assert html_to_vdom(source) == {
-        "tagName": "",
-        "children": [expected],
-    }
+    assert html_to_vdom(source) == expected
 
 
 def test_html_to_vdom_with_style_attr():
@@ -126,7 +117,24 @@ def test_html_to_vdom_with_style_attr():
         "tagName": "p",
     }
 
-    assert html_to_vdom(source) == {
+    assert html_to_vdom(source) == expected
+
+
+def test_html_to_vdom_with_no_parent_node():
+    source = "<p>Hello</p><div>World</div>"
+
+    expected = {
         "tagName": "",
-        "children": [expected],
+        "children": [
+            {
+                "tagName": "p",
+                "children": ["Hello"],
+            },
+            {
+                "tagName": "div",
+                "children": ["World"],
+            },
+        ],
     }
+
+    assert html_to_vdom(source) == expected
