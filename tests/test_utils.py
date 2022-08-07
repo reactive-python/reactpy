@@ -126,14 +126,8 @@ def test_html_to_vdom_with_no_parent_node():
     expected = {
         "tagName": "",
         "children": [
-            {
-                "tagName": "p",
-                "children": ["Hello"],
-            },
-            {
-                "tagName": "div",
-                "children": ["World"],
-            },
+            {"tagName": "p", "children": ["Hello"]},
+            {"tagName": "div", "children": ["World"]},
         ],
     }
 
