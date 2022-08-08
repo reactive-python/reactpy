@@ -53,7 +53,7 @@ class Ref(Generic[_RefValue]):
         return f"{type(self).__name__}({current})"
 
 
-def html_to_vdom(html: str, *transforms: _ModelTransform, recover: bool = False) -> Dict:
+def html_to_vdom(html: str, *transforms: _ModelTransform) -> Dict:
     """Transform HTML into a DOM model
     Parameters:
         source:
@@ -62,9 +62,6 @@ def html_to_vdom(html: str, *transforms: _ModelTransform, recover: bool = False)
             Functions of the form ``transform(old) -> new`` where ``old`` is a VDOM
             dictionary which will be replaced by ``new``. For example, you could use a
             transform function to add highlighting to a ``<code/>`` block.
-        recover:
-            If ``True``, try to repair broken HTML. This may result in parsing invalid
-            HTML as plain text.
     """
     if not isinstance(html, str):
         raise TypeError(f"Encountered unsupported type {type(html)} from {html}")
@@ -74,7 +71,7 @@ def html_to_vdom(html: str, *transforms: _ModelTransform, recover: bool = False)
         remove_comments=True,
         remove_pis=True,
         remove_blank_text=True,
-        recover=recover,
+        recover=False,
     )
     nodes: List = fragments_fromstring(html, no_leading_text=True, parser=parser)
     has_root_node = len(nodes) == 1
@@ -97,7 +94,7 @@ def html_to_vdom(html: str, *transforms: _ModelTransform, recover: bool = False)
     return vdom
 
 
-def _etree_to_vdom(node: etree._Element, *transforms: _ModelTransform):
+def _etree_to_vdom(node: etree._Element, *transforms: _ModelTransform) -> Dict:
     """Recusively transform an lxml etree node into a DOM model
     Parameters:
         source:
