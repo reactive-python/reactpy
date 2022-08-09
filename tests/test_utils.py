@@ -68,7 +68,7 @@ def test_html_to_vdom_transform():
 
     def make_links_blue(node):
         if node["tagName"] == "a":
-            node["attributes"]["style"] = {"color": "blue"}
+            node["attributes"] = {"style": {"color": "blue"}}
         return node
 
     expected = {
