@@ -96,6 +96,7 @@ def html_to_vdom(html: str, *transforms: _ModelTransform) -> Dict:
 
 def _etree_to_vdom(node: etree._Element, *transforms: _ModelTransform) -> Dict:
     """Recusively transform an lxml etree node into a DOM model
+    
     Parameters:
         source:
             The ``lxml.etree._Element`` node
