@@ -4,6 +4,8 @@ from typing import Any, Callable, Dict, Generic, Iterable, List, TypeVar, Union
 from lxml import etree
 from lxml.html import fragments_fromstring
 
+import idom
+
 
 _RefValue = TypeVar("_RefValue")
 _ModelTransform = Callable[[Dict[str, Any]], Any]
@@ -54,7 +56,9 @@ class Ref(Generic[_RefValue]):
 
 
 def html_to_vdom(html: str, *transforms: _ModelTransform) -> Dict:
-    """Transform HTML into a DOM model
+    """Transform HTML into a DOM model. Unique keys can be provided to HTML elements
+    using a ``key=...`` attribute within your HTML tag.
+
     Parameters:
         source:
             The raw HTML as a string
@@ -96,7 +100,7 @@ def html_to_vdom(html: str, *transforms: _ModelTransform) -> Dict:
 
 def _etree_to_vdom(node: etree._Element, *transforms: _ModelTransform) -> Dict:
     """Recusively transform an lxml etree node into a DOM model
-    
+
     Parameters:
         source:
             The ``lxml.etree._Element`` node
@@ -108,16 +112,24 @@ def _etree_to_vdom(node: etree._Element, *transforms: _ModelTransform) -> Dict:
     if not isinstance(node, etree._Element):
         raise TypeError(f"Encountered unsupported type {type(node)} from {node}")
 
-    # Convert the lxml node to a VDOM dict.
-    vdom = {
-        "tagName": node.tag,
-        "children": _generate_vdom_children(node, transforms),
-        "attributes": dict(node.items()),
-        "eventHandlers": {},
-        "importSource": {},
-        "key": "",
-        "error": "",
-    }
+    # Convert the lxml node to a VDOM dict
+    # _generate_vdom_children() will recursively call _etree_to_vdom() on all children
+    attributes = dict(node.items())
+    key = attributes.pop("key", None)
+    children = _generate_vdom_children(node, transforms)
+    vdom = (
+        # Try to use a constructor from idom.html to create the VDOM dict
+        getattr(idom.html, node.tag)(attributes, *children, key=key)
+        if hasattr(idom.html, node.tag)
+        # Fall back to using a generic VDOM dict
+        else {
+            "tagName": node.tag,
+            "children": children,
+            "attributes": attributes,
+            "key": key,
+        }
+    )
+
     _mutate_vdom(vdom)
 
     # Apply any provided transforms.
@@ -132,12 +144,18 @@ def _etree_to_vdom(node: etree._Element, *transforms: _ModelTransform) -> Dict:
 
 def _mutate_vdom(vdom: Dict):
     """Performs any necessary mutations on the VDOM attributes to meet VDOM spec.
-    
-    It also transforms the ``style`` attribute into a dictionary whose keys are
+
+    Currently, this function only transforms the ``style`` attribute into a dictionary whose keys are
     camelCase so as to be renderable by React.
+
+    This function may be extended in the future.
     """
     # Convert style attributes to VDOM spec
-    if "style" in vdom["attributes"] and isinstance(vdom["attributes"]["style"], str):
+    if (
+        "attributes" in vdom
+        and "style" in vdom["attributes"]
+        and isinstance(vdom["attributes"]["style"], str)
+    ):
         vdom["attributes"]["style"] = {
             _hypen_to_camel_case(key.strip()): value.strip()
             for key, value in (
@@ -147,36 +165,22 @@ def _mutate_vdom(vdom: Dict):
             )
         }
 
-    # Set key attribute for scripts to prevent re-execution during re-renders
-    if vdom["tagName"] == "script":
-        if not isinstance(vdom["children"][0], str):
-            # The script's source should always be the first child
-            raise LookupError("Could not find script's contents!")
-        if vdom["children"][0]:
-            vdom["key"] = vdom["children"][0]
-
 
 def _prune_vdom_fields(vdom: Dict):
     """Remove unneeded fields from VDOM dict."""
-    if not len(vdom["children"]):
+    if "children" in vdom and not len(vdom["children"]):
         del vdom["children"]
-    if not len(vdom["attributes"]):
+    if "attributes" in vdom and not len(vdom["attributes"]):
         del vdom["attributes"]
-    if not len(vdom["eventHandlers"]):
-        del vdom["eventHandlers"]
-    if not len(vdom["importSource"]):
-        del vdom["importSource"]
-    if not vdom["key"]:
+    if "key" in vdom and not vdom["key"]:
         del vdom["key"]
-    if not vdom["error"]:
-        del vdom["error"]
 
 
 def _generate_vdom_children(
     node: etree._Element, transforms: Iterable[_ModelTransform]
 ) -> List[Union[Dict, str]]:
-    """Recursively generate a list of VDOM children from an lxml node.
-    
+    """Generates a list of VDOM children from an lxml node.
+
     Inserts inner text and/or tail text inbetween VDOM children, if necessary.
     """
     return ([node.text] if node.text else []) + list(
