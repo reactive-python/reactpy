@@ -89,7 +89,7 @@ def html_to_vdom(html: str, *transforms: _ModelTransform) -> Dict:
             root_node.append(child)
 
     # Convert the lxml node to a VDOM dict
-    vdom = _etree_to_vdom(root_node, *transforms)
+    vdom = _etree_to_vdom(root_node, transforms)
 
     # Change the artificially created root node to a React Fragment, instead of a div
     if not has_root_node:
@@ -98,7 +98,7 @@ def html_to_vdom(html: str, *transforms: _ModelTransform) -> Dict:
     return vdom
 
 
-def _etree_to_vdom(node: etree._Element, *transforms: _ModelTransform) -> Dict:
+def _etree_to_vdom(node: etree._Element, transforms: Iterable[_ModelTransform]) -> Dict:
     """Recusively transform an lxml etree node into a DOM model
 
     Parameters:
@@ -186,7 +186,7 @@ def _generate_vdom_children(
     return ([node.text] if node.text else []) + list(
         chain(
             *(
-                [_etree_to_vdom(child, *transforms)]
+                [_etree_to_vdom(child, transforms)]
                 + ([child.tail] if child.tail else [])
                 for child in node.iterchildren(None)
             )
