@@ -172,7 +172,9 @@ def _generate_vdom_children(
     node: etree._Element, transforms: Iterable[_ModelTransform]
 ) -> List[Union[Dict, str]]:
     """Recursively generate a list of VDOM children from an lxml node.
-    Inserts inner text and/or tail text inbetween VDOM children, if necessary."""
+    
+    Inserts inner text and/or tail text inbetween VDOM children, if necessary.
+    """
     return ([node.text] if node.text else []) + list(
         chain(
             *(
