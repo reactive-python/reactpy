@@ -131,8 +131,11 @@ def _etree_to_vdom(node: etree._Element, *transforms: _ModelTransform) -> Dict:
 
 
 def _mutate_vdom(vdom: Dict):
-    """Performs any necessary mutations on the VDOM attributes to meet VDOM spec
-    and/or to make elements properly renderable in React."""
+    """Performs any necessary mutations on the VDOM attributes to meet VDOM spec.
+    
+    It also transforms the ``style`` attribute into a dictionary whose keys are
+    camelCase so as to be renderable by React.
+    """
     # Convert style attributes to VDOM spec
     if "style" in vdom["attributes"] and isinstance(vdom["attributes"]["style"], str):
         vdom["attributes"]["style"] = {
