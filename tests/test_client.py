@@ -2,6 +2,7 @@ import asyncio
 from contextlib import AsyncExitStack
 from pathlib import Path
 
+import pytest
 from playwright.async_api import Browser
 
 import idom
@@ -114,7 +115,50 @@ async def test_slow_server_response_on_input_change(display: DisplayFixture):
             await asyncio.sleep(delay)
             set_value(event["target"]["value"])
 
-        return idom.html.input({"onChange": handle_change, "id": "test-input"})
+        return idom.html.input(
+            {"onChange": handle_change, "value": value, "id": "test-input"}
+        )
+
+    await display.show(SomeComponent)
+
+    inp = await display.page.wait_for_selector("#test-input")
+    await inp.type("hello")
+
+    assert (await inp.evaluate("node => node.value")) == "hello"
+
+
+@pytest.mark.parametrize(
+    "handler_name",
+    [
+        "onChange",
+        # I don't know why these don't work...
+        # "onKeyDown",
+        # "onKeyUp",
+        # "onKeyPress",
+        # "onInput",
+    ],
+)
+async def test_controlled_input(display: DisplayFixture, handler_name: str):
+    """A delay server-side could cause input values to be overwritten.
+
+    For more info see: https://github.com/idom-team/idom/issues/684
+    """
+
+    @idom.component
+    def SomeComponent():
+        value, set_value = idom.hooks.use_state("")
+
+        async def handle_event(event):
+            print(event["target"]["value"])
+            set_value(event["target"]["value"])
+
+        return idom.html.input(
+            {
+                handler_name: handle_event,
+                "value": value,
+                "id": "test-input",
+            }
+        )
 
     await display.show(SomeComponent)
 

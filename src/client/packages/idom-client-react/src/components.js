@@ -84,31 +84,32 @@ function UserInputElement({ model }) {
   let value = props.value;
   delete props.value;
 
+  // Track a buffer of observed values in order to avoid flicker
+  const observedValues = React.useState([])[0];
+
   // Instead of controlling the value, we set it in an effect.
   React.useEffect(() => {
+    if (observedValues) {
+      if (value === observedValues[0]) {
+        observedValues.shift();
+        // no need to set a new value yet
+        value = undefined;
+      } else {
+        observedValues.length = 0;
+      }
+    }
     if (value !== undefined) {
       ref.current.value = value;
     }
   }, [ref.current, value]);
 
-  // Track a buffer of observed values in order to avoid flicker
-  const observedValues = React.useState([])[0];
-  if (observedValues) {
-    if (value === observedValues[0]) {
-      observedValues.shift();
-      value = observedValues[observedValues.length - 1];
-    } else {
-      observedValues.length = 0;
+  const givenOnInput = props.onInput;
+  props.onInput = (event) => {
+    observedValues.push(event.target.value);
+    if (typeof givenOnInput === "function") {
+      givenOnInput(event);
     }
-  }
-
-  const givenOnChange = props.onChange;
-  if (typeof givenOnChange === "function") {
-    props.onChange = (event) => {
-      observedValues.push(event.target.value);
-      givenOnChange(event);
-    };
-  }
+  };
 
   // Use createElement here to avoid warning about variable numbers of children not
   // having keys. Warning about this must now be the responsibility of the server
