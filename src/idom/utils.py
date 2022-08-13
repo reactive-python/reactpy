@@ -112,13 +112,14 @@ def _etree_to_vdom(node: etree._Element, transforms: Iterable[_ModelTransform]) 
     if not isinstance(node, etree._Element):
         raise TypeError(f"Encountered unsupported type {type(node)} from {node}")
 
+    # This will recursively call _etree_to_vdom() on all children
+    children = _generate_vdom_children(node, transforms)
+
     # Convert the lxml node to a VDOM dict
-    # _generate_vdom_children() will recursively call _etree_to_vdom() on all children
     attributes = dict(node.items())
     key = attributes.pop("key", None)
-    children = _generate_vdom_children(node, transforms)
     vdom = (
-        # Try to use a constructor from idom.html to create the VDOM dict
+        # If available, use a constructor from idom.html to create the VDOM dict
         getattr(idom.html, node.tag)(attributes, *children, key=key)
         if hasattr(idom.html, node.tag)
         # Fall back to using a generic VDOM dict
@@ -130,6 +131,7 @@ def _etree_to_vdom(node: etree._Element, transforms: Iterable[_ModelTransform]) 
         }
     )
 
+    # Perform any necessary mutations on the VDOM attributes to meet VDOM spec
     _mutate_vdom(vdom)
 
     # Apply any provided transforms.
@@ -150,12 +152,13 @@ def _mutate_vdom(vdom: Dict):
 
     This function may be extended in the future.
     """
-    # Convert style attributes to VDOM spec
+    # Determine if the style attribute needs to be converted to a dict
     if (
         "attributes" in vdom
         and "style" in vdom["attributes"]
         and isinstance(vdom["attributes"]["style"], str)
     ):
+        # Convert style attribute from str -> dict with camelCase keys
         vdom["attributes"]["style"] = {
             _hypen_to_camel_case(key.strip()): value.strip()
             for key, value in (
@@ -183,10 +186,14 @@ def _generate_vdom_children(
 
     Inserts inner text and/or tail text inbetween VDOM children, if necessary.
     """
-    return ([node.text] if node.text else []) + list(
+    return (  # Get the inner text of the current node
+        [node.text] if node.text else []
+    ) + list(
         chain(
             *(
+                # Recursively convert each child node to VDOM
                 [_etree_to_vdom(child, transforms)]
+                # Insert the tail text between each child node
                 + ([child.tail] if child.tail else [])
                 for child in node.iterchildren(None)
             )
@@ -198,5 +205,11 @@ def _hypen_to_camel_case(css_key: str) -> str:
     """Convert a hypenated string to camelCase."""
     first_word, *subsequent_words = css_key.split("-")
 
-    # Use map() to titlecase all subsequent words
-    return "".join([first_word.lower(), *map(str.title, subsequent_words)])
+    return "".join(
+        [
+            # Lowercase the first word
+            first_word.lower(),
+            # Use map() to titlecase all subsequent words
+            *map(str.title, subsequent_words),
+        ]
+    )
