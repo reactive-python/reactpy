@@ -69,7 +69,7 @@ def html_to_vdom(html: str, *transforms: _ModelTransform) -> VdomDict:
             transform function to add highlighting to a ``<code/>`` block.
     """
     if not isinstance(html, str):  # pragma: no cover
-        raise TypeError(f"Encountered unsupported type {type(html)} from {html}")
+        raise TypeError(f"Expected html to be a string, not {type(html).__name__}")
 
     # If the user provided a string, convert it to a list of lxml.etree nodes
     parser = etree.HTMLParser(
@@ -114,7 +114,7 @@ def _etree_to_vdom(
             transform function to add highlighting to a ``<code/>`` block.
     """
     if not isinstance(node, etree._Element):  # pragma: no cover
-        raise TypeError(f"Encountered unsupported type {type(node)} from {node}")
+        raise TypeError(f"Expected node to be a etree._Element, not {type(node).__name__}")
 
     # This will recursively call _etree_to_vdom() on all children
     children = _generate_vdom_children(node, transforms)
