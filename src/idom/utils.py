@@ -119,18 +119,17 @@ def _etree_to_vdom(node: etree._Element, transforms: Iterable[_ModelTransform]) 
     # Convert the lxml node to a VDOM dict
     attributes = dict(node.items())
     key = attributes.pop("key", None)
-    vdom = (
-        # If available, use a constructor from idom.html to create the VDOM dict
-        getattr(idom.html, node.tag)(attributes, *children, key=key)
-        if hasattr(idom.html, node.tag)
-        # Fall back to using a generic VDOM dict
-        else {
-            "tagName": node.tag,
-            "children": children,
-            "attributes": attributes,
-            "key": key,
-        }
-    )
+
+    if hasattr(idom.html, node.tag):
+        vdom = getattr(idom.html, node.tag)(attributes, *children, key=key)
+    else:
+        vdom: VdomDict = {"tagName": node.tag}
+        if children:
+            vdom["children"] = children
+        if attributes:
+            vdom["attributes"] = attributes
+        if key is not None:
+            vdom["key"] = key
 
     # Perform any necessary mutations on the VDOM attributes to meet VDOM spec
     _mutate_vdom(vdom)
