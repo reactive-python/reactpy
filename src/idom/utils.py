@@ -138,9 +138,6 @@ def _etree_to_vdom(node: etree._Element, transforms: Iterable[_ModelTransform]) 
     for transform in transforms:
         vdom = transform(vdom)
 
-    # Get rid of empty VDOM fields
-    _prune_vdom_fields(vdom)
-
     return vdom
 
 
@@ -167,16 +164,6 @@ def _mutate_vdom(vdom: Dict):
                 if ":" in part
             )
         }
-
-
-def _prune_vdom_fields(vdom: Dict):
-    """Remove unneeded fields from VDOM dict."""
-    if "children" in vdom and not len(vdom["children"]):
-        del vdom["children"]
-    if "attributes" in vdom and not len(vdom["attributes"]):
-        del vdom["attributes"]
-    if "key" in vdom and not vdom["key"]:
-        del vdom["key"]
 
 
 def _generate_vdom_children(
