@@ -5,6 +5,7 @@ from lxml import etree
 from lxml.html import fragments_fromstring
 
 import idom
+from idom.core.vdom import VdomDict
 
 
 _RefValue = TypeVar("_RefValue")
@@ -55,7 +56,7 @@ class Ref(Generic[_RefValue]):
         return f"{type(self).__name__}({current})"
 
 
-def html_to_vdom(html: str, *transforms: _ModelTransform) -> Dict:
+def html_to_vdom(html: str, *transforms: _ModelTransform) -> VdomDict:
     """Transform HTML into a DOM model. Unique keys can be provided to HTML elements
     using a ``key=...`` attribute within your HTML tag.
 
@@ -99,7 +100,9 @@ def html_to_vdom(html: str, *transforms: _ModelTransform) -> Dict:
     return vdom
 
 
-def _etree_to_vdom(node: etree._Element, transforms: Iterable[_ModelTransform]) -> Dict:
+def _etree_to_vdom(
+    node: etree._Element, transforms: Iterable[_ModelTransform]
+) -> VdomDict:
     """Recusively transform an lxml etree node into a DOM model
 
     Parameters:
@@ -141,7 +144,7 @@ def _etree_to_vdom(node: etree._Element, transforms: Iterable[_ModelTransform]) 
     return vdom
 
 
-def _mutate_vdom(vdom: Dict):
+def _mutate_vdom(vdom: VdomDict):
     """Performs any necessary mutations on the VDOM attributes to meet VDOM spec.
 
     Currently, this function only transforms the ``style`` attribute into a dictionary whose keys are
@@ -168,7 +171,7 @@ def _mutate_vdom(vdom: Dict):
 
 def _generate_vdom_children(
     node: etree._Element, transforms: Iterable[_ModelTransform]
-) -> List[Union[Dict, str]]:
+) -> List[Union[VdomDict, str]]:
     """Generates a list of VDOM children from an lxml node.
 
     Inserts inner text and/or tail text inbetween VDOM children, if necessary.
