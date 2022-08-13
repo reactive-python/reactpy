@@ -98,7 +98,7 @@ def example(session: Session) -> None:
 def docs(session: Session) -> None:
     """Build and display documentation in the browser (automatically reloads on change)"""
     install_requirements_file(session, "build-docs")
-    install_idom_dev(session, extras="all")
+    install_idom_dev(session)
     session.run(
         "python",
         "scripts/live_docs.py",
@@ -188,7 +188,7 @@ def test_python_suite(session: Session) -> None:
         session.install(".[all]")
     else:
         posargs += ["--cov=src/idom", "--cov-report", "term"]
-        install_idom_dev(session, extras="all")
+        install_idom_dev(session)
 
     session.run("pytest", *posargs)
 
@@ -234,7 +234,7 @@ def test_python_build(session: Session) -> None:
 def test_docs(session: Session) -> None:
     """Verify that the docs build and that doctests pass"""
     install_requirements_file(session, "build-docs")
-    install_idom_dev(session, extras="all")
+    install_idom_dev(session)
     session.run(
         "sphinx-build",
         "-a",  # re-write all output files
@@ -370,7 +370,8 @@ def install_requirements_file(session: Session, name: str) -> None:
     session.install("-r", str(file_path))
 
 
-def install_idom_dev(session: Session, extras: str = "stable") -> None:
+def install_idom_dev(session: Session, extras: str = "all") -> None:
+    session.run("pip", "--version")
     if "--no-install" not in session.posargs:
         session.install("-e", f".[{extras}]")
     else:

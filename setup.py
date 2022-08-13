@@ -5,13 +5,12 @@ import shutil
 import subprocess
 import sys
 import traceback
-from distutils import log
-from distutils.command.build import build  # type: ignore
-from distutils.command.sdist import sdist  # type: ignore
+from logging import StreamHandler, getLogger
 from pathlib import Path
 
 from setuptools import find_packages, setup
 from setuptools.command.develop import develop
+from setuptools.command.sdist import sdist
 
 
 if sys.platform == "win32":
@@ -20,6 +19,15 @@ else:
 
     def list2cmdline(cmd_list):
         return " ".join(map(pipes.quote, cmd_list))
+
+
+log = getLogger()
+log.addHandler(StreamHandler(sys.stdout))
+
+
+# -----------------------------------------------------------------------------
+# Basic Constants
+# -----------------------------------------------------------------------------
 
 
 # the name of the project
@@ -167,9 +175,17 @@ def build_javascript_first(cls):
 
 package["cmdclass"] = {
     "sdist": build_javascript_first(sdist),
-    "build": build_javascript_first(build),
     "develop": build_javascript_first(develop),
 }
+
+if sys.version_info < (3, 10, 6):
+    from distutils.command.build import build
+
+    package["cmdclass"]["build"] = build_javascript_first(build)
+else:
+    from setuptools.command.build_py import build_py
+
+    package["cmdclass"]["build_py"] = build_javascript_first(build_py)
 
 
 # -----------------------------------------------------------------------------
