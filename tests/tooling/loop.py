@@ -69,9 +69,7 @@ def _cancel_all_tasks(loop: asyncio.AbstractEventLoop, is_current: bool) -> None
 
     if is_current:
         loop.run_until_complete(
-            wait_for(
-                asyncio.gather(*to_cancel, loop=loop, return_exceptions=True), TIMEOUT
-            )
+            wait_for(asyncio.gather(*to_cancel, return_exceptions=True), TIMEOUT)
         )
     else:
         # user was responsible for cancelling all tasks

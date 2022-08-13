@@ -12,8 +12,7 @@ from idom import html
 from idom.config import IDOM_DEBUG_MODE
 from idom.core.component import component
 from idom.core.hooks import use_effect, use_state
-from idom.core.layout import Layout, LayoutEvent
-from idom.core.serve import render_json_patch
+from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 from idom.testing import (
     HookCatcher,
     StaticEventHandler,
@@ -69,7 +68,7 @@ async def test_layout_cannot_be_used_outside_context_manager(caplog):
 
 
 async def test_simple_layout():
-    set_state_hook = idom.Ref(None)
+    set_state_hook = idom.Ref()
 
     @idom.component
     def SimpleComponent():
@@ -77,24 +76,21 @@ async def test_simple_layout():
         return idom.vdom(tag)
 
     async with idom.Layout(SimpleComponent()) as layout:
-        path, changes = await render_json_patch(layout)
-
-        assert path == ""
-        assert_same_items(
-            changes,
-            [
-                {"op": "add", "path": "/children", "value": [{"tagName": "div"}]},
-                {"op": "add", "path": "/tagName", "value": ""},
-            ],
+        update_1 = await layout.render()
+        assert update_1 == LayoutUpdate(
+            path="",
+            old=None,
+            new={"tagName": "", "children": [{"tagName": "div"}]},
         )
 
         set_state_hook.current("table")
-        path, changes = await render_json_patch(layout)
 
-        assert path == ""
-        assert changes == [
-            {"op": "replace", "path": "/children/0/tagName", "value": "table"}
-        ]
+        update_2 = await layout.render()
+        assert update_2 == LayoutUpdate(
+            path="",
+            old=update_1.new,
+            new={"tagName": "", "children": [{"tagName": "table"}]},
+        )
 
 
 async def test_component_can_return_none():
@@ -113,55 +109,55 @@ async def test_nested_component_layout():
     @idom.component
     def Parent():
         state, parent_set_state.current = idom.hooks.use_state(0)
-        return idom.html.div(state, Child(key="c"))
+        return idom.html.div(state, Child())
 
     @idom.component
     def Child():
         state, child_set_state.current = idom.hooks.use_state(0)
         return idom.html.div(state)
 
-    async with idom.Layout(Parent(key="p")) as layout:
-        path, changes = await render_json_patch(layout)
-
-        assert path == ""
-        assert_same_items(
-            changes,
-            [
+    def make_parent_model(state, model):
+        return {
+            "tagName": "",
+            "children": [
                 {
-                    "op": "add",
-                    "path": "/children",
-                    "value": [
-                        {
-                            "children": [
-                                "0",
-                                {
-                                    "children": [{"children": ["0"], "tagName": "div"}],
-                                    "tagName": "",
-                                },
-                            ],
-                            "tagName": "div",
-                        }
-                    ],
-                },
-                {"op": "add", "path": "/tagName", "value": ""},
+                    "tagName": "div",
+                    "children": [str(state), model],
+                }
             ],
+        }
+
+    def make_child_model(state):
+        return {
+            "tagName": "",
+            "children": [{"tagName": "div", "children": [str(state)]}],
+        }
+
+    async with idom.Layout(Parent()) as layout:
+        update_1 = await layout.render()
+        assert update_1 == LayoutUpdate(
+            path="",
+            old=None,
+            new=make_parent_model(0, make_child_model(0)),
         )
 
         parent_set_state.current(1)
-        path, changes = await render_json_patch(layout)
 
-        assert path == ""
-        assert changes == [
-            {"op": "replace", "path": "/children/0/children/0", "value": "1"}
-        ]
+        update_2 = await layout.render()
+        assert update_2 == LayoutUpdate(
+            path="",
+            old=update_1.new,
+            new=make_parent_model(1, make_child_model(0)),
+        )
 
         child_set_state.current(1)
-        path, changes = await render_json_patch(layout)
 
-        assert path == "/children/0/children/1"
-        assert changes == [
-            {"op": "replace", "path": "/children/0/children/0", "value": "1"}
-        ]
+        update_3 = await layout.render()
+        assert update_3 == LayoutUpdate(
+            path="/children/0/children/1",
+            old=update_2.new["children"][0]["children"][1],
+            new=make_child_model(1),
+        )
 
 
 @pytest.mark.skipif(
@@ -184,39 +180,35 @@ async def test_layout_render_error_has_partial_update_with_error_message():
     with assert_idom_did_log(match_error="error from bad child"):
 
         async with idom.Layout(Main()) as layout:
-            patch = await render_json_patch(layout)
-            assert_same_items(
-                patch.changes,
-                [
-                    {
-                        "op": "add",
-                        "path": "/children",
-                        "value": [
-                            {
-                                "tagName": "div",
-                                "children": [
-                                    {
-                                        "tagName": "",
-                                        "children": [
-                                            {"tagName": "div", "children": ["hello"]}
-                                        ],
-                                    },
-                                    {
-                                        "tagName": "",
-                                        "error": "ValueError: error from bad child",
-                                    },
-                                    {
-                                        "tagName": "",
-                                        "children": [
-                                            {"tagName": "div", "children": ["hello"]}
-                                        ],
-                                    },
-                                ],
-                            }
-                        ],
-                    },
-                    {"op": "add", "path": "/tagName", "value": ""},
-                ],
+            assert (await layout.render()) == LayoutUpdate(
+                path="",
+                old=None,
+                new={
+                    "tagName": "",
+                    "children": [
+                        {
+                            "tagName": "div",
+                            "children": [
+                                {
+                                    "tagName": "",
+                                    "children": [
+                                        {"tagName": "div", "children": ["hello"]}
+                                    ],
+                                },
+                                {
+                                    "tagName": "",
+                                    "error": "ValueError: error from bad child",
+                                },
+                                {
+                                    "tagName": "",
+                                    "children": [
+                                        {"tagName": "div", "children": ["hello"]}
+                                    ],
+                                },
+                            ],
+                        }
+                    ],
+                },
             )
 
 
@@ -240,36 +232,32 @@ async def test_layout_render_error_has_partial_update_without_error_message():
     with assert_idom_did_log(match_error="error from bad child"):
 
         async with idom.Layout(Main()) as layout:
-            patch = await render_json_patch(layout)
-            assert_same_items(
-                patch.changes,
-                [
-                    {
-                        "op": "add",
-                        "path": "/children",
-                        "value": [
-                            {
-                                "children": [
-                                    {
-                                        "children": [
-                                            {"children": ["hello"], "tagName": "div"}
-                                        ],
-                                        "tagName": "",
-                                    },
-                                    {"error": "", "tagName": ""},
-                                    {
-                                        "children": [
-                                            {"children": ["hello"], "tagName": "div"}
-                                        ],
-                                        "tagName": "",
-                                    },
-                                ],
-                                "tagName": "div",
-                            }
-                        ],
-                    },
-                    {"op": "add", "path": "/tagName", "value": ""},
-                ],
+            assert (await layout.render()) == LayoutUpdate(
+                path="",
+                old=None,
+                new={
+                    "tagName": "",
+                    "children": [
+                        {
+                            "children": [
+                                {
+                                    "children": [
+                                        {"children": ["hello"], "tagName": "div"}
+                                    ],
+                                    "tagName": "",
+                                },
+                                {"error": "", "tagName": ""},
+                                {
+                                    "children": [
+                                        {"children": ["hello"], "tagName": "div"}
+                                    ],
+                                    "tagName": "",
+                                },
+                            ],
+                            "tagName": "div",
+                        }
+                    ],
+                },
             )
 
 
@@ -283,32 +271,28 @@ async def test_render_raw_vdom_dict_with_single_component_object_as_children():
         return {"tagName": "div", "children": {"tagName": "h1"}}
 
     async with idom.Layout(Main()) as layout:
-        patch = await render_json_patch(layout)
-        assert_same_items(
-            patch.changes,
-            [
-                {
-                    "op": "add",
-                    "path": "/children",
-                    "value": [
-                        {
-                            "children": [
-                                {
-                                    "children": [
-                                        {
-                                            "children": [{"tagName": "h1"}],
-                                            "tagName": "div",
-                                        }
-                                    ],
-                                    "tagName": "",
-                                }
-                            ],
-                            "tagName": "div",
-                        }
-                    ],
-                },
-                {"op": "add", "path": "/tagName", "value": ""},
-            ],
+        assert (await layout.render()) == LayoutUpdate(
+            path="",
+            old=None,
+            new={
+                "tagName": "",
+                "children": [
+                    {
+                        "children": [
+                            {
+                                "children": [
+                                    {
+                                        "children": [{"tagName": "h1"}],
+                                        "tagName": "div",
+                                    }
+                                ],
+                                "tagName": "",
+                            }
+                        ],
+                        "tagName": "div",
+                    }
+                ],
+            },
         )
 
 
@@ -493,7 +477,7 @@ async def test_update_path_to_component_that_is_not_direct_child_is_correct():
 
         hook.latest.schedule_render()
 
-        update = await render_json_patch(layout)
+        update = await layout.render()
         assert update.path == "/children/0/children/0/children/0"
 
 
@@ -620,22 +604,18 @@ async def test_component_can_return_another_component_directly():
         return idom.html.div("hello")
 
     async with idom.Layout(Outer()) as layout:
-        update = await render_json_patch(layout)
-        assert_same_items(
-            update.changes,
-            [
-                {
-                    "op": "add",
-                    "path": "/children",
-                    "value": [
-                        {
-                            "children": [{"children": ["hello"], "tagName": "div"}],
-                            "tagName": "",
-                        }
-                    ],
-                },
-                {"op": "add", "path": "/tagName", "value": ""},
-            ],
+        assert (await layout.render()) == LayoutUpdate(
+            path="",
+            old=None,
+            new={
+                "tagName": "",
+                "children": [
+                    {
+                        "children": [{"children": ["hello"], "tagName": "div"}],
+                        "tagName": "",
+                    }
+                ],
+            },
         )
 
 

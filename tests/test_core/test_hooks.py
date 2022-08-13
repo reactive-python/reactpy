@@ -11,12 +11,10 @@ from idom.core.hooks import (
     current_hook,
     strictly_equal,
 )
-from idom.core.layout import Layout
-from idom.core.serve import render_json_patch
+from idom.core.layout import Layout, LayoutUpdate
 from idom.testing import DisplayFixture, HookCatcher, assert_idom_did_log, poll
 from idom.testing.logs import assert_idom_did_not_log
 from idom.utils import Ref
-from tests.tooling.asserts import assert_same_items
 
 
 async def test_must_be_rendering_in_layout_to_use_hooks():
@@ -42,31 +40,35 @@ async def test_simple_stateful_component():
     sse = SimpleStatefulComponent()
 
     async with idom.Layout(sse) as layout:
-        patch_1 = await render_json_patch(layout)
-        assert patch_1.path == ""
-        assert_same_items(
-            patch_1.changes,
-            [
-                {"op": "add", "path": "/tagName", "value": ""},
-                {
-                    "op": "add",
-                    "path": "/children",
-                    "value": [{"children": ["0"], "tagName": "div"}],
-                },
-            ],
+        update_1 = await layout.render()
+        assert update_1 == LayoutUpdate(
+            path="",
+            old=None,
+            new={
+                "tagName": "",
+                "children": [{"tagName": "div", "children": ["0"]}],
+            },
         )
 
-        patch_2 = await render_json_patch(layout)
-        assert patch_2.path == ""
-        assert patch_2.changes == [
-            {"op": "replace", "path": "/children/0/children/0", "value": "1"}
-        ]
+        update_2 = await layout.render()
+        assert update_2 == LayoutUpdate(
+            path="",
+            old=update_1.new,
+            new={
+                "tagName": "",
+                "children": [{"tagName": "div", "children": ["1"]}],
+            },
+        )
 
-        patch_3 = await render_json_patch(layout)
-        assert patch_3.path == ""
-        assert patch_3.changes == [
-            {"op": "replace", "path": "/children/0/children/0", "value": "2"}
-        ]
+        update_3 = await layout.render()
+        assert update_3 == LayoutUpdate(
+            path="",
+            old=update_2.new,
+            new={
+                "tagName": "",
+                "children": [{"tagName": "div", "children": ["2"]}],
+            },
+        )
 
 
 async def test_set_state_callback_identity_is_preserved():
