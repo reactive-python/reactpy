@@ -5,6 +5,7 @@ from pathlib import Path
 from playwright.async_api import Browser
 
 import idom
+from idom.backend.utils import find_available_port
 from idom.testing import BackendFixture, DisplayFixture
 
 
@@ -12,6 +13,7 @@ JS_DIR = Path(__file__).parent / "js"
 
 
 async def test_automatic_reconnect(browser: Browser):
+    port = find_available_port("localhost")
     page = await browser.new_page()
 
     # we need to wait longer here because the automatic reconnect is not instant
@@ -22,7 +24,7 @@ async def test_automatic_reconnect(browser: Browser):
         return idom.html.p({"id": "old-component"}, "old")
 
     async with AsyncExitStack() as exit_stack:
-        server = await exit_stack.enter_async_context(BackendFixture(port=8000))
+        server = await exit_stack.enter_async_context(BackendFixture(port=port))
         display = await exit_stack.enter_async_context(
             DisplayFixture(server, driver=page)
         )
@@ -43,7 +45,7 @@ async def test_automatic_reconnect(browser: Browser):
         return idom.html.p({"id": f"new-component-{state}"}, f"new-{state}")
 
     async with AsyncExitStack() as exit_stack:
-        server = await exit_stack.enter_async_context(BackendFixture(port=8000))
+        server = await exit_stack.enter_async_context(BackendFixture(port=port))
         display = await exit_stack.enter_async_context(
             DisplayFixture(server, driver=page)
         )

@@ -230,10 +230,17 @@ class Layout:
         else:
             key, index = new_state.key, new_state.index
             parent.children_by_key[key] = new_state
-            # need to do insertion in case where old_state is None and we're appending
-            parent.model.current["children"][index : index + 1] = [
-                new_state.model.current
-            ]
+            # need to add this model to parent's children without mutating parent model
+            old_parent_model = parent.model.current
+            old_parent_children = old_parent_model["children"]
+            parent.model.current = {
+                **old_parent_model,
+                "children": [
+                    *old_parent_children[:index],
+                    new_state.model.current,
+                    *old_parent_children[index + 1 :],
+                ],
+            }
         finally:
             # avoid double render
             self._rendering_queue.remove_if_pending(life_cycle_state.id)
