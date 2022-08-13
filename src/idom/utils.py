@@ -84,7 +84,8 @@ def html_to_vdom(html: str, *transforms: _ModelTransform) -> Dict:
     if has_root_node:
         root_node = nodes[0]
     else:
-        root_node = etree.Element("div", None, None)
+        # etree.Element requires a non-empty tag - we correct this below
+        root_node = etree.Element("TEMP", None, None)
         for child in nodes:
             root_node.append(child)
 
