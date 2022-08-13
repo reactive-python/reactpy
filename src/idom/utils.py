@@ -9,7 +9,7 @@ from idom.core.vdom import VdomDict
 
 
 _RefValue = TypeVar("_RefValue")
-_ModelTransform = Callable[[Dict[str, Any]], Any]
+_ModelTransform = Callable[[VdomDict], Any]
 _UNDEFINED: Any = object()
 
 
