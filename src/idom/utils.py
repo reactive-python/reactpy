@@ -201,7 +201,15 @@ def _generate_vdom_children(
     )
 
 
-def _hypen_to_camel_case(string: str) -> str:
+def _hypen_to_camel_case(css_key: str) -> str:
     """Convert a hypenated string to camelCase."""
-    first, remainder = string.split("-", 1)
-    return first.lower() + remainder.title().replace("-", "")
+    first_word, *subsequent_words = css_key.split("-")
+
+    return "".join(
+        [
+            # Lowercase the first word
+            first_word.lower(),
+            # Use map() to titlecase all subsequent words
+            *map(str.title, subsequent_words),
+        ]
+    )
