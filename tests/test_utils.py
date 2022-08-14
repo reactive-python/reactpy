@@ -93,6 +93,20 @@ def test_html_to_vdom_transform():
     assert html_to_vdom(source, make_links_blue) == expected
 
 
+def test_non_html_tag_behavior():
+    source = "<my-tag data-x=something><my-other-tag key=a-key /></my-tag>"
+
+    expected = {
+        "tagName": "my-tag",
+        "attributes": {"data-x": "something"},
+        "children": [
+            {"tagName": "my-other-tag", "key": "a-key"},
+        ],
+    }
+
+    assert html_to_vdom(source) == expected
+
+
 def test_html_to_vdom_with_null_tag():
     source = "<p>hello<br>world</p>"
 
