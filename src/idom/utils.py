@@ -85,7 +85,7 @@ def html_to_vdom(html: str, *transforms: _ModelTransform, strict: bool = True) -
         nodes: List = fragments_fromstring(html, no_leading_text=True, parser=parser)
     except etree.XMLSyntaxError as e:
         if not strict:
-            raise e
+            raise e  # pragma: no cover
         raise HTMLParseError(
             "An error has occurred while parsing the HTML.\n\n"
             "This HTML may be malformatted, or may not perfectly adhere to HTML5.\n"
