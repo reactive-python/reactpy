@@ -73,10 +73,7 @@ def html_to_vdom(html: str, *transforms: _ModelTransform) -> VdomDict:
 
     # If the user provided a string, convert it to a list of lxml.etree nodes
     parser = etree.HTMLParser(
-        remove_comments=True,
-        remove_pis=True,
-        remove_blank_text=True,
-        recover=False,
+        remove_comments=True, remove_pis=True, remove_blank_text=True
     )
     nodes: List = fragments_fromstring(html, no_leading_text=True, parser=parser)
     has_root_node = len(nodes) == 1
@@ -114,7 +111,9 @@ def _etree_to_vdom(
             transform function to add highlighting to a ``<code/>`` block.
     """
     if not isinstance(node, etree._Element):  # pragma: no cover
-        raise TypeError(f"Expected node to be a etree._Element, not {type(node).__name__}")
+        raise TypeError(
+            f"Expected node to be a etree._Element, not {type(node).__name__}"
+        )
 
     # This will recursively call _etree_to_vdom() on all children
     children = _generate_vdom_children(node, transforms)
