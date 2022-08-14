@@ -89,7 +89,7 @@ def html_to_vdom(html: str, *transforms: _ModelTransform, strict: bool = True) -
         raise HTMLParseError(
             "An error has occurred while parsing the HTML.\n\n"
             "This HTML may be malformatted, or may not perfectly adhere to HTML5.\n"
-            "If you believe the exception above was intentional, "
+            "If you believe the exception above was due to something intentional, "
             "you can disable the strict parameter on html_to_vdom().\n"
             "Otherwise, repair your broken HTML and try again."
         ) from e
