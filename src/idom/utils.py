@@ -1,11 +1,11 @@
 from itertools import chain
-from typing import Any, Callable, Dict, Generic, Iterable, List, TypeVar, Union
+from typing import Any, Callable, Generic, Iterable, List, TypeVar, Union
 
 from lxml import etree
 from lxml.html import fragments_fromstring
 
 import idom
-from idom.core.vdom import VdomDict
+from idom.core.types import VdomDict
 
 
 _RefValue = TypeVar("_RefValue")
@@ -56,7 +56,7 @@ class Ref(Generic[_RefValue]):
         return f"{type(self).__name__}({current})"
 
 
-def html_to_vdom(html: str, *transforms: _ModelTransform) -> VdomDict:
+def html_to_vdom(html: str, *transforms: _ModelTransform, strict=True) -> VdomDict:
     """Transform HTML into a DOM model. Unique keys can be provided to HTML elements
     using a ``key=...`` attribute within your HTML tag.
 
@@ -67,15 +67,32 @@ def html_to_vdom(html: str, *transforms: _ModelTransform) -> VdomDict:
             Functions of the form ``transform(old) -> new`` where ``old`` is a VDOM
             dictionary which will be replaced by ``new``. For example, you could use a
             transform function to add highlighting to a ``<code/>`` block.
+        strict:
+            If ``True``, raise an exception if the HTML does not perfectly follow HTML5
+            syntax.
     """
     if not isinstance(html, str):  # pragma: no cover
         raise TypeError(f"Expected html to be a string, not {type(html).__name__}")
 
     # If the user provided a string, convert it to a list of lxml.etree nodes
     parser = etree.HTMLParser(
-        remove_comments=True, remove_pis=True, remove_blank_text=True
+        remove_comments=True,
+        remove_pis=True,
+        remove_blank_text=True,
+        recover=not strict,
     )
-    nodes: List = fragments_fromstring(html, no_leading_text=True, parser=parser)
+    try:
+        nodes: List = fragments_fromstring(html, no_leading_text=True, parser=parser)
+    except etree.XMLSyntaxError as e:
+        if not strict:
+            raise e
+        raise HTMLParseError(
+            "An error has occurred while parsing the HTML.\n\n"
+            "This HTML may be malformatted, or may not perfectly adhere to HTML5.\n"
+            "If you believe the exception above was intentional, "
+            "you can disable the strict parameter on html_to_vdom().\n"
+            "Otherwise, repair your broken HTML and try again."
+        ) from e
     has_root_node = len(nodes) == 1
 
     # Find or create a root node
@@ -197,3 +214,7 @@ def _hypen_to_camel_case(string: str) -> str:
     """Convert a hypenated string to camelCase."""
     first, _, remainder = string.partition("-")
     return first.lower() + remainder.title().replace("-", "")
+
+
+class HTMLParseError(etree.LxmlSyntaxError):
+    """Raised when an HTML document cannot be parsed using strict parsing."""

@@ -1,7 +1,7 @@
 import pytest
 
 import idom
-from idom.utils import html_to_vdom
+from idom.utils import HTMLParseError, html_to_vdom
 
 
 def test_basic_ref_behavior():
@@ -104,7 +104,10 @@ def test_non_html_tag_behavior():
         ],
     }
 
-    assert html_to_vdom(source) == expected
+    assert html_to_vdom(source, strict=False) == expected
+
+    with pytest.raises(HTMLParseError):
+        html_to_vdom(source, strict=True)
 
 
 def test_html_to_vdom_with_null_tag():
