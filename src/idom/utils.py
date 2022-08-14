@@ -158,6 +158,9 @@ def _mutate_vdom(vdom: VdomDict):
         and "style" in vdom["attributes"]
         and isinstance(vdom["attributes"]["style"], str)
     ):
+        # Convince type checker that it's safe to mutate attributes
+        assert isinstance(vdom["attributes"], dict)
+
         # Convert style attribute from str -> dict with camelCase keys
         vdom["attributes"]["style"] = {
             _hypen_to_camel_case(key.strip()): value.strip()
