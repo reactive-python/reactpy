@@ -56,7 +56,7 @@ class Ref(Generic[_RefValue]):
         return f"{type(self).__name__}({current})"
 
 
-def html_to_vdom(html: str, *transforms: _ModelTransform, strict=True) -> VdomDict:
+def html_to_vdom(html: str, *transforms: _ModelTransform, strict: bool = True) -> VdomDict:
     """Transform HTML into a DOM model. Unique keys can be provided to HTML elements
     using a ``key=...`` attribute within your HTML tag.
 
