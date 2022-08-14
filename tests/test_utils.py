@@ -1,7 +1,7 @@
 import pytest
 
 import idom
-from idom.utils import html_to_vdom
+from idom.utils import HTMLParseError, html_to_vdom
 
 
 def test_basic_ref_behavior():
@@ -60,18 +60,15 @@ def test_ref_repr():
     ],
 )
 def test_html_to_vdom(case):
-    assert html_to_vdom(case["source"]) == {
-        "tagName": "div",
-        "children": [case["model"]],
-    }
+    assert html_to_vdom(case["source"]) == case["model"]
 
 
 def test_html_to_vdom_transform():
-    source = "<p>hello <a>world</a> and <a>universe</a></p>"
+    source = "<p>hello <a>world</a> and <a>universe</a>lmao</p>"
 
     def make_links_blue(node):
         if node["tagName"] == "a":
-            node["attributes"]["style"] = {"color": "blue"}
+            node["attributes"] = {"style": {"color": "blue"}}
         return node
 
     expected = {
@@ -89,10 +86,66 @@ def test_html_to_vdom_transform():
                 "children": ["universe"],
                 "attributes": {"style": {"color": "blue"}},
             },
+            "lmao",
         ],
     }
 
-    assert html_to_vdom(source, make_links_blue) == {
-        "tagName": "div",
-        "children": [expected],
+    assert html_to_vdom(source, make_links_blue) == expected
+
+
+def test_non_html_tag_behavior():
+    source = "<my-tag data-x=something><my-other-tag key=a-key /></my-tag>"
+
+    expected = {
+        "tagName": "my-tag",
+        "attributes": {"data-x": "something"},
+        "children": [
+            {"tagName": "my-other-tag", "key": "a-key"},
+        ],
     }
+
+    assert html_to_vdom(source, strict=False) == expected
+
+    with pytest.raises(HTMLParseError):
+        html_to_vdom(source, strict=True)
+
+
+def test_html_to_vdom_with_null_tag():
+    source = "<p>hello<br>world</p>"
+
+    expected = {
+        "tagName": "p",
+        "children": [
+            "hello",
+            {"tagName": "br"},
+            "world",
+        ],
+    }
+
+    assert html_to_vdom(source) == expected
+
+
+def test_html_to_vdom_with_style_attr():
+    source = '<p style="color: red; background-color : green; ">Hello World.</p>'
+
+    expected = {
+        "attributes": {"style": {"backgroundColor": "green", "color": "red"}},
+        "children": ["Hello World."],
+        "tagName": "p",
+    }
+
+    assert html_to_vdom(source) == expected
+
+
+def test_html_to_vdom_with_no_parent_node():
+    source = "<p>Hello</p><div>World</div>"
+
+    expected = {
+        "tagName": "",
+        "children": [
+            {"tagName": "p", "children": ["Hello"]},
+            {"tagName": "div", "children": ["World"]},
+        ],
+    }
+
+    assert html_to_vdom(source) == expected
