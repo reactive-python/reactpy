@@ -23,6 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+No changes.
+
+
+v0.40.0
+-------
+:octicon:`milestone` *released on 2022-08-13*
+
 **Fixed**
 
 - :issue:`777` - Fix edge cases where ``html_to_vdom`` can fail to convert HTML
