@@ -7,12 +7,6 @@ Components. Their usage should always follow the :ref:`Rules of Hooks`. For most
 cases the :ref:`Basic Hooks` should be enough, however the remaining
 :ref:`Supplementary Hooks` should fulfill less common scenarios.
 
-.. note::
-
-    Not all of React's built-in hooks have been implemented.
-    `In the future <https://github.com/idom-team/idom/issues/203>`_ they will be
-    added, but if you have a particular need for a missing hook post an issue.
-
 
 Basic Hooks
 ===========
