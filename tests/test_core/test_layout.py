@@ -1207,3 +1207,43 @@ async def test_component_error_in_should_render_is_handled_gracefully():
             await layout.render()
             root_hook.latest.schedule_render()
             await layout.render()
+
+
+async def test_does_render_children_after_component():
+    """Regression test for bug where layout was appending children to a stale ref
+
+    The stale reference was created when a component got rendered. Thus, everything
+    after the component failed to display.
+    """
+
+    @idom.component
+    def Parent():
+        return html.div(
+            html.p("first"),
+            Child(),
+            html.p("third"),
+        )
+
+    @idom.component
+    def Child():
+        return html.p("second")
+
+    async with idom.Layout(Parent()) as layout:
+        update = await layout.render()
+        print(update.new)
+        assert update.new == {
+            "tagName": "",
+            "children": [
+                {
+                    "tagName": "div",
+                    "children": [
+                        {"tagName": "p", "children": ["first"]},
+                        {
+                            "tagName": "",
+                            "children": [{"tagName": "p", "children": ["second"]}],
+                        },
+                        {"tagName": "p", "children": ["third"]},
+                    ],
+                }
+            ],
+        }
