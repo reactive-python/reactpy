@@ -23,6 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+No changes.
+
+
+v0.40.1
+-------
+:octicon:`milestone` *released on 2022-09-11*
+
 **Fixed**
 
 - :issue:`806` - child models after a component fail to render
