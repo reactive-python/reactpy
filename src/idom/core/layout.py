@@ -361,7 +361,7 @@ class Layout:
                 [old_state.children_by_key[key] for key in old_keys]
             )
 
-        new_children = new_state.model.current["children"] = []
+        new_state.model.current["children"] = []
         for index, (child, child_type, key) in enumerate(child_type_key_tuples):
             old_child_state = old_state.children_by_key.get(key)
             if child_type is _DICT_TYPE:
@@ -388,7 +388,7 @@ class Layout:
                             index,
                         )
                 self._render_model(exit_stack, old_child_state, new_child_state, child)
-                new_children.append(new_child_state.model.current)
+                new_state.append_child(new_child_state.model.current)
                 new_state.children_by_key[key] = new_child_state
             elif child_type is _COMPONENT_TYPE:
                 child = cast(ComponentType, child)
@@ -428,7 +428,7 @@ class Layout:
                 old_child_state = old_state.children_by_key.get(key)
                 if old_child_state is not None:
                     self._unmount_model_states([old_child_state])
-                new_children.append(child)
+                new_state.append_child(child)
 
     def _render_model_children_without_old_state(
         self,
@@ -446,12 +446,12 @@ class Layout:
                 f"Duplicate keys {duplicate_keys} at {new_state.patch_path or '/'!r}"
             )
 
-        new_children = new_state.model.current["children"] = []
+        new_state.model.current["children"] = []
         for index, (child, child_type, key) in enumerate(child_type_key_tuples):
             if child_type is _DICT_TYPE:
                 child_state = _make_element_model_state(new_state, index, key)
                 self._render_model(exit_stack, None, child_state, child)
-                new_children.append(child_state.model.current)
+                new_state.append_child(child_state.model.current)
                 new_state.children_by_key[key] = child_state
             elif child_type is _COMPONENT_TYPE:
                 child_state = _make_component_model_state(
@@ -459,7 +459,7 @@ class Layout:
                 )
                 self._render_component(exit_stack, None, child_state, child)
             else:
-                new_children.append(child)
+                new_state.append_child(child)
 
     def _unmount_model_states(self, old_states: List[_ModelState]) -> None:
         to_unmount = old_states[::-1]  # unmount in reversed order of rendering
@@ -660,6 +660,9 @@ class _ModelState:
         parent = self._parent_ref()
         assert parent is not None, "detached model state"
         return parent
+
+    def append_child(self, child: Any) -> None:
+        self.model.current["children"].append(child)
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"ModelState({ {s: getattr(self, s, None) for s in self.__slots__} })"
