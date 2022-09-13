@@ -23,6 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+No changes.
+
+
+v0.40.2
+-------
+:octicon:`milestone` *released on 2022-09-13*
+
 **Changed**
 
 - :pull:`809` - Avoid the use of JSON patch for diffing models.

@@ -22,7 +22,7 @@ from .widgets import hotswap
 
 
 __author__ = "idom-team"
-__version__ = "0.40.1"  # DO NOT MODIFY
+__version__ = "0.40.2"  # DO NOT MODIFY
 
 __all__ = [
     "component",
