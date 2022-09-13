@@ -6,8 +6,8 @@ from logging import getLogger
 from typing import Any, Awaitable, Callable, Dict, List, NamedTuple, cast
 
 from anyio import create_task_group
+from jsonpatch import apply_patch
 
-from ._fixed_jsonpatch import apply_patch, make_patch  # type: ignore
 from .layout import LayoutEvent, LayoutUpdate
 from .types import LayoutType, VdomJson
 
@@ -74,7 +74,7 @@ class VdomJsonPatch(NamedTuple):
     @classmethod
     def create_from(cls, update: LayoutUpdate) -> VdomJsonPatch:
         """Return a patch given an layout update"""
-        return cls(update.path, make_patch(update.old or {}, update.new).patch)
+        return cls(update.path, [{"op": "replace", "path": "", "value": update.new}])
 
 
 async def _single_outgoing_loop(
