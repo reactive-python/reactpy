@@ -81,31 +81,18 @@ function UserInputElement({ model }) {
   // order to allow all changes committed by the user to be recorded in the order they
   // occur. If we don't the user may commit multiple changes before we render next
   // causing the content of prior changes to be overwritten by subsequent changes.
-  let value = props.value;
+  let propsValue = props.value;
   delete props.value;
+  const [value, setValue] = React.useState(propsValue);
 
-  // Instead of controlling the value, we set it in an effect.
   React.useEffect(() => {
-    if (value !== undefined) {
-      ref.current.value = value;
-    }
-  }, [ref.current, value]);
-
-  // Track a buffer of observed values in order to avoid flicker
-  const observedValues = React.useState([])[0];
-  if (observedValues) {
-    if (value === observedValues[0]) {
-      observedValues.shift();
-      value = observedValues[observedValues.length - 1];
-    } else {
-      observedValues.length = 0;
-    }
-  }
+    setValue(propsValue);
+  }, [propsValue]);
 
   const givenOnChange = props.onChange;
   if (typeof givenOnChange === "function") {
     props.onChange = (event) => {
-      observedValues.push(event.target.value);
+      setValue(event.target.value);
       givenOnChange(event);
     };
   }
@@ -115,12 +102,7 @@ function UserInputElement({ model }) {
   // providing the models instead of the client rendering them.
   return React.createElement(
     model.tagName,
-    {
-      ...props,
-      ref: (target) => {
-        ref.current = target;
-      },
-    },
+    { ...props, value },
     ...createElementChildren(
       model,
       (model) => html`<${Element} key=${model.key} model=${model} />`
