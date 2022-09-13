@@ -23,7 +23,9 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Changed**
+
+- :pull:`809` - Avoid the use of JSON patch for diffing models.
 
 
 v0.40.1
@@ -32,7 +34,7 @@ v0.40.1
 
 **Fixed**
 
-- :issue:`806` - child models after a component fail to render
+- :issue:`806` - Child models after a component fail to render
 
 
 v0.40.0 (yanked)
