@@ -4,7 +4,13 @@ from contextlib import AsyncExitStack
 from types import TracebackType
 from typing import Any
 
-from playwright.async_api import Browser, BrowserContext, Page, async_playwright
+from playwright.async_api import (
+    Browser,
+    BrowserContext,
+    ElementHandle,
+    Page,
+    async_playwright,
+)
 
 from idom import html
 from idom.config import IDOM_TESTING_DEFAULT_TIMEOUT
@@ -30,21 +36,23 @@ class DisplayFixture:
                 self.page = driver
             else:
                 self._browser = driver
-        self._next_view_id = 0
 
     async def show(
         self,
         component: RootComponentConstructor,
     ) -> None:
-        self._next_view_id += 1
-        view_id = f"display-{self._next_view_id}"
-        self.backend.mount(lambda: html.div({"id": view_id}, component()))
-
+        self.backend.mount(component)
         await self.goto("/")
-        await self.page.wait_for_selector(f"#{view_id}", state="attached")
+        await self.root_element()  # check that root element is attached
 
     async def goto(self, path: str, query: Any | None = None) -> None:
         await self.page.goto(self.backend.url(path, query))
+
+    async def root_element(self) -> ElementHandle:
+        element = await self.page.wait_for_selector(f"#app", state="attached")
+        if element is None:
+            raise RuntimeError("Root element not attached")  # pragma: no cover
+        return element
 
     async def __aenter__(self) -> DisplayFixture:
         es = self._exit_stack = AsyncExitStack()
