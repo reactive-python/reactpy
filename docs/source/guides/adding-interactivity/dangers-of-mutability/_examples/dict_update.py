@@ -28,13 +28,13 @@ def Form():
             ),
         ),
         html.label(
-            "First name: ",
+            "Last name: ",
             html.input(
                 {"value": person["last_name"], "onChange": handle_last_name_change},
             ),
         ),
         html.label(
-            "First name: ",
+            "Email: ",
             html.input(
                 {"value": person["email"], "onChange": handle_email_change},
             ),
