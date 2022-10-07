@@ -8,7 +8,7 @@ from .types import ComponentType, VdomDict
 
 
 def component(
-    function: Callable[..., Union[ComponentType, VdomDict | None]]
+    function: Callable[..., ComponentType | VdomDict | str | None]
 ) -> Callable[..., Component]:
     """A decorator for defining a new component.
 
@@ -39,7 +39,7 @@ class Component:
 
     def __init__(
         self,
-        function: Callable[..., ComponentType | VdomDict | None],
+        function: Callable[..., ComponentType | VdomDict | str | None],
         key: Optional[Any],
         args: Tuple[Any, ...],
         kwargs: Dict[str, Any],
@@ -51,7 +51,7 @@ class Component:
         self._kwargs = kwargs
         self._sig = sig
 
-    def render(self) -> VdomDict | ComponentType | None:
+    def render(self) -> ComponentType | VdomDict | str | None:
         return self.type(*self._args, **self._kwargs)
 
     def should_render(self, new: Component) -> bool:
