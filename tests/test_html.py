@@ -1,18 +1,9 @@
 import pytest
 
-from idom import component, config, html, use_state
+from idom import component, config, html
 from idom.testing import DisplayFixture, poll
 from idom.utils import Ref
-
-
-def use_toggle(initial=True):
-    state, set_state = use_state(initial)
-    return state, lambda: set_state(not state)
-
-
-def use_counter(initial_value):
-    state, set_state = use_state(initial_value)
-    return state, lambda: set_state(state + 1)
+from tests.tooling.hooks import use_counter, use_toggle
 
 
 async def test_script_mount_unmount(display: DisplayFixture):
@@ -20,7 +11,7 @@ async def test_script_mount_unmount(display: DisplayFixture):
 
     @component
     def Root():
-        is_mounted, toggle_is_mounted.current = use_toggle()
+        is_mounted, toggle_is_mounted.current = use_toggle(True)
         return html.div(
             html.div({"id": "mount-state", "data-value": False}),
             HasScript() if is_mounted else html.div(),

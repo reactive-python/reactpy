@@ -20,6 +20,7 @@ from idom.testing import (
     capture_idom_logs,
 )
 from idom.utils import Ref
+from tests.tooling.hooks import use_toggle
 
 
 @pytest.fixture(autouse=True)
@@ -494,11 +495,6 @@ async def test_log_on_dispatch_to_missing_event_handler(caplog):
     )
 
 
-def use_toggle(init=False):
-    state, set_state = idom.hooks.use_state(init)
-    return state, lambda: set_state(lambda old: not old)
-
-
 async def test_model_key_preserves_callback_identity_for_common_elements(caplog):
     called_good_trigger = idom.Ref(False)
     good_handler = StaticEventHandler()
@@ -813,18 +809,13 @@ async def test_schedule_render_from_unmounted_hook():
             await layout.render()
 
 
-def use_toggle():
-    state, set_state = idom.hooks.use_state(True)
-    return state, lambda: set_state(not state)
-
-
 async def test_elements_and_components_with_the_same_key_can_be_interchanged():
     set_toggle = idom.Ref()
     effects = []
 
     @idom.component
     def Root():
-        toggle, set_toggle.current = use_toggle()
+        toggle, set_toggle.current = use_toggle(True)
         if toggle:
             return SomeComponent("x")
         else:
