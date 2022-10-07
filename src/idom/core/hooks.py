@@ -541,7 +541,7 @@ def _try_to_infer_closure_values(
         else:
             return None
     else:
-        return cast("Sequence[Any] | None", values)
+        return values
 
 
 def current_hook() -> LifeCycleHook:
