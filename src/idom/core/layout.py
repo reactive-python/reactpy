@@ -136,7 +136,7 @@ class Layout:
             except KeyError:
                 logger.debug(
                     "Did not render component with model state ID "
-                    "{model_state_id!r} - component already unmounted"
+                    f"{model_state_id!r} - component already unmounted"
                 )
             else:
                 return self._create_layout_update(model_state)
