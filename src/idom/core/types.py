@@ -44,7 +44,7 @@ class ComponentType(Protocol):
     This is used to see if two component instances share the same definition.
     """
 
-    def render(self) -> VdomDict | ComponentType | None:
+    def render(self) -> VdomDict | ComponentType | str | None:
         """Render the component's view model."""
 
     def should_render(self: _OwnType, new: _OwnType) -> bool:
