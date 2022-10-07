@@ -20,7 +20,6 @@ from idom.testing import (
     capture_idom_logs,
 )
 from idom.utils import Ref
-from tests.tooling.asserts import assert_same_items
 
 
 @pytest.fixture(autouse=True)
@@ -814,13 +813,14 @@ async def test_schedule_render_from_unmounted_hook():
             await layout.render()
 
 
+def use_toggle():
+    state, set_state = idom.hooks.use_state(True)
+    return state, lambda: set_state(not state)
+
+
 async def test_elements_and_components_with_the_same_key_can_be_interchanged():
     set_toggle = idom.Ref()
     effects = []
-
-    def use_toggle():
-        state, set_state = idom.hooks.use_state(True)
-        return state, lambda: set_state(not state)
 
     @idom.component
     def Root():

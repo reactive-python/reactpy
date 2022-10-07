@@ -12,7 +12,6 @@ from playwright.async_api import (
     async_playwright,
 )
 
-from idom import html
 from idom.config import IDOM_TESTING_DEFAULT_TIMEOUT
 from idom.types import RootComponentConstructor
 
@@ -49,7 +48,7 @@ class DisplayFixture:
         await self.page.goto(self.backend.url(path, query))
 
     async def root_element(self) -> ElementHandle:
-        element = await self.page.wait_for_selector(f"#app", state="attached")
+        element = await self.page.wait_for_selector("#app", state="attached")
         if element is None:
             raise RuntimeError("Root element not attached")  # pragma: no cover
         return element

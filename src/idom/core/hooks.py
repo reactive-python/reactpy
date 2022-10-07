@@ -23,7 +23,6 @@ from typing import (
 
 from typing_extensions import Protocol
 
-from idom.config import IDOM_DEBUG_MODE
 from idom.utils import Ref
 
 from ._thread_local import ThreadLocal
@@ -226,9 +225,6 @@ def use_debug_value(
             :func:`id` is different). By default these are inferred based on local
             variables that are referenced by the given function.
     """
-    if not IDOM_DEBUG_MODE.current:
-        return  # pragma: no cover
-
     old: Ref[Any] = _use_const(lambda: Ref(object()))
     memo_func = message if callable(message) else lambda: message
     new = use_memo(memo_func, dependencies)
