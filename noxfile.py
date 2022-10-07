@@ -200,7 +200,7 @@ def test_python_types(session: Session) -> None:
     install_requirements_file(session, "check-types")
     install_requirements_file(session, "pkg-deps")
     install_requirements_file(session, "pkg-extras")
-    session.run("mypy", "--strict", "src/idom")
+    session.run("mypy", "--show-error-codes", "--strict", "src/idom")
 
 
 @nox.session

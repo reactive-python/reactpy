@@ -56,7 +56,9 @@ class Ref(Generic[_RefValue]):
         return f"{type(self).__name__}({current})"
 
 
-def html_to_vdom(html: str, *transforms: _ModelTransform, strict: bool = True) -> VdomDict:
+def html_to_vdom(
+    html: str, *transforms: _ModelTransform, strict: bool = True
+) -> VdomDict:
     """Transform HTML into a DOM model. Unique keys can be provided to HTML elements
     using a ``key=...`` attribute within your HTML tag.
 
@@ -82,7 +84,9 @@ def html_to_vdom(html: str, *transforms: _ModelTransform, strict: bool = True) -
         recover=not strict,
     )
     try:
-        nodes: List = fragments_fromstring(html, no_leading_text=True, parser=parser)
+        nodes: list[etree._Element] = fragments_fromstring(
+            html, no_leading_text=True, parser=parser
+        )
     except etree.XMLSyntaxError as e:
         if not strict:
             raise e  # pragma: no cover
@@ -139,10 +143,11 @@ def _etree_to_vdom(
     attributes = dict(node.items())
     key = attributes.pop("key", None)
 
+    vdom: VdomDict
     if hasattr(idom.html, node.tag):
         vdom = getattr(idom.html, node.tag)(attributes, *children, key=key)
     else:
-        vdom: VdomDict = {"tagName": node.tag}
+        vdom = {"tagName": node.tag}
         if children:
             vdom["children"] = children
         if attributes:
@@ -160,7 +165,7 @@ def _etree_to_vdom(
     return vdom
 
 
-def _mutate_vdom(vdom: VdomDict):
+def _mutate_vdom(vdom: VdomDict) -> None:
     """Performs any necessary mutations on the VDOM attributes to meet VDOM spec.
 
     Currently, this function only transforms the ``style`` attribute into a dictionary whose keys are
@@ -216,5 +221,5 @@ def _hypen_to_camel_case(string: str) -> str:
     return first.lower() + remainder.title().replace("-", "")
 
 
-class HTMLParseError(etree.LxmlSyntaxError):
+class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
     """Raised when an HTML document cannot be parsed using strict parsing."""

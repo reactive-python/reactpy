@@ -11,11 +11,11 @@ on:
     - cron: "0 0 * * *"
 
 jobs:
-  python-coverage:
+  python-exhaustive:
     uses: ./.github/workflows/.nox-session.yml
     with:
       job-name: "python-{0}"
-      session-name: test_python_suite
+      session-name: test_python
       session-arguments: --maxfail=3
   python-environments:
     uses: ./.github/workflows/.nox-session.yml
