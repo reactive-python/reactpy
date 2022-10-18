@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 
 import pytest
@@ -50,14 +51,14 @@ async def page(browser):
 
 @pytest.fixture(scope="session")
 async def browser(pytestconfig: Config):
-    if os.name == "nt":  # pragma: no cover
-        pytest.skip("Browser tests not supported on Windows")
     async with async_playwright() as pw:
         yield await pw.chromium.launch(headless=not bool(pytestconfig.option.headed))
 
 
 @pytest.fixture(scope="session")
 def event_loop():
+    if os.name == "nt":  # pragma: no cover
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     with open_event_loop() as loop:
         yield loop
 
