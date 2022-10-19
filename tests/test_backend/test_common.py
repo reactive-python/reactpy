@@ -1,4 +1,4 @@
-from typing import MutableMapping
+from typing import MutableMapping, get_type_hints
 
 import pytest
 

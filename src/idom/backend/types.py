@@ -51,7 +51,7 @@ class Connection(Generic[_Carrier]):
     """The current location (URL)"""
 
     carrier: _Carrier
-    """How the connection is mediated. For example, a websocket.
+    """How the connection is mediated. For example, a request or websocket.
 
     This typically depends on the backend implementation.
     """
