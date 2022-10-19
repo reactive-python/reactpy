@@ -23,7 +23,18 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Changed**
+
+- :pull:`823` - The hooks ``use_location`` and ``use_scope`` are no longer
+  implementation specific and are now available as top-level imports. Instead of each
+  backend defining these hooks, backends establish a ``ConnectionContext`` with this
+  information.
+
+**Added**
+
+- :pull:`823` - There is a new ``use_connection`` hook which returns a ``Connection``
+  object. This ``Connection`` object contains a ``location`` and ``scope``, along with
+  a ``carrier`` which is unique to each backend implementation.
 
 
 v0.40.2
