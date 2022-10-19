@@ -1,11 +1,11 @@
-from typing import MutableMapping
+from typing import MutableMapping, get_type_hints
 
 import pytest
 
 import idom
 from idom import html
 from idom.backend import default as default_implementation
-from idom.backend.types import Location
+from idom.backend.types import Connection, Location
 from idom.backend.utils import all_implementations
 from idom.testing import BackendFixture, DisplayFixture, poll
 
@@ -64,12 +64,26 @@ async def test_module_from_template(display: DisplayFixture):
     await display.page.wait_for_selector(".VictoryContainer")
 
 
+async def test_use_connection(display: DisplayFixture):
+    conn = idom.Ref()
+
+    @idom.component
+    def ShowScope():
+        conn.current = idom.use_connection()
+        return html.pre({"id": "scope"}, str(conn.current))
+
+    await display.show(ShowScope)
+
+    await display.page.wait_for_selector("#scope")
+    assert isinstance(conn.current, Connection)
+
+
 async def test_use_scope(display: DisplayFixture):
     scope = idom.Ref()
 
     @idom.component
     def ShowScope():
-        scope.current = display.backend.implementation.use_scope()
+        scope.current = idom.use_scope()
         return html.pre({"id": "scope"}, str(scope.current))
 
     await display.show(ShowScope)
@@ -88,8 +102,8 @@ async def test_use_location(display: DisplayFixture):
 
     @idom.component
     def ShowRoute():
-        location.current = display.backend.implementation.use_location()
-        return html.pre({"id": "scope"}, str(location.current))
+        location.current = idom.use_location()
+        return html.pre(str(location.current))
 
     await display.show(ShowRoute)
 
@@ -105,3 +119,24 @@ async def test_use_location(display: DisplayFixture):
     ]:
         await display.goto(loc.pathname + loc.search)
         await poll_location.until_equals(loc)
+
+
+@pytest.mark.parametrize("hook_name", ["use_request", "use_websocket"])
+async def test_use_request(display: DisplayFixture, hook_name):
+    hook = getattr(display.backend.implementation, hook_name, None)
+    if hook is None:
+        pytest.skip(f"{display.backend.implementation} has no '{hook_name}' hook")
+
+    hook_val = idom.Ref()
+
+    @idom.component
+    def ShowRoute():
+        hook_val.current = hook()
+        return html.pre({"id": "hook"}, str(hook_val.current))
+
+    await display.show(ShowRoute)
+
+    await display.page.wait_for_selector("#hook")
+
+    # we can't easily narrow this check
+    assert hook_val.current is not None

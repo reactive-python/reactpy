@@ -22,11 +22,13 @@ from flask import (
 from flask_cors import CORS
 from flask_sock import Sock
 from simple_websocket import Server as WebSocket
+from werkzeug.local import LocalProxy
 from werkzeug.serving import BaseWSGIServer, make_server
 
 import idom
-from idom.backend.types import Location
-from idom.core.hooks import Context, create_context, use_context
+from idom.backend.hooks import ConnectionContext
+from idom.backend.hooks import use_connection as _use_connection
+from idom.backend.types import Connection, Location
 from idom.core.layout import LayoutEvent, LayoutUpdate
 from idom.core.serve import serve_json_patch
 from idom.core.types import ComponentType, RootComponentConstructor
@@ -36,8 +38,6 @@ from .utils import safe_client_build_dir_path, safe_web_modules_dir_path
 
 
 logger = logging.getLogger(__name__)
-
-ConnectionContext: Context[Connection | None] = create_context(None)
 
 
 def configure(
@@ -107,45 +107,25 @@ async def serve_development_app(
             raise RuntimeError("Failed to shutdown server.")
 
 
-def use_location() -> Location:
-    """Get the current route as a string"""
-    conn = use_connection()
-    search = conn.request.query_string.decode()
-    return Location(pathname="/" + conn.path, search="?" + search if search else "")
-
-
-def use_scope() -> dict[str, Any]:
-    """Get the current WSGI environment"""
-    return use_request().environ
-
-
-def use_request() -> Request:
-    """Get the current ``Request``"""
-    return use_connection().request
-
-
-def use_connection() -> Connection:
-    """Get the current :class:`Connection`"""
-    connection = use_context(ConnectionContext)
-    if connection is None:
-        raise RuntimeError(  # pragma: no cover
-            "No connection. Are you running with a Flask server?"
-        )
-    return connection
-
-
-@dataclass
-class Connection:
-    """A simple wrapper for holding connection information"""
-
-    request: Request
-    """The current request object"""
-
-    websocket: WebSocket
+def use_websocket() -> WebSocket:
     """A handle to the current websocket"""
+    return use_connection().carrier.websocket
 
-    path: str
-    """The current path being served"""
+
+def use_request() -> LocalProxy[Request]:
+    """Get the current ``Request``"""
+    return use_connection().carrier.request
+
+
+def use_connection() -> Connection[_FlaskCarrier]:
+    """Get the current :class:`Connection`"""
+    conn = _use_connection()
+    if not isinstance(conn.carrier, _FlaskCarrier):
+        raise TypeError(  # pragma: no cover
+            f"Connection has unexpected carrier {conn.carrier}. "
+            "Are you running with a Flask server?"
+        )
+    return conn
 
 
 @dataclass
@@ -230,11 +210,20 @@ def _dispatch_in_thread(
             return await async_recv_queue.get()
 
         async def main() -> None:
+            search = request.query_string.decode()
             await serve_json_patch(
                 idom.Layout(
                     ConnectionContext(
-                        component, value=Connection(request, websocket, path)
-                    )
+                        component,
+                        value=Connection(
+                            scope=request.environ,
+                            location=Location(
+                                pathname=f"/{path}",
+                                search=f"?{search}" if search else "",
+                            ),
+                            carrier=_FlaskCarrier(request, websocket),
+                        ),
+                    ),
                 ),
                 send_coro,
                 recv_coro,
@@ -283,3 +272,14 @@ class _DispatcherThreadInfo(NamedTuple):
     dispatch_future: "asyncio.Future[Any]"
     thread_send_queue: "ThreadQueue[LayoutUpdate]"
     async_recv_queue: "AsyncQueue[LayoutEvent]"
+
+
+@dataclass
+class _FlaskCarrier:
+    """A simple wrapper for holding a Flask request and WebSocket"""
+
+    request: Request
+    """The current request object"""
+
+    websocket: WebSocket
+    """A handle to the current websocket"""

@@ -12,9 +12,9 @@ from starlette.staticfiles import StaticFiles
 from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from idom.backend.types import Location
+from idom.backend.hooks import ConnectionContext
+from idom.backend.types import Connection, Location
 from idom.config import IDOM_WEB_MODULES_DIR
-from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import (
     RecvCoroutine,
@@ -25,12 +25,12 @@ from idom.core.serve import (
 from idom.core.types import RootComponentConstructor
 
 from ._asgi import serve_development_asgi
+from .hooks import ConnectionContext
+from .hooks import use_connection as _use_connection
 from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
 
 
 logger = logging.getLogger(__name__)
-
-WebSocketContext: Context[WebSocket | None] = create_context(None)
 
 
 def configure(
@@ -68,27 +68,19 @@ async def serve_development_app(
     await serve_development_asgi(app, host, port, started)
 
 
-def use_location() -> Location:
-    """Get the current route as a string"""
-    scope = use_scope()
-    pathname = "/" + scope["path_params"].get("path", "")
-    search = scope["query_string"].decode()
-    return Location(pathname, "?" + search if search else "")
-
-
-def use_scope() -> Scope:
-    """Get the current ASGI scope dictionary"""
-    return use_websocket().scope
-
-
 def use_websocket() -> WebSocket:
     """Get the current WebSocket object"""
-    websocket = use_context(WebSocketContext)
-    if websocket is None:
-        raise RuntimeError(  # pragma: no cover
-            "No websocket. Are you running with a Starllette server?"
+    return use_connection().carrier
+
+
+def use_connection() -> Connection[WebSocket]:
+    conn = _use_connection()
+    if not isinstance(conn.carrier, WebSocket):
+        raise TypeError(  # pragma: no cover
+            f"Connection has unexpected carrier {conn.carrier}. "
+            "Are you running with a Flask server?"
         )
-    return websocket
+    return conn
 
 
 @dataclass
@@ -154,9 +146,22 @@ def _setup_single_view_dispatcher_route(
     async def model_stream(socket: WebSocket) -> None:
         await socket.accept()
         send, recv = _make_send_recv_callbacks(socket)
+
+        pathname = "/" + socket.scope["path_params"].get("path", "")
+        search = socket.scope["query_string"].decode()
+
         try:
             await serve_json_patch(
-                Layout(WebSocketContext(constructor(), value=socket)),
+                Layout(
+                    ConnectionContext(
+                        constructor(),
+                        value=Connection(
+                            scope=socket.scope,
+                            location=Location(pathname, f"?{search}" if search else ""),
+                            carrier=socket,
+                        ),
+                    )
+                ),
                 send,
                 recv,
             )

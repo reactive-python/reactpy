@@ -1,4 +1,5 @@
 from . import backend, config, html, logging, sample, types, web
+from .backend.hooks import use_connection, use_location, use_scope
 from .backend.utils import run
 from .core import hooks
 from .core.component import component
@@ -25,6 +26,7 @@ __author__ = "idom-team"
 __version__ = "0.40.2"  # DO NOT MODIFY
 
 __all__ = [
+    "backend",
     "component",
     "config",
     "create_context",
@@ -38,16 +40,18 @@ __all__ = [
     "Ref",
     "run",
     "sample",
-    "backend",
     "Stop",
     "types",
     "use_callback",
+    "use_connection",
     "use_context",
     "use_debug_value",
     "use_effect",
+    "use_location",
     "use_memo",
     "use_reducer",
     "use_ref",
+    "use_scope",
     "use_state",
     "vdom",
     "web",
