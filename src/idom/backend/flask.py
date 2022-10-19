@@ -112,7 +112,7 @@ def use_websocket() -> WebSocket:
     return use_connection().carrier.websocket
 
 
-def use_request() -> LocalProxy[Request]:
+def use_request() -> Request:
     """Get the current ``Request``"""
     return use_connection().carrier.request
 
