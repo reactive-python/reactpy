@@ -22,7 +22,6 @@ from flask import (
 from flask_cors import CORS
 from flask_sock import Sock
 from simple_websocket import Server as WebSocket
-from werkzeug.local import LocalProxy
 from werkzeug.serving import BaseWSGIServer, make_server
 
 import idom
