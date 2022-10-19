@@ -21,7 +21,7 @@ async def serve_development_asgi(
             host=host,
             port=port,
             loop="asyncio",
-            debug=True,
+            reload=True,
         )
     )
 

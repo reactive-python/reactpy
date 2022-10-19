@@ -1,6 +1,6 @@
 # extra=starlette
 starlette >=0.13.6
-uvicorn[standard] >=0.13.4
+uvicorn[standard] >=0.19.0
 
 # extra=sanic
 sanic >=21
@@ -8,7 +8,7 @@ sanic-cors
 
 # extra=fastapi
 fastapi >=0.63.0
-uvicorn[standard] >=0.13.4
+uvicorn[standard] >=0.19.0
 
 # extra=flask
 flask
