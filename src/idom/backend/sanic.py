@@ -10,7 +10,6 @@ from uuid import uuid4
 
 from sanic import Blueprint, Sanic, request, response
 from sanic.config import Config
-from sanic.models.asgi import ASGIScope
 from sanic.server.websockets.connection import WebSocketConnection
 from sanic_cors import CORS
 
