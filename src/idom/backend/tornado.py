@@ -117,9 +117,17 @@ def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
     if options.serve_static_files:
         handlers.append(
             (
-                r"/.*/?_api/modules/(.*)",
+                r"/_idom/modules/(.*)",
                 StaticFileHandler,
                 {"path": str(IDOM_WEB_MODULES_DIR.current)},
+            )
+        )
+
+        handlers.append(
+            (
+                r"/_idom/assets/(.*)",
+                StaticFileHandler,
+                {"path": str(CLIENT_BUILD_DIR / "assets")},
             )
         )
 
@@ -150,12 +158,12 @@ def _setup_single_view_dispatcher_route(
 ) -> _RouteHandlerSpecs:
     return [
         (
-            r"/(.*)/_api/stream",
+            r"/_idom/stream/(.*)",
             ModelStreamHandler,
             {"component_constructor": constructor},
         ),
         (
-            r"/_api/stream",
+            r"/_idom/stream",
             ModelStreamHandler,
             {"component_constructor": constructor},
         ),
@@ -163,10 +171,8 @@ def _setup_single_view_dispatcher_route(
 
 
 class SpaStaticFileHandler(StaticFileHandler):
-    async def get(self, path: str, include_body: bool = True) -> None:
-        # Path safety is the responsibility of tornado.web.StaticFileHandler -
-        # using `safe_client_build_dir_path` is for convenience in this case.
-        return await super().get(safe_client_build_dir_path(path).name, include_body)
+    async def get(self, _: str, include_body: bool = True) -> None:
+        return await super().get(str(CLIENT_BUILD_DIR / "index.html"), include_body)
 
 
 class ModelStreamHandler(WebSocketHandler):

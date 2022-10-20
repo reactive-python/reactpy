@@ -27,7 +27,11 @@ from idom.core.types import RootComponentConstructor
 from ._asgi import serve_development_asgi
 from .hooks import ConnectionContext
 from .hooks import use_connection as _use_connection
-from .utils import safe_client_build_dir_path, safe_web_modules_dir_path
+from .utils import (
+    CLIENT_BUILD_DIR,
+    safe_client_build_dir_path,
+    safe_web_modules_dir_path,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -38,14 +42,14 @@ def configure(
 ) -> None:
     """Configure an application instance to display the given component"""
     options = options or Options()
-    blueprint = Blueprint(f"idom_dispatcher_{id(app)}", url_prefix=options.url_prefix)
 
-    _setup_common_routes(blueprint, options)
+    spa_bp = Blueprint(f"idom_spa_{id(app)}", url_prefix=options.url_prefix)
+    api_bp = Blueprint(f"idom_api_{id(app)}", url_prefix="/_idom")
 
-    # this route should take priority so set up it up first
-    _setup_single_view_dispatcher_route(blueprint, component)
+    _setup_common_routes(api_bp, spa_bp, options)
+    _setup_single_view_dispatcher_route(api_bp, component, options)
 
-    app.blueprint(blueprint)
+    app.blueprint((spa_bp, api_bp))
 
 
 def create_development_app() -> Sanic:
@@ -101,23 +105,35 @@ class Options:
     """The URL prefix where IDOM resources will be served from"""
 
 
-def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
+def _setup_common_routes(
+    api_blueprint: Blueprint,
+    spa_blueprint: Blueprint,
+    options: Options,
+) -> None:
     cors_options = options.cors
     if cors_options:  # pragma: no cover
         cors_params = cors_options if isinstance(cors_options, dict) else {}
-        CORS(blueprint, **cors_params)
+        CORS(api_blueprint, **cors_params)
 
     if options.serve_static_files:
 
         async def single_page_app_files(
             request: request.Request,
+            _: str = "",
+        ) -> response.HTTPResponse:
+            return await response.file(CLIENT_BUILD_DIR / "index.html")
+
+        spa_blueprint.add_route(single_page_app_files, "/")
+        spa_blueprint.add_route(single_page_app_files, "/<_:path>")
+
+        async def asset_files(
+            request: request.Request,
             path: str = "",
         ) -> response.HTTPResponse:
             path = urllib_parse.unquote(path)
-            return await response.file(safe_client_build_dir_path(path))
+            return await response.file(safe_client_build_dir_path(f"assets/{path}"))
 
-        blueprint.add_route(single_page_app_files, "/")
-        blueprint.add_route(single_page_app_files, "/<path:path>")
+        api_blueprint.add_route(asset_files, "/assets/<path:path>")
 
         async def web_module_files(
             request: request.Request,
@@ -130,12 +146,13 @@ def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
                 mime_type="text/javascript",
             )
 
-        blueprint.add_route(web_module_files, "/_api/modules/<path:path>")
-        blueprint.add_route(web_module_files, "/<_:path>/_api/modules/<path:path>")
+        api_blueprint.add_route(web_module_files, "/modules/<path:path>")
 
 
 def _setup_single_view_dispatcher_route(
-    blueprint: Blueprint, constructor: RootComponentConstructor
+    api_blueprint: Blueprint,
+    constructor: RootComponentConstructor,
+    options: Options,
 ) -> None:
     async def model_stream(
         request: request.Request, socket: WebSocketConnection, path: str = ""
@@ -172,8 +189,8 @@ def _setup_single_view_dispatcher_route(
             recv,
         )
 
-    blueprint.add_websocket_route(model_stream, "/_api/stream")
-    blueprint.add_websocket_route(model_stream, "/<path:path>/_api/stream")
+    api_blueprint.add_websocket_route(model_stream, "/stream")
+    api_blueprint.add_websocket_route(model_stream, "/stream/<path:path>/")
 
 
 def _make_send_recv_callbacks(
