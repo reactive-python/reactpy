@@ -24,7 +24,7 @@ from idom.core.types import ComponentConstructor
 
 from .hooks import ConnectionContext
 from .hooks import use_connection as _use_connection
-from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
+from .utils import CLIENT_BUILD_DIR
 
 
 def configure(

@@ -28,7 +28,7 @@ from idom.core.types import RootComponentConstructor
 from ._asgi import serve_development_asgi
 from .hooks import ConnectionContext
 from .hooks import use_connection as _use_connection
-from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
+from .utils import CLIENT_BUILD_DIR
 
 
 logger = logging.getLogger(__name__)
