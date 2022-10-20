@@ -60,10 +60,10 @@ def run(
 
 def safe_client_build_dir_path(path: str) -> Path:
     """Prevent path traversal out of :data:`CLIENT_BUILD_DIR`"""
-    if path in ("", "/"):
-        return CLIENT_BUILD_DIR / "index.html"
-    else:
-        return traversal_safe_path(CLIENT_BUILD_DIR, *path.split("/"))
+    return traversal_safe_path(
+        CLIENT_BUILD_DIR,
+        *("index.html" if path in ("", "/") else path).split("/"),
+    )
 
 
 def safe_web_modules_dir_path(path: str) -> Path:
