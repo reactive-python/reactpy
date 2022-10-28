@@ -26,7 +26,7 @@ from typing_extensions import Protocol
 from idom.utils import Ref
 
 from ._thread_local import ThreadLocal
-from .types import ComponentType, Key, VdomDict
+from .types import ComponentType, Key, State, VdomDict
 from .vdom import vdom
 
 
@@ -46,35 +46,20 @@ __all__ = [
 
 logger = getLogger(__name__)
 
-_StateType = TypeVar("_StateType")
+_Type = TypeVar("_Type")
 
 
 @overload
-def use_state(
-    initial_value: Callable[[], _StateType],
-) -> Tuple[
-    _StateType,
-    Callable[[_StateType | Callable[[_StateType], _StateType]], None],
-]:
+def use_state(initial_value: Callable[[], _Type]) -> State[_Type]:
     ...
 
 
 @overload
-def use_state(
-    initial_value: _StateType,
-) -> Tuple[
-    _StateType,
-    Callable[[_StateType | Callable[[_StateType], _StateType]], None],
-]:
+def use_state(initial_value: _Type) -> State[_Type]:
     ...
 
 
-def use_state(
-    initial_value: _StateType | Callable[[], _StateType],
-) -> Tuple[
-    _StateType,
-    Callable[[_StateType | Callable[[_StateType], _StateType]], None],
-]:
+def use_state(initial_value: _Type | Callable[[], _Type]) -> State[_Type]:
     """See the full :ref:`Use State` docs for details
 
     Parameters:
@@ -87,16 +72,16 @@ def use_state(
         A tuple containing the current state and a function to update it.
     """
     current_state = _use_const(lambda: _CurrentState(initial_value))
-    return current_state.value, current_state.dispatch
+    return State(current_state.value, current_state.dispatch)
 
 
-class _CurrentState(Generic[_StateType]):
+class _CurrentState(Generic[_Type]):
 
     __slots__ = "value", "dispatch"
 
     def __init__(
         self,
-        initial_value: Union[_StateType, Callable[[], _StateType]],
+        initial_value: Union[_Type, Callable[[], _Type]],
     ) -> None:
         if callable(initial_value):
             self.value = initial_value()
@@ -105,9 +90,7 @@ class _CurrentState(Generic[_StateType]):
 
         hook = current_hook()
 
-        def dispatch(
-            new: Union[_StateType, Callable[[_StateType], _StateType]]
-        ) -> None:
+        def dispatch(new: Union[_Type, Callable[[_Type], _Type]]) -> None:
             if callable(new):
                 next_value = new(self.value)
             else:
@@ -234,14 +217,14 @@ def use_debug_value(
         logger.debug(f"{current_hook().component} {new}")
 
 
-def create_context(default_value: _StateType) -> Context[_StateType]:
+def create_context(default_value: _Type) -> Context[_Type]:
     """Return a new context type for use in :func:`use_context`"""
 
     def context(
         *children: Any,
-        value: _StateType = default_value,
+        value: _Type = default_value,
         key: Key | None = None,
-    ) -> ContextProvider[_StateType]:
+    ) -> ContextProvider[_Type]:
         return ContextProvider(
             *children,
             value=value,
@@ -254,19 +237,19 @@ def create_context(default_value: _StateType) -> Context[_StateType]:
     return context
 
 
-class Context(Protocol[_StateType]):
+class Context(Protocol[_Type]):
     """Returns a :class:`ContextProvider` component"""
 
     def __call__(
         self,
         *children: Any,
-        value: _StateType = ...,
+        value: _Type = ...,
         key: Key | None = ...,
-    ) -> ContextProvider[_StateType]:
+    ) -> ContextProvider[_Type]:
         ...
 
 
-def use_context(context: Context[_StateType]) -> _StateType:
+def use_context(context: Context[_Type]) -> _Type:
     """Get the current value for the given context type.
 
     See the full :ref:`Use Context` docs for more information.
@@ -282,7 +265,7 @@ def use_context(context: Context[_StateType]) -> _StateType:
         # lastly check that 'value' kwarg exists
         assert "value" in context.__kwdefaults__, f"{context} has no 'value' kwarg"
         # then we can safely access the context's default value
-        return cast(_StateType, context.__kwdefaults__["value"])
+        return cast(_Type, context.__kwdefaults__["value"])
 
     subscribers = provider._subscribers
 
@@ -294,13 +277,13 @@ def use_context(context: Context[_StateType]) -> _StateType:
     return provider._value
 
 
-class ContextProvider(Generic[_StateType]):
+class ContextProvider(Generic[_Type]):
     def __init__(
         self,
         *children: Any,
-        value: _StateType,
+        value: _Type,
         key: Key | None,
-        type: Context[_StateType],
+        type: Context[_Type],
     ) -> None:
         self.children = children
         self.key = key
@@ -312,7 +295,7 @@ class ContextProvider(Generic[_StateType]):
         current_hook().set_context_provider(self)
         return vdom("", *self.children)
 
-    def should_render(self, new: ContextProvider[_StateType]) -> bool:
+    def should_render(self, new: ContextProvider[_Type]) -> bool:
         if not strictly_equal(self._value, new._value):
             for hook in self._subscribers:
                 hook.set_context_provider(new)
@@ -328,9 +311,9 @@ _ActionType = TypeVar("_ActionType")
 
 
 def use_reducer(
-    reducer: Callable[[_StateType, _ActionType], _StateType],
-    initial_value: _StateType,
-) -> Tuple[_StateType, Callable[[_ActionType], None]]:
+    reducer: Callable[[_Type, _ActionType], _Type],
+    initial_value: _Type,
+) -> Tuple[_Type, Callable[[_ActionType], None]]:
     """See the full :ref:`Use Reducer` docs for details
 
     Parameters:
@@ -348,8 +331,8 @@ def use_reducer(
 
 
 def _create_dispatcher(
-    reducer: Callable[[_StateType, _ActionType], _StateType],
-    set_state: Callable[[Callable[[_StateType], _StateType]], None],
+    reducer: Callable[[_Type, _ActionType], _Type],
+    set_state: Callable[[Callable[[_Type], _Type]], None],
 ) -> Callable[[_ActionType], None]:
     def dispatch(action: _ActionType) -> None:
         set_state(lambda last_state: reducer(last_state, action))
@@ -409,7 +392,7 @@ def use_callback(
 class _LambdaCaller(Protocol):
     """MyPy doesn't know how to deal with TypeVars only used in function return"""
 
-    def __call__(self, func: Callable[[], _StateType]) -> _StateType:
+    def __call__(self, func: Callable[[], _Type]) -> _Type:
         ...
 
 
@@ -423,16 +406,16 @@ def use_memo(
 
 @overload
 def use_memo(
-    function: Callable[[], _StateType],
+    function: Callable[[], _Type],
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> _StateType:
+) -> _Type:
     ...
 
 
 def use_memo(
-    function: Optional[Callable[[], _StateType]] = None,
+    function: Optional[Callable[[], _Type]] = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Union[_StateType, Callable[[Callable[[], _StateType]], _StateType]]:
+) -> Union[_Type, Callable[[Callable[[], _Type]], _Type]]:
     """See the full :ref:`Use Memo` docs for details
 
     Parameters:
@@ -449,7 +432,7 @@ def use_memo(
     """
     dependencies = _try_to_infer_closure_values(function, dependencies)
 
-    memo: _Memo[_StateType] = _use_const(_Memo)
+    memo: _Memo[_Type] = _use_const(_Memo)
 
     if memo.empty():
         # we need to initialize on the first run
@@ -471,17 +454,17 @@ def use_memo(
     else:
         changed = False
 
-    setup: Callable[[Callable[[], _StateType]], _StateType]
+    setup: Callable[[Callable[[], _Type]], _Type]
 
     if changed:
 
-        def setup(function: Callable[[], _StateType]) -> _StateType:
+        def setup(function: Callable[[], _Type]) -> _Type:
             current_value = memo.value = function()
             return current_value
 
     else:
 
-        def setup(function: Callable[[], _StateType]) -> _StateType:
+        def setup(function: Callable[[], _Type]) -> _Type:
             return memo.value
 
     if function is not None:
@@ -490,12 +473,12 @@ def use_memo(
         return setup
 
 
-class _Memo(Generic[_StateType]):
+class _Memo(Generic[_Type]):
     """Simple object for storing memoization data"""
 
     __slots__ = "value", "deps"
 
-    value: _StateType
+    value: _Type
     deps: Sequence[Any]
 
     def empty(self) -> bool:
@@ -507,7 +490,7 @@ class _Memo(Generic[_StateType]):
             return False
 
 
-def use_ref(initial_value: _StateType) -> Ref[_StateType]:
+def use_ref(initial_value: _Type) -> Ref[_Type]:
     """See the full :ref:`Use State` docs for details
 
     Parameters:
@@ -519,7 +502,7 @@ def use_ref(initial_value: _StateType) -> Ref[_StateType]:
     return _use_const(lambda: Ref(initial_value))
 
 
-def _use_const(function: Callable[[], _StateType]) -> _StateType:
+def _use_const(function: Callable[[], _Type]) -> _Type:
     return current_hook().use_state(function)
 
 
@@ -670,7 +653,7 @@ class LifeCycleHook:
             self._schedule_render()
         return None
 
-    def use_state(self, function: Callable[[], _StateType]) -> _StateType:
+    def use_state(self, function: Callable[[], _Type]) -> _Type:
         if not self._rendered_atleast_once:
             # since we're not intialized yet we're just appending state
             result = function()
@@ -689,8 +672,8 @@ class LifeCycleHook:
         self._context_providers[provider.type] = provider
 
     def get_context_provider(
-        self, context: Context[_StateType]
-    ) -> ContextProvider[_StateType] | None:
+        self, context: Context[_Type]
+    ) -> ContextProvider[_Type] | None:
         return self._context_providers.get(context)
 
     def affect_component_will_render(self, component: ComponentType) -> None:
