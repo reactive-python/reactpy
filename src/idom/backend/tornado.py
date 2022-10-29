@@ -75,7 +75,7 @@ async def serve_development_app(
 
     try:
         # block forever - tornado has already set up its own background tasks
-        await asyncio.get_event_loop().create_future()
+        await asyncio.get_running_loop().create_future()
     finally:
         # stop accepting new connections
         server.stop()

@@ -53,9 +53,7 @@ def run(
         f"Running with {app_cls.__module__}.{app_cls.__name__} at http://{host}:{port}"
     )
 
-    asyncio.get_event_loop().run_until_complete(
-        implementation.serve_development_app(app, host, port)
-    )
+    asyncio.run(implementation.serve_development_app(app, host, port))
 
 
 def safe_client_build_dir_path(path: str) -> Path:

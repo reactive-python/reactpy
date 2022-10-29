@@ -34,16 +34,15 @@ async def test_run(page: Page, exit_stack: ExitStack):
     port = find_available_port(host)
     url = f"http://{host}:{port}"
 
-    def run_in_thread():
-        asyncio.set_event_loop(loop)
-        sync_run(
+    threading.Thread(
+        target=lambda: sync_run(
             SampleApp,
             host,
             port,
             implementation=flask_implementation,
-        )
-
-    threading.Thread(target=run_in_thread, daemon=True).start()
+        ),
+        daemon=True,
+    ).start()
 
     # give the server a moment to start
     time.sleep(0.5)

@@ -80,7 +80,7 @@ async def serve_development_app(
     started: asyncio.Event | None = None,
 ) -> None:
     """Run an application using a development server"""
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     stopped = asyncio.Event()
 
     server: Ref[BaseWSGIServer] = Ref()

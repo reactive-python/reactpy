@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import Any, NoReturn
 
 from idom.types import RootComponentConstructor
 
@@ -23,9 +23,9 @@ def create_development_app() -> Any:
     return _default_implementation().create_development_app()
 
 
-def Options(*args: Any, **kwargs: Any) -> Any:
+def Options(*args: Any, **kwargs: Any) -> NoReturn:
     """Create configuration options"""
-    return _default_implementation().Options(*args, **kwargs)
+    raise ValueError("Default implementation has no options.")  # pragma: no cover
 
 
 async def serve_development_app(
