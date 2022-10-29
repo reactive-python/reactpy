@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import MutableMapping
 
 import pytest
@@ -19,12 +19,21 @@ from idom.testing import BackendFixture, DisplayFixture, poll
 )
 async def display(page, request):
     imp: BackendImplementation = request.param
-    async with BackendFixture(
-        implementation=imp,
-        # we do this to check that route priorities for each backend are correct
-        options=imp.Options(url_prefix=str(PATH_PREFIX)),
-    ) as server:
-        async with DisplayFixture(backend=server, driver=page) as display:
+
+    # we do this to check that route priorities for each backend are correct
+    if imp is default_implementation:
+        url_prefix = ""
+        opts = None
+    else:
+        url_prefix = str(PATH_PREFIX)
+        opts = imp.Options(url_prefix=url_prefix)
+
+    async with BackendFixture(implementation=imp, options=opts) as server:
+        async with DisplayFixture(
+            backend=server,
+            driver=page,
+            url_prefix=url_prefix,
+        ) as display:
             yield display
 
 
@@ -114,7 +123,7 @@ async def test_use_location(display: DisplayFixture):
 
     await display.show(ShowRoute)
 
-    await poll_location.until_equals(Location("/", ""))
+    await poll_location.until_equals(Location(display.url_prefix or "/", ""))
 
     for loc in [
         Location("/something"),
@@ -124,7 +133,8 @@ async def test_use_location(display: DisplayFixture):
         Location("/another/something/file.txt", "?key=value"),
         Location("/another/something/file.txt", "?key1=value1&key2=value2"),
     ]:
-        await display.goto(loc.pathname + loc.search)
+        loc = replace(loc, pathname=f"{display.url_prefix}{loc.pathname}")
+        await display.goto(loc.pathname + loc.search, add_url_prefix=False)
         await poll_location.until_equals(loc)
 
 

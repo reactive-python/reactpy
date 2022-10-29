@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import AsyncExitStack
 from types import TracebackType
 from typing import Any
+from urllib.parse import urljoin
 
 from playwright.async_api import (
     Browser,
@@ -27,6 +28,7 @@ class DisplayFixture:
         self,
         backend: BackendFixture | None = None,
         driver: Browser | BrowserContext | Page | None = None,
+        url_prefix: str = "",
     ) -> None:
         if backend is not None:
             self.backend = backend
@@ -35,6 +37,7 @@ class DisplayFixture:
                 self.page = driver
             else:
                 self._browser = driver
+        self.url_prefix = url_prefix
 
     async def show(
         self,
@@ -44,8 +47,14 @@ class DisplayFixture:
         await self.goto("/")
         await self.root_element()  # check that root element is attached
 
-    async def goto(self, path: str, query: Any | None = None) -> None:
-        await self.page.goto(self.backend.url(path, query))
+    async def goto(
+        self, path: str, query: Any | None = None, add_url_prefix: bool = True
+    ) -> None:
+        await self.page.goto(
+            self.backend.url(
+                f"{self.url_prefix}{path}" if add_url_prefix else path, query
+            )
+        )
 
     async def root_element(self) -> ElementHandle:
         element = await self.page.wait_for_selector("#app", state="attached")
