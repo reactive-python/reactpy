@@ -238,7 +238,7 @@ def _dispatch_in_thread(
                 recv_coro,
             )
 
-        main_future = asyncio.ensure_future(main())
+        main_future = asyncio.ensure_future(main(), loop=loop)
 
         dispatch_thread_info_ref.current = _DispatcherThreadInfo(
             dispatch_loop=loop,
