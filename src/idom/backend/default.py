@@ -23,6 +23,11 @@ def create_development_app() -> Any:
     return _default_implementation().create_development_app()
 
 
+def Options(*args: Any, **kwargs: Any) -> Any:
+    """Create configuration options"""
+    return _default_implementation().Options(*args, **kwargs)
+
+
 async def serve_development_app(
     app: Any,
     host: str,

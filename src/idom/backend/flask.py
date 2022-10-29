@@ -33,6 +33,7 @@ from idom.core.serve import serve_json_patch
 from idom.core.types import ComponentType, RootComponentConstructor
 from idom.utils import Ref
 
+from ._urls import ASSETS_PATH, MODULES_PATH, PATH_PREFIX, STREAM_PATH
 from .utils import (
     CLIENT_BUILD_DIR,
     safe_client_build_dir_path,
@@ -55,7 +56,7 @@ def configure(
     """
     options = options or Options()
 
-    api_bp = Blueprint(f"idom_api_{id(app)}", __name__, url_prefix="/_idom")
+    api_bp = Blueprint(f"idom_api_{id(app)}", __name__, url_prefix=str(PATH_PREFIX))
     spa_bp = Blueprint(f"idom_spa_{id(app)}", __name__, url_prefix=options.url_prefix)
 
     _setup_single_view_dispatcher_route(api_bp, options, component)
@@ -161,11 +162,11 @@ def _setup_common_routes(
 
     if options.serve_static_files:
 
-        @api_blueprint.route("/assets/<path:path>")
+        @api_blueprint.route(f"/{ASSETS_PATH.name}/<path:path>")
         def send_assets_dir(path: str = "") -> Any:
             return send_file(safe_client_build_dir_path(f"assets/{path}"))
 
-        @api_blueprint.route("/modules/<path:path>")
+        @api_blueprint.route(f"/{MODULES_PATH.name}/<path:path>")
         def send_modules_dir(path: str = "") -> Any:
             return send_file(safe_web_modules_dir_path(path))
 
@@ -189,8 +190,8 @@ def _setup_single_view_dispatcher_route(
 
         _dispatch_in_thread(ws, path, constructor(), send, recv)
 
-    sock.route("stream", endpoint="without_path")(model_stream)
-    sock.route("stream/<path:path>", endpoint="with_path")(model_stream)
+    sock.route(STREAM_PATH.name, endpoint="without_path")(model_stream)
+    sock.route(f"{STREAM_PATH.name}/<path:path>", endpoint="with_path")(model_stream)
 
 
 def _dispatch_in_thread(

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import MutableMapping
 
 import pytest
@@ -5,7 +6,8 @@ import pytest
 import idom
 from idom import html
 from idom.backend import default as default_implementation
-from idom.backend.types import Connection, Location
+from idom.backend._urls import PATH_PREFIX
+from idom.backend.types import BackendImplementation, Connection, Location
 from idom.backend.utils import all_implementations
 from idom.testing import BackendFixture, DisplayFixture, poll
 
@@ -16,7 +18,12 @@ from idom.testing import BackendFixture, DisplayFixture, poll
     scope="module",
 )
 async def display(page, request):
-    async with BackendFixture(implementation=request.param) as server:
+    imp: BackendImplementation = request.param
+    async with BackendFixture(
+        implementation=imp,
+        # we do this to check that route priorities for each backend are correct
+        options=imp.Options(url_prefix=str(PATH_PREFIX)),
+    ) as server:
         async with DisplayFixture(backend=server, driver=page) as display:
             yield display
 

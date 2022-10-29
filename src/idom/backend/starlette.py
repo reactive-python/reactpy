@@ -26,6 +26,7 @@ from idom.core.serve import (
 from idom.core.types import RootComponentConstructor
 
 from ._asgi import serve_development_asgi
+from ._urls import ASSETS_PATH, MODULES_PATH, STREAM_PATH
 from .hooks import ConnectionContext
 from .hooks import use_connection as _use_connection
 from .utils import CLIENT_BUILD_DIR
@@ -115,11 +116,11 @@ def _setup_common_routes(options: Options, app: Starlette) -> None:
 
     if options.serve_static_files:
         app.mount(
-            "/_idom/modules",
+            str(MODULES_PATH),
             StaticFiles(directory=IDOM_WEB_MODULES_DIR.current, check_dir=False),
         )
         app.mount(
-            "/_idom/assets",
+            str(ASSETS_PATH),
             StaticFiles(directory=CLIENT_BUILD_DIR / "assets", check_dir=False),
         )
         # register this last so it takes least priority
@@ -134,8 +135,8 @@ async def serve_index(request: Request) -> FileResponse:
 def _setup_single_view_dispatcher_route(
     options: Options, app: Starlette, constructor: RootComponentConstructor
 ) -> None:
-    @app.websocket_route("/_idom/stream")
-    @app.websocket_route("/_idom/stream/{path:path}")
+    @app.websocket_route(str(STREAM_PATH))
+    @app.websocket_route(f"{STREAM_PATH}/{{path:path}}")
     async def model_stream(socket: WebSocket) -> None:
         await socket.accept()
         send, recv = _make_send_recv_callbacks(socket)

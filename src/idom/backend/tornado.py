@@ -22,6 +22,7 @@ from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
 
+from ._urls import ASSETS_PATH, MODULES_PATH, STREAM_PATH
 from .hooks import ConnectionContext
 from .hooks import use_connection as _use_connection
 from .utils import CLIENT_BUILD_DIR
@@ -117,7 +118,7 @@ def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
     if options.serve_static_files:
         handlers.append(
             (
-                r"/_idom/modules/(.*)",
+                rf"{MODULES_PATH}/(.*)",
                 StaticFileHandler,
                 {"path": str(IDOM_WEB_MODULES_DIR.current)},
             )
@@ -125,7 +126,7 @@ def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
 
         handlers.append(
             (
-                r"/_idom/assets/(.*)",
+                rf"{ASSETS_PATH}/(.*)",
                 StaticFileHandler,
                 {"path": str(CLIENT_BUILD_DIR / "assets")},
             )
@@ -158,12 +159,12 @@ def _setup_single_view_dispatcher_route(
 ) -> _RouteHandlerSpecs:
     return [
         (
-            r"/_idom/stream/(.*)",
+            rf"{STREAM_PATH}/(.*)",
             ModelStreamHandler,
             {"component_constructor": constructor},
         ),
         (
-            r"/_idom/stream",
+            str(STREAM_PATH),
             ModelStreamHandler,
             {"component_constructor": constructor},
         ),

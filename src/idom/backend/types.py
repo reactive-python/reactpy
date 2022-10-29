@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from typing import Any, Generic, MutableMapping, TypeVar
+from typing import Any, Callable, Generic, MutableMapping, TypeVar
 
 from typing_extensions import Protocol, runtime_checkable
 
@@ -15,6 +15,9 @@ _App = TypeVar("_App")
 @runtime_checkable
 class BackendImplementation(Protocol[_App]):
     """Common interface for built-in web server/framework integrations"""
+
+    Options: Callable[..., Any]
+    """A constructor for options passed to :meth:`BackendImplementation.configure`"""
 
     def configure(
         self,

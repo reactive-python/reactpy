@@ -25,6 +25,7 @@ from idom.core.serve import (
 from idom.core.types import RootComponentConstructor
 
 from ._asgi import serve_development_asgi
+from ._urls import ASSETS_PATH, MODULES_PATH, PATH_PREFIX, STREAM_PATH
 from .hooks import ConnectionContext
 from .hooks import use_connection as _use_connection
 from .utils import (
@@ -44,7 +45,7 @@ def configure(
     options = options or Options()
 
     spa_bp = Blueprint(f"idom_spa_{id(app)}", url_prefix=options.url_prefix)
-    api_bp = Blueprint(f"idom_api_{id(app)}", url_prefix="/_idom")
+    api_bp = Blueprint(f"idom_api_{id(app)}", url_prefix=str(PATH_PREFIX))
 
     _setup_common_routes(api_bp, spa_bp, options)
     _setup_single_view_dispatcher_route(api_bp, component, options)
@@ -133,7 +134,7 @@ def _setup_common_routes(
             path = urllib_parse.unquote(path)
             return await response.file(safe_client_build_dir_path(f"assets/{path}"))
 
-        api_blueprint.add_route(asset_files, "/assets/<path:path>")
+        api_blueprint.add_route(asset_files, f"/{ASSETS_PATH.name}/<path:path>")
 
         async def web_module_files(
             request: request.Request,
@@ -146,7 +147,7 @@ def _setup_common_routes(
                 mime_type="text/javascript",
             )
 
-        api_blueprint.add_route(web_module_files, "/modules/<path:path>")
+        api_blueprint.add_route(web_module_files, f"/{MODULES_PATH.name}/<path:path>")
 
 
 def _setup_single_view_dispatcher_route(
@@ -189,8 +190,8 @@ def _setup_single_view_dispatcher_route(
             recv,
         )
 
-    api_blueprint.add_websocket_route(model_stream, "/stream")
-    api_blueprint.add_websocket_route(model_stream, "/stream/<path:path>/")
+    api_blueprint.add_websocket_route(model_stream, f"/{STREAM_PATH.name}")
+    api_blueprint.add_websocket_route(model_stream, f"/{STREAM_PATH.name}/<path:path>/")
 
 
 def _make_send_recv_callbacks(
