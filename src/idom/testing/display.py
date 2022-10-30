@@ -3,7 +3,6 @@ from __future__ import annotations
 from contextlib import AsyncExitStack
 from types import TracebackType
 from typing import Any
-from urllib.parse import urljoin
 
 from playwright.async_api import (
     Browser,
