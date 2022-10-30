@@ -3,6 +3,7 @@ from pathlib import Path
 
 import idom
 from idom.testing import DisplayFixture, poll
+from tests.tooling.common import DEFAULT_TYPE_DELAY
 
 
 HERE = Path(__file__).parent
@@ -86,13 +87,13 @@ async def test_use_linked_inputs(display: DisplayFixture):
     input_1 = await display.page.wait_for_selector("#i_1")
     input_2 = await display.page.wait_for_selector("#i_2")
 
-    await input_1.type("hello", delay=50)
+    await input_1.type("hello", delay=DEFAULT_TYPE_DELAY)
 
     assert (await input_1.evaluate("e => e.value")) == "hello"
     assert (await input_2.evaluate("e => e.value")) == "hello"
 
     await input_2.focus()
-    await input_2.type(" world", delay=50)
+    await input_2.type(" world", delay=DEFAULT_TYPE_DELAY)
 
     assert (await input_1.evaluate("e => e.value")) == "hello world"
     assert (await input_2.evaluate("e => e.value")) == "hello world"
@@ -114,14 +115,14 @@ async def test_use_linked_inputs_on_change(display: DisplayFixture):
     input_1 = await display.page.wait_for_selector("#i_1")
     input_2 = await display.page.wait_for_selector("#i_2")
 
-    await input_1.type("hello", delay=20)
+    await input_1.type("hello", delay=DEFAULT_TYPE_DELAY)
 
     poll_value = poll(lambda: value.current)
 
     await poll_value.until_equals("hello")
 
     await input_2.focus()
-    await input_2.type(" world", delay=20)
+    await input_2.type(" world", delay=DEFAULT_TYPE_DELAY)
 
     await poll_value.until_equals("hello world")
 
