@@ -50,7 +50,7 @@ def configure(
     _setup_common_routes(api_bp, spa_bp, options)
     _setup_single_view_dispatcher_route(api_bp, component, options)
 
-    app.blueprint((spa_bp, api_bp))
+    app.blueprint([spa_bp, api_bp])
 
 
 def create_development_app() -> Sanic:
