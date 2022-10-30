@@ -125,10 +125,10 @@ async def test_use_location(display: DisplayFixture):
     await poll_location.until_equals(Location("/", ""))
 
     for loc in [
-        Location("/something"),
-        Location("/something/file.txt"),
-        Location("/another/something"),
-        Location("/another/something/file.txt"),
+        Location("/something", ""),
+        Location("/something/file.txt", ""),
+        Location("/another/something", ""),
+        Location("/another/something/file.txt", ""),
         Location("/another/something/file.txt", "?key=value"),
         Location("/another/something/file.txt", "?key1=value1&key2=value2"),
     ]:

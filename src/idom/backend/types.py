@@ -71,7 +71,7 @@ class Location:
     pathname: str
     """the path of the URL for the location"""
 
-    search: str = ""
+    search: str
     """A search or query string - a '?' followed by the parameters of the URL.
 
     If there are no search parameters this should be an empty string
