@@ -1,4 +1,3 @@
-from dataclasses import dataclass, replace
 from typing import MutableMapping
 
 import pytest
