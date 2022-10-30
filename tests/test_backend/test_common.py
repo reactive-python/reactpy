@@ -123,7 +123,7 @@ async def test_use_location(display: DisplayFixture):
 
     await display.show(ShowRoute)
 
-    await poll_location.until_equals(Location(display.url_prefix or "/", ""))
+    await poll_location.until_equals(Location("/", ""))
 
     for loc in [
         Location("/something"),
@@ -133,8 +133,7 @@ async def test_use_location(display: DisplayFixture):
         Location("/another/something/file.txt", "?key=value"),
         Location("/another/something/file.txt", "?key1=value1&key2=value2"),
     ]:
-        loc = replace(loc, pathname=f"{display.url_prefix}{loc.pathname}")
-        await display.goto(loc.pathname + loc.search, add_url_prefix=False)
+        await display.goto(loc.pathname + loc.search)
         await poll_location.until_equals(loc)
 
 

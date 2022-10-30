@@ -175,7 +175,7 @@ def _setup_single_view_dispatcher_route(
                     value=Connection(
                         scope=scope,
                         location=Location(
-                            pathname=f"/{path}",
+                            pathname=f"/{path[len(options.url_prefix):]}",
                             search=(
                                 f"?{request.query_string}"
                                 if request.query_string

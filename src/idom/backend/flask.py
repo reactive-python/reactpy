@@ -188,7 +188,14 @@ def _setup_single_view_dispatcher_route(
         def recv() -> LayoutEvent:
             return LayoutEvent(**json.loads(ws.receive()))
 
-        _dispatch_in_thread(ws, path, constructor(), send, recv)
+        _dispatch_in_thread(
+            ws,
+            # remove any url prefix from path
+            path[len(options.url_prefix) :],
+            constructor(),
+            send,
+            recv,
+        )
 
     sock.route(STREAM_PATH.name, endpoint="without_path")(model_stream)
     sock.route(f"{STREAM_PATH.name}/<path:path>", endpoint="with_path")(model_stream)

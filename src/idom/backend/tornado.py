@@ -46,7 +46,7 @@ def configure(
         options,
         (
             # this route should take priority so set up it up first
-            _setup_single_view_dispatcher_route(component)
+            _setup_single_view_dispatcher_route(component, options)
             + _setup_common_routes(options)
         ),
     )
@@ -155,18 +155,18 @@ def _add_handler(
 
 
 def _setup_single_view_dispatcher_route(
-    constructor: ComponentConstructor,
+    constructor: ComponentConstructor, options: Options
 ) -> _RouteHandlerSpecs:
     return [
         (
             rf"{STREAM_PATH}/(.*)",
             ModelStreamHandler,
-            {"component_constructor": constructor},
+            {"component_constructor": constructor, "url_prefix": options.url_prefix},
         ),
         (
             str(STREAM_PATH),
             ModelStreamHandler,
-            {"component_constructor": constructor},
+            {"component_constructor": constructor, "url_prefix": options.url_prefix},
         ),
     ]
 
@@ -182,8 +182,11 @@ class ModelStreamHandler(WebSocketHandler):
     _dispatch_future: Future[None]
     _message_queue: AsyncQueue[str]
 
-    def initialize(self, component_constructor: ComponentConstructor) -> None:
+    def initialize(
+        self, component_constructor: ComponentConstructor, url_prefix: str
+    ) -> None:
         self._component_constructor = component_constructor
+        self._url_prefix = url_prefix
 
     async def open(self, path: str = "", *args: Any, **kwargs: Any) -> None:
         message_queue: "AsyncQueue[str]" = AsyncQueue()
@@ -203,7 +206,7 @@ class ModelStreamHandler(WebSocketHandler):
                         value=Connection(
                             scope=WSGIContainer.environ(self.request),
                             location=Location(
-                                pathname=f"/{path}",
+                                pathname=f"/{path[len(self._url_prefix):]}",
                                 search=(
                                     f"?{self.request.query}"
                                     if self.request.query

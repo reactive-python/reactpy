@@ -39,6 +39,8 @@ Unreleased
   This should allow the browser to cache static resources. Even if your ``url_prefix``
   is ``/_idom``, your app should still work as expected. Though if you're using
   ``idom-router``, IDOM's server routes will always take priority.
+- :pull:`824` - Backend implementations now strip any URL prefix in the pathname for
+  ``use_location``.
 
 **Added**
 

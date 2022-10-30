@@ -142,6 +142,7 @@ def _setup_single_view_dispatcher_route(
         send, recv = _make_send_recv_callbacks(socket)
 
         pathname = "/" + socket.scope["path_params"].get("path", "")
+        pathname = pathname[len(options.url_prefix) :] or "/"
         search = socket.scope["query_string"].decode()
 
         try:
