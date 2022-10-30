@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from typing import Any, MutableMapping, TypeVar
+from typing import Any, Generic, MutableMapping, TypeVar
 
 from typing_extensions import Protocol, runtime_checkable
 
@@ -36,11 +36,25 @@ class BackendImplementation(Protocol[_App]):
     ) -> None:
         """Run an application using a development server"""
 
-    def use_scope(self) -> MutableMapping[str, Any]:
-        """Get an ASGI scope or WSGI environment dictionary"""
 
-    def use_location(self) -> Location:
-        """Get the current location (URL)"""
+_Carrier = TypeVar("_Carrier")
+
+
+@dataclass
+class Connection(Generic[_Carrier]):
+    """Represents a connection with a client"""
+
+    scope: MutableMapping[str, Any]
+    """An ASGI scope or WSGI environment dictionary"""
+
+    location: Location
+    """The current location (URL)"""
+
+    carrier: _Carrier
+    """How the connection is mediated. For example, a websocket.
+
+    This typically depends on the backend implementation.
+    """
 
 
 @dataclass
@@ -55,4 +69,7 @@ class Location:
     """the path of the URL for the location"""
 
     search: str = ""
-    """A search or query string - a '?' followed by the parameters of the URL."""
+    """A search or query string - a '?' followed by the parameters of the URL.
+
+    If there are no search parameters this should be an empty string
+    """

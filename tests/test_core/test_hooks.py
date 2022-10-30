@@ -15,6 +15,7 @@ from idom.core.layout import Layout, LayoutUpdate
 from idom.testing import DisplayFixture, HookCatcher, assert_idom_did_log, poll
 from idom.testing.logs import assert_idom_did_not_log
 from idom.utils import Ref
+from tests.tooling.common import DEFAULT_TYPE_DELAY
 
 
 async def test_must_be_rendering_in_layout_to_use_hooks():
@@ -246,7 +247,7 @@ async def test_simple_input_with_use_state(display: DisplayFixture):
     await display.show(Input)
 
     button = await display.page.wait_for_selector("#input")
-    await button.type("this is a test")
+    await button.type("this is a test", delay=DEFAULT_TYPE_DELAY)
     await display.page.wait_for_selector("#complete")
 
     assert message_ref.current == "this is a test"

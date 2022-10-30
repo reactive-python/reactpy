@@ -5,7 +5,7 @@ from typing import Any
 
 from idom.types import RootComponentConstructor
 
-from .types import BackendImplementation, Location
+from .types import BackendImplementation
 from .utils import all_implementations
 
 
@@ -33,16 +33,6 @@ async def serve_development_app(
     return await _default_implementation().serve_development_app(
         app, host, port, started
     )
-
-
-def use_scope() -> Any:
-    """Return the current ASGI/WSGI scope"""
-    return _default_implementation().use_scope()
-
-
-def use_location() -> Location:
-    """Return the current route as a string"""
-    return _default_implementation().use_location()
 
 
 _DEFAULT_IMPLEMENTATION: BackendImplementation[Any] | None = None

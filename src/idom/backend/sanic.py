@@ -4,18 +4,16 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, MutableMapping, Tuple, Union
 from urllib import parse as urllib_parse
 from uuid import uuid4
 
 from sanic import Blueprint, Sanic, request, response
 from sanic.config import Config
-from sanic.models.asgi import ASGIScope
+from sanic.server.websockets.connection import WebSocketConnection
 from sanic_cors import CORS
-from websockets.legacy.protocol import WebSocketCommonProtocol
 
-from idom.backend.types import Location
-from idom.core.hooks import Context, create_context, use_context
+from idom.backend.types import Connection, Location
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import (
     RecvCoroutine,
@@ -27,12 +25,12 @@ from idom.core.serve import (
 from idom.core.types import RootComponentConstructor
 
 from ._asgi import serve_development_asgi
+from .hooks import ConnectionContext
+from .hooks import use_connection as _use_connection
 from .utils import safe_client_build_dir_path, safe_web_modules_dir_path
 
 
 logger = logging.getLogger(__name__)
-
-ConnectionContext: Context[Connection | None] = create_context(None)
 
 
 def configure(
@@ -65,50 +63,25 @@ async def serve_development_app(
     await serve_development_asgi(app, host, port, started)
 
 
-def use_location() -> Location:
-    """Get the current route as a string"""
-    conn = use_connection()
-    search = conn.request.query_string
-    return Location(pathname="/" + conn.path, search="?" + search if search else "")
-
-
-def use_scope() -> ASGIScope:
-    """Get the current ASGI scope"""
-    app = use_request().app
-    try:
-        asgi_app = app._asgi_app
-    except AttributeError:  # pragma: no cover
-        raise RuntimeError("No scope. Sanic may not be running with an ASGI server")
-    return asgi_app.transport.scope
-
-
 def use_request() -> request.Request:
     """Get the current ``Request``"""
-    return use_connection().request
+    return use_connection().carrier.request
 
 
-def use_connection() -> Connection:
+def use_websocket() -> WebSocketConnection:
+    """Get the current websocket"""
+    return use_connection().carrier.websocket
+
+
+def use_connection() -> Connection[_SanicCarrier]:
     """Get the current :class:`Connection`"""
-    connection = use_context(ConnectionContext)
-    if connection is None:
-        raise RuntimeError(  # pragma: no cover
-            "No connection. Are you running with a Sanic server?"
+    conn = _use_connection()
+    if not isinstance(conn.carrier, _SanicCarrier):
+        raise TypeError(  # pragma: no cover
+            f"Connection has unexpected carrier {conn.carrier}. "
+            "Are you running with a Sanic server?"
         )
-    return connection
-
-
-@dataclass
-class Connection:
-    """A simple wrapper for holding connection information"""
-
-    request: request.Request
-    """The current request object"""
-
-    websocket: WebSocketCommonProtocol
-    """A handle to the current websocket"""
-
-    path: str
-    """The current path being served"""
+    return conn
 
 
 @dataclass
@@ -165,12 +138,36 @@ def _setup_single_view_dispatcher_route(
     blueprint: Blueprint, constructor: RootComponentConstructor
 ) -> None:
     async def model_stream(
-        request: request.Request, socket: WebSocketCommonProtocol, path: str = ""
+        request: request.Request, socket: WebSocketConnection, path: str = ""
     ) -> None:
+        app = request.app
+        try:
+            asgi_app = app._asgi_app
+        except AttributeError:  # pragma: no cover
+            logger.warning("No scope. Sanic may not be running with an ASGI server")
+            scope: MutableMapping[str, Any] = {}
+        else:
+            scope = asgi_app.transport.scope
+
         send, recv = _make_send_recv_callbacks(socket)
-        conn = Connection(request, socket, path)
         await serve_json_patch(
-            Layout(ConnectionContext(constructor(), value=conn)),
+            Layout(
+                ConnectionContext(
+                    constructor(),
+                    value=Connection(
+                        scope=scope,
+                        location=Location(
+                            pathname=f"/{path}",
+                            search=(
+                                f"?{request.query_string}"
+                                if request.query_string
+                                else ""
+                            ),
+                        ),
+                        carrier=_SanicCarrier(request, socket),
+                    ),
+                )
+            ),
             send,
             recv,
         )
@@ -180,7 +177,7 @@ def _setup_single_view_dispatcher_route(
 
 
 def _make_send_recv_callbacks(
-    socket: WebSocketCommonProtocol,
+    socket: WebSocketConnection,
 ) -> Tuple[SendCoroutine, RecvCoroutine]:
     async def sock_send(value: VdomJsonPatch) -> None:
         await socket.send(json.dumps(value))
@@ -192,3 +189,14 @@ def _make_send_recv_callbacks(
         return LayoutEvent(**json.loads(data))
 
     return sock_send, sock_recv
+
+
+@dataclass
+class _SanicCarrier:
+    """A simple wrapper for holding connection information"""
+
+    request: request.Request
+    """The current request object"""
+
+    websocket: WebSocketConnection
+    """A handle to the current websocket"""

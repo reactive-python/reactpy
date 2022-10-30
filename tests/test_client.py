@@ -7,6 +7,7 @@ from playwright.async_api import Browser
 import idom
 from idom.backend.utils import find_available_port
 from idom.testing import BackendFixture, DisplayFixture
+from tests.tooling.common import DEFAULT_TYPE_DELAY
 
 
 JS_DIR = Path(__file__).parent / "js"
@@ -121,6 +122,6 @@ async def test_slow_server_response_on_input_change(display: DisplayFixture):
     await display.show(SomeComponent)
 
     inp = await display.page.wait_for_selector("#test-input")
-    await inp.type("hello")
+    await inp.type("hello", delay=DEFAULT_TYPE_DELAY)
 
     assert (await inp.evaluate("node => node.value")) == "hello"

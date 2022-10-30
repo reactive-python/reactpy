@@ -16,17 +16,15 @@ from tornado.web import Application, RequestHandler, StaticFileHandler
 from tornado.websocket import WebSocketHandler
 from tornado.wsgi import WSGIContainer
 
-from idom.backend.types import Location
+from idom.backend.types import Connection, Location
 from idom.config import IDOM_WEB_MODULES_DIR
-from idom.core.hooks import Context, create_context, use_context
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
 
+from .hooks import ConnectionContext
+from .hooks import use_connection as _use_connection
 from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
-
-
-ConnectionContext: Context[Connection | None] = create_context(None)
 
 
 def configure(
@@ -84,41 +82,19 @@ async def serve_development_app(
         await server.close_all_connections()
 
 
-def use_location() -> Location:
-    """Get the current route as a string"""
-    conn = use_connection()
-    search = conn.request.query
-    return Location(pathname="/" + conn.path, search="?" + search if search else "")
-
-
-def use_scope() -> dict[str, Any]:
-    """Get the current WSGI environment dictionary"""
-    return WSGIContainer.environ(use_request())
-
-
 def use_request() -> HTTPServerRequest:
     """Get the current ``HTTPServerRequest``"""
-    return use_connection().request
+    return use_connection().carrier
 
 
-def use_connection() -> Connection:
-    connection = use_context(ConnectionContext)
-    if connection is None:
-        raise RuntimeError(  # pragma: no cover
-            "No connection. Are you running with a Tornado server?"
+def use_connection() -> Connection[HTTPServerRequest]:
+    conn = _use_connection()
+    if not isinstance(conn.carrier, HTTPServerRequest):
+        raise TypeError(  # pragma: no cover
+            f"Connection has unexpected carrier {conn.carrier}. "
+            "Are you running with a Flask server?"
         )
-    return connection
-
-
-@dataclass
-class Connection:
-    """A simple wrapper for holding connection information"""
-
-    request: HTTPServerRequest
-    """The current request object"""
-
-    path: str
-    """The current path being served"""
+    return conn
 
 
 @dataclass
@@ -217,7 +193,18 @@ class ModelStreamHandler(WebSocketHandler):
                 Layout(
                     ConnectionContext(
                         self._component_constructor(),
-                        value=Connection(self.request, path),
+                        value=Connection(
+                            scope=WSGIContainer.environ(self.request),
+                            location=Location(
+                                pathname=f"/{path}",
+                                search=(
+                                    f"?{self.request.query}"
+                                    if self.request.query
+                                    else ""
+                                ),
+                            ),
+                            carrier=self.request,
+                        ),
                     )
                 ),
                 send,

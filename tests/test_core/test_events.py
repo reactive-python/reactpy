@@ -8,6 +8,7 @@ from idom.core.events import (
     to_event_handler_function,
 )
 from idom.testing import DisplayFixture, poll
+from tests.tooling.common import DEFAULT_TYPE_DELAY
 
 
 def test_event_handler_repr():
@@ -155,7 +156,7 @@ async def test_can_prevent_event_default_operation(display: DisplayFixture):
     await display.show(Input)
 
     inp = await display.page.wait_for_selector("#input")
-    await inp.type("hello")
+    await inp.type("hello", delay=DEFAULT_TYPE_DELAY)
     # the default action of updating the element's value did not take place
     assert (await inp.evaluate("node => node.value")) == ""
 
