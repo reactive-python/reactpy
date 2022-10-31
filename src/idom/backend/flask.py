@@ -33,7 +33,12 @@ from idom.core.serve import serve_json_patch
 from idom.core.types import ComponentType, RootComponentConstructor
 from idom.utils import Ref
 
-from .utils import safe_client_build_dir_path, safe_web_modules_dir_path
+from ._urls import ASSETS_PATH, MODULES_PATH, PATH_PREFIX, STREAM_PATH
+from .utils import (
+    CLIENT_BUILD_DIR,
+    safe_client_build_dir_path,
+    safe_web_modules_dir_path,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -50,14 +55,15 @@ def configure(
         options: Options for configuring server behavior
     """
     options = options or Options()
-    blueprint = Blueprint("idom", __name__, url_prefix=options.url_prefix)
 
-    # this route should take priority so set up it up first
-    _setup_single_view_dispatcher_route(blueprint, options, component)
+    api_bp = Blueprint(f"idom_api_{id(app)}", __name__, url_prefix=str(PATH_PREFIX))
+    spa_bp = Blueprint(f"idom_spa_{id(app)}", __name__, url_prefix=options.url_prefix)
 
-    _setup_common_routes(blueprint, options)
+    _setup_single_view_dispatcher_route(api_bp, options, component)
+    _setup_common_routes(api_bp, spa_bp, options)
 
-    app.register_blueprint(blueprint)
+    app.register_blueprint(api_bp)
+    app.register_blueprint(spa_bp)
 
 
 def create_development_app() -> Flask:
@@ -74,7 +80,7 @@ async def serve_development_app(
     started: asyncio.Event | None = None,
 ) -> None:
     """Run an application using a development server"""
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     stopped = asyncio.Event()
 
     server: Ref[BaseWSGIServer] = Ref()
@@ -144,32 +150,36 @@ class Options:
     """The URL prefix where IDOM resources will be served from"""
 
 
-def _setup_common_routes(blueprint: Blueprint, options: Options) -> None:
+def _setup_common_routes(
+    api_blueprint: Blueprint,
+    spa_blueprint: Blueprint,
+    options: Options,
+) -> None:
     cors_options = options.cors
     if cors_options:  # pragma: no cover
         cors_params = cors_options if isinstance(cors_options, dict) else {}
-        CORS(blueprint, **cors_params)
+        CORS(api_blueprint, **cors_params)
 
     if options.serve_static_files:
 
-        @blueprint.route("/")
-        @blueprint.route("/<path:path>")
-        def send_client_dir(path: str = "") -> Any:
-            return send_file(safe_client_build_dir_path(path))
+        @api_blueprint.route(f"/{ASSETS_PATH.name}/<path:path>")
+        def send_assets_dir(path: str = "") -> Any:
+            return send_file(safe_client_build_dir_path(f"assets/{path}"))
 
-        @blueprint.route(r"/_api/modules/<path:path>")
-        @blueprint.route(r"<path:_>/_api/modules/<path:path>")
-        def send_modules_dir(
-            path: str,
-            _: str = "",  # this is not used
-        ) -> Any:
+        @api_blueprint.route(f"/{MODULES_PATH.name}/<path:path>")
+        def send_modules_dir(path: str = "") -> Any:
             return send_file(safe_web_modules_dir_path(path))
+
+        @spa_blueprint.route("/")
+        @spa_blueprint.route("/<path:_>")
+        def send_client_dir(_: str = "") -> Any:
+            return send_file(CLIENT_BUILD_DIR / "index.html")
 
 
 def _setup_single_view_dispatcher_route(
-    blueprint: Blueprint, options: Options, constructor: RootComponentConstructor
+    api_blueprint: Blueprint, options: Options, constructor: RootComponentConstructor
 ) -> None:
-    sock = Sock(blueprint)
+    sock = Sock(api_blueprint)
 
     def model_stream(ws: WebSocket, path: str = "") -> None:
         def send(value: Any) -> None:
@@ -178,10 +188,17 @@ def _setup_single_view_dispatcher_route(
         def recv() -> LayoutEvent:
             return LayoutEvent(**json.loads(ws.receive()))
 
-        _dispatch_in_thread(ws, path, constructor(), send, recv)
+        _dispatch_in_thread(
+            ws,
+            # remove any url prefix from path
+            path[len(options.url_prefix) :],
+            constructor(),
+            send,
+            recv,
+        )
 
-    sock.route("/_api/stream", endpoint="without_path")(model_stream)
-    sock.route("/<path:path>/_api/stream", endpoint="with_path")(model_stream)
+    sock.route(STREAM_PATH.name, endpoint="without_path")(model_stream)
+    sock.route(f"{STREAM_PATH.name}/<path:path>", endpoint="with_path")(model_stream)
 
 
 def _dispatch_in_thread(
@@ -228,7 +245,7 @@ def _dispatch_in_thread(
                 recv_coro,
             )
 
-        main_future = asyncio.ensure_future(main())
+        main_future = asyncio.ensure_future(main(), loop=loop)
 
         dispatch_thread_info_ref.current = _DispatcherThreadInfo(
             dispatch_loop=loop,

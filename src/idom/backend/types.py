@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from typing import Any, Generic, MutableMapping, TypeVar
+from typing import Any, Callable, Generic, MutableMapping, TypeVar
 
 from typing_extensions import Protocol, runtime_checkable
 
@@ -15,6 +15,9 @@ _App = TypeVar("_App")
 @runtime_checkable
 class BackendImplementation(Protocol[_App]):
     """Common interface for built-in web server/framework integrations"""
+
+    Options: Callable[..., Any]
+    """A constructor for options passed to :meth:`BackendImplementation.configure`"""
 
     def configure(
         self,
@@ -51,7 +54,7 @@ class Connection(Generic[_Carrier]):
     """The current location (URL)"""
 
     carrier: _Carrier
-    """How the connection is mediated. For example, a websocket.
+    """How the connection is mediated. For example, a request or websocket.
 
     This typically depends on the backend implementation.
     """
@@ -68,7 +71,7 @@ class Location:
     pathname: str
     """the path of the URL for the location"""
 
-    search: str = ""
+    search: str
     """A search or query string - a '?' followed by the parameters of the URL.
 
     If there are no search parameters this should be an empty string

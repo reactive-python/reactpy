@@ -716,7 +716,7 @@ class _ThreadSafeQueue(Generic[_Type]):
     __slots__ = "_loop", "_queue", "_pending"
 
     def __init__(self) -> None:
-        self._loop = asyncio.get_event_loop()
+        self._loop = asyncio.get_running_loop()
         self._queue: asyncio.Queue[_Type] = asyncio.Queue()
         self._pending: Set[_Type] = set()
 

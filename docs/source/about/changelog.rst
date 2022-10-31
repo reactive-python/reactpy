@@ -29,6 +29,18 @@ Unreleased
   implementation specific and are now available as top-level imports. Instead of each
   backend defining these hooks, backends establish a ``ConnectionContext`` with this
   information.
+- :pull:`824` - IDOM's built-in backend server now expose the following routes:
+
+  - ``/_idom/assets/<file-path>``
+  - ``/_idom/stream/<path>``
+  - ``/_idom/modules/<file-path>``
+  - ``/<prefix>/<path>``
+
+  This should allow the browser to cache static resources. Even if your ``url_prefix``
+  is ``/_idom``, your app should still work as expected. Though if you're using
+  ``idom-router``, IDOM's server routes will always take priority.
+- :pull:`824` - Backend implementations now strip any URL prefix in the pathname for
+  ``use_location``.
 
 **Added**
 

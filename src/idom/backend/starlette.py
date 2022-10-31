@@ -4,12 +4,13 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable, Dict, Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
+from starlette.requests import Request
+from starlette.responses import FileResponse
 from starlette.staticfiles import StaticFiles
-from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from idom.backend.hooks import ConnectionContext
@@ -25,9 +26,10 @@ from idom.core.serve import (
 from idom.core.types import RootComponentConstructor
 
 from ._asgi import serve_development_asgi
+from ._urls import ASSETS_PATH, MODULES_PATH, STREAM_PATH
 from .hooks import ConnectionContext
 from .hooks import use_connection as _use_connection
-from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
+from .utils import CLIENT_BUILD_DIR
 
 
 logger = logging.getLogger(__name__)
@@ -113,41 +115,34 @@ def _setup_common_routes(options: Options, app: Starlette) -> None:
     url_prefix = options.url_prefix
 
     if options.serve_static_files:
-        wm_dir = IDOM_WEB_MODULES_DIR.current
-        web_module_files = StaticFiles(directory=wm_dir, check_dir=False)
-        app.mount(url_prefix + "/_api/modules", web_module_files)
-        app.mount(url_prefix + "/{_:path}/_api/modules", web_module_files)
-
+        app.mount(
+            str(MODULES_PATH),
+            StaticFiles(directory=IDOM_WEB_MODULES_DIR.current, check_dir=False),
+        )
+        app.mount(
+            str(ASSETS_PATH),
+            StaticFiles(directory=CLIENT_BUILD_DIR / "assets", check_dir=False),
+        )
         # register this last so it takes least priority
-        app.mount(url_prefix + "/", single_page_app_files())
+        app.add_route(url_prefix + "/", serve_index)
+        app.add_route(url_prefix + "/{path:path}", serve_index)
 
 
-def single_page_app_files() -> Callable[..., Awaitable[None]]:
-    static_files_app = StaticFiles(
-        directory=CLIENT_BUILD_DIR,
-        html=True,
-        check_dir=False,
-    )
-
-    async def spa_app(scope: Scope, receive: Receive, send: Send) -> None:
-        # Path safety is the responsibility of starlette.staticfiles.StaticFiles -
-        # using `safe_client_build_dir_path` is for convenience in this case.
-        path = safe_client_build_dir_path(scope["path"]).name
-        return await static_files_app({**scope, "path": path}, receive, send)
-
-    return spa_app
+async def serve_index(request: Request) -> FileResponse:
+    return FileResponse(CLIENT_BUILD_DIR / "index.html")
 
 
 def _setup_single_view_dispatcher_route(
     options: Options, app: Starlette, constructor: RootComponentConstructor
 ) -> None:
-    @app.websocket_route(options.url_prefix + "/_api/stream")
-    @app.websocket_route(options.url_prefix + "/{path:path}/_api/stream")
+    @app.websocket_route(str(STREAM_PATH))
+    @app.websocket_route(f"{STREAM_PATH}/{{path:path}}")
     async def model_stream(socket: WebSocket) -> None:
         await socket.accept()
         send, recv = _make_send_recv_callbacks(socket)
 
         pathname = "/" + socket.scope["path_params"].get("path", "")
+        pathname = pathname[len(options.url_prefix) :] or "/"
         search = socket.scope["query_string"].decode()
 
         try:

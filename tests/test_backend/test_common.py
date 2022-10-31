@@ -5,7 +5,8 @@ import pytest
 import idom
 from idom import html
 from idom.backend import default as default_implementation
-from idom.backend.types import Connection, Location
+from idom.backend._urls import PATH_PREFIX
+from idom.backend.types import BackendImplementation, Connection, Location
 from idom.backend.utils import all_implementations
 from idom.testing import BackendFixture, DisplayFixture, poll
 
@@ -16,8 +17,22 @@ from idom.testing import BackendFixture, DisplayFixture, poll
     scope="module",
 )
 async def display(page, request):
-    async with BackendFixture(implementation=request.param) as server:
-        async with DisplayFixture(backend=server, driver=page) as display:
+    imp: BackendImplementation = request.param
+
+    # we do this to check that route priorities for each backend are correct
+    if imp is default_implementation:
+        url_prefix = ""
+        opts = None
+    else:
+        url_prefix = str(PATH_PREFIX)
+        opts = imp.Options(url_prefix=url_prefix)
+
+    async with BackendFixture(implementation=imp, options=opts) as server:
+        async with DisplayFixture(
+            backend=server,
+            driver=page,
+            url_prefix=url_prefix,
+        ) as display:
             yield display
 
 
@@ -110,10 +125,10 @@ async def test_use_location(display: DisplayFixture):
     await poll_location.until_equals(Location("/", ""))
 
     for loc in [
-        Location("/something"),
-        Location("/something/file.txt"),
-        Location("/another/something"),
-        Location("/another/something/file.txt"),
+        Location("/something", ""),
+        Location("/something/file.txt", ""),
+        Location("/another/something", ""),
+        Location("/another/something/file.txt", ""),
         Location("/another/something/file.txt", "?key=value"),
         Location("/another/something/file.txt", "?key1=value1&key2=value2"),
     ]:

@@ -1,14 +1,11 @@
 {
-  "devDependencies": {
-    "snowpack": "^3.8.8"
-  },
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/idom-team/idom"
   },
   "scripts": {
-    "build": "snowpack build",
+    "build": "vite build",
     "check-format": "npm --workspaces run check-format",
     "format": "npm --workspaces run format",
     "publish": "npm --workspaces publish",
@@ -17,5 +14,8 @@
   "version": "0.40.2",
   "workspaces": [
     "./packages/*"
-  ]
+  ],
+  "devDependencies": {
+    "vite": "^3.1.8"
+  }
 }

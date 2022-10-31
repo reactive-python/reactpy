@@ -53,17 +53,15 @@ def run(
         f"Running with {app_cls.__module__}.{app_cls.__name__} at http://{host}:{port}"
     )
 
-    asyncio.get_event_loop().run_until_complete(
-        implementation.serve_development_app(app, host, port)
-    )
+    asyncio.run(implementation.serve_development_app(app, host, port))
 
 
 def safe_client_build_dir_path(path: str) -> Path:
     """Prevent path traversal out of :data:`CLIENT_BUILD_DIR`"""
-    start, _, end = (path[:-1] if path.endswith("/") else path).rpartition("/")
-    file = end or start
-    final_path = traversal_safe_path(CLIENT_BUILD_DIR, file)
-    return final_path if final_path.is_file() else (CLIENT_BUILD_DIR / "index.html")
+    return traversal_safe_path(
+        CLIENT_BUILD_DIR,
+        *("index.html" if path in ("", "/") else path).split("/"),
+    )
 
 
 def safe_web_modules_dir_path(path: str) -> Path:

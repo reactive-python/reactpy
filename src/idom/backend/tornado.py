@@ -22,9 +22,10 @@ from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
 
+from ._urls import ASSETS_PATH, MODULES_PATH, STREAM_PATH
 from .hooks import ConnectionContext
 from .hooks import use_connection as _use_connection
-from .utils import CLIENT_BUILD_DIR, safe_client_build_dir_path
+from .utils import CLIENT_BUILD_DIR
 
 
 def configure(
@@ -45,7 +46,7 @@ def configure(
         options,
         (
             # this route should take priority so set up it up first
-            _setup_single_view_dispatcher_route(component)
+            _setup_single_view_dispatcher_route(component, options)
             + _setup_common_routes(options)
         ),
     )
@@ -74,7 +75,7 @@ async def serve_development_app(
 
     try:
         # block forever - tornado has already set up its own background tasks
-        await asyncio.get_event_loop().create_future()
+        await asyncio.get_running_loop().create_future()
     finally:
         # stop accepting new connections
         server.stop()
@@ -117,9 +118,17 @@ def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
     if options.serve_static_files:
         handlers.append(
             (
-                r"/.*/?_api/modules/(.*)",
+                rf"{MODULES_PATH}/(.*)",
                 StaticFileHandler,
                 {"path": str(IDOM_WEB_MODULES_DIR.current)},
+            )
+        )
+
+        handlers.append(
+            (
+                rf"{ASSETS_PATH}/(.*)",
+                StaticFileHandler,
+                {"path": str(CLIENT_BUILD_DIR / "assets")},
             )
         )
 
@@ -146,27 +155,25 @@ def _add_handler(
 
 
 def _setup_single_view_dispatcher_route(
-    constructor: ComponentConstructor,
+    constructor: ComponentConstructor, options: Options
 ) -> _RouteHandlerSpecs:
     return [
         (
-            r"/(.*)/_api/stream",
+            rf"{STREAM_PATH}/(.*)",
             ModelStreamHandler,
-            {"component_constructor": constructor},
+            {"component_constructor": constructor, "url_prefix": options.url_prefix},
         ),
         (
-            r"/_api/stream",
+            str(STREAM_PATH),
             ModelStreamHandler,
-            {"component_constructor": constructor},
+            {"component_constructor": constructor, "url_prefix": options.url_prefix},
         ),
     ]
 
 
 class SpaStaticFileHandler(StaticFileHandler):
-    async def get(self, path: str, include_body: bool = True) -> None:
-        # Path safety is the responsibility of tornado.web.StaticFileHandler -
-        # using `safe_client_build_dir_path` is for convenience in this case.
-        return await super().get(safe_client_build_dir_path(path).name, include_body)
+    async def get(self, _: str, include_body: bool = True) -> None:
+        return await super().get(str(CLIENT_BUILD_DIR / "index.html"), include_body)
 
 
 class ModelStreamHandler(WebSocketHandler):
@@ -175,8 +182,11 @@ class ModelStreamHandler(WebSocketHandler):
     _dispatch_future: Future[None]
     _message_queue: AsyncQueue[str]
 
-    def initialize(self, component_constructor: ComponentConstructor) -> None:
+    def initialize(
+        self, component_constructor: ComponentConstructor, url_prefix: str
+    ) -> None:
         self._component_constructor = component_constructor
+        self._url_prefix = url_prefix
 
     async def open(self, path: str = "", *args: Any, **kwargs: Any) -> None:
         message_queue: "AsyncQueue[str]" = AsyncQueue()
@@ -196,7 +206,7 @@ class ModelStreamHandler(WebSocketHandler):
                         value=Connection(
                             scope=WSGIContainer.environ(self.request),
                             location=Location(
-                                pathname=f"/{path}",
+                                pathname=f"/{path[len(self._url_prefix):]}",
                                 search=(
                                     f"?{self.request.query}"
                                     if self.request.query

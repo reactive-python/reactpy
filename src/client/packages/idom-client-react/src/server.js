@@ -25,26 +25,22 @@ export function mountWithLayoutServer(
 }
 
 export function LayoutServerInfo({ host, port, path, query, secure }) {
-  const wsProtocol = "ws" + (secure ? "s" : "");
-  const httpProtocol = "http" + (secure ? "s" : "");
+  const wsProtocol = `ws${secure ? "s" : ""}`;
+  const wsBaseUrl = `${wsProtocol}://${host}:${port}`;
 
-  let url = host + ":" + port + (path || new URL(document.baseURI).pathname);
-
-  if (url.endsWith("/")) {
-    url = url.slice(0, -1);
+  let pathName = path || new URL(document.baseURI).pathname;
+  if (pathName.endsWith("/")) {
+    pathName = pathName.slice(0, -1);
   }
 
-  const wsBaseUrl = wsProtocol + "://" + url;
-  const httpBaseUrl = httpProtocol + "://" + url;
-
   if (query) {
-    query = "?" + query;
+    query = `?${query}`;
   } else {
     query = "";
   }
 
   this.path = {
-    stream: wsBaseUrl + "/_api/stream" + query,
-    module: (source) => httpBaseUrl + `/_api/modules/${source}`,
+    stream: `${wsBaseUrl}/_idom/stream${pathName}${query}`,
+    module: (source) => `/_idom/modules/${source}`,
   };
 }
