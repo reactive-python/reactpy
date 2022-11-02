@@ -1379,3 +1379,19 @@ async def test_use_context_compares_with_strict_equality(get_value):
         hook.latest.schedule_render()
         await layout.render()
         assert inner_render_count.current == 1
+
+
+async def test_use_state_named_tuple():
+    state = idom.Ref()
+
+    @idom.component
+    def some_component():
+        state.current = idom.use_state(1)
+        return None
+
+    async with idom.Layout(some_component()) as layout:
+        await layout.render()
+        assert state.current.value == 1
+        state.current.set_value(2)
+        await layout.render()
+        assert state.current.value == 2

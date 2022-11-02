@@ -41,6 +41,28 @@ Unreleased
   ``idom-router``, IDOM's server routes will always take priority.
 - :pull:`824` - Backend implementations now strip any URL prefix in the pathname for
   ``use_location``.
+- :pull:`827` - ``use_state`` now returns a named tuple with ``value`` and ``set_value``
+  fields. This is convenient for adding type annotations if the initial state value is
+  not the same as the values you might pass to the state setter. Where previously you
+  might have to do something like:
+
+  .. code-block::
+
+      value: int | None = None
+      value, set_value = use_state(value)
+
+  Now you can annotate your state using the ``State`` class:
+
+  .. code-block::
+
+      state: State[int | None] = use_state(None)
+
+      # access value and setter
+      state.value
+      state.set_value
+
+      # can still destructure if you need to
+      value, set_value = state
 
 **Added**
 

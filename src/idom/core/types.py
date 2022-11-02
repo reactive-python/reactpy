@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+import sys
+from collections import namedtuple
 from types import TracebackType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
+    Generic,
     Iterable,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Type,
@@ -16,6 +21,19 @@ from typing import (
 )
 
 from typing_extensions import Protocol, TypedDict, runtime_checkable
+
+
+_Type = TypeVar("_Type")
+
+
+if TYPE_CHECKING or sys.version_info < (3, 9) or sys.version_info >= (3, 11):
+
+    class State(NamedTuple, Generic[_Type]):  # pragma: no cover
+        value: _Type
+        set_value: Callable[[_Type | Callable[[_Type], _Type]], None]
+
+else:
+    State = namedtuple("State", ("value", "set_value"))
 
 
 ComponentConstructor = Callable[..., "ComponentType"]
