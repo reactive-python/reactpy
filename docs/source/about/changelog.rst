@@ -23,6 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+No changes.
+
+
+v0.41.0
+-------
+:octicon:`milestone` *released on 2022-11-01*
+
 **Changed**
 
 - :pull:`823` - The hooks ``use_location`` and ``use_scope`` are no longer

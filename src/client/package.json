@@ -1,4 +1,7 @@
 {
+  "devDependencies": {
+    "vite": "^3.1.8"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -11,11 +14,8 @@
     "publish": "npm --workspaces publish",
     "test": "npm --workspaces test"
   },
-  "version": "0.40.2",
+  "version": "0.41.0",
   "workspaces": [
     "./packages/*"
-  ],
-  "devDependencies": {
-    "vite": "^3.1.8"
-  }
+  ]
 }
