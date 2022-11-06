@@ -28,11 +28,11 @@ _Type = TypeVar("_Type")
 
 if TYPE_CHECKING or sys.version_info < (3, 9) or sys.version_info >= (3, 11):
 
-    class State(NamedTuple, Generic[_Type]):  # pragma: no cover
+    class State(NamedTuple, Generic[_Type]):
         value: _Type
         set_value: Callable[[_Type | Callable[[_Type], _Type]], None]
 
-else:
+else:  # pragma: no cover
     State = namedtuple("State", ("value", "set_value"))
 
 
