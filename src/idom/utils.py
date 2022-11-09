@@ -88,9 +88,8 @@ def html_to_vdom(
                 recover=not strict,
             ),
         )
-        nodes: List = parsed_document.find("body")
-        for element in reversed(parsed_document.find("head")):
-            nodes.insert(0, element)
+        nodes: etree._Element = parsed_document.find("head")
+        nodes.extend(parsed_document.find("body"))
     except etree.XMLSyntaxError as e:
         if not strict:
             raise e  # pragma: no cover
