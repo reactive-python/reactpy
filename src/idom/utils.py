@@ -78,7 +78,7 @@ def html_to_vdom(
 
     # If the user provided a string, convert it to a list of lxml.etree nodes
     try:
-        parsed_document = document_fromstring(
+        html_node: etree._Element = document_fromstring(
             html.strip(),
             ensure_head_body=True,
             parser=etree.HTMLParser(
@@ -88,8 +88,8 @@ def html_to_vdom(
                 recover=not strict,
             ),
         )
-        body_node: etree._Element = parsed_document.find("head")
-        body_node.extend(parsed_document.find("body"))
+        body_node: etree._Element = html_node.find("head")
+        body_node.extend(html_node.find("body"))
     except etree.XMLSyntaxError as e:
         if not strict:
             raise e  # pragma: no cover
