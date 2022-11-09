@@ -114,7 +114,7 @@ def html_to_vdom(
     # Convert the lxml node to a VDOM dict
     vdom = _etree_to_vdom(root_node, transforms)
 
-    # Change the artificially `TEMP` root node to a React Fragment
+    # Change the `TEMP` root node to a React Fragment
     if vdom["tagName"] == "TEMP":
         vdom["tagName"] = ""
 
