@@ -2,7 +2,7 @@ from itertools import chain
 from typing import Any, Callable, Generic, Iterable, List, TypeVar, Union
 
 from lxml import etree
-from lxml.html import fragments_fromstring
+from lxml.html import document_fromstring
 
 import idom
 from idom.core.types import VdomDict
@@ -77,16 +77,20 @@ def html_to_vdom(
         raise TypeError(f"Expected html to be a string, not {type(html).__name__}")
 
     # If the user provided a string, convert it to a list of lxml.etree nodes
-    parser = etree.HTMLParser(
-        remove_comments=True,
-        remove_pis=True,
-        remove_blank_text=True,
-        recover=not strict,
-    )
     try:
-        nodes: list[etree._Element] = fragments_fromstring(
-            html, no_leading_text=True, parser=parser
+        parsed_document = document_fromstring(
+            html.strip(),
+            ensure_head_body=True,
+            parser=etree.HTMLParser(
+                remove_comments=True,
+                remove_pis=True,
+                remove_blank_text=True,
+                recover=not strict,
+            ),
         )
+        nodes: List = parsed_document.find("body")
+        for element in reversed(parsed_document.find("head")):
+            nodes.insert(0, element)
     except etree.XMLSyntaxError as e:
         if not strict:
             raise e  # pragma: no cover
@@ -102,8 +106,9 @@ def html_to_vdom(
     # Find or create a root node
     if has_root_node:
         root_node = nodes[0]
+
+    # etree.Element requires a non-empty tag name. The tag name `TEMP` is deleted below.
     else:
-        # etree.Element requires a non-empty tag - we correct this below
         root_node = etree.Element("TEMP", None, None)
         for child in nodes:
             root_node.append(child)
@@ -111,7 +116,7 @@ def html_to_vdom(
     # Convert the lxml node to a VDOM dict
     vdom = _etree_to_vdom(root_node, transforms)
 
-    # Change the artificially created root node to a React Fragment, instead of a div
+    # Change the artificially `TEMP` root node to a React Fragment
     if not has_root_node:
         vdom["tagName"] = ""
 
@@ -121,7 +126,7 @@ def html_to_vdom(
 def _etree_to_vdom(
     node: etree._Element, transforms: Iterable[_ModelTransform]
 ) -> VdomDict:
-    """Recusively transform an lxml etree node into a DOM model
+    """Transform an lxml etree node into a DOM model
 
     Parameters:
         source:
@@ -136,7 +141,7 @@ def _etree_to_vdom(
             f"Expected node to be a etree._Element, not {type(node).__name__}"
         )
 
-    # This will recursively call _etree_to_vdom() on all children
+    # Recursively call _etree_to_vdom() on all children
     children = _generate_vdom_children(node, transforms)
 
     # Convert the lxml node to a VDOM dict

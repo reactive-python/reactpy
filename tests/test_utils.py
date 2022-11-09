@@ -149,3 +149,27 @@ def test_html_to_vdom_with_no_parent_node():
     }
 
     assert html_to_vdom(source) == expected
+
+def test_html_to_vdom_with_html_body_head():
+    source = """
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+    <title>My Title</title>
+    </head>
+
+    <body><h1>Hello World</h1></body>
+
+    </html>
+    """
+
+    expected = {
+        "tagName": "",
+        "children": [
+            {"tagName": "title", "children": ["My Title"]},
+            {"tagName": "h1", "children": ["Hello World"]},
+        ],
+    }
+
+    assert html_to_vdom(source) == expected
