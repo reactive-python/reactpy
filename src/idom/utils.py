@@ -100,10 +100,9 @@ def html_to_vdom(
             "you can disable the strict parameter on html_to_vdom().\n"
             "Otherwise, repair your broken HTML and try again."
         ) from e
-    has_root_node = len(body_node) == 1
 
     # Find or create a root node
-    if has_root_node:
+    if len(body_node) == 1:
         root_node = body_node[0]
 
     # etree.Element requires a non-empty tag name. The tag name `TEMP` is deleted below.
@@ -116,7 +115,7 @@ def html_to_vdom(
     vdom = _etree_to_vdom(root_node, transforms)
 
     # Change the artificially `TEMP` root node to a React Fragment
-    if not has_root_node:
+    if vdom["tagName"] == "TEMP":
         vdom["tagName"] = ""
 
     return vdom
