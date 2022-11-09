@@ -150,6 +150,7 @@ def test_html_to_vdom_with_no_parent_node():
 
     assert html_to_vdom(source) == expected
 
+
 def test_html_to_vdom_with_html_body_head():
     source = """
     <!DOCTYPE html>

@@ -23,7 +23,9 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Fixed**
+
+- :issue:`832` - Fix ``html_to_vdom`` improperly handling ``<head>`` children
 
 
 v0.41.0
