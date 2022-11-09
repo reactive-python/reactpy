@@ -88,8 +88,8 @@ def html_to_vdom(
                 recover=not strict,
             ),
         )
-        nodes: etree._Element = parsed_document.find("head")
-        nodes.extend(parsed_document.find("body"))
+        body_node: etree._Element = parsed_document.find("head")
+        body_node.extend(parsed_document.find("body"))
     except etree.XMLSyntaxError as e:
         if not strict:
             raise e  # pragma: no cover
@@ -100,16 +100,16 @@ def html_to_vdom(
             "you can disable the strict parameter on html_to_vdom().\n"
             "Otherwise, repair your broken HTML and try again."
         ) from e
-    has_root_node = len(nodes) == 1
+    has_root_node = len(body_node) == 1
 
     # Find or create a root node
     if has_root_node:
-        root_node = nodes[0]
+        root_node = body_node[0]
 
     # etree.Element requires a non-empty tag name. The tag name `TEMP` is deleted below.
     else:
         root_node = etree.Element("TEMP", None, None)
-        for child in nodes:
+        for child in body_node:
             root_node.append(child)
 
     # Convert the lxml node to a VDOM dict
