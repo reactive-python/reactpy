@@ -126,10 +126,11 @@ def _etree_to_vdom(
     attributes = dict(node.items())
     key = attributes.pop("key", None)
 
+    vdom: VdomDict
     if hasattr(idom.html, node.tag):
-        vdom: VdomDict = getattr(idom.html, node.tag)(attributes, *children, key=key)
+        vdom = getattr(idom.html, node.tag)(attributes, *children, key=key)
     else:
-        vdom: VdomDict = {"tagName": node.tag}
+        vdom = {"tagName": node.tag}
         if children:
             vdom["children"] = children
         if attributes:
@@ -203,11 +204,11 @@ def _hypen_to_camel_case(string: str) -> str:
     return first.lower() + remainder.title().replace("-", "")
 
 
-class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
+class HTMLParseError(etree.LxmlSyntaxError):
     """Raised when an HTML document cannot be parsed using strict parsing."""
 
 
-def del_html_body_transform(vdom: VdomDict):
+def del_html_body_transform(vdom: dict) -> dict:
     """Transform intended for use with `html_to_vdom`.
 
     Removes `<html>` and `<body>` while preserving `<head>` children.
