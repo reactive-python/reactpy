@@ -1,7 +1,7 @@
 import pytest
 
 import idom
-from idom.utils import HTMLParseError, html_to_vdom, del_html_body_transform
+from idom.utils import HTMLParseError, del_html_body_transform, html_to_vdom
 
 
 def test_basic_ref_behavior():

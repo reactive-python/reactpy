@@ -35,8 +35,9 @@ and ``<head>`` tags if needed.
 
 
 **Removed**
-- :issue:`832` - Removed ``idom.html.body`` and ``idom.html.head``, as they are
-technologically unusable and thus not needed.
+- :issue:`832` - Removed ``idom.html.body`` and ``idom.html.head`` as they are
+currently unusable due to technological limitations, and thus not needed.
+
 
 v0.41.0
 -------
