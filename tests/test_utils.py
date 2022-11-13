@@ -1,7 +1,7 @@
 import pytest
 
 import idom
-from idom.utils import HTMLParseError, html_to_vdom
+from idom.utils import HTMLParseError, html_to_vdom, del_html_body_transform
 
 
 def test_basic_ref_behavior():
@@ -141,7 +141,7 @@ def test_html_to_vdom_with_no_parent_node():
     source = "<p>Hello</p><div>World</div>"
 
     expected = {
-        "tagName": "",
+        "tagName": "div",
         "children": [
             {"tagName": "p", "children": ["Hello"]},
             {"tagName": "div", "children": ["World"]},
@@ -151,7 +151,7 @@ def test_html_to_vdom_with_no_parent_node():
     assert html_to_vdom(source) == expected
 
 
-def test_html_to_vdom_with_html_body_head():
+def test_del_html_body_transform():
     source = """
     <!DOCTYPE html>
     <html lang="en">
@@ -173,4 +173,19 @@ def test_html_to_vdom_with_html_body_head():
         ],
     }
 
-    assert html_to_vdom(source) == expected
+    assert html_to_vdom(source, del_html_body_transform) == expected
+
+
+def test_del_html_body_transform_no_head():
+    source = """
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <body><h1>Hello World</h1></body>
+
+    </html>
+    """
+
+    expected = {"tagName": "h1", "children": ["Hello World"]}
+
+    assert html_to_vdom(source, del_html_body_transform) == expected

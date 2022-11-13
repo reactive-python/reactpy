@@ -2,7 +2,7 @@ from itertools import chain
 from typing import Any, Callable, Generic, Iterable, List, TypeVar, Union
 
 from lxml import etree
-from lxml.html import document_fromstring
+from lxml.html import fromstring
 
 import idom
 from idom.core.types import VdomDict
@@ -78,9 +78,8 @@ def html_to_vdom(
 
     # If the user provided a string, convert it to a list of lxml.etree nodes
     try:
-        html_node: etree._Element = document_fromstring(
+        root_node: etree._Element = fromstring(
             html.strip(),
-            ensure_head_body=True,
             parser=etree.HTMLParser(
                 remove_comments=True,
                 remove_pis=True,
@@ -88,8 +87,6 @@ def html_to_vdom(
                 recover=not strict,
             ),
         )
-        body_node: etree._Element = html_node.find("head")
-        body_node.extend(html_node.find("body"))
     except etree.XMLSyntaxError as e:
         if not strict:
             raise e  # pragma: no cover
@@ -101,24 +98,7 @@ def html_to_vdom(
             "Otherwise, repair your broken HTML and try again."
         ) from e
 
-    # Find or create a root node
-    if len(body_node) == 1:
-        root_node = body_node[0]
-
-    # etree.Element requires a non-empty tag name. The tag name `TEMP` is deleted below.
-    else:
-        root_node = etree.Element("TEMP", None, None)
-        for child in body_node:
-            root_node.append(child)
-
-    # Convert the lxml node to a VDOM dict
-    vdom = _etree_to_vdom(root_node, transforms)
-
-    # Change the `TEMP` root node to a React Fragment
-    if vdom["tagName"] == "TEMP":
-        vdom["tagName"] = ""
-
-    return vdom
+    return _etree_to_vdom(root_node, transforms)
 
 
 def _etree_to_vdom(
@@ -146,11 +126,10 @@ def _etree_to_vdom(
     attributes = dict(node.items())
     key = attributes.pop("key", None)
 
-    vdom: VdomDict
     if hasattr(idom.html, node.tag):
-        vdom = getattr(idom.html, node.tag)(attributes, *children, key=key)
+        vdom: VdomDict = getattr(idom.html, node.tag)(attributes, *children, key=key)
     else:
-        vdom = {"tagName": node.tag}
+        vdom: VdomDict = {"tagName": node.tag}
         if children:
             vdom["children"] = children
         if attributes:
@@ -226,3 +205,36 @@ def _hypen_to_camel_case(string: str) -> str:
 
 class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
     """Raised when an HTML document cannot be parsed using strict parsing."""
+
+
+def del_html_body_transform(vdom: VdomDict):
+    """Transform intended for use with `html_to_vdom`.
+
+    Removes `<html>` and `<body>` while preserving `<head>` children.
+    """
+    if vdom["tagName"] == "html":
+        vdom["tagName"] = ""
+
+        # Remove all fields from `<html>` except for `children` and `tagName`
+        for key in list(vdom.keys()):
+            if key not in ("children", "tagName"):
+                del vdom[key]
+
+        # Preserve `<head>` children and remove the `<body>` tag
+        head_and_body_children = []
+        for child in vdom.get("children", []):
+            # Add `<head>` children to the list
+            if child["tagName"] == "head":
+                head_and_body_children.extend(child.get("children", []))
+
+            # Add `<body>` children to the list, then remove `<body>` and `<head>`
+            if child.get("tagName", None) == "body":
+                head_and_body_children.extend(child.get("children", []))
+                vdom["children"] = head_and_body_children
+                break
+
+        # Set vdom to the first child if there's only one child
+        if len(vdom.get("children", [])) == 1:
+            vdom = vdom["children"][0]
+
+    return vdom
