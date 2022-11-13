@@ -6,7 +6,6 @@
 **Dcument metadata**
 
 - :func:`base`
-- :func:`head`
 - :func:`link`
 - :func:`meta`
 - :func:`style`
@@ -14,7 +13,6 @@
 
 **Content sectioning**
 
-- :func:`body`
 - :func:`address`
 - :func:`article`
 - :func:`aside`
@@ -182,14 +180,12 @@ def _(*children: Any, key: Key | None = None) -> VdomDict:
 
 # Dcument metadata
 base = make_vdom_constructor("base")
-head = make_vdom_constructor("head")
 link = make_vdom_constructor("link")
 meta = make_vdom_constructor("meta")
 style = make_vdom_constructor("style")
 title = make_vdom_constructor("title")
 
 # Content sectioning
-body = make_vdom_constructor("body")
 address = make_vdom_constructor("address")
 article = make_vdom_constructor("article")
 aside = make_vdom_constructor("aside")
