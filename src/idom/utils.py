@@ -65,7 +65,7 @@ def html_to_vdom(
     using a ``key=...`` attribute within your HTML tag.
 
     Parameters:
-        source:
+        html:
             The raw HTML as a string
         transforms:
             Functions of the form ``transform(old) -> new`` where ``old`` is a VDOM
@@ -109,7 +109,7 @@ def _etree_to_vdom(
     """Transform an lxml etree node into a DOM model
 
     Parameters:
-        source:
+        node:
             The ``lxml.etree._Element`` node
         transforms:
             Functions of the form ``transform(old) -> new`` where ``old`` is a VDOM
