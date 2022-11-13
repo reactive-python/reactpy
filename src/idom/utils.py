@@ -204,11 +204,11 @@ def _hypen_to_camel_case(string: str) -> str:
     return first.lower() + remainder.title().replace("-", "")
 
 
-class HTMLParseError(etree.LxmlSyntaxError):
+class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
     """Raised when an HTML document cannot be parsed using strict parsing."""
 
 
-def del_html_body_transform(vdom: dict) -> dict:
+def del_html_body_transform(vdom: dict[str, Any]) -> dict[str, Any]:
     """Transform intended for use with `html_to_vdom`.
 
     Removes `<html>` and `<body>` while preserving `<head>` children.
