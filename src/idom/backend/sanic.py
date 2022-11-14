@@ -23,16 +23,22 @@ from idom.core.serve import (
     serve_json_patch,
 )
 from idom.core.types import RootComponentConstructor
+from idom.utils import vdom_to_html
 
-from ._asgi import serve_development_asgi
-from ._urls import ASSETS_PATH, MODULES_PATH, PATH_PREFIX, STREAM_PATH
-from .hooks import ConnectionContext
-from .hooks import use_connection as _use_connection
-from .utils import (
+from ._common import (
+    ASSETS_PATH,
     CLIENT_BUILD_DIR,
+    MODULES_PATH,
+    PATH_PREFIX,
+    STREAM_PATH,
+    CommonOptions,
+    read_client_index_html,
     safe_client_build_dir_path,
     safe_web_modules_dir_path,
+    serve_development_asgi,
 )
+from .hooks import ConnectionContext
+from .hooks import use_connection as _use_connection
 
 
 logger = logging.getLogger(__name__)
@@ -90,20 +96,14 @@ def use_connection() -> Connection[_SanicCarrier]:
 
 
 @dataclass
-class Options:
+class Options(CommonOptions):
     """Options for :class:`SanicRenderServer`"""
 
-    cors: Union[bool, Dict[str, Any]] = False
+    cors: bool | dict[str, Any] = False
     """Enable or configure Cross Origin Resource Sharing (CORS)
 
     For more information see docs for ``sanic_cors.CORS``
     """
-
-    serve_static_files: bool = True
-    """Whether or not to serve static files (i.e. web modules)"""
-
-    url_prefix: str = ""
-    """The URL prefix where IDOM resources will be served from"""
 
 
 def _setup_common_routes(
@@ -116,38 +116,38 @@ def _setup_common_routes(
         cors_params = cors_options if isinstance(cors_options, dict) else {}
         CORS(api_blueprint, **cors_params)
 
-    if options.serve_static_files:
+    index_html = read_client_index_html(options)
 
-        async def single_page_app_files(
-            request: request.Request,
-            _: str = "",
-        ) -> response.HTTPResponse:
-            return await response.file(CLIENT_BUILD_DIR / "index.html")
+    async def single_page_app_files(
+        request: request.Request,
+        _: str = "",
+    ) -> response.HTTPResponse:
+        return response.html(index_html)
 
-        spa_blueprint.add_route(single_page_app_files, "/")
-        spa_blueprint.add_route(single_page_app_files, "/<_:path>")
+    spa_blueprint.add_route(single_page_app_files, "/")
+    spa_blueprint.add_route(single_page_app_files, "/<_:path>")
 
-        async def asset_files(
-            request: request.Request,
-            path: str = "",
-        ) -> response.HTTPResponse:
-            path = urllib_parse.unquote(path)
-            return await response.file(safe_client_build_dir_path(f"assets/{path}"))
+    async def asset_files(
+        request: request.Request,
+        path: str = "",
+    ) -> response.HTTPResponse:
+        path = urllib_parse.unquote(path)
+        return await response.file(safe_client_build_dir_path(f"assets/{path}"))
 
-        api_blueprint.add_route(asset_files, f"/{ASSETS_PATH.name}/<path:path>")
+    api_blueprint.add_route(asset_files, f"/{ASSETS_PATH.name}/<path:path>")
 
-        async def web_module_files(
-            request: request.Request,
-            path: str,
-            _: str = "",  # this is not used
-        ) -> response.HTTPResponse:
-            path = urllib_parse.unquote(path)
-            return await response.file(
-                safe_web_modules_dir_path(path),
-                mime_type="text/javascript",
-            )
+    async def web_module_files(
+        request: request.Request,
+        path: str,
+        _: str = "",  # this is not used
+    ) -> response.HTTPResponse:
+        path = urllib_parse.unquote(path)
+        return await response.file(
+            safe_web_modules_dir_path(path),
+            mime_type="text/javascript",
+        )
 
-        api_blueprint.add_route(web_module_files, f"/{MODULES_PATH.name}/<path:path>")
+    api_blueprint.add_route(web_module_files, f"/{MODULES_PATH.name}/<path:path>")
 
 
 def _setup_single_view_dispatcher_route(
