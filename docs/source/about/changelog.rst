@@ -32,7 +32,7 @@ Unreleased
 - :issue:`832` - Fix ``html_to_vdom`` improperly ``<html>``, ``<body>``, and ``<head>``.
 
 **Removed**
-- :issue:`832` - Removed ``idom.html.body`` and ``idom.html.head`` as they are currently unusable due to technological limitations, and thus not needed.
+- :issue:`832` - Removed ``idom.html.body`` as it is currently unusable due to technological limitations, and thus not needed.
 
 
 v0.41.0

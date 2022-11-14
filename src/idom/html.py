@@ -6,6 +6,7 @@
 **Dcument metadata**
 
 - :func:`base`
+- :func:`head`
 - :func:`link`
 - :func:`meta`
 - :func:`style`
@@ -180,6 +181,7 @@ def _(*children: Any, key: Key | None = None) -> VdomDict:
 
 # Dcument metadata
 base = make_vdom_constructor("base")
+head = make_vdom_constructor("head")
 link = make_vdom_constructor("link")
 meta = make_vdom_constructor("meta")
 style = make_vdom_constructor("style")
