@@ -25,11 +25,11 @@ Unreleased
 
 **Added**
 
-- :pull:`832` - ``del_html_body_transform`` to strip out ``<html>``, ``<body>``, and ``<head>`` tags if needed.
+- :pull:`832` - ``del_html_body_transform`` to remove ``<html>``, ``<head>``, and ``<body>`` while preserving ``<head>`` and ``<body>`` children.
 
 **Fixed**
 
-- :pull:`832` - Fix ``html_to_vdom`` improperly handling ``<html>``, ``<body>``, and ``<head>``.
+- :pull:`832` - Fix ``html_to_vdom`` improperly handling ``<html>``, ``<head>``, and ``<body>``.
 
 **Removed**
 - :pull:`832` - Removed ``idom.html.body`` as it is currently unusable due to technological limitations, and thus not needed.

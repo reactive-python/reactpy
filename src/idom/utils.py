@@ -213,7 +213,7 @@ class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
 def del_html_body_transform(vdom: dict[str, Any]) -> dict[str, Any]:
     """Transform intended for use with `html_to_vdom`.
 
-    Removes `<html>` and `<body>` while preserving `<head>` children.
+    Removes `<html>`, `<head>`, and `<body>` while preserving `<head>` and `<body>` children.
 
     Parameters:
         vdom:
