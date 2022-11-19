@@ -210,7 +210,7 @@ class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
     """Raised when an HTML document cannot be parsed using strict parsing."""
 
 
-def del_html_body_transform(vdom: dict[str, Any]) -> dict[str, Any]:
+def del_html_body_transform(vdom: VdomDict) -> VdomDict:
     """Transform intended for use with `html_to_vdom`.
 
     Removes `<html>`, `<head>`, and `<body>` while preserving `<head>` and `<body>` children.
