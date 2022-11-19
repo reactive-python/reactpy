@@ -23,6 +23,7 @@ from typing import (
 
 from typing_extensions import Protocol
 
+from idom.config import IDOM_DEBUG_MODE
 from idom.utils import Ref
 
 from ._thread_local import ThreadLocal
@@ -212,7 +213,7 @@ def use_debug_value(
     memo_func = message if callable(message) else lambda: message
     new = use_memo(memo_func, dependencies)
 
-    if old.current != new:
+    if IDOM_DEBUG_MODE.current and old.current != new:
         old.current = new
         logger.debug(f"{current_hook().component} {new}")
 
