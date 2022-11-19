@@ -40,7 +40,7 @@ Options = CommonOptions
 def configure(
     app: Application,
     component: ComponentConstructor,
-    options: Options | None = None,
+    options: CommonOptions | None = None,
 ) -> None:
     """Configure the necessary IDOM routes on the given app.
 
