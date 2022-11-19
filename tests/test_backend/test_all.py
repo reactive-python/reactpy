@@ -155,3 +155,18 @@ async def test_use_request(display: DisplayFixture, hook_name):
 
     # we can't easily narrow this check
     assert hook_val.current is not None
+
+
+@pytest.mark.parametrize("imp", all_implementations())
+async def test_customized_head(imp: BackendImplementation, page):
+    @idom.component
+    def sample():
+        return html.h1("the page title is customized")
+
+    async with BackendFixture(
+        implementation=imp,
+        options=imp.Options(head=html.title("Custom Title")),
+    ) as server:
+        async with DisplayFixture(backend=server, driver=page) as display:
+            await display.show(sample)
+            assert (await display.page.title()) == "Custom Title"
