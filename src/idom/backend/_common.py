@@ -4,7 +4,7 @@ import asyncio
 import os
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any, Awaitable, Sequence
+from typing import Any, Awaitable, Sequence, cast
 
 from asgiref.typing import ASGIApplication
 from uvicorn.config import Config as UvicornConfig
@@ -100,7 +100,7 @@ def vdom_head_elements_to_html(head: Sequence[VdomDict] | VdomDict | str) -> str
         return head
     elif isinstance(head, dict):
         if head.get("tagName") == "head":
-            head = {**head, "tagName": ""}
+            head = cast(VdomDict, {**head, "tagName": ""})
         return vdom_to_html(head)
     else:
         return vdom_to_html(html._(head))
