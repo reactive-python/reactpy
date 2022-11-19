@@ -62,7 +62,7 @@ class Ref(Generic[_RefValue]):
         return f"{type(self).__name__}({current})"
 
 
-def vdom_to_html(vdom: str | VdomDict) -> str:
+def vdom_to_html(value: str | VdomDict, indent: int = 0, depth: int = 0) -> str:
     """Convert a VDOM dictionary into an HTML string
 
     Only the following keys are translated to HTML:
@@ -71,38 +71,68 @@ def vdom_to_html(vdom: str | VdomDict) -> str:
     - ``attributes``
     - ``children`` (must be strings or more VDOM dicts)
     """
-    if isinstance(vdom, str):
-        return vdom
+    if indent:
+        close_indent = f"\n{' ' * (indent * depth)}"
+        open_indent = close_indent if depth else close_indent[1:]
+    else:
+        open_indent = close_indent = ""
+
+    if isinstance(value, str):
+        return f"{open_indent}{value}" if depth else value
 
     try:
-        tag = vdom["tagName"]
-    except TypeError as error:
-        raise TypeError(f"Expected a VDOM dictionary or string, not {vdom}") from error
+        tag = value["tagName"]
+    except TypeError as error:  # pragma: no cover
+        raise TypeError(f"Expected a VDOM dictionary or string, not {value}") from error
 
-    if "attributes" in vdom:
-        vdom_attributes = dict(vdom["attributes"])
-        vdom_attributes["style"] = _vdom_to_html_style(vdom_attributes["style"])
-        attributes = " " + " ".join(
-            f'{k}="{html_escape(v)}"' for k, v in vdom_attributes.items()
-        )
+    if "attributes" in value:
+        if not tag:  # pragma: no cover
+            warn(f"Ignored attributes from element frament", UserWarning)
+        else:
+            vdom_attributes = dict(value["attributes"])
+            if "style" in vdom_attributes:
+                vdom_attributes["style"] = _vdom_to_html_style(vdom_attributes["style"])
+            for k, v in list(vdom_attributes.items()):
+                if not isinstance(v, (str, int)):
+                    del vdom_attributes[k]
+                    warn(
+                        f"Could not convert attribute of type {type(v).__name__} to HTML attribute - {v}",
+                        UserWarning,
+                    )
+            attributes = (
+                f""" {' '.join(f'{k}="{html_escape(v)}"' for k, v in vdom_attributes.items())}"""
+                if vdom_attributes
+                else ""
+            )
     else:
         attributes = ""
 
-    if "children" in vdom:
-        vdom_children: list[str] = []
-        for child in vdom["children"]:
-            if isinstance(child, (str, dict)):
-                vdom_children.append(vdom_to_html(cast("str | VdomDict", child)))
+    if "children" in value:
+        children_list: list[str] = []
+
+        child: VdomDict | str
+        for child in value["children"]:
+            if isinstance(child, (dict, str)):
+                children_list.append(vdom_to_html(child, indent, depth + 1))
             else:
                 warn(
-                    f"Could not convert element of type {type(child).__name__!r} to HTML",
+                    f"Could not convert element of type {type(child).__name__!r} to HTML - {child}",
                     UserWarning,
                 )
-        children = "".join(vdom_children)
+
+        children = "".join(children_list)
+
     else:
         children = ""
 
-    return f"<{tag}{attributes}>{children}</{tag}>"
+    if not children:
+        return f"{open_indent}<{tag}{attributes} />" if tag else ""
+    else:
+        return (
+            f"{open_indent}<{tag}{attributes}>{children}{close_indent}</{tag}>"
+            if tag
+            else children
+        )
 
 
 _CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
@@ -113,7 +143,7 @@ def _vdom_to_html_style(style: str | dict[str, Any]) -> str:
         return style
 
     return ";".join(
-        f"{_CAMEL_CASE_SUB_PATTERN.sub('-', k)}:{v}" for k, v in style.items()
+        f"{_CAMEL_CASE_SUB_PATTERN.sub('-', k).lower()}:{v}" for k, v in style.items()
     )
 
 

@@ -1,7 +1,8 @@
 import pytest
 
 import idom
-from idom.utils import HTMLParseError, html_to_vdom
+from idom import html
+from idom.utils import HTMLParseError, html_to_vdom, vdom_to_html
 
 
 def test_basic_ref_behavior():
@@ -149,3 +150,67 @@ def test_html_to_vdom_with_no_parent_node():
     }
 
     assert html_to_vdom(source) == expected
+
+
+@pytest.mark.parametrize(
+    "vdom_in, html_out",
+    [
+        (
+            html.div("hello"),
+            "<div>hello</div>",
+        ),
+        (
+            html.div(object()),  # ignore non-str/vdom children
+            "<div />",
+        ),
+        (
+            html.div({"someAttribute": object()}),  # ignore non-str/vdom attrs
+            "<div />",
+        ),
+        (
+            html.div("hello", html.a({"href": "https://example.com"}, "example")),
+            '<div>hello<a href="https://example.com">example</a></div>',
+        ),
+        (
+            html.button({"onClick": lambda event: None}),
+            "<button />",
+        ),
+        (
+            html.div({"style": {"backgroundColor": "blue", "marginLeft": "10px"}}),
+            '<div style="background-color:blue;margin-left:10px" />',
+        ),
+        (
+            html.div({"style": "background-color:blue;margin-left:10px"}),
+            '<div style="background-color:blue;margin-left:10px" />',
+        ),
+        (
+            html._(
+                html.div("hello"),
+                html.a({"href": "https://example.com"}, "example"),
+            ),
+            '<div>hello</div><a href="https://example.com">example</a>',
+        ),
+        (
+            html.div(
+                html._(
+                    html.div("hello"),
+                    html.a({"href": "https://example.com"}, "example"),
+                ),
+                html.button(),
+            ),
+            '<div><div>hello</div><a href="https://example.com">example</a><button /></div>',
+        ),
+    ],
+)
+def test_vdom_to_html(vdom_in, html_out):
+    assert vdom_to_html(vdom_in) == html_out
+
+
+def test_vdom_to_html_with_indent():
+    assert (
+        vdom_to_html(
+            html.div("hello", html.a({"href": "https://example.com"}, "example")),
+            indent=2,
+        )
+        == '<div>\n  hello\n  <a href="https://example.com">\n    example\n  </a>\n</div>'
+    )

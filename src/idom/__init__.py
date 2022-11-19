@@ -18,7 +18,7 @@ from .core.hooks import (
 from .core.layout import Layout
 from .core.serve import Stop
 from .core.vdom import vdom
-from .utils import Ref, html_to_vdom
+from .utils import Ref, html_to_vdom, vdom_to_html
 from .widgets import hotswap
 
 
@@ -53,6 +53,7 @@ __all__ = [
     "use_ref",
     "use_scope",
     "use_state",
+    "vdom_to_html",
     "vdom",
     "web",
 ]
