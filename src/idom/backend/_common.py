@@ -4,7 +4,7 @@ import asyncio
 import os
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any, Awaitable
+from typing import Any, Awaitable, Sequence
 
 from asgiref.typing import ASGIApplication
 from uvicorn.config import Config as UvicornConfig
@@ -91,26 +91,40 @@ def read_client_index_html(options: CommonOptions) -> str:
     return (
         (CLIENT_BUILD_DIR / "index.html")
         .read_text()
-        .format(__head__=vdom_to_html(options.head))
+        .format(__head__=vdom_head_elements_to_html(options.head))
     )
+
+
+def vdom_head_elements_to_html(head: Sequence[VdomDict] | VdomDict | str) -> str:
+    if isinstance(head, str):
+        return head
+    elif isinstance(head, dict):
+        if head.get("tagName") == "head":
+            head = {**head, "tagName": ""}
+        return vdom_to_html(head)
+    else:
+        return vdom_to_html(html._(head))
 
 
 @dataclass
 class CommonOptions:
     """Options for IDOM's built-in backed server implementations"""
 
-    head: VdomDict | str = vdom_to_html(
-        html.head(
-            html.title("IDOM"),
-            html.link(
-                {
-                    "rel": "icon",
-                    "href": "_idom/assets/idom-logo-square-small.svg",
-                    "type": "image/svg+xml",
-                }
-            ),
-        )
+    head: Sequence[VdomDict] | VdomDict | str = (
+        html.title("IDOM"),
+        html.link(
+            {
+                "rel": "icon",
+                "href": "_idom/assets/idom-logo-square-small.svg",
+                "type": "image/svg+xml",
+            }
+        ),
     )
+    """Add elements to the ``<head>`` of the application.
+
+    For example, this can be used to customize the title of the page, link extra
+    scripts, or load stylesheets.
+    """
 
     url_prefix: str = ""
     """The URL prefix where IDOM resources will be served from"""

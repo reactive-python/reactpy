@@ -93,7 +93,7 @@ def use_connection() -> Connection[WebSocket]:
 
 @dataclass
 class Options(CommonOptions):
-    """Optionsuration options for :class:`StarletteRenderServer`"""
+    """Render server config for :func:`idom.backend.starlette.configure`"""
 
     cors: bool | dict[str, Any] = False
     """Enable or configure Cross Origin Resource Sharing (CORS)

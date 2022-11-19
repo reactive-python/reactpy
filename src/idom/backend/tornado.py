@@ -4,7 +4,6 @@ import asyncio
 import json
 from asyncio import Queue as AsyncQueue
 from asyncio.futures import Future
-from dataclasses import dataclass
 from typing import Any, List, Tuple, Type, Union
 from urllib.parse import urljoin
 
@@ -35,6 +34,7 @@ from .hooks import use_connection as _use_connection
 
 
 Options = CommonOptions
+"""Render server config for :func:`idom.backend.tornado.configure`"""
 
 
 def configure(

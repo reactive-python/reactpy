@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, MutableMapping, Tuple, Union
+from typing import Any, MutableMapping, Tuple
 from urllib import parse as urllib_parse
 from uuid import uuid4
 
@@ -23,11 +23,9 @@ from idom.core.serve import (
     serve_json_patch,
 )
 from idom.core.types import RootComponentConstructor
-from idom.utils import vdom_to_html
 
 from ._common import (
     ASSETS_PATH,
-    CLIENT_BUILD_DIR,
     MODULES_PATH,
     PATH_PREFIX,
     STREAM_PATH,
@@ -97,7 +95,7 @@ def use_connection() -> Connection[_SanicCarrier]:
 
 @dataclass
 class Options(CommonOptions):
-    """Options for :class:`SanicRenderServer`"""
+    """Render server config for :func:`idom.backend.sanic.configure`"""
 
     cors: bool | dict[str, Any] = False
     """Enable or configure Cross Origin Resource Sharing (CORS)

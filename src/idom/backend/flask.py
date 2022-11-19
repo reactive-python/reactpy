@@ -27,7 +27,6 @@ from werkzeug.serving import BaseWSGIServer, make_server
 import idom
 from idom.backend._common import (
     ASSETS_PATH,
-    CLIENT_BUILD_DIR,
     MODULES_PATH,
     PATH_PREFIX,
     STREAM_PATH,
@@ -139,7 +138,7 @@ def use_connection() -> Connection[_FlaskCarrier]:
 
 @dataclass
 class Options(CommonOptions):
-    """Render server config for :class:`FlaskRenderServer`"""
+    """Render server config for :func:`idom.backend.flask.configure`"""
 
     cors: bool | dict[str, Any] = False
     """Enable or configure Cross Origin Resource Sharing (CORS)

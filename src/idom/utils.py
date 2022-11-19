@@ -87,7 +87,7 @@ def vdom_to_html(value: str | VdomDict, indent: int = 0, depth: int = 0) -> str:
 
     if "attributes" in value:
         if not tag:  # pragma: no cover
-            warn(f"Ignored attributes from element frament", UserWarning)
+            warn("Ignored attributes from element frament", UserWarning)
         else:
             vdom_attributes = dict(value["attributes"])
             if "style" in vdom_attributes:
