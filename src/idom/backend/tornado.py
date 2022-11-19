@@ -125,10 +125,7 @@ def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
         (
             r"/(.*)",
             IndexHandler,
-            {
-                "path": str(CLIENT_BUILD_DIR),
-                "index_html": read_client_index_html(options),
-            },
+            {"index_html": read_client_index_html(options)},
         ),
     ]
 

@@ -123,12 +123,12 @@ def _setup_common_routes(options: Options, app: Starlette) -> None:
         StaticFiles(directory=CLIENT_BUILD_DIR / "assets", check_dir=False),
     )
     # register this last so it takes least priority
-    index_route = index_route(options)
+    index_route = _make_index_route(options)
     app.add_route(url_prefix + "/", index_route)
     app.add_route(url_prefix + "/{path:path}", index_route)
 
 
-def index_route(options: Options) -> Callable[[Request], Awaitable[HTMLResponse]]:
+def _make_index_route(options: Options) -> Callable[[Request], Awaitable[HTMLResponse]]:
     index_html = read_client_index_html(options)
 
     async def serve_index(request: Request) -> HTMLResponse:
