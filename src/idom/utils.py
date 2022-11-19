@@ -110,10 +110,11 @@ def vdom_to_html(value: str | VdomDict, indent: int = 0, depth: int = 0) -> str:
     if "children" in value:
         children_list: list[str] = []
 
-        child: VdomDict | str
         for child in value["children"]:
             if isinstance(child, (dict, str)):
-                children_list.append(vdom_to_html(child, indent, depth + 1))
+                children_list.append(
+                    vdom_to_html(cast("VdomDict | str", child), indent, depth + 1)
+                )
             else:
                 warn(
                     f"Could not convert element of type {type(child).__name__!r} to HTML - {child}",

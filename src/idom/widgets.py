@@ -187,5 +187,5 @@ _Func = Callable[..., Any]
 
 
 def _use_callable(initial_func: _Func) -> Tuple[_Func, Callable[[_Func], None]]:
-    state = hooks.use_state(lambda: initial_func)
-    return state[0], lambda new: state[1](lambda old: new)
+    state, set_state = hooks.use_state(lambda: initial_func)
+    return state, lambda new: set_state(lambda old: new)
