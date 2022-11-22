@@ -36,21 +36,21 @@ def test_catch_unsafe_relative_path_traversal(tmp_path, bad_path):
                 html.title("example"),
             ),
             # we strip the head element
-            '<meta charset="utf-8" /><title>example</title>',
+            '<meta charset="utf-8"><title>example</title>',
         ),
         (
             html._(
                 html.meta({"charset": "utf-8"}),
                 html.title("example"),
             ),
-            '<meta charset="utf-8" /><title>example</title>',
+            '<meta charset="utf-8"><title>example</title>',
         ),
         (
             [
                 html.meta({"charset": "utf-8"}),
                 html.title("example"),
             ],
-            '<meta charset="utf-8" /><title>example</title>',
+            '<meta charset="utf-8"><title>example</title>',
         ),
     ],
 )
