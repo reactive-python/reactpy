@@ -62,7 +62,7 @@ class Ref(Generic[_RefValue]):
         return f"{type(self).__name__}({current})"
 
 
-def vdom_to_html(value: str | VdomDict, indent: int = 0, depth: int = 0) -> str:
+def vdom_to_html(value: str | VdomDict) -> str:
     """Convert a VDOM dictionary into an HTML string
 
     Only the following keys are translated to HTML:
@@ -71,80 +71,40 @@ def vdom_to_html(value: str | VdomDict, indent: int = 0, depth: int = 0) -> str:
     - ``attributes``
     - ``children`` (must be strings or more VDOM dicts)
     """
-    if indent:
-        close_indent = f"\n{' ' * (indent * depth)}"
-        open_indent = close_indent if depth else close_indent[1:]
-    else:
-        open_indent = close_indent = ""
 
     if isinstance(value, str):
-        return f"{open_indent}{value}" if depth else value
+        return value
 
     try:
         tag = value["tagName"]
     except TypeError as error:  # pragma: no cover
         raise TypeError(f"Expected a VDOM dictionary or string, not {value}") from error
 
-    if "attributes" in value:
-        if not tag:  # pragma: no cover
-            warn("Ignored attributes from element frament", UserWarning)
-        else:
-            vdom_attributes = dict(value["attributes"])
-            if "style" in vdom_attributes:
-                vdom_attributes["style"] = _vdom_to_html_style(vdom_attributes["style"])
-            for k, v in list(vdom_attributes.items()):
-                if not isinstance(v, (str, int)):
-                    del vdom_attributes[k]
-                    warn(
-                        f"Could not convert attribute of type {type(v).__name__} to HTML attribute - {v}",
-                        UserWarning,
-                    )
-            attributes = (
-                f""" {' '.join(f'{k}="{html_escape(v)}"' for k, v in vdom_attributes.items())}"""
-                if vdom_attributes
-                else ""
-            )
-    else:
-        attributes = ""
+    attributes = " ".join(
+        _vdom_to_html_attr(k, v) for k, v in value.get("attributes", {}).items()
+    )
 
-    if "children" in value:
-        children_list: list[str] = []
+    if attributes:
+        assert tag, "Element frament may not contain attributes"
+        attributes = f" {attributes}"
 
-        for child in value["children"]:
-            if isinstance(child, (dict, str)):
-                children_list.append(
-                    vdom_to_html(cast("VdomDict | str", child), indent, depth + 1)
-                )
-            else:
-                warn(
-                    f"Could not convert element of type {type(child).__name__!r} to HTML - {child}",
-                    UserWarning,
-                )
+    children = "".join(
+        vdom_to_html(cast("VdomDict | str", c))
+        if isinstance(c, (dict, str))
+        else html_escape(str(c))
+        for c in value.get("children", ())
+    )
 
-        children = "".join(children_list)
-
-    else:
-        children = ""
-
-    if not children:
-        return f"{open_indent}<{tag}{attributes} />" if tag else ""
-    else:
-        return (
-            f"{open_indent}<{tag}{attributes}>{children}{close_indent}</{tag}>"
-            if tag
-            else children
+    return (
+        (
+            f"<{tag}{attributes}>{children}</{tag}>"
+            if children
+            # To be safe we mark elements without children as self-closing.
+            # https://html.spec.whatwg.org/multipage/syntax.html#foreign-elements
+            else (f"<{tag}{attributes} />" if attributes else f"<{tag}/>")
         )
-
-
-_CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
-
-
-def _vdom_to_html_style(style: str | dict[str, Any]) -> str:
-    if not isinstance(style, Mapping):
-        return style
-
-    return ";".join(
-        f"{_CAMEL_CASE_SUB_PATTERN.sub('-', k).lower()}:{v}" for k, v in style.items()
+        if tag
+        else children
     )
 
 
@@ -208,6 +168,10 @@ def html_to_vdom(
         vdom["tagName"] = ""
 
     return vdom
+
+
+class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
+    """Raised when an HTML document cannot be parsed using strict parsing."""
 
 
 def _etree_to_vdom(
@@ -313,5 +277,32 @@ def _hypen_to_camel_case(string: str) -> str:
     return first.lower() + remainder.title().replace("-", "")
 
 
-class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
-    """Raised when an HTML document cannot be parsed using strict parsing."""
+# Pattern for delimitting camelCase names (e.g. camelCase to camel-case)
+_CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
+
+# see list of HTML attributes with dashes in them:
+# https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#attribute_list
+_CAMEL_TO_DASH_CASE_HTML_ATTRS = {
+    "acceptCharset": "accept-charset",
+    "httpEquiv": "http-equiv",
+}
+
+
+def _vdom_to_html_attr(key: str, value: Any) -> str:
+    if key == "style":
+        if isinstance(value, dict):
+            value = ";".join(
+                # We lower only to normalize - CSS is case-insensitive:
+                # https://www.w3.org/TR/css-fonts-3/#font-family-casing
+                f"{_CAMEL_CASE_SUB_PATTERN.sub('-', k).lower()}:{v}"
+                for k, v in value.items()
+            )
+    elif key.startswith("data"):
+        # Handle data-* attribute names
+        key = _CAMEL_CASE_SUB_PATTERN.sub("-", key)
+    else:
+        key = _CAMEL_TO_DASH_CASE_HTML_ATTRS.get(key, key)
+
+    # Again, we lower the attribute name only to normalize - HTML is case-insensitive:
+    # http://w3c.github.io/html-reference/documents.html#case-insensitivity
+    return f'{key.lower()}="{html_escape(str(value))}"'
