@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
-from html import escape as html_escape
 from itertools import chain
 from typing import Any, Callable, Generic, Iterable, TypeVar, cast
-from warnings import warn
 
 from lxml import etree
-from lxml.html import fragments_fromstring
+from lxml.html import fragments_fromstring, tostring
 
 import idom
 from idom.core.types import VdomDict
@@ -62,7 +59,7 @@ class Ref(Generic[_RefValue]):
         return f"{type(self).__name__}({current})"
 
 
-def vdom_to_html(value: str | VdomDict) -> str:
+def vdom_to_html(value: VdomDict) -> str:
     """Convert a VDOM dictionary into an HTML string
 
     Only the following keys are translated to HTML:
@@ -71,40 +68,12 @@ def vdom_to_html(value: str | VdomDict) -> str:
     - ``attributes``
     - ``children`` (must be strings or more VDOM dicts)
     """
-
-    if isinstance(value, str):
-        return value
-
-    try:
-        tag = value["tagName"]
-    except TypeError as error:  # pragma: no cover
-        raise TypeError(f"Expected a VDOM dictionary or string, not {value}") from error
-
-    attributes = " ".join(
-        _vdom_to_html_attr(k, v) for k, v in value.get("attributes", {}).items()
-    )
-
-    if attributes:
-        assert tag, "Element frament may not contain attributes"
-        attributes = f" {attributes}"
-
-    children = "".join(
-        vdom_to_html(cast("VdomDict | str", c))
-        if isinstance(c, (dict, str))
-        else html_escape(str(c))
-        for c in value.get("children", ())
-    )
-
+    temp_root = etree.Element("__temp__")
+    _add_vdom_to_etree(temp_root, value)
     return (
-        (
-            f"<{tag}{attributes}>{children}</{tag}>"
-            if children
-            # To be safe we mark elements without children as self-closing.
-            # https://html.spec.whatwg.org/multipage/syntax.html#foreign-elements
-            else (f"<{tag}{attributes} />" if attributes else f"<{tag}/>")
-        )
-        if tag
-        else children
+        cast(bytes, tostring(temp_root)).decode()
+        # strip out temp root <__temp__> element
+        [10:-11]
     )
 
 
@@ -221,6 +190,32 @@ def _etree_to_vdom(
     return vdom
 
 
+def _add_vdom_to_etree(parent: etree._Element, vdom: VdomDict) -> None:
+    try:
+        tag = vdom["tagName"]
+    except TypeError as e:
+        raise TypeError(f"Expected a VdomDict, not {vdom}") from e
+    except KeyError as e:
+        raise TypeError(f"Expected a VdomDict, not {vdom}") from e
+
+    if tag:
+        element = etree.SubElement(parent, tag)
+        element.attrib.update(
+            _vdom_to_html_attr(k, v) for k, v in vdom.get("attributes", {}).items()
+        )
+    else:
+        element = parent
+
+    for c in vdom.get("children", []):
+        if isinstance(c, dict):
+            _add_vdom_to_etree(element, cast(VdomDict, c))
+        elif len(element):
+            last_child = element[-1]
+            last_child.tail = f"{last_child.tail or ''}{c}"
+        else:
+            element.text = f"{element.text or ''}{c}"
+
+
 def _mutate_vdom(vdom: VdomDict) -> None:
     """Performs any necessary mutations on the VDOM attributes to meet VDOM spec.
 
@@ -288,7 +283,7 @@ _CAMEL_TO_DASH_CASE_HTML_ATTRS = {
 }
 
 
-def _vdom_to_html_attr(key: str, value: Any) -> str:
+def _vdom_to_html_attr(key: str, value: Any) -> tuple[str, str]:
     if key == "style":
         if isinstance(value, dict):
             value = ";".join(
@@ -303,6 +298,10 @@ def _vdom_to_html_attr(key: str, value: Any) -> str:
     else:
         key = _CAMEL_TO_DASH_CASE_HTML_ATTRS.get(key, key)
 
+    assert not callable(
+        value
+    ), f"Could not convert callable attribute {key}={value} to HTML"
+
     # Again, we lower the attribute name only to normalize - HTML is case-insensitive:
     # http://w3c.github.io/html-reference/documents.html#case-insensitivity
-    return f'{key.lower()}="{html_escape(str(value))}"'
+    return key.lower(), str(value)

@@ -170,23 +170,33 @@ SOME_OBJECT = object()
         ),
         (
             html.div({"someAttribute": SOME_OBJECT}),
-            f'<div someattribute="{html_escape(str(SOME_OBJECT))}" />',
+            f'<div someattribute="{html_escape(str(SOME_OBJECT))}"></div>',
         ),
         (
-            html.div("hello", html.a({"href": "https://example.com"}, "example")),
-            '<div>hello<a href="https://example.com">example</a></div>',
+            html.div(
+                "hello", html.a({"href": "https://example.com"}, "example"), "world"
+            ),
+            '<div>hello<a href="https://example.com">example</a>world</div>',
         ),
         (
             html.button({"onClick": lambda event: None}),
-            "<button/>",
+            "<button></button>",
+        ),
+        (
+            html._("hello ", html._("world")),
+            "hello world",
+        ),
+        (
+            html._(html.div("hello"), html._("world")),
+            "<div>hello</div>world",
         ),
         (
             html.div({"style": {"backgroundColor": "blue", "marginLeft": "10px"}}),
-            '<div style="background-color:blue;margin-left:10px" />',
+            '<div style="background-color:blue;margin-left:10px"></div>',
         ),
         (
             html.div({"style": "background-color:blue;margin-left:10px"}),
-            '<div style="background-color:blue;margin-left:10px" />',
+            '<div style="background-color:blue;margin-left:10px"></div>',
         ),
         (
             html._(
@@ -203,13 +213,13 @@ SOME_OBJECT = object()
                 ),
                 html.button(),
             ),
-            '<div><div>hello</div><a href="https://example.com">example</a><button/></div>',
+            '<div><div>hello</div><a href="https://example.com">example</a><button></button></div>',
         ),
         (
             html.div(
                 {"dataSomething": 1, "dataSomethingElse": 2, "dataisnotdashed": 3}
             ),
-            '<div data-something="1" data-something-else="2" dataisnotdashed="3" />',
+            '<div data-something="1" data-something-else="2" dataisnotdashed="3"></div>',
         ),
     ],
 )
