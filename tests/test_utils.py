@@ -225,3 +225,8 @@ SOME_OBJECT = object()
 )
 def test_vdom_to_html(vdom_in, html_out):
     assert vdom_to_html(vdom_in) == html_out
+
+
+def test_vdom_to_html_error():
+    with pytest.raises(TypeError, match="Expected a VDOM dict"):
+        vdom_to_html({"notVdom": True})

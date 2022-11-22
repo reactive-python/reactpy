@@ -190,13 +190,13 @@ def _etree_to_vdom(
     return vdom
 
 
-def _add_vdom_to_etree(parent: etree._Element, vdom: VdomDict) -> None:
+def _add_vdom_to_etree(parent: etree._Element, vdom: VdomDict | dict[str, Any]) -> None:
     try:
         tag = vdom["tagName"]
-    except TypeError as e:
-        raise TypeError(f"Expected a VdomDict, not {vdom}") from e
     except KeyError as e:
-        raise TypeError(f"Expected a VdomDict, not {vdom}") from e
+        raise TypeError(f"Expected a VDOM dict, not {vdom}") from e
+    else:
+        vdom = cast(VdomDict, vdom)
 
     if tag:
         element = etree.SubElement(parent, tag)
@@ -208,7 +208,7 @@ def _add_vdom_to_etree(parent: etree._Element, vdom: VdomDict) -> None:
 
     for c in vdom.get("children", []):
         if isinstance(c, dict):
-            _add_vdom_to_etree(element, cast(VdomDict, c))
+            _add_vdom_to_etree(element, c)
         elif len(element):
             last_child = element[-1]
             last_child.tail = f"{last_child.tail or ''}{c}"
