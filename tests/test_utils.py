@@ -205,6 +205,12 @@ SOME_OBJECT = object()
             ),
             '<div><div>hello</div><a href="https://example.com">example</a><button/></div>',
         ),
+        (
+            html.div(
+                {"dataSomething": 1, "dataSomethingElse": 2, "dataisnotdashed": 3}
+            ),
+            '<div data-something="1" data-something-else="2" dataisnotdashed="3" />',
+        ),
     ],
 )
 def test_vdom_to_html(vdom_in, html_out):
