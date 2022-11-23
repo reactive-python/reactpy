@@ -59,7 +59,7 @@ class Ref(Generic[_RefValue]):
         return f"{type(self).__name__}({current})"
 
 
-def vdom_to_html(value: VdomDict) -> str:
+def vdom_to_html(vdom: VdomDict) -> str:
     """Convert a VDOM dictionary into an HTML string
 
     Only the following keys are translated to HTML:
@@ -67,11 +67,13 @@ def vdom_to_html(value: VdomDict) -> str:
     - ``tagName``
     - ``attributes``
     - ``children`` (must be strings or more VDOM dicts)
+
+    Parameters:
+        vdom: The VdomDict element to convert to HTML
     """
     temp_root = etree.Element("__temp__")
-    _add_vdom_to_etree(temp_root, value)
+    _add_vdom_to_etree(temp_root, vdom)
     html = cast(bytes, tostring(temp_root)).decode()
-
     # strip out temp root <__temp__> element
     return html[10:-11]
 
@@ -208,11 +210,27 @@ def _add_vdom_to_etree(parent: etree._Element, vdom: VdomDict | dict[str, Any]) 
     for c in vdom.get("children", []):
         if isinstance(c, dict):
             _add_vdom_to_etree(element, c)
-        elif len(element):
-            last_child = element[-1]
-            last_child.tail = f"{last_child.tail or ''}{c}"
         else:
-            element.text = f"{element.text or ''}{c}"
+            """
+            LXML handles string children by storing them under `text` and `tail`
+            attributes of Element objects. The `text` attribute, if present, effectively
+            becomes that element's first child. Then the `tail` attribute, if present,
+            becomes a sibling that follows that element. For example, consider the
+            following HTML:
+
+                <p><a>hello</a>world</p>
+
+            In this code sample, "hello" is the `text` attribute of the `<a>` element
+            and "world" is the `tail` attribute of that same `<a>` element. It's for
+            this reason that, depending on whether the element being constructed has
+            non-string a child element, we need to assign a `text` vs `tail` attribute
+            to that element or the last non-string child respectively.
+            """
+            if len(element):
+                last_child = element[-1]
+                last_child.tail = f"{last_child.tail or ''}{c}"
+            else:
+                element.text = f"{element.text or ''}{c}"
 
 
 def _mutate_vdom(vdom: VdomDict) -> None:
