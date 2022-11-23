@@ -62,22 +62,6 @@ IDOM_WED_MODULES_DIR: _Option[Path] = _DeprecatedOption(
 )
 """This has been renamed to :data:`IDOM_WEB_MODULES_DIR`"""
 
-IDOM_FEATURE_INDEX_AS_DEFAULT_KEY = _Option(
-    "IDOM_FEATURE_INDEX_AS_DEFAULT_KEY",
-    default=True,
-    mutable=False,
-    validator=lambda x: bool(int(x)),
-)
-"""Use the index of elements/components amongst their siblings as the default key.
-
-The flag's default value is set to true. To return to legacy behavior set
-``IDOM_FEATURE_INDEX_AS_DEFAULT_KEY=0``. In a future release, this flag will be removed
-entirely and the indices will always be the default key.
-
-For more information on changes to this feature flag see:
-https://github.com/idom-team/idom/issues/351
-"""
-
 IDOM_TESTING_DEFAULT_TIMEOUT = _Option(
     "IDOM_TESTING_DEFAULT_TIMEOUT",
     5.0,

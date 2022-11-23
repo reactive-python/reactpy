@@ -23,7 +23,9 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Removed**
+
+- :pull:`840` - remove ``IDOM_FEATURE_INDEX_AS_DEFAULT_KEY`` option
 
 
 v0.41.0
