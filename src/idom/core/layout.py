@@ -24,11 +24,7 @@ from typing import (
 from uuid import uuid4
 from weakref import ref as weakref
 
-from idom.config import (
-    IDOM_CHECK_VDOM_SPEC,
-    IDOM_DEBUG_MODE,
-    IDOM_FEATURE_INDEX_AS_DEFAULT_KEY,
-)
+from idom.config import IDOM_CHECK_VDOM_SPEC, IDOM_DEBUG_MODE
 from idom.utils import Ref
 
 from ._event_proxy import _wrap_in_warning_event_proxies
@@ -755,7 +751,7 @@ def _process_child_type_and_key(
             key = None
 
         if key is None:
-            key = _default_key(index)
+            key = index
 
         yield (child, child_type, key)
 
@@ -765,14 +761,3 @@ _ElementType = NewType("_ElementType", int)
 _DICT_TYPE = _ElementType(1)
 _COMPONENT_TYPE = _ElementType(2)
 _STRING_TYPE = _ElementType(3)
-
-
-if IDOM_FEATURE_INDEX_AS_DEFAULT_KEY.current:
-
-    def _default_key(index: int) -> Any:
-        return index
-
-else:
-
-    def _default_key(index: int) -> Any:  # pragma: no cover
-        return object()
