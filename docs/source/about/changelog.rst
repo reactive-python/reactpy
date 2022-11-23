@@ -33,6 +33,7 @@ Unreleased
 
 **Removed**
 - :pull:`832` - Removed ``idom.html.body`` as it is currently unusable due to technological limitations, and thus not needed.
+- :pull:`840` - remove ``IDOM_FEATURE_INDEX_AS_DEFAULT_KEY`` option
 
 
 v0.41.0
