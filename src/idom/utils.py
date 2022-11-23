@@ -289,17 +289,6 @@ def _hypen_to_camel_case(string: str) -> str:
     return first.lower() + remainder.title().replace("-", "")
 
 
-# Pattern for delimitting camelCase names (e.g. camelCase to camel-case)
-_CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
-
-# see list of HTML attributes with dashes in them:
-# https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#attribute_list
-_CAMEL_TO_DASH_CASE_HTML_ATTRS = {
-    "acceptCharset": "accept-charset",
-    "httpEquiv": "http-equiv",
-}
-
-
 def _vdom_attr_to_html_str(key: str, value: Any) -> tuple[str, str]:
     if key == "style":
         if isinstance(value, dict):
@@ -309,11 +298,15 @@ def _vdom_attr_to_html_str(key: str, value: Any) -> tuple[str, str]:
                 f"{_CAMEL_CASE_SUB_PATTERN.sub('-', k).lower()}:{v}"
                 for k, v in value.items()
             )
-    elif key.startswith("data") or key.startswith("aria"):
-        # Handle data-* attribute names
+    elif (
+        # camel to data-* attributes
+        key.startswith("data")
+        # camel to aria-* attributes
+        or key.startswith("aria")
+        # handle special cases
+        or key in _DASHED_HTML_ATTRS
+    ):
         key = _CAMEL_CASE_SUB_PATTERN.sub("-", key)
-    else:
-        key = _CAMEL_TO_DASH_CASE_HTML_ATTRS.get(key, key)
 
     assert not callable(
         value
@@ -322,3 +315,11 @@ def _vdom_attr_to_html_str(key: str, value: Any) -> tuple[str, str]:
     # Again, we lower the attribute name only to normalize - HTML is case-insensitive:
     # http://w3c.github.io/html-reference/documents.html#case-insensitivity
     return key.lower(), str(value)
+
+
+# Pattern for delimitting camelCase names (e.g. camelCase to camel-case)
+_CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
+
+# see list of HTML attributes with dashes in them:
+# https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#attribute_list
+_DASHED_HTML_ATTRS = {"acceptCharset", "httpEquiv"}

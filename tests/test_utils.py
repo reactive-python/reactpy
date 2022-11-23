@@ -4,7 +4,7 @@ import pytest
 
 import idom
 from idom import html
-from idom.utils import HTMLParseError, html_to_vdom, vdom_to_html
+from idom.utils import _DASHED_HTML_ATTRS, HTMLParseError, html_to_vdom, vdom_to_html
 
 
 def test_basic_ref_behavior():
