@@ -70,11 +70,10 @@ def vdom_to_html(value: VdomDict) -> str:
     """
     temp_root = etree.Element("__temp__")
     _add_vdom_to_etree(temp_root, value)
-    return (
-        cast(bytes, tostring(temp_root)).decode()
-        # strip out temp root <__temp__> element
-        [10:-11]
-    )
+    html = cast(bytes, tostring(temp_root)).decode()
+
+    # strip out temp root <__temp__> element
+    return html[10:-11]
 
 
 def html_to_vdom(
@@ -201,7 +200,7 @@ def _add_vdom_to_etree(parent: etree._Element, vdom: VdomDict | dict[str, Any]) 
     if tag:
         element = etree.SubElement(parent, tag)
         element.attrib.update(
-            _vdom_to_html_attr(k, v) for k, v in vdom.get("attributes", {}).items()
+            _vdom_attr_to_html_str(k, v) for k, v in vdom.get("attributes", {}).items()
         )
     else:
         element = parent
@@ -283,7 +282,7 @@ _CAMEL_TO_DASH_CASE_HTML_ATTRS = {
 }
 
 
-def _vdom_to_html_attr(key: str, value: Any) -> tuple[str, str]:
+def _vdom_attr_to_html_str(key: str, value: Any) -> tuple[str, str]:
     if key == "style":
         if isinstance(value, dict):
             value = ";".join(
@@ -292,7 +291,7 @@ def _vdom_to_html_attr(key: str, value: Any) -> tuple[str, str]:
                 f"{_CAMEL_CASE_SUB_PATTERN.sub('-', k).lower()}:{v}"
                 for k, v in value.items()
             )
-    elif key.startswith("data"):
+    elif key.startswith("data") or key.startswith("aria"):
         # Handle data-* attribute names
         key = _CAMEL_CASE_SUB_PATTERN.sub("-", key)
     else:
