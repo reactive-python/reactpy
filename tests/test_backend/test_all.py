@@ -5,7 +5,7 @@ import pytest
 import idom
 from idom import html
 from idom.backend import default as default_implementation
-from idom.backend._urls import PATH_PREFIX
+from idom.backend._common import PATH_PREFIX
 from idom.backend.types import BackendImplementation, Connection, Location
 from idom.backend.utils import all_implementations
 from idom.testing import BackendFixture, DisplayFixture, poll
@@ -155,3 +155,20 @@ async def test_use_request(display: DisplayFixture, hook_name):
 
     # we can't easily narrow this check
     assert hook_val.current is not None
+
+
+@pytest.mark.parametrize("imp", all_implementations())
+async def test_customized_head(imp: BackendImplementation, page):
+    custom_title = f"Custom Title for {imp.__name__}"
+
+    @idom.component
+    def sample():
+        return html.h1(f"^ Page title is customized to: '{custom_title}'")
+
+    async with BackendFixture(
+        implementation=imp,
+        options=imp.Options(head=html.title(custom_title)),
+    ) as server:
+        async with DisplayFixture(backend=server, driver=page) as display:
+            await display.show(sample)
+            assert (await display.page.title()) == custom_title

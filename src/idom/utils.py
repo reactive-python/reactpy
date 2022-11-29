@@ -1,8 +1,11 @@
+from __future__ import annotations
+
+import re
 from itertools import chain
-from typing import Any, Callable, Generic, Iterable, List, TypeVar, Union
+from typing import Any, Callable, Generic, Iterable, TypeVar, cast
 
 from lxml import etree
-from lxml.html import fragments_fromstring
+from lxml.html import fragments_fromstring, tostring
 
 import idom
 from idom.core.types import VdomDict
@@ -54,6 +57,25 @@ class Ref(Generic[_RefValue]):
             # attribute error occurs for uninitialized refs
             current = "<undefined>"
         return f"{type(self).__name__}({current})"
+
+
+def vdom_to_html(vdom: VdomDict) -> str:
+    """Convert a VDOM dictionary into an HTML string
+
+    Only the following keys are translated to HTML:
+
+    - ``tagName``
+    - ``attributes``
+    - ``children`` (must be strings or more VDOM dicts)
+
+    Parameters:
+        vdom: The VdomDict element to convert to HTML
+    """
+    temp_root = etree.Element("__temp__")
+    _add_vdom_to_etree(temp_root, vdom)
+    html = cast(bytes, tostring(temp_root)).decode()
+    # strip out temp root <__temp__> element
+    return html[10:-11]
 
 
 def html_to_vdom(
@@ -118,6 +140,10 @@ def html_to_vdom(
     return vdom
 
 
+class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
+    """Raised when an HTML document cannot be parsed using strict parsing."""
+
+
 def _etree_to_vdom(
     node: etree._Element, transforms: Iterable[_ModelTransform]
 ) -> VdomDict:
@@ -165,6 +191,48 @@ def _etree_to_vdom(
     return vdom
 
 
+def _add_vdom_to_etree(parent: etree._Element, vdom: VdomDict | dict[str, Any]) -> None:
+    try:
+        tag = vdom["tagName"]
+    except KeyError as e:
+        raise TypeError(f"Expected a VDOM dict, not {vdom}") from e
+    else:
+        vdom = cast(VdomDict, vdom)
+
+    if tag:
+        element = etree.SubElement(parent, tag)
+        element.attrib.update(
+            _vdom_attr_to_html_str(k, v) for k, v in vdom.get("attributes", {}).items()
+        )
+    else:
+        element = parent
+
+    for c in vdom.get("children", []):
+        if isinstance(c, dict):
+            _add_vdom_to_etree(element, c)
+        else:
+            """
+            LXML handles string children by storing them under `text` and `tail`
+            attributes of Element objects. The `text` attribute, if present, effectively
+            becomes that element's first child. Then the `tail` attribute, if present,
+            becomes a sibling that follows that element. For example, consider the
+            following HTML:
+
+                <p><a>hello</a>world</p>
+
+            In this code sample, "hello" is the `text` attribute of the `<a>` element
+            and "world" is the `tail` attribute of that same `<a>` element. It's for
+            this reason that, depending on whether the element being constructed has
+            non-string a child element, we need to assign a `text` vs `tail` attribute
+            to that element or the last non-string child respectively.
+            """
+            if len(element):
+                last_child = element[-1]
+                last_child.tail = f"{last_child.tail or ''}{c}"
+            else:
+                element.text = f"{element.text or ''}{c}"
+
+
 def _mutate_vdom(vdom: VdomDict) -> None:
     """Performs any necessary mutations on the VDOM attributes to meet VDOM spec.
 
@@ -195,7 +263,7 @@ def _mutate_vdom(vdom: VdomDict) -> None:
 
 def _generate_vdom_children(
     node: etree._Element, transforms: Iterable[_ModelTransform]
-) -> List[Union[VdomDict, str]]:
+) -> list[VdomDict | str]:
     """Generates a list of VDOM children from an lxml node.
 
     Inserts inner text and/or tail text inbetween VDOM children, if necessary.
@@ -221,5 +289,37 @@ def _hypen_to_camel_case(string: str) -> str:
     return first.lower() + remainder.title().replace("-", "")
 
 
-class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
-    """Raised when an HTML document cannot be parsed using strict parsing."""
+def _vdom_attr_to_html_str(key: str, value: Any) -> tuple[str, str]:
+    if key == "style":
+        if isinstance(value, dict):
+            value = ";".join(
+                # We lower only to normalize - CSS is case-insensitive:
+                # https://www.w3.org/TR/css-fonts-3/#font-family-casing
+                f"{_CAMEL_CASE_SUB_PATTERN.sub('-', k).lower()}:{v}"
+                for k, v in value.items()
+            )
+    elif (
+        # camel to data-* attributes
+        key.startswith("data")
+        # camel to aria-* attributes
+        or key.startswith("aria")
+        # handle special cases
+        or key in _DASHED_HTML_ATTRS
+    ):
+        key = _CAMEL_CASE_SUB_PATTERN.sub("-", key)
+
+    assert not callable(
+        value
+    ), f"Could not convert callable attribute {key}={value} to HTML"
+
+    # Again, we lower the attribute name only to normalize - HTML is case-insensitive:
+    # http://w3c.github.io/html-reference/documents.html#case-insensitivity
+    return key.lower(), str(value)
+
+
+# Pattern for delimitting camelCase names (e.g. camelCase to camel-case)
+_CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
+
+# see list of HTML attributes with dashes in them:
+# https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#attribute_list
+_DASHED_HTML_ATTRS = {"acceptCharset", "httpEquiv"}
