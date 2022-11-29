@@ -30,10 +30,7 @@ def run(
     implementation: BackendImplementation[Any] | None = None,
 ) -> None:
     """Run a component with a development server"""
-    logger.warning(
-        "You are running a development server. "
-        "Change this before deploying in production!"
-    )
+    logger.warning(_DEVELOPMENT_RUN_FUNC_WARNING)
 
     implementation = implementation or import_module("idom.backend.default")
 
@@ -94,3 +91,11 @@ def all_implementations() -> Iterator[BackendImplementation[Any]]:
             )
 
         yield module
+
+
+_DEVELOPMENT_RUN_FUNC_WARNING = f"""\
+The `run()` function is only intended for testing during development! To run in \
+production, consider selecting a supported backend and importing its associated \
+`configure()` function from `idom.backend.<package>` where `<package>` is one of \
+{list(SUPPORTED_PACKAGES)}. For details refer to the docs on how to run each package.\
+"""
