@@ -9,6 +9,7 @@ from pathlib import Path
 from string import Template
 from typing import Any, List, NewType, Optional, Set, Tuple, Union, overload
 from urllib.parse import urlparse
+from warnings import warn
 
 from idom.config import IDOM_DEBUG_MODE, IDOM_WEB_MODULES_DIR
 from idom.core.types import ImportSourceDict, VdomDictConstructor
@@ -119,6 +120,11 @@ def module_from_template(
             Using this option has negative performance consequences since all DOM
             elements must be changed on each render. See :issue:`461` for more info.
     """
+    warn(
+        "module_from_template() is deprecated due to instability - use the Javascript "
+        "Components API instead. This function will be removed in a future release.",
+        DeprecationWarning,
+    )
     template_name, _, template_version = template.partition("@")
     template_version = "@" + template_version if template_version else ""
 
