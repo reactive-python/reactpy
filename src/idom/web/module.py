@@ -36,7 +36,7 @@ URL_SOURCE = SourceType("URL")
 def module_from_url(
     url: str,
     fallback: Optional[Any] = None,
-    resolve_exports: bool = IDOM_DEBUG_MODE.current,
+    resolve_exports: bool | None = None,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
 ) -> WebModule:
@@ -65,7 +65,11 @@ def module_from_url(
         file=None,
         export_names=(
             resolve_module_exports_from_url(url, resolve_exports_depth)
-            if resolve_exports
+            if (
+                resolve_exports
+                if resolve_exports is not None
+                else IDOM_DEBUG_MODE.current
+            )
             else None
         ),
         unmount_before_update=unmount_before_update,
@@ -80,7 +84,7 @@ def module_from_template(
     package: str,
     cdn: str = "https://esm.sh",
     fallback: Optional[Any] = None,
-    resolve_exports: bool = IDOM_DEBUG_MODE.current,
+    resolve_exports: bool | None = None,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
 ) -> WebModule:
@@ -159,7 +163,7 @@ def module_from_file(
     name: str,
     file: Union[str, Path],
     fallback: Optional[Any] = None,
-    resolve_exports: bool = IDOM_DEBUG_MODE.current,
+    resolve_exports: bool | None = None,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
     symlink: bool = False,

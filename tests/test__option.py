@@ -74,3 +74,25 @@ def test_option_set_default():
     assert not opt.is_set()
     assert opt.set_default("new-value") == "new-value"
     assert opt.is_set()
+
+
+def test_cannot_subscribe_immutable_option():
+    opt = Option("A_FAKE_OPTION", "default", mutable=False)
+    with pytest.raises(TypeError, match="Immutable options cannot be subscribed to"):
+        opt.subscribe(lambda value: None)
+
+
+def test_option_subscribe():
+    opt = Option("A_FAKE_OPTION", "default")
+
+    calls = []
+    opt.subscribe(calls.append)
+    assert calls == ["default"]
+
+    opt.current = "default"
+    # value did not change, so no trigger
+    assert calls == ["default"]
+
+    opt.current = "new-1"
+    opt.current = "new-2"
+    assert calls == ["default", "new-1", "new-2"]
