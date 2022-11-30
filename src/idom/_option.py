@@ -107,7 +107,11 @@ class Option(Generic[_O]):
         """Remove the current value, the default will be used until it is set again."""
         if not self._mutable:
             raise TypeError(f"{self} cannot be modified after initial load")
+        old = self.current
         delattr(self, "_current")
+        if self.current != old:
+            for sub_func in self._subscribers:
+                sub_func(self.current)
 
     def __repr__(self) -> str:
         return f"Option({self._name}={self.current!r})"

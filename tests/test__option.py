@@ -96,3 +96,6 @@ def test_option_subscribe():
     opt.current = "new-1"
     opt.current = "new-2"
     assert calls == ["default", "new-1", "new-2"]
+
+    opt.unset()
+    assert calls == ["default", "new-1", "new-2", "default"]
