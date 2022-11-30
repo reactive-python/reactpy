@@ -4,12 +4,12 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Awaitable, Callable, Tuple
 
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
-from starlette.responses import FileResponse
+from starlette.responses import HTMLResponse
 from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
@@ -25,11 +25,17 @@ from idom.core.serve import (
 )
 from idom.core.types import RootComponentConstructor
 
-from ._asgi import serve_development_asgi
-from ._urls import ASSETS_PATH, MODULES_PATH, STREAM_PATH
+from ._common import (
+    ASSETS_PATH,
+    CLIENT_BUILD_DIR,
+    MODULES_PATH,
+    STREAM_PATH,
+    CommonOptions,
+    read_client_index_html,
+    serve_development_asgi,
+)
 from .hooks import ConnectionContext
 from .hooks import use_connection as _use_connection
-from .utils import CLIENT_BUILD_DIR
 
 
 logger = logging.getLogger(__name__)
@@ -86,20 +92,14 @@ def use_connection() -> Connection[WebSocket]:
 
 
 @dataclass
-class Options:
-    """Optionsuration options for :class:`StarletteRenderServer`"""
+class Options(CommonOptions):
+    """Render server config for :func:`idom.backend.starlette.configure`"""
 
-    cors: Union[bool, Dict[str, Any]] = False
+    cors: bool | dict[str, Any] = False
     """Enable or configure Cross Origin Resource Sharing (CORS)
 
     For more information see docs for ``starlette.middleware.cors.CORSMiddleware``
     """
-
-    serve_static_files: bool = True
-    """Whether or not to serve static files (i.e. web modules)"""
-
-    url_prefix: str = ""
-    """The URL prefix where IDOM resources will be served from"""
 
 
 def _setup_common_routes(options: Options, app: Starlette) -> None:
@@ -114,22 +114,27 @@ def _setup_common_routes(options: Options, app: Starlette) -> None:
     # BUG: https://github.com/tiangolo/fastapi/issues/1469
     url_prefix = options.url_prefix
 
-    if options.serve_static_files:
-        app.mount(
-            str(MODULES_PATH),
-            StaticFiles(directory=IDOM_WEB_MODULES_DIR.current, check_dir=False),
-        )
-        app.mount(
-            str(ASSETS_PATH),
-            StaticFiles(directory=CLIENT_BUILD_DIR / "assets", check_dir=False),
-        )
-        # register this last so it takes least priority
-        app.add_route(url_prefix + "/", serve_index)
-        app.add_route(url_prefix + "/{path:path}", serve_index)
+    app.mount(
+        str(MODULES_PATH),
+        StaticFiles(directory=IDOM_WEB_MODULES_DIR.current, check_dir=False),
+    )
+    app.mount(
+        str(ASSETS_PATH),
+        StaticFiles(directory=CLIENT_BUILD_DIR / "assets", check_dir=False),
+    )
+    # register this last so it takes least priority
+    index_route = _make_index_route(options)
+    app.add_route(url_prefix + "/", index_route)
+    app.add_route(url_prefix + "/{path:path}", index_route)
 
 
-async def serve_index(request: Request) -> FileResponse:
-    return FileResponse(CLIENT_BUILD_DIR / "index.html")
+def _make_index_route(options: Options) -> Callable[[Request], Awaitable[HTMLResponse]]:
+    index_html = read_client_index_html(options)
+
+    async def serve_index(request: Request) -> HTMLResponse:
+        return HTMLResponse(index_html)
+
+    return serve_index
 
 
 def _setup_single_view_dispatcher_route(

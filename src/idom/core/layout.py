@@ -4,7 +4,6 @@ import abc
 import asyncio
 from collections import Counter
 from contextlib import ExitStack
-from functools import wraps
 from logging import getLogger
 from typing import (
     Any,
@@ -135,23 +134,12 @@ class Layout:
                     f"{model_state_id!r} - component already unmounted"
                 )
             else:
-                return self._create_layout_update(model_state)
-
-    if IDOM_CHECK_VDOM_SPEC.current:
-        # If in debug mode inject a function that ensures all returned updates
-        # contain valid VDOM models. We only do this in debug mode or when this check
-        # is explicitely turned in order to avoid unnecessarily impacting performance.
-
-        _debug_render = render
-
-        @wraps(_debug_render)
-        async def render(self) -> LayoutUpdate:
-            result = await self._debug_render()
-            # Ensure that the model is valid VDOM on each render
-            root_id = self._root_life_cycle_state_id
-            root_model = self._model_states_by_life_cycle_state_id[root_id]
-            validate_vdom_json(root_model.model.current)
-            return result
+                update = self._create_layout_update(model_state)
+                if IDOM_CHECK_VDOM_SPEC.current:
+                    root_id = self._root_life_cycle_state_id
+                    root_model = self._model_states_by_life_cycle_state_id[root_id]
+                    validate_vdom_json(root_model.model.current)
+                return update
 
     def _create_layout_update(self, old_state: _ModelState) -> LayoutUpdate:
         new_state = _copy_component_model_state(old_state)

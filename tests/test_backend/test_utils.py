@@ -8,7 +8,6 @@ from playwright.async_api import Page
 from idom.backend import flask as flask_implementation
 from idom.backend.utils import find_available_port
 from idom.backend.utils import run as sync_run
-from idom.backend.utils import traversal_safe_path
 from idom.sample import SampleApp as SampleApp
 
 
@@ -45,16 +44,3 @@ async def test_run(page: Page, exit_stack: ExitStack):
 
     await page.goto(url)
     await page.wait_for_selector("#sample")
-
-
-@pytest.mark.parametrize(
-    "bad_path",
-    [
-        "../escaped",
-        "ok/../../escaped",
-        "ok/ok-again/../../ok-yet-again/../../../escaped",
-    ],
-)
-def test_catch_unsafe_relative_path_traversal(tmp_path, bad_path):
-    with pytest.raises(ValueError, match="Unsafe path"):
-        traversal_safe_path(tmp_path, *bad_path.split("/"))

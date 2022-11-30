@@ -318,16 +318,6 @@ def test_invalid_vdom(value, error_message_pattern):
 
 
 @pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="Only logs in debug mode")
-def test_debug_log_if_children_in_attributes(caplog):
-    idom.vdom("div", {"children": ["hello"]})
-    assert len(caplog.records) == 1
-    assert caplog.records[0].message.startswith(
-        "Reserved key 'children' found in attributes"
-    )
-    caplog.records.clear()
-
-
-@pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="Only logs in debug mode")
 def test_debug_log_cannot_verify_keypath_for_genereators(caplog):
     idom.vdom("div", (1 for i in range(10)))
     assert len(caplog.records) == 1

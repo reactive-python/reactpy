@@ -4,7 +4,6 @@ import asyncio
 import json
 from asyncio import Queue as AsyncQueue
 from asyncio.futures import Future
-from dataclasses import dataclass
 from typing import Any, List, Tuple, Type, Union
 from urllib.parse import urljoin
 
@@ -22,16 +21,26 @@ from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
 
-from ._urls import ASSETS_PATH, MODULES_PATH, STREAM_PATH
+from ._common import (
+    ASSETS_PATH,
+    CLIENT_BUILD_DIR,
+    MODULES_PATH,
+    STREAM_PATH,
+    CommonOptions,
+    read_client_index_html,
+)
 from .hooks import ConnectionContext
 from .hooks import use_connection as _use_connection
-from .utils import CLIENT_BUILD_DIR
+
+
+Options = CommonOptions
+"""Render server config for :func:`idom.backend.tornado.configure`"""
 
 
 def configure(
     app: Application,
     component: ComponentConstructor,
-    options: Options | None = None,
+    options: CommonOptions | None = None,
 ) -> None:
     """Configure the necessary IDOM routes on the given app.
 
@@ -98,50 +107,27 @@ def use_connection() -> Connection[HTTPServerRequest]:
     return conn
 
 
-@dataclass
-class Options:
-    """Render server options for :class:`TornadoRenderServer` subclasses"""
-
-    serve_static_files: bool = True
-    """Whether or not to serve static files (i.e. web modules)"""
-
-    url_prefix: str = ""
-    """The URL prefix where IDOM resources will be served from"""
-
-
 _RouteHandlerSpecs = List[Tuple[str, Type[RequestHandler], Any]]
 
 
 def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
-    handlers: _RouteHandlerSpecs = []
-
-    if options.serve_static_files:
-        handlers.append(
-            (
-                rf"{MODULES_PATH}/(.*)",
-                StaticFileHandler,
-                {"path": str(IDOM_WEB_MODULES_DIR.current)},
-            )
-        )
-
-        handlers.append(
-            (
-                rf"{ASSETS_PATH}/(.*)",
-                StaticFileHandler,
-                {"path": str(CLIENT_BUILD_DIR / "assets")},
-            )
-        )
-
-        # register last to give lowest priority
-        handlers.append(
-            (
-                r"/(.*)",
-                SpaStaticFileHandler,
-                {"path": str(CLIENT_BUILD_DIR)},
-            )
-        )
-
-    return handlers
+    return [
+        (
+            rf"{MODULES_PATH}/(.*)",
+            StaticFileHandler,
+            {"path": str(IDOM_WEB_MODULES_DIR.current)},
+        ),
+        (
+            rf"{ASSETS_PATH}/(.*)",
+            StaticFileHandler,
+            {"path": str(CLIENT_BUILD_DIR / "assets")},
+        ),
+        (
+            r"/(.*)",
+            IndexHandler,
+            {"index_html": read_client_index_html(options)},
+        ),
+    ]
 
 
 def _add_handler(
@@ -171,9 +157,15 @@ def _setup_single_view_dispatcher_route(
     ]
 
 
-class SpaStaticFileHandler(StaticFileHandler):
-    async def get(self, _: str, include_body: bool = True) -> None:
-        return await super().get(str(CLIENT_BUILD_DIR / "index.html"), include_body)
+class IndexHandler(RequestHandler):
+
+    _index_html: str
+
+    def initialize(self, index_html: str) -> None:
+        self._index_html = index_html
+
+    async def get(self, _: str) -> None:
+        self.finish(self._index_html)
 
 
 class ModelStreamHandler(WebSocketHandler):

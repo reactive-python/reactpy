@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from queue import Queue as ThreadQueue
 from threading import Event as ThreadEvent
 from threading import Thread
-from typing import Any, Callable, Dict, NamedTuple, NoReturn, Optional, Union, cast
+from typing import Any, Callable, NamedTuple, NoReturn, Optional, cast
 
 from flask import (
     Blueprint,
@@ -25,6 +25,16 @@ from simple_websocket import Server as WebSocket
 from werkzeug.serving import BaseWSGIServer, make_server
 
 import idom
+from idom.backend._common import (
+    ASSETS_PATH,
+    MODULES_PATH,
+    PATH_PREFIX,
+    STREAM_PATH,
+    CommonOptions,
+    read_client_index_html,
+    safe_client_build_dir_path,
+    safe_web_modules_dir_path,
+)
 from idom.backend.hooks import ConnectionContext
 from idom.backend.hooks import use_connection as _use_connection
 from idom.backend.types import Connection, Location
@@ -32,13 +42,6 @@ from idom.core.layout import LayoutEvent, LayoutUpdate
 from idom.core.serve import serve_json_patch
 from idom.core.types import ComponentType, RootComponentConstructor
 from idom.utils import Ref
-
-from ._urls import ASSETS_PATH, MODULES_PATH, PATH_PREFIX, STREAM_PATH
-from .utils import (
-    CLIENT_BUILD_DIR,
-    safe_client_build_dir_path,
-    safe_web_modules_dir_path,
-)
 
 
 logger = logging.getLogger(__name__)
@@ -134,20 +137,14 @@ def use_connection() -> Connection[_FlaskCarrier]:
 
 
 @dataclass
-class Options:
-    """Render server config for :class:`FlaskRenderServer`"""
+class Options(CommonOptions):
+    """Render server config for :func:`idom.backend.flask.configure`"""
 
-    cors: Union[bool, Dict[str, Any]] = False
+    cors: bool | dict[str, Any] = False
     """Enable or configure Cross Origin Resource Sharing (CORS)
 
     For more information see docs for ``flask_cors.CORS``
     """
-
-    serve_static_files: bool = True
-    """Whether or not to serve static files (i.e. web modules)"""
-
-    url_prefix: str = ""
-    """The URL prefix where IDOM resources will be served from"""
 
 
 def _setup_common_routes(
@@ -160,20 +157,20 @@ def _setup_common_routes(
         cors_params = cors_options if isinstance(cors_options, dict) else {}
         CORS(api_blueprint, **cors_params)
 
-    if options.serve_static_files:
+    @api_blueprint.route(f"/{ASSETS_PATH.name}/<path:path>")
+    def send_assets_dir(path: str = "") -> Any:
+        return send_file(safe_client_build_dir_path(f"assets/{path}"))
 
-        @api_blueprint.route(f"/{ASSETS_PATH.name}/<path:path>")
-        def send_assets_dir(path: str = "") -> Any:
-            return send_file(safe_client_build_dir_path(f"assets/{path}"))
+    @api_blueprint.route(f"/{MODULES_PATH.name}/<path:path>")
+    def send_modules_dir(path: str = "") -> Any:
+        return send_file(safe_web_modules_dir_path(path))
 
-        @api_blueprint.route(f"/{MODULES_PATH.name}/<path:path>")
-        def send_modules_dir(path: str = "") -> Any:
-            return send_file(safe_web_modules_dir_path(path))
+    index_html = read_client_index_html(options)
 
-        @spa_blueprint.route("/")
-        @spa_blueprint.route("/<path:_>")
-        def send_client_dir(_: str = "") -> Any:
-            return send_file(CLIENT_BUILD_DIR / "index.html")
+    @spa_blueprint.route("/")
+    @spa_blueprint.route("/<path:_>")
+    def send_client_dir(_: str = "") -> Any:
+        return index_html
 
 
 def _setup_single_view_dispatcher_route(

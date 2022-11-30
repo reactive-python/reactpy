@@ -2,22 +2,17 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 import socket
 from contextlib import closing
 from importlib import import_module
-from pathlib import Path
 from typing import Any, Iterator
 
-import idom
-from idom.config import IDOM_WEB_MODULES_DIR
 from idom.types import RootComponentConstructor
 
 from .types import BackendImplementation
 
 
 logger = logging.getLogger(__name__)
-CLIENT_BUILD_DIR = Path(idom.__file__).parent / "_client"
 
 SUPPORTED_PACKAGES = (
     "starlette",
@@ -35,10 +30,7 @@ def run(
     implementation: BackendImplementation[Any] | None = None,
 ) -> None:
     """Run a component with a development server"""
-    logger.warning(
-        "You are running a development server. "
-        "Change this before deploying in production!"
-    )
+    logger.warning(_DEVELOPMENT_RUN_FUNC_WARNING)
 
     implementation = implementation or import_module("idom.backend.default")
 
@@ -54,34 +46,6 @@ def run(
     )
 
     asyncio.run(implementation.serve_development_app(app, host, port))
-
-
-def safe_client_build_dir_path(path: str) -> Path:
-    """Prevent path traversal out of :data:`CLIENT_BUILD_DIR`"""
-    return traversal_safe_path(
-        CLIENT_BUILD_DIR,
-        *("index.html" if path in ("", "/") else path).split("/"),
-    )
-
-
-def safe_web_modules_dir_path(path: str) -> Path:
-    """Prevent path traversal out of :data:`idom.config.IDOM_WEB_MODULES_DIR`"""
-    return traversal_safe_path(IDOM_WEB_MODULES_DIR.current, *path.split("/"))
-
-
-def traversal_safe_path(root: str | Path, *unsafe: str | Path) -> Path:
-    """Raise a ``ValueError`` if the ``unsafe`` path resolves outside the root dir."""
-    root = os.path.abspath(root)
-
-    # Resolve relative paths but not symlinks - symlinks should be ok since their
-    # presence and where they point is under the control of the developer.
-    path = os.path.abspath(os.path.join(root, *unsafe))
-
-    if os.path.commonprefix([root, path]) != root:
-        # If the common prefix is not root directory we resolved outside the root dir
-        raise ValueError("Unsafe path")
-
-    return Path(path)
 
 
 def find_available_port(
@@ -127,3 +91,11 @@ def all_implementations() -> Iterator[BackendImplementation[Any]]:
             )
 
         yield module
+
+
+_DEVELOPMENT_RUN_FUNC_WARNING = f"""\
+The `run()` function is only intended for testing during development! To run in \
+production, consider selecting a supported backend and importing its associated \
+`configure()` function from `idom.backend.<package>` where `<package>` is one of \
+{list(SUPPORTED_PACKAGES)}. For details refer to the docs on how to run each package.\
+"""

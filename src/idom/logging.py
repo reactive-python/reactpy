@@ -10,10 +10,7 @@ dictConfig(
         "version": 1,
         "disable_existing_loggers": False,
         "loggers": {
-            "idom": {
-                "level": "DEBUG" if IDOM_DEBUG_MODE.current else "INFO",
-                "handlers": ["console"],
-            },
+            "idom": {"handlers": ["console"]},
         },
         "handlers": {
             "console": {
@@ -37,5 +34,10 @@ ROOT_LOGGER = logging.getLogger("idom")
 """IDOM's root logger instance"""
 
 
-if IDOM_DEBUG_MODE.current:
-    ROOT_LOGGER.debug("IDOM is in debug mode")
+@IDOM_DEBUG_MODE.subscribe
+def _set_debug_level(debug: bool) -> None:
+    if debug:
+        ROOT_LOGGER.setLevel("DEBUG")
+        ROOT_LOGGER.debug("IDOM is in debug mode")
+    else:
+        ROOT_LOGGER.setLevel("INFO")
