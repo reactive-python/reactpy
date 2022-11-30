@@ -213,7 +213,11 @@ def module_from_file(
         file=target_file,
         export_names=(
             resolve_module_exports_from_file(source_file, resolve_exports_depth)
-            if resolve_exports
+            if (
+                resolve_exports
+                if resolve_exports is not None
+                else IDOM_DEBUG_MODE.current
+            )
             else None
         ),
         unmount_before_update=unmount_before_update,
@@ -240,7 +244,7 @@ def module_from_string(
     name: str,
     content: str,
     fallback: Optional[Any] = None,
-    resolve_exports: bool = IDOM_DEBUG_MODE.current,
+    resolve_exports: bool | None = None,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
 ) -> WebModule:
@@ -284,7 +288,11 @@ def module_from_string(
         file=target_file,
         export_names=(
             resolve_module_exports_from_file(target_file, resolve_exports_depth)
-            if resolve_exports
+            if (
+                resolve_exports
+                if resolve_exports is not None
+                else IDOM_DEBUG_MODE.current
+            )
             else None
         ),
         unmount_before_update=unmount_before_update,
