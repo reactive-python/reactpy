@@ -210,38 +210,15 @@ class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
     """Raised when an HTML document cannot be parsed using strict parsing."""
 
 
-def del_html_body_transform(vdom: dict[str, Any]) -> dict[str, Any]:
+def del_html_head_body_transform(vdom: dict[str, Any]) -> dict[str, Any]:
     """Transform intended for use with `html_to_vdom`.
 
-    Removes `<html>`, `<head>`, and `<body>` while preserving `<head>` and `<body>` children.
+    Removes `<html>`, `<head>`, and `<body>` while preserving their children.
 
     Parameters:
         vdom:
             The VDOM dictionary to transform.
     """
-    if vdom["tagName"] == "html":
-        vdom["tagName"] = ""
-
-        # Remove all fields from `<html>` except for `children` and `tagName`
-        for key in list(vdom.keys()):
-            if key not in ("children", "tagName"):
-                del vdom[key]
-
-        # Preserve `<head>` children and remove the `<body>` tag
-        head_and_body_children = []
-        for child in vdom.get("children", []):
-            # Add `<head>` children to the list
-            if child["tagName"] == "head":
-                head_and_body_children.extend(child.get("children", []))
-
-            # Add `<body>` children to the list, then remove `<body>` and `<head>`
-            if child.get("tagName", None) == "body":
-                head_and_body_children.extend(child.get("children", []))
-                vdom["children"] = head_and_body_children
-                break
-
-        # Set vdom to the first child if there's only one child
-        if len(vdom.get("children", [])) == 1:
-            vdom = vdom["children"][0]
-
+    if vdom["tagName"] in {"html", "body", "head"}:
+        return {"tagName": "", "children": vdom["children"]}
     return vdom
