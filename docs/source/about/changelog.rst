@@ -32,6 +32,11 @@ Unreleased
 
 - :pull:`835` - ability to customize the ``<head>`` element of IDOM's built-in client.
 - :pull:`835` - ``vdom_to_html`` utility function.
+- :pull:`843` - Ability to subscribe to changes that are made to mutable options.
+
+**Fixed**
+
+- :issue:`582` - ``IDOM_DEBUG_MODE`` is now mutable and can be changed at runtime
 
 
 v0.41.0
