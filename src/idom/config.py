@@ -13,7 +13,6 @@ from ._option import Option as _Option
 IDOM_DEBUG_MODE = _Option(
     "IDOM_DEBUG_MODE",
     default=False,
-    mutable=False,
     validator=lambda x: bool(int(x)),
 )
 """This immutable option turns on/off debug mode
@@ -27,8 +26,7 @@ log level for IDOM is set to ``DEBUG``.
 
 IDOM_CHECK_VDOM_SPEC = _Option(
     "IDOM_CHECK_VDOM_SPEC",
-    default=IDOM_DEBUG_MODE.current,
-    mutable=False,
+    default=IDOM_DEBUG_MODE,
     validator=lambda x: bool(int(x)),
 )
 """This immutable option turns on/off checks which ensure VDOM is rendered to spec
