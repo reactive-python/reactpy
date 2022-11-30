@@ -25,26 +25,20 @@ Unreleased
 
 **Added**
 
+- :pull:`835` - ability to customize the ``<head>`` element of IDOM's built-in client.
+- :pull:`835` - ``vdom_to_html`` utility function.
+- :pull:`843` - Ability to subscribe to changes that are made to mutable options.
 - :pull:`832` - ``del_html_head_body_transform`` to remove ``<html>``, ``<head>``, and ``<body>`` while preserving children.
 
 **Fixed**
 
+- :issue:`582` - ``IDOM_DEBUG_MODE`` is now mutable and can be changed at runtime
 - :pull:`832` - Fix ``html_to_vdom`` improperly removing ``<html>``, ``<head>``, and ``<body>`` nodes.
 
 **Removed**
 - :pull:`832` - Removed ``idom.html.body`` as it is currently unusable due to technological limitations, and thus not needed.
 - :pull:`840` - remove ``IDOM_FEATURE_INDEX_AS_DEFAULT_KEY`` option
 - :pull:`835` - ``serve_static_files`` option from backend configuration
-
-**Added**
-
-- :pull:`835` - ability to customize the ``<head>`` element of IDOM's built-in client.
-- :pull:`835` - ``vdom_to_html`` utility function.
-- :pull:`843` - Ability to subscribe to changes that are made to mutable options.
-
-**Fixed**
-
-- :issue:`582` - ``IDOM_DEBUG_MODE`` is now mutable and can be changed at runtime
 
 
 v0.41.0
