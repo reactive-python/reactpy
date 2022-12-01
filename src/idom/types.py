@@ -25,6 +25,7 @@ from .core.types import (
     VdomChildren,
     VdomDict,
     VdomJson,
+    VdomJsonChild,
 )
 
 
@@ -51,4 +52,5 @@ __all__ = [
     "VdomChildren",
     "VdomDict",
     "VdomJson",
+    "VdomJsonChild",
 ]

@@ -142,7 +142,7 @@ class ImportSourceDict(TypedDict):
 class _OptionalVdomJson(TypedDict, total=False):
     key: Key
     error: str
-    children: List[Any]
+    children: List[VdomJsonChild]
     attributes: Dict[str, Any]
     eventHandlers: Dict[str, _JsonEventTarget]  # noqa
     importSource: _JsonImportSource  # noqa
@@ -154,6 +154,9 @@ class _RequiredVdomJson(TypedDict, total=True):
 
 class VdomJson(_RequiredVdomJson, _OptionalVdomJson):
     """A JSON serializable form of :class:`VdomDict` matching the :data:`VDOM_JSON_SCHEMA`"""
+
+
+VdomJsonChild = Union[VdomJson, str, int]
 
 
 class _JsonEventTarget(TypedDict):

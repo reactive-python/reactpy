@@ -16,6 +16,7 @@ from idom.testing import DisplayFixture, HookCatcher, assert_idom_did_log, poll
 from idom.testing.logs import assert_idom_did_not_log
 from idom.utils import Ref
 from tests.tooling.common import DEFAULT_TYPE_DELAY
+from tests.tooling.vdom import find_vdom
 
 
 async def test_must_be_rendering_in_layout_to_use_hooks():
@@ -1395,3 +1396,23 @@ async def test_use_state_named_tuple():
         state.current.set_value(2)
         await layout.render()
         assert state.current.value == 2
+
+
+async def test_nested_context_providers():
+    context_1 = idom.create_context(None)
+    context_2 = idom.create_context(None)
+
+    @idom.component
+    def root():
+        return context_1(context_2(inner(), value=2), value=1)
+
+    @idom.component
+    def inner():
+        return html.h1(
+            idom.use_context(context_1),
+            idom.use_context(context_2),
+        )
+
+    async with idom.Layout(root()) as layout:
+        update = await layout.render()
+        assert find_vdom(update.new, lambda e: e.get("children") == ["1", "2"])
