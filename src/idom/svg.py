@@ -38,7 +38,7 @@ __all__ = (
     "fe_tile",
     "fe_turbulence",
     "filter",
-    "foreignObject",
+    "foreign_object",
     "g",
     "hatch",
     "hatchpath",
