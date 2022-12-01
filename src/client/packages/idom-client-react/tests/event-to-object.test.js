@@ -4,22 +4,40 @@ import * as assert from "uvu/assert";
 import { serializeEvent } from "../src/event-to-object.js";
 import "./tooling/setup.js";
 
+const mockBoundingRect = {
+  left: 0,
+  top: 0,
+  right: 0,
+  bottom: 0,
+  x: 0,
+  y: 0,
+  width: 0,
+};
+
+const mockElement = {
+  tagName: null,
+  getBoundingClientRect: () => mockBoundingRect,
+};
+
+const allTargetData = {
+  files: [
+    {
+      lastModified: 0,
+      name: "something",
+      type: "some-type",
+      size: 0,
+    },
+  ],
+  value: "something",
+  currentTime: 35,
+  tagName: null, // overwritten in tests
+  elements: [
+    { ...mockElement, tagName: "INPUT", value: "first" },
+    { ...mockElement, tagName: "INPUT", value: "second" },
+  ],
+};
+
 function assertEqualSerializedEventData(eventData, expectedSerializedData) {
-  const mockBoundingRect = {
-    left: 0,
-    top: 0,
-    right: 0,
-    bottom: 0,
-    x: 0,
-    y: 0,
-    width: 0,
-  };
-
-  const mockElement = {
-    tagName: null,
-    getBoundingClientRect: () => mockBoundingRect,
-  };
-
   const commonEventData = {
     target: mockElement,
     currentTarget: mockElement,
@@ -37,20 +55,6 @@ function assertEqualSerializedEventData(eventData, expectedSerializedData) {
     lodash.merge({}, commonSerializedEventData, expectedSerializedData)
   );
 }
-
-const allTargetData = {
-  files: [
-    {
-      lastModified: 0,
-      name: "something",
-      type: "some-type",
-      size: 0,
-    },
-  ],
-  value: "something",
-  currentTime: 35,
-  tagName: null, // overwritten in tests
-};
 
 [
   {
@@ -75,6 +79,24 @@ const allTargetData = {
     case: `adds 'currentTime' attribute for ${tagName} element`,
     tagName,
     output: { target: { currentTime: allTargetData.currentTime } },
+  })),
+  ...["FORM"].map((tagName) => ({
+    case: `adds 'elements' attribute for ${tagName} element`,
+    tagName,
+    output: {
+      target: {
+        elements: [
+          {
+            value: "first",
+            boundingClientRect: mockBoundingRect,
+          },
+          {
+            value: "second",
+            boundingClientRect: mockBoundingRect,
+          },
+        ],
+      },
+    },
   })),
 ].forEach((expectation) => {
   test(`serializeEvent() ${expectation.case}`, () => {
@@ -113,6 +135,7 @@ const allEventData = {
   clientX: "clientX",
   clientY: "clientY",
   ctrlKey: "ctrlKey",
+  form: "form",
   metaKey: "metaKey",
   pageX: "pageX",
   pageY: "pageY",

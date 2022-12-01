@@ -25,14 +25,15 @@ Unreleased
 
 **Removed**
 
-- :pull:`840` - remove ``IDOM_FEATURE_INDEX_AS_DEFAULT_KEY`` option
+- :pull:`840` - Remove ``IDOM_FEATURE_INDEX_AS_DEFAULT_KEY`` option
 - :pull:`835` - ``serve_static_files`` option from backend configuration
 
 **Added**
 
-- :pull:`835` - ability to customize the ``<head>`` element of IDOM's built-in client.
+- :pull:`835` - Ability to customize the ``<head>`` element of IDOM's built-in client.
 - :pull:`835` - ``vdom_to_html`` utility function.
 - :pull:`843` - Ability to subscribe to changes that are made to mutable options.
+- :pull:`699` - Support for form element serialization
 
 **Fixed**
 
