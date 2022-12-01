@@ -25,10 +25,11 @@ Unreleased
 
 **Added**
 
-- :pull:`835` - ability to customize the ``<head>`` element of IDOM's built-in client.
+- :pull:`835` - Ability to customize the ``<head>`` element of IDOM's built-in client.
 - :pull:`835` - ``vdom_to_html`` utility function.
 - :pull:`843` - Ability to subscribe to changes that are made to mutable options.
 - :pull:`832` - ``del_html_head_body_transform`` to remove ``<html>``, ``<head>``, and ``<body>`` while preserving children.
+- :pull:`699` - Support for form element serialization
 
 **Fixed**
 
