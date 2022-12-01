@@ -4,7 +4,12 @@ import pytest
 
 import idom
 from idom import html
-from idom.utils import HTMLParseError, html_to_vdom, vdom_to_html
+from idom.utils import (
+    HTMLParseError,
+    del_html_head_body_transform,
+    html_to_vdom,
+    vdom_to_html,
+)
 
 
 def test_basic_ref_behavior():
@@ -144,7 +149,7 @@ def test_html_to_vdom_with_no_parent_node():
     source = "<p>Hello</p><div>World</div>"
 
     expected = {
-        "tagName": "",
+        "tagName": "div",
         "children": [
             {"tagName": "p", "children": ["Hello"]},
             {"tagName": "div", "children": ["World"]},
@@ -152,6 +157,37 @@ def test_html_to_vdom_with_no_parent_node():
     }
 
     assert html_to_vdom(source) == expected
+
+
+def test_del_html_body_transform():
+    source = """
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+    <title>My Title</title>
+    </head>
+
+    <body><h1>Hello World</h1></body>
+
+    </html>
+    """
+
+    expected = {
+        "tagName": "",
+        "children": [
+            {
+                "tagName": "",
+                "children": [{"tagName": "title", "children": ["My Title"]}],
+            },
+            {
+                "tagName": "",
+                "children": [{"tagName": "h1", "children": ["Hello World"]}],
+            },
+        ],
+    }
+
+    assert html_to_vdom(source, del_html_head_body_transform) == expected
 
 
 SOME_OBJECT = object()

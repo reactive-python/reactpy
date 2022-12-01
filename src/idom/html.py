@@ -14,7 +14,6 @@
 
 **Content sectioning**
 
-- :func:`body`
 - :func:`address`
 - :func:`article`
 - :func:`aside`
@@ -189,7 +188,6 @@ style = make_vdom_constructor("style")
 title = make_vdom_constructor("title")
 
 # Content sectioning
-body = make_vdom_constructor("body")
 address = make_vdom_constructor("address")
 article = make_vdom_constructor("article")
 aside = make_vdom_constructor("aside")

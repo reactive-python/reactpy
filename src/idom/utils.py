@@ -5,7 +5,7 @@ from itertools import chain
 from typing import Any, Callable, Generic, Iterable, TypeVar, cast
 
 from lxml import etree
-from lxml.html import fragments_fromstring, tostring
+from lxml.html import fromstring, tostring
 
 import idom
 from idom.core.types import VdomDict
@@ -85,7 +85,7 @@ def html_to_vdom(
     using a ``key=...`` attribute within your HTML tag.
 
     Parameters:
-        source:
+        html:
             The raw HTML as a string
         transforms:
             Functions of the form ``transform(old) -> new`` where ``old`` is a VDOM
@@ -99,15 +99,15 @@ def html_to_vdom(
         raise TypeError(f"Expected html to be a string, not {type(html).__name__}")
 
     # If the user provided a string, convert it to a list of lxml.etree nodes
-    parser = etree.HTMLParser(
-        remove_comments=True,
-        remove_pis=True,
-        remove_blank_text=True,
-        recover=not strict,
-    )
     try:
-        nodes: list[etree._Element] = fragments_fromstring(
-            html, no_leading_text=True, parser=parser
+        root_node: etree._Element = fromstring(
+            html.strip(),
+            parser=etree.HTMLParser(
+                remove_comments=True,
+                remove_pis=True,
+                remove_blank_text=True,
+                recover=not strict,
+            ),
         )
     except etree.XMLSyntaxError as e:
         if not strict:
@@ -119,25 +119,8 @@ def html_to_vdom(
             "you can disable the strict parameter on html_to_vdom().\n"
             "Otherwise, repair your broken HTML and try again."
         ) from e
-    has_root_node = len(nodes) == 1
 
-    # Find or create a root node
-    if has_root_node:
-        root_node = nodes[0]
-    else:
-        # etree.Element requires a non-empty tag - we correct this below
-        root_node = etree.Element("TEMP", None, None)
-        for child in nodes:
-            root_node.append(child)
-
-    # Convert the lxml node to a VDOM dict
-    vdom = _etree_to_vdom(root_node, transforms)
-
-    # Change the artificially created root node to a React Fragment, instead of a div
-    if not has_root_node:
-        vdom["tagName"] = ""
-
-    return vdom
+    return _etree_to_vdom(root_node, transforms)
 
 
 class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
@@ -147,10 +130,10 @@ class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
 def _etree_to_vdom(
     node: etree._Element, transforms: Iterable[_ModelTransform]
 ) -> VdomDict:
-    """Recusively transform an lxml etree node into a DOM model
+    """Transform an lxml etree node into a DOM model
 
     Parameters:
-        source:
+        node:
             The ``lxml.etree._Element`` node
         transforms:
             Functions of the form ``transform(old) -> new`` where ``old`` is a VDOM
@@ -162,7 +145,7 @@ def _etree_to_vdom(
             f"Expected node to be a etree._Element, not {type(node).__name__}"
         )
 
-    # This will recursively call _etree_to_vdom() on all children
+    # Recursively call _etree_to_vdom() on all children
     children = _generate_vdom_children(node, transforms)
 
     # Convert the lxml node to a VDOM dict
@@ -287,6 +270,20 @@ def _hypen_to_camel_case(string: str) -> str:
     """Convert a hypenated string to camelCase."""
     first, _, remainder = string.partition("-")
     return first.lower() + remainder.title().replace("-", "")
+
+
+def del_html_head_body_transform(vdom: VdomDict) -> VdomDict:
+    """Transform intended for use with `html_to_vdom`.
+
+    Removes `<html>`, `<head>`, and `<body>` while preserving their children.
+
+    Parameters:
+        vdom:
+            The VDOM dictionary to transform.
+    """
+    if vdom["tagName"] in {"html", "body", "head"}:
+        return {"tagName": "", "children": vdom["children"]}
+    return vdom
 
 
 def _vdom_attr_to_html_str(key: str, value: Any) -> tuple[str, str]:
