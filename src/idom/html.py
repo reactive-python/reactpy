@@ -177,7 +177,6 @@ __all__ = (
     "bdi",
     "bdo",
     "blockquote",
-    "body",
     "br",
     "button",
     "canvas",
