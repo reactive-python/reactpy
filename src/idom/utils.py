@@ -272,7 +272,7 @@ def _hypen_to_camel_case(string: str) -> str:
     return first.lower() + remainder.title().replace("-", "")
 
 
-def del_html_head_body_transform(vdom: dict[str, Any]) -> dict[str, Any]:
+def del_html_head_body_transform(vdom: VdomDict) -> VdomDict:
     """Transform intended for use with `html_to_vdom`.
 
     Removes `<html>`, `<head>`, and `<body>` while preserving their children.
