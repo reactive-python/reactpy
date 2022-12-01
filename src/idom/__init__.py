@@ -1,4 +1,4 @@
-from . import backend, config, html, logging, sample, types, web
+from . import backend, config, html, logging, sample, svg, types, web
 from .backend.hooks import use_connection, use_location, use_scope
 from .backend.utils import run
 from .core import hooks
@@ -41,6 +41,7 @@ __all__ = [
     "run",
     "sample",
     "Stop",
+    "svg",
     "types",
     "use_callback",
     "use_connection",
