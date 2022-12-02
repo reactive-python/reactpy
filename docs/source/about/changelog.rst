@@ -23,6 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+No changes.
+
+
+v0.42.0
+-------
+:octicon:`milestone` *released on 2022-12-02*
+
 **Added**
 
 - :pull:`835` - Ability to customize the ``<head>`` element of IDOM's built-in client.
