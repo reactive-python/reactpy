@@ -13,7 +13,7 @@ from sanic.config import Config
 from sanic.server.websockets.connection import WebSocketConnection
 from sanic_cors import CORS
 
-from idom.backend.types import Connection, Location
+from idom.backend.common.types import Connection, Location
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import (
     RecvCoroutine,
@@ -24,7 +24,7 @@ from idom.core.serve import (
 )
 from idom.core.types import RootComponentConstructor
 
-from ._common import (
+from .common.implementations import (
     ASSETS_PATH,
     MODULES_PATH,
     PATH_PREFIX,

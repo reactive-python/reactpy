@@ -15,13 +15,13 @@ from tornado.web import Application, RequestHandler, StaticFileHandler
 from tornado.websocket import WebSocketHandler
 from tornado.wsgi import WSGIContainer
 
-from idom.backend.types import Connection, Location
+from idom.backend.common.types import Connection, Location
 from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
 
-from ._common import (
+from .common.implementations import (
     ASSETS_PATH,
     CLIENT_BUILD_DIR,
     MODULES_PATH,

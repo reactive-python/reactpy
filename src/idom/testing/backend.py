@@ -8,8 +8,8 @@ from typing import Any, Optional, Tuple, Type, Union
 from urllib.parse import urlencode, urlunparse
 
 from idom.backend import default as default_server
-from idom.backend.types import BackendImplementation
-from idom.backend.utils import find_available_port
+from idom.backend.common.types import BackendImplementation
+from idom.backend.common.utils import find_available_port
 from idom.widgets import hotswap
 
 from .logs import LogAssertionError, capture_idom_logs, list_logged_exceptions

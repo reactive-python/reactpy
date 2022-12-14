@@ -5,9 +5,9 @@ import pytest
 import idom
 from idom import html
 from idom.backend import default as default_implementation
-from idom.backend._common import PATH_PREFIX
-from idom.backend.types import BackendImplementation, Connection, Location
-from idom.backend.utils import all_implementations
+from idom.backend.common.implementations import PATH_PREFIX
+from idom.backend.common.types import BackendImplementation, Connection, Location
+from idom.backend.common.utils import all_implementations
 from idom.testing import BackendFixture, DisplayFixture, poll
 
 

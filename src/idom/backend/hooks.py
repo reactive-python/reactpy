@@ -4,7 +4,7 @@ from typing import Any, MutableMapping
 
 from idom.core.hooks import Context, create_context, use_context
 
-from .types import Connection, Location
+from .common.types import Connection, Location
 
 
 # backend implementations should establish this context at the root of an app

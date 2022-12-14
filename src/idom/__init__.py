@@ -1,6 +1,6 @@
 from . import backend, config, html, logging, sample, svg, types, web
+from .backend.common.utils import run
 from .backend.hooks import use_connection, use_location, use_scope
-from .backend.utils import run
 from .core import hooks
 from .core.component import component
 from .core.events import event

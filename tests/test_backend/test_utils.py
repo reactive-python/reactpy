@@ -6,8 +6,8 @@ import pytest
 from playwright.async_api import Page
 
 from idom.backend import flask as flask_implementation
-from idom.backend.utils import find_available_port
-from idom.backend.utils import run as sync_run
+from idom.backend.common.utils import find_available_port
+from idom.backend.common.utils import run as sync_run
 from idom.sample import SampleApp as SampleApp
 
 

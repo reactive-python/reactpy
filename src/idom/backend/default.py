@@ -5,8 +5,8 @@ from typing import Any, NoReturn
 
 from idom.types import RootComponentConstructor
 
-from .types import BackendImplementation
-from .utils import all_implementations
+from .common.types import BackendImplementation
+from .common.utils import all_implementations
 
 
 def configure(

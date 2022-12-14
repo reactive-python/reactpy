@@ -13,8 +13,8 @@ from starlette.responses import HTMLResponse
 from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
+from idom.backend.common.types import Connection, Location
 from idom.backend.hooks import ConnectionContext
-from idom.backend.types import Connection, Location
 from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.layout import Layout, LayoutEvent
 from idom.core.serve import (
@@ -25,7 +25,7 @@ from idom.core.serve import (
 )
 from idom.core.types import RootComponentConstructor
 
-from ._common import (
+from .common.implementations import (
     ASSETS_PATH,
     CLIENT_BUILD_DIR,
     MODULES_PATH,

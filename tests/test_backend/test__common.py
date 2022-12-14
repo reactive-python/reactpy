@@ -1,7 +1,10 @@
 import pytest
 
 from idom import html
-from idom.backend._common import traversal_safe_path, vdom_head_elements_to_html
+from idom.backend.common.implementations import (
+    traversal_safe_path,
+    vdom_head_elements_to_html,
+)
 
 
 @pytest.mark.parametrize(

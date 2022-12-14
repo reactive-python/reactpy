@@ -5,7 +5,7 @@ from pathlib import Path
 from playwright.async_api import Browser
 
 import idom
-from idom.backend.utils import find_available_port
+from idom.backend.common.utils import find_available_port
 from idom.testing import BackendFixture, DisplayFixture
 from tests.tooling.common import DEFAULT_TYPE_DELAY
 

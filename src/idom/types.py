@@ -4,7 +4,7 @@
 - :mod:`idom.backend.types`
 """
 
-from .backend.types import BackendImplementation, Connection, Location
+from .backend.common.types import BackendImplementation, Connection, Location
 from .core.component import Component
 from .core.hooks import Context
 from .core.types import (
