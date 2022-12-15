@@ -17,15 +17,11 @@ from idom.backend.common.types import Connection, Location
 from idom.backend.hooks import ConnectionContext
 from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.layout import Layout, LayoutEvent
-from idom.core.serve import (
-    RecvCoroutine,
-    SendCoroutine,
-    VdomJsonPatch,
-    serve_json_patch,
-)
+from idom.core.server import RecvCoroutine, SendCoroutine
+from idom.core.server import serve as serve_layout
 from idom.core.types import RootComponentConstructor
 
-from .common.implementations import (
+from .common.impl import (
     ASSETS_PATH,
     CLIENT_BUILD_DIR,
     MODULES_PATH,
@@ -151,7 +147,9 @@ def _setup_single_view_dispatcher_route(
         search = socket.scope["query_string"].decode()
 
         try:
-            await serve_json_patch(
+            await serve_layout(
+                send,
+                recv,
                 Layout(
                     ConnectionContext(
                         constructor(),
@@ -162,8 +160,6 @@ def _setup_single_view_dispatcher_route(
                         ),
                     )
                 ),
-                send,
-                recv,
             )
         except WebSocketDisconnect as error:
             logger.info(f"WebSocket disconnect: {error.code}")
@@ -172,10 +168,10 @@ def _setup_single_view_dispatcher_route(
 def _make_send_recv_callbacks(
     socket: WebSocket,
 ) -> Tuple[SendCoroutine, RecvCoroutine]:
-    async def sock_send(value: VdomJsonPatch) -> None:
+    async def sock_send(value: Any) -> None:
         await socket.send_text(json.dumps(value))
 
-    async def sock_recv() -> LayoutEvent:
-        return LayoutEvent(**json.loads(await socket.receive_text()))
+    async def sock_recv() -> Any:
+        return json.loads(await socket.receive_text())
 
     return sock_send, sock_recv

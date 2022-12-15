@@ -25,7 +25,7 @@ from simple_websocket import Server as WebSocket
 from werkzeug.serving import BaseWSGIServer, make_server
 
 import idom
-from idom.backend.common.implementations import (
+from idom.backend.common.impl import (
     ASSETS_PATH,
     MODULES_PATH,
     PATH_PREFIX,
@@ -39,7 +39,7 @@ from idom.backend.common.types import Connection, Location
 from idom.backend.hooks import ConnectionContext
 from idom.backend.hooks import use_connection as _use_connection
 from idom.core.layout import LayoutEvent, LayoutUpdate
-from idom.core.serve import serve_json_patch
+from idom.core.server import serve_json_patch
 from idom.core.types import ComponentType, RootComponentConstructor
 from idom.utils import Ref
 

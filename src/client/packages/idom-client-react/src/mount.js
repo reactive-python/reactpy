@@ -38,6 +38,8 @@ function mountLayoutWithReconnectingWebSocket(
   socket.onopen = (event) => {
     console.info(`IDOM WebSocket connected.`);
 
+    socket.send(JSON.stringify({ type: "client-info", version: "0.0.1" }));
+
     if (mountState.everMounted) {
       ReactDOM.unmountComponentAtNode(element);
     }
@@ -46,13 +48,25 @@ function mountLayoutWithReconnectingWebSocket(
     mountLayout(element, {
       loadImportSource,
       saveUpdateHook: updateHookPromise.resolve,
-      sendEvent: (event) => socket.send(JSON.stringify(event)),
+      sendEvent: (event) =>
+        socket.send(JSON.stringify({ type: "layout-event", data: event })),
     });
   };
 
+  const messageHandlers = {
+    "server-info": () => {},
+    "layout-update": ({ data }) =>
+      updateHookPromise.promise.then((update) => update(data)),
+  };
+
   socket.onmessage = (event) => {
-    const [pathPrefix, patch] = JSON.parse(event.data);
-    updateHookPromise.promise.then((update) => update(pathPrefix, patch));
+    const msg = JSON.parse(event.data);
+    const handler = messageHandlers[msg["type"]];
+    if (!handler) {
+      console.error(`Unknown message type '${msg["type"]}'`);
+      return;
+    }
+    handler(msg);
   };
 
   socket.onclose = (event) => {

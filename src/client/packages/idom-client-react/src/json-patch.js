@@ -1,42 +1,26 @@
 import React from "react";
-import jsonpatch from "fast-json-patch";
 
 export function useJsonPatchCallback(initial) {
   const doc = React.useRef(initial);
   const forceUpdate = useForceUpdate();
 
   const applyPatch = React.useCallback(
-    (path, patch) => {
+    ({ path, new: newDoc }) => {
       if (!path) {
-        // We CANNOT mutate the part of the document because React checks some
-        // attributes of the model (e.g. model.attributes.style is checked for
-        // identity).
-        doc.current = applyNonMutativePatch(
-          doc.current,
-          patch,
-          false,
-          false,
-          true
-        );
+        doc.current = newDoc;
       } else {
-        // We CAN mutate the document here though because we know that nothing above
-        // The patch `path` is changing. Thus, maintaining the identity for that section
-        // of the model is accurate.
-        applyMutativePatch(doc.current, [
-          {
-            op: "replace",
-            path: path,
-            // We CANNOT mutate the part of the document where the actual patch is being
-            // applied. Instead we create a copy because React checks some attributes of
-            // the model (e.g. model.attributes.style is checked for identity). The part
-            // of the document above the `path` can be mutated though because we know it
-            // has not changed.
-            value: applyNonMutativePatch(
-              jsonpatch.getValueByPointer(doc.current, path),
-              patch
-            ),
-          },
-        ]);
+        let value = doc.current;
+        const pathParts = path
+          .split("/")
+          .map((pathPart) =>
+            startsWithNumber(pathPart) ? Number(pathPart) : pathPart
+          );
+        const pathPrefix = pathParts.slice(0, -1);
+        const pathLast = pathParts[pathParts.length - 1];
+        for (const pathPart in pathPrefix) {
+          value = value[pathPart];
+        }
+        value[pathLast] = newDoc;
       }
       forceUpdate();
     },
@@ -57,4 +41,8 @@ function applyMutativePatch(doc, patch) {
 function useForceUpdate() {
   const [, updateState] = React.useState();
   return React.useCallback(() => updateState({}), []);
+}
+
+function startsWithNumber(str) {
+  return /^\d/.test(str);
 }

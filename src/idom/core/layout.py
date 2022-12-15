@@ -17,6 +17,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    TypedDict,
     TypeVar,
     cast,
 )
@@ -24,36 +25,32 @@ from uuid import uuid4
 from weakref import ref as weakref
 
 from idom.config import IDOM_CHECK_VDOM_SPEC, IDOM_DEBUG_MODE
+from idom.core._event_proxy import _wrap_in_warning_event_proxies
+from idom.core.hooks import LifeCycleHook
+from idom.core.types import ComponentType, EventHandlerDict, VdomDict, VdomJson
+from idom.core.vdom import validate_vdom_json
 from idom.utils import Ref
-
-from ._event_proxy import _wrap_in_warning_event_proxies
-from .hooks import LifeCycleHook
-from .types import ComponentType, EventHandlerDict, VdomDict, VdomJson
-from .vdom import validate_vdom_json
 
 
 logger = getLogger(__name__)
 
 
-class LayoutUpdate(NamedTuple):
+class LayoutUpdate(TypedDict):
     """A change to a view as a result of a :meth:`Layout.render`"""
 
     path: str
     """A "/" delimited path to the element from the root of the layout"""
 
-    old: Optional[VdomJson]
-    """The old state of the layout"""
-
     new: VdomJson
     """The new state of the layout"""
 
 
-class LayoutEvent(NamedTuple):
+class LayoutEvent(TypedDict):
     """An event that should be relayed to its handler by :meth:`Layout.deliver`"""
 
     target: str
     """The ID of the event handler."""
-    data: List[Any]
+    data: list[Any]
     """A list of event data passed to the event handler."""
 
 
@@ -110,16 +107,16 @@ class Layout:
         # associated with a backend model that has been deleted. We only handle
         # events if the element and the handler exist in the backend. Otherwise
         # we just ignore the event.
-        handler = self._event_handlers.get(event.target)
+        handler = self._event_handlers.get(event["target"])
 
         if handler is not None:
             try:
-                await handler.function(_wrap_in_warning_event_proxies(event.data))
+                await handler.function(_wrap_in_warning_event_proxies(event["data"]))
             except Exception:
                 logger.exception(f"Failed to execute event handler {handler}")
         else:
             logger.info(
-                f"Ignored event - handler {event.target!r} does not exist or its component unmounted"
+                f"Ignored event - handler {event['target']!r} does not exist or its component unmounted"
             )
 
     async def render(self) -> LayoutUpdate:
@@ -148,17 +145,10 @@ class Layout:
         with ExitStack() as exit_stack:
             self._render_component(exit_stack, old_state, new_state, component)
 
-        old_model: Optional[VdomJson]
-        try:
-            old_model = old_state.model.current
-        except AttributeError:
-            old_model = None
-
-        return LayoutUpdate(
-            path=new_state.patch_path,
-            old=old_model,
-            new=new_state.model.current,
-        )
+        return {
+            "path": new_state.patch_path,
+            "new": new_state.model.current,
+        }
 
     def _render_component(
         self,

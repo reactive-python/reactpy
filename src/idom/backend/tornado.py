@@ -18,10 +18,10 @@ from tornado.wsgi import WSGIContainer
 from idom.backend.common.types import Connection, Location
 from idom.config import IDOM_WEB_MODULES_DIR
 from idom.core.layout import Layout, LayoutEvent
-from idom.core.serve import VdomJsonPatch, serve_json_patch
+from idom.core.server import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
 
-from .common.implementations import (
+from .common.impl import (
     ASSETS_PATH,
     CLIENT_BUILD_DIR,
     MODULES_PATH,

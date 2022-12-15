@@ -3,7 +3,7 @@ from typing import Any, Sequence
 
 import idom
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
-from idom.core.serve import VdomJsonPatch, serve_json_patch
+from idom.core.server import VdomJsonPatch, serve_json_patch
 from idom.testing import StaticEventHandler
 
 

@@ -16,7 +16,7 @@ from .core.hooks import (
     use_state,
 )
 from .core.layout import Layout
-from .core.serve import Stop
+from .core.server import Stop
 from .core.vdom import vdom
 from .utils import Ref, html_to_vdom, vdom_to_html
 from .widgets import hotswap

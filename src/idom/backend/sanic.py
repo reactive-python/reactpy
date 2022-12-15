@@ -15,7 +15,7 @@ from sanic_cors import CORS
 
 from idom.backend.common.types import Connection, Location
 from idom.core.layout import Layout, LayoutEvent
-from idom.core.serve import (
+from idom.core.server import (
     RecvCoroutine,
     SendCoroutine,
     Stop,
@@ -24,7 +24,7 @@ from idom.core.serve import (
 )
 from idom.core.types import RootComponentConstructor
 
-from .common.implementations import (
+from .common.impl import (
     ASSETS_PATH,
     MODULES_PATH,
     PATH_PREFIX,
