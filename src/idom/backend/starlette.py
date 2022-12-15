@@ -22,8 +22,8 @@ from idom.core.server import serve as serve_layout
 from idom.core.types import RootComponentConstructor
 
 from .common.impl import (
-    ASSETS_PATH,
     CLIENT_BUILD_DIR,
+    CLIENT_PATH,
     MODULES_PATH,
     STREAM_PATH,
     CommonOptions,
@@ -115,8 +115,8 @@ def _setup_common_routes(options: Options, app: Starlette) -> None:
         StaticFiles(directory=IDOM_WEB_MODULES_DIR.current, check_dir=False),
     )
     app.mount(
-        str(ASSETS_PATH),
-        StaticFiles(directory=CLIENT_BUILD_DIR / "assets", check_dir=False),
+        str(CLIENT_PATH),
+        StaticFiles(directory=CLIENT_BUILD_DIR, check_dir=False),
     )
     # register this last so it takes least priority
     index_route = _make_index_route(options)

@@ -26,7 +26,7 @@ from werkzeug.serving import BaseWSGIServer, make_server
 
 import idom
 from idom.backend.common.impl import (
-    ASSETS_PATH,
+    CLIENT_PATH,
     MODULES_PATH,
     PATH_PREFIX,
     STREAM_PATH,
@@ -157,9 +157,9 @@ def _setup_common_routes(
         cors_params = cors_options if isinstance(cors_options, dict) else {}
         CORS(api_blueprint, **cors_params)
 
-    @api_blueprint.route(f"/{ASSETS_PATH.name}/<path:path>")
-    def send_assets_dir(path: str = "") -> Any:
-        return send_file(safe_client_build_dir_path(f"assets/{path}"))
+    @api_blueprint.route(f"/{CLIENT_PATH.name}/<path:path>")
+    def send_client_dir(path: str = "") -> Any:
+        return send_file(safe_client_build_dir_path(path))
 
     @api_blueprint.route(f"/{MODULES_PATH.name}/<path:path>")
     def send_modules_dir(path: str = "") -> Any:

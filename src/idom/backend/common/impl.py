@@ -19,7 +19,7 @@ from idom.utils import vdom_to_html
 
 PATH_PREFIX = PurePosixPath("/_idom")
 MODULES_PATH = PATH_PREFIX / "modules"
-ASSETS_PATH = PATH_PREFIX / "assets"
+CLIENT_PATH = PATH_PREFIX / "client"
 STREAM_PATH = PATH_PREFIX / "stream"
 
 CLIENT_BUILD_DIR = Path(_idom_file_path).parent / "_client"
@@ -115,7 +115,7 @@ class CommonOptions:
         html.link(
             {
                 "rel": "icon",
-                "href": "_idom/assets/idom-logo-square-small.svg",
+                "href": "_idom/client/idom-logo-square-small.svg",
                 "type": "image/svg+xml",
             }
         ),

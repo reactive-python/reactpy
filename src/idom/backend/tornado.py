@@ -22,8 +22,8 @@ from idom.core.server import VdomJsonPatch, serve_json_patch
 from idom.core.types import ComponentConstructor
 
 from .common.impl import (
-    ASSETS_PATH,
     CLIENT_BUILD_DIR,
+    CLIENT_PATH,
     MODULES_PATH,
     STREAM_PATH,
     CommonOptions,
@@ -118,9 +118,9 @@ def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
             {"path": str(IDOM_WEB_MODULES_DIR.current)},
         ),
         (
-            rf"{ASSETS_PATH}/(.*)",
+            rf"{CLIENT_PATH}/(.*)",
             StaticFileHandler,
-            {"path": str(CLIENT_BUILD_DIR / "assets")},
+            {"path": str(CLIENT_BUILD_DIR)},
         ),
         (
             r"/(.*)",

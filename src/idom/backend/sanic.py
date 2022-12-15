@@ -25,7 +25,7 @@ from idom.core.server import (
 from idom.core.types import RootComponentConstructor
 
 from .common.impl import (
-    ASSETS_PATH,
+    CLIENT_PATH,
     MODULES_PATH,
     PATH_PREFIX,
     STREAM_PATH,
@@ -130,9 +130,9 @@ def _setup_common_routes(
         path: str = "",
     ) -> response.HTTPResponse:
         path = urllib_parse.unquote(path)
-        return await response.file(safe_client_build_dir_path(f"assets/{path}"))
+        return await response.file(safe_client_build_dir_path(path))
 
-    api_blueprint.add_route(asset_files, f"/{ASSETS_PATH.name}/<path:path>")
+    api_blueprint.add_route(asset_files, f"/{CLIENT_PATH.name}/<path:path>")
 
     async def web_module_files(
         request: request.Request,
