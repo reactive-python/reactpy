@@ -38,7 +38,7 @@ class IteractiveWidget(SphinxDirective):
                 <div>
                     <div
                         id="{container_id}"
-                        class="interactive widget-container center-content"
+                        class="interactive widget-container"
                         style="margin-bottom: {self.options.get("margin", 0)}px;"
                     />
                     <script type="module">

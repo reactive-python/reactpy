@@ -21,11 +21,6 @@
   width: 100%;
 }
 
-.center-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 .enable-widget-button {
   padding: 10px;
   color: #ffffff !important;

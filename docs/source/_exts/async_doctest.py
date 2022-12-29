@@ -8,16 +8,15 @@ from sphinx.ext.doctest import setup as doctest_setup
 
 
 test_template = """
-import asyncio as __asyncio
+import asyncio as __test_template_asyncio
 
-async def __run():
+async def __test_template__main():
 
     {test}
 
     globals().update(locals())
 
-loop = __asyncio.get_event_loop()
-loop.run_until_complete(__run())
+__test_template_asyncio.run(__test_template__main())
 """
 
 

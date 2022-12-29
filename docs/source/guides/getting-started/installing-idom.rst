@@ -107,10 +107,9 @@ ensure the modifications you've made are backwards compatible. If you want to ad
 feature to IDOM you should write your own test that validates its behavior.
 
 If you have questions about how to modify IDOM or help with its development, be sure to
-`start a discussion
-<https://github.com/idom-team/idom/discussions/new?category=question>`__. The IDOM team
-are always excited to :ref:`welcome <everyone can contribute>` new contributions and
-contributors of all kinds
+:discussion:`start a discussion <new?category=question>`. The IDOM team are always
+excited to :ref:`welcome <everyone can contribute>` new contributions and contributors
+of all kinds
 
 .. card::
     :link: /about/contributor-guide

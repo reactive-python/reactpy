@@ -81,7 +81,13 @@ def main():
 
     build_args, pre_build_commands = _get_build_args(args)
     builder = wrap_builder(
-        get_builder(server.watcher, build_args, pre_build_commands=pre_build_commands)
+        get_builder(
+            server.watcher,
+            build_args,
+            host=args.host,
+            port=args.port,
+            pre_build_commands=pre_build_commands,
+        )
     )
 
     ignore_handler = _get_ignore_handler(args)
@@ -100,7 +106,7 @@ def main():
 
         def opener():
             time.sleep(args.delay)
-            webbrowser.open("http://%s:%s/index.html" % (args.host, 8000))
+            webbrowser.open("http://%s:%s/index.html" % (args.host, args.port))
 
         threading.Thread(target=opener, daemon=True).start()
 
