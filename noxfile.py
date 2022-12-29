@@ -181,6 +181,7 @@ def test_python_suite(session: Session) -> None:
     install_requirements_file(session, "test-env")
     session.run("playwright", "install", "chromium")
     posargs = session.posargs
+    posargs += ["--reruns", "3", "--reruns-delay", "1"]
 
     if "--no-cov" in session.posargs:
         session.log("Coverage won't be checked")
