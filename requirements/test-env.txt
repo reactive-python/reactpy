@@ -9,3 +9,6 @@ playwright
 
 # I'm not quite sure why this needs to be installed for tests with Sanic to pass
 sanic-testing
+
+# required to test uploading form data with starlette
+python-multipart

@@ -1,10 +1,17 @@
 import asyncio
 from contextlib import AsyncExitStack
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 from playwright.async_api import Browser
+from starlette.applications import Starlette
+from starlette.datastructures import UploadFile
+from starlette.requests import Request
+from starlette.responses import Response
 
 import idom
+from idom import html
+from idom.backend import starlette as starlette_backend
 from idom.backend.utils import find_available_port
 from idom.testing import BackendFixture, DisplayFixture
 from tests.tooling.common import DEFAULT_TYPE_DELAY
@@ -125,3 +132,48 @@ async def test_slow_server_response_on_input_change(display: DisplayFixture):
     await inp.type("hello", delay=DEFAULT_TYPE_DELAY)
 
     assert (await inp.evaluate("node => node.value")) == "hello"
+
+
+async def test_form_upload_file(page):
+    file_content = asyncio.Future()
+
+    async def handle_file_upload(request: Request) -> Response:
+        form = await request.form()
+        file: UploadFile = form.get("file")
+        file_content.set_result((await file.read()).decode("utf-8"))
+        return Response()
+
+    app = Starlette()
+    app.add_route("/file-upload", handle_file_upload, methods=["POST"])
+
+    @idom.component
+    def CheckUploadFile():
+        return html.form(
+            {
+                "enctype": "multipart/form-data",
+                "action": "/file-upload",
+                "method": "POST",
+            },
+            html.input({"type": "file", "name": "file", "id": "file-input"}),
+            html.input({"type": "submit", "id": "form-submit"}),
+        )
+
+    async with AsyncExitStack() as es:
+        file = Path(es.enter_context(NamedTemporaryFile()).name)
+
+        expected_file_content = "Hello, World!"
+        file.write_text(expected_file_content)
+
+        server = await es.enter_async_context(
+            BackendFixture(app=app, implementation=starlette_backend)
+        )
+        display = await es.enter_async_context(DisplayFixture(server, driver=page))
+
+        await display.show(CheckUploadFile)
+
+        file_input = await display.page.wait_for_selector("#file-input")
+        await file_input.set_input_files(file)
+
+        await (await display.page.wait_for_selector("#form-submit")).click()
+
+        assert (await asyncio.wait_for(file_content, 5)) == expected_file_content
