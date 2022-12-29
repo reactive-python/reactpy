@@ -32,6 +32,8 @@ async def serve_development_asgi(
     started: asyncio.Event | None,
 ) -> None:
     """Run a development server for starlette"""
+    started = started or asyncio.Event()
+
     server = UvicornServer(
         UvicornConfig(
             app,
@@ -42,15 +44,11 @@ async def serve_development_asgi(
         )
     )
 
-    coros: list[Awaitable[Any]] = [server.serve()]
-
-    if started:
-        coros.append(_check_if_started(server, started))
-
     try:
-        await asyncio.gather(*coros)
+        await asyncio.gather(server.serve(), _check_if_started(server, started))
     finally:
-        await asyncio.wait_for(server.shutdown(), timeout=3)
+        if started.is_set():
+            await asyncio.wait_for(server.shutdown(), timeout=3)
 
 
 async def _check_if_started(server: UvicornServer, started: asyncio.Event) -> None:
