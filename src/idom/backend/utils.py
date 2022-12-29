@@ -7,9 +7,8 @@ from contextlib import closing
 from importlib import import_module
 from typing import Any, Iterator
 
+from idom.backend.types import BackendImplementation
 from idom.types import RootComponentConstructor
-
-from .types import BackendImplementation
 
 
 logger = logging.getLogger(__name__)

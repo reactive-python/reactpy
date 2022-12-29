@@ -122,8 +122,16 @@ def _setup_common_routes(
     ) -> response.HTTPResponse:
         return response.html(index_html)
 
-    spa_blueprint.add_route(single_page_app_files, "/")
-    spa_blueprint.add_route(single_page_app_files, "/<_:path>")
+    spa_blueprint.add_route(
+        single_page_app_files,
+        "/",
+        name="single_page_app_files_root",
+    )
+    spa_blueprint.add_route(
+        single_page_app_files,
+        "/<_:path>",
+        name="single_page_app_files_path",
+    )
 
     async def asset_files(
         request: request.Request,
@@ -188,8 +196,16 @@ def _setup_single_view_dispatcher_route(
             recv,
         )
 
-    api_blueprint.add_websocket_route(model_stream, f"/{STREAM_PATH.name}")
-    api_blueprint.add_websocket_route(model_stream, f"/{STREAM_PATH.name}/<path:path>/")
+    api_blueprint.add_websocket_route(
+        model_stream,
+        f"/{STREAM_PATH.name}",
+        name="model_stream_root",
+    )
+    api_blueprint.add_websocket_route(
+        model_stream,
+        f"/{STREAM_PATH.name}/<path:path>/",
+        name="model_stream_path",
+    )
 
 
 def _make_send_recv_callbacks(
