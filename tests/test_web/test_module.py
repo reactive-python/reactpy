@@ -1,10 +1,11 @@
 from pathlib import Path
 
 import pytest
-from sanic import Sanic
+from starlette.applications import Starlette
+from starlette.responses import FileResponse
 
 import idom
-from idom.backend import sanic as sanic_implementation
+from idom.backend import starlette as starlette_implementation
 from idom.testing import (
     BackendFixture,
     DisplayFixture,
@@ -52,14 +53,12 @@ async def test_that_js_module_unmount_is_called(display: DisplayFixture):
 
 
 async def test_module_from_url(browser):
-    app = Sanic("test_module_from_url")
+    app = Starlette()
 
     # instead of directing the URL to a CDN, we just point it to this static file
-    app.static(
-        "/simple-button.js",
-        str(JS_FIXTURES_DIR / "simple-button.js"),
-        content_type="text/javascript",
-    )
+    @app.route("/simple-button.js")
+    async def simple_button_js(request):
+        return FileResponse(str(JS_FIXTURES_DIR / "simple-button.js"))
 
     SimpleButton = idom.web.export(
         idom.web.module_from_url("/simple-button.js", resolve_exports=False),
@@ -70,7 +69,9 @@ async def test_module_from_url(browser):
     def ShowSimpleButton():
         return SimpleButton({"id": "my-button"})
 
-    async with BackendFixture(app=app, implementation=sanic_implementation) as server:
+    async with BackendFixture(
+        app=app, implementation=starlette_implementation
+    ) as server:
         async with DisplayFixture(server, browser) as display:
             await display.show(ShowSimpleButton)
 
