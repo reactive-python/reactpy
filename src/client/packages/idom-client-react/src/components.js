@@ -29,6 +29,14 @@ export function Layout({ saveUpdateHook, sendEvent, loadImportSource }) {
   `;
 }
 
+const ELEMENT_WRAPPER_COMPONENTS = {
+  form: FormElement,
+  input: UserInputElement,
+  script: ScriptElement,
+  select: UserInputElement,
+  textarea: UserInputElement,
+};
+
 export function Element({ model }) {
   if (model.error !== undefined) {
     if (model.error) {
@@ -36,15 +44,16 @@ export function Element({ model }) {
     } else {
       return null;
     }
-  } else if (model.tagName == "script") {
-    return html`<${ScriptElement} model=${model} />`;
-  } else if (["input", "select", "textarea"].includes(model.tagName)) {
-    return html`<${UserInputElement} model=${model} />`;
-  } else if (model.importSource) {
-    return html`<${ImportedElement} model=${model} />`;
-  } else {
-    return html`<${StandardElement} model=${model} />`;
   }
+
+  let Component;
+  if (model.importSource) {
+    Component = ImportedElement;
+  } else {
+    Component = ELEMENT_WRAPPER_COMPONENTS[model.tagName] || StandardElement;
+  }
+
+  return html`<${Component} model=${model} />`;
 }
 
 function StandardElement({ model }) {
@@ -153,6 +162,41 @@ function ScriptElement({ model }) {
     }
   }, [model.key]);
   return html`<div ref=${ref} />`;
+}
+
+function FormElement({ model }) {
+  const layoutContext = React.useContext(LayoutContext);
+  const props = createElementAttributes(model, layoutContext.sendEvent);
+
+  if (props.target && props.target !== "_self") {
+    return html`<${StandardElement} model=${model} />`;
+  }
+
+  const oldOnSubmit = props.onSubmit || (() => {});
+  async function onSubmit(event) {
+    event.preventDefault();
+    if (!model?.eventHandlers?.onSubmit?.preventDefault) {
+      await fetch(props.action || window.location.href, {
+        method: props.method || "POST",
+        body: new FormData(event.target),
+      });
+    }
+    if (oldOnSubmit) {
+      oldOnSubmit(event);
+    }
+  }
+
+  // Use createElement here to avoid warning about variable numbers of children not
+  // having keys. Warning about this must now be the responsibility of the server
+  // providing the models instead of the client rendering them.
+  return React.createElement(
+    model.tagName,
+    { ...props, onSubmit },
+    ...createElementChildren(
+      model,
+      (model) => html`<${Element} key=${model.key} model=${model} />`
+    )
+  );
 }
 
 function ImportedElement({ model }) {
