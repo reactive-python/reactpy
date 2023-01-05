@@ -58,8 +58,11 @@ def configure(
 
 
 def create_development_app() -> Sanic:
-    """Return a :class:`Sanic` app instance in debug mode"""
-    return Sanic(f"idom_development_app_{uuid4().hex}", Config())
+    """Return a :class:`Sanic` app instance in test mode"""
+    Sanic.test_mode = True
+    logger.warning("Sanic.test_mode is now active")
+    app = Sanic(f"idom_development_app_{uuid4().hex}", Config())
+    return app
 
 
 async def serve_development_app(

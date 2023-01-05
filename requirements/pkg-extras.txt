@@ -5,6 +5,7 @@ uvicorn[standard] >=0.19.0
 # extra=sanic
 sanic >=21
 sanic-cors
+uvicorn[standard] >=0.19.0
 
 # extra=fastapi
 fastapi >=0.63.0

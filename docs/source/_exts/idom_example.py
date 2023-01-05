@@ -89,7 +89,7 @@ class WidgetExample(SphinxDirective):
             [],
             {},
             _make_tab_items(labeled_tab_items),
-            self.lineno - 1,
+            self.lineno - 2,
             self.content_offset,
             "",
             self.state,
