@@ -65,9 +65,6 @@ class ComponentType(Protocol):
     def render(self) -> VdomDict | ComponentType | str | None:
         """Render the component's view model."""
 
-    def should_render(self: _OwnType, new: _OwnType) -> bool:
-        """Whether the new component instance should be rendered."""
-
 
 _Render = TypeVar("_Render", covariant=True)
 _Event = TypeVar("_Event", contravariant=True)

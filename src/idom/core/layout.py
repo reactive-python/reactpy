@@ -168,44 +168,35 @@ class Layout:
         component: ComponentType,
     ) -> None:
         life_cycle_state = new_state.life_cycle_state
+        life_cycle_hook = life_cycle_state.hook
+
         self._model_states_by_life_cycle_state_id[life_cycle_state.id] = new_state
 
-        if (
-            old_state is not None
-            and hasattr(old_state.model, "current")
-            and old_state.is_component_state
-            and not _check_should_render(
-                old_state.life_cycle_state.component, component
-            )
-        ):
-            new_state.model.current = old_state.model.current
-        else:
-            life_cycle_hook = life_cycle_state.hook
-            life_cycle_hook.affect_component_will_render(component)
-            exit_stack.callback(life_cycle_hook.affect_layout_did_render)
-            life_cycle_hook.set_current()
-            try:
-                raw_model = component.render()
-                # wrap the model in a fragment (i.e. tagName="") to ensure components have
-                # a separate node in the model state tree. This could be removed if this
-                # components are given a node in the tree some other way
-                wrapper_model: VdomDict = {"tagName": ""}
-                if raw_model is not None:
-                    wrapper_model["children"] = [raw_model]
-                self._render_model(exit_stack, old_state, new_state, wrapper_model)
-            except Exception as error:
-                logger.exception(f"Failed to render {component}")
-                new_state.model.current = {
-                    "tagName": "",
-                    "error": (
-                        f"{type(error).__name__}: {error}"
-                        if IDOM_DEBUG_MODE.current
-                        else ""
-                    ),
-                }
-            finally:
-                life_cycle_hook.unset_current()
-                life_cycle_hook.affect_component_did_render()
+        life_cycle_hook.affect_component_will_render(component)
+        exit_stack.callback(life_cycle_hook.affect_layout_did_render)
+        life_cycle_hook.set_current()
+        try:
+            raw_model = component.render()
+            # wrap the model in a fragment (i.e. tagName="") to ensure components have
+            # a separate node in the model state tree. This could be removed if this
+            # components are given a node in the tree some other way
+            wrapper_model: VdomDict = {"tagName": ""}
+            if raw_model is not None:
+                wrapper_model["children"] = [raw_model]
+            self._render_model(exit_stack, old_state, new_state, wrapper_model)
+        except Exception as error:
+            logger.exception(f"Failed to render {component}")
+            new_state.model.current = {
+                "tagName": "",
+                "error": (
+                    f"{type(error).__name__}: {error}"
+                    if IDOM_DEBUG_MODE.current
+                    else ""
+                ),
+            }
+        finally:
+            life_cycle_hook.unset_current()
+            life_cycle_hook.affect_component_did_render()
 
         try:
             parent = new_state.parent
@@ -462,14 +453,6 @@ class Layout:
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.root})"
-
-
-def _check_should_render(old: ComponentType, new: ComponentType) -> bool:
-    try:
-        return old.should_render(new)
-    except Exception:
-        logger.exception(f"{old} component failed to check if {new} should be rendered")
-        return False
 
 
 def _new_root_model_state(
