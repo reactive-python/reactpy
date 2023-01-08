@@ -216,9 +216,6 @@ class Layout:
                     *old_parent_children[index + 1 :],
                 ],
             }
-        finally:
-            # avoid double render
-            self._rendering_queue.remove_if_pending(life_cycle_state.id)
 
     def _render_model(
         self,
@@ -692,10 +689,6 @@ class _ThreadSafeQueue(Generic[_Type]):
             self._pending.add(value)
             self._loop.call_soon_threadsafe(self._queue.put_nowait, value)
         return None
-
-    def remove_if_pending(self, value: _Type) -> None:
-        if value in self._pending:
-            self._pending.remove(value)
 
     async def get(self) -> _Type:
         while True:
