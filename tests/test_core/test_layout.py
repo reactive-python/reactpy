@@ -11,7 +11,7 @@ import idom
 from idom import html
 from idom.config import IDOM_DEBUG_MODE
 from idom.core.component import component
-from idom.core.hooks import create_context, use_context, use_effect, use_state
+from idom.core.hooks import use_effect, use_state
 from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 from idom.testing import (
     HookCatcher,
