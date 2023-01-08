@@ -1162,7 +1162,7 @@ async def test_does_render_children_after_component():
         }
 
 
-async def test_remove_context_provider_consumer_without_changing_context_value():
+async def test_render_removed_context_consumer():
     Context = idom.create_context(None)
     toggle_remove_child = None
     schedule_removed_child_render = None
