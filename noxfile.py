@@ -187,6 +187,7 @@ def test_python_suite(session: Session) -> None:
         args = ["coverage", "run", "--source=src/idom", "--module", *args]
         install_idom_dev(session)
     else:
+        args.remove("--no-cov")
         session.log("Coverage won't be checked")
         session.install(".[all]")
 
