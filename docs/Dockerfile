@@ -23,7 +23,7 @@ RUN pip install -r requirements/build-docs.txt
 ADD src ./src
 ADD scripts ./scripts
 ADD setup.py ./
-ADD setup.cfg ./
+ADD pyproject.toml ./
 ADD MANIFEST.in ./
 ADD README.md ./
 RUN pip install -e .[all]
