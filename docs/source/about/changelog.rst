@@ -23,7 +23,18 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Removed**
+
+- :pull:`870` - ``ComponentType.should_render()``. This method was implemented based on
+  reading the React/Preact source code. As it turns out though it seems like it's mostly
+  a vestige from the fact that both these libraries still support class-based
+  components. The ability for components to not render also caused several bugs.
+
+**Fixed**
+
+- :issue:`846` - Nested context does no update value if outer context should not render.
+- :issue:`847` - Detached model state on render of context consumer if unmounted and
+  context value does not change.
 
 
 v0.42.0

@@ -1,4 +1,8 @@
-from idom import use_state
+from idom.core.hooks import current_hook, use_state
+
+
+def use_force_render():
+    return current_hook().schedule_render
 
 
 def use_toggle(init=False):
