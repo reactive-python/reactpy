@@ -26,7 +26,7 @@ COPY setup.py ./
 COPY pyproject.toml ./
 COPY MANIFEST.in ./
 COPY README.md ./
-RUN pip install -e .[all]
+RUN pip install .[all]
 
 # COPY License
 # -----------
