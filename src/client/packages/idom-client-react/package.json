@@ -1,7 +1,7 @@
 {
   "author": "Ryan Morshead",
   "dependencies": {
-    "fast-json-patch": "^3.0.0-1",
+    "fast-json-patch": "^3.1.1",
     "htm": "^3.0.3"
   },
   "description": "A client for IDOM implemented in React",
