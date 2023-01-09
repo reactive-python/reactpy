@@ -23,6 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+No changes.
+
+
+v0.43.0
+-------
+:octicon:`milestone` *released on 2023-01-09*
+
 **Removed**
 
 - :pull:`870` - ``ComponentType.should_render()``. This method was implemented based on
