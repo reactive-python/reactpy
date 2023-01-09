@@ -58,7 +58,7 @@ def resolve_module_exports_from_url(
         return set()
 
     try:
-        text = requests.get(url, headers={"User-Agent": _FAKE_USER_AGENT}).text
+        text = requests.get(url).text
     except requests.exceptions.ConnectionError as error:
         reason = "" if error is None else " - {error.errno}"
         logger.warning("Did not resolve exports for url " + url + reason)
@@ -154,9 +154,4 @@ _JS_FUNC_OR_CLS_EXPORT_PATTERN = re.compile(
 )
 _JS_GENERAL_EXPORT_PATTERN = re.compile(
     r"(?:^|;|})\s*export(?=\s+|{)(.*?)(?=;|$)", re.MULTILINE
-)
-
-# we fake the user agent to bypass some bot blockers
-_FAKE_USER_AGENT = (
-    "Mozilla/5.0 (platform; rv:geckoversion) Gecko/geckotrail Firefox/firefoxversion"
 )
