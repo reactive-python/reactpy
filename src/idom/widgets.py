@@ -13,6 +13,7 @@ from typing import (
     TypeVar,
     Union,
 )
+from warnings import warn
 
 from typing_extensions import Protocol
 
@@ -22,6 +23,7 @@ from . import html
 from .core import hooks
 from .core.component import component
 from .core.types import ComponentConstructor, VdomDict
+from .testing.backend import _hotswap, _MountFunc
 from .utils import Ref
 
 
@@ -107,85 +109,10 @@ class _CastFunc(Protocol[_CastTo]):
         ...
 
 
-MountFunc = Callable[["Callable[[], Any] | None"], None]
-
-
-def hotswap(update_on_change: bool = False) -> Tuple[MountFunc, ComponentConstructor]:
-    """Swap out components from a layout on the fly.
-
-    Since you can't change the component functions used to create a layout
-    in an imperative manner, you can use ``hotswap`` to do this so
-    long as you set things up ahead of time.
-
-    Parameters:
-        update_on_change: Whether or not all views of the layout should be udpated on a swap.
-
-    Example:
-        .. code-block:: python
-
-            import idom
-
-            show, root = idom.hotswap()
-            PerClientStateServer(root).run_in_thread("localhost", 8765)
-
-            @idom.component
-            def DivOne(self):
-                return {"tagName": "div", "children": [1]}
-
-            show(DivOne)
-
-            # displaying the output now will show DivOne
-
-            @idom.component
-            def DivTwo(self):
-                return {"tagName": "div", "children": [2]}
-
-            show(DivTwo)
-
-            # displaying the output now will show DivTwo
-    """
-    constructor_ref: Ref[Callable[[], Any]] = Ref(lambda: None)
-
-    if update_on_change:
-        set_constructor_callbacks: Set[Callable[[Callable[[], Any]], None]] = set()
-
-        @component
-        def HotSwap() -> Any:
-            # new displays will adopt the latest constructor and arguments
-            constructor, set_constructor = _use_callable(constructor_ref.current)
-
-            def add_callback() -> Callable[[], None]:
-                set_constructor_callbacks.add(set_constructor)
-                return lambda: set_constructor_callbacks.remove(set_constructor)
-
-            hooks.use_effect(add_callback)
-
-            return constructor()
-
-        def swap(constructor: Callable[[], Any] | None) -> None:
-            constructor = constructor_ref.current = constructor or (lambda: None)
-
-            for set_constructor in set_constructor_callbacks:
-                set_constructor(constructor)
-
-            return None
-
-    else:
-
-        @component
-        def HotSwap() -> Any:
-            return constructor_ref.current()
-
-        def swap(constructor: Callable[[], Any] | None) -> None:
-            constructor_ref.current = constructor or (lambda: None)
-            return None
-
-    return swap, HotSwap
-
-
-_Func = Callable[..., Any]
-
-
-def _use_callable(initial_func: _Func) -> Tuple[_Func, Callable[[_Func], None]]:
-    state, set_state = hooks.use_state(lambda: initial_func)
-    return state, lambda new: set_state(lambda old: new)
+def hotswap(update_on_change: bool = False) -> Tuple[_MountFunc, ComponentConstructor]:
+    warn(
+        "The 'hotswap' function is deprecated and will be removed in a future release",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return _hotswap(update_on_change)

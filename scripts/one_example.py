@@ -5,7 +5,7 @@ from threading import Event, Thread
 
 import idom
 from docs.examples import all_example_names, get_example_files_by_name, load_one_example
-from idom.widgets import hotswap
+from idom.widgets import _hotswap
 
 
 EXAMPLE_NAME_SET = all_example_names()
@@ -32,7 +32,7 @@ def on_file_change(path, callback):
 def main():
     ex_name = _example_name_input()
 
-    mount, component = hotswap(update_on_change=True)
+    mount, component = _hotswap(update_on_change=True)
 
     def update_component():
         print(f"Loading example: {ex_name!r}")

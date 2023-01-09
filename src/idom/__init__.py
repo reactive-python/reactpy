@@ -19,7 +19,7 @@ from .core.layout import Layout
 from .core.serve import Stop
 from .core.vdom import vdom
 from .utils import Ref, html_to_vdom, vdom_to_html
-from .widgets import hotswap
+from .widgets import _hotswap
 
 
 __author__ = "idom-team"
@@ -32,7 +32,7 @@ __all__ = [
     "create_context",
     "event",
     "hooks",
-    "hotswap",
+    "_hotswap",
     "html_to_vdom",
     "html",
     "Layout",
