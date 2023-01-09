@@ -17,28 +17,28 @@ RUN pip install --upgrade pip
 
 # Install IDOM
 # ------------
-ADD requirements ./requirements
+COPY requirements ./requirements
 RUN pip install -r requirements/build-docs.txt
 
-ADD src ./src
-ADD scripts ./scripts
-ADD setup.py ./
-ADD pyproject.toml ./
-ADD MANIFEST.in ./
-ADD README.md ./
+COPY src ./src
+COPY scripts ./scripts
+COPY setup.py ./
+COPY pyproject.toml ./
+COPY MANIFEST.in ./
+COPY README.md ./
 RUN pip install -e .[all]
 
-# Add License
+# COPY License
 # -----------
-Add LICENSE /app/
+COPY LICENSE /app/
 
 # Build the Docs
 # --------------
-ADD docs/__init__.py ./docs/
-ADD docs/app.py ./docs/
-ADD docs/examples.py ./docs/
-ADD docs/source ./docs/source
-ADD branding ./branding
+COPY docs/__init__.py ./docs/
+COPY docs/app.py ./docs/
+COPY docs/examples.py ./docs/
+COPY docs/source ./docs/source
+COPY branding ./branding
 RUN sphinx-build -v -W -b html docs/source docs/build
 
 # Define Entrypoint
