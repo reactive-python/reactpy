@@ -268,13 +268,6 @@ def use_context(context: Context[_Type]) -> _Type:
         # then we can safely access the context's default value
         return cast(_Type, context.__kwdefaults__["value"])
 
-    subscribers = provider._subscribers
-
-    @use_effect
-    def subscribe_to_context_change() -> Callable[[], None]:
-        subscribers.add(hook)
-        return lambda: subscribers.remove(hook)
-
     return provider._value
 
 
@@ -289,20 +282,11 @@ class ContextProvider(Generic[_Type]):
         self.children = children
         self.key = key
         self.type = type
-        self._subscribers: set[LifeCycleHook] = set()
         self._value = value
 
     def render(self) -> VdomDict:
         current_hook().set_context_provider(self)
         return vdom("", *self.children)
-
-    def should_render(self, new: ContextProvider[_Type]) -> bool:
-        if not strictly_equal(self._value, new._value):
-            for hook in self._subscribers:
-                hook.set_context_provider(new)
-                hook.schedule_render()
-            return True
-        return False
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.type})"

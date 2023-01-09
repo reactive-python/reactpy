@@ -54,9 +54,6 @@ class Component:
     def render(self) -> ComponentType | VdomDict | str | None:
         return self.type(*self._args, **self._kwargs)
 
-    def should_render(self, new: Component) -> bool:
-        return True
-
     def __repr__(self) -> str:
         try:
             args = self._sig.bind(*self._args, **self._kwargs).arguments

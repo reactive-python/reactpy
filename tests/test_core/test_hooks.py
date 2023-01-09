@@ -946,39 +946,6 @@ def test_context_repr():
     assert repr(sample_context()) == f"ContextProvider({sample_context})"
 
 
-async def test_use_context_only_renders_for_value_change():
-    Context = idom.create_context(None)
-
-    provider_hook = HookCatcher()
-    render_count = idom.Ref(0)
-    set_state = idom.Ref()
-
-    @idom.component
-    @provider_hook.capture
-    def ComponentProvidesContext():
-        state, set_state.current = idom.use_state(0)
-        return Context(ComponentInContext(), value=state)
-
-    @idom.component
-    def ComponentInContext():
-        render_count.current += 1
-        return html.div()
-
-    async with idom.Layout(ComponentProvidesContext()) as layout:
-        await layout.render()
-        assert render_count.current == 1
-
-        set_state.current(1)
-
-        await layout.render()
-        assert render_count.current == 2
-
-        provider_hook.latest.schedule_render()
-
-        await layout.render()
-        assert render_count.current == 2
-
-
 async def test_use_context_updates_components_even_if_memoized():
     Context = idom.create_context(None)
 
@@ -1019,114 +986,26 @@ async def test_use_context_updates_components_even_if_memoized():
         assert value.current == 2
 
 
-async def test_nested_contexts_do_not_conflict():
+async def test_context_values_are_scoped():
     Context = idom.create_context(None)
 
-    outer_value = idom.Ref(None)
-    inner_value = idom.Ref(None)
-    outer_render_count = idom.Ref(0)
-    inner_render_count = idom.Ref(0)
-    set_outer_value = idom.Ref()
-    set_root_value = idom.Ref()
-
     @idom.component
-    def Root():
-        outer_value, set_root_value.current = idom.use_state(-1)
-        return Context(Outer(), value=outer_value)
-
-    @idom.component
-    def Outer():
-        inner_value, set_outer_value.current = idom.use_state(1)
-        outer_value.current = idom.use_context(Context)
-        outer_render_count.current += 1
-        return Context(Inner(), value=inner_value)
-
-    @idom.component
-    def Inner():
-        inner_value.current = idom.use_context(Context)
-        inner_render_count.current += 1
-        return html.div()
-
-    async with idom.Layout(Root()) as layout:
-        await layout.render()
-        assert outer_render_count.current == 1
-        assert inner_render_count.current == 1
-        assert outer_value.current == -1
-        assert inner_value.current == 1
-
-        set_root_value.current(-2)
-
-        await layout.render()
-        assert outer_render_count.current == 2
-        assert inner_render_count.current == 1
-        assert outer_value.current == -2
-        assert inner_value.current == 1
-
-        set_outer_value.current(2)
-
-        await layout.render()
-        assert outer_render_count.current == 3
-        assert inner_render_count.current == 2
-        assert outer_value.current == -2
-        assert inner_value.current == 2
-
-
-async def test_neighboring_contexts_do_not_conflict():
-    LeftContext = idom.create_context(None)
-    RightContext = idom.create_context(None)
-
-    set_left = idom.Ref()
-    set_right = idom.Ref()
-    left_used_value = idom.Ref()
-    right_used_value = idom.Ref()
-    left_render_count = idom.Ref(0)
-    right_render_count = idom.Ref(0)
-
-    @idom.component
-    def Root():
-        left_value, set_left.current = idom.use_state(1)
-        right_value, set_right.current = idom.use_state(1)
-        return idom.html.div(
-            LeftContext(Left(), value=left_value),
-            RightContext(Right(), value=right_value),
+    def Parent():
+        return html._(
+            Context(Context(Child1(), value=1), value="something-else"),
+            Context(Child2(), value=2),
         )
 
     @idom.component
-    def Left():
-        left_render_count.current += 1
-        left_used_value.current = idom.use_context(LeftContext)
-        return idom.html.div()
+    def Child1():
+        assert idom.use_context(Context) == 1
 
     @idom.component
-    def Right():
-        right_render_count.current += 1
-        right_used_value.current = idom.use_context(RightContext)
-        return idom.html.div()
+    def Child2():
+        assert idom.use_context(Context) == 2
 
-    async with idom.Layout(Root()) as layout:
+    async with Layout(Parent()) as layout:
         await layout.render()
-        assert left_render_count.current == 1
-        assert right_render_count.current == 1
-        assert left_used_value.current == 1
-        assert right_used_value.current == 1
-
-        for i in range(2, 5):
-            set_left.current(i)
-
-            await layout.render()
-            assert left_render_count.current == i
-            assert right_render_count.current == 1
-            assert left_used_value.current == i
-            assert right_used_value.current == 1
-
-        for j in range(2, 5):
-            set_right.current(j)
-
-            await layout.render()
-            assert left_render_count.current == i
-            assert right_render_count.current == j
-            assert left_used_value.current == i
-            assert right_used_value.current == j
 
 
 async def test_error_in_effect_cleanup_is_gracefully_handled():
@@ -1355,30 +1234,6 @@ async def test_use_effect_compares_with_strict_equality(get_value):
         await layout.render()
         # effect does not trigger
         assert effect_count.current == 1
-
-
-@pytest.mark.parametrize("get_value", STRICT_EQUALITY_VALUE_CONSTRUCTORS)
-async def test_use_context_compares_with_strict_equality(get_value):
-    hook = HookCatcher()
-    context = idom.create_context(None)
-    inner_render_count = idom.Ref(0)
-
-    @idom.component
-    @hook.capture
-    def OuterComponent():
-        return context(InnerComponent(), value=get_value())
-
-    @idom.component
-    def InnerComponent():
-        idom.use_context(context)
-        inner_render_count.current += 1
-
-    async with idom.Layout(OuterComponent()) as layout:
-        await layout.render()
-        assert inner_render_count.current == 1
-        hook.latest.schedule_render()
-        await layout.render()
-        assert inner_render_count.current == 1
 
 
 async def test_use_state_named_tuple():

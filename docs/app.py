@@ -1,4 +1,3 @@
-import os
 from logging import getLogger
 from pathlib import Path
 
@@ -18,23 +17,6 @@ logger = getLogger(__name__)
 
 
 IDOM_MODEL_SERVER_URL_PREFIX = "/_idom"
-
-
-def run():
-    app = make_app()
-
-    configure(
-        app,
-        Example,
-        Options(url_prefix=IDOM_MODEL_SERVER_URL_PREFIX),
-    )
-
-    app.run(
-        host="0.0.0.0",
-        port=int(os.environ.get("PORT", 5000)),
-        workers=int(os.environ.get("WEB_CONCURRENCY", 1)),
-        debug=bool(int(os.environ.get("DEBUG", "0"))),
-    )
 
 
 @component
@@ -66,5 +48,11 @@ def make_app():
     @app.route("/")
     async def forward_to_index(request):
         return response.redirect("/docs/index.html")
+
+    configure(
+        app,
+        Example,
+        Options(url_prefix=IDOM_MODEL_SERVER_URL_PREFIX),
+    )
 
     return app

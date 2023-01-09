@@ -64,50 +64,6 @@ about how to get started. To make a change to IDOM you'll do the following:
     At that point your contribution will be merged into the main codebase!
 
 
-Creating a Changelog Entry
---------------------------
-
-As part of your pull request, you'll want to edit the `Changelog
-<https://github.com/idom-team/idom/blob/main/docs/source/about/changelog.rst>`__ by
-adding an entry describing what you've changed or improved. You should write an entry in
-the style of `Keep a Changelog <https://keepachangelog.com/>`__ that falls under one of
-the following categories, and add it to the :ref:`Unreleased` section of the changelog:
-
-- **Added** - for new features.
-- **Changed** - for changes in existing functionality.
-- **Deprecated** - for soon-to-be removed features.
-- **Removed** - for now removed features.
-- **Fixed** - for any bug fixes.
-- **Documented** - for improvements to this documentation.
-- **Security** - in case of vulnerabilities.
-
-If one of the sections doesn't exist, add it. If it does already, add a bullet point
-under the relevant section. Your description should begin with a reference to the
-relevant issue or pull request number. Here's a short example of what an unreleased
-changelog entry might look like:
-
-.. code-block:: rst
-
-    Unreleased
-    ----------
-
-    **Added**
-
-    - :pull:`123` - A really cool new feature
-
-    **Changed**
-
-    - :pull:`456` - The behavior of some existing feature
-
-    **Fixed**
-
-    - :issue:`789` - Some really bad bug
-
-.. hint::
-
-    ``:issue:`` and ``:pull:`` refer to issue and pull request ticket numbers.
-
-
 Development Environment
 -----------------------
 
@@ -136,7 +92,7 @@ In order to develop IDOM locally you'll first need to install the following:
     *   - NPM >= 7.13
         - https://docs.npmjs.com/try-the-latest-stable-version-of-npm
 
-    *   - Docker
+    *   - Docker (optional)
         - https://docs.docker.com/get-docker/
 
 .. note::
@@ -175,35 +131,38 @@ However you may also ``cd`` to the ``src/client`` directory which contains a
 Running The Tests
 -----------------
 
-The test suite for IDOM is executed with Nox_. The suite covers:
+The test suite for IDOM is executed with Nox_, which should already be installed if you
+followed the `earlier instructions <Development Environment>`_. The suite covers:
 
 1. Server-side Python code with PyTest_
 
-2. The end-to-end application using Selenium_ in Python
+2. The end-to-end application using Playwright_ in Python
 
 3. Client-side Javascript code with UVU_
 
-To run the full suite of tests you'll need to install:
+Before running the test suite you'll need to install the required browsers by running:
 
-- `Google Chrome`_
+.. code-block:: bash
 
-- ChromeDriver_.
+    playwright install
 
-.. warning::
-
-    Be sure the version of `Google Chrome`_ and ChromeDriver_ you install are compatible.
-
-Once you've installed the aforementioned browser and web driver you'll be able to run:
+Once you've installed them you'll be able to run:
 
 .. code-block:: bash
 
     nox -s test
 
-If you prefer to run the tests using a headless browser:
+You can observe the browser as the tests are running by passing an extra flag:
 
 .. code-block:: bash
 
-    nox -s test -- --headless
+    nox -s test -- --headed
+
+To see a full list of available commands (e.g. ``nox -s <your-command>``) run:
+
+.. code-block:: bash
+
+    nox -l
 
 
 Code Quality Checks
@@ -270,6 +229,50 @@ installed Docker, you can run:
 Where you can then navigate to http://localhost:5000..
 
 
+Creating a Changelog Entry
+--------------------------
+
+As part of your pull request, you'll want to edit the `Changelog
+<https://github.com/idom-team/idom/blob/main/docs/source/about/changelog.rst>`__ by
+adding an entry describing what you've changed or improved. You should write an entry in
+the style of `Keep a Changelog <https://keepachangelog.com/>`__ that falls under one of
+the following categories, and add it to the :ref:`Unreleased` section of the changelog:
+
+- **Added** - for new features.
+- **Changed** - for changes in existing functionality.
+- **Deprecated** - for soon-to-be removed features.
+- **Removed** - for now removed features.
+- **Fixed** - for any bug fixes.
+- **Documented** - for improvements to this documentation.
+- **Security** - in case of vulnerabilities.
+
+If one of the sections doesn't exist, add it. If it does already, add a bullet point
+under the relevant section. Your description should begin with a reference to the
+relevant issue or pull request number. Here's a short example of what an unreleased
+changelog entry might look like:
+
+.. code-block:: rst
+
+    Unreleased
+    ----------
+
+    **Added**
+
+    - :pull:`123` - A really cool new feature
+
+    **Changed**
+
+    - :pull:`456` - The behavior of some existing feature
+
+    **Fixed**
+
+    - :issue:`789` - Some really bad bug
+
+.. hint::
+
+    ``:issue:`` and ``:pull:`` refer to issue and pull request ticket numbers.
+
+
 Release Process
 ---------------
 
@@ -332,7 +335,7 @@ you should refer to their respective documentation in the links below:
 .. _PyPI: https://pypi.org/project/idom
 .. _pip: https://pypi.org/project/pip/
 .. _PyTest: pytest <https://docs.pytest.org
-.. _Selenium: https://www.seleniumhq.org/
+.. _Playwright: https://playwright.dev/python/
 .. _Nox: https://nox.thea.codes/en/stable/#
 .. _React: https://reactjs.org/
 .. _Heroku: https://www.heroku.com/what

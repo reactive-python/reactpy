@@ -20,7 +20,7 @@ from idom.testing import (
     capture_idom_logs,
 )
 from idom.utils import Ref
-from tests.tooling.hooks import use_toggle
+from tests.tooling.hooks import use_force_render, use_toggle
 
 
 @pytest.fixture(autouse=True)
@@ -1123,83 +1123,6 @@ async def test_change_element_to_string_causes_unmount():
         assert did_unmount.current
 
 
-class ComponentShouldRender:
-    def __init__(self, child, should_render):
-        self.child = child or html.div()
-        self.should_render = should_render
-        self.key = None
-        self.type = self.__class__
-
-    def render(self):
-        return html.div(self.child)
-
-
-async def test_component_should_render_always_true():
-    render_count = idom.Ref(0)
-    root_hook = HookCatcher()
-
-    @idom.component
-    @root_hook.capture
-    def Root():
-        return ComponentShouldRender(SomeComponent(), should_render=lambda new: True)
-
-    @idom.component
-    def SomeComponent():
-        render_count.current += 1
-        return html.div()
-
-    async with idom.Layout(Root()) as layout:
-        for _ in range(4):
-            await layout.render()
-            root_hook.latest.schedule_render()
-
-    assert render_count.current == 4
-
-
-async def test_component_should_render_always_false():
-    render_count = idom.Ref(0)
-    root_hook = HookCatcher()
-
-    @idom.component
-    @root_hook.capture
-    def Root():
-        return ComponentShouldRender(SomeComponent(), should_render=lambda new: False)
-
-    @idom.component
-    def SomeComponent():
-        render_count.current += 1
-        return html.div()
-
-    async with idom.Layout(Root()) as layout:
-        for _ in range(4):
-            await layout.render()
-            root_hook.latest.schedule_render()
-
-    assert render_count.current == 1
-
-
-async def test_component_error_in_should_render_is_handled_gracefully():
-    root_hook = HookCatcher()
-
-    @idom.component
-    @root_hook.capture
-    def Root():
-        def bad_should_render(new):
-            raise ValueError("The error message")
-
-        return ComponentShouldRender(html.div(), should_render=bad_should_render)
-
-    with assert_idom_did_log(
-        match_message=r".* component failed to check if .* should be rendered",
-        error_type=ValueError,
-        match_error="The error message",
-    ):
-        async with idom.Layout(Root()) as layout:
-            await layout.render()
-            root_hook.latest.schedule_render()
-            await layout.render()
-
-
 async def test_does_render_children_after_component():
     """Regression test for bug where layout was appending children to a stale ref
 
@@ -1221,7 +1144,6 @@ async def test_does_render_children_after_component():
 
     async with idom.Layout(Parent()) as layout:
         update = await layout.render()
-        print(update.new)
         assert update.new == {
             "tagName": "",
             "children": [
@@ -1238,3 +1160,43 @@ async def test_does_render_children_after_component():
                 }
             ],
         }
+
+
+async def test_render_removed_context_consumer():
+    Context = idom.create_context(None)
+    toggle_remove_child = None
+    schedule_removed_child_render = None
+
+    @component
+    def Parent():
+        nonlocal toggle_remove_child
+        remove_child, toggle_remove_child = use_toggle()
+        return Context(html.div() if remove_child else Child(), value=None)
+
+    @component
+    def Child():
+        nonlocal schedule_removed_child_render
+        schedule_removed_child_render = use_force_render()
+        return None
+
+    async with idom.Layout(Parent()) as layout:
+        await layout.render()
+
+        # If the context provider does not render its children then internally tracked
+        # state for the removed child component might not be cleaned up propperly. This
+        # occured in the past when the context provider implemented a should_render()
+        # method that returned False (and thus did not render its children) when the
+        # context value did not change.
+        toggle_remove_child()
+        await layout.render()
+
+        # If this removed child component has state which has not been cleaned up
+        # correctly, scheduling a render for it might cause an error.
+        schedule_removed_child_render()
+
+        # If things were cleaned up propperly, the above scheduled render should not
+        # actually take place. Thus we expect the timeout to occur.
+        render_task = asyncio.create_task(layout.render())
+        done, pending = await asyncio.wait([render_task], timeout=0.1)
+        assert not done and pending
+        render_task.cancel()

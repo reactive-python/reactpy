@@ -13,8 +13,8 @@ from sphinx_autobuild.cli import (
     get_parser,
 )
 
-from docs.app import IDOM_MODEL_SERVER_URL_PREFIX, Example, make_app, reload_examples
-from idom.backend.sanic import Options, configure, serve_development_app
+from docs.app import make_app, reload_examples
+from idom.backend.sanic import serve_development_app
 from idom.testing import clear_idom_web_modules_dir
 
 
@@ -29,12 +29,6 @@ def wrap_builder(old_builder):
     # This is the bit that we're injecting to get the example components to reload too
 
     app = make_app()
-
-    configure(
-        app,
-        Example,
-        Options(cors=True, url_prefix=IDOM_MODEL_SERVER_URL_PREFIX),
-    )
 
     thread_started = threading.Event()
 
