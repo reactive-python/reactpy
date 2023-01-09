@@ -180,17 +180,21 @@ def test_python_suite(session: Session) -> None:
     session.env["IDOM_DEBUG_MODE"] = "1"
     install_requirements_file(session, "test-env")
     session.run("playwright", "install", "chromium")
-    posargs = session.posargs
-    posargs += ["--reruns", "3", "--reruns-delay", "1"]
+    args = ["pytest", "--reruns", "3", "--reruns-delay", "1", *session.posargs]
 
-    if "--no-cov" in session.posargs:
+    check_cov = "--no-cov" not in session.posargs
+    if check_cov:
+        args = ["coverage", "run", "--source=src/idom", "--module", *args]
+        install_idom_dev(session)
+    else:
+        args.remove("--no-cov")
         session.log("Coverage won't be checked")
         session.install(".[all]")
-    else:
-        posargs += ["--cov=src/idom", "--cov-report", "term"]
-        install_idom_dev(session)
 
-    session.run("pytest", *posargs)
+    session.run(*args)
+
+    if check_cov:
+        session.run("coverage", "report")
 
 
 @nox.session
@@ -209,14 +213,7 @@ def test_python_style(session: Session) -> None:
     """Check that Python style guidelines are being followed"""
     install_requirements_file(session, "check-style")
     session.run("flake8", "src/idom", "tests", "docs")
-    black_default_exclude = r"\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist"
-    session.run(
-        "black",
-        ".",
-        "--check",
-        "--exclude",
-        rf"/({black_default_exclude}|venv|node_modules)/",
-    )
+    session.run("black", ".", "--check")
     session.run("isort", ".", "--check-only")
 
 
