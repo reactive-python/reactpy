@@ -9,51 +9,6 @@ from tests.tooling.common import DEFAULT_TYPE_DELAY
 HERE = Path(__file__).parent
 
 
-async def test_hostwap_update_on_change(display: DisplayFixture):
-    """Ensure shared hotswapping works
-
-    This basically means that previously rendered views of a hotswap component get updated
-    when a new view is mounted, not just the next time it is re-displayed
-
-    In this test we construct a scenario where clicking a button will cause a pre-existing
-    hotswap component to be updated
-    """
-
-    def make_next_count_constructor(count):
-        """We need to construct a new function so they're different when we set_state"""
-
-        def constructor():
-            count.current += 1
-            return idom.html.div({"id": f"hotswap-{count.current}"}, count.current)
-
-        return constructor
-
-    @idom.component
-    def ButtonSwapsDivs():
-        count = idom.Ref(0)
-
-        async def on_click(event):
-            mount(make_next_count_constructor(count))
-
-        incr = idom.html.button({"onClick": on_click, "id": "incr-button"}, "incr")
-
-        mount, make_hostswap = idom.widgets.hotswap(update_on_change=True)
-        mount(make_next_count_constructor(count))
-        hotswap_view = make_hostswap()
-
-        return idom.html.div(incr, hotswap_view)
-
-    await display.show(ButtonSwapsDivs)
-
-    client_incr_button = await display.page.wait_for_selector("#incr-button")
-
-    await display.page.wait_for_selector("#hotswap-1")
-    await client_incr_button.click()
-    await display.page.wait_for_selector("#hotswap-2")
-    await client_incr_button.click()
-    await display.page.wait_for_selector("#hotswap-3")
-
-
 IMAGE_SRC_BYTES = b"""
 <svg width="400" height="110" xmlns="http://www.w3.org/2000/svg">
     <rect width="300" height="100" style="fill:rgb(0,0,255);" />

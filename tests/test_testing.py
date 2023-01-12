@@ -3,10 +3,12 @@ import os
 
 import pytest
 
-from idom import testing
+from idom import Ref, component, html, testing
 from idom.backend import starlette as starlette_implementation
 from idom.logging import ROOT_LOGGER
 from idom.sample import SampleApp as SampleApp
+from idom.testing.backend import _hotswap
+from idom.testing.display import DisplayFixture
 
 
 def test_assert_idom_logged_does_not_supress_errors():
@@ -162,3 +164,48 @@ def test_list_logged_excptions():
 
         logged_errors = testing.logs.list_logged_exceptions(records)
         assert logged_errors == [the_error]
+
+
+async def test_hostwap_update_on_change(display: DisplayFixture):
+    """Ensure shared hotswapping works
+
+    This basically means that previously rendered views of a hotswap component get updated
+    when a new view is mounted, not just the next time it is re-displayed
+
+    In this test we construct a scenario where clicking a button will cause a pre-existing
+    hotswap component to be updated
+    """
+
+    def make_next_count_constructor(count):
+        """We need to construct a new function so they're different when we set_state"""
+
+        def constructor():
+            count.current += 1
+            return html.div({"id": f"hotswap-{count.current}"}, count.current)
+
+        return constructor
+
+    @component
+    def ButtonSwapsDivs():
+        count = Ref(0)
+
+        async def on_click(event):
+            mount(make_next_count_constructor(count))
+
+        incr = html.button({"onClick": on_click, "id": "incr-button"}, "incr")
+
+        mount, make_hostswap = _hotswap(update_on_change=True)
+        mount(make_next_count_constructor(count))
+        hotswap_view = make_hostswap()
+
+        return html.div(incr, hotswap_view)
+
+    await display.show(ButtonSwapsDivs)
+
+    client_incr_button = await display.page.wait_for_selector("#incr-button")
+
+    await display.page.wait_for_selector("#hotswap-1")
+    await client_incr_button.click()
+    await display.page.wait_for_selector("#hotswap-2")
+    await client_incr_button.click()
+    await display.page.wait_for_selector("#hotswap-3")

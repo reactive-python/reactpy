@@ -4,13 +4,16 @@ import asyncio
 import logging
 from contextlib import AsyncExitStack
 from types import TracebackType
-from typing import Any, Optional, Tuple, Type, Union
+from typing import Any, Callable, Optional, Tuple, Type, Union
 from urllib.parse import urlencode, urlunparse
 
 from idom.backend import default as default_server
 from idom.backend.types import BackendImplementation
 from idom.backend.utils import find_available_port
-from idom.widgets import hotswap
+from idom.core.component import component
+from idom.core.hooks import use_callback, use_effect, use_state
+from idom.core.types import ComponentConstructor
+from idom.utils import Ref
 
 from .logs import LogAssertionError, capture_idom_logs, list_logged_exceptions
 
@@ -41,7 +44,7 @@ class BackendFixture:
     ) -> None:
         self.host = host
         self.port = port or find_available_port(host, allow_reuse_waiting_ports=False)
-        self.mount, self._root_component = hotswap()
+        self.mount, self._root_component = _hotswap()
 
         if app is not None:
             if implementation is None:
@@ -146,3 +149,80 @@ class BackendFixture:
             raise LogAssertionError("Unexpected logged exception") from logged_errors[0]
 
         return None
+
+
+_MountFunc = Callable[["Callable[[], Any] | None"], None]
+
+
+def _hotswap(update_on_change: bool = False) -> Tuple[_MountFunc, ComponentConstructor]:
+    """Swap out components from a layout on the fly.
+
+    Since you can't change the component functions used to create a layout
+    in an imperative manner, you can use ``hotswap`` to do this so
+    long as you set things up ahead of time.
+
+    Parameters:
+        update_on_change: Whether or not all views of the layout should be udpated on a swap.
+
+    Example:
+        .. code-block:: python
+
+            import idom
+
+            show, root = idom.hotswap()
+            PerClientStateServer(root).run_in_thread("localhost", 8765)
+
+            @idom.component
+            def DivOne(self):
+                return {"tagName": "div", "children": [1]}
+
+            show(DivOne)
+
+            # displaying the output now will show DivOne
+
+            @idom.component
+            def DivTwo(self):
+                return {"tagName": "div", "children": [2]}
+
+            show(DivTwo)
+
+            # displaying the output now will show DivTwo
+    """
+    constructor_ref: Ref[Callable[[], Any]] = Ref(lambda: None)
+
+    if update_on_change:
+        set_constructor_callbacks: set[Callable[[Callable[[], Any]], None]] = set()
+
+        @component
+        def HotSwap() -> Any:
+            # new displays will adopt the latest constructor and arguments
+            constructor, _set_constructor = use_state(lambda: constructor_ref.current)
+            set_constructor = use_callback(lambda new: _set_constructor(lambda _: new))
+
+            def add_callback() -> Callable[[], None]:
+                set_constructor_callbacks.add(set_constructor)
+                return lambda: set_constructor_callbacks.remove(set_constructor)
+
+            use_effect(add_callback)
+
+            return constructor()
+
+        def swap(constructor: Callable[[], Any] | None) -> None:
+            constructor = constructor_ref.current = constructor or (lambda: None)
+
+            for set_constructor in set_constructor_callbacks:
+                set_constructor(constructor)
+
+            return None
+
+    else:
+
+        @component
+        def HotSwap() -> Any:
+            return constructor_ref.current()
+
+        def swap(constructor: Callable[[], Any] | None) -> None:
+            constructor_ref.current = constructor or (lambda: None)
+            return None
+
+    return swap, HotSwap
