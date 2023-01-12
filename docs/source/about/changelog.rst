@@ -23,14 +23,17 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Deprecated**
+
+- :pull:`876` - ``idom.widgets.hotswap``. The function has no clear uses outside of some
+  internal applications. For this reason it has been deprecated.
 
 
 v0.43.0
 -------
 :octicon:`milestone` *released on 2023-01-09*
 
-**Removed**
+**Deprecated**
 
 - :pull:`870` - ``ComponentType.should_render()``. This method was implemented based on
   reading the React/Preact source code. As it turns out though it seems like it's mostly

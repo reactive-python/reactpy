@@ -1,10 +1,10 @@
-from . import backend, config, html, logging, sample, svg, types, web
-from .backend.hooks import use_connection, use_location, use_scope
-from .backend.utils import run
-from .core import hooks
-from .core.component import component
-from .core.events import event
-from .core.hooks import (
+from idom import backend, config, html, logging, sample, svg, types, web, widgets
+from idom.backend.hooks import use_connection, use_location, use_scope
+from idom.backend.utils import run
+from idom.core import hooks
+from idom.core.component import component
+from idom.core.events import event
+from idom.core.hooks import (
     create_context,
     use_callback,
     use_context,
@@ -15,11 +15,10 @@ from .core.hooks import (
     use_ref,
     use_state,
 )
-from .core.layout import Layout
-from .core.serve import Stop
-from .core.vdom import vdom
-from .utils import Ref, html_to_vdom, vdom_to_html
-from .widgets import _hotswap
+from idom.core.layout import Layout
+from idom.core.serve import Stop
+from idom.core.vdom import vdom
+from idom.utils import Ref, html_to_vdom, vdom_to_html
 
 
 __author__ = "idom-team"
@@ -32,7 +31,6 @@ __all__ = [
     "create_context",
     "event",
     "hooks",
-    "_hotswap",
     "html_to_vdom",
     "html",
     "Layout",
@@ -57,4 +55,5 @@ __all__ = [
     "vdom_to_html",
     "vdom",
     "web",
+    "widgets",
 ]

@@ -1,18 +1,7 @@
 from __future__ import annotations
 
 from base64 import b64encode
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, TypeVar, Union
 from warnings import warn
 
 from typing_extensions import Protocol
@@ -20,11 +9,8 @@ from typing_extensions import Protocol
 import idom
 
 from . import html
-from .core import hooks
-from .core.component import component
 from .core.types import ComponentConstructor, VdomDict
 from .testing.backend import _hotswap, _MountFunc
-from .utils import Ref
 
 
 def image(
@@ -109,7 +95,9 @@ class _CastFunc(Protocol[_CastTo]):
         ...
 
 
-def hotswap(update_on_change: bool = False) -> Tuple[_MountFunc, ComponentConstructor]:
+def hotswap(
+    update_on_change: bool = False,
+) -> Tuple[_MountFunc, ComponentConstructor]:  # pragma: no cover
     warn(
         "The 'hotswap' function is deprecated and will be removed in a future release",
         DeprecationWarning,

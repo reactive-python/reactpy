@@ -7,11 +7,11 @@ from types import TracebackType
 from typing import Any, Callable, Optional, Tuple, Type, Union
 from urllib.parse import urlencode, urlunparse
 
-from idom import component, use_effect, use_state
 from idom.backend import default as default_server
 from idom.backend.types import BackendImplementation
 from idom.backend.utils import find_available_port
-from idom.core.hooks import use_callback
+from idom.core.component import component
+from idom.core.hooks import use_callback, use_effect, use_state
 from idom.core.types import ComponentConstructor
 from idom.utils import Ref
 
@@ -190,28 +190,39 @@ def _hotswap(update_on_change: bool = False) -> Tuple[_MountFunc, ComponentConst
     """
     constructor_ref: Ref[Callable[[], Any]] = Ref(lambda: None)
 
-    set_constructor_callbacks: set[Callable[[Callable[[], Any]], None]] = set()
+    if update_on_change:
+        set_constructor_callbacks: set[Callable[[Callable[[], Any]], None]] = set()
 
-    @component
-    def HotSwap() -> Any:
-        # new displays will adopt the latest constructor and arguments
-        constructor, _set_constructor = use_state(lambda: constructor_ref.current)
-        set_constructor = use_callback(lambda new: _set_constructor(lambda _: new))
+        @component
+        def HotSwap() -> Any:
+            # new displays will adopt the latest constructor and arguments
+            constructor, _set_constructor = use_state(lambda: constructor_ref.current)
+            set_constructor = use_callback(lambda new: _set_constructor(lambda _: new))
 
-        def add_callback() -> Callable[[], None]:
-            set_constructor_callbacks.add(set_constructor)
-            return lambda: set_constructor_callbacks.remove(set_constructor)
+            def add_callback() -> Callable[[], None]:
+                set_constructor_callbacks.add(set_constructor)
+                return lambda: set_constructor_callbacks.remove(set_constructor)
 
-        use_effect(add_callback)
+            use_effect(add_callback)
 
-        return constructor()
+            return constructor()
 
-    def swap(constructor: Callable[[], Any] | None) -> None:
-        constructor = constructor_ref.current = constructor or (lambda: None)
+        def swap(constructor: Callable[[], Any] | None) -> None:
+            constructor = constructor_ref.current = constructor or (lambda: None)
 
-        for set_constructor in set_constructor_callbacks:
-            set_constructor(constructor)
+            for set_constructor in set_constructor_callbacks:
+                set_constructor(constructor)
 
-        return None
+            return None
+
+    else:
+
+        @component
+        def HotSwap() -> Any:
+            return constructor_ref.current()
+
+        def swap(constructor: Callable[[], Any] | None) -> None:
+            constructor_ref.current = constructor or (lambda: None)
+            return None
 
     return swap, HotSwap

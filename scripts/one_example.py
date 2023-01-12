@@ -32,7 +32,7 @@ def on_file_change(path, callback):
 def main():
     ex_name = _example_name_input()
 
-    mount, component = _hotswap(update_on_change=True)
+    mount, component = _hotswap()
 
     def update_component():
         print(f"Loading example: {ex_name!r}")
