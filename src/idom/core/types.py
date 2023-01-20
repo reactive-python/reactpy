@@ -20,7 +20,7 @@ from typing import (
     Union,
 )
 
-from typing_extensions import Protocol, TypedDict, runtime_checkable
+from typing_extensions import Literal, Protocol, TypedDict, runtime_checkable
 
 
 _Type = TypeVar("_Type")
@@ -213,3 +213,25 @@ class VdomDictConstructor(Protocol):
         event_handlers: Optional[EventHandlerMapping] = ...,
     ) -> VdomDict:
         ...
+
+
+class LayoutUpdateMessage(TypedDict):
+    """A message describing an update to a layout"""
+
+    type: Literal["layout-update"]
+    """The type of message"""
+    path: str
+    """JSON Pointer path to the model element being updated"""
+    model: VdomJson
+    """The model to assign at the given JSON Pointer path"""
+
+
+class LayoutEventMessage(TypedDict):
+    """Message describing an event originating from an element in the layout"""
+
+    type: Literal["layout-event"]
+    """The type of message"""
+    target: str
+    """The ID of the event handler."""
+    data: List[Any]
+    """A list of event data passed to the event handler."""

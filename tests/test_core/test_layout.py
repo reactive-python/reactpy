@@ -12,7 +12,7 @@ from idom import html
 from idom.config import IDOM_DEBUG_MODE
 from idom.core.component import component
 from idom.core.hooks import use_effect, use_state
-from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
+from idom.core.layout import Layout, LayoutEventMessage, LayoutUpdateMessage
 from idom.testing import (
     HookCatcher,
     StaticEventHandler,
@@ -58,7 +58,7 @@ async def test_layout_cannot_be_used_outside_context_manager(caplog):
     layout = idom.Layout(component)
 
     with pytest.raises(Exception):
-        await layout.deliver(LayoutEvent("something", []))
+        await layout.deliver(LayoutEventMessage("something", []))
 
     with pytest.raises(Exception):
         layout.update(component)
@@ -77,7 +77,7 @@ async def test_simple_layout():
 
     async with idom.Layout(SimpleComponent()) as layout:
         update_1 = await layout.render()
-        assert update_1 == LayoutUpdate(
+        assert update_1 == LayoutUpdateMessage(
             path="",
             old=None,
             new={"tagName": "", "children": [{"tagName": "div"}]},
@@ -86,7 +86,7 @@ async def test_simple_layout():
         set_state_hook.current("table")
 
         update_2 = await layout.render()
-        assert update_2 == LayoutUpdate(
+        assert update_2 == LayoutUpdateMessage(
             path="",
             old=update_1.new,
             new={"tagName": "", "children": [{"tagName": "table"}]},
@@ -135,7 +135,7 @@ async def test_nested_component_layout():
 
     async with idom.Layout(Parent()) as layout:
         update_1 = await layout.render()
-        assert update_1 == LayoutUpdate(
+        assert update_1 == LayoutUpdateMessage(
             path="",
             old=None,
             new=make_parent_model(0, make_child_model(0)),
@@ -144,7 +144,7 @@ async def test_nested_component_layout():
         parent_set_state.current(1)
 
         update_2 = await layout.render()
-        assert update_2 == LayoutUpdate(
+        assert update_2 == LayoutUpdateMessage(
             path="",
             old=update_1.new,
             new=make_parent_model(1, make_child_model(0)),
@@ -153,7 +153,7 @@ async def test_nested_component_layout():
         child_set_state.current(1)
 
         update_3 = await layout.render()
-        assert update_3 == LayoutUpdate(
+        assert update_3 == LayoutUpdateMessage(
             path="/children/0/children/1",
             old=update_2.new["children"][0]["children"][1],
             new=make_child_model(1),
@@ -180,7 +180,7 @@ async def test_layout_render_error_has_partial_update_with_error_message():
     with assert_idom_did_log(match_error="error from bad child"):
 
         async with idom.Layout(Main()) as layout:
-            assert (await layout.render()) == LayoutUpdate(
+            assert (await layout.render()) == LayoutUpdateMessage(
                 path="",
                 old=None,
                 new={
@@ -232,7 +232,7 @@ async def test_layout_render_error_has_partial_update_without_error_message():
     with assert_idom_did_log(match_error="error from bad child"):
 
         async with idom.Layout(Main()) as layout:
-            assert (await layout.render()) == LayoutUpdate(
+            assert (await layout.render()) == LayoutUpdateMessage(
                 path="",
                 old=None,
                 new={
@@ -271,7 +271,7 @@ async def test_render_raw_vdom_dict_with_single_component_object_as_children():
         return {"tagName": "div", "children": {"tagName": "h1"}}
 
     async with idom.Layout(Main()) as layout:
-        assert (await layout.render()) == LayoutUpdate(
+        assert (await layout.render()) == LayoutUpdateMessage(
             path="",
             old=None,
             new={
@@ -487,7 +487,7 @@ async def test_log_on_dispatch_to_missing_event_handler(caplog):
         return idom.html.div()
 
     async with idom.Layout(SomeComponent()) as layout:
-        await layout.deliver(LayoutEvent(target="missing", data=[]))
+        await layout.deliver(LayoutEventMessage(target="missing", data=[]))
 
     assert re.match(
         "Ignored event - handler 'missing' does not exist or its component unmounted",
@@ -528,7 +528,7 @@ async def test_model_key_preserves_callback_identity_for_common_elements(caplog)
     async with idom.Layout(MyComponent()) as layout:
         await layout.render()
         for i in range(3):
-            event = LayoutEvent(good_handler.target, [])
+            event = LayoutEventMessage(good_handler.target, [])
             await layout.deliver(event)
 
             assert called_good_trigger.current
@@ -579,7 +579,7 @@ async def test_model_key_preserves_callback_identity_for_components():
     async with idom.Layout(RootComponent()) as layout:
         await layout.render()
         for _ in range(3):
-            event = LayoutEvent(good_handler.target, [])
+            event = LayoutEventMessage(good_handler.target, [])
             await layout.deliver(event)
 
             assert called_good_trigger.current
@@ -599,7 +599,7 @@ async def test_component_can_return_another_component_directly():
         return idom.html.div("hello")
 
     async with idom.Layout(Outer()) as layout:
-        assert (await layout.render()) == LayoutUpdate(
+        assert (await layout.render()) == LayoutUpdateMessage(
             path="",
             old=None,
             new={
@@ -767,7 +767,7 @@ async def test_log_error_on_bad_event_handler():
 
         async with idom.Layout(ComponentWithBadEventHandler()) as layout:
             await layout.render()
-            event = LayoutEvent(bad_handler.target, [])
+            event = LayoutEventMessage(bad_handler.target, [])
             await layout.deliver(event)
 
 
@@ -1038,7 +1038,7 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
         did_call_effect.clear()
 
         for i in range(1, 5):
-            await layout.deliver(LayoutEvent(set_child_key_num.target, []))
+            await layout.deliver(LayoutEventMessage(set_child_key_num.target, []))
             await layout.render()
             assert effect_calls_without_state == {"some-key", "key-0"}
             did_call_effect.clear()
@@ -1086,13 +1086,13 @@ async def test_changing_event_handlers_in_the_next_render():
 
     async with Layout(Root()) as layout:
         await layout.render()
-        await layout.deliver(LayoutEvent(event_handler.target, []))
+        await layout.deliver(LayoutEventMessage(event_handler.target, []))
         assert did_trigger.current
         did_trigger.current = False
 
         set_event_name.current("second")
         await layout.render()
-        await layout.deliver(LayoutEvent(event_handler.target, []))
+        await layout.deliver(LayoutEventMessage(event_handler.target, []))
         assert did_trigger.current
         did_trigger.current = False
 

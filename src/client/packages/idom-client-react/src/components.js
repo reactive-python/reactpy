@@ -1,8 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import htm from "htm";
+import { set as setJsonPointer } from "json-pointer";
 
-import { useJsonPatchCallback } from "./json-patch.js";
 import { useImportSource } from "./import-source.js";
 import { LayoutContext } from "./contexts.js";
 
@@ -14,17 +14,30 @@ import {
 const html = htm.bind(React.createElement);
 
 export function Layout({ saveUpdateHook, sendEvent, loadImportSource }) {
-  const [model, patchModel] = useJsonPatchCallback({});
+  const currentModel = React.useState({})[0];
+  const forceUpdate = useForceUpdate();
+
+  const patchModel = React.useCallback(
+    ({ path, model }) => {
+      if (!path) {
+        Object.assign(currentModel, model);
+      } else {
+        setJsonPointer(currentModel, path, model);
+      }
+      forceUpdate();
+    },
+    [currentModel]
+  );
 
   React.useEffect(() => saveUpdateHook(patchModel), [patchModel]);
 
-  if (!Object.keys(model).length) {
+  if (!Object.keys(currentModel).length) {
     return html`<${React.Fragment} />`;
   }
 
   return html`
     <${LayoutContext.Provider} value=${{ sendEvent, loadImportSource }}>
-      <${Element} model=${model} />
+      <${Element} model=${currentModel} />
     <//>
   `;
 }
@@ -199,4 +212,9 @@ function _ImportedElement({ model, importSource }) {
   });
 
   return html`<div ref=${mountPoint} />`;
+}
+
+function useForceUpdate() {
+  const [, updateState] = React.useState();
+  return React.useCallback(() => updateState({}), []);
 }

@@ -14,14 +14,8 @@ from sanic.server.websockets.connection import WebSocketConnection
 from sanic_cors import CORS
 
 from idom.backend.types import Connection, Location
-from idom.core.layout import Layout, LayoutEvent
-from idom.core.serve import (
-    RecvCoroutine,
-    SendCoroutine,
-    Stop,
-    VdomJsonPatch,
-    serve_json_patch,
-)
+from idom.core.layout import Layout
+from idom.core.serve import RecvCoroutine, SendCoroutine, Stop, serve_layout
 from idom.core.types import RootComponentConstructor
 
 from ._common import (
@@ -169,7 +163,7 @@ def _setup_single_view_dispatcher_route(
             scope = asgi_app.transport.scope
 
         send, recv = _make_send_recv_callbacks(socket)
-        await serve_json_patch(
+        await serve_layout(
             Layout(
                 ConnectionContext(
                     constructor(),
@@ -198,14 +192,14 @@ def _setup_single_view_dispatcher_route(
 def _make_send_recv_callbacks(
     socket: WebSocketConnection,
 ) -> Tuple[SendCoroutine, RecvCoroutine]:
-    async def sock_send(value: VdomJsonPatch) -> None:
+    async def sock_send(value: Any) -> None:
         await socket.send(json.dumps(value))
 
-    async def sock_recv() -> LayoutEvent:
+    async def sock_recv() -> Any:
         data = await socket.recv()
         if data is None:
             raise Stop()
-        return LayoutEvent(**json.loads(data))
+        return json.loads(data)
 
     return sock_send, sock_recv
 

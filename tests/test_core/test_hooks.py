@@ -11,7 +11,7 @@ from idom.core.hooks import (
     current_hook,
     strictly_equal,
 )
-from idom.core.layout import Layout, LayoutUpdate
+from idom.core.layout import Layout, LayoutUpdateMessage
 from idom.testing import DisplayFixture, HookCatcher, assert_idom_did_log, poll
 from idom.testing.logs import assert_idom_did_not_log
 from idom.utils import Ref
@@ -42,7 +42,7 @@ async def test_simple_stateful_component():
 
     async with idom.Layout(sse) as layout:
         update_1 = await layout.render()
-        assert update_1 == LayoutUpdate(
+        assert update_1 == LayoutUpdateMessage(
             path="",
             old=None,
             new={
@@ -52,7 +52,7 @@ async def test_simple_stateful_component():
         )
 
         update_2 = await layout.render()
-        assert update_2 == LayoutUpdate(
+        assert update_2 == LayoutUpdateMessage(
             path="",
             old=update_1.new,
             new={
@@ -62,7 +62,7 @@ async def test_simple_stateful_component():
         )
 
         update_3 = await layout.render()
-        assert update_3 == LayoutUpdate(
+        assert update_3 == LayoutUpdateMessage(
             path="",
             old=update_2.new,
             new={

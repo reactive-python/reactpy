@@ -28,33 +28,18 @@ from idom.utils import Ref
 
 from ._event_proxy import _wrap_in_warning_event_proxies
 from .hooks import LifeCycleHook
-from .types import ComponentType, EventHandlerDict, VdomDict, VdomJson
+from .types import (
+    ComponentType,
+    EventHandlerDict,
+    LayoutEventMessage,
+    LayoutUpdateMessage,
+    VdomDict,
+    VdomJson,
+)
 from .vdom import validate_vdom_json
 
 
 logger = getLogger(__name__)
-
-
-class LayoutUpdate(NamedTuple):
-    """A change to a view as a result of a :meth:`Layout.render`"""
-
-    path: str
-    """A "/" delimited path to the element from the root of the layout"""
-
-    old: Optional[VdomJson]
-    """The old state of the layout"""
-
-    new: VdomJson
-    """The new state of the layout"""
-
-
-class LayoutEvent(NamedTuple):
-    """An event that should be relayed to its handler by :meth:`Layout.deliver`"""
-
-    target: str
-    """The ID of the event handler."""
-    data: List[Any]
-    """A list of event data passed to the event handler."""
 
 
 class Layout:
@@ -104,25 +89,26 @@ class Layout:
 
         return None
 
-    async def deliver(self, event: LayoutEvent) -> None:
+    async def deliver(self, event: LayoutEventMessage) -> None:
         """Dispatch an event to the targeted handler"""
         # It is possible for an element in the frontend to produce an event
         # associated with a backend model that has been deleted. We only handle
         # events if the element and the handler exist in the backend. Otherwise
         # we just ignore the event.
-        handler = self._event_handlers.get(event.target)
+        handler = self._event_handlers.get(event["target"])
 
         if handler is not None:
             try:
-                await handler.function(_wrap_in_warning_event_proxies(event.data))
+                await handler.function(_wrap_in_warning_event_proxies(event["data"]))
             except Exception:
                 logger.exception(f"Failed to execute event handler {handler}")
         else:
             logger.info(
-                f"Ignored event - handler {event.target!r} does not exist or its component unmounted"
+                f"Ignored event - handler {event['target']!r} "
+                "does not exist or its component unmounted"
             )
 
-    async def render(self) -> LayoutUpdate:
+    async def render(self) -> LayoutUpdateMessage:
         """Await the next available render. This will block until a component is updated"""
         while True:
             model_state_id = await self._rendering_queue.get()
@@ -141,24 +127,18 @@ class Layout:
                     validate_vdom_json(root_model.model.current)
                 return update
 
-    def _create_layout_update(self, old_state: _ModelState) -> LayoutUpdate:
+    def _create_layout_update(self, old_state: _ModelState) -> LayoutUpdateMessage:
         new_state = _copy_component_model_state(old_state)
         component = new_state.life_cycle_state.component
 
         with ExitStack() as exit_stack:
             self._render_component(exit_stack, old_state, new_state, component)
 
-        old_model: Optional[VdomJson]
-        try:
-            old_model = old_state.model.current
-        except AttributeError:
-            old_model = None
-
-        return LayoutUpdate(
-            path=new_state.patch_path,
-            old=old_model,
-            new=new_state.model.current,
-        )
+        return {
+            "type": "layout-update",
+            "path": new_state.patch_path,
+            "model": new_state.model.current,
+        }
 
     def _render_component(
         self,

@@ -9,9 +9,6 @@ from typing import Iterator
 from idom.config import IDOM_TESTING_DEFAULT_TIMEOUT
 
 
-TIMEOUT = 3
-
-
 @contextmanager
 def open_event_loop(as_current: bool = True) -> Iterator[asyncio.AbstractEventLoop]:
     """Open a new event loop and cleanly stop it
@@ -29,11 +26,19 @@ def open_event_loop(as_current: bool = True) -> Iterator[asyncio.AbstractEventLo
         try:
             _cancel_all_tasks(loop, as_current)
             if as_current:
-                loop.run_until_complete(wait_for(loop.shutdown_asyncgens(), TIMEOUT))
+                loop.run_until_complete(
+                    wait_for(
+                        loop.shutdown_asyncgens(),
+                        IDOM_TESTING_DEFAULT_TIMEOUT.current,
+                    )
+                )
                 if sys.version_info >= (3, 9):
                     # shutdown_default_executor only available in Python 3.9+
                     loop.run_until_complete(
-                        wait_for(loop.shutdown_default_executor(), TIMEOUT)
+                        wait_for(
+                            loop.shutdown_default_executor(),
+                            IDOM_TESTING_DEFAULT_TIMEOUT.current,
+                        )
                     )
         finally:
             if as_current:
@@ -69,7 +74,10 @@ def _cancel_all_tasks(loop: asyncio.AbstractEventLoop, is_current: bool) -> None
 
     if is_current:
         loop.run_until_complete(
-            wait_for(asyncio.gather(*to_cancel, return_exceptions=True), TIMEOUT)
+            wait_for(
+                asyncio.gather(*to_cancel, return_exceptions=True),
+                IDOM_TESTING_DEFAULT_TIMEOUT.current,
+            )
         )
     else:
         # user was responsible for cancelling all tasks
