@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from collections import namedtuple
+from collections.abc import Sequence
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -14,7 +15,6 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
-    Sequence,
     Type,
     TypeVar,
     Union,
@@ -233,5 +233,5 @@ class LayoutEventMessage(TypedDict):
     """The type of message"""
     target: str
     """The ID of the event handler."""
-    data: List[Any]
+    data: Sequence[Any]
     """A list of event data passed to the event handler."""
