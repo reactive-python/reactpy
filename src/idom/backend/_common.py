@@ -128,3 +128,7 @@ class CommonOptions:
 
     url_prefix: str = ""
     """The URL prefix where IDOM resources will be served from"""
+
+    def __post_init__(self) -> None:
+        if self.url_prefix and not self.url_prefix.startswith("/"):
+            raise ValueError("Expected 'url_prefix' to start with '/'")
