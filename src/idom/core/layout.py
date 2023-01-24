@@ -115,7 +115,7 @@ class Layout:
             try:
                 model_state = self._model_states_by_life_cycle_state_id[model_state_id]
             except KeyError:
-                logger.debug(
+                logger.info(
                     "Did not render component with model state ID "
                     f"{model_state_id!r} - component already unmounted"
                 )
