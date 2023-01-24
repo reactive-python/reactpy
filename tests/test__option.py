@@ -106,3 +106,6 @@ def test_deprecated_option():
 
     with pytest.warns(DeprecationWarning, match="is deprecated!"):
         opt.current
+
+    with pytest.warns(DeprecationWarning, match="is deprecated!"):
+        opt.current = "something"

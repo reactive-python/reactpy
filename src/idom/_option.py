@@ -125,17 +125,15 @@ class DeprecatedOption(Option[_O]):  # pragma: no cover
         super().__init__(*args, **kwargs)
 
     @property  # type: ignore
-    def _current(self) -> _O:
+    def current(self) -> _O:
         warn(
             self._deprecation_message,
             DeprecationWarning,
             stacklevel=_frame_depth_in_module() + 1,
         )
-        return self._new_opt.current
+        return super().current
 
-    @_current.setter
-    def _current(self, new: _O) -> None:
-        self._new_opt.current = new
+    current = current.setter(Option.current.fset)
 
 
 def _frame_depth_in_module() -> int:
