@@ -1,21 +1,18 @@
 import asyncio
 from typing import Any, Sequence
 
+from jsonpointer import set_pointer
+
 import idom
-from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
-from idom.core.serve import VdomJsonPatch, serve_json_patch
+from idom.core.layout import Layout
+from idom.core.serve import serve_layout
+from idom.core.types import LayoutUpdateMessage
 from idom.testing import StaticEventHandler
+from tests.tooling.common import event_message
 
 
 EVENT_NAME = "onEvent"
 STATIC_EVENT_HANDLER = StaticEventHandler()
-
-
-def test_vdom_json_patch_create_from_apply_to():
-    update = LayoutUpdate("", {"a": 1, "b": [1]}, {"a": 2, "b": [1, 2]})
-    patch = VdomJsonPatch.create_from(update)
-    result = patch.apply_to({"a": 1, "b": [1]})
-    assert result == {"a": 2, "b": [1, 2]}
 
 
 def make_send_recv_callbacks(events_to_inject):
@@ -46,7 +43,7 @@ def make_send_recv_callbacks(events_to_inject):
 
 
 def make_events_and_expected_model():
-    events = [LayoutEvent(STATIC_EVENT_HANDLER.target, [])] * 4
+    events = [event_message(STATIC_EVENT_HANDLER.target)] * 4
     expected_model = {
         "tagName": "",
         "children": [
@@ -67,12 +64,17 @@ def make_events_and_expected_model():
 
 
 def assert_changes_produce_expected_model(
-    changes: Sequence[LayoutUpdate],
+    changes: Sequence[LayoutUpdateMessage],
     expected_model: Any,
 ) -> None:
     model_from_changes = {}
     for update in changes:
-        model_from_changes = update.apply_to(model_from_changes)
+        if update["path"]:
+            model_from_changes = set_pointer(
+                model_from_changes, update["path"], update["model"]
+            )
+        else:
+            model_from_changes.update(update["model"])
     assert model_from_changes == expected_model
 
 
@@ -89,7 +91,7 @@ def Counter():
 async def test_dispatch():
     events, expected_model = make_events_and_expected_model()
     changes, send, recv = make_send_recv_callbacks(events)
-    await asyncio.wait_for(serve_json_patch(Layout(Counter()), send, recv), 1)
+    await asyncio.wait_for(serve_layout(Layout(Counter()), send, recv), 1)
     assert_changes_produce_expected_model(changes, expected_model)
 
 
@@ -121,15 +123,15 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
     recv_queue = asyncio.Queue()
 
     asyncio.ensure_future(
-        serve_json_patch(
+        serve_layout(
             idom.Layout(ComponentWithTwoEventHandlers()),
             send_queue.put,
             recv_queue.get,
         )
     )
 
-    await recv_queue.put(LayoutEvent(blocked_handler.target, []))
+    await recv_queue.put(event_message(blocked_handler.target))
     await will_block.wait()
 
-    await recv_queue.put(LayoutEvent(non_blocked_handler.target, []))
+    await recv_queue.put(event_message(non_blocked_handler.target))
     await second_event_did_execute.wait()

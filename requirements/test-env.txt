@@ -10,3 +10,6 @@ playwright
 
 # I'm not quite sure why this needs to be installed for tests with Sanic to pass
 sanic-testing
+
+# Used to generate model changes from layout update messages
+jsonpointer

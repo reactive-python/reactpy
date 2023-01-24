@@ -17,8 +17,8 @@ from tornado.wsgi import WSGIContainer
 
 from idom.backend.types import Connection, Location
 from idom.config import IDOM_WEB_MODULES_DIR
-from idom.core.layout import Layout, LayoutEvent
-from idom.core.serve import VdomJsonPatch, serve_json_patch
+from idom.core.layout import Layout
+from idom.core.serve import serve_layout
 from idom.core.types import ComponentConstructor
 
 from ._common import (
@@ -183,15 +183,15 @@ class ModelStreamHandler(WebSocketHandler):
     async def open(self, path: str = "", *args: Any, **kwargs: Any) -> None:
         message_queue: "AsyncQueue[str]" = AsyncQueue()
 
-        async def send(value: VdomJsonPatch) -> None:
+        async def send(value: Any) -> None:
             await self.write_message(json.dumps(value))
 
-        async def recv() -> LayoutEvent:
-            return LayoutEvent(**json.loads(await message_queue.get()))
+        async def recv() -> Any:
+            return json.loads(await message_queue.get())
 
         self._message_queue = message_queue
         self._dispatch_future = asyncio.ensure_future(
-            serve_json_patch(
+            serve_layout(
                 Layout(
                     ConnectionContext(
                         self._component_constructor(),

@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import asyncio
+from logging import getLogger
+from sys import exc_info
 from typing import Any, NoReturn
 
 from idom.types import RootComponentConstructor
 
 from .types import BackendImplementation
 from .utils import all_implementations
+
+
+logger = getLogger(__name__)
 
 
 def configure(
@@ -53,6 +58,7 @@ def _default_implementation() -> BackendImplementation[Any]:
     try:
         implementation = next(all_implementations())
     except StopIteration:  # pragma: no cover
+        logger.debug("Backend implementation import failed", exc_info=exc_info())
         raise RuntimeError("No built-in server implementation installed.")
     else:
         _DEFAULT_IMPLEMENTATION = implementation
