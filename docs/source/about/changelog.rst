@@ -28,6 +28,14 @@ Unreleased
 - :pull:`876` - ``idom.widgets.hotswap``. The function has no clear uses outside of some
   internal applications. For this reason it has been deprecated.
 
+**Removed**
+
+- :pull:`886` - Ability to access element value from events via `event['value']` key.
+  Instead element value should be accessed via `event['target']['value']`. Originally
+  deprecated in :ref:`v0.34.0`.
+- :pull:`886` - old misspelled option ``idom.config.IDOM_WED_MODULES_DIR``. Originally
+  deprecated in :ref:`v0.36.1`.
+
 
 v0.43.0
 -------
@@ -65,10 +73,14 @@ v0.42.0
 - :pull:`832` - Fix ``html_to_vdom`` improperly removing ``<html>``, ``<head>``, and ``<body>`` nodes.
 
 **Removed**
+
 - :pull:`832` - Removed ``idom.html.body`` as it is currently unusable due to technological limitations, and thus not needed.
 - :pull:`840` - remove ``IDOM_FEATURE_INDEX_AS_DEFAULT_KEY`` option
 - :pull:`835` - ``serve_static_files`` option from backend configuration
 
+**Deprecated**
+
+- :commit:`8f3785b` - Deprecated ``module_from_template``
 
 v0.41.0
 -------

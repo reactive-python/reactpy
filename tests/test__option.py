@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from idom._option import Option
+from idom._option import DeprecatedOption, Option
 
 
 def test_option_repr():
@@ -99,3 +99,13 @@ def test_option_subscribe():
 
     opt.unset()
     assert calls == ["default", "new-1", "new-2", "default"]
+
+
+def test_deprecated_option():
+    opt = DeprecatedOption("is deprecated!", "A_FAKE_OPTION", None)
+
+    with pytest.warns(DeprecationWarning, match="is deprecated!"):
+        opt.current
+
+    with pytest.warns(DeprecationWarning, match="is deprecated!"):
+        opt.current = "something"

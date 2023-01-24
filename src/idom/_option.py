@@ -120,27 +120,18 @@ class Option(Generic[_O]):
 
 
 class DeprecatedOption(Option[_O]):  # pragma: no cover
-    def __init__(self, new_opt: Option[_O], name: str) -> None:
-        # copy over attrs
-        attrs = new_opt.__dict__.copy()
-        attrs.pop("_current", None)
-        self.__dict__.update(new_opt.__dict__)
-        # then set the ones needed here
-        self._name = name
-        self._new_opt = new_opt
+    def __init__(self, message: str, *args: Any, **kwargs: Any) -> None:
+        self._deprecation_message = message
+        super().__init__(*args, **kwargs)
 
-    @property  # type: ignore
-    def _current(self) -> _O:
+    @Option.current.getter  # type: ignore
+    def current(self) -> _O:
         warn(
-            f"{self.name!r} has been renamed to {self._new_opt.name!r}",
+            self._deprecation_message,
             DeprecationWarning,
             stacklevel=_frame_depth_in_module() + 1,
         )
-        return self._new_opt.current
-
-    @_current.setter
-    def _current(self, new: _O) -> None:
-        self._new_opt.current = new
+        return super().current
 
 
 def _frame_depth_in_module() -> int:
