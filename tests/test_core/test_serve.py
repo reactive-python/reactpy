@@ -1,21 +1,18 @@
 import asyncio
 from typing import Any, Sequence
 
+from jsonpointer import set_pointer
+
 import idom
-from idom.core.layout import Layout, LayoutEventMessage, LayoutUpdateMessage
-from idom.core.serve import LayoutUpdateMessage, serve_layout
+from idom.core.layout import Layout
+from idom.core.serve import serve_layout
+from idom.core.types import LayoutUpdateMessage
 from idom.testing import StaticEventHandler
+from tests.tooling.common import event_message
 
 
 EVENT_NAME = "onEvent"
 STATIC_EVENT_HANDLER = StaticEventHandler()
-
-
-def test_vdom_json_patch_create_from_apply_to():
-    update = LayoutUpdateMessage("", {"a": 1, "b": [1]}, {"a": 2, "b": [1, 2]})
-    patch = LayoutUpdateMessage.create_from(update)
-    result = patch.apply_to({"a": 1, "b": [1]})
-    assert result == {"a": 2, "b": [1, 2]}
 
 
 def make_send_recv_callbacks(events_to_inject):
@@ -46,7 +43,7 @@ def make_send_recv_callbacks(events_to_inject):
 
 
 def make_events_and_expected_model():
-    events = [LayoutEventMessage(STATIC_EVENT_HANDLER.target, [])] * 4
+    events = [event_message(STATIC_EVENT_HANDLER.target)] * 4
     expected_model = {
         "tagName": "",
         "children": [
@@ -72,7 +69,12 @@ def assert_changes_produce_expected_model(
 ) -> None:
     model_from_changes = {}
     for update in changes:
-        model_from_changes = update.apply_to(model_from_changes)
+        if update["path"]:
+            model_from_changes = set_pointer(
+                model_from_changes, update["path"], update["model"]
+            )
+        else:
+            model_from_changes.update(update["model"])
     assert model_from_changes == expected_model
 
 
@@ -128,8 +130,8 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
         )
     )
 
-    await recv_queue.put(LayoutEventMessage(blocked_handler.target, []))
+    await recv_queue.put(event_message(blocked_handler.target))
     await will_block.wait()
 
-    await recv_queue.put(LayoutEventMessage(non_blocked_handler.target, []))
+    await recv_queue.put(event_message(non_blocked_handler.target))
     await second_event_did_execute.wait()

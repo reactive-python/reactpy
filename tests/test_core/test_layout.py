@@ -2,8 +2,6 @@ import asyncio
 import gc
 import random
 import re
-from collections.abc import Sequence
-from typing import Any
 from weakref import finalize
 from weakref import ref as weakref
 
@@ -15,7 +13,6 @@ from idom.config import IDOM_DEBUG_MODE
 from idom.core.component import component
 from idom.core.hooks import use_effect, use_state
 from idom.core.layout import Layout
-from idom.core.types import LayoutEventMessage, LayoutUpdateMessage
 from idom.testing import (
     HookCatcher,
     StaticEventHandler,
@@ -23,6 +20,7 @@ from idom.testing import (
     capture_idom_logs,
 )
 from idom.utils import Ref
+from tests.tooling.common import event_message, update_message
 from tests.tooling.hooks import use_force_render, use_toggle
 
 
@@ -33,14 +31,6 @@ def no_logged_errors():
         for record in logs:
             if record.exc_info:
                 raise record.exc_info[1]
-
-
-def event_message(target: str, *data: Any) -> LayoutEventMessage:
-    return {"type": "layout-event", "target": target, "data": data}
-
-
-def update_message(path: str, model: Any) -> LayoutUpdateMessage:
-    return {"type": "layout-update", "path": path, "model": model}
 
 
 def test_layout_repr():

@@ -98,7 +98,7 @@ VdomAttributes = Mapping[str, Any]
 VdomChild = Union[ComponentType, "VdomDict", str]
 """A single child element of a :class:`VdomDict`"""
 
-VdomChildren = Sequence[VdomChild]
+VdomChildren = "Sequence[VdomChild]"
 """Describes a series of :class:`VdomChild` elements"""
 
 VdomAttributesAndChildren = Union[
