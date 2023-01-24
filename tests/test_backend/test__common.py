@@ -1,7 +1,19 @@
 import pytest
 
 from idom import html
-from idom.backend._common import traversal_safe_path, vdom_head_elements_to_html
+from idom.backend._common import (
+    CommonOptions,
+    traversal_safe_path,
+    vdom_head_elements_to_html,
+)
+
+
+def test_common_options_url_prefix_starts_with_slash():
+    # no prefix specified
+    CommonOptions(url_prefix="")
+
+    with pytest.raises(ValueError, match="start with '/'"):
+        CommonOptions(url_prefix="not-start-withslash")
 
 
 @pytest.mark.parametrize(
