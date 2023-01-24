@@ -51,8 +51,8 @@ function mountLayoutWithReconnectingWebSocket(
   };
 
   socket.onmessage = (event) => {
-    const [pathPrefix, patch] = JSON.parse(event.data);
-    updateHookPromise.promise.then((update) => update(pathPrefix, patch));
+    const message = JSON.parse(event.data);
+    updateHookPromise.promise.then((update) => update(message));
   };
 
   socket.onclose = (event) => {

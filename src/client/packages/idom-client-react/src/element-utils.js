@@ -51,6 +51,7 @@ function createEventHandler(eventName, sendEvent, eventSpec) {
     sendEvent({
       data: data,
       target: eventSpec["target"],
+      type: "layout-event",
     });
   };
 }

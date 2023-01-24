@@ -38,8 +38,7 @@ from idom.backend._common import (
 from idom.backend.hooks import ConnectionContext
 from idom.backend.hooks import use_connection as _use_connection
 from idom.backend.types import Connection, Location
-from idom.core.layout import LayoutEvent, LayoutUpdate
-from idom.core.serve import serve_json_patch
+from idom.core.serve import serve_layout
 from idom.core.types import ComponentType, RootComponentConstructor
 from idom.utils import Ref
 
@@ -182,8 +181,8 @@ def _setup_single_view_dispatcher_route(
         def send(value: Any) -> None:
             ws.send(json.dumps(value))
 
-        def recv() -> LayoutEvent:
-            return LayoutEvent(**json.loads(ws.receive()))
+        def recv() -> Any:
+            return json.loads(ws.receive())
 
         _dispatch_in_thread(
             ws,
@@ -203,7 +202,7 @@ def _dispatch_in_thread(
     path: str,
     component: ComponentType,
     send: Callable[[Any], None],
-    recv: Callable[[], Optional[LayoutEvent]],
+    recv: Callable[[], Optional[Any]],
 ) -> NoReturn:
     dispatch_thread_info_created = ThreadEvent()
     dispatch_thread_info_ref: idom.Ref[Optional[_DispatcherThreadInfo]] = idom.Ref(None)
@@ -213,18 +212,15 @@ def _dispatch_in_thread(
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        thread_send_queue: "ThreadQueue[LayoutUpdate]" = ThreadQueue()
-        async_recv_queue: "AsyncQueue[LayoutEvent]" = AsyncQueue()
+        thread_send_queue: "ThreadQueue[Any]" = ThreadQueue()
+        async_recv_queue: "AsyncQueue[Any]" = AsyncQueue()
 
         async def send_coro(value: Any) -> None:
             thread_send_queue.put(value)
 
-        async def recv_coro() -> Any:
-            return await async_recv_queue.get()
-
         async def main() -> None:
             search = request.query_string.decode()
-            await serve_json_patch(
+            await serve_layout(
                 idom.Layout(
                     ConnectionContext(
                         component,
@@ -239,7 +235,7 @@ def _dispatch_in_thread(
                     ),
                 ),
                 send_coro,
-                recv_coro,
+                async_recv_queue.get,
             )
 
         main_future = asyncio.ensure_future(main(), loop=loop)
@@ -282,9 +278,9 @@ def _dispatch_in_thread(
 
 class _DispatcherThreadInfo(NamedTuple):
     dispatch_loop: asyncio.AbstractEventLoop
-    dispatch_future: "asyncio.Future[Any]"
-    thread_send_queue: "ThreadQueue[LayoutUpdate]"
-    async_recv_queue: "AsyncQueue[LayoutEvent]"
+    dispatch_future: asyncio.Future[Any]
+    thread_send_queue: ThreadQueue[Any]
+    async_recv_queue: AsyncQueue[Any]
 
 
 @dataclass

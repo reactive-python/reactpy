@@ -10,6 +10,7 @@ from urllib.parse import urlencode, urlunparse
 from idom.backend import default as default_server
 from idom.backend.types import BackendImplementation
 from idom.backend.utils import find_available_port
+from idom.config import IDOM_TESTING_DEFAULT_TIMEOUT
 from idom.core.component import component
 from idom.core.hooks import use_callback, use_effect, use_state
 from idom.core.types import ComponentConstructor
@@ -41,10 +42,14 @@ class BackendFixture:
         app: Any | None = None,
         implementation: BackendImplementation[Any] | None = None,
         options: Any | None = None,
+        timeout: float | None = None,
     ) -> None:
         self.host = host
         self.port = port or find_available_port(host, allow_reuse_waiting_ports=False)
         self.mount, self._root_component = _hotswap()
+        self.timeout = (
+            IDOM_TESTING_DEFAULT_TIMEOUT.current if timeout is None else timeout
+        )
 
         if app is not None:
             if implementation is None:
@@ -119,17 +124,17 @@ class BackendFixture:
         async def stop_server() -> None:
             server_future.cancel()
             try:
-                await asyncio.wait_for(server_future, timeout=3)
+                await asyncio.wait_for(server_future, timeout=self.timeout)
             except asyncio.CancelledError:
                 pass
 
         self._exit_stack.push_async_callback(stop_server)
 
         try:
-            await asyncio.wait_for(started.wait(), timeout=3)
+            await asyncio.wait_for(started.wait(), timeout=self.timeout)
         except Exception:  # pragma: no cover
             # see if we can await the future for a more helpful error
-            await asyncio.wait_for(server_future, timeout=3)
+            await asyncio.wait_for(server_future, timeout=self.timeout)
             raise
 
         return self
