@@ -6,7 +6,6 @@ variables or, for those which allow it, a programatic interface.
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from ._option import DeprecatedOption as _DeprecatedOption
 from ._option import Option as _Option
 
 
@@ -53,12 +52,6 @@ This directory **MUST** be treated as a black box. Downstream applications **MUS
 assume anything about the structure of this directory see :mod:`idom.web.module` for a
 set of publically available APIs for working with the client.
 """
-
-IDOM_WED_MODULES_DIR: _Option[Path] = _DeprecatedOption(
-    new_opt=IDOM_WEB_MODULES_DIR,
-    name="IDOM_WED_MODULES_DIR",
-)
-"""This has been renamed to :data:`IDOM_WEB_MODULES_DIR`"""
 
 IDOM_TESTING_DEFAULT_TIMEOUT = _Option(
     "IDOM_TESTING_DEFAULT_TIMEOUT",

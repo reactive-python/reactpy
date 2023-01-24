@@ -26,7 +26,6 @@ from weakref import ref as weakref
 from idom.config import IDOM_CHECK_VDOM_SPEC, IDOM_DEBUG_MODE
 from idom.utils import Ref
 
-from ._event_proxy import _wrap_in_warning_event_proxies
 from .hooks import LifeCycleHook
 from .types import (
     ComponentType,
@@ -99,7 +98,7 @@ class Layout:
 
         if handler is not None:
             try:
-                await handler.function(_wrap_in_warning_event_proxies(event["data"]))
+                await handler.function(event["data"])
             except Exception:
                 logger.exception(f"Failed to execute event handler {handler}")
         else:

@@ -28,6 +28,14 @@ Unreleased
 - :pull:`876` - ``idom.widgets.hotswap``. The function has no clear uses outside of some
   internal applications. For this reason it has been deprecated.
 
+**Removed**
+
+- :pull:`886` - Ability to access element value from events via `event['value']` key.
+  Instead element value should be accessed via `event['target']['value']`. Originally
+  deprecated in :ref:`v0.34.0`.
+- :pull:`886` - old misspelled option ``idom.config.IDOM_WED_MODULES_DIR``. Originally
+  deprecated in :ref:`v0.36.1`.
+
 
 v0.43.0
 -------
