@@ -73,10 +73,14 @@ v0.42.0
 - :pull:`832` - Fix ``html_to_vdom`` improperly removing ``<html>``, ``<head>``, and ``<body>`` nodes.
 
 **Removed**
+
 - :pull:`832` - Removed ``idom.html.body`` as it is currently unusable due to technological limitations, and thus not needed.
 - :pull:`840` - remove ``IDOM_FEATURE_INDEX_AS_DEFAULT_KEY`` option
 - :pull:`835` - ``serve_static_files`` option from backend configuration
 
+**Deprecated**
+
+- :commit:`8f3785b` - Deprecated ``module_from_template``
 
 v0.41.0
 -------
