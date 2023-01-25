@@ -62,8 +62,11 @@ class ComponentType(Protocol):
     This is used to see if two component instances share the same definition.
     """
 
-    def render(self) -> VdomDict | ComponentType | str | None:
+    def render(self) -> RenderResult:
         """Render the component's view model."""
+
+
+RenderResult = Union["VdomDict", ComponentType, str, None]
 
 
 _Render = TypeVar("_Render", covariant=True)
@@ -208,9 +211,9 @@ class VdomDictConstructor(Protocol):
 
     def __call__(
         self,
-        *attributes_and_children: VdomAttributesAndChildren,
-        key: str = ...,
-        event_handlers: Optional[EventHandlerMapping] = ...,
+        *children: VdomChild,
+        key: Key | None = None,
+        **attributes: Any,
     ) -> VdomDict:
         ...
 

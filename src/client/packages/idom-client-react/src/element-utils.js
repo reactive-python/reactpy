@@ -22,18 +22,16 @@ export function createElementAttributes(model, sendEvent) {
 
   if (model.eventHandlers) {
     for (const [eventName, eventSpec] of Object.entries(model.eventHandlers)) {
-      attributes[eventName] = createEventHandler(
-        eventName,
-        sendEvent,
-        eventSpec
-      );
+      attributes[eventName] = createEventHandler(sendEvent, eventSpec);
     }
   }
 
-  return attributes;
+  return Object.fromEntries(
+    Object.entries(attributes).map(([key, value]) => [snakeToCamel(key), value])
+  );
 }
 
-function createEventHandler(eventName, sendEvent, eventSpec) {
+function createEventHandler(sendEvent, eventSpec) {
   return function () {
     const data = Array.from(arguments).map((value) => {
       if (typeof value === "object" && value.nativeEvent) {
@@ -51,7 +49,16 @@ function createEventHandler(eventName, sendEvent, eventSpec) {
     sendEvent({
       data: data,
       target: eventSpec["target"],
-      type: "layout-event",
     });
   };
+}
+
+function snakeToCamel(str) {
+  if (str.startsWith("data_") || str.startsWith("aria_")) {
+    return str.replace("_", "-");
+  } else {
+    return str
+      .toLowerCase()
+      .replace(/([-_][a-z])/g, (group) => group.toUpperCase().replace("_", ""));
+  }
 }
