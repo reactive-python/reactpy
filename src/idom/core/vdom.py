@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Mapping, cast
+from typing import Any, DefaultDict, Mapping, cast
 
 from fastjsonschema import compile as compile_json_schema
 
@@ -15,7 +15,6 @@ from idom.core.events import (
 from idom.core.types import (
     ComponentType,
     EventHandlerDict,
-    EventHandlerMapping,
     EventHandlerType,
     ImportSourceDict,
     Key,
@@ -157,7 +156,7 @@ def vdom(
 
     flattened_children: list[VdomChild] = []
     for child in children:
-        if isinstance(child, dict) and "tagName" not in child:
+        if isinstance(child, dict) and "tagName" not in child:  # pragma: no cover
             warn(
                 (
                     "Element constructor signatures have changed! This will be an error "
@@ -203,27 +202,10 @@ def with_import_source(element: VdomDict, import_source: ImportSourceDict) -> Vd
     return {**element, "importSource": import_source}
 
 
-def with_event_handlers(
-    element: VdomDict, event_handlers: EventHandlerMapping
-) -> VdomDict:
-    if "eventHandlers" in element:
-        old_handlers = element["eventHandlers"]
-        new_handlers = {
-            merge_event_handlers((old_handlers[k], event_handlers[h]))
-            if k in old_handlers
-            else h
-            for k, h in event_handlers
-        }
-        return {**element, "eventHandlers": new_handlers}
-    else:
-        return {**element, "eventHandlers": dict(event_handlers)}
-
-
 def make_vdom_constructor(
     tag: str,
     allow_children: bool = True,
     import_source: ImportSourceDict | None = None,
-    event_handlers: EventHandlerMapping | None = None,
 ) -> VdomDictConstructor:
     """Return a constructor for VDOM dictionaries with the given tag name.
 
@@ -231,34 +213,17 @@ def make_vdom_constructor(
     first ``tag`` argument.
     """
 
-    if import_source is not None:
+    def constructor(
+        *children: VdomChild, key: Key | None = None, **attributes: Any
+    ) -> VdomDict:
+        if not allow_children and children:
+            raise TypeError(f"{tag!r} nodes cannot have children.")
 
-        def constructor(
-            *children: VdomChild, key: Key | None = None, **attributes: Any
-        ) -> VdomDict:
-            if not allow_children and children:
-                raise TypeError(f"{tag!r} nodes cannot have children.")
-            return with_import_source(
-                vdom(tag, *children, key=key, **attributes), import_source
-            )
+        model = vdom(tag, *children, key=key, **attributes), import_source
+        if import_source is not None:
+            model = with_import_source(model, import_source)
 
-    else:
-
-        def constructor(
-            *children: VdomChild, key: Key | None = None, **attributes: Any
-        ) -> VdomDict:
-            if not allow_children and children:
-                raise TypeError(f"{tag!r} nodes cannot have children.")
-            return vdom(tag, *children, key=key, **attributes)
-
-    if event_handlers:
-        _constructor = constructor
-
-        def constructor(
-            *children: VdomChild, key: Key | None = None, **attributes: Any
-        ) -> VdomDict:
-            model = _constructor(*children, key=key, **attributes)
-            return with_event_handlers(model, event_handlers)
+        return model
 
     # replicate common function attributes
     constructor.__name__ = tag
@@ -280,7 +245,7 @@ def separate_attributes_and_event_handlers(
     attributes: Mapping[str, Any]
 ) -> tuple[dict[str, Any], EventHandlerDict]:
     separated_attributes = {}
-    separated_event_handlers: dict[str, list[EventHandlerType]] = {}
+    separated_handlers: DefaultDict[str, list[EventHandlerType]] = DefaultDict(list)
 
     for k, v in attributes.items():
 
@@ -299,13 +264,10 @@ def separate_attributes_and_event_handlers(
             separated_attributes[k] = v
             continue
 
-        if k not in separated_event_handlers:
-            separated_event_handlers[k] = [handler]
-        else:
-            separated_event_handlers[k].append(handler)
+        separated_handlers[k].append(handler)
 
     flat_event_handlers_dict = {
-        k: merge_event_handlers(h) for k, h in separated_event_handlers.items()
+        k: merge_event_handlers(h) for k, h in separated_handlers.items()
     }
 
     return separated_attributes, flat_event_handlers_dict
