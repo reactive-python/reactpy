@@ -26,11 +26,7 @@ export function createElementAttributes(model, sendEvent) {
     }
   }
 
-  const attrs = Object.fromEntries(
-    Object.entries(attributes).map(normalizeAttribute)
-  );
-  console.log(attrs);
-  return attrs;
+  return Object.fromEntries(Object.entries(attributes).map(normalizeAttribute));
 }
 
 function createEventHandler(sendEvent, eventSpec) {
