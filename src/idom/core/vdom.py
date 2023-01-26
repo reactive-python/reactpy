@@ -160,12 +160,18 @@ def vdom(
         if isinstance(child, dict) and "tagName" not in child:
             warn(
                 (
-                    "Element constructor signatures have changed! This will be an "
-                    "error in a future release. A CLI tool for automatically updating "
-                    "code to the latest API has been provided with this release of "
-                    "IDOM (e.g. 'idom update-html-usages'). However, it may not "
-                    "resolve all issues arrising from this change. Start a discussion "
-                    "if you need help transitioning to this new interface: "
+                    "Element constructor signatures have changed! This will be an error "
+                    "in a future release. All element constructors now have the  "
+                    "following usage where attributes may be snake_case keyword "
+                    "arguments: "
+                    "\n\n"
+                    ">>> html.div(*children, key=key, **attributes) "
+                    "\n\n"
+                    "A CLI tool for automatically updating code to the latest API has "
+                    "been provided with this release of IDOM (e.g. 'idom "
+                    "update-html-usages'). However, it may not resolve all issues "
+                    "arrising from this change. Start a discussion if you need help "
+                    "transitioning to this new interface: "
                     "https://github.com/idom-team/idom/discussions/new?category=question"
                 ),
                 DeprecationWarning,
