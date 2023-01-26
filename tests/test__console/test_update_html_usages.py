@@ -38,8 +38,8 @@ def test_update_html_usages(tmp_path):
             "html.div(**{variable: 'test', **other, 'key': value})",
         ),
         (
-            'html.div(dict(other, className="test"))',
-            "html.div(**other, class_name='test')",
+            'html.div(dict(other, className="test", **another))',
+            "html.div(**other, class_name='test', **another)",
         ),
         (
             'html.div({"className": "outer"}, html.div({"className": "inner"}))',
@@ -74,6 +74,23 @@ def test_update_html_usages(tmp_path):
         ),
         (
             'html.div({"tagName": "test"})',
+            None,
+        ),
+        (
+            'html.div(dict(tagName="test"))',
+            None,
+        ),
+        (
+            'html.not_an_html_tag({"className": "test"})',
+            None,
+        ),
+        (
+            'html.div(class_name="test")',
+            None,
+        ),
+        (
+            # we don't try to interpret the logic here
+            '(div or button)({"className": "test"})',
             None,
         ),
         # avoid unnecessary changes
@@ -192,6 +209,9 @@ def test_update_html_usages(tmp_path):
             """,
         ),
     ],
+    ids=lambda item: " ".join(map(str.strip, item.split()))
+    if isinstance(item, str)
+    else item,
 )
 def test_generate_rewrite(source, expected):
     actual = generate_rewrite(Path("test.py"), dedent(source).strip())

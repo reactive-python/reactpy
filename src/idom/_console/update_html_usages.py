@@ -63,14 +63,14 @@ def generate_rewrite(file: Path, source: str) -> None:
 
     changed: list[Sequence[ast.AST]] = []
     for parents, node in walk_with_parent(tree):
-        if isinstance(node, ast.Call):
+        if isinstance(node, ast.Call) and node.args:
             func = node.func
             if isinstance(func, ast.Attribute):
                 name = func.attr
             elif isinstance(func, ast.Name):
                 name = func.id
             else:
-                name = ""
+                continue
             if hasattr(html, name) or name == "vdom":
                 if name == "vdom":
                     maybe_attr_dict_node = node.args[1]
@@ -112,7 +112,7 @@ def generate_rewrite(file: Path, source: str) -> None:
             ):
                 nodes_to_unparse.append(current_node)
                 break
-        else:
+        else:  # pragma: no cover
             raise RuntimeError("Failed to change code")
 
     # check if an nodes to rewrite contain eachother, pick outermost nodes
@@ -134,12 +134,11 @@ def generate_rewrite(file: Path, source: str) -> None:
         # there may be some content just before and after the content we're re-writing
         before_replacement = lines[node.lineno - 1][: node.col_offset].lstrip()
 
-        if node.end_lineno is not None and node.end_col_offset is not None:
-            after_replacement = lines[node.end_lineno - 1][
-                node.end_col_offset :
-            ].strip()
-        else:
-            after_replacement = ""
+        after_replacement = (
+            lines[node.end_lineno - 1][node.end_col_offset :].strip()
+            if node.end_lineno is not None and node.end_col_offset is not None
+            else ""
+        )
 
         replacement = indent(
             before_replacement
@@ -148,10 +147,7 @@ def generate_rewrite(file: Path, source: str) -> None:
             " " * (node.col_offset - len(before_replacement)),
         )
 
-        if node.end_lineno:
-            lines[node.lineno - 1 : node.end_lineno] = [replacement]
-        else:
-            lines[node.lineno - 1] = replacement
+        lines[node.lineno - 1 : node.end_lineno or node.lineno] = [replacement]
 
         if comments:
             moved_comment_lines_from_end.append(len(lines) - node.lineno)
