@@ -3,7 +3,7 @@ from __future__ import annotations
 import ast
 import re
 from collections.abc import Sequence
-from glob import glob
+from dataclasses import dataclass
 from keyword import kwlist
 from pathlib import Path
 from textwrap import indent
@@ -12,6 +12,7 @@ from tokenize import generate_tokens
 from typing import Iterator
 
 import click
+from typing_extensions import TypeGuard
 
 from idom import html
 
@@ -64,73 +65,32 @@ def generate_rewrite(file: Path, source: str) -> None:
     for parents, node in walk_with_parent(tree):
         if isinstance(node, ast.Call):
             func = node.func
-            match func:
-                case ast.Attribute():
-                    name = func.attr
-                case ast.Name(ctx=ast.Load()):
-                    name = func.id
-                case _:
-                    name = ""
+            if isinstance(func, ast.Attribute):
+                name = func.attr
+            elif isinstance(func, ast.Name):
+                name = func.id
+            else:
+                name = ""
             if hasattr(html, name) or name == "vdom":
                 if name == "vdom":
-                    # first arg is the tag name
-                    node_args_pre = node.args[:1]
-                    node.args = node.args[1:]
+                    maybe_attr_dict_node = node.args[1]
+                    # remove attr dict from new args
+                    new_args = node.args[:1] + node.args[2:]
                 else:
-                    node_args_pre = []
+                    maybe_attr_dict_node = node.args[0]
+                    # remove attr dict from new args
+                    new_args = node.args[1:]
 
-                match node.args:
-                    case [ast.Dict(keys, values), *_]:
-                        new_kwargs = list(node.keywords)
-                        should_change = True
-                        for k, v in zip(keys, values):
-                            if isinstance(k, ast.Constant) and isinstance(k.value, str):
-                                if k.value == "tagName":
-                                    # this is a vdom dict declaration
-                                    should_change = False
-                                    break
-                                new_kwargs.append(
-                                    ast.keyword(arg=conv_attr_name(k.value), value=v)
-                                )
-                            else:
-                                new_kwargs = [ast.keyword(arg=None, value=node.args[0])]
-                                should_change = True
-                                break
-                        if should_change:
-                            node.args = node_args_pre + node.args[1:]
-                            node.keywords = new_kwargs
-                            changed.append((node, *parents))
-                    case [
-                        ast.Call(
-                            func=ast.Name(id="dict", ctx=ast.Load()),
-                            args=args,
-                            keywords=kwargs,
-                        ),
-                        *_,
-                    ]:
-                        new_kwargs = [
-                            *[ast.keyword(arg=None, value=a) for a in args],
-                            *node.keywords,
-                        ]
-                        for kw in kwargs:
-                            if kw.arg == "tagName":
-                                # this is a vdom dict declaration
-                                break
-                            if kw.arg is not None:
-                                new_kwargs.append(
-                                    ast.keyword(
-                                        arg=conv_attr_name(kw.arg), value=kw.value
-                                    )
-                                )
-                            else:
-                                new_kwargs.append(kw)
+                if node.args:
+                    new_keyword_info = extract_keywords(maybe_attr_dict_node)
+                    if new_keyword_info is not None:
+                        if new_keyword_info.replace:
+                            node.keywords = new_keyword_info.keywords
                         else:
-                            node.args = node_args_pre + node.args[1:]
-                            node.keywords = new_kwargs
-                            changed.append((node, *parents))
+                            node.keywords.extend(new_keyword_info.keywords)
 
-                    case _:
-                        pass
+                        node.args = new_args
+                        changed.append((node, *parents))
 
     if not changed:
         return
@@ -202,6 +162,39 @@ def generate_rewrite(file: Path, source: str) -> None:
     return "\n".join(lines)
 
 
+def extract_keywords(node: ast.AST) -> KeywordInfo | None:
+    if isinstance(node, ast.Dict):
+        keywords: list[ast.keyword] = []
+        for k, v in zip(node.keys, node.values):
+            if isinstance(k, ast.Constant) and isinstance(k.value, str):
+                if k.value == "tagName":
+                    # this is a vdom dict declaration
+                    return None
+                keywords.append(ast.keyword(arg=conv_attr_name(k.value), value=v))
+            else:
+                return KeywordInfo(
+                    replace=True,
+                    keywords=[ast.keyword(arg=None, value=node)],
+                )
+        return KeywordInfo(replace=False, keywords=keywords)
+    elif (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "dict"
+        and isinstance(node.func.ctx, ast.Load)
+    ):
+        keywords = [ast.keyword(arg=None, value=a) for a in node.args]
+        for kw in node.keywords:
+            if kw.arg == "tagName":
+                # this is a vdom dict declaration
+                return None
+            if kw.arg is not None:
+                keywords.append(ast.keyword(arg=conv_attr_name(kw.arg), value=kw.value))
+            else:
+                keywords.append(kw)
+        return KeywordInfo(replace=False, keywords=keywords)
+
+
 def find_comments(lines: list[str]) -> list[str]:
     iter_lines = iter(lines)
     return [
@@ -223,3 +216,9 @@ def walk_with_parent(
 def conv_attr_name(name: str) -> str:
     new_name = CAMEL_CASE_SUB_PATTERN.sub("_", name).replace("-", "_").lower()
     return f"{new_name}_" if new_name in kwlist else new_name
+
+
+@dataclass
+class KeywordInfo:
+    replace: bool
+    keywords: Sequence[ast.keyword]
