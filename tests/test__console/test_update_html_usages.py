@@ -8,6 +8,10 @@ from click.testing import CliRunner
 from idom._console.update_html_usages import generate_rewrite, update_html_usages
 
 
+if sys.version_info < (3, 9):
+    pytestmark = pytest.mark.skip(reason="ast.unparse is Python>=3.9")
+
+
 def test_update_html_usages(tmp_path):
     runner = CliRunner()
 
@@ -214,7 +218,6 @@ def test_update_html_usages(tmp_path):
     if isinstance(item, str)
     else item,
 )
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="ast.unparse is Python>=3.9")
 def test_generate_rewrite(source, expected):
     actual = generate_rewrite(Path("test.py"), dedent(source).strip())
     if isinstance(expected, str):
