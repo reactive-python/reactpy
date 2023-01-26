@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from textwrap import dedent
 
@@ -213,6 +214,7 @@ def test_update_html_usages(tmp_path):
     if isinstance(item, str)
     else item,
 )
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="ast.unparse is Python>=3.9")
 def test_generate_rewrite(source, expected):
     actual = generate_rewrite(Path("test.py"), dedent(source).strip())
     if isinstance(expected, str):

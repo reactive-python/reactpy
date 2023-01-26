@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import re
+import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from keyword import kwlist
@@ -51,6 +52,8 @@ def update_html_usages(directories: list[str]) -> None:
     just above its changes. As such it requires manual intervention to put those
     comments back in their original location.
     """
+    if sys.version_info < (3, 9):  # pragma: no cover
+        raise RuntimeError("This command requires Python>=3.9")
     for d in directories:
         for file in Path(d).rglob("*.py"):
             result = generate_rewrite(file=file, source=file.read_text())
