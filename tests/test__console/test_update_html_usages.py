@@ -34,8 +34,8 @@ def test_update_html_usages(tmp_path):
             "vdom('div', class_name='test')",
         ),
         (
-            'html.div({class_name: "test", **other})',
-            "html.div(**{class_name: 'test', **other})",
+            'html.div({variable: "test", **other, "key": value})',
+            "html.div(**{variable: 'test', **other, 'key': value})",
         ),
         (
             'html.div(dict(other, className="test"))',
