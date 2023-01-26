@@ -7,4 +7,4 @@ requests >=2
 colorlog >=6
 asgiref >=3
 lxml >=4
-typer >=8, <9
+click >=8, <9

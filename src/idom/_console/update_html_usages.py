@@ -3,7 +3,7 @@ from __future__ import annotations
 import ast
 import re
 from collections.abc import Sequence
-from glob import iglob
+from glob import glob
 from keyword import kwlist
 from pathlib import Path
 from textwrap import indent
@@ -20,9 +20,9 @@ CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
 
 
 @click.command()
-@click.argument("patterns", nargs=-1)
-def update_html_usages(patterns: list[str]) -> None:
-    """Rewrite files matching the given glob patterns to the new html element API.
+@click.argument("directories", nargs=-1)
+def update_html_usages(directories: list[str]) -> None:
+    """Rewrite files in the given directories to use the new html element API.
 
     The old API required users to pass a dictionary of attributes to html element
     constructor functions. For example:
@@ -50,8 +50,8 @@ def update_html_usages(patterns: list[str]) -> None:
     just above its changes. As such it requires manual intervention to put those
     comments back in their original location.
     """
-    for pat in patterns:
-        for file in map(Path, iglob(pat)):
+    for d in directories:
+        for file in Path(d).rglob("*.py"):
             result = generate_rewrite(file=file, source=file.read_text())
             if result is not None:
                 file.write_text(result)

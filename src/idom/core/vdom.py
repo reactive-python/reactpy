@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Mapping, cast
+from warnings import warn
 
 from fastjsonschema import compile as compile_json_schema
 
@@ -153,20 +154,32 @@ def vdom(
     """
     model: VdomDict = {"tagName": tag}
 
-    children: list[VdomChild] = []
+    flattened_children: list[VdomChild] = []
     for child in children:
+        if isinstance(child, dict) and "tagName" not in child:
+            warn(
+                (
+                    "Element constructor signatures have changed! A CLI tool for "
+                    "automatically updating code to the latest API has been provided "
+                    "with this release of IDOM (e.g. 'idom update-html-usages'). For "
+                    "start a discussion if you need help transitioning to this new "
+                    "interface: https://github.com/idom-team/idom/discussions/new?category=question"
+                ),
+                DeprecationWarning,
+            )
+            attributes.update(child)
         if _is_single_child(child):
-            children.append(child)
+            flattened_children.append(child)
         else:
-            children.extend(child)
+            flattened_children.extend(child)
 
     attributes, event_handlers = separate_attributes_and_event_handlers(attributes)
 
     if attributes:
         model["attributes"] = attributes
 
-    if children:
-        model["children"] = children
+    if flattened_children:
+        model["children"] = flattened_children
 
     if event_handlers:
         model["eventHandlers"] = event_handlers

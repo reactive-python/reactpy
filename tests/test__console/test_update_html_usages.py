@@ -13,7 +13,7 @@ def test_update_html_usages(tmp_path):
     tempfile: Path = tmp_path / "temp.py"
     tempfile.write_text("html.div({'className': test})")
 
-    result = runner.invoke(update_html_usages, str(tempfile))
+    result = runner.invoke(update_html_usages, str(tmp_path))
 
     if result.exception:
         raise result.exception
