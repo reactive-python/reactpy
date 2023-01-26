@@ -17,10 +17,10 @@ def Todo():
             set_items(items[:index] + items[index + 1 :])
 
         task_text = idom.html.td(idom.html.p(text))
-        delete_button = idom.html.td({"onClick": remove_task}, idom.html.button(["x"]))
+        delete_button = idom.html.td(idom.html.button(["x"]), on_click=remove_task)
         tasks.append(idom.html.tr(task_text, delete_button))
 
-    task_input = idom.html.input({"onKeyDown": add_new_task})
+    task_input = idom.html.input(on_key_down=add_new_task)
     task_table = idom.html.table(tasks)
 
     return idom.html.div(

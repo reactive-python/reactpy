@@ -41,7 +41,7 @@ async def test_that_js_module_unmount_is_called(display: DisplayFixture):
     await display.page.wait_for_selector("#some-component", state="attached")
 
     set_current_component.current(
-        idom.html.h1({"id": "some-other-component"}, "some other component")
+        idom.html.h1("some other component", id="some-other-component")
     )
 
     # the new component has been displayed

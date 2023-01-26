@@ -205,17 +205,15 @@ SOME_OBJECT = object()
             f"<div>{html_escape(str(SOME_OBJECT))}</div>",
         ),
         (
-            html.div({"someAttribute": SOME_OBJECT}),
+            html.div(some_attribute=SOME_OBJECT),
             f'<div someattribute="{html_escape(str(SOME_OBJECT))}"></div>',
         ),
         (
-            html.div(
-                "hello", html.a({"href": "https://example.com"}, "example"), "world"
-            ),
+            html.div("hello", html.a("example", href="https://example.com"), "world"),
             '<div>hello<a href="https://example.com">example</a>world</div>',
         ),
         (
-            html.button({"onClick": lambda event: None}),
+            html.button(on_click=lambda event: None),
             "<button></button>",
         ),
         (
@@ -227,17 +225,17 @@ SOME_OBJECT = object()
             "<div>hello</div>world",
         ),
         (
-            html.div({"style": {"backgroundColor": "blue", "marginLeft": "10px"}}),
+            html.div(style={"background_color": "blue", "margin_left": "10px"}),
             '<div style="background-color:blue;margin-left:10px"></div>',
         ),
         (
-            html.div({"style": "background-color:blue;margin-left:10px"}),
+            html.div(style="background-color:blue;margin-left:10px"),
             '<div style="background-color:blue;margin-left:10px"></div>',
         ),
         (
             html._(
                 html.div("hello"),
-                html.a({"href": "https://example.com"}, "example"),
+                html.a("example", href="https://example.com"),
             ),
             '<div>hello</div><a href="https://example.com">example</a>',
         ),
@@ -245,16 +243,14 @@ SOME_OBJECT = object()
             html.div(
                 html._(
                     html.div("hello"),
-                    html.a({"href": "https://example.com"}, "example"),
+                    html.a("example", href="https://example.com"),
                 ),
                 html.button(),
             ),
             '<div><div>hello</div><a href="https://example.com">example</a><button></button></div>',
         ),
         (
-            html.div(
-                {"dataSomething": 1, "dataSomethingElse": 2, "dataisnotdashed": 3}
-            ),
+            html.div(data_something=1, data_something_else=2, dataisnotdashed=3),
             '<div data-something="1" data-something-else="2" dataisnotdashed="3"></div>',
         ),
     ],

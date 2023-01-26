@@ -15,7 +15,7 @@ def Counter():
 
     return html.div(
         html.h1(number),
-        html.button({"onClick": handle_click}, "Increment"),
+        html.button("Increment", on_click=handle_click),
     )
 
 

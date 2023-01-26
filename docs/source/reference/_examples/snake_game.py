@@ -21,8 +21,7 @@ def GameView():
         return GameLoop(grid_size=6, block_scale=50, set_game_state=set_game_state)
 
     start_button = idom.html.button(
-        {"onClick": lambda event: set_game_state(GameState.play)},
-        "Start",
+        "Start", on_click=lambda event: set_game_state(GameState.play)
     )
 
     if game_state == GameState.won:
@@ -40,7 +39,7 @@ def GameView():
         """
     )
 
-    return idom.html.div({"className": "snake-game-menu"}, menu_style, menu)
+    return idom.html.div(menu_style, menu, class_name="snake-game-menu")
 
 
 class Direction(enum.Enum):
@@ -72,7 +71,7 @@ def GameLoop(grid_size, block_scale, set_game_state):
             if direction_vector_sum != (0, 0):
                 direction.current = maybe_new_direction
 
-    grid_wrapper = idom.html.div({"onKeyDown": on_direction_change}, grid)
+    grid_wrapper = idom.html.div(grid, on_key_down=on_direction_change)
 
     assign_grid_block_color(grid, food, "blue")
 
@@ -139,43 +138,39 @@ def use_interval(rate):
 
 def create_grid(grid_size, block_scale):
     return idom.html.div(
-        {
-            "style": {
-                "height": f"{block_scale * grid_size}px",
-                "width": f"{block_scale * grid_size}px",
-                "cursor": "pointer",
-                "display": "grid",
-                "grid-gap": 0,
-                "grid-template-columns": f"repeat({grid_size}, {block_scale}px)",
-                "grid-template-rows": f"repeat({grid_size}, {block_scale}px)",
-            },
-            "tabIndex": -1,
-        },
         [
             idom.html.div(
-                {"style": {"height": f"{block_scale}px"}},
                 [
                     create_grid_block("black", block_scale, key=i)
                     for i in range(grid_size)
                 ],
                 key=i,
+                style={"height": f"{block_scale}px"},
             )
             for i in range(grid_size)
         ],
+        style={
+            "height": f"{block_scale * grid_size}px",
+            "width": f"{block_scale * grid_size}px",
+            "cursor": "pointer",
+            "display": "grid",
+            "grid-gap": 0,
+            "grid-template-columns": f"repeat({grid_size}, {block_scale}px)",
+            "grid-template-rows": f"repeat({grid_size}, {block_scale}px)",
+        },
+        tab_index=-1,
     )
 
 
 def create_grid_block(color, block_scale, key):
     return idom.html.div(
-        {
-            "style": {
-                "height": f"{block_scale}px",
-                "width": f"{block_scale}px",
-                "backgroundColor": color,
-                "outline": "1px solid grey",
-            }
-        },
         key=key,
+        style={
+            "height": f"{block_scale}px",
+            "width": f"{block_scale}px",
+            "backgroundColor": color,
+            "outline": "1px solid grey",
+        },
     )
 
 
