@@ -219,7 +219,7 @@ def make_vdom_constructor(
         if not allow_children and children:
             raise TypeError(f"{tag!r} nodes cannot have children.")
 
-        model = vdom(tag, *children, key=key, **attributes), import_source
+        model = vdom(tag, *children, key=key, **attributes)
         if import_source is not None:
             model = with_import_source(model, import_source)
 
