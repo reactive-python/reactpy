@@ -154,7 +154,7 @@ def _etree_to_vdom(
 
     vdom: VdomDict
     if hasattr(idom.html, node.tag):
-        vdom = getattr(idom.html, node.tag)(attributes, *children, key=key)
+        vdom = getattr(idom.html, node.tag)(*children, key=key, **attributes)
     else:
         vdom = {"tagName": node.tag}
         if children:
@@ -233,9 +233,9 @@ def _mutate_vdom(vdom: VdomDict) -> None:
         # Convince type checker that it's safe to mutate attributes
         assert isinstance(vdom["attributes"], dict)
 
-        # Convert style attribute from str -> dict with camelCase keys
+        # Convert style attribute from str -> dict with snake case keys
         vdom["attributes"]["style"] = {
-            _hypen_to_camel_case(key.strip()): value.strip()
+            key.strip().replace("-", "_"): value.strip()
             for key, value in (
                 part.split(":", 1)
                 for part in vdom["attributes"]["style"].split(";")
@@ -264,12 +264,6 @@ def _generate_vdom_children(
             )
         )
     )
-
-
-def _hypen_to_camel_case(string: str) -> str:
-    """Convert a hypenated string to camelCase."""
-    first, _, remainder = string.partition("-")
-    return first.lower() + remainder.title().replace("-", "")
 
 
 def del_html_head_body_transform(vdom: VdomDict) -> VdomDict:

@@ -26,9 +26,11 @@ export function createElementAttributes(model, sendEvent) {
     }
   }
 
-  return Object.fromEntries(
-    Object.entries(attributes).map(([key, value]) => [snakeToCamel(key), value])
+  const attrs = Object.fromEntries(
+    Object.entries(attributes).map(normalizeAttribute)
   );
+  console.log(attrs);
+  return attrs;
 }
 
 function createEventHandler(sendEvent, eventSpec) {
@@ -53,12 +55,32 @@ function createEventHandler(sendEvent, eventSpec) {
   };
 }
 
-function snakeToCamel(str) {
-  if (str.startsWith("data_") || str.startsWith("aria_")) {
-    return str.replace("_", "-");
+function normalizeAttribute([key, value]) {
+  let normKey = key;
+  let normValue = value;
+
+  if (key === "style" && typeof value === "object") {
+    normValue = Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [snakeToCamel(k), v])
+    );
+  } else if (
+    key.startsWith("data_") ||
+    key.startsWith("aria_") ||
+    DASHED_HTML_ATTRS.includes(key)
+  ) {
+    normKey = key.replace("_", "-");
   } else {
-    return str
-      .toLowerCase()
-      .replace(/([-_][a-z])/g, (group) => group.toUpperCase().replace("_", ""));
+    normKey = snakeToCamel(key);
   }
+  return [normKey, normValue];
 }
+
+function snakeToCamel(str) {
+  return str.replace(/([_][a-z])/g, (group) =>
+    group.toUpperCase().replace("_", "")
+  );
+}
+
+// see list of HTML attributes with dashes in them:
+// https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#attribute_list
+const DASHED_HTML_ATTRS = ["accept_charset", "http_equiv"];

@@ -79,7 +79,7 @@ async def test_style_can_be_changed(display: DisplayFixture):
             f"color: {color}",
             id="my-button",
             on_click=lambda event: set_color_toggle(not color_toggle),
-            style={"backgroundColor": color, "color": "white"},
+            style={"background_color": color, "color": "white"},
         )
 
     await display.show(ButtonWithChangingColor)

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import os
-from inspect import currentframe
 from logging import getLogger
-from types import FrameType
 from typing import Any, Callable, Generic, Iterator, TypeVar, cast
 from warnings import warn
+
+from idom._warnings import warn
 
 
 _O = TypeVar("_O")
@@ -129,25 +129,5 @@ class DeprecatedOption(Option[_O]):  # pragma: no cover
         warn(
             self._deprecation_message,
             DeprecationWarning,
-            stacklevel=_frame_depth_in_module() + 1,
         )
         return super().current
-
-
-def _frame_depth_in_module() -> int:
-    depth = 0
-    for frame in _iter_frames(2):
-        if frame.f_globals.get("__name__") != __name__:
-            break
-        depth += 1
-    return depth
-
-
-def _iter_frames(index: int = 1) -> Iterator[FrameType]:
-    frame = currentframe()
-    while frame is not None:
-        if index == 0:
-            yield frame
-        else:
-            index -= 1
-        frame = frame.f_back

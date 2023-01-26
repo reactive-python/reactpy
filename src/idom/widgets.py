@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from base64 import b64encode
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, TypeVar, Union
-from warnings import warn
 
 from typing_extensions import Protocol
 
 import idom
 
 from . import html
+from ._warnings import warn
 from .core.types import ComponentConstructor, VdomDict
 from .testing.backend import _hotswap, _MountFunc
 

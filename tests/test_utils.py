@@ -46,12 +46,20 @@ def test_ref_repr():
 @pytest.mark.parametrize(
     "case",
     [
-        {"source": "<div/>", "model": {"tagName": "div"}},
+        {
+            "source": "<div/>",
+            "model": {"tagName": "div"},
+        },
+        {
+            "source": "<div some-attribute=thing />",
+            # we don't touch attribute values
+            "model": {"tagName": "div", "attributes": {"some-attribute": "thing"}},
+        },
         {
             "source": "<div style='background-color:blue'/>",
             "model": {
                 "tagName": "div",
-                "attributes": {"style": {"backgroundColor": "blue"}},
+                "attributes": {"style": {"background_color": "blue"}},
             },
         },
         {
@@ -137,7 +145,7 @@ def test_html_to_vdom_with_style_attr():
     source = '<p style="color: red; background-color : green; ">Hello World.</p>'
 
     expected = {
-        "attributes": {"style": {"backgroundColor": "green", "color": "red"}},
+        "attributes": {"style": {"background_color": "green", "color": "red"}},
         "children": ["Hello World."],
         "tagName": "p",
     }

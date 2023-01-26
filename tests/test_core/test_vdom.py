@@ -16,7 +16,7 @@ from idom.core.vdom import (
 
 
 FAKE_EVENT_HANDLER = EventHandler(lambda data: None)
-FAKE_EVENT_HANDLER_DICT = {"onEvent": FAKE_EVENT_HANDLER}
+FAKE_EVENT_HANDLER_DICT = {"on_event": FAKE_EVENT_HANDLER}
 
 
 @pytest.mark.parametrize(

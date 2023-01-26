@@ -154,9 +154,9 @@ def create_grid(grid_size, block_scale):
             "width": f"{block_scale * grid_size}px",
             "cursor": "pointer",
             "display": "grid",
-            "grid-gap": 0,
-            "grid-template-columns": f"repeat({grid_size}, {block_scale}px)",
-            "grid-template-rows": f"repeat({grid_size}, {block_scale}px)",
+            "grid_gap": 0,
+            "grid_template_columns": f"repeat({grid_size}, {block_scale}px)",
+            "grid_template_rows": f"repeat({grid_size}, {block_scale}px)",
         },
         tab_index=-1,
     )
@@ -168,7 +168,7 @@ def create_grid_block(color, block_scale, key):
         style={
             "height": f"{block_scale}px",
             "width": f"{block_scale}px",
-            "backgroundColor": color,
+            "background_color": color,
             "outline": "1px solid grey",
         },
     )
@@ -177,7 +177,7 @@ def create_grid_block(color, block_scale, key):
 def assign_grid_block_color(grid, point, color):
     x, y = point
     block = grid["children"][x]["children"][y]
-    block["attributes"]["style"]["backgroundColor"] = color
+    block["attributes"]["style"]["background_color"] = color
 
 
 idom.run(GameView)

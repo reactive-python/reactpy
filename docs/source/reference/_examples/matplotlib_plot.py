@@ -61,7 +61,7 @@ def poly_coef_input(index, callback):
         idom.html.label("C", idom.html.sub(index), " × X", idom.html.sup(index)),
         idom.html.input(type="number", on_change=callback),
         key=index,
-        style={"margin-top": "5px"},
+        style={"margin_top": "5px"},
     )
 
 

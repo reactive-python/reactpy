@@ -32,7 +32,7 @@ async def test_that_js_module_unmount_is_called(display: DisplayFixture):
     @idom.component
     def ShowCurrentComponent():
         current_component, set_current_component.current = idom.hooks.use_state(
-            lambda: SomeComponent({"id": "some-component", "text": "initial component"})
+            lambda: SomeComponent(id="some-component", text="initial component")
         )
         return current_component
 
@@ -68,7 +68,7 @@ async def test_module_from_url(browser):
 
     @idom.component
     def ShowSimpleButton():
-        return SimpleButton({"id": "my-button"})
+        return SimpleButton(id="my-button")
 
     async with BackendFixture(app=app, implementation=sanic_implementation) as server:
         async with DisplayFixture(server, browser) as display:
@@ -105,7 +105,8 @@ async def test_module_from_file(display: DisplayFixture):
     @idom.component
     def ShowSimpleButton():
         return SimpleButton(
-            {"id": "my-button", "onClick": lambda event: is_clicked.set_current(True)}
+            id="my-button",
+            on_click=lambda event: is_clicked.set_current(True),
         )
 
     await display.show(ShowSimpleButton)
@@ -198,11 +199,11 @@ async def test_module_exports_multiple_components(display: DisplayFixture):
         ["Header1", "Header2"],
     )
 
-    await display.show(lambda: Header1({"id": "my-h1"}, "My Header 1"))
+    await display.show(lambda: Header1("My Header 1", id="my-h1"))
 
     await display.page.wait_for_selector("#my-h1", state="attached")
 
-    await display.show(lambda: Header2({"id": "my-h2"}, "My Header 2"))
+    await display.show(lambda: Header2("My Header 2", id="my-h2"))
 
     await display.page.wait_for_selector("#my-h2", state="attached")
 
@@ -215,9 +216,9 @@ async def test_imported_components_can_render_children(display: DisplayFixture):
 
     await display.show(
         lambda: Parent(
-            Child({"index": 1}),
-            Child({"index": 2}),
-            Child({"index": 3}),
+            Child(index=1),
+            Child(index=2),
+            Child(index=3),
         )
     )
 

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Mapping, cast
-from warnings import warn
 
 from fastjsonschema import compile as compile_json_schema
 
+from idom._warnings import warn
 from idom.config import IDOM_DEBUG_MODE
 from idom.core.events import (
     EventHandler,
@@ -15,6 +15,7 @@ from idom.core.events import (
 from idom.core.types import (
     ComponentType,
     EventHandlerDict,
+    EventHandlerMapping,
     EventHandlerType,
     ImportSourceDict,
     Key,
@@ -159,11 +160,13 @@ def vdom(
         if isinstance(child, dict) and "tagName" not in child:
             warn(
                 (
-                    "Element constructor signatures have changed! A CLI tool for "
-                    "automatically updating code to the latest API has been provided "
-                    "with this release of IDOM (e.g. 'idom update-html-usages'). For "
-                    "start a discussion if you need help transitioning to this new "
-                    "interface: https://github.com/idom-team/idom/discussions/new?category=question"
+                    "Element constructor signatures have changed! This will be an "
+                    "error in a future release. A CLI tool for automatically updating "
+                    "code to the latest API has been provided with this release of "
+                    "IDOM (e.g. 'idom update-html-usages'). However, it may not "
+                    "resolve all issues arrising from this change. Start a discussion "
+                    "if you need help transitioning to this new interface: "
+                    "https://github.com/idom-team/idom/discussions/new?category=question"
                 ),
                 DeprecationWarning,
             )
@@ -194,19 +197,62 @@ def with_import_source(element: VdomDict, import_source: ImportSourceDict) -> Vd
     return {**element, "importSource": import_source}
 
 
-def make_vdom_constructor(tag: str, allow_children: bool = True) -> VdomDictConstructor:
+def with_event_handlers(
+    element: VdomDict, event_handlers: EventHandlerMapping
+) -> VdomDict:
+    if "eventHandlers" in element:
+        old_handlers = element["eventHandlers"]
+        new_handlers = {
+            merge_event_handlers((old_handlers[k], event_handlers[h]))
+            if k in old_handlers
+            else h
+            for k, h in event_handlers
+        }
+        return {**element, "eventHandlers": new_handlers}
+    else:
+        return {**element, "eventHandlers": dict(event_handlers)}
+
+
+def make_vdom_constructor(
+    tag: str,
+    allow_children: bool = True,
+    import_source: ImportSourceDict | None = None,
+    event_handlers: EventHandlerMapping | None = None,
+) -> VdomDictConstructor:
     """Return a constructor for VDOM dictionaries with the given tag name.
 
     The resulting callable will have the same interface as :func:`vdom` but without its
     first ``tag`` argument.
     """
 
-    def constructor(
-        *children: VdomChild, key: Key | None = None, **attributes: Any
-    ) -> VdomDict:
-        if not allow_children and children:
-            raise TypeError(f"{tag!r} nodes cannot have children.")
-        return vdom(tag, *children, key=key, **attributes)
+    if import_source is not None:
+
+        def constructor(
+            *children: VdomChild, key: Key | None = None, **attributes: Any
+        ) -> VdomDict:
+            if not allow_children and children:
+                raise TypeError(f"{tag!r} nodes cannot have children.")
+            return with_import_source(
+                vdom(tag, *children, key=key, **attributes), import_source
+            )
+
+    else:
+
+        def constructor(
+            *children: VdomChild, key: Key | None = None, **attributes: Any
+        ) -> VdomDict:
+            if not allow_children and children:
+                raise TypeError(f"{tag!r} nodes cannot have children.")
+            return vdom(tag, *children, key=key, **attributes)
+
+    if event_handlers:
+        _constructor = constructor
+
+        def constructor(
+            *children: VdomChild, key: Key | None = None, **attributes: Any
+        ) -> VdomDict:
+            model = _constructor(*children, key=key, **attributes)
+            return with_event_handlers(model, event_handlers)
 
     # replicate common function attributes
     constructor.__name__ = tag
