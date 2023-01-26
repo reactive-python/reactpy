@@ -30,6 +30,10 @@ def test_update_html_usages(tmp_path):
             "html.div(class_name='test')",
         ),
         (
+            'vdom("div", {"className": "test"})',
+            "vdom('div', class_name='test')",
+        ),
+        (
             'html.div({class_name: "test", **other})',
             "html.div(**{class_name: 'test', **other})",
         ),
@@ -66,6 +70,10 @@ def test_update_html_usages(tmp_path):
         # when to not attempt conversion
         (
             'html.div(ignore, {"className": "test"})',
+            None,
+        ),
+        (
+            'html.div({"tagName": "test"})',
             None,
         ),
         # avoid unnecessary changes

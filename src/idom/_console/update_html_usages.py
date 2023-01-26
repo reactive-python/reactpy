@@ -71,21 +71,31 @@ def generate_rewrite(file: Path, source: str) -> None:
                     name = func.id
                 case _:
                     name = ""
-            if hasattr(html, name):
+            if hasattr(html, name) or name == "vdom":
+                if name == "vdom":
+                    # first arg is the tag name
+                    node_args_pre = node.args[:1]
+                    node.args = node.args[1:]
+                else:
+                    node_args_pre = []
+
                 match node.args:
                     case [ast.Dict(keys, values), *_]:
                         new_kwargs = list(node.keywords)
                         for k, v in zip(keys, values):
                             if isinstance(k, ast.Constant) and isinstance(k.value, str):
+                                if k.value == "tagName":
+                                    # this is a vdom dict declaration
+                                    break
                                 new_kwargs.append(
                                     ast.keyword(arg=conv_attr_name(k.value), value=v)
                                 )
                             else:
                                 new_kwargs = [ast.keyword(arg=None, value=node.args[0])]
-                                break
-                        node.args = node.args[1:]
-                        node.keywords = new_kwargs
-                        changed.append((node, *parents))
+                        else:
+                            node.args = node_args_pre + node.args[1:]
+                            node.keywords = new_kwargs
+                            changed.append((node, *parents))
                     case [
                         ast.Call(
                             func=ast.Name(id="dict", ctx=ast.Load()),
@@ -99,6 +109,9 @@ def generate_rewrite(file: Path, source: str) -> None:
                             *node.keywords,
                         ]
                         for kw in kwargs:
+                            if kw.arg == "tagName":
+                                # this is a vdom dict declaration
+                                break
                             if kw.arg is not None:
                                 new_kwargs.append(
                                     ast.keyword(
@@ -107,9 +120,10 @@ def generate_rewrite(file: Path, source: str) -> None:
                                 )
                             else:
                                 new_kwargs.append(kw)
-                        node.args = node.args[1:]
-                        node.keywords = new_kwargs
-                        changed.append((node, *parents))
+                        else:
+                            node.args = node_args_pre + node.args[1:]
+                            node.keywords = new_kwargs
+                            changed.append((node, *parents))
 
                     case _:
                         pass
