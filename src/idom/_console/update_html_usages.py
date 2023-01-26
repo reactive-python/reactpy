@@ -13,7 +13,6 @@ from tokenize import generate_tokens
 from typing import Iterator
 
 import click
-from typing_extensions import TypeGuard
 
 from idom import html
 
@@ -61,42 +60,47 @@ def update_html_usages(directories: list[str]) -> None:
                 file.write_text(result)
 
 
-def generate_rewrite(file: Path, source: str) -> None:
+def generate_rewrite(file: Path, source: str) -> str | None:
     tree = ast.parse(source)
 
     changed: list[Sequence[ast.AST]] = []
     for parents, node in walk_with_parent(tree):
-        if isinstance(node, ast.Call) and node.args:
-            func = node.func
-            if isinstance(func, ast.Attribute):
-                name = func.attr
-            elif isinstance(func, ast.Name):
-                name = func.id
-            else:
-                continue
-            if hasattr(html, name) or name == "vdom":
-                if name == "vdom":
-                    maybe_attr_dict_node = node.args[1]
-                    # remove attr dict from new args
-                    new_args = node.args[:1] + node.args[2:]
+        if not (isinstance(node, ast.Call) and node.args):
+            continue
+
+        func = node.func
+        if isinstance(func, ast.Attribute):
+            name = func.attr
+        elif isinstance(func, ast.Name):
+            name = func.id
+        else:
+            continue
+
+        if not (hasattr(html, name) or name == "vdom"):
+            continue
+
+        if name == "vdom":
+            maybe_attr_dict_node = node.args[1]
+            # remove attr dict from new args
+            new_args = node.args[:1] + node.args[2:]
+        else:
+            maybe_attr_dict_node = node.args[0]
+            # remove attr dict from new args
+            new_args = node.args[1:]
+
+        if node.args:
+            new_keyword_info = extract_keywords(maybe_attr_dict_node)
+            if new_keyword_info is not None:
+                if new_keyword_info.replace:
+                    node.keywords = new_keyword_info.keywords
                 else:
-                    maybe_attr_dict_node = node.args[0]
-                    # remove attr dict from new args
-                    new_args = node.args[1:]
+                    node.keywords.extend(new_keyword_info.keywords)
 
-                if node.args:
-                    new_keyword_info = extract_keywords(maybe_attr_dict_node)
-                    if new_keyword_info is not None:
-                        if new_keyword_info.replace:
-                            node.keywords = new_keyword_info.keywords
-                        else:
-                            node.keywords.extend(new_keyword_info.keywords)
-
-                        node.args = new_args
-                        changed.append((node, *parents))
+                node.args = new_args
+                changed.append((node, *parents))
 
     if not changed:
-        return
+        return None
 
     ast.fix_missing_locations(tree)
 
@@ -124,7 +128,10 @@ def generate_rewrite(file: Path, source: str) -> None:
     )
     outermost_nodes_to_unparse = [current_outermost_node]
     for node in sorted_nodes_to_unparse:
-        if node.lineno > current_outermost_node.end_lineno:
+        if (
+            not current_outermost_node.end_lineno
+            or node.lineno > current_outermost_node.end_lineno
+        ):
             current_outermost_node = node
             outermost_nodes_to_unparse.append(node)
 
@@ -192,6 +199,7 @@ def extract_keywords(node: ast.AST) -> KeywordInfo | None:
             else:
                 keywords.append(kw)
         return KeywordInfo(replace=False, keywords=keywords)
+    return None
 
 
 def find_comments(lines: list[str]) -> list[str]:
@@ -220,4 +228,4 @@ def conv_attr_name(name: str) -> str:
 @dataclass
 class KeywordInfo:
     replace: bool
-    keywords: Sequence[ast.keyword]
+    keywords: list[ast.keyword]

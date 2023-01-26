@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sys
 from collections import namedtuple
-from collections.abc import Sequence
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -15,6 +14,7 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -101,7 +101,7 @@ VdomAttributes = Mapping[str, Any]
 VdomChild = Union[ComponentType, "VdomDict", str]
 """A single child element of a :class:`VdomDict`"""
 
-VdomChildren = "Sequence[VdomChild]"
+VdomChildren = Sequence[VdomChild]
 """Describes a series of :class:`VdomChild` elements"""
 
 VdomAttributesAndChildren = Union[
@@ -211,7 +211,7 @@ class VdomDictConstructor(Protocol):
 
     def __call__(
         self,
-        *children: VdomChild,
+        *children: VdomChild | VdomChildren,
         key: Key | None = None,
         **attributes: Any,
     ) -> VdomDict:

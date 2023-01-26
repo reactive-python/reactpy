@@ -8,7 +8,7 @@ from warnings import warn as _warn
 @wraps(_warn)
 def warn(*args: Any, **kwargs: Any) -> Any:
     # warn at call site outside of IDOM
-    _warn(*args, stacklevel=_frame_depth_in_module() + 1, **kwargs)
+    _warn(*args, stacklevel=_frame_depth_in_module() + 1, **kwargs)  # type: ignore
 
 
 def _frame_depth_in_module() -> int:

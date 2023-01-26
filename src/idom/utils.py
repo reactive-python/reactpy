@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from itertools import chain
 from typing import Any, Callable, Generic, Iterable, TypeVar, cast
 

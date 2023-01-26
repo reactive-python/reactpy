@@ -157,7 +157,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from typing import Any
 
 from idom.core.types import Key, VdomDict
 from idom.core.vdom import make_vdom_constructor, vdom

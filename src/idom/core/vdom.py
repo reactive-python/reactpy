@@ -4,6 +4,7 @@ import logging
 from typing import Any, DefaultDict, Mapping, cast
 
 from fastjsonschema import compile as compile_json_schema
+from typing_extensions import TypeGuard
 
 from idom._warnings import warn
 from idom.config import IDOM_DEBUG_MODE
@@ -19,6 +20,7 @@ from idom.core.types import (
     ImportSourceDict,
     Key,
     VdomChild,
+    VdomChildren,
     VdomDict,
     VdomDictConstructor,
     VdomJson,
@@ -130,7 +132,10 @@ def is_vdom(value: Any) -> bool:
 
 
 def vdom(
-    tag: str, *children: VdomChild, key: Key | None = None, **attributes: Any
+    tag: str,
+    *children: VdomChild | VdomChildren,
+    key: Key | None = None,
+    **attributes: Any,
 ) -> VdomDict:
     """A helper function for creating VDOM elements.
 
@@ -179,7 +184,10 @@ def vdom(
         if _is_single_child(child):
             flattened_children.append(child)
         else:
-            flattened_children.extend(child)
+            # FIXME: Types do not narrow in negative case of TypeGaurd
+            # This cannot be fixed until there is some sort of "StrictTypeGuard".
+            # See: https://github.com/python/typing/discussions/1013
+            flattened_children.extend(child)  # type: ignore
 
     attributes, event_handlers = separate_attributes_and_event_handlers(attributes)
 
@@ -199,7 +207,7 @@ def vdom(
 
 
 def with_import_source(element: VdomDict, import_source: ImportSourceDict) -> VdomDict:
-    return {**element, "importSource": import_source}
+    return {**element, "importSource": import_source}  # type: ignore
 
 
 def make_vdom_constructor(
@@ -214,7 +222,9 @@ def make_vdom_constructor(
     """
 
     def constructor(
-        *children: VdomChild, key: Key | None = None, **attributes: Any
+        *children: VdomChild | VdomChildren,
+        key: Key | None = None,
+        **attributes: Any,
     ) -> VdomDict:
         if not allow_children and children:
             raise TypeError(f"{tag!r} nodes cannot have children.")
@@ -273,7 +283,7 @@ def separate_attributes_and_event_handlers(
     return separated_attributes, flat_event_handlers_dict
 
 
-def _is_single_child(value: Any) -> bool:
+def _is_single_child(value: Any) -> TypeGuard[VdomChild]:
     if isinstance(value, (str, Mapping)) or not hasattr(value, "__iter__"):
         return True
     if IDOM_DEBUG_MODE.current:

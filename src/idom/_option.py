@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import os
 from logging import getLogger
-from typing import Any, Callable, Generic, Iterator, TypeVar, cast
-from warnings import warn
+from typing import Any, Callable, Generic, TypeVar, cast
 
 from idom._warnings import warn
 
