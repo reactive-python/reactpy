@@ -15,6 +15,7 @@ from typing import Iterator
 import click
 
 from idom import html
+from idom._console.utils import error
 
 
 CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
@@ -53,11 +54,18 @@ def update_html_usages(directories: list[str]) -> None:
     """
     if sys.version_info < (3, 9):  # pragma: no cover
         raise RuntimeError("This command requires Python>=3.9")
+
+    at_leat_one_file = False
     for d in directories:
         for file in Path(d).rglob("*.py"):
+            at_leat_one_file = True
             result = generate_rewrite(file=file, source=file.read_text())
             if result is not None:
                 file.write_text(result)
+
+    if not at_leat_one_file:
+        error("Found no Python files in the given directories.")
+        sys.exit(1)
 
 
 def generate_rewrite(file: Path, source: str) -> str | None:

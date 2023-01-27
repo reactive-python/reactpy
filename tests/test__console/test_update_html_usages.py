@@ -27,6 +27,14 @@ def test_update_html_usages(tmp_path):
     assert tempfile.read_text() == "html.div(class_name=test)"
 
 
+def test_update_html_usages_no_files(tmp_path):
+    runner = CliRunner()
+
+    result = runner.invoke(update_html_usages, "directory-does-no-exist")
+    assert result.exit_code == 1
+    assert "Found no Python files" in result.stdout
+
+
 @pytest.mark.parametrize(
     "source, expected",
     [
