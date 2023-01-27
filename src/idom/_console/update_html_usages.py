@@ -15,18 +15,13 @@ from typing import Iterator
 import click
 
 from idom import html
-from idom._console.utils import echo_error, echo_warning
 
 
 CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
 
 
 @click.command()
-@click.argument(
-    "directories",
-    nargs=-1,
-    type=click.Path(exists=True, dir_okay=True, file_okay=False),
-)
+@click.argument("paths", nargs=-1, type=click.Path(exists=True))
 def update_html_usages(paths: list[str]) -> None:
     """Rewrite files under the given paths using the new html element API.
 
@@ -61,18 +56,11 @@ def update_html_usages(paths: list[str]) -> None:
 
     at_least_one_file = False
     for p in map(Path, paths):
-        if not p.exists():
-            echo_warning(f"no directory {p}")
-            continue
         for f in [p] if p.is_file() else p.rglob("*.py"):
             at_least_one_file = True
             result = generate_rewrite(file=f, source=f.read_text())
             if result is not None:
                 f.write_text(result)
-
-    if not at_least_one_file:
-        echo_error("Found no Python files in the given directories.")
-        sys.exit(1)
 
 
 def generate_rewrite(file: Path, source: str) -> str | None:
@@ -80,7 +68,7 @@ def generate_rewrite(file: Path, source: str) -> str | None:
 
     changed: list[Sequence[ast.AST]] = []
     for parents, node in walk_with_parent(tree):
-        if not (isinstance(node, ast.Call) and node.args):
+        if not isinstance(node, ast.Call):
             continue
 
         func = node.func
@@ -91,28 +79,30 @@ def generate_rewrite(file: Path, source: str) -> str | None:
         else:
             continue
 
-        if not (hasattr(html, name) or name == "vdom"):
-            continue
-
         if name == "vdom":
+            if len(node.args) < 2:
+                continue
             maybe_attr_dict_node = node.args[1]
             # remove attr dict from new args
             new_args = node.args[:1] + node.args[2:]
-        else:
+        elif hasattr(html, name):
+            if len(node.args) == 0:
+                continue
             maybe_attr_dict_node = node.args[0]
             # remove attr dict from new args
             new_args = node.args[1:]
+        else:
+            continue
 
-        if node.args:
-            new_keyword_info = extract_keywords(maybe_attr_dict_node)
-            if new_keyword_info is not None:
-                if new_keyword_info.replace:
-                    node.keywords = new_keyword_info.keywords
-                else:
-                    node.keywords.extend(new_keyword_info.keywords)
+        new_keyword_info = extract_keywords(maybe_attr_dict_node)
+        if new_keyword_info is not None:
+            if new_keyword_info.replace:
+                node.keywords = new_keyword_info.keywords
+            else:
+                node.keywords.extend(new_keyword_info.keywords)
 
-                node.args = new_args
-                changed.append((node, *parents))
+            node.args = new_args
+            changed.append((node, *parents))
 
     if not changed:
         return None

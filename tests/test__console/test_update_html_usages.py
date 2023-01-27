@@ -31,13 +31,10 @@ def test_update_html_usages_no_files():
     runner = CliRunner()
 
     result = runner.invoke(
-        update_html_usages,
-        args=["directory-does-no-exist"],
-        catch_exceptions=False,
+        update_html_usages, args=["directory-does-no-exist"], catch_exceptions=False
     )
 
-    assert result.exit_code == 1
-    assert "Found no Python files" in result.stdout
+    assert result.exit_code != 0
 
 
 @pytest.mark.parametrize(
@@ -88,6 +85,14 @@ def test_update_html_usages_no_files():
         # when to not attempt conversion
         (
             'html.div(ignore, {"className": "test"})',
+            None,
+        ),
+        (
+            "html.div()",
+            None,
+        ),
+        (
+            'html.vdom("div")',
             None,
         ),
         (
