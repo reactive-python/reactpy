@@ -54,10 +54,8 @@ def update_html_usages(paths: list[str]) -> None:
     if sys.version_info < (3, 9):  # pragma: no cover
         raise RuntimeError("This command requires Python>=3.9")
 
-    at_least_one_file = False
     for p in map(Path, paths):
         for f in [p] if p.is_file() else p.rglob("*.py"):
-            at_least_one_file = True
             result = generate_rewrite(file=f, source=f.read_text())
             if result is not None:
                 f.write_text(result)
