@@ -8,9 +8,7 @@ from typing import (
     Any,
     Awaitable,
     Callable,
-    Dict,
     Generic,
-    List,
     NewType,
     Optional,
     Sequence,
@@ -625,7 +623,7 @@ class LifeCycleHook:
         self._rendered_atleast_once = False
         self._current_state_index = 0
         self._state: Tuple[Any, ...] = ()
-        self._event_effects: Dict[EffectType, List[Callable[[], None]]] = {
+        self._event_effects: dict[EffectType, list[Callable[[], None]]] = {
             COMPONENT_DID_RENDER_EFFECT: [],
             LAYOUT_DID_RENDER_EFFECT: [],
             COMPONENT_WILL_UNMOUNT_EFFECT: [],

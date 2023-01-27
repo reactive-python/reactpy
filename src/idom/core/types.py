@@ -7,10 +7,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Generic,
-    Iterable,
-    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -20,7 +17,7 @@ from typing import (
     Union,
 )
 
-from typing_extensions import Literal, Protocol, TypedDict, runtime_checkable
+from typing_extensions import Literal, Protocol, TypeAlias, TypedDict, runtime_checkable
 
 
 _Type = TypeVar("_Type")
@@ -104,20 +101,13 @@ VdomChild = Union[ComponentType, "VdomDict", str]
 VdomChildren = Sequence[VdomChild]
 """Describes a series of :class:`VdomChild` elements"""
 
-VdomAttributesAndChildren = Union[
-    Mapping[str, Any],  # this describes both VdomDict and VdomAttributes
-    Iterable[VdomChild],
-    VdomChild,
-]
-"""Useful for the ``*attributes_and_children`` parameter in :func:`idom.core.vdom.vdom`"""
-
 
 class _VdomDictOptional(TypedDict, total=False):
     key: Key | None
     children: Sequence[
         # recursive types are not allowed yet:
         # https://github.com/python/mypy/issues/731
-        Union[ComponentType, Dict[str, Any], str, Any]
+        Union[ComponentType, dict[str, Any], str, Any]
     ]
     attributes: VdomAttributes
     eventHandlers: EventHandlerDict  # noqa
@@ -142,9 +132,9 @@ class ImportSourceDict(TypedDict):
 class _OptionalVdomJson(TypedDict, total=False):
     key: Key
     error: str
-    children: List[Any]
-    attributes: Dict[str, Any]
-    eventHandlers: Dict[str, _JsonEventTarget]  # noqa
+    children: list[Any]
+    attributes: dict[str, Any]
+    eventHandlers: dict[str, _JsonEventTarget]  # noqa
     importSource: _JsonImportSource  # noqa
 
 
@@ -170,7 +160,7 @@ class _JsonImportSource(TypedDict):
 EventHandlerMapping = Mapping[str, "EventHandlerType"]
 """A generic mapping between event names to their handlers"""
 
-EventHandlerDict = Dict[str, "EventHandlerType"]
+EventHandlerDict: TypeAlias = "dict[str, EventHandlerType]"
 """A dict mapping between event names to their handlers"""
 
 

@@ -8,15 +8,11 @@ from logging import getLogger
 from typing import (
     Any,
     Callable,
-    Dict,
     Generic,
     Iterator,
-    List,
     NamedTuple,
     NewType,
     Optional,
-    Set,
-    Tuple,
     TypeVar,
     cast,
 )
@@ -217,7 +213,7 @@ class Layout:
         self,
         old_state: Optional[_ModelState],
         new_state: _ModelState,
-        raw_model: Dict[str, Any],
+        raw_model: dict[str, Any],
     ) -> None:
         # extract event handlers from 'eventHandlers' and 'attributes'
         handlers_by_event: EventHandlerDict = raw_model.get("eventHandlers", {})
@@ -385,7 +381,7 @@ class Layout:
         self,
         exit_stack: ExitStack,
         new_state: _ModelState,
-        raw_children: List[Any],
+        raw_children: list[Any],
     ) -> None:
         child_type_key_tuples = list(_process_child_type_and_key(raw_children))
 
@@ -412,7 +408,7 @@ class Layout:
             else:
                 new_state.append_child(child)
 
-    def _unmount_model_states(self, old_states: List[_ModelState]) -> None:
+    def _unmount_model_states(self, old_states: list[_ModelState]) -> None:
         to_unmount = old_states[::-1]  # unmount in reversed order of rendering
         while to_unmount:
             model_state = to_unmount.pop()
@@ -561,8 +557,8 @@ class _ModelState:
         key: Any,
         model: Ref[VdomJson],
         patch_path: str,
-        children_by_key: Dict[str, _ModelState],
-        targets_by_event: Dict[str, str],
+        children_by_key: dict[str, _ModelState],
+        targets_by_event: dict[str, str],
         life_cycle_state: Optional[_LifeCycleState] = None,
     ):
         self.index = index
@@ -661,7 +657,7 @@ class _ThreadSafeQueue(Generic[_Type]):
     def __init__(self) -> None:
         self._loop = asyncio.get_running_loop()
         self._queue: asyncio.Queue[_Type] = asyncio.Queue()
-        self._pending: Set[_Type] = set()
+        self._pending: set[_Type] = set()
 
     def put(self, value: _Type) -> None:
         if value not in self._pending:
@@ -679,8 +675,8 @@ class _ThreadSafeQueue(Generic[_Type]):
 
 
 def _process_child_type_and_key(
-    children: List[Any],
-) -> Iterator[Tuple[Any, _ElementType, Any]]:
+    children: list[Any],
+) -> Iterator[tuple[Any, _ElementType, Any]]:
     for index, child in enumerate(children):
         if isinstance(child, dict):
             child_type = _DICT_TYPE
