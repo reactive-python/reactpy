@@ -17,20 +17,25 @@ def test_update_html_usages(tmp_path):
 
     tempfile: Path = tmp_path / "temp.py"
     tempfile.write_text("html.div({'className': test})")
-
-    result = runner.invoke(update_html_usages, str(tmp_path))
-
-    if result.exception:
-        raise result.exception
+    result = runner.invoke(
+        update_html_usages,
+        args=[str(tmp_path)],
+        catch_exceptions=False,
+    )
 
     assert result.exit_code == 0
     assert tempfile.read_text() == "html.div(class_name=test)"
 
 
-def test_update_html_usages_no_files(tmp_path):
+def test_update_html_usages_no_files():
     runner = CliRunner()
 
-    result = runner.invoke(update_html_usages, "directory-does-no-exist")
+    result = runner.invoke(
+        update_html_usages,
+        args=["directory-does-no-exist"],
+        catch_exceptions=False,
+    )
+
     assert result.exit_code == 1
     assert "Found no Python files" in result.stdout
 

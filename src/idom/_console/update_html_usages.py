@@ -15,16 +15,20 @@ from typing import Iterator
 import click
 
 from idom import html
-from idom._console.utils import error
+from idom._console.utils import echo_error, echo_warning
 
 
 CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
 
 
 @click.command()
-@click.argument("directories", nargs=-1)
-def update_html_usages(directories: list[str]) -> None:
-    """Rewrite files in the given directories to use the new html element API.
+@click.argument(
+    "directories",
+    nargs=-1,
+    type=click.Path(exists=True, dir_okay=True, file_okay=False),
+)
+def update_html_usages(paths: list[str]) -> None:
+    """Rewrite files under the given paths using the new html element API.
 
     The old API required users to pass a dictionary of attributes to html element
     constructor functions. For example:
@@ -55,16 +59,19 @@ def update_html_usages(directories: list[str]) -> None:
     if sys.version_info < (3, 9):  # pragma: no cover
         raise RuntimeError("This command requires Python>=3.9")
 
-    at_leat_one_file = False
-    for d in directories:
-        for file in Path(d).rglob("*.py"):
-            at_leat_one_file = True
-            result = generate_rewrite(file=file, source=file.read_text())
+    at_least_one_file = False
+    for p in map(Path, paths):
+        if not p.exists():
+            echo_warning(f"no directory {p}")
+            continue
+        for f in [p] if p.is_file() else p.rglob("*.py"):
+            at_least_one_file = True
+            result = generate_rewrite(file=f, source=f.read_text())
             if result is not None:
-                file.write_text(result)
+                f.write_text(result)
 
-    if not at_leat_one_file:
-        error("Found no Python files in the given directories.")
+    if not at_least_one_file:
+        echo_error("Found no Python files in the given directories.")
         sys.exit(1)
 
 
