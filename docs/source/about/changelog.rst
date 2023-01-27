@@ -23,6 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+No changes.
+
+
+v0.44.0
+-------
+:octicon:`milestone` *released on 2023-01-27*
+
 **Deprecated**
 
 - :pull:`876` - ``idom.widgets.hotswap``. The function has no clear uses outside of some

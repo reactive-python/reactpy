@@ -22,7 +22,7 @@ from idom.utils import Ref, html_to_vdom, vdom_to_html
 
 
 __author__ = "idom-team"
-__version__ = "0.43.0"  # DO NOT MODIFY
+__version__ = "0.44.0"  # DO NOT MODIFY
 
 __all__ = [
     "backend",
