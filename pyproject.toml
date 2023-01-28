@@ -34,6 +34,9 @@ exclude_lines = [
     '\.\.\.',
     "raise NotImplementedError",
 ]
+omit = [
+    "src/idom/__main__.py",
+]
 
 [tool.pydocstyle]
 inherit = false
@@ -48,7 +51,7 @@ per-file-ignores = [
     "docs/*/_examples/*.py:E402",
 ]
 max-line-length = 88
-max-complexity = 18
+max-complexity = 20
 select = ["B", "C", "E", "F", "W", "T4", "B9", "N", "ROH"]
 exclude = ["**/node_modules/*", ".eggs/*", ".tox/*"]
 # -- flake8-tidy-imports --

@@ -24,13 +24,13 @@ def ArtistList():
 
     return html.div(
         html.h1("Inspiring sculptors:"),
-        html.input({"value": artist_to_add, "onChange": handle_change}),
-        html.button({"onClick": handle_add_click}, "add"),
+        html.input(value=artist_to_add, on_change=handle_change),
+        html.button("add", on_click=handle_add_click),
         html.ul(
             [
                 html.li(
                     name,
-                    html.button({"onClick": make_handle_delete_click(index)}, "delete"),
+                    html.button("delete", on_click=make_handle_delete_click(index)),
                     key=name,
                 )
                 for index, name in enumerate(artists)

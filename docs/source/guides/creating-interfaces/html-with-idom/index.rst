@@ -90,11 +90,9 @@ Additionally, instead of specifying ``style`` using a string, we use a dictionar
 .. testcode::
 
     html.img(
-        {
-            "src": "https://picsum.photos/id/237/500/300",
-            "style": {"width": "50%", "marginLeft": "25%"},
-            "alt": "Billie Holiday",
-        }
+        src="https://picsum.photos/id/237/500/300",
+        style={"width": "50%", "marginLeft": "25%"},
+        alt="Billie Holiday",
     )
 
 .. raw:: html

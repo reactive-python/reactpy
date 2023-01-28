@@ -113,11 +113,9 @@ class CommonOptions:
     head: Sequence[VdomDict] | VdomDict | str = (
         html.title("IDOM"),
         html.link(
-            {
-                "rel": "icon",
-                "href": "_idom/assets/idom-logo-square-small.svg",
-                "type": "image/svg+xml",
-            }
+            rel="icon",
+            href="_idom/assets/idom-logo-square-small.svg",
+            type="image/svg+xml",
         ),
     )
     """Add elements to the ``<head>`` of the application.

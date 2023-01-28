@@ -6,4 +6,5 @@ fastjsonschema >=2.14.5
 requests >=2
 colorlog >=6
 asgiref >=3
-lxml >= 4
+lxml >=4
+click >=8, <9

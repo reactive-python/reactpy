@@ -4,13 +4,12 @@ import filecmp
 import logging
 import shutil
 from dataclasses import dataclass
-from functools import partial
 from pathlib import Path
 from string import Template
 from typing import Any, List, NewType, Optional, Set, Tuple, Union, overload
 from urllib.parse import urlparse
-from warnings import warn
 
+from idom._warnings import warn
 from idom.config import IDOM_DEBUG_MODE, IDOM_WEB_MODULES_DIR
 from idom.core.types import ImportSourceDict, VdomDictConstructor
 from idom.core.vdom import make_vdom_constructor
@@ -373,11 +372,9 @@ def _make_export(
     fallback: Optional[Any],
     allow_children: bool,
 ) -> VdomDictConstructor:
-    return partial(
-        make_vdom_constructor(
-            name,
-            allow_children=allow_children,
-        ),
+    return make_vdom_constructor(
+        name,
+        allow_children=allow_children,
         import_source=ImportSourceDict(
             source=web_module.source,
             sourceType=web_module.source_type,

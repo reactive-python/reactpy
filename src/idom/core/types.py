@@ -2,25 +2,22 @@ from __future__ import annotations
 
 import sys
 from collections import namedtuple
-from collections.abc import Sequence
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Generic,
-    Iterable,
-    List,
     Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
 )
 
-from typing_extensions import Literal, Protocol, TypedDict, runtime_checkable
+from typing_extensions import Literal, Protocol, TypeAlias, TypedDict, runtime_checkable
 
 
 _Type = TypeVar("_Type")
@@ -62,8 +59,11 @@ class ComponentType(Protocol):
     This is used to see if two component instances share the same definition.
     """
 
-    def render(self) -> VdomDict | ComponentType | str | None:
+    def render(self) -> RenderResult:
         """Render the component's view model."""
+
+
+RenderResult = Union["VdomDict", ComponentType, str, None]
 
 
 _Render = TypeVar("_Render", covariant=True)
@@ -98,15 +98,8 @@ VdomAttributes = Mapping[str, Any]
 VdomChild = Union[ComponentType, "VdomDict", str]
 """A single child element of a :class:`VdomDict`"""
 
-VdomChildren = "Sequence[VdomChild]"
+VdomChildren = Sequence[VdomChild]
 """Describes a series of :class:`VdomChild` elements"""
-
-VdomAttributesAndChildren = Union[
-    Mapping[str, Any],  # this describes both VdomDict and VdomAttributes
-    Iterable[VdomChild],
-    VdomChild,
-]
-"""Useful for the ``*attributes_and_children`` parameter in :func:`idom.core.vdom.vdom`"""
 
 
 class _VdomDictOptional(TypedDict, total=False):
@@ -114,7 +107,7 @@ class _VdomDictOptional(TypedDict, total=False):
     children: Sequence[
         # recursive types are not allowed yet:
         # https://github.com/python/mypy/issues/731
-        Union[ComponentType, Dict[str, Any], str, Any]
+        Union[ComponentType, dict[str, Any], str, Any]
     ]
     attributes: VdomAttributes
     eventHandlers: EventHandlerDict  # noqa
@@ -139,9 +132,9 @@ class ImportSourceDict(TypedDict):
 class _OptionalVdomJson(TypedDict, total=False):
     key: Key
     error: str
-    children: List[Any]
-    attributes: Dict[str, Any]
-    eventHandlers: Dict[str, _JsonEventTarget]  # noqa
+    children: list[Any]
+    attributes: dict[str, Any]
+    eventHandlers: dict[str, _JsonEventTarget]  # noqa
     importSource: _JsonImportSource  # noqa
 
 
@@ -167,7 +160,7 @@ class _JsonImportSource(TypedDict):
 EventHandlerMapping = Mapping[str, "EventHandlerType"]
 """A generic mapping between event names to their handlers"""
 
-EventHandlerDict = Dict[str, "EventHandlerType"]
+EventHandlerDict: TypeAlias = "dict[str, EventHandlerType]"
 """A dict mapping between event names to their handlers"""
 
 
@@ -208,9 +201,9 @@ class VdomDictConstructor(Protocol):
 
     def __call__(
         self,
-        *attributes_and_children: VdomAttributesAndChildren,
-        key: str = ...,
-        event_handlers: Optional[EventHandlerMapping] = ...,
+        *children: VdomChild | VdomChildren,
+        key: Key | None = None,
+        **attributes: Any,
     ) -> VdomDict:
         ...
 

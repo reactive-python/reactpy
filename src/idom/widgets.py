@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from base64 import b64encode
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, TypeVar, Union
-from warnings import warn
+from typing import Any, Callable, Iterable, Tuple, TypeVar, Union
 
 from typing_extensions import Protocol
 
 import idom
 
 from . import html
+from ._warnings import warn
 from .core.types import ComponentConstructor, VdomDict
 from .testing.backend import _hotswap, _MountFunc
 
@@ -16,7 +16,7 @@ from .testing.backend import _hotswap, _MountFunc
 def image(
     format: str,
     value: Union[str, bytes] = "",
-    attributes: Optional[Dict[str, Any]] = None,
+    **attributes: Any,
 ) -> VdomDict:
     """Utility for constructing an image from a string or bytes
 
@@ -33,19 +33,19 @@ def image(
     base64_value = b64encode(bytes_value).decode()
     src = f"data:image/{format};base64,{base64_value}"
 
-    return {"tagName": "img", "attributes": {"src": src, **(attributes or {})}}
+    return {"tagName": "img", "attributes": {"src": src, **attributes}}
 
 
 _Value = TypeVar("_Value")
 
 
 def use_linked_inputs(
-    attributes: Sequence[Dict[str, Any]],
+    attributes: Iterable[dict[str, Any]],
     on_change: Callable[[_Value], None] = lambda value: None,
     cast: _CastFunc[_Value] = lambda value: value,
     initial_value: str = "",
     ignore_empty: bool = True,
-) -> List[VdomDict]:
+) -> list[VdomDict]:
     """Return a list of linked inputs equal to the number of given attributes.
 
     Parameters:
@@ -67,7 +67,7 @@ def use_linked_inputs(
     """
     value, set_value = idom.hooks.use_state(initial_value)
 
-    def sync_inputs(event: Dict[str, Any]) -> None:
+    def sync_inputs(event: dict[str, Any]) -> None:
         new_value = event["target"]["value"]
         set_value(new_value)
         if not new_value and ignore_empty:
@@ -82,7 +82,7 @@ def use_linked_inputs(
         key = attrs.pop("key", None)
         attrs.update({"onChange": sync_inputs, "value": value})
 
-        inputs.append(html.input(attrs, key=key))
+        inputs.append(html.input(key=key, **attrs))
 
     return inputs
 

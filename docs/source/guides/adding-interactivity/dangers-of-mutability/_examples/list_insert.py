@@ -16,8 +16,8 @@ def ArtistList():
 
     return html.div(
         html.h1("Inspiring sculptors:"),
-        html.input({"value": artist_to_add, "onChange": handle_change}),
-        html.button({"onClick": handle_click}, "add"),
+        html.input(value=artist_to_add, on_change=handle_change),
+        html.button("add", on_click=handle_click),
         html.ul([html.li(name, key=name) for name in artists]),
     )
 

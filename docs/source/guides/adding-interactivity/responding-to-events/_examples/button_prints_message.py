@@ -6,7 +6,7 @@ def PrintButton(display_text, message_text):
     def handle_event(event):
         print(message_text)
 
-    return html.button({"onClick": handle_event}, display_text)
+    return html.button(display_text, on_click=handle_event)
 
 
 @component

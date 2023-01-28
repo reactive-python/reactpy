@@ -22,7 +22,7 @@ async def test_automatic_reconnect(browser: Browser):
 
     @idom.component
     def OldComponent():
-        return idom.html.p({"id": "old-component"}, "old")
+        return idom.html.p("old", id="old-component")
 
     async with AsyncExitStack() as exit_stack:
         server = await exit_stack.enter_async_context(BackendFixture(port=port))
@@ -43,7 +43,7 @@ async def test_automatic_reconnect(browser: Browser):
     @idom.component
     def NewComponent():
         state, set_state.current = idom.hooks.use_state(0)
-        return idom.html.p({"id": f"new-component-{state}"}, f"new-{state}")
+        return idom.html.p(f"new-{state}", id=f"new-component-{state}")
 
     async with AsyncExitStack() as exit_stack:
         server = await exit_stack.enter_async_context(BackendFixture(port=port))
@@ -76,12 +76,10 @@ async def test_style_can_be_changed(display: DisplayFixture):
         color_toggle, set_color_toggle = idom.hooks.use_state(True)
         color = "red" if color_toggle else "blue"
         return idom.html.button(
-            {
-                "id": "my-button",
-                "onClick": lambda event: set_color_toggle(not color_toggle),
-                "style": {"backgroundColor": color, "color": "white"},
-            },
             f"color: {color}",
+            id="my-button",
+            on_click=lambda event: set_color_toggle(not color_toggle),
+            style={"background_color": color, "color": "white"},
         )
 
     await display.show(ButtonWithChangingColor)
@@ -117,7 +115,7 @@ async def test_slow_server_response_on_input_change(display: DisplayFixture):
             await asyncio.sleep(delay)
             set_value(event["target"]["value"])
 
-        return idom.html.input({"onChange": handle_change, "id": "test-input"})
+        return idom.html.input(on_change=handle_change, id="test-input")
 
     await display.show(SomeComponent)
 

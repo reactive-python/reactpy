@@ -3,7 +3,7 @@ from idom import component, html, run
 
 @component
 def Button(display_text, on_click):
-    return html.button({"onClick": on_click}, display_text)
+    return html.button(display_text, on_click=on_click)
 
 
 @component

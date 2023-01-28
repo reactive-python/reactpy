@@ -7,11 +7,16 @@ import idom
 from idom.config import IDOM_DEBUG_MODE
 from idom.core.events import EventHandler
 from idom.core.types import VdomDict
-from idom.core.vdom import is_vdom, make_vdom_constructor, validate_vdom_json
+from idom.core.vdom import (
+    is_vdom,
+    make_vdom_constructor,
+    validate_vdom_json,
+    with_import_source,
+)
 
 
 FAKE_EVENT_HANDLER = EventHandler(lambda data: None)
-FAKE_EVENT_HANDLER_DICT = {"onEvent": FAKE_EVENT_HANDLER}
+FAKE_EVENT_HANDLER_DICT = {"on_event": FAKE_EVENT_HANDLER}
 
 
 @pytest.mark.parametrize(
@@ -36,7 +41,7 @@ def test_is_vdom(result, value):
             {"tagName": "div", "children": [{"tagName": "div"}]},
         ),
         (
-            idom.vdom("div", {"style": {"backgroundColor": "red"}}),
+            idom.vdom("div", style={"backgroundColor": "red"}),
             {"tagName": "div", "attributes": {"style": {"backgroundColor": "red"}}},
         ),
         (
@@ -48,11 +53,7 @@ def test_is_vdom(result, value):
             },
         ),
         (
-            idom.vdom("div", event_handlers=FAKE_EVENT_HANDLER_DICT),
-            {"tagName": "div", "eventHandlers": FAKE_EVENT_HANDLER_DICT},
-        ),
-        (
-            idom.vdom("div", {"onEvent": FAKE_EVENT_HANDLER}),
+            idom.vdom("div", on_event=FAKE_EVENT_HANDLER),
             {"tagName": "div", "eventHandlers": FAKE_EVENT_HANDLER_DICT},
         ),
         (
@@ -78,9 +79,9 @@ def test_is_vdom(result, value):
             {"tagName": "div", "children": [1, 4, 9]},
         ),
         (
-            idom.vdom(
-                "MyComponent",
-                import_source={"source": "./some-script.js", "fallback": "loading..."},
+            with_import_source(
+                idom.vdom("MyComponent"),
+                {"source": "./some-script.js", "fallback": "loading..."},
             ),
             {
                 "tagName": "MyComponent",
@@ -99,44 +100,23 @@ def test_simple_node_construction(actual, expected):
 async def test_callable_attributes_are_cast_to_event_handlers():
     params_from_calls = []
 
-    node = idom.vdom("div", {"onEvent": lambda *args: params_from_calls.append(args)})
+    node = idom.vdom("div", on_event=lambda *args: params_from_calls.append(args))
 
     event_handlers = node.pop("eventHandlers")
     assert node == {"tagName": "div"}
 
-    handler = event_handlers["onEvent"]
-    assert event_handlers == {"onEvent": EventHandler(handler.function)}
+    handler = event_handlers["on_event"]
+    assert event_handlers == {"on_event": EventHandler(handler.function)}
 
     await handler.function([1, 2])
     await handler.function([3, 4, 5])
     assert params_from_calls == [(1, 2), (3, 4, 5)]
 
 
-async def test_event_handlers_and_callable_attributes_are_automatically_merged():
-    calls = []
-
-    node = idom.vdom(
-        "div",
-        {"onEvent": lambda: calls.append("callable_attr")},
-        event_handlers={
-            "onEvent": EventHandler(lambda data: calls.append("normal_event_handler"))
-        },
-    )
-
-    event_handlers = node.pop("eventHandlers")
-    assert node == {"tagName": "div"}
-
-    handler = event_handlers["onEvent"]
-    assert event_handlers == {"onEvent": EventHandler(handler.function)}
-
-    await handler.function([])
-    assert calls == ["normal_event_handler", "callable_attr"]
-
-
 def test_make_vdom_constructor():
     elmt = make_vdom_constructor("some-tag")
 
-    assert elmt({"data": 1}, [elmt()]) == {
+    assert elmt(elmt(), data=1) == {
         "tagName": "some-tag",
         "children": [{"tagName": "some-tag"}],
         "attributes": {"data": 1},

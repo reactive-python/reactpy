@@ -83,10 +83,10 @@ def NumberInput(label, value, set_value_callback, domain):
         set_value_callback(value)
 
     return idom.html.fieldset(
-        {"class": "number-input-container"},
-        idom.html.legend({"style": {"font-size": "medium"}}, label),
+        idom.html.legend(label, style={"font_size": "medium"}),
         Input(update_value, "number", value, attributes=attrs, cast=float),
         Input(update_value, "range", value, attributes=attrs, cast=float),
+        class_name="number-input-container",
     )
 
 

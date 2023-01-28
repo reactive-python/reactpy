@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, cast
+from typing import Any, DefaultDict, Mapping, cast
 
 from fastjsonschema import compile as compile_json_schema
-from typing_extensions import Protocol
+from typing_extensions import TypeGuard
 
+from idom._warnings import warn
 from idom.config import IDOM_DEBUG_MODE
 from idom.core.events import (
     EventHandler,
@@ -15,11 +16,13 @@ from idom.core.events import (
 from idom.core.types import (
     ComponentType,
     EventHandlerDict,
-    EventHandlerMapping,
     EventHandlerType,
     ImportSourceDict,
-    VdomAttributesAndChildren,
+    Key,
+    VdomChild,
+    VdomChildren,
     VdomDict,
+    VdomDictConstructor,
     VdomJson,
 )
 
@@ -130,12 +133,11 @@ def is_vdom(value: Any) -> bool:
 
 def vdom(
     tag: str,
-    *attributes_and_children: VdomAttributesAndChildren,
-    key: str | int | None = None,
-    event_handlers: Optional[EventHandlerMapping] = None,
-    import_source: Optional[ImportSourceDict] = None,
+    *children: VdomChild | VdomChildren,
+    key: Key | None = None,
+    **attributes: Any,
 ) -> VdomDict:
-    """A helper function for creating VDOM dictionaries.
+    """A helper function for creating VDOM elements.
 
     Parameters:
         tag:
@@ -157,16 +159,43 @@ def vdom(
     """
     model: VdomDict = {"tagName": tag}
 
-    attributes, children = coalesce_attributes_and_children(attributes_and_children)
-    attributes, event_handlers = separate_attributes_and_event_handlers(
-        attributes, event_handlers or {}
-    )
+    flattened_children: list[VdomChild] = []
+    for child in children:
+        if isinstance(child, dict) and "tagName" not in child:  # pragma: no cover
+            warn(
+                (
+                    "Element constructor signatures have changed! This will be an error "
+                    "in a future release. All element constructors now have the  "
+                    "following usage where attributes may be snake_case keyword "
+                    "arguments: "
+                    "\n\n"
+                    ">>> html.div(*children, key=key, **attributes) "
+                    "\n\n"
+                    "A CLI tool for automatically updating code to the latest API has "
+                    "been provided with this release of IDOM (e.g. 'idom "
+                    "update-html-usages'). However, it may not resolve all issues "
+                    "arrising from this change. Start a discussion if you need help "
+                    "transitioning to this new interface: "
+                    "https://github.com/idom-team/idom/discussions/new?category=question"
+                ),
+                DeprecationWarning,
+            )
+            attributes.update(child)
+        if _is_single_child(child):
+            flattened_children.append(child)
+        else:
+            # FIXME: Types do not narrow in negative case of TypeGaurd
+            # This cannot be fixed until there is some sort of "StrictTypeGuard".
+            # See: https://github.com/python/typing/discussions/1013
+            flattened_children.extend(child)  # type: ignore
+
+    attributes, event_handlers = separate_attributes_and_event_handlers(attributes)
 
     if attributes:
         model["attributes"] = attributes
 
-    if children:
-        model["children"] = children
+    if flattened_children:
+        model["children"] = flattened_children
 
     if event_handlers:
         model["eventHandlers"] = event_handlers
@@ -174,26 +203,18 @@ def vdom(
     if key is not None:
         model["key"] = key
 
-    if import_source is not None:
-        model["importSource"] = import_source
-
     return model
 
 
-class _VdomDictConstructor(Protocol):
-    def __call__(
-        self,
-        *attributes_and_children: VdomAttributesAndChildren,
-        key: str | int | None = ...,
-        event_handlers: Optional[EventHandlerMapping] = ...,
-        import_source: Optional[ImportSourceDict] = ...,
-    ) -> VdomDict:
-        ...
+def with_import_source(element: VdomDict, import_source: ImportSourceDict) -> VdomDict:
+    return {**element, "importSource": import_source}  # type: ignore
 
 
 def make_vdom_constructor(
-    tag: str, allow_children: bool = True
-) -> _VdomDictConstructor:
+    tag: str,
+    allow_children: bool = True,
+    import_source: ImportSourceDict | None = None,
+) -> VdomDictConstructor:
     """Return a constructor for VDOM dictionaries with the given tag name.
 
     The resulting callable will have the same interface as :func:`vdom` but without its
@@ -201,20 +222,17 @@ def make_vdom_constructor(
     """
 
     def constructor(
-        *attributes_and_children: VdomAttributesAndChildren,
-        key: str | int | None = None,
-        event_handlers: Optional[EventHandlerMapping] = None,
-        import_source: Optional[ImportSourceDict] = None,
+        *children: VdomChild | VdomChildren,
+        key: Key | None = None,
+        **attributes: Any,
     ) -> VdomDict:
-        model = vdom(
-            tag,
-            *attributes_and_children,
-            key=key,
-            event_handlers=event_handlers,
-            import_source=import_source,
-        )
-        if not allow_children and "children" in model:
+        if not allow_children and children:
             raise TypeError(f"{tag!r} nodes cannot have children.")
+
+        model = vdom(tag, *children, key=key, **attributes)
+        if import_source is not None:
+            model = with_import_source(model, import_source)
+
         return model
 
     # replicate common function attributes
@@ -233,36 +251,11 @@ def make_vdom_constructor(
     return constructor
 
 
-def coalesce_attributes_and_children(
-    values: Sequence[Any],
-) -> Tuple[Mapping[str, Any], List[Any]]:
-    if not values:
-        return {}, []
-
-    children_or_iterables: Sequence[Any]
-    attributes, *children_or_iterables = values
-    if not _is_attributes(attributes):
-        attributes = {}
-        children_or_iterables = values
-
-    children: List[Any] = []
-    for child in children_or_iterables:
-        if _is_single_child(child):
-            children.append(child)
-        else:
-            children.extend(child)
-
-    return attributes, children
-
-
 def separate_attributes_and_event_handlers(
-    attributes: Mapping[str, Any], event_handlers: EventHandlerMapping
-) -> Tuple[Dict[str, Any], EventHandlerDict]:
+    attributes: Mapping[str, Any]
+) -> tuple[dict[str, Any], EventHandlerDict]:
     separated_attributes = {}
-    separated_event_handlers: Dict[str, List[EventHandlerType]] = {}
-
-    for k, v in event_handlers.items():
-        separated_event_handlers[k] = [v]
+    separated_handlers: DefaultDict[str, list[EventHandlerType]] = DefaultDict(list)
 
     for k, v in attributes.items():
 
@@ -271,7 +264,8 @@ def separate_attributes_and_event_handlers(
         if callable(v):
             handler = EventHandler(to_event_handler_function(v))
         elif (
-            # isinstance check on protocols is slow, function attr check is a quick filter
+            # isinstance check on protocols is slow - use function attr pre-check as a
+            # quick filter before actually performing slow EventHandlerType type check
             hasattr(v, "function")
             and isinstance(v, EventHandlerType)
         ):
@@ -280,23 +274,16 @@ def separate_attributes_and_event_handlers(
             separated_attributes[k] = v
             continue
 
-        if k not in separated_event_handlers:
-            separated_event_handlers[k] = [handler]
-        else:
-            separated_event_handlers[k].append(handler)
+        separated_handlers[k].append(handler)
 
     flat_event_handlers_dict = {
-        k: merge_event_handlers(h) for k, h in separated_event_handlers.items()
+        k: merge_event_handlers(h) for k, h in separated_handlers.items()
     }
 
     return separated_attributes, flat_event_handlers_dict
 
 
-def _is_attributes(value: Any) -> bool:
-    return isinstance(value, Mapping) and "tagName" not in value
-
-
-def _is_single_child(value: Any) -> bool:
+def _is_single_child(value: Any) -> TypeGuard[VdomChild]:
     if isinstance(value, (str, Mapping)) or not hasattr(value, "__iter__"):
         return True
     if IDOM_DEBUG_MODE.current:
