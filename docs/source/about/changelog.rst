@@ -23,7 +23,46 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Changed**
+
+- :pull:`841` - Revamped element constructor interface. Now instead of passing a
+  dictionary of attributes to element constructors, attributes are declared using
+  keyword arguments. For example, instead of writing:
+
+  .. code-block::
+
+      html.div({"className": "some-class"}, "some", "text")
+
+  You now should write:
+
+  .. code-block::
+
+      html.div("some", "text", class_name="some-class")
+
+  .. note::
+
+    All attributes are written using ``snake_case``.
+
+  In conjunction, with these changes, IDOM now supplies a command line utility that
+  makes a "best effort" attempt to automatically convert code to the new API. Usage of
+  this utility is as follows:
+
+  .. code-block:: bash
+
+      idom update-html-usages [PATHS]
+
+  Where ``[PATHS]`` is any number of directories or files that should be rewritten.
+
+  .. warning::
+
+    After running this utility, code comments and formatting may have been altered. It's
+    recommended that you run a code formatting tool like `Black
+    <https://github.com/psf/black>`__ and manually review and replace any comments that
+    may have been moved.
+
+**Fixed**
+
+- :issue:`755` - unification of component and VDOM constructor interfaces. See above.
 
 
 v0.44.0

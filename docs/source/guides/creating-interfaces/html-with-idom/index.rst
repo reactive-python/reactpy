@@ -71,7 +71,7 @@ Adding HTML Attributes
 ----------------------
 
 That's all well and good, but there's more to HTML than just text. What if we wanted to
-display an image? In HTMl we'd use the `<img/>` element and add attributes to it order
+display an image? In HTMl we'd use the ``<img>`` element and add attributes to it order
 to specify a URL to its ``src`` and use some ``style`` to modify and position it:
 
 .. code-block:: html
@@ -80,23 +80,27 @@ to specify a URL to its ``src`` and use some ``style`` to modify and position it
         src="https://picsum.photos/id/237/500/300"
         style="width: 50%; margin-left: 25%;"
         alt="Billie Holiday"
+        tabindex="0"
     />
 
-In IDOM we add these attributes to elements using dictionaries. There are some notable
-differences though. The biggest being the fact that all names in IDOM use ``camelCase``
-instead of dash-separated words. For example, ``margin-left`` becomes ``marginLeft``.
-Additionally, instead of specifying ``style`` using a string, we use a dictionary:
+In IDOM we add these attributes to elements using keyword arguments. There are two main
+notable differences though. First, all names in IDOM use ``snake_case`` instead of
+dash-separated words. For example, ``tabindex`` and ``margin-left`` become ``tab_index``
+and ``margin_left`` respectively. Second, instead of specifying ``style`` using a
+string, we use a dictionary. Given this, you can rewrite the ``<img>`` element above as:
 
 .. testcode::
 
     html.img(
         src="https://picsum.photos/id/237/500/300",
-        style={"width": "50%", "marginLeft": "25%"},
+        style={"width": "50%", "margin_left": "25%"},
         alt="Billie Holiday",
+        tab_index="0",
     )
 
 .. raw:: html
 
+    <!-- no tabindex since that would ruin accesibility of the page -->
     <img
         src="https://picsum.photos/id/237/500/300"
         style="width: 50%; margin-left: 25%;"
