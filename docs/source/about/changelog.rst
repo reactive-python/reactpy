@@ -23,6 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+No changes.
+
+
+v1.0.0-a1
+---------
+:octicon:`milestone` *released on 2023-01-28*
+
 **Changed**
 
 - :pull:`841` - Revamped element constructor interface. Now instead of passing a
