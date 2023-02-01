@@ -18,7 +18,6 @@ from docs.examples import (
 
 
 class WidgetExample(SphinxDirective):
-
     has_content = False
     required_arguments = 1
     _next_id = 0
