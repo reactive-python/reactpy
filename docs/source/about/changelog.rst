@@ -23,6 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+No changes.
+
+
+v1.0.0-a2
+---------
+:octicon:`milestone` *released on 2023-01-31*
+
 **Reverted**
 
 - :pull:`901` - reverts :pull:`886` due to :issue:`896`
