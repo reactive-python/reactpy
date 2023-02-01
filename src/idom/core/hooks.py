@@ -75,7 +75,6 @@ def use_state(initial_value: _Type | Callable[[], _Type]) -> State[_Type]:
 
 
 class _CurrentState(Generic[_Type]):
-
     __slots__ = "value", "dispatch"
 
     def __init__(
@@ -148,11 +147,9 @@ def use_effect(
     last_clean_callback: Ref[Optional[_EffectCleanFunc]] = use_ref(None)
 
     def add_effect(function: _EffectApplyFunc) -> None:
-
         if not asyncio.iscoroutinefunction(function):
             sync_function = cast(_SyncEffectFunc, function)
         else:
-
             async_function = cast(_AsyncEffectFunc, function)
 
             def sync_function() -> Optional[_EffectCleanFunc]:

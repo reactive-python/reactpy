@@ -158,7 +158,6 @@ def _setup_single_view_dispatcher_route(
 
 
 class IndexHandler(RequestHandler):
-
     _index_html: str
 
     def initialize(self, index_html: str) -> None:

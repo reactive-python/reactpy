@@ -174,7 +174,6 @@ async def test_layout_render_error_has_partial_update_with_error_message():
         raise ValueError("error from bad child")
 
     with assert_idom_did_log(match_error="error from bad child"):
-
         async with idom.Layout(Main()) as layout:
             assert (await layout.render()) == update_message(
                 path="",
@@ -225,7 +224,6 @@ async def test_layout_render_error_has_partial_update_without_error_message():
         raise ValueError("error from bad child")
 
     with assert_idom_did_log(match_error="error from bad child"):
-
         async with idom.Layout(Main()) as layout:
             assert (await layout.render()) == update_message(
                 path="",
@@ -754,7 +752,6 @@ async def test_log_error_on_bad_event_handler():
         return idom.html.button(on_click=raise_error)
 
     with assert_idom_did_log(match_error="bad event handler"):
-
         async with idom.Layout(ComponentWithBadEventHandler()) as layout:
             await layout.render()
             event = event_message(bad_handler.target)

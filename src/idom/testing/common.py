@@ -56,6 +56,7 @@ class poll(Generic[_R]):  # noqa: N801
         condition: Callable[[_R], bool],
         timeout: float = IDOM_TESTING_DEFAULT_TIMEOUT.current,
         delay: float = _DEFAULT_POLL_DELAY,
+        description: str = "condition to be true",
     ) -> None:
         """Check that the coroutines result meets a condition within the timeout"""
         started_at = time.time()
@@ -66,7 +67,7 @@ class poll(Generic[_R]):  # noqa: N801
                 break
             elif (time.time() - started_at) > timeout:  # pragma: no cover
                 raise TimeoutError(
-                    f"Condition not met within {timeout} "
+                    f"Expected {description} after {timeout} "
                     f"seconds - last value was {result!r}"
                 )
 
@@ -77,7 +78,12 @@ class poll(Generic[_R]):  # noqa: N801
         delay: float = _DEFAULT_POLL_DELAY,
     ) -> None:
         """Wait until the result is identical to the given value"""
-        return await self.until(lambda left: left is right, timeout, delay)
+        return await self.until(
+            lambda left: left is right,
+            timeout,
+            delay,
+            f"value to be identical to {right!r}",
+        )
 
     async def until_equals(
         self,
@@ -86,7 +92,12 @@ class poll(Generic[_R]):  # noqa: N801
         delay: float = _DEFAULT_POLL_DELAY,
     ) -> None:
         """Wait until the result is equal to the given value"""
-        return await self.until(lambda left: left == right, timeout, delay)
+        return await self.until(
+            lambda left: left == right,
+            timeout,
+            delay,
+            f"value to equal {right!r}",
+        )
 
 
 class HookCatcher:

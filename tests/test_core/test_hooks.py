@@ -1057,7 +1057,6 @@ async def test_use_debug_mode():
         return idom.html.div()
 
     async with idom.Layout(SomeComponent()) as layout:
-
         with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
             await layout.render()
 
@@ -1085,7 +1084,6 @@ async def test_use_debug_mode_with_factory():
         return idom.html.div()
 
     async with idom.Layout(SomeComponent()) as layout:
-
         with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
             await layout.render()
 
@@ -1111,7 +1109,6 @@ async def test_use_debug_mode_does_not_log_if_not_in_debug_mode():
         return idom.html.div()
 
     async with idom.Layout(SomeComponent()) as layout:
-
         with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'hello'"):
             await layout.render()
 

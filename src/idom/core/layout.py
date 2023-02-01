@@ -651,7 +651,6 @@ _Type = TypeVar("_Type")
 
 
 class _ThreadSafeQueue(Generic[_Type]):
-
     __slots__ = "_loop", "_queue", "_pending"
 
     def __init__(self) -> None:

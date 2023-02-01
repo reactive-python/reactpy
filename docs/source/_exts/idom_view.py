@@ -13,7 +13,6 @@ _IDOM_STATIC_HOST = os.environ.get("IDOM_DOC_STATIC_SERVER_HOST", "/docs").rstri
 
 
 class IteractiveWidget(SphinxDirective):
-
     has_content = False
     required_arguments = 1
     _next_id = 0

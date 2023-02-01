@@ -6,8 +6,9 @@ from playwright.async_api import Browser
 
 import idom
 from idom.backend.utils import find_available_port
-from idom.testing import BackendFixture, DisplayFixture
+from idom.testing import BackendFixture, DisplayFixture, poll
 from tests.tooling.common import DEFAULT_TYPE_DELAY
+from tests.tooling.hooks import use_counter
 
 
 JS_DIR = Path(__file__).parent / "js"
@@ -21,8 +22,12 @@ async def test_automatic_reconnect(browser: Browser):
     page.set_default_timeout(10000)
 
     @idom.component
-    def OldComponent():
-        return idom.html.p("old", id="old-component")
+    def SomeComponent():
+        count, incr_count = use_counter(0)
+        return idom.html._(
+            idom.html.p("count", count, data_count=count, id="count"),
+            idom.html.button("incr", on_click=lambda e: incr_count(), id="incr"),
+        )
 
     async with AsyncExitStack() as exit_stack:
         server = await exit_stack.enter_async_context(BackendFixture(port=port))
@@ -30,20 +35,17 @@ async def test_automatic_reconnect(browser: Browser):
             DisplayFixture(server, driver=page)
         )
 
-        await display.show(OldComponent)
+        await display.show(SomeComponent)
 
-        # ensure the element is displayed before stopping the server
-        await page.wait_for_selector("#old-component")
+        count = await page.wait_for_selector("#count")
+        incr = await page.wait_for_selector("#incr")
+
+        for i in range(3):
+            assert (await count.get_attribute("data-count")) == str(i)
+            await incr.click()
 
     # the server is disconnected but the last view state is still shown
-    await page.wait_for_selector("#old-component")
-
-    set_state = idom.Ref(None)
-
-    @idom.component
-    def NewComponent():
-        state, set_state.current = idom.hooks.use_state(0)
-        return idom.html.p(f"new-{state}", id=f"new-component-{state}")
+    await page.wait_for_selector("#count")
 
     async with AsyncExitStack() as exit_stack:
         server = await exit_stack.enter_async_context(BackendFixture(port=port))
@@ -51,15 +53,22 @@ async def test_automatic_reconnect(browser: Browser):
             DisplayFixture(server, driver=page)
         )
 
-        await display.show(NewComponent)
+        # use mount instead of show to avoid a page refesh
+        display.backend.mount(SomeComponent)
 
-        # Note the lack of a page refresh before looking up this new component. The
-        # client should attempt to reconnect and display the new view automatically.
-        await page.wait_for_selector("#new-component-0")
+        async def get_count():
+            # need to refetch element because may unmount on reconnect
+            count = await page.wait_for_selector("#count")
+            return await count.get_attribute("data-count")
 
-        # check that we can resume normal operation
-        set_state.current(1)
-        await page.wait_for_selector("#new-component-1")
+        for i in range(3):
+            # it may take a moment for the websocket to reconnect so need to poll
+            await poll(get_count).until_equals(str(i))
+
+            # need to refetch element because may unmount on reconnect
+            incr = await page.wait_for_selector("#incr")
+
+            await incr.click()
 
 
 async def test_style_can_be_changed(display: DisplayFixture):

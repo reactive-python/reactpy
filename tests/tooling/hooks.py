@@ -12,4 +12,4 @@ def use_toggle(init=False):
 
 def use_counter(initial_value):
     state, set_state = use_state(initial_value)
-    return state, lambda: set_state(state + 1)
+    return state, lambda: set_state(lambda old: old + 1)

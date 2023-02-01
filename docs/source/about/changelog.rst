@@ -23,7 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Reverted**
+
+- :pull:`901` - reverts :pull:`886` due to :issue:`896`
+
+**Fixed**
+
+- :issue:`896` - Stale event handlers after disconnect/reconnect cycle
 
 
 v1.0.0-a1

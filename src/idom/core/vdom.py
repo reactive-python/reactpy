@@ -258,7 +258,6 @@ def separate_attributes_and_event_handlers(
     separated_handlers: DefaultDict[str, list[EventHandlerType]] = DefaultDict(list)
 
     for k, v in attributes.items():
-
         handler: EventHandlerType
 
         if callable(v):

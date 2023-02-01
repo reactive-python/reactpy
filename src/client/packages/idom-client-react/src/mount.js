@@ -38,6 +38,9 @@ function mountLayoutWithReconnectingWebSocket(
   socket.onopen = (event) => {
     console.info(`IDOM WebSocket connected.`);
 
+    if (mountState.everMounted) {
+      ReactDOM.unmountComponentAtNode(element);
+    }
     _resetOpenMountState(mountState);
 
     mountLayout(element, {
