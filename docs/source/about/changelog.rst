@@ -30,6 +30,7 @@ Unreleased
 **Fixed**
 
 - :issue:`896` - Stale event handlers after disconnect/reconnect cycle
+- :issue:`898` - Fixed CLI not registered as entry point
 
 
 v1.0.0-a1
