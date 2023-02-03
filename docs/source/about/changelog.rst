@@ -23,6 +23,10 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+**Fixed**
+
+- :pull:`908` - minor type hint issue with ``VdomDictConstructor``
+
 **Removed**
 
 - :pull:`907` - accidental import of idom.testing
