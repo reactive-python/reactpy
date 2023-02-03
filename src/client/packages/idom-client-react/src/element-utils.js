@@ -64,7 +64,7 @@ function normalizeAttribute([key, value]) {
     key.startsWith("aria_") ||
     DASHED_HTML_ATTRS.includes(key)
   ) {
-    normKey = key.replace("_", "-");
+    normKey = key.split("_").join("-");
   } else {
     normKey = snakeToCamel(key);
   }

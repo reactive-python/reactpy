@@ -132,3 +132,21 @@ async def test_slow_server_response_on_input_change(display: DisplayFixture):
     await inp.type("hello", delay=DEFAULT_TYPE_DELAY)
 
     assert (await inp.evaluate("node => node.value")) == "hello"
+
+
+async def test_data_and_aria_attribute_naming(display: DisplayFixture):
+    @idom.component
+    def SomeComponent():
+        return idom.html.h1(
+            "see attributes",
+            id="title",
+            data_some_thing="some data",
+            aria_description="some title",
+        )
+
+    await display.show(SomeComponent)
+
+    title = await display.page.wait_for_selector("#title")
+
+    assert await title.get_attribute("data-some-thing") == "some data"
+    assert await title.get_attribute("aria-description") == "some title"
