@@ -15,6 +15,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    overload,
 )
 
 from typing_extensions import Literal, Protocol, TypeAlias, TypedDict, runtime_checkable
@@ -198,6 +199,23 @@ class EventHandlerType(Protocol):
 
 class VdomDictConstructor(Protocol):
     """Standard function for constructing a :class:`VdomDict`"""
+
+    @overload
+    def __call__(
+        self,
+        *children: VdomChild | VdomChildren,
+        key: Key | None = None,
+        **attributes: Any,
+    ) -> VdomDict:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        *children: VdomChild | VdomChildren,
+        **attributes: Any,
+    ) -> VdomDict:
+        ...
 
     def __call__(
         self,
