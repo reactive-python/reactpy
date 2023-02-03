@@ -23,7 +23,11 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Fixed**
+
+- :pull:`911` - fixed ``data-*`` and ``aria-*`` attribute name conversions. Previously
+  an attribute declared as ``data_some_thing`` got converted to ``data-some_thing``
+  instead of ``data-some-thing``.
 
 
 v1.0.0-a3
