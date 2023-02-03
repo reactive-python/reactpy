@@ -23,7 +23,9 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Removed**
+
+- :pull:`907` - accidental import of idom.testing
 
 
 v1.0.0-a2
