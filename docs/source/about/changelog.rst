@@ -23,6 +23,13 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+No changes.
+
+
+v1.0.0-a3
+---------
+:octicon:`milestone` *released on 2023-02-02*
+
 **Fixed**
 
 - :pull:`908` - minor type hint issue with ``VdomDictConstructor``
