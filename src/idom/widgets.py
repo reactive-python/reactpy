@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from base64 import b64encode
-from typing import Any, Callable, Iterable, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Tuple, TypeVar, Union
 
 from typing_extensions import Protocol
 
@@ -10,7 +10,6 @@ import idom
 from . import html
 from ._warnings import warn
 from .core.types import ComponentConstructor, VdomDict
-from .testing.backend import _hotswap, _MountFunc
 
 
 def image(
@@ -95,6 +94,10 @@ class _CastFunc(Protocol[_CastTo]):
         ...
 
 
+if TYPE_CHECKING:
+    from .testing.backend import _MountFunc
+
+
 def hotswap(
     update_on_change: bool = False,
 ) -> Tuple[_MountFunc, ComponentConstructor]:  # pragma: no cover
@@ -103,4 +106,6 @@ def hotswap(
         DeprecationWarning,
         stacklevel=2,
     )
+    from .testing.backend import _hotswap
+
     return _hotswap(update_on_change)

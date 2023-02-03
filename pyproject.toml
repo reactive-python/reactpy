@@ -31,9 +31,11 @@ show_missing = true
 skip_covered = true
 sort = "Name"
 exclude_lines = [
-    "pragma: no cover",
+    # These are regex patterns
+    'pragma: no cover',
     '\.\.\.',
-    "raise NotImplementedError",
+    'raise NotImplementedError',
+    'if TYPE_CHECKING[\s:]',
 ]
 omit = [
     "src/idom/__main__.py",

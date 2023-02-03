@@ -27,6 +27,10 @@ Unreleased
 
 - :pull:`908` - minor type hint issue with ``VdomDictConstructor``
 
+**Removed**
+
+- :pull:`907` - accidental import of idom.testing
+
 
 v1.0.0-a2
 ---------
