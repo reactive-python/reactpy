@@ -23,7 +23,9 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Fixed**
+
+- :pull:`908` - minor type hint issue with ``VdomDictConstructor``
 
 
 v1.0.0-a2
