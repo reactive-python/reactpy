@@ -142,6 +142,7 @@ async def test_data_and_aria_attribute_naming(display: DisplayFixture):
             id="title",
             data_some_thing="some data",
             aria_description="some title",
+            **{"data-another-thing": "more data"},
         )
 
     await display.show(SomeComponent)
@@ -149,4 +150,5 @@ async def test_data_and_aria_attribute_naming(display: DisplayFixture):
     title = await display.page.wait_for_selector("#title")
 
     assert await title.get_attribute("data-some-thing") == "some data"
+    assert await title.get_attribute("data-another-thing") == "more data"
     assert await title.get_attribute("aria-description") == "some title"
