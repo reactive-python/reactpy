@@ -23,7 +23,9 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Changed**
+
+- :pull:`919` - reverts :pull:`841` as per the conclusion in :discussion:`916`
 
 
 v1.0.0-a3

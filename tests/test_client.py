@@ -25,8 +25,8 @@ async def test_automatic_reconnect(browser: Browser):
     def SomeComponent():
         count, incr_count = use_counter(0)
         return idom.html._(
-            idom.html.p("count", count, data_count=count, id="count"),
-            idom.html.button("incr", on_click=lambda e: incr_count(), id="incr"),
+            idom.html.p({"data_count": count, "id": "count"}, "count", count),
+            idom.html.button(dict(on_click=lambda e: incr_count(), id="incr"), "incr"),
         )
 
     async with AsyncExitStack() as exit_stack:
@@ -85,10 +85,12 @@ async def test_style_can_be_changed(display: DisplayFixture):
         color_toggle, set_color_toggle = idom.hooks.use_state(True)
         color = "red" if color_toggle else "blue"
         return idom.html.button(
+            {
+                "id": "my-button",
+                "onClick": lambda event: set_color_toggle(not color_toggle),
+                "style": {"backgroundColor": color, "color": "white"},
+            },
             f"color: {color}",
-            id="my-button",
-            on_click=lambda event: set_color_toggle(not color_toggle),
-            style={"background_color": color, "color": "white"},
         )
 
     await display.show(ButtonWithChangingColor)
@@ -124,7 +126,7 @@ async def test_slow_server_response_on_input_change(display: DisplayFixture):
             await asyncio.sleep(delay)
             set_value(event["target"]["value"])
 
-        return idom.html.input(on_change=handle_change, id="test-input")
+        return idom.html.input({"onChange": handle_change, "id": "test-input"})
 
     await display.show(SomeComponent)
 
@@ -132,3 +134,27 @@ async def test_slow_server_response_on_input_change(display: DisplayFixture):
     await inp.type("hello", delay=DEFAULT_TYPE_DELAY)
 
     assert (await inp.evaluate("node => node.value")) == "hello"
+
+
+async def test_snake_case_attributes(display: DisplayFixture):
+    @idom.component
+    def SomeComponent():
+        return idom.html.h1(
+            {
+                "id": "my-title",
+                "style": {"background_color": "blue"},
+                "class_name": "hello",
+                "data_some_thing": "some-data",
+                "aria_some_thing": "some-aria",
+            },
+            "title with some attributes",
+        )
+
+    await display.show(SomeComponent)
+
+    title = await display.page.wait_for_selector("#my-title")
+
+    assert await title.get_attribute("class") == "hello"
+    assert await title.get_attribute("style") == "background-color: blue;"
+    assert await title.get_attribute("data-some-thing") == "some-data"
+    assert await title.get_attribute("aria-some-thing") == "some-aria"

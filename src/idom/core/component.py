@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from functools import wraps
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from .types import ComponentType, VdomDict
 
@@ -41,8 +41,8 @@ class Component:
         self,
         function: Callable[..., ComponentType | VdomDict | str | None],
         key: Optional[Any],
-        args: tuple[Any, ...],
-        kwargs: dict[str, Any],
+        args: Tuple[Any, ...],
+        kwargs: Dict[str, Any],
         sig: inspect.Signature,
     ) -> None:
         self.key = key

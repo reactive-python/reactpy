@@ -1,7 +1,7 @@
 from functools import wraps
 from inspect import currentframe
 from types import FrameType
-from typing import Any, Iterator
+from typing import TYPE_CHECKING, Any, Iterator
 from warnings import warn as _warn
 
 
@@ -9,6 +9,10 @@ from warnings import warn as _warn
 def warn(*args: Any, **kwargs: Any) -> Any:
     # warn at call site outside of IDOM
     _warn(*args, stacklevel=_frame_depth_in_module() + 1, **kwargs)  # type: ignore
+
+
+if TYPE_CHECKING:
+    warn = _warn
 
 
 def _frame_depth_in_module() -> int:

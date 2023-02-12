@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from collections import namedtuple
+from collections.abc import Sequence
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -10,11 +11,8 @@ from typing import (
     Generic,
     Mapping,
     NamedTuple,
-    Optional,
-    Sequence,
     Type,
     TypeVar,
-    Union,
     overload,
 )
 
@@ -41,7 +39,7 @@ RootComponentConstructor = Callable[[], "ComponentType"]
 """The root component should be constructed by a function accepting no arguments."""
 
 
-Key = Union[str, int]
+Key: TypeAlias = "str | int"
 
 
 _OwnType = TypeVar("_OwnType")
@@ -60,11 +58,8 @@ class ComponentType(Protocol):
     This is used to see if two component instances share the same definition.
     """
 
-    def render(self) -> RenderResult:
+    def render(self) -> VdomDict | ComponentType | str | None:
         """Render the component's view model."""
-
-
-RenderResult = Union["VdomDict", ComponentType, str, None]
 
 
 _Render = TypeVar("_Render", covariant=True)
@@ -89,17 +84,17 @@ class LayoutType(Protocol[_Render, _Event]):
         exc_type: Type[Exception],
         exc_value: Exception,
         traceback: TracebackType,
-    ) -> Optional[bool]:
+    ) -> bool | None:
         """Clean up the view after its final render"""
 
 
 VdomAttributes = Mapping[str, Any]
 """Describes the attributes of a :class:`VdomDict`"""
 
-VdomChild = Union[ComponentType, "VdomDict", str]
+VdomChild: TypeAlias = "ComponentType | VdomDict | str"
 """A single child element of a :class:`VdomDict`"""
 
-VdomChildren = Sequence[VdomChild]
+VdomChildren: TypeAlias = "Sequence[VdomChild] | VdomChild"
 """Describes a series of :class:`VdomChild` elements"""
 
 
@@ -108,7 +103,10 @@ class _VdomDictOptional(TypedDict, total=False):
     children: Sequence[
         # recursive types are not allowed yet:
         # https://github.com/python/mypy/issues/731
-        Union[ComponentType, dict[str, Any], str, Any]
+        ComponentType
+        | dict[str, Any]
+        | str
+        | Any
     ]
     attributes: VdomAttributes
     eventHandlers: EventHandlerDict  # noqa
@@ -185,7 +183,7 @@ class EventHandlerType(Protocol):
     function: EventHandlerFunc
     """A coroutine which can respond to an event and its data"""
 
-    target: Optional[str]
+    target: str | None
     """Typically left as ``None`` except when a static target is useful.
 
     When testing, it may be useful to specify a static target ID so events can be
@@ -201,27 +199,16 @@ class VdomDictConstructor(Protocol):
     """Standard function for constructing a :class:`VdomDict`"""
 
     @overload
-    def __call__(
-        self,
-        *children: VdomChild | VdomChildren,
-        key: Key | None = None,
-        **attributes: Any,
-    ) -> VdomDict:
+    def __call__(self, attributes: VdomAttributes, *children: VdomChildren) -> VdomDict:
+        ...
+
+    @overload
+    def __call__(self, *children: VdomChildren) -> VdomDict:
         ...
 
     @overload
     def __call__(
-        self,
-        *children: VdomChild | VdomChildren,
-        **attributes: Any,
-    ) -> VdomDict:
-        ...
-
-    def __call__(
-        self,
-        *children: VdomChild | VdomChildren,
-        key: Key | None = None,
-        **attributes: Any,
+        self, *attributes_and_children: VdomAttributes | VdomChildren
     ) -> VdomDict:
         ...
 

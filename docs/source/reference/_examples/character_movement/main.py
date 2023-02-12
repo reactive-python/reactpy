@@ -36,7 +36,15 @@ def Scene():
     position, set_position = use_state(Position(100, 100, 0))
 
     return html.div(
+        {"style": {"width": "225px"}},
         html.div(
+            {
+                "style": {
+                    "width": "200px",
+                    "height": "200px",
+                    "backgroundColor": "slategray",
+                }
+            },
             image(
                 "png",
                 CHARACTER_IMAGE,
@@ -49,15 +57,13 @@ def Scene():
                     }
                 },
             ),
-            style={"width": "200px", "height": "200px", "backgroundColor": "slategray"},
         ),
-        html.button("Move Left", on_click=lambda e: set_position(translate(x=-10))),
-        html.button("Move Right", on_click=lambda e: set_position(translate(x=10))),
-        html.button("Move Up", on_click=lambda e: set_position(translate(y=-10))),
-        html.button("Move Down", on_click=lambda e: set_position(translate(y=10))),
-        html.button("Rotate Left", on_click=lambda e: set_position(rotate(-30))),
-        html.button("Rotate Right", on_click=lambda e: set_position(rotate(30))),
-        style={"width": "225px"},
+        html.button({"onClick": lambda e: set_position(translate(x=-10))}, "Move Left"),
+        html.button({"onClick": lambda e: set_position(translate(x=10))}, "Move Right"),
+        html.button({"onClick": lambda e: set_position(translate(y=-10))}, "Move Up"),
+        html.button({"onClick": lambda e: set_position(translate(y=10))}, "Move Down"),
+        html.button({"onClick": lambda e: set_position(rotate(-30))}, "Rotate Left"),
+        html.button({"onClick": lambda e: set_position(rotate(30))}, "Rotate Right"),
     )
 
 

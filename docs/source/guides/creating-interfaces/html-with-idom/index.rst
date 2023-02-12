@@ -92,10 +92,11 @@ string, we use a dictionary. Given this, you can rewrite the ``<img>`` element a
 .. testcode::
 
     html.img(
-        src="https://picsum.photos/id/237/500/300",
-        style={"width": "50%", "margin_left": "25%"},
-        alt="Billie Holiday",
-        tab_index="0",
+        {
+            "src": "https://picsum.photos/id/237/500/300",
+            "style": {"width": "50%", "margin_left": "25%"},
+            "alt": "Billie Holiday",
+        }
     )
 
 .. raw:: html

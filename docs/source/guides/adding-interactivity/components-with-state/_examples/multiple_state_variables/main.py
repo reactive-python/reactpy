@@ -29,14 +29,14 @@ def Gallery():
     url = sculpture["url"]
 
     return html.div(
-        html.button("Next", on_click=handle_next_click),
+        html.button({"onClick": handle_next_click}, "Next"),
         html.h2(name, " by ", artist),
         html.p(f"({bounded_index + 1} or {len(sculpture_data)})"),
-        html.img(src=url, alt=alt, style={"height": "200px"}),
+        html.img({"src": url, "alt": alt, "style": {"height": "200px"}}),
         html.div(
             html.button(
-                f"{('Show' if show_more else 'Hide')} details",
-                on_click=handle_more_click,
+                {"onClick": handle_more_click},
+                f"{'Show' if show_more else 'Hide'} details",
             ),
             (html.p(description) if show_more else ""),
         ),

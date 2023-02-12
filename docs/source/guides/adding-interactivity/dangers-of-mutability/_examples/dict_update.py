@@ -23,15 +23,21 @@ def Form():
     return html.div(
         html.label(
             "First name: ",
-            html.input(value=person["first_name"], on_change=handle_first_name_change),
+            html.input(
+                {"value": person["first_name"], "onChange": handle_first_name_change},
+            ),
         ),
         html.label(
             "Last name: ",
-            html.input(value=person["last_name"], on_change=handle_last_name_change),
+            html.input(
+                {"value": person["last_name"], "onChange": handle_last_name_change},
+            ),
         ),
         html.label(
             "Email: ",
-            html.input(value=person["email"], on_change=handle_email_change),
+            html.input(
+                {"value": person["email"], "onChange": handle_email_change},
+            ),
         ),
         html.p(f"{person['first_name']} {person['last_name']} {person['email']}"),
     )

@@ -10,23 +10,19 @@ from typing import (
     Callable,
     Generic,
     NewType,
-    Optional,
     Sequence,
-    Tuple,
     TypeVar,
-    Union,
     cast,
     overload,
 )
 
-from typing_extensions import Protocol
+from typing_extensions import Protocol, TypeAlias
 
 from idom.config import IDOM_DEBUG_MODE
 from idom.utils import Ref
 
 from ._thread_local import ThreadLocal
 from .types import ComponentType, Key, State, VdomDict
-from .vdom import vdom
 
 
 if not TYPE_CHECKING:
@@ -79,7 +75,7 @@ class _CurrentState(Generic[_Type]):
 
     def __init__(
         self,
-        initial_value: Union[_Type, Callable[[], _Type]],
+        initial_value: _Type | Callable[[], _Type],
     ) -> None:
         if callable(initial_value):
             self.value = initial_value()
@@ -88,7 +84,7 @@ class _CurrentState(Generic[_Type]):
 
         hook = current_hook()
 
-        def dispatch(new: Union[_Type, Callable[[_Type], _Type]]) -> None:
+        def dispatch(new: _Type | Callable[[_Type], _Type]) -> None:
             if callable(new):
                 next_value = new(self.value)
             else:
@@ -100,10 +96,10 @@ class _CurrentState(Generic[_Type]):
         self.dispatch = dispatch
 
 
-_EffectCleanFunc = Callable[[], None]
-_SyncEffectFunc = Callable[[], Optional[_EffectCleanFunc]]
-_AsyncEffectFunc = Callable[[], Awaitable[Optional[_EffectCleanFunc]]]
-_EffectApplyFunc = Union[_SyncEffectFunc, _AsyncEffectFunc]
+_EffectCleanFunc: TypeAlias = "Callable[[], None]"
+_SyncEffectFunc: TypeAlias = "Callable[[], _EffectCleanFunc | None]"
+_AsyncEffectFunc: TypeAlias = "Callable[[], Awaitable[_EffectCleanFunc | None]]"
+_EffectApplyFunc: TypeAlias = "_SyncEffectFunc | _AsyncEffectFunc"
 
 
 @overload
@@ -123,9 +119,9 @@ def use_effect(
 
 
 def use_effect(
-    function: Optional[_EffectApplyFunc] = None,
+    function: _EffectApplyFunc | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Optional[Callable[[_EffectApplyFunc], None]]:
+) -> Callable[[_EffectApplyFunc], None] | None:
     """See the full :ref:`Use Effect` docs for details
 
     Parameters:
@@ -144,7 +140,7 @@ def use_effect(
 
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
-    last_clean_callback: Ref[Optional[_EffectCleanFunc]] = use_ref(None)
+    last_clean_callback: Ref[_EffectCleanFunc | None] = use_ref(None)
 
     def add_effect(function: _EffectApplyFunc) -> None:
         if not asyncio.iscoroutinefunction(function):
@@ -152,7 +148,7 @@ def use_effect(
         else:
             async_function = cast(_AsyncEffectFunc, function)
 
-            def sync_function() -> Optional[_EffectCleanFunc]:
+            def sync_function() -> _EffectCleanFunc | None:
                 future = asyncio.ensure_future(async_function())
 
                 def clean_future() -> None:
@@ -281,7 +277,7 @@ class ContextProvider(Generic[_Type]):
 
     def render(self) -> VdomDict:
         current_hook().set_context_provider(self)
-        return vdom("", *self.children)
+        return {"tagName": "", "children": self.children}
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.type})"
@@ -293,7 +289,7 @@ _ActionType = TypeVar("_ActionType")
 def use_reducer(
     reducer: Callable[[_Type, _ActionType], _Type],
     initial_value: _Type,
-) -> Tuple[_Type, Callable[[_ActionType], None]]:
+) -> tuple[_Type, Callable[[_ActionType], None]]:
     """See the full :ref:`Use Reducer` docs for details
 
     Parameters:
@@ -340,9 +336,9 @@ def use_callback(
 
 
 def use_callback(
-    function: Optional[_CallbackFunc] = None,
+    function: _CallbackFunc | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Union[_CallbackFunc, Callable[[_CallbackFunc], _CallbackFunc]]:
+) -> _CallbackFunc | Callable[[_CallbackFunc], _CallbackFunc]:
     """See the full :ref:`Use Callback` docs for details
 
     Parameters:
@@ -393,9 +389,9 @@ def use_memo(
 
 
 def use_memo(
-    function: Optional[Callable[[], _Type]] = None,
+    function: Callable[[], _Type] | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Union[_Type, Callable[[Callable[[], _Type]], _Type]]:
+) -> _Type | Callable[[Callable[[], _Type]], _Type]:
     """See the full :ref:`Use Memo` docs for details
 
     Parameters:
@@ -619,7 +615,7 @@ class LifeCycleHook:
         self._is_rendering = False
         self._rendered_atleast_once = False
         self._current_state_index = 0
-        self._state: Tuple[Any, ...] = ()
+        self._state: tuple[Any, ...] = ()
         self._event_effects: dict[EffectType, list[Callable[[], None]]] = {
             COMPONENT_DID_RENDER_EFFECT: [],
             LAYOUT_DID_RENDER_EFFECT: [],

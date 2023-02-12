@@ -39,7 +39,7 @@ async def display(page, request):
 async def test_display_simple_hello_world(display: DisplayFixture):
     @idom.component
     def Hello():
-        return idom.html.p(["Hello World"], id="hello")
+        return idom.html.p({"id": "hello"}, ["Hello World"])
 
     await display.show(Hello)
 
@@ -56,9 +56,11 @@ async def test_display_simple_click_counter(display: DisplayFixture):
     def Counter():
         count, set_count = idom.hooks.use_state(0)
         return idom.html.button(
+            {
+                "id": "counter",
+                "onClick": lambda event: set_count(lambda old_count: old_count + 1),
+            },
             f"Count: {count}",
-            id="counter",
-            on_click=lambda event: set_count(lambda old_count: old_count + 1),
         )
 
     await display.show(Counter)
@@ -83,7 +85,7 @@ async def test_use_connection(display: DisplayFixture):
     @idom.component
     def ShowScope():
         conn.current = idom.use_connection()
-        return html.pre(str(conn.current), id="scope")
+        return html.pre({"id": "scope"}, str(conn.current))
 
     await display.show(ShowScope)
 
@@ -97,7 +99,7 @@ async def test_use_scope(display: DisplayFixture):
     @idom.component
     def ShowScope():
         scope.current = idom.use_scope()
-        return html.pre(str(scope.current), id="scope")
+        return html.pre({"id": "scope"}, str(scope.current))
 
     await display.show(ShowScope)
 
@@ -145,7 +147,7 @@ async def test_use_request(display: DisplayFixture, hook_name):
     @idom.component
     def ShowRoute():
         hook_val.current = hook()
-        return html.pre(str(hook_val.current), id="hook")
+        return html.pre({"id": "hook"}, str(hook_val.current))
 
     await display.show(ShowRoute)
 

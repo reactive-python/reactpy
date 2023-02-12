@@ -85,7 +85,7 @@ def Counter():
         initial_value=0,
     )
     handler = STATIC_EVENT_HANDLER.use(lambda: change_count(1))
-    return idom.html.div(**{EVENT_NAME: handler}, count=count)
+    return idom.html.div({EVENT_NAME: handler, "count": count})
 
 
 async def test_dispatch():
@@ -115,8 +115,8 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
             second_event_did_execute.set()
 
         return idom.html.div(
-            idom.html.button(on_click=block_forever),
-            idom.html.button(on_click=handle_event),
+            idom.html.button({"onClick": block_forever}),
+            idom.html.button({"onClick": handle_event}),
         )
 
     send_queue = asyncio.Queue()

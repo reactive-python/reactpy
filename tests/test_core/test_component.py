@@ -35,11 +35,11 @@ async def test_simple_parameterized_component():
 async def test_component_with_var_args():
     @idom.component
     def ComponentWithVarArgsAndKwargs(*args, **kwargs):
-        return idom.html.div(*args, **kwargs)
+        return idom.html.div(kwargs, args)
 
-    assert ComponentWithVarArgsAndKwargs("hello", "world", my_attr=1).render() == {
+    assert ComponentWithVarArgsAndKwargs("hello", "world", myAttr=1).render() == {
         "tagName": "div",
-        "attributes": {"my_attr": 1},
+        "attributes": {"myAttr": 1},
         "children": ["hello", "world"],
     }
 
@@ -47,7 +47,7 @@ async def test_component_with_var_args():
 async def test_display_simple_hello_world(display: DisplayFixture):
     @idom.component
     def Hello():
-        return idom.html.p(["Hello World"], id="hello")
+        return idom.html.p({"id": "hello"}, ["Hello World"])
 
     await display.show(Hello)
 
@@ -58,10 +58,10 @@ async def test_pre_tags_are_rendered_correctly(display: DisplayFixture):
     @idom.component
     def PreFormated():
         return idom.html.pre(
+            {"id": "pre-form-test"},
             idom.html.span("this", idom.html.span("is"), "some"),
             "pre-formated",
             " text",
-            id="pre-form-test",
         )
 
     await display.show(PreFormated)

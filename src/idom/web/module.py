@@ -6,7 +6,7 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from string import Template
-from typing import Any, List, NewType, Optional, Set, Tuple, Union, overload
+from typing import Any, NewType, overload
 from urllib.parse import urlparse
 
 from idom._warnings import warn
@@ -34,7 +34,7 @@ URL_SOURCE = SourceType("URL")
 
 def module_from_url(
     url: str,
-    fallback: Optional[Any] = None,
+    fallback: Any | None = None,
     resolve_exports: bool | None = None,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
@@ -82,7 +82,7 @@ def module_from_template(
     template: str,
     package: str,
     cdn: str = "https://esm.sh",
-    fallback: Optional[Any] = None,
+    fallback: Any | None = None,
     resolve_exports: bool | None = None,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
@@ -160,8 +160,8 @@ def module_from_template(
 
 def module_from_file(
     name: str,
-    file: Union[str, Path],
-    fallback: Optional[Any] = None,
+    file: str | Path,
+    fallback: Any | None = None,
     resolve_exports: bool | None = None,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
@@ -242,7 +242,7 @@ def _copy_file(target: Path, source: Path, symlink: bool) -> None:
 def module_from_string(
     name: str,
     content: str,
-    fallback: Optional[Any] = None,
+    fallback: Any | None = None,
     resolve_exports: bool | None = None,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
@@ -302,9 +302,9 @@ def module_from_string(
 class WebModule:
     source: str
     source_type: SourceType
-    default_fallback: Optional[Any]
-    export_names: Optional[Set[str]]
-    file: Optional[Path]
+    default_fallback: Any | None
+    export_names: set[str] | None
+    file: Path | None
     unmount_before_update: bool
 
 
@@ -312,7 +312,7 @@ class WebModule:
 def export(
     web_module: WebModule,
     export_names: str,
-    fallback: Optional[Any] = ...,
+    fallback: Any | None = ...,
     allow_children: bool = ...,
 ) -> VdomDictConstructor:
     ...
@@ -321,19 +321,19 @@ def export(
 @overload
 def export(
     web_module: WebModule,
-    export_names: Union[List[str], Tuple[str, ...]],
-    fallback: Optional[Any] = ...,
+    export_names: list[str] | tuple[str, ...],
+    fallback: Any | None = ...,
     allow_children: bool = ...,
-) -> List[VdomDictConstructor]:
+) -> list[VdomDictConstructor]:
     ...
 
 
 def export(
     web_module: WebModule,
-    export_names: Union[str, List[str], Tuple[str, ...]],
-    fallback: Optional[Any] = None,
+    export_names: str | list[str] | tuple[str, ...],
+    fallback: Any | None = None,
     allow_children: bool = True,
-) -> Union[VdomDictConstructor, List[VdomDictConstructor]]:
+) -> VdomDictConstructor | list[VdomDictConstructor]:
     """Return one or more VDOM constructors from a :class:`WebModule`
 
     Parameters:
@@ -369,7 +369,7 @@ def export(
 def _make_export(
     web_module: WebModule,
     name: str,
-    fallback: Optional[Any],
+    fallback: Any | None,
     allow_children: bool,
 ) -> VdomDictConstructor:
     return make_vdom_constructor(

@@ -19,14 +19,14 @@ BASE64_IMAGE_SRC = b64encode(IMAGE_SRC_BYTES).decode()
 
 async def test_image_from_string(display: DisplayFixture):
     src = IMAGE_SRC_BYTES.decode()
-    await display.show(lambda: idom.widgets.image("svg", src, id="a-circle-1"))
+    await display.show(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
     client_img = await display.page.wait_for_selector("#a-circle-1")
     assert BASE64_IMAGE_SRC in (await client_img.get_attribute("src"))
 
 
 async def test_image_from_bytes(display: DisplayFixture):
     src = IMAGE_SRC_BYTES
-    await display.show(lambda: idom.widgets.image("svg", src, id="a-circle-1"))
+    await display.show(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
     client_img = await display.page.wait_for_selector("#a-circle-1")
     assert BASE64_IMAGE_SRC in (await client_img.get_attribute("src"))
 

@@ -15,9 +15,9 @@ def Counter():
     count, set_count = idom.hooks.use_state(initial_count)
     return idom.html.div(
         f"Count: {count}",
-        idom.html.button("Reset", on_click=lambda event: set_count(initial_count)),
-        idom.html.button("+", on_click=lambda event: set_count(increment)),
-        idom.html.button("-", on_click=lambda event: set_count(decrement)),
+        idom.html.button({"onClick": lambda event: set_count(initial_count)}, "Reset"),
+        idom.html.button({"onClick": lambda event: set_count(increment)}, "+"),
+        idom.html.button({"onClick": lambda event: set_count(decrement)}, "-"),
     )
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from itertools import chain
 from typing import Any, Callable, Generic, Iterable, TypeVar, cast
 
@@ -153,7 +154,7 @@ def _etree_to_vdom(
 
     vdom: VdomDict
     if hasattr(idom.html, node.tag):
-        vdom = getattr(idom.html, node.tag)(*children, key=key, **attributes)
+        vdom = getattr(idom.html, node.tag)(attributes, *children, key=key)
     else:
         vdom = {"tagName": node.tag}
         if children:
@@ -232,7 +233,7 @@ def _mutate_vdom(vdom: VdomDict) -> None:
         # Convince type checker that it's safe to mutate attributes
         assert isinstance(vdom["attributes"], dict)
 
-        # Convert style attribute from str -> dict with snake case keys
+        # Convert style attribute from str -> dict with camelCase keys
         vdom["attributes"]["style"] = {
             key.strip().replace("-", "_"): value.strip()
             for key, value in (
@@ -285,20 +286,18 @@ def _vdom_attr_to_html_str(key: str, value: Any) -> tuple[str, str]:
             value = ";".join(
                 # We lower only to normalize - CSS is case-insensitive:
                 # https://www.w3.org/TR/css-fonts-3/#font-family-casing
-                f"{k.replace('_', '-').lower()}:{v}"
+                f"{_CAMEL_CASE_SUB_PATTERN.sub('-', k).lower()}:{v}"
                 for k, v in value.items()
             )
     elif (
         # camel to data-* attributes
-        key.startswith("data_")
+        key.startswith("data")
         # camel to aria-* attributes
-        or key.startswith("aria_")
+        or key.startswith("aria")
         # handle special cases
         or key in _DASHED_HTML_ATTRS
     ):
-        key = key.replace("_", "-")
-    else:
-        key = key.replace("_", "")
+        key = _CAMEL_CASE_SUB_PATTERN.sub("-", key)
 
     assert not callable(
         value
@@ -309,6 +308,9 @@ def _vdom_attr_to_html_str(key: str, value: Any) -> tuple[str, str]:
     return key.lower(), str(value)
 
 
+# Pattern for delimitting camelCase names (e.g. camelCase to camel-case)
+_CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
+
 # see list of HTML attributes with dashes in them:
 # https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#attribute_list
-_DASHED_HTML_ATTRS = {"accept_charset", "http_equiv"}
+_DASHED_HTML_ATTRS = {"acceptCharset", "httpEquiv"}

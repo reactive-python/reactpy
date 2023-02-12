@@ -16,24 +16,27 @@ def App():
         print(f"Sent '{message}' to {recipient}")
 
     return html.form(
+        {"onSubmit": handle_submit, "style": {"display": "inline-grid"}},
         html.label(
             "To: ",
             html.select(
-                html.option("Alice", value="Alice"),
-                html.option("Bob", value="Bob"),
-                value=recipient,
-                on_change=lambda event: set_recipient(event["target"]["value"]),
+                {
+                    "value": recipient,
+                    "onChange": lambda event: set_recipient(event["target"]["value"]),
+                },
+                html.option({"value": "Alice"}, "Alice"),
+                html.option({"value": "Bob"}, "Bob"),
             ),
         ),
         html.input(
-            type="text",
-            placeholder="Your message...",
-            value=message,
-            on_change=lambda event: set_message(event["target"]["value"]),
+            {
+                "type": "text",
+                "placeholder": "Your message...",
+                "value": message,
+                "onChange": lambda event: set_message(event["target"]["value"]),
+            }
         ),
-        html.button("Send", type="submit"),
-        on_submit=handle_submit,
-        style={"display": "inline-grid"},
+        html.button({"type": "submit"}, "Send"),
     )
 
 
