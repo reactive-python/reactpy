@@ -1,7 +1,7 @@
 import click
 
 import idom
-from idom._console.update_html_usages import update_html_usages
+from idom._console.rewrite_key_declarations import rewrite_key_declarations
 
 
 @click.group()
@@ -10,7 +10,7 @@ def app() -> None:
     pass
 
 
-app.add_command(update_html_usages)
+app.add_command(rewrite_key_declarations)
 
 
 if __name__ == "__main__":

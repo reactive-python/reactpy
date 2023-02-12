@@ -5,7 +5,6 @@ import re
 import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
-from keyword import kwlist
 from pathlib import Path
 from textwrap import indent
 from tokenize import COMMENT as COMMENT_TOKEN
@@ -22,7 +21,7 @@ CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
 
 @click.command()
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
-def update_html_usages(paths: list[str]) -> None:
+def rewrite_key_declarations(paths: list[str]) -> None:
     """Rewrite files under the given paths using the new html element API.
 
     The old API required users to pass a dictionary of attributes to html element
@@ -64,9 +63,21 @@ def update_html_usages(paths: list[str]) -> None:
 def generate_rewrite(file: Path, source: str) -> str | None:
     tree = ast.parse(source)
 
+    changed = find_nodes_to_change(tree)
+    if not changed:
+        log_could_not_rewrite(file, tree)
+        return None
+
+    new = rewrite_changed_nodes(file, source, tree, changed)
+    log_could_not_rewrite(file, ast.parse(new))
+
+    return new
+
+
+def find_nodes_to_change(tree: ast.AST) -> list[Sequence[ast.AST]]:
     changed: list[Sequence[ast.AST]] = []
     for parents, node in walk_with_parent(tree):
-        if not isinstance(node, ast.Call):
+        if not (isinstance(node, ast.Call) and node.keywords):
             continue
 
         func = node.func
@@ -77,34 +88,62 @@ def generate_rewrite(file: Path, source: str) -> str | None:
         else:
             continue
 
-        if name == "vdom":
-            if len(node.args) < 2:
-                continue
-            maybe_attr_dict_node = node.args[1]
-            # remove attr dict from new args
-            new_args = node.args[:1] + node.args[2:]
-        elif hasattr(html, name):
-            if len(node.args) == 0:
-                continue
-            maybe_attr_dict_node = node.args[0]
-            # remove attr dict from new args
-            new_args = node.args[1:]
+        for kw in list(node.keywords):
+            if kw.arg == "key":
+                break
         else:
             continue
 
-        new_keyword_info = extract_keywords(maybe_attr_dict_node)
-        if new_keyword_info is not None:
-            if new_keyword_info.replace:
-                node.keywords = new_keyword_info.keywords
+        maybe_attr_dict_node = None
+        if name == "vdom":
+            if len(node.args) == 1:
+                # vdom("tag") need to add attr dict
+                maybe_attr_dict_node = ast.Dict(keys=[], values=[])
+                node.args.append(maybe_attr_dict_node)
+            elif isinstance(node.args[1], (ast.Constant, ast.JoinedStr)):
+                maybe_attr_dict_node = ast.Dict(keys=[], values=[])
+                node.args.insert(1, maybe_attr_dict_node)
+            elif len(node.args) >= 2:
+                maybe_attr_dict_node = node.args[1]
+        elif hasattr(html, name):
+            if len(node.args) == 0:
+                # vdom("tag") need to add attr dict
+                maybe_attr_dict_node = ast.Dict(keys=[], values=[])
+                node.args.append(maybe_attr_dict_node)
+            elif isinstance(node.args[0], (ast.Constant, ast.JoinedStr)):
+                maybe_attr_dict_node = ast.Dict(keys=[], values=[])
+                node.args.insert(0, maybe_attr_dict_node)
             else:
-                node.keywords.extend(new_keyword_info.keywords)
+                maybe_attr_dict_node = node.args[0]
 
-            node.args = new_args
-            changed.append((node, *parents))
+        if not maybe_attr_dict_node:
+            continue
 
-    if not changed:
-        return None
+        if isinstance(maybe_attr_dict_node, ast.Dict):
+            maybe_attr_dict_node.keys.append(ast.Constant("key"))
+            maybe_attr_dict_node.values.append(kw.value)
+        elif (
+            isinstance(maybe_attr_dict_node, ast.Call)
+            and isinstance(maybe_attr_dict_node.func, ast.Name)
+            and maybe_attr_dict_node.func.id == "dict"
+            and isinstance(maybe_attr_dict_node.func.ctx, ast.Load)
+        ):
+            maybe_attr_dict_node.keywords.append(ast.keyword(arg="key", value=kw.value))
+        else:
+            continue
 
+        node.keywords.remove(kw)
+        changed.append((node, *parents))
+
+    return changed
+
+
+def rewrite_changed_nodes(
+    file: str,
+    source: str,
+    tree: ast.AST,
+    changed: list[Sequence[ast.AST]],
+) -> str:
     ast.fix_missing_locations(tree)
 
     lines = source.split("\n")
@@ -171,38 +210,25 @@ def generate_rewrite(file: Path, source: str) -> str | None:
     return "\n".join(lines)
 
 
-def extract_keywords(node: ast.AST) -> KeywordInfo | None:
-    if isinstance(node, ast.Dict):
-        keywords: list[ast.keyword] = []
-        for k, v in zip(node.keys, node.values):
-            if isinstance(k, ast.Constant) and isinstance(k.value, str):
-                if k.value == "tagName":
-                    # this is a vdom dict declaration
-                    return None
-                keywords.append(ast.keyword(arg=conv_attr_name(k.value), value=v))
-            else:
-                return KeywordInfo(
-                    replace=True,
-                    keywords=[ast.keyword(arg=None, value=node)],
-                )
-        return KeywordInfo(replace=False, keywords=keywords)
-    elif (
-        isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Name)
-        and node.func.id == "dict"
-        and isinstance(node.func.ctx, ast.Load)
-    ):
-        keywords = [ast.keyword(arg=None, value=a) for a in node.args]
-        for kw in node.keywords:
-            if kw.arg == "tagName":
-                # this is a vdom dict declaration
-                return None
-            if kw.arg is not None:
-                keywords.append(ast.keyword(arg=conv_attr_name(kw.arg), value=kw.value))
-            else:
-                keywords.append(kw)
-        return KeywordInfo(replace=False, keywords=keywords)
-    return None
+def log_could_not_rewrite(file: str, tree: ast.AST) -> None:
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and node.keywords):
+            continue
+
+        func = node.func
+        if isinstance(func, ast.Attribute):
+            name = func.attr
+        elif isinstance(func, ast.Name):
+            name = func.id
+        else:
+            continue
+
+        if (
+            name == "vdom"
+            or hasattr(html, name)
+            and any(kw.arg == "key" for kw in node.keywords)
+        ):
+            click.echo(f"Unable to rewrite usage at {file}:{node.lineno}")
 
 
 def find_comments(lines: list[str]) -> list[str]:
@@ -221,11 +247,6 @@ def walk_with_parent(
     for child in ast.iter_child_nodes(node):
         yield parents, child
         yield from walk_with_parent(child, parents)
-
-
-def conv_attr_name(name: str) -> str:
-    new_name = CAMEL_CASE_SUB_PATTERN.sub("_", name).replace("-", "_").lower()
-    return f"{new_name}_" if new_name in kwlist else new_name
 
 
 @dataclass
