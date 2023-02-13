@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from functools import wraps
-from typing import Any, Callable, Mapping, Sequence, cast, overload
+from typing import Any, Mapping, Sequence, cast, overload
 
 from fastjsonschema import compile as compile_json_schema
 from typing_extensions import Protocol
