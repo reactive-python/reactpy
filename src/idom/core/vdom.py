@@ -251,7 +251,7 @@ def custom_vdom_constructor(func: _CustomVdomDictConstructor) -> VdomDictConstru
     """Cast function to VdomDictConstructor"""
 
     @wraps(func)
-    def wrapper(*attributes_and_children: Any):
+    def wrapper(*attributes_and_children: Any) -> VdomDict:
         attributes, children = separate_attributes_and_children(attributes_and_children)
         key = attributes.pop("key", None)
         attributes, event_handlers = separate_attributes_and_event_handlers(attributes)
