@@ -21,7 +21,7 @@ CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
 
 @click.command()
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
-def rewrite_key_declarations(paths: list[str]) -> None:
+def rewrite_keys(paths: list[str]) -> None:
     """Rewrite files under the given paths using the new html element API.
 
     The old API required users to pass a dictionary of attributes to html element

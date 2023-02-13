@@ -5,10 +5,7 @@ from textwrap import dedent
 import pytest
 from click.testing import CliRunner
 
-from idom._console.rewrite_key_declarations import (
-    generate_rewrite,
-    rewrite_key_declarations,
-)
+from idom._console.rewrite_keys import generate_rewrite, rewrite_keys
 
 
 if sys.version_info < (3, 9):
@@ -21,7 +18,7 @@ def test_rewrite_key_declarations(tmp_path):
     tempfile: Path = tmp_path / "temp.py"
     tempfile.write_text("html.div(key='test')")
     result = runner.invoke(
-        rewrite_key_declarations,
+        rewrite_keys,
         args=[str(tmp_path)],
         catch_exceptions=False,
     )
@@ -34,7 +31,7 @@ def test_rewrite_key_declarations_no_files():
     runner = CliRunner()
 
     result = runner.invoke(
-        rewrite_key_declarations,
+        rewrite_keys,
         args=["directory-does-no-exist"],
         catch_exceptions=False,
     )

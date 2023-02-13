@@ -1,7 +1,7 @@
 import click
 
 import idom
-from idom._console.rewrite_key_declarations import rewrite_key_declarations
+from idom._console.rewrite_keys import rewrite_keys
 
 
 @click.group()
@@ -10,7 +10,7 @@ def app() -> None:
     pass
 
 
-app.add_command(rewrite_key_declarations)
+app.add_command(rewrite_keys)
 
 
 if __name__ == "__main__":
