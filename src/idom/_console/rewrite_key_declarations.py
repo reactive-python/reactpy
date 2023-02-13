@@ -9,7 +9,7 @@ from pathlib import Path
 from textwrap import indent
 from tokenize import COMMENT as COMMENT_TOKEN
 from tokenize import generate_tokens
-from typing import Iterator
+from typing import Any, Iterator
 
 import click
 
@@ -94,7 +94,7 @@ def find_nodes_to_change(tree: ast.AST) -> list[Sequence[ast.AST]]:
         else:
             continue
 
-        maybe_attr_dict_node = None
+        maybe_attr_dict_node: Any | None = None
         if name == "vdom":
             if len(node.args) == 1:
                 # vdom("tag") need to add attr dict
@@ -139,7 +139,7 @@ def find_nodes_to_change(tree: ast.AST) -> list[Sequence[ast.AST]]:
 
 
 def rewrite_changed_nodes(
-    file: str,
+    file: Path,
     source: str,
     tree: ast.AST,
     changed: list[Sequence[ast.AST]],
@@ -210,7 +210,7 @@ def rewrite_changed_nodes(
     return "\n".join(lines)
 
 
-def log_could_not_rewrite(file: str, tree: ast.AST) -> None:
+def log_could_not_rewrite(file: Path, tree: ast.AST) -> None:
     for node in ast.walk(tree):
         if not (isinstance(node, ast.Call) and node.keywords):
             continue
