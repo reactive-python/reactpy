@@ -297,7 +297,7 @@ def _vdom_attr_to_html_str(key: str, value: Any) -> tuple[str, str]:
 
 # see list of HTML attributes with dashes in them:
 # https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#attribute_list
-DASHED_HTML_ATTRS = {"acceptCharset", "httpEquiv"}
+DASHED_HTML_ATTRS = {"accept_charset", "http_equiv"}
 
 # Pattern for delimitting camelCase names (e.g. camelCase to camel-case)
 _CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
