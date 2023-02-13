@@ -38,7 +38,7 @@ VDOM_JSON_SCHEMA = {
             "type": "object",
             "properties": {
                 "tagName": {"type": "string"},
-                "key": {"type": "string"},
+                "key": {"type": ["string", "number", "null"]},
                 "error": {"type": "string"},
                 "children": {"$ref": "#/definitions/elementChildren"},
                 "attributes": {"type": "object"},
