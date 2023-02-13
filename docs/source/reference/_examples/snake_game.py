@@ -153,12 +153,11 @@ def create_grid(grid_size, block_scale):
         },
         [
             idom.html.div(
-                {"style": {"height": f"{block_scale}px"}},
+                {"style": {"height": f"{block_scale}px"}, "key": i},
                 [
                     create_grid_block("black", block_scale, key=i)
                     for i in range(grid_size)
                 ],
-                key=i,
             )
             for i in range(grid_size)
         ],
@@ -173,9 +172,9 @@ def create_grid_block(color, block_scale, key):
                 "width": f"{block_scale}px",
                 "backgroundColor": color,
                 "outline": "1px solid grey",
-            }
+            },
+            "key": key,
         },
-        key=key,
     )
 
 

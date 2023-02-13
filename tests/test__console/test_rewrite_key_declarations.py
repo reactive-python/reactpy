@@ -199,6 +199,10 @@ def test_rewrite_key_declarations_no_files():
             None,
         ),
         (
+            "not_html.div(key='test')",
+            None,
+        ),
+        (
             "html.div()",
             None,
         ),

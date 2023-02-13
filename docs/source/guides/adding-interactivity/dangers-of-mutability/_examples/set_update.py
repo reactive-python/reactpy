@@ -21,14 +21,14 @@ def Grid():
                     "style": {
                         "height": "30px",
                         "width": "30px",
-                        "backgroundColor": (
-                            "black" if index in selected_indices else "white"
-                        ),
+                        "backgroundColor": "black"
+                        if index in selected_indices
+                        else "white",
                         "outline": "1px solid grey",
                         "cursor": "pointer",
                     },
-                },
-                key=index,
+                    "key": index,
+                }
             )
             for index in range(line_size)
         ],

@@ -506,9 +506,11 @@ async def test_model_key_preserves_callback_identity_for_common_elements(caplog)
 
         children = [
             idom.html.button(
-                {"onClick": good_trigger, "id": "good"}, "good", key="good"
+                {"onClick": good_trigger, "id": "good", "key": "good"}, "good"
             ),
-            idom.html.button({"onClick": bad_trigger, "id": "bad"}, "bad", key="bad"),
+            idom.html.button(
+                {"onClick": bad_trigger, "id": "bad", "key": "bad"}, "bad"
+            ),
         ]
 
         if reverse_children:
@@ -692,8 +694,8 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
     def ComponentReturnsDuplicateKeys():
         if should_error:
             return idom.html.div(
-                idom.html.div(key="duplicate"),
-                idom.html.div(key="duplicate"),
+                idom.html.div({"key": "duplicate"}),
+                idom.html.div({"key": "duplicate"}),
             )
         else:
             return idom.html.div()
@@ -847,8 +849,8 @@ async def test_layout_does_not_copy_element_children_by_key():
         return idom.html.div(
             [
                 idom.html.div(
+                    {"key": i},
                     idom.html.input({"onChange": lambda event: None}),
-                    key=str(i),
                 )
                 for i in items
             ]
@@ -879,7 +881,7 @@ async def test_changing_key_of_parent_element_unmounts_children():
     @idom.component
     @root_hook.capture
     def Root():
-        return idom.html.div(HasState(), key=str(random.random()))
+        return idom.html.div({"key": str(random.random())}, HasState())
 
     @idom.component
     def HasState():
@@ -1015,10 +1017,7 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
             set_state(1)
             did_call_effect.set()
 
-        return html.div(
-            child_key,
-            key=child_key,
-        )
+        return html.div({"key": child_key}, child_key)
 
     async with idom.Layout(Parent()) as layout:
         await layout.render()

@@ -58,7 +58,7 @@ def plot(title, x, y):
 
 def poly_coef_input(index, callback):
     return idom.html.div(
-        {"style": {"margin-top": "5px"}},
+        {"style": {"margin-top": "5px"}, "key": index},
         idom.html.label(
             "C",
             idom.html.sub(index),
@@ -71,7 +71,6 @@ def poly_coef_input(index, callback):
                 "onChange": callback,
             },
         ),
-        key=index,
     )
 
 

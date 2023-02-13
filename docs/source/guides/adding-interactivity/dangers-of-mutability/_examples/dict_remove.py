@@ -43,12 +43,12 @@ def Definitions():
         html.hr(),
         [
             html.div(
+                {"key": term},
                 html.button(
                     {"onClick": make_delete_click_handler(term)}, "delete term"
                 ),
                 html.dt(term),
                 html.dd(definition),
-                key=term,
             )
             for term, definition in all_terms.items()
         ],

@@ -142,8 +142,8 @@ def test_child_of_script_must_be_string():
 def test_simple_fragment():
     assert html._() == {"tagName": ""}
     assert html._(1, 2, 3) == {"tagName": "", "children": [1, 2, 3]}
-    assert html._(key="something") == {"tagName": "", "key": "something"}
-    assert html._(1, 2, 3, key="something") == {
+    assert html._({"key": "something"}) == {"tagName": "", "key": "something"}
+    assert html._({"key": "something"}, 1, 2, 3) == {
         "tagName": "",
         "key": "something",
         "children": [1, 2, 3],

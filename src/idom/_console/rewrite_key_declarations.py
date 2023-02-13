@@ -81,7 +81,11 @@ def find_nodes_to_change(tree: ast.AST) -> list[Sequence[ast.AST]]:
             continue
 
         func = node.func
-        if isinstance(func, ast.Attribute):
+        if (
+            isinstance(func, ast.Attribute)
+            and isinstance(func.value, ast.Name)
+            and func.value.id == "html"
+        ):
             name = func.attr
         elif isinstance(func, ast.Name):
             name = func.id

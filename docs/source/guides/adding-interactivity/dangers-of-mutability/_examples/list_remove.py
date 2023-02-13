@@ -29,9 +29,9 @@ def ArtistList():
         html.ul(
             [
                 html.li(
+                    {"key": name},
                     name,
                     html.button({"onClick": make_handle_delete_click(index)}, "delete"),
-                    key=name,
                 )
                 for index, name in enumerate(artists)
             ]
