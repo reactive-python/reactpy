@@ -37,9 +37,9 @@ async def test_component_with_var_args():
     def ComponentWithVarArgsAndKwargs(*args, **kwargs):
         return idom.html.div(kwargs, args)
 
-    assert ComponentWithVarArgsAndKwargs("hello", "world", myAttr=1).render() == {
+    assert ComponentWithVarArgsAndKwargs("hello", "world", my_attr=1).render() == {
         "tagName": "div",
-        "attributes": {"myAttr": 1},
+        "attributes": {"my_attr": 1},
         "children": ["hello", "world"],
     }
 
