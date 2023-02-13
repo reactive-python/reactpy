@@ -205,8 +205,8 @@ def vdom(
     if children:
         model["children"] = children
 
-    if key:
-        model["key"] = key
+    if key is not None:
+        model["key"] = str(key)
 
     if event_handlers:
         model["eventHandlers"] = event_handlers
