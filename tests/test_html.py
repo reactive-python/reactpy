@@ -139,6 +139,11 @@ def test_child_of_script_must_be_string():
         html.script(1)
 
 
+def test_script_has_no_event_handlers():
+    with pytest.raises(ValueError, match="do not support event handlers"):
+        html.script({"on_event": lambda: None})
+
+
 def test_simple_fragment():
     assert html._() == {"tagName": ""}
     assert html._(1, 2, 3) == {"tagName": "", "children": [1, 2, 3]}

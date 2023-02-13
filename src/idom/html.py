@@ -157,10 +157,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from typing import Sequence
 
-from idom.core.types import Key, VdomDict
-from idom.core.vdom import make_vdom_constructor, separate_attributes_and_children
+from idom.core.types import EventHandlerDict, Key, VdomAttributes, VdomChild, VdomDict
+from idom.core.vdom import custom_vdom_constructor, make_vdom_constructor
 
 
 __all__ = (
@@ -278,15 +278,20 @@ __all__ = (
 )
 
 
-def _(*children: Any, key: Key | None = None) -> VdomDict:
+@custom_vdom_constructor
+def _(
+    attributes: VdomAttributes,
+    children: Sequence[VdomChild],
+    key: Key | None,
+    event_handlers: EventHandlerDict,
+) -> VdomDict:
     """An HTML fragment - this element will not appear in the DOM"""
-    attributes, coalesced_children = separate_attributes_and_children(children)
-    if attributes:
-        raise TypeError("Fragments cannot have attributes")
+    if attributes or event_handlers:
+        raise TypeError("Fragments cannot have attributes besides 'key'")
     model: VdomDict = {"tagName": ""}
 
-    if coalesced_children:
-        model["children"] = coalesced_children
+    if children:
+        model["children"] = children
 
     if key is not None:
         model["key"] = key
@@ -389,9 +394,12 @@ canvas = make_vdom_constructor("canvas")
 noscript = make_vdom_constructor("noscript")
 
 
+@custom_vdom_constructor
 def script(
-    *attributes_and_children: Mapping[str, Any] | str,
-    key: str | int | None = None,
+    attributes: VdomAttributes,
+    children: Sequence[VdomChild],
+    key: Key | None,
+    event_handlers: EventHandlerDict,
 ) -> VdomDict:
     """Create a new `<{script}> <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script>`__ element.
 
@@ -408,7 +416,8 @@ def script(
     """
     model: VdomDict = {"tagName": "script"}
 
-    attributes, children = separate_attributes_and_children(attributes_and_children)
+    if event_handlers:
+        raise TypeError("'script' elements do not support event handlers")
 
     if children:
         if len(children) > 1:

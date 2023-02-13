@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Mapping, Sequence, cast, overload
+from functools import wraps
+from typing import Any, Callable, Mapping, Sequence, cast, overload
 
 from fastjsonschema import compile as compile_json_schema
+from typing_extensions import Protocol
 
 from idom._warnings import warn
 from idom.config import IDOM_DEBUG_MODE
@@ -13,7 +15,9 @@ from idom.core.types import (
     EventHandlerDict,
     EventHandlerType,
     ImportSourceDict,
+    Key,
     VdomAttributes,
+    VdomChild,
     VdomChildren,
     VdomDict,
     VdomDictConstructor,
@@ -243,6 +247,19 @@ def make_vdom_constructor(
     return cast(VdomDictConstructor, constructor)
 
 
+def custom_vdom_constructor(func: _CustomVdomDictConstructor) -> VdomDictConstructor:
+    """Cast function to VdomDictConstructor"""
+
+    @wraps(func)
+    def wrapper(*attributes_and_children: Any):
+        attributes, children = separate_attributes_and_children(attributes_and_children)
+        key = attributes.pop("key", None)
+        attributes, event_handlers = separate_attributes_and_event_handlers(attributes)
+        return func(attributes, children, key, event_handlers)
+
+    return cast(VdomDictConstructor, wrapper)
+
+
 def separate_attributes_and_children(
     values: Sequence[Any],
 ) -> tuple[dict[str, Any], list[Any]]:
@@ -320,6 +337,17 @@ def _validate_child_key_integrity(value: Any) -> None:
                 # remove 'children' to reduce log spam
                 child_copy = {**child, "children": _EllipsisRepr()}
                 logger.error(f"Key not specified for child in list {child_copy}")
+
+
+class _CustomVdomDictConstructor(Protocol):
+    def __call__(
+        self,
+        attributes: VdomAttributes,
+        children: Sequence[VdomChild],
+        key: Key | None,
+        event_handlers: EventHandlerDict,
+    ) -> VdomDict:
+        ...
 
 
 class _EllipsisRepr:
