@@ -417,7 +417,7 @@ def script(
     model: VdomDict = {"tagName": "script"}
 
     if event_handlers:
-        raise TypeError("'script' elements do not support event handlers")
+        raise ValueError("'script' elements do not support event handlers")
 
     if children:
         if len(children) > 1:
