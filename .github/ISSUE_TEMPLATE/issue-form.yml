@@ -1,6 +1,6 @@
 name: Plan a Task
 description: Create a detailed plan of action (ONLY START AFTER DISCUSSION PLEASE 🙏).
-labels: ["flag: triage"]
+labels: ["flag-triage"]
 body:
 - type: textarea
   attributes:
