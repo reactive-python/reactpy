@@ -71,7 +71,7 @@ def generate_rewrite(file: Path, source: str) -> str | None:
 
 
 def find_nodes_to_change(tree: ast.AST) -> list[ChangedNode]:
-    changed: list[Sequence[ast.AST]] = []
+    changed: list[ChangedNode] = []
     for el_info in find_element_constructor_usages(tree):
         for kw in list(el_info.call.keywords):
             if kw.arg == "key":

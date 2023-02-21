@@ -46,17 +46,17 @@ def generate_rewrite(file: Path, source: str) -> str | None:
 
 
 def find_nodes_to_change(tree: ast.AST) -> list[ChangedNode]:
-    changed: list[Sequence[ast.AST]] = []
+    changed: list[ChangedNode] = []
     for el_info in find_element_constructor_usages(tree):
         if isinstance(el_info.props, ast.Dict):
             did_change = False
-            keys: list[ast.Constant] = []
+            keys: list[ast.expr | None] = []
             for k in el_info.props.keys:
                 if isinstance(k, ast.Constant) and isinstance(k.value, str):
                     new_prop_name = conv_attr_name(k.value)
                     if new_prop_name != k.value:
                         did_change = True
-                        keys.append(ast.Constant(conv_attr_name(k.value)))
+                        keys.append(ast.Constant(new_prop_name))
                     else:
                         keys.append(k)
                 else:
@@ -68,12 +68,13 @@ def find_nodes_to_change(tree: ast.AST) -> list[ChangedNode]:
             did_change = False
             keywords: list[ast.keyword] = []
             for kw in el_info.props.keywords:
-                new_prop_name = conv_attr_name(kw.arg)
-                if new_prop_name != kw.arg:
-                    did_change = True
-                    keywords.append(
-                        ast.keyword(arg=conv_attr_name(kw.arg), value=kw.value)
-                    )
+                if kw.arg is not None:
+                    new_prop_name = conv_attr_name(kw.arg)
+                    if new_prop_name != kw.arg:
+                        did_change = True
+                        keywords.append(ast.keyword(arg=new_prop_name, value=kw.value))
+                    else:
+                        keywords.append(kw)
                 else:
                     keywords.append(kw)
             if not did_change:
