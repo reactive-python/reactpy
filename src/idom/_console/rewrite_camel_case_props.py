@@ -84,5 +84,5 @@ def find_nodes_to_change(tree: ast.AST) -> list[ChangedNode]:
 
 
 def conv_attr_name(name: str) -> str:
-    new_name = CAMEL_CASE_SUB_PATTERN.sub("_", name).replace("-", "_").lower()
+    new_name = CAMEL_CASE_SUB_PATTERN.sub("_", name).lower()
     return f"{new_name}_" if new_name in kwlist else new_name

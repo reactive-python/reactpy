@@ -58,8 +58,8 @@ def test_rewrite_camel_case_props_declarations_no_files():
             "vdom('tag', dict(camel_case='test', **props))",
         ),
         (
-            "html.div({'camelCase': test})",
-            "html.div({'camel_case': test})",
+            "html.div({'camelCase': test, 'data-thing': test})",
+            "html.div({'camel_case': test, 'data-thing': test})",
         ),
         (
             "html.div({'camelCase': test, ignore: this})",
@@ -71,7 +71,27 @@ def test_rewrite_camel_case_props_declarations_no_files():
             None,
         ),
         (
+            "html.div({'data-case': test})",
+            None,
+        ),
+        (
             "html.div(dict(snake_case='test'))",
+            None,
+        ),
+        (
+            "html.div()",
+            None,
+        ),
+        (
+            "vdom('tag')",
+            None,
+        ),
+        (
+            "html.div('child')",
+            None,
+        ),
+        (
+            "vdom('tag', 'child')",
             None,
         ),
     ],
