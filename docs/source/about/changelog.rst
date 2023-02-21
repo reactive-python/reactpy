@@ -26,6 +26,13 @@ Unreleased
 No changes.
 
 
+v1.0.0-a5
+---------
+:octicon:`milestone` *released on 2023-02-21*
+
+No changes.
+
+
 v1.0.0-a4
 ---------
 :octicon:`milestone` *released on 2023-02-21*
