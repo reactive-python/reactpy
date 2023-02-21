@@ -3,13 +3,11 @@ from __future__ import annotations
 import ast
 import re
 import sys
-from collections.abc import Sequence
 from keyword import kwlist
 from pathlib import Path
 
 import click
 
-from idom import html
 from idom._console.ast_utils import (
     ChangedNode,
     find_element_constructor_usages,

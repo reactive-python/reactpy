@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 import sys
-from collections.abc import Sequence
 from pathlib import Path
 
 import click
