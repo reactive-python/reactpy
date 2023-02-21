@@ -54,6 +54,10 @@ def test_rewrite_camel_case_props_declarations_no_files():
             "vdom('tag', dict(camel_case='test'))",
         ),
         (
+            "vdom('tag', dict(camelCase='test', **props))",
+            "vdom('tag', dict(camel_case='test', **props))",
+        ),
+        (
             "html.div({'camelCase': test})",
             "html.div({'camel_case': test})",
         ),
