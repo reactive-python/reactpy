@@ -92,7 +92,9 @@ class ChangedNode:
     parents: Sequence[ast.AST]
 
 
-def find_element_constructor_usages(tree: ast.AST) -> Iterator[ElementConstructorInfo]:
+def find_element_constructor_usages(
+    tree: ast.AST, add_props: bool = False
+) -> Iterator[ElementConstructorInfo]:
     changed: list[Sequence[ast.AST]] = []
     for parents, node in _walk_with_parent(tree):
         if not (isinstance(node, ast.Call)):
@@ -111,24 +113,37 @@ def find_element_constructor_usages(tree: ast.AST) -> Iterator[ElementConstructo
             continue
 
         maybe_attr_dict_node: Any | None = None
+
         if name == "vdom":
             if len(node.args) == 0:
                 continue
             elif len(node.args) == 1:
                 maybe_attr_dict_node = ast.Dict(keys=[], values=[])
-                node.args.append(maybe_attr_dict_node)
+                if add_props:
+                    node.args.append(maybe_attr_dict_node)
+                else:
+                    continue
             elif isinstance(node.args[1], (ast.Constant, ast.JoinedStr)):
                 maybe_attr_dict_node = ast.Dict(keys=[], values=[])
-                node.args.insert(1, maybe_attr_dict_node)
+                if add_props:
+                    node.args.insert(1, maybe_attr_dict_node)
+                else:
+                    continue
             elif len(node.args) >= 2:
                 maybe_attr_dict_node = node.args[1]
         elif hasattr(html, name):
             if len(node.args) == 0:
                 maybe_attr_dict_node = ast.Dict(keys=[], values=[])
-                node.args.append(maybe_attr_dict_node)
+                if add_props:
+                    node.args.append(maybe_attr_dict_node)
+                else:
+                    continue
             elif isinstance(node.args[0], (ast.Constant, ast.JoinedStr)):
                 maybe_attr_dict_node = ast.Dict(keys=[], values=[])
-                node.args.insert(0, maybe_attr_dict_node)
+                if add_props:
+                    node.args.insert(0, maybe_attr_dict_node)
+                else:
+                    continue
             else:
                 maybe_attr_dict_node = node.args[0]
 
