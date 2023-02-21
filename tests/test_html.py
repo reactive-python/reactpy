@@ -13,7 +13,7 @@ async def test_script_mount_unmount(display: DisplayFixture):
     def Root():
         is_mounted, toggle_is_mounted.current = use_toggle(True)
         return html.div(
-            html.div(id="mount-state", data_value=False),
+            html.div({"id": "mount-state", "data_value": False}),
             HasScript() if is_mounted else html.div(),
         )
 
@@ -53,8 +53,8 @@ async def test_script_re_run_on_content_change(display: DisplayFixture):
     def HasScript():
         count, incr_count.current = use_counter(1)
         return html.div(
-            html.div(id="mount-count", data_value=0),
-            html.div(id="unmount-count", data_value=0),
+            html.div({"id": "mount-count", "data_value": 0}),
+            html.div({"id": "unmount-count", "data_value": 0}),
             html.script(
                 f"""() => {{
                     const mountCountEl = document.getElementById("mount-count");
@@ -101,9 +101,11 @@ async def test_script_from_src(display: DisplayFixture):
             return html.div()
         else:
             return html.div(
-                html.div(id="run-count", data_value=0),
+                html.div({"id": "run-count", "data_value": 0}),
                 html.script(
-                    src=f"/_idom/modules/{file_name_template.format(src_id=src_id)}"
+                    {
+                        "src": f"/_idom/modules/{file_name_template.format(src_id=src_id)}"
+                    }
                 ),
             )
 
@@ -137,11 +139,16 @@ def test_child_of_script_must_be_string():
         html.script(1)
 
 
+def test_script_has_no_event_handlers():
+    with pytest.raises(ValueError, match="do not support event handlers"):
+        html.script({"on_event": lambda: None})
+
+
 def test_simple_fragment():
     assert html._() == {"tagName": ""}
     assert html._(1, 2, 3) == {"tagName": "", "children": [1, 2, 3]}
-    assert html._(key="something") == {"tagName": "", "key": "something"}
-    assert html._(1, 2, 3, key="something") == {
+    assert html._({"key": "something"}) == {"tagName": "", "key": "something"}
+    assert html._({"key": "something"}, 1, 2, 3) == {
         "tagName": "",
         "key": "something",
         "children": [1, 2, 3],
@@ -149,5 +156,5 @@ def test_simple_fragment():
 
 
 def test_fragment_can_have_no_attributes():
-    with pytest.raises(TypeError):
-        html._(some_attribute=1)
+    with pytest.raises(TypeError, match="Fragments cannot have attributes"):
+        html._({"some_attribute": 1})

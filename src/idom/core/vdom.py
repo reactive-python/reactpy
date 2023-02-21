@@ -1,24 +1,22 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, DefaultDict, Mapping, cast
+from functools import wraps
+from typing import Any, Mapping, Sequence, cast, overload
 
 from fastjsonschema import compile as compile_json_schema
-from typing_extensions import TypeGuard
+from typing_extensions import Protocol
 
 from idom._warnings import warn
 from idom.config import IDOM_DEBUG_MODE
-from idom.core.events import (
-    EventHandler,
-    merge_event_handlers,
-    to_event_handler_function,
-)
+from idom.core.events import EventHandler, to_event_handler_function
 from idom.core.types import (
     ComponentType,
     EventHandlerDict,
     EventHandlerType,
     ImportSourceDict,
     Key,
+    VdomAttributes,
     VdomChild,
     VdomChildren,
     VdomDict,
@@ -40,7 +38,7 @@ VDOM_JSON_SCHEMA = {
             "type": "object",
             "properties": {
                 "tagName": {"type": "string"},
-                "key": {"type": "string"},
+                "key": {"type": ["string", "number", "null"]},
                 "error": {"type": "string"},
                 "children": {"$ref": "#/definitions/elementChildren"},
                 "attributes": {"type": "object"},
@@ -131,11 +129,20 @@ def is_vdom(value: Any) -> bool:
     )
 
 
+@overload
+def vdom(tag: str, *children: VdomChildren) -> VdomDict:
+    ...
+
+
+@overload
+def vdom(tag: str, attributes: VdomAttributes, *children: VdomChildren) -> VdomDict:
+    ...
+
+
 def vdom(
     tag: str,
-    *children: VdomChild | VdomChildren,
-    key: Key | None = None,
-    **attributes: Any,
+    *attributes_and_children: Any,
+    **kwargs: Any,
 ) -> VdomDict:
     """A helper function for creating VDOM elements.
 
@@ -157,63 +164,58 @@ def vdom(
             (subject to change) specifies javascript that, when evaluated returns a
             React component.
     """
-    model: VdomDict = {"tagName": tag}
-
-    flattened_children: list[VdomChild] = []
-    for child in children:
-        if isinstance(child, dict) and "tagName" not in child:  # pragma: no cover
+    if kwargs:  # pragma: no cover
+        if "key" in kwargs:
+            if attributes_and_children:
+                maybe_attributes, *children = attributes_and_children
+                if _is_attributes(maybe_attributes):
+                    attributes_and_children = (
+                        {**maybe_attributes, "key": kwargs.pop("key")},
+                        *children,
+                    )
+                else:
+                    attributes_and_children = (
+                        {"key": kwargs.pop("key")},
+                        maybe_attributes,
+                        *children,
+                    )
+            else:
+                attributes_and_children = ({"key": kwargs.pop("key")},)
             warn(
-                (
-                    "Element constructor signatures have changed! This will be an error "
-                    "in a future release. All element constructors now have the  "
-                    "following usage where attributes may be snake_case keyword "
-                    "arguments: "
-                    "\n\n"
-                    ">>> html.div(*children, key=key, **attributes) "
-                    "\n\n"
-                    "A CLI tool for automatically updating code to the latest API has "
-                    "been provided with this release of IDOM (e.g. 'idom "
-                    "update-html-usages'). However, it may not resolve all issues "
-                    "arrising from this change. Start a discussion if you need help "
-                    "transitioning to this new interface: "
-                    "https://github.com/idom-team/idom/discussions/new?category=question"
-                ),
+                "An element's 'key' must be declared in an attribute dict instead "
+                "of as a keyword argument. This will error in a future version.",
                 DeprecationWarning,
             )
-            attributes.update(child)
-        if _is_single_child(child):
-            flattened_children.append(child)
-        else:
-            # FIXME: Types do not narrow in negative case of TypeGaurd
-            # This cannot be fixed until there is some sort of "StrictTypeGuard".
-            # See: https://github.com/python/typing/discussions/1013
-            flattened_children.extend(child)  # type: ignore
 
+        if kwargs:
+            raise ValueError(f"Extra keyword arguments {kwargs}")
+
+    model: VdomDict = {"tagName": tag}
+
+    if not attributes_and_children:
+        return model
+
+    attributes, children = separate_attributes_and_children(attributes_and_children)
+    key = attributes.pop("key", None)
     attributes, event_handlers = separate_attributes_and_event_handlers(attributes)
 
     if attributes:
         model["attributes"] = attributes
 
-    if flattened_children:
-        model["children"] = flattened_children
-
-    if event_handlers:
-        model["eventHandlers"] = event_handlers
+    if children:
+        model["children"] = children
 
     if key is not None:
         model["key"] = key
 
+    if event_handlers:
+        model["eventHandlers"] = event_handlers
+
     return model
 
 
-def with_import_source(element: VdomDict, import_source: ImportSourceDict) -> VdomDict:
-    return {**element, "importSource": import_source}  # type: ignore
-
-
 def make_vdom_constructor(
-    tag: str,
-    allow_children: bool = True,
-    import_source: ImportSourceDict | None = None,
+    tag: str, allow_children: bool = True, import_source: ImportSourceDict | None = None
 ) -> VdomDictConstructor:
     """Return a constructor for VDOM dictionaries with the given tag name.
 
@@ -221,18 +223,12 @@ def make_vdom_constructor(
     first ``tag`` argument.
     """
 
-    def constructor(
-        *children: VdomChild | VdomChildren,
-        key: Key | None = None,
-        **attributes: Any,
-    ) -> VdomDict:
-        if not allow_children and children:
+    def constructor(*attributes_and_children: Any, **kwargs: Any) -> VdomDict:
+        model = vdom(tag, *attributes_and_children, **kwargs)
+        if not allow_children and "children" in model:
             raise TypeError(f"{tag!r} nodes cannot have children.")
-
-        model = vdom(tag, *children, key=key, **attributes)
-        if import_source is not None:
-            model = with_import_source(model, import_source)
-
+        if import_source:
+            model["importSource"] = import_source
         return model
 
     # replicate common function attributes
@@ -248,14 +244,51 @@ def make_vdom_constructor(
         constructor.__module__ = module_name
         constructor.__qualname__ = f"{module_name}.{tag}"
 
-    return constructor
+    return cast(VdomDictConstructor, constructor)
+
+
+def custom_vdom_constructor(func: _CustomVdomDictConstructor) -> VdomDictConstructor:
+    """Cast function to VdomDictConstructor"""
+
+    @wraps(func)
+    def wrapper(*attributes_and_children: Any) -> VdomDict:
+        attributes, children = separate_attributes_and_children(attributes_and_children)
+        key = attributes.pop("key", None)
+        attributes, event_handlers = separate_attributes_and_event_handlers(attributes)
+        return func(attributes, children, key, event_handlers)
+
+    return cast(VdomDictConstructor, wrapper)
+
+
+def separate_attributes_and_children(
+    values: Sequence[Any],
+) -> tuple[dict[str, Any], list[Any]]:
+    if not values:
+        return {}, []
+
+    attributes: dict[str, Any]
+    children_or_iterables: Sequence[Any]
+    if _is_attributes(values[0]):
+        attributes, *children_or_iterables = values
+    else:
+        attributes = {}
+        children_or_iterables = values
+
+    children: list[Any] = []
+    for child in children_or_iterables:
+        if _is_single_child(child):
+            children.append(child)
+        else:
+            children.extend(child)
+
+    return attributes, children
 
 
 def separate_attributes_and_event_handlers(
     attributes: Mapping[str, Any]
 ) -> tuple[dict[str, Any], EventHandlerDict]:
     separated_attributes = {}
-    separated_handlers: DefaultDict[str, list[EventHandlerType]] = DefaultDict(list)
+    separated_event_handlers: dict[str, EventHandlerType] = {}
 
     for k, v in attributes.items():
         handler: EventHandlerType
@@ -273,16 +306,16 @@ def separate_attributes_and_event_handlers(
             separated_attributes[k] = v
             continue
 
-        separated_handlers[k].append(handler)
+        separated_event_handlers[k] = handler
 
-    flat_event_handlers_dict = {
-        k: merge_event_handlers(h) for k, h in separated_handlers.items()
-    }
-
-    return separated_attributes, flat_event_handlers_dict
+    return separated_attributes, {k: h for k, h in separated_event_handlers.items()}
 
 
-def _is_single_child(value: Any) -> TypeGuard[VdomChild]:
+def _is_attributes(value: Any) -> bool:
+    return isinstance(value, Mapping) and "tagName" not in value
+
+
+def _is_single_child(value: Any) -> bool:
     if isinstance(value, (str, Mapping)) or not hasattr(value, "__iter__"):
         return True
     if IDOM_DEBUG_MODE.current:
@@ -304,6 +337,17 @@ def _validate_child_key_integrity(value: Any) -> None:
                 # remove 'children' to reduce log spam
                 child_copy = {**child, "children": _EllipsisRepr()}
                 logger.error(f"Key not specified for child in list {child_copy}")
+
+
+class _CustomVdomDictConstructor(Protocol):
+    def __call__(
+        self,
+        attributes: VdomAttributes,
+        children: Sequence[VdomChild],
+        key: Key | None,
+        event_handlers: EventHandlerDict,
+    ) -> VdomDict:
+        ...
 
 
 class _EllipsisRepr:

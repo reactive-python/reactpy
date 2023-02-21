@@ -4,7 +4,7 @@ import asyncio
 import json
 from asyncio import Queue as AsyncQueue
 from asyncio.futures import Future
-from typing import Any, List, Tuple, Type, Union
+from typing import Any
 from urllib.parse import urljoin
 
 from tornado.httpserver import HTTPServer
@@ -14,6 +14,7 @@ from tornado.platform.asyncio import AsyncIOMainLoop
 from tornado.web import Application, RequestHandler, StaticFileHandler
 from tornado.websocket import WebSocketHandler
 from tornado.wsgi import WSGIContainer
+from typing_extensions import TypeAlias
 
 from idom.backend.types import Connection, Location
 from idom.config import IDOM_WEB_MODULES_DIR
@@ -107,7 +108,7 @@ def use_connection() -> Connection[HTTPServerRequest]:
     return conn
 
 
-_RouteHandlerSpecs = List[Tuple[str, Type[RequestHandler], Any]]
+_RouteHandlerSpecs: TypeAlias = "list[tuple[str, type[RequestHandler], Any]]"
 
 
 def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
@@ -133,7 +134,7 @@ def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
 def _add_handler(
     app: Application, options: Options, handlers: _RouteHandlerSpecs
 ) -> None:
-    prefixed_handlers: List[Any] = [
+    prefixed_handlers: list[Any] = [
         (urljoin(options.url_prefix, route_pattern),) + tuple(handler_info)
         for route_pattern, *handler_info in handlers
     ]
@@ -213,7 +214,7 @@ class ModelStreamHandler(WebSocketHandler):
             )
         )
 
-    async def on_message(self, message: Union[str, bytes]) -> None:
+    async def on_message(self, message: str | bytes) -> None:
         await self._message_queue.put(
             message if isinstance(message, str) else message.decode()
         )

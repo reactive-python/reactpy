@@ -21,7 +21,8 @@ def GameView():
         return GameLoop(grid_size=6, block_scale=50, set_game_state=set_game_state)
 
     start_button = idom.html.button(
-        "Start", on_click=lambda event: set_game_state(GameState.play)
+        {"onClick": lambda event: set_game_state(GameState.play)},
+        "Start",
     )
 
     if game_state == GameState.won:
@@ -39,7 +40,7 @@ def GameView():
         """
     )
 
-    return idom.html.div(menu_style, menu, class_name="snake-game-menu")
+    return idom.html.div({"className": "snake-game-menu"}, menu_style, menu)
 
 
 class Direction(enum.Enum):
@@ -71,7 +72,7 @@ def GameLoop(grid_size, block_scale, set_game_state):
             if direction_vector_sum != (0, 0):
                 direction.current = maybe_new_direction
 
-    grid_wrapper = idom.html.div(grid, on_key_down=on_direction_change)
+    grid_wrapper = idom.html.div({"onKeyDown": on_direction_change}, grid)
 
     assign_grid_block_color(grid, food, "blue")
 
@@ -138,38 +139,41 @@ def use_interval(rate):
 
 def create_grid(grid_size, block_scale):
     return idom.html.div(
+        {
+            "style": {
+                "height": f"{block_scale * grid_size}px",
+                "width": f"{block_scale * grid_size}px",
+                "cursor": "pointer",
+                "display": "grid",
+                "grid-gap": 0,
+                "grid-template-columns": f"repeat({grid_size}, {block_scale}px)",
+                "grid-template-rows": f"repeat({grid_size}, {block_scale}px)",
+            },
+            "tabIndex": -1,
+        },
         [
             idom.html.div(
+                {"style": {"height": f"{block_scale}px"}, "key": i},
                 [
                     create_grid_block("black", block_scale, key=i)
                     for i in range(grid_size)
                 ],
-                key=i,
-                style={"height": f"{block_scale}px"},
             )
             for i in range(grid_size)
         ],
-        style={
-            "height": f"{block_scale * grid_size}px",
-            "width": f"{block_scale * grid_size}px",
-            "cursor": "pointer",
-            "display": "grid",
-            "grid_gap": 0,
-            "grid_template_columns": f"repeat({grid_size}, {block_scale}px)",
-            "grid_template_rows": f"repeat({grid_size}, {block_scale}px)",
-        },
-        tab_index=-1,
     )
 
 
 def create_grid_block(color, block_scale, key):
     return idom.html.div(
-        key=key,
-        style={
-            "height": f"{block_scale}px",
-            "width": f"{block_scale}px",
-            "background_color": color,
-            "outline": "1px solid grey",
+        {
+            "style": {
+                "height": f"{block_scale}px",
+                "width": f"{block_scale}px",
+                "backgroundColor": color,
+                "outline": "1px solid grey",
+            },
+            "key": key,
         },
     )
 
@@ -177,7 +181,7 @@ def create_grid_block(color, block_scale, key):
 def assign_grid_block_color(grid, point, color):
     x, y = point
     block = grid["children"][x]["children"][y]
-    block["attributes"]["style"]["background_color"] = color
+    block["attributes"]["style"]["backgroundColor"] = color
 
 
 idom.run(GameView)

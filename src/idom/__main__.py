@@ -1,7 +1,8 @@
 import click
 
 import idom
-from idom._console.update_html_usages import update_html_usages
+from idom._console.rewrite_camel_case_props import rewrite_camel_case_props
+from idom._console.rewrite_keys import rewrite_keys
 
 
 @click.group()
@@ -10,7 +11,8 @@ def app() -> None:
     pass
 
 
-app.add_command(update_html_usages)
+app.add_command(rewrite_keys)
+app.add_command(rewrite_camel_case_props)
 
 
 if __name__ == "__main__":

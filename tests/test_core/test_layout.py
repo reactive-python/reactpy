@@ -505,8 +505,12 @@ async def test_model_key_preserves_callback_identity_for_common_elements(caplog)
             raise ValueError("Called bad trigger")
 
         children = [
-            idom.html.button("good", key="good", on_click=good_trigger, id="good"),
-            idom.html.button("bad", key="bad", on_click=bad_trigger, id="bad"),
+            idom.html.button(
+                {"onClick": good_trigger, "id": "good", "key": "good"}, "good"
+            ),
+            idom.html.button(
+                {"onClick": bad_trigger, "id": "bad", "key": "bad"}, "bad"
+            ),
         ]
 
         if reverse_children:
@@ -563,7 +567,7 @@ async def test_model_key_preserves_callback_identity_for_components():
             def callback():
                 raise ValueError("Called bad trigger")
 
-        return idom.html.button("good", on_click=callback, id="good")
+        return idom.html.button({"onClick": callback, "id": "good"}, "good")
 
     async with idom.Layout(RootComponent()) as layout:
         await layout.render()
@@ -645,8 +649,8 @@ async def test_event_handler_at_component_root_is_garbage_collected():
         value, set_value = idom.hooks.use_state(False)
         set_value(not value)  # trigger renders forever
         event_handler.current = weakref(set_value)
-        button = idom.html.button("state is: ", value, on_click=set_value)
-        event_handler.current = weakref(button["eventHandlers"]["on_click"].function)
+        button = idom.html.button({"onClick": set_value}, "state is: ", value)
+        event_handler.current = weakref(button["eventHandlers"]["onClick"].function)
         return button
 
     async with idom.Layout(HasEventHandlerAtRoot()) as layout:
@@ -667,8 +671,8 @@ async def test_event_handler_deep_in_component_layout_is_garbage_collected():
         value, set_value = idom.hooks.use_state(False)
         set_value(not value)  # trigger renders forever
         event_handler.current = weakref(set_value)
-        button = idom.html.button("state is: ", value, on_click=set_value)
-        event_handler.current = weakref(button["eventHandlers"]["on_click"].function)
+        button = idom.html.button({"onClick": set_value}, "state is: ", value)
+        event_handler.current = weakref(button["eventHandlers"]["onClick"].function)
         return idom.html.div(idom.html.div(button))
 
     async with idom.Layout(HasNestedEventHandler()) as layout:
@@ -690,8 +694,8 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
     def ComponentReturnsDuplicateKeys():
         if should_error:
             return idom.html.div(
-                idom.html.div(key="duplicate"),
-                idom.html.div(key="duplicate"),
+                idom.html.div({"key": "duplicate"}),
+                idom.html.div({"key": "duplicate"}),
             )
         else:
             return idom.html.div()
@@ -749,7 +753,7 @@ async def test_log_error_on_bad_event_handler():
         def raise_error():
             raise Exception("bad event handler")
 
-        return idom.html.button(on_click=raise_error)
+        return idom.html.button({"onClick": raise_error})
 
     with assert_idom_did_log(match_error="bad event handler"):
         async with idom.Layout(ComponentWithBadEventHandler()) as layout:
@@ -845,8 +849,8 @@ async def test_layout_does_not_copy_element_children_by_key():
         return idom.html.div(
             [
                 idom.html.div(
-                    idom.html.input(on_change=lambda event: None),
-                    key=str(i),
+                    {"key": i},
+                    idom.html.input({"onChange": lambda event: None}),
                 )
                 for i in items
             ]
@@ -877,7 +881,7 @@ async def test_changing_key_of_parent_element_unmounts_children():
     @idom.component
     @root_hook.capture
     def Root():
-        return idom.html.div(HasState(), key=str(random.random()))
+        return idom.html.div({"key": str(random.random())}, HasState())
 
     @idom.component
     def HasState():
@@ -904,14 +908,14 @@ async def test_switching_node_type_with_event_handlers():
         toggle, toggle_type.current = use_toggle(True)
         handler = element_static_handler.use(lambda: None)
         if toggle:
-            return html.div(html.button(on_event=handler))
+            return html.div(html.button({"on_event": handler}))
         else:
             return html.div(SomeComponent())
 
     @idom.component
     def SomeComponent():
         handler = component_static_handler.use(lambda: None)
-        return html.button(on_another_event=handler)
+        return html.button({"on_another_event": handler})
 
     async with idom.Layout(Root()) as layout:
         await layout.render()
@@ -994,7 +998,8 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
         state, set_state = use_state(0)
         return html.div(
             html.button(
-                "click me", on_click=set_child_key_num.use(lambda: set_state(state + 1))
+                {"on_click": set_child_key_num.use(lambda: set_state(state + 1))},
+                "click me",
             ),
             Child("some-key"),
             Child(f"key-{state}"),
@@ -1012,10 +1017,7 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
             set_state(1)
             did_call_effect.set()
 
-        return html.div(
-            child_key,
-            key=child_key,
-        )
+        return html.div({"key": child_key}, child_key)
 
     async with idom.Layout(Parent()) as layout:
         await layout.render()
@@ -1067,7 +1069,7 @@ async def test_changing_event_handlers_in_the_next_render():
     def Root():
         event_name, set_event_name.current = use_state("first")
         return html.button(
-            **{event_name: event_handler.use(lambda: did_trigger.set_current(True))}
+            {event_name: event_handler.use(lambda: did_trigger.set_current(True))}
         )
 
     async with Layout(Root()) as layout:

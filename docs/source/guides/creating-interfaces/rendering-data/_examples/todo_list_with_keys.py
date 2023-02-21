@@ -7,7 +7,7 @@ def DataList(items, filter_by_priority=None, sort_by_priority=False):
         items = [i for i in items if i["priority"] <= filter_by_priority]
     if sort_by_priority:
         items = list(sorted(items, key=lambda i: i["priority"]))
-    list_item_elements = [html.li(i["text"], key=i["id"]) for i in items]
+    list_item_elements = [html.li({"key": i["id"]}, i["text"]) for i in items]
     return html.ul(list_item_elements)
 
 

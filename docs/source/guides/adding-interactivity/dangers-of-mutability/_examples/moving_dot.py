@@ -16,25 +16,29 @@ def MovingDot():
         )
 
     return html.div(
+        {
+            "on_pointer_move": handle_pointer_move,
+            "style": {
+                "position": "relative",
+                "height": "200px",
+                "width": "100%",
+                "backgroundColor": "white",
+            },
+        },
         html.div(
-            style={
-                "position": "absolute",
-                "background_color": "red",
-                "border_radius": "50%",
-                "width": "20px",
-                "height": "20px",
-                "left": "-10px",
-                "top": "-10px",
-                "transform": f"translate({position['x']}px, {position['y']}px)",
+            {
+                "style": {
+                    "position": "absolute",
+                    "backgroundColor": "red",
+                    "borderRadius": "50%",
+                    "width": "20px",
+                    "height": "20px",
+                    "left": "-10px",
+                    "top": "-10px",
+                    "transform": f"translate({position['x']}px, {position['y']}px)",
+                }
             }
         ),
-        on_pointer_move=handle_pointer_move,
-        style={
-            "position": "relative",
-            "height": "200px",
-            "width": "100%",
-            "background_color": "white",
-        },
     )
 
 

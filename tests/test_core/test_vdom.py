@@ -7,12 +7,7 @@ import idom
 from idom.config import IDOM_DEBUG_MODE
 from idom.core.events import EventHandler
 from idom.core.types import VdomDict
-from idom.core.vdom import (
-    is_vdom,
-    make_vdom_constructor,
-    validate_vdom_json,
-    with_import_source,
-)
+from idom.core.vdom import is_vdom, make_vdom_constructor, validate_vdom_json
 
 
 FAKE_EVENT_HANDLER = EventHandler(lambda data: None)
@@ -41,7 +36,7 @@ def test_is_vdom(result, value):
             {"tagName": "div", "children": [{"tagName": "div"}]},
         ),
         (
-            idom.vdom("div", style={"backgroundColor": "red"}),
+            idom.vdom("div", {"style": {"backgroundColor": "red"}}),
             {"tagName": "div", "attributes": {"style": {"backgroundColor": "red"}}},
         ),
         (
@@ -53,7 +48,7 @@ def test_is_vdom(result, value):
             },
         ),
         (
-            idom.vdom("div", on_event=FAKE_EVENT_HANDLER),
+            idom.vdom("div", {"on_event": FAKE_EVENT_HANDLER}),
             {"tagName": "div", "eventHandlers": FAKE_EVENT_HANDLER_DICT},
         ),
         (
@@ -78,19 +73,6 @@ def test_is_vdom(result, value):
             idom.vdom("div", map(lambda x: x**2, [1, 2, 3])),
             {"tagName": "div", "children": [1, 4, 9]},
         ),
-        (
-            with_import_source(
-                idom.vdom("MyComponent"),
-                {"source": "./some-script.js", "fallback": "loading..."},
-            ),
-            {
-                "tagName": "MyComponent",
-                "importSource": {
-                    "source": "./some-script.js",
-                    "fallback": "loading...",
-                },
-            },
-        ),
     ],
 )
 def test_simple_node_construction(actual, expected):
@@ -100,7 +82,7 @@ def test_simple_node_construction(actual, expected):
 async def test_callable_attributes_are_cast_to_event_handlers():
     params_from_calls = []
 
-    node = idom.vdom("div", on_event=lambda *args: params_from_calls.append(args))
+    node = idom.vdom("div", {"on_event": lambda *args: params_from_calls.append(args)})
 
     event_handlers = node.pop("eventHandlers")
     assert node == {"tagName": "div"}
@@ -116,7 +98,7 @@ async def test_callable_attributes_are_cast_to_event_handlers():
 def test_make_vdom_constructor():
     elmt = make_vdom_constructor("some-tag")
 
-    assert elmt(elmt(), data=1) == {
+    assert elmt({"data": 1}, [elmt()]) == {
         "tagName": "some-tag",
         "children": [{"tagName": "some-tag"}],
         "attributes": {"data": 1},
@@ -234,13 +216,13 @@ def test_valid_vdom(value):
             r"data\.eventHandlers must be object",
         ),
         (
-            {"tagName": "tag", "eventHandlers": {"onEvent": None}},
+            {"tagName": "tag", "eventHandlers": {"on_event": None}},
             r"data\.eventHandlers\.{data_key} must be object",
         ),
         (
             {
                 "tagName": "tag",
-                "eventHandlers": {"onEvent": {}},
+                "eventHandlers": {"on_event": {}},
             },
             r"data\.eventHandlers\.{data_key}\ must contain \['target'\] properties",
         ),
@@ -248,7 +230,7 @@ def test_valid_vdom(value):
             {
                 "tagName": "tag",
                 "eventHandlers": {
-                    "onEvent": {
+                    "on_event": {
                         "target": "something",
                         "preventDefault": None,
                     }
@@ -260,7 +242,7 @@ def test_valid_vdom(value):
             {
                 "tagName": "tag",
                 "eventHandlers": {
-                    "onEvent": {
+                    "on_event": {
                         "target": "something",
                         "stopPropagation": None,
                     }

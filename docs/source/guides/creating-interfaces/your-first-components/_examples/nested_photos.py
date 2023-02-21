@@ -4,9 +4,11 @@ from idom import component, html, run
 @component
 def Photo():
     return html.img(
-        src="https://picsum.photos/id/274/500/300",
-        style={"width": "30%"},
-        alt="Ray Charles",
+        {
+            "src": "https://picsum.photos/id/274/500/300",
+            "style": {"width": "30%"},
+            "alt": "Ray Charles",
+        }
     )
 
 

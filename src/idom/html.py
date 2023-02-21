@@ -157,10 +157,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Sequence
 
-from idom.core.types import Key, VdomDict
-from idom.core.vdom import make_vdom_constructor, vdom
+from idom.core.types import EventHandlerDict, Key, VdomAttributes, VdomChild, VdomDict
+from idom.core.vdom import custom_vdom_constructor, make_vdom_constructor
 
 
 __all__ = (
@@ -278,9 +278,25 @@ __all__ = (
 )
 
 
-def _(*children: Any, key: Key | None = None) -> VdomDict:
+@custom_vdom_constructor
+def _(
+    attributes: VdomAttributes,
+    children: Sequence[VdomChild],
+    key: Key | None,
+    event_handlers: EventHandlerDict,
+) -> VdomDict:
     """An HTML fragment - this element will not appear in the DOM"""
-    return vdom("", *children, key=key)
+    if attributes or event_handlers:
+        raise TypeError("Fragments cannot have attributes besides 'key'")
+    model: VdomDict = {"tagName": ""}
+
+    if children:
+        model["children"] = children
+
+    if key is not None:
+        model["key"] = key
+
+    return model
 
 
 # Dcument metadata
@@ -378,7 +394,13 @@ canvas = make_vdom_constructor("canvas")
 noscript = make_vdom_constructor("noscript")
 
 
-def script(*children: str, key: Key | None = None, **attributes: Any) -> VdomDict:
+@custom_vdom_constructor
+def script(
+    attributes: VdomAttributes,
+    children: Sequence[VdomChild],
+    key: Key | None,
+    event_handlers: EventHandlerDict,
+) -> VdomDict:
     """Create a new `<{script}> <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script>`__ element.
 
     This behaves slightly differently than a normal script element in that it may be run
@@ -392,20 +414,30 @@ def script(*children: str, key: Key | None = None, **attributes: Any) -> VdomDic
     function that is called when the script element is removed from the tree, or when
     the script content changes.
     """
+    model: VdomDict = {"tagName": "script"}
+
+    if event_handlers:
+        raise ValueError("'script' elements do not support event handlers")
+
     if children:
         if len(children) > 1:
             raise ValueError("'script' nodes may have, at most, one child.")
         elif not isinstance(children[0], str):
             raise ValueError("The child of a 'script' must be a string.")
         else:
+            model["children"] = children
             if key is None:
                 key = children[0]
 
     if attributes:
+        model["attributes"] = attributes
         if key is None and not children and "src" in attributes:
             key = attributes["src"]
 
-    return vdom("script", *children, key=key, **attributes)
+    if key is not None:
+        model["key"] = key
+
+    return model
 
 
 # Demarcating edits

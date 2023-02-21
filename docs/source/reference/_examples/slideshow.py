@@ -9,9 +9,11 @@ def Slideshow():
         set_index(index + 1)
 
     return idom.html.img(
-        src=f"https://picsum.photos/id/{index}/800/300",
-        style={"cursor": "pointer"},
-        on_click=next_image,
+        {
+            "src": f"https://picsum.photos/id/{index}/800/300",
+            "style": {"cursor": "pointer"},
+            "onClick": next_image,
+        }
     )
 
 

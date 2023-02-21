@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from base64 import b64encode
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Sequence, Tuple, TypeVar, Union
 
 from typing_extensions import Protocol
 
@@ -15,7 +15,7 @@ from .core.types import ComponentConstructor, VdomDict
 def image(
     format: str,
     value: Union[str, bytes] = "",
-    **attributes: Any,
+    attributes: dict[str, Any] | None = None,
 ) -> VdomDict:
     """Utility for constructing an image from a string or bytes
 
@@ -32,14 +32,14 @@ def image(
     base64_value = b64encode(bytes_value).decode()
     src = f"data:image/{format};base64,{base64_value}"
 
-    return {"tagName": "img", "attributes": {"src": src, **attributes}}
+    return {"tagName": "img", "attributes": {"src": src, **(attributes or {})}}
 
 
 _Value = TypeVar("_Value")
 
 
 def use_linked_inputs(
-    attributes: Iterable[dict[str, Any]],
+    attributes: Sequence[dict[str, Any]],
     on_change: Callable[[_Value], None] = lambda value: None,
     cast: _CastFunc[_Value] = lambda value: value,
     initial_value: str = "",
@@ -75,13 +75,7 @@ def use_linked_inputs(
 
     inputs: list[VdomDict] = []
     for attrs in attributes:
-        # we're going to mutate this so copy it
-        attrs = attrs.copy()
-
-        key = attrs.pop("key", None)
-        attrs.update({"onChange": sync_inputs, "value": value})
-
-        inputs.append(html.input(key=key, **attrs))
+        inputs.append(html.input({**attrs, "on_change": sync_inputs, "value": value}))
 
     return inputs
 

@@ -15,9 +15,9 @@ def CounterList():
     return html.ul(
         [
             html.li(
+                {"key": index},
                 count,
-                html.button("+1", on_click=make_increment_click_handler(index)),
-                key=index,
+                html.button({"on_click": make_increment_click_handler(index)}, "+1"),
             )
             for index, count in enumerate(counters)
         ]

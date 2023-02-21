@@ -23,7 +23,15 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Changed**
+
+- :pull:`919` - Reverts :pull:`841` as per the conclusion in :discussion:`916`. but
+  preserves the ability to declare attributes with snake_case.
+
+**Deprecated**
+
+- :pull:`919` - Declaration of keys via keywork arguments in standard elements. A script
+  has been added to automatically convert old usages where possible.
 
 
 v1.0.0-a3

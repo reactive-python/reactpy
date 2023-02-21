@@ -181,7 +181,7 @@ async def test_hostwap_update_on_change(display: DisplayFixture):
 
         def constructor():
             count.current += 1
-            return html.div(count.current, id=f"hotswap-{count.current}")
+            return html.div({"id": f"hotswap-{count.current}"}, count.current)
 
         return constructor
 
@@ -192,7 +192,7 @@ async def test_hostwap_update_on_change(display: DisplayFixture):
         async def on_click(event):
             mount(make_next_count_constructor(count))
 
-        incr = html.button("incr", on_click=on_click, id="incr-button")
+        incr = html.button({"on_click": on_click, "id": "incr-button"}, "incr")
 
         mount, make_hostswap = _hotswap(update_on_change=True)
         mount(make_next_count_constructor(count))

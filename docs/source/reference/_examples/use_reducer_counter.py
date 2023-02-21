@@ -17,9 +17,9 @@ def Counter():
     count, dispatch = idom.hooks.use_reducer(reducer, 0)
     return idom.html.div(
         f"Count: {count}",
-        idom.html.button("Reset", on_click=lambda event: dispatch("reset")),
-        idom.html.button("+", on_click=lambda event: dispatch("increment")),
-        idom.html.button("-", on_click=lambda event: dispatch("decrement")),
+        idom.html.button({"onClick": lambda event: dispatch("reset")}, "Reset"),
+        idom.html.button({"onClick": lambda event: dispatch("increment")}, "+"),
+        idom.html.button({"onClick": lambda event: dispatch("decrement")}, "-"),
     )
 
 

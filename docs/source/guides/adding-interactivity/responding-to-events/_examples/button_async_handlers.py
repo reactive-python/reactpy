@@ -9,7 +9,7 @@ def ButtonWithDelay(message, delay):
         await asyncio.sleep(delay)
         print(message)
 
-    return html.button(message, on_click=handle_event)
+    return html.button({"on_click": handle_event}, message)
 
 
 @component

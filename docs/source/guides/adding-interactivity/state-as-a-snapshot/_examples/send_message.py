@@ -9,7 +9,9 @@ def App():
     if is_sent:
         return html.div(
             html.h1("Message sent!"),
-            html.button("Send new message?", on_click=lambda event: set_is_sent(False)),
+            html.button(
+                {"on_click": lambda event: set_is_sent(False)}, "Send new message?"
+            ),
         )
 
     @event(prevent_default=True)
@@ -18,14 +20,15 @@ def App():
         set_is_sent(True)
 
     return html.form(
+        {"on_submit": handle_submit, "style": {"display": "inline-grid"}},
         html.textarea(
-            placeholder="Your message here...",
-            value=message,
-            on_change=lambda event: set_message(event["target"]["value"]),
+            {
+                "placeholder": "Your message here...",
+                "value": message,
+                "on_change": lambda event: set_message(event["target"]["value"]),
+            }
         ),
-        html.button("Send", type="submit"),
-        on_submit=handle_submit,
-        style={"display": "inline-grid"},
+        html.button({"type": "submit"}, "Send"),
     )
 
 

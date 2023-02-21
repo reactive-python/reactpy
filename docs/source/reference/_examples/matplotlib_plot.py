@@ -39,8 +39,8 @@ def ExpandableNumberInputs(values, set_values):
     return idom.html.div(
         idom.html.div(
             "add/remove term:",
-            idom.html.button("+", on_click=lambda event: add_input()),
-            idom.html.button("-", on_click=lambda event: del_input()),
+            idom.html.button({"onClick": lambda event: add_input()}, "+"),
+            idom.html.button({"onClick": lambda event: del_input()}, "-"),
         ),
         inputs,
     )
@@ -58,10 +58,19 @@ def plot(title, x, y):
 
 def poly_coef_input(index, callback):
     return idom.html.div(
-        idom.html.label("C", idom.html.sub(index), " × X", idom.html.sup(index)),
-        idom.html.input(type="number", on_change=callback),
-        key=index,
-        style={"margin_top": "5px"},
+        {"style": {"margin-top": "5px"}, "key": index},
+        idom.html.label(
+            "C",
+            idom.html.sub(index),
+            " × X",
+            idom.html.sup(index),
+        ),
+        idom.html.input(
+            {
+                "type": "number",
+                "onChange": callback,
+            },
+        ),
     )
 
 

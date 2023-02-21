@@ -122,7 +122,7 @@ def _load_one_example(file_or_name: Path | str) -> ComponentType:
     def PrintView():
         text, set_text = idom.hooks.use_state(print_buffer.getvalue())
         print_buffer.set_callback(set_text)
-        return idom.html.pre(text, class_name="printout") if text else idom.html.div()
+        return idom.html.pre({"class": "printout"}, text) if text else idom.html.div()
 
     return Wrapper()
 

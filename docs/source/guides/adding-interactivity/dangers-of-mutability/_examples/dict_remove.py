@@ -26,24 +26,29 @@ def Definitions():
         return handle_click
 
     return html.div(
-        html.button("add term", on_click=handle_add_click),
+        html.button({"on_click": handle_add_click}, "add term"),
         html.label(
             "Term: ",
-            html.input(value=term_to_add, on_change=handle_term_to_add_change),
+            html.input({"value": term_to_add, "on_change": handle_term_to_add_change}),
         ),
         html.label(
             "Definition: ",
             html.input(
-                value=definition_to_add, on_change=handle_definition_to_add_change
+                {
+                    "value": definition_to_add,
+                    "on_change": handle_definition_to_add_change,
+                }
             ),
         ),
         html.hr(),
         [
             html.div(
-                html.button("delete term", on_click=make_delete_click_handler(term)),
+                {"key": term},
+                html.button(
+                    {"on_click": make_delete_click_handler(term)}, "delete term"
+                ),
                 html.dt(term),
                 html.dd(definition),
-                key=term,
             )
             for term, definition in all_terms.items()
         ],
