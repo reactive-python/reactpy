@@ -15,22 +15,22 @@ jobs:
     uses: ./.github/workflows/.nox-session.yml
     with:
       job-name: "python-{0}"
-      session-name: test_python
-      session-arguments: --maxfail=3
+      nox-args: "-t check-python"
+      session-args: "--pytest --maxfail=3"
   python-environments:
     uses: ./.github/workflows/.nox-session.yml
     with:
-      session-name: test_python_suite
-      session-arguments: --maxfail=3 --no-cov
+      nox-args: "-s check-pytest-tests"
+      session-args: "--skip-coverage --pytest --maxfail=3"
       runs-on-array: '["ubuntu-latest", "macos-latest", "windows-latest"]'
       python-version-array: '["3.7", "3.8", "3.9", "3.10", "3.11"]'
   docs:
     uses: ./.github/workflows/.nox-session.yml
     with:
       job-name: "python-{0}"
-      session-name: test_docs
+      nox-args: "-s check-docs"
   javascript:
     uses: ./.github/workflows/.nox-session.yml
     with:
       job-name: "{1}"
-      session-name: test_javascript
+      nox-args: "-t check-javascrcipt"

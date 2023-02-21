@@ -150,13 +150,13 @@ Once you've installed them you'll be able to run:
 
 .. code-block:: bash
 
-    nox -s test
+    nox -t check
 
 You can observe the browser as the tests are running by passing an extra flag:
 
 .. code-block:: bash
 
-    nox -s test -- --headed
+    nox -s check -- --headed
 
 To see a full list of available commands (e.g. ``nox -s <your-command>``) run:
 
@@ -217,14 +217,14 @@ To run some of the examples in the documentation as if they were tests run:
 
 .. code-block:: bash
 
-    nox -s test_docs
+    nox -s check-docs
 
 Building the documentation as it's deployed in production requires Docker_. Once you've
 installed Docker, you can run:
 
 .. code-block:: bash
 
-    nox -s docs_in_docker
+    nox -s docks-in-docker
 
 Where you can then navigate to http://localhost:5000..
 

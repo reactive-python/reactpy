@@ -3,10 +3,10 @@ name: Nox Session
 on:
   workflow_call:
     inputs:
-      session-name:
+      nox-args:
         required: true
         type: string
-      session-arguments:
+      session-args:
         required: false
         type: string
       runs-on-array:
@@ -45,4 +45,4 @@ jobs:
         run: pip install -r requirements/nox-deps.txt
       - name: Run Tests
         env: { "CI": "true" }
-        run: nox -s ${{ inputs.session-name }} --stop-on-first-error -- ${{ inputs.session-arguments }}
+        run: nox ${{ inputs.nox-args }} --stop-on-first-error -- ${{ inputs.session-args }}
