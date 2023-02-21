@@ -192,7 +192,7 @@ async def test_hostwap_update_on_change(display: DisplayFixture):
         async def on_click(event):
             mount(make_next_count_constructor(count))
 
-        incr = html.button({"onClick": on_click, "id": "incr-button"}, "incr")
+        incr = html.button({"on_click": on_click, "id": "incr-button"}, "incr")
 
         mount, make_hostswap = _hotswap(update_on_change=True)
         mount(make_next_count_constructor(count))

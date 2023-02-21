@@ -21,7 +21,8 @@ def Search(value, set_value):
         set_value(event["target"]["value"])
 
     return html.label(
-        "Search by Food Name: ", html.input({"value": value, "onChange": handle_change})
+        "Search by Food Name: ",
+        html.input({"value": value, "on_change": handle_change}),
     )
 
 

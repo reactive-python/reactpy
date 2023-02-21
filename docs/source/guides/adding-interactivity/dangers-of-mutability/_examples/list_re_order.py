@@ -15,8 +15,8 @@ def ArtistList():
 
     return html.div(
         html.h1("Inspiring sculptors:"),
-        html.button({"onClick": handle_sort_click}, "sort"),
-        html.button({"onClick": handle_reverse_click}, "reverse"),
+        html.button({"on_click": handle_sort_click}, "sort"),
+        html.button({"on_click": handle_reverse_click}, "reverse"),
         html.ul([html.li({"key": name}, name) for name in artists]),
     )
 

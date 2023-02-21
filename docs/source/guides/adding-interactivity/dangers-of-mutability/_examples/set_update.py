@@ -17,7 +17,7 @@ def Grid():
         [
             html.div(
                 {
-                    "onClick": make_handle_click(index),
+                    "on_click": make_handle_click(index),
                     "style": {
                         "height": "30px",
                         "width": "30px",

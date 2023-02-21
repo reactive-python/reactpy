@@ -278,6 +278,15 @@ def _vdom_attr_to_html_str(key: str, value: Any) -> tuple[str, str]:
             )
     elif (
         # camel to data-* attributes
+        key.startswith("data_")
+        # camel to aria-* attributes
+        or key.startswith("aria_")
+        # handle special cases
+        or key in DASHED_HTML_ATTRS
+    ):
+        key = key.replace("_", "-")
+    elif (
+        # camel to data-* attributes
         key.startswith("data")
         # camel to aria-* attributes
         or key.startswith("aria")
@@ -297,7 +306,7 @@ def _vdom_attr_to_html_str(key: str, value: Any) -> tuple[str, str]:
 
 # see list of HTML attributes with dashes in them:
 # https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#attribute_list
-DASHED_HTML_ATTRS = {"accept_charset", "http_equiv"}
+DASHED_HTML_ATTRS = {"accept_charset", "acceptCharset", "http_equiv", "httpEquiv"}
 
 # Pattern for delimitting camelCase names (e.g. camelCase to camel-case)
 _CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")

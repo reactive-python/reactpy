@@ -915,7 +915,7 @@ async def test_switching_node_type_with_event_handlers():
     @idom.component
     def SomeComponent():
         handler = component_static_handler.use(lambda: None)
-        return html.button({"onAnotherEvent": handler})
+        return html.button({"on_another_event": handler})
 
     async with idom.Layout(Root()) as layout:
         await layout.render()
@@ -998,7 +998,7 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
         state, set_state = use_state(0)
         return html.div(
             html.button(
-                {"onClick": set_child_key_num.use(lambda: set_state(state + 1))},
+                {"on_click": set_child_key_num.use(lambda: set_state(state + 1))},
                 "click me",
             ),
             Child("some-key"),

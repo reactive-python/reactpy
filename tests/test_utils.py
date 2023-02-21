@@ -215,7 +215,7 @@ SOME_OBJECT = object()
             '<div>hello<a href="https://example.com">example</a>world</div>',
         ),
         (
-            html.button({"onClick": lambda event: None}),
+            html.button({"on_click": lambda event: None}),
             "<button></button>",
         ),
         (
@@ -250,6 +250,12 @@ SOME_OBJECT = object()
                 html.button(),
             ),
             '<div><div>hello</div><a href="https://example.com">example</a><button></button></div>',
+        ),
+        (
+            html.div(
+                {"data_something": 1, "data_something_else": 2, "dataisnotdashed": 3}
+            ),
+            '<div data-something="1" data-something-else="2" dataisnotdashed="3"></div>',
         ),
         (
             html.div(

@@ -1,6 +1,7 @@
 import click
 
 import idom
+from idom._console.rewrite_camel_case_props import rewrite_camel_case_props
 from idom._console.rewrite_keys import rewrite_keys
 
 
@@ -11,6 +12,7 @@ def app() -> None:
 
 
 app.add_command(rewrite_keys)
+app.add_command(rewrite_camel_case_props)
 
 
 if __name__ == "__main__":

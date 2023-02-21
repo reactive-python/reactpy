@@ -17,7 +17,7 @@ def MovingDot():
 
     return html.div(
         {
-            "onPointerMove": handle_pointer_move,
+            "on_pointer_move": handle_pointer_move,
             "style": {
                 "position": "relative",
                 "height": "200px",
@@ -36,7 +36,7 @@ def MovingDot():
                     "left": "-10px",
                     "top": "-10px",
                     "transform": f"translate({position['x']}px, {position['y']}px)",
-                },
+                }
             }
         ),
     )

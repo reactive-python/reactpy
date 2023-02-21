@@ -31,7 +31,7 @@ def Gallery():
     url = sculpture["url"]
 
     return html.div(
-        html.button({"onClick": handle_click}, "Next"),
+        html.button({"on_click": handle_click}, "Next"),
         html.h2(name, " by ", artist),
         html.p(f"({bounded_index + 1} or {len(sculpture_data)})"),
         html.img({"src": url, "alt": alt, "style": {"height": "200px"}}),

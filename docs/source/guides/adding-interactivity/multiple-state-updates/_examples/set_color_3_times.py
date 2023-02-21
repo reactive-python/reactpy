@@ -15,10 +15,10 @@ def ColorButton():
 
     return html.div(
         html.button(
-            {"onClick": handle_click, "style": {"backgroundColor": color}}, "Set Color"
+            {"on_click": handle_click, "style": {"backgroundColor": color}}, "Set Color"
         ),
         html.button(
-            {"onClick": handle_reset, "style": {"backgroundColor": color}}, "Reset"
+            {"on_click": handle_reset, "style": {"backgroundColor": color}}, "Reset"
         ),
     )
 

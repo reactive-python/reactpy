@@ -1,22 +1,18 @@
 from __future__ import annotations
 
 import ast
-import re
 import sys
 from collections.abc import Sequence
-from dataclasses import dataclass
 from pathlib import Path
-from textwrap import indent
-from tokenize import COMMENT as COMMENT_TOKEN
-from tokenize import generate_tokens
-from typing import Any, Iterator
 
 import click
 
 from idom import html
-
-
-CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
+from idom._console.ast_utils import (
+    ChangedNode,
+    find_element_constructor_usages,
+    rewrite_changed_nodes,
+)
 
 
 @click.command()
@@ -74,144 +70,25 @@ def generate_rewrite(file: Path, source: str) -> str | None:
     return new
 
 
-def find_nodes_to_change(tree: ast.AST) -> list[Sequence[ast.AST]]:
+def find_nodes_to_change(tree: ast.AST) -> list[ChangedNode]:
     changed: list[Sequence[ast.AST]] = []
-    for parents, node in walk_with_parent(tree):
-        if not (isinstance(node, ast.Call) and node.keywords):
-            continue
-
-        func = node.func
-        if (
-            isinstance(func, ast.Attribute)
-            and isinstance(func.value, ast.Name)
-            and func.value.id == "html"
-        ):
-            name = func.attr
-        elif isinstance(func, ast.Name):
-            name = func.id
-        else:
-            continue
-
-        for kw in list(node.keywords):
+    for el_info in find_element_constructor_usages(tree):
+        for kw in list(el_info.call.keywords):
             if kw.arg == "key":
                 break
         else:
             continue
 
-        maybe_attr_dict_node: Any | None = None
-        if name == "vdom":
-            if len(node.args) == 1:
-                # vdom("tag") need to add attr dict
-                maybe_attr_dict_node = ast.Dict(keys=[], values=[])
-                node.args.append(maybe_attr_dict_node)
-            elif isinstance(node.args[1], (ast.Constant, ast.JoinedStr)):
-                maybe_attr_dict_node = ast.Dict(keys=[], values=[])
-                node.args.insert(1, maybe_attr_dict_node)
-            elif len(node.args) >= 2:
-                maybe_attr_dict_node = node.args[1]
-        elif hasattr(html, name):
-            if len(node.args) == 0:
-                # vdom("tag") need to add attr dict
-                maybe_attr_dict_node = ast.Dict(keys=[], values=[])
-                node.args.append(maybe_attr_dict_node)
-            elif isinstance(node.args[0], (ast.Constant, ast.JoinedStr)):
-                maybe_attr_dict_node = ast.Dict(keys=[], values=[])
-                node.args.insert(0, maybe_attr_dict_node)
-            else:
-                maybe_attr_dict_node = node.args[0]
-
-        if not maybe_attr_dict_node:
-            continue
-
-        if isinstance(maybe_attr_dict_node, ast.Dict):
-            maybe_attr_dict_node.keys.append(ast.Constant("key"))
-            maybe_attr_dict_node.values.append(kw.value)
-        elif (
-            isinstance(maybe_attr_dict_node, ast.Call)
-            and isinstance(maybe_attr_dict_node.func, ast.Name)
-            and maybe_attr_dict_node.func.id == "dict"
-            and isinstance(maybe_attr_dict_node.func.ctx, ast.Load)
-        ):
-            maybe_attr_dict_node.keywords.append(ast.keyword(arg="key", value=kw.value))
+        if isinstance(el_info.props, ast.Dict):
+            el_info.props.keys.append(ast.Constant("key"))
+            el_info.props.values.append(kw.value)
         else:
-            continue
+            el_info.props.keywords.append(ast.keyword(arg="key", value=kw.value))
 
-        node.keywords.remove(kw)
-        changed.append((node, *parents))
+        el_info.call.keywords.remove(kw)
+        changed.append(ChangedNode(el_info.call, el_info.parents))
 
     return changed
-
-
-def rewrite_changed_nodes(
-    file: Path,
-    source: str,
-    tree: ast.AST,
-    changed: list[Sequence[ast.AST]],
-) -> str:
-    ast.fix_missing_locations(tree)
-
-    lines = source.split("\n")
-
-    # find closest parent nodes that should be re-written
-    nodes_to_unparse: list[ast.AST] = []
-    for node_lineage in changed:
-        origin_node = node_lineage[0]
-        for i in range(len(node_lineage) - 1):
-            current_node, next_node = node_lineage[i : i + 2]
-            if (
-                not hasattr(next_node, "lineno")
-                or next_node.lineno < origin_node.lineno
-                or isinstance(next_node, (ast.ClassDef, ast.FunctionDef))
-            ):
-                nodes_to_unparse.append(current_node)
-                break
-        else:  # pragma: no cover
-            raise RuntimeError("Failed to change code")
-
-    # check if an nodes to rewrite contain eachother, pick outermost nodes
-    current_outermost_node, *sorted_nodes_to_unparse = list(
-        sorted(nodes_to_unparse, key=lambda n: n.lineno)
-    )
-    outermost_nodes_to_unparse = [current_outermost_node]
-    for node in sorted_nodes_to_unparse:
-        if (
-            not current_outermost_node.end_lineno
-            or node.lineno > current_outermost_node.end_lineno
-        ):
-            current_outermost_node = node
-            outermost_nodes_to_unparse.append(node)
-
-    moved_comment_lines_from_end: list[int] = []
-    # now actually rewrite these nodes (in reverse to avoid changes earlier in file)
-    for node in reversed(outermost_nodes_to_unparse):
-        # make a best effort to preserve any comments that we're going to overwrite
-        comments = find_comments(lines[node.lineno - 1 : node.end_lineno])
-
-        # there may be some content just before and after the content we're re-writing
-        before_replacement = lines[node.lineno - 1][: node.col_offset].lstrip()
-
-        after_replacement = (
-            lines[node.end_lineno - 1][node.end_col_offset :].strip()
-            if node.end_lineno is not None and node.end_col_offset is not None
-            else ""
-        )
-
-        replacement = indent(
-            before_replacement
-            + "\n".join([*comments, ast.unparse(node)])
-            + after_replacement,
-            " " * (node.col_offset - len(before_replacement)),
-        )
-
-        lines[node.lineno - 1 : node.end_lineno or node.lineno] = [replacement]
-
-        if comments:
-            moved_comment_lines_from_end.append(len(lines) - node.lineno)
-
-    for lineno_from_end in sorted(list(set(moved_comment_lines_from_end))):
-        click.echo(f"Moved comments to {file}:{len(lines) - lineno_from_end}")
-
-    return "\n".join(lines)
 
 
 def log_could_not_rewrite(file: Path, tree: ast.AST) -> None:
@@ -233,27 +110,3 @@ def log_could_not_rewrite(file: Path, tree: ast.AST) -> None:
             and any(kw.arg == "key" for kw in node.keywords)
         ):
             click.echo(f"Unable to rewrite usage at {file}:{node.lineno}")
-
-
-def find_comments(lines: list[str]) -> list[str]:
-    iter_lines = iter(lines)
-    return [
-        token
-        for token_type, token, _, _, _ in generate_tokens(lambda: next(iter_lines))
-        if token_type == COMMENT_TOKEN
-    ]
-
-
-def walk_with_parent(
-    node: ast.AST, parents: tuple[ast.AST, ...] = ()
-) -> Iterator[tuple[tuple[ast.AST, ...], ast.AST]]:
-    parents = (node,) + parents
-    for child in ast.iter_child_nodes(node):
-        yield parents, child
-        yield from walk_with_parent(child, parents)
-
-
-@dataclass
-class KeywordInfo:
-    replace: bool
-    keywords: list[ast.keyword]

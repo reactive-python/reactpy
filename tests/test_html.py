@@ -13,7 +13,7 @@ async def test_script_mount_unmount(display: DisplayFixture):
     def Root():
         is_mounted, toggle_is_mounted.current = use_toggle(True)
         return html.div(
-            html.div({"id": "mount-state", "data-value": False}),
+            html.div({"id": "mount-state", "data_value": False}),
             HasScript() if is_mounted else html.div(),
         )
 
@@ -53,8 +53,8 @@ async def test_script_re_run_on_content_change(display: DisplayFixture):
     def HasScript():
         count, incr_count.current = use_counter(1)
         return html.div(
-            html.div({"id": "mount-count", "data-value": 0}),
-            html.div({"id": "unmount-count", "data-value": 0}),
+            html.div({"id": "mount-count", "data_value": 0}),
+            html.div({"id": "unmount-count", "data_value": 0}),
             html.script(
                 f"""() => {{
                     const mountCountEl = document.getElementById("mount-count");
@@ -101,7 +101,7 @@ async def test_script_from_src(display: DisplayFixture):
             return html.div()
         else:
             return html.div(
-                html.div({"id": "run-count", "data-value": 0}),
+                html.div({"id": "run-count", "data_value": 0}),
                 html.script(
                     {
                         "src": f"/_idom/modules/{file_name_template.format(src_id=src_id)}"
@@ -157,4 +157,4 @@ def test_simple_fragment():
 
 def test_fragment_can_have_no_attributes():
     with pytest.raises(TypeError, match="Fragments cannot have attributes"):
-        html._({"some-attribute": 1})
+        html._({"some_attribute": 1})

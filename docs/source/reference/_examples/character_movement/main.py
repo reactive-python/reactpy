@@ -58,12 +58,16 @@ def Scene():
                 },
             ),
         ),
-        html.button({"onClick": lambda e: set_position(translate(x=-10))}, "Move Left"),
-        html.button({"onClick": lambda e: set_position(translate(x=10))}, "Move Right"),
-        html.button({"onClick": lambda e: set_position(translate(y=-10))}, "Move Up"),
-        html.button({"onClick": lambda e: set_position(translate(y=10))}, "Move Down"),
-        html.button({"onClick": lambda e: set_position(rotate(-30))}, "Rotate Left"),
-        html.button({"onClick": lambda e: set_position(rotate(30))}, "Rotate Right"),
+        html.button(
+            {"on_click": lambda e: set_position(translate(x=-10))}, "Move Left"
+        ),
+        html.button(
+            {"on_click": lambda e: set_position(translate(x=10))}, "Move Right"
+        ),
+        html.button({"on_click": lambda e: set_position(translate(y=-10))}, "Move Up"),
+        html.button({"on_click": lambda e: set_position(translate(y=10))}, "Move Down"),
+        html.button({"on_click": lambda e: set_position(rotate(-30))}, "Rotate Left"),
+        html.button({"on_click": lambda e: set_position(rotate(30))}, "Rotate Right"),
     )
 
 

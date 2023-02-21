@@ -9,23 +9,23 @@ def DivInDiv():
 
     div_in_div = html.div(
         {
-            "onClick": lambda event: set_outer_count(outer_count + 1),
+            "on_click": lambda event: set_outer_count(outer_count + 1),
             "style": {"height": "100px", "width": "100px", "backgroundColor": "red"},
         },
         html.div(
             {
-                "onClick": event(
+                "on_click": event(
                     lambda event: set_inner_count(inner_count + 1),
                     stop_propagation=stop_propagatation,
                 ),
                 "style": {"height": "50px", "width": "50px", "backgroundColor": "blue"},
-            },
+            }
         ),
     )
 
     return html.div(
         html.button(
-            {"onClick": lambda event: set_stop_propagatation(not stop_propagatation)},
+            {"on_click": lambda event: set_stop_propagatation(not stop_propagatation)},
             "Toggle Propogation",
         ),
         html.pre(f"Will propagate: {not stop_propagatation}"),

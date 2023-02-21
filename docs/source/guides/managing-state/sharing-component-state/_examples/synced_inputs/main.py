@@ -16,7 +16,7 @@ def Input(label, value, set_value):
         set_value(event["target"]["value"])
 
     return html.label(
-        label + " ", html.input({"value": value, "onChange": handle_change})
+        label + " ", html.input({"value": value, "on_change": handle_change})
     )
 
 
