@@ -298,6 +298,7 @@ def _fragment(
     return model
 
 
+# FIXME: https://github.com/PyCQA/pylint/issues/5784
 _ = custom_vdom_constructor(_fragment)
 
 
@@ -441,6 +442,7 @@ def _script(
     return model
 
 
+# FIXME: https://github.com/PyCQA/pylint/issues/5784
 script = custom_vdom_constructor(_script)
 
 # Demarcating edits
