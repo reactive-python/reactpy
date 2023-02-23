@@ -21,7 +21,7 @@ def Grid():
                     "style": {
                         "height": "30px",
                         "width": "30px",
-                        "backgroundColor": "black"
+                        "background_color": "black"
                         if index in selected_indices
                         else "white",
                         "outline": "1px solid grey",

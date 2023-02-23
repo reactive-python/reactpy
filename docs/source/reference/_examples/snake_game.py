@@ -21,8 +21,7 @@ def GameView():
         return GameLoop(grid_size=6, block_scale=50, set_game_state=set_game_state)
 
     start_button = idom.html.button(
-        {"onClick": lambda event: set_game_state(GameState.play)},
-        "Start",
+        {"on_click": lambda event: set_game_state(GameState.play)}, "Start"
     )
 
     if game_state == GameState.won:
@@ -40,7 +39,7 @@ def GameView():
         """
     )
 
-    return idom.html.div({"className": "snake-game-menu"}, menu_style, menu)
+    return idom.html.div({"class_name": "snake-game-menu"}, menu_style, menu)
 
 
 class Direction(enum.Enum):
@@ -72,7 +71,7 @@ def GameLoop(grid_size, block_scale, set_game_state):
             if direction_vector_sum != (0, 0):
                 direction.current = maybe_new_direction
 
-    grid_wrapper = idom.html.div({"onKeyDown": on_direction_change}, grid)
+    grid_wrapper = idom.html.div({"on_key_down": on_direction_change}, grid)
 
     assign_grid_block_color(grid, food, "blue")
 
@@ -149,7 +148,7 @@ def create_grid(grid_size, block_scale):
                 "grid-template-columns": f"repeat({grid_size}, {block_scale}px)",
                 "grid-template-rows": f"repeat({grid_size}, {block_scale}px)",
             },
-            "tabIndex": -1,
+            "tab_index": -1,
         },
         [
             idom.html.div(
@@ -170,11 +169,11 @@ def create_grid_block(color, block_scale, key):
             "style": {
                 "height": f"{block_scale}px",
                 "width": f"{block_scale}px",
-                "backgroundColor": color,
+                "background_color": color,
                 "outline": "1px solid grey",
             },
             "key": key,
-        },
+        }
     )
 
 

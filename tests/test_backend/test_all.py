@@ -58,7 +58,7 @@ async def test_display_simple_click_counter(display: DisplayFixture):
         return idom.html.button(
             {
                 "id": "counter",
-                "onClick": lambda event: set_count(lambda old_count: old_count + 1),
+                "on_click": lambda event: set_count(lambda old_count: old_count + 1),
             },
             f"Count: {count}",
         )

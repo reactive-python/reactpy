@@ -151,7 +151,7 @@ async def test_can_prevent_event_default_operation(display: DisplayFixture):
         async def on_key_down(value):
             pass
 
-        return idom.html.input({"onKeyDown": on_key_down, "id": "input"})
+        return idom.html.input({"on_key_down": on_key_down, "id": "input"})
 
     await display.show(Input)
 
@@ -170,7 +170,9 @@ async def test_simple_click_event(display: DisplayFixture):
             set_clicked(True)
 
         if not clicked:
-            return idom.html.button({"onClick": on_click, "id": "click"}, ["Click Me!"])
+            return idom.html.button(
+                {"on_click": on_click, "id": "click"}, ["Click Me!"]
+            )
         else:
             return idom.html.p({"id": "complete"}, ["Complete"])
 
@@ -195,12 +197,8 @@ async def test_can_stop_event_propogation(display: DisplayFixture):
 
         outer = idom.html.div(
             {
-                "style": {
-                    "height": "35px",
-                    "width": "35px",
-                    "backgroundColor": "red",
-                },
-                "onClick": outer_click_is_not_triggered,
+                "style": {"height": "35px", "width": "35px", "background_color": "red"},
+                "on_click": outer_click_is_not_triggered,
                 "id": "outer",
             },
             idom.html.div(
@@ -208,11 +206,11 @@ async def test_can_stop_event_propogation(display: DisplayFixture):
                     "style": {
                         "height": "30px",
                         "width": "30px",
-                        "backgroundColor": "blue",
+                        "background_color": "blue",
                     },
-                    "onClick": inner_click_no_op,
+                    "on_click": inner_click_no_op,
                     "id": "inner",
-                },
+                }
             ),
         )
         return outer
