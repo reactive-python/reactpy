@@ -1,9 +1,9 @@
-import idom
+import reactpy
 
 
-@idom.component
+@reactpy.component
 def Todo():
-    items, set_items = idom.hooks.use_state([])
+    items, set_items = reactpy.hooks.use_state([])
 
     async def add_new_task(event):
         if event["key"] == "Enter":
@@ -16,18 +16,20 @@ def Todo():
         async def remove_task(event, index=index):
             set_items(items[:index] + items[index + 1 :])
 
-        task_text = idom.html.td(idom.html.p(text))
-        delete_button = idom.html.td({"on_click": remove_task}, idom.html.button(["x"]))
-        tasks.append(idom.html.tr(task_text, delete_button))
+        task_text = reactpy.html.td(reactpy.html.p(text))
+        delete_button = reactpy.html.td(
+            {"on_click": remove_task}, reactpy.html.button(["x"])
+        )
+        tasks.append(reactpy.html.tr(task_text, delete_button))
 
-    task_input = idom.html.input({"on_key_down": add_new_task})
-    task_table = idom.html.table(tasks)
+    task_input = reactpy.html.input({"on_key_down": add_new_task})
+    task_table = reactpy.html.table(tasks)
 
-    return idom.html.div(
-        idom.html.p("press enter to add a task:"),
+    return reactpy.html.div(
+        reactpy.html.p("press enter to add a task:"),
         task_input,
         task_table,
     )
 
 
-idom.run(Todo)
+reactpy.run(Todo)

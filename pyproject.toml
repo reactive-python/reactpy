@@ -38,7 +38,7 @@ exclude_lines = [
     'if TYPE_CHECKING[\s:]',
 ]
 omit = [
-    "src/idom/__main__.py",
+    "src/reactpy/__main__.py",
 ]
 
 [tool.pydocstyle]

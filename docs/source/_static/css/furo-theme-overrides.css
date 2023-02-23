@@ -1,8 +1,6 @@
-body {
-  --admonition-title-font-size: 1rem !important;
-  --admonition-font-size: 1rem !important;
-}
-
 .sidebar-container {
   width: 18em;
+}
+.sidebar-brand-text {
+  display: none;
 }

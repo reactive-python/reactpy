@@ -8,12 +8,12 @@ from _pytest.config import Config
 from _pytest.config.argparsing import Parser
 from playwright.async_api import async_playwright
 
-from idom.config import IDOM_TESTING_DEFAULT_TIMEOUT
-from idom.testing import (
+from reactpy.config import REACTPY_TESTING_DEFAULT_TIMEOUT
+from reactpy.testing import (
     BackendFixture,
     DisplayFixture,
-    capture_idom_logs,
-    clear_idom_web_modules_dir,
+    capture_reactpy_logs,
+    clear_reactpy_web_modules_dir,
 )
 from tests.tooling.loop import open_event_loop
 
@@ -42,7 +42,7 @@ async def server():
 @pytest.fixture(scope="session")
 async def page(browser):
     pg = await browser.new_page()
-    pg.set_default_timeout(IDOM_TESTING_DEFAULT_TIMEOUT.current * 1000)
+    pg.set_default_timeout(REACTPY_TESTING_DEFAULT_TIMEOUT.current * 1000)
     try:
         yield pg
     finally:
@@ -65,12 +65,12 @@ def event_loop():
 
 @pytest.fixture(autouse=True)
 def clear_web_modules_dir_after_test():
-    clear_idom_web_modules_dir()
+    clear_reactpy_web_modules_dir()
 
 
 @pytest.fixture(autouse=True)
 def assert_no_logged_exceptions():
-    with capture_idom_logs() as records:
+    with capture_reactpy_logs() as records:
         yield
         try:
             for r in records:

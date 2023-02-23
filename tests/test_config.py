@@ -1,7 +1,7 @@
 import pytest
 
-from idom import config
-from idom._option import Option
+from reactpy import config
+from reactpy._option import Option
 
 
 @pytest.fixture(autouse=True)
@@ -23,7 +23,7 @@ def reset_options():
             opt.current = val
 
 
-def test_idom_debug_mode_toggle():
+def test_reactpy_debug_mode_toggle():
     # just check that nothing breaks
-    config.IDOM_DEBUG_MODE.current = True
-    config.IDOM_DEBUG_MODE.current = False
+    config.REACTPY_DEBUG_MODE.current = True
+    config.REACTPY_DEBUG_MODE.current = False

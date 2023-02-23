@@ -6,7 +6,7 @@ from asyncio import wait_for
 from contextlib import contextmanager
 from typing import Iterator
 
-from idom.config import IDOM_TESTING_DEFAULT_TIMEOUT
+from reactpy.config import REACTPY_TESTING_DEFAULT_TIMEOUT
 
 
 @contextmanager
@@ -29,7 +29,7 @@ def open_event_loop(as_current: bool = True) -> Iterator[asyncio.AbstractEventLo
                 loop.run_until_complete(
                     wait_for(
                         loop.shutdown_asyncgens(),
-                        IDOM_TESTING_DEFAULT_TIMEOUT.current,
+                        REACTPY_TESTING_DEFAULT_TIMEOUT.current,
                     )
                 )
                 if sys.version_info >= (3, 9):
@@ -37,7 +37,7 @@ def open_event_loop(as_current: bool = True) -> Iterator[asyncio.AbstractEventLo
                     loop.run_until_complete(
                         wait_for(
                             loop.shutdown_default_executor(),
-                            IDOM_TESTING_DEFAULT_TIMEOUT.current,
+                            REACTPY_TESTING_DEFAULT_TIMEOUT.current,
                         )
                     )
         finally:
@@ -45,10 +45,10 @@ def open_event_loop(as_current: bool = True) -> Iterator[asyncio.AbstractEventLo
                 asyncio.set_event_loop(None)
             start = time.time()
             while loop.is_running():
-                if (time.time() - start) > IDOM_TESTING_DEFAULT_TIMEOUT.current:
+                if (time.time() - start) > REACTPY_TESTING_DEFAULT_TIMEOUT.current:
                     raise TimeoutError(
                         "Failed to stop loop after "
-                        f"{IDOM_TESTING_DEFAULT_TIMEOUT.current} seconds"
+                        f"{REACTPY_TESTING_DEFAULT_TIMEOUT.current} seconds"
                     )
                 time.sleep(0.1)
             loop.close()
@@ -76,7 +76,7 @@ def _cancel_all_tasks(loop: asyncio.AbstractEventLoop, is_current: bool) -> None
         loop.run_until_complete(
             wait_for(
                 asyncio.gather(*to_cancel, return_exceptions=True),
-                IDOM_TESTING_DEFAULT_TIMEOUT.current,
+                REACTPY_TESTING_DEFAULT_TIMEOUT.current,
             )
         )
     else:

@@ -1,4 +1,4 @@
-from idom import component, event, html, run
+from reactpy import component, event, html, run
 
 
 @component

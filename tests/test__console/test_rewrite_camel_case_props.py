@@ -5,7 +5,7 @@ from textwrap import dedent
 import pytest
 from click.testing import CliRunner
 
-from idom._console.rewrite_camel_case_props import (
+from reactpy._console.rewrite_camel_case_props import (
     generate_rewrite,
     rewrite_camel_case_props,
 )
@@ -50,8 +50,8 @@ def test_rewrite_camel_case_props_declarations_no_files():
             "html.div(dict(camel_case='test'))",
         ),
         (
-            "idom.html.button({'onClick': block_forever})",
-            "idom.html.button({'on_click': block_forever})",
+            "reactpy.html.button({'onClick': block_forever})",
+            "reactpy.html.button({'on_click': block_forever})",
         ),
         (
             "html.div(dict(style={'testThing': test}))",

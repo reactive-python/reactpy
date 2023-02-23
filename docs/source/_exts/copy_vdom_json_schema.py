@@ -3,7 +3,7 @@ from pathlib import Path
 
 from sphinx.application import Sphinx
 
-from idom.core.vdom import VDOM_JSON_SCHEMA
+from reactpy.core.vdom import VDOM_JSON_SCHEMA
 
 
 def setup(app: Sphinx) -> None:

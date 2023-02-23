@@ -1,15 +1,15 @@
-import idom
+import reactpy
 
 
-mui = idom.web.module_from_template("react", "@material-ui/core@^5.0", fallback="⌛")
-Switch = idom.web.export(mui, "Switch")
+mui = reactpy.web.module_from_template("react", "@material-ui/core@^5.0", fallback="⌛")
+Switch = reactpy.web.export(mui, "Switch")
 
 
-@idom.component
+@reactpy.component
 def DayNightSwitch():
-    checked, set_checked = idom.hooks.use_state(False)
+    checked, set_checked = reactpy.hooks.use_state(False)
 
-    return idom.html.div(
+    return reactpy.html.div(
         Switch(
             {
                 "checked": checked,
@@ -20,4 +20,4 @@ def DayNightSwitch():
     )
 
 
-idom.run(DayNightSwitch)
+reactpy.run(DayNightSwitch)

@@ -1,7 +1,7 @@
 {
-  "name": "idom-docs-example-loader",
+  "name": "reactpy-docs-example-loader",
   "version": "1.0.0",
-  "description": "simple javascript client for IDOM's documentation",
+  "description": "simple javascript client for ReactPy's documentation",
   "main": "index.js",
   "scripts": {
     "build": "rollup --config",
@@ -15,6 +15,6 @@
     "rollup": "^2.35.1"
   },
   "dependencies": {
-    "idom-client-react": "file:../../../src/client/packages/idom-client-react"
+    "@reactpy/client": "file:../../../src/client/packages/client"
   }
 }

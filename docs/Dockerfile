@@ -15,7 +15,7 @@ RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install --upgrade pip
 
-# Install IDOM
+# Install ReactPy
 # ------------
 COPY requirements ./requirements
 RUN pip install -r requirements/build-docs.txt
@@ -44,6 +44,6 @@ RUN sphinx-build -v -W -b html docs/source docs/build
 # Define Entrypoint
 # -----------------
 ENV PORT 5000
-ENV IDOM_DEBUG_MODE=1
-ENV IDOM_CHECK_VDOM_SPEC=0
+ENV REACTPY_DEBUG_MODE=1
+ENV REACTPY_CHECK_VDOM_SPEC=0
 CMD python scripts/run_docs.py

@@ -1,7 +1,7 @@
 import pytest
 
-from idom import html
-from idom.backend._common import (
+from reactpy import html
+from reactpy.backend._common import (
     CommonOptions,
     traversal_safe_path,
     vdom_head_elements_to_html,

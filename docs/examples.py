@@ -5,14 +5,14 @@ from pathlib import Path
 from traceback import format_exc
 from typing import Callable, Iterator
 
-import idom
-from idom.types import ComponentType
+import reactpy
+from reactpy.types import ComponentType
 
 
 HERE = Path(__file__)
 SOURCE_DIR = HERE.parent / "source"
 CONF_FILE = SOURCE_DIR / "conf.py"
-RUN_IDOM = idom.run
+RUN_ReactPy = reactpy.run
 
 
 def load_examples() -> Iterator[tuple[str, Callable[[], ComponentType]]]:
@@ -95,7 +95,7 @@ def _load_one_example(file_or_name: Path | str) -> ComponentType:
         nonlocal captured_component_constructor
         captured_component_constructor = component_constructor
 
-    idom.run = capture_component
+    reactpy.run = capture_component
     try:
         code = compile(file.read_text(), str(file), "exec")
         exec(
@@ -109,21 +109,23 @@ def _load_one_example(file_or_name: Path | str) -> ComponentType:
     except Exception:
         return _make_error_display(format_exc())
     finally:
-        idom.run = RUN_IDOM
+        reactpy.run = RUN_ReactPy
 
     if captured_component_constructor is None:
         return _make_example_did_not_run(str(file))
 
-    @idom.component
+    @reactpy.component
     def Wrapper():
-        return idom.html.div(captured_component_constructor(), PrintView())
+        return reactpy.html.div(captured_component_constructor(), PrintView())
 
-    @idom.component
+    @reactpy.component
     def PrintView():
-        text, set_text = idom.hooks.use_state(print_buffer.getvalue())
+        text, set_text = reactpy.hooks.use_state(print_buffer.getvalue())
         print_buffer.set_callback(set_text)
         return (
-            idom.html.pre({"class_name": "printout"}, text) if text else idom.html.div()
+            reactpy.html.pre({"class_name": "printout"}, text)
+            if text
+            else reactpy.html.div()
         )
 
     return Wrapper()
@@ -161,16 +163,16 @@ class _PrintBuffer:
 
 
 def _make_example_did_not_run(example_name):
-    @idom.component
+    @reactpy.component
     def ExampleDidNotRun():
-        return idom.html.code(f"Example {example_name} did not run")
+        return reactpy.html.code(f"Example {example_name} did not run")
 
     return ExampleDidNotRun()
 
 
 def _make_error_display(message):
-    @idom.component
+    @reactpy.component
     def ShowError():
-        return idom.html.pre(message)
+        return reactpy.html.pre(message)
 
     return ShowError()

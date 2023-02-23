@@ -5,7 +5,7 @@ from textwrap import dedent
 import pytest
 from click.testing import CliRunner
 
-from idom._console.rewrite_keys import generate_rewrite, rewrite_keys
+from reactpy._console.rewrite_keys import generate_rewrite, rewrite_keys
 
 
 if sys.version_info < (3, 9):

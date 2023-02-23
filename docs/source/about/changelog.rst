@@ -3,8 +3,8 @@ Changelog
 
 .. note::
 
-    The IDOM team manages their short and long term plans with `GitHub Projects
-    <https://github.com/orgs/idom-team/projects/1>`__. If you have questions about what
+    The ReactPy team manages their short and long term plans with `GitHub Projects
+    <https://github.com/orgs/reactive-python/projects/1>`__. If you have questions about what
     the team are working on, or have feedback on how issues should be prioritized, feel
     free to :discussion-type:`open up a discussion <question>`.
 
@@ -76,7 +76,7 @@ v1.0.0-a3
 
 **Removed**
 
-- :pull:`907` - accidental import of idom.testing
+- :pull:`907` - accidental import of reactpy.testing
 
 
 v1.0.0-a2
@@ -117,13 +117,13 @@ v1.0.0-a1
 
     All attributes are written using ``snake_case``.
 
-  In conjunction, with these changes, IDOM now supplies a command line utility that
+  In conjunction, with these changes, ReactPy now supplies a command line utility that
   makes a "best effort" attempt to automatically convert code to the new API. Usage of
   this utility is as follows:
 
   .. code-block:: bash
 
-      idom update-html-usages [PATHS]
+      reactpy update-html-usages [PATHS]
 
   Where ``[PATHS]`` is any number of directories or files that should be rewritten.
 
@@ -145,7 +145,7 @@ v0.44.0
 
 **Deprecated**
 
-- :pull:`876` - ``idom.widgets.hotswap``. The function has no clear uses outside of some
+- :pull:`876` - ``reactpy.widgets.hotswap``. The function has no clear uses outside of some
   internal applications. For this reason it has been deprecated.
 
 **Removed**
@@ -153,7 +153,7 @@ v0.44.0
 - :pull:`886` - Ability to access element value from events via `event['value']` key.
   Instead element value should be accessed via `event['target']['value']`. Originally
   deprecated in :ref:`v0.34.0`.
-- :pull:`886` - old misspelled option ``idom.config.IDOM_WED_MODULES_DIR``. Originally
+- :pull:`886` - old misspelled option ``reactpy.config.REACTPY_WED_MODULES_DIR``. Originally
   deprecated in :ref:`v0.36.1`.
 
 
@@ -181,7 +181,7 @@ v0.42.0
 
 **Added**
 
-- :pull:`835` - Ability to customize the ``<head>`` element of IDOM's built-in client.
+- :pull:`835` - Ability to customize the ``<head>`` element of ReactPy's built-in client.
 - :pull:`835` - ``vdom_to_html`` utility function.
 - :pull:`843` - Ability to subscribe to changes that are made to mutable options.
 - :pull:`832` - ``del_html_head_body_transform`` to remove ``<html>``, ``<head>``, and ``<body>`` while preserving children.
@@ -189,13 +189,13 @@ v0.42.0
 
 **Fixed**
 
-- :issue:`582` - ``IDOM_DEBUG_MODE`` is now mutable and can be changed at runtime
+- :issue:`582` - ``REACTPY_DEBUG_MODE`` is now mutable and can be changed at runtime
 - :pull:`832` - Fix ``html_to_vdom`` improperly removing ``<html>``, ``<head>``, and ``<body>`` nodes.
 
 **Removed**
 
-- :pull:`832` - Removed ``idom.html.body`` as it is currently unusable due to technological limitations, and thus not needed.
-- :pull:`840` - remove ``IDOM_FEATURE_INDEX_AS_DEFAULT_KEY`` option
+- :pull:`832` - Removed ``reactpy.html.body`` as it is currently unusable due to technological limitations, and thus not needed.
+- :pull:`840` - remove ``REACTPY_FEATURE_INDEX_AS_DEFAULT_KEY`` option
 - :pull:`835` - ``serve_static_files`` option from backend configuration
 
 **Deprecated**
@@ -212,16 +212,16 @@ v0.41.0
   implementation specific and are now available as top-level imports. Instead of each
   backend defining these hooks, backends establish a ``ConnectionContext`` with this
   information.
-- :pull:`824` - IDOM's built-in backend server now expose the following routes:
+- :pull:`824` - ReactPy's built-in backend server now expose the following routes:
 
-  - ``/_idom/assets/<file-path>``
-  - ``/_idom/stream/<path>``
-  - ``/_idom/modules/<file-path>``
+  - ``/_reactpy/assets/<file-path>``
+  - ``/_reactpy/stream/<path>``
+  - ``/_reactpy/modules/<file-path>``
   - ``/<prefix>/<path>``
 
   This should allow the browser to cache static resources. Even if your ``url_prefix``
-  is ``/_idom``, your app should still work as expected. Though if you're using
-  ``idom-router``, IDOM's server routes will always take priority.
+  is ``/_reactpy``, your app should still work as expected. Though if you're using
+  ``reactpy-router``, ReactPy's server routes will always take priority.
 - :pull:`824` - Backend implementations now strip any URL prefix in the pathname for
   ``use_location``.
 - :pull:`827` - ``use_state`` now returns a named tuple with ``value`` and ``set_value``
@@ -301,14 +301,14 @@ v0.39.0
 
 **Fixed**
 
-- :pull:`763` - ``No module named 'idom.server'`` from ``idom.run``
+- :pull:`763` - ``No module named 'reactpy.server'`` from ``reactpy.run``
 - :pull:`749` - Setting appropriate MIME type for web modules in `sanic` server implementation
 
 **Changed**
 
 - :pull:`763` - renamed various:
 
-  - ``idom.testing.server -> idom.testing.backend``
+  - ``reactpy.testing.server -> reactpy.testing.backend``
   - ``ServerFixture -> BackendFixture``
   - ``DisplayFixture.server -> DisplayFixture.backend``
 
@@ -326,7 +326,7 @@ v0.38.1
 
 **Fixed**
 
-- `idom-team/idom-jupyter#22 <https://github.com/idom-team/idom-jupyter/issues/22>`__ -
+- `reactive-python/reactpy-jupyter#22 <https://github.com/reactive-python/reactpy-jupyter/issues/22>`__ -
   a missing file extension was causing a problem with WebPack.
 
 
@@ -347,7 +347,7 @@ v0.38.0-a4
 
 **Changed**
 
-- :pull:`733` - renamed ``assert_idom_logged`` testing util to ``assert_idom_did_log``
+- :pull:`733` - renamed ``assert_reactpy_logged`` testing util to ``assert_reactpy_did_log``
 
 
 v0.38.0-a3
@@ -367,12 +367,12 @@ v0.38.0-a2
 
 - :pull:`721` - Implement ``use_location()`` hook. Navigating to any route below the
   root of the application will be reflected in the ``location.pathname``. This operates
-  in concert with how IDOM's configured routes have changed. This will ultimately work
+  in concert with how ReactPy's configured routes have changed. This will ultimately work
   towards resolving :issue:`569`.
 
 **Changed**
 
-- :pull:`721` - The routes IDOM configures on apps have changed
+- :pull:`721` - The routes ReactPy configures on apps have changed
 
   .. code-block:: text
 
@@ -380,14 +380,14 @@ v0.38.0-a2
       prefix/_api/stream       websocket endpoint
       prefix/*                 client react app
 
-  This means that IDOM's client app is available at any route below the configured
+  This means that ReactPy's client app is available at any route below the configured
   ``url_prefix`` besides ``prefix/_api``. The ``_api`` route will likely remain a route
-  which is reserved by IDOM. The route navigated to below the ``prefix`` will be shown
+  which is reserved by ReactPy. The route navigated to below the ``prefix`` will be shown
   in ``use_location``.
 
-- :pull:`721` - IDOM's client now uses Preact instead of React
+- :pull:`721` - ReactPy's client now uses Preact instead of React
 
-- :pull:`726` - Renamed ``idom.server`` to ``idom.backend``. Other references to "server
+- :pull:`726` - Renamed ``reactpy.server`` to ``reactpy.backend``. Other references to "server
   implementations" have been renamed to "backend implementations" throughout the
   documentation and code.
 
@@ -402,9 +402,9 @@ v0.38.0-a1
 
 **Changed**
 
-- :pull:`703` - How IDOM integrates with servers. ``idom.run`` no longer accepts an app
-  instance to discourage use outside of testing. IDOM's server implementations now
-  provide ``configure()`` functions instead. ``idom.testing`` has been completely
+- :pull:`703` - How ReactPy integrates with servers. ``reactpy.run`` no longer accepts an app
+  instance to discourage use outside of testing. ReactPy's server implementations now
+  provide ``configure()`` functions instead. ``reactpy.testing`` has been completely
   reworked in order to support async web drivers
 - :pull:`703` - ``PerClientStateServer`` has been functionally replaced by ``configure``
 
@@ -414,14 +414,14 @@ v0.38.0-a1
 
 **Removed**
 
-- :issue:`669` - Removed ``idom.widgets.multiview`` since basic routing view ``use_scope`` is
+- :issue:`669` - Removed ``reactpy.widgets.multiview`` since basic routing view ``use_scope`` is
   now possible as well as all ``SharedClientStateServer`` implementations.
 
 **Fixed**
 
-- :issue:`591` - IDOM's test suite no longer uses sync web drivers
+- :issue:`591` - ReactPy's test suite no longer uses sync web drivers
 - :issue:`678` - Updated Sanic requirement to ``>=21``
-- :issue:`657` - How we advertise ``idom.run``
+- :issue:`657` - How we advertise ``reactpy.run``
 
 
 v0.37.2
@@ -431,11 +431,11 @@ v0.37.2
 **Changed**
 
 - :pull:`701` - The name of ``proto`` modules to ``types`` and added a top level
-  ``idom.types`` module
+  ``reactpy.types`` module
 
 **Fixed**
 
-- :pull:`716` - A typo caused IDOM to use the insecure ``ws`` web-socket protocol on
+- :pull:`716` - A typo caused ReactPy to use the insecure ``ws`` web-socket protocol on
   pages loaded with ``https`` instead of the secure ``wss`` protocol
 
 
@@ -515,8 +515,8 @@ v0.36.1
 -------
 :octicon:`milestone` *released on 2022-02-02*
 
-Includes bug fixes and renames the configuration option ``IDOM_WED_MODULES_DIR`` to
-``IDOM_WEB_MODULES_DIR`` with a corresponding deprecation warning.
+Includes bug fixes and renames the configuration option ``REACTPY_WED_MODULES_DIR`` to
+``REACTPY_WEB_MODULES_DIR`` with a corresponding deprecation warning.
 
 **Closed Issues**
 
@@ -526,7 +526,7 @@ Includes bug fixes and renames the configuration option ``IDOM_WED_MODULES_DIR``
 **Merged Pull Requests**
 
 - mark old state as None if unmounting - :pull:`641`
-- rename IDOM_WED_MODULES_DIR to IDOM_WEB_MODULES_DIR - :pull:`638`
+- rename REACTPY_WED_MODULES_DIR to REACTPY_WEB_MODULES_DIR - :pull:`638`
 
 
 v0.36.0
@@ -621,8 +621,8 @@ v0.35.0
 
 The highlight of this release is that the default :ref:`"key" <Organizing Items With
 Keys>` of all elements will be their index amongst their neighbors. Previously this
-behavior could be engaged by setting ``IDOM_FEATURE_INDEX_AS_DEFAULT_KEY=1`` when
-running IDOM. In this release though, you will need to explicitly turn off this feature
+behavior could be engaged by setting ``REACTPY_FEATURE_INDEX_AS_DEFAULT_KEY=1`` when
+running ReactPy. In this release though, you will need to explicitly turn off this feature
 (i.e. ``=0``) to return to the old behavior. With this change, some may notice
 additional error logs which warn that:
 
@@ -638,9 +638,9 @@ on :ref:`Organizing Items With Keys`.
 
 - Support Starlette Server - :issue:`588`
 - Fix unhandled case in module_from_template - :issue:`584`
-- Hide "Children" within IDOM_DEBUG_MODE key warnings - :issue:`562`
+- Hide "Children" within REACTPY_DEBUG_MODE key warnings - :issue:`562`
 - Bug in Element Key Identity - :issue:`556`
-- Add iFrame to idom.html - :issue:`542`
+- Add iFrame to reactpy.html - :issue:`542`
 - Create a use_linked_inputs widget instead of Input - :issue:`475`
 - React warning from module_from_template - :issue:`440`
 - Use Index as Default Key - :issue:`351`
@@ -689,7 +689,7 @@ v0.33.3
 :octicon:`milestone` *released on 2021-10-08*
 
 Contains a small number of bug fixes and improvements. The most significant change is
-the addition of a warning stating that `IDOM_FEATURE_INDEX_AS_DEFAULT_KEY=1` will become
+the addition of a warning stating that `REACTPY_FEATURE_INDEX_AS_DEFAULT_KEY=1` will become
 the default in a future release. Beyond that, a lesser improvement makes it possible to
 use the default export from a Javascript module when calling `module_from_template` by
 specifying `exports_default=True` as a parameter. A
@@ -702,7 +702,7 @@ specifying `exports_default=True` as a parameter. A
 
 **Pull Requests**
 
-- warn that IDOM_FEATURE_INDEX_AS_DEFAULT_KEY=1 will be the default - :pull:`515`
+- warn that REACTPY_FEATURE_INDEX_AS_DEFAULT_KEY=1 will be the default - :pull:`515`
 - clean up patch queues after exit - :pull:`514`
 - Remove Reconnecting WS alert - :pull:`513`
 - Fix 502 - :pull:`503`
@@ -745,13 +745,13 @@ suite, we added a test that should hopefully catch this in the future by proxy.
 
 The most important breaking change, is yet another which modifies the Custom Javascript
 Component interface. We now add a ``create()`` function to the ``bind()`` interface that
-allows IDOM's client to recursively create components from that (and only that) import
+allows ReactPy's client to recursively create components from that (and only that) import
 source. Prior to this, the interface was given unrendered models for child elements. The
 imported module was then responsible for rendering them. This placed a large burden on
 the author to understand how to handle these unrendered child models. In addition, in
 the React template used by ``module_from_template`` we needed to import a version of
-``idom-client-react`` from the CDN - this had already caused some issues where the
-template required a version of ``idom-client-react`` in the which had not been released
+``@reactpy/client`` from the CDN - this had already caused some issues where the
+template required a version of ``@reactpy/client`` in the which had not been released
 yet.
 
 **Closed Issues**
@@ -762,14 +762,14 @@ yet.
 - Examples broken in docs  - :issue:`451`
 - Rework docs landing page - :issue:`446`
 - eventHandlers should be a mapping of generic callables - :issue:`423`
-- Allow customization of built-in IDOM client - :issue:`253`
+- Allow customization of built-in ReactPy client - :issue:`253`
 
 **Pull Requests**
 
 - move VdomDict and VdomJson to proto - :pull:`492`
 - only send error info in debug mode - :pull:`491`
 - correctly apply client-side JSON patch - :pull:`490`
-- add script to set version of all packages in IDOM - :pull:`483`
+- add script to set version of all packages in ReactPy - :pull:`483`
 - Pass import source to bind - :pull:`482`
 - Do not mutate client-side model - :pull:`481`
 - assume import source children come from same source - :pull:`479`
@@ -795,7 +795,7 @@ See :ref:`Custom JavaScript Components` for details on the new interface.
 - Query params in package name for module_from_template not stripped - :issue:`455`
 - Make docs section margins larger - :issue:`450`
 - Search broken in docs - :issue:`443`
-- Move src/idom/client out of Python package - :issue:`429`
+- Move src/reactpy/client out of Python package - :issue:`429`
 - Use composition instead of classes async with Layout and LifeCycleHook  - :issue:`412`
 - Remove Python language extension - :issue:`282`
 - Add keys to models so React doesn't complain of child arrays requiring them -
@@ -818,12 +818,12 @@ v0.31.0
 -------
 :octicon:`milestone` *released on 2021-07-14*
 
-The :class:`~idom.core.layout.Layout` is now a prototype, and ``Layout.update`` is no
+The :class:`~reactpy.core.layout.Layout` is now a prototype, and ``Layout.update`` is no
 longer a public API. This is combined with a much more significant refactor of the
 underlying rendering logic.
 
 The biggest issue that has been resolved relates to the relationship between
-:class:`~idom.core.hooks.LifeCycleHook` and ``Layout``. Previously, the
+:class:`~reactpy.core.hooks.LifeCycleHook` and ``Layout``. Previously, the
 ``LifeCycleHook`` accepted a layout instance in its constructor and called
 ``Layout.update``. Additionally, the ``Layout`` would manipulate the
 ``LifeCycleHook.component`` attribute whenever the component instance changed after a
@@ -883,23 +883,23 @@ runtime reliance on NPM. Doing so has many virtuous knock-on effects:
    are located, and as a result, it's also easier to coordinate the server and client
    code.
 4. Alternate client implementations benefit from this simplicity. Now, it's possible to
-   install idom-client-react normally and write a ``loadImportSource()`` function that
-   looks for route serving the contents of `IDOM_WEB_MODULES_DIR.`
+   install @reactpy/client normally and write a ``loadImportSource()`` function that
+   looks for route serving the contents of `REACTPY_WEB_MODULES_DIR.`
 
 This change includes large breaking changes:
 
 - The CLI is being removed as it won't be needed any longer
-- The `idom.client` is being removed in favor of a stripped down ``idom.web`` module
-- The `IDOM_CLIENT_BUILD_DIR` config option will no longer exist and a new
-  ``IDOM_WEB_MODULES_DIR`` which only contains dynamically linked web modules. While
+- The `reactpy.client` is being removed in favor of a stripped down ``reactpy.web`` module
+- The `REACTPY_CLIENT_BUILD_DIR` config option will no longer exist and a new
+  ``REACTPY_WEB_MODULES_DIR`` which only contains dynamically linked web modules. While
   this new directory's location is configurable, it is meant to be transient and should
   not be re-used across sessions.
 
-The new ``idom.web`` module takes a simpler approach to constructing import sources and
+The new ``reactpy.web`` module takes a simpler approach to constructing import sources and
 expands upon the logic for resolving imports by allowing exports from URLs to be
-discovered too. Now, that IDOM isn't using NPM to dynamically install component
-libraries ``idom.web`` instead creates JS modules from template files and links them
-into ``IDOM_WEB_MODULES_DIR``. These templates ultimately direct the browser to load the
+discovered too. Now, that ReactPy isn't using NPM to dynamically install component
+libraries ``reactpy.web`` instead creates JS modules from template files and links them
+into ``REACTPY_WEB_MODULES_DIR``. These templates ultimately direct the browser to load the
 desired library from a CDN.
 
 **Pull Requests**
@@ -908,7 +908,7 @@ desired library from a CDN.
 - Fix typo in index.rst - :pull:`411`
 - Add event handlers docs - :pull:`410`
 - Misc doc improvements - :pull:`409`
-- Port first IDOM article to docs - :pull:`408`
+- Port first ReactPy article to docs - :pull:`408`
 - Test build in CI - :pull:`404`
 - Remove all runtime reliance on NPM - :pull:`398`
 
@@ -920,8 +920,8 @@ v0.29.0
 Contains breaking changes, the most significant of which are:
 
 - Moves the runtime client build directory to a "user data" directory rather a directory
-  where IDOM's code was installed. This has the advantage of not requiring write
-  permissions to rebuild the client if IDOM was installed globally rather than in a
+  where ReactPy's code was installed. This has the advantage of not requiring write
+  permissions to rebuild the client if ReactPy was installed globally rather than in a
   virtual environment.
 - The custom JS component interface has been reworked to expose an API similar to
   the ``createElement``, ``render``, ``unmountComponentAtNode`` functions from React.
@@ -955,7 +955,7 @@ Includes a wide variety of improvements:
 - support for the ``files`` attribute from the target of input elements
 - model children are passed to the Javascript ``mount()`` function
 - began to add tests to client-side javascript
-- add a ``mountLayoutWithWebSocket`` function to ``idom-client-react``
+- add a ``mountLayoutWithWebSocket`` function to ``@reactpy/client``
 
 and breaking changes, the most significant of which are:
 
@@ -966,7 +966,7 @@ and breaking changes, the most significant of which are:
   concerns and common workspace scripts in ``package.json``.
 - Use a ``loadImportSource()`` function instead of trying to infer the path to dynamic
   modules which was brittle and inflexible. Allowing the specific client implementation
-  to discover where "import sources" are located means ``idom-client-react`` doesn't
+  to discover where "import sources" are located means ``@reactpy/client`` doesn't
   need to try and devise a solution that will work for all cases. The fallout from this
   change is the addition of `importSource.sourceType` which, for the moment can either
   be ``"NAME"`` or ``"URL"`` where the former indicates the client is expected to know
@@ -1073,7 +1073,7 @@ its state do the same.
 
 In a future update, the default key for all elements and components will be its index
 with respect to its siblings in the layout. The
-:attr:`~idom.config.IDOM_FEATURE_INDEX_AS_DEFAULT_KEY` feature flag has been introduced
+:attr:`~reactpy.config.REACTPY_FEATURE_INDEX_AS_DEFAULT_KEY` feature flag has been introduced
 to allow users to enable this behavior early.
 
 **Highlighted Commits:**
@@ -1110,15 +1110,15 @@ v0.23.0
 - automatically reconnect to server - :commit:`3477e2b`
 - allow no reconnect in client - :commit:`ef263c2`
 - cleaner way to specify import sources - :commit:`ea19a07`
-- add the idom-react-client back into the main repo - :commit:`5dcc3bb`
+- add the reactpy-react-client back into the main repo - :commit:`5dcc3bb`
 - implement fastapi render server - :commit:`94e0620`
-- improve docstring for IDOM_CLIENT_BUILD_DIR - :commit:`962d885`
+- improve docstring for REACTPY_CLIENT_BUILD_DIR - :commit:`962d885`
 - cli improvements - :commit:`788fd86`
 - rename SERIALIZED_VDOM_JSON_SCHEMA to VDOM_JSON_SCHEMA - :commit:`74ad578`
 - better logging for modules - :commit:`39565b9`
 - move client utils into private module - :commit:`f825e96`
-- redirect BUILD_DIR imports to IDOM_CLIENT_BUILD_DIR option - :commit:`53fb23b`
+- redirect BUILD_DIR imports to REACTPY_CLIENT_BUILD_DIR option - :commit:`53fb23b`
 - upgrade snowpack - :commit:`5697a2d`
-- better logs for idom.run + flask server - :commit:`2b34e3d`
+- better logs for reactpy.run + flask server - :commit:`2b34e3d`
 - move package to src dir - :commit:`066c9c5`
-- idom restore uses backup - :commit:`773f78e`
+- reactpy restore uses backup - :commit:`773f78e`

@@ -1,5 +1,5 @@
-from idom.sample import SampleApp
-from idom.testing import DisplayFixture
+from reactpy.sample import SampleApp
+from reactpy.testing import DisplayFixture
 
 
 async def test_sample_app(display: DisplayFixture):

@@ -75,14 +75,14 @@ Section 2: Shared Component State
 Sometimes, you want the state of two components to always change together. To do it,
 remove state from both of them, move it to their closest common parent, and then pass it
 down to them via props. This is known as “lifting state up”, and it’s one of the most
-common things you will do writing code with IDOM.
+common things you will do writing code with ReactPy.
 
 In the example below the search input and the list of elements below share the same
 state, the state represents the food name. Note how the component ``Table`` gets called
 at each change of state. The component is observing the state and reacting to state
 changes automatically, just like it would do in React.
 
-.. idom:: sharing-component-state/_examples/synced_inputs
+.. reactpy:: sharing-component-state/_examples/synced_inputs
 
 .. card::
     :link: sharing-component-state/index

@@ -3,7 +3,7 @@ import enum
 import random
 import time
 
-import idom
+import reactpy
 
 
 class GameState(enum.Enum):
@@ -13,25 +13,25 @@ class GameState(enum.Enum):
     play = 3
 
 
-@idom.component
+@reactpy.component
 def GameView():
-    game_state, set_game_state = idom.hooks.use_state(GameState.init)
+    game_state, set_game_state = reactpy.hooks.use_state(GameState.init)
 
     if game_state == GameState.play:
         return GameLoop(grid_size=6, block_scale=50, set_game_state=set_game_state)
 
-    start_button = idom.html.button(
+    start_button = reactpy.html.button(
         {"on_click": lambda event: set_game_state(GameState.play)}, "Start"
     )
 
     if game_state == GameState.won:
-        menu = idom.html.div(idom.html.h3("You won!"), start_button)
+        menu = reactpy.html.div(reactpy.html.h3("You won!"), start_button)
     elif game_state == GameState.lost:
-        menu = idom.html.div(idom.html.h3("You lost"), start_button)
+        menu = reactpy.html.div(reactpy.html.h3("You lost"), start_button)
     else:
-        menu = idom.html.div(idom.html.h3("Click to play"), start_button)
+        menu = reactpy.html.div(reactpy.html.h3("Click to play"), start_button)
 
-    menu_style = idom.html.style(
+    menu_style = reactpy.html.style(
         """
         .snake-game-menu h3 {
             margin-top: 0px !important;
@@ -39,7 +39,7 @@ def GameView():
         """
     )
 
-    return idom.html.div({"class_name": "snake-game-menu"}, menu_style, menu)
+    return reactpy.html.div({"class_name": "snake-game-menu"}, menu_style, menu)
 
 
 class Direction(enum.Enum):
@@ -49,19 +49,21 @@ class Direction(enum.Enum):
     ArrowRight = (1, 0)
 
 
-@idom.component
+@reactpy.component
 def GameLoop(grid_size, block_scale, set_game_state):
     # we `use_ref` here to capture the latest direction press without any delay
-    direction = idom.hooks.use_ref(Direction.ArrowRight.value)
+    direction = reactpy.hooks.use_ref(Direction.ArrowRight.value)
     # capture the last direction of travel that was rendered
     last_direction = direction.current
 
-    snake, set_snake = idom.hooks.use_state([(grid_size // 2 - 1, grid_size // 2 - 1)])
+    snake, set_snake = reactpy.hooks.use_state(
+        [(grid_size // 2 - 1, grid_size // 2 - 1)]
+    )
     food, set_food = use_snake_food(grid_size, snake)
 
     grid = create_grid(grid_size, block_scale)
 
-    @idom.event(prevent_default=True)
+    @reactpy.event(prevent_default=True)
     def on_direction_change(event):
         if hasattr(Direction, event["key"]):
             maybe_new_direction = Direction[event["key"]].value
@@ -71,7 +73,7 @@ def GameLoop(grid_size, block_scale, set_game_state):
             if direction_vector_sum != (0, 0):
                 direction.current = maybe_new_direction
 
-    grid_wrapper = idom.html.div({"on_key_down": on_direction_change}, grid)
+    grid_wrapper = reactpy.html.div({"on_key_down": on_direction_change}, grid)
 
     assign_grid_block_color(grid, food, "blue")
 
@@ -88,7 +90,7 @@ def GameLoop(grid_size, block_scale, set_game_state):
 
     interval = use_interval(0.5)
 
-    @idom.hooks.use_effect
+    @reactpy.hooks.use_effect
     async def animate():
         if new_game_state is not None:
             await asyncio.sleep(1)
@@ -118,7 +120,7 @@ def use_snake_food(grid_size, current_snake):
     grid_points = {(x, y) for x in range(grid_size) for y in range(grid_size)}
     points_not_in_snake = grid_points.difference(current_snake)
 
-    food, _set_food = idom.hooks.use_state(current_snake[-1])
+    food, _set_food = reactpy.hooks.use_state(current_snake[-1])
 
     def set_food():
         _set_food(random.choice(list(points_not_in_snake)))
@@ -127,7 +129,7 @@ def use_snake_food(grid_size, current_snake):
 
 
 def use_interval(rate):
-    usage_time = idom.hooks.use_ref(time.time())
+    usage_time = reactpy.hooks.use_ref(time.time())
 
     async def interval() -> None:
         await asyncio.sleep(rate - (time.time() - usage_time.current))
@@ -137,7 +139,7 @@ def use_interval(rate):
 
 
 def create_grid(grid_size, block_scale):
-    return idom.html.div(
+    return reactpy.html.div(
         {
             "style": {
                 "height": f"{block_scale * grid_size}px",
@@ -151,7 +153,7 @@ def create_grid(grid_size, block_scale):
             "tab_index": -1,
         },
         [
-            idom.html.div(
+            reactpy.html.div(
                 {"style": {"height": f"{block_scale}px"}, "key": i},
                 [
                     create_grid_block("black", block_scale, key=i)
@@ -164,7 +166,7 @@ def create_grid(grid_size, block_scale):
 
 
 def create_grid_block(color, block_scale, key):
-    return idom.html.div(
+    return reactpy.html.div(
         {
             "style": {
                 "height": f"{block_scale}px",
@@ -183,4 +185,4 @@ def assign_grid_block_color(grid, point, color):
     block["attributes"]["style"]["backgroundColor"] = color
 
 
-idom.run(GameView)
+reactpy.run(GameView)

@@ -9,7 +9,7 @@ from sphinx.application import Sphinx
 
 HERE = Path(__file__).parent
 SRC = HERE.parent.parent.parent / "src"
-PYTHON_PACKAGE = SRC / "idom"
+PYTHON_PACKAGE = SRC / "reactpy"
 
 AUTO_DIR = HERE.parent / "_auto"
 AUTO_DIR.mkdir(exist_ok=True)

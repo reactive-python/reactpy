@@ -1,12 +1,3 @@
-body {
-  --sd-color-info: var(--color-admonition-title-background--note);
-  --sd-color-warning: var(--color-admonition-title-background--warning);
-  --sd-color-danger: var(--color-admonition-title-background--danger);
-  --sd-color-info-text: var(--color-admonition-title--note);
-  --sd-color-warning-text: var(--color-admonition-title--warning);
-  --sd-color-danger-text: var(--color-admonition-title--danger);
-}
-
 .sd-card-body {
   display: flex;
   flex-direction: column;

@@ -1,13 +1,13 @@
 import pytest
 
-import idom
-from idom.core.events import (
+import reactpy
+from reactpy.core.events import (
     EventHandler,
     merge_event_handler_funcs,
     merge_event_handlers,
     to_event_handler_function,
 )
-from idom.testing import DisplayFixture, poll
+from reactpy.testing import DisplayFixture, poll
 from tests.tooling.common import DEFAULT_TYPE_DELAY
 
 
@@ -61,7 +61,7 @@ def test_event_handler_equivalence():
 
 
 async def test_to_event_handler_function():
-    call_args = idom.Ref(None)
+    call_args = reactpy.Ref(None)
 
     async def coro(*args):
         call_args.current = args
@@ -145,13 +145,13 @@ async def test_merge_event_handler_funcs():
 
 
 async def test_can_prevent_event_default_operation(display: DisplayFixture):
-    @idom.component
+    @reactpy.component
     def Input():
-        @idom.event(prevent_default=True)
+        @reactpy.event(prevent_default=True)
         async def on_key_down(value):
             pass
 
-        return idom.html.input({"on_key_down": on_key_down, "id": "input"})
+        return reactpy.html.input({"on_key_down": on_key_down, "id": "input"})
 
     await display.show(Input)
 
@@ -162,19 +162,19 @@ async def test_can_prevent_event_default_operation(display: DisplayFixture):
 
 
 async def test_simple_click_event(display: DisplayFixture):
-    @idom.component
+    @reactpy.component
     def Button():
-        clicked, set_clicked = idom.hooks.use_state(False)
+        clicked, set_clicked = reactpy.hooks.use_state(False)
 
         async def on_click(event):
             set_clicked(True)
 
         if not clicked:
-            return idom.html.button(
+            return reactpy.html.button(
                 {"on_click": on_click, "id": "click"}, ["Click Me!"]
             )
         else:
-            return idom.html.p({"id": "complete"}, ["Complete"])
+            return reactpy.html.p({"id": "complete"}, ["Complete"])
 
     await display.show(Button)
 
@@ -184,24 +184,24 @@ async def test_simple_click_event(display: DisplayFixture):
 
 
 async def test_can_stop_event_propogation(display: DisplayFixture):
-    clicked = idom.Ref(False)
+    clicked = reactpy.Ref(False)
 
-    @idom.component
+    @reactpy.component
     def DivInDiv():
-        @idom.event(stop_propagation=True)
+        @reactpy.event(stop_propagation=True)
         def inner_click_no_op(event):
             clicked.current = True
 
         def outer_click_is_not_triggered(event):
             assert False
 
-        outer = idom.html.div(
+        outer = reactpy.html.div(
             {
                 "style": {"height": "35px", "width": "35px", "background_color": "red"},
                 "on_click": outer_click_is_not_triggered,
                 "id": "outer",
             },
-            idom.html.div(
+            reactpy.html.div(
                 {
                     "style": {
                         "height": "30px",

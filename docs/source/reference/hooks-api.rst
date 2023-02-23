@@ -49,7 +49,7 @@ accepts a single argument (the previous state) and returns the next state. Consi
 simply use case of a counter where we've pulled out logic for increment and
 decremented the count:
 
-.. idom:: _examples/use_state_counter
+.. reactpy:: _examples/use_state_counter
 
 We use the functional form for the "+" and "-" buttons since the next ``count`` depends
 on the previous value, while for the "Reset" button we simple assign the
@@ -102,7 +102,7 @@ component render functions.
 .. note::
 
     Normally in React the ``did_render`` function is called once an update has been
-    committed to the screen. Since no such action is performed by IDOM, and the time
+    committed to the screen. Since no such action is performed by ReactPy, and the time
     at which the update is displayed cannot be known we are unable to achieve parity
     with this behavior.
 
@@ -153,7 +153,7 @@ Here, a new connection will be established whenever a new ``url`` is set.
 Async Effects
 .............
 
-A behavior unique to IDOM's implementation of ``use_effect`` is that it natively
+A behavior unique to ReactPy's implementation of ``use_effect`` is that it natively
 supports ``async`` functions:
 
 .. code-block::
@@ -199,7 +199,7 @@ Use Context
     value = use_context(MyContext)
 
 Accepts a context object (the value returned from
-:func:`idom.core.hooks.create_context`) and returns the current context value for that
+:func:`reactpy.core.hooks.create_context`) and returns the current context value for that
 context. The current context value is determined by the ``value`` argument passed to the
 nearest ``MyContext`` in the tree.
 
@@ -235,7 +235,7 @@ may be slightly more performant as well as being preferable since there is only 
 
 We can rework the :ref:`Functional Updates` counter example to use ``use_reducer``:
 
-.. idom:: _examples/use_reducer_counter
+.. reactpy:: _examples/use_reducer_counter
 
 .. note::
 
@@ -298,8 +298,8 @@ Use Ref
 
     ref_container = use_ref(initial_value)
 
-Returns a mutable :class:`~idom.utils.Ref` object that has a single
-:attr:`~idom.utils.Ref.current` attribute that at first contains the ``initial_state``.
+Returns a mutable :class:`~reactpy.utils.Ref` object that has a single
+:attr:`~reactpy.utils.Ref.current` attribute that at first contains the ``initial_state``.
 The identity of the ``Ref`` object will be preserved for the lifetime of the component.
 
 A ``Ref`` is most useful if you need to incur side effects since updating its
@@ -329,7 +329,7 @@ Only call outside flow controls
 **Don't call hooks inside loops, conditions, or nested functions.** Instead you must
 always call hooks at the top level of your functions. By adhering to this rule you
 ensure that hooks are always called in the exact same order. This fact is what allows
-IDOM to preserve the state of hooks between multiple calls to ``useState`` and
+ReactPy to preserve the state of hooks between multiple calls to ``useState`` and
 ``useEffect`` calls.
 
 
@@ -342,33 +342,33 @@ Only call in render functions
 
 - ✅ Call Hooks from another custom hook
 
-Following this rule ensures stateful logic for IDOM component is always clearly
+Following this rule ensures stateful logic for ReactPy component is always clearly
 separated from the rest of your codebase.
 
 
 Flake8 Plugin
 -------------
 
-We provide a Flake8 plugin called `flake8-idom-hooks <Flake8 Linter Plugin>`_ that helps
+We provide a Flake8 plugin called `flake8-reactpy-hooks <Flake8 Linter Plugin>`_ that helps
 to enforce the two rules described above. You can ``pip`` install it directly, or with
-the ``lint`` extra for IDOM:
+the ``lint`` extra for ReactPy:
 
 .. code-block:: bash
 
-    pip install flake8-idom-hooks
+    pip install flake8-reactpy-hooks
 
 Once installed running, ``flake8`` on your code will start catching errors. For example:
 
 .. code-block:: bash
 
-    flake8 my_idom_components.py
+    flake8 my_reactpy_components.py
 
 Might produce something like the following output:
 
 .. code-block:: text
 
-    ./my_idom_components:10:8 ROH102 hook 'use_effect' used inside if statement
-    ./my_idom_components:23:4 ROH102 hook 'use_state' used outside component or hook definition
+    ./my_reactpy_components:10:8 ROH102 hook 'use_effect' used inside if statement
+    ./my_reactpy_components:23:4 ROH102 hook 'use_state' used outside component or hook definition
 
 See the Flake8 docs for
 `more info <https://flake8.pycqa.org/en/latest/user/configuration.html>`__.
@@ -376,4 +376,4 @@ See the Flake8 docs for
 .. links
 .. =====
 
-.. _Flake8 Linter Plugin: https://github.com/idom-team/flake8-idom-hooks
+.. _Flake8 Linter Plugin: https://github.com/reactive-python/flake8-reactpy-hooks

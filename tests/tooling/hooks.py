@@ -1,4 +1,4 @@
-from idom.core.hooks import current_hook, use_state
+from reactpy.core.hooks import current_hook, use_state
 
 
 def use_force_render():

@@ -1,4 +1,4 @@
-from idom import component, html, run, use_state
+from reactpy import component, html, run, use_state
 
 
 @component

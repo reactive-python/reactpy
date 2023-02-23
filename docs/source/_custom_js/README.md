@@ -1,4 +1,4 @@
-# Custom Javascript for IDOM's Docs
+# Custom Javascript for ReactPy's Docs
 
 Build the javascript with
 

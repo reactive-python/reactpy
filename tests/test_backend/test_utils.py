@@ -5,10 +5,10 @@ from contextlib import ExitStack
 import pytest
 from playwright.async_api import Page
 
-from idom.backend import flask as flask_implementation
-from idom.backend.utils import find_available_port
-from idom.backend.utils import run as sync_run
-from idom.sample import SampleApp as SampleApp
+from reactpy.backend import flask as flask_implementation
+from reactpy.backend.utils import find_available_port
+from reactpy.backend.utils import run as sync_run
+from reactpy.sample import SampleApp as SampleApp
 
 
 @pytest.fixture

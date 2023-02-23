@@ -1,4 +1,4 @@
-import idom
+import reactpy
 
 
 def reducer(count, action):
@@ -12,15 +12,15 @@ def reducer(count, action):
         raise ValueError(f"Unknown action '{action}'")
 
 
-@idom.component
+@reactpy.component
 def Counter():
-    count, dispatch = idom.hooks.use_reducer(reducer, 0)
-    return idom.html.div(
+    count, dispatch = reactpy.hooks.use_reducer(reducer, 0)
+    return reactpy.html.div(
         f"Count: {count}",
-        idom.html.button({"on_click": lambda event: dispatch("reset")}, "Reset"),
-        idom.html.button({"on_click": lambda event: dispatch("increment")}, "+"),
-        idom.html.button({"on_click": lambda event: dispatch("decrement")}, "-"),
+        reactpy.html.button({"on_click": lambda event: dispatch("reset")}, "Reset"),
+        reactpy.html.button({"on_click": lambda event: dispatch("increment")}, "+"),
+        reactpy.html.button({"on_click": lambda event: dispatch("decrement")}, "-"),
     )
 
 
-idom.run(Counter)
+reactpy.run(Counter)

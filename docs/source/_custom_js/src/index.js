@@ -1,25 +1,25 @@
-import { mountWithLayoutServer, LayoutServerInfo } from "idom-client-react";
+import { mountWithLayoutServer, LayoutServerInfo } from "@reactpy/client";
 
 let didMountDebug = false;
 
 export function mountWidgetExample(
   mountID,
   viewID,
-  idomServerHost,
+  reactpyServerHost,
   useActivateButton
 ) {
-  let idomHost, idomPort;
-  if (idomServerHost) {
-    [idomHost, idomPort] = idomServerHost.split(":", 2);
+  let reactpyHost, reactpyPort;
+  if (reactpyServerHost) {
+    [reactpyHost, reactpyPort] = reactpyServerHost.split(":", 2);
   } else {
-    idomHost = window.location.hostname;
-    idomPort = window.location.port;
+    reactpyHost = window.location.hostname;
+    reactpyPort = window.location.port;
   }
 
   const serverInfo = new LayoutServerInfo({
-    host: idomHost,
-    port: idomPort,
-    path: "/_idom/",
+    host: reactpyHost,
+    port: reactpyPort,
+    path: "/_reactpy/",
     query: `view_id=${viewID}`,
     secure: window.location.protocol == "https:",
   });

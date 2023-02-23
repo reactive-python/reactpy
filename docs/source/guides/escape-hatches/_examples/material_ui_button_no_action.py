@@ -1,4 +1,4 @@
-from idom import component, run, web
+from reactpy import component, run, web
 
 
 mui = web.module_from_template(

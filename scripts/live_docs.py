@@ -14,15 +14,15 @@ from sphinx_autobuild.cli import (
 )
 
 from docs.app import make_app, reload_examples
-from idom.backend.sanic import serve_development_app
-from idom.testing import clear_idom_web_modules_dir
+from reactpy.backend.sanic import serve_development_app
+from reactpy.testing import clear_reactpy_web_modules_dir
 
 
 # these environment variable are used in custom Sphinx extensions
-os.environ["IDOM_DOC_EXAMPLE_SERVER_HOST"] = "127.0.0.1:5555"
-os.environ["IDOM_DOC_STATIC_SERVER_HOST"] = ""
+os.environ["REACTPY_DOC_EXAMPLE_SERVER_HOST"] = "127.0.0.1:5555"
+os.environ["REACTPY_DOC_STATIC_SERVER_HOST"] = ""
 
-_running_idom_servers = []
+_running_reactpy_servers = []
 
 
 def wrap_builder(old_builder):
@@ -54,7 +54,7 @@ def wrap_builder(old_builder):
     thread_started.wait()
 
     def new_builder():
-        clear_idom_web_modules_dir()
+        clear_reactpy_web_modules_dir()
         reload_examples()
         old_builder()
 

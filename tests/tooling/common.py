@@ -1,6 +1,6 @@
 from typing import Any
 
-from idom.core.types import LayoutEventMessage, LayoutUpdateMessage
+from reactpy.core.types import LayoutEventMessage, LayoutUpdateMessage
 
 
 # see: https://github.com/microsoft/playwright-python/issues/1614

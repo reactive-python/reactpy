@@ -4,9 +4,9 @@ from pathlib import Path
 
 from playwright.async_api import Browser
 
-import idom
-from idom.backend.utils import find_available_port
-from idom.testing import BackendFixture, DisplayFixture, poll
+import reactpy
+from reactpy.backend.utils import find_available_port
+from reactpy.testing import BackendFixture, DisplayFixture, poll
 from tests.tooling.common import DEFAULT_TYPE_DELAY
 from tests.tooling.hooks import use_counter
 
@@ -21,12 +21,14 @@ async def test_automatic_reconnect(browser: Browser):
     # we need to wait longer here because the automatic reconnect is not instant
     page.set_default_timeout(10000)
 
-    @idom.component
+    @reactpy.component
     def SomeComponent():
         count, incr_count = use_counter(0)
-        return idom.html._(
-            idom.html.p({"data_count": count, "id": "count"}, "count", count),
-            idom.html.button(dict(on_click=lambda e: incr_count(), id="incr"), "incr"),
+        return reactpy.html._(
+            reactpy.html.p({"data_count": count, "id": "count"}, "count", count),
+            reactpy.html.button(
+                dict(on_click=lambda e: incr_count(), id="incr"), "incr"
+            ),
         )
 
     async with AsyncExitStack() as exit_stack:
@@ -77,14 +79,14 @@ async def test_style_can_be_changed(display: DisplayFixture):
     A bug was introduced where the client-side model was mutated and React was relying
     on the model to have been copied in order to determine if something had changed.
 
-    See for more info: https://github.com/idom-team/idom/issues/480
+    See for more info: https://github.com/reactive-python/reactpy/issues/480
     """
 
-    @idom.component
+    @reactpy.component
     def ButtonWithChangingColor():
-        color_toggle, set_color_toggle = idom.hooks.use_state(True)
+        color_toggle, set_color_toggle = reactpy.hooks.use_state(True)
         color = "red" if color_toggle else "blue"
-        return idom.html.button(
+        return reactpy.html.button(
             {
                 "id": "my-button",
                 "on_click": lambda event: set_color_toggle(not color_toggle),
@@ -113,20 +115,20 @@ async def _get_style(element):
 async def test_slow_server_response_on_input_change(display: DisplayFixture):
     """A delay server-side could cause input values to be overwritten.
 
-    For more info see: https://github.com/idom-team/idom/issues/684
+    For more info see: https://github.com/reactive-python/reactpy/issues/684
     """
 
     delay = 0.2
 
-    @idom.component
+    @reactpy.component
     def SomeComponent():
-        value, set_value = idom.hooks.use_state("")
+        value, set_value = reactpy.hooks.use_state("")
 
         async def handle_change(event):
             await asyncio.sleep(delay)
             set_value(event["target"]["value"])
 
-        return idom.html.input({"on_change": handle_change, "id": "test-input"})
+        return reactpy.html.input({"on_change": handle_change, "id": "test-input"})
 
     await display.show(SomeComponent)
 
@@ -137,9 +139,9 @@ async def test_slow_server_response_on_input_change(display: DisplayFixture):
 
 
 async def test_snake_case_attributes(display: DisplayFixture):
-    @idom.component
+    @reactpy.component
     def SomeComponent():
-        return idom.html.h1(
+        return reactpy.html.h1(
             {
                 "id": "my-title",
                 "style": {"background_color": "blue"},

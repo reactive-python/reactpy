@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from idom import component, hooks, html, run
+from reactpy import component, hooks, html, run
 
 
 HERE = Path(__file__)

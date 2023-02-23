@@ -56,11 +56,11 @@ Adding Interactivity
 Section 1: Responding to Events
 -------------------------------
 
-IDOM lets you add event handlers to your parts of the interface. This means that you can
+ReactPy lets you add event handlers to your parts of the interface. This means that you can
 define synchronous or asynchronous functions that are triggered when a particular user
 interaction occurs like clicking, hovering, of focusing on form inputs, and more.
 
-.. idom:: responding-to-events/_examples/button_prints_message
+.. reactpy:: responding-to-events/_examples/button_prints_message
 
 It may feel weird to define a function within a function like this, but doing so allows
 the ``handle_event`` function to access information from within the scope of the
@@ -85,16 +85,16 @@ Components often need to change what’s on the screen as a result of an interac
 example, typing into the form should update the input field, clicking a “Comment” button
 should bring up a text input field, clicking “Buy” should put a product in the shopping
 cart. Components need to “remember” things like the current input value, the current
-image, the shopping cart. In IDOM, this kind of component-specific memory is created and
+image, the shopping cart. In ReactPy, this kind of component-specific memory is created and
 updated with a "hook" called ``use_state()`` that creates a **state variable** and
 **state setter** respectively:
 
-.. idom:: components-with-state/_examples/adding_state_variable
+.. reactpy:: components-with-state/_examples/adding_state_variable
 
-In IDOM, ``use_state``, as well as any other function whose name starts with ``use``, is
-called a "hook". These are special functions that should only be called while IDOM is
+In ReactPy, ``use_state``, as well as any other function whose name starts with ``use``, is
+called a "hook". These are special functions that should only be called while ReactPy is
 :ref:`rendering <the rendering process>`. They let you "hook into" the different
-capabilities of IDOM's components of which ``use_state`` is just one (well get into the
+capabilities of ReactPy's components of which ``use_state`` is just one (well get into the
 other :ref:`later <managing state>`).
 
 .. card::
@@ -122,7 +122,7 @@ which owns the state.
     set_count(count + 1)  # schedule a re-render where count is 1
     print(count)  # still prints: 0
 
-This behavior of IDOM means that each render of a component is like taking a snapshot of
+This behavior of ReactPy means that each render of a component is like taking a snapshot of
 the UI based on the component's state at that time. Treating state in this way can help
 reduce subtle bugs. For instance, in the code below there's a simple chat app with a
 message input and recipient selector. The catch is that the message actually gets sent 5
@@ -130,7 +130,7 @@ seconds after the "Send" button is clicked. So what would happen if we changed t
 recipient between the time the "Send" button was clicked and the moment the message is
 actually sent?
 
-.. idom:: state-as-a-snapshot/_examples/print_chat_message
+.. reactpy:: state-as-a-snapshot/_examples/print_chat_message
 
 As it turns out, changing the message recipient after pressing send does not change
 where the message ulitmately goes. However, one could imagine a bug where the recipient
@@ -138,7 +138,7 @@ of a message is determined at the time the message is sent rather than at the ti
 "Send" button it clicked. Thus changing the recipient after pressing send would change
 where the message got sent.
 
-In many cases, IDOM avoids this class of bug entirely because it treats state as a
+In many cases, ReactPy avoids this class of bug entirely because it treats state as a
 snapshot.
 
 .. card::
@@ -159,10 +159,10 @@ changes to state only take effect in the next render, not in the current one. Fu
 changes to state are batched, calling a particular state setter 3 times won't trigger 3
 renders, it will only trigger 1. This means that multiple state assignments are batched
 - so long as the event handler is synchronous (i.e. the event handler is not an
-``async`` function), IDOM waits until all the code in an event handler has run before
+``async`` function), ReactPy waits until all the code in an event handler has run before
 processing state and starting the next render:
 
-.. idom:: multiple-state-updates/_examples/set_color_3_times
+.. reactpy:: multiple-state-updates/_examples/set_color_3_times
 
 Sometimes though, you need to update a state variable more than once before the next
 render. In these cases, instead of having updates batched, you instead want them to be
@@ -172,7 +172,7 @@ To accomplish this, instead of passing the next state value directly (e.g.
 ``compute_new_state(old_state)`` to the state setter (e.g.
 ``set_state(compute_new_state)``):
 
-.. idom:: multiple-state-updates/_examples/set_state_function
+.. reactpy:: multiple-state-updates/_examples/set_state_function
 
 .. card::
     :link: multiple-state-updates/index
@@ -188,17 +188,17 @@ Section 5: Dangers of Mutability
 --------------------------------
 
 While state can hold any type of value, you should be careful to avoid directly
-modifying objects that you declare as state with IDOM. In other words, you must not
+modifying objects that you declare as state with ReactPy. In other words, you must not
 :ref:`"mutate" <What is a Mutation>` values which are held as state. Rather, to change
 these values you should use new ones or create copies.
 
-This is because IDOM does not understand that when a value is mutated, it may have
+This is because ReactPy does not understand that when a value is mutated, it may have
 changed. As a result, mutating values will not trigger re-renders. Thus, you must be
-careful to avoid mutation whenever you want IDOM to re-render a component. For example,
+careful to avoid mutation whenever you want ReactPy to re-render a component. For example,
 instead of mutating dictionaries to update their items you should instead create a
 copy that contains the desired changes:
 
-.. idom:: dangers-of-mutability/_examples/dict_update
+.. reactpy:: dangers-of-mutability/_examples/dict_update
 
 .. card::
     :link: dangers-of-mutability/index
