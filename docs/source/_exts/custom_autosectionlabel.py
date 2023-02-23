@@ -4,8 +4,10 @@ See Sphinx BSD license:
 https://github.com/sphinx-doc/sphinx/blob/f9968594206e538f13fa1c27c065027f10d4ea27/LICENSE
 """
 
+from __future__ import annotations
+
 from fnmatch import fnmatch
-from typing import Any, Dict, cast
+from typing import Any, cast
 
 from docutils import nodes
 from docutils.nodes import Node
@@ -66,7 +68,7 @@ def register_sections_as_label(app: Sphinx, document: Node) -> None:
         domain.labels[name] = docname, labelid, sectname
 
 
-def setup(app: Sphinx) -> Dict[str, Any]:
+def setup(app: Sphinx) -> dict[str, Any]:
     app.add_config_value("autosectionlabel_prefix_document", False, "env")
     app.add_config_value("autosectionlabel_maxdepth", None, "env")
     app.add_config_value("autosectionlabel_skip_docs", [], "env")
