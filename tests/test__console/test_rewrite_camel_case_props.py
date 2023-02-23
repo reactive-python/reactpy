@@ -50,6 +50,18 @@ def test_rewrite_camel_case_props_declarations_no_files():
             "html.div(dict(camel_case='test'))",
         ),
         (
+            "idom.html.button({'onClick': block_forever})",
+            "idom.html.button({'on_click': block_forever})",
+        ),
+        (
+            "html.div(dict(style={'testThing': test}))",
+            "html.div(dict(style={'test_thing': test}))",
+        ),
+        (
+            "html.div(dict(style=dict(testThing=test)))",
+            "html.div(dict(style=dict(test_thing=test)))",
+        ),
+        (
             "vdom('tag', dict(camelCase='test'))",
             "vdom('tag', dict(camel_case='test'))",
         ),
