@@ -108,6 +108,6 @@ def _rewrite_props(
                 kw = ast.keyword(arg=kw_arg, value=kw_value)
             keywords.append(kw)
         if not did_change:
-            return
+            return False
         props_node.keywords = keywords
     return True
