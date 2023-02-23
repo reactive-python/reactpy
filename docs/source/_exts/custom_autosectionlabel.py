@@ -30,7 +30,6 @@ def get_node_depth(node: Node) -> int:
 
 def register_sections_as_label(app: Sphinx, document: Node) -> None:
     docname = app.env.docname
-    print(docname)
 
     for pattern in app.config.autosectionlabel_skip_docs:
         if fnmatch(docname, pattern):
