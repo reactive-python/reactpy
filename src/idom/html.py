@@ -278,8 +278,7 @@ __all__ = (
 )
 
 
-@custom_vdom_constructor
-def _(
+def _fragment(
     attributes: VdomAttributes,
     children: Sequence[VdomChild],
     key: Key | None,
@@ -297,6 +296,9 @@ def _(
         model["key"] = key
 
     return model
+
+
+_ = custom_vdom_constructor(_fragment)
 
 
 # Dcument metadata
@@ -394,8 +396,7 @@ canvas = make_vdom_constructor("canvas")
 noscript = make_vdom_constructor("noscript")
 
 
-@custom_vdom_constructor
-def script(
+def _script(
     attributes: VdomAttributes,
     children: Sequence[VdomChild],
     key: Key | None,
@@ -439,6 +440,8 @@ def script(
 
     return model
 
+
+script = custom_vdom_constructor(_script)
 
 # Demarcating edits
 del_ = make_vdom_constructor("del")
