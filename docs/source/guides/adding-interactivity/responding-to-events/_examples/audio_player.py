@@ -10,7 +10,7 @@ def PlayDinosaurSound():
         idom.html.audio(
             {
                 "controls": True,
-                "onTimeUpdate": lambda e: set_event(e),
+                "on_time_update": lambda e: set_event(e),
                 "src": "https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3",
             }
         ),

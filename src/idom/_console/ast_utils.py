@@ -101,10 +101,9 @@ def find_element_constructor_usages(
             continue
 
         func = node.func
-        if (
-            isinstance(func, ast.Attribute)
-            and isinstance(func.value, ast.Name)
-            and func.value.id == "html"
+        if isinstance(func, ast.Attribute) and (
+            (isinstance(func.value, ast.Name) and func.value.id == "html")
+            or (isinstance(func.value, ast.Attribute) and func.value.attr == "html")
         ):
             name = func.attr
         elif isinstance(func, ast.Name):

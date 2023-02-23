@@ -42,7 +42,7 @@ def Scene():
                 "style": {
                     "width": "200px",
                     "height": "200px",
-                    "backgroundColor": "slategray",
+                    "background_color": "slategray",
                 }
             },
             image(

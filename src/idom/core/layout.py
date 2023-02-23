@@ -199,7 +199,10 @@ class Layout:
         new_state: _ModelState,
         raw_model: Any,
     ) -> None:
-        new_state.model.current = {"tagName": raw_model["tagName"]}
+        try:
+            new_state.model.current = {"tagName": raw_model["tagName"]}
+        except Exception as e:  # pragma: no cover
+            raise ValueError(f"Expected a VDOM element dict, not {raw_model}") from e
         if "key" in raw_model:
             new_state.key = new_state.model.current["key"] = raw_model["key"]
         if "importSource" in raw_model:

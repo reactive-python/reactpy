@@ -12,7 +12,7 @@ def Slideshow():
         {
             "src": f"https://picsum.photos/id/{index}/800/300",
             "style": {"cursor": "pointer"},
-            "onClick": next_image,
+            "on_click": next_image,
         }
     )
 

@@ -115,8 +115,8 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
             second_event_did_execute.set()
 
         return idom.html.div(
-            idom.html.button({"onClick": block_forever}),
-            idom.html.button({"onClick": handle_event}),
+            idom.html.button({"on_click": block_forever}),
+            idom.html.button({"on_click": handle_event}),
         )
 
     send_queue = asyncio.Queue()

@@ -87,8 +87,8 @@ async def test_style_can_be_changed(display: DisplayFixture):
         return idom.html.button(
             {
                 "id": "my-button",
-                "onClick": lambda event: set_color_toggle(not color_toggle),
-                "style": {"backgroundColor": color, "color": "white"},
+                "on_click": lambda event: set_color_toggle(not color_toggle),
+                "style": {"background_color": color, "color": "white"},
             },
             f"color: {color}",
         )
@@ -126,7 +126,7 @@ async def test_slow_server_response_on_input_change(display: DisplayFixture):
             await asyncio.sleep(delay)
             set_value(event["target"]["value"])
 
-        return idom.html.input({"onChange": handle_change, "id": "test-input"})
+        return idom.html.input({"on_change": handle_change, "id": "test-input"})
 
     await display.show(SomeComponent)
 

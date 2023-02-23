@@ -10,7 +10,7 @@ def DivInDiv():
     div_in_div = html.div(
         {
             "on_click": lambda event: set_outer_count(outer_count + 1),
-            "style": {"height": "100px", "width": "100px", "backgroundColor": "red"},
+            "style": {"height": "100px", "width": "100px", "background_color": "red"},
         },
         html.div(
             {
@@ -18,7 +18,11 @@ def DivInDiv():
                     lambda event: set_inner_count(inner_count + 1),
                     stop_propagation=stop_propagatation,
                 ),
-                "style": {"height": "50px", "width": "50px", "backgroundColor": "blue"},
+                "style": {
+                    "height": "50px",
+                    "width": "50px",
+                    "background_color": "blue",
+                },
             }
         ),
     )

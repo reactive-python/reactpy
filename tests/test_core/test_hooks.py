@@ -183,14 +183,14 @@ async def test_set_state_checks_identity_not_equality(display: DisplayFixture):
             idom.html.button(
                 {
                     "id": "r_1",
-                    "onClick": event_count_tracker(lambda event: set_state(r_1)),
+                    "on_click": event_count_tracker(lambda event: set_state(r_1)),
                 },
                 "r_1",
             ),
             idom.html.button(
                 {
                     "id": "r_2",
-                    "onClick": event_count_tracker(lambda event: set_state(r_2)),
+                    "on_click": event_count_tracker(lambda event: set_state(r_2)),
                 },
                 "r_2",
             ),
@@ -237,7 +237,7 @@ async def test_simple_input_with_use_state(display: DisplayFixture):
                 set_message(event["target"]["value"])
 
         if message is None:
-            return idom.html.input({"id": "input", "onChange": on_change})
+            return idom.html.input({"id": "input", "on_change": on_change})
         else:
             return idom.html.p({"id": "complete"}, ["Complete"])
 
@@ -267,7 +267,9 @@ async def test_double_set_state(display: DisplayFixture):
             idom.html.div(
                 {"id": "second", "data-value": state_2}, f"value is: {state_2}"
             ),
-            idom.html.button({"id": "button", "onClick": double_set_state}, "click me"),
+            idom.html.button(
+                {"id": "button", "on_click": double_set_state}, "click me"
+            ),
         )
 
     await display.show(SomeComponent)

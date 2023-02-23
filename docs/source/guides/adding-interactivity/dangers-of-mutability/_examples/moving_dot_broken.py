@@ -20,15 +20,15 @@ def MovingDot():
                 "position": "relative",
                 "height": "200px",
                 "width": "100%",
-                "backgroundColor": "white",
+                "background_color": "white",
             },
         },
         html.div(
             {
                 "style": {
                     "position": "absolute",
-                    "backgroundColor": "red",
-                    "borderRadius": "50%",
+                    "background_color": "red",
+                    "border_radius": "50%",
                     "width": "20px",
                     "height": "20px",
                     "left": "-10px",
