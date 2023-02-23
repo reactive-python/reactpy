@@ -23,7 +23,9 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Fixed**
+
+- :pull:`936` - remaining issues from :pull:`934`
 
 
 v1.0.0-a5
