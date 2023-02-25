@@ -39,17 +39,17 @@ ReactPy
     Community <https://github.com/reactive-python/reactpy/discussions>
 
 
-ReactPy is a Python web framework for building **interactive websites without a single
-line of Javascript**. This is accomplished by breaking down complex applications into
-nestable and reusable chunks of code called :ref:`"components" <Your First Components>`
-that allow you to focus on what your application does rather than how it does it.
+ReactPy is a library for building user interfaces in Python without any Javascript.
+These interfaces are composed of encapsulated :ref:`"components" <Your First
+Components>` which look and behave similarly to those found in `ReactJS
+<https://reactjs.org/>`__. Components made using ReactPy are easy to create and reason
+about when you're getting started, as well as simple to extend and maintain when you
+have to make changes later.
 
-ReactPy can be added to existing applications built on a variety of sync and async web
-servers, as well as integrated with other frameworks like Django, Jupyter, and Plotly
-Dash. Not only does this mean you're free to choose what technology stack to run on, but
-on top of that, you can run the exact same components wherever you need them. For
-example, you can take a component originally developed in a Jupyter Notebook and embed
-it in your production application without changing anything about the component itself.
+Whether you need to run a full blown application with a standalone server, or just want
+try things out in a Jupyter Notebook. ReactPy has you covered - it's both approachable
+for those without web development experience while also being powerful enough to grow
+with your ambitions.
 
 
 At a Glance
