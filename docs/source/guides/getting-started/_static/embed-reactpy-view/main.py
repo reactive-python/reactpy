@@ -14,10 +14,10 @@ async def index(request):
 
 
 @component
-def IdomView():
+def ReactPyView():
     return html.code("This text came from an ReactPy App")
 
 
-configure(app, IdomView, Options(url_prefix="/_reactpy"))
+configure(app, ReactPyView, Options(url_prefix="/_reactpy"))
 
 app.run(host="127.0.0.1", port=5000)
