@@ -38,18 +38,11 @@ ReactPy
     Source Code <https://github.com/reactive-python/reactpy>
     Community <https://github.com/reactive-python/reactpy/discussions>
 
-
-ReactPy is a library for building user interfaces in Python without any Javascript.
-These interfaces are composed of encapsulated :ref:`"components" <Your First
-Components>` which look and behave similarly to those found in `ReactJS
-<https://reactjs.org/>`__. Components made using ReactPy are easy to create and reason
-about when you're getting started, as well as simple to extend and maintain when you
-have to make changes later.
-
-Whether you need to run a full blown application with a standalone server, or just want
-try things out in a Jupyter Notebook. ReactPy has you covered - it's both approachable
-for those without web development experience while also being powerful enough to grow
-with your ambitions.
+ReactPy is a library for building user interfaces in Python without Javascript. ReactPy
+interfaces are made from :ref:`components <Your First Components>` which look and behave
+similarly to this found in `ReactJS <https://reactjs.org/>`__. Designed with simplicity
+in mind, ReactPy can be used by those without web development experience while also
+being powerful enough to grow with your ambitions.
 
 
 At a Glance
