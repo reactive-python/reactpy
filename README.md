@@ -1,4 +1,4 @@
-# ReactPy &middot; [![Tests](https://github.com/reactive-python/reactpy/workflows/test/badge.svg)](https://github.com/reactive-python/reactpy/actions?query=workflow%3ATest) [![PyPI Version](https://img.shields.io/pypi/v/reactpy.svg)](https://pypi.python.org/pypi/reactpy) [![License](https://img.shields.io/badge/License-MIT-purple.svg)](https://github.com/reactive-python/reactpy/blob/main/LICENSE)
+<img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/reactpy-logo-wide.svg" alt="ReactPy Logo" id="reactpy" width="500px" />
 
 ReactPy is a library for building user interfaces in Python without Javascript. ReactPy
 interfaces are made from components which look and behave similarly to this found in

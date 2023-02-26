@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="2650"
-   height="1000"
-   viewBox="0 0 701.137 264.58"
+   width="2500"
+   height="755"
+   viewBox="0 0 661.45 199.7579"
    version="1.1"
    id="svg890"
    xmlns="http://www.w3.org/2000/svg"
@@ -13,7 +13,8 @@
      id="defs2" />
   <g
      id="layer1"
-     style="fill:#00be5a;fill-opacity:1">
+     style="fill:#00be5a;fill-opacity:1"
+     transform="matrix(1.0094097,0,0,1.0094097,-20.83039,-28.982858)">
     <g
        id="g37902"
        style="fill:#00be5a;fill-opacity:1">
@@ -158,12 +159,12 @@
   </g>
   <text
      xml:space="preserve"
-     style="font-weight:bold;font-size:105.832px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';letter-spacing:0px;word-spacing:0px;stroke-width:0.26458;fill:#00be5a;fill-opacity:1"
-     x="254.19316"
-     y="170.11667"
+     style="font-weight:bold;font-size:106.828px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';letter-spacing:0px;word-spacing:0px;fill:#00be5a;fill-opacity:1;stroke-width:0.26707"
+     x="235.75421"
+     y="142.73428"
      id="text5299"><tspan
        id="tspan5297"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:105.832px;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.26458;fill:#00be5a;fill-opacity:1"
-       x="254.19316"
-       y="170.11667">ReactPy</tspan></text>
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:106.828px;font-family:sans-serif;-inkscape-font-specification:sans-serif;fill:#00be5a;fill-opacity:1;stroke-width:0.26707"
+       x="235.75421"
+       y="142.73428">ReactPy</tspan></text>
 </svg>
