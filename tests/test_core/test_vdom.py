@@ -201,11 +201,11 @@ def test_valid_vdom(value):
         ),
         (
             {"tagName": "tag", "children": [None]},
-            r"data\.children\[{data_x}\] must be object or string",
+            r"data\.children\[0\] must be object or string",
         ),
         (
             {"tagName": "tag", "children": [{"tagName": None}]},
-            r"data\.children\[{data_x}\]\.tagName must be string",
+            r"data\.children\[0\]\.tagName must be string",
         ),
         (
             {"tagName": "tag", "attributes": None},
@@ -217,14 +217,14 @@ def test_valid_vdom(value):
         ),
         (
             {"tagName": "tag", "eventHandlers": {"on_event": None}},
-            r"data\.eventHandlers\.{data_key} must be object",
+            r"data\.eventHandlers\.on_event must be object",
         ),
         (
             {
                 "tagName": "tag",
                 "eventHandlers": {"on_event": {}},
             },
-            r"data\.eventHandlers\.{data_key}\ must contain \['target'\] properties",
+            r"data\.eventHandlers\.on_event\ must contain \['target'\] properties",
         ),
         (
             {
@@ -236,7 +236,7 @@ def test_valid_vdom(value):
                     }
                 },
             },
-            r"data\.eventHandlers\.{data_key}\.preventDefault must be boolean",
+            r"data\.eventHandlers\.on_event\.preventDefault must be boolean",
         ),
         (
             {
@@ -248,7 +248,7 @@ def test_valid_vdom(value):
                     }
                 },
             },
-            r"data\.eventHandlers\.{data_key}\.stopPropagation must be boolean",
+            r"data\.eventHandlers\.on_event\.stopPropagation must be boolean",
         ),
         (
             {"tagName": "tag", "importSource": None},
