@@ -31,7 +31,7 @@ log.addHandler(StreamHandler(sys.stdout))
 
 
 # the name of the project
-NAME = "idom"
+NAME = "reactpy"
 
 # basic paths used to gather files
 ROOT_DIR = Path(__file__).parent
@@ -53,7 +53,7 @@ package = {
     "description": "It's React, but in Python",
     "author": "Ryan Morshead",
     "author_email": "ryan.morshead@gmail.com",
-    "url": "https://github.com/rmorshea/idom",
+    "url": "https://github.com/rmorshea/reactpy",
     "license": "MIT",
     "platforms": "Linux, Mac OS X, Windows",
     "keywords": ["interactive", "widgets", "DOM", "React"],
@@ -149,7 +149,7 @@ package["long_description_content_type"] = "text/markdown"
 # Command Line Interface
 # --------------------------------------------------------------------------------------
 
-package["entry_points"] = {"console_scripts": ["idom=idom.__main__:app"]}
+package["entry_points"] = {"console_scripts": ["reactpy=reactpy.__main__:app"]}
 
 # --------------------------------------------------------------------------------------
 # Build Javascript

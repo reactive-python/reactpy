@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Start a Discussion
-    url: https://github.com/idom-team/idom/discussions
+    url: https://github.com/reactive-python/reactpy/discussions
     about: Report issues, request features, ask questions, and share ideas

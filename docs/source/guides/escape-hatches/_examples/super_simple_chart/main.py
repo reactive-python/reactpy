@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from idom import component, run, web
+from reactpy import component, run, web
 
 
 file = Path(__file__).parent / "super-simple-chart.js"

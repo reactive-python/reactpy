@@ -15,16 +15,16 @@ This is why, in the example below, even though it might seem like clicking the
 "Increment" button would cause the ``number`` to increase by ``3``, it only does by
 ``1``:
 
-.. idom:: ../state-as-a-snapshot/_examples/set_counter_3_times
+.. reactpy:: ../state-as-a-snapshot/_examples/set_counter_3_times
 
 The reason this happens is because, so long as the event handler is synchronous (i.e.
-the event handler is not an ``async`` function), IDOM waits until all the code in an
+the event handler is not an ``async`` function), ReactPy waits until all the code in an
 event handler has run before processing state and starting the next render. Thus, it's
 the last call to a given state setter that matters. In the example below, even though we
 set the color of the button to ``"orange"`` and then ``"pink"`` before ``"blue"``,
 the color does not quickly flash orange and pink before blue - it alway remains blue:
 
-.. idom:: _examples/set_color_3_times
+.. reactpy:: _examples/set_color_3_times
 
 This behavior let's you make multiple state changes without triggering unnecessary
 renders or renders with inconsistent state where only some of the variables have been
@@ -33,13 +33,13 @@ handlers have finished running.
 
 .. note::
 
-    For asynchronous event handlers, IDOM will not render until you ``await`` something.
+    For asynchronous event handlers, ReactPy will not render until you ``await`` something.
     As we saw in :ref:`prior examples <State And Delayed Reactions>`, if you introduce
     an asynchronous delay to an event handler after changing state, renders may take
     place before the remainder of the event handler completes. However, state variables
     within handlers, even async ones, always remains static.
 
-This behavior of IDOM to "batch" state changes that take place inside a single event
+This behavior of ReactPy to "batch" state changes that take place inside a single event
 handler, do not extend across event handlers. In other words, distinct events will
 always produce distinct renders. To give an example, if clicking a button increments a
 counter by one, no matter how fast the user clicks, the view will never jump from 1 to 3
@@ -77,9 +77,9 @@ In our case, ``new_state = old_state + 1``. So we might define:
 
 Which we can use to replace ``set_number(number + 1)`` with ``set_number(increment)``:
 
-.. idom:: _examples/set_state_function
+.. reactpy:: _examples/set_state_function
 
-The way to think about how IDOM runs though this series of ``set_state(increment)``
+The way to think about how ReactPy runs though this series of ``set_state(increment)``
 calls is to imagine that each one updates the internally managed state with its return
 value, then that return value is being passed to the next updater function. Ultimately,
 this is functionally equivalent to the following:
@@ -94,14 +94,14 @@ introduced a delay before ``set_number(number + 1)``. What would happen if we cl
 the "Increment" button more than once before the delay in the first triggered event
 completed?
 
-.. idom:: _examples/delay_before_set_count
+.. reactpy:: _examples/delay_before_set_count
 
 From an :ref:`earlier lesson <State And Delayed Reactions>`, we learned that introducing
 delays do not change the fact that state variables do not change until the next render.
 As a result, despite clicking many times before the delay completes, the ``number`` only
 increments by one. To solve this we can use updater functions:
 
-.. idom:: _examples/delay_before_count_updater
+.. reactpy:: _examples/delay_before_count_updater
 
 Now when you click the "Increment" button, each click, though delayed, corresponds to
 ``number`` being increased. This is because the ``old_number`` in the updater function

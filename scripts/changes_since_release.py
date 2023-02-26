@@ -6,7 +6,7 @@ from common.github_utils import (
     REPO_NAME,
     date_range_query,
     last_release_date,
-    search_idom_repo,
+    search_reactpy_repo,
 )
 
 
@@ -34,7 +34,7 @@ def show_issues(format: str):
     print(SECTION_FORMAT_TEMPLATES[format]("Closed Issues"))
     template = ISSUE_FORMAT_TEMPLATES[format]
     query = f"type:issue closed:{date_range_query(last_release_date())}"
-    for issue in search_idom_repo(query):
+    for issue in search_reactpy_repo(query):
         print(template(**issue))
 
 
@@ -42,7 +42,7 @@ def show_pull_requests(format: str = "text"):
     print(SECTION_FORMAT_TEMPLATES[format]("Merged Pull Requests"))
     template = PULL_REQUEST_FORMAT_TEMPLATES[format]
     query = f"type:pr merged:{date_range_query(last_release_date())}"
-    for pull in search_idom_repo(query):
+    for pull in search_reactpy_repo(query):
         print(template(**pull))
 
 

@@ -1,8 +1,8 @@
 from base64 import b64encode
 from pathlib import Path
 
-import idom
-from idom.testing import DisplayFixture, poll
+import reactpy
+from reactpy.testing import DisplayFixture, poll
 from tests.tooling.common import DEFAULT_TYPE_DELAY
 
 
@@ -19,23 +19,23 @@ BASE64_IMAGE_SRC = b64encode(IMAGE_SRC_BYTES).decode()
 
 async def test_image_from_string(display: DisplayFixture):
     src = IMAGE_SRC_BYTES.decode()
-    await display.show(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
+    await display.show(lambda: reactpy.widgets.image("svg", src, {"id": "a-circle-1"}))
     client_img = await display.page.wait_for_selector("#a-circle-1")
     assert BASE64_IMAGE_SRC in (await client_img.get_attribute("src"))
 
 
 async def test_image_from_bytes(display: DisplayFixture):
     src = IMAGE_SRC_BYTES
-    await display.show(lambda: idom.widgets.image("svg", src, {"id": "a-circle-1"}))
+    await display.show(lambda: reactpy.widgets.image("svg", src, {"id": "a-circle-1"}))
     client_img = await display.page.wait_for_selector("#a-circle-1")
     assert BASE64_IMAGE_SRC in (await client_img.get_attribute("src"))
 
 
 async def test_use_linked_inputs(display: DisplayFixture):
-    @idom.component
+    @reactpy.component
     def SomeComponent():
-        i_1, i_2 = idom.widgets.use_linked_inputs([{"id": "i_1"}, {"id": "i_2"}])
-        return idom.html.div(i_1, i_2)
+        i_1, i_2 = reactpy.widgets.use_linked_inputs([{"id": "i_1"}, {"id": "i_2"}])
+        return reactpy.html.div(i_1, i_2)
 
     await display.show(SomeComponent)
 
@@ -55,15 +55,15 @@ async def test_use_linked_inputs(display: DisplayFixture):
 
 
 async def test_use_linked_inputs_on_change(display: DisplayFixture):
-    value = idom.Ref(None)
+    value = reactpy.Ref(None)
 
-    @idom.component
+    @reactpy.component
     def SomeComponent():
-        i_1, i_2 = idom.widgets.use_linked_inputs(
+        i_1, i_2 = reactpy.widgets.use_linked_inputs(
             [{"id": "i_1"}, {"id": "i_2"}],
             on_change=value.set_current,
         )
-        return idom.html.div(i_1, i_2)
+        return reactpy.html.div(i_1, i_2)
 
     await display.show(SomeComponent)
 
@@ -83,14 +83,14 @@ async def test_use_linked_inputs_on_change(display: DisplayFixture):
 
 
 async def test_use_linked_inputs_on_change_with_cast(display: DisplayFixture):
-    value = idom.Ref(None)
+    value = reactpy.Ref(None)
 
-    @idom.component
+    @reactpy.component
     def SomeComponent():
-        i_1, i_2 = idom.widgets.use_linked_inputs(
+        i_1, i_2 = reactpy.widgets.use_linked_inputs(
             [{"id": "i_1"}, {"id": "i_2"}], on_change=value.set_current, cast=int
         )
-        return idom.html.div(i_1, i_2)
+        return reactpy.html.div(i_1, i_2)
 
     await display.show(SomeComponent)
 
@@ -110,16 +110,16 @@ async def test_use_linked_inputs_on_change_with_cast(display: DisplayFixture):
 
 
 async def test_use_linked_inputs_ignore_empty(display: DisplayFixture):
-    value = idom.Ref(None)
+    value = reactpy.Ref(None)
 
-    @idom.component
+    @reactpy.component
     def SomeComponent():
-        i_1, i_2 = idom.widgets.use_linked_inputs(
+        i_1, i_2 = reactpy.widgets.use_linked_inputs(
             [{"id": "i_1"}, {"id": "i_2"}],
             on_change=value.set_current,
             ignore_empty=True,
         )
-        return idom.html.div(i_1, i_2)
+        return reactpy.html.div(i_1, i_2)
 
     await display.show(SomeComponent)
 

@@ -3,11 +3,11 @@ import sys
 import pytest
 from fastjsonschema import JsonSchemaException
 
-import idom
-from idom.config import IDOM_DEBUG_MODE
-from idom.core.events import EventHandler
-from idom.core.types import VdomDict
-from idom.core.vdom import is_vdom, make_vdom_constructor, validate_vdom_json
+import reactpy
+from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.core.events import EventHandler
+from reactpy.core.types import VdomDict
+from reactpy.core.vdom import is_vdom, make_vdom_constructor, validate_vdom_json
 
 
 FAKE_EVENT_HANDLER = EventHandler(lambda data: None)
@@ -32,27 +32,27 @@ def test_is_vdom(result, value):
     "actual, expected",
     [
         (
-            idom.vdom("div", [idom.vdom("div")]),
+            reactpy.vdom("div", [reactpy.vdom("div")]),
             {"tagName": "div", "children": [{"tagName": "div"}]},
         ),
         (
-            idom.vdom("div", {"style": {"backgroundColor": "red"}}),
+            reactpy.vdom("div", {"style": {"backgroundColor": "red"}}),
             {"tagName": "div", "attributes": {"style": {"backgroundColor": "red"}}},
         ),
         (
             # multiple iterables of children are merged
-            idom.vdom("div", [idom.vdom("div"), 1], (idom.vdom("div"), 2)),
+            reactpy.vdom("div", [reactpy.vdom("div"), 1], (reactpy.vdom("div"), 2)),
             {
                 "tagName": "div",
                 "children": [{"tagName": "div"}, 1, {"tagName": "div"}, 2],
             },
         ),
         (
-            idom.vdom("div", {"on_event": FAKE_EVENT_HANDLER}),
+            reactpy.vdom("div", {"on_event": FAKE_EVENT_HANDLER}),
             {"tagName": "div", "eventHandlers": FAKE_EVENT_HANDLER_DICT},
         ),
         (
-            idom.vdom("div", idom.html.h1("hello"), idom.html.h2("world")),
+            reactpy.vdom("div", reactpy.html.h1("hello"), reactpy.html.h2("world")),
             {
                 "tagName": "div",
                 "children": [
@@ -62,15 +62,15 @@ def test_is_vdom(result, value):
             },
         ),
         (
-            idom.vdom("div", {"tagName": "div"}),
+            reactpy.vdom("div", {"tagName": "div"}),
             {"tagName": "div", "children": [{"tagName": "div"}]},
         ),
         (
-            idom.vdom("div", (i for i in range(3))),
+            reactpy.vdom("div", (i for i in range(3))),
             {"tagName": "div", "children": [0, 1, 2]},
         ),
         (
-            idom.vdom("div", map(lambda x: x**2, [1, 2, 3])),
+            reactpy.vdom("div", map(lambda x: x**2, [1, 2, 3])),
             {"tagName": "div", "children": [1, 4, 9]},
         ),
     ],
@@ -82,7 +82,9 @@ def test_simple_node_construction(actual, expected):
 async def test_callable_attributes_are_cast_to_event_handlers():
     params_from_calls = []
 
-    node = idom.vdom("div", {"on_event": lambda *args: params_from_calls.append(args)})
+    node = reactpy.vdom(
+        "div", {"on_event": lambda *args: params_from_calls.append(args)}
+    )
 
     event_handlers = node.pop("eventHandlers")
     assert node == {"tagName": "div"}
@@ -279,9 +281,9 @@ def test_invalid_vdom(value, error_message_pattern):
         validate_vdom_json(value)
 
 
-@pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="Only logs in debug mode")
+@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="Only logs in debug mode")
 def test_debug_log_cannot_verify_keypath_for_genereators(caplog):
-    idom.vdom("div", (1 for i in range(10)))
+    reactpy.vdom("div", (1 for i in range(10)))
     assert len(caplog.records) == 1
     assert caplog.records[0].message.startswith(
         "Did not verify key-path integrity of children in generator"
@@ -289,18 +291,18 @@ def test_debug_log_cannot_verify_keypath_for_genereators(caplog):
     caplog.records.clear()
 
 
-@pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="Only logs in debug mode")
+@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="Only logs in debug mode")
 def test_debug_log_dynamic_children_must_have_keys(caplog):
-    idom.vdom("div", [idom.vdom("div")])
+    reactpy.vdom("div", [reactpy.vdom("div")])
     assert len(caplog.records) == 1
     assert caplog.records[0].message.startswith("Key not specified for child")
 
     caplog.records.clear()
 
-    @idom.component
+    @reactpy.component
     def MyComponent():
-        return idom.vdom("div")
+        return reactpy.vdom("div")
 
-    idom.vdom("div", [MyComponent()])
+    reactpy.vdom("div", [MyComponent()])
     assert len(caplog.records) == 1
     assert caplog.records[0].message.startswith("Key not specified for child")

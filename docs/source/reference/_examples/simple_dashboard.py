@@ -2,28 +2,28 @@ import asyncio
 import random
 import time
 
-import idom
-from idom.widgets import Input
+import reactpy
+from reactpy.widgets import Input
 
 
-victory = idom.web.module_from_template(
+victory = reactpy.web.module_from_template(
     "react",
     "victory-line",
     fallback="⌛",
     # not usually required (see issue #461 for more info)
     unmount_before_update=True,
 )
-VictoryLine = idom.web.export(victory, "VictoryLine")
+VictoryLine = reactpy.web.export(victory, "VictoryLine")
 
 
-@idom.component
+@reactpy.component
 def RandomWalk():
-    mu = idom.hooks.use_ref(0)
-    sigma = idom.hooks.use_ref(1)
+    mu = reactpy.hooks.use_ref(0)
+    sigma = reactpy.hooks.use_ref(1)
 
-    return idom.html.div(
+    return reactpy.html.div(
         RandomWalkGraph(mu, sigma),
-        idom.html.style(
+        reactpy.html.style(
             """
             .number-input-container {margin-bottom: 20px}
             .number-input-container input {width: 48%;float: left}
@@ -45,12 +45,12 @@ def RandomWalk():
     )
 
 
-@idom.component
+@reactpy.component
 def RandomWalkGraph(mu, sigma):
     interval = use_interval(0.5)
-    data, set_data = idom.hooks.use_state([{"x": 0, "y": 0}] * 50)
+    data, set_data = reactpy.hooks.use_state([{"x": 0, "y": 0}] * 50)
 
-    @idom.hooks.use_effect
+    @reactpy.hooks.use_effect
     async def animate():
         await interval
         last_data_point = data[-1]
@@ -71,27 +71,27 @@ def RandomWalkGraph(mu, sigma):
     )
 
 
-@idom.component
+@reactpy.component
 def NumberInput(label, value, set_value_callback, domain):
     minimum, maximum, step = domain
     attrs = {"min": minimum, "max": maximum, "step": step}
 
-    value, set_value = idom.hooks.use_state(value)
+    value, set_value = reactpy.hooks.use_state(value)
 
     def update_value(value):
         set_value(value)
         set_value_callback(value)
 
-    return idom.html.fieldset(
+    return reactpy.html.fieldset(
         {"class_name": "number-input-container"},
-        idom.html.legend({"style": {"font-size": "medium"}}, label),
+        reactpy.html.legend({"style": {"font-size": "medium"}}, label),
         Input(update_value, "number", value, attributes=attrs, cast=float),
         Input(update_value, "range", value, attributes=attrs, cast=float),
     )
 
 
 def use_interval(rate):
-    usage_time = idom.hooks.use_ref(time.time())
+    usage_time = reactpy.hooks.use_ref(time.time())
 
     async def interval() -> None:
         await asyncio.sleep(rate - (time.time() - usage_time.current))
@@ -100,4 +100,4 @@ def use_interval(rate):
     return asyncio.ensure_future(interval())
 
 
-idom.run(RandomWalk)
+reactpy.run(RandomWalk)

@@ -4,8 +4,8 @@ Getting Started
 .. toctree::
     :hidden:
 
-    installing-idom
-    running-idom
+    installing-reactpy
+    running-reactpy
 
 .. dropdown:: :octicon:`bookmark-fill;2em` What You'll Learn
     :color: info
@@ -14,56 +14,56 @@ Getting Started
 
     .. grid:: 1 2 2 2
 
-        .. grid-item-card:: :octicon:`tools` Installing IDOM
-            :link: installing-idom
+        .. grid-item-card:: :octicon:`tools` Installing ReactPy
+            :link: installing-reactpy
             :link-type: doc
 
-            Learn how IDOM can be installed in a variety of different ways - with
+            Learn how ReactPy can be installed in a variety of different ways - with
             different web servers and even in different frameworks.
 
-        .. grid-item-card:: :octicon:`play` Running IDOM
-            :link: running-idom
+        .. grid-item-card:: :octicon:`play` Running ReactPy
+            :link: running-reactpy
             :link-type: doc
 
-            See how IDOM can be run with a variety of different production servers or be
+            See how ReactPy can be run with a variety of different production servers or be
             added to existing applications.
 
-The fastest way to get started with IDOM is to try it out in a `Juptyer Notebook
-<https://mybinder.org/v2/gh/idom-team/idom-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb>`__.
+The fastest way to get started with ReactPy is to try it out in a `Juptyer Notebook
+<https://mybinder.org/v2/gh/reactive-python/reactpy-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb>`__.
 If you want to use a Notebook to work through the examples shown in this documentation,
-you'll need to replace calls to ``idom.run(App)`` with a line at the end of each cell
+you'll need to replace calls to ``reactpy.run(App)`` with a line at the end of each cell
 that constructs the ``App()`` in question. If that doesn't make sense, the introductory
 notebook linked below will demonstrate how to do this:
 
 .. card::
-    :link: https://mybinder.org/v2/gh/idom-team/idom-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb
+    :link: https://mybinder.org/v2/gh/reactive-python/reactpy-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb
 
-    .. image:: _static/idom-in-jupyterlab.gif
+    .. image:: _static/reactpy-in-jupyterlab.gif
         :scale: 72%
         :align: center
 
 
-Section 1: Installing IDOM
---------------------------
+Section 1: Installing ReactPy
+-----------------------------
 
-The next fastest option is to install IDOM along with a supported server (like
+The next fastest option is to install ReactPy along with a supported server (like
 ``starlette``) with ``pip``:
 
 .. code-block:: bash
 
-    pip install "idom[starlette]"
+    pip install "reactpy[starlette]"
 
 To check that everything is working you can run the sample application:
 
 .. code-block:: bash
 
-    python -c "import idom; idom.run(idom.sample.SampleApp)"
+    python -c "import reactpy; reactpy.run(reactpy.sample.SampleApp)"
 
 .. note::
 
     This launches a simple development server which is good enough for testing, but
     probably not what you want to use in production. When deploying in production,
-    there's a number of different ways of :ref:`running IDOM <Section 2: Running IDOM>`.
+    there's a number of different ways of :ref:`running ReactPy <Section 2: Running ReactPy>`.
 
 You should then see a few log messages:
 
@@ -78,7 +78,7 @@ something like this:
 
 .. card::
 
-    .. idom-view:: _examples/sample_app
+    .. reactpy-view:: _examples/sample_app
 
 If you get a ``RuntimeError`` similar to the following:
 
@@ -86,38 +86,38 @@ If you get a ``RuntimeError`` similar to the following:
 
     Found none of the following builtin server implementations...
 
-Then be sure you run ``pip install "idom[starlette]"`` instead of just ``idom``. For
-anything else, report your issue in IDOM's :discussion-type:`discussion forum
+Then be sure you run ``pip install "reactpy[starlette]"`` instead of just ``reactpy``. For
+anything else, report your issue in ReactPy's :discussion-type:`discussion forum
 <problem>`.
 
 .. card::
-    :link: installing-idom
+    :link: installing-reactpy
     :link-type: doc
 
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Learn how IDOM can be installed in a variety of different ways - with different web
+    Learn how ReactPy can be installed in a variety of different ways - with different web
     servers and even in different frameworks.
 
 
-Section 2: Running IDOM
------------------------
+Section 2: Running ReactPy
+--------------------------
 
-Once you've :ref:`installed IDOM <Installing IDOM>`, you'll want to learn how to run an
+Once you've :ref:`installed ReactPy <Installing ReactPy>`, you'll want to learn how to run an
 application. Throughout most of the examples in this documentation, you'll see the
-:func:`~idom.backend.utils.run` function used. While it's convenient tool for
+:func:`~reactpy.backend.utils.run` function used. While it's convenient tool for
 development it shouldn't be used in production settings - it's slow, and could leak
 secrets through debug log messages.
 
-.. idom:: _examples/hello_world
+.. reactpy:: _examples/hello_world
 
 .. card::
-    :link: running-idom
+    :link: running-reactpy
     :link-type: doc
 
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    See how IDOM can be run with a variety of different production servers or be
+    See how ReactPy can be run with a variety of different production servers or be
     added to existing applications.

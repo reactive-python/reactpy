@@ -1,67 +1,35 @@
 from __future__ import annotations
 
-import functools
 import os
-import re
+from argparse import REMAINDER
+from dataclasses import replace
 from pathlib import Path
-from typing import Any, Callable, TypeVar
+from shutil import rmtree
+from typing import Sequence
 
-import nox
-from nox.sessions import Session
+from noxopt import Annotated, NoxOpt, Option, Session
 
 
 ROOT = Path(__file__).parent
-SRC = ROOT / "src"
-POSARGS_PATTERN = re.compile(r"^(\w+)\[(.+)\]$")
-TRUE_VALUES = {"true", "True", "TRUE", "1"}
+CLIENT_DIR = ROOT / "src" / "client"
+
+REMAINING_ARGS = Option(nargs=REMAINDER, type=str)
+
+group = NoxOpt(auto_tag=True)
 
 
-_Return = TypeVar("_Return")
-
-
-def do_first(
-    first_session_func: Callable[[Session], None]
-) -> Callable[[Callable[[Session], _Return]], Callable[[Session], _Return]]:
-    """Decorator for functions defining session actions that should happen first
-
-    >>> @do_first
-    >>> def setup(session):
-    >>>     ...  # do some setup
-    >>>
-    >>> @setup
-    >>> def the_actual_session(session):
-    >>>     ...  # so actual work
-
-    This makes it quick an easy to define common setup actions.
-    """
-
-    def setup(
-        second_session_func: Callable[[Session], _Return]
-    ) -> Callable[[Session], _Return]:
-        @functools.wraps(second_session_func)
-        def wrapper(session: Session) -> Any:
-            first_session_func(session)
-            return second_session_func(session)
-
-        return wrapper
-
-    return setup
-
-
-@do_first
-def apply_standard_pip_upgrades(session: Session) -> None:
+@group.setup
+def setup_checks(
+    session: Session,
+    ci: Annotated[bool, Option(help="whether running in CI")] = False,
+) -> None:
     session.install("--upgrade", "pip")
-
-
-@do_first
-def install_latest_npm_in_ci(session: Session) -> None:
-    if os.environ.get("CI") in TRUE_VALUES:
+    if ci:
         session.log("Running in CI environment - installing latest NPM")
         session.run("npm", "install", "-g", "npm@latest", external=True)
 
 
-@nox.session(reuse_venv=True)
-@apply_standard_pip_upgrades
+@group.session
 def format(session: Session) -> None:
     """Auto format Python and Javascript code"""
     # format Python
@@ -70,7 +38,7 @@ def format(session: Session) -> None:
     session.run("isort", ".")
 
     # format client Javascript
-    session.chdir(SRC / "client")
+    session.chdir(CLIENT_DIR)
     session.run("npm", "run", "format", external=True)
 
     # format docs Javascript
@@ -78,33 +46,30 @@ def format(session: Session) -> None:
     session.run("npm", "run", "format", external=True)
 
 
-@nox.session(reuse_venv=True)
-@apply_standard_pip_upgrades
+@group.session
 def example(session: Session) -> None:
     """Run an example"""
     session.install("matplotlib")
-    install_idom_dev(session)
+    install_reactpy_dev(session)
     session.run(
         "python",
         "scripts/one_example.py",
         *session.posargs,
-        env=get_idom_script_env(),
+        env=get_reactpy_script_env(),
     )
 
 
-@nox.session(reuse_venv=True)
-@install_latest_npm_in_ci
-@apply_standard_pip_upgrades
+@group.session
 def docs(session: Session) -> None:
     """Build and display documentation in the browser (automatically reloads on change)"""
     install_requirements_file(session, "build-docs")
-    install_idom_dev(session)
+    install_reactpy_dev(session)
     session.run(
         "python",
         "scripts/live_docs.py",
         "--open-browser",
         # watch python source too
-        "--watch=src/idom",
+        "--watch=src/reactpy",
         # for some reason this matches absolute paths
         "--ignore=**/_auto/*",
         "--ignore=**/_static/custom.js",
@@ -116,11 +81,11 @@ def docs(session: Session) -> None:
         "html",
         "docs/source",
         "docs/build",
-        env={**os.environ, **get_idom_script_env()},
+        env={**os.environ, **get_reactpy_script_env()},
     )
 
 
-@nox.session
+@group.session
 def docs_in_docker(session: Session) -> None:
     """Build a docker image for the documentation and run it to mimic production"""
     session.run(
@@ -130,7 +95,7 @@ def docs_in_docker(session: Session) -> None:
         "--file",
         "docs/Dockerfile",
         "--tag",
-        "idom-docs:latest",
+        "reactpy-docs:latest",
         external=True,
     )
     session.run(
@@ -142,97 +107,71 @@ def docs_in_docker(session: Session) -> None:
         "-e",
         "DEBUG=1",
         "--rm",
-        "idom-docs:latest",
+        "reactpy-docs:latest",
         external=True,
     )
 
 
-@nox.session
-def test(session: Session) -> None:
-    """Run the complete test suite"""
-    session.notify("test_python", posargs=session.posargs)
-    session.notify("test_docs")
-    session.notify("test_javascript")
-
-
-@nox.session
-def test_python(session: Session) -> None:
-    """Run all Python checks"""
-    session.notify("test_python_suite", posargs=session.posargs)
-    session.notify("test_python_types")
-    session.notify("test_python_style")
-    session.notify("test_python_build")
-
-
-@nox.session
-def test_javascript(session: Session) -> None:
-    """Run all Javascript checks"""
-    session.notify("test_javascript_suite")
-    session.notify("test_javascript_build")
-    session.notify("test_javascript_style")
-
-
-@nox.session
-@install_latest_npm_in_ci
-@apply_standard_pip_upgrades
-def test_python_suite(session: Session) -> None:
+@group.session
+def check_python_tests(
+    session: Session,
+    no_cov: Annotated[bool, Option(help="turn off coverage checks")] = False,
+    headed: Annotated[bool, Option(help="run tests with a headed browser")] = False,
+    pytest: Annotated[Sequence[str], replace(REMAINING_ARGS, help="pytest args")] = (),
+) -> None:
     """Run the Python-based test suite"""
-    session.env["IDOM_DEBUG_MODE"] = "1"
+    session.env["REACTPY_DEBUG_MODE"] = "1"
     install_requirements_file(session, "test-env")
     session.run("playwright", "install", "chromium")
-    args = ["pytest", "--reruns", "3", "--reruns-delay", "1", *session.posargs]
 
-    check_cov = "--no-cov" not in session.posargs
-    if check_cov:
-        args = ["coverage", "run", "--source=src/idom", "--module", *args]
-        install_idom_dev(session)
-    else:
-        args.remove("--no-cov")
+    args = ["pytest", *pytest]
+    if headed:
+        args.append("--headed")
+
+    if no_cov:
         session.log("Coverage won't be checked")
         session.install(".[all]")
+    else:
+        args = ["coverage", "run", "--source=src/reactpy", "--module", *args]
+        install_reactpy_dev(session)
 
     session.run(*args)
 
-    if check_cov:
+    if not no_cov:
         session.run("coverage", "report")
 
 
-@nox.session
-@apply_standard_pip_upgrades
-def test_python_types(session: Session) -> None:
+@group.session
+def check_python_types(session: Session) -> None:
     """Perform a static type analysis of the Python codebase"""
     install_requirements_file(session, "check-types")
     install_requirements_file(session, "pkg-deps")
     install_requirements_file(session, "pkg-extras")
     session.run("mypy", "--version")
-    session.run("mypy", "--show-error-codes", "--strict", "src/idom")
+    session.run("mypy", "--show-error-codes", "--strict", "src/reactpy")
 
 
-@nox.session
-@apply_standard_pip_upgrades
-def test_python_style(session: Session) -> None:
+@group.session
+def check_python_format(session: Session) -> None:
     """Check that Python style guidelines are being followed"""
     install_requirements_file(session, "check-style")
-    session.run("flake8", "src/idom", "tests", "docs")
+    session.run("flake8", "src/reactpy", "tests", "docs")
     session.run("black", ".", "--check")
     session.run("isort", ".", "--check-only")
 
 
-@nox.session
-@apply_standard_pip_upgrades
-def test_python_build(session: Session) -> None:
+@group.session
+def check_python_build(session: Session) -> None:
     """Test whether the Python package can be build for distribution"""
     install_requirements_file(session, "build-pkg")
     session.run("python", "-m", "build", "--sdist", "--wheel", "--outdir", "dist", ".")
 
 
-@nox.session
-@install_latest_npm_in_ci
-@apply_standard_pip_upgrades
-def test_docs(session: Session) -> None:
+@group.session
+def check_docs(session: Session) -> None:
     """Verify that the docs build and that doctests pass"""
     install_requirements_file(session, "build-docs")
-    install_idom_dev(session)
+    install_reactpy_dev(session)
     session.run(
         "sphinx-build",
         "-a",  # re-write all output files
@@ -249,42 +188,47 @@ def test_docs(session: Session) -> None:
     session.run("docker", "build", ".", "--file", "docs/Dockerfile", external=True)
 
 
-@do_first
-@install_latest_npm_in_ci
-def setup_client_env(session: Session) -> None:
-    session.chdir(SRC / "client")
+@group.setup("check-javascript")
+def setup_javascript_checks(session: Session) -> None:
+    session.chdir(CLIENT_DIR)
     session.run("npm", "install", external=True)
 
 
-@nox.session
-@setup_client_env
-def test_javascript_suite(session: Session) -> None:
+@group.session
+def check_javascript_suite(session: Session) -> None:
     """Run the Javascript-based test suite and ensure it bundles succesfully"""
     session.run("npm", "run", "test", external=True)
 
 
-@nox.session
-@setup_client_env
-def test_javascript_build(session: Session) -> None:
+@group.session
+def check_javascript_build(session: Session) -> None:
     """Run the Javascript-based test suite and ensure it bundles succesfully"""
     session.run("npm", "run", "test", external=True)
 
 
-@nox.session
-@setup_client_env
-def test_javascript_style(session: Session) -> None:
+@group.session
+def check_javascript_format(session: Session) -> None:
     """Check that Javascript style guidelines are being followed"""
     session.run("npm", "run", "check-format", external=True)
 
 
-@nox.session
-def build_js(session: Session) -> None:
+@group.session
+def build_javascript(session: Session) -> None:
     """Build javascript client code"""
-    session.chdir(SRC / "client")
+    session.chdir(CLIENT_DIR)
     session.run("npm", "run", "build", external=True)
 
 
-@nox.session
+@group.session
+def build_python(session: Session) -> None:
+    """Build javascript client code"""
+    rmtree(str(ROOT / "build"))
+    rmtree(str(ROOT / "dist"))
+    session.install("build", "wheel")
+    session.run("python", "-m", "build", "--sdist", "--wheel", "--outdir", "dist", ".")
+
+
+@group.session
 def tag(session: Session) -> None:
     """Create a new git tag"""
     try:
@@ -355,7 +299,7 @@ def tag(session: Session) -> None:
     session.run("git", "push", "origin", "main", "--tags", external=True)
 
 
-@nox.session(reuse_venv=True)
+@group.session
 def changes_since_release(session: Session) -> None:
     """Output the latest changes since the last release"""
     session.install("requests", "python-dateutil")
@@ -368,7 +312,7 @@ def install_requirements_file(session: Session, name: str) -> None:
     session.install("-r", str(file_path))
 
 
-def install_idom_dev(session: Session, extras: str = "all") -> None:
+def install_reactpy_dev(session: Session, extras: str = "all") -> None:
     session.run("pip", "--version")
     if "--no-install" not in session.posargs:
         session.install("-e", f".[{extras}]")
@@ -384,12 +328,12 @@ def set_version(new: str) -> None:
     (ROOT / "VERSION").write_text(new.strip() + "\n")
 
 
-def get_idom_script_env() -> dict[str, str]:
+def get_reactpy_script_env() -> dict[str, str]:
     return {
         "PYTHONPATH": os.getcwd(),
-        "IDOM_DEBUG_MODE": os.environ.get("IDOM_DEBUG_MODE", "1"),
-        "IDOM_TESTING_DEFAULT_TIMEOUT": os.environ.get(
-            "IDOM_TESTING_DEFAULT_TIMEOUT", "6.0"
+        "REACTPY_DEBUG_MODE": os.environ.get("REACTPY_DEBUG_MODE", "1"),
+        "REACTPY_TESTING_DEFAULT_TIMEOUT": os.environ.get(
+            "REACTPY_TESTING_DEFAULT_TIMEOUT", "6.0"
         ),
-        "IDOM_CHECK_VDOM_SPEC": os.environ.get("IDOM_CHECK_VDOM_SPEC", "0"),
+        "REACTPY_CHECK_VDOM_SPEC": os.environ.get("REACTPY_CHECK_VDOM_SPEC", "0"),
     }

@@ -1,11 +1,11 @@
-import idom
+import reactpy
 
 
-pigeon_maps = idom.web.module_from_template("react", "pigeon-maps", fallback="⌛")
-Map, Marker = idom.web.export(pigeon_maps, ["Map", "Marker"])
+pigeon_maps = reactpy.web.module_from_template("react", "pigeon-maps", fallback="⌛")
+Map, Marker = reactpy.web.export(pigeon_maps, ["Map", "Marker"])
 
 
-@idom.component
+@reactpy.component
 def MapWithMarkers():
     marker_anchor, add_marker_anchor, remove_marker_anchor = use_set()
 
@@ -35,7 +35,7 @@ def MapWithMarkers():
 
 
 def use_set(initial_value=None):
-    values, set_values = idom.hooks.use_state(initial_value or set())
+    values, set_values = reactpy.hooks.use_state(initial_value or set())
 
     def add_value(lat_lon):
         set_values(values.union({lat_lon}))
@@ -46,4 +46,4 @@ def use_set(initial_value=None):
     return values, add_value, remove_value
 
 
-idom.run(MapWithMarkers)
+reactpy.run(MapWithMarkers)

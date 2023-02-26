@@ -1,5 +1,5 @@
 # --- Build Artifacts ---
-src/idom/_client
+src/reactpy/_client
 
 # --- Jupyter ---
 *.ipynb_checkpoints

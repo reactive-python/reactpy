@@ -32,15 +32,15 @@ preparing any package that's been uploaded to NPM_. If you need to roll with you
 private CDN, this will likely be more complicated.
 
 In either case though, on the Python side, things are quite simple. You need only pass
-the URL where your package can be found to :func:`~idom.web.module.module_from_url`
+the URL where your package can be found to :func:`~reactpy.web.module.module_from_url`
 where you can then load any of its exports:
 
 .. code-block::
 
-    import idom
+    import reactpy
 
     your_module = ido.web.module_from_url("https://some.cdn/your-module")
-    YourComponent = idom.web.export(your_module, "YourComponent")
+    YourComponent = reactpy.web.export(your_module, "YourComponent")
 
 
 Distributing Javascript via PyPI_
@@ -52,7 +52,7 @@ briefly look at what's required. At a high level, we must consider how to...
 
 1. bundle your Javascript into an `ECMAScript Module`)
 2. include that Javascript bundle in a Python package
-3. use it as a component in your application using IDOM
+3. use it as a component in your application using ReactPy
 
 In the descriptions to follow we'll be assuming that:
 
@@ -121,7 +121,7 @@ Your ``package.json`` should include the following:
       "dependencies": {
         "react": "^17.0.1",
         "react-dom": "^17.0.1",
-        "idom-client-react": "^0.8.5",
+        "@reactpy/client": "^0.8.5",
         ...
       },
       ...
@@ -159,17 +159,17 @@ we'll be writing ``widget.py`` under that assumption.
     };
 
 Your ``widget.py`` file should then load the neighboring bundle file using
-:func:`~idom.web.module.module_from_file`. Then components from that bundle can be
-loaded with :func:`~idom.web.module.export`.
+:func:`~reactpy.web.module.module_from_file`. Then components from that bundle can be
+loaded with :func:`~reactpy.web.module.export`.
 
 .. code-block::
 
     from pathlib import Path
 
-    import idom
+    import reactpy
 
     _BUNDLE_PATH = Path(__file__).parent / "bundle.js"
-    _WEB_MODULE = idom.web.module_from_file(
+    _WEB_MODULE = reactpy.web.module_from_file(
         # Note that this is the same name from package.json - this must be globally
         # unique since it must share a namespace with all other javascript packages.
         name="YOUR-PACKAGE-NAME",
@@ -179,16 +179,16 @@ loaded with :func:`~idom.web.module.export`.
     )
 
     # Your module must provide a named export for YourFirstComponent
-    YourFirstComponent = idom.web.export(_WEB_MODULE, "YourFirstComponent")
+    YourFirstComponent = reactpy.web.export(_WEB_MODULE, "YourFirstComponent")
 
     # It's possible to export multiple components at once
-    YourSecondComponent, YourThirdComponent = idom.web.export(
+    YourSecondComponent, YourThirdComponent = reactpy.web.export(
         _WEB_MODULE, ["YourSecondComponent", "YourThirdComponent"]
     )
 
 .. note::
 
-    When :data:`idom.config.IDOM_DEBUG_MODE` is active, named exports will be validated.
+    When :data:`reactpy.config.REACTPY_DEBUG_MODE` is active, named exports will be validated.
 
 The remaining files that we need to create are concerned with creating a Python package.
 We won't cover all the details here, so refer to the Setuptools_ documentation for
@@ -230,10 +230,10 @@ commands in Setuptools like ``build``, ``sdist``, and ``develop``:
         name=PACKAGE_NAME,
         version="0.0.1",
         packages=find_packages(exclude=["tests*"]),
-        classifiers=["Framework :: IDOM", ...],
-        keywords=["IDOM", "components", ...],
-        # install IDOM with this package
-        install_requires=["idom"],
+        classifiers=["Framework :: ReactPy", ...],
+        keywords=["ReactPy", "components", ...],
+        # install ReactPy with this package
+        install_requires=["reactpy"],
         # required in order to include static files like bundle.js using MANIFEST.in
         include_package_data=True,
         # we need access to the file system, so cannot be run from a zip file
@@ -297,7 +297,7 @@ up and running as quickly as possible.
 .. _install NPM: https://www.npmjs.com/get-npm
 .. _CDN: https://en.wikipedia.org/wiki/Content_delivery_network
 .. _PyPI: https://pypi.org/
-.. _template repository: https://github.com/idom-team/idom-react-component-cookiecutter
+.. _template repository: https://github.com/reactive-python/reactpy-react-component-cookiecutter
 .. _web module: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
 .. _Rollup: https://rollupjs.org/guide/en/
 .. _Webpack: https://webpack.js.org/

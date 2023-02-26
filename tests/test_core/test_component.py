@@ -1,9 +1,9 @@
-import idom
-from idom.testing import DisplayFixture
+import reactpy
+from reactpy.testing import DisplayFixture
 
 
 def test_component_repr():
-    @idom.component
+    @reactpy.component
     def MyComponent(a, *b, **c):
         pass
 
@@ -17,25 +17,25 @@ def test_component_repr():
 
 
 async def test_simple_component():
-    @idom.component
+    @reactpy.component
     def SimpleDiv():
-        return idom.html.div()
+        return reactpy.html.div()
 
     assert SimpleDiv().render() == {"tagName": "div"}
 
 
 async def test_simple_parameterized_component():
-    @idom.component
+    @reactpy.component
     def SimpleParamComponent(tag):
-        return idom.vdom(tag)
+        return reactpy.vdom(tag)
 
     assert SimpleParamComponent("div").render() == {"tagName": "div"}
 
 
 async def test_component_with_var_args():
-    @idom.component
+    @reactpy.component
     def ComponentWithVarArgsAndKwargs(*args, **kwargs):
-        return idom.html.div(kwargs, args)
+        return reactpy.html.div(kwargs, args)
 
     assert ComponentWithVarArgsAndKwargs("hello", "world", my_attr=1).render() == {
         "tagName": "div",
@@ -45,9 +45,9 @@ async def test_component_with_var_args():
 
 
 async def test_display_simple_hello_world(display: DisplayFixture):
-    @idom.component
+    @reactpy.component
     def Hello():
-        return idom.html.p({"id": "hello"}, ["Hello World"])
+        return reactpy.html.p({"id": "hello"}, ["Hello World"])
 
     await display.show(Hello)
 
@@ -55,11 +55,11 @@ async def test_display_simple_hello_world(display: DisplayFixture):
 
 
 async def test_pre_tags_are_rendered_correctly(display: DisplayFixture):
-    @idom.component
+    @reactpy.component
     def PreFormated():
-        return idom.html.pre(
+        return reactpy.html.pre(
             {"id": "pre-form-test"},
-            idom.html.span("this", idom.html.span("is"), "some"),
+            reactpy.html.span("this", reactpy.html.span("is"), "some"),
             "pre-formated",
             " text",
         )

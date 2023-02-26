@@ -2,24 +2,24 @@ from io import BytesIO
 
 import matplotlib.pyplot as plt
 
-import idom
-from idom.widgets import image
+import reactpy
+from reactpy.widgets import image
 
 
-@idom.component
+@reactpy.component
 def PolynomialPlot():
-    coefficients, set_coefficients = idom.hooks.use_state([0])
+    coefficients, set_coefficients = reactpy.hooks.use_state([0])
 
     x = [n for n in linspace(-1, 1, 50)]
     y = [polynomial(value, coefficients) for value in x]
 
-    return idom.html.div(
+    return reactpy.html.div(
         plot(f"{len(coefficients)} Term Polynomial", x, y),
         ExpandableNumberInputs(coefficients, set_coefficients),
     )
 
 
-@idom.component
+@reactpy.component
 def ExpandableNumberInputs(values, set_values):
     inputs = []
     for i in range(len(values)):
@@ -36,11 +36,11 @@ def ExpandableNumberInputs(values, set_values):
     def del_input():
         set_values(values[:-1])
 
-    return idom.html.div(
-        idom.html.div(
+    return reactpy.html.div(
+        reactpy.html.div(
             "add/remove term:",
-            idom.html.button({"on_click": lambda event: add_input()}, "+"),
-            idom.html.button({"on_click": lambda event: del_input()}, "-"),
+            reactpy.html.button({"on_click": lambda event: add_input()}, "+"),
+            reactpy.html.button({"on_click": lambda event: del_input()}, "-"),
         ),
         inputs,
     )
@@ -57,15 +57,15 @@ def plot(title, x, y):
 
 
 def poly_coef_input(index, callback):
-    return idom.html.div(
+    return reactpy.html.div(
         {"style": {"margin-top": "5px"}, "key": index},
-        idom.html.label(
+        reactpy.html.label(
             "C",
-            idom.html.sub(index),
+            reactpy.html.sub(index),
             " × X",
-            idom.html.sup(index),
+            reactpy.html.sup(index),
         ),
-        idom.html.input({"type": "number", "on_change": callback}),
+        reactpy.html.input({"type": "number", "on_change": callback}),
     )
 
 
@@ -82,4 +82,4 @@ def linspace(start, stop, n):
         yield start + h * i
 
 
-idom.run(PolynomialPlot)
+reactpy.run(PolynomialPlot)

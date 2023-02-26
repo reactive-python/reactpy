@@ -3,9 +3,9 @@ import time
 from os.path import getmtime
 from threading import Event, Thread
 
-import idom
+import reactpy
 from docs.examples import all_example_names, get_example_files_by_name, load_one_example
-from idom.widgets import _hotswap
+from reactpy.widgets import _hotswap
 
 
 EXAMPLE_NAME_SET = all_example_names()
@@ -41,7 +41,7 @@ def main():
     for file in get_example_files_by_name(ex_name):
         on_file_change(file, update_component)
 
-    idom.run(component)
+    reactpy.run(component)
 
 
 def _example_name_input() -> str:

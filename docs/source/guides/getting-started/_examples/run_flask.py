@@ -1,7 +1,7 @@
 # :lines: 11-
 
-from idom import run
-from idom.backend import flask as flask_server
+from reactpy import run
+from reactpy.backend import flask as flask_server
 
 
 # the run() function is the entry point for examples
@@ -10,8 +10,8 @@ flask_server.configure = lambda _, cmpt: run(cmpt)
 
 from flask import Flask
 
-from idom import component, html
-from idom.backend.flask import configure
+from reactpy import component, html
+from reactpy.backend.flask import configure
 
 
 @component

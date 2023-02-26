@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Example App</title>
+  </head>
+  <body>
+    <h1>This is an Example App</h1>
+    <p>Just below is an embedded ReactPy view...</p>
+    <div id="reactpy-app" />
+    <script type="module">
+      import {
+        mountWithLayoutServer,
+        LayoutServerInfo,
+      } from "https://esm.sh/@reactpy/client@0.38.0";
+
+      const serverInfo = new LayoutServerInfo({
+        host: document.location.hostname,
+        port: document.location.port,
+        path: "_reactpy",
+        query: queryParams.user.toString(),
+        secure: document.location.protocol == "https:",
+      });
+
+      mountLayoutWithWebSocket(
+        document.getElementById("reactpy-app"),
+        serverInfo
+      );
+    </script>
+  </body>
+</html>

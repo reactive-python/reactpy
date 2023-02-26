@@ -9,22 +9,22 @@ parts of the view directly. As an illustration, you may think that when a user c
 
 .. image:: _static/direct-state-change.png
 
-IDOM works a bit differently though - user interactions cause event handlers to
-:ref:`"set state" <Introduction to use_state>` triggering IDOM to re-render a new
+ReactPy works a bit differently though - user interactions cause event handlers to
+:ref:`"set state" <Introduction to use_state>` triggering ReactPy to re-render a new
 version of the view rather then mutating the existing one.
 
-.. image:: _static/idom-state-change.png
+.. image:: _static/reactpy-state-change.png
 
-Given this, when IDOM "renders" something, it's as if IDOM has taken a snapshot of the
+Given this, when ReactPy "renders" something, it's as if ReactPy has taken a snapshot of the
 UI where all the event handlers, local variables and the view itself were calculated
 using what state was present at the time of that render. Then, when user iteractions
-trigger state setters, IDOM is made away of the newly set state and schedules a
+trigger state setters, ReactPy is made away of the newly set state and schedules a
 re-render. When this subsequent renders occurs it performs all the same calculations as
 before, but with this new state.
 
 As we've :ref:`already seen <When Variables Aren't Enough>`, state variables are not
 like normal variables. Instead, they live outside your components and are managed by
-IDOM. When a component is rendered, IDOM provides the component a snapshot of the state
+ReactPy. When a component is rendered, ReactPy provides the component a snapshot of the state
 in that exact moment. As a result, the view returned by that component is itself a
 snapshot of the UI at that time.
 
@@ -42,7 +42,7 @@ Let's experiment with this behaviors of state to see why we should think about i
 respect to these "snapshots" in time. Take a look at the example below and try to guess
 how it will behave. **What will the count be after you click the "Increment" button?**
 
-.. idom:: _examples/set_counter_3_times
+.. reactpy:: _examples/set_counter_3_times
 
 Despite the fact that we called ``set_count(count + 1)`` three times, the count only
 increments by ``1``! This is perhaps a surprising result, but let's break what's
@@ -68,7 +68,7 @@ above as:
 
 Even though, we called ``set_count`` three times with what might have seemed like
 different values, every time we were actually just doing ``set_count(1)`` on each call.
-Only after the event handler returns will IDOM actually perform the next render where
+Only after the event handler returns will ReactPy actually perform the next render where
 count is ``1``. When it does, ``number`` will be ``1`` and we'll be able to perform the
 same subtitution as before to see what the next number will be after we click
 "Increment":
@@ -87,7 +87,7 @@ Given what we :ref:`learned above <setting state triggers renders>`, we ought to
 to reason about what should happen in the example below. What will be printed when the
 "Increment" button is clicked?
 
-.. idom:: _examples/print_count_after_set
+.. reactpy:: _examples/print_count_after_set
 
 If we use the same subtitution trick we saw before, we can rewrite these lines:
 
@@ -112,7 +112,7 @@ What if we slightly modify this example, by introducing a delay between when we 
 ``set_number`` and when we print? Will this behavior remain the same? To add this delay
 we'll use an :ref:`async event handler` and :func:`~asyncio.sleep` for some time:
 
-.. idom:: _examples/delayed_print_after_set
+.. reactpy:: _examples/delayed_print_after_set
 
 Even though the render completed before the print statement took place, the behavior
 remained the same! Despite the fact that the next render took place before the print
@@ -140,9 +140,9 @@ been sent yet, should not impact where the message is ultimately sent. We then n
 ask what actually happens. Will it print “You said Hello to Alice” or “You said Hello to
 Bob”?
 
-.. idom:: _examples/print_chat_message
+.. reactpy:: _examples/print_chat_message
 
-As it turns out, the code above matches the user's expectation. This is because IDOM
+As it turns out, the code above matches the user's expectation. This is because ReactPy
 keeps the state values fixed within the event handlers defined during a particular
 render. As a result, you don't need to worry about whether state has changed while
 code in an event handler is running.

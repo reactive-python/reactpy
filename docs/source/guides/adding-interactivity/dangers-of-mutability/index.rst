@@ -2,7 +2,7 @@ Dangers of Mutability
 =====================
 
 While state can hold any type of value, you should be careful to avoid directly
-modifying objects that you declare as state with IDOM. In other words, you must not
+modifying objects that you declare as state with ReactPy. In other words, you must not
 :ref:`"mutate" <What is a Mutation>` values which are held as state. Rather, to change
 these values you should use new ones or create copies.
 
@@ -51,13 +51,13 @@ have not had to consider the consiquences of mutations.
 Why Avoid Mutation?
 -------------------
 
-Unfortunately, IDOM does not understand that when a value is mutated, it may have
+Unfortunately, ReactPy does not understand that when a value is mutated, it may have
 changed. As a result, mutating values will not trigger re-renders. Thus, you must be
-careful to avoid mutation whenever you want IDOM to re-render a component. For example,
+careful to avoid mutation whenever you want ReactPy to re-render a component. For example,
 the intention of the code below is to make the red dot move when you touch or hover over
 the preview area. However it doesn't - the dot remains stationary:
 
-.. idom:: _examples/moving_dot_broken
+.. reactpy:: _examples/moving_dot_broken
 
 The problem is with this section of code:
 
@@ -68,7 +68,7 @@ The problem is with this section of code:
     :lineno-start: 13
 
 This code mutates the ``position`` dictionary from the prior render instead of using the
-state variable's associated state setter. Without calling setter IDOM has no idea that
+state variable's associated state setter. Without calling setter ReactPy has no idea that
 the variable's data has been modified. While it can be possible to get away with
 mutating state variables, it's highly dicsouraged. Doing so can cause strange and
 unpredictable behavior. As a result, you should always treat the data within a state
@@ -80,7 +80,7 @@ call it by passing a *new* dictionary with the values for the next render. Notic
 by making these alterations to the code, that the dot now follows your pointer when
 you touch or hover over the preview:
 
-.. idom:: _examples/moving_dot
+.. reactpy:: _examples/moving_dot
 
 
 .. dropdown:: Local mutation can be alright
@@ -208,7 +208,7 @@ updating user information with a preview of the currently entered data. We can
 accomplish this using `"unpacking" <https://www.python.org/dev/peps/pep-0448/>`__ with
 the ``**`` syntax:
 
-.. idom:: _examples/dict_update
+.. reactpy:: _examples/dict_update
 
 
 .. _removing-dictionary-items:
@@ -249,7 +249,7 @@ set of keys. One way to do this is with a dictionary comprehension. The example 
 shows an interface where you're able to enter a new term and definition. Once added,
 you can click a delete button to remove the term and definition:
 
-.. idom:: _examples/dict_remove
+.. reactpy:: _examples/dict_remove
 
 
 Working with Lists
@@ -349,7 +349,7 @@ the items we want to append instead. There are several ways to do this for one o
 values however it's often simplest to use `"unpacking"
 <https://www.python.org/dev/peps/pep-0448/>`__ with the ``*`` syntax.
 
-.. idom:: _examples/list_insert
+.. reactpy:: _examples/list_insert
 
 
 .. _removing-list-items:
@@ -378,7 +378,7 @@ not quite as clean. You must select the portion the list prior to the item which
 be removed (``l[:index]``) and the portion after the item (``l[index + 1:]``) and add
 them together:
 
-.. idom:: _examples/list_remove
+.. reactpy:: _examples/list_remove
 
 
 .. _replacing-list-items:
@@ -409,7 +409,7 @@ must select the portion before and after the item in question. But this time, in
 of adding those two selections together, you must insert that values you want to replace
 between them:
 
-.. idom:: _examples/list_replace
+.. reactpy:: _examples/list_replace
 
 
 .. _re-ordering-list-items:
@@ -441,7 +441,7 @@ list object, you should use the builtin functions :func:`sorted` and :func:`reve
 and pass the resulting iterator into the :class:`list` constructor to create a sorted
 or reversed copy of the given list:
 
-.. idom:: _examples/list_re_order
+.. reactpy:: _examples/list_re_order
 
 
 Working with Sets
@@ -512,7 +512,7 @@ or operator ``|`` serves as a succinct way to compute the union of two sets. How
 you should be careful to not use an in-place assignment with this operator as that will
 (counterintuitively) mutate the original set rather than creating a new one.
 
-.. idom:: _examples/set_update
+.. reactpy:: _examples/set_update
 
 
 .. _removing-set-items:
@@ -558,7 +558,7 @@ methods to return new sets without mutating them. As before when :ref:`adding se
 you need to avoid using the inline assignment operators since that will
 (counterintuitively) mutate the original set rather than given you a new one:
 
-.. idom:: _examples/set_remove
+.. reactpy:: _examples/set_remove
 
 
 Useful Packages

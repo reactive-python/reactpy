@@ -3,11 +3,11 @@ from typing import Any, Sequence
 
 from jsonpointer import set_pointer
 
-import idom
-from idom.core.layout import Layout
-from idom.core.serve import serve_layout
-from idom.core.types import LayoutUpdateMessage
-from idom.testing import StaticEventHandler
+import reactpy
+from reactpy.core.layout import Layout
+from reactpy.core.serve import serve_layout
+from reactpy.core.types import LayoutUpdateMessage
+from reactpy.testing import StaticEventHandler
 from tests.tooling.common import event_message
 
 
@@ -29,7 +29,7 @@ def make_send_recv_callbacks(events_to_inject):
         changes.append(patch)
         sem.release()
         if not events_to_inject:
-            raise idom.Stop()
+            raise reactpy.Stop()
 
     async def recv():
         await sem.acquire()
@@ -78,14 +78,14 @@ def assert_changes_produce_expected_model(
     assert model_from_changes == expected_model
 
 
-@idom.component
+@reactpy.component
 def Counter():
-    count, change_count = idom.hooks.use_reducer(
+    count, change_count = reactpy.hooks.use_reducer(
         (lambda old_count, diff: old_count + diff),
         initial_value=0,
     )
     handler = STATIC_EVENT_HANDLER.use(lambda: change_count(1))
-    return idom.html.div({EVENT_NAME: handler, "count": count})
+    return reactpy.html.div({EVENT_NAME: handler, "count": count})
 
 
 async def test_dispatch():
@@ -103,7 +103,7 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
     blocked_handler = StaticEventHandler()
     non_blocked_handler = StaticEventHandler()
 
-    @idom.component
+    @reactpy.component
     def ComponentWithTwoEventHandlers():
         @blocked_handler.use
         async def block_forever():
@@ -114,9 +114,9 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
         async def handle_event():
             second_event_did_execute.set()
 
-        return idom.html.div(
-            idom.html.button({"on_click": block_forever}),
-            idom.html.button({"on_click": handle_event}),
+        return reactpy.html.div(
+            reactpy.html.button({"on_click": block_forever}),
+            reactpy.html.button({"on_click": handle_event}),
         )
 
     send_queue = asyncio.Queue()
@@ -124,7 +124,7 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
 
     asyncio.ensure_future(
         serve_layout(
-            idom.Layout(ComponentWithTwoEventHandlers()),
+            reactpy.Layout(ComponentWithTwoEventHandlers()),
             send_queue.put,
             recv_queue.get,
         )

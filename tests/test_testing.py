@@ -3,30 +3,30 @@ import os
 
 import pytest
 
-from idom import Ref, component, html, testing
-from idom.backend import starlette as starlette_implementation
-from idom.logging import ROOT_LOGGER
-from idom.sample import SampleApp as SampleApp
-from idom.testing.backend import _hotswap
-from idom.testing.display import DisplayFixture
+from reactpy import Ref, component, html, testing
+from reactpy.backend import starlette as starlette_implementation
+from reactpy.logging import ROOT_LOGGER
+from reactpy.sample import SampleApp as SampleApp
+from reactpy.testing.backend import _hotswap
+from reactpy.testing.display import DisplayFixture
 
 
-def test_assert_idom_logged_does_not_supress_errors():
+def test_assert_reactpy_logged_does_not_supress_errors():
     with pytest.raises(RuntimeError, match="expected error"):
-        with testing.assert_idom_did_log():
+        with testing.assert_reactpy_did_log():
             raise RuntimeError("expected error")
 
 
-def test_assert_idom_logged_message():
-    with testing.assert_idom_did_log(match_message="my message"):
+def test_assert_reactpy_logged_message():
+    with testing.assert_reactpy_did_log(match_message="my message"):
         ROOT_LOGGER.info("my message")
 
-    with testing.assert_idom_did_log(match_message=r".*"):
+    with testing.assert_reactpy_did_log(match_message=r".*"):
         ROOT_LOGGER.info("my message")
 
 
-def test_assert_idom_logged_error():
-    with testing.assert_idom_did_log(
+def test_assert_reactpy_logged_error():
+    with testing.assert_reactpy_did_log(
         match_message="log message",
         error_type=ValueError,
         match_error="my value error",
@@ -40,7 +40,7 @@ def test_assert_idom_logged_error():
         AssertionError,
         match=r"Could not find a log record matching the given",
     ):
-        with testing.assert_idom_did_log(
+        with testing.assert_reactpy_did_log(
             match_message="log message",
             error_type=ValueError,
             match_error="my value error",
@@ -55,7 +55,7 @@ def test_assert_idom_logged_error():
         AssertionError,
         match=r"Could not find a log record matching the given",
     ):
-        with testing.assert_idom_did_log(
+        with testing.assert_reactpy_did_log(
             match_message="log message",
             error_type=ValueError,
             match_error="my value error",
@@ -70,7 +70,7 @@ def test_assert_idom_logged_error():
         AssertionError,
         match=r"Could not find a log record matching the given",
     ):
-        with testing.assert_idom_did_log(
+        with testing.assert_reactpy_did_log(
             match_message="log message",
             error_type=ValueError,
             match_error="my value error",
@@ -82,12 +82,12 @@ def test_assert_idom_logged_error():
                 ROOT_LOGGER.exception("something else")
 
 
-def test_assert_idom_logged_assertion_error_message():
+def test_assert_reactpy_logged_assertion_error_message():
     with pytest.raises(
         AssertionError,
         match=r"Could not find a log record matching the given",
     ):
-        with testing.assert_idom_did_log(
+        with testing.assert_reactpy_did_log(
             # put in all possible params full assertion error message
             match_message=r".*",
             error_type=Exception,
@@ -96,29 +96,29 @@ def test_assert_idom_logged_assertion_error_message():
             pass
 
 
-def test_assert_idom_logged_ignores_level():
+def test_assert_reactpy_logged_ignores_level():
     original_level = ROOT_LOGGER.level
     ROOT_LOGGER.setLevel(logging.INFO)
     try:
-        with testing.assert_idom_did_log(match_message=r".*"):
+        with testing.assert_reactpy_did_log(match_message=r".*"):
             # this log would normally be ignored
             ROOT_LOGGER.debug("my message")
     finally:
         ROOT_LOGGER.setLevel(original_level)
 
 
-def test_assert_idom_did_not_log():
-    with testing.assert_idom_did_not_log(match_message="my message"):
+def test_assert_reactpy_did_not_log():
+    with testing.assert_reactpy_did_not_log(match_message="my message"):
         pass
 
-    with testing.assert_idom_did_not_log(match_message=r"something else"):
+    with testing.assert_reactpy_did_not_log(match_message=r"something else"):
         ROOT_LOGGER.info("my message")
 
     with pytest.raises(
         AssertionError,
         match=r"Did find a log record matching the given",
     ):
-        with testing.assert_idom_did_not_log(
+        with testing.assert_reactpy_did_not_log(
             # put in all possible params full assertion error message
             match_message=r".*",
             error_type=Exception,
@@ -153,7 +153,7 @@ def test_if_app_is_given_implementation_must_be_too():
 
 def test_list_logged_excptions():
     the_error = None
-    with testing.capture_idom_logs() as records:
+    with testing.capture_reactpy_logs() as records:
         ROOT_LOGGER.info("A non-error log message")
 
         try:

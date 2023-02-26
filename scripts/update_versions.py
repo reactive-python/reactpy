@@ -7,7 +7,7 @@ import semver
 
 ROOT = Path("__file__").parent.parent
 VERSION_FILE = ROOT / Path("VERSION")
-PY_PKG_INIT_FILE = ROOT / "src" / "idom" / "__init__.py"
+PY_PKG_INIT_FILE = ROOT / "src" / "reactpy" / "__init__.py"
 JS_ROOT_DIR = ROOT / "src" / "client"
 JS_PACKAGE_JSON_FILES = [
     pkg_dir / "package.json" for pkg_dir in (JS_ROOT_DIR / "packages").iterdir()

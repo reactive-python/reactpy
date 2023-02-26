@@ -3,35 +3,35 @@ from pathlib import Path
 import pytest
 from sanic import Sanic
 
-import idom
-from idom.backend import sanic as sanic_implementation
-from idom.testing import (
+import reactpy
+from reactpy.backend import sanic as sanic_implementation
+from reactpy.testing import (
     BackendFixture,
     DisplayFixture,
-    assert_idom_did_log,
-    assert_idom_did_not_log,
+    assert_reactpy_did_log,
+    assert_reactpy_did_not_log,
     poll,
 )
-from idom.web.module import NAME_SOURCE, WebModule
+from reactpy.web.module import NAME_SOURCE, WebModule
 
 
 JS_FIXTURES_DIR = Path(__file__).parent / "js_fixtures"
 
 
 async def test_that_js_module_unmount_is_called(display: DisplayFixture):
-    SomeComponent = idom.web.export(
-        idom.web.module_from_file(
+    SomeComponent = reactpy.web.export(
+        reactpy.web.module_from_file(
             "set-flag-when-unmount-is-called",
             JS_FIXTURES_DIR / "set-flag-when-unmount-is-called.js",
         ),
         "SomeComponent",
     )
 
-    set_current_component = idom.Ref(None)
+    set_current_component = reactpy.Ref(None)
 
-    @idom.component
+    @reactpy.component
     def ShowCurrentComponent():
-        current_component, set_current_component.current = idom.hooks.use_state(
+        current_component, set_current_component.current = reactpy.hooks.use_state(
             lambda: SomeComponent({"id": "some-component", "text": "initial component"})
         )
         return current_component
@@ -41,7 +41,7 @@ async def test_that_js_module_unmount_is_called(display: DisplayFixture):
     await display.page.wait_for_selector("#some-component", state="attached")
 
     set_current_component.current(
-        idom.html.h1({"id": "some-other-component"}, "some other component")
+        reactpy.html.h1({"id": "some-other-component"}, "some other component")
     )
 
     # the new component has been displayed
@@ -61,12 +61,12 @@ async def test_module_from_url(browser):
         content_type="text/javascript",
     )
 
-    SimpleButton = idom.web.export(
-        idom.web.module_from_url("/simple-button.js", resolve_exports=False),
+    SimpleButton = reactpy.web.export(
+        reactpy.web.module_from_url("/simple-button.js", resolve_exports=False),
         "SimpleButton",
     )
 
-    @idom.component
+    @reactpy.component
     def ShowSimpleButton():
         return SimpleButton({"id": "my-button"})
 
@@ -79,30 +79,30 @@ async def test_module_from_url(browser):
 
 def test_module_from_template_where_template_does_not_exist():
     with pytest.raises(ValueError, match="No template for 'does-not-exist.js'"):
-        idom.web.module_from_template("does-not-exist", "something.js")
+        reactpy.web.module_from_template("does-not-exist", "something.js")
 
 
 async def test_module_from_template(display: DisplayFixture):
-    victory = idom.web.module_from_template("react@18.2.0", "victory-bar@35.4.0")
+    victory = reactpy.web.module_from_template("react@18.2.0", "victory-bar@35.4.0")
 
     assert "react@18.2.0" in victory.file.read_text()
-    VictoryBar = idom.web.export(victory, "VictoryBar")
+    VictoryBar = reactpy.web.export(victory, "VictoryBar")
     await display.show(VictoryBar)
 
     await display.page.wait_for_selector(".VictoryContainer")
 
 
 async def test_module_from_file(display: DisplayFixture):
-    SimpleButton = idom.web.export(
-        idom.web.module_from_file(
+    SimpleButton = reactpy.web.export(
+        reactpy.web.module_from_file(
             "simple-button", JS_FIXTURES_DIR / "simple-button.js"
         ),
         "SimpleButton",
     )
 
-    is_clicked = idom.Ref(False)
+    is_clicked = reactpy.Ref(False)
 
-    @idom.component
+    @reactpy.component
     def ShowSimpleButton():
         return SimpleButton(
             {"id": "my-button", "onClick": lambda event: is_clicked.set_current(True)}
@@ -119,30 +119,30 @@ def test_module_from_file_source_conflict(tmp_path):
     first_file = tmp_path / "first.js"
 
     with pytest.raises(FileNotFoundError, match="does not exist"):
-        idom.web.module_from_file("temp", first_file)
+        reactpy.web.module_from_file("temp", first_file)
 
     first_file.touch()
 
-    idom.web.module_from_file("temp", first_file)
+    reactpy.web.module_from_file("temp", first_file)
 
     second_file = tmp_path / "second.js"
     second_file.touch()
 
     # ok, same content
-    idom.web.module_from_file("temp", second_file)
+    reactpy.web.module_from_file("temp", second_file)
 
     third_file = tmp_path / "third.js"
     third_file.write_text("something-different")
 
-    with assert_idom_did_log(r"Existing web module .* will be replaced with"):
-        idom.web.module_from_file("temp", third_file)
+    with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
+        reactpy.web.module_from_file("temp", third_file)
 
 
 def test_web_module_from_file_symlink(tmp_path):
     file = tmp_path / "temp.js"
     file.touch()
 
-    module = idom.web.module_from_file("temp", file, symlink=True)
+    module = reactpy.web.module_from_file("temp", file, symlink=True)
 
     assert module.file.resolve().read_text() == ""
 
@@ -155,44 +155,44 @@ def test_web_module_from_file_symlink_twice(tmp_path):
     file_1 = tmp_path / "temp_1.js"
     file_1.touch()
 
-    idom.web.module_from_file("temp", file_1, symlink=True)
+    reactpy.web.module_from_file("temp", file_1, symlink=True)
 
-    with assert_idom_did_not_log(r"Existing web module .* will be replaced with"):
-        idom.web.module_from_file("temp", file_1, symlink=True)
+    with assert_reactpy_did_not_log(r"Existing web module .* will be replaced with"):
+        reactpy.web.module_from_file("temp", file_1, symlink=True)
 
     file_2 = tmp_path / "temp_2.js"
     file_2.write_text("something")
 
-    with assert_idom_did_log(r"Existing web module .* will be replaced with"):
-        idom.web.module_from_file("temp", file_2, symlink=True)
+    with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
+        reactpy.web.module_from_file("temp", file_2, symlink=True)
 
 
 def test_web_module_from_file_replace_existing(tmp_path):
     file1 = tmp_path / "temp1.js"
     file1.touch()
 
-    idom.web.module_from_file("temp", file1)
+    reactpy.web.module_from_file("temp", file1)
 
     file2 = tmp_path / "temp2.js"
     file2.write_text("something")
 
-    with assert_idom_did_log(r"Existing web module .* will be replaced with"):
-        idom.web.module_from_file("temp", file2)
+    with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
+        reactpy.web.module_from_file("temp", file2)
 
 
 def test_module_missing_exports():
     module = WebModule("test", NAME_SOURCE, None, {"a", "b", "c"}, None, False)
 
     with pytest.raises(ValueError, match="does not export 'x'"):
-        idom.web.export(module, "x")
+        reactpy.web.export(module, "x")
 
     with pytest.raises(ValueError, match=r"does not export \['x', 'y'\]"):
-        idom.web.export(module, ["x", "y"])
+        reactpy.web.export(module, ["x", "y"])
 
 
 async def test_module_exports_multiple_components(display: DisplayFixture):
-    Header1, Header2 = idom.web.export(
-        idom.web.module_from_file(
+    Header1, Header2 = reactpy.web.export(
+        reactpy.web.module_from_file(
             "exports-two-components", JS_FIXTURES_DIR / "exports-two-components.js"
         ),
         ["Header1", "Header2"],
@@ -208,10 +208,10 @@ async def test_module_exports_multiple_components(display: DisplayFixture):
 
 
 async def test_imported_components_can_render_children(display: DisplayFixture):
-    module = idom.web.module_from_file(
+    module = reactpy.web.module_from_file(
         "component-can-have-child", JS_FIXTURES_DIR / "component-can-have-child.js"
     )
-    Parent, Child = idom.web.export(module, ["Parent", "Child"])
+    Parent, Child = reactpy.web.export(module, ["Parent", "Child"])
 
     await display.show(
         lambda: Parent(
@@ -231,6 +231,6 @@ async def test_imported_components_can_render_children(display: DisplayFixture):
 
 
 def test_module_from_string():
-    idom.web.module_from_string("temp", "old")
-    with assert_idom_did_log(r"Existing web module .* will be replaced with"):
-        idom.web.module_from_string("temp", "new")
+    reactpy.web.module_from_string("temp", "old")
+    with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
+        reactpy.web.module_from_string("temp", "new")

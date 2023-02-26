@@ -1,7 +1,7 @@
 # :lines: 11-
 
-from idom import run
-from idom.backend import sanic as sanic_server
+from reactpy import run
+from reactpy.backend import sanic as sanic_server
 
 
 # the run() function is the entry point for examples
@@ -10,8 +10,8 @@ sanic_server.configure = lambda _, cmpt: run(cmpt)
 
 from sanic import Sanic
 
-from idom import component, html
-from idom.backend.sanic import configure
+from reactpy import component, html
+from reactpy.backend.sanic import configure
 
 
 @component

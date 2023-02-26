@@ -3,12 +3,12 @@
 Javascript Components
 =====================
 
-While IDOM is a great tool for displaying HTML and responding to browser events with
+While ReactPy is a great tool for displaying HTML and responding to browser events with
 pure Python, there are other projects which already allow you to do this inside
 `Jupyter Notebooks <https://ipywidgets.readthedocs.io/en/latest/examples/Widget%20Basics.html>`__
 or in standard
 `web apps <https://blog.jupyter.org/and-voil%C3%A0-f6a2c08a4a93?gi=54b835a2fcce>`__.
-The real power of IDOM comes from its ability to seamlessly leverage the existing
+The real power of ReactPy comes from its ability to seamlessly leverage the existing
 Javascript ecosystem. This can be accomplished in different ways for different reasons:
 
 .. list-table::
@@ -18,7 +18,7 @@ Javascript ecosystem. This can be accomplished in different ways for different r
         - Use Case
 
     *   - :ref:`Dynamically Loaded Components`
-        - You want to **quickly experiment** with IDOM and the Javascript ecosystem.
+        - You want to **quickly experiment** with ReactPy and the Javascript ecosystem.
 
     *   - :ref:`Custom Javascript Components`
         - You want to create polished software that can be **easily shared** with others.
@@ -35,18 +35,18 @@ Dynamically Loaded Components
     Javascript` for more info. Instead, it's best used during exploratory phases of
     development.
 
-IDOM makes it easy to draft your code when you're in the early stages of development by
+ReactPy makes it easy to draft your code when you're in the early stages of development by
 using a CDN_ to dynamically load Javascript packages on the fly. In this example we'll
 be using the ubiquitous React-based UI framework `Material UI`_.
 
-.. idom:: _examples/material_ui_button_no_action
+.. reactpy:: _examples/material_ui_button_no_action
 
 So now that we can display a Material UI Button we probably want to make it do
 something. Thankfully there's nothing new to learn here, you can pass event handlers to
 the button just as you did when :ref:`getting started <responding to events>`. Thus, all
 we need to do is add an ``onClick`` handler to the component:
 
-.. idom:: _examples/material_ui_button_on_click
+.. reactpy:: _examples/material_ui_button_on_click
 
 
 .. _Custom Javascript Component:
@@ -55,7 +55,7 @@ Custom Javascript Components
 ----------------------------
 
 For projects that will be shared with others, we recommend bundling your Javascript with
-Rollup_ or Webpack_ into a `web module`_. IDOM also provides a `template repository`_
+Rollup_ or Webpack_ into a `web module`_. ReactPy also provides a `template repository`_
 that can be used as a blueprint to build a library of React components.
 
 To work as intended, the Javascript bundle must export a function ``bind()`` that
@@ -132,7 +132,7 @@ Javascript that can run directly in the browser. This means we can't use fancy s
 like `JSX <https://reactjs.org/docs/introducing-jsx.html>`__ and instead will use
 `htm <https://github.com/developit/htm>`__ to simulate JSX in plain Javascript.
 
-.. idom:: _examples/super_simple_chart
+.. reactpy:: _examples/super_simple_chart
 
 
 .. Links
@@ -140,7 +140,7 @@ like `JSX <https://reactjs.org/docs/introducing-jsx.html>`__ and instead will us
 
 .. _Material UI: https://material-ui.com/
 .. _CDN: https://en.wikipedia.org/wiki/Content_delivery_network
-.. _template repository: https://github.com/idom-team/idom-react-component-cookiecutter
+.. _template repository: https://github.com/reactive-python/reactpy-react-component-cookiecutter
 .. _web module: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
 .. _Rollup: https://rollupjs.org/guide/en/
 .. _Webpack: https://webpack.js.org/

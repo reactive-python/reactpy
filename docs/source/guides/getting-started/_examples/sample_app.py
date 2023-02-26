@@ -1,4 +1,4 @@
-import idom
+import reactpy
 
 
-idom.run(idom.sample.SampleApp)
+reactpy.run(reactpy.sample.SampleApp)

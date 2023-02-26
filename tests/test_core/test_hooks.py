@@ -2,45 +2,45 @@ import asyncio
 
 import pytest
 
-import idom
-from idom import html
-from idom.config import IDOM_DEBUG_MODE
-from idom.core.hooks import (
+import reactpy
+from reactpy import html
+from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.core.hooks import (
     COMPONENT_DID_RENDER_EFFECT,
     LifeCycleHook,
     current_hook,
     strictly_equal,
 )
-from idom.core.layout import Layout
-from idom.testing import DisplayFixture, HookCatcher, assert_idom_did_log, poll
-from idom.testing.logs import assert_idom_did_not_log
-from idom.utils import Ref
+from reactpy.core.layout import Layout
+from reactpy.testing import DisplayFixture, HookCatcher, assert_reactpy_did_log, poll
+from reactpy.testing.logs import assert_reactpy_did_not_log
+from reactpy.utils import Ref
 from tests.tooling.common import DEFAULT_TYPE_DELAY, update_message
 
 
 async def test_must_be_rendering_in_layout_to_use_hooks():
-    @idom.component
+    @reactpy.component
     def SimpleComponentWithHook():
-        idom.hooks.use_state(None)
-        return idom.html.div()
+        reactpy.hooks.use_state(None)
+        return reactpy.html.div()
 
     with pytest.raises(RuntimeError, match="No life cycle hook is active"):
         await SimpleComponentWithHook().render()
 
-    async with idom.Layout(SimpleComponentWithHook()) as layout:
+    async with reactpy.Layout(SimpleComponentWithHook()) as layout:
         await layout.render()
 
 
 async def test_simple_stateful_component():
-    @idom.component
+    @reactpy.component
     def SimpleStatefulComponent():
-        index, set_index = idom.hooks.use_state(0)
+        index, set_index = reactpy.hooks.use_state(0)
         set_index(index + 1)
-        return idom.html.div(index)
+        return reactpy.html.div(index)
 
     sse = SimpleStatefulComponent()
 
-    async with idom.Layout(sse) as layout:
+    async with reactpy.Layout(sse) as layout:
         update_1 = await layout.render()
         assert update_1 == update_message(
             path="",
@@ -72,16 +72,16 @@ async def test_simple_stateful_component():
 async def test_set_state_callback_identity_is_preserved():
     saved_set_state_hooks = []
 
-    @idom.component
+    @reactpy.component
     def SimpleStatefulComponent():
-        index, set_index = idom.hooks.use_state(0)
+        index, set_index = reactpy.hooks.use_state(0)
         saved_set_state_hooks.append(set_index)
         set_index(index + 1)
-        return idom.html.div(index)
+        return reactpy.html.div(index)
 
     sse = SimpleStatefulComponent()
 
-    async with idom.Layout(sse) as layout:
+    async with reactpy.Layout(sse) as layout:
         await layout.render()
         await layout.render()
         await layout.render()
@@ -93,28 +93,28 @@ async def test_set_state_callback_identity_is_preserved():
 
 
 async def test_use_state_with_constructor():
-    constructor_call_count = idom.Ref(0)
+    constructor_call_count = reactpy.Ref(0)
 
-    set_outer_state = idom.Ref()
-    set_inner_key = idom.Ref()
-    set_inner_state = idom.Ref()
+    set_outer_state = reactpy.Ref()
+    set_inner_key = reactpy.Ref()
+    set_inner_state = reactpy.Ref()
 
     def make_default():
         constructor_call_count.current += 1
         return 0
 
-    @idom.component
+    @reactpy.component
     def Outer():
-        state, set_outer_state.current = idom.use_state(0)
-        inner_key, set_inner_key.current = idom.use_state("first")
-        return idom.html.div(state, Inner(key=inner_key))
+        state, set_outer_state.current = reactpy.use_state(0)
+        inner_key, set_inner_key.current = reactpy.use_state("first")
+        return reactpy.html.div(state, Inner(key=inner_key))
 
-    @idom.component
+    @reactpy.component
     def Inner():
-        state, set_inner_state.current = idom.use_state(make_default)
-        return idom.html.div(state)
+        state, set_inner_state.current = reactpy.use_state(make_default)
+        return reactpy.html.div(state)
 
-    async with idom.Layout(Outer()) as layout:
+    async with reactpy.Layout(Outer()) as layout:
         await layout.render()
 
         assert constructor_call_count.current == 1
@@ -136,18 +136,18 @@ async def test_use_state_with_constructor():
 
 
 async def test_set_state_with_reducer_instead_of_value():
-    count = idom.Ref()
-    set_count = idom.Ref()
+    count = reactpy.Ref()
+    set_count = reactpy.Ref()
 
     def increment(count):
         return count + 1
 
-    @idom.component
+    @reactpy.component
     def Counter():
-        count.current, set_count.current = idom.hooks.use_state(0)
-        return idom.html.div(count.current)
+        count.current, set_count.current = reactpy.hooks.use_state(0)
+        return reactpy.html.div(count.current)
 
-    async with idom.Layout(Counter()) as layout:
+    async with reactpy.Layout(Counter()) as layout:
         await layout.render()
 
         for i in range(4):
@@ -157,15 +157,15 @@ async def test_set_state_with_reducer_instead_of_value():
 
 
 async def test_set_state_checks_identity_not_equality(display: DisplayFixture):
-    r_1 = idom.Ref("value")
-    r_2 = idom.Ref("value")
+    r_1 = reactpy.Ref("value")
+    r_2 = reactpy.Ref("value")
 
     # refs are equal but not identical
     assert r_1 == r_2
     assert r_1 is not r_2
 
-    render_count = idom.Ref(0)
-    event_count = idom.Ref(0)
+    render_count = reactpy.Ref(0)
+    event_count = reactpy.Ref(0)
 
     def event_count_tracker(function):
         def tracker(*args, **kwargs):
@@ -174,20 +174,20 @@ async def test_set_state_checks_identity_not_equality(display: DisplayFixture):
 
         return tracker
 
-    @idom.component
+    @reactpy.component
     def TestComponent():
-        state, set_state = idom.hooks.use_state(r_1)
+        state, set_state = reactpy.hooks.use_state(r_1)
 
         render_count.current += 1
-        return idom.html.div(
-            idom.html.button(
+        return reactpy.html.div(
+            reactpy.html.button(
                 {
                     "id": "r_1",
                     "on_click": event_count_tracker(lambda event: set_state(r_1)),
                 },
                 "r_1",
             ),
-            idom.html.button(
+            reactpy.html.button(
                 {
                     "id": "r_2",
                     "on_click": event_count_tracker(lambda event: set_state(r_2)),
@@ -225,11 +225,11 @@ async def test_set_state_checks_identity_not_equality(display: DisplayFixture):
 
 
 async def test_simple_input_with_use_state(display: DisplayFixture):
-    message_ref = idom.Ref(None)
+    message_ref = reactpy.Ref(None)
 
-    @idom.component
+    @reactpy.component
     def Input(message=None):
-        message, set_message = idom.hooks.use_state(message)
+        message, set_message = reactpy.hooks.use_state(message)
         message_ref.current = message
 
         async def on_change(event):
@@ -237,9 +237,9 @@ async def test_simple_input_with_use_state(display: DisplayFixture):
                 set_message(event["target"]["value"])
 
         if message is None:
-            return idom.html.input({"id": "input", "on_change": on_change})
+            return reactpy.html.input({"id": "input", "on_change": on_change})
         else:
-            return idom.html.p({"id": "complete"}, ["Complete"])
+            return reactpy.html.p({"id": "complete"}, ["Complete"])
 
     await display.show(Input)
 
@@ -251,23 +251,23 @@ async def test_simple_input_with_use_state(display: DisplayFixture):
 
 
 async def test_double_set_state(display: DisplayFixture):
-    @idom.component
+    @reactpy.component
     def SomeComponent():
-        state_1, set_state_1 = idom.hooks.use_state(0)
-        state_2, set_state_2 = idom.hooks.use_state(0)
+        state_1, set_state_1 = reactpy.hooks.use_state(0)
+        state_2, set_state_2 = reactpy.hooks.use_state(0)
 
         def double_set_state(event):
             set_state_1(state_1 + 1)
             set_state_2(state_2 + 1)
 
-        return idom.html.div(
-            idom.html.div(
+        return reactpy.html.div(
+            reactpy.html.div(
                 {"id": "first", "data-value": state_1}, f"value is: {state_1}"
             ),
-            idom.html.div(
+            reactpy.html.div(
                 {"id": "second", "data-value": state_2}, f"value is: {state_2}"
             ),
-            idom.html.button(
+            reactpy.html.button(
                 {"id": "button", "on_click": double_set_state}, "click me"
             ),
         )
@@ -293,30 +293,30 @@ async def test_double_set_state(display: DisplayFixture):
 
 
 async def test_use_effect_callback_occurs_after_full_render_is_complete():
-    effect_triggered = idom.Ref(False)
-    effect_triggers_after_final_render = idom.Ref(None)
+    effect_triggered = reactpy.Ref(False)
+    effect_triggers_after_final_render = reactpy.Ref(None)
 
-    @idom.component
+    @reactpy.component
     def OuterComponent():
-        return idom.html.div(
+        return reactpy.html.div(
             ComponentWithEffect(),
             CheckNoEffectYet(),
         )
 
-    @idom.component
+    @reactpy.component
     def ComponentWithEffect():
-        @idom.hooks.use_effect
+        @reactpy.hooks.use_effect
         def effect():
             effect_triggered.current = True
 
-        return idom.html.div()
+        return reactpy.html.div()
 
-    @idom.component
+    @reactpy.component
     def CheckNoEffectYet():
         effect_triggers_after_final_render.current = not effect_triggered.current
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(OuterComponent()) as layout:
+    async with reactpy.Layout(OuterComponent()) as layout:
         await layout.render()
 
     assert effect_triggered.current
@@ -326,13 +326,13 @@ async def test_use_effect_callback_occurs_after_full_render_is_complete():
 
 async def test_use_effect_cleanup_occurs_before_next_effect():
     component_hook = HookCatcher()
-    cleanup_triggered = idom.Ref(False)
-    cleanup_triggered_before_next_effect = idom.Ref(False)
+    cleanup_triggered = reactpy.Ref(False)
+    cleanup_triggered_before_next_effect = reactpy.Ref(False)
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def ComponentWithEffect():
-        @idom.hooks.use_effect(dependencies=None)
+        @reactpy.hooks.use_effect(dependencies=None)
         def effect():
             if cleanup_triggered.current:
                 cleanup_triggered_before_next_effect.current = True
@@ -342,9 +342,9 @@ async def test_use_effect_cleanup_occurs_before_next_effect():
 
             return cleanup
 
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(ComponentWithEffect()) as layout:
+    async with reactpy.Layout(ComponentWithEffect()) as layout:
         await layout.render()
 
         assert not cleanup_triggered.current
@@ -357,33 +357,33 @@ async def test_use_effect_cleanup_occurs_before_next_effect():
 
 
 async def test_use_effect_cleanup_occurs_on_will_unmount():
-    set_key = idom.Ref()
-    component_did_render = idom.Ref(False)
-    cleanup_triggered = idom.Ref(False)
-    cleanup_triggered_before_next_render = idom.Ref(False)
+    set_key = reactpy.Ref()
+    component_did_render = reactpy.Ref(False)
+    cleanup_triggered = reactpy.Ref(False)
+    cleanup_triggered_before_next_render = reactpy.Ref(False)
 
-    @idom.component
+    @reactpy.component
     def OuterComponent():
-        key, set_key.current = idom.use_state("first")
+        key, set_key.current = reactpy.use_state("first")
         return ComponentWithEffect(key=key)
 
-    @idom.component
+    @reactpy.component
     def ComponentWithEffect():
         if component_did_render.current and cleanup_triggered.current:
             cleanup_triggered_before_next_render.current = True
 
         component_did_render.current = True
 
-        @idom.hooks.use_effect
+        @reactpy.hooks.use_effect
         def effect():
             def cleanup():
                 cleanup_triggered.current = True
 
             return cleanup
 
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(OuterComponent()) as layout:
+    async with reactpy.Layout(OuterComponent()) as layout:
         await layout.render()
 
         assert not cleanup_triggered.current
@@ -397,24 +397,24 @@ async def test_use_effect_cleanup_occurs_on_will_unmount():
 
 async def test_memoized_effect_on_recreated_if_dependencies_change():
     component_hook = HookCatcher()
-    set_state_callback = idom.Ref(None)
-    effect_run_count = idom.Ref(0)
+    set_state_callback = reactpy.Ref(None)
+    effect_run_count = reactpy.Ref(0)
 
     first_value = 1
     second_value = 2
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def ComponentWithMemoizedEffect():
-        state, set_state_callback.current = idom.hooks.use_state(first_value)
+        state, set_state_callback.current = reactpy.hooks.use_state(first_value)
 
-        @idom.hooks.use_effect(dependencies=[state])
+        @reactpy.hooks.use_effect(dependencies=[state])
         def effect():
             effect_run_count.current += 1
 
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(ComponentWithMemoizedEffect()) as layout:
+    async with reactpy.Layout(ComponentWithMemoizedEffect()) as layout:
         await layout.render()
 
         assert effect_run_count.current == 1
@@ -437,27 +437,27 @@ async def test_memoized_effect_on_recreated_if_dependencies_change():
 
 async def test_memoized_effect_cleanup_only_triggered_before_new_effect():
     component_hook = HookCatcher()
-    set_state_callback = idom.Ref(None)
-    cleanup_trigger_count = idom.Ref(0)
+    set_state_callback = reactpy.Ref(None)
+    cleanup_trigger_count = reactpy.Ref(0)
 
     first_value = 1
     second_value = 2
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def ComponentWithEffect():
-        state, set_state_callback.current = idom.hooks.use_state(first_value)
+        state, set_state_callback.current = reactpy.hooks.use_state(first_value)
 
-        @idom.hooks.use_effect(dependencies=[state])
+        @reactpy.hooks.use_effect(dependencies=[state])
         def effect():
             def cleanup():
                 cleanup_trigger_count.current += 1
 
             return cleanup
 
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(ComponentWithEffect()) as layout:
+    async with reactpy.Layout(ComponentWithEffect()) as layout:
         await layout.render()
 
         assert cleanup_trigger_count.current == 0
@@ -476,15 +476,15 @@ async def test_memoized_effect_cleanup_only_triggered_before_new_effect():
 async def test_use_async_effect():
     effect_ran = asyncio.Event()
 
-    @idom.component
+    @reactpy.component
     def ComponentWithAsyncEffect():
-        @idom.hooks.use_effect
+        @reactpy.hooks.use_effect
         async def effect():
             effect_ran.set()
 
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(ComponentWithAsyncEffect()) as layout:
+    async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
         await layout.render()
         await asyncio.wait_for(effect_ran.wait(), 1)
 
@@ -494,17 +494,17 @@ async def test_use_async_effect_cleanup():
     effect_ran = asyncio.Event()
     cleanup_ran = asyncio.Event()
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def ComponentWithAsyncEffect():
-        @idom.hooks.use_effect(dependencies=None)  # force this to run every time
+        @reactpy.hooks.use_effect(dependencies=None)  # force this to run every time
         async def effect():
             effect_ran.set()
             return cleanup_ran.set
 
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(ComponentWithAsyncEffect()) as layout:
+    async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
         await layout.render()
 
         component_hook.latest.schedule_render()
@@ -521,10 +521,10 @@ async def test_use_async_effect_cancel(caplog):
 
     event_that_never_occurs = asyncio.Event()
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def ComponentWithLongWaitingEffect():
-        @idom.hooks.use_effect(dependencies=None)  # force this to run every time
+        @reactpy.hooks.use_effect(dependencies=None)  # force this to run every time
         async def effect():
             effect_ran.set()
             try:
@@ -533,9 +533,9 @@ async def test_use_async_effect_cancel(caplog):
                 effect_was_cancelled.set()
                 raise
 
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(ComponentWithLongWaitingEffect()) as layout:
+    async with reactpy.Layout(ComponentWithLongWaitingEffect()) as layout:
         await layout.render()
 
         await effect_ran.wait()
@@ -553,16 +553,16 @@ async def test_use_async_effect_cancel(caplog):
 
 
 async def test_error_in_effect_is_gracefully_handled(caplog):
-    @idom.component
+    @reactpy.component
     def ComponentWithEffect():
-        @idom.hooks.use_effect
+        @reactpy.hooks.use_effect
         def bad_effect():
             raise ValueError("Something went wong :(")
 
-        return idom.html.div()
+        return reactpy.html.div()
 
-    with assert_idom_did_log(match_message=r"Layout post-render effect .* failed"):
-        async with idom.Layout(ComponentWithEffect()) as layout:
+    with assert_reactpy_did_log(match_message=r"Layout post-render effect .* failed"):
+        async with reactpy.Layout(ComponentWithEffect()) as layout:
             await layout.render()  # no error
 
 
@@ -570,57 +570,57 @@ async def test_error_in_effect_cleanup_is_gracefully_handled(caplog):
     caplog.clear()
     component_hook = HookCatcher()
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def ComponentWithEffect():
-        @idom.hooks.use_effect(dependencies=None)  # force this to run every time
+        @reactpy.hooks.use_effect(dependencies=None)  # force this to run every time
         def ok_effect():
             def bad_cleanup():
                 raise ValueError("Something went wong :(")
 
             return bad_cleanup
 
-        return idom.html.div()
+        return reactpy.html.div()
 
-    with assert_idom_did_log(match_error=r"Layout post-render effect .* failed"):
-        async with idom.Layout(ComponentWithEffect()) as layout:
+    with assert_reactpy_did_log(match_error=r"Layout post-render effect .* failed"):
+        async with reactpy.Layout(ComponentWithEffect()) as layout:
             await layout.render()
             component_hook.latest.schedule_render()
             await layout.render()  # no error
 
 
 async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled():
-    set_key = idom.Ref()
+    set_key = reactpy.Ref()
 
-    @idom.component
+    @reactpy.component
     def OuterComponent():
-        key, set_key.current = idom.use_state("first")
+        key, set_key.current = reactpy.use_state("first")
         return ComponentWithEffect(key=key)
 
-    @idom.component
+    @reactpy.component
     def ComponentWithEffect():
-        @idom.hooks.use_effect
+        @reactpy.hooks.use_effect
         def ok_effect():
             def bad_cleanup():
                 raise ValueError("Something went wong :(")
 
             return bad_cleanup
 
-        return idom.html.div()
+        return reactpy.html.div()
 
-    with assert_idom_did_log(
+    with assert_reactpy_did_log(
         match_message=r"Pre-unmount effect .*? failed",
         error_type=ValueError,
     ):
-        async with idom.Layout(OuterComponent()) as layout:
+        async with reactpy.Layout(OuterComponent()) as layout:
             await layout.render()
             set_key.current("second")
             await layout.render()  # no error
 
 
 async def test_use_reducer():
-    saved_count = idom.Ref(None)
-    saved_dispatch = idom.Ref(None)
+    saved_count = reactpy.Ref(None)
+    saved_dispatch = reactpy.Ref(None)
 
     def reducer(count, action):
         if action == "increment":
@@ -630,14 +630,14 @@ async def test_use_reducer():
         else:
             raise ValueError(f"Unknown action '{action}'")
 
-    @idom.component
+    @reactpy.component
     def Counter(initial_count):
-        saved_count.current, saved_dispatch.current = idom.hooks.use_reducer(
+        saved_count.current, saved_dispatch.current = reactpy.hooks.use_reducer(
             reducer, initial_count
         )
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(Counter(0)) as layout:
+    async with reactpy.Layout(Counter(0)) as layout:
         await layout.render()
 
         assert saved_count.current == 0
@@ -662,12 +662,12 @@ async def test_use_reducer_dispatch_callback_identity_is_preserved():
         else:
             raise ValueError(f"Unknown action '{action}'")
 
-    @idom.component
+    @reactpy.component
     def ComponentWithUseReduce():
-        saved_dispatchers.append(idom.hooks.use_reducer(reducer, 0)[1])
-        return idom.html.div()
+        saved_dispatchers.append(reactpy.hooks.use_reducer(reducer, 0)[1])
+        return reactpy.html.div()
 
-    async with idom.Layout(ComponentWithUseReduce()) as layout:
+    async with reactpy.Layout(ComponentWithUseReduce()) as layout:
         for _ in range(3):
             await layout.render()
             saved_dispatchers[-1]("increment")
@@ -681,13 +681,13 @@ async def test_use_callback_identity():
     component_hook = HookCatcher()
     used_callbacks = []
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def ComponentWithRef():
-        used_callbacks.append(idom.hooks.use_callback(lambda: None))
-        return idom.html.div()
+        used_callbacks.append(reactpy.hooks.use_callback(lambda: None))
+        return reactpy.html.div()
 
-    async with idom.Layout(ComponentWithRef()) as layout:
+    async with reactpy.Layout(ComponentWithRef()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
         await layout.render()
@@ -698,22 +698,24 @@ async def test_use_callback_identity():
 
 async def test_use_callback_memoization():
     component_hook = HookCatcher()
-    set_state_hook = idom.Ref(None)
+    set_state_hook = reactpy.Ref(None)
     used_callbacks = []
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def ComponentWithRef():
-        state, set_state_hook.current = idom.hooks.use_state(0)
+        state, set_state_hook.current = reactpy.hooks.use_state(0)
 
-        @idom.hooks.use_callback(dependencies=[state])  # use the deco form for coverage
+        @reactpy.hooks.use_callback(
+            dependencies=[state]
+        )  # use the deco form for coverage
         def cb():
             return None
 
         used_callbacks.append(cb)
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(ComponentWithRef()) as layout:
+    async with reactpy.Layout(ComponentWithRef()) as layout:
         await layout.render()
         set_state_hook.current(1)
         await layout.render()
@@ -727,21 +729,23 @@ async def test_use_callback_memoization():
 
 async def test_use_memo():
     component_hook = HookCatcher()
-    set_state_hook = idom.Ref(None)
+    set_state_hook = reactpy.Ref(None)
     used_values = []
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def ComponentWithMemo():
-        state, set_state_hook.current = idom.hooks.use_state(0)
-        value = idom.hooks.use_memo(
-            lambda: idom.Ref(state),  # use a Ref here just to ensure it's a unique obj
+        state, set_state_hook.current = reactpy.hooks.use_state(0)
+        value = reactpy.hooks.use_memo(
+            lambda: reactpy.Ref(
+                state
+            ),  # use a Ref here just to ensure it's a unique obj
             [state],
         )
         used_values.append(value)
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(ComponentWithMemo()) as layout:
+    async with reactpy.Layout(ComponentWithMemo()) as layout:
         await layout.render()
         set_state_hook.current(1)
         await layout.render()
@@ -759,14 +763,14 @@ async def test_use_memo_always_runs_if_dependencies_are_none():
 
     iter_values = iter([1, 2, 3])
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def ComponentWithMemo():
-        value = idom.hooks.use_memo(lambda: next(iter_values), dependencies=None)
+        value = reactpy.hooks.use_memo(lambda: next(iter_values), dependencies=None)
         used_values.append(value)
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(ComponentWithMemo()) as layout:
+    async with reactpy.Layout(ComponentWithMemo()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
         await layout.render()
@@ -781,19 +785,19 @@ async def test_use_memo_with_stored_deps_is_empty_tuple_after_deps_are_none():
     used_values = []
 
     iter_values = iter([1, 2, 3])
-    deps_used_in_memo = idom.Ref(())
+    deps_used_in_memo = reactpy.Ref(())
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def ComponentWithMemo():
-        value = idom.hooks.use_memo(
+        value = reactpy.hooks.use_memo(
             lambda: next(iter_values),
             deps_used_in_memo.current,  # noqa: ROH202
         )
         used_values.append(value)
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(ComponentWithMemo()) as layout:
+    async with reactpy.Layout(ComponentWithMemo()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
         deps_used_in_memo.current = None
@@ -811,14 +815,14 @@ async def test_use_memo_never_runs_if_deps_is_empty_list():
 
     iter_values = iter([1, 2, 3])
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def ComponentWithMemo():
-        value = idom.hooks.use_memo(lambda: next(iter_values), ())
+        value = reactpy.hooks.use_memo(lambda: next(iter_values), ())
         used_values.append(value)
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(ComponentWithMemo()) as layout:
+    async with reactpy.Layout(ComponentWithMemo()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
         await layout.render()
@@ -832,13 +836,13 @@ async def test_use_ref():
     component_hook = HookCatcher()
     used_refs = []
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def ComponentWithRef():
-        used_refs.append(idom.hooks.use_ref(1))
-        return idom.html.div()
+        used_refs.append(reactpy.hooks.use_ref(1))
+        return reactpy.html.div()
 
-    async with idom.Layout(ComponentWithRef()) as layout:
+    async with reactpy.Layout(ComponentWithRef()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
         await layout.render()
@@ -851,29 +855,29 @@ def test_bad_schedule_render_callback():
     def bad_callback():
         raise ValueError("something went wrong")
 
-    with assert_idom_did_log(
+    with assert_reactpy_did_log(
         match_message=f"Failed to schedule render via {bad_callback}"
     ):
         LifeCycleHook(bad_callback).schedule_render()
 
 
 async def test_use_effect_automatically_infers_closure_values():
-    set_count = idom.Ref()
+    set_count = reactpy.Ref()
     did_effect = asyncio.Event()
 
-    @idom.component
+    @reactpy.component
     def CounterWithEffect():
-        count, set_count.current = idom.hooks.use_state(0)
+        count, set_count.current = reactpy.hooks.use_state(0)
 
-        @idom.hooks.use_effect
+        @reactpy.hooks.use_effect
         def some_effect_that_uses_count():
             """should automatically trigger on count change"""
             count  # use count in this closure
             did_effect.set()
 
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(CounterWithEffect()) as layout:
+    async with reactpy.Layout(CounterWithEffect()) as layout:
         await layout.render()
         await did_effect.wait()
         did_effect.clear()
@@ -886,22 +890,22 @@ async def test_use_effect_automatically_infers_closure_values():
 
 
 async def test_use_memo_automatically_infers_closure_values():
-    set_count = idom.Ref()
+    set_count = reactpy.Ref()
     did_memo = asyncio.Event()
 
-    @idom.component
+    @reactpy.component
     def CounterWithEffect():
-        count, set_count.current = idom.hooks.use_state(0)
+        count, set_count.current = reactpy.hooks.use_state(0)
 
-        @idom.hooks.use_memo
+        @reactpy.hooks.use_memo
         def some_memo_func_that_uses_count():
             """should automatically trigger on count change"""
             count  # use count in this closure
             did_memo.set()
 
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(CounterWithEffect()) as layout:
+    async with reactpy.Layout(CounterWithEffect()) as layout:
         await layout.render()
         await did_memo.wait()
         did_memo.clear()
@@ -914,60 +918,60 @@ async def test_use_memo_automatically_infers_closure_values():
 
 
 async def test_use_context_default_value():
-    Context = idom.create_context("something")
-    value = idom.Ref()
+    Context = reactpy.create_context("something")
+    value = reactpy.Ref()
 
-    @idom.component
+    @reactpy.component
     def ComponentProvidesContext():
         return Context(ComponentUsesContext())
 
-    @idom.component
+    @reactpy.component
     def ComponentUsesContext():
-        value.current = idom.use_context(Context)
+        value.current = reactpy.use_context(Context)
         return html.div()
 
-    async with idom.Layout(ComponentProvidesContext()) as layout:
+    async with reactpy.Layout(ComponentProvidesContext()) as layout:
         await layout.render()
         assert value.current == "something"
 
-    @idom.component
+    @reactpy.component
     def ComponentUsesContext():
-        value.current = idom.use_context(Context)
+        value.current = reactpy.use_context(Context)
         return html.div()
 
-    async with idom.Layout(ComponentUsesContext()) as layout:
+    async with reactpy.Layout(ComponentUsesContext()) as layout:
         await layout.render()
         assert value.current == "something"
 
 
 def test_context_repr():
-    sample_context = idom.create_context(None)
+    sample_context = reactpy.create_context(None)
     assert repr(sample_context()) == f"ContextProvider({sample_context})"
 
 
 async def test_use_context_updates_components_even_if_memoized():
-    Context = idom.create_context(None)
+    Context = reactpy.create_context(None)
 
-    value = idom.Ref(None)
-    render_count = idom.Ref(0)
-    set_state = idom.Ref()
+    value = reactpy.Ref(None)
+    render_count = reactpy.Ref(0)
+    set_state = reactpy.Ref()
 
-    @idom.component
+    @reactpy.component
     def ComponentProvidesContext():
-        state, set_state.current = idom.use_state(0)
+        state, set_state.current = reactpy.use_state(0)
         return Context(ComponentInContext(), value=state)
 
-    @idom.component
+    @reactpy.component
     def ComponentInContext():
-        return idom.use_memo(MemoizedComponentUsesContext)
+        return reactpy.use_memo(MemoizedComponentUsesContext)
 
-    @idom.component
+    @reactpy.component
     def MemoizedComponentUsesContext():
-        value.current = idom.use_context(Context)
+        value.current = reactpy.use_context(Context)
         render_count.current += 1
         return html.div()
 
-    async with idom.Layout(ComponentProvidesContext()) as layout:
+    async with reactpy.Layout(ComponentProvidesContext()) as layout:
         await layout.render()
         assert render_count.current == 1
         assert value.current == 0
@@ -986,22 +990,22 @@ async def test_use_context_updates_components_even_if_memoized():
 
 
 async def test_context_values_are_scoped():
-    Context = idom.create_context(None)
+    Context = reactpy.create_context(None)
 
-    @idom.component
+    @reactpy.component
     def Parent():
         return html._(
             Context(Context(Child1(), value=1), value="something-else"),
             Context(Child2(), value=2),
         )
 
-    @idom.component
+    @reactpy.component
     def Child1():
-        assert idom.use_context(Context) == 1
+        assert reactpy.use_context(Context) == 1
 
-    @idom.component
+    @reactpy.component
     def Child2():
-        assert idom.use_context(Context) == 2
+        assert reactpy.use_context(Context) == 2
 
     async with Layout(Parent()) as layout:
         await layout.render()
@@ -1010,7 +1014,7 @@ async def test_context_values_are_scoped():
 async def test_error_in_effect_cleanup_is_gracefully_handled():
     component_hook = HookCatcher()
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def ComponentWithEffect():
         hook = current_hook()
@@ -1019,14 +1023,14 @@ async def test_error_in_effect_cleanup_is_gracefully_handled():
             raise ValueError("The error message")
 
         hook.add_effect(COMPONENT_DID_RENDER_EFFECT, bad_effect)
-        return idom.html.div()
+        return reactpy.html.div()
 
-    with assert_idom_did_log(
+    with assert_reactpy_did_log(
         match_message="Component post-render effect .*? failed",
         error_type=ValueError,
         match_error="The error message",
     ):
-        async with idom.Layout(ComponentWithEffect()) as layout:
+        async with reactpy.Layout(ComponentWithEffect()) as layout:
             await layout.render()
             component_hook.latest.schedule_render()
             await layout.render()  # no error
@@ -1035,10 +1039,10 @@ async def test_error_in_effect_cleanup_is_gracefully_handled():
 async def test_set_state_during_render():
     render_count = Ref(0)
 
-    @idom.component
+    @reactpy.component
     def SetStateDuringRender():
         render_count.current += 1
-        state, set_state = idom.use_state(0)
+        state, set_state = reactpy.use_state(0)
         if not state:
             set_state(state + 1)
         return html.div(state)
@@ -1054,102 +1058,104 @@ async def test_set_state_during_render():
             await asyncio.wait_for(layout.render(), timeout=0.1)
 
 
-@pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="only logs in debug mode")
+@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="only logs in debug mode")
 async def test_use_debug_mode():
-    set_message = idom.Ref()
+    set_message = reactpy.Ref()
     component_hook = HookCatcher()
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def SomeComponent():
-        message, set_message.current = idom.use_state("hello")
-        idom.use_debug_value(f"message is {message!r}")
-        return idom.html.div()
+        message, set_message.current = reactpy.use_state("hello")
+        reactpy.use_debug_value(f"message is {message!r}")
+        return reactpy.html.div()
 
-    async with idom.Layout(SomeComponent()) as layout:
-        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
+    async with reactpy.Layout(SomeComponent()) as layout:
+        with assert_reactpy_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
             await layout.render()
 
         set_message.current("bye")
 
-        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'bye'"):
+        with assert_reactpy_did_log(r"SomeComponent\(.*?\) message is 'bye'"):
             await layout.render()
 
         component_hook.latest.schedule_render()
 
-        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
+        with assert_reactpy_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
             await layout.render()
 
 
-@pytest.mark.skipif(not IDOM_DEBUG_MODE.current, reason="only logs in debug mode")
+@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="only logs in debug mode")
 async def test_use_debug_mode_with_factory():
-    set_message = idom.Ref()
+    set_message = reactpy.Ref()
     component_hook = HookCatcher()
 
-    @idom.component
+    @reactpy.component
     @component_hook.capture
     def SomeComponent():
-        message, set_message.current = idom.use_state("hello")
-        idom.use_debug_value(lambda: f"message is {message!r}")
-        return idom.html.div()
+        message, set_message.current = reactpy.use_state("hello")
+        reactpy.use_debug_value(lambda: f"message is {message!r}")
+        return reactpy.html.div()
 
-    async with idom.Layout(SomeComponent()) as layout:
-        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
+    async with reactpy.Layout(SomeComponent()) as layout:
+        with assert_reactpy_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
             await layout.render()
 
         set_message.current("bye")
 
-        with assert_idom_did_log(r"SomeComponent\(.*?\) message is 'bye'"):
+        with assert_reactpy_did_log(r"SomeComponent\(.*?\) message is 'bye'"):
             await layout.render()
 
         component_hook.latest.schedule_render()
 
-        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
+        with assert_reactpy_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
             await layout.render()
 
 
-@pytest.mark.skipif(IDOM_DEBUG_MODE.current, reason="logs in debug mode")
+@pytest.mark.skipif(REACTPY_DEBUG_MODE.current, reason="logs in debug mode")
 async def test_use_debug_mode_does_not_log_if_not_in_debug_mode():
-    set_message = idom.Ref()
+    set_message = reactpy.Ref()
 
-    @idom.component
+    @reactpy.component
     def SomeComponent():
-        message, set_message.current = idom.use_state("hello")
-        idom.use_debug_value(lambda: f"message is {message!r}")
-        return idom.html.div()
+        message, set_message.current = reactpy.use_state("hello")
+        reactpy.use_debug_value(lambda: f"message is {message!r}")
+        return reactpy.html.div()
 
-    async with idom.Layout(SomeComponent()) as layout:
-        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'hello'"):
+    async with reactpy.Layout(SomeComponent()) as layout:
+        with assert_reactpy_did_not_log(r"SomeComponent\(.*?\) message is 'hello'"):
             await layout.render()
 
         set_message.current("bye")
 
-        with assert_idom_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
+        with assert_reactpy_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
             await layout.render()
 
 
 async def test_conditionally_rendered_components_can_use_context():
-    set_state = idom.Ref()
+    set_state = reactpy.Ref()
     used_context_values = []
-    some_context = idom.create_context(None)
+    some_context = reactpy.create_context(None)
 
-    @idom.component
+    @reactpy.component
     def SomeComponent():
-        state, set_state.current = idom.use_state(True)
+        state, set_state.current = reactpy.use_state(True)
         if state:
             return FirstCondition()
         else:
             return SecondCondition()
 
-    @idom.component
+    @reactpy.component
     def FirstCondition():
-        used_context_values.append(idom.use_context(some_context) + "-1")
+        used_context_values.append(reactpy.use_context(some_context) + "-1")
 
-    @idom.component
+    @reactpy.component
     def SecondCondition():
-        used_context_values.append(idom.use_context(some_context) + "-2")
+        used_context_values.append(reactpy.use_context(some_context) + "-2")
 
-    async with idom.Layout(some_context(SomeComponent(), value="the-value")) as layout:
+    async with reactpy.Layout(
+        some_context(SomeComponent(), value="the-value")
+    ) as layout:
         await layout.render()
         assert used_context_values == ["the-value-1"]
         set_state.current(False)
@@ -1193,15 +1199,15 @@ STRICT_EQUALITY_VALUE_CONSTRUCTORS = [
 
 @pytest.mark.parametrize("get_value", STRICT_EQUALITY_VALUE_CONSTRUCTORS)
 async def test_use_state_compares_with_strict_equality(get_value):
-    render_count = idom.Ref(0)
-    set_state = idom.Ref()
+    render_count = reactpy.Ref(0)
+    set_state = reactpy.Ref()
 
-    @idom.component
+    @reactpy.component
     def SomeComponent():
-        _, set_state.current = idom.use_state(get_value())
+        _, set_state.current = reactpy.use_state(get_value())
         render_count.current += 1
 
-    async with idom.Layout(SomeComponent()) as layout:
+    async with reactpy.Layout(SomeComponent()) as layout:
         await layout.render()
         assert render_count.current == 1
         set_state.current(get_value())
@@ -1211,18 +1217,18 @@ async def test_use_state_compares_with_strict_equality(get_value):
 
 @pytest.mark.parametrize("get_value", STRICT_EQUALITY_VALUE_CONSTRUCTORS)
 async def test_use_effect_compares_with_strict_equality(get_value):
-    effect_count = idom.Ref(0)
-    value = idom.Ref("string")
+    effect_count = reactpy.Ref(0)
+    value = reactpy.Ref("string")
     hook = HookCatcher()
 
-    @idom.component
+    @reactpy.component
     @hook.capture
     def SomeComponent():
-        @idom.use_effect(dependencies=[value.current])
+        @reactpy.use_effect(dependencies=[value.current])
         def incr_effect_count():
             effect_count.current += 1
 
-    async with idom.Layout(SomeComponent()) as layout:
+    async with reactpy.Layout(SomeComponent()) as layout:
         await layout.render()
         assert effect_count.current == 1
         value.current = "string"  # new string instance but same value
@@ -1233,14 +1239,14 @@ async def test_use_effect_compares_with_strict_equality(get_value):
 
 
 async def test_use_state_named_tuple():
-    state = idom.Ref()
+    state = reactpy.Ref()
 
-    @idom.component
+    @reactpy.component
     def some_component():
-        state.current = idom.use_state(1)
+        state.current = reactpy.use_state(1)
         return None
 
-    async with idom.Layout(some_component()) as layout:
+    async with reactpy.Layout(some_component()) as layout:
         await layout.render()
         assert state.current.value == 1
         state.current.set_value(2)

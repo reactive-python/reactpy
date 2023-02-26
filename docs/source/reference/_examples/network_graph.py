@@ -1,17 +1,17 @@
 import random
 
-import idom
+import reactpy
 
 
-react_cytoscapejs = idom.web.module_from_template(
+react_cytoscapejs = reactpy.web.module_from_template(
     "react",
     "react-cytoscapejs",
     fallback="⌛",
 )
-Cytoscape = idom.web.export(react_cytoscapejs, "default")
+Cytoscape = reactpy.web.export(react_cytoscapejs, "default")
 
 
-@idom.component
+@reactpy.component
 def RandomNetworkGraph():
     return Cytoscape(
         {
@@ -38,4 +38,4 @@ def random_network(number_of_nodes):
     return nodes + conns
 
 
-idom.run(RandomNetworkGraph)
+reactpy.run(RandomNetworkGraph)

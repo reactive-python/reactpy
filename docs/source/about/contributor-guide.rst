@@ -4,11 +4,11 @@ Contributor Guide
 .. note::
 
     The
-    `Code of Conduct <https://github.com/idom-team/idom/blob/main/CODE_OF_CONDUCT.md>`__
+    `Code of Conduct <https://github.com/reactive-python/reactpy/blob/main/CODE_OF_CONDUCT.md>`__
     applies in all community spaces. If you are not familiar with our Code of Conduct
     policy, take a minute to read it before making your first contribution.
 
-The IDOM team welcomes contributions and contributors of all kinds - whether they come
+The ReactPy team welcomes contributions and contributors of all kinds - whether they come
 as code changes, participation in the discussions, opening issues and pointing out bugs,
 or simply sharing your work with your colleagues and friends. We're excited to see how
 you can help move this project and community forward!
@@ -23,7 +23,7 @@ Trust us, there's so many ways to support the project. We're always looking for 
 who can:
 
 - Improve our documentation
-- Teach and tell others about IDOM
+- Teach and tell others about ReactPy
 - Share ideas for new features
 - Report bugs
 - Participate in general discussions
@@ -35,13 +35,13 @@ we'll help you make your first contribution.
 Making a Pull Request
 ---------------------
 
-To make your first code contribution to IDOM, you'll need to install Git_ (or
+To make your first code contribution to ReactPy, you'll need to install Git_ (or
 `Git Bash`_ on Windows). Thankfully there are many helpful
 `tutorials <https://github.com/firstcontributions/first-contributions/blob/master/README.md>`__
-about how to get started. To make a change to IDOM you'll do the following:
+about how to get started. To make a change to ReactPy you'll do the following:
 
-`Fork IDOM <https://docs.github.com/en/github/getting-started-with-github/fork-a-repo>`__:
-    Go to `this URL <https://github.com/idom-team/idom>`__ and click the "Fork" button.
+`Fork ReactPy <https://docs.github.com/en/github/getting-started-with-github/fork-a-repo>`__:
+    Go to `this URL <https://github.com/reactive-python/reactpy>`__ and click the "Fork" button.
 
 `Clone your fork <https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository>`__:
     You use a ``git clone`` command to copy the code from GitHub to your computer.
@@ -50,10 +50,10 @@ about how to get started. To make a change to IDOM you'll do the following:
     You'll ``git checkout -b your-first-branch`` to create a new space to start your work.
 
 :ref:`Prepare your Development Environment <Development Environment>`:
-    We explain in more detail below how to install all IDOM's dependencies.
+    We explain in more detail below how to install all ReactPy's dependencies.
 
 `Push your changes <https://docs.github.com/en/github/using-git/pushing-commits-to-a-remote-repository>`__:
-    Once you've made changes to IDOM, you'll ``git push`` them to your fork.
+    Once you've made changes to ReactPy, you'll ``git push`` them to your fork.
 
 :ref:`Create a changelog entry <Creating a changelog entry>`:
     Record your changes in the :ref:`changelog` so we can publicize them in the next release.
@@ -72,7 +72,7 @@ Development Environment
     If you have any questions during set up or development post on our
     :discussion-type:`discussion board <question>` and we'll answer them.
 
-In order to develop IDOM locally you'll first need to install the following:
+In order to develop ReactPy locally you'll first need to install the following:
 
 .. list-table::
     :header-rows: 1
@@ -103,8 +103,8 @@ Once done, you can clone a local copy of this repository:
 
 .. code-block:: bash
 
-    git clone https://github.com/idom-team/idom.git
-    cd idom
+    git clone https://github.com/reactive-python/reactpy.git
+    cd reactpy
 
 Then, you should be able to run the command below to:
 
@@ -118,7 +118,7 @@ Then, you should be able to run the command below to:
 
     pip install -e . -r requirements.txt && pre-commit install
 
-If you modify any Javascript, you'll need to re-install IDOM:
+If you modify any Javascript, you'll need to re-install ReactPy:
 
 .. code-block:: bash
 
@@ -131,7 +131,7 @@ However you may also ``cd`` to the ``src/client`` directory which contains a
 Running The Tests
 -----------------
 
-The test suite for IDOM is executed with Nox_, which should already be installed if you
+The test suite for ReactPy is executed with Nox_, which should already be installed if you
 followed the `earlier instructions <Development Environment>`_. The suite covers:
 
 1. Server-side Python code with PyTest_
@@ -182,7 +182,7 @@ The following are currently being used:
 - Prettier_ - a tool for automatically formatting various file types
 
 The most strict measure of quality enforced on the codebase is 100% test coverage in
-Python files. This means that every line of coded added to IDOM requires a test case
+Python files. This means that every line of coded added to ReactPy requires a test case
 that exercises it. This doesn't prevent all bugs, but it should ensure that we catch the
 most common ones.
 
@@ -233,7 +233,7 @@ Creating a Changelog Entry
 --------------------------
 
 As part of your pull request, you'll want to edit the `Changelog
-<https://github.com/idom-team/idom/blob/main/docs/source/about/changelog.rst>`__ by
+<https://github.com/reactive-python/reactpy/blob/main/docs/source/about/changelog.rst>`__ by
 adding an entry describing what you've changed or improved. You should write an entry in
 the style of `Keep a Changelog <https://keepachangelog.com/>`__ that falls under one of
 the following categories, and add it to the :ref:`Unreleased` section of the changelog:
@@ -276,7 +276,7 @@ changelog entry might look like:
 Release Process
 ---------------
 
-Creating a release for IDOM involves two steps:
+Creating a release for ReactPy involves two steps:
 
 1. Tagging a version
 2. Publishing a release
@@ -308,19 +308,19 @@ use GitHub's "Auto-generated release notes".
 Other Core Repositories
 -----------------------
 
-IDOM depends on, or is used by several other core projects. For documentation on them
+ReactPy depends on, or is used by several other core projects. For documentation on them
 you should refer to their respective documentation in the links below:
 
-- `idom-react-component-cookiecutter
-  <https://github.com/idom-team/idom-react-component-cookiecutter>`__ - Template repo
+- `reactpy-react-component-cookiecutter
+  <https://github.com/reactive-python/reactpy-react-component-cookiecutter>`__ - Template repo
   for making :ref:`Custom Javascript Components`.
-- `flake8-idom-hooks <https://github.com/idom-team/flake8-idom-hooks>`__ - Enforces the
+- `flake8-reactpy-hooks <https://github.com/reactive-python/flake8-reactpy-hooks>`__ - Enforces the
   :ref:`Rules of Hooks`
-- `idom-jupyter <https://github.com/idom-team/idom-jupyter>`__ - IDOM integration for
+- `reactpy-jupyter <https://github.com/reactive-python/reactpy-jupyter>`__ - ReactPy integration for
   Jupyter
-- `idom-dash <https://github.com/idom-team/idom-dash>`__ - IDOM integration for Plotly
+- `reactpy-dash <https://github.com/reactive-python/reactpy-dash>`__ - ReactPy integration for Plotly
   Dash
-- `django-idom <https://github.com/idom-team/django-idom>`__ - IDOM integration for
+- `django-reactpy <https://github.com/reactive-python/django-reactpy>`__ - ReactPy integration for
   Django
 
 .. Links
@@ -332,7 +332,7 @@ you should refer to their respective documentation in the links below:
 .. _Git: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 .. _Git Bash: https://gitforwindows.org/
 .. _NPM: https://www.npmjs.com/get-npm
-.. _PyPI: https://pypi.org/project/idom
+.. _PyPI: https://pypi.org/project/reactpy
 .. _pip: https://pypi.org/project/pip/
 .. _PyTest: pytest <https://docs.pytest.org
 .. _Playwright: https://playwright.dev/python/

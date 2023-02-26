@@ -7,7 +7,7 @@ import requests
 from dateutil.parser import isoparse
 
 
-REPO_NAME = "idom-team/idom"
+REPO_NAME = "reactive-python/reactpy"
 
 
 def last_release_date() -> datetime:
@@ -30,7 +30,7 @@ def date_range_query(
     return start.isoformat() + ".." + stop.isoformat()
 
 
-def search_idom_repo(query: str) -> Iterator[Any]:
+def search_reactpy_repo(query: str) -> Iterator[Any]:
     page = 0
     while True:
         page += 1

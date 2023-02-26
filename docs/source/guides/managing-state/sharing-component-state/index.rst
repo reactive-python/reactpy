@@ -8,7 +8,7 @@ Sharing Component State
 Sometimes, you want the state of two components to always change together. To do it,
 remove state from both of them, move it to their closest common parent, and then pass it
 down to them via props. This is known as “lifting state up”, and it’s one of the most
-common things you will do writing code with IDOM.
+common things you will do writing code with ReactPy.
 
 
 Synced Inputs
@@ -18,7 +18,7 @@ In the code below the two input boxes are synchronized, this happens because the
 state. The state is shared via the parent component ``SyncedInputs``. Check the ``value``
 and ``set_value`` variables.
 
-.. idom:: _examples/synced_inputs
+.. reactpy:: _examples/synced_inputs
 
 
 Filterable  List
@@ -31,7 +31,7 @@ Note how the component ``Table`` gets called at each change of state. The
 component is observing the state and reacting to state changes automatically,
 just like it would do in React.
 
-.. idom:: _examples/filterable_list
+.. reactpy:: _examples/filterable_list
 
 .. note::
 

@@ -7,26 +7,26 @@ from weakref import ref as weakref
 
 import pytest
 
-import idom
-from idom import html
-from idom.config import IDOM_DEBUG_MODE
-from idom.core.component import component
-from idom.core.hooks import use_effect, use_state
-from idom.core.layout import Layout
-from idom.testing import (
+import reactpy
+from reactpy import html
+from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.core.component import component
+from reactpy.core.hooks import use_effect, use_state
+from reactpy.core.layout import Layout
+from reactpy.testing import (
     HookCatcher,
     StaticEventHandler,
-    assert_idom_did_log,
-    capture_idom_logs,
+    assert_reactpy_did_log,
+    capture_reactpy_logs,
 )
-from idom.utils import Ref
+from reactpy.utils import Ref
 from tests.tooling.common import event_message, update_message
 from tests.tooling.hooks import use_force_render, use_toggle
 
 
 @pytest.fixture(autouse=True)
 def no_logged_errors():
-    with capture_idom_logs() as logs:
+    with capture_reactpy_logs() as logs:
         yield
         for record in logs:
             if record.exc_info:
@@ -34,29 +34,29 @@ def no_logged_errors():
 
 
 def test_layout_repr():
-    @idom.component
+    @reactpy.component
     def MyComponent():
         ...
 
     my_component = MyComponent()
-    layout = idom.Layout(my_component)
+    layout = reactpy.Layout(my_component)
     assert str(layout) == f"Layout(MyComponent({id(my_component):02x}))"
 
 
 def test_layout_expects_abstract_component():
     with pytest.raises(TypeError, match="Expected a ComponentType"):
-        idom.Layout(None)
+        reactpy.Layout(None)
     with pytest.raises(TypeError, match="Expected a ComponentType"):
-        idom.Layout(idom.html.div())
+        reactpy.Layout(reactpy.html.div())
 
 
 async def test_layout_cannot_be_used_outside_context_manager(caplog):
-    @idom.component
+    @reactpy.component
     def Component():
         ...
 
     component = Component()
-    layout = idom.Layout(component)
+    layout = reactpy.Layout(component)
 
     with pytest.raises(Exception):
         await layout.deliver(event_message("something"))
@@ -69,14 +69,14 @@ async def test_layout_cannot_be_used_outside_context_manager(caplog):
 
 
 async def test_simple_layout():
-    set_state_hook = idom.Ref()
+    set_state_hook = reactpy.Ref()
 
-    @idom.component
+    @reactpy.component
     def SimpleComponent():
-        tag, set_state_hook.current = idom.hooks.use_state("div")
-        return idom.vdom(tag)
+        tag, set_state_hook.current = reactpy.hooks.use_state("div")
+        return reactpy.vdom(tag)
 
-    async with idom.Layout(SimpleComponent()) as layout:
+    async with reactpy.Layout(SimpleComponent()) as layout:
         update_1 = await layout.render()
         assert update_1 == update_message(
             path="",
@@ -93,27 +93,27 @@ async def test_simple_layout():
 
 
 async def test_component_can_return_none():
-    @idom.component
+    @reactpy.component
     def SomeComponent():
         return None
 
-    async with idom.Layout(SomeComponent()) as layout:
+    async with reactpy.Layout(SomeComponent()) as layout:
         assert (await layout.render())["model"] == {"tagName": ""}
 
 
 async def test_nested_component_layout():
-    parent_set_state = idom.Ref(None)
-    child_set_state = idom.Ref(None)
+    parent_set_state = reactpy.Ref(None)
+    child_set_state = reactpy.Ref(None)
 
-    @idom.component
+    @reactpy.component
     def Parent():
-        state, parent_set_state.current = idom.hooks.use_state(0)
-        return idom.html.div(state, Child())
+        state, parent_set_state.current = reactpy.hooks.use_state(0)
+        return reactpy.html.div(state, Child())
 
-    @idom.component
+    @reactpy.component
     def Child():
-        state, child_set_state.current = idom.hooks.use_state(0)
-        return idom.html.div(state)
+        state, child_set_state.current = reactpy.hooks.use_state(0)
+        return reactpy.html.div(state)
 
     def make_parent_model(state, model):
         return {
@@ -132,7 +132,7 @@ async def test_nested_component_layout():
             "children": [{"tagName": "div", "children": [str(state)]}],
         }
 
-    async with idom.Layout(Parent()) as layout:
+    async with reactpy.Layout(Parent()) as layout:
         update_1 = await layout.render()
         assert update_1 == update_message(
             path="",
@@ -157,24 +157,24 @@ async def test_nested_component_layout():
 
 
 @pytest.mark.skipif(
-    not IDOM_DEBUG_MODE.current,
+    not REACTPY_DEBUG_MODE.current,
     reason="errors only reported in debug mode",
 )
 async def test_layout_render_error_has_partial_update_with_error_message():
-    @idom.component
+    @reactpy.component
     def Main():
-        return idom.html.div([OkChild(), BadChild(), OkChild()])
+        return reactpy.html.div([OkChild(), BadChild(), OkChild()])
 
-    @idom.component
+    @reactpy.component
     def OkChild():
-        return idom.html.div(["hello"])
+        return reactpy.html.div(["hello"])
 
-    @idom.component
+    @reactpy.component
     def BadChild():
         raise ValueError("error from bad child")
 
-    with assert_idom_did_log(match_error="error from bad child"):
-        async with idom.Layout(Main()) as layout:
+    with assert_reactpy_did_log(match_error="error from bad child"):
+        async with reactpy.Layout(Main()) as layout:
             assert (await layout.render()) == update_message(
                 path="",
                 model={
@@ -207,24 +207,24 @@ async def test_layout_render_error_has_partial_update_with_error_message():
 
 
 @pytest.mark.skipif(
-    IDOM_DEBUG_MODE.current,
+    REACTPY_DEBUG_MODE.current,
     reason="errors only reported in debug mode",
 )
 async def test_layout_render_error_has_partial_update_without_error_message():
-    @idom.component
+    @reactpy.component
     def Main():
-        return idom.html.div([OkChild(), BadChild(), OkChild()])
+        return reactpy.html.div([OkChild(), BadChild(), OkChild()])
 
-    @idom.component
+    @reactpy.component
     def OkChild():
-        return idom.html.div(["hello"])
+        return reactpy.html.div(["hello"])
 
-    @idom.component
+    @reactpy.component
     def BadChild():
         raise ValueError("error from bad child")
 
-    with assert_idom_did_log(match_error="error from bad child"):
-        async with idom.Layout(Main()) as layout:
+    with assert_reactpy_did_log(match_error="error from bad child"):
+        async with reactpy.Layout(Main()) as layout:
             assert (await layout.render()) == update_message(
                 path="",
                 model={
@@ -254,15 +254,15 @@ async def test_layout_render_error_has_partial_update_without_error_message():
 
 
 async def test_render_raw_vdom_dict_with_single_component_object_as_children():
-    @idom.component
+    @reactpy.component
     def Main():
         return {"tagName": "div", "children": Child()}
 
-    @idom.component
+    @reactpy.component
     def Child():
         return {"tagName": "div", "children": {"tagName": "h1"}}
 
-    async with idom.Layout(Main()) as layout:
+    async with reactpy.Layout(Main()) as layout:
         assert (await layout.render()) == update_message(
             path="",
             model={
@@ -302,17 +302,17 @@ async def test_components_are_garbage_collected():
         return wrapper
 
     @add_to_live_components
-    @idom.component
+    @reactpy.component
     @outer_component_hook.capture
     def Outer():
         return Inner()
 
     @add_to_live_components
-    @idom.component
+    @reactpy.component
     def Inner():
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(Outer()) as layout:
+    async with reactpy.Layout(Outer()) as layout:
         await layout.render()
 
         assert len(live_components) == 2
@@ -342,7 +342,7 @@ async def test_root_component_life_cycle_hook_is_garbage_collected():
     def add_to_live_hooks(constructor):
         def wrapper(*args, **kwargs):
             result = constructor(*args, **kwargs)
-            hook = idom.hooks.current_hook()
+            hook = reactpy.hooks.current_hook()
             hook_id = id(hook)
             live_hooks.add(hook_id)
             finalize(hook, live_hooks.discard, hook_id)
@@ -350,12 +350,12 @@ async def test_root_component_life_cycle_hook_is_garbage_collected():
 
         return wrapper
 
-    @idom.component
+    @reactpy.component
     @add_to_live_hooks
     def Root():
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(Root()) as layout:
+    async with reactpy.Layout(Root()) as layout:
         await layout.render()
 
         assert len(live_hooks) == 1
@@ -374,7 +374,7 @@ async def test_life_cycle_hooks_are_garbage_collected():
     def add_to_live_hooks(constructor):
         def wrapper(*args, **kwargs):
             result = constructor(*args, **kwargs)
-            hook = idom.hooks.current_hook()
+            hook = reactpy.hooks.current_hook()
             hook_id = id(hook)
             live_hooks.add(hook_id)
             finalize(hook, live_hooks.discard, hook_id)
@@ -382,19 +382,21 @@ async def test_life_cycle_hooks_are_garbage_collected():
 
         return wrapper
 
-    @idom.component
+    @reactpy.component
     @add_to_live_hooks
     def Outer():
         nonlocal set_inner_component
-        inner_component, set_inner_component = idom.hooks.use_state(Inner(key="first"))
+        inner_component, set_inner_component = reactpy.hooks.use_state(
+            Inner(key="first")
+        )
         return inner_component
 
-    @idom.component
+    @reactpy.component
     @add_to_live_hooks
     def Inner():
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(Outer()) as layout:
+    async with reactpy.Layout(Outer()) as layout:
         await layout.render()
 
         assert len(live_hooks) == 2
@@ -423,15 +425,15 @@ async def test_life_cycle_hooks_are_garbage_collected():
 
 async def test_double_updated_component_is_not_double_rendered():
     hook = HookCatcher()
-    run_count = idom.Ref(0)
+    run_count = reactpy.Ref(0)
 
-    @idom.component
+    @reactpy.component
     @hook.capture
     def AnyComponent():
         run_count.current += 1
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(AnyComponent()) as layout:
+    async with reactpy.Layout(AnyComponent()) as layout:
         await layout.render()
 
         assert run_count.current == 1
@@ -454,16 +456,16 @@ async def test_double_updated_component_is_not_double_rendered():
 async def test_update_path_to_component_that_is_not_direct_child_is_correct():
     hook = HookCatcher()
 
-    @idom.component
+    @reactpy.component
     def Parent():
-        return idom.html.div(idom.html.div(Child()))
+        return reactpy.html.div(reactpy.html.div(Child()))
 
-    @idom.component
+    @reactpy.component
     @hook.capture
     def Child():
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(Parent()) as layout:
+    async with reactpy.Layout(Parent()) as layout:
         await layout.render()
 
         hook.latest.schedule_render()
@@ -473,11 +475,11 @@ async def test_update_path_to_component_that_is_not_direct_child_is_correct():
 
 
 async def test_log_on_dispatch_to_missing_event_handler(caplog):
-    @idom.component
+    @reactpy.component
     def SomeComponent():
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(SomeComponent()) as layout:
+    async with reactpy.Layout(SomeComponent()) as layout:
         await layout.deliver(event_message("missing"))
 
     assert re.match(
@@ -487,11 +489,11 @@ async def test_log_on_dispatch_to_missing_event_handler(caplog):
 
 
 async def test_model_key_preserves_callback_identity_for_common_elements(caplog):
-    called_good_trigger = idom.Ref(False)
+    called_good_trigger = reactpy.Ref(False)
     good_handler = StaticEventHandler()
     bad_handler = StaticEventHandler()
 
-    @idom.component
+    @reactpy.component
     def MyComponent():
         reverse_children, set_reverse_children = use_toggle()
 
@@ -505,10 +507,10 @@ async def test_model_key_preserves_callback_identity_for_common_elements(caplog)
             raise ValueError("Called bad trigger")
 
         children = [
-            idom.html.button(
+            reactpy.html.button(
                 {"on_click": good_trigger, "id": "good", "key": "good"}, "good"
             ),
-            idom.html.button(
+            reactpy.html.button(
                 {"on_click": bad_trigger, "id": "bad", "key": "bad"}, "bad"
             ),
         ]
@@ -516,9 +518,9 @@ async def test_model_key_preserves_callback_identity_for_common_elements(caplog)
         if reverse_children:
             children.reverse()
 
-        return idom.html.div(children)
+        return reactpy.html.div(children)
 
-    async with idom.Layout(MyComponent()) as layout:
+    async with reactpy.Layout(MyComponent()) as layout:
         await layout.render()
         for i in range(3):
             event = event_message(good_handler.target)
@@ -534,11 +536,11 @@ async def test_model_key_preserves_callback_identity_for_common_elements(caplog)
 
 
 async def test_model_key_preserves_callback_identity_for_components():
-    called_good_trigger = idom.Ref(False)
+    called_good_trigger = reactpy.Ref(False)
     good_handler = StaticEventHandler()
     bad_handler = StaticEventHandler()
 
-    @idom.component
+    @reactpy.component
     def RootComponent():
         reverse_children, set_reverse_children = use_toggle()
 
@@ -550,9 +552,9 @@ async def test_model_key_preserves_callback_identity_for_components():
         if reverse_children:
             children.reverse()
 
-        return idom.html.div(children)
+        return reactpy.html.div(children)
 
-    @idom.component
+    @reactpy.component
     def Trigger(set_reverse_children, name):
         if name == "good":
 
@@ -567,9 +569,9 @@ async def test_model_key_preserves_callback_identity_for_components():
             def callback():
                 raise ValueError("Called bad trigger")
 
-        return idom.html.button({"on_click": callback, "id": "good"}, "good")
+        return reactpy.html.button({"on_click": callback, "id": "good"}, "good")
 
-    async with idom.Layout(RootComponent()) as layout:
+    async with reactpy.Layout(RootComponent()) as layout:
         await layout.render()
         for _ in range(3):
             event = event_message(good_handler.target)
@@ -583,15 +585,15 @@ async def test_model_key_preserves_callback_identity_for_components():
 
 
 async def test_component_can_return_another_component_directly():
-    @idom.component
+    @reactpy.component
     def Outer():
         return Inner()
 
-    @idom.component
+    @reactpy.component
     def Inner():
-        return idom.html.div("hello")
+        return reactpy.html.div("hello")
 
-    async with idom.Layout(Outer()) as layout:
+    async with reactpy.Layout(Outer()) as layout:
         assert (await layout.render()) == update_message(
             path="",
             model={
@@ -607,25 +609,25 @@ async def test_component_can_return_another_component_directly():
 
 
 async def test_hooks_for_keyed_components_get_garbage_collected():
-    pop_item = idom.Ref(None)
+    pop_item = reactpy.Ref(None)
     garbage_collect_items = []
     registered_finalizers = set()
 
-    @idom.component
+    @reactpy.component
     def Outer():
-        items, set_items = idom.hooks.use_state([1, 2, 3])
+        items, set_items = reactpy.hooks.use_state([1, 2, 3])
         pop_item.current = lambda: set_items(items[:-1])
-        return idom.html.div(Inner(key=k, finalizer_id=k) for k in items)
+        return reactpy.html.div(Inner(key=k, finalizer_id=k) for k in items)
 
-    @idom.component
+    @reactpy.component
     def Inner(finalizer_id):
         if finalizer_id not in registered_finalizers:
-            hook = idom.hooks.current_hook()
+            hook = reactpy.hooks.current_hook()
             finalize(hook, lambda: garbage_collect_items.append(finalizer_id))
             registered_finalizers.add(finalizer_id)
-        return idom.html.div(finalizer_id)
+        return reactpy.html.div(finalizer_id)
 
-    async with idom.Layout(Outer()) as layout:
+    async with reactpy.Layout(Outer()) as layout:
         await layout.render()
 
         pop_item.current()
@@ -642,18 +644,18 @@ async def test_hooks_for_keyed_components_get_garbage_collected():
 
 
 async def test_event_handler_at_component_root_is_garbage_collected():
-    event_handler = idom.Ref()
+    event_handler = reactpy.Ref()
 
-    @idom.component
+    @reactpy.component
     def HasEventHandlerAtRoot():
-        value, set_value = idom.hooks.use_state(False)
+        value, set_value = reactpy.hooks.use_state(False)
         set_value(not value)  # trigger renders forever
         event_handler.current = weakref(set_value)
-        button = idom.html.button({"on_click": set_value}, "state is: ", value)
+        button = reactpy.html.button({"on_click": set_value}, "state is: ", value)
         event_handler.current = weakref(button["eventHandlers"]["on_click"].function)
         return button
 
-    async with idom.Layout(HasEventHandlerAtRoot()) as layout:
+    async with reactpy.Layout(HasEventHandlerAtRoot()) as layout:
         await layout.render()
 
         for i in range(3):
@@ -664,18 +666,18 @@ async def test_event_handler_at_component_root_is_garbage_collected():
 
 
 async def test_event_handler_deep_in_component_layout_is_garbage_collected():
-    event_handler = idom.Ref()
+    event_handler = reactpy.Ref()
 
-    @idom.component
+    @reactpy.component
     def HasNestedEventHandler():
-        value, set_value = idom.hooks.use_state(False)
+        value, set_value = reactpy.hooks.use_state(False)
         set_value(not value)  # trigger renders forever
         event_handler.current = weakref(set_value)
-        button = idom.html.button({"on_click": set_value}, "state is: ", value)
+        button = reactpy.html.button({"on_click": set_value}, "state is: ", value)
         event_handler.current = weakref(button["eventHandlers"]["on_click"].function)
-        return idom.html.div(idom.html.div(button))
+        return reactpy.html.div(reactpy.html.div(button))
 
-    async with idom.Layout(HasNestedEventHandler()) as layout:
+    async with reactpy.Layout(HasNestedEventHandler()) as layout:
         await layout.render()
 
         for i in range(3):
@@ -689,19 +691,19 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
     hook = HookCatcher()
     should_error = True
 
-    @idom.component
+    @reactpy.component
     @hook.capture
     def ComponentReturnsDuplicateKeys():
         if should_error:
-            return idom.html.div(
-                idom.html.div({"key": "duplicate"}),
-                idom.html.div({"key": "duplicate"}),
+            return reactpy.html.div(
+                reactpy.html.div({"key": "duplicate"}),
+                reactpy.html.div({"key": "duplicate"}),
             )
         else:
-            return idom.html.div()
+            return reactpy.html.div()
 
-    async with idom.Layout(ComponentReturnsDuplicateKeys()) as layout:
-        with assert_idom_did_log(
+    async with reactpy.Layout(ComponentReturnsDuplicateKeys()) as layout:
+        with assert_reactpy_did_log(
             error_type=ValueError,
             match_error=r"Duplicate keys \['duplicate'\] at '/children/0'",
         ):
@@ -714,7 +716,7 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
 
         should_error = True
         hook.latest.schedule_render()
-        with assert_idom_did_log(
+        with assert_reactpy_did_log(
             error_type=ValueError,
             match_error=r"Duplicate keys \['duplicate'\] at '/children/0'",
         ):
@@ -725,17 +727,17 @@ async def test_keyed_components_preserve_hook_on_parent_update():
     outer_hook = HookCatcher()
     inner_hook = HookCatcher()
 
-    @idom.component
+    @reactpy.component
     @outer_hook.capture
     def Outer():
         return Inner(key=1)
 
-    @idom.component
+    @reactpy.component
     @inner_hook.capture
     def Inner():
-        return idom.html.div()
+        return reactpy.html.div()
 
-    async with idom.Layout(Outer()) as layout:
+    async with reactpy.Layout(Outer()) as layout:
         await layout.render()
         old_inner_hook = inner_hook.latest
 
@@ -747,41 +749,41 @@ async def test_keyed_components_preserve_hook_on_parent_update():
 async def test_log_error_on_bad_event_handler():
     bad_handler = StaticEventHandler()
 
-    @idom.component
+    @reactpy.component
     def ComponentWithBadEventHandler():
         @bad_handler.use
         def raise_error():
             raise Exception("bad event handler")
 
-        return idom.html.button({"on_click": raise_error})
+        return reactpy.html.button({"on_click": raise_error})
 
-    with assert_idom_did_log(match_error="bad event handler"):
-        async with idom.Layout(ComponentWithBadEventHandler()) as layout:
+    with assert_reactpy_did_log(match_error="bad event handler"):
+        async with reactpy.Layout(ComponentWithBadEventHandler()) as layout:
             await layout.render()
             event = event_message(bad_handler.target)
             await layout.deliver(event)
 
 
 async def test_schedule_render_from_unmounted_hook():
-    parent_set_state = idom.Ref()
+    parent_set_state = reactpy.Ref()
 
-    @idom.component
+    @reactpy.component
     def Parent():
-        state, parent_set_state.current = idom.hooks.use_state(1)
+        state, parent_set_state.current = reactpy.hooks.use_state(1)
         return Child(key=state, state=state)
 
     child_hook = HookCatcher()
 
-    @idom.component
+    @reactpy.component
     @child_hook.capture
     def Child(state):
-        idom.hooks.use_effect(lambda: lambda: print("unmount", state))
-        return idom.html.div(state)
+        reactpy.hooks.use_effect(lambda: lambda: print("unmount", state))
+        return reactpy.html.div(state)
 
-    with assert_idom_did_log(
+    with assert_reactpy_did_log(
         r"Did not render component with model state ID .*? - component already unmounted",
     ):
-        async with idom.Layout(Parent()) as layout:
+        async with reactpy.Layout(Parent()) as layout:
             await layout.render()
 
             old_hook = child_hook.latest
@@ -801,27 +803,27 @@ async def test_schedule_render_from_unmounted_hook():
 
 
 async def test_elements_and_components_with_the_same_key_can_be_interchanged():
-    set_toggle = idom.Ref()
+    set_toggle = reactpy.Ref()
     effects = []
 
-    @idom.component
+    @reactpy.component
     def Root():
         toggle, set_toggle.current = use_toggle(True)
         if toggle:
             return SomeComponent("x")
         else:
-            return idom.html.div(SomeComponent("y"))
+            return reactpy.html.div(SomeComponent("y"))
 
-    @idom.component
+    @reactpy.component
     def SomeComponent(name):
         @use_effect
         def some_effect():
             effects.append("mount " + name)
             return lambda: effects.append("unmount " + name)
 
-        return idom.html.div(name)
+        return reactpy.html.div(name)
 
-    async with idom.Layout(Root()) as layout:
+    async with reactpy.Layout(Root()) as layout:
         await layout.render()
 
         assert effects == ["mount x"]
@@ -839,24 +841,24 @@ async def test_elements_and_components_with_the_same_key_can_be_interchanged():
 
 async def test_layout_does_not_copy_element_children_by_key():
     # this is a regression test for a subtle bug:
-    # https://github.com/idom-team/idom/issues/556
+    # https://github.com/reactive-python/reactpy/issues/556
 
-    set_items = idom.Ref()
+    set_items = reactpy.Ref()
 
-    @idom.component
+    @reactpy.component
     def SomeComponent():
-        items, set_items.current = idom.use_state([1, 2, 3])
-        return idom.html.div(
+        items, set_items.current = reactpy.use_state([1, 2, 3])
+        return reactpy.html.div(
             [
-                idom.html.div(
+                reactpy.html.div(
                     {"key": i},
-                    idom.html.input({"on_change": lambda event: None}),
+                    reactpy.html.input({"on_change": lambda event: None}),
                 )
                 for i in items
             ]
         )
 
-    async with idom.Layout(SomeComponent()) as layout:
+    async with reactpy.Layout(SomeComponent()) as layout:
         await layout.render()
 
         set_items.current([2, 3])
@@ -876,19 +878,19 @@ async def test_changing_key_of_parent_element_unmounts_children():
     random.seed(0)
 
     root_hook = HookCatcher()
-    state = idom.Ref(None)
+    state = reactpy.Ref(None)
 
-    @idom.component
+    @reactpy.component
     @root_hook.capture
     def Root():
-        return idom.html.div({"key": str(random.random())}, HasState())
+        return reactpy.html.div({"key": str(random.random())}, HasState())
 
-    @idom.component
+    @reactpy.component
     def HasState():
-        state.current = idom.hooks.use_state(random.random)[0]
-        return idom.html.div()
+        state.current = reactpy.hooks.use_state(random.random)[0]
+        return reactpy.html.div()
 
-    async with idom.Layout(Root()) as layout:
+    async with reactpy.Layout(Root()) as layout:
         await layout.render()
 
         for i in range(5):
@@ -899,11 +901,11 @@ async def test_changing_key_of_parent_element_unmounts_children():
 
 
 async def test_switching_node_type_with_event_handlers():
-    toggle_type = idom.Ref()
+    toggle_type = reactpy.Ref()
     element_static_handler = StaticEventHandler()
     component_static_handler = StaticEventHandler()
 
-    @idom.component
+    @reactpy.component
     def Root():
         toggle, toggle_type.current = use_toggle(True)
         handler = element_static_handler.use(lambda: None)
@@ -912,12 +914,12 @@ async def test_switching_node_type_with_event_handlers():
         else:
             return html.div(SomeComponent())
 
-    @idom.component
+    @reactpy.component
     def SomeComponent():
         handler = component_static_handler.use(lambda: None)
         return html.button({"on_another_event": handler})
 
-    async with idom.Layout(Root()) as layout:
+    async with reactpy.Layout(Root()) as layout:
         await layout.render()
 
         assert element_static_handler.target in layout._event_handlers
@@ -937,11 +939,11 @@ async def test_switching_node_type_with_event_handlers():
 
 
 async def test_switching_component_definition():
-    toggle_component = idom.Ref()
-    first_used_state = idom.Ref(None)
-    second_used_state = idom.Ref(None)
+    toggle_component = reactpy.Ref()
+    first_used_state = reactpy.Ref(None)
+    second_used_state = reactpy.Ref(None)
 
-    @idom.component
+    @reactpy.component
     def Root():
         toggle, toggle_component.current = use_toggle(True)
         if toggle:
@@ -949,21 +951,21 @@ async def test_switching_component_definition():
         else:
             return SecondComponent()
 
-    @idom.component
+    @reactpy.component
     def FirstComponent():
         first_used_state.current = use_state("first")[0]
         # reset state after unmount
         use_effect(lambda: lambda: first_used_state.set_current(None))
         return html.div()
 
-    @idom.component
+    @reactpy.component
     def SecondComponent():
         second_used_state.current = use_state("second")[0]
         # reset state after unmount
         use_effect(lambda: lambda: second_used_state.set_current(None))
         return html.div()
 
-    async with idom.Layout(Root()) as layout:
+    async with reactpy.Layout(Root()) as layout:
         await layout.render()
 
         assert first_used_state.current == "first"
@@ -1019,7 +1021,7 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
 
         return html.div({"key": child_key}, child_key)
 
-    async with idom.Layout(Parent()) as layout:
+    async with reactpy.Layout(Parent()) as layout:
         await layout.render()
         await did_call_effect.wait()
         assert effect_calls_without_state == {"some-key", "key-0"}
@@ -1118,7 +1120,7 @@ async def test_does_render_children_after_component():
     after the component failed to display.
     """
 
-    @idom.component
+    @reactpy.component
     def Parent():
         return html.div(
             html.p("first"),
@@ -1126,11 +1128,11 @@ async def test_does_render_children_after_component():
             html.p("third"),
         )
 
-    @idom.component
+    @reactpy.component
     def Child():
         return html.p("second")
 
-    async with idom.Layout(Parent()) as layout:
+    async with reactpy.Layout(Parent()) as layout:
         update = await layout.render()
         assert update["model"] == {
             "tagName": "",
@@ -1151,7 +1153,7 @@ async def test_does_render_children_after_component():
 
 
 async def test_render_removed_context_consumer():
-    Context = idom.create_context(None)
+    Context = reactpy.create_context(None)
     toggle_remove_child = None
     schedule_removed_child_render = None
 
@@ -1167,7 +1169,7 @@ async def test_render_removed_context_consumer():
         schedule_removed_child_render = use_force_render()
         return None
 
-    async with idom.Layout(Parent()) as layout:
+    async with reactpy.Layout(Parent()) as layout:
         await layout.render()
 
         # If the context provider does not render its children then internally tracked

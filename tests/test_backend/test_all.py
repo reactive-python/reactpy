@@ -2,13 +2,13 @@ from typing import MutableMapping
 
 import pytest
 
-import idom
-from idom import html
-from idom.backend import default as default_implementation
-from idom.backend._common import PATH_PREFIX
-from idom.backend.types import BackendImplementation, Connection, Location
-from idom.backend.utils import all_implementations
-from idom.testing import BackendFixture, DisplayFixture, poll
+import reactpy
+from reactpy import html
+from reactpy.backend import default as default_implementation
+from reactpy.backend._common import PATH_PREFIX
+from reactpy.backend.types import BackendImplementation, Connection, Location
+from reactpy.backend.utils import all_implementations
+from reactpy.testing import BackendFixture, DisplayFixture, poll
 
 
 @pytest.fixture(
@@ -37,9 +37,9 @@ async def display(page, request):
 
 
 async def test_display_simple_hello_world(display: DisplayFixture):
-    @idom.component
+    @reactpy.component
     def Hello():
-        return idom.html.p({"id": "hello"}, ["Hello World"])
+        return reactpy.html.p({"id": "hello"}, ["Hello World"])
 
     await display.show(Hello)
 
@@ -52,10 +52,10 @@ async def test_display_simple_hello_world(display: DisplayFixture):
 
 
 async def test_display_simple_click_counter(display: DisplayFixture):
-    @idom.component
+    @reactpy.component
     def Counter():
-        count, set_count = idom.hooks.use_state(0)
-        return idom.html.button(
+        count, set_count = reactpy.hooks.use_state(0)
+        return reactpy.html.button(
             {
                 "id": "counter",
                 "on_click": lambda event: set_count(lambda old_count: old_count + 1),
@@ -73,18 +73,18 @@ async def test_display_simple_click_counter(display: DisplayFixture):
 
 
 async def test_module_from_template(display: DisplayFixture):
-    victory = idom.web.module_from_template("react", "victory-bar@35.4.0")
-    VictoryBar = idom.web.export(victory, "VictoryBar")
+    victory = reactpy.web.module_from_template("react", "victory-bar@35.4.0")
+    VictoryBar = reactpy.web.export(victory, "VictoryBar")
     await display.show(VictoryBar)
     await display.page.wait_for_selector(".VictoryContainer")
 
 
 async def test_use_connection(display: DisplayFixture):
-    conn = idom.Ref()
+    conn = reactpy.Ref()
 
-    @idom.component
+    @reactpy.component
     def ShowScope():
-        conn.current = idom.use_connection()
+        conn.current = reactpy.use_connection()
         return html.pre({"id": "scope"}, str(conn.current))
 
     await display.show(ShowScope)
@@ -94,11 +94,11 @@ async def test_use_connection(display: DisplayFixture):
 
 
 async def test_use_scope(display: DisplayFixture):
-    scope = idom.Ref()
+    scope = reactpy.Ref()
 
-    @idom.component
+    @reactpy.component
     def ShowScope():
-        scope.current = idom.use_scope()
+        scope.current = reactpy.use_scope()
         return html.pre({"id": "scope"}, str(scope.current))
 
     await display.show(ShowScope)
@@ -108,16 +108,16 @@ async def test_use_scope(display: DisplayFixture):
 
 
 async def test_use_location(display: DisplayFixture):
-    location = idom.Ref()
+    location = reactpy.Ref()
 
     @poll
     async def poll_location():
         """This needs to be async to allow the server to respond"""
         return location.current
 
-    @idom.component
+    @reactpy.component
     def ShowRoute():
-        location.current = idom.use_location()
+        location.current = reactpy.use_location()
         return html.pre(str(location.current))
 
     await display.show(ShowRoute)
@@ -142,9 +142,9 @@ async def test_use_request(display: DisplayFixture, hook_name):
     if hook is None:
         pytest.skip(f"{display.backend.implementation} has no '{hook_name}' hook")
 
-    hook_val = idom.Ref()
+    hook_val = reactpy.Ref()
 
-    @idom.component
+    @reactpy.component
     def ShowRoute():
         hook_val.current = hook()
         return html.pre({"id": "hook"}, str(hook_val.current))
@@ -161,7 +161,7 @@ async def test_use_request(display: DisplayFixture, hook_name):
 async def test_customized_head(imp: BackendImplementation, page):
     custom_title = f"Custom Title for {imp.__name__}"
 
-    @idom.component
+    @reactpy.component
     def sample():
         return html.h1(f"^ Page title is customized to: '{custom_title}'")
 

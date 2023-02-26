@@ -40,7 +40,7 @@ We could then take this list and "render" it into a series of ``<li>`` elements:
 
 .. testcode::
 
-    from idom import html
+    from reactpy import html
 
     list_item_elements = [html.li(text) for text in tasks]
 
@@ -52,7 +52,7 @@ This list of elements can then be passed into a parent ``<ul>`` element:
 
 The last thing we have to do is return this from a component:
 
-.. idom:: _examples/todo_from_list
+.. reactpy:: _examples/todo_from_list
 
 
 Filtering and Sorting Elements
@@ -105,13 +105,13 @@ and then ordering the elements based on the ``priority``:
 
 We could then add this code to our ``DataList`` component:
 
-.. idom:: _examples/sorted_and_filtered_todo_list
+.. reactpy:: _examples/sorted_and_filtered_todo_list
 
 
 Organizing Items With Keys
 --------------------------
 
-If you run the examples above :ref:`in debug mode <Running IDOM in Debug Mode>` you'll
+If you run the examples above :ref:`in debug mode <Running ReactPy in Debug Mode>` you'll
 see the server log a bunch of errors that look something like:
 
 .. code-block:: text
@@ -142,13 +142,13 @@ the element constructor:
 
     list_item_elements = [html.li(t["text"], key=t["id"]) for t in tasks]
 
-This ``key`` tells IDOM which ``<li>`` element corresponds to which item of data in our
+This ``key`` tells ReactPy which ``<li>`` element corresponds to which item of data in our
 ``tasks`` list. This becomes important if the order or number of items in your list can
 change. In our case, if we decided to change whether we want to ``filter_by_priority``
 or ``sort_by_priority`` the items in our ``<ul>`` element would change. Given this,
 here's how we'd change our component:
 
-.. idom:: _examples/todo_list_with_keys
+.. reactpy:: _examples/todo_list_with_keys
 
 
 Keys for Components
@@ -161,7 +161,7 @@ exact same way that it does for standard HTML elements:
 
 .. testcode::
 
-    from idom import component
+    from reactpy import component
 
 
     @component
@@ -189,7 +189,7 @@ exact same way that it does for standard HTML elements:
 
     .. testcode::
 
-        from idom import component
+        from reactpy import component
 
         @component
         def FunctionWithKeyParam(key):
@@ -288,10 +288,10 @@ use for each ``key``?
 
 
 .. card::
-    :link: /guides/understanding-idom/why-idom-needs-keys
+    :link: /guides/understanding-reactpy/why-reactpy-needs-keys
     :link-type: doc
 
     :octicon:`book` Read More
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Learn about why IDOM needs keys in the first place.
+    Learn about why ReactPy needs keys in the first place.

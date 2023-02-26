@@ -1,8 +1,8 @@
 import pytest
 
-from idom import component, config, html
-from idom.testing import DisplayFixture, poll
-from idom.utils import Ref
+from reactpy import component, config, html
+from reactpy.testing import DisplayFixture, poll
+from reactpy.utils import Ref
 from tests.tooling.hooks import use_counter, use_toggle
 
 
@@ -104,7 +104,7 @@ async def test_script_from_src(display: DisplayFixture):
                 html.div({"id": "run-count", "data_value": 0}),
                 html.script(
                     {
-                        "src": f"/_idom/modules/{file_name_template.format(src_id=src_id)}"
+                        "src": f"/_reactpy/modules/{file_name_template.format(src_id=src_id)}"
                     }
                 ),
             )
@@ -112,8 +112,8 @@ async def test_script_from_src(display: DisplayFixture):
     await display.show(HasScript)
 
     for i in range(1, 4):
-        script_file = config.IDOM_WEB_MODULES_DIR.current / file_name_template.format(
-            src_id=i
+        script_file = (
+            config.REACTPY_WEB_MODULES_DIR.current / file_name_template.format(src_id=i)
         )
         script_file.write_text(
             f"""

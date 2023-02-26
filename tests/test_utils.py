@@ -2,9 +2,9 @@ from html import escape as html_escape
 
 import pytest
 
-import idom
-from idom import html
-from idom.utils import (
+import reactpy
+from reactpy import html
+from reactpy.utils import (
     HTMLParseError,
     del_html_head_body_transform,
     html_to_vdom,
@@ -13,7 +13,7 @@ from idom.utils import (
 
 
 def test_basic_ref_behavior():
-    r = idom.Ref(1)
+    r = reactpy.Ref(1)
     assert r.current == 1
 
     r.current = 2
@@ -22,7 +22,7 @@ def test_basic_ref_behavior():
     assert r.set_current(3) == 2
     assert r.current == 3
 
-    r = idom.Ref()
+    r = reactpy.Ref()
     with pytest.raises(AttributeError):
         r.current
 
@@ -31,16 +31,16 @@ def test_basic_ref_behavior():
 
 
 def test_ref_equivalence():
-    assert idom.Ref([1, 2, 3]) == idom.Ref([1, 2, 3])
-    assert idom.Ref([1, 2, 3]) != idom.Ref([1, 2])
-    assert idom.Ref([1, 2, 3]) != [1, 2, 3]
-    assert idom.Ref() != idom.Ref()
-    assert idom.Ref() != idom.Ref(1)
+    assert reactpy.Ref([1, 2, 3]) == reactpy.Ref([1, 2, 3])
+    assert reactpy.Ref([1, 2, 3]) != reactpy.Ref([1, 2])
+    assert reactpy.Ref([1, 2, 3]) != [1, 2, 3]
+    assert reactpy.Ref() != reactpy.Ref()
+    assert reactpy.Ref() != reactpy.Ref(1)
 
 
 def test_ref_repr():
-    assert repr(idom.Ref([1, 2, 3])) == "Ref([1, 2, 3])"
-    assert repr(idom.Ref()) == "Ref(<undefined>)"
+    assert repr(reactpy.Ref([1, 2, 3])) == "Ref([1, 2, 3])"
+    assert repr(reactpy.Ref()) == "Ref(<undefined>)"
 
 
 @pytest.mark.parametrize(

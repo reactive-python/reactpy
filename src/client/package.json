@@ -5,7 +5,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/idom-team/idom"
+    "url": "https://github.com/reactive-python/reactpy"
   },
   "scripts": {
     "build": "vite build",

@@ -5,7 +5,7 @@ Describes various data structures and protocols used to define and communicate v
 document object models (:ref:`VDOM`). The definitions below follow in the footsteps of
 `a specification <https://github.com/nteract/vdom/blob/master/docs/mimetype-spec.md>`_
 created by `Nteract <https://nteract.io>`_ and which was built into
-`JupyterLab <https://jupyterlab.readthedocs.io/en/stable/>`_. While IDOM's specification
+`JupyterLab <https://jupyterlab.readthedocs.io/en/stable/>`_. While ReactPy's specification
 for VDOM is fairly well established, it should not be relied until it's been fully
 adopted by the aforementioned organizations.
 
@@ -13,7 +13,7 @@ adopted by the aforementioned organizations.
 VDOM
 ----
 
-A set of definitions that explain how IDOM creates a virtual representation of
+A set of definitions that explain how ReactPy creates a virtual representation of
 the document object model. We'll begin by looking at a bit of HTML that we'll convert
 into its VDOM representation:
 
@@ -35,13 +35,13 @@ into its VDOM representation:
 
   .. code-block:: python
 
-      import idom
+      import reactpy
 
       async def a_python_callback(new):
           ...
 
-      name_input_view = idom.html.div(
-          idom.html.input(
+      name_input_view = reactpy.html.div(
+          reactpy.html.input(
               {
                   "type": "text",
                   "minLength": 4,

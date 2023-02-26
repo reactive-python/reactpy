@@ -1,21 +1,21 @@
 import json
 
-import idom
+import reactpy
 
 
-mui = idom.web.module_from_template(
+mui = reactpy.web.module_from_template(
     "react@^17.0.0",
     "@material-ui/core@4.12.4",
     fallback="⌛",
 )
-Button = idom.web.export(mui, "Button")
+Button = reactpy.web.export(mui, "Button")
 
 
-@idom.component
+@reactpy.component
 def ViewButtonEvents():
-    event, set_event = idom.hooks.use_state(None)
+    event, set_event = reactpy.hooks.use_state(None)
 
-    return idom.html.div(
+    return reactpy.html.div(
         Button(
             {
                 "color": "primary",
@@ -24,8 +24,8 @@ def ViewButtonEvents():
             },
             "Click Me!",
         ),
-        idom.html.pre(json.dumps(event, indent=2)),
+        reactpy.html.pre(json.dumps(event, indent=2)),
     )
 
 
-idom.run(ViewButtonEvents)
+reactpy.run(ViewButtonEvents)

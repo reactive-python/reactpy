@@ -1,7 +1,7 @@
 # :lines: 11-
 
-from idom import run
-from idom.backend import fastapi as fastapi_server
+from reactpy import run
+from reactpy.backend import fastapi as fastapi_server
 
 
 # the run() function is the entry point for examples
@@ -10,8 +10,8 @@ fastapi_server.configure = lambda _, cmpt: run(cmpt)
 
 from fastapi import FastAPI
 
-from idom import component, html
-from idom.backend.fastapi import configure
+from reactpy import component, html
+from reactpy.backend.fastapi import configure
 
 
 @component

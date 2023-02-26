@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from idom._option import DeprecatedOption, Option
+from reactpy._option import DeprecatedOption, Option
 
 
 def test_option_repr():

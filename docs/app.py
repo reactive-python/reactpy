@@ -3,20 +3,20 @@ from pathlib import Path
 
 from sanic import Sanic, response
 
-from idom import component
-from idom.backend.sanic import Options, configure, use_request
-from idom.core.types import ComponentConstructor
+from reactpy import component
+from reactpy.backend.sanic import Options, configure, use_request
+from reactpy.core.types import ComponentConstructor
 
 from .examples import get_normalized_example_name, load_examples
 
 
 HERE = Path(__file__).parent
-IDOM_MODEL_SERVER_URL_PREFIX = "/_idom"
+REACTPY_MODEL_SERVER_URL_PREFIX = "/_reactpy"
 
 logger = getLogger(__name__)
 
 
-IDOM_MODEL_SERVER_URL_PREFIX = "/_idom"
+REACTPY_MODEL_SERVER_URL_PREFIX = "/_reactpy"
 
 
 @component
@@ -52,7 +52,7 @@ def make_app():
     configure(
         app,
         Example,
-        Options(url_prefix=IDOM_MODEL_SERVER_URL_PREFIX),
+        Options(url_prefix=REACTPY_MODEL_SERVER_URL_PREFIX),
     )
 
     return app

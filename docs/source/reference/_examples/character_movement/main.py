@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import NamedTuple
 
-from idom import component, html, run, use_state
-from idom.widgets import image
+from reactpy import component, html, run, use_state
+from reactpy.widgets import image
 
 
 HERE = Path(__file__)

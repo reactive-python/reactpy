@@ -25,37 +25,37 @@ sys.path.insert(0, str(THIS_DIR / "_exts"))
 
 # -- Project information -----------------------------------------------------
 
-project = "IDOM"
-title = "IDOM Docs"
+project = "ReactPy"
+title = "ReactPy"
 description = (
-    "IDOM is a Python web framework for building interactive websites without needing "
+    "ReactPy is a Python web framework for building interactive websites without needing "
     "a single line of Javascript. It can be run standalone, in a Jupyter Notebook, or "
     "as part of an existing application."
 )
-copyright = "2020, Ryan Morshead"
+copyright = "2023, Ryan Morshead"
 author = "Ryan Morshead"
 
 # -- Common External Links ---------------------------------------------------
 
 extlinks = {
     "issue": (
-        "https://github.com/idom-team/idom/issues/%s",
+        "https://github.com/reactive-python/reactpy/issues/%s",
         "#",
     ),
     "pull": (
-        "https://github.com/idom-team/idom/pull/%s",
+        "https://github.com/reactive-python/reactpy/pull/%s",
         "#",
     ),
     "discussion": (
-        "https://github.com/idom-team/idom/discussions/%s",
+        "https://github.com/reactive-python/reactpy/discussions/%s",
         "#",
     ),
     "discussion-type": (
-        "https://github.com/idom-team/idom/discussions/categories/%s",
+        "https://github.com/reactive-python/reactpy/discussions/categories/%s",
         "",
     ),
     "commit": (
-        "https://github.com/idom-team/idom/commit/%s",
+        "https://github.com/reactive-python/reactpy/commit/%s",
         "",
     ),
 }
@@ -87,9 +87,9 @@ extensions = [
     "async_doctest",
     "autogen_api_docs",
     "copy_vdom_json_schema",
-    "idom_view",
+    "reactpy_view",
     "patched_html_translator",
-    "idom_example",
+    "reactpy_example",
     "build_custom_js",
     "custom_autosectionlabel",
 ]
@@ -163,8 +163,8 @@ redirects = {
 
 # -- sphinxext.opengraph --
 
-ogp_site_url = "https://idom-docs.herokuapp.com/"
-ogp_image = "https://raw.githubusercontent.com/idom-team/idom/main/branding/png/idom-logo-black.png"
+ogp_site_url = "https://reactpy-docs.herokuapp.com/"
+ogp_image = "https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/png/reactpy-logo-padded.png"
 # We manually specify this below
 # ogp_description_length = 200
 ogp_type = "website"
@@ -188,14 +188,27 @@ html_title = title
 # a list of builtin themes.
 #
 html_theme = "furo"
-html_logo = str(ROOT_DIR / "branding" / "svg" / "idom-logo.svg")
-html_favicon = str(ROOT_DIR / "branding" / "svg" / "idom-logo-square-small.svg")
+html_logo = str(ROOT_DIR / "branding" / "reactpy-logo-wide.svg")
+html_favicon = str(ROOT_DIR / "branding" / "reactpy-logo.ico")
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
-# html_theme_options = {}
+
+html_theme_options = {
+    "light_css_variables": {
+        # furo
+        "admonition-title-font-size": "1rem",
+        "admonition-font-size": "1rem",
+        # sphinx-design
+        "sd-color-info": "var(--color-admonition-title-background--note)",
+        "sd-color-warning": "var(--color-admonition-title-background--warning)",
+        "sd-color-danger": "var(--color-admonition-title-background--danger)",
+        "sd-color-info-text": "var(--color-admonition-title--note)",
+        "sd-color-warning-text": "var(--color-admonition-title--warning)",
+        "sd-color-danger-text": "var(--color-admonition-title--danger)",
+    },
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -232,7 +245,7 @@ panels_css_variables = {
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "IDOMdoc"
+htmlhelp_basename = "ReactPydoc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -255,14 +268,14 @@ htmlhelp_basename = "IDOMdoc"
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [(master_doc, "IDOM.tex", html_title, "Ryan Morshead", "manual")]
+latex_documents = [(master_doc, "ReactPy.tex", html_title, "Ryan Morshead", "manual")]
 
 
 # -- Options for manual page output ------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "idom", html_title, [author], 1)]
+man_pages = [(master_doc, "reactpy", html_title, [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -273,10 +286,10 @@ man_pages = [(master_doc, "idom", html_title, [author], 1)]
 texinfo_documents = [
     (
         master_doc,
-        "IDOM",
+        "ReactPy",
         html_title,
         author,
-        "IDOM",
+        "ReactPy",
         "One line description of project.",
         "Miscellaneous",
     )
