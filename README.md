@@ -1,4 +1,21 @@
-<img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/reactpy-logo-wide.svg" alt="ReactPy Logo" id="reactpy" width="500px" />
+<p align="center">
+    <a href="https://reactpy.herokuapp.com">
+        <img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/reactpy-logo-wide.svg" alt="ReactPy Logo" id="reactpy" style="min-width: 300px; width: 50%" />
+    </a>
+</p>
+<p align="center">
+    <em>Reactive user interfaces with pure Python</em>
+</p>
+    <p align="center">
+    <a href="https://github.com/encode/starlette/actions">
+        <img src="https://github.com/reactive-python/reactpy/workflows/test/badge.svg" alt="Build Status">
+    </a>
+    <a href="https://pypi.org/project/reactpy/">
+        <img src="https://badge.fury.io/py/reactpy.svg" alt="Package version">
+    </a>
+</p>
+
+---
 
 ReactPy is a library for building user interfaces in Python without Javascript. ReactPy
 interfaces are made from components which look and behave similarly to this found in
@@ -6,17 +23,19 @@ interfaces are made from components which look and behave similarly to this foun
 by those without web development experience while also being powerful enough to grow
 with your ambitions.
 
-<table>
+<table align="center">
     <thead>
         <tr>
-            <th>Supported Servers</th>
-            <th>Supported Integrations</th>
+            <th colspan="2">Supported Backends</th>
+        <tr>
+            <th>Built-in</th>
+            <th>External</th>
         </tr>
     </thead>
     <tbody>
         <tr>
         <td>
-            <a href="https://reactpy-docs.herokuapp.com/docs/guides/getting-started/installing-reactpy.html#officially-supported-servers">
+            <a href="">
                 Flask, FastAPI, Sanic, Tornado
             </a>
         </td>
@@ -48,7 +67,7 @@ run(HelloWorld)
 Follow the links below to find out more about this project.
 
 - [Try it Now](https://mybinder.org/v2/gh/reactive-python/reactpy-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb) - check out ReactPy in a Jupyter Notebook.
-- [Documentation](https://reactpy-docs.herokuapp.com/) - learn how to install, run, and use ReactPy.
+- [Documentation](https://reactpy.herokuapp.com/) - learn how to install, run, and use ReactPy.
 - [Community Forum](https://github.com/reactive-python/reactpy/discussions) - ask questions, share ideas, and show off projects.
-- [Contributor Guide](https://reactpy-docs.herokuapp.com/docs/developing-reactpy/contributor-guide.html) - see how you can help develop this project.
+- [Contributor Guide](https://reactpy.herokuapp.com/docs/developing-reactpy/contributor-guide.html) - see how you can help develop this project.
 - [Code of Conduct](https://github.com/reactive-python/reactpy/blob/main/CODE_OF_CONDUCT.md) - standards for interacting with this community.
