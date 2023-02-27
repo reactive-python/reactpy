@@ -7,8 +7,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Awaitable, Sequence, cast
 
 from asgiref.typing import ASGIApplication
-from uvicorn.config import Config as UvicornConfig
-from uvicorn.server import Server as UvicornServer
+import uvicorn
 
 from reactpy import __file__ as _reactpy_file_path
 from reactpy import html
@@ -31,9 +30,9 @@ async def serve_development_asgi(
     port: int,
     started: asyncio.Event | None,
 ) -> None:
-    """Run a development server for starlette"""
-    server = UvicornServer(
-        UvicornConfig(
+    """Run a development server for an ASGI application"""
+    server = uvicorn.Server(
+        uvicorn.Config(
             app,
             host=host,
             port=port,
@@ -41,22 +40,8 @@ async def serve_development_asgi(
             reload=True,
         )
     )
-
-    coros: list[Awaitable[Any]] = [server.serve()]
-
-    if started:
-        coros.append(_check_if_started(server, started))
-
-    try:
-        await asyncio.gather(*coros)
-    finally:
-        await asyncio.wait_for(server.shutdown(), timeout=3)
-
-
-async def _check_if_started(server: UvicornServer, started: asyncio.Event) -> None:
-    while not server.started:
-        await asyncio.sleep(0.2)
-    started.set()
+    server.config.setup_event_loop()
+    await server.serve()
 
 
 def safe_client_build_dir_path(path: str) -> Path:
