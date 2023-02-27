@@ -1,4 +1,6 @@
-<img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/reactpy-logo-wide.svg" alt="ReactPy Logo" id="reactpy" width="500px" />
+<a href="https://reactpy.herokuapp.com">
+    <img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/reactpy-logo-wide.svg" alt="ReactPy Logo" id="reactpy" width="500px" />
+</a>
 
 ReactPy is a library for building user interfaces in Python without Javascript. ReactPy
 interfaces are made from components which look and behave similarly to this found in
