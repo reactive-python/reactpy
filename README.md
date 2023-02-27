@@ -26,10 +26,10 @@ with your ambitions.
 <table align="center">
     <thead>
         <tr>
-            <th colspan="2">Supported Backends</th>
+            <th colspan="2" style="text-align: center">Supported Backends</th>
         <tr>
-            <th>Built-in</th>
-            <th>External</th>
+            <th style="text-align: center">Built-in</th>
+            <th style="text-align: center">External</th>
         </tr>
     </thead>
     <tbody>
