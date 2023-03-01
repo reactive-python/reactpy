@@ -41,7 +41,19 @@ async def serve_development_asgi(
         )
     )
     server.config.setup_event_loop()
-    await server.serve()
+    coros: list[Awaitable[Any]] = [server.serve()]
+
+    # If a started event is provided, then use it signal based on `server.started`
+    if started:
+        coros.append(_check_if_started(server, started))
+
+    await asyncio.gather(*coros)
+
+
+async def _check_if_started(server: uvicorn.Server, started: asyncio.Event) -> None:
+    while not server.started:
+        await asyncio.sleep(0.2)
+    started.set()
 
 
 def safe_client_build_dir_path(path: str) -> Path:
