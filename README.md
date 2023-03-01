@@ -1,6 +1,6 @@
 <p align="center" id="reactpy">
     <a href="https://reactpy.herokuapp.com">
-        <img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-wide.svg" alt="ReactPy Logo" style="min-width: 300px; width: 50%" />
+        <img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-landscape.svg" alt="ReactPy Logo" style="min-width: 300px; width: 50%" />
     </a>
 </p>
 <p align="center">
