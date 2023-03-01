@@ -163,7 +163,7 @@ redirects = {
 
 # -- sphinxext.opengraph --
 
-ogp_site_url = "https://reactpy.herokuapp.com/"
+ogp_site_url = "https://reactpy.dev/"
 ogp_image = "https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/png/reactpy-logo-padded.png"
 # We manually specify this below
 # ogp_description_length = 200

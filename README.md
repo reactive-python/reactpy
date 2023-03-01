@@ -12,7 +12,7 @@ ReactPy is a library for building user interfaces in Python without Javascript. 
     <tbody>
         <tr>
         <td>
-            <a href="https://reactpyherokuapp.com/docs/guides/getting-started/installing-reactpy.html#officially-supported-servers">
+            <a href="https://reactpy.dev/docs/guides/getting-started/installing-reactpy.html#officially-supported-servers">
                 Flask, FastAPI, Sanic, Tornado
             </a>
         </td>
@@ -44,7 +44,7 @@ run(HelloWorld)
 Follow the links below to find out more about this project.
 
 -   [Try it Now](https://mybinder.org/v2/gh/reactive-python/reactpy-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb) - check out ReactPy in a Jupyter Notebook.
--   [Documentation](https://reactpyherokuapp.com/) - learn how to install, run, and use ReactPy.
+-   [Documentation](https://reactpy.dev/) - learn how to install, run, and use ReactPy.
 -   [Community Forum](https://github.com/reactive-python/reactpy/discussions) - ask questions, share ideas, and show off projects.
--   [Contributor Guide](https://reactpyherokuapp.com/docs/developing-reactpy/contributor-guide.html) - see how you can help develop this project.
+-   [Contributor Guide](https://reactpy.dev/docs/developing-reactpy/contributor-guide.html) - see how you can help develop this project.
 -   [Code of Conduct](https://github.com/reactive-python/reactpy/blob/main/CODE_OF_CONDUCT.md) - standards for interacting with this community.
