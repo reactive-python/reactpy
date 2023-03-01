@@ -164,7 +164,7 @@ redirects = {
 # -- sphinxext.opengraph --
 
 ogp_site_url = "https://reactpy.dev/"
-ogp_image = "https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/png/reactpy-logo-padded.png"
+ogp_image = "https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/png/reactpy-logo-landscape-padded.png"
 # We manually specify this below
 # ogp_description_length = 200
 ogp_type = "website"
@@ -188,8 +188,8 @@ html_title = title
 # a list of builtin themes.
 #
 html_theme = "furo"
-html_logo = str(ROOT_DIR / "branding" / "reactpy-logo-wide.svg")
-html_favicon = str(ROOT_DIR / "branding" / "reactpy-logo.ico")
+html_logo = str(ROOT_DIR / "branding" / "svg" / "reactpy-logo-landscape.svg")
+html_favicon = str(ROOT_DIR / "branding" / "ico" / "reactpy-logo.ico")
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
