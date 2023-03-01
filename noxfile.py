@@ -229,7 +229,7 @@ def build_python(session: Session) -> None:
 
 
 @group.session
-def tag(session: Session) -> None:
+def tag(session: Session, version: str) -> None:
     """Create a new git tag"""
     try:
         session.run(
@@ -254,7 +254,7 @@ def tag(session: Session) -> None:
         session.error("To many arguments")
 
     try:
-        new_version = session.posargs[0]
+        new_version = version
     except IndexError:
         session.error("No version tag given")
 
