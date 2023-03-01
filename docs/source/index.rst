@@ -40,7 +40,7 @@ ReactPy
 
 ReactPy is a library for building user interfaces in Python without Javascript. ReactPy
 interfaces are made from :ref:`components <Your First Components>` which look and behave
-similarly to this found in `ReactJS <https://reactjs.org/>`__. Designed with simplicity
+similarly to those found in `ReactJS <https://reactjs.org/>`__. Designed with simplicity
 in mind, ReactPy can be used by those without web development experience while also
 being powerful enough to grow with your ambitions.
 
