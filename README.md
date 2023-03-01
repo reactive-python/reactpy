@@ -1,12 +1,31 @@
-<img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/reactpy-logo-wide.svg" alt="ReactPy Logo" id="reactpy" width="500px" />
+<p align="center">
+    <a href="https://reactpy.herokuapp.com">
+        <img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/reactpy-logo-wide.svg" alt="ReactPy Logo" id="reactpy" style="min-width: 300px; width: 50%" />
+    </a>
+</p>
+<p align="center">
+    <em>Reactive user interfaces with pure Python</em>
+</p>
+    <p align="center">
+    <a href="https://github.com/encode/starlette/actions">
+        <img src="https://github.com/reactive-python/reactpy/workflows/test/badge.svg" alt="Build Status">
+    </a>
+    <a href="https://pypi.org/project/reactpy/">
+        <img src="https://badge.fury.io/py/reactpy.svg" alt="Package version">
+    </a>
+</p>
 
-ReactPy is a library for building user interfaces in Python without Javascript. ReactPy interfaces are made from components which look and behave similarly to those found in [ReactJS](https://reactjs.org/). Designed with simplicity in mind, ReactPy can be used by those without web development experience while also being powerful enough to grow with your ambitions.
+---
 
-<table>
+[ReactPy](https://reactpy.dev/) is a library for building user interfaces in Python without Javascript. ReactPy interfaces are made from components which look and behave similarly to this found in [ReactJS](https://reactjs.org/). Designed with simplicity in mind, ReactPy can be used by those without web development experience while also being powerful enough to grow with your ambitions.
+
+<table align="center">
     <thead>
         <tr>
-            <th>Supported Servers</th>
-            <th>Supported Integrations</th>
+            <th colspan="2" style="text-align: center">Supported Backends</th>
+        <tr>
+            <th style="text-align: center">Built-in</th>
+            <th style="text-align: center">External</th>
         </tr>
     </thead>
     <tbody>
