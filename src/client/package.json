@@ -11,7 +11,6 @@
     "build": "vite build",
     "check-format": "npm --workspaces run check-format",
     "format": "npm --workspaces run format",
-    "publish": "npm --workspaces publish",
     "test": "npm --workspaces test"
   },
   "version": "1.0.0",

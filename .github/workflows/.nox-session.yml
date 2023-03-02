@@ -3,10 +3,17 @@ name: Nox Session
 on:
   workflow_call:
     inputs:
+      job-name:
+        required: true
+        type: string
       nox-args:
         required: true
         type: string
-      session-args:
+      nox-env:
+        required: false
+        type: string
+        default: "{}"
+      nox-session-args:
         required: false
         type: string
       runs-on-array:
@@ -17,10 +24,6 @@ on:
         required: false
         type: string
         default: '["3.x"]'
-      job-name:
-        required: false
-        type: string
-        default: python-{0} {1}
 
 jobs:
   nox-session:
@@ -35,14 +38,12 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "14.x"
-      - name: Install Specific NPM Version
-        run: npm install -g npm@8.3
       - name: Use Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Python Dependencies
         run: pip install -r requirements/nox-deps.txt
-      - name: Run Tests
-        env: { "CI": "true" }
+      - name: Run Sessions
+        env: ${{ inputs.nox-env }}
         run: nox ${{ inputs.nox-args }} --stop-on-first-error -- ${{ inputs.session-args }}

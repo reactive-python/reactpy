@@ -16,12 +16,12 @@ jobs:
     with:
       job-name: "python-{0}"
       nox-args: "-t check-python"
-      session-args: "--pytest --maxfail=3 --reruns 3"
+      nox-session-args: "--pytest --maxfail=3 --reruns 3"
   python-environments:
     uses: ./.github/workflows/.nox-session.yml
     with:
       nox-args: "-s check-python-tests"
-      session-args: "--no-cov --pytest --maxfail=3 --reruns 3"
+      nox-session-args: "--no-cov --pytest --maxfail=3 --reruns 3"
       runs-on-array: '["ubuntu-latest", "macos-latest", "windows-latest"]'
       python-version-array: '["3.7", "3.8", "3.9", "3.10", "3.11"]'
   docs:

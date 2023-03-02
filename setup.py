@@ -53,7 +53,7 @@ package = {
     "description": "It's React, but in Python",
     "author": "Ryan Morshead",
     "author_email": "ryan.morshead@gmail.com",
-    "url": "https://github.com/rmorshea/reactpy",
+    "url": "https://github.com/reactive-python/reactpy",
     "license": "MIT",
     "platforms": "Linux, Mac OS X, Windows",
     "keywords": ["interactive", "widgets", "DOM", "React"],
@@ -164,7 +164,7 @@ def build_javascript_first(cls):
                 npm = shutil.which("npm")  # this is required on windows
                 if npm is None:
                     raise RuntimeError("NPM is not installed.")
-                for args in (f"{npm} install", f"{npm} run build"):
+                for args in (f"{npm} ci", f"{npm} run build"):
                     args_list = args.split()
                     log.info(f"> {list2cmdline(args_list)}")
                     subprocess.run(args_list, cwd=str(JS_DIR), check=True)
