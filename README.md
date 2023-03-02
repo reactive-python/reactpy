@@ -1,13 +1,11 @@
 <p align="center" id="reactpy">
-    <a href="https://reactpy.herokuapp.com">
-        <img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-landscape.svg" alt="ReactPy Logo" style="min-width: 300px; width: 50%" />
-    </a>
+    <img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-landscape.svg" alt="ReactPy Logo" style="min-width: 300px; width: 50%" />
 </p>
 <p align="center">
     <em>Reactive user interfaces with pure Python</em>
 </p>
     <p align="center">
-    <a href="https://github.com/encode/starlette/actions">
+    <a href="https://github.com/reactive-python/reactpy/actions">
         <img src="https://github.com/reactive-python/reactpy/workflows/test/badge.svg" alt="Build Status">
     </a>
     <a href="https://pypi.org/project/reactpy/">
