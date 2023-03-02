@@ -1,5 +1,7 @@
 <p align="center" id="reactpy">
-    <img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-landscape.svg" alt="ReactPy Logo" style="min-width: 300px; width: 50%" />
+    <a href="#">
+        <img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-landscape.svg" alt="ReactPy Logo" style="min-width: 300px; width: 50%" />
+    </a>
 </p>
 <p align="center">
     <em>Reactive user interfaces with pure Python</em>
