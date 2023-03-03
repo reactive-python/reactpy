@@ -7,13 +7,17 @@ from argparse import REMAINDER
 from dataclasses import replace
 from pathlib import Path
 from shutil import rmtree
-from typing import Callable, Literal, NamedTuple, Sequence
+from typing import TYPE_CHECKING, Callable, NamedTuple, Sequence
 
 from noxopt import Annotated, NoxOpt, Option, Session
 
 
-ROOT = Path(__file__).parent.resolve()
-SRC_DIR = ROOT / "src"
+if TYPE_CHECKING:
+    # not available in typing module until Python 3.8
+    from typing import Literal
+
+ROOT_DIR = Path(__file__).parent.resolve()
+SRC_DIR = ROOT_DIR / "src"
 CLIENT_DIR = SRC_DIR / "client"
 REACTPY_DIR = SRC_DIR / "reactpy"
 
@@ -29,6 +33,7 @@ group = NoxOpt(auto_tag=True)
 @group.setup
 def setup_checks(session: Session) -> None:
     session.install("--upgrade", "pip")
+    session.run("pip", "--version")
 
 
 @group.setup("check-javascript")
@@ -50,7 +55,7 @@ def format(session: Session) -> None:
     session.run("npm", "run", "format", external=True)
 
     # format docs Javascript
-    session.chdir(ROOT / "docs" / "source" / "_custom_js")
+    session.chdir(ROOT_DIR / "docs" / "source" / "_custom_js")
     session.run("npm", "run", "format", external=True)
 
 
@@ -224,8 +229,8 @@ def build_javascript(session: Session) -> None:
 @group.session
 def build_python(session: Session) -> None:
     """Build python package dist"""
-    rmtree(str(ROOT / "build"))
-    rmtree(str(ROOT / "dist"))
+    rmtree(str(ROOT_DIR / "build"))
+    rmtree(str(ROOT_DIR / "dist"))
     install_requirements_file(session, "build-pkg")
     session.run("python", "-m", "build", "--sdist", "--wheel", "--outdir", "dist", ".")
 
@@ -259,13 +264,12 @@ def publish(session: Session) -> None:
 
 
 def install_requirements_file(session: Session, name: str) -> None:
-    file_path = ROOT / "requirements" / (name + ".txt")
+    file_path = ROOT_DIR / "requirements" / (name + ".txt")
     assert file_path.exists(), f"requirements file {file_path} does not exist"
     session.install("-r", str(file_path))
 
 
 def install_reactpy_dev(session: Session, extras: str = "all") -> None:
-    session.run("pip", "--version")
     if "--no-install" not in session.posargs:
         session.install("-e", f".[{extras}]")
     else:
@@ -331,7 +335,7 @@ def prepare_python_release(session: Session, name: str) -> Callable[[], None]:
 
 def get_packages(session: Session) -> dict[str, PackageInfo]:
     packages: dict[str, PackageInfo] = {
-        "reactpy": PackageInfo("py", ROOT, get_reactpy_package_version(session))
+        "reactpy": PackageInfo("py", ROOT_DIR, get_reactpy_package_version(session))
     }
 
     # collect javascript packages
