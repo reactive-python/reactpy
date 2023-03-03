@@ -40,7 +40,6 @@ async def serve_development_asgi(
             reload=True,
         )
     )
-    server.config.setup_event_loop()
     coros: list[Awaitable[Any]] = [server.serve()]
 
     # If a started event is provided, then use it signal based on `server.started`
