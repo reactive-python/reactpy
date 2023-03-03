@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import os
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -48,8 +47,11 @@ async def serve_development_asgi(
     if started:
         coros.append(_check_if_started(server, started))
 
-    with contextlib.suppress(Exception):
+    try:
         await asyncio.gather(*coros)
+    except Exception:
+        if server.started:
+            await asyncio.wait_for(server.shutdown(), timeout=3)
 
 
 async def _check_if_started(server: uvicorn.Server, started: asyncio.Event) -> None:
