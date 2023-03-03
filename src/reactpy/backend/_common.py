@@ -50,9 +50,7 @@ async def serve_development_asgi(
     try:
         await asyncio.gather(*coros)
     finally:
-        if not server.servers:
-            server.servers = []
-        await asyncio.wait_for(server.shutdown(), timeout=3)
+        pass
 
 
 async def _check_if_started(server: uvicorn.Server, started: asyncio.Event) -> None:
