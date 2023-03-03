@@ -229,7 +229,7 @@ def build_python(session: Session) -> None:
 
 
 @group.session
-def tag(session: Session) -> None:
+def tag(session: Session, version: str = "") -> None:
     """Create a new git tag"""
     try:
         session.run(
@@ -250,13 +250,9 @@ def tag(session: Session) -> None:
     except Exception:
         session.error("Cannot create a tag - there are uncommited changes")
 
-    if len(session.posargs) > 1:
-        session.error("To many arguments")
-
-    try:
-        new_version = session.posargs[0]
-    except IndexError:
+    if not version:
         session.error("No version tag given")
+    new_version = version
 
     install_requirements_file(session, "make-release")
 
