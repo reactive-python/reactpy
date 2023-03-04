@@ -50,7 +50,7 @@ async def serve_development_asgi(
     try:
         await asyncio.gather(*coros)
     finally:
-        if not hasattr(server, "servers"):
+        if not hasattr(server, "servers"):  # pragma: no cover
             server.servers = []
         await asyncio.wait_for(server.shutdown(), timeout=3)
 
