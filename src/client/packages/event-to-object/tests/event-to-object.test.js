@@ -1,7 +1,7 @@
 import { test } from "uvu";
 import lodash from "lodash";
 import * as assert from "uvu/assert";
-import { serializeEvent } from "../src/event-to-object.js";
+import serializeEvent from "../src/index.js";
 import "./tooling/setup.js";
 
 const mockBoundingRect = {
@@ -52,7 +52,7 @@ function assertEqualSerializedEventData(eventData, expectedSerializedData) {
 
   assert.equal(
     serializeEvent(lodash.merge({}, commonEventData, eventData)),
-    lodash.merge({}, commonSerializedEventData, expectedSerializedData)
+    lodash.merge({}, commonSerializedEventData, expectedSerializedData),
   );
 }
 
@@ -73,7 +73,7 @@ function assertEqualSerializedEventData(eventData, expectedSerializedData) {
       case: `adds 'value' attribute for ${tagName} element`,
       tagName,
       output: { target: { value: allTargetData.value } },
-    })
+    }),
   ),
   ...["AUDIO", "VIDEO"].map((tagName) => ({
     case: `adds 'currentTime' attribute for ${tagName} element`,
@@ -178,7 +178,7 @@ const allEventData = {
       eventType,
       case: "composition",
       output: { data: "data" },
-    })
+    }),
   ),
   ...["keydown", "keypress", "keyup"].map((eventType) => ({
     eventType,
@@ -281,7 +281,7 @@ const allEventData = {
         metaKey: "metaKey",
         shiftKey: "shiftKey",
       },
-    })
+    }),
   ),
   {
     eventType: "scroll",
@@ -309,7 +309,7 @@ const allEventData = {
         pseudoElement: "pseudoElement",
         elapsedTime: "elapsedTime",
       },
-    })
+    }),
   ),
   {
     eventType: "transitionend",
@@ -324,7 +324,7 @@ const allEventData = {
   test(`serializeEvent() adds ${expectation.case} attributes`, () => {
     assertEqualSerializedEventData(
       { ...allEventData, type: expectation.eventType },
-      expectation.output
+      expectation.output,
     );
   });
 });
@@ -346,7 +346,7 @@ test("serializeEvent() adds text of current selection", () => {
     { ...allEventData, type: "select" },
     {
       selectedText: "START\nMIDDLE\n",
-    }
+    },
   );
 });
 

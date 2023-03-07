@@ -1,15 +1,18 @@
 {
   "author": "Ryan Morshead",
   "dependencies": {
-    "htm": "^3.0.3",
+    "event-to-object": "file:packages/event-to-object",
     "json-pointer": "^0.6.2"
   },
   "description": "A client for ReactPy implemented in React",
   "devDependencies": {
+    "@types/json-pointer": "^1.0.31",
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
     "jsdom": "16.5.0",
     "lodash": "^4.17.21",
     "prettier": "^2.5.1",
-    "uvu": "^0.5.1"
+    "typescript": "^4.9.5"
   },
   "files": [
     "src/**/*.js"
@@ -26,9 +29,10 @@
     "url": "https://github.com/reactive-python/reactpy"
   },
   "scripts": {
-    "check-format": "prettier --check ./src ./tests",
     "format": "prettier --write ./src ./tests",
-    "test": "uvu tests"
+    "check:format": "prettier --check ./src ./tests",
+    "check:tests": "echo 'no tests'",
+    "check:types": "tsc"
   },
   "type": "module",
   "version": "0.1.0"

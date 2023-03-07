@@ -6,18 +6,22 @@
   },
   "description": "A client application for ReactPy implemented in React",
   "devDependencies": {
-    "prettier": "^2.5.1"
+    "prettier": "^2.5.1",
+    "typescript": "^4.9.5",
+    "@types/react-dom": "^18.0.11"
   },
   "license": "MIT",
-  "main": "src/index.js",
+  "main": "src/index.tsx",
   "name": "@reactpy/app",
   "repository": {
     "type": "git",
     "url": "https://github.com/reactive-python/reactpy"
   },
   "scripts": {
-    "check-format": "prettier --check ./src",
     "format": "prettier --write ./src",
-    "test": "echo 'no tests'"
-  }
+    "check:format": "prettier --check ./src",
+    "check:tests": "echo 'no tests'",
+    "check:types": "tsc"
+  },
+  "version": "0.45.0"
 }

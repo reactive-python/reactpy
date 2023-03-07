@@ -232,21 +232,18 @@ def check_docs(session: Session) -> None:
 
 
 @group.session
-def check_javascript_suite(session: Session) -> None:
-    """Run the Javascript-based test suite and ensure it bundles succesfully"""
-    session.run("npm", "run", "test", external=True)
-
-
-@group.session
-def check_javascript_build(session: Session) -> None:
-    """Run the Javascript-based test suite and ensure it bundles succesfully"""
-    session.run("npm", "run", "test", external=True)
+def check_javascript_tests(session: Session) -> None:
+    session.run("npm", "run", "check:tests", external=True)
 
 
 @group.session
 def check_javascript_format(session: Session) -> None:
-    """Check that Javascript style guidelines are being followed"""
-    session.run("npm", "run", "check-format", external=True)
+    session.run("npm", "run", "check:format", external=True)
+
+
+@group.session
+def check_javascript_types(session: Session) -> None:
+    session.run("npm", "run", "check:types", external=True)
 
 
 @group.session

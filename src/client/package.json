@@ -9,9 +9,11 @@
   },
   "scripts": {
     "build": "vite build",
-    "check-format": "npm --workspaces run check-format",
+    "publish": "npm --workspaces publish",
     "format": "npm --workspaces run format",
-    "test": "npm --workspaces test"
+    "check:format": "npm --workspaces run check-format",
+    "check:tests": "npm --workspaces check:tests",
+    "check:types": "npm --workspaces run check:types"
   },
   "version": "1.0.0",
   "workspaces": [

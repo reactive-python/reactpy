@@ -1,4 +1,4 @@
-export function serializeEvent(event) {
+export default function convert(event) {
   const data = {};
 
   if (event.type in eventTransforms) {
@@ -21,7 +21,7 @@ function serializeDomElement(element) {
     elementData = defaultElementTransform(element);
     if (element.tagName in elementTransforms) {
       elementTransforms[element.tagName].forEach((trans) =>
-        Object.assign(elementData, trans(element))
+        Object.assign(elementData, trans(element)),
       );
     }
   }
