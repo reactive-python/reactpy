@@ -6,7 +6,7 @@
   },
   "description": "A client application for ReactPy implemented in React",
   "devDependencies": {
-    "prettier": "^2.5.1",
+    "prettier": "^3.0.0-alpha.6",
     "typescript": "^4.9.5",
     "@types/react-dom": "^18.0.11"
   },

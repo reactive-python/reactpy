@@ -11,7 +11,7 @@
     "build": "vite build",
     "publish": "npm --workspaces publish",
     "format": "npm --workspaces run format",
-    "check:format": "npm --workspaces run check-format",
+    "check:format": "npm --workspaces run check:format",
     "check:tests": "npm --workspaces run check:tests",
     "check:types": "npm --workspaces run check:types"
   },

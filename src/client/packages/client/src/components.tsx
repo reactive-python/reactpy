@@ -36,7 +36,11 @@ export function Layout(props: { server: ReactPyClient }): JSX.Element {
     props.server
       .receiveMessage<LayoutUpdateMessage>("layout-update")
       .then(({ path, model }) => {
-        setJsonPointer(currentModel, path, model);
+        if (path === "") {
+          Object.assign(currentModel, model);
+        } else {
+          setJsonPointer(currentModel, path, model);
+        }
         forceUpdate();
       });
   }, [currentModel, props.server]);

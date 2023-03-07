@@ -53,7 +53,7 @@ export class SimpleReactPyClient implements ReactPyClient {
       handlers = [];
       this.handlers[type] = handlers;
     }
-    return new Promise(handlers.push);
+    return new Promise((r) => handlers.push(r));
   }
 
   async sendMessage(message: OutgoingMessage): Promise<void> {

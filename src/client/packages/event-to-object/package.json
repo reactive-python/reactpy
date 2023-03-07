@@ -1,9 +1,14 @@
 {
   "author": "Ryan Morshead",
-  "dependencies": {},
-  "description": "Convert DOM events to JSON serializable objects",
+  "dependencies": {
+    "event-to-object": "file:packages/event-to-object",
+    "json-pointer": "^0.6.2"
+  },
+  "description": "A client for ReactPy implemented in React",
   "devDependencies": {
-    "prettier": "^2.5.1",
+    "jsdom": "16.5.0",
+    "lodash": "^4.17.21",
+    "prettier": "^3.0.0-alpha.6",
     "uvu": "^0.5.1"
   },
   "license": "MIT",
@@ -14,10 +19,11 @@
     "url": "https://github.com/reactive-python/reactpy"
   },
   "scripts": {
-    "format": "prettier --write ./src",
+    "format": "prettier --write ./src ./tests",
+    "check:format": "prettier --check ./src ./tests",
     "check:tests": "uvu tests",
-    "check:format": "prettier --check ./src",
-    "check:types": "echo 'no types'"
+    "check:types": "tsc"
   },
+  "type": "module",
   "version": "0.1.0"
 }

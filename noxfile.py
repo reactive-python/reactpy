@@ -247,6 +247,11 @@ def check_javascript_types(session: Session) -> None:
 
 
 @group.session
+def check_javascript_build(session: Session) -> None:
+    session.run("npm", "run", "build", external=True)
+
+
+@group.session
 def build_javascript(session: Session) -> None:
     """Build javascript client code"""
     session.chdir(CLIENT_DIR)
