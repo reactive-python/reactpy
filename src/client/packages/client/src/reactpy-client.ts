@@ -1,39 +1,39 @@
 import { OutgoingMessage, IncomingMessage } from "./messages";
 import { ReactPyModule } from "./reactpy-vdom";
 
-export interface ReactPyServer {
+export interface ReactPyClient {
   receiveMessage: <M extends IncomingMessage>(type: M["type"]) => Promise<M>;
   sendMessage: (message: OutgoingMessage) => Promise<void>;
   loadModule: (moduleName: string) => Promise<ReactPyModule>;
 }
 
-export type StandardServerUrlProps = {
+type UrlProps = {
   baseUrl: string;
   routePath: string;
   queryString: string;
 };
 
-export type StandardServerReconnectProps = {
+type ReconnectProps = {
   maxInterval?: number;
   maxRetries?: number;
   backoffRate?: number;
   intervalJitter?: number;
 };
 
-export class SimpleReactPyServer implements ReactPyServer {
-  private readonly urls: StandardServerUrls;
+export class SimpleReactPyClient implements ReactPyClient {
+  private readonly urls: ServerUrls;
   private readonly handlers: {
     [key in IncomingMessage["type"]]?: ((message: any) => void)[];
   };
   private readonly socket: { current?: WebSocket };
 
   constructor(props: {
-    serverApi: StandardServerUrlProps;
-    reconnectOptions?: StandardServerReconnectProps;
+    serverApi: UrlProps;
+    reconnectOptions?: ReconnectProps;
   }) {
     this.handlers = {};
 
-    this.urls = getStandardServerUrls(props.serverApi);
+    this.urls = getServerUrls(props.serverApi);
 
     this.socket = startReconnectingWebSocket({
       url: this.urls.stream,
@@ -82,25 +82,21 @@ export class SimpleReactPyServer implements ReactPyServer {
   }
 }
 
-type StandardServerUrls = {
+type ServerUrls = {
   base: URL;
   stream: string;
   modules: string;
   assets: string;
 };
 
-function getStandardServerUrls(
-  props: StandardServerUrlProps,
-): StandardServerUrls {
+function getServerUrls(props: UrlProps): ServerUrls {
   const base = new URL(`${props.baseUrl || document.location.origin}/_reactpy`);
   const modules = `${base}/modules`;
   const assets = `${base}/assets`;
 
-  const wsProtocol = `ws${base.protocol === "https:" ? "s" : ""}`;
-  const wsHost = `${base.host}:${base.port}`;
-  const wsPath = `${props.routePath || ""}${props.routePath || ""}`;
-
-  const stream = `${wsProtocol}://${wsHost}${wsPath}`;
+  const streamProtocol = `ws${base.protocol === "https:" ? "s" : ""}`;
+  const streamPath = `${base.pathname}/stream${props.routePath || ""}`;
+  const stream = `${streamProtocol}://${base.host}${streamPath}`;
 
   return { base, modules, assets, stream };
 }
@@ -111,7 +107,7 @@ function startReconnectingWebSocket(
     onOpen: () => void;
     onMessage: (message: MessageEvent<any>) => void;
     onClose: () => void;
-  } & StandardServerReconnectProps,
+  } & ReconnectProps,
 ) {
   const {
     maxInterval = 60000,

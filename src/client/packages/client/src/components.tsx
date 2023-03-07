@@ -24,11 +24,11 @@ import {
   loadImportSource,
   ImportSourceBinding,
 } from "./reactpy-vdom";
-import { ReactPyServer } from "./reactpy-server";
+import { ReactPyClient } from "./reactpy-client";
 
-const LayoutServer = createContext<ReactPyServer>(null as any);
+const LayoutServer = createContext<ReactPyClient>(null as any);
 
-export function Layout(props: { server: ReactPyServer }): JSX.Element {
+export function Layout(props: { server: ReactPyClient }): JSX.Element {
   const currentModel: ReactPyVdom = useState({ tagName: "" })[0];
   const forceUpdate = useForceUpdate();
 

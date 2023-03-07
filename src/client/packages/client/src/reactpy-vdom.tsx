@@ -1,12 +1,12 @@
 import React, { ComponentType, ReactNode } from "react";
-import { ReactPyServer } from "./reactpy-server";
+import { ReactPyClient } from "./reactpy-client";
 // @ts-ignore
 import serializeEvent from "event-to-object";
 import { IncomingMessage, Message, OutgoingMessage } from "./messages";
 
 export async function loadImportSource(
   vdomImportSource: ReactPyVdomImportSource,
-  server: ReactPyServer,
+  server: ReactPyClient,
 ): Promise<BindImportSource> {
   let module: ReactPyModule;
   if (vdomImportSource.sourceType === "URL") {
@@ -51,7 +51,7 @@ export async function loadImportSource(
 }
 
 function createImportSourceElement(props: {
-  server: ReactPyServer;
+  server: ReactPyClient;
   module: ReactPyModule;
   binding: ReactPyModuleBinding;
   model: ReactPyVdom;
@@ -133,7 +133,7 @@ export function createChildren<Child>(
 
 export function createAttributes(
   model: ReactPyVdom,
-  server: ReactPyServer,
+  server: ReactPyClient,
 ): { [key: string]: any } {
   return Object.fromEntries(
     Object.entries({
@@ -151,7 +151,7 @@ export function createAttributes(
 }
 
 function createEventHandler(
-  { sendMessage }: ReactPyServer,
+  { sendMessage }: ReactPyClient,
   name: string,
   { target, preventDefault, stopPropagation }: ReactPyVdomEventHandler,
 ): [string, () => void] {

@@ -1,9 +1,9 @@
 import React from "react";
 import { render } from "react-dom";
-import { Layout, SimpleReactPyServer } from "@reactpy/client";
+import { Layout, SimpleReactPyClient } from "@reactpy/client";
 
 export function mount(root: HTMLElement) {
-  const server = new SimpleReactPyServer({
+  const server = new SimpleReactPyClient({
     serverApi: {
       baseUrl: document.location.origin,
       routePath: document.location.pathname,
