@@ -6,13 +6,13 @@ import { IncomingMessage, Message, OutgoingMessage } from "./messages";
 
 export async function loadImportSource(
   vdomImportSource: ReactPyVdomImportSource,
-  server: ReactPyClient,
+  client: ReactPyClient,
 ): Promise<BindImportSource> {
   let module: ReactPyModule;
   if (vdomImportSource.sourceType === "URL") {
     module = await import(vdomImportSource.source);
   } else {
-    module = await server.loadModule(vdomImportSource.source);
+    module = await client.loadModule(vdomImportSource.source);
   }
   if (typeof module.bind !== "function") {
     throw `${vdomImportSource.source} did not export a function 'bind'`;
@@ -20,8 +20,8 @@ export async function loadImportSource(
 
   return (node: HTMLElement) => {
     const binding = module.bind(node, {
-      sendMessage: server.sendMessage,
-      receiveMessage: server.receiveMessage,
+      sendMessage: client.sendMessage,
+      onMessage: client.onMessage,
     });
     if (
       !(
@@ -38,7 +38,7 @@ export async function loadImportSource(
       render: (model) =>
         binding.render(
           createImportSourceElement({
-            server,
+            client,
             module,
             binding,
             model,
@@ -51,7 +51,7 @@ export async function loadImportSource(
 }
 
 function createImportSourceElement(props: {
-  server: ReactPyClient;
+  client: ReactPyClient;
   module: ReactPyModule;
   binding: ReactPyModuleBinding;
   model: ReactPyVdom;
@@ -84,7 +84,7 @@ function createImportSourceElement(props: {
   }
   return props.binding.create(
     type,
-    createAttributes(props.model, props.server),
+    createAttributes(props.model, props.client),
     createChildren(props.model, (child) =>
       createImportSourceElement({
         ...props,
@@ -113,27 +113,25 @@ function stringifyImportSource(importSource: ReactPyVdomImportSource) {
 
 export function createChildren<Child>(
   model: ReactPyVdom,
-  createChild: (model: ReactPyVdom) => Child,
+  createChild: (child: ReactPyVdom) => Child,
 ): (Child | string)[] {
   if (!model.children) {
     return [];
   } else {
-    return model.children
-      .filter((x) => x) // filter nulls
-      .map((child) => {
-        switch (typeof child) {
-          case "object":
-            return createChild(child);
-          case "string":
-            return child;
-        }
-      });
+    return model.children.map((child) => {
+      switch (typeof child) {
+        case "object":
+          return createChild(child);
+        case "string":
+          return child;
+      }
+    });
   }
 }
 
 export function createAttributes(
   model: ReactPyVdom,
-  server: ReactPyClient,
+  client: ReactPyClient,
 ): { [key: string]: any } {
   return Object.fromEntries(
     Object.entries({
@@ -142,7 +140,7 @@ export function createAttributes(
       // Construct event handlers
       ...Object.fromEntries(
         Object.entries(model.eventHandlers || {}).map(([name, handler]) =>
-          createEventHandler(server, name, handler),
+          createEventHandler(client, name, handler),
         ),
       ),
       // Convert snake_case to camelCase names
@@ -151,7 +149,7 @@ export function createAttributes(
 }
 
 function createEventHandler(
-  { sendMessage }: ReactPyClient,
+  client: ReactPyClient,
   name: string,
   { target, preventDefault, stopPropagation }: ReactPyVdomEventHandler,
 ): [string, () => void] {
@@ -171,7 +169,7 @@ function createEventHandler(
           return value;
         }
       });
-      sendMessage({ type: "layout-event", data, target });
+      client.sendMessage({ type: "layout-event", data, target });
     },
   ];
 }
@@ -225,8 +223,8 @@ export type ReactPyVdomEventHandler = {
 };
 
 export type ReactPyVdomImportSource = {
-  sourceType: "URL" | "NAME";
   source: string;
+  sourceType?: "URL" | "NAME";
   fallback?: string | ReactPyVdom;
   unmountBeforeUpdate?: boolean;
 };
@@ -239,8 +237,8 @@ export type ReactPyModule = {
 } & { [key: string]: any };
 
 export type ReactPyModuleBindingContext = {
-  sendMessage: (message: OutgoingMessage) => void;
-  receiveMessage: <M extends IncomingMessage>(type: M["type"]) => Promise<M>;
+  sendMessage: ReactPyClient["sendMessage"];
+  onMessage: ReactPyClient["onMessage"];
 };
 
 export type ReactPyModuleBinding = {

@@ -1,9 +1,15 @@
 import { OutgoingMessage, IncomingMessage } from "./messages";
 import { ReactPyModule } from "./reactpy-vdom";
+import logger from "./logger";
 
 export interface ReactPyClient {
-  receiveMessage: <M extends IncomingMessage>(type: M["type"]) => Promise<M>;
-  sendMessage: (message: OutgoingMessage) => Promise<void>;
+  start: () => void;
+  stop: () => void;
+  onMessage: <M extends IncomingMessage>(
+    type: M["type"],
+    handler: (message: M) => void,
+  ) => void;
+  sendMessage: (message: OutgoingMessage) => void;
   loadModule: (moduleName: string) => Promise<ReactPyModule>;
 }
 
@@ -21,42 +27,66 @@ type ReconnectProps = {
 };
 
 export class SimpleReactPyClient implements ReactPyClient {
+  private resolveShouldOpen?: (value: unknown) => void;
+  private resolveShouldClose?: (value: unknown) => void;
   private readonly urls: ServerUrls;
   private readonly handlers: {
-    [key in IncomingMessage["type"]]?: ((message: any) => void)[];
+    [key in IncomingMessage["type"]]: ((message: any) => void)[];
   };
   private readonly socket: { current?: WebSocket };
 
   constructor(props: {
-    serverApi: UrlProps;
+    serverLocation: UrlProps;
     reconnectOptions?: ReconnectProps;
   }) {
-    this.handlers = {};
+    this.handlers = {
+      "connection-open": [],
+      "connection-close": [],
+      "layout-update": [],
+    };
 
-    this.urls = getServerUrls(props.serverApi);
+    this.urls = getServerUrls(props.serverLocation);
+
+    const shouldOpen = new Promise((r) => (this.resolveShouldOpen = r));
+    const shouldClose = new Promise((r) => (this.resolveShouldClose = r));
 
     this.socket = startReconnectingWebSocket({
+      shouldOpen,
+      shouldClose,
       url: this.urls.stream,
       onOpen: () => this.handleIncoming({ type: "connection-open" }),
-      onMessage: ({ data }) => this.handleIncoming(JSON.parse(data)),
+      onMessage: async ({ data }) => this.handleIncoming(JSON.parse(data)),
       onClose: () => this.handleIncoming({ type: "connection-close" }),
-
       ...props.reconnectOptions,
     });
   }
 
-  async receiveMessage<M extends IncomingMessage>(type: M["type"]): Promise<M> {
-    let handlers: ((message: any) => void)[];
-    if (type in this.handlers) {
-      handlers = this.handlers[type] as any;
+  start(): void {
+    if (this.resolveShouldOpen) {
+      logger.log("Starting ReactPy client...");
+      this.resolveShouldOpen(undefined);
     } else {
-      handlers = [];
-      this.handlers[type] = handlers;
+      throw "Did not start client";
     }
-    return new Promise((r) => handlers.push(r));
   }
 
-  async sendMessage(message: OutgoingMessage): Promise<void> {
+  stop(): void {
+    if (this.resolveShouldClose) {
+      logger.log("Stopping ReactPy client...");
+      this.resolveShouldClose(undefined);
+    } else {
+      throw "Did not stop client";
+    }
+  }
+
+  onMessage<M extends IncomingMessage>(
+    type: M["type"],
+    handler: (message: M) => void,
+  ): void {
+    this.handlers[type].push(handler);
+  }
+
+  sendMessage(message: OutgoingMessage): void {
     this.socket.current?.send(JSON.stringify(message));
   }
 
@@ -66,19 +96,18 @@ export class SimpleReactPyClient implements ReactPyClient {
 
   private handleIncoming(message: IncomingMessage): void {
     if (!message.type) {
-      console.warn("Received message without type", message);
+      logger.warn("Received message without type", message);
       return;
     }
 
     const messageHandlers: ((m: any) => void)[] | undefined =
       this.handlers[message.type];
     if (!messageHandlers) {
-      console.warn("Received message without handler", message);
+      logger.warn("Received message without handler", message);
       return;
     }
 
     messageHandlers.forEach((h) => h(message));
-    delete this.handlers[message.type];
   }
 }
 
@@ -95,14 +124,19 @@ function getServerUrls(props: UrlProps): ServerUrls {
   const assets = `${base}/assets`;
 
   const streamProtocol = `ws${base.protocol === "https:" ? "s" : ""}`;
-  const streamPath = `${base.pathname}/stream${props.routePath || ""}`;
-  const stream = `${streamProtocol}://${base.host}${streamPath}`;
+  const streamPath = rtrim(
+    `${base.pathname}/stream${props.routePath || ""}`,
+    "/",
+  );
+  const stream = `${streamProtocol}://${base.host}${streamPath}${props.queryString}`;
 
   return { base, modules, assets, stream };
 }
 
 function startReconnectingWebSocket(
   props: {
+    shouldOpen: Promise<any>;
+    shouldClose: Promise<any>;
     url: string;
     onOpen: () => void;
     onMessage: (message: MessageEvent<any>) => void;
@@ -116,35 +150,52 @@ function startReconnectingWebSocket(
     intervalJitter = 0.1,
   } = props;
 
+  const startInterval = 750;
   let retries = 0;
-  let interval = 200;
+  let interval = startInterval;
+  let closed = false;
+  let everConnected = false;
   const socket: { current?: WebSocket } = {};
 
   const connect = () => {
+    if (closed) {
+      return;
+    }
     socket.current = new WebSocket(props.url);
     socket.current.onopen = () => {
-      interval = 0;
+      everConnected = true;
+      logger.log("client connected");
+      interval = startInterval;
       retries = 0;
       props.onOpen();
     };
     socket.current.onmessage = props.onMessage;
     socket.current.onclose = () => {
+      if (!everConnected) {
+        logger.log("failed to connect");
+        return;
+      }
+
+      logger.log("disconnected");
       props.onClose();
+
       if (retries >= maxRetries) {
         return;
       }
-      setTimeout(connect, interval);
-      interval = nextInterval(
-        interval,
-        backoffRate,
-        maxInterval,
-        intervalJitter,
-      );
+
+      const thisInterval = addJitter(interval, intervalJitter);
+      logger.log(`reconnecting in ${thisInterval / 1000} seconds...`);
+      setTimeout(connect, thisInterval);
+      interval = nextInterval(interval, backoffRate, maxInterval);
       retries++;
     };
   };
 
-  connect();
+  props.shouldOpen.then(connect);
+  props.shouldClose.then(() => {
+    closed = true;
+    socket.current?.close();
+  });
 
   return socket;
 }
@@ -153,15 +204,20 @@ function nextInterval(
   currentInterval: number,
   backoffRate: number,
   maxInterval: number,
-  intervalJitter: number,
-) {
+): number {
   return Math.min(
     currentInterval *
       // increase interval by backoff rate
-      backoffRate +
-      // add random jitter
-      (Math.random() * intervalJitter * 2 - intervalJitter),
+      backoffRate,
     // don't exceed max interval
     maxInterval,
   );
+}
+
+function addJitter(interval: number, jitter: number): number {
+  return interval + (Math.random() * jitter * interval * 2 - jitter * interval);
+}
+
+function rtrim(text: string, trim: string): string {
+  return text.replace(new RegExp(`${trim}+$`), "");
 }

@@ -3,12 +3,12 @@ import { render } from "react-dom";
 import { Layout, SimpleReactPyClient } from "@reactpy/client";
 
 export function mount(root: HTMLElement) {
-  const server = new SimpleReactPyClient({
-    serverApi: {
+  const client = new SimpleReactPyClient({
+    serverLocation: {
       baseUrl: document.location.origin,
       routePath: document.location.pathname,
       queryString: document.location.search,
     },
   });
-  render(<Layout server={server} />, root);
+  render(<Layout client={client} />, root);
 }

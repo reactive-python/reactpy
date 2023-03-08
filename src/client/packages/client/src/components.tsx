@@ -9,7 +9,6 @@ import React, {
   Fragment,
   ComponentType,
   MutableRefObject,
-  SyntheticEvent,
   ChangeEvent,
 } from "react";
 // @ts-ignore
@@ -20,35 +19,37 @@ import {
   ReactPyComponent,
   createChildren,
   createAttributes,
-  ReactPyVdomImportSource,
   loadImportSource,
   ImportSourceBinding,
 } from "./reactpy-vdom";
 import { ReactPyClient } from "./reactpy-client";
 
-const LayoutServer = createContext<ReactPyClient>(null as any);
+const ClientContext = createContext<ReactPyClient>(null as any);
 
-export function Layout(props: { server: ReactPyClient }): JSX.Element {
+export function Layout(props: { client: ReactPyClient }): JSX.Element {
   const currentModel: ReactPyVdom = useState({ tagName: "" })[0];
   const forceUpdate = useForceUpdate();
 
   useEffect(() => {
-    props.server
-      .receiveMessage<LayoutUpdateMessage>("layout-update")
-      .then(({ path, model }) => {
+    props.client.onMessage<LayoutUpdateMessage>(
+      "layout-update",
+      ({ path, model }) => {
         if (path === "") {
           Object.assign(currentModel, model);
         } else {
           setJsonPointer(currentModel, path, model);
         }
         forceUpdate();
-      });
-  }, [currentModel, props.server]);
+      },
+    );
+    props.client.start();
+    return () => props.client.stop();
+  }, [currentModel, props.client]);
 
   return (
-    <LayoutServer.Provider value={props.server}>
+    <ClientContext.Provider value={props.client}>
       <Element model={currentModel} />
-    </LayoutServer.Provider>
+    </ClientContext.Provider>
   );
 }
 
@@ -75,33 +76,25 @@ export function Element({ model }: { model: ReactPyVdom }): JSX.Element | null {
 }
 
 function StandardElement({ model }: { model: ReactPyVdom }) {
-  const server = React.useContext(LayoutServer);
-
-  let type: string | ComponentType<any>;
-  if (model.tagName == "") {
-    type = Fragment;
-  } else {
-    type = model.tagName;
-  }
-
+  const client = React.useContext(ClientContext);
   // Use createElement here to avoid warning about variable numbers of children not
-  // having keys. Warning about this must now be the responsibility of the server
+  // having keys. Warning about this must now be the responsibility of the client
   // providing the models instead of the client rendering them.
   return createElement(
-    type,
-    createAttributes(model, server),
-    ...createChildren(model, (model) => (
-      <Element model={model} key={model.key} />
-    )),
+    model.tagName === "" ? Fragment : model.tagName,
+    createAttributes(model, client),
+    ...createChildren(model, (child) => {
+      return <Element model={child} key={child.key} />;
+    }),
   );
 }
 
 function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
-  const server = useContext(LayoutServer);
-  const props = createAttributes(model, server);
+  const client = useContext(ClientContext);
+  const props = createAttributes(model, client);
   const [value, setValue] = React.useState(props.value);
 
-  // honor changes to value from the server via props
+  // honor changes to value from the client via props
   React.useEffect(() => setValue(props.value), [props.value]);
 
   const givenOnChange = props.onChange;
@@ -109,20 +102,20 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
     props.onChange = (event: ChangeEvent<any>) => {
       // immediately update the value to give the user feedback
       setValue(event.target.value);
-      // allow the server to respond (and possibly change the value)
+      // allow the client to respond (and possibly change the value)
       givenOnChange(event);
     };
   }
 
   // Use createElement here to avoid warning about variable numbers of children not
-  // having keys. Warning about this must now be the responsibility of the server
+  // having keys. Warning about this must now be the responsibility of the client
   // providing the models instead of the client rendering them.
-  return React.createElement(
+  return createElement(
     model.tagName,
     // overwrite
     { ...props, value },
-    ...createChildren(model, (model) => (
-      <Element model={model} key={model.key} />
+    ...createChildren(model, (child) => (
+      <Element model={child} key={child.key} />
     )),
   );
 }
@@ -184,22 +177,22 @@ function ImportedElement({ model }: { model: ReactPyVdom }) {
 }
 
 function useForceUpdate() {
-  const [state, setState] = useState(false);
-  return useCallback(() => setState(!state), []);
+  const [, setState] = useState(false);
+  return () => setState((old) => !old);
 }
 
 function useImportSource(model: ReactPyVdom): MutableRefObject<any> {
   const vdomImportSource = model.importSource;
 
   const mountPoint = useRef<HTMLElement>(null);
-  const server = React.useContext(LayoutServer);
+  const client = React.useContext(ClientContext);
   const [binding, setBinding] = useState<ImportSourceBinding | null>(null);
 
   React.useEffect(() => {
     let unmounted = false;
 
     if (vdomImportSource) {
-      loadImportSource(vdomImportSource, server).then((bind) => {
+      loadImportSource(vdomImportSource, client).then((bind) => {
         if (!unmounted && mountPoint.current) {
           setBinding(bind(mountPoint.current));
         }
@@ -216,7 +209,7 @@ function useImportSource(model: ReactPyVdom): MutableRefObject<any> {
         binding.unmount();
       }
     };
-  }, [server, vdomImportSource, setBinding, mountPoint.current]);
+  }, [client, vdomImportSource, setBinding, mountPoint.current]);
 
   // this effect must run every time in case the model has changed
   useEffect(() => {

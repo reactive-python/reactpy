@@ -84,7 +84,7 @@ VDOM_JSON_SCHEMA = {
                 },
                 "unmountBeforeUpdate": {"type": "boolean"},
             },
-            "required": ["source", "sourceType"],
+            "required": ["source"],
         },
         "elementOrString": {
             "type": ["object", "string"],
