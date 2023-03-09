@@ -1,7 +1,7 @@
 import { test } from "uvu";
 import lodash from "lodash";
 import * as assert from "uvu/assert";
-import serializeEvent from "../src/index.js";
+import serializeEvent from "../src/index.ts";
 import "./tooling/setup.js";
 
 const mockBoundingRect = {

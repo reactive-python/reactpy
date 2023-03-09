@@ -1,8 +1,6 @@
-import React, { ComponentType, ReactNode } from "react";
+import React, { ComponentType } from "react";
 import { ReactPyClient } from "./reactpy-client";
-// @ts-ignore
 import serializeEvent from "event-to-object";
-import { IncomingMessage, Message, OutgoingMessage } from "./messages";
 
 export async function loadImportSource(
   vdomImportSource: ReactPyVdomImportSource,
@@ -157,17 +155,17 @@ function createEventHandler(
     name,
     function () {
       const data = Array.from(arguments).map((value) => {
-        if (typeof value === "object" && value.nativeEvent) {
-          if (preventDefault) {
-            value.preventDefault();
-          }
-          if (stopPropagation) {
-            value.stopPropagation();
-          }
-          return serializeEvent(value);
-        } else {
+        if (!(typeof value === "object" && value.nativeEvent)) {
           return value;
         }
+        const event = value as React.SyntheticEvent<any>;
+        if (preventDefault) {
+          event.preventDefault();
+        }
+        if (stopPropagation) {
+          event.stopPropagation();
+        }
+        return serializeEvent(event.nativeEvent);
       });
       client.sendMessage({ type: "layout-event", data, target });
     },
