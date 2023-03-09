@@ -1,7 +1,7 @@
 import { test } from "uvu";
-import { JSDOM } from "jsdom";
+import { Window } from "happy-dom";
 
-const { window } = new JSDOM("<main></main>");
+export const window = new Window();
 
 export function setup() {
   global.window = window;
@@ -15,6 +15,7 @@ export function reset() {
   window.document.title = "";
   window.document.head.innerHTML = "";
   window.document.body.innerHTML = "<main></main>";
+  window.getSelection().removeAllRanges();
 }
 
 test.before(setup);

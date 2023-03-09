@@ -25,6 +25,7 @@
   },
   "scripts": {
     "format": "prettier --write ./src",
+    "test": "npm run check:tests",
     "check:format": "prettier --check ./src",
     "check:tests": "echo 'no tests'",
     "check:types": "tsc"

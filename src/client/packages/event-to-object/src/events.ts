@@ -264,6 +264,7 @@ export interface SelectionObject {
   isCollapsed: boolean;
   rangeCount: number;
   type: string;
+  selectedText: string;
 }
 
 export interface EventTargetObject {

@@ -149,33 +149,6 @@ const convertGamepadEvent = (event: GamepadEvent): e.GamepadEventObject => ({
   gamepad: convertGamepad(event.gamepad),
 });
 
-const convertGamepad = (gamepad: Gamepad): e.GamepadObject => ({
-  axes: Array.from(gamepad.axes),
-  buttons: Array.from(gamepad.buttons).map(convertGamepadButton),
-  connected: gamepad.connected,
-  id: gamepad.id,
-  index: gamepad.index,
-  mapping: gamepad.mapping,
-  timestamp: gamepad.timestamp,
-  hapticActuators: Array.from(gamepad.hapticActuators).map(
-    convertGamepadHapticActuator,
-  ),
-});
-
-const convertGamepadButton = (
-  button: GamepadButton,
-): e.GamepadButtonObject => ({
-  pressed: button.pressed,
-  touched: button.touched,
-  value: button.value,
-});
-
-const convertGamepadHapticActuator = (
-  actuator: GamepadHapticActuator,
-): e.GamepadHapticActuatorObject => ({
-  type: actuator.type,
-});
-
 const convertPointerEvent = (event: PointerEvent): e.PointerEventObject => ({
   ...convertMouseEvent(event),
   pointerId: event.pointerId,
@@ -209,10 +182,8 @@ const eventConverters: { [key: string]: (event: any) => any } = {
   animationend: convertAnimationEvent,
   animationiteration: convertAnimationEvent,
   animationstart: convertAnimationEvent,
-  //
-
+  // input events
   beforeinput: convertInputEvent,
-  blur: convertFocusEvent,
   // composition events
   compositionend: convertCompositionEvent,
   compositionstart: convertCompositionEvent,
@@ -234,6 +205,7 @@ const eventConverters: { [key: string]: (event: any) => any } = {
   // ui events
   error: convertUiEvent,
   // focus events
+  blur: convertFocusEvent,
   focus: convertFocusEvent,
   focusin: convertFocusEvent,
   focusout: convertFocusEvent,
@@ -246,8 +218,8 @@ const eventConverters: { [key: string]: (event: any) => any } = {
   keypress: convertKeyboardEvent,
   keyup: convertKeyboardEvent,
   // mouse events
-  click: convertMouseEvent,
   auxclick: convertMouseEvent,
+  click: convertMouseEvent,
   dblclick: convertMouseEvent,
   mousedown: convertMouseEvent,
   mouseenter: convertMouseEvent,
@@ -285,24 +257,25 @@ const eventConverters: { [key: string]: (event: any) => any } = {
   wheel: convertWheelEvent,
 };
 
-function convertElement(element: EventTarget | null): any {
-  if (!element) {
+function convertElement(element: EventTarget | HTMLElement | null): any {
+  if (!element || !("tagName" in element)) {
     return null;
   }
 
-  // @ts-ignore
-  const tagName = element.tagName as string;
-  if (!tagName) {
-    return null;
-  }
+  const htmlElement = element as HTMLElement;
 
-  const converter = elementConverters[tagName];
-  return converter
-    ? converter(element)
-    : "name" in element
-    ? { name: element.name }
-    : {};
+  return {
+    ...convertGenericElement(htmlElement),
+    ...(htmlElement.tagName in elementConverters
+      ? elementConverters[htmlElement.tagName](htmlElement)
+      : {}),
+  };
 }
+
+const convertGenericElement = (element: HTMLElement) => ({
+  tagName: element.tagName,
+  boundingClientRect: { ...element.getBoundingClientRect() },
+});
 
 const convertMediaElement = (element: HTMLMediaElement) => ({
   currentTime: element.currentTime,
@@ -338,6 +311,33 @@ const elementConverters: { [key: string]: (element: any) => any } = {
   TEXTAREA: (element: HTMLTextAreaElement) => ({ value: element.value }),
   VIDEO: convertMediaElement,
 };
+
+const convertGamepad = (gamepad: Gamepad): e.GamepadObject => ({
+  axes: Array.from(gamepad.axes),
+  buttons: Array.from(gamepad.buttons).map(convertGamepadButton),
+  connected: gamepad.connected,
+  id: gamepad.id,
+  index: gamepad.index,
+  mapping: gamepad.mapping,
+  timestamp: gamepad.timestamp,
+  hapticActuators: Array.from(gamepad.hapticActuators).map(
+    convertGamepadHapticActuator,
+  ),
+});
+
+const convertGamepadButton = (
+  button: GamepadButton,
+): e.GamepadButtonObject => ({
+  pressed: button.pressed,
+  touched: button.touched,
+  value: button.value,
+});
+
+const convertGamepadHapticActuator = (
+  actuator: GamepadHapticActuator,
+): e.GamepadHapticActuatorObject => ({
+  type: actuator.type,
+});
 
 const convertFile = (file: File) => ({
   lastModified: file.lastModified,
@@ -380,6 +380,9 @@ function convertSelection(
     isCollapsed,
     rangeCount,
   } = selection;
+  if (type === "None") {
+    return null;
+  }
   return {
     type,
     anchorNode: convertElement(anchorNode),
@@ -388,6 +391,7 @@ function convertSelection(
     focusOffset,
     isCollapsed,
     rangeCount,
+    selectedText: selection.toString(),
   };
 }
 

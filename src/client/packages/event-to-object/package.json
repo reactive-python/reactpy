@@ -6,12 +6,12 @@
   },
   "description": "A client for ReactPy implemented in React",
   "devDependencies": {
-    "jsdom": "16.5.0",
+    "happy-dom": "^8.9.0",
     "lodash": "^4.17.21",
     "prettier": "^3.0.0-alpha.6",
-    "uvu": "^0.5.1",
     "tsm": "^2.0.0",
-    "typescript": "^4.9.5"
+    "typescript": "^4.9.5",
+    "uvu": "^0.5.1"
   },
   "license": "MIT",
   "main": "src/index.js",
@@ -22,6 +22,7 @@
   },
   "scripts": {
     "format": "prettier --write ./src ./tests",
+    "test": "npm run check:tests",
     "check:format": "prettier --check ./src ./tests",
     "check:tests": "uvu -r tsm tests",
     "check:types": "tsc"
