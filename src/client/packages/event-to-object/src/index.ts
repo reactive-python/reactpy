@@ -212,7 +212,6 @@ const eventConverters: { [key: string]: (event: any) => any } = {
   // gamepad events
   gamepadconnected: convertGamepadEvent,
   gamepaddisconnected: convertGamepadEvent,
-  gotpointercapture: convertPointerEvent,
   // keyboard events
   keydown: convertKeyboardEvent,
   keypress: convertKeyboardEvent,
@@ -221,6 +220,7 @@ const eventConverters: { [key: string]: (event: any) => any } = {
   auxclick: convertMouseEvent,
   click: convertMouseEvent,
   dblclick: convertMouseEvent,
+  contextmenu: convertMouseEvent,
   mousedown: convertMouseEvent,
   mouseenter: convertMouseEvent,
   mouseleave: convertMouseEvent,
@@ -230,6 +230,7 @@ const eventConverters: { [key: string]: (event: any) => any } = {
   mouseup: convertMouseEvent,
   scroll: convertMouseEvent,
   // pointer events
+  gotpointercapture: convertPointerEvent,
   lostpointercapture: convertPointerEvent,
   pointercancel: convertPointerEvent,
   pointerdown: convertPointerEvent,

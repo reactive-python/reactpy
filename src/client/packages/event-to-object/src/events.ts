@@ -27,18 +27,18 @@ export type EventToObjectMap = {
 export interface EventObject {
   bubbles: boolean;
   composed: boolean;
-  currentTarget: EventTargetObject | null;
+  currentTarget: ElementObject | null;
   defaultPrevented: boolean;
   eventPhase: number;
   isTrusted: boolean;
-  target: EventTargetObject | null;
+  target: ElementObject | null;
   timeStamp: DOMHighResTimeStamp;
   type: string;
   selection: SelectionObject | null;
 }
 
 export interface SubmitEventObject extends EventObject {
-  submitter: EventTargetObject;
+  submitter: ElementObject;
 }
 
 export interface InputEventObject extends UIEventObject {
@@ -117,7 +117,7 @@ export interface MouseEventObject extends EventObject {
   offsetY: number;
   pageX: number;
   pageY: number;
-  relatedTarget: EventTargetObject | null;
+  relatedTarget: ElementObject | null;
   screenX: number;
   screenY: number;
   shiftKey: boolean;
@@ -164,7 +164,7 @@ export interface KeyboardEventObject extends UIEventObject {
 }
 
 export interface FocusEventObject extends UIEventObject {
-  relatedTarget: EventTargetObject | null;
+  relatedTarget: ElementObject | null;
 }
 
 export interface TouchEventObject extends UIEventObject {
@@ -215,28 +215,11 @@ export interface TouchObject {
   rotationAngle: number;
   screenX: number;
   screenY: number;
-  target: EventTargetObject;
+  target: ElementObject;
 }
 
 export interface DataTransferObject {
-  /**
-   * Returns the kind of operation that is currently selected. If the kind of operation
-   * isn't one of those that is allowed by the effectAllowed attribute, then the
-   * operation will fail.
-   *
-   * Can be set, to change the selected operation.
-   *
-   * The possible values are "none", "copy", "link", and "move".
-   */
   dropEffect: "none" | "copy" | "link" | "move";
-  /**
-   * Returns the kinds of operations that are to be allowed.
-   *
-   * Can be set (during the dragstart event), to change the allowed operations.
-   *
-   * The possible values are "none", "copy", "copyLink", "copyMove", "link", "linkMove",
-   * "move", "all", and "uninitialized",
-   */
   effectAllowed:
     | "none"
     | "copy"
@@ -247,19 +230,15 @@ export interface DataTransferObject {
     | "move"
     | "all"
     | "uninitialized";
-  /** Returns a FileList of the files being dragged, if any. */
   files: FileListObject;
-  /** Returns a DataTransferItemList object, with the drag data. */
   items: DataTransferItemListObject;
-  /** Lists the formats that were set in the dragstart event. In addition, if any files
-   * are being dragged, then one of the types will be the string "Files". */
   types: string[];
 }
 
 export interface SelectionObject {
-  anchorNode: EventTargetObject | null;
+  anchorNode: ElementObject | null;
   anchorOffset: number;
-  focusNode: EventTargetObject | null;
+  focusNode: ElementObject | null;
   focusOffset: number;
   isCollapsed: boolean;
   rangeCount: number;
@@ -267,7 +246,7 @@ export interface SelectionObject {
   selectedText: string;
 }
 
-export interface EventTargetObject {
+export interface ElementObject {
   value?: string;
   textContent?: string;
 }

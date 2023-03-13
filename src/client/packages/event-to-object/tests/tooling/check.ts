@@ -1,20 +1,18 @@
 import * as assert from "uvu/assert";
+import { Event } from "happy-dom";
 // @ts-ignore
 import lodash from "lodash";
 import convert from "../../src/index";
-import { mockElement } from "./mock";
+import { mockElementObject } from "./mock";
 
 export function checkEventConversion(
   givenEvent: Event,
   expectedConversion: any,
 ): void {
-  const commonEventData = {
-    target: mockElement,
-    currentTarget: mockElement,
-    relatedTarget: mockElement,
-  };
-
-  const actualSerializedEvent = convert(givenEvent);
+  const actualSerializedEvent = convert(
+    // @ts-ignore
+    givenEvent,
+  );
 
   if (!actualSerializedEvent) {
     assert.equal(actualSerializedEvent, expectedConversion);
