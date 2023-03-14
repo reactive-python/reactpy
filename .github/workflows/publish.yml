@@ -1,0 +1,21 @@
+# This workflows will upload a Javscript Package using NPM to npmjs.org when a release is created
+# For more information see: https://docs.github.com/en/actions/guides/publishing-nodejs-packages
+
+name: publish
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    uses: ./.github/workflows/.nox-session.yml
+    with:
+      job-name: "publish"
+      nox-args: "-s publish"
+      nox-env: >
+        {
+          "NODE_AUTH_TOKEN": "${{ secrets.NPM_AUTOMATION_TOKEN }}",
+          "PYPI_USERNAME": "${{ secrets.PYPI_USERNAME }}",
+          "PYPI_PASSWORD": "${{ secrets.PYPI_PASSWORD }}"
+        }

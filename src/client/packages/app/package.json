@@ -19,6 +19,5 @@
     "check-format": "prettier --check ./src",
     "format": "prettier --write ./src",
     "test": "echo 'no tests'"
-  },
-  "version": "0.45.0"
+  }
 }
