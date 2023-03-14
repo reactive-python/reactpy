@@ -10,6 +10,8 @@
     "check:types": "npm --workspaces run check:types"
   },
   "workspaces": [
-    "./packages/*"
+    "packages/event-to-object",
+    "packages/client",
+    "packages/app"
   ]
 }

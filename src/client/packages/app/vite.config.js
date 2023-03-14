@@ -8,5 +8,5 @@ export default defineConfig({
       "react-dom": "preact/compat",
     },
   },
-  base: "/_reactpy",
+  base: "/_reactpy/",
 });
