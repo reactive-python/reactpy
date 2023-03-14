@@ -1,10 +1,16 @@
 {
   "author": "Ryan Morshead",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "name": "event-to-object",
+  "description": "A client for ReactPy implemented in React",
+  "type": "module",
+  "version": "0.1.0",
   "dependencies": {
     "event-to-object": "file:packages/event-to-object",
     "json-pointer": "^0.6.2"
   },
-  "description": "A client for ReactPy implemented in React",
   "devDependencies": {
     "happy-dom": "^8.9.0",
     "lodash": "^4.17.21",
@@ -13,20 +19,16 @@
     "typescript": "^4.9.5",
     "uvu": "^0.5.1"
   },
-  "license": "MIT",
-  "main": "src/index.js",
-  "name": "event-to-object",
   "repository": {
     "type": "git",
     "url": "https://github.com/reactive-python/reactpy"
   },
   "scripts": {
+    "build": "tsc -b",
     "format": "prettier --write ./src ./tests",
     "test": "npm run check:tests",
     "check:format": "prettier --check ./src ./tests",
     "check:tests": "uvu -r tsm tests",
-    "check:types": "tsc"
-  },
-  "type": "module",
-  "version": "0.1.0"
+    "check:types": "tsc --noEmit"
+  }
 }

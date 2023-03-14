@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  build: { outDir: "../reactpy/_client", emptyOutDir: true },
+  build: { outDir: "../../../reactpy/_client", emptyOutDir: true },
   resolve: {
     alias: {
       react: "preact/compat",

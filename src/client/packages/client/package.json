@@ -1,11 +1,16 @@
 {
   "author": "Ryan Morshead",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "description": "A client for ReactPy implemented in React",
+  "license": "MIT",
+  "name": "@reactpy/client",
+  "type": "module",
+  "version": "0.1.0",
   "dependencies": {
-    "event-to-object": "file:packages/event-to-object",
+    "event-to-object": "^0.1.0",
     "json-pointer": "^0.6.2"
   },
-  "main": "src/index.ts",
-  "description": "A client for ReactPy implemented in React",
   "devDependencies": {
     "@types/json-pointer": "^1.0.31",
     "@types/react": "^18.0.28",
@@ -13,8 +18,6 @@
     "prettier": "^3.0.0-alpha.6",
     "typescript": "^4.9.5"
   },
-  "license": "MIT",
-  "name": "@reactpy/client",
   "peerDependencies": {
     "react": ">=16",
     "react-dom": ">=16"
@@ -24,12 +27,11 @@
     "url": "https://github.com/reactive-python/reactpy"
   },
   "scripts": {
+    "build": "tsc -b",
     "format": "prettier --write ./src",
     "test": "npm run check:tests",
     "check:format": "prettier --check ./src",
     "check:tests": "echo 'no tests'",
-    "check:types": "tsc"
-  },
-  "type": "module",
-  "version": "0.1.0"
+    "check:types": "tsc --noEmit"
+  }
 }
