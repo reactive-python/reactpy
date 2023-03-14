@@ -60,6 +60,7 @@ group = NoxOpt(auto_tag=True)
 def setup_checks(session: Session) -> None:
     session.install("--upgrade", "pip")
     session.run("pip", "--version")
+    session.run("npm", "--version", external=True)
 
 
 @group.setup("check-javascript")
