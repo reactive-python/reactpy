@@ -9,10 +9,6 @@ on:
       nox-args:
         required: true
         type: string
-      nox-env:
-        required: false
-        type: string
-        default: "{}"
       nox-session-args:
         required: false
         type: string
@@ -24,6 +20,13 @@ on:
         required: false
         type: string
         default: '["3.x"]'
+    secrets:
+      NODE_AUTH_TOKEN:
+        required: false
+      PYPI_USERNAME:
+        required: false
+      PYPI_PASSWORD:
+        required: false
 
 jobs:
   nox-session:
@@ -47,5 +50,8 @@ jobs:
       - name: Install Python Dependencies
         run: pip install -r requirements/nox-deps.txt
       - name: Run Sessions
-        env: ${{ fromJson(inputs.nox-env) }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+          PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: nox ${{ inputs.nox-args }} --stop-on-first-error -- ${{ inputs.nox-session-args }}

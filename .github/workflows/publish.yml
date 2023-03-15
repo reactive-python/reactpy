@@ -13,4 +13,4 @@ jobs:
     with:
       job-name: "publish"
       nox-args: "-s publish"
-      nox-env: '{ "NODE_AUTH_TOKEN": "${{ secrets.NPM_AUTOMATION_TOKEN }}", "PYPI_USERNAME": "${{ secrets.PYPI_USERNAME }}", "PYPI_PASSWORD": "${{ secrets.PYPI_PASSWORD }}" }'
+    secrets: inherit
