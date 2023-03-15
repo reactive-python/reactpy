@@ -357,8 +357,10 @@ def prepare_python_release(session: Session) -> Callable[[bool], None]:
             "PYPI_USERNAME and PYPI_PASSWORD environment variables must be set"
         )
 
-    rmtree("build")
-    rmtree("dist")
+    for build_dir_name in ["build", "dist"]:
+        build_dir_path = Path.cwd() / build_dir_name
+        if build_dir_path.exists():
+            rmtree(str(build_dir_path))
 
     install_requirements_file(session, "build-pkg")
     session.run("python", "-m", "build", "--sdist", "--wheel", "--outdir", "dist", ".")
