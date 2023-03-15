@@ -12,20 +12,48 @@ from typing import TYPE_CHECKING, Callable, NamedTuple, Sequence
 from noxopt import Annotated, NoxOpt, Option, Session
 
 
+# --- Typing Preamble ------------------------------------------------------------------
+
+
 if TYPE_CHECKING:
     # not available in typing module until Python 3.8
-    from typing import Literal
+    # not available in typing module until Python 3.10
+    from typing import Literal, Protocol, TypeAlias
+
+    class ReleasePrepFunc(Protocol):
+        def __call__(self, session: Session) -> Callable[[bool], None]:
+            ...
+
+
+LanguageName: TypeAlias = "Literal['py', 'js']"
+
+
+# --- Constants ------------------------------------------------------------------------
+
 
 ROOT_DIR = Path(__file__).parent.resolve()
 SRC_DIR = ROOT_DIR / "src"
 CLIENT_DIR = SRC_DIR / "client"
 REACTPY_DIR = SRC_DIR / "reactpy"
-
+LANGUAGE_TYPES: list[LanguageName] = ["py", "js"]
 TAG_PATTERN = re.compile(
-    r"^(?P<name>[0-9a-zA-Z-@/]+)-v(?P<version>[0-9][0-9a-zA-Z-\.\+]*)$"
+    # start
+    r"^"
+    # package name
+    r"(?P<name>[0-9a-zA-Z-@/]+)-"
+    # package language
+    rf"(?P<language>{'|'.join(LANGUAGE_TYPES)})-"
+    # package version
+    r"v(?P<version>[0-9][0-9a-zA-Z-\.\+]*)"
+    # end
+    r"$"
 )
-
+print(TAG_PATTERN.pattern)
 REMAINING_ARGS = Option(nargs=REMAINDER, type=str)
+
+
+# --- Session Setup --------------------------------------------------------------------
+
 
 group = NoxOpt(auto_tag=True)
 
@@ -40,6 +68,9 @@ def setup_checks(session: Session) -> None:
 def setup_javascript_checks(session: Session) -> None:
     session.chdir(CLIENT_DIR)
     session.run("npm", "ci", external=True)
+
+
+# --- Session Definitions --------------------------------------------------------------
 
 
 @group.session
@@ -236,31 +267,43 @@ def build_python(session: Session) -> None:
 
 
 @group.session
-def publish(session: Session) -> None:
+def publish(session: Session, dry_run: bool = False) -> None:
     packages = get_packages(session)
 
-    release_prep = {"js": prepare_javascript_release, "py": prepare_python_release}
+    release_prep: dict[LanguageName, ReleasePrepFunc] = {
+        "js": prepare_javascript_release,
+        "py": prepare_python_release,
+    }
 
-    publishers: list[Callable[[], None]] = []
-    for tag, tag_package, tag_version in get_current_tags(session):
-        if tag_package not in packages:
-            session.error(f"Tag {tag} references missing package {tag_package}")
+    publishers: list[Callable[[bool], None]] = []
+    for tag, tag_lang, tag_pkg, tag_ver in get_current_tags(session):
+        if tag_pkg not in packages:
+            session.error(f"Tag {tag} references package {tag_pkg} that does not exist")
 
-        pkg_kind, pkg_path, pkg_version = packages[tag_package]
-        if pkg_version != tag_version:
+        pkg_path, pkg_lang, pkg_ver = packages[tag_pkg]
+        if pkg_ver != tag_ver:
             session.error(
-                f"Tag {tag} references version {tag_version} of package {tag_package}, "
-                f"but the current version is {pkg_version}"
+                f"Tag {tag} references version {tag_ver} of package {tag_pkg}, "
+                f"but the current version is {pkg_ver}"
+            )
+
+        if pkg_lang != tag_lang:
+            session.error(
+                f"Tag {tag} references language {tag_lang} of package {tag_pkg}, "
+                f"but the current language is {pkg_lang}"
             )
 
         session.chdir(pkg_path)
-        session.log(f"Preparing {tag_package} for release...")
-        publishers.append((pkg_path, release_prep[pkg_kind](session, tag_package)))
+        session.log(f"Preparing {tag_pkg} for release...")
+        publishers.append((pkg_path, release_prep[tag_lang](session)))
 
     for pkg_path, publish in publishers:
-        session.log(f"Publishing {tag_package}...")
+        session.log(f"Publishing {tag_pkg}...")
         session.chdir(pkg_path)
-        publish()
+        publish(dry_run)
+
+
+# --- Utilities ------------------------------------------------------------------------
 
 
 def install_requirements_file(session: Session, name: str) -> None:
@@ -287,14 +330,17 @@ def get_reactpy_script_env() -> dict[str, str]:
     }
 
 
-def prepare_javascript_release(session: Session, name: str) -> Callable[[], None]:
+def prepare_javascript_release(session: Session) -> Callable[[bool], None]:
     node_auth_token = session.env.get("NODE_AUTH_TOKEN")
     if node_auth_token is None:
         session.error("NODE_AUTH_TOKEN environment variable must be set")
 
     session.run("npm", "ci", external=True)
 
-    def publish() -> None:
+    def publish(dry_run: bool) -> None:
+        if dry_run:
+            session.run("npm", "pack", "--dry-run", external=True)
+            return
         session.run(
             "npm",
             "publish",
@@ -307,7 +353,7 @@ def prepare_javascript_release(session: Session, name: str) -> Callable[[], None
     return publish
 
 
-def prepare_python_release(session: Session, name: str) -> Callable[[], None]:
+def prepare_python_release(session: Session) -> Callable[[bool], None]:
     twine_username = session.env.get("PYPI_USERNAME")
     twine_password = session.env.get("PYPI_PASSWORD")
 
@@ -322,7 +368,11 @@ def prepare_python_release(session: Session, name: str) -> Callable[[], None]:
     install_requirements_file(session, "build-pkg")
     session.run("python", "-m", "build", "--sdist", "--wheel", "--outdir", "dist", ".")
 
-    def publish():
+    def publish(dry_run: bool):
+        if dry_run:
+            session.run("twine", "check", "dist/*")
+            return
+
         session.run(
             "twine",
             "upload",
@@ -335,7 +385,7 @@ def prepare_python_release(session: Session, name: str) -> Callable[[], None]:
 
 def get_packages(session: Session) -> dict[str, PackageInfo]:
     packages: dict[str, PackageInfo] = {
-        "reactpy": PackageInfo("py", ROOT_DIR, get_reactpy_package_version(session))
+        "reactpy": PackageInfo(ROOT_DIR, "py", get_reactpy_package_version(session))
     }
 
     # collect javascript packages
@@ -359,14 +409,14 @@ def get_packages(session: Session) -> dict[str, PackageInfo]:
         if pkg_name in packages:
             session.error(f"Duplicate package name {pkg_name}")
 
-        packages[pkg_name] = PackageInfo("js", pkg, pkg_version)
+        packages[pkg_name] = PackageInfo(pkg, "js", pkg_version)
 
     return packages
 
 
 class PackageInfo(NamedTuple):
-    kind: Literal["js", "py"]
     path: Path
+    language: LanguageName
     version: str
 
 
@@ -420,9 +470,16 @@ def get_current_tags(session: Session) -> list[TagInfo]:
         match = TAG_PATTERN.match(tag)
         if not match:
             session.error(
-                f"Invalid tag {tag} - must be of the form <package>-<version>"
+                f"Invalid tag {tag} - must be of the form <package>-<language>-<version>"
             )
-        parsed_tags.append(TagInfo(tag, match["name"], match["version"]))
+        parsed_tags.append(
+            TagInfo(
+                tag,
+                match["language"],
+                match["name"],
+                match["version"],
+            )
+        )
 
     session.log(f"Found tags: {[info.tag for info in parsed_tags]}")
 
@@ -431,6 +488,7 @@ def get_current_tags(session: Session) -> list[TagInfo]:
 
 class TagInfo(NamedTuple):
     tag: str
+    language: LanguageName
     package: str
     version: str
 
