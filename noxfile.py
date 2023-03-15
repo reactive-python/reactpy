@@ -335,7 +335,9 @@ def prepare_javascript_release(session: Session) -> Callable[[bool], None]:
     if node_auth_token is None:
         session.error("NODE_AUTH_TOKEN environment variable must be set")
 
-    session.run("npm", "ci", external=True)
+    # TODO: make this `ci` instead of `install` somehow. By default `npm install` at
+    # workspace root does not generate a lockfile which is required by `npm ci`.
+    session.run("npm", "install", external=True)
 
     def publish(dry_run: bool) -> None:
         if dry_run:
