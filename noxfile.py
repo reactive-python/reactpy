@@ -7,7 +7,7 @@ from argparse import REMAINDER
 from dataclasses import replace
 from pathlib import Path
 from shutil import rmtree
-from typing import TYPE_CHECKING, Callable, NamedTuple, Sequence
+from typing import TYPE_CHECKING, Callable, NamedTuple, Sequence, cast, reveal_type
 
 from noxopt import Annotated, NoxOpt, Option, Session
 
@@ -41,8 +41,6 @@ TAG_PATTERN = re.compile(
     r"^"
     # package name
     r"(?P<name>[0-9a-zA-Z-@/]+)-"
-    # package language
-    rf"(?P<language>{'|'.join(LANGUAGE_TYPES)})-"
     # package version
     r"v(?P<version>[0-9][0-9a-zA-Z-\.\+]*)"
     # end
@@ -193,6 +191,7 @@ def check_python_types(session: Session) -> None:
     install_requirements_file(session, "pkg-extras")
     session.run("mypy", "--version")
     session.run("mypy", "--show-error-codes", "--strict", "src/reactpy")
+    session.run("mypy", "--show-error-codes", "noxfile.py")
 
 
 @group.session
@@ -275,8 +274,8 @@ def publish(session: Session, dry_run: bool = False) -> None:
         "py": prepare_python_release,
     }
 
-    publishers: list[Callable[[bool], None]] = []
-    for tag, tag_lang, tag_pkg, tag_ver in get_current_tags(session):
+    publishers: list[tuple[Path, Callable[[bool], None]]] = []
+    for tag, tag_pkg, tag_ver in get_current_tags(session):
         if tag_pkg not in packages:
             session.error(f"Tag {tag} references package {tag_pkg} that does not exist")
 
@@ -287,18 +286,12 @@ def publish(session: Session, dry_run: bool = False) -> None:
                 f"but the current version is {pkg_ver}"
             )
 
-        if pkg_lang != tag_lang:
-            session.error(
-                f"Tag {tag} references language {tag_lang} of package {tag_pkg}, "
-                f"but the current language is {pkg_lang}"
-            )
-
         session.chdir(pkg_path)
         session.log(f"Preparing {tag_pkg} for release...")
-        publishers.append((pkg_path, release_prep[tag_lang](session)))
+        publishers.append((pkg_path, release_prep[pkg_lang](session)))
 
     for pkg_path, publish in publishers:
-        session.log(f"Publishing {tag_pkg}...")
+        session.log(f"Publishing {pkg_path}...")
         session.chdir(pkg_path)
         publish(dry_run)
 
@@ -335,7 +328,7 @@ def prepare_javascript_release(session: Session) -> Callable[[bool], None]:
     if node_auth_token is None:
         session.error("NODE_AUTH_TOKEN environment variable must be set")
 
-    # TODO: make this `ci` instead of `install` somehow. By default `npm install` at
+    # TODO: Make this `ci` instead of `install` somehow. By default `npm install` at
     # workspace root does not generate a lockfile which is required by `npm ci`.
     session.run("npm", "install", external=True)
 
@@ -349,7 +342,7 @@ def prepare_javascript_release(session: Session) -> Callable[[bool], None]:
             "--access",
             "public",
             external=True,
-            env={"NODE_AUTH_TOKEN": node_auth_token},
+            env={"NODE_AUTH_TOKEN": node_auth_token},  # type: ignore[dict-item]
         )
 
     return publish
@@ -379,7 +372,7 @@ def prepare_python_release(session: Session) -> Callable[[bool], None]:
             "twine",
             "upload",
             "dist/*",
-            env={"TWINE_USERNAME": twine_username, "TWINE_PASSWORD": twine_password},
+            env={"TWINE_USERNAME": twine_username, "TWINE_PASSWORD": twine_password},  # type: ignore[dict-item]
         )
 
     return publish
@@ -447,20 +440,23 @@ def get_current_tags(session: Session) -> list[TagInfo]:
     tags_per_commit: dict[str, list[str]] = {}
     for commit, tag in map(
         str.split,
-        session.run(
-            "git",
-            "for-each-ref",
-            "--format",
-            r"%(objectname) %(refname:short)",
-            "refs/tags",
-            silent=True,
-            external=True,
+        cast(
+            str,
+            session.run(
+                "git",
+                "for-each-ref",
+                "--format",
+                r"%(objectname) %(refname:short)",
+                "refs/tags",
+                silent=True,
+                external=True,
+            ),
         ).splitlines(),
     ):
         tags_per_commit.setdefault(commit, []).append(tag)
 
-    current_commit = session.run(
-        "git", "rev-parse", "HEAD", silent=True, external=True
+    current_commit = cast(
+        str, session.run("git", "rev-parse", "HEAD", silent=True, external=True)
     ).strip()
     tags = tags_per_commit.get(current_commit, [])
 
@@ -477,7 +473,6 @@ def get_current_tags(session: Session) -> list[TagInfo]:
         parsed_tags.append(
             TagInfo(
                 tag,
-                match["language"],
                 match["name"],
                 match["version"],
             )
@@ -490,7 +485,6 @@ def get_current_tags(session: Session) -> list[TagInfo]:
 
 class TagInfo(NamedTuple):
     tag: str
-    language: LanguageName
     package: str
     version: str
 
@@ -510,6 +504,5 @@ def get_reactpy_package_version(session: Session) -> str:
                 # remove the quotes
                 [1:-1]
             )
-            break
     else:
         session.error(f"No version found in {pkg_root_init_file}")
