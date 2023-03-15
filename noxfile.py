@@ -7,7 +7,7 @@ from argparse import REMAINDER
 from dataclasses import replace
 from pathlib import Path
 from shutil import rmtree
-from typing import TYPE_CHECKING, Callable, NamedTuple, Sequence, cast, reveal_type
+from typing import TYPE_CHECKING, Callable, NamedTuple, Sequence, cast
 
 from noxopt import Annotated, NoxOpt, Option, Session
 
