@@ -9,8 +9,24 @@ on:
 
 jobs:
   publish:
-    uses: ./.github/workflows/.nox-session.yml
-    with:
-      job-name: "publish"
-      nox-args: "-s publish"
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14.x"
+          registry-url: "https://registry.npmjs.org"
+      - name: Pin NPM Version
+        run: npm install -g npm@8.19.3
+      - name: Use Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Python Dependencies
+        run: pip install -r requirements/nox-deps.txt
+      - name: Run Sessions
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+          PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: nox -s publish
