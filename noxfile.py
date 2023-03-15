@@ -342,7 +342,7 @@ def prepare_javascript_release(session: Session) -> Callable[[bool], None]:
             "--access",
             "public",
             external=True,
-            env={"NODE_AUTH_TOKEN": node_auth_token},  # type: ignore[dict-item]
+            env={"NODE_AUTH_TOKEN": node_auth_token},
         )
 
     return publish
@@ -372,7 +372,7 @@ def prepare_python_release(session: Session) -> Callable[[bool], None]:
             "twine",
             "upload",
             "dist/*",
-            env={"TWINE_USERNAME": twine_username, "TWINE_PASSWORD": twine_password},  # type: ignore[dict-item]
+            env={"TWINE_USERNAME": twine_username, "TWINE_PASSWORD": twine_password},
         )
 
     return publish
@@ -473,8 +473,8 @@ def get_current_tags(session: Session) -> list[TagInfo]:
         parsed_tags.append(
             TagInfo(
                 tag,
-                match["name"],
-                match["version"],
+                match["name"],  # type: ignore[index]
+                match["version"],  # type: ignore[index]
             )
         )
 
@@ -489,7 +489,7 @@ class TagInfo(NamedTuple):
     version: str
 
 
-def get_reactpy_package_version(session: Session) -> str:
+def get_reactpy_package_version(session: Session) -> str:  # type: ignore[return]
     pkg_root_init_file = REACTPY_DIR / "__init__.py"
     for line in pkg_root_init_file.read_text().split("\n"):
         if line.startswith('__version__ = "') and line.endswith('"  # DO NOT MODIFY'):
