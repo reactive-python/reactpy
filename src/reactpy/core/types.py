@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import sys
 from collections import namedtuple
 from collections.abc import Sequence
@@ -7,6 +8,7 @@ from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
+    Awaitable,
     Callable,
     Generic,
     Mapping,
@@ -233,3 +235,12 @@ class LayoutEventMessage(TypedDict):
     """The ID of the event handler."""
     data: Sequence[Any]
     """A list of event data passed to the event handler."""
+
+
+SyncEffect: TypeAlias = "Callable[[], None | Callable[[], None]]"
+"""A synchronous function which can be run by the :func:`use_effect` hook"""
+
+AsyncEffect: TypeAlias = (
+    "Callable[[asyncio.Task | None, asyncio.Event], Awaitable[None]]"
+)
+"""A asynchronous function which can be run by the :func:`use_effect` hook"""

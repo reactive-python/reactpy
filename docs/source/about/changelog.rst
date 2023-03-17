@@ -23,7 +23,7 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+
 
 
 v1.0.0

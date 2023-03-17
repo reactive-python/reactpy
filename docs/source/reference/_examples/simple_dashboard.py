@@ -97,7 +97,7 @@ def use_interval(rate):
         await asyncio.sleep(rate - (time.time() - usage_time.current))
         usage_time.current = time.time()
 
-    return asyncio.ensure_future(interval())
+    return asyncio.create_task(interval())
 
 
 reactpy.run(RandomWalk)

@@ -190,7 +190,7 @@ class ModelStreamHandler(WebSocketHandler):
             return json.loads(await message_queue.get())
 
         self._message_queue = message_queue
-        self._dispatch_future = asyncio.ensure_future(
+        self._dispatch_future = asyncio.create_task(
             serve_layout(
                 Layout(
                     ConnectionContext(

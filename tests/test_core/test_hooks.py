@@ -479,7 +479,7 @@ async def test_use_async_effect():
     @reactpy.component
     def ComponentWithAsyncEffect():
         @reactpy.hooks.use_effect
-        async def effect():
+        async def effect(prior, interupt):
             effect_ran.set()
 
         return reactpy.html.div()
@@ -498,9 +498,10 @@ async def test_use_async_effect_cleanup():
     @component_hook.capture
     def ComponentWithAsyncEffect():
         @reactpy.hooks.use_effect(dependencies=None)  # force this to run every time
-        async def effect():
+        async def effect(prior, interupt):
             effect_ran.set()
-            return cleanup_ran.set
+            await interupt.wait()
+            cleanup_ran.set()
 
         return reactpy.html.div()
 
@@ -514,7 +515,63 @@ async def test_use_async_effect_cleanup():
     await asyncio.wait_for(cleanup_ran.wait(), 1)
 
 
-async def test_use_async_effect_cancel(caplog):
+async def test_use_async_effect_cancel():
+    component_hook = HookCatcher()
+    effect_ran = asyncio.Event()
+    effect_was_cancelled = asyncio.Event()
+
+    event_that_never_occurs = asyncio.Event()
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithLongWaitingEffect():
+        @reactpy.hooks.use_effect(dependencies=None)  # force this to run every time
+        async def effect(prior, interupt):
+            if prior is not None:
+                prior.cancel()
+            effect_ran.set()
+            try:
+                await event_that_never_occurs.wait()
+            except asyncio.CancelledError:
+                effect_was_cancelled.set()
+                raise
+
+        return reactpy.html.div()
+
+    async with reactpy.Layout(ComponentWithLongWaitingEffect()) as layout:
+        await layout.render()
+
+        await effect_ran.wait()
+        component_hook.latest.schedule_render()
+
+        await layout.render()
+
+    await asyncio.wait_for(effect_was_cancelled.wait(), 1)
+
+    # So I know we said the event never occurs but... to ensure the effect's future is
+    # cancelled before the test is cleaned up we need to set the event. This is because
+    # the cancellation doesn't propogate before the test is resolved which causes
+    # delayed log messages that impact other tests.
+    event_that_never_occurs.set()
+
+
+async def test_deprecated_use_async_effect_no_arguments():
+    effect_ran = asyncio.Event()
+
+    @reactpy.component
+    def ComponentWithAsyncEffect():
+        @reactpy.hooks.use_effect
+        async def effect():
+            effect_ran.set()
+
+        return reactpy.html.div()
+
+    async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
+        await layout.render()
+        await asyncio.wait_for(effect_ran.wait(), 1)
+
+
+async def test_deprecated_use_async_effect_cancel_no_arguments():
     component_hook = HookCatcher()
     effect_ran = asyncio.Event()
     effect_was_cancelled = asyncio.Event()

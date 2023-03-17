@@ -242,7 +242,7 @@ def _dispatch_in_thread(
                 async_recv_queue.get,
             )
 
-        main_future = asyncio.ensure_future(main(), loop=loop)
+        main_future = asyncio.create_task(main(), loop=loop)
 
         dispatch_thread_info_ref.current = _DispatcherThreadInfo(
             dispatch_loop=loop,

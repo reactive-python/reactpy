@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+from asyncio import Event, Task, create_task
+from inspect import iscoroutinefunction, isfunction, signature
 from logging import getLogger
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     Callable,
     Generic,
     NewType,
@@ -15,14 +16,15 @@ from typing import (
     cast,
     overload,
 )
+from warnings import warn
 
-from typing_extensions import Protocol, TypeAlias
+from typing_extensions import Literal, Protocol, TypeAlias, TypedDict
 
 from reactpy.config import REACTPY_DEBUG_MODE
 from reactpy.utils import Ref
 
 from ._thread_local import ThreadLocal
-from .types import ComponentType, Key, State, VdomDict
+from .types import AsyncEffect, ComponentType, Key, State, SyncEffect, VdomDict
 
 
 if not TYPE_CHECKING:
@@ -96,32 +98,26 @@ class _CurrentState(Generic[_Type]):
         self.dispatch = dispatch
 
 
-_EffectCleanFunc: TypeAlias = "Callable[[], None]"
-_SyncEffectFunc: TypeAlias = "Callable[[], _EffectCleanFunc | None]"
-_AsyncEffectFunc: TypeAlias = "Callable[[], Awaitable[_EffectCleanFunc | None]]"
-_EffectApplyFunc: TypeAlias = "_SyncEffectFunc | _AsyncEffectFunc"
-
-
 @overload
 def use_effect(
     function: None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Callable[[_EffectApplyFunc], None]:
+) -> Callable[[SyncEffect | AsyncEffect], None]:
     ...
 
 
 @overload
 def use_effect(
-    function: _EffectApplyFunc,
+    function: SyncEffect | AsyncEffect,
     dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> None:
     ...
 
 
 def use_effect(
-    function: _EffectApplyFunc | None = None,
+    function: SyncEffect | AsyncEffect | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Callable[[_EffectApplyFunc], None] | None:
+) -> Callable[[SyncEffect | AsyncEffect], None] | None:
     """See the full :ref:`Use Effect` docs for details
 
     Parameters:
@@ -140,42 +136,65 @@ def use_effect(
 
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
-    last_clean_callback: Ref[_EffectCleanFunc | None] = use_ref(None)
+    state: _EffectState = _use_const(
+        lambda: {"prior_task": None, "prior_callback": None}
+    )
 
-    def add_effect(function: _EffectApplyFunc) -> None:
-        if not asyncio.iscoroutinefunction(function):
-            sync_function = cast(_SyncEffectFunc, function)
-        else:
-            async_function = cast(_AsyncEffectFunc, function)
-
-            def sync_function() -> _EffectCleanFunc | None:
-                future = asyncio.ensure_future(async_function())
-
-                def clean_future() -> None:
-                    if not future.cancel():
-                        clean = future.result()
-                        if clean is not None:
-                            clean()
-
-                return clean_future
-
-        def effect() -> None:
-            if last_clean_callback.current is not None:
-                last_clean_callback.current()
-
-            clean = last_clean_callback.current = sync_function()
-            if clean is not None:
-                hook.add_effect(COMPONENT_WILL_UNMOUNT_EFFECT, clean)
-
-            return None
-
-        return memoize(lambda: hook.add_effect(LAYOUT_DID_RENDER_EFFECT, effect))
+    def add_effect(function: SyncEffect | AsyncEffect) -> None:
+        memoize(lambda: _add_effect(hook, state, function))
+        return None
 
     if function is not None:
         add_effect(function)
         return None
     else:
         return add_effect
+
+
+def _add_effect(
+    hook: LifeCycleHook, state: _EffectState, function: SyncEffect | AsyncEffect
+) -> None:
+    sync_function: SyncEffect
+
+    if iscoroutinefunction(function):
+        if not signature(function).parameters:  # pragma: no cover
+            warn(
+                f"Async effect functions {function} should accept two arguments - the "
+                "prior task and an interrupt event. This will be required in a future "
+                "release.",
+                DeprecationWarning,
+            )
+            original_function = function
+
+            def function(prior_task: Task | None, _: Event) -> None:
+                if prior_task is not None:
+                    prior_task.cancel()
+                return original_function()
+
+        def sync_function() -> Callable[[], None]:
+            interupt = Event()
+            state["prior_task"] = create_task(function(state["prior_task"], interupt))
+            return interupt.set
+
+    elif isfunction(function):
+        sync_function = function
+    else:
+        raise TypeError(f"Expected a function, not {function!r}")
+
+    def effect() -> None:
+        prior_callback = state["prior_callback"]
+        if prior_callback is not None:
+            prior_callback()
+        next_callback = state["prior_callback"] = sync_function()
+        if next_callback is not None:
+            hook.add_effect(COMPONENT_WILL_UNMOUNT_EFFECT, next_callback)
+
+    hook.add_effect(LAYOUT_DID_RENDER_EFFECT, effect)
+
+
+class _EffectState(TypedDict):
+    prior_task: Task | None
+    prior_callback: Callable[[], None] | None
 
 
 def use_debug_value(
