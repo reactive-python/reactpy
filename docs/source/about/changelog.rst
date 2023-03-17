@@ -23,7 +23,21 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+**Fixed**
 
+- :issue:`956` - Async effects now accept two arguments - the prior effect's
+  ``asyncio.Task`` (or ``None``) and an interupt ``asyncio.Event``. The prior effect's
+  task allows effect authors to await or cancel it to ensure that it has completed
+  before executing the next effect. The interupt event is used to signal that the effect
+  should stop and clean up any resources it may have allocated. This is useful for
+  effects that may be long running and need to be stopped when the component is
+  unmounted.
+
+**Deprecated**
+
+- :pull:`957` - Async effects that do not accept any arguments are now deprecated and
+  will be disallowed in a future release. All async effects should accept two
+  arguments - the prior effect's task and an interupt event.
 
 
 v1.0.0
