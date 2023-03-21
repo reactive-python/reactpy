@@ -1,18 +1,31 @@
 <p align="center" id="reactpy">
-    <a href="#">
-        <img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-landscape.svg" alt="ReactPy Logo" style="min-width: 300px; width: 50%" />
-    </a>
+  <a
+    href="#"
+    style="display: flex; align-items: center; justify-content: center"
+  >
+    <img
+      src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg"
+      alt="ReactPy Logo"
+      height="200px"
+    />
+    <span color="#00be5a" style="font-size: 4rem; font-family: sans-serif"
+      >ReactPy</span
+    >
+  </a>
 </p>
 <p align="center">
-    <em>Reactive user interfaces with pure Python</em>
+  <em>Reactive user interfaces with pure Python</em>
 </p>
-    <p align="center">
-    <a href="https://github.com/reactive-python/reactpy/actions">
-        <img src="https://github.com/reactive-python/reactpy/workflows/test/badge.svg" alt="Build Status">
-    </a>
-    <a href="https://pypi.org/project/reactpy/">
-        <img src="https://badge.fury.io/py/reactpy.svg" alt="Package version">
-    </a>
+<p align="center">
+  <a href="https://github.com/reactive-python/reactpy/actions">
+    <img
+      src="https://github.com/reactive-python/reactpy/workflows/test/badge.svg"
+      alt="Build Status"
+    />
+  </a>
+  <a href="https://pypi.org/project/reactpy/">
+    <img src="https://badge.fury.io/py/reactpy.svg" alt="Package version" />
+  </a>
 </p>
 
 ---
@@ -62,8 +75,8 @@ run(HelloWorld)
 
 Follow the links below to find out more about this project.
 
--   [Try it Now](https://mybinder.org/v2/gh/reactive-python/reactpy-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb) - check out ReactPy in a Jupyter Notebook.
--   [Documentation](https://reactpy.dev/) - learn how to install, run, and use ReactPy.
--   [Community Forum](https://github.com/reactive-python/reactpy/discussions) - ask questions, share ideas, and show off projects.
--   [Contributor Guide](https://reactpy.dev/docs/developing-reactpy/contributor-guide.html) - see how you can help develop this project.
--   [Code of Conduct](https://github.com/reactive-python/reactpy/blob/main/CODE_OF_CONDUCT.md) - standards for interacting with this community.
+- [Try it Now](https://mybinder.org/v2/gh/reactive-python/reactpy-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb) - check out ReactPy in a Jupyter Notebook.
+- [Documentation](https://reactpy.dev/) - learn how to install, run, and use ReactPy.
+- [Community Forum](https://github.com/reactive-python/reactpy/discussions) - ask questions, share ideas, and show off projects.
+- [Contributor Guide](https://reactpy.dev/docs/developing-reactpy/contributor-guide.html) - see how you can help develop this project.
+- [Code of Conduct](https://github.com/reactive-python/reactpy/blob/main/CODE_OF_CONDUCT.md) - standards for interacting with this community.
