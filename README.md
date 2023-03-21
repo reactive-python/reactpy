@@ -1,32 +1,23 @@
-<p align="center" id="reactpy">
-  <a
-    href="#"
-    style="display: flex; align-items: center; justify-content: center"
-  >
-    <img
-      src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg"
-      alt="ReactPy Logo"
-      height="200px"
-    />
-    <span color="#00be5a" style="font-size: 4rem; font-family: sans-serif"
-      >ReactPy</span
-    >
-  </a>
-</p>
-<p align="center">
-  <em>Reactive user interfaces with pure Python</em>
-</p>
-<p align="center">
-  <a href="https://github.com/reactive-python/reactpy/actions">
-    <img
-      src="https://github.com/reactive-python/reactpy/workflows/test/badge.svg"
-      alt="Build Status"
-    />
-  </a>
-  <a href="https://pypi.org/project/reactpy/">
-    <img src="https://badge.fury.io/py/reactpy.svg" alt="Package version" />
-  </a>
-</p>
+<svg fill="none" viewBox="0 0 600 300" width="600" height="300" xmlns="http://www.w3.org/2000/svg">
+  <foreignObject width="100%" height="100%">
+    <div xmlns="http://www.w3.org/1999/xhtml">
+      <style>
+        .container {
+          display: flex;
+          width: 100%;
+          height: 300px;
+          background-color: black;
+          color: white;
+        }
+      </style>
+
+      <div class="container">
+        <h1>Hi there, my name is Nikola 👋</h1>
+      </div>
+    </div>
+
+  </foreignObject>
+</svg>
 
 ---
 
