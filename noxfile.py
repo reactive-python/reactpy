@@ -248,6 +248,7 @@ def check_javascript_format(session: Session) -> None:
 
 @group.session
 def check_javascript_types(session: Session) -> None:
+    session.run("npm", "run", "build", external=True)
     session.run("npm", "run", "check:types", external=True)
 
 
