@@ -25,9 +25,9 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "format": "prettier --write ./src ./tests",
+    "format": "prettier --write .",
     "test": "npm run check:tests",
-    "check:format": "prettier --check ./src ./tests",
+    "check:format": "prettier --check .",
     "check:tests": "uvu -r tsm tests",
     "check:types": "tsc --noEmit"
   }

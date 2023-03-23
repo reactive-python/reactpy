@@ -35,7 +35,6 @@ ROOT_DIR = Path(__file__).parent.resolve()
 SRC_DIR = ROOT_DIR / "src"
 CLIENT_DIR = SRC_DIR / "client"
 REACTPY_DIR = SRC_DIR / "reactpy"
-LANGUAGE_TYPES: list[LanguageName] = ["py", "js"]
 TAG_PATTERN = re.compile(
     # start
     r"^"
@@ -46,7 +45,6 @@ TAG_PATTERN = re.compile(
     # end
     r"$"
 )
-print(TAG_PATTERN.pattern)
 REMAINING_ARGS = Option(nargs=REMAINDER, type=str)
 
 
@@ -87,6 +85,12 @@ def format(session: Session) -> None:
     # format docs Javascript
     session.chdir(ROOT_DIR / "docs" / "source" / "_custom_js")
     session.run("npm", "run", "format", external=True)
+
+
+@group.session
+def tsc(session: Session) -> None:
+    session.chdir(CLIENT_DIR)
+    session.run("npx", "tsc", "-b", "-w", "packages/app", external=True)
 
 
 @group.session
@@ -269,7 +273,17 @@ def build_python(session: Session) -> None:
 
 
 @group.session
-def publish(session: Session, dry_run: bool = False) -> None:
+def publish(
+    session: Session,
+    publish_dry_run: Annotated[
+        bool,
+        Option(help="whether to test the release process"),
+    ] = False,
+    publish_fake_tags: Annotated[
+        Sequence[str],
+        Option(nargs="*", type=str, help="fake tags to use for a dry run release"),
+    ] = (),
+) -> None:
     packages = get_packages(session)
 
     release_prep: dict[LanguageName, ReleasePrepFunc] = {
@@ -277,8 +291,20 @@ def publish(session: Session, dry_run: bool = False) -> None:
         "py": prepare_python_release,
     }
 
+    if publish_fake_tags and not publish_dry_run:
+        session.error("Cannot specify --publish-fake-tags without --publish-dry-run")
+
+    parsed_tags: list[TagInfo] = []
+    for tag in publish_fake_tags or get_current_tags(session):
+        tag_info = parse_tag(tag)
+        if tag_info is None:
+            session.error(
+                f"Invalid tag {tag} - must be of the form <package>-<language>-<version>"
+            )
+        parsed_tags.append(tag_info)
+
     publishers: list[tuple[Path, Callable[[bool], None]]] = []
-    for tag, tag_pkg, tag_ver in get_current_tags(session):
+    for tag, tag_pkg, tag_ver in parsed_tags:
         if tag_pkg not in packages:
             session.error(f"Tag {tag} references package {tag_pkg} that does not exist")
 
@@ -296,7 +322,7 @@ def publish(session: Session, dry_run: bool = False) -> None:
     for pkg_path, publish in publishers:
         session.log(f"Publishing {pkg_path}...")
         session.chdir(pkg_path)
-        publish(dry_run)
+        publish(publish_dry_run)
 
 
 # --- Utilities ------------------------------------------------------------------------
@@ -420,7 +446,7 @@ class PackageInfo(NamedTuple):
     version: str
 
 
-def get_current_tags(session: Session) -> list[TagInfo]:
+def get_current_tags(session: Session) -> list[str]:
     """Get tags for the current commit"""
     # check if unstaged changes
     try:
@@ -468,24 +494,20 @@ def get_current_tags(session: Session) -> list[TagInfo]:
     if not tags:
         session.error("No tags found for current commit")
 
-    parsed_tags: list[TagInfo] = []
-    for tag in tags:
-        match = TAG_PATTERN.match(tag)
-        if not match:
-            session.error(
-                f"Invalid tag {tag} - must be of the form <package>-<language>-<version>"
-            )
-        parsed_tags.append(
-            TagInfo(
-                tag,
-                match["name"],  # type: ignore[index]
-                match["version"],  # type: ignore[index]
-            )
-        )
+    session.log(f"Found tags: {tags}")
 
-    session.log(f"Found tags: {[info.tag for info in parsed_tags]}")
+    return tags
 
-    return parsed_tags
+
+def parse_tag(tag: str) -> TagInfo | None:
+    match = TAG_PATTERN.match(tag)
+    if not match:
+        return None
+    return TagInfo(
+        tag,
+        match["name"],  # type: ignore[index]
+        match["version"],  # type: ignore[index]
+    )
 
 
 class TagInfo(NamedTuple):

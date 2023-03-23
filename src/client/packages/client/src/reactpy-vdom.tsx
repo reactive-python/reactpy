@@ -13,7 +13,9 @@ export async function loadImportSource(
     module = await client.loadModule(vdomImportSource.source);
   }
   if (typeof module.bind !== "function") {
-    throw `${vdomImportSource.source} did not export a function 'bind'`;
+    throw new Error(
+      `${vdomImportSource.source} did not export a function 'bind'`,
+    );
   }
 
   return (node: HTMLElement) => {

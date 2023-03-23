@@ -6,7 +6,7 @@
   "license": "MIT",
   "name": "@reactpy/client",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "dependencies": {
     "event-to-object": "^0.1.0",
     "json-pointer": "^0.6.2"
@@ -28,9 +28,9 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "format": "prettier --write ./src",
+    "format": "prettier --write .",
     "test": "npm run check:tests",
-    "check:format": "prettier --check ./src",
+    "check:format": "prettier --check .",
     "check:tests": "echo 'no tests'",
     "check:types": "tsc --noEmit"
   }

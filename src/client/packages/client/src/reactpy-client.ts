@@ -13,10 +13,15 @@ export interface ReactPyClient {
   loadModule: (moduleName: string) => Promise<ReactPyModule>;
 }
 
+export type SimpleReactPyClientProprs = {
+  serverLocation: UrlProps;
+  reconnectOptions?: ReconnectProps;
+};
+
 type UrlProps = {
-  baseUrl: string;
-  routePath: string;
-  queryString: string;
+  url: string;
+  route: string;
+  query: string;
 };
 
 type ReconnectProps = {
@@ -27,18 +32,15 @@ type ReconnectProps = {
 };
 
 export class SimpleReactPyClient implements ReactPyClient {
-  private resolveShouldOpen?: (value: unknown) => void;
-  private resolveShouldClose?: (value: unknown) => void;
+  private resolveShouldOpen: (value: unknown) => void;
+  private resolveShouldClose: (value: unknown) => void;
   private readonly urls: ServerUrls;
   private readonly handlers: {
     [key in IncomingMessage["type"]]: ((message: any) => void)[];
   };
   private readonly socket: { current?: WebSocket };
 
-  constructor(props: {
-    serverLocation: UrlProps;
-    reconnectOptions?: ReconnectProps;
-  }) {
+  constructor(props: SimpleReactPyClientProprs) {
     this.handlers = {
       "connection-open": [],
       "connection-close": [],
@@ -47,6 +49,12 @@ export class SimpleReactPyClient implements ReactPyClient {
 
     this.urls = getServerUrls(props.serverLocation);
 
+    this.resolveShouldOpen = () => {
+      throw new Error("Could not start client");
+    };
+    this.resolveShouldClose = () => {
+      throw new Error("Could not stop client");
+    };
     const shouldOpen = new Promise((r) => (this.resolveShouldOpen = r));
     const shouldClose = new Promise((r) => (this.resolveShouldClose = r));
 
@@ -62,21 +70,13 @@ export class SimpleReactPyClient implements ReactPyClient {
   }
 
   start(): void {
-    if (this.resolveShouldOpen) {
-      logger.log("Starting ReactPy client...");
-      this.resolveShouldOpen(undefined);
-    } else {
-      throw "Did not start client";
-    }
+    logger.log("Starting client...");
+    this.resolveShouldOpen(undefined);
   }
 
   stop(): void {
-    if (this.resolveShouldClose) {
-      logger.log("Stopping ReactPy client...");
-      this.resolveShouldClose(undefined);
-    } else {
-      throw "Did not stop client";
-    }
+    logger.log("stopping client...");
+    this.resolveShouldClose(undefined);
   }
 
   onMessage<M extends IncomingMessage>(
@@ -119,16 +119,13 @@ type ServerUrls = {
 };
 
 function getServerUrls(props: UrlProps): ServerUrls {
-  const base = new URL(`${props.baseUrl || document.location.origin}/_reactpy`);
+  const base = new URL(`${props.url || document.location.origin}/_reactpy`);
   const modules = `${base}/modules`;
   const assets = `${base}/assets`;
 
   const streamProtocol = `ws${base.protocol === "https:" ? "s" : ""}`;
-  const streamPath = rtrim(
-    `${base.pathname}/stream${props.routePath || ""}`,
-    "/",
-  );
-  const stream = `${streamProtocol}://${base.host}${streamPath}${props.queryString}`;
+  const streamPath = rtrim(`${base.pathname}/stream${props.route || ""}`, "/");
+  const stream = `${streamProtocol}://${base.host}${streamPath}${props.query}`;
 
   return { base, modules, assets, stream };
 }
@@ -176,7 +173,7 @@ function startReconnectingWebSocket(
         return;
       }
 
-      logger.log("disconnected");
+      logger.log("client disconnected");
       props.onClose();
 
       if (retries >= maxRetries) {
@@ -184,7 +181,9 @@ function startReconnectingWebSocket(
       }
 
       const thisInterval = addJitter(interval, intervalJitter);
-      logger.log(`reconnecting in ${thisInterval / 1000} seconds...`);
+      logger.log(
+        `reconnecting in ${(thisInterval / 1000).toPrecision(4)} seconds...`,
+      );
       setTimeout(connect, thisInterval);
       interval = nextInterval(interval, backoffRate, maxInterval);
       retries++;
