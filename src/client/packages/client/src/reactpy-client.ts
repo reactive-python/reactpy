@@ -13,14 +13,39 @@ export interface ReactPyClient {
   loadModule: (moduleName: string) => Promise<ReactPyModule>;
 }
 
-export type SimpleReactPyClientProprs = {
-  serverLocation: UrlProps;
+export type SimpleReactPyClientProps = {
+  serverLocation?: LocationProps;
   reconnectOptions?: ReconnectProps;
 };
 
-type UrlProps = {
+/**
+ * The location of the server.
+ *
+ * This is used to determine the location of the server's API endpoints. All endpoints
+ * are expected to be found at the base URL, with the following paths:
+ *
+ * - `_reactpy/stream/${route}${query}`: The websocket endpoint for the stream.
+ * - `_reactpy/modules`: The directory containing the dynamically loaded modules.
+ * - `_reactpy/assets`: The directory containing the static assets.
+ */
+type LocationProps = {
+  /**
+   * The base URL of the server.
+   *
+   * @default - document.location.origin
+   */
   url: string;
+  /**
+   * The route to the page being rendered.
+   *
+   * @default - document.location.pathname
+   */
   route: string;
+  /**
+   * The query string of the page being rendered.
+   *
+   * @default - document.location.search
+   */
   query: string;
 };
 
@@ -40,14 +65,20 @@ export class SimpleReactPyClient implements ReactPyClient {
   };
   private readonly socket: { current?: WebSocket };
 
-  constructor(props: SimpleReactPyClientProprs) {
+  constructor(props: SimpleReactPyClientProps) {
     this.handlers = {
       "connection-open": [],
       "connection-close": [],
       "layout-update": [],
     };
 
-    this.urls = getServerUrls(props.serverLocation);
+    this.urls = getServerUrls(
+      props.serverLocation || {
+        url: document.location.origin,
+        route: document.location.pathname,
+        query: document.location.search,
+      },
+    );
 
     this.resolveShouldOpen = () => {
       throw new Error("Could not start client");
@@ -118,7 +149,7 @@ type ServerUrls = {
   assets: string;
 };
 
-function getServerUrls(props: UrlProps): ServerUrls {
+function getServerUrls(props: LocationProps): ServerUrls {
   const base = new URL(`${props.url || document.location.origin}/_reactpy`);
   const modules = `${base}/modules`;
   const assets = `${base}/assets`;

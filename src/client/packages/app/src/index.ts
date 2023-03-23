@@ -5,7 +5,7 @@ export function app(element: HTMLElement) {
     element,
     new SimpleReactPyClient({
       serverLocation: {
-        url: document.location.host,
+        url: document.location.origin,
         route: document.location.pathname,
         query: document.location.search,
       },
