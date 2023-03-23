@@ -302,7 +302,7 @@ def publish(
             session.error(
                 f"Invalid tag {tag} - must be of the form <package>-<language>-<version>"
             )
-        parsed_tags.append(tag_info)
+        parsed_tags.append(tag_info)  # type: ignore
 
     publishers: list[tuple[Path, Callable[[bool], None]]] = []
     for tag, tag_pkg, tag_ver in parsed_tags:
@@ -416,20 +416,18 @@ def get_packages(session: Session) -> dict[str, PackageInfo]:
     }
 
     # collect javascript packages
-    packages: list[Path] = []
+    js_package_paths: list[Path] = []
     for maybed_pkg in (CLIENT_DIR / "packages").glob("*"):
         if not (maybed_pkg / "package.json").exists():
             for nmaybe_namespaced_pkg in maybed_pkg.glob("*"):
                 if (nmaybe_namespaced_pkg / "package.json").exists():
-                    packages.append(nmaybe_namespaced_pkg)
+                    js_package_paths.append(nmaybe_namespaced_pkg)
         else:
-            packages.append(maybed_pkg)
+            js_package_paths.append(maybed_pkg)
 
     # get javascript package info
-    for pkg in packages:
-        pkg_json_file = pkg / "package.json"
-        if not pkg_json_file.exists():
-            session.error(f"package.json not found in {pkg}")
+    for pkg in js_package_paths:
+        pkg_json_file = pkg / "package.json"  # we already know this exists
 
         pkg_json = json.loads(pkg_json_file.read_text())
 
@@ -511,11 +509,7 @@ def parse_tag(tag: str) -> TagInfo | None:
     match = TAG_PATTERN.match(tag)
     if not match:
         return None
-    return TagInfo(
-        tag,
-        match["name"],  # type: ignore[index]
-        match["version"],  # type: ignore[index]
-    )
+    return TagInfo(tag, match["name"], match["version"])
 
 
 class TagInfo(NamedTuple):
@@ -539,5 +533,4 @@ def get_reactpy_package_version(session: Session) -> str:  # type: ignore[return
                 # remove the quotes
                 [1:-1]
             )
-    else:
-        session.error(f"No version found in {pkg_root_init_file}")
+    session.error(f"No version found in {pkg_root_init_file}")
