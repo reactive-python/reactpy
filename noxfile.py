@@ -35,7 +35,6 @@ ROOT_DIR = Path(__file__).parent.resolve()
 SRC_DIR = ROOT_DIR / "src"
 CLIENT_DIR = SRC_DIR / "client"
 REACTPY_DIR = SRC_DIR / "reactpy"
-LANGUAGE_TYPES: list[LanguageName] = ["py", "js"]
 TAG_PATTERN = re.compile(
     # start
     r"^"
@@ -46,7 +45,6 @@ TAG_PATTERN = re.compile(
     # end
     r"$"
 )
-print(TAG_PATTERN.pattern)
 REMAINING_ARGS = Option(nargs=REMAINDER, type=str)
 
 
@@ -60,6 +58,7 @@ group = NoxOpt(auto_tag=True)
 def setup_checks(session: Session) -> None:
     session.install("--upgrade", "pip")
     session.run("pip", "--version")
+    session.run("npm", "--version", external=True)
 
 
 @group.setup("check-javascript")
@@ -86,6 +85,12 @@ def format(session: Session) -> None:
     # format docs Javascript
     session.chdir(ROOT_DIR / "docs" / "source" / "_custom_js")
     session.run("npm", "run", "format", external=True)
+
+
+@group.session
+def tsc(session: Session) -> None:
+    session.chdir(CLIENT_DIR)
+    session.run("npx", "tsc", "-b", "-w", "packages/app", external=True)
 
 
 @group.session
@@ -232,21 +237,24 @@ def check_docs(session: Session) -> None:
 
 
 @group.session
-def check_javascript_suite(session: Session) -> None:
-    """Run the Javascript-based test suite and ensure it bundles succesfully"""
-    session.run("npm", "run", "test", external=True)
-
-
-@group.session
-def check_javascript_build(session: Session) -> None:
-    """Run the Javascript-based test suite and ensure it bundles succesfully"""
-    session.run("npm", "run", "test", external=True)
+def check_javascript_tests(session: Session) -> None:
+    session.run("npm", "run", "check:tests", external=True)
 
 
 @group.session
 def check_javascript_format(session: Session) -> None:
-    """Check that Javascript style guidelines are being followed"""
-    session.run("npm", "run", "check-format", external=True)
+    session.run("npm", "run", "check:format", external=True)
+
+
+@group.session
+def check_javascript_types(session: Session) -> None:
+    session.run("npm", "run", "build", external=True)
+    session.run("npm", "run", "check:types", external=True)
+
+
+@group.session
+def check_javascript_build(session: Session) -> None:
+    session.run("npm", "run", "build", external=True)
 
 
 @group.session
@@ -266,7 +274,17 @@ def build_python(session: Session) -> None:
 
 
 @group.session
-def publish(session: Session, dry_run: bool = False) -> None:
+def publish(
+    session: Session,
+    publish_dry_run: Annotated[
+        bool,
+        Option(help="whether to test the release process"),
+    ] = False,
+    publish_fake_tags: Annotated[
+        Sequence[str],
+        Option(nargs="*", type=str, help="fake tags to use for a dry run release"),
+    ] = (),
+) -> None:
     packages = get_packages(session)
 
     release_prep: dict[LanguageName, ReleasePrepFunc] = {
@@ -274,8 +292,20 @@ def publish(session: Session, dry_run: bool = False) -> None:
         "py": prepare_python_release,
     }
 
+    if publish_fake_tags and not publish_dry_run:
+        session.error("Cannot specify --publish-fake-tags without --publish-dry-run")
+
+    parsed_tags: list[TagInfo] = []
+    for tag in publish_fake_tags or get_current_tags(session):
+        tag_info = parse_tag(tag)
+        if tag_info is None:
+            session.error(
+                f"Invalid tag {tag} - must be of the form <package>-<language>-<version>"
+            )
+        parsed_tags.append(tag_info)  # type: ignore
+
     publishers: list[tuple[Path, Callable[[bool], None]]] = []
-    for tag, tag_pkg, tag_ver in get_current_tags(session):
+    for tag, tag_pkg, tag_ver in parsed_tags:
         if tag_pkg not in packages:
             session.error(f"Tag {tag} references package {tag_pkg} that does not exist")
 
@@ -293,7 +323,7 @@ def publish(session: Session, dry_run: bool = False) -> None:
     for pkg_path, publish in publishers:
         session.log(f"Publishing {pkg_path}...")
         session.chdir(pkg_path)
-        publish(dry_run)
+        publish(publish_dry_run)
 
 
 # --- Utilities ------------------------------------------------------------------------
@@ -386,22 +416,27 @@ def get_packages(session: Session) -> dict[str, PackageInfo]:
     }
 
     # collect javascript packages
-    for pkg in (CLIENT_DIR / "packages").glob("*"):
-        pkg_json_file = pkg / "package.json"
-        if not pkg_json_file.exists():
-            session.error(f"package.json not found in {pkg}")
+    js_package_paths: list[Path] = []
+    for maybed_pkg in (CLIENT_DIR / "packages").glob("*"):
+        if not (maybed_pkg / "package.json").exists():
+            for nmaybe_namespaced_pkg in maybed_pkg.glob("*"):
+                if (nmaybe_namespaced_pkg / "package.json").exists():
+                    js_package_paths.append(nmaybe_namespaced_pkg)
+        else:
+            js_package_paths.append(maybed_pkg)
+
+    # get javascript package info
+    for pkg in js_package_paths:
+        pkg_json_file = pkg / "package.json"  # we already know this exists
 
         pkg_json = json.loads(pkg_json_file.read_text())
 
         pkg_name = pkg_json.get("name")
         pkg_version = pkg_json.get("version")
 
-        if pkg_version is None:
-            session.log(f"Skipping - {pkg_name} has no name or version in package.json")
+        if pkg_version is None or pkg_name is None:
+            session.log(f"Skipping - {pkg_name} has no name/version in package.json")
             continue
-
-        if pkg_name is None:
-            session.error(f"Package {pkg} has no name in package.json")
 
         if pkg_name in packages:
             session.error(f"Duplicate package name {pkg_name}")
@@ -417,7 +452,7 @@ class PackageInfo(NamedTuple):
     version: str
 
 
-def get_current_tags(session: Session) -> list[TagInfo]:
+def get_current_tags(session: Session) -> list[str]:
     """Get tags for the current commit"""
     # check if unstaged changes
     try:
@@ -465,24 +500,16 @@ def get_current_tags(session: Session) -> list[TagInfo]:
     if not tags:
         session.error("No tags found for current commit")
 
-    parsed_tags: list[TagInfo] = []
-    for tag in tags:
-        match = TAG_PATTERN.match(tag)
-        if not match:
-            session.error(
-                f"Invalid tag {tag} - must be of the form <package>-<language>-<version>"
-            )
-        parsed_tags.append(
-            TagInfo(
-                tag,
-                match["name"],  # type: ignore[index]
-                match["version"],  # type: ignore[index]
-            )
-        )
+    session.log(f"Found tags: {tags}")
 
-    session.log(f"Found tags: {[info.tag for info in parsed_tags]}")
+    return tags
 
-    return parsed_tags
+
+def parse_tag(tag: str) -> TagInfo | None:
+    match = TAG_PATTERN.match(tag)
+    if not match:
+        return None
+    return TagInfo(tag, match["name"], match["version"])
 
 
 class TagInfo(NamedTuple):
@@ -506,5 +533,4 @@ def get_reactpy_package_version(session: Session) -> str:  # type: ignore[return
                 # remove the quotes
                 [1:-1]
             )
-    else:
-        session.error(f"No version found in {pkg_root_init_file}")
+    session.error(f"No version found in {pkg_root_init_file}")

@@ -1,4 +1,4 @@
-import { mountWithLayoutServer, LayoutServerInfo } from "@reactpy/client";
+import { SimpleReactPyClient, mount } from "@reactpy/client";
 
 let didMountDebug = false;
 
@@ -6,7 +6,7 @@ export function mountWidgetExample(
   mountID,
   viewID,
   reactpyServerHost,
-  useActivateButton
+  useActivateButton,
 ) {
   let reactpyHost, reactpyPort;
   if (reactpyServerHost) {
@@ -16,27 +16,27 @@ export function mountWidgetExample(
     reactpyPort = window.location.port;
   }
 
-  const serverInfo = new LayoutServerInfo({
-    host: reactpyHost,
-    port: reactpyPort,
-    path: "/_reactpy/",
-    query: `view_id=${viewID}`,
-    secure: window.location.protocol == "https:",
+  const client = new SimpleReactPyClient({
+    serverLocation: {
+      url: `${window.location.protocol}//${reactpyHost}:${reactpyPort}`,
+      route: "/",
+      query: `?view_id=${viewID}`,
+    },
   });
 
   const mountEl = document.getElementById(mountID);
   let isMounted = false;
   triggerIfInViewport(mountEl, () => {
     if (!isMounted) {
-      activateView(mountEl, serverInfo, useActivateButton);
+      activateView(mountEl, client, useActivateButton);
       isMounted = true;
     }
   });
 }
 
-function activateView(mountEl, serverInfo, useActivateButton) {
+function activateView(mountEl, client, useActivateButton) {
   if (!useActivateButton) {
-    mountWithLayoutServer(mountEl, serverInfo);
+    mount(mountEl, client);
     return;
   }
 
@@ -51,7 +51,7 @@ function activateView(mountEl, serverInfo, useActivateButton) {
         mountEl.setAttribute("class", "interactive widget-container");
         mountWithLayoutServer(mountEl, serverInfo);
       }
-    })
+    }),
   );
 
   function fadeOutElementThenCallback(element, callback) {
@@ -87,7 +87,7 @@ function triggerIfInViewport(element, callback) {
     {
       root: null,
       threshold: 0.1, // set offset 0.1 means trigger if atleast 10% of element in viewport
-    }
+    },
   );
 
   observer.observe(element);
