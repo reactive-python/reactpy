@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.package.json",
+  "extends": "../../../tsconfig.package.json",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
@@ -8,7 +8,7 @@
   "include": ["src"],
   "references": [
     {
-      "path": "../client"
+      "path": "../../event-to-object"
     }
   ]
 }

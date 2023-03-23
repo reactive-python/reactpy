@@ -3,7 +3,6 @@
   "license": "MIT",
   "main": "src/dist/index.js",
   "types": "src/dist/index.d.ts",
-  "name": "@reactpy/app",
   "description": "A client application for ReactPy implemented in React",
   "dependencies": {
     "@reactpy/client": "^0.2.0",

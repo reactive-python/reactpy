@@ -11,7 +11,7 @@
   },
   "workspaces": [
     "packages/event-to-object",
-    "packages/client",
-    "packages/app"
+    "packages/@reactpy/client",
+    "apps/ui"
   ]
 }

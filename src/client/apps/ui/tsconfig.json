@@ -8,7 +8,7 @@
   "include": ["src"],
   "references": [
     {
-      "path": "../event-to-object"
+      "path": "../../packages/@reactpy/client"
     }
   ]
 }

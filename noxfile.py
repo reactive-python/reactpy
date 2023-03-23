@@ -416,7 +416,17 @@ def get_packages(session: Session) -> dict[str, PackageInfo]:
     }
 
     # collect javascript packages
-    for pkg in (CLIENT_DIR / "packages").glob("*"):
+    packages: list[Path] = []
+    for maybed_pkg in (CLIENT_DIR / "packages").glob("*"):
+        if not (maybed_pkg / "package.json").exists():
+            for nmaybe_namespaced_pkg in maybed_pkg.glob("*"):
+                if (nmaybe_namespaced_pkg / "package.json").exists():
+                    packages.append(nmaybe_namespaced_pkg)
+        else:
+            packages.append(maybed_pkg)
+
+    # get javascript package info
+    for pkg in packages:
         pkg_json_file = pkg / "package.json"
         if not pkg_json_file.exists():
             session.error(f"package.json not found in {pkg}")
@@ -426,12 +436,9 @@ def get_packages(session: Session) -> dict[str, PackageInfo]:
         pkg_name = pkg_json.get("name")
         pkg_version = pkg_json.get("version")
 
-        if pkg_version is None:
-            session.log(f"Skipping - {pkg_name} has no name or version in package.json")
+        if pkg_version is None or pkg_name is None:
+            session.log(f"Skipping - {pkg_name} has no name/version in package.json")
             continue
-
-        if pkg_name is None:
-            session.error(f"Package {pkg} has no name in package.json")
 
         if pkg_name in packages:
             session.error(f"Duplicate package name {pkg_name}")

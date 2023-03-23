@@ -2,14 +2,35 @@ import { OutgoingMessage, IncomingMessage } from "./messages";
 import { ReactPyModule } from "./reactpy-vdom";
 import logger from "./logger";
 
+/**
+ * A client for communicating with a ReactPy server.
+ */
 export interface ReactPyClient {
+  /**
+   * Connect to the server and start receiving messages.
+   *
+   * Message handlers should be registered before calling this method in order to
+   * garuntee that messages are not missed.
+   */
   start: () => void;
+  /**
+   * Disconnect from the server and stop receiving messages.
+   */
   stop: () => void;
+  /**
+   * Register a handler for a message type.
+   */
   onMessage: <M extends IncomingMessage>(
     type: M["type"],
     handler: (message: M) => void,
   ) => void;
+  /**
+   * Send a message to the server.
+   */
   sendMessage: (message: OutgoingMessage) => void;
+  /**
+   * Dynamically load a module from the server.
+   */
   loadModule: (moduleName: string) => Promise<ReactPyModule>;
 }
 
@@ -101,7 +122,7 @@ export class SimpleReactPyClient implements ReactPyClient {
   }
 
   start(): void {
-    logger.log("Starting client...");
+    logger.log("starting client...");
     this.resolveShouldOpen(undefined);
   }
 
