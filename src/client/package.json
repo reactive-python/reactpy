@@ -1,21 +1,17 @@
 {
-  "devDependencies": {
-    "vite": "^3.1.8"
-  },
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/reactive-python/reactpy"
-  },
   "scripts": {
-    "build": "vite build",
-    "check-format": "npm --workspaces run check-format",
-    "format": "npm --workspaces run format",
     "publish": "npm --workspaces publish",
-    "test": "npm --workspaces test"
+    "test": "npm --workspaces test",
+    "build": "npm --workspaces run build",
+    "format": "npm --workspaces run format",
+    "check:format": "npm --workspaces run check:format",
+    "check:tests": "npm --workspaces run check:tests",
+    "check:types": "npm --workspaces run check:types"
   },
-  "version": "1.0.0",
   "workspaces": [
-    "./packages/*"
+    "packages/event-to-object",
+    "packages/@reactpy/client",
+    "apps/ui"
   ]
 }

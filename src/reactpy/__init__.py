@@ -22,7 +22,7 @@ from reactpy.utils import Ref, html_to_vdom, vdom_to_html
 
 
 __author__ = "The Reactive Python Team"
-__version__ = "0.45.0"  # DO NOT MODIFY
+__version__ = "1.0.0"  # DO NOT MODIFY
 
 __all__ = [
     "backend",

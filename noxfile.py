@@ -1,32 +1,73 @@
 from __future__ import annotations
 
+import json
 import os
+import re
 from argparse import REMAINDER
 from dataclasses import replace
 from pathlib import Path
 from shutil import rmtree
-from typing import Sequence
+from typing import TYPE_CHECKING, Callable, NamedTuple, Sequence, cast
 
 from noxopt import Annotated, NoxOpt, Option, Session
 
 
-ROOT = Path(__file__).parent
-CLIENT_DIR = ROOT / "src" / "client"
+# --- Typing Preamble ------------------------------------------------------------------
 
+
+if TYPE_CHECKING:
+    # not available in typing module until Python 3.8
+    # not available in typing module until Python 3.10
+    from typing import Literal, Protocol, TypeAlias
+
+    class ReleasePrepFunc(Protocol):
+        def __call__(self, session: Session) -> Callable[[bool], None]:
+            ...
+
+
+LanguageName: TypeAlias = "Literal['py', 'js']"
+
+
+# --- Constants ------------------------------------------------------------------------
+
+
+ROOT_DIR = Path(__file__).parent.resolve()
+SRC_DIR = ROOT_DIR / "src"
+CLIENT_DIR = SRC_DIR / "client"
+REACTPY_DIR = SRC_DIR / "reactpy"
+TAG_PATTERN = re.compile(
+    # start
+    r"^"
+    # package name
+    r"(?P<name>[0-9a-zA-Z-@/]+)-"
+    # package version
+    r"v(?P<version>[0-9][0-9a-zA-Z-\.\+]*)"
+    # end
+    r"$"
+)
 REMAINING_ARGS = Option(nargs=REMAINDER, type=str)
+
+
+# --- Session Setup --------------------------------------------------------------------
+
 
 group = NoxOpt(auto_tag=True)
 
 
 @group.setup
-def setup_checks(
-    session: Session,
-    ci: Annotated[bool, Option(help="whether running in CI")] = False,
-) -> None:
+def setup_checks(session: Session) -> None:
     session.install("--upgrade", "pip")
-    if ci:
-        session.log("Running in CI environment - installing latest NPM")
-        session.run("npm", "install", "-g", "npm@latest", external=True)
+    session.run("pip", "--version")
+    session.run("npm", "--version", external=True)
+
+
+@group.setup("check-javascript")
+def setup_javascript_checks(session: Session) -> None:
+    session.chdir(CLIENT_DIR)
+    session.run("npm", "ci", external=True)
+
+
+# --- Session Definitions --------------------------------------------------------------
 
 
 @group.session
@@ -42,8 +83,14 @@ def format(session: Session) -> None:
     session.run("npm", "run", "format", external=True)
 
     # format docs Javascript
-    session.chdir(ROOT / "docs" / "source" / "_custom_js")
+    session.chdir(ROOT_DIR / "docs" / "source" / "_custom_js")
     session.run("npm", "run", "format", external=True)
+
+
+@group.session
+def tsc(session: Session) -> None:
+    session.chdir(CLIENT_DIR)
+    session.run("npx", "tsc", "-b", "-w", "packages/app", external=True)
 
 
 @group.session
@@ -149,6 +196,7 @@ def check_python_types(session: Session) -> None:
     install_requirements_file(session, "pkg-extras")
     session.run("mypy", "--version")
     session.run("mypy", "--show-error-codes", "--strict", "src/reactpy")
+    session.run("mypy", "--show-error-codes", "noxfile.py")
 
 
 @group.session
@@ -188,28 +236,25 @@ def check_docs(session: Session) -> None:
     session.run("docker", "build", ".", "--file", "docs/Dockerfile", external=True)
 
 
-@group.setup("check-javascript")
-def setup_javascript_checks(session: Session) -> None:
-    session.chdir(CLIENT_DIR)
-    session.run("npm", "install", external=True)
-
-
 @group.session
-def check_javascript_suite(session: Session) -> None:
-    """Run the Javascript-based test suite and ensure it bundles succesfully"""
-    session.run("npm", "run", "test", external=True)
-
-
-@group.session
-def check_javascript_build(session: Session) -> None:
-    """Run the Javascript-based test suite and ensure it bundles succesfully"""
-    session.run("npm", "run", "test", external=True)
+def check_javascript_tests(session: Session) -> None:
+    session.run("npm", "run", "check:tests", external=True)
 
 
 @group.session
 def check_javascript_format(session: Session) -> None:
-    """Check that Javascript style guidelines are being followed"""
-    session.run("npm", "run", "check-format", external=True)
+    session.run("npm", "run", "check:format", external=True)
+
+
+@group.session
+def check_javascript_types(session: Session) -> None:
+    session.run("npm", "run", "build", external=True)
+    session.run("npm", "run", "check:types", external=True)
+
+
+@group.session
+def check_javascript_build(session: Session) -> None:
+    session.run("npm", "run", "build", external=True)
 
 
 @group.session
@@ -221,16 +266,195 @@ def build_javascript(session: Session) -> None:
 
 @group.session
 def build_python(session: Session) -> None:
-    """Build javascript client code"""
-    rmtree(str(ROOT / "build"))
-    rmtree(str(ROOT / "dist"))
-    session.install("build", "wheel")
+    """Build python package dist"""
+    rmtree(str(ROOT_DIR / "build"))
+    rmtree(str(ROOT_DIR / "dist"))
+    install_requirements_file(session, "build-pkg")
     session.run("python", "-m", "build", "--sdist", "--wheel", "--outdir", "dist", ".")
 
 
 @group.session
-def tag(session: Session, version: str = "") -> None:
-    """Create a new git tag"""
+def publish(
+    session: Session,
+    publish_dry_run: Annotated[
+        bool,
+        Option(help="whether to test the release process"),
+    ] = False,
+    publish_fake_tags: Annotated[
+        Sequence[str],
+        Option(nargs="*", type=str, help="fake tags to use for a dry run release"),
+    ] = (),
+) -> None:
+    packages = get_packages(session)
+
+    release_prep: dict[LanguageName, ReleasePrepFunc] = {
+        "js": prepare_javascript_release,
+        "py": prepare_python_release,
+    }
+
+    if publish_fake_tags and not publish_dry_run:
+        session.error("Cannot specify --publish-fake-tags without --publish-dry-run")
+
+    parsed_tags: list[TagInfo] = []
+    for tag in publish_fake_tags or get_current_tags(session):
+        tag_info = parse_tag(tag)
+        if tag_info is None:
+            session.error(
+                f"Invalid tag {tag} - must be of the form <package>-<language>-<version>"
+            )
+        parsed_tags.append(tag_info)  # type: ignore
+
+    publishers: list[tuple[Path, Callable[[bool], None]]] = []
+    for tag, tag_pkg, tag_ver in parsed_tags:
+        if tag_pkg not in packages:
+            session.error(f"Tag {tag} references package {tag_pkg} that does not exist")
+
+        pkg_path, pkg_lang, pkg_ver = packages[tag_pkg]
+        if pkg_ver != tag_ver:
+            session.error(
+                f"Tag {tag} references version {tag_ver} of package {tag_pkg}, "
+                f"but the current version is {pkg_ver}"
+            )
+
+        session.chdir(pkg_path)
+        session.log(f"Preparing {tag_pkg} for release...")
+        publishers.append((pkg_path, release_prep[pkg_lang](session)))
+
+    for pkg_path, publish in publishers:
+        session.log(f"Publishing {pkg_path}...")
+        session.chdir(pkg_path)
+        publish(publish_dry_run)
+
+
+# --- Utilities ------------------------------------------------------------------------
+
+
+def install_requirements_file(session: Session, name: str) -> None:
+    file_path = ROOT_DIR / "requirements" / (name + ".txt")
+    assert file_path.exists(), f"requirements file {file_path} does not exist"
+    session.install("-r", str(file_path))
+
+
+def install_reactpy_dev(session: Session, extras: str = "all") -> None:
+    if "--no-install" not in session.posargs:
+        session.install("-e", f".[{extras}]")
+    else:
+        session.posargs.remove("--no-install")
+
+
+def get_reactpy_script_env() -> dict[str, str]:
+    return {
+        "PYTHONPATH": os.getcwd(),
+        "REACTPY_DEBUG_MODE": os.environ.get("REACTPY_DEBUG_MODE", "1"),
+        "REACTPY_TESTING_DEFAULT_TIMEOUT": os.environ.get(
+            "REACTPY_TESTING_DEFAULT_TIMEOUT", "6.0"
+        ),
+        "REACTPY_CHECK_VDOM_SPEC": os.environ.get("REACTPY_CHECK_VDOM_SPEC", "0"),
+    }
+
+
+def prepare_javascript_release(session: Session) -> Callable[[bool], None]:
+    node_auth_token = session.env.get("NODE_AUTH_TOKEN")
+    if node_auth_token is None:
+        session.error("NODE_AUTH_TOKEN environment variable must be set")
+
+    # TODO: Make this `ci` instead of `install` somehow. By default `npm install` at
+    # workspace root does not generate a lockfile which is required by `npm ci`.
+    session.run("npm", "install", external=True)
+
+    def publish(dry_run: bool) -> None:
+        if dry_run:
+            session.run("npm", "pack", "--dry-run", external=True)
+            return
+        session.run(
+            "npm",
+            "publish",
+            "--access",
+            "public",
+            external=True,
+            env={"NODE_AUTH_TOKEN": node_auth_token},
+        )
+
+    return publish
+
+
+def prepare_python_release(session: Session) -> Callable[[bool], None]:
+    twine_username = session.env.get("PYPI_USERNAME")
+    twine_password = session.env.get("PYPI_PASSWORD")
+
+    if not (twine_password and twine_username):
+        session.error(
+            "PYPI_USERNAME and PYPI_PASSWORD environment variables must be set"
+        )
+
+    for build_dir_name in ["build", "dist"]:
+        build_dir_path = Path.cwd() / build_dir_name
+        if build_dir_path.exists():
+            rmtree(str(build_dir_path))
+
+    install_requirements_file(session, "build-pkg")
+    session.run("python", "-m", "build", "--sdist", "--wheel", "--outdir", "dist", ".")
+
+    def publish(dry_run: bool):
+        if dry_run:
+            session.run("twine", "check", "dist/*")
+            return
+
+        session.run(
+            "twine",
+            "upload",
+            "dist/*",
+            env={"TWINE_USERNAME": twine_username, "TWINE_PASSWORD": twine_password},
+        )
+
+    return publish
+
+
+def get_packages(session: Session) -> dict[str, PackageInfo]:
+    packages: dict[str, PackageInfo] = {
+        "reactpy": PackageInfo(ROOT_DIR, "py", get_reactpy_package_version(session))
+    }
+
+    # collect javascript packages
+    js_package_paths: list[Path] = []
+    for maybed_pkg in (CLIENT_DIR / "packages").glob("*"):
+        if not (maybed_pkg / "package.json").exists():
+            for nmaybe_namespaced_pkg in maybed_pkg.glob("*"):
+                if (nmaybe_namespaced_pkg / "package.json").exists():
+                    js_package_paths.append(nmaybe_namespaced_pkg)
+        else:
+            js_package_paths.append(maybed_pkg)
+
+    # get javascript package info
+    for pkg in js_package_paths:
+        pkg_json_file = pkg / "package.json"  # we already know this exists
+
+        pkg_json = json.loads(pkg_json_file.read_text())
+
+        pkg_name = pkg_json.get("name")
+        pkg_version = pkg_json.get("version")
+
+        if pkg_version is None or pkg_name is None:
+            session.log(f"Skipping - {pkg_name} has no name/version in package.json")
+            continue
+
+        if pkg_name in packages:
+            session.error(f"Duplicate package name {pkg_name}")
+
+        packages[pkg_name] = PackageInfo(pkg, "js", pkg_version)
+
+    return packages
+
+
+class PackageInfo(NamedTuple):
+    path: Path
+    language: LanguageName
+    version: str
+
+
+def get_current_tags(session: Session) -> list[str]:
+    """Get tags for the current commit"""
+    # check if unstaged changes
     try:
         session.run(
             "git",
@@ -250,86 +474,63 @@ def tag(session: Session, version: str = "") -> None:
     except Exception:
         session.error("Cannot create a tag - there are uncommited changes")
 
-    if not version:
-        session.error("No version tag given")
-    new_version = version
+    tags_per_commit: dict[str, list[str]] = {}
+    for commit, tag in map(
+        str.split,
+        cast(
+            str,
+            session.run(
+                "git",
+                "for-each-ref",
+                "--format",
+                r"%(objectname) %(refname:short)",
+                "refs/tags",
+                silent=True,
+                external=True,
+            ),
+        ).splitlines(),
+    ):
+        tags_per_commit.setdefault(commit, []).append(tag)
 
-    install_requirements_file(session, "make-release")
+    current_commit = cast(
+        str, session.run("git", "rev-parse", "HEAD", silent=True, external=True)
+    ).strip()
+    tags = tags_per_commit.get(current_commit, [])
 
-    # check that version is valid semver
-    session.run("pysemver", "check", new_version)
+    if not tags:
+        session.error("No tags found for current commit")
 
-    old_version = get_version()
-    session.log(f"Old version: {old_version}")
-    session.log(f"New version: {new_version}")
-    set_version(new_version)
+    session.log(f"Found tags: {tags}")
 
-    session.run("python", "scripts/update_versions.py")
-
-    # trigger npm install to update package-lock.json
-    session.install("-e", ".")
-
-    version = get_version()
-    install_requirements_file(session, "make-release")
-    session.run("pysemver", "check", version)
-
-    changelog_file = ROOT / "docs" / "source" / "about" / "changelog.rst"
-    for line in changelog_file.read_text().splitlines():
-        if line == f"v{version}":
-            session.log(f"Found changelog section for version {version}")
-            break
-    else:
-        session.error(
-            f"Something went wrong - could not find a title section for {version}"
-        )
-
-    if session.interactive:
-        response = input("Confirm (yes/no): ").lower()
-        if response != "yes":
-            session.error("Did not create tag")
-
-    # stage, commit, tag, and push version bump
-    session.run("git", "add", "--all", external=True)
-    session.run("git", "commit", "-m", f"version {new_version}", external=True)
-    session.run("git", "tag", version, external=True)
-    session.run("git", "push", "origin", "main", "--tags", external=True)
+    return tags
 
 
-@group.session
-def changes_since_release(session: Session) -> None:
-    """Output the latest changes since the last release"""
-    session.install("requests", "python-dateutil")
-    session.run("python", "scripts/changes_since_release.py", *session.posargs)
+def parse_tag(tag: str) -> TagInfo | None:
+    match = TAG_PATTERN.match(tag)
+    if not match:
+        return None
+    return TagInfo(tag, match["name"], match["version"])
 
 
-def install_requirements_file(session: Session, name: str) -> None:
-    file_path = ROOT / "requirements" / (name + ".txt")
-    assert file_path.exists(), f"requirements file {file_path} does not exist"
-    session.install("-r", str(file_path))
+class TagInfo(NamedTuple):
+    tag: str
+    package: str
+    version: str
 
 
-def install_reactpy_dev(session: Session, extras: str = "all") -> None:
-    session.run("pip", "--version")
-    if "--no-install" not in session.posargs:
-        session.install("-e", f".[{extras}]")
-    else:
-        session.posargs.remove("--no-install")
-
-
-def get_version() -> str:
-    return (ROOT / "VERSION").read_text().strip()
-
-
-def set_version(new: str) -> None:
-    (ROOT / "VERSION").write_text(new.strip() + "\n")
-
-
-def get_reactpy_script_env() -> dict[str, str]:
-    return {
-        "PYTHONPATH": os.getcwd(),
-        "REACTPY_DEBUG_MODE": os.environ.get("REACTPY_DEBUG_MODE", "1"),
-        "REACTPY_TESTING_DEFAULT_TIMEOUT": os.environ.get(
-            "REACTPY_TESTING_DEFAULT_TIMEOUT", "6.0"
-        ),
-        "REACTPY_CHECK_VDOM_SPEC": os.environ.get("REACTPY_CHECK_VDOM_SPEC", "0"),
-    }
+def get_reactpy_package_version(session: Session) -> str:  # type: ignore[return]
+    pkg_root_init_file = REACTPY_DIR / "__init__.py"
+    for line in pkg_root_init_file.read_text().split("\n"):
+        if line.startswith('__version__ = "') and line.endswith('"  # DO NOT MODIFY'):
+            return (
+                line
+                # get assignment value
+                .split("=", 1)[1]
+                # remove "DO NOT MODIFY" comment
+                .split("#", 1)[0]
+                # clean up leading/trailing space
+                .strip()
+                # remove the quotes
+                [1:-1]
+            )
+    session.error(f"No version found in {pkg_root_init_file}")
