@@ -140,23 +140,17 @@ followed the `earlier instructions <Development Environment>`_. The suite covers
 
 3. Client-side Javascript code with UVU_
 
-Before running the test suite you'll need to install the required browsers by running:
-
-.. code-block:: bash
-
-    playwright install
-
 Once you've installed them you'll be able to run:
 
 .. code-block:: bash
 
-    nox -s test
+    nox -s check-python-tests
 
 You can observe the browser as the tests are running by passing an extra flag:
 
 .. code-block:: bash
 
-    nox -s test -- --headed
+    nox -s check-python-tests -- --headed
 
 To see a full list of available commands (e.g. ``nox -s <your-command>``) run:
 
