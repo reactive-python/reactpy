@@ -23,7 +23,9 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Removed**
+
+- :pull:`943` - remove `module_from_template`
 
 
 v1.0.0
