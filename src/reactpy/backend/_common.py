@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Awaitable, Sequence, cast
 
-from asgiref.typing import ASGIApplication
 import uvicorn
+from asgiref.typing import ASGIApplication
 
 from reactpy import __file__ as _reactpy_file_path
 from reactpy import html
@@ -50,6 +50,9 @@ async def serve_development_asgi(
     try:
         await asyncio.gather(*coros)
     finally:
+        # Since we aren't using the uvicorn's `run()` API, we can't guarantee uvicorn's
+        # order of operations. So we need to make sure `shutdown()` always has an initialized
+        # list of `self.servers` to use.
         if not hasattr(server, "servers"):  # pragma: no cover
             server.servers = []
         await asyncio.wait_for(server.shutdown(), timeout=3)
@@ -69,7 +72,7 @@ def safe_client_build_dir_path(path: str) -> Path:
     )
 
 
-def safe_web_modules_dir_path(path: str) -> Path:
+def safe_web_modules_dir_path(path: str) -> Path:  # pragma: no cover
     """Prevent path traversal out of :data:`reactpy.config.REACTPY_WEB_MODULES_DIR`"""
     return traversal_safe_path(REACTPY_WEB_MODULES_DIR.current, *path.split("/"))
 

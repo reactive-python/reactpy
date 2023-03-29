@@ -82,8 +82,8 @@ def use_websocket() -> WebSocketConnection:
 def use_connection() -> Connection[_SanicCarrier]:
     """Get the current :class:`Connection`"""
     conn = _use_connection()
-    if not isinstance(conn.carrier, _SanicCarrier):
-        raise TypeError(  # pragma: no cover
+    if not isinstance(conn.carrier, _SanicCarrier):  # pragma: no cover
+        raise TypeError(
             f"Connection has unexpected carrier {conn.carrier}. "
             "Are you running with a Sanic server?"
         )

@@ -129,8 +129,8 @@ def use_request() -> Request:
 def use_connection() -> Connection[_FlaskCarrier]:
     """Get the current :class:`Connection`"""
     conn = _use_connection()
-    if not isinstance(conn.carrier, _FlaskCarrier):
-        raise TypeError(  # pragma: no cover
+    if not isinstance(conn.carrier, _FlaskCarrier):  # pragma: no cover
+        raise TypeError(
             f"Connection has unexpected carrier {conn.carrier}. "
             "Are you running with a Flask server?"
         )
