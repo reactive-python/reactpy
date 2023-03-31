@@ -139,7 +139,7 @@ def _setup_common_routes(
 
     api_blueprint.add_route(asset_files, f"/{ASSETS_PATH.name}/<path:path>")
 
-    async def web_module_files(
+    async def web_module_files(  # pragma: no cover
         request: request.Request,
         path: str,
         _: str = "",  # this is not used

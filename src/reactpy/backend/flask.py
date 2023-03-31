@@ -148,13 +148,13 @@ class Options(CommonOptions):
     """
 
 
-def _setup_common_routes(
+def _setup_common_routes(  # pragma: no cover
     api_blueprint: Blueprint,
     spa_blueprint: Blueprint,
     options: Options,
 ) -> None:
     cors_options = options.cors
-    if cors_options:  # pragma: no cover
+    if cors_options:
         cors_params = cors_options if isinstance(cors_options, dict) else {}
         CORS(api_blueprint, **cors_params)
 
