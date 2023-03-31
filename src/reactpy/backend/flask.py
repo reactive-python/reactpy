@@ -148,13 +148,13 @@ class Options(CommonOptions):
     """
 
 
-def _setup_common_routes(  # pragma: no cover
+def _setup_common_routes(
     api_blueprint: Blueprint,
     spa_blueprint: Blueprint,
     options: Options,
 ) -> None:
     cors_options = options.cors
-    if cors_options:
+    if cors_options:  # pragma: no cover
         cors_params = cors_options if isinstance(cors_options, dict) else {}
         CORS(api_blueprint, **cors_params)
 
@@ -163,7 +163,7 @@ def _setup_common_routes(  # pragma: no cover
         return send_file(safe_client_build_dir_path(f"assets/{path}"))
 
     @api_blueprint.route(f"/{MODULES_PATH.name}/<path:path>")
-    def send_modules_dir(path: str = "") -> Any:
+    def send_modules_dir(path: str = "") -> Any:  # pragma: no cover
         return send_file(safe_web_modules_dir_path(path))
 
     index_html = read_client_index_html(options)
