@@ -162,12 +162,12 @@ def _setup_single_view_dispatcher_route(
         request: request.Request, socket: WebSocketConnection, path: str = ""
     ) -> None:
         app = request.app
+        scope: MutableMapping[str, Any] = {}
         try:
             asgi_app = app._asgi_app
             scope = asgi_app.transport.scope
         except AttributeError:  # pragma: no cover
             logger.warning("No scope. Sanic may not be running with an ASGI server")
-            scope: MutableMapping[str, Any] = {}
 
         send, recv = _make_send_recv_callbacks(socket)
         await serve_layout(
