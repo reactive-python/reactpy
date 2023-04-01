@@ -164,11 +164,10 @@ def _setup_single_view_dispatcher_route(
         app = request.app
         try:
             asgi_app = app._asgi_app
+            scope = asgi_app.transport.scope
         except AttributeError:  # pragma: no cover
             logger.warning("No scope. Sanic may not be running with an ASGI server")
             scope: MutableMapping[str, Any] = {}
-        else:
-            scope = asgi_app.transport.scope
 
         send, recv = _make_send_recv_callbacks(socket)
         await serve_layout(
