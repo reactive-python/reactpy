@@ -8,10 +8,13 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "jsx": "react",
-    "lib": ["DOM", "DOM.Iterable", "esnext"],
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "esnext"
+    ],
     "module": "esnext",
     "moduleResolution": "node",
-    "noEmit": false,
     "resolveJsonModule": true,
     "skipLibCheck": false,
     "strict": true,

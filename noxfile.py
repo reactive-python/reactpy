@@ -363,6 +363,7 @@ def prepare_javascript_release(
         session.error("NODE_AUTH_TOKEN environment variable must be set")
 
     session.run("npm", "ci", external=True)
+    session.run("npm", "run", "build", external=True)
 
     def publish(dry_run: bool) -> None:
         if dry_run:
