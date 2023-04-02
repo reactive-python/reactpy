@@ -6,7 +6,7 @@
   "name": "event-to-object",
   "description": "Convert native events to JSON serializable objects",
   "type": "module",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "dependencies": {
     "json-pointer": "^0.6.2"
   },
