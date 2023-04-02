@@ -4,11 +4,10 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "name": "event-to-object",
-  "description": "A client for ReactPy implemented in React",
+  "description": "Convert native events to JSON serializable objects",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "dependencies": {
-    "event-to-object": "file:packages/event-to-object",
     "json-pointer": "^0.6.2"
   },
   "devDependencies": {
