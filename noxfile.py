@@ -21,7 +21,9 @@ if TYPE_CHECKING:
     from typing import Literal, Protocol, TypeAlias
 
     class ReleasePrepFunc(Protocol):
-        def __call__(self, session: Session) -> Callable[[bool], None]:
+        def __call__(
+            self, session: Session, package: PackageInfo
+        ) -> Callable[[bool], None]:
             ...
 
 
@@ -309,7 +311,7 @@ def publish(
         if tag_pkg not in packages:
             session.error(f"Tag {tag} references package {tag_pkg} that does not exist")
 
-        pkg_path, pkg_lang, pkg_ver = packages[tag_pkg]
+        pkg_name, pkg_path, pkg_lang, pkg_ver = pkg_info = packages[tag_pkg]
         if pkg_ver != tag_ver:
             session.error(
                 f"Tag {tag} references version {tag_ver} of package {tag_pkg}, "
@@ -318,7 +320,7 @@ def publish(
 
         session.chdir(pkg_path)
         session.log(f"Preparing {tag_pkg} for release...")
-        publishers.append((pkg_path, release_prep[pkg_lang](session)))
+        publishers.append((pkg_path, release_prep[pkg_lang](session, pkg_info)))
 
     for pkg_path, publish in publishers:
         session.log(f"Publishing {pkg_path}...")
@@ -353,21 +355,30 @@ def get_reactpy_script_env() -> dict[str, str]:
     }
 
 
-def prepare_javascript_release(session: Session) -> Callable[[bool], None]:
+def prepare_javascript_release(
+    session: Session, package: PackageInfo
+) -> Callable[[bool], None]:
     node_auth_token = session.env.get("NODE_AUTH_TOKEN")
     if node_auth_token is None:
         session.error("NODE_AUTH_TOKEN environment variable must be set")
 
-    # TODO: Make this `ci` instead of `install` somehow. By default `npm install` at
-    # workspace root does not generate a lockfile which is required by `npm ci`.
-    session.run("npm", "install", external=True)
+    session.run("npm", "ci", external=True)
 
     def publish(dry_run: bool) -> None:
         if dry_run:
-            session.run("npm", "pack", "--dry-run", external=True)
+            session.run(
+                "npm",
+                "--workspace",
+                package.name,
+                "pack",
+                "--dry-run",
+                external=True,
+            )
             return
         session.run(
             "npm",
+            "--workspace",
+            package.name,
             "publish",
             "--access",
             "public",
@@ -378,7 +389,9 @@ def prepare_javascript_release(session: Session) -> Callable[[bool], None]:
     return publish
 
 
-def prepare_python_release(session: Session) -> Callable[[bool], None]:
+def prepare_python_release(
+    session: Session, package: PackageInfo
+) -> Callable[[bool], None]:
     twine_username = session.env.get("PYPI_USERNAME")
     twine_password = session.env.get("PYPI_PASSWORD")
 
@@ -412,7 +425,9 @@ def prepare_python_release(session: Session) -> Callable[[bool], None]:
 
 def get_packages(session: Session) -> dict[str, PackageInfo]:
     packages: dict[str, PackageInfo] = {
-        "reactpy": PackageInfo(ROOT_DIR, "py", get_reactpy_package_version(session))
+        "reactpy": PackageInfo(
+            "reactpy", ROOT_DIR, "py", get_reactpy_package_version(session)
+        )
     }
 
     # collect javascript packages
@@ -441,12 +456,13 @@ def get_packages(session: Session) -> dict[str, PackageInfo]:
         if pkg_name in packages:
             session.error(f"Duplicate package name {pkg_name}")
 
-        packages[pkg_name] = PackageInfo(pkg, "js", pkg_version)
+        packages[pkg_name] = PackageInfo(pkg_name, CLIENT_DIR, "js", pkg_version)
 
     return packages
 
 
 class PackageInfo(NamedTuple):
+    name: str
     path: Path
     language: LanguageName
     version: str
