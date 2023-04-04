@@ -77,6 +77,21 @@ async def test_module_from_url(browser):
             await display.page.wait_for_selector("#my-button")
 
 
+def test_module_from_template_where_template_does_not_exist():
+    with pytest.raises(ValueError, match="No template for 'does-not-exist.js'"):
+        reactpy.web.module_from_template("does-not-exist", "something.js")
+
+
+async def test_module_from_template(display: DisplayFixture):
+    victory = reactpy.web.module_from_template("react@18.2.0", "victory-bar@35.4.0")
+
+    assert "react@18.2.0" in victory.file.read_text()
+    VictoryBar = reactpy.web.export(victory, "VictoryBar")
+    await display.show(VictoryBar)
+
+    await display.page.wait_for_selector(".VictoryContainer")
+
+
 async def test_module_from_file(display: DisplayFixture):
     SimpleButton = reactpy.web.export(
         reactpy.web.module_from_file(
