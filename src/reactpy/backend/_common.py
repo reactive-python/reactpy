@@ -72,7 +72,7 @@ def safe_client_build_dir_path(path: str) -> Path:
     )
 
 
-def safe_web_modules_dir_path(path: str) -> Path:  # pragma: no cover
+def safe_web_modules_dir_path(path: str) -> Path:
     """Prevent path traversal out of :data:`reactpy.config.REACTPY_WEB_MODULES_DIR`"""
     return traversal_safe_path(REACTPY_WEB_MODULES_DIR.current, *path.split("/"))
 

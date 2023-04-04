@@ -143,7 +143,7 @@ def _setup_common_routes(
         request: request.Request,
         path: str,
         _: str = "",  # this is not used
-    ) -> response.HTTPResponse:  # pragma: no cover
+    ) -> response.HTTPResponse:
         path = urllib_parse.unquote(path)
         return await response.file(
             safe_web_modules_dir_path(path),

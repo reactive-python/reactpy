@@ -163,7 +163,7 @@ def _setup_common_routes(
         return send_file(safe_client_build_dir_path(f"assets/{path}"))
 
     @api_blueprint.route(f"/{MODULES_PATH.name}/<path:path>")
-    def send_modules_dir(path: str = "") -> Any:  # pragma: no cover
+    def send_modules_dir(path: str = "") -> Any:
         return send_file(safe_web_modules_dir_path(path))
 
     index_html = read_client_index_html(options)
