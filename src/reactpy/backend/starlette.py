@@ -78,8 +78,8 @@ def use_websocket() -> WebSocket:
 
 def use_connection() -> Connection[WebSocket]:
     conn = _use_connection()
-    if not isinstance(conn.carrier, WebSocket):
-        raise TypeError(  # pragma: no cover
+    if not isinstance(conn.carrier, WebSocket):  # pragma: no cover
+        raise TypeError(
             f"Connection has unexpected carrier {conn.carrier}. "
             "Are you running with a Flask server?"
         )

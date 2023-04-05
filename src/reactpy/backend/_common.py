@@ -6,9 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Awaitable, Sequence, cast
 
+import uvicorn
 from asgiref.typing import ASGIApplication
-from uvicorn.config import Config as UvicornConfig
-from uvicorn.server import Server as UvicornServer
 
 from reactpy import __file__ as _reactpy_file_path
 from reactpy import html
@@ -31,9 +30,9 @@ async def serve_development_asgi(
     port: int,
     started: asyncio.Event | None,
 ) -> None:
-    """Run a development server for starlette"""
-    server = UvicornServer(
-        UvicornConfig(
+    """Run a development server for an ASGI application"""
+    server = uvicorn.Server(
+        uvicorn.Config(
             app,
             host=host,
             port=port,
@@ -41,19 +40,25 @@ async def serve_development_asgi(
             reload=True,
         )
     )
-
+    server.config.setup_event_loop()
     coros: list[Awaitable[Any]] = [server.serve()]
 
+    # If a started event is provided, then use it signal based on `server.started`
     if started:
         coros.append(_check_if_started(server, started))
 
     try:
         await asyncio.gather(*coros)
     finally:
+        # Since we aren't using the uvicorn's `run()` API, we can't guarantee uvicorn's
+        # order of operations. So we need to make sure `shutdown()` always has an initialized
+        # list of `self.servers` to use.
+        if not hasattr(server, "servers"):  # pragma: no cover
+            server.servers = []
         await asyncio.wait_for(server.shutdown(), timeout=3)
 
 
-async def _check_if_started(server: UvicornServer, started: asyncio.Event) -> None:
+async def _check_if_started(server: uvicorn.Server, started: asyncio.Event) -> None:
     while not server.started:
         await asyncio.sleep(0.2)
     started.set()

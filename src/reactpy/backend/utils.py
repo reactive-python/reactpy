@@ -85,10 +85,8 @@ def all_implementations() -> Iterator[BackendImplementation[Any]]:
             logger.debug(f"Failed to import {name!r}", exc_info=True)
             continue
 
-        if not isinstance(module, BackendImplementation):
-            raise TypeError(  # pragma: no cover
-                f"{module.__name__!r} is an invalid implementation"
-            )
+        if not isinstance(module, BackendImplementation):  # pragma: no cover
+            raise TypeError(f"{module.__name__!r} is an invalid implementation")
 
         yield module
 

@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, MutableMapping, Tuple
+from typing import Any, Tuple
 from urllib import parse as urllib_parse
 from uuid import uuid4
 
@@ -82,8 +82,8 @@ def use_websocket() -> WebSocketConnection:
 def use_connection() -> Connection[_SanicCarrier]:
     """Get the current :class:`Connection`"""
     conn = _use_connection()
-    if not isinstance(conn.carrier, _SanicCarrier):
-        raise TypeError(  # pragma: no cover
+    if not isinstance(conn.carrier, _SanicCarrier):  # pragma: no cover
+        raise TypeError(
             f"Connection has unexpected carrier {conn.carrier}. "
             "Are you running with a Sanic server?"
         )
@@ -162,11 +162,9 @@ def _setup_single_view_dispatcher_route(
         request: request.Request, socket: WebSocketConnection, path: str = ""
     ) -> None:
         asgi_app = getattr(request.app, "_asgi_app", None)
-        if asgi_app is None:  # pragma: no cover
+        scope = asgi_app.transport.scope if asgi_app else {}
+        if not scope:  # pragma: no cover
             logger.warning("No scope. Sanic may not be running with an ASGI server")
-            scope: MutableMapping[str, Any] = {}
-        else:
-            scope = asgi_app.transport.scope
 
         send, recv = _make_send_recv_callbacks(socket)
         await serve_layout(
