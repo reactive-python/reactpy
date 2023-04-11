@@ -21,17 +21,17 @@ export interface ReactPyClient {
    *
    * @param message The message to send. Messages must have a `type` property.
    */
-  sendMessage: (message: any) => void;
+  sendMessage(message: any): void;
 
   /**
    * Load a module from the server.
    * @param moduleName The name of the module to load.
    * @returns A promise that resolves to the module.
    */
-  loadModule: (moduleName: string) => Promise<ReactPyModule>;
+  loadModule(moduleName: string): Promise<ReactPyModule>;
 }
 
-export class BaseReactPyClient implements Partial<ReactPyClient> {
+export abstract class BaseReactPyClient implements ReactPyClient {
   private readonly handlers: { [key: string]: ((message: any) => void)[] } = {};
   protected readonly ready: Promise<void>;
   private resolveReady: (value: undefined) => void;
@@ -48,6 +48,9 @@ export class BaseReactPyClient implements Partial<ReactPyClient> {
       this.handlers[type] = this.handlers[type].filter((h) => h !== handler);
     };
   }
+
+  abstract sendMessage(message: any): void;
+  abstract loadModule(moduleName: string): Promise<ReactPyModule>;
 
   /**
    * Handle an incoming message.

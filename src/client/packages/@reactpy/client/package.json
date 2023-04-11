@@ -6,7 +6,7 @@
   "license": "MIT",
   "name": "@reactpy/client",
   "type": "module",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "dependencies": {
     "event-to-object": "^0.1.2",
     "json-pointer": "^0.6.2"
