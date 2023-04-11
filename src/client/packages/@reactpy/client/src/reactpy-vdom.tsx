@@ -155,8 +155,8 @@ function createEventHandler(
 ): [string, () => void] {
   return [
     name,
-    function () {
-      const data = Array.from(arguments).map((value) => {
+    function (...args: any[]) {
+      const data = Array.from(args).map((value) => {
         if (!(typeof value === "object" && value.nativeEvent)) {
           return value;
         }

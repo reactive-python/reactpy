@@ -3,7 +3,6 @@ import { Event } from "happy-dom";
 // @ts-ignore
 import lodash from "lodash";
 import convert from "../../src/index";
-import { mockElementObject } from "./mock";
 
 export function checkEventConversion(
   givenEvent: Event,

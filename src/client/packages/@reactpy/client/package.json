@@ -6,7 +6,7 @@
   "license": "MIT",
   "name": "@reactpy/client",
   "type": "module",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "dependencies": {
     "event-to-object": "^0.1.2",
     "json-pointer": "^0.6.2"
@@ -15,7 +15,6 @@
     "@types/json-pointer": "^1.0.31",
     "@types/react": "^17.0",
     "@types/react-dom": "^17.0",
-    "prettier": "^3.0.0-alpha.6",
     "typescript": "^4.9.5"
   },
   "peerDependencies": {
@@ -28,9 +27,7 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "format": "prettier --write .",
     "test": "npm run check:tests",
-    "check:format": "prettier --check .",
     "check:tests": "echo 'no tests'",
     "check:types": "tsc --noEmit"
   }
