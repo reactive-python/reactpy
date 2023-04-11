@@ -11,7 +11,6 @@ import React, {
 } from "react";
 // @ts-ignore
 import { set as setJsonPointer } from "json-pointer";
-import { LayoutUpdateMessage } from "./messages";
 import {
   ReactPyVdom,
   ReactPyComponent,
@@ -28,21 +27,18 @@ export function Layout(props: { client: ReactPyClient }): JSX.Element {
   const currentModel: ReactPyVdom = useState({ tagName: "" })[0];
   const forceUpdate = useForceUpdate();
 
-  useEffect(() => {
-    props.client.onMessage<LayoutUpdateMessage>(
-      "layout-update",
-      ({ path, model }) => {
+  useEffect(
+    () =>
+      props.client.onMessage("layout-update", ({ path, model }) => {
         if (path === "") {
           Object.assign(currentModel, model);
         } else {
           setJsonPointer(currentModel, path, model);
         }
         forceUpdate();
-      },
-    );
-    props.client.start();
-    return () => props.client.stop();
-  }, [currentModel, props.client]);
+      }),
+    [currentModel, props.client],
+  );
 
   return (
     <ClientContext.Provider value={props.client}>
@@ -140,7 +136,7 @@ function ScriptElement({ model }: { model: ReactPyVdom }) {
       }
       ref.current.appendChild(scriptElement);
     } else if (scriptContent) {
-      let scriptResult = eval(scriptContent);
+      const scriptResult = eval(scriptContent);
       if (typeof scriptResult == "function") {
         return scriptResult();
       }

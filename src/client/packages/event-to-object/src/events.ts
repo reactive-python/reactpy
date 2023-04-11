@@ -256,8 +256,3 @@ export interface FileObject {
   size: number;
   type: string;
 }
-
-type NONE = 0;
-type CAPTURING_PHASE = 1;
-type AT_TARGET = 2;
-type BUBBLING_PHASE = 3;
