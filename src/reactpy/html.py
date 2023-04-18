@@ -1,4 +1,7 @@
 """
+
+**Disclaimer** : Do not use raw user inputs from untrusted data sources in scripts. Doing so can lead to security vulnerabilities such as cross-site scripting (XSS) attacks.
+
 **Fragment**
 
 - :func:`_`
