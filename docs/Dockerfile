@@ -15,17 +15,12 @@ RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install --upgrade pip
 
-
-# ------------
-
-
 # Install ReactPy
 # ------------
 COPY requirements ./requirements
-RUN pip install -r requirements/build-docs.txt
 
 # Install Dependencies
-RUN pip install --no-cache-dir -r requirements/requirements.txt
+RUN pip install --no-cache-dir -r requirements/docs-container-env.txt
 
 COPY src ./src
 COPY scripts ./scripts
