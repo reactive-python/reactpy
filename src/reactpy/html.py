@@ -1,8 +1,5 @@
 """
 
-.. warning:: Do not use raw user inputs from untrusted data sources in scripts. :newline:
-    Doing so can lead to security vulnerabilities such as cross-site scripting (XSS) attacks.
-
 **Fragment**
 
 - :func:`_`
@@ -414,6 +411,9 @@ def _script(
     event_handlers: EventHandlerDict,
 ) -> VdomDict:
     """Create a new `<{script}> <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script>`__ element.
+
+    .. warning:: Do not use raw user inputs from untrusted data sources in scripts. :newline:
+    Doing so can lead to security vulnerabilities such as cross-site scripting (XSS) attacks.
 
     This behaves slightly differently than a normal script element in that it may be run
     multiple times if its key changes (depending on specific browser behaviors). If no
