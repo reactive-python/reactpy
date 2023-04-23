@@ -196,7 +196,7 @@ class ModelStreamHandler(WebSocketHandler):
                     ConnectionContext(
                         self._component_constructor(),
                         value=Connection(
-                            scope=WSGIContainer.environ(self.request),
+                            scope=_FAKE_WSGI_CONTAINER.environ(self.request),
                             location=Location(
                                 pathname=f"/{path[len(self._url_prefix):]}",
                                 search=(
@@ -222,3 +222,10 @@ class ModelStreamHandler(WebSocketHandler):
     def on_close(self) -> None:
         if not self._dispatch_future.done():
             self._dispatch_future.cancel()
+
+
+# The interface for WSGIContainer.environ changed in Tornado version 6.3 from
+# a staticmethod to an instance method. Since we're not that concerned with
+# the details of the WSGI app itself, we can just use a fake one.
+# see: https://github.com/tornadoweb/tornado/pull/3231#issuecomment-1518957578
+_FAKE_WSGI_CONTAINER = WSGIContainer(lambda *a, **kw: iter([]))
