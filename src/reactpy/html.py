@@ -410,11 +410,49 @@ def _script(
     key: Key | None,
     event_handlers: EventHandlerDict,
 ) -> VdomDict:
-    """Create a new `<{script}> <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script>`__ element.
+    """Create a new `<script> <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script>`__ element.
 
-    .. warning:: Do not use raw user inputs from untrusted data sources in scripts. :newline:
-    Doing so can lead to security vulnerabilities such as cross-site scripting (XSS) attacks.
+    .. warning::
 
+        Do not use unsanitized data from untrusted sources anywhere in your script. Doing
+        so may allow for malicious code injection. Consider this **insecure** code:
+
+        .. code-block::
+
+            my_script = html.script(f"console.log('{user_bio}');")
+
+        A clever attacker could construct ``user_bio`` such that they could escape the
+        string and execute arbitrary code to perform cross-site scripting
+        (`XSS <https://en.wikipedia.org/wiki/Cross-site_scripting>`__`). For example,
+        what if ``user_bio`` were of the form:
+
+        .. code-block:: text
+
+            '); attackerCodeHere(); ('
+
+        This would allow the following Javascript code to be executed client-side:
+
+        .. code-block:: js
+
+            console.log(''); attackerCodeHere(); ('');
+
+        One way to avoid this could be to escape ``user_bio`` so as to prevent the
+        injection of Javascript code. For example:
+
+        .. code-block:: python
+
+            import json
+            my_script = html.script(f"console.log({json.dumps(user_bio)});")
+
+        This would prevent the injection of Javascript code by escaping the ``user_bio``
+        string. In this case, the following client-side code would be executed instead:
+
+        .. code-block:: js
+
+            console.log("'); attackerCodeHere(); ('");
+
+        This is a very simple example, but it illustrates the point that you should
+        always be careful when using unsanitized data from untrusted sources.
     This behaves slightly differently than a normal script element in that it may be run
     multiple times if its key changes (depending on specific browser behaviors). If no
     key is given, the key is inferred to be the content of the script or, lastly its
