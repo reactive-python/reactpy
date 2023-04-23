@@ -414,8 +414,24 @@ def _script(
 
     .. warning::
 
-        Do not use unsanitized data from untrusted sources anywhere in your script. Doing
-        so may allow for malicious code injection. Consider this **insecure** code:
+        Be careful to sanitize data from untrusted sources before using it in a script.
+        See the "Notes" for more details
+
+    This behaves slightly differently than a normal script element in that it may be run
+    multiple times if its key changes (depending on specific browser behaviors). If no
+    key is given, the key is inferred to be the content of the script or, lastly its
+    'src' attribute if that is given.
+
+    If no attributes are given, the content of the script may evaluate to a function.
+    This function will be called when the script is initially created or when the
+    content of the script changes. The function may itself optionally return a teardown
+    function that is called when the script element is removed from the tree, or when
+    the script content changes.
+
+    Notes:
+        Do not use unsanitized data from untrusted sources anywhere in your script.
+        Doing so may allow for malicious code injection. Consider this **insecure**
+        code:
 
         .. code-block::
 
@@ -453,16 +469,6 @@ def _script(
 
         This is a very simple example, but it illustrates the point that you should
         always be careful when using unsanitized data from untrusted sources.
-    This behaves slightly differently than a normal script element in that it may be run
-    multiple times if its key changes (depending on specific browser behaviors). If no
-    key is given, the key is inferred to be the content of the script or, lastly its
-    'src' attribute if that is given.
-
-    If no attributes are given, the content of the script may evaluate to a function.
-    This function will be called when the script is initially created or when the
-    content of the script changes. The function may itself optionally return a teardown
-    function that is called when the script element is removed from the tree, or when
-    the script content changes.
     """
     model: VdomDict = {"tagName": "script"}
 
