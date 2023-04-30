@@ -55,7 +55,7 @@ per-file-ignores = [
 ]
 max-line-length = 88
 max-complexity = 20
-select = ["B", "C", "E", "F", "W", "T4", "B9", "N", "ROH"]
+select = ["B", "C", "E", "F", "W", "T4", "B9", "N", "RPY"]
 exclude = ["**/node_modules/*", ".eggs/*", ".tox/*"]
 # -- flake8-tidy-imports --
 ban-relative-imports = "true"

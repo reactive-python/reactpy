@@ -1,7 +1,7 @@
 black[jupyter]
 flake8
 flake8-pyproject
-flake8-idom-hooks >=0.5.0
+reactpy-flake8 >=0.7
 flake8-print
 flake8-tidy-imports
 isort >=5.7.0
