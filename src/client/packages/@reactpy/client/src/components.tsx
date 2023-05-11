@@ -161,12 +161,12 @@ function ImportedElement({ model }: { model: ReactPyVdom }) {
     if (!importSourceFallback) {
       return null;
     } else if (typeof importSourceFallback === "string") {
-      return <div>{importSourceFallback}</div>;
+      return <span>{importSourceFallback}</span>;
     } else {
       return <StandardElement model={importSourceFallback} />;
     }
   } else {
-    return <div ref={importSourceRef} />;
+    return <span ref={importSourceRef} />;
   }
 }
 
