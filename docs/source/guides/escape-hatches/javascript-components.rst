@@ -140,7 +140,7 @@ like `JSX <https://reactjs.org/docs/introducing-jsx.html>`__ and instead will us
 
 .. _Material UI: https://material-ui.com/
 .. _CDN: https://en.wikipedia.org/wiki/Content_delivery_network
-.. _template repository: https://github.com/reactive-python/reactpy-react-component-cookiecutter
+.. _template repository: https://github.com/reactive-python/reactpy-js-component-template
 .. _web module: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
 .. _Rollup: https://rollupjs.org/guide/en/
 .. _Webpack: https://webpack.js.org/
