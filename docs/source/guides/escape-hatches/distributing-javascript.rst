@@ -297,7 +297,7 @@ up and running as quickly as possible.
 .. _install NPM: https://www.npmjs.com/get-npm
 .. _CDN: https://en.wikipedia.org/wiki/Content_delivery_network
 .. _PyPI: https://pypi.org/
-.. _template repository: https://github.com/reactive-python/reactpy-react-component-cookiecutter
+.. _template repository: https://github.com/reactive-python/reactpy-js-component-template
 .. _web module: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
 .. _Rollup: https://rollupjs.org/guide/en/
 .. _Webpack: https://webpack.js.org/

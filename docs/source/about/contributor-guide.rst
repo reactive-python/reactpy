@@ -305,10 +305,10 @@ Other Core Repositories
 ReactPy depends on, or is used by several other core projects. For documentation on them
 you should refer to their respective documentation in the links below:
 
-- `reactpy-react-component-cookiecutter
-  <https://github.com/reactive-python/reactpy-react-component-cookiecutter>`__ - Template repo
+- `reactpy-js-component-template
+  <https://github.com/reactive-python/reactpy-js-component-template>`__ - Template repo
   for making :ref:`Custom Javascript Components`.
-- `flake8-reactpy-hooks <https://github.com/reactive-python/flake8-reactpy-hooks>`__ - Enforces the
+- `reactpy-flake8 <https://github.com/reactive-python/reactpy-flake8>`__ - Enforces the
   :ref:`Rules of Hooks`
 - `reactpy-jupyter <https://github.com/reactive-python/reactpy-jupyter>`__ - ReactPy integration for
   Jupyter
@@ -321,7 +321,6 @@ you should refer to their respective documentation in the links below:
 .. =====
 
 .. _Google Chrome: https://www.google.com/chrome/
-.. _ChromeDriver: https://chromedriver.chromium.org/downloads
 .. _Docker: https://docs.docker.com/get-docker/
 .. _Git: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 .. _Git Bash: https://gitforwindows.org/
