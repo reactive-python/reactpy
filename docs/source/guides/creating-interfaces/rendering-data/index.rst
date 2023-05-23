@@ -82,10 +82,6 @@ and then ordering the elements based on the ``priority``:
 
 .. testcode::
 
-    x = 1
-
-.. testcode::
-
     filter_by_priority = 1
     sort_by_priority = True
 
@@ -104,6 +100,11 @@ and then ordering the elements based on the ``priority``:
     ]
 
 We could then add this code to our ``DataList`` component:
+
+.. warning::
+
+    The code below produces a bunch of warnings! Be sure to tead the
+    :ref:`next section <Organizing Items With Keys>` to find out why.
 
 .. reactpy:: _examples/sorted_and_filtered_todo_list
 
@@ -135,12 +136,11 @@ structure even further to include a unique ID for each item in our todo list:
         {"id": 7, "text": "Read a book", "priority": 1},
     ]
 
-Then, as we're constructing our ``<li>`` elements we'll pass in a ``key`` argument to
-the element constructor:
+Then, as we're constructing our ``<li>`` elements we'll declare a ``key`` attribute:
 
 .. code-block::
 
-    list_item_elements = [html.li(t["text"], key=t["id"]) for t in tasks]
+    list_item_elements = [html.li({"key": t["id"]}, t["text"]) for t in tasks]
 
 This ``key`` tells ReactPy which ``<li>`` element corresponds to which item of data in our
 ``tasks`` list. This becomes important if the order or number of items in your list can

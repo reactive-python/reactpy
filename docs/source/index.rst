@@ -23,6 +23,7 @@ ReactPy
     :caption: Reference
 
     reference/browser-events
+    reference/html-attributes
     reference/hooks-api
     _auto/apis
     reference/javascript-api

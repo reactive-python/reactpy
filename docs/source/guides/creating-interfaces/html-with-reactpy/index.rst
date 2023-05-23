@@ -78,22 +78,20 @@ to specify a URL to its ``src`` and use some ``style`` to modify and position it
 
     <img
         src="https://picsum.photos/id/237/500/300"
+        class="img-fluid"
         style="width: 50%; margin-left: 25%;"
         alt="Billie Holiday"
         tabindex="0"
     />
 
-In ReactPy we add these attributes to elements using keyword arguments. There are two main
-notable differences though. First, all names in ReactPy use ``snake_case`` instead of
-dash-separated words. For example, ``tabindex`` and ``margin-left`` become ``tab_index``
-and ``margin_left`` respectively. Second, instead of specifying ``style`` using a
-string, we use a dictionary. Given this, you can rewrite the ``<img>`` element above as:
+In ReactPy we add these attributes to elements using a dictionary:
 
 .. testcode::
 
     html.img(
         {
             "src": "https://picsum.photos/id/237/500/300",
+            "class_name": "img-fluid",
             "style": {"width": "50%", "margin_left": "25%"},
             "alt": "Billie Holiday",
         }
@@ -104,10 +102,21 @@ string, we use a dictionary. Given this, you can rewrite the ``<img>`` element a
     <!-- no tabindex since that would ruin accesibility of the page -->
     <img
         src="https://picsum.photos/id/237/500/300"
+        class="img-fluid"
         style="width: 50%; margin-left: 25%;"
         alt="Billie Holiday"
     />
 
+There are some notable differences. First, all names in ReactPy use ``snake_case`` instead
+of dash-separated words. For example, ``tabindex`` and ``margin-left`` become
+``tab_index`` and ``margin_left`` respectively. Second, instead of using a string to
+specify the ``style`` attribute, we use a dictionary to describe the CSS properties we
+want to apply to an element. This is done to avoid having to escape quotes and other
+characters in the string. Finally, the ``class`` attribute is renamed to ``class_name``
+to avoid conflicting with the ``class`` keyword in Python.
+
+For full list of supported attributes and differences from HTML, see the
+:ref:`HTML Attributes` reference.
 
 ----------
 
