@@ -1,23 +1,26 @@
-<p align="center" id="reactpy">
-    <a href="#">
-        <img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-landscape.svg" alt="ReactPy Logo" style="min-width: 300px; width: 50%" />
-    </a>
-</p>
-<p align="center">
-    <em>Reactive user interfaces with pure Python</em>
-</p>
-    <p align="center">
+# <img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg" align="left" height="45"/> ReactPy
+
+<p>
     <a href="https://github.com/reactive-python/reactpy/actions">
-        <img src="https://github.com/reactive-python/reactpy/workflows/test/badge.svg" alt="Build Status">
+        <img src="https://github.com/reactive-python/reactpy/workflows/test/badge.svg?event=push">
     </a>
     <a href="https://pypi.org/project/reactpy/">
-        <img src="https://badge.fury.io/py/reactpy.svg" alt="Package version">
+        <img src="https://img.shields.io/pypi/v/reactpy.svg?label=PyPI">
+    </a>
+    <a href="https://github.com/reactive-python/reactpy/blob/main/LICENSE">
+        <img src="https://img.shields.io/badge/License-MIT-purple.svg">
+    </a>
+    <a href="https://reactpy.dev/">
+        <img src="https://img.shields.io/website?down_message=offline&label=Docs&logo=read-the-docs&logoColor=white&up_message=online&url=https%3A%2F%2Freactpy.dev%2Fdocs%2Findex.html">
+    </a>
+    <a href="https://discord.gg/uNb5P4hA9X">
+        <img src="https://img.shields.io/discord/1111078259854168116?label=Discord&logo=discord">
     </a>
 </p>
 
 ---
 
-[ReactPy](https://reactpy.dev/) is a library for building user interfaces in Python without Javascript. ReactPy interfaces are made from components which look and behave similarly to those found in [ReactJS](https://reactjs.org/). Designed with simplicity in mind, ReactPy can be used by those without web development experience while also being powerful enough to grow with your ambitions.
+[ReactPy](https://reactpy.dev/) is a library for building user interfaces in Python without Javascript. ReactPy interfaces are made from components that look and behave similar to those found in [ReactJS](https://reactjs.org/). Designed with simplicity in mind, ReactPy can be used by those without web development experience while also being powerful enough to grow with your ambitions.
 
 <table align="center">
     <thead>
@@ -38,7 +41,7 @@
         <td>
             <a href="https://github.com/reactive-python/reactpy-django">Django</a>,
             <a href="https://github.com/reactive-python/reactpy-jupyter">Jupyter</a>,
-            <a href="https://github.com/reactive-python/reactpy-dash">Plotly-Dash</a>
+            <a href="https://github.com/idom-team/idom-dash">Plotly-Dash</a>
         </td>
         </tr>
     </tbody>
@@ -52,18 +55,19 @@ To get a rough idea of how to write apps in ReactPy, take a look at this tiny _H
 from reactpy import component, html, run
 
 @component
-def HelloWorld():
+def hello_world():
     return html.h1("Hello, World!")
 
-run(HelloWorld)
+run(hello_world)
 ```
 
 # Resources
 
 Follow the links below to find out more about this project.
 
--   [Try it Now](https://mybinder.org/v2/gh/reactive-python/reactpy-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb) - check out ReactPy in a Jupyter Notebook.
--   [Documentation](https://reactpy.dev/) - learn how to install, run, and use ReactPy.
--   [Community Forum](https://github.com/reactive-python/reactpy/discussions) - ask questions, share ideas, and show off projects.
--   [Contributor Guide](https://reactpy.dev/docs/developing-reactpy/contributor-guide.html) - see how you can help develop this project.
--   [Code of Conduct](https://github.com/reactive-python/reactpy/blob/main/CODE_OF_CONDUCT.md) - standards for interacting with this community.
+-   [Try ReactPy (Jupyter Notebook)](https://mybinder.org/v2/gh/reactive-python/reactpy-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb)
+-   [Documentation](https://reactpy.dev/)
+-   [GitHub Discussions](https://github.com/reactive-python/reactpy/discussions)
+-   [Discord](https://discord.gg/uNb5P4hA9X)
+-   [Contributor Guide](https://reactpy.dev/docs/developing-reactpy/contributor-guide.html)
+-   [Code of Conduct](https://github.com/reactive-python/reactpy/blob/main/CODE_OF_CONDUCT.md)
