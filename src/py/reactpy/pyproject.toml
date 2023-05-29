@@ -104,7 +104,7 @@ style = [
   "ruff {args:.}",
   "black --check --diff {args:.}",
 ]
-fmt = [
+fix = [
   "black {args:.}",
   "ruff --fix {args:.}",
   "style",
