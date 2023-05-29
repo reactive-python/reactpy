@@ -1,0 +1,211 @@
+[build-system]
+requires = ["hatchling", "hatch-build-scripts>=0.0.2"]
+build-backend = "hatchling.build"
+
+# --- Project --------------------------------------------------------------------------
+
+[project]
+name = "reactpy"
+dynamic = ["version"]
+description = 'Reactive user interfaces with pure Python'
+readme = "../../../README.md"
+requires-python = ">=3.9"
+license = "MIT"
+keywords = ["react", "javascript", "reactpy", "component"]
+authors = [
+  { name = "Ryan Morshead", email = "ryan.morshead@gmail.com" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+  "typing-extensions >=3.10",
+  "mypy-extensions >=0.4.3",
+  "anyio >=3",
+  "jsonpatch >=1.32",
+  "fastjsonschema >=2.14.5",
+  "requests >=2",
+  "colorlog >=6",
+  "asgiref >=3",
+  "lxml >=4",
+]
+[project.optional-dependencies]
+starlette = [
+  "starlette >=0.13.6",
+  "uvicorn[standard] >=0.19.0",
+]
+sanic = [
+  "sanic >=21",
+  "sanic-cors",
+  "uvicorn[standard] >=0.19.0",
+]
+fastapi = [
+  "fastapi >=0.63.0",
+  "uvicorn[standard] >=0.19.0",
+]
+flask = [
+  "flask",
+  "markupsafe>=1.1.1,<2.1",
+  "flask-cors",
+  "flask-sock",
+]
+tornado = [
+  "tornado",
+]
+testing = [
+  "playwright",
+]
+
+[project.urls]
+Documentation = "https://github.com/reactive-python/reactpy#readme"
+Issues = "https://github.com/reactive-python/reactpy/discussions"
+Source = "https://github.com/reactive-python/reactpy"
+
+# --- Hatch ----------------------------------------------------------------------------
+
+[tool.hatch.version]
+path = "reactpy/__init__.py"
+
+[tool.hatch.envs.default]
+pre-install-command = "hatch run build --hooks-only"
+dependencies = [
+  "coverage[toml]>=6.5",
+  "pytest",
+]
+[tool.hatch.envs.default.scripts]
+test = "pytest {args:tests}"
+test-cov = "coverage run -m pytest {args:tests}"
+cov-report = [
+  "- coverage combine",
+  "coverage report",
+]
+cov = [
+  "test-cov",
+  "cov-report",
+]
+
+[tool.hatch.envs.lint]
+detached = true
+dependencies = [
+  "black>=23.1.0",
+  "mypy>=1.0.0",
+  "ruff>=0.0.243",
+]
+
+[tool.hatch.envs.lint.scripts]
+typing = "mypy --install-types --non-interactive {args:reactpy tests}"
+style = [
+  "ruff {args:.}",
+  "black --check --diff {args:.}",
+]
+fmt = [
+  "black {args:.}",
+  "ruff --fix {args:.}",
+  "style",
+]
+all = [
+  "style",
+  "typing",
+]
+
+[[tool.hatch.build.hooks.build-scripts.scripts]]
+work_dir = "../../js"
+commands = [
+  "npm install",
+  "npm run build"
+]
+artifacts = [
+  "app/dist/"
+]
+out_dir = "reactpy/_static"
+
+# --- Black ----------------------------------------------------------------------------
+
+[tool.black]
+target-version = ["py37"]
+line-length = 88
+skip-string-normalization = true
+
+# --- Ruff -----------------------------------------------------------------------------
+
+[tool.ruff]
+target-version = "py37"
+line-length = 88
+select = [
+  "A",
+  "ARG",
+  "B",
+  "C",
+  "DTZ",
+  "E",
+  "EM",
+  "F",
+  "FBT",
+  "I",
+  "ICN",
+  "ISC",
+  "N",
+  "PLC",
+  "PLE",
+  "PLR",
+  "PLW",
+  "Q",
+  "RUF",
+  "S",
+  "T",
+  "TID",
+  "UP",
+  "W",
+  "YTT",
+]
+ignore = [
+  # Allow non-abstract empty methods in abstract base classes
+  "B027",
+  # Allow boolean positional values in function calls, like `dict.get(... True)`
+  "FBT003",
+  # Ignore checks for possible passwords
+  "S105", "S106", "S107",
+  # Ignore complexity
+  "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+]
+unfixable = [
+  # Don't touch unused imports
+  "F401",
+]
+
+[tool.ruff.isort]
+known-first-party = ["reactpy"]
+
+[tool.ruff.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.per-file-ignores]
+# Tests can use magic values, assertions, and relative imports
+"tests/**/*" = ["PLR2004", "S101", "TID252"]
+
+# --- Coverage -------------------------------------------------------------------------
+
+[tool.coverage.run]
+source_pkgs = ["reactpy", "tests"]
+branch = true
+parallel = true
+omit = [
+  "reactpy/__init__.py",
+]
+
+[tool.coverage.paths]
+reactpy = ["reactpy", "*/reactpy/reactpy"]
+tests = ["tests", "*/reactpy/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]

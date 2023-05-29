@@ -1,6 +1,3 @@
-# --- Build Artifacts ---
-src/reactpy/_client
-
 # --- Jupyter ---
 *.ipynb_checkpoints
 *Untitled*.ipynb
