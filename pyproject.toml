@@ -4,7 +4,7 @@
 name = "project"
 version = "0.0.0"
 description = "Scripts for managing the ReactPy respository"
-dependencies = ["invoke"]
+dependencies = ["invoke", "ruff", "black"]
 
 # --- Hatch ----------------------------------------------------------------------------
 
@@ -12,8 +12,17 @@ dependencies = ["invoke"]
 post-install-commands = ["invoke env"]
 
 [tool.hatch.envs.default.scripts]
-lint = "invoke lint"
-test = "invoke test"
+publish = "invoke publish {args}"
+
+checks = ["lint", "test"]
+lint = ["lint-py {args}", "lint-js {args}"]
+test = ["test-py", "test-js"]
+
+lint-py = "invoke lint-py {args}"
+lint-js = "invoke lint-js {args}"
+
+test-py = "invoke test-py {args}"
+test-js = "invoke test-js {args}"
 
 # --- Black ----------------------------------------------------------------------------
 
@@ -36,7 +45,8 @@ select = [
   "E",
   "EM",
   "F",
-  "FBT",
+  # TODO: turn this on later
+  # "FBT",
   "I",
   "ICN",
   "ISC",
@@ -55,6 +65,8 @@ select = [
   "YTT",
 ]
 ignore = [
+  # TODO: turn this on later
+  "N802", "N806",  # allow TitleCase functions/variables
   # Allow non-abstract empty methods in abstract base classes
   "B027",
   # Allow boolean positional values in function calls, like `dict.get(... True)`
@@ -77,4 +89,4 @@ ban-relative-imports = "all"
 
 [tool.ruff.per-file-ignores]
 # Tests can use magic values, assertions, and relative imports
-"tests/**/*" = ["PLR2004", "S101", "TID252"]
+"**/tests/**/*" = ["PLR2004", "S101", "TID252"]

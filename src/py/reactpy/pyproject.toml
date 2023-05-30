@@ -93,29 +93,21 @@ cov = [
 [tool.hatch.envs.lint]
 detached = true
 dependencies = [
-  "black>=23.1.0",
   "mypy>=1.0.0",
-  "ruff>=0.0.243",
+  "types-click",
+  "types-tornado",
+  "types-pkg-resources",
+  "types-flask",
+  "types-requests",
 ]
 
 [tool.hatch.envs.lint.scripts]
 typing = "mypy --install-types --non-interactive {args:reactpy tests}"
-style = [
-  "ruff {args:.}",
-  "black --check --diff {args:.}",
-]
-fix = [
-  "black {args:.}",
-  "ruff --fix {args:.}",
-  "style",
-]
-all = [
-  "style",
-  "typing",
-]
+all = ["typing"]
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
 work_dir = "../../js"
+out_dir = "reactpy/_static"
 commands = [
   "npm install",
   "npm run build"
@@ -123,7 +115,6 @@ commands = [
 artifacts = [
   "app/dist/"
 ]
-out_dir = "reactpy/_static"
 
 # --- Black ----------------------------------------------------------------------------
 
