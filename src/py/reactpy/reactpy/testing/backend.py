@@ -4,7 +4,7 @@ import asyncio
 import logging
 from contextlib import AsyncExitStack
 from types import TracebackType
-from typing import Any, Callable, Optional, Tuple, Type, Union
+from typing import Any, Callable
 from urllib.parse import urlencode, urlunparse
 
 from reactpy.backend import default as default_server
@@ -57,9 +57,7 @@ class BackendFixture:
         if app is not None:
             if implementation is None:
                 msg = "If an application instance its corresponding server implementation must be provided too."
-                raise ValueError(
-                    msg
-                )
+                raise ValueError(msg)
 
         self._app = app
         self.implementation = implementation or default_server
@@ -158,7 +156,6 @@ class BackendFixture:
             raise LogAssertionError(msg) from logged_errors[0]
 
 
-
 _MountFunc = Callable[["Callable[[], Any] | None"], None]
 
 
@@ -220,7 +217,6 @@ def _hotswap(update_on_change: bool = False) -> tuple[_MountFunc, ComponentConst
 
             for set_constructor in set_constructor_callbacks:
                 set_constructor(constructor)
-
 
     else:
 

@@ -7,7 +7,6 @@ from sphinx.util.docutils import SphinxDirective
 
 from docs.examples import get_normalized_example_name
 
-
 _REACTPY_EXAMPLE_HOST = os.environ.get("REACTPY_DOC_EXAMPLE_SERVER_HOST", "")
 _REACTPY_STATIC_HOST = os.environ.get("REACTPY_DOC_STATIC_SERVER_HOST", "/docs").rstrip(
     "/"

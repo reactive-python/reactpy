@@ -13,7 +13,8 @@ def GoodComponent():
 
 @component
 def BadComponent():
-    raise RuntimeError("This component raised an error")
+    msg = "This component raised an error"
+    raise RuntimeError(msg)
 
 
 run(App)

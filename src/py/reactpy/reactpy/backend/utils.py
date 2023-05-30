@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import socket
+from collections.abc import Iterator
 from contextlib import closing
 from importlib import import_module
-from typing import Any, Iterator
+from typing import Any
 
 from reactpy.backend.types import BackendImplementation
 from reactpy.types import RootComponentConstructor
@@ -69,9 +70,7 @@ def find_available_port(
             else:
                 return port
     msg = f"Host {host!r} has no available port in range {port_max}-{port_max}"
-    raise RuntimeError(
-        msg
-    )
+    raise RuntimeError(msg)
 
 
 def all_implementations() -> Iterator[BackendImplementation[Any]]:

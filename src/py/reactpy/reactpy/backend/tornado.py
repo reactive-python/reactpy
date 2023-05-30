@@ -100,9 +100,7 @@ def use_connection() -> Connection[HTTPServerRequest]:
     conn = _use_connection()
     if not isinstance(conn.carrier, HTTPServerRequest):  # pragma: no cover
         msg = f"Connection has unexpected carrier {conn.carrier}. Are you running with a Flask server?"
-        raise TypeError(
-            msg
-        )
+        raise TypeError(msg)
     return conn
 
 

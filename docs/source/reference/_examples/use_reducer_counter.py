@@ -9,7 +9,8 @@ def reducer(count, action):
     elif action == "reset":
         return 0
     else:
-        raise ValueError(f"Unknown action '{action}'")
+        msg = f"Unknown action '{action}'"
+        raise ValueError(msg)
 
 
 @reactpy.component

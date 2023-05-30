@@ -1,10 +1,9 @@
 import asyncio
-import sys
 import threading
 import time
 from asyncio import wait_for
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
 
 from reactpy.config import REACTPY_TESTING_DEFAULT_TIMEOUT
 
@@ -32,14 +31,12 @@ def open_event_loop(as_current: bool = True) -> Iterator[asyncio.AbstractEventLo
                         REACTPY_TESTING_DEFAULT_TIMEOUT.current,
                     )
                 )
-                if sys.version_info >= (3, 9):
-                    # shutdown_default_executor only available in Python 3.9+
-                    loop.run_until_complete(
-                        wait_for(
-                            loop.shutdown_default_executor(),
-                            REACTPY_TESTING_DEFAULT_TIMEOUT.current,
-                        )
+                loop.run_until_complete(
+                    wait_for(
+                        loop.shutdown_default_executor(),
+                        REACTPY_TESTING_DEFAULT_TIMEOUT.current,
                     )
+                )
         finally:
             if as_current:
                 asyncio.set_event_loop(None)
@@ -47,9 +44,7 @@ def open_event_loop(as_current: bool = True) -> Iterator[asyncio.AbstractEventLo
             while loop.is_running():
                 if (time.time() - start) > REACTPY_TESTING_DEFAULT_TIMEOUT.current:
                     msg = f"Failed to stop loop after {REACTPY_TESTING_DEFAULT_TIMEOUT.current} seconds"
-                    raise TimeoutError(
-                        msg
-                    )
+                    raise TimeoutError(msg)
                 time.sleep(0.1)
             loop.close()
 
@@ -79,11 +74,9 @@ def _cancel_all_tasks(loop: asyncio.AbstractEventLoop, is_current: bool) -> None
                 REACTPY_TESTING_DEFAULT_TIMEOUT.current,
             )
         )
-    else:
-        # user was responsible for cancelling all tasks
-        if not done.wait(timeout=3):
-            msg = "Could not stop event loop in time"
-            raise TimeoutError(msg)
+    elif not done.wait(timeout=3):  # user was responsible for cancelling all tasks
+        msg = "Could not stop event loop in time"
+        raise TimeoutError(msg)
 
     for task in to_cancel:
         if task.cancelled():

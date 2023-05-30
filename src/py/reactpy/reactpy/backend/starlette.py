@@ -3,8 +3,9 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from collections.abc import Awaitable
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable, Tuple
+from typing import Any, Callable
 
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
@@ -77,9 +78,7 @@ def use_connection() -> Connection[WebSocket]:
     conn = _use_connection()
     if not isinstance(conn.carrier, WebSocket):  # pragma: no cover
         msg = f"Connection has unexpected carrier {conn.carrier}. Are you running with a Flask server?"
-        raise TypeError(
-            msg
-        )
+        raise TypeError(msg)
     return conn
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, MutableMapping
+from collections.abc import MutableMapping
+from typing import Any
 
 from reactpy.backend.types import Connection, Location
 from reactpy.core.hooks import Context, create_context, use_context

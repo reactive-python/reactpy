@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable
 
 from reactpy.core.types import ComponentType, VdomDict
 
@@ -22,9 +22,7 @@ def component(
         inspect.Parameter.POSITIONAL_OR_KEYWORD,
     ):
         msg = f"Component render function {function} uses reserved parameter 'key'"
-        raise TypeError(
-            msg
-        )
+        raise TypeError(msg)
 
     @wraps(function)
     def constructor(*args: Any, key: Any | None = None, **kwargs: Any) -> Component:

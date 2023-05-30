@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping, Sequence
 from functools import wraps
-from typing import Any, Mapping, Sequence, cast, overload
+from typing import Any, Protocol, cast, overload
 
 from fastjsonschema import compile as compile_json_schema
-from typing_extensions import Protocol
 
 from reactpy._warnings import warn
 from reactpy.config import REACTPY_DEBUG_MODE

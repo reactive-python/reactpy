@@ -4,8 +4,9 @@ import asyncio
 import inspect
 import shutil
 import time
+from collections.abc import Awaitable
 from functools import wraps
-from typing import Any, Awaitable, Callable, Generic, Optional, TypeVar, cast
+from typing import Any, Callable, Generic, TypeVar, cast
 from uuid import uuid4
 from weakref import ref
 
@@ -67,9 +68,7 @@ class poll(Generic[_R]):  # noqa: N801
                 break
             elif (time.time() - started_at) > timeout:  # pragma: no cover
                 msg = f"Expected {description} after {timeout} seconds - last value was {result!r}"
-                raise TimeoutError(
-                    msg
-                )
+                raise TimeoutError(msg)
 
     async def until_is(
         self,

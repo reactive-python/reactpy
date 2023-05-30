@@ -3,7 +3,6 @@
 from reactpy import run
 from reactpy.backend import starlette as starlette_server
 
-
 # the run() function is the entry point for examples
 starlette_server.configure = lambda _, cmpt: run(cmpt)
 

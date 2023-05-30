@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import ast
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import indent
 from tokenize import COMMENT as COMMENT_TOKEN
 from tokenize import generate_tokens
-from typing import Any, Iterator
+from typing import Any
 
 import click
 
@@ -42,7 +42,9 @@ def rewrite_changed_nodes(
             raise RuntimeError(msg)
 
     # check if an nodes to rewrite contain eachother, pick outermost nodes
-    current_outermost_node, *sorted_nodes_to_unparse = sorted(nodes_to_unparse, key=lambda n: n.lineno)
+    current_outermost_node, *sorted_nodes_to_unparse = sorted(
+        nodes_to_unparse, key=lambda n: n.lineno
+    )
     outermost_nodes_to_unparse = [current_outermost_node]
     for node in sorted_nodes_to_unparse:
         if (

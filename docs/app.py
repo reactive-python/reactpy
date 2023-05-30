@@ -3,12 +3,10 @@ from pathlib import Path
 
 from sanic import Sanic, response
 
+from docs.examples import get_normalized_example_name, load_examples
 from reactpy import component
 from reactpy.backend.sanic import Options, configure, use_request
 from reactpy.core.types import ComponentConstructor
-
-from .examples import get_normalized_example_name, load_examples
-
 
 HERE = Path(__file__).parent
 REACTPY_MODEL_SERVER_URL_PREFIX = "/_reactpy"
@@ -46,7 +44,7 @@ def make_app():
     app.static("/docs", str(HERE / "build"))
 
     @app.route("/")
-    async def forward_to_index(request):
+    async def forward_to_index(_):
         return response.redirect("/docs/index.html")
 
     configure(

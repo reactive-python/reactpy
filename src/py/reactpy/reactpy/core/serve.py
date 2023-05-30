@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from asyncio import create_task
+from collections.abc import Awaitable
 from logging import getLogger
-from typing import Awaitable, Callable
+from typing import Callable
 
 from anyio import create_task_group
 

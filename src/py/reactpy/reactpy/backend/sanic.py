@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, Tuple
+from typing import Any
 from urllib import parse as urllib_parse
 from uuid import uuid4
 
@@ -82,9 +82,7 @@ def use_connection() -> Connection[_SanicCarrier]:
     conn = _use_connection()
     if not isinstance(conn.carrier, _SanicCarrier):  # pragma: no cover
         msg = f"Connection has unexpected carrier {conn.carrier}. Are you running with a Sanic server?"
-        raise TypeError(
-            msg
-        )
+        raise TypeError(msg)
     return conn
 
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
 #
@@ -9,7 +8,6 @@
 import sys
 from doctest import DONT_ACCEPT_TRUE_FOR_1, ELLIPSIS, NORMALIZE_WHITESPACE
 from pathlib import Path
-
 
 # -- Path Setup --------------------------------------------------------------
 
@@ -32,7 +30,7 @@ description = (
     "a single line of Javascript. It can be run standalone, in a Jupyter Notebook, or "
     "as part of an existing application."
 )
-copyright = "2023, Ryan Morshead"
+copyright = "2023, Ryan Morshead"  # noqa: A001
 author = "Ryan Morshead"
 
 # -- Common External Links ---------------------------------------------------

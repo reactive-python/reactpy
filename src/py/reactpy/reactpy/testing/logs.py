@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Iterator
 from contextlib import contextmanager
 from traceback import format_exception
-from typing import Any, Iterator, NoReturn
+from typing import Any, NoReturn
 
 from reactpy.logging import ROOT_LOGGER
 

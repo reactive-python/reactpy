@@ -1,6 +1,5 @@
 import reactpy
 
-
 pigeon_maps = reactpy.web.module_from_template("react", "pigeon-maps", fallback="⌛")
 Map, Marker = reactpy.web.export(pigeon_maps, ["Map", "Marker"])
 
@@ -9,18 +8,16 @@ Map, Marker = reactpy.web.export(pigeon_maps, ["Map", "Marker"])
 def MapWithMarkers():
     marker_anchor, add_marker_anchor, remove_marker_anchor = use_set()
 
-    markers = list(
-        map(
-            lambda anchor: Marker(
-                {
-                    "anchor": anchor,
-                    "onClick": lambda: remove_marker_anchor(anchor),
-                },
-                key=str(anchor),
-            ),
-            marker_anchor,
+    markers = [
+        Marker(
+            {
+                "anchor": anchor,
+                "onClick": lambda: remove_marker_anchor(anchor),
+            },
+            key=str(anchor),
         )
-    )
+        for anchor in marker_anchor
+    ]
 
     return Map(
         {

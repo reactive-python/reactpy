@@ -782,7 +782,6 @@ async def test_schedule_render_from_unmounted_hook():
     @reactpy.component
     @child_hook.capture
     def Child(state):
-        reactpy.hooks.use_effect(lambda: lambda: print("unmount", state))
         return reactpy.html.div(state)
 
     with assert_reactpy_did_log(

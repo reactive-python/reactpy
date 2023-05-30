@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from queue import Queue as ThreadQueue
 from threading import Event as ThreadEvent
 from threading import Thread
-from typing import Any, Callable, NamedTuple, NoReturn, Optional, cast
+from typing import Any, Callable, NamedTuple, NoReturn, cast
 
 from flask import (
     Blueprint,
@@ -131,9 +131,7 @@ def use_connection() -> Connection[_FlaskCarrier]:
     conn = _use_connection()
     if not isinstance(conn.carrier, _FlaskCarrier):  # pragma: no cover
         msg = f"Connection has unexpected carrier {conn.carrier}. Are you running with a Flask server?"
-        raise TypeError(
-            msg
-        )
+        raise TypeError(msg)
     return conn
 
 
@@ -207,9 +205,9 @@ def _dispatch_in_thread(
     recv: Callable[[], Any | None],
 ) -> NoReturn:
     dispatch_thread_info_created = ThreadEvent()
-    dispatch_thread_info_ref: reactpy.Ref[
-        _DispatcherThreadInfo | None
-    ] = reactpy.Ref(None)
+    dispatch_thread_info_ref: reactpy.Ref[_DispatcherThreadInfo | None] = reactpy.Ref(
+        None
+    )
 
     @copy_current_request_context
     def run_dispatcher() -> None:

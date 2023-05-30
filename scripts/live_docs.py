@@ -17,7 +17,6 @@ from docs.app import make_app, reload_examples
 from reactpy.backend.sanic import serve_development_app
 from reactpy.testing import clear_reactpy_web_modules_dir
 
-
 # these environment variable are used in custom Sphinx extensions
 os.environ["REACTPY_DOC_EXAMPLE_SERVER_HOST"] = "127.0.0.1:5555"
 os.environ["REACTPY_DOC_STATIC_SERVER_HOST"] = ""
@@ -100,7 +99,7 @@ def main():
 
         def opener():
             time.sleep(args.delay)
-            webbrowser.open("http://%s:%s/index.html" % (args.host, args.port))
+            webbrowser.open(f"http://{args.host}:{args.port}/index.html")
 
         threading.Thread(target=opener, daemon=True).start()
 

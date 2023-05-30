@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Callable, Optional, Sequence, overload
+from collections.abc import Sequence
+from typing import Any, Callable, Literal, overload
 
 from anyio import create_task_group
-from typing_extensions import Literal
 
 from reactpy.core.types import EventHandlerFunc, EventHandlerType
 
@@ -192,9 +192,7 @@ def merge_event_handlers(
             or handler.target != target
         ):
             msg = "Cannot merge handlers - 'stop_propagation', 'prevent_default' or 'target' mistmatch."
-            raise ValueError(
-                msg
-            )
+            raise ValueError(msg)
 
     return EventHandler(
         merge_event_handler_funcs([h.function for h in event_handlers]),

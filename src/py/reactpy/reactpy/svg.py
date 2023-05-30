@@ -106,7 +106,7 @@ fe_specular_lighting = make_vdom_constructor("feSpecularLighting", allow_childre
 fe_spot_light = make_vdom_constructor("feSpotLight", allow_children=False)
 fe_tile = make_vdom_constructor("feTile", allow_children=False)
 fe_turbulence = make_vdom_constructor("feTurbulence", allow_children=False)
-filter = make_vdom_constructor("filter", allow_children=False)
+filter = make_vdom_constructor("filter", allow_children=False)  # noqa: A001
 foreign_object = make_vdom_constructor("foreignObject", allow_children=False)
 g = make_vdom_constructor("g")
 hatch = make_vdom_constructor("hatch", allow_children=False)
@@ -125,7 +125,7 @@ polyline = make_vdom_constructor("polyline", allow_children=False)
 radial_gradient = make_vdom_constructor("radialGradient", allow_children=False)
 rect = make_vdom_constructor("rect", allow_children=False)
 script = make_vdom_constructor("script", allow_children=False)
-set = make_vdom_constructor("set", allow_children=False)
+set = make_vdom_constructor("set", allow_children=False)  # noqa: A001
 stop = make_vdom_constructor("stop", allow_children=False)
 style = make_vdom_constructor("style", allow_children=False)
 svg = make_vdom_constructor("svg")

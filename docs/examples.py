@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from io import StringIO
 from pathlib import Path
 from traceback import format_exc
-from typing import Callable, Iterator
+from typing import Callable
 
 import reactpy
 from reactpy.types import ComponentType
-
 
 HERE = Path(__file__)
 SOURCE_DIR = HERE.parent / "source"
@@ -148,7 +148,6 @@ class _PrintBuffer:
 
     def set_callback(self, function: Callable[[str], None]) -> None:
         self._callback = function
-        return None
 
     def getvalue(self) -> str:
         return "".join(self._lines)

@@ -4,7 +4,6 @@ from typing import NamedTuple
 from reactpy import component, html, run, use_state
 from reactpy.widgets import image
 
-
 HERE = Path(__file__)
 CHARACTER_IMAGE = (HERE.parent / "static" / "bunny.png").read_bytes()
 

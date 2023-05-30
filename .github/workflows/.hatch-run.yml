@@ -1,4 +1,4 @@
-name: Nox Session
+name: hatch-run
 
 on:
   workflow_call:
@@ -6,11 +6,8 @@ on:
       job-name:
         required: true
         type: string
-      nox-args:
+      hatch-run:
         required: true
-        type: string
-      nox-session-args:
-        required: false
         type: string
       runs-on-array:
         required: false
@@ -29,7 +26,7 @@ on:
         required: false
 
 jobs:
-  nox-session:
+  hatch:
     name: ${{ format(inputs.job-name, matrix.python-version, matrix.runs-on) }}
     strategy:
       matrix:
@@ -55,4 +52,4 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.node-auth-token }}
           PYPI_USERNAME: ${{ secrets.pypi-username }}
           PYPI_PASSWORD: ${{ secrets.pypi-password }}
-        run: nox ${{ inputs.nox-args }} --stop-on-first-error -- ${{ inputs.nox-session-args }}
+        run: hatch run ${{ inputs.hatch-run }}

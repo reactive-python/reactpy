@@ -3,16 +3,15 @@ from __future__ import annotations
 import abc
 import asyncio
 from collections import Counter
+from collections.abc import Iterator
 from contextlib import ExitStack
 from logging import getLogger
 from typing import (
     Any,
     Callable,
     Generic,
-    Iterator,
     NamedTuple,
     NewType,
-    Optional,
     TypeVar,
     cast,
 )
@@ -80,7 +79,6 @@ class Layout:
         del self._rendering_queue
         del self._root_life_cycle_state_id
         del self._model_states_by_life_cycle_state_id
-
 
     async def deliver(self, event: LayoutEventMessage) -> None:
         """Dispatch an event to the targeted handler"""
@@ -301,9 +299,7 @@ class Layout:
             key_counter = Counter(item[2] for item in child_type_key_tuples)
             duplicate_keys = [key for key, count in key_counter.items() if count > 1]
             msg = f"Duplicate keys {duplicate_keys} at {new_state.patch_path or '/'!r}"
-            raise ValueError(
-                msg
-            )
+            raise ValueError(msg)
 
         old_keys = set(old_state.children_by_key).difference(new_keys)
         if old_keys:
@@ -393,9 +389,7 @@ class Layout:
             key_counter = Counter(item[2] for item in child_type_key_tuples)
             duplicate_keys = [key for key, count in key_counter.items() if count > 1]
             msg = f"Duplicate keys {duplicate_keys} at {new_state.patch_path or '/'!r}"
-            raise ValueError(
-                msg
-            )
+            raise ValueError(msg)
 
         new_state.model.current["children"] = []
         for index, (child, child_type, key) in enumerate(child_type_key_tuples):

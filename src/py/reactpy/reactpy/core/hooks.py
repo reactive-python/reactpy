@@ -1,22 +1,22 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Sequence
 from logging import getLogger
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     Callable,
     Generic,
     NewType,
-    Sequence,
+    Protocol,
     TypeVar,
     cast,
     overload,
 )
 
-from typing_extensions import Protocol, TypeAlias
+from typing_extensions import TypeAlias
 
 from reactpy.config import REACTPY_DEBUG_MODE
 from reactpy.core._thread_local import ThreadLocal
@@ -164,7 +164,6 @@ def use_effect(
             clean = last_clean_callback.current = sync_function()
             if clean is not None:
                 hook.add_effect(COMPONENT_WILL_UNMOUNT_EFFECT, clean)
-
 
         return memoize(lambda: hook.add_effect(LAYOUT_DID_RENDER_EFFECT, effect))
 

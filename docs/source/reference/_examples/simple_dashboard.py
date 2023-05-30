@@ -5,7 +5,6 @@ import time
 import reactpy
 from reactpy.widgets import Input
 
-
 victory = reactpy.web.module_from_template(
     "react",
     "victory-line",

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import MutableMapping
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, MutableMapping, TypeVar
-
-from typing_extensions import Protocol, runtime_checkable
+from typing import Any, Callable, Generic, Protocol, TypeVar, runtime_checkable
 
 from reactpy.core.types import RootComponentConstructor
 

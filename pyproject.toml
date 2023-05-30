@@ -67,6 +67,10 @@ select = [
 ignore = [
   # TODO: turn this on later
   "N802", "N806",  # allow TitleCase functions/variables
+  # Let Black deal with line-length
+  "E501",
+  # Allow unused args (useful for documenting what the parameter is for later)
+  "ARG001", "ARG005",
   # Allow non-abstract empty methods in abstract base classes
   "B027",
   # Allow boolean positional values in function calls, like `dict.get(... True)`
@@ -90,3 +94,15 @@ ban-relative-imports = "all"
 [tool.ruff.per-file-ignores]
 # Tests can use magic values, assertions, and relative imports
 "**/tests/**/*" = ["PLR2004", "S101", "TID252"]
+"docs/**/*.py" = [
+  # Examples require some extra setup before import
+  "E402",
+  # Allow exec
+  "S102",
+  # Allow print
+  "T201",
+]
+"scripts/**/*.py" = [
+  # Allow print
+  "T201",
+]

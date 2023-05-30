@@ -1,7 +1,8 @@
+from collections.abc import Iterator
 from functools import wraps
 from inspect import currentframe
 from types import FrameType
-from typing import TYPE_CHECKING, Any, Iterator
+from typing import TYPE_CHECKING, Any
 from warnings import warn as _warn
 
 

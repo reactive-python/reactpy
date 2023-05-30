@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Collection, Iterator
 from pathlib import Path
-from typing import Collection, Iterator
 
 from sphinx.application import Sphinx
-
 
 HERE = Path(__file__).parent
 SRC = HERE.parent.parent.parent / "src"
@@ -83,7 +82,9 @@ def get_module_name(path: Path) -> str:
 
 def get_section_symbol(path: Path) -> str:
     rel_path_parts = path.relative_to(PYTHON_PACKAGE).parts
-    assert len(rel_path_parts) < len(SECTION_SYMBOLS), "package structure is too deep"
+    if len(rel_path_parts) < len(SECTION_SYMBOLS):
+        msg = "package structure is too deep"
+        raise RuntimeError(msg)
     return SECTION_SYMBOLS[len(rel_path_parts)]
 
 

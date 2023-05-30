@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from itertools import chain
-from typing import Any, Callable, Generic, Iterable, TypeVar, cast
+from typing import Any, Callable, Generic, TypeVar, cast
 
 from lxml import etree
 from lxml.html import fromstring, tostring
@@ -113,9 +114,7 @@ def html_to_vdom(
         if not strict:
             raise e  # pragma: no cover
         msg = "An error has occurred while parsing the HTML.\n\nThis HTML may be malformatted, or may not perfectly adhere to HTML5.\nIf you believe the exception above was due to something intentional, you can disable the strict parameter on html_to_vdom().\nOtherwise, repair your broken HTML and try again."
-        raise HTMLParseError(
-            msg
-        ) from e
+        raise HTMLParseError(msg) from e
 
     return _etree_to_vdom(root_node, transforms)
 
@@ -139,9 +138,7 @@ def _etree_to_vdom(
     """
     if not isinstance(node, etree._Element):  # pragma: no cover
         msg = f"Expected node to be a etree._Element, not {type(node).__name__}"
-        raise TypeError(
-            msg
-        )
+        raise TypeError(msg)
 
     # Recursively call _etree_to_vdom() on all children
     children = _generate_vdom_children(node, transforms)

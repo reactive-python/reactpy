@@ -1,7 +1,6 @@
 import logging
 import re
 from pathlib import Path, PurePosixPath
-from typing import Set, Tuple
 from urllib.parse import urlparse
 
 import requests
@@ -21,7 +20,7 @@ def resolve_module_exports_from_file(
     file: Path,
     max_depth: int,
     is_re_export: bool = False,
-) -> Set[str]:
+) -> set[str]:
     if max_depth == 0:
         logger.warning(f"Did not resolve all exports for {file} - max depth reached")
         return set()
@@ -51,7 +50,7 @@ def resolve_module_exports_from_url(
     url: str,
     max_depth: int,
     is_re_export: bool = False,
-) -> Set[str]:
+) -> set[str]:
     if max_depth == 0:
         logger.warning(f"Did not resolve all exports for {url} - max depth reached")
         return set()
@@ -78,9 +77,9 @@ def resolve_module_exports_from_url(
 
 def resolve_module_exports_from_source(
     content: str, exclude_default: bool
-) -> Tuple[Set[str], Set[str]]:
-    names: Set[str] = set()
-    references: Set[str] = set()
+) -> tuple[set[str], set[str]]:
+    names: set[str] = set()
+    references: set[str] = set()
 
     if _JS_DEFAULT_EXPORT_PATTERN.search(content):
         names.add("default")

@@ -7,7 +7,6 @@ import reactpy
 from docs.examples import all_example_names, get_example_files_by_name, load_one_example
 from reactpy.widgets import _hotswap
 
-
 EXAMPLE_NAME_SET = all_example_names()
 EXAMPLE_NAME_LIST = tuple(sorted(EXAMPLE_NAME_SET))
 
@@ -76,7 +75,7 @@ def _print_error(*args) -> None:
 
 def _print_available_options():
     examples_by_path = {}
-    for i, name in enumerate(EXAMPLE_NAME_LIST):
+    for _i, name in enumerate(EXAMPLE_NAME_LIST):
         if "/" not in name:
             path = ""
         else:

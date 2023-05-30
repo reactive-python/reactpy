@@ -1,4 +1,3 @@
-
 import pipes
 import shutil
 import subprocess
@@ -127,9 +126,7 @@ with extra_requirements_path.open() as f:
             extra_requirements["all"].append(line)
         elif line:
             msg = f"No '# extra=<name>' header before requirements in {extra_requirements_path}"
-            raise ValueError(
-                msg
-            )
+            raise ValueError(msg)
 package["extras_require"] = extra_requirements
 
 

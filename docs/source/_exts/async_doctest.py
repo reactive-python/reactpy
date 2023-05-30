@@ -6,7 +6,6 @@ from sphinx.application import Sphinx
 from sphinx.ext.doctest import DocTestBuilder
 from sphinx.ext.doctest import setup as doctest_setup
 
-
 test_template = """
 import asyncio as __test_template_asyncio
 
@@ -41,10 +40,8 @@ class AsyncDoctestBuilder(DocTestBuilder):
     @test_runner.setter
     def test_runner(self, value: DocTestRunner) -> None:
         self._test_runner = TestRunnerWrapper(value)
-        return None
 
 
 def setup(app: Sphinx) -> None:
     doctest_setup(app)
     app.add_builder(AsyncDoctestBuilder, override=True)
-    return None

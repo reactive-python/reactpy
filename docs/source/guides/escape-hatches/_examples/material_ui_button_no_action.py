@@ -1,6 +1,5 @@
 from reactpy import component, run, web
 
-
 mui = web.module_from_template(
     "react@^17.0.0",
     "@material-ui/core@4.12.4",

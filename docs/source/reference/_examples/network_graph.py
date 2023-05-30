@@ -2,7 +2,6 @@ import random
 
 import reactpy
 
-
 react_cytoscapejs = reactpy.web.module_from_template(
     "react",
     "react-cytoscapejs",

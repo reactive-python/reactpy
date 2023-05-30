@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from base64 import b64encode
-from typing import TYPE_CHECKING, Any, Callable, Sequence, Tuple, TypeVar, Union
-
-from typing_extensions import Protocol
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Callable, Protocol, TypeVar
 
 import reactpy
 from reactpy import html
@@ -21,7 +20,7 @@ def image(
     The source value will automatically be encoded to base64
     """
     if format == "svg":
-        format = "svg+xml"
+        format = "svg+xml"  # noqa: A001
 
     if isinstance(value, str):
         bytes_value = value.encode()

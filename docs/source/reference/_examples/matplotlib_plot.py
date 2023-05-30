@@ -10,7 +10,7 @@ from reactpy.widgets import image
 def PolynomialPlot():
     coefficients, set_coefficients = reactpy.hooks.use_state([0])
 
-    x = [n for n in linspace(-1, 1, 50)]
+    x = list(linspace(-1, 1, 50))
     y = [polynomial(value, coefficients) for value in x]
 
     return reactpy.html.div(
@@ -31,7 +31,7 @@ def ExpandableNumberInputs(values, set_values):
         inputs.append(poly_coef_input(i + 1, set_value_at_index))
 
     def add_input():
-        set_values(values + [0])
+        set_values([*values, 0])
 
     def del_input():
         set_values(values[:-1])
@@ -62,7 +62,7 @@ def poly_coef_input(index, callback):
         reactpy.html.label(
             "C",
             reactpy.html.sub(index),
-            " × X",
+            " x X",
             reactpy.html.sup(index),
         ),
         reactpy.html.input({"type": "number", "on_change": callback}),

@@ -158,7 +158,7 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from reactpy.core.types import (
     EventHandlerDict,
@@ -382,14 +382,14 @@ wbr = make_vdom_constructor("wbr")
 area = make_vdom_constructor("area", allow_children=False)
 audio = make_vdom_constructor("audio")
 img = make_vdom_constructor("img", allow_children=False)
-map = make_vdom_constructor("map")
+map = make_vdom_constructor("map")  # noqa: A001
 track = make_vdom_constructor("track")
 video = make_vdom_constructor("video")
 
 # Embedded content
 embed = make_vdom_constructor("embed", allow_children=False)
 iframe = make_vdom_constructor("iframe", allow_children=False)
-object = make_vdom_constructor("object")
+object = make_vdom_constructor("object")  # noqa: A001
 param = make_vdom_constructor("param")
 picture = make_vdom_constructor("picture")
 portal = make_vdom_constructor("portal", allow_children=False)
@@ -522,7 +522,7 @@ tr = make_vdom_constructor("tr")
 button = make_vdom_constructor("button")
 fieldset = make_vdom_constructor("fieldset")
 form = make_vdom_constructor("form")
-input = make_vdom_constructor("input", allow_children=False)
+input = make_vdom_constructor("input", allow_children=False)  # noqa: A001
 label = make_vdom_constructor("label")
 legend = make_vdom_constructor("legend")
 meter = make_vdom_constructor("meter")

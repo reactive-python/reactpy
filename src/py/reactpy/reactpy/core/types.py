@@ -2,21 +2,22 @@ from __future__ import annotations
 
 import sys
 from collections import namedtuple
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Generic,
-    Mapping,
+    Literal,
     NamedTuple,
-    Type,
+    Protocol,
     TypeVar,
     overload,
+    runtime_checkable,
 )
 
-from typing_extensions import Literal, Protocol, TypeAlias, TypedDict, runtime_checkable
+from typing_extensions import TypeAlias, TypedDict
 
 _Type = TypeVar("_Type")
 

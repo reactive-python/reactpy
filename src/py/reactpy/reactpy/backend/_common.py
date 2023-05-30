@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import os
+from collections.abc import Awaitable, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any, Awaitable, Sequence, cast
+from typing import Any, cast
 
 import uvicorn
 from asgiref.typing import ASGIApplication

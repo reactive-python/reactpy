@@ -1,6 +1,5 @@
 import reactpy
 
-
 mui = reactpy.web.module_from_template("react", "@material-ui/core@^5.0", fallback="⌛")
 Switch = reactpy.web.export(mui, "Switch")
 

@@ -1,5 +1,6 @@
 import asyncio
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from jsonpointer import set_pointer
 
