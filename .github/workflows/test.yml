@@ -11,25 +11,35 @@ on:
     - cron: "0 0 * * 0"
 
 jobs:
-  python-exhaustive:
+  test-py-cov:
     uses: ./.github/workflows/.hatch-run.yml
     with:
       job-name: "python-{0}"
-      hatch-run: "check-py"
-  python-environments:
+      hatch-run: "test-py"
+  lint-py:
+    uses: ./.github/workflows/.hatch-run.yml
+    with:
+      job-name: "python-{0}"
+      hatch-run: "lint-py"
+  test-py-matrix:
     uses: ./.github/workflows/.hatch-run.yml
     with:
       job-name: "python-{0} {1}"
-      hatch-run: "check-py --no-cov"
+      hatch-run: "test-py --no-cov"
       runs-on-array: '["ubuntu-latest", "macos-latest", "windows-latest"]'
       python-version-array: '["3.9", "3.10", "3.11"]'
-  docs:
+  test-docs:
     uses: ./.github/workflows/.hatch-run.yml
     with:
       job-name: "python-{0}"
       hatch-run: "test-docs"
-  javascript:
+  test-js:
     uses: ./.github/workflows/.hatch-run.yml
     with:
       job-name: "{1}"
-      hatch-run: "test-js lint-js"
+      hatch-run: "test-js"
+  lint-js:
+    uses: ./.github/workflows/.hatch-run.yml
+    with:
+      job-name: "{1}"
+      hatch-run: "lint-js"

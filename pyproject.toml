@@ -14,9 +14,6 @@ post-install-commands = ["invoke env"]
 [tool.hatch.envs.default.scripts]
 publish = "invoke publish {args}"
 
-check-py = "invoke test-py {args} lint-py"
-check-js = "invoke test-js lint-js"
-
 lint-py = "invoke lint-py {args}"
 lint-js = "invoke lint-js {args}"
 
@@ -29,7 +26,6 @@ test-docs = "invoke test-docs"
 [tool.black]
 target-version = ["py39"]
 line-length = 88
-skip-string-normalization = true
 
 # --- Ruff -----------------------------------------------------------------------------
 
