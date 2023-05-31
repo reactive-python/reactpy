@@ -30,8 +30,8 @@ jobs:
     name: ${{ format(inputs.job-name, matrix.python-version, matrix.runs-on) }}
     strategy:
       matrix:
-        runs-on: ${{ fromJson(inputs.runs-on-array) }}
         python-version: ${{ fromJson(inputs.python-version-array) }}
+        runs-on: ${{ fromJson(inputs.runs-on-array) }}
     runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v2
