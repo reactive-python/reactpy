@@ -14,15 +14,15 @@ post-install-commands = ["invoke env"]
 [tool.hatch.envs.default.scripts]
 publish = "invoke publish {args}"
 
-checks = ["lint", "test"]
-lint = ["lint-py {args}", "lint-js {args}"]
-test = ["test-py", "test-js"]
+check-py = "invoke test-py {args} lint-py"
+check-js = "invoke test-js lint-js"
 
 lint-py = "invoke lint-py {args}"
 lint-js = "invoke lint-js {args}"
 
 test-py = "invoke test-py {args}"
-test-js = "invoke test-js {args}"
+test-js = "invoke test-js"
+test-docs = "invoke test-docs"
 
 # --- Black ----------------------------------------------------------------------------
 

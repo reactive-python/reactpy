@@ -95,6 +95,11 @@ def test_js(context: Context):
 
 
 @task
+def test_docs(context: Context):
+    raise Exit("Not implemented")
+
+
+@task
 def publish(context: Context, dry_run: str = ""):
     """Publish packages that have been tagged for release in the current commit
 

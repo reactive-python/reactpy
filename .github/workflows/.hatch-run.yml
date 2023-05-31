@@ -46,8 +46,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Python Dependencies
-        run: pip install -r requirements/nox-deps.txt
-      - name: Run Sessions
+        run: pip install hatch
+      - name: Run Scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.node-auth-token }}
           PYPI_USERNAME: ${{ secrets.pypi-username }}

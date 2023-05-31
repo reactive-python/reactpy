@@ -15,23 +15,21 @@ jobs:
     uses: ./.github/workflows/.hatch-run.yml
     with:
       job-name: "python-{0}"
-      hatch-run: "-t check-python"
-      nox-session-args: "--pytest --maxfail=3 --reruns 3"
+      hatch-run: "check-py"
   python-environments:
-    uses: ./.github/workflows/.nox-session.yml
+    uses: ./.github/workflows/.hatch-run.yml
     with:
       job-name: "python-{0} {1}"
-      nox-args: "-s check-python-tests"
-      nox-session-args: "--no-cov --pytest --maxfail=3 --reruns 3"
+      hatch-run: "check-py --no-cov"
       runs-on-array: '["ubuntu-latest", "macos-latest", "windows-latest"]'
       python-version-array: '["3.9", "3.10", "3.11"]'
   docs:
-    uses: ./.github/workflows/.nox-session.yml
+    uses: ./.github/workflows/.hatch-run.yml
     with:
       job-name: "python-{0}"
-      nox-args: "-s check-docs"
+      hatch-run: "test-docs"
   javascript:
-    uses: ./.github/workflows/.nox-session.yml
+    uses: ./.github/workflows/.hatch-run.yml
     with:
       job-name: "{1}"
-      nox-args: "-t check-javascript"
+      hatch-run: "test-js lint-js"

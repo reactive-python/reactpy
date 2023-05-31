@@ -9,10 +9,10 @@ on:
 
 jobs:
   publish:
-    uses: ./.github/workflows/.nox-session.yml
+    uses: ./.github/workflows/.hatch-run.yml
     with:
       job-name: "publish"
-      nox-args: "-s publish"
+      hatch-run: "publish"
     secrets:
       node-auth-token: ${{ secrets.NODE_AUTH_TOKEN }}
       pypi-username: ${{ secrets.PYPI_USERNAME }}
