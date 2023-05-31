@@ -141,7 +141,8 @@ class HookCatcher:
         @wraps(render_function)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             self = self_ref()
-            assert self is not None, "Hook catcher has been garbage collected"
+            if self is None:
+                raise RuntimeError("Hook catcher has been garbage collected")
 
             hook = current_hook()
             if self.index_by_kwarg is not None:

@@ -105,7 +105,7 @@ def test_deprecated_option():
     opt = DeprecatedOption("is deprecated!", "A_FAKE_OPTION", None)
 
     with pytest.warns(DeprecationWarning, match="is deprecated!"):
-        opt.current
+        assert opt.current == "is deprecated"
 
     with pytest.warns(DeprecationWarning, match="is deprecated!"):
         opt.current = "something"

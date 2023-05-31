@@ -175,7 +175,8 @@ def get_packages(context: Context) -> dict[str, PackageInfo]:
             raise Exit(msg)
 
     packages_by_name = {p.name: p for p in packages}
-    assert len(packages_by_name) == len(packages), "duplicate package names"
+    if len(packages_by_name) != len(packages):
+        raise Exit("duplicate package names detected")
 
     return packages_by_name
 

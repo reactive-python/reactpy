@@ -318,21 +318,20 @@ class Layout:
                         index,
                         key,
                     )
+                elif old_child_state.is_component_state:
+                    self._unmount_model_states([old_child_state])
+                    new_child_state = _make_element_model_state(
+                        new_state,
+                        index,
+                        key,
+                    )
+                    old_child_state = None
                 else:
-                    if old_child_state.is_component_state:
-                        self._unmount_model_states([old_child_state])
-                        new_child_state = _make_element_model_state(
-                            new_state,
-                            index,
-                            key,
-                        )
-                        old_child_state = None
-                    else:
-                        new_child_state = _update_element_model_state(
-                            old_child_state,
-                            new_state,
-                            index,
-                        )
+                    new_child_state = _update_element_model_state(
+                        old_child_state,
+                        new_state,
+                        index,
+                    )
                 self._render_model(exit_stack, old_child_state, new_child_state, child)
                 new_state.append_child(new_child_state.model.current)
                 new_state.children_by_key[key] = new_child_state
@@ -595,7 +594,8 @@ class _ModelState:
     @property
     def parent(self) -> _ModelState:
         parent = self._parent_ref()
-        assert parent is not None, "detached model state"
+        if parent is None:
+            raise RuntimeError("detached model state")
         return parent
 
     def append_child(self, child: Any) -> None:

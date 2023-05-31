@@ -129,7 +129,7 @@ def find_element_constructor_usages(
                     node.args.insert(1, maybe_attr_dict_node)
                 else:
                     continue
-            elif len(node.args) >= 2:
+            elif len(node.args) >= 2:  # noqa: PLR2004
                 maybe_attr_dict_node = node.args[1]
         elif hasattr(html, name):
             if len(node.args) == 0:

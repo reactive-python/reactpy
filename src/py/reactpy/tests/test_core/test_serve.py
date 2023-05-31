@@ -122,7 +122,7 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
     send_queue = asyncio.Queue()
     recv_queue = asyncio.Queue()
 
-    asyncio.ensure_future(
+    task = asyncio.create_task(
         serve_layout(
             reactpy.Layout(ComponentWithTwoEventHandlers()),
             send_queue.put,
@@ -135,3 +135,5 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
 
     await recv_queue.put(event_message(non_blocked_handler.target))
     await second_event_did_execute.wait()
+
+    task.cancel()

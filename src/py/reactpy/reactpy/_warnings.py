@@ -13,7 +13,7 @@ def warn(*args: Any, **kwargs: Any) -> Any:
 
 
 if TYPE_CHECKING:
-    warn = _warn
+    warn = _warn  # noqa F811
 
 
 def _frame_depth_in_module() -> int:

@@ -5,12 +5,7 @@ import pytest
 import reactpy
 from reactpy import html
 from reactpy.config import REACTPY_DEBUG_MODE
-from reactpy.core.hooks import (
-    COMPONENT_DID_RENDER_EFFECT,
-    LifeCycleHook,
-    current_hook,
-    strictly_equal,
-)
+from reactpy.core.hooks import LifeCycleHook, strictly_equal
 from reactpy.core.layout import Layout
 from reactpy.testing import DisplayFixture, HookCatcher, assert_reactpy_did_log, poll
 from reactpy.testing.logs import assert_reactpy_did_not_log
@@ -567,30 +562,6 @@ async def test_error_in_effect_is_gracefully_handled(caplog):
             await layout.render()  # no error
 
 
-async def test_error_in_effect_cleanup_is_gracefully_handled(caplog):
-    caplog.clear()
-    component_hook = HookCatcher()
-
-    @reactpy.component
-    @component_hook.capture
-    def ComponentWithEffect():
-        @reactpy.hooks.use_effect(dependencies=None)  # force this to run every time
-        def ok_effect():
-            def bad_cleanup():
-                msg = "Something went wong :("
-                raise ValueError(msg)
-
-            return bad_cleanup
-
-        return reactpy.html.div()
-
-    with assert_reactpy_did_log(match_error=r"Layout post-render effect .* failed"):
-        async with reactpy.Layout(ComponentWithEffect()) as layout:
-            await layout.render()
-            component_hook.latest.schedule_render()
-            await layout.render()  # no error
-
-
 async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled():
     set_key = reactpy.Ref()
 
@@ -878,7 +849,7 @@ async def test_use_effect_automatically_infers_closure_values():
         @reactpy.hooks.use_effect
         def some_effect_that_uses_count():
             """should automatically trigger on count change"""
-            count  # use count in this closure
+            _ = count  # use count in this closure
             did_effect.set()
 
         return reactpy.html.div()
@@ -906,7 +877,7 @@ async def test_use_memo_automatically_infers_closure_values():
         @reactpy.hooks.use_memo
         def some_memo_func_that_uses_count():
             """should automatically trigger on count change"""
-            count  # use count in this closure
+            _ = count  # use count in this closure
             did_memo.set()
 
         return reactpy.html.div()
@@ -941,11 +912,11 @@ async def test_use_context_default_value():
         assert value.current == "something"
 
     @reactpy.component
-    def ComponentUsesContext():
+    def ComponentUsesContext2():
         value.current = reactpy.use_context(Context)
         return html.div()
 
-    async with reactpy.Layout(ComponentUsesContext()) as layout:
+    async with reactpy.Layout(ComponentUsesContext2()) as layout:
         await layout.render()
         assert value.current == "something"
 
@@ -1023,13 +994,11 @@ async def test_error_in_effect_cleanup_is_gracefully_handled():
     @reactpy.component
     @component_hook.capture
     def ComponentWithEffect():
-        hook = current_hook()
-
+        @reactpy.hooks.use_effect(dependencies=None)  # always run
         def bad_effect():
             msg = "The error message"
             raise ValueError(msg)
 
-        hook.add_effect(COMPONENT_DID_RENDER_EFFECT, bad_effect)
         return reactpy.html.div()
 
     with assert_reactpy_did_log(

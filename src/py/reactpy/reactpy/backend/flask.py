@@ -256,7 +256,9 @@ def _dispatch_in_thread(
 
     dispatch_thread_info_created.wait()
     dispatch_thread_info = cast(_DispatcherThreadInfo, dispatch_thread_info_ref.current)
-    assert dispatch_thread_info is not None
+
+    if dispatch_thread_info is None:
+        raise RuntimeError("Failed to create dispatcher thread")
 
     stop = ThreadEvent()
 

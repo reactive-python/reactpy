@@ -86,8 +86,8 @@ def main():
     ignore_handler = _get_ignore_handler(args)
     server.watch(srcdir, builder, ignore=ignore_handler)
     for dirpath in args.additional_watched_dirs:
-        dirpath = os.path.realpath(dirpath)
-        server.watch(dirpath, builder, ignore=ignore_handler)
+        real_dirpath = os.path.realpath(dirpath)
+        server.watch(real_dirpath, builder, ignore=ignore_handler)
     server.watch(outdir, ignore=ignore_handler)
 
     if not args.no_initial_build:

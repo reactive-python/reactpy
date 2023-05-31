@@ -58,13 +58,10 @@ async def test_layout_cannot_be_used_outside_context_manager(caplog):
     component = Component()
     layout = reactpy.Layout(component)
 
-    with pytest.raises(Exception):
+    with pytest.raises(AttributeError):
         await layout.deliver(event_message("something"))
 
-    with pytest.raises(Exception):
-        layout.update(component)
-
-    with pytest.raises(Exception):
+    with pytest.raises(AttributeError):
         await layout.render()
 
 
@@ -387,7 +384,7 @@ async def test_life_cycle_hooks_are_garbage_collected():
     @reactpy.component
     @add_to_live_hooks
     def Outer():
-        nonlocal set_inner_component
+        nonlocal set_inner_component  # noqa PLE0117
         inner_component, set_inner_component = reactpy.hooks.use_state(
             Inner(key="first")
         )

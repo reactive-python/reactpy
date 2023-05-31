@@ -24,7 +24,7 @@ def test_basic_ref_behavior():
 
     r = reactpy.Ref()
     with pytest.raises(AttributeError):
-        r.current
+        r.current  # noqa B018
 
     r.current = 4
     assert r.current == 4

@@ -56,7 +56,7 @@ def resolve_module_exports_from_url(
         return set()
 
     try:
-        text = requests.get(url).text
+        text = requests.get(url, timeout=5).text
     except requests.exceptions.ConnectionError as error:
         reason = "" if error is None else " - {error.errno}"
         logger.warning("Did not resolve exports for url " + url + reason)

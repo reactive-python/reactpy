@@ -246,13 +246,13 @@ def use_context(context: Context[_Type]) -> _Type:
     provider = hook.get_context_provider(context)
 
     if provider is None:
-        # force type checker to realize this is just a normal function
-        assert isinstance(context, FunctionType), f"{context} is not a Context"
-        # __kwdefault__ can be None if no kwarg only parameters exist
-        assert context.__kwdefaults__ is not None, f"{context} has no 'value' kwarg"
-        # lastly check that 'value' kwarg exists
-        assert "value" in context.__kwdefaults__, f"{context} has no 'value' kwarg"
-        # then we can safely access the context's default value
+        # same assertions but with normal exceptions
+        if not isinstance(context, FunctionType):
+            raise TypeError(f"{context} is not a Context")
+        if context.__kwdefaults__ is None:
+            raise TypeError(f"{context} has no 'value' kwarg")
+        if "value" not in context.__kwdefaults__:
+            raise TypeError(f"{context} has no 'value' kwarg")
         return cast(_Type, context.__kwdefaults__["value"])
 
     return provider._value
@@ -455,7 +455,7 @@ class _Memo(Generic[_Type]):
 
     def empty(self) -> bool:
         try:
-            self.value
+            self.value  # noqa: B018
         except AttributeError:
             return True
         else:
@@ -708,8 +708,8 @@ class LifeCycleHook:
 
     def unset_current(self) -> None:
         """Unset this hook as the active hook in this thread"""
-        # this assertion should never fail - primarilly useful for debug
-        assert _hook_stack.get().pop() is self
+        if _hook_stack.get().pop() is not self:
+            raise RuntimeError("Hook stack is in an invalid state")
 
     def _schedule_render(self) -> None:
         try:

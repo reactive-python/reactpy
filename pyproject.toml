@@ -39,7 +39,8 @@ select = [
   "C",
   "DTZ",
   "E",
-  "EM",
+  # error message linting is overkill
+  # "EM",
   "F",
   # TODO: turn this on later
   # "FBT",
@@ -63,14 +64,22 @@ select = [
 ignore = [
   # TODO: turn this on later
   "N802", "N806",  # allow TitleCase functions/variables
+  # We're not any cryptography
+  "S311",
+  # For loop variable re-assignment seems like an uncommon mistake
+  "PLW2901",
   # Let Black deal with line-length
   "E501",
+  # Allow args/attrs to shadow built-ins
+  "A002", "A003",
   # Allow unused args (useful for documenting what the parameter is for later)
-  "ARG001", "ARG005",
+  "ARG001", "ARG002", "ARG005",
   # Allow non-abstract empty methods in abstract base classes
   "B027",
   # Allow boolean positional values in function calls, like `dict.get(... True)`
   "FBT003",
+  # If we're making an explicit comparison to a falsy value it was probably intentional
+  "PLC1901",
   # Ignore checks for possible passwords
   "S105", "S106", "S107",
   # Ignore complexity

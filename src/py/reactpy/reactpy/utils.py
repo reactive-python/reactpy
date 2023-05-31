@@ -214,7 +214,7 @@ def _mutate_vdom(vdom: VdomDict) -> None:
         and isinstance(vdom["attributes"]["style"], str)
     ):
         # Convince type checker that it's safe to mutate attributes
-        assert isinstance(vdom["attributes"], dict)
+        assert isinstance(vdom["attributes"], dict)  # noqa: S101
 
         # Convert style attribute from str -> dict with camelCase keys
         vdom["attributes"]["style"] = {
@@ -291,9 +291,8 @@ def _vdom_attr_to_html_str(key: str, value: Any) -> tuple[str, str]:
     ):
         key = _CAMEL_CASE_SUB_PATTERN.sub("-", key)
 
-    assert not callable(
-        value
-    ), f"Could not convert callable attribute {key}={value} to HTML"
+    if callable(value):
+        raise TypeError(f"Cannot convert callable attribute {key}={value} to HTML")
 
     # Again, we lower the attribute name only to normalize - HTML is case-insensitive:
     # http://w3c.github.io/html-reference/documents.html#case-insensitivity

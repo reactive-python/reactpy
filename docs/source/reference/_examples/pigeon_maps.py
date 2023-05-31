@@ -12,7 +12,7 @@ def MapWithMarkers():
         Marker(
             {
                 "anchor": anchor,
-                "onClick": lambda: remove_marker_anchor(anchor),
+                "onClick": lambda event, a=anchor: remove_marker_anchor(a),
             },
             key=str(anchor),
         )

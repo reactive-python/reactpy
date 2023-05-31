@@ -34,9 +34,8 @@ def Table(value, set_value):
         tr = html.tr(name, descr, value)
         if not value:
             rows.append(tr)
-        else:
-            if value.lower() in row["name"].lower():
-                rows.append(tr)
+        elif value.lower() in row["name"].lower():
+            rows.append(tr)
         headers = html.tr(html.td(html.b("name")), html.td(html.b("description")))
     table = html.table(html.thead(headers), html.tbody(rows))
     return table

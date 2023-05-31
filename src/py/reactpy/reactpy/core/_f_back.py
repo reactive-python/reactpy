@@ -9,7 +9,8 @@ def f_module_name(index: int = 0) -> str:
     if frame is None:
         return ""  # pragma: no cover
     name = frame.f_globals.get("__name__", "")
-    assert isinstance(name, str), "Expected module name to be a string"
+    if not isinstance(name, str):
+        raise TypeError("Expected module name to be a string")
     return name
 
 

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from asyncio import create_task
 from collections.abc import Awaitable
 from logging import getLogger
 from typing import Callable
 
 from anyio import create_task_group
+from anyio.abc import TaskGroup
 
 from reactpy.core.types import LayoutEventMessage, LayoutType, LayoutUpdateMessage
 
@@ -40,7 +40,7 @@ async def serve_layout(
         try:
             async with create_task_group() as task_group:
                 task_group.start_soon(_single_outgoing_loop, layout, send)
-                task_group.start_soon(_single_incoming_loop, layout, recv)
+                task_group.start_soon(_single_incoming_loop, task_group, layout, recv)
         except Stop:
             logger.info(f"Stopped serving {layout}")
 
@@ -53,9 +53,11 @@ async def _single_outgoing_loop(
 
 
 async def _single_incoming_loop(
-    layout: LayoutType[LayoutUpdateMessage, LayoutEventMessage], recv: RecvCoroutine
+    task_group: TaskGroup,
+    layout: LayoutType[LayoutUpdateMessage, LayoutEventMessage],
+    recv: RecvCoroutine,
 ) -> None:
     while True:
         # We need to fire and forget here so that we avoid waiting on the completion
         # of this event handler before receiving and running the next one.
-        create_task(layout.deliver(await recv()))
+        task_group.start_soon(layout.deliver, await recv())

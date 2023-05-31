@@ -50,7 +50,7 @@ _DEFAULT_IMPLEMENTATION: BackendImplementation[Any] | None = None
 
 def _default_implementation() -> BackendImplementation[Any]:
     """Get the first available server implementation"""
-    global _DEFAULT_IMPLEMENTATION
+    global _DEFAULT_IMPLEMENTATION  # noqa PLW0603
 
     if _DEFAULT_IMPLEMENTATION is not None:
         return _DEFAULT_IMPLEMENTATION
@@ -60,7 +60,7 @@ def _default_implementation() -> BackendImplementation[Any]:
     except StopIteration:  # pragma: no cover
         logger.debug("Backend implementation import failed", exc_info=exc_info())
         msg = "No built-in server implementation installed."
-        raise RuntimeError(msg)
+        raise RuntimeError(msg) from None
     else:
         _DEFAULT_IMPLEMENTATION = implementation
         return implementation
