@@ -6,10 +6,10 @@ import reactpy
 from reactpy import html
 from reactpy.config import REACTPY_DEBUG_MODE
 from reactpy.core.hooks import (
-    LifeCycleHook,
-    strictly_equal,
     COMPONENT_DID_RENDER_EFFECT,
+    LifeCycleHook,
     current_hook,
+    strictly_equal,
 )
 from reactpy.core.layout import Layout
 from reactpy.testing import DisplayFixture, HookCatcher, assert_reactpy_did_log, poll
