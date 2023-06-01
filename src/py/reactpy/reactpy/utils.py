@@ -95,7 +95,7 @@ def html_to_vdom(
             If ``True``, raise an exception if the HTML does not perfectly follow HTML5
             syntax.
     """
-    if not isinstance(html, str):  # pragma: no cover
+    if not isinstance(html, str):  # nocov
         msg = f"Expected html to be a string, not {type(html).__name__}"
         raise TypeError(msg)
 
@@ -112,7 +112,7 @@ def html_to_vdom(
         )
     except etree.XMLSyntaxError as e:
         if not strict:
-            raise e  # pragma: no cover
+            raise e  # nocov
         msg = "An error has occurred while parsing the HTML.\n\nThis HTML may be malformatted, or may not perfectly adhere to HTML5.\nIf you believe the exception above was due to something intentional, you can disable the strict parameter on html_to_vdom().\nOtherwise, repair your broken HTML and try again."
         raise HTMLParseError(msg) from e
 
@@ -136,7 +136,7 @@ def _etree_to_vdom(
             dictionary which will be replaced by ``new``. For example, you could use a
             transform function to add highlighting to a ``<code/>`` block.
     """
-    if not isinstance(node, etree._Element):  # pragma: no cover
+    if not isinstance(node, etree._Element):  # nocov
         msg = f"Expected node to be a etree._Element, not {type(node).__name__}"
         raise TypeError(msg)
 
@@ -291,7 +291,7 @@ def _vdom_attr_to_html_str(key: str, value: Any) -> tuple[str, str]:
     ):
         key = _CAMEL_CASE_SUB_PATTERN.sub("-", key)
 
-    if callable(value):
+    if callable(value):  # nocov
         raise TypeError(f"Cannot convert callable attribute {key}={value} to HTML")
 
     # Again, we lower the attribute name only to normalize - HTML is case-insensitive:

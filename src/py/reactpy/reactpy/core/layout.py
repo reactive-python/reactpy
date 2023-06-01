@@ -45,7 +45,7 @@ class Layout:
         "_model_states_by_life_cycle_state_id",
     ]
 
-    if not hasattr(abc.ABC, "__weakref__"):  # pragma: no cover
+    if not hasattr(abc.ABC, "__weakref__"):  # nocov
         __slots__.append("__weakref__")
 
     def __init__(self, root: ComponentType) -> None:
@@ -197,7 +197,7 @@ class Layout:
     ) -> None:
         try:
             new_state.model.current = {"tagName": raw_model["tagName"]}
-        except Exception as e:  # pragma: no cover
+        except Exception as e:  # nocov
             msg = f"Expected a VDOM element dict, not {raw_model}"
             raise ValueError(msg) from e
         if "key" in raw_model:
@@ -595,13 +595,13 @@ class _ModelState:
     def parent(self) -> _ModelState:
         parent = self._parent_ref()
         if parent is None:
-            raise RuntimeError("detached model state")
+            raise RuntimeError("detached model state")  # nocov
         return parent
 
     def append_child(self, child: Any) -> None:
         self.model.current["children"].append(child)
 
-    def __repr__(self) -> str:  # pragma: no cover
+    def __repr__(self) -> str:  # nocov
         return f"ModelState({ {s: getattr(self, s, None) for s in self.__slots__} })"
 
 

@@ -45,7 +45,7 @@ def rewrite_keys(paths: list[str]) -> None:
     just above its changes. As such it requires manual intervention to put those
     comments back in their original location.
     """
-    if sys.version_info < (3, 9):  # pragma: no cover
+    if sys.version_info < (3, 9):  # nocov
         msg = "This command requires Python>=3.9"
         raise RuntimeError(msg)
 

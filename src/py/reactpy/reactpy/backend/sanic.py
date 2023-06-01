@@ -80,7 +80,7 @@ def use_websocket() -> WebSocketConnection:
 def use_connection() -> Connection[_SanicCarrier]:
     """Get the current :class:`Connection`"""
     conn = _use_connection()
-    if not isinstance(conn.carrier, _SanicCarrier):  # pragma: no cover
+    if not isinstance(conn.carrier, _SanicCarrier):  # nocov
         msg = f"Connection has unexpected carrier {conn.carrier}. Are you running with a Sanic server?"
         raise TypeError(msg)
     return conn
@@ -103,7 +103,7 @@ def _setup_common_routes(
     options: Options,
 ) -> None:
     cors_options = options.cors
-    if cors_options:  # pragma: no cover
+    if cors_options:  # nocov
         cors_params = cors_options if isinstance(cors_options, dict) else {}
         CORS(api_blueprint, **cors_params)
 
@@ -159,7 +159,7 @@ def _setup_single_view_dispatcher_route(
     ) -> None:
         asgi_app = getattr(request.app, "_asgi_app", None)
         scope = asgi_app.transport.scope if asgi_app else {}
-        if not scope:  # pragma: no cover
+        if not scope:  # nocov
             logger.warning("No scope. Sanic may not be running with an ASGI server")
 
         send, recv = _make_send_recv_callbacks(socket)

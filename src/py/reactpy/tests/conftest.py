@@ -57,7 +57,7 @@ async def browser(pytestconfig: Config):
 
 @pytest.fixture(scope="session")
 def event_loop():
-    if os.name == "nt":  # pragma: no cover
+    if os.name == "nt":  # nocov
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     with open_event_loop() as loop:
         yield loop

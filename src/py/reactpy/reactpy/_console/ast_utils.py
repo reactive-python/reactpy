@@ -37,7 +37,7 @@ def rewrite_changed_nodes(
             ):
                 nodes_to_unparse.append(current_node)
                 break
-        else:  # pragma: no cover
+        else:  # nocov
             msg = "Failed to change code"
             raise RuntimeError(msg)
 

@@ -28,7 +28,7 @@ if TYPE_CHECKING or sys.version_info < (3, 9) or sys.version_info >= (3, 11):
         value: _Type
         set_value: Callable[[_Type | Callable[[_Type], _Type]], None]
 
-else:  # pragma: no cover
+else:  # nocov
     State = namedtuple("State", ("value", "set_value"))
 
 

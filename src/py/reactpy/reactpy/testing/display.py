@@ -56,9 +56,9 @@ class DisplayFixture:
 
     async def root_element(self) -> ElementHandle:
         element = await self.page.wait_for_selector("#app", state="attached")
-        if element is None:
+        if element is None:  # nocov
             msg = "Root element not attached"
-            raise RuntimeError(msg)  # pragma: no cover
+            raise RuntimeError(msg)
         return element
 
     async def __aenter__(self) -> DisplayFixture:

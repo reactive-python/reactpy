@@ -92,7 +92,7 @@ if TYPE_CHECKING:
 
 def hotswap(
     update_on_change: bool = False,
-) -> tuple[_MountFunc, ComponentConstructor]:  # pragma: no cover
+) -> tuple[_MountFunc, ComponentConstructor]:  # nocov
     warn(
         "The 'hotswap' function is deprecated and will be removed in a future release",
         DeprecationWarning,

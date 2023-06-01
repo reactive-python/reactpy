@@ -53,7 +53,7 @@ async def serve_development_asgi(
         # Since we aren't using the uvicorn's `run()` API, we can't guarantee uvicorn's
         # order of operations. So we need to make sure `shutdown()` always has an initialized
         # list of `self.servers` to use.
-        if not hasattr(server, "servers"):  # pragma: no cover
+        if not hasattr(server, "servers"):  # nocov
             server.servers = []
         await asyncio.wait_for(server.shutdown(), timeout=3)
 

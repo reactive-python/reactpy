@@ -13,9 +13,9 @@ ConnectionContext: Context[Connection[Any] | None] = create_context(None)
 def use_connection() -> Connection[Any]:
     """Get the current :class:`~reactpy.backend.types.Connection`."""
     conn = use_context(ConnectionContext)
-    if conn is None:
+    if conn is None:  # nocov
         msg = "No backend established a connection."
-        raise RuntimeError(msg)  # pragma: no cover
+        raise RuntimeError(msg)
     return conn
 
 

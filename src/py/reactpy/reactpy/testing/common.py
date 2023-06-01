@@ -66,7 +66,7 @@ class poll(Generic[_R]):  # noqa: N801
             result = await self._func(*self._args, **self._kwargs)
             if condition(result):
                 break
-            elif (time.time() - started_at) > timeout:  # pragma: no cover
+            elif (time.time() - started_at) > timeout:  # nocov
                 msg = f"Expected {description} after {timeout} seconds - last value was {result!r}"
                 raise TimeoutError(msg)
 

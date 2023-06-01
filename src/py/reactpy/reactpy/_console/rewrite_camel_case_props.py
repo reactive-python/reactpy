@@ -23,7 +23,7 @@ CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
 def rewrite_camel_case_props(paths: list[str]) -> None:
     """Rewrite camelCase props to snake_case"""
-    if sys.version_info < (3, 9):  # pragma: no cover
+    if sys.version_info < (3, 9):  # nocov
         msg = "This command requires Python>=3.9"
         raise RuntimeError(msg)
 

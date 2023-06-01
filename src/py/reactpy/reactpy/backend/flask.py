@@ -111,7 +111,7 @@ async def serve_development_app(
         # the thread should eventually join
         thread.join(timeout=3)
         # just double check it happened
-        if thread.is_alive():  # pragma: no cover
+        if thread.is_alive():  # nocov
             msg = "Failed to shutdown server."
             raise RuntimeError(msg)
 
@@ -129,7 +129,7 @@ def use_request() -> Request:
 def use_connection() -> Connection[_FlaskCarrier]:
     """Get the current :class:`Connection`"""
     conn = _use_connection()
-    if not isinstance(conn.carrier, _FlaskCarrier):  # pragma: no cover
+    if not isinstance(conn.carrier, _FlaskCarrier):  # nocov
         msg = f"Connection has unexpected carrier {conn.carrier}. Are you running with a Flask server?"
         raise TypeError(msg)
     return conn
@@ -152,7 +152,7 @@ def _setup_common_routes(
     options: Options,
 ) -> None:
     cors_options = options.cors
-    if cors_options:  # pragma: no cover
+    if cors_options:  # nocov
         cors_params = cors_options if isinstance(cors_options, dict) else {}
         CORS(api_blueprint, **cors_params)
 
@@ -258,7 +258,7 @@ def _dispatch_in_thread(
     dispatch_thread_info = cast(_DispatcherThreadInfo, dispatch_thread_info_ref.current)
 
     if dispatch_thread_info is None:
-        raise RuntimeError("Failed to create dispatcher thread")
+        raise RuntimeError("Failed to create dispatcher thread")  # nocov
 
     stop = ThreadEvent()
 
@@ -274,7 +274,7 @@ def _dispatch_in_thread(
             dispatch_thread_info.dispatch_loop.call_soon_threadsafe(
                 dispatch_thread_info.async_recv_queue.put_nowait, value
             )
-    finally:  # pragma: no cover
+    finally:  # nocov
         dispatch_thread_info.dispatch_loop.call_soon_threadsafe(
             dispatch_thread_info.dispatch_future.cancel
         )

@@ -248,11 +248,11 @@ def use_context(context: Context[_Type]) -> _Type:
     if provider is None:
         # same assertions but with normal exceptions
         if not isinstance(context, FunctionType):
-            raise TypeError(f"{context} is not a Context")
+            raise TypeError(f"{context} is not a Context")  # nocov
         if context.__kwdefaults__ is None:
-            raise TypeError(f"{context} has no 'value' kwarg")
+            raise TypeError(f"{context} has no 'value' kwarg")  # nocov
         if "value" not in context.__kwdefaults__:
-            raise TypeError(f"{context} has no 'value' kwarg")
+            raise TypeError(f"{context} has no 'value' kwarg")  # nocov
         return cast(_Type, context.__kwdefaults__["value"])
 
     return provider._value

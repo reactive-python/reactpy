@@ -16,7 +16,7 @@ def configure(
     app: Any, component: RootComponentConstructor, options: None = None
 ) -> None:
     """Configure the given app instance to display the given component"""
-    if options is not None:  # pragma: no cover
+    if options is not None:  # nocov
         msg = "Default implementation cannot be configured with options"
         raise ValueError(msg)
     return _default_implementation().configure(app, component)
@@ -27,7 +27,7 @@ def create_development_app() -> Any:
     return _default_implementation().create_development_app()
 
 
-def Options(*args: Any, **kwargs: Any) -> NoReturn:  # pragma: no cover
+def Options(*args: Any, **kwargs: Any) -> NoReturn:  # nocov
     """Create configuration options"""
     msg = "Default implementation has no options."
     raise ValueError(msg)
@@ -57,7 +57,7 @@ def _default_implementation() -> BackendImplementation[Any]:
 
     try:
         implementation = next(all_implementations())
-    except StopIteration:  # pragma: no cover
+    except StopIteration:  # nocov
         logger.debug("Backend implementation import failed", exc_info=exc_info())
         msg = "No built-in server implementation installed."
         raise RuntimeError(msg) from None

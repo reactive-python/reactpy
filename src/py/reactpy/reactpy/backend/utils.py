@@ -79,11 +79,11 @@ def all_implementations() -> Iterator[BackendImplementation[Any]]:
         try:
             relative_import_name = f"{__name__.rsplit('.', 1)[0]}.{name}"
             module = import_module(relative_import_name)
-        except ImportError:  # pragma: no cover
+        except ImportError:  # nocov
             logger.debug(f"Failed to import {name!r}", exc_info=True)
             continue
 
-        if not isinstance(module, BackendImplementation):  # pragma: no cover
+        if not isinstance(module, BackendImplementation):  # nocov
             msg = f"{module.__name__!r} is an invalid implementation"
             raise TypeError(msg)
 

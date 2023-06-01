@@ -162,7 +162,7 @@ def vdom(
             (subject to change) specifies javascript that, when evaluated returns a
             React component.
     """
-    if kwargs:  # pragma: no cover
+    if kwargs:  # nocov
         if "key" in kwargs:
             if attributes_and_children:
                 maybe_attributes, *children = attributes_and_children

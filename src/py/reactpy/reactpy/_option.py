@@ -119,7 +119,7 @@ class Option(Generic[_O]):
         return f"Option({self._name}={self.current!r})"
 
 
-class DeprecatedOption(Option[_O]):  # pragma: no cover
+class DeprecatedOption(Option[_O]):  # nocov
     def __init__(self, message: str, *args: Any, **kwargs: Any) -> None:
         self._deprecation_message = message
         super().__init__(*args, **kwargs)

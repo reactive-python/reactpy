@@ -61,7 +61,7 @@ def assert_reactpy_did_log(
                     )
                 ):
                     break
-            else:  # pragma: no cover
+            else:  # nocov
                 _raise_log_message_error(
                     "Could not find a log record matching the given",
                     match_message,

@@ -133,7 +133,7 @@ class BackendFixture:
 
         try:
             await asyncio.wait_for(started.wait(), timeout=self.timeout)
-        except Exception:  # pragma: no cover
+        except Exception:  # nocov
             # see if we can await the future for a more helpful error
             await asyncio.wait_for(server_future, timeout=self.timeout)
             raise
@@ -151,7 +151,7 @@ class BackendFixture:
         self.mount(None)  # reset the view
 
         logged_errors = self.list_logged_exceptions(del_log_records=False)
-        if logged_errors:  # pragma: no cover
+        if logged_errors:  # nocov
             msg = "Unexpected logged exception"
             raise LogAssertionError(msg) from logged_errors[0]
 

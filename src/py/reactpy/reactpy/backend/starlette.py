@@ -76,7 +76,7 @@ def use_websocket() -> WebSocket:
 
 def use_connection() -> Connection[WebSocket]:
     conn = _use_connection()
-    if not isinstance(conn.carrier, WebSocket):  # pragma: no cover
+    if not isinstance(conn.carrier, WebSocket):  # nocov
         msg = f"Connection has unexpected carrier {conn.carrier}. Are you running with a Flask server?"
         raise TypeError(msg)
     return conn
@@ -95,7 +95,7 @@ class Options(CommonOptions):
 
 def _setup_common_routes(options: Options, app: Starlette) -> None:
     cors_options = options.cors
-    if cors_options:  # pragma: no cover
+    if cors_options:  # nocov
         cors_params = (
             cors_options if isinstance(cors_options, dict) else {"allow_origins": ["*"]}
         )
