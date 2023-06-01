@@ -5,7 +5,12 @@ import pytest
 import reactpy
 from reactpy import html
 from reactpy.config import REACTPY_DEBUG_MODE
-from reactpy.core.hooks import LifeCycleHook, strictly_equal
+from reactpy.core.hooks import (
+    LifeCycleHook,
+    strictly_equal,
+    COMPONENT_DID_RENDER_EFFECT,
+    current_hook,
+)
 from reactpy.core.layout import Layout
 from reactpy.testing import DisplayFixture, HookCatcher, assert_reactpy_did_log, poll
 from reactpy.testing.logs import assert_reactpy_did_not_log
@@ -988,7 +993,7 @@ async def test_context_values_are_scoped():
         await layout.render()
 
 
-async def test_error_in_effect_cleanup_is_gracefully_handled():
+async def test_error_in_layout_effect_cleanup_is_gracefully_handled():
     component_hook = HookCatcher()
 
     @reactpy.component
@@ -1227,3 +1232,28 @@ async def test_use_state_named_tuple():
         state.current.set_value(2)
         await layout.render()
         assert state.current.value == 2
+
+
+async def test_error_in_component_effect_cleanup_is_gracefully_handled():
+    component_hook = HookCatcher()
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithEffect():
+        hook = current_hook()
+
+        def bad_effect():
+            raise ValueError("The error message")
+
+        hook.add_effect(COMPONENT_DID_RENDER_EFFECT, bad_effect)
+        return reactpy.html.div()
+
+    with assert_reactpy_did_log(
+        match_message="Component post-render effect .*? failed",
+        error_type=ValueError,
+        match_error="The error message",
+    ):
+        async with reactpy.Layout(ComponentWithEffect()) as layout:
+            await layout.render()
+            component_hook.latest.schedule_render()
+            await layout.render()  # no error

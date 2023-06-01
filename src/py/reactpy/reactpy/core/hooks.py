@@ -709,7 +709,7 @@ class LifeCycleHook:
     def unset_current(self) -> None:
         """Unset this hook as the active hook in this thread"""
         if _hook_stack.get().pop() is not self:
-            raise RuntimeError("Hook stack is in an invalid state")
+            raise RuntimeError("Hook stack is in an invalid state")  # nocov
 
     def _schedule_render(self) -> None:
         try:
