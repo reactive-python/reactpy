@@ -22,7 +22,6 @@
     "build": "vite build",
     "format": "prettier --write . && eslint --fix .",
     "test": "npm run check:tests",
-    "check:format": "prettier --check .",
     "check:tests": "echo 'no tests'",
     "check:types": "tsc --noEmit"
   }

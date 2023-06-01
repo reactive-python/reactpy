@@ -4,10 +4,12 @@
     "publish": "npm --workspaces publish",
     "test": "npm --workspaces test",
     "build": "npm --workspaces run build",
-    "format": "prettier --write . && eslint --fix .",
-    "check:format": "prettier --check . && eslint .",
+    "format": "npm run prettier -- --write && npm run eslint -- --fix",
+    "check:format": "npm run prettier -- --check && npm run eslint",
     "check:tests": "npm --workspaces run check:tests",
-    "check:types": "npm --workspaces run check:types"
+    "check:types": "npm --workspaces run check:types",
+    "prettier": "prettier --ignore-path .gitignore .",
+    "eslint": "eslint --ignore-path .gitignore ."
   },
   "workspaces": [
     "packages/event-to-object",
