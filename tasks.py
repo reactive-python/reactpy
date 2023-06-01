@@ -89,7 +89,12 @@ def env_py(context: Context):
 @task
 def env_js(context: Context):
     """Install JS development environment"""
-    in_js(context, "npm ci", hide="out")
+    in_js(
+        context,
+        "npm ci",
+        "npm run build",
+        hide="out",
+    )
 
 
 @task
