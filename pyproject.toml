@@ -1,15 +1,20 @@
 # --- Project ----------------------------------------------------------------------------
 
 [project]
-name = "project"
+name = "scripts"
 version = "0.0.0"
 description = "Scripts for managing the ReactPy respository"
-dependencies = ["invoke", "ruff", "black"]
 
 # --- Hatch ----------------------------------------------------------------------------
 
 [tool.hatch.envs.default]
-post-install-commands = ["invoke env"]
+detached = true
+dependencies = [
+  "invoke",
+  "black",
+  "ruff",
+  "toml",
+]
 
 [tool.hatch.envs.default.scripts]
 publish = "invoke publish {args}"

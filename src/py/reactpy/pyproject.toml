@@ -36,6 +36,8 @@ dependencies = [
   "lxml >=4",
 ]
 [project.optional-dependencies]
+all = ["reactpy[starlette,sanic,fastapi,flask,tornado,testing]"]
+
 starlette = [
   "starlette >=0.13.6",
   "uvicorn[standard] >=0.19.0",
@@ -73,13 +75,24 @@ Source = "https://github.com/reactive-python/reactpy"
 path = "reactpy/__init__.py"
 
 [tool.hatch.envs.default]
+features = ["all"]
 pre-install-command = "hatch run build --hooks-only"
 dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
+  "pytest-asyncio>=0.17",
+  "pytest-mock",
+  "pytest-rerunfailures",
+  "pytest-timeout",
+  "responses",
+  "playwright",
+  # I'm not quite sure why this needs to be installed for tests with Sanic to pass
+  "sanic-testing",
+  # Used to generate model changes from layout update messages
+  "jsonpointer",
 ]
 [tool.hatch.envs.default.scripts]
-test = "pytest {args:tests}"
+test = "playwright install && pytest {args:tests}"
 test-cov = "coverage run -m pytest {args:tests}"
 cov-report = [
   "- coverage combine",
@@ -102,8 +115,8 @@ dependencies = [
 ]
 
 [tool.hatch.envs.lint.scripts]
-typing = "mypy --install-types --non-interactive {args:reactpy tests}"
-all = ["typing"]
+types = "mypy --strict reactpy"
+all = ["types"]
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
 work_dir = "../../js"
@@ -115,6 +128,23 @@ commands = [
 artifacts = [
   "app/dist/"
 ]
+
+# --- Pytest ---------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+xfail_strict = true
+python_files = "*asserts.py test_*.py"
+asyncio_mode = "auto"
+
+# --- MyPy -----------------------------------------------------------------------------
+
+[tool.mypy]
+incremental = false
+ignore_missing_imports = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
 
 # --- Coverage -------------------------------------------------------------------------
 
@@ -131,8 +161,16 @@ reactpy = ["reactpy", "*/reactpy/reactpy"]
 tests = ["tests", "*/reactpy/tests"]
 
 [tool.coverage.report]
+fail_under = 100
+show_missing = true
+skip_covered = true
+sort = "Name"
 exclude_lines = [
   "no cov",
+  '\.\.\.\$',
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
+]
+omit = [
+    "reactpy/__main__.py",
 ]

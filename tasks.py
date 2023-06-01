@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
+from shlex import join
+import sys
+import toml
 from dataclasses import dataclass
-from logging import getLogger
 from pathlib import Path
 from shutil import rmtree
 from typing import TYPE_CHECKING, Any, Callable
@@ -33,7 +36,16 @@ if TYPE_CHECKING:
 # --- Constants ------------------------------------------------------------------------
 
 
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
+log.setLevel("INFO")
+log_handler = logging.StreamHandler(sys.stdout)
+log_handler.setFormatter(logging.Formatter("%(message)s"))
+log.addHandler(log_handler)
+
+
+# --- Constants ------------------------------------------------------------------------
+
+
 ROOT = Path(__file__).parent
 SRC_DIR = ROOT / "src"
 JS_DIR = SRC_DIR / "js"
@@ -59,6 +71,11 @@ def env(context: Context):
     """Install development environment"""
     in_py(context, "pip install -e .", hide="out")
     in_js(context, "npm ci", hide="out")
+    for py_proj in PY_PROJECTS:
+        py_proj_toml = toml.load(py_proj / "pyproject.toml")
+        hatch_default_env = py_proj_toml["tool"]["hatch"]["envs"].get("default", {})
+        hatch_default_deps = hatch_default_env.get("dependencies", [])
+        context.run(f"pip install {' '.join(map(repr, hatch_default_deps))}")
 
 
 @task
@@ -70,6 +87,7 @@ def lint_py(context: Context, fix: bool = False):
     else:
         context.run("ruff .")
         context.run("black --check --diff .")
+    in_py(context, "hatch run lint:all")
 
 
 @task
@@ -142,6 +160,7 @@ def publish(context: Context, dry_run: str = ""):
 def in_py(context: Context, *commands: str, **kwargs: Any) -> None:
     for p in PY_PROJECTS:
         with context.cd(p):
+            log.info(f"Running commands in {p}...")
             for c in commands:
                 context.run(c, **kwargs)
 

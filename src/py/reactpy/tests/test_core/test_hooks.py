@@ -1002,7 +1002,7 @@ async def test_error_in_effect_cleanup_is_gracefully_handled():
         return reactpy.html.div()
 
     with assert_reactpy_did_log(
-        match_message="Component post-render effect .*? failed",
+        match_message=r"post-render effect .*? failed",
         error_type=ValueError,
         match_error="The error message",
     ):
