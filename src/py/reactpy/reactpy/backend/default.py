@@ -27,10 +27,10 @@ def create_development_app() -> Any:
     return _default_implementation().create_development_app()
 
 
-def Options(*args: Any, **kwargs: Any) -> NoReturn:
+def Options(*args: Any, **kwargs: Any) -> NoReturn:  # pragma: no cover
     """Create configuration options"""
     msg = "Default implementation has no options."
-    raise ValueError(msg)  # pragma: no cover
+    raise ValueError(msg)
 
 
 async def serve_development_app(

@@ -11,10 +11,16 @@ description = "Scripts for managing the ReactPy respository"
 detached = true
 dependencies = [
   "invoke",
+  # lint
   "black",
   "ruff",
   "toml",
+  "flake8",
+  "flake8-pyproject",
+  "reactpy-flake8 >=0.7",
+  # publish
   "semver >=2, <3",
+  "twine",
 ]
 
 [tool.hatch.envs.default.scripts]
@@ -32,6 +38,12 @@ test-docs = "invoke test-docs"
 [tool.black]
 target-version = ["py39"]
 line-length = 88
+
+# --- Flake8 ----------------------------------------------------------------------------
+
+[tool.flake8]
+select = ["RPY"]  # only need to check with reactpy-flake8
+exclude = ["**/node_modules/*", ".eggs/*", ".tox/*", "**/venv/*"]
 
 # --- Ruff -----------------------------------------------------------------------------
 

@@ -5,13 +5,13 @@ import logging
 import os
 import re
 import sys
-import toml
 from dataclasses import dataclass
 from pathlib import Path
 from shutil import rmtree
 from typing import TYPE_CHECKING, Any, Callable
 
 import semver
+import toml
 from invoke import task
 from invoke.context import Context
 from invoke.exceptions import Exit
@@ -69,28 +69,45 @@ TAG_PATTERN = re.compile(
 @task
 def env(context: Context):
     """Install development environment"""
-    in_py(context, "pip install -e .", hide="out")
-    in_js(context, "npm ci", hide="out")
+    env_py(context)
+    env_js(context)
+
+
+@task
+def env_py(context: Context):
+    """Install Python development environment"""
     for py_proj in PY_PROJECTS:
         py_proj_toml = toml.load(py_proj / "pyproject.toml")
         hatch_default_env = py_proj_toml["tool"]["hatch"]["envs"].get("default", {})
+        hatch_default_features = hatch_default_env.get("features", [])
         hatch_default_deps = hatch_default_env.get("dependencies", [])
+        with context.cd(py_proj):
+            context.run(f"pip install '.[{','.join(hatch_default_features)}]'")
         context.run(f"pip install {' '.join(map(repr, hatch_default_deps))}")
+
+
+@task
+def env_js(context: Context):
+    """Install JS development environment"""
+    in_js(context, "npm ci", hide="out")
 
 
 @task
 def lint_py(context: Context, fix: bool = False):
     """Run linters and type checkers"""
     if fix:
-        context.run("black .")
         context.run("ruff --fix .")
     else:
         context.run("ruff .")
         context.run("black --check --diff .")
-    in_py(context, "hatch run lint:all")
+        in_py(
+            context,
+            f"flake8 --toml-config {ROOT / 'pyproject.toml'} .",
+            "hatch run lint:all",
+        )
 
 
-@task
+@task(pre=[env_js])
 def lint_js(context: Context, fix: bool = False):
     """Run linters and type checkers"""
     if fix:
@@ -106,13 +123,13 @@ def test_py(context: Context, no_cov: bool = False):
     in_py(context, f"hatch run {'test' if no_cov else 'cov'}")
 
 
-@task
+@task(pre=[env_js])
 def test_js(context: Context):
     """Run test suites"""
     in_js(context, "npm run check:tests")
 
 
-@task
+@task(pre=[env_py])
 def test_docs(context: Context):
     raise Exit("Not implemented")
 

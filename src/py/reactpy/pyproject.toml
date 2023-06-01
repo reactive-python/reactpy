@@ -93,9 +93,9 @@ dependencies = [
 ]
 [tool.hatch.envs.default.scripts]
 test = "playwright install && pytest {args:tests}"
-test-cov = "coverage run -m pytest {args:tests}"
+test-cov = "playwright install && coverage run -m pytest {args:tests}"
 cov-report = [
-  "- coverage combine",
+  # "- coverage combine",
   "coverage report",
 ]
 cov = [
@@ -103,8 +103,11 @@ cov = [
   "cov-report",
 ]
 
+[tool.hatch.envs.default.env-vars]
+REACTPY_DEBUG_MODE="1"
+
 [tool.hatch.envs.lint]
-detached = true
+features = ["all"]
 dependencies = [
   "mypy>=1.0.0",
   "types-click",
@@ -149,16 +152,12 @@ warn_unused_ignores = true
 # --- Coverage -------------------------------------------------------------------------
 
 [tool.coverage.run]
-source_pkgs = ["reactpy", "tests"]
-branch = true
-parallel = true
+source_pkgs = ["reactpy"]
+branch = false
+parallel = false
 omit = [
   "reactpy/__init__.py",
 ]
-
-[tool.coverage.paths]
-reactpy = ["reactpy", "*/reactpy/reactpy"]
-tests = ["tests", "*/reactpy/tests"]
 
 [tool.coverage.report]
 fail_under = 100
@@ -166,8 +165,8 @@ show_missing = true
 skip_covered = true
 sort = "Name"
 exclude_lines = [
-  "no cov",
-  '\.\.\.\$',
+  "no ?cov",
+  '\.\.\.',
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
