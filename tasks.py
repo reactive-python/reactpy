@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import re
-from shlex import join
 import sys
 import toml
 from dataclasses import dataclass
@@ -12,6 +11,7 @@ from pathlib import Path
 from shutil import rmtree
 from typing import TYPE_CHECKING, Any, Callable
 
+import semver
 from invoke import task
 from invoke.context import Context
 from invoke.exceptions import Exit
@@ -273,6 +273,11 @@ def parse_tag(tag: str) -> TagInfo:
     if not match:
         msg = f"Invalid tag: {tag}"
         raise Exit(msg)
+
+    version = match.group("version")
+    if not semver.Version.is_valid(version):
+        raise Exit(f"Invalid version: {version} in tag {tag}")
+
     return TagInfo(tag=tag, name=match.group("name"), version=match.group("version"))
 
 
