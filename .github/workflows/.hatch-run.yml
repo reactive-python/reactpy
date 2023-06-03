@@ -50,7 +50,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Python Dependencies
-        run: pip install hatch
+        run: pip install hatch poetry
       - name: Run Scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.node-auth-token }}

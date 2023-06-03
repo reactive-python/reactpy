@@ -3,12 +3,15 @@ from pathlib import Path
 
 from sanic import Sanic, response
 
-from docs.examples import get_normalized_example_name, load_examples
+from docs_app.examples import get_normalized_example_name, load_examples
 from reactpy import component
 from reactpy.backend.sanic import Options, configure, use_request
 from reactpy.core.types import ComponentConstructor
 
-HERE = Path(__file__).parent
+THIS_DIR = Path(__file__).parent
+DOCS_DIR = THIS_DIR.parent
+DOCS_BUILD_DIR = DOCS_DIR / "build"
+
 REACTPY_MODEL_SERVER_URL_PREFIX = "/_reactpy"
 
 logger = getLogger(__name__)
@@ -38,10 +41,10 @@ def reload_examples():
 _EXAMPLES: dict[str, ComponentConstructor] = {}
 
 
-def make_app():
-    app = Sanic("docs_app")
+def make_app(name: str):
+    app = Sanic(name)
 
-    app.static("/docs", str(HERE / "build"))
+    app.static("/docs", str(DOCS_BUILD_DIR))
 
     @app.route("/")
     async def forward_to_index(_):

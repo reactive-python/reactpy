@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "docs"
+version = "0.0.0"
+description = "docs"
+authors = ["rmorshea <ryan.morshead@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+reactpy = { path = "../src/py/reactpy", extras = ["starlette", "sanic", "fastapi", "flask", "tornado", "testing"], develop = false }
+furo = "2022.04.07"
+sphinx = "*"
+sphinx-autodoc-typehints = "*"
+sphinx-copybutton = "*"
+sphinx-autobuild = "*"
+sphinx-reredirects = "*"
+sphinx-design = "*"
+sphinx-resolve-py-references = "*"
+sphinxext-opengraph = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

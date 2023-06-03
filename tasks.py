@@ -47,6 +47,7 @@ log.addHandler(log_handler)
 
 
 ROOT = Path(__file__).parent
+DOCS_DIR = ROOT / "docs"
 SRC_DIR = ROOT / "src"
 JS_DIR = SRC_DIR / "js"
 PY_DIR = SRC_DIR / "py"
@@ -139,7 +140,59 @@ def test_js(context: Context):
 
 @task(pre=[env_py])
 def test_docs(context: Context):
-    raise Exit("Not implemented")
+    with context.cd(DOCS_DIR):
+        context.run("poetry install")
+        context.run(
+            "poetry run sphinx-build "
+            "-a "  # re-write all output files
+            "-T "  # show full tracebacks
+            "-W "  # turn warnings into errors
+            "--keep-going "  # complete the build, but still report warnings as errors
+            "-b doctest "
+            "source "
+            "build",
+        )
+        context.run("poetry run sphinx-build -b doctest source build")
+
+    context.run("docker build . --file ./docs/Dockerfile")
+
+
+@task
+def docs(context: Context, docker: bool = False):
+    """Build documentation"""
+    if docker:
+        _docker_docs(context)
+    else:
+        _live_docs(context)
+
+
+def _docker_docs(context: Context) -> None:
+    context.run("docker build . --file ./docs/Dockerfile --tag reactpy-docs:latest")
+    context.run(
+        "docker run -it -p 5000:5000 -e DEBUG=1 --rm reactpy-docs:latest", pty=True
+    )
+
+
+def _live_docs(context: Context) -> None:
+    with context.cd(DOCS_DIR):
+        context.run("poetry install")
+        context.run(
+            "poetry run python main.py "
+            "--open-browser "
+            # watch python source too
+            "--watch=../src/py "
+            # for some reason this matches absolute paths
+            "--ignore=**/_auto/* "
+            "--ignore=**/_static/custom.js "
+            "--ignore=**/node_modules/* "
+            "--ignore=**/package-lock.json "
+            "-a "
+            "-E "
+            "-b "
+            "html "
+            "source "
+            "build"
+        )
 
 
 @task

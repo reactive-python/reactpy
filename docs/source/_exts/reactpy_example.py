@@ -4,17 +4,16 @@ import re
 from pathlib import Path
 from typing import Any
 
+from docs_app.examples import (
+    SOURCE_DIR,
+    get_example_files_by_name,
+    get_normalized_example_name,
+)
 from docutils.parsers.rst import directives
 from docutils.statemachine import StringList
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 from sphinx_design.tabs import TabSetDirective
-
-from docs.examples import (
-    SOURCE_DIR,
-    get_example_files_by_name,
-    get_normalized_example_name,
-)
 
 
 class WidgetExample(SphinxDirective):

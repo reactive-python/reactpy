@@ -10,7 +10,7 @@ import reactpy
 from reactpy.types import ComponentType
 
 HERE = Path(__file__)
-SOURCE_DIR = HERE.parent / "source"
+SOURCE_DIR = HERE.parent.parent / "source"
 CONF_FILE = SOURCE_DIR / "conf.py"
 RUN_ReactPy = reactpy.run
 

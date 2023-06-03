@@ -8,7 +8,7 @@ build-backend = "hatchling.build"
 name = "reactpy"
 dynamic = ["version"]
 description = 'Reactive user interfaces with pure Python'
-readme = "../../../README.md"
+readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
 keywords = ["react", "javascript", "reactpy", "component"]
@@ -65,9 +65,9 @@ testing = [
 ]
 
 [project.urls]
+Source = "https://github.com/reactive-python/reactpy"
 Documentation = "https://github.com/reactive-python/reactpy#readme"
 Issues = "https://github.com/reactive-python/reactpy/discussions"
-Source = "https://github.com/reactive-python/reactpy"
 
 # --- Hatch ----------------------------------------------------------------------------
 

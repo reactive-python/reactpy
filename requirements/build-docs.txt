@@ -1,9 +1,0 @@
-sphinx
-sphinx-autodoc-typehints
-furo ==2022.04.07
-sphinx-copybutton
-sphinx-autobuild
-sphinx-reredirects
-sphinx-design
-sphinx-resolve-py-references
-sphinxext-opengraph
