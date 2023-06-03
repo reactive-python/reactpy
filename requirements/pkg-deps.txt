@@ -1,9 +1,0 @@
-typing-extensions >=3.10
-mypy-extensions >=0.4.3
-anyio >=3
-jsonpatch >=1.32
-fastjsonschema >=2.14.5
-requests >=2
-colorlog >=6
-asgiref >=3
-lxml >=4

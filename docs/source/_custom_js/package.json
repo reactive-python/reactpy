@@ -15,6 +15,6 @@
     "rollup": "^2.35.1"
   },
   "dependencies": {
-    "@reactpy/client": "file:../../../src/client/packages/@reactpy/client"
+    "@reactpy/client": "file:../../../src/js/packages/@reactpy/client"
   }
 }

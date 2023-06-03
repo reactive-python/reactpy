@@ -1,0 +1,4 @@
+.coverage.*
+
+# --- Build Artifacts ---
+reactpy/_static

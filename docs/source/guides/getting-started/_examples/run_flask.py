@@ -3,7 +3,6 @@
 from reactpy import run
 from reactpy.backend import flask as flask_server
 
-
 # the run() function is the entry point for examples
 flask_server.configure = lambda _, cmpt: run(cmpt)
 

@@ -8,7 +8,7 @@ def ArtistList():
     )
 
     def handle_sort_click(event):
-        set_artists(list(sorted(artists)))
+        set_artists(sorted(artists))
 
     def handle_reverse_click(event):
         set_artists(list(reversed(artists)))

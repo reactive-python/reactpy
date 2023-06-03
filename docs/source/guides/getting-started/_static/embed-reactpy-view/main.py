@@ -4,7 +4,6 @@ from sanic.response import file
 from reactpy import component, html
 from reactpy.backend.sanic import Options, configure
 
-
 app = Sanic("MyApp")
 
 

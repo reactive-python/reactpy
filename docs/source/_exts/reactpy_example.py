@@ -4,17 +4,16 @@ import re
 from pathlib import Path
 from typing import Any
 
+from docs_app.examples import (
+    SOURCE_DIR,
+    get_example_files_by_name,
+    get_normalized_example_name,
+)
 from docutils.parsers.rst import directives
 from docutils.statemachine import StringList
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 from sphinx_design.tabs import TabSetDirective
-
-from docs.examples import (
-    SOURCE_DIR,
-    get_example_files_by_name,
-    get_normalized_example_name,
-)
 
 
 class WidgetExample(SphinxDirective):
@@ -41,10 +40,8 @@ class WidgetExample(SphinxDirective):
         ex_files = get_example_files_by_name(example_name)
         if not ex_files:
             src_file, line_num = self.get_source_info()
-            raise ValueError(
-                f"Missing example named {example_name!r} "
-                f"referenced by document {src_file}:{line_num}"
-            )
+            msg = f"Missing example named {example_name!r} referenced by document {src_file}:{line_num}"
+            raise ValueError(msg)
 
         labeled_tab_items: list[tuple[str, Any]] = []
         if len(ex_files) == 1:
@@ -114,7 +111,8 @@ def _literal_include(path: Path, linenos: bool):
             ".json": "json",
         }[path.suffix]
     except KeyError:
-        raise ValueError(f"Unknown extension type {path.suffix!r}")
+        msg = f"Unknown extension type {path.suffix!r}"
+        raise ValueError(msg) from None
 
     return _literal_include_template.format(
         name=str(path.relative_to(SOURCE_DIR)),

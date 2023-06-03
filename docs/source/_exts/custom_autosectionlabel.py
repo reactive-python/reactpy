@@ -17,7 +17,6 @@ from sphinx.locale import __
 from sphinx.util import logging
 from sphinx.util.nodes import clean_astext
 
-
 logger = logging.getLogger(__name__)
 
 

@@ -1,61 +1,132 @@
-[build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
+# --- Project ----------------------------------------------------------------------------
 
-[tool.isort]
-multi_line_output = 3
-force_grid_wrap = 0
-use_parentheses = "True"
-ensure_newline_before_comments = "True"
-include_trailing_comma = "True"
-line_length = 88
-lines_after_imports = 2
+[project]
+name = "scripts"
+version = "0.0.0"
+description = "Scripts for managing the ReactPy respository"
 
-[tool.mypy]
-incremental = false
-ignore_missing_imports = true
-warn_unused_configs = true
-warn_redundant_casts = true
-warn_unused_ignores = true
+# --- Hatch ----------------------------------------------------------------------------
 
-[tool.pytest.ini_options]
-testpaths = "tests"
-xfail_strict = true
-markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
-python_files = "*asserts.py test_*.py"
-asyncio_mode = "auto"
-
-[tool.coverage.report]
-fail_under = 100
-show_missing = true
-skip_covered = true
-sort = "Name"
-exclude_lines = [
-    # These are regex patterns
-    'pragma: no cover',
-    '\.\.\.',
-    'raise NotImplementedError',
-    'if TYPE_CHECKING[\s:]',
-]
-omit = [
-    "src/reactpy/__main__.py",
+[tool.hatch.envs.default]
+detached = true
+dependencies = [
+  "invoke",
+  # lint
+  "black",
+  "ruff",
+  "toml",
+  "flake8",
+  "flake8-pyproject",
+  "reactpy-flake8 >=0.7",
+  # publish
+  "semver >=2, <3",
+  "twine",
 ]
 
-[tool.pydocstyle]
-inherit = false
-match = '.*\.py'
-convention = "google"
-add_ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D107", "D412", "D415"]
+[tool.hatch.envs.default.scripts]
+publish = "invoke publish {args}"
+docs = "invoke docs {args}"
+
+lint-py = "invoke lint-py {args}"
+lint-js = "invoke lint-js {args}"
+
+test-py = "invoke test-py {args}"
+test-js = "invoke test-js"
+test-docs = "invoke test-docs"
+
+# --- Black ----------------------------------------------------------------------------
+
+[tool.black]
+target-version = ["py39"]
+line-length = 88
+
+# --- Flake8 ----------------------------------------------------------------------------
 
 [tool.flake8]
-ignore = ["E203", "E266", "E501", "W503", "F811", "N802", "N806"]
-per-file-ignores = [
-    # sometimes this is required in order to hide setup for an example
-    "docs/*/_examples/*.py:E402",
+select = ["RPY"]  # only need to check with reactpy-flake8
+exclude = ["**/node_modules/*", ".eggs/*", ".tox/*", "**/venv/*"]
+
+# --- Ruff -----------------------------------------------------------------------------
+
+[tool.ruff]
+target-version = "py39"
+line-length = 88
+select = [
+  "A",
+  "ARG",
+  "B",
+  "C",
+  "DTZ",
+  "E",
+  # error message linting is overkill
+  # "EM",
+  "F",
+  # TODO: turn this on later
+  # "FBT",
+  "I",
+  "ICN",
+  "ISC",
+  "N",
+  "PLC",
+  "PLE",
+  "PLR",
+  "PLW",
+  "Q",
+  "RUF",
+  "S",
+  "T",
+  "TID",
+  "UP",
+  "W",
+  "YTT",
 ]
-max-line-length = 88
-max-complexity = 20
-select = ["B", "C", "E", "F", "W", "T4", "B9", "N", "RPY"]
-exclude = ["**/node_modules/*", ".eggs/*", ".tox/*"]
-# -- flake8-tidy-imports --
-ban-relative-imports = "true"
+ignore = [
+  # TODO: turn this on later
+  "N802", "N806",  # allow TitleCase functions/variables
+  # We're not any cryptography
+  "S311",
+  # For loop variable re-assignment seems like an uncommon mistake
+  "PLW2901",
+  # Let Black deal with line-length
+  "E501",
+  # Allow args/attrs to shadow built-ins
+  "A002", "A003",
+  # Allow unused args (useful for documenting what the parameter is for later)
+  "ARG001", "ARG002", "ARG005",
+  # Allow non-abstract empty methods in abstract base classes
+  "B027",
+  # Allow boolean positional values in function calls, like `dict.get(... True)`
+  "FBT003",
+  # If we're making an explicit comparison to a falsy value it was probably intentional
+  "PLC1901",
+  # Ignore checks for possible passwords
+  "S105", "S106", "S107",
+  # Ignore complexity
+  "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+]
+unfixable = [
+  # Don't touch unused imports
+  "F401",
+]
+
+[tool.ruff.isort]
+known-first-party = ["reactpy"]
+
+[tool.ruff.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.per-file-ignores]
+# Tests can use magic values, assertions, and relative imports
+"**/tests/**/*" = ["PLR2004", "S101", "TID252"]
+"docs/**/*.py" = [
+  # Examples require some extra setup before import
+  "E402",
+  # Allow exec
+  "S102",
+  # Allow print
+  "T201",
+]
+"scripts/**/*.py" = [
+  # Allow print
+  "T201",
+]

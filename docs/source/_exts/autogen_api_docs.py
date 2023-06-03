@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Collection, Iterator
 from pathlib import Path
-from typing import Collection, Iterator
 
 from sphinx.application import Sphinx
 
-
 HERE = Path(__file__).parent
 SRC = HERE.parent.parent.parent / "src"
-PYTHON_PACKAGE = SRC / "reactpy"
+PYTHON_PACKAGE = SRC / "py" / "reactpy" / "reactpy"
 
 AUTO_DIR = HERE.parent / "_auto"
 AUTO_DIR.mkdir(exist_ok=True)
@@ -82,9 +81,12 @@ def get_module_name(path: Path) -> str:
 
 
 def get_section_symbol(path: Path) -> str:
-    rel_path_parts = path.relative_to(PYTHON_PACKAGE).parts
-    assert len(rel_path_parts) < len(SECTION_SYMBOLS), "package structure is too deep"
-    return SECTION_SYMBOLS[len(rel_path_parts)]
+    rel_path = path.relative_to(PYTHON_PACKAGE)
+    rel_path_parts = rel_path.parts
+    if len(rel_path_parts) > len(SECTION_SYMBOLS):
+        msg = f"package structure is too deep - ran out of section symbols: {rel_path}"
+        raise RuntimeError(msg)
+    return SECTION_SYMBOLS[len(rel_path_parts) - 1]
 
 
 def walk_python_files(root: Path, ignore_dirs: Collection[str]) -> Iterator[Path]:

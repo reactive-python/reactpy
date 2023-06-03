@@ -107,7 +107,7 @@ def GameLoop(grid_size, block_scale, set_game_state):
 
         if snake[-1] == food:
             set_food()
-            new_snake = snake + [new_snake_head]
+            new_snake = [*snake, new_snake_head]
         else:
             new_snake = snake[1:] + [new_snake_head]
 

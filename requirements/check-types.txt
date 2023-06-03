@@ -1,6 +1,0 @@
-mypy
-types-click
-types-tornado
-types-pkg-resources
-types-flask
-types-requests

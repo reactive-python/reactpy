@@ -3,7 +3,6 @@
 from reactpy import run
 from reactpy.backend import tornado as tornado_server
 
-
 # the run() function is the entry point for examples
 tornado_server.configure = lambda _, cmpt: run(cmpt)
 

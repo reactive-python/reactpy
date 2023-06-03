@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
 #
@@ -10,16 +9,14 @@ import sys
 from doctest import DONT_ACCEPT_TRUE_FOR_1, ELLIPSIS, NORMALIZE_WHITESPACE
 from pathlib import Path
 
-
 # -- Path Setup --------------------------------------------------------------
 
 THIS_DIR = Path(__file__).parent
 ROOT_DIR = THIS_DIR.parent.parent
-
-# project path
-sys.path.insert(0, str(ROOT_DIR))
+DOCS_DIR = THIS_DIR.parent
 
 # extension path
+sys.path.insert(0, str(DOCS_DIR))
 sys.path.insert(0, str(THIS_DIR / "_exts"))
 
 
@@ -32,7 +29,7 @@ description = (
     "a single line of Javascript. It can be run standalone, in a Jupyter Notebook, or "
     "as part of an existing application."
 )
-copyright = "2023, Ryan Morshead"
+copyright = "2023, Ryan Morshead"  # noqa: A001
 author = "Ryan Morshead"
 
 # -- Common External Links ---------------------------------------------------
@@ -40,23 +37,23 @@ author = "Ryan Morshead"
 extlinks = {
     "issue": (
         "https://github.com/reactive-python/reactpy/issues/%s",
-        "#",
+        "#%s",
     ),
     "pull": (
         "https://github.com/reactive-python/reactpy/pull/%s",
-        "#",
+        "#%s",
     ),
     "discussion": (
         "https://github.com/reactive-python/reactpy/discussions/%s",
-        "#",
+        "#%s",
     ),
     "discussion-type": (
         "https://github.com/reactive-python/reactpy/discussions/categories/%s",
-        "",
+        "%s",
     ),
     "commit": (
         "https://github.com/reactive-python/reactpy/commit/%s",
-        "",
+        "%s",
     ),
 }
 extlinks_detect_hardcoded_links = True
@@ -320,7 +317,7 @@ epub_exclude_files = ["search.html"]
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "https://docs.python.org/": None,
+    "python": ("https://docs.python.org/3", None),
     "pyalect": ("https://pyalect.readthedocs.io/en/latest", None),
     "sanic": ("https://sanic.readthedocs.io/en/latest/", None),
     "tornado": ("https://www.tornadoweb.org/en/stable/", None),

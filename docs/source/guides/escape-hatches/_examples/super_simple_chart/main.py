@@ -2,7 +2,6 @@ from pathlib import Path
 
 from reactpy import component, run, web
 
-
 file = Path(__file__).parent / "super-simple-chart.js"
 ssc = web.module_from_file("super-simple-chart", file, fallback="⌛")
 SuperSimpleChart = web.export(ssc, "SuperSimpleChart")

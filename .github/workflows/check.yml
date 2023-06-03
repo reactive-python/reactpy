@@ -1,0 +1,45 @@
+name: check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 0 * * 0"
+
+jobs:
+  test-py-cov:
+    uses: ./.github/workflows/.hatch-run.yml
+    with:
+      job-name: "python-{0}"
+      hatch-run: "test-py"
+  lint-py:
+    uses: ./.github/workflows/.hatch-run.yml
+    with:
+      job-name: "python-{0}"
+      hatch-run: "lint-py"
+  test-py-matrix:
+    uses: ./.github/workflows/.hatch-run.yml
+    with:
+      job-name: "python-{0} {1}"
+      hatch-run: "test-py --no-cov"
+      runs-on-array: '["ubuntu-latest", "macos-latest", "windows-latest"]'
+      python-version-array: '["3.9", "3.10", "3.11"]'
+  test-docs:
+    uses: ./.github/workflows/.hatch-run.yml
+    with:
+      job-name: "python-{0}"
+      hatch-run: "test-docs"
+  test-js:
+    uses: ./.github/workflows/.hatch-run.yml
+    with:
+      job-name: "{1}"
+      hatch-run: "test-js"
+  lint-js:
+    uses: ./.github/workflows/.hatch-run.yml
+    with:
+      job-name: "{1}"
+      hatch-run: "lint-js"

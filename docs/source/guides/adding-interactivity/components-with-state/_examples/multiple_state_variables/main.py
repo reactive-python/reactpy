@@ -3,7 +3,6 @@ from pathlib import Path
 
 from reactpy import component, hooks, html, run
 
-
 HERE = Path(__file__)
 DATA_PATH = HERE.parent / "data.json"
 sculpture_data = json.loads(DATA_PATH.read_text())

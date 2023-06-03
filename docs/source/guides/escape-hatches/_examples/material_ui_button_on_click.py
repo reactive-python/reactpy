@@ -2,7 +2,6 @@ import json
 
 import reactpy
 
-
 mui = reactpy.web.module_from_template(
     "react@^17.0.0",
     "@material-ui/core@4.12.4",
