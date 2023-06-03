@@ -8,9 +8,16 @@ RUN curl -sL https://deb.nodesource.com/setup_14.x  | bash -
 RUN apt-get install -yq nodejs build-essential
 RUN npm install -g npm@8.5.0
 
-# Install Pipx
-# ------------
-RUN pip install pipx
+# Install Poetry
+# --------------
+RUN pip install poetry
+
+# Create/Activate Python Venv
+# ---------------------------
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN pip install --upgrade pip
 
 # Copy Files
 # ----------
@@ -22,12 +29,12 @@ COPY branding ./branding
 # Install and Build Docs
 # ----------------------
 WORKDIR /app/docs
-RUN pipx run poetry install
-RUN pipx run poetry run sphinx-build -v -W -b html source build
+RUN poetry install
+RUN sphinx-build -v -W -b html source build
 
 # Define Entrypoint
 # -----------------
 ENV PORT 5000
 ENV REACTPY_DEBUG_MODE=1
 ENV REACTPY_CHECK_VDOM_SPEC=0
-CMD pipx run poetry run python main.py
+CMD python main.py
