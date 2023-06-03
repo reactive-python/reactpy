@@ -99,7 +99,7 @@ cov-report = [
   "coverage report",
 ]
 cov = [
-  "test-cov",
+  "test-cov {args}",
   "cov-report",
 ]
 

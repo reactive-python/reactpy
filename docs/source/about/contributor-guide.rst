@@ -80,11 +80,17 @@ In order to develop ReactPy locally you'll first need to install the following:
     *   - What to Install
         - How to Install
 
+    *   - Python >= 3.9
+        - https://realpython.com/installing-python/
+
+    *   - Hatch
+        - https://hatch.pypa.io/latest/install/
+
+    *   - Poetry
+        - https://python-poetry.org/docs/#installation
+
     *   - Git
         - https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
-
-    *   - Python >= 3.7
-        - https://realpython.com/installing-python/
 
     *   - NodeJS >= 14
         - https://nodejs.org/en/download/package-manager/
@@ -106,57 +112,38 @@ Once done, you can clone a local copy of this repository:
     git clone https://github.com/reactive-python/reactpy.git
     cd reactpy
 
-Then, you should be able to run the command below to:
-
-- Install an editable version of the Python code
-
-- Download, build, and install Javascript dependencies
-
-- Install some pre-commit_ hooks for Git
+Then, you should be able to activate your development environment with:
 
 .. code-block:: bash
 
-    pip install -e . -r requirements.txt && pre-commit install
-
-If you modify any Javascript, you'll need to re-install ReactPy:
-
-.. code-block:: bash
-
-    pip install -e .
-
-However you may also ``cd`` to the ``src/client`` directory which contains a
-``package.json`` that you can use to run standard ``npm`` commands from.
+    hatch shell
 
 
 Running The Tests
 -----------------
 
-The test suite for ReactPy is executed with Nox_, which should already be installed if you
-followed the `earlier instructions <Development Environment>`_. The suite covers:
-
-1. Server-side Python code with PyTest_
-
-2. The end-to-end application using Playwright_ in Python
-
-3. Client-side Javascript code with UVU_
-
-Once you've installed them you'll be able to run:
+Tests exist for both Python and Javascript. These can be run with the following:
 
 .. code-block:: bash
 
-    nox -s check-python-tests
+    hatch run test-py
+    hatch run test-js
 
-You can observe the browser as the tests are running by passing an extra flag:
-
-.. code-block:: bash
-
-    nox -s check-python-tests -- --headed
-
-To see a full list of available commands (e.g. ``nox -s <your-command>``) run:
+If you want to run tests for individual packages you'll need to ``cd`` into the
+package directory and run the tests from there. For example, to run the tests just for
+the ``reactpy`` package you'd do:
 
 .. code-block:: bash
 
-    nox -l
+    cd src/py/reactpy
+    hatch run test --headed  # run the tests in a browser window
+
+For Javascript, you'd do:
+
+.. code-block:: bash
+
+    cd src/js/packages/event-to-object
+    npm run check:tests
 
 
 Code Quality Checks
@@ -172,8 +159,9 @@ The following are currently being used:
 - MyPy_ - a static type checker
 - Black_ - an opinionated code formatter
 - Flake8_ - a style guide enforcement tool
-- ISort_ - a utility for alphabetically sorting imports
+- Ruff_ - An extremely fast Python linter, written in Rust.
 - Prettier_ - a tool for automatically formatting various file types
+- EsLint_ - A Javascript linter
 
 The most strict measure of quality enforced on the codebase is 100% test coverage in
 Python files. This means that every line of coded added to ReactPy requires a test case
@@ -186,10 +174,10 @@ your :ref:`Pull Request <Making a Pull Request>`.
 
 .. note::
 
-    You can manually run ``nox -s format`` to auto format your code without having to
-    do so via ``pre-commit``. However, many IDEs have ways to automatically format upon
-    saving a file
-    (e.g.`VSCode <https://code.visualstudio.com/docs/python/editing#_formatting>`__)
+    You can manually run ``hatch run lint --fix`` to auto format your code without
+    having to do so via ``pre-commit``. However, many IDEs have ways to automatically
+    format upon saving a file (e.g.
+    `VSCode <https://code.visualstudio.com/docs/python/editing#_formatting>`__)
 
 
 Building The Documentation
@@ -199,7 +187,7 @@ To build and display the documentation locally run:
 
 .. code-block:: bash
 
-    nox -s docs
+    hatch run docs
 
 This will compile the documentation from its source files into HTML, start a web server,
 and open a browser to display the now generated documentation. Whenever you change any
@@ -211,14 +199,14 @@ To run some of the examples in the documentation as if they were tests run:
 
 .. code-block:: bash
 
-    nox -s test_docs
+    hatch run test-docs
 
 Building the documentation as it's deployed in production requires Docker_. Once you've
 installed Docker, you can run:
 
 .. code-block:: bash
 
-    nox -s docs_in_docker
+    hatch run docs --docker
 
 Where you can then navigate to http://localhost:5000..
 
@@ -329,7 +317,6 @@ you should refer to their respective documentation in the links below:
 .. _pip: https://pypi.org/project/pip/
 .. _PyTest: pytest <https://docs.pytest.org
 .. _Playwright: https://playwright.dev/python/
-.. _Nox: https://nox.thea.codes/en/stable/#
 .. _React: https://reactjs.org/
 .. _Heroku: https://www.heroku.com/what
 .. _GitHub Actions: https://github.com/features/actions
@@ -338,6 +325,7 @@ you should refer to their respective documentation in the links below:
 .. _MyPy: http://mypy-lang.org/
 .. _Black: https://github.com/psf/black
 .. _Flake8: https://flake8.pycqa.org/en/latest/
-.. _ISort: https://pycqa.github.io/isort/
+.. _Ruff: https://github.com/charliermarsh/ruff
 .. _UVU: https://github.com/lukeed/uvu
 .. _Prettier: https://prettier.io/
+.. _ESLint: https://eslint.org/
