@@ -127,7 +127,6 @@ def test_py(context: Context, no_cov: bool = False):
     """Run test suites"""
     in_py(
         context,
-        "hatch build --hooks-only",
         f"hatch run {'test' if no_cov else 'cov'} --maxfail=3, --reruns=3",
     )
 
