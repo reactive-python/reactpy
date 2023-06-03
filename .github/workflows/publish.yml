@@ -13,7 +13,7 @@ jobs:
     with:
       job-name: "publish"
       hatch-run: "publish"
-      uses-secrets: true
+      node-registry-url: "https://registry.npmjs.org"
     secrets:
       node-auth-token: ${{ secrets.NODE_AUTH_TOKEN }}
       pypi-username: ${{ secrets.PYPI_USERNAME }}
