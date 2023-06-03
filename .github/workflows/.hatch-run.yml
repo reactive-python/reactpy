@@ -17,6 +17,9 @@ on:
         required: false
         type: string
         default: '["3.x"]'
+      uses-secrets:
+        type: boolean
+        default: false
     secrets:
       node-auth-token:
         required: false
@@ -36,9 +39,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
+        if: ${{ inputs.uses-secrets }}}
         with:
           node-version: "14.x"
           registry-url: "https://registry.npmjs.org"
+      - uses: actions/setup-node@v2
+        if: ${{ inputs.uses-secrets }}}
+        with:
+          node-version: "14.x"
       - name: Pin NPM Version
         run: npm install -g npm@8.19.3
       - name: Use Python ${{ matrix.python-version }}

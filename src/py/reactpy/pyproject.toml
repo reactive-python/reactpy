@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "hatch-build-scripts>=0.0.3"]
+requires = ["hatchling", "hatch-build-scripts>=0.0.4"]
 build-backend = "hatchling.build"
 
 # --- Project --------------------------------------------------------------------------
@@ -76,7 +76,7 @@ path = "reactpy/__init__.py"
 
 [tool.hatch.envs.default]
 features = ["all"]
-pre-install-command = "hatch run build --hooks-only"
+pre-install-command = "hatch build --hooks-only"
 dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
@@ -125,7 +125,7 @@ all = ["types"]
 work_dir = "../../js"
 out_dir = "reactpy/_static"
 commands = [
-  "npm install",
+  "npm ci",
   "npm run build"
 ]
 artifacts = [

@@ -125,7 +125,11 @@ def lint_js(context: Context, fix: bool = False):
 @task
 def test_py(context: Context, no_cov: bool = False):
     """Run test suites"""
-    in_py(context, f"hatch run {'test' if no_cov else 'cov'} --maxfail=3")
+    in_py(
+        context,
+        "hatch build --hooks-only",
+        f"hatch run {'test' if no_cov else 'cov'} --maxfail=3",
+    )
 
 
 @task(pre=[env_js])
@@ -329,7 +333,7 @@ def prepare_js_release(
                 return
             context.run(
                 f"npm --workspace {package.name} publish --access public",
-                env_dict={"NODE_AUTH_TOKEN": node_auth_token},
+                env={"NODE_AUTH_TOKEN": node_auth_token},
             )
 
     return publish

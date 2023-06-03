@@ -13,6 +13,7 @@ jobs:
     with:
       job-name: "publish"
       hatch-run: "publish"
+      uses-secrets: true
     secrets:
       node-auth-token: ${{ secrets.NODE_AUTH_TOKEN }}
       pypi-username: ${{ secrets.PYPI_USERNAME }}
