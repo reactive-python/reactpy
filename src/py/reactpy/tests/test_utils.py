@@ -205,10 +205,6 @@ SOME_OBJECT = object()
             f"<div>{html_escape(str(SOME_OBJECT))}</div>",
         ),
         (
-            html.div({"someAttribute": SOME_OBJECT}),
-            f'<div someattribute="{html_escape(str(SOME_OBJECT))}"></div>',
-        ),
-        (
             html.div(
                 "hello", html.a({"href": "https://example.com"}, "example"), "world"
             ),

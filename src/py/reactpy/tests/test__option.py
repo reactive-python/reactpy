@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from reactpy._option import DeprecatedOption, Option
+from reactpy._option import Option, deprecate
 
 
 def test_option_repr():
@@ -33,7 +33,7 @@ def test_option_validator():
     opt.current = "0"
     assert opt.current is False
 
-    with pytest.raises(ValueError, match="invalid literal for int"):
+    with pytest.raises(ValueError, match="Invalid value"):
         opt.current = "not-an-int"
 
 
@@ -102,10 +102,29 @@ def test_option_subscribe():
 
 
 def test_deprecated_option():
-    opt = DeprecatedOption("is deprecated!", "A_FAKE_OPTION", None)
+    opt = deprecate(Option("A_FAKE_OPTION", None), "is deprecated!")
 
     with pytest.warns(DeprecationWarning, match="is deprecated!"):
         assert opt.current is None
 
     with pytest.warns(DeprecationWarning, match="is deprecated!"):
         opt.current = "something"
+
+
+def test_option_parent():
+    parent_opt = Option("A_FAKE_OPTION", "default-value", mutable=True)
+    child_opt = Option("A_FAKE_OPTION", parent=parent_opt)
+    assert child_opt.mutable
+    assert child_opt.current == "default-value"
+
+    parent_opt.current = "new-value"
+    assert child_opt.current == "new-value"
+
+
+def test_option_parent_child_must_be_mutable():
+    mut_parent_opt = Option("A_FAKE_OPTION", "default-value", mutable=True)
+    immu_parent_opt = Option("A_FAKE_OPTION", "default-value", mutable=False)
+    with pytest.raises(TypeError, match="must be mutable"):
+        Option("A_FAKE_OPTION", parent=mut_parent_opt, mutable=False)
+    with pytest.raises(TypeError, match="must be mutable"):
+        Option("A_FAKE_OPTION", parent=immu_parent_opt, mutable=None)

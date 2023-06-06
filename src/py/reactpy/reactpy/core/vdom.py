@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 from collections.abc import Mapping, Sequence
 from functools import wraps
@@ -8,7 +9,7 @@ from typing import Any, Protocol, cast, overload
 from fastjsonschema import compile as compile_json_schema
 
 from reactpy._warnings import warn
-from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_CHECK_JSON_ATTRS, REACTPY_DEBUG_MODE
 from reactpy.core._f_back import f_module_name
 from reactpy.core.events import EventHandler, to_event_handler_function
 from reactpy.core.types import (
@@ -199,6 +200,8 @@ def vdom(
     attributes, event_handlers = separate_attributes_and_event_handlers(attributes)
 
     if attributes:
+        if REACTPY_CHECK_JSON_ATTRS.current:
+            json.dumps(attributes)
         model["attributes"] = attributes
 
     if children:

@@ -7,6 +7,7 @@ from typing import Callable
 from anyio import create_task_group
 from anyio.abc import TaskGroup
 
+from reactpy.config import REACTPY_DEBUG_MODE
 from reactpy.core.types import LayoutEventMessage, LayoutType, LayoutUpdateMessage
 
 logger = getLogger(__name__)
@@ -49,7 +50,18 @@ async def _single_outgoing_loop(
     layout: LayoutType[LayoutUpdateMessage, LayoutEventMessage], send: SendCoroutine
 ) -> None:
     while True:
-        await send(await layout.render())
+        update = await layout.render()
+        try:
+            await send(update)
+        except Exception:
+            if not REACTPY_DEBUG_MODE.current:
+                msg = (
+                    "Failed to send update. More info may be available "
+                    "if you enabling debug mode by settings "
+                    "`reactpy.config.REACTPY_DEBUG_MODE.current = True`."
+                )
+                logger.error(msg)
+            raise
 
 
 async def _single_incoming_loop(

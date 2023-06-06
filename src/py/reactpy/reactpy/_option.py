@@ -8,6 +8,13 @@ from reactpy._warnings import warn
 
 _O = TypeVar("_O")
 logger = getLogger(__name__)
+UNDEFINED = cast(Any, object())
+
+
+def deprecate(option: Option[_O], message: str) -> Option[_O]:
+    option.__class__ = _DeprecatedOption
+    option._deprecation_message = message
+    return option
 
 
 class Option(Generic[_O]):
@@ -16,8 +23,9 @@ class Option(Generic[_O]):
     def __init__(
         self,
         name: str,
-        default: _O | Option[_O],
+        default: _O = UNDEFINED,
         mutable: bool = True,
+        parent: Option[_O] | None = None,
         validator: Callable[[Any], _O] = lambda x: cast(_O, x),
     ) -> None:
         self._name = name
@@ -28,12 +36,15 @@ class Option(Generic[_O]):
         if name in os.environ:
             self._current = validator(os.environ[name])
 
-        self._default: _O
-        if isinstance(default, Option):
-            self._default = default.default
-            default.subscribe(lambda value: setattr(self, "_default", value))
-        else:
+        if parent is not None:
+            if not (parent.mutable and self.mutable):
+                raise TypeError("Parent and child options must be mutable")
+            self._default = parent.default
+            parent.subscribe(self.set_current)
+        elif default is not UNDEFINED:
             self._default = default
+        else:
+            raise TypeError("Must specify either a default or a parent option")
 
         logger.debug(f"{self._name}={self.current}")
 
@@ -81,11 +92,19 @@ class Option(Generic[_O]):
 
         Raises a ``TypeError`` if this option is not :attr:`Option.mutable`.
         """
+        old = self.current
+        if new is old:
+            return None
+
         if not self._mutable:
             msg = f"{self} cannot be modified after initial load"
             raise TypeError(msg)
-        old = self.current
-        new = self._current = self._validator(new)
+
+        try:
+            new = self._current = self._validator(new)
+        except ValueError as error:
+            raise ValueError(f"Invalid value for {self._name}: {new!r}") from error
+
         logger.debug(f"{self._name}={self._current}")
         if new != old:
             for sub_func in self._subscribers:
@@ -119,15 +138,8 @@ class Option(Generic[_O]):
         return f"Option({self._name}={self.current!r})"
 
 
-class DeprecatedOption(Option[_O]):  # nocov
-    def __init__(self, message: str, *args: Any, **kwargs: Any) -> None:
-        self._deprecation_message = message
-        super().__init__(*args, **kwargs)
-
+class _DeprecatedOption(Option[_O]):  # nocov
     @Option.current.getter  # type: ignore
     def current(self) -> _O:
-        warn(
-            self._deprecation_message,
-            DeprecationWarning,
-        )
+        warn(self._deprecation_message, DeprecationWarning)
         return super().current

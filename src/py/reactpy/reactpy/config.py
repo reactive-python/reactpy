@@ -6,41 +6,58 @@ variables or, for those which allow it, a programmatic interface.
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from reactpy._option import Option as _Option
+from reactpy._option import Option
 
-REACTPY_DEBUG_MODE = _Option(
-    "REACTPY_DEBUG_MODE",
-    default=False,
-    validator=lambda x: bool(int(x)),
+TRUE_VALUES = {"true", "1"}
+FALSE_VALUES = {"false", "0"}
+
+
+def boolean(value: str | bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    elif not isinstance(value, str):
+        raise TypeError(f"Expected str or bool, got {type(value).__name__}")
+
+    if value.lower() in TRUE_VALUES:
+        return True
+    elif value.lower() in FALSE_VALUES:
+        return False
+    else:
+        raise ValueError(
+            f"Invalid boolean value {value!r} - expected "
+            f"one of {list(TRUE_VALUES | FALSE_VALUES)}"
+        )
+
+
+REACTPY_DEBUG_MODE = Option(
+    "REACTPY_DEBUG_MODE", default=False, validator=boolean, mutable=True
 )
-"""This immutable option turns on/off debug mode
+"""Get extra logs and validation checks at the cost of performance.
 
-The string values ``1`` and ``0`` are mapped to ``True`` and ``False`` respectively.
+This will enable the following:
 
-When debug is on, extra validation measures are applied that negatively impact
-performance but can be used to catch bugs during development. Additionally, the default
-log level for ReactPy is set to ``DEBUG``.
+- :data:`REACTPY_CHECK_VDOM_SPEC`
+- :data:`REACTPY_CHECK_JSON_ATTRS`
 """
 
-REACTPY_CHECK_VDOM_SPEC = _Option(
-    "REACTPY_CHECK_VDOM_SPEC",
-    default=REACTPY_DEBUG_MODE,
-    validator=lambda x: bool(int(x)),
-)
-"""This immutable option turns on/off checks which ensure VDOM is rendered to spec
-
-The string values ``1`` and ``0`` are mapped to ``True`` and ``False`` respectively.
-
-By default this check is off. When ``REACTPY_DEBUG_MODE=1`` this will be turned on but can
-be manually disablled by setting ``REACTPY_CHECK_VDOM_SPEC=0`` in addition.
+REACTPY_CHECK_VDOM_SPEC = Option("REACTPY_CHECK_VDOM_SPEC", parent=REACTPY_DEBUG_MODE)
+"""Checks which ensure VDOM is rendered to spec
 
 For more info on the VDOM spec, see here: :ref:`VDOM JSON Schema`
 """
 
-# Because these web modules will be linked dynamically at runtime this can be temporary
+REACTPY_CHECK_JSON_ATTRS = Option("REACTPY_CHECK_JSON_ATTRS", parent=REACTPY_DEBUG_MODE)
+"""Checks that all VDOM attributes are JSON serializable
+
+The VDOM spec is not able to enforce this on its own since attributes could anything.
+"""
+
+# Because these web modules will be linked dynamically at runtime this can be temporary.
+# Assigning to a variable here ensures that the directory is not deleted until the end
+# of the program.
 _DEFAULT_WEB_MODULES_DIR = TemporaryDirectory()
 
-REACTPY_WEB_MODULES_DIR = _Option(
+REACTPY_WEB_MODULES_DIR = Option(
     "REACTPY_WEB_MODULES_DIR",
     default=Path(_DEFAULT_WEB_MODULES_DIR.name),
     validator=Path,
@@ -52,7 +69,7 @@ assume anything about the structure of this directory see :mod:`reactpy.web.modu
 set of publicly available APIs for working with the client.
 """
 
-REACTPY_TESTING_DEFAULT_TIMEOUT = _Option(
+REACTPY_TESTING_DEFAULT_TIMEOUT = Option(
     "REACTPY_TESTING_DEFAULT_TIMEOUT",
     5.0,
     mutable=False,
