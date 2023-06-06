@@ -60,7 +60,7 @@ async def test_pre_tags_are_rendered_correctly(display: DisplayFixture):
         return reactpy.html.pre(
             {"id": "pre-form-test"},
             reactpy.html.span("this", reactpy.html.span("is"), "some"),
-            "pre-Formatted",
+            "pre-formatted",
             " text",
         )
 
