@@ -30,7 +30,7 @@ def DivInDiv():
     return html.div(
         html.button(
             {"on_click": lambda event: set_stop_propagatation(not stop_propagatation)},
-            "Toggle Propogation",
+            "Toggle Propagation",
         ),
         html.pre(f"Will propagate: {not stop_propagatation}"),
         html.pre(f"Inner click count: {inner_count}"),

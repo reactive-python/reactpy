@@ -18,7 +18,7 @@ STATIC_EVENT_HANDLER = StaticEventHandler()
 def make_send_recv_callbacks(events_to_inject):
     changes = []
 
-    # We need a semaphor here to simulate recieving an event after each update is sent.
+    # We need a semaphore here to simulate receiving an event after each update is sent.
     # The effect is that the send() and recv() callbacks trade off control. If we did
     # not do this, it would easy to determine when to halt because, while we might have
     # received all the events, they might not have been sent since the two callbacks are

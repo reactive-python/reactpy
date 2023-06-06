@@ -315,7 +315,7 @@ def get_current_tags(context: Context) -> set[str]:
         context.run("git diff --cached --exit-code", hide=True)
         context.run("git diff --exit-code", hide=True)
     except Exception:
-        log.error("Cannot create a tag - there are uncommited changes")
+        log.error("Cannot create a tag - there are uncommitted changes")
         return set()
 
     tags_per_commit: dict[str, list[str]] = {}

@@ -56,18 +56,18 @@ async def test_display_simple_hello_world(display: DisplayFixture):
 
 async def test_pre_tags_are_rendered_correctly(display: DisplayFixture):
     @reactpy.component
-    def PreFormated():
+    def PreFormatted():
         return reactpy.html.pre(
             {"id": "pre-form-test"},
             reactpy.html.span("this", reactpy.html.span("is"), "some"),
-            "pre-formated",
+            "pre-formatted",
             " text",
         )
 
-    await display.show(PreFormated)
+    await display.show(PreFormatted)
 
     pre = await display.page.wait_for_selector("#pre-form-test")
 
     assert (
         await pre.evaluate("node => node.innerHTML")
-    ) == "<span>this<span>is</span>some</span>pre-formated text"
+    ) == "<span>this<span>is</span>some</span>pre-formatted text"

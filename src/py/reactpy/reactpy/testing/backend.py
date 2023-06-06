@@ -167,7 +167,7 @@ def _hotswap(update_on_change: bool = False) -> tuple[_MountFunc, ComponentConst
     long as you set things up ahead of time.
 
     Parameters:
-        update_on_change: Whether or not all views of the layout should be udpated on a swap.
+        update_on_change: Whether or not all views of the layout should be updated on a swap.
 
     Example:
         .. code-block:: python

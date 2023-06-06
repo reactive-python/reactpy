@@ -131,13 +131,13 @@ Unfortunately this means you cannot conditionally prevent default behavior in re
 to event data without writing :ref:`Custom Javascript Components`.
 
 
-Stop Event Propogation
+Stop Event Propagation
 ......................
 
 Similarly to :ref:`preventing default behavior <Preventing Default Event Actions>`, you
 can use the :func:`~reactpy.core.events.event` decorator to prevent events originating in a
 child element from propagating to parent elements by setting ``stop_propagation``. In
-the example below we place a red ``div`` inside a parent blue ``div``. When propogation
+the example below we place a red ``div`` inside a parent blue ``div``. When propagation
 is turned on, clicking the red element will cause the handler for the outer blue one to
 trigger. Conversely, when it's off, only the handler for the red element will trigger.
 

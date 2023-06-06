@@ -54,7 +54,7 @@ async def test_automatic_reconnect(browser: Browser):
             DisplayFixture(server, driver=page)
         )
 
-        # use mount instead of show to avoid a page refesh
+        # use mount instead of show to avoid a page refresh
         display.backend.mount(SomeComponent)
 
         async def get_count():

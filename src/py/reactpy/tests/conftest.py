@@ -23,7 +23,7 @@ def pytest_addoption(parser: Parser) -> None:
         "--headed",
         dest="headed",
         action="store_true",
-        help="Open a browser window when runnging web-based tests",
+        help="Open a browser window when running web-based tests",
     )
 
 
