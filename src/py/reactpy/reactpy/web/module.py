@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 SourceType = NewType("SourceType", str)
 
 NAME_SOURCE = SourceType("NAME")
-"""A named souce - usually a Javascript package name"""
+"""A named source - usually a Javascript package name"""
 
 URL_SOURCE = SourceType("URL")
 """A source loaded from a URL, usually a CDN"""
@@ -44,14 +44,14 @@ def module_from_url(
             Where the javascript module will be loaded from which conforms to the
             interface for :ref:`Custom Javascript Components`
         fallback:
-            What to temporarilly display while the module is being loaded.
+            What to temporarily display while the module is being loaded.
         resolve_imports:
             Whether to try and find all the named exports of this module.
         resolve_exports_depth:
             How deeply to search for those exports.
         unmount_before_update:
             Cause the component to be unmounted before each update. This option should
-            only be used if the imported package failes to re-render when props change.
+            only be used if the imported package fails to re-render when props change.
             Using this option has negative performance consequences since all DOM
             elements must be changed on each render. See :issue:`461` for more info.
     """
@@ -110,14 +110,14 @@ def module_from_template(
         cdn:
             Where the package should be loaded from. The CDN must distribute ESM modules
         fallback:
-            What to temporarilly display while the module is being loaded.
+            What to temporarily display while the module is being loaded.
         resolve_imports:
             Whether to try and find all the named exports of this module.
         resolve_exports_depth:
             How deeply to search for those exports.
         unmount_before_update:
             Cause the component to be unmounted before each update. This option should
-            only be used if the imported package failes to re-render when props change.
+            only be used if the imported package fails to re-render when props change.
             Using this option has negative performance consequences since all DOM
             elements must be changed on each render. See :issue:`461` for more info.
     """
@@ -174,14 +174,14 @@ def module_from_file(
         file:
             The file from which the content of the web module will be created.
         fallback:
-            What to temporarilly display while the module is being loaded.
+            What to temporarily display while the module is being loaded.
         resolve_imports:
             Whether to try and find all the named exports of this module.
         resolve_exports_depth:
             How deeply to search for those exports.
         unmount_before_update:
             Cause the component to be unmounted before each update. This option should
-            only be used if the imported package failes to re-render when props change.
+            only be used if the imported package fails to re-render when props change.
             Using this option has negative performance consequences since all DOM
             elements must be changed on each render. See :issue:`461` for more info.
         symlink:
@@ -255,14 +255,14 @@ def module_from_string(
         content:
             The contents of the web module
         fallback:
-            What to temporarilly display while the module is being loaded.
+            What to temporarily display while the module is being loaded.
         resolve_imports:
             Whether to try and find all the named exports of this module.
         resolve_exports_depth:
             How deeply to search for those exports.
         unmount_before_update:
             Cause the component to be unmounted before each update. This option should
-            only be used if the imported package failes to re-render when props change.
+            only be used if the imported package fails to re-render when props change.
             Using this option has negative performance consequences since all DOM
             elements must be changed on each render. See :issue:`461` for more info.
     """
@@ -342,7 +342,7 @@ def export(
             will be returned. If a list is given, then a list of components will be
             returned.
         fallback:
-            What to temporarilly display while the module is being loaded.
+            What to temporarily display while the module is being loaded.
         allow_children:
             Whether or not these components can have children.
     """

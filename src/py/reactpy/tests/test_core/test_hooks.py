@@ -547,7 +547,7 @@ async def test_use_async_effect_cancel(caplog):
 
     # So I know we said the event never occurs but... to ensure the effect's future is
     # cancelled before the test is cleaned up we need to set the event. This is because
-    # the cancellation doesn't propogate before the test is resolved which causes
+    # the cancellation doesn't propagate before the test is resolved which causes
     # delayed log messages that impact other tests.
     event_that_never_occurs.set()
 

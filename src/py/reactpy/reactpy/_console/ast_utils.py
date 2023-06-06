@@ -41,7 +41,7 @@ def rewrite_changed_nodes(
             msg = "Failed to change code"
             raise RuntimeError(msg)
 
-    # check if an nodes to rewrite contain eachother, pick outermost nodes
+    # check if an nodes to rewrite contain each other, pick outermost nodes
     current_outermost_node, *sorted_nodes_to_unparse = sorted(
         nodes_to_unparse, key=lambda n: n.lineno
     )

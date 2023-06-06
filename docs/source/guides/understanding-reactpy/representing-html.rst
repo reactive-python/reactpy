@@ -7,7 +7,7 @@ Representing HTML 🚧
 
     Under construction 🚧
 
-We've already discussed how to contruct HTML with ReactPy in a :ref:`previous section <HTML
+We've already discussed how to construct HTML with ReactPy in a :ref:`previous section <HTML
 with ReactPy>`, but we skimmed over the question of the data structure we use to represent
 it. Let's reconsider the examples from before - on the top is some HTML and on the
 bottom is the corresponding code to create it in ReactPy:

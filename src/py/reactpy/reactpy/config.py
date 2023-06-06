@@ -1,6 +1,6 @@
 """
 ReactPy provides a series of configuration options that can be set using environment
-variables or, for those which allow it, a programatic interface.
+variables or, for those which allow it, a programmatic interface.
 """
 
 from pathlib import Path
@@ -49,7 +49,7 @@ REACTPY_WEB_MODULES_DIR = _Option(
 
 This directory **MUST** be treated as a black box. Downstream applications **MUST NOT**
 assume anything about the structure of this directory see :mod:`reactpy.web.module` for a
-set of publically available APIs for working with the client.
+set of publicly available APIs for working with the client.
 """
 
 REACTPY_TESTING_DEFAULT_TIMEOUT = _Option(

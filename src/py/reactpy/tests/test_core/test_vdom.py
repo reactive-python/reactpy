@@ -136,7 +136,7 @@ def test_make_vdom_constructor():
             "eventHandler": {
                 "target": "something",
                 "preventDefault": False,
-                "stopPropogation": True,
+                "stopPropagation": True,
             },
         },
         {
@@ -165,7 +165,7 @@ def test_make_vdom_constructor():
             "eventHandler": {
                 "target": "something",
                 "preventDefault": False,
-                "stopPropogation": True,
+                "stopPropagation": True,
             },
             "importSource": {
                 "source": "something",

@@ -99,7 +99,7 @@ In ReactPy we add these attributes to elements using a dictionary:
 
 .. raw:: html
 
-    <!-- no tabindex since that would ruin accesibility of the page -->
+    <!-- no tabindex since that would ruin accessibility of the page -->
     <img
         src="https://picsum.photos/id/237/500/300"
         class="img-fluid"

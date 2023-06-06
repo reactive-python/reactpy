@@ -111,7 +111,7 @@ Section 3: State as a Snapshot
 ------------------------------
 
 As we :ref:`learned earlier <Components with State>`, state setters behave a little
-differently than you might exepct at first glance. Instead of updating your current
+differently than you might expect at first glance. Instead of updating your current
 handle on the setter's corresponding variable, it schedules a re-render of the component
 which owns the state.
 
@@ -133,7 +133,7 @@ actually sent?
 .. reactpy:: state-as-a-snapshot/_examples/print_chat_message
 
 As it turns out, changing the message recipient after pressing send does not change
-where the message ulitmately goes. However, one could imagine a bug where the recipient
+where the message ultimately goes. However, one could imagine a bug where the recipient
 of a message is determined at the time the message is sent rather than at the time the
 "Send" button it clicked. Thus changing the recipient after pressing send would change
 where the message got sent.

@@ -4,7 +4,7 @@
 
 - :func:`_`
 
-**Dcument metadata**
+**Document metadata**
 
 - :func:`base`
 - :func:`head`
@@ -309,7 +309,7 @@ def _fragment(
 _ = custom_vdom_constructor(_fragment)
 
 
-# Dcument metadata
+# Document metadata
 base = make_vdom_constructor("base")
 head = make_vdom_constructor("head")
 link = make_vdom_constructor("link")

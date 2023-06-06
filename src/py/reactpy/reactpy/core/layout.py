@@ -568,7 +568,7 @@ class _ModelState:
         """The actual model of the element"""
 
         self.patch_path = patch_path
-        """A "/" delimitted path to the element within the greater layout"""
+        """A "/" delimited path to the element within the greater layout"""
 
         self.children_by_key = children_by_key
         """Child model states indexed by their unique keys"""

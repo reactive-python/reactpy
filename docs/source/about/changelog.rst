@@ -62,7 +62,7 @@ v1.0.0-a4
 
 **Deprecated**
 
-- :pull:`919` - Declaration of keys via keywork arguments in standard elements. A script
+- :pull:`919` - Declaration of keys via keyword arguments in standard elements. A script
   has been added to automatically convert old usages where possible.
 
 
@@ -590,7 +590,7 @@ v0.35.2
 This release includes several bug fixes. The most significant of which is the ability to
 change the type of an element in the try (i.e. to and from being a component) without
 getting an error. Originally the errors were introduced because it was though changing
-element type would not be desireable. This was not the case though - swapping types
+element type would not be desirable. This was not the case though - swapping types
 turns out to be quite common and useful.
 
 **Closed Issues**

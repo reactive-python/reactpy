@@ -414,7 +414,7 @@ async def test_life_cycle_hooks_are_garbage_collected():
 
     # For some reason, holding `set_inner_component` outside the render context causes
     # the associated hook to not be automatically garbage collected. After some
-    # imperical investigation, it seems that if we do not hold `set_inner_component` in
+    # empirical investigation, it seems that if we do not hold `set_inner_component` in
     # this way, the call to `gc.collect()` isn't required. This is demonstrated in
     # `test_root_component_life_cycle_hook_is_garbage_collected`
     gc.collect()
@@ -1173,8 +1173,8 @@ async def test_render_removed_context_consumer():
         await layout.render()
 
         # If the context provider does not render its children then internally tracked
-        # state for the removed child component might not be cleaned up propperly. This
-        # occured in the past when the context provider implemented a should_render()
+        # state for the removed child component might not be cleaned up properly. This
+        # occurred in the past when the context provider implemented a should_render()
         # method that returned False (and thus did not render its children) when the
         # context value did not change.
         toggle_remove_child()
@@ -1184,7 +1184,7 @@ async def test_render_removed_context_consumer():
         # correctly, scheduling a render for it might cause an error.
         schedule_removed_child_render()
 
-        # If things were cleaned up propperly, the above scheduled render should not
+        # If things were cleaned up properly, the above scheduled render should not
         # actually take place. Thus we expect the timeout to occur.
         render_task = asyncio.create_task(layout.render())
         done, pending = await asyncio.wait([render_task], timeout=0.1)

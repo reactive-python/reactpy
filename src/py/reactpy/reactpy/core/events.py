@@ -44,7 +44,7 @@ def event(
         element = reactpy.html.button({"onClick": my_callback})
 
     You may want the ability to prevent the default action associated with the event
-    from taking place, or stoping the event from propagating up the DOM. This decorator
+    from taking place, or stopping the event from propagating up the DOM. This decorator
     allows you to add that functionality to your callbacks.
 
     .. code-block:: python
@@ -191,7 +191,7 @@ def merge_event_handlers(
             or handler.prevent_default != prevent_default
             or handler.target != target
         ):
-            msg = "Cannot merge handlers - 'stop_propagation', 'prevent_default' or 'target' mistmatch."
+            msg = "Cannot merge handlers - 'stop_propagation', 'prevent_default' or 'target' mismatch."
             raise ValueError(msg)
 
     return EventHandler(

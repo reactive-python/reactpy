@@ -11,7 +11,7 @@ words. For example, ``tabindex`` and ``margin-left`` become ``tab_index`` and
 ``margin_left`` respectively.
 
 
-Noteable Attributes
+Notable Attributes
 -------------------
 
 Some attributes in ReactPy are renamed, have special meaning, or are used differently

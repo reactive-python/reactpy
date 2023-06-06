@@ -61,7 +61,7 @@
       },
       "type": ["object", "string"]
     },
-    "eventHander": {
+    "eventHandler": {
       "properties": {
         "preventDefault": {
           "type": "boolean"

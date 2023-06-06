@@ -17,7 +17,7 @@ version of the view rather then mutating the existing one.
 
 Given this, when ReactPy "renders" something, it's as if ReactPy has taken a snapshot of the
 UI where all the event handlers, local variables and the view itself were calculated
-using what state was present at the time of that render. Then, when user iteractions
+using what state was present at the time of that render. Then, when user interactions
 trigger state setters, ReactPy is made away of the newly set state and schedules a
 re-render. When this subsequent renders occurs it performs all the same calculations as
 before, but with this new state.
@@ -70,7 +70,7 @@ Even though, we called ``set_count`` three times with what might have seemed lik
 different values, every time we were actually just doing ``set_count(1)`` on each call.
 Only after the event handler returns will ReactPy actually perform the next render where
 count is ``1``. When it does, ``number`` will be ``1`` and we'll be able to perform the
-same subtitution as before to see what the next number will be after we click
+same substitution as before to see what the next number will be after we click
 "Increment":
 
 .. code-block::
@@ -89,7 +89,7 @@ to reason about what should happen in the example below. What will be printed wh
 
 .. reactpy:: _examples/print_count_after_set
 
-If we use the same subtitution trick we saw before, we can rewrite these lines:
+If we use the same substitution trick we saw before, we can rewrite these lines:
 
 .. code-block::
 

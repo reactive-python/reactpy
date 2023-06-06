@@ -10,7 +10,7 @@ Batched Updates
 ---------------
 
 As we learned :ref:`previously <state as a snapshot>`, state variables remain fixed
-inside each render as if state were a snapshot taken at the begining of each render.
+inside each render as if state were a snapshot taken at the beginning of each render.
 This is why, in the example below, even though it might seem like clicking the
 "Increment" button would cause the ``number`` to increase by ``3``, it only does by
 ``1``:
@@ -22,7 +22,7 @@ the event handler is not an ``async`` function), ReactPy waits until all the cod
 event handler has run before processing state and starting the next render. Thus, it's
 the last call to a given state setter that matters. In the example below, even though we
 set the color of the button to ``"orange"`` and then ``"pink"`` before ``"blue"``,
-the color does not quickly flash orange and pink before blue - it alway remains blue:
+the color does not quickly flash orange and pink before blue - it always remains blue:
 
 .. reactpy:: _examples/set_color_3_times
 

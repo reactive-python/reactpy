@@ -341,7 +341,7 @@ def use_callback(
         function:
             The function whose identity will be preserved
         dependencies:
-            Dependencies of the callback. The identity the ``function`` will be udpated
+            Dependencies of the callback. The identity the ``function`` will be updated
             if the identity of any value in the given sequence changes (i.e. their
             :func:`id` is different). By default these are inferred based on local
             variables that are referenced by the given function.
@@ -573,7 +573,7 @@ class LifeCycleHook:
             # given render have been completed.
             hook.affect_layout_did_render()
 
-            # Typically an event occurs and a new render is scheduled, thus begining
+            # Typically an event occurs and a new render is scheduled, thus beginning
             # the render cycle anew.
             hook.schedule_render()
 
@@ -626,7 +626,7 @@ class LifeCycleHook:
 
     def use_state(self, function: Callable[[], _Type]) -> _Type:
         if not self._rendered_atleast_once:
-            # since we're not intialized yet we're just appending state
+            # since we're not initialized yet we're just appending state
             result = function()
             self._state += (result,)
         else:
@@ -636,7 +636,7 @@ class LifeCycleHook:
         return result
 
     def add_effect(self, effect_type: EffectType, function: Callable[[], None]) -> None:
-        """Trigger a function on the occurance of the given effect type"""
+        """Trigger a function on the occurrence of the given effect type"""
         self._event_effects[effect_type].append(function)
 
     def set_context_provider(self, provider: ContextProvider[Any]) -> None:
