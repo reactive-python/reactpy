@@ -9,10 +9,10 @@ backends. For example, if we want to run ReactPy using the `Starlette
 
     pip install "reactpy[starlette]"
 
-If you want to install a "pure" version of ReactPy without a backend implementation you can
-do so without any installation extras. You might do this if you wanted to :ref:`use a
-custom backend <using a custom backend>` or if you wanted to manually pin your
-dependencies:
+If you want to install a "pure" version of ReactPy **without a backend implementation**
+you can do so without any installation extras. You might do this if you wanted to
+:ref:`use a custom backend <using a custom backend>` or if you wanted to manually pin
+the dependencies for your chosen backend:
 
 .. code-block:: bash
 
