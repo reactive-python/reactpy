@@ -11,7 +11,7 @@ from reactpy.testing.backend import _hotswap
 from reactpy.testing.display import DisplayFixture
 
 
-def test_assert_reactpy_logged_does_not_supress_errors():
+def test_assert_reactpy_logged_does_not_suppress_errors():
     with pytest.raises(RuntimeError, match="expected error"):
         with testing.assert_reactpy_did_log():
             msg = "expected error"

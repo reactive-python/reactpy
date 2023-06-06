@@ -106,7 +106,7 @@ async def serve_development_app(
     try:
         await stopped.wait()
     finally:
-        # we may have exitted because this task was cancelled
+        # we may have exited because this task was cancelled
         server.current.shutdown()
         # the thread should eventually join
         thread.join(timeout=3)

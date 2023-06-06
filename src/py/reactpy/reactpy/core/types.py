@@ -187,7 +187,7 @@ class EventHandlerType(Protocol):
     """Typically left as ``None`` except when a static target is useful.
 
     When testing, it may be useful to specify a static target ID so events can be
-    triggered programatically.
+    triggered programmatically.
 
     .. note::
 

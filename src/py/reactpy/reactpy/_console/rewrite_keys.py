@@ -40,7 +40,7 @@ def rewrite_keys(paths: list[str]) -> None:
     recommend running your code formatter like Black against your code after executing
     this command.
 
-    Additionally, We are unable to perserve the location of comments that lie within any
+    Additionally, We are unable to preserve the location of comments that lie within any
     rewritten code. This command will place the comments in the code it plans to rewrite
     just above its changes. As such it requires manual intervention to put those
     comments back in their original location.

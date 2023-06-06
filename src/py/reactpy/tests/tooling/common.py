@@ -3,7 +3,7 @@ from typing import Any
 from reactpy.core.types import LayoutEventMessage, LayoutUpdateMessage
 
 # see: https://github.com/microsoft/playwright-python/issues/1614
-DEFAULT_TYPE_DELAY = 100  # miliseconds
+DEFAULT_TYPE_DELAY = 100  # milliseconds
 
 
 def event_message(target: str, *data: Any) -> LayoutEventMessage:

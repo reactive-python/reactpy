@@ -174,7 +174,7 @@ loaded with :func:`~reactpy.web.module.export`.
         # unique since it must share a namespace with all other javascript packages.
         name="YOUR-PACKAGE-NAME",
         file=_BUNDLE_PATH,
-        # What to temporarilly display while the module is being loaded
+        # What to temporarily display while the module is being loaded
         fallback="Loading...",
     )
 

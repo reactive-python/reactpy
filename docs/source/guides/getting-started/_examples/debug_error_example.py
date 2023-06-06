@@ -8,7 +8,7 @@ def App():
 
 @component
 def GoodComponent():
-    return html.p("This component rendered successfuly")
+    return html.p("This component rendered successfully")
 
 
 @component

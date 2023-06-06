@@ -232,7 +232,7 @@ def _generate_vdom_children(
 ) -> list[VdomDict | str]:
     """Generates a list of VDOM children from an lxml node.
 
-    Inserts inner text and/or tail text inbetween VDOM children, if necessary.
+    Inserts inner text and/or tail text in between VDOM children, if necessary.
     """
     return (  # Get the inner text of the current node
         [node.text] if node.text else []

@@ -531,7 +531,7 @@ Removing Set Items
             s.difference_update(values)
             s -= values  # "in-place" operators mutate!
 
-            s.symetric_difference_update(values)
+            s.symmetric_difference_update(values)
             s ^= values  # "in-place" operators mutate!
 
             s.intersection_update(values)
@@ -547,7 +547,7 @@ Removing Set Items
             s.difference(values)
             s - values
 
-            s.symetric_difference(values)
+            s.symmetric_difference(values)
             s ^ values
 
             s.intersection(values)

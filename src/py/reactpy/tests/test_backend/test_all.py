@@ -45,7 +45,7 @@ async def test_display_simple_hello_world(display: DisplayFixture):
 
     await display.page.wait_for_selector("#hello")
 
-    # test that we can reconnect succefully
+    # test that we can reconnect successfully
     await display.page.reload()
 
     await display.page.wait_for_selector("#hello")

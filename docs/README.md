@@ -3,7 +3,7 @@
 We provide two main ways to run the docs. Both use
 [`nox`](https://pypi.org/project/nox/):
 
-- `nox -s docs` - displayes the docs and rebuilds when files are modified.
+- `nox -s docs` - displays the docs and rebuilds when files are modified.
 - `nox -s docs-in-docker` - builds a docker image and runs the docs from there.
 
 If any changes to the core of the documentation are made (i.e. to non-`*.rst` files),

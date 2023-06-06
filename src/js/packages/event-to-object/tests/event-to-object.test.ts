@@ -57,7 +57,7 @@ const simpleTestCases: SimpleTestCase<any>[] = [
   },
   {
     types: ["copy", "cut", "paste"],
-    description: "clipboad event",
+    description: "clipboard event",
     givenEventType: window.ClipboardEvent,
     expectedConversion: { clipboardData: null },
   },

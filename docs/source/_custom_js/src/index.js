@@ -86,7 +86,7 @@ function triggerIfInViewport(element, callback) {
     },
     {
       root: null,
-      threshold: 0.1, // set offset 0.1 means trigger if atleast 10% of element in viewport
+      threshold: 0.1, // set offset 0.1 means trigger if at least 10% of element in viewport
     },
   );
 

@@ -58,10 +58,10 @@ VDOM_JSON_SCHEMA = {
         "elementEventHandlers": {
             "type": "object",
             "patternProperties": {
-                ".*": {"$ref": "#/definitions/eventHander"},
+                ".*": {"$ref": "#/definitions/eventHandler"},
             },
         },
-        "eventHander": {
+        "eventHandler": {
             "type": "object",
             "properties": {
                 "target": {"type": "string"},
@@ -152,7 +152,7 @@ def vdom(
             iterables of children. The attribute mapping **must** precede the children,
             or children which will be merged into their respective parts of the model.
         key:
-            A string idicating the identity of a particular element. This is significant
+            A string indicating the identity of a particular element. This is significant
             to preserve event handlers across updates - without a key, a re-render would
             cause these handlers to be deleted, but with a key, they would be redirected
             to any newly defined handlers.

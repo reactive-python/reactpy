@@ -183,7 +183,7 @@ async def test_simple_click_event(display: DisplayFixture):
     await display.page.wait_for_selector("#complete")
 
 
-async def test_can_stop_event_propogation(display: DisplayFixture):
+async def test_can_stop_event_Propagation(display: DisplayFixture):
     clicked = reactpy.Ref(False)
 
     @reactpy.component
