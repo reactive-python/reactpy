@@ -70,4 +70,4 @@ async def test_pre_tags_are_rendered_correctly(display: DisplayFixture):
 
     assert (
         await pre.evaluate("node => node.innerHTML")
-    ) == "<span>this<span>is</span>some</span>pre-Formatted text"
+    ) == "<span>this<span>is</span>some</span>pre-formatted text"
