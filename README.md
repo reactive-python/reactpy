@@ -69,5 +69,5 @@ Follow the links below to find out more about this project.
 -   [Documentation](https://reactpy.dev/)
 -   [GitHub Discussions](https://github.com/reactive-python/reactpy/discussions)
 -   [Discord](https://discord.gg/uNb5P4hA9X)
--   [Contributor Guide](https://reactpy.dev/docs/developing-reactpy/contributor-guide.html)
+-   [Contributor Guide](https://reactpy.dev/docs/about/contributor-guide.html)
 -   [Code of Conduct](https://github.com/reactive-python/reactpy/blob/main/CODE_OF_CONDUCT.md)
