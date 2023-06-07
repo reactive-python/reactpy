@@ -75,7 +75,7 @@ run ReactPy in these supported frameworks, follow the links below:
 .. grid:: 3
 
     .. grid-item-card::
-        :link: https://github.com/reactive-python/django-reactpy
+        :link: https://github.com/reactive-python/reactpy-django
         :img-background: _static/logo-django.svg
         :class-card: card-logo-image
 
