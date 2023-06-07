@@ -50,7 +50,7 @@ _DEFAULT_IMPLEMENTATION: BackendImplementation[Any] | None = None
 
 def _default_implementation() -> BackendImplementation[Any]:
     """Get the first available server implementation"""
-    global _DEFAULT_IMPLEMENTATION  # noqa PLW0603
+    global _DEFAULT_IMPLEMENTATION  # noqa: PLW0603
 
     if _DEFAULT_IMPLEMENTATION is not None:
         return _DEFAULT_IMPLEMENTATION
