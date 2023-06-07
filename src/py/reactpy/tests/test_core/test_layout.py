@@ -384,7 +384,7 @@ async def test_life_cycle_hooks_are_garbage_collected():
     @reactpy.component
     @add_to_live_hooks
     def Outer():
-        nonlocal set_inner_component  # noqa PLE0117
+        nonlocal set_inner_component
         inner_component, set_inner_component = reactpy.hooks.use_state(
             Inner(key="first")
         )
