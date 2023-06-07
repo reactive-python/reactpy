@@ -3,6 +3,8 @@ ReactPy provides a series of configuration options that can be set using environ
 variables or, for those which allow it, a programmatic interface.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -12,9 +14,11 @@ TRUE_VALUES = {"true", "1"}
 FALSE_VALUES = {"false", "0"}
 
 
-def boolean(value: str | bool) -> bool:
+def boolean(value: str | bool | int) -> bool:
     if isinstance(value, bool):
         return value
+    elif isinstance(value, int):
+        return bool(value)
     elif not isinstance(value, str):
         raise TypeError(f"Expected str or bool, got {type(value).__name__}")
 

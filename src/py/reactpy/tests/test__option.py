@@ -128,3 +128,10 @@ def test_option_parent_child_must_be_mutable():
         Option("A_FAKE_OPTION", parent=mut_parent_opt, mutable=False)
     with pytest.raises(TypeError, match="must be mutable"):
         Option("A_FAKE_OPTION", parent=immu_parent_opt, mutable=None)
+
+
+def test_no_default_or_parent():
+    with pytest.raises(
+        TypeError, match="must specify either a default value or a parent"
+    ):
+        Option("A_FAKE_OPTION")
