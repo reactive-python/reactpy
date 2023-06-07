@@ -26,6 +26,7 @@ dependencies = [
 [tool.hatch.envs.default.scripts]
 publish = "invoke publish {args}"
 docs = "invoke docs {args}"
+check = ["lint-py", "lint-js", "test-py", "test-js", "test-docs"]
 
 lint-py = "invoke lint-py {args}"
 lint-js = "invoke lint-js {args}"
