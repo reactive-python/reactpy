@@ -1,0 +1,8 @@
+repos:
+  - repo: local
+    hooks:
+      - id: lint-py
+        name: Lint Python files
+        entry: hatch run lint-py
+        language: system
+        pass_filenames: false
