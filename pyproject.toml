@@ -104,6 +104,8 @@ ignore = [
   "S105", "S106", "S107",
   # Ignore complexity
   "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+  # Ignore escape sequence: `\ `
+  "W605",
 ]
 unfixable = [
   # Don't touch unused imports
