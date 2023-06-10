@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from reactpy._option import Option, deprecate
+from reactpy._option import DeprecatedOption, Option
 
 
 def test_option_repr():
@@ -102,7 +102,7 @@ def test_option_subscribe():
 
 
 def test_deprecated_option():
-    opt = deprecate(Option("A_FAKE_OPTION", None), "is deprecated!")
+    opt = DeprecatedOption("A_FAKE_OPTION", None, message="is deprecated!")
 
     with pytest.warns(DeprecationWarning, match="is deprecated!"):
         assert opt.current is None

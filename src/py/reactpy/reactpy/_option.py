@@ -11,12 +11,6 @@ logger = getLogger(__name__)
 UNDEFINED = cast(Any, object())
 
 
-def deprecate(option: Option[_O], message: str) -> Option[_O]:
-    option.__class__ = _DeprecatedOption
-    option._deprecation_message = message
-    return option
-
-
 class Option(Generic[_O]):
     """An option that can be set using an environment variable of the same name"""
 
@@ -138,7 +132,13 @@ class Option(Generic[_O]):
         return f"Option({self._name}={self.current!r})"
 
 
-class _DeprecatedOption(Option[_O]):  # nocov
+class DeprecatedOption(Option[_O]):
+    """An option that will warn when it is accessed"""
+
+    def __init__(self, *args: Any, message: str, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._deprecation_message = message
+
     @Option.current.getter  # type: ignore
     def current(self) -> _O:
         warn(self._deprecation_message, DeprecationWarning)
