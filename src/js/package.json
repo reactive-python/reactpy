@@ -4,7 +4,7 @@
     "publish": "npm --workspaces publish",
     "test": "npm --workspaces test",
     "build": "npm --workspaces run build",
-    "format": "npm run prettier -- --write && npm run eslint -- --fix",
+    "fix:format": "npm run prettier -- --write && npm run eslint -- --fix",
     "check:format": "npm run prettier -- --check && npm run eslint",
     "check:tests": "npm --workspaces run check:tests",
     "check:types": "npm --workspaces run check:types",
