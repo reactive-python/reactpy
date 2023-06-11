@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 def configure(
     app: Starlette,
-    constructor: RootComponentConstructor,
+    component: RootComponentConstructor,
     options: Options | None = None,
 ) -> None:
     """Configure the necessary ReactPy routes on the given app.
@@ -49,7 +49,7 @@ def configure(
     options = options or Options()
 
     # this route should take priority so set up it up first
-    _setup_single_view_dispatcher_route(options, app, constructor)
+    _setup_single_view_dispatcher_route(options, app, component)
 
     _setup_common_routes(options, app)
 
@@ -129,7 +129,7 @@ def _make_index_route(options: Options) -> Callable[[Request], Awaitable[HTMLRes
 
 
 def _setup_single_view_dispatcher_route(
-    options: Options, app: Starlette, constructor: RootComponentConstructor
+    options: Options, app: Starlette, component: RootComponentConstructor
 ) -> None:
     @app.websocket_route(str(STREAM_PATH))
     @app.websocket_route(f"{STREAM_PATH}/{{path:path}}")
@@ -145,7 +145,7 @@ def _setup_single_view_dispatcher_route(
             await serve_layout(
                 Layout(
                     ConnectionContext(
-                        constructor(),
+                        component(),
                         value=Connection(
                             scope=socket.scope,
                             location=Location(pathname, f"?{search}" if search else ""),

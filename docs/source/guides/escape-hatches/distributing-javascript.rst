@@ -201,7 +201,7 @@ we need to declare what our build tool is (in this case Setuptools):
     requires = ["setuptools>=40.8.0", "wheel"]
     build-backend = "setuptools.build_meta"
 
-Then, we can creat the ``setup.py`` file which uses Setuptools. This will differ
+Then, we can create the ``setup.py`` file which uses Setuptools. This will differ
 substantially from a normal ``setup.py`` file since, as part of the build process we'll
 need to use NPM to bundle our Javascript. This requires customizing some of the build
 commands in Setuptools like ``build``, ``sdist``, and ``develop``:
