@@ -141,5 +141,14 @@ class DeprecatedOption(Option[_O]):
 
     @Option.current.getter  # type: ignore
     def current(self) -> _O:
-        warn(self._deprecation_message, DeprecationWarning)
+        try:
+            # we access the current value during init to debug log it
+            # no need to warn unless it's actually used. since this attr
+            # is only set after super().__init__ is called, we can check
+            # for it to determine if it's being accessed by a user.
+            msg = self._deprecation_message
+        except AttributeError:
+            pass
+        else:
+            warn(msg, DeprecationWarning)
         return super().current

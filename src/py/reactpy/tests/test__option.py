@@ -132,6 +132,6 @@ def test_option_parent_child_must_be_mutable():
 
 def test_no_default_or_parent():
     with pytest.raises(
-        TypeError, match="must specify either a default value or a parent"
+        TypeError, match="Must specify either a default or a parent option"
     ):
         Option("A_FAKE_OPTION")
