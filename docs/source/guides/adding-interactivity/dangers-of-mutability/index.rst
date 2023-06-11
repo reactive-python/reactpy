@@ -42,8 +42,8 @@ facilitate change:
     values are equivalent with the ``==`` or ``!=`` operators.
 
 Thus far, all the values we've been working with have been immutable. These include
-:class:`int`, :class:`float`, :class:`str`, and :class:`bool` values. As a result, we've
-have not had to consider the consiquences of mutations.
+:class:`int`, :class:`float`, :class:`str`, and :class:`bool` values. As a result, we
+have not had to consider the consequences of mutations.
 
 
 .. _Why Avoid Mutation:

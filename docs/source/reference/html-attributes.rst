@@ -130,7 +130,7 @@ All Attributes
 
 `aria_* <https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes>`__
   ARIA attributes let you specify the accessibility tree information for this element.
-  See ARIA attributes for a complete reference. In ReactPr, all ARIA attribute names are
+  See ARIA attributes for a complete reference. In ReactPy, all ARIA attribute names are
   exactly the same as in HTML.
 
 `auto_capitalize <https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autocapitalize>`__
@@ -138,7 +138,7 @@ All Attributes
 
 `content_editable <https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/contenteditable>`__
   A boolean. If true, the browser lets the user edit the rendered element directly. This
-  is used to implement rich text input libraries like Lexical. ReactPr warns if you try
+  is used to implement rich text input libraries like Lexical. ReactPy warns if you try
   to pass children to an element with ``content_editable = True`` because ReactPy will
   not be able to update its content after user edits.
 
