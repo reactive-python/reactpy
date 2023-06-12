@@ -53,7 +53,7 @@ async def _single_outgoing_loop(
         update = await layout.render()
         try:
             await send(update)
-        except Exception:
+        except Exception:  # nocov
             if not REACTPY_DEBUG_MODE.current:
                 msg = (
                     "Failed to send update. More info may be available "
