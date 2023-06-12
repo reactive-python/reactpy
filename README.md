@@ -16,6 +16,24 @@
     <a href="https://discord.gg/uNb5P4hA9X">
         <img src="https://img.shields.io/discord/1111078259854168116?label=Discord&logo=discord">
     </a>
+        <a href="https://pepy.tech/project/reactpy">
+        <img src="https://static.pepy.tech/badge/reactpy/month" alt="Downloads">
+    </a>
+    <a href="https://github.com/reactive-python/reactpy/stargazers">
+        <img src="https://img.shields.io/github/stars/reactive-python/reactpy.svg" alt="GitHub Stars">
+    </a>
+    <a href="https://github.com/reactive-python/reactpy/network/members">
+        <img src="https://img.shields.io/github/forks/reactive-python/reactpy.svg" alt="GitHub Forks">
+    </a>
+    <a href="https://github.com/reactive-python/reactpy/graphs/contributors">
+        <img src="https://img.shields.io/github/contributors/reactive-python/reactpy.svg" alt="GitHub Contributors">
+    </a>
+    <a href="https://github.com/reactive-python/reactpy/issues">
+        <img src="https://img.shields.io/github/issues/reactive-python/reactpy.svg" alt="GitHub Issues">
+    </a>
+<!--     <a href="https://github.com/reactive-python/reactpy/pulls">
+        <img src="https://img.shields.io/github/issues-pr/reactive-python/reactpy.svg" alt="GitHub Pull Requests">
+    </a> -->
 </p>
 
 
