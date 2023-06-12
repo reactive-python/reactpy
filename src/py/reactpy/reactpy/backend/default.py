@@ -60,10 +60,12 @@ def _default_implementation() -> BackendImplementation[Any]:
     except StopIteration:  # nocov
         logger.debug("Backend implementation import failed", exc_info=exc_info())
         supported_backends = ", ".join(SUPPORTED_PACKAGES)
-        msg = ("It seems you haven't installed a backend. To resolve this issue, "
-       "you can install a backend by running:\n\n"
-       'pip install "reactpy[starlette]"\n\n'
-       f"Other supported backends include: {supported_backends}.")
+        msg = (
+            "It seems you haven't installed a backend. To resolve this issue, "
+            "you can install a backend by running:\n\n"
+            'pip install "reactpy[starlette]"\n\n'
+            f"Other supported backends include: {supported_backends}."
+        )
 
         raise RuntimeError(msg) from None
     else:
