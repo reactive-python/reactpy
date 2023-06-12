@@ -6,6 +6,7 @@ from sys import exc_info
 from typing import Any, NoReturn
 
 from reactpy.backend.types import BackendImplementation
+from reactpy.backend.utils import SUPPORTED_PACKAGES
 from reactpy.backend.utils import all_implementations
 from reactpy.types import RootComponentConstructor
 
@@ -59,7 +60,10 @@ def _default_implementation() -> BackendImplementation[Any]:
         implementation = next(all_implementations())
     except StopIteration:  # nocov
         logger.debug("Backend implementation import failed", exc_info=exc_info())
-        msg = "No built-in server implementation installed."
+        supported_backends = ', '.join(SUPPORTED_PACKAGES)
+        msg = "It seems you haven't installed any built-in backends. \n" \
+            "To resolve this issue, you can install a backend like 'reactpy[starlette]' or any other supported backend.\n" \
+            f"The list of supported backends is: {supported_backends}."     
         raise RuntimeError(msg) from None
     else:
         _DEFAULT_IMPLEMENTATION = implementation
