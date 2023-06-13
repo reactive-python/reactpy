@@ -1,7 +1,7 @@
 HTML With ReactPy
 =================
 
-In a typical Python-base web application the responsibility of defining the view along
+In a typical Python-based web application the responsibility of defining the view along
 with its backing data and logic are distributed between a client and server
 respectively. With ReactPy, both these tasks are centralized in a single place. This is
 done by allowing HTML interfaces to be constructed in Python. Take a look at the two

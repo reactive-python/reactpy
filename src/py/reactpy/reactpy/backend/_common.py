@@ -5,16 +5,16 @@ import os
 from collections.abc import Awaitable, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any, cast
-
-import uvicorn
-from asgiref.typing import ASGIApplication
+from typing import TYPE_CHECKING, Any, cast
 
 from reactpy import __file__ as _reactpy_file_path
 from reactpy import html
 from reactpy.config import REACTPY_WEB_MODULES_DIR
 from reactpy.core.types import VdomDict
 from reactpy.utils import vdom_to_html
+
+if TYPE_CHECKING:
+    from asgiref.typing import ASGIApplication
 
 PATH_PREFIX = PurePosixPath("/_reactpy")
 MODULES_PATH = PATH_PREFIX / "modules"
@@ -23,39 +23,44 @@ STREAM_PATH = PATH_PREFIX / "stream"
 
 CLIENT_BUILD_DIR = Path(_reactpy_file_path).parent / "_static" / "app" / "dist"
 
+try:
+    import uvicorn
+except ImportError:  # nocov
+    pass
+else:
 
-async def serve_development_asgi(
-    app: ASGIApplication | Any,
-    host: str,
-    port: int,
-    started: asyncio.Event | None,
-) -> None:
-    """Run a development server for an ASGI application"""
-    server = uvicorn.Server(
-        uvicorn.Config(
-            app,
-            host=host,
-            port=port,
-            loop="asyncio",
-            reload=True,
+    async def serve_development_asgi(
+        app: ASGIApplication | Any,
+        host: str,
+        port: int,
+        started: asyncio.Event | None,
+    ) -> None:
+        """Run a development server for an ASGI application"""
+        server = uvicorn.Server(
+            uvicorn.Config(
+                app,
+                host=host,
+                port=port,
+                loop="asyncio",
+                reload=True,
+            )
         )
-    )
-    server.config.setup_event_loop()
-    coros: list[Awaitable[Any]] = [server.serve()]
+        server.config.setup_event_loop()
+        coros: list[Awaitable[Any]] = [server.serve()]
 
-    # If a started event is provided, then use it signal based on `server.started`
-    if started:
-        coros.append(_check_if_started(server, started))
+        # If a started event is provided, then use it signal based on `server.started`
+        if started:
+            coros.append(_check_if_started(server, started))
 
-    try:
-        await asyncio.gather(*coros)
-    finally:
-        # Since we aren't using the uvicorn's `run()` API, we can't guarantee uvicorn's
-        # order of operations. So we need to make sure `shutdown()` always has an initialized
-        # list of `self.servers` to use.
-        if not hasattr(server, "servers"):  # nocov
-            server.servers = []
-        await asyncio.wait_for(server.shutdown(), timeout=3)
+        try:
+            await asyncio.gather(*coros)
+        finally:
+            # Since we aren't using the uvicorn's `run()` API, we can't guarantee uvicorn's
+            # order of operations. So we need to make sure `shutdown()` always has an initialized
+            # list of `self.servers` to use.
+            if not hasattr(server, "servers"):  # nocov
+                server.servers = []
+            await asyncio.wait_for(server.shutdown(), timeout=3)
 
 
 async def _check_if_started(server: uvicorn.Server, started: asyncio.Event) -> None:

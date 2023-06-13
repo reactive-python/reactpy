@@ -108,7 +108,7 @@ def lint_py(context: Context, fix: bool = False):
         context.run("black --check --diff .")
         in_py(
             context,
-            f"flake8 --toml-config {ROOT / 'pyproject.toml'} .",
+            f"flake8 --toml-config '{ROOT / 'pyproject.toml'}' .",
             "hatch run lint:all",
         )
 

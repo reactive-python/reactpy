@@ -9,10 +9,10 @@ backends. For example, if we want to run ReactPy using the `Starlette
 
     pip install "reactpy[starlette]"
 
-If you want to install a "pure" version of ReactPy without a backend implementation you can
-do so without any installation extras. You might do this if you wanted to :ref:`use a
-custom backend <using a custom backend>` or if you wanted to manually pin your
-dependencies:
+If you want to install a "pure" version of ReactPy **without a backend implementation**
+you can do so without any installation extras. You might do this if you wanted to
+:ref:`use a custom backend <using a custom backend>` or if you wanted to manually pin
+the dependencies for your chosen backend:
 
 .. code-block:: bash
 
@@ -75,7 +75,7 @@ run ReactPy in these supported frameworks, follow the links below:
 .. grid:: 3
 
     .. grid-item-card::
-        :link: https://github.com/reactive-python/django-reactpy
+        :link: https://github.com/reactive-python/reactpy-django
         :img-background: _static/logo-django.svg
         :class-card: card-logo-image
 
