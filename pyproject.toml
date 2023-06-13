@@ -21,6 +21,7 @@ dependencies = [
   # publish
   "semver >=2, <3",
   "twine",
+  "pre-commit",
 ]
 
 [tool.hatch.envs.default.scripts]
