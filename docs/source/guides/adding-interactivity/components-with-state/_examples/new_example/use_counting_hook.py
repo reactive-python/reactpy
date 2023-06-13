@@ -1,17 +1,15 @@
-from reactpy import component, hooks
+from reactpy import hooks
 
+def reducer(count, action):
+    if action == "increment":
+        return count + 1
+    elif action == "decrement":
+        return count - 1
+    elif action == "reset":
+        return 0
+    else:
+        msg = f"Unknown action '{action}'"
+        raise ValueError(msg)
 
-@component
-def use_counting_hook(initial):
-
-    number, set_number = hooks.use_state(initial)
-
-    def increment():
-        set_number(number + 1)
-        print(number)
-
-    def decrement():
-        set_number(number - 1)
-        print(number)
-
-    return [number, increment, decrement]
+def use_counting_hook(initial_value=0):
+    return hooks.use_reducer(reducer, initial_value)
