@@ -63,7 +63,7 @@ def _default_implementation() -> BackendImplementation[Any]:
         msg = (
             "It seems you haven't installed a backend. To resolve this issue, "
             "you can install a backend by running:\n\n"
-            'pip install "reactpy[starlette]"\n\n'
+            '\033[1mpip install "reactpy[starlette]"\033[0m\n\n'
             f"Other supported backends include: {supported_backends}."
         )
         raise RuntimeError(msg) from None
