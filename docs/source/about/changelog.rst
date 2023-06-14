@@ -23,8 +23,15 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Fixed**
 
+- :pull:`1051` - Fix ``reactpy.run`` port assignment sometimes attaching to in-use ports on Windows
+- :pull:`1051` - Fix ``reactpy.run`` not recognizing ``fastapi``
+
+**Changed**
+
+- :pull:`1051` - Rename ``reactpy.backend.BackendImplementation`` to ``reactpy.backend.BackendProtocol``
+- :pull:`1051` - Allow ``reactpy.run`` to fail in more predictable ways
 
 v1.0.0
 ------
