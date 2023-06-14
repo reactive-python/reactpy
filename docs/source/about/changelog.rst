@@ -23,7 +23,9 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Fixed**
+
+- :pull:`1050` - Fix issue where JavaScript files can be detected as mime-type ``text/plain`` due to a corrupt Windows registry
 
 
 v1.0.0
