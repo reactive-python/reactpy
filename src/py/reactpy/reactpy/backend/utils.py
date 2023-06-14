@@ -14,11 +14,11 @@ from reactpy.types import RootComponentConstructor
 logger = logging.getLogger(__name__)
 
 SUPPORTED_PACKAGES = (
-    "starlette",
     "fastapi",
     "sanic",
     "tornado",
     "flask",
+    "starlette",
 )
 
 
