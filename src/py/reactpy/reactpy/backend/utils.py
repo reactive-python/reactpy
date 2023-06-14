@@ -48,7 +48,7 @@ def find_available_port(
     host: str,
     port_min: int = 8000,
     port_max: int = 9000,
-    allow_reuse_waiting_ports: bool = True,
+    allow_reuse_waiting_ports: bool = False,
 ) -> int:
     """Get a port that's available for the given host and port range"""
     for port in range(port_min, port_max):
