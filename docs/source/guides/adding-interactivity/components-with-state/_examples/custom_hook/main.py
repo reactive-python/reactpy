@@ -1,6 +1,4 @@
-from reactpy import component, hooks, html
-from reactpy.backend.flask import configure
-from flask import Flask
+from reactpy import component, hooks, html, run
 
 # Import custom hook from use_counting_hook.py file
 from use_counting_hook import use_counting_hook
@@ -24,5 +22,4 @@ def Example_Component():
         f"Count: {count}"
     )
 
-app = Flask(__name__)
-configure(app, Example_Component)
+run(Example_Component)
