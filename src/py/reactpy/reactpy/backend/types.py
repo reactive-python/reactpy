@@ -17,20 +17,19 @@ class BackendProtocol(Protocol[_App]):
     Options: Callable[..., Any]
     """A constructor for options passed to :meth:`BackendProtocol.configure`"""
 
-    @staticmethod
     def configure(
+        self,
         app: _App,
         component: RootComponentConstructor,
         options: Any | None = None,
     ) -> None:
         """Configure the given app instance to display the given component"""
 
-    @staticmethod
-    def create_development_app() -> _App:
+    def create_development_app(self) -> _App:
         """Create an application instance for development purposes"""
 
-    @staticmethod
     async def serve_development_app(
+        self,
         app: _App,
         host: str,
         port: int,
