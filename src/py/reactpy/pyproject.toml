@@ -56,7 +56,6 @@ flask = [
   "markupsafe>=1.1.1,<2.1",
   "flask-cors",
   "flask-sock",
-  "uvicorn[standard] >=0.19.0",
 ]
 tornado = [
   "tornado",
@@ -144,6 +143,7 @@ asyncio_mode = "auto"
 # --- MyPy -----------------------------------------------------------------------------
 
 [tool.mypy]
+incremental = false
 ignore_missing_imports = true
 warn_unused_configs = true
 warn_redundant_casts = true
