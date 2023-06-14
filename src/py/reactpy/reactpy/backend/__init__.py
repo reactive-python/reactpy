@@ -1,4 +1,7 @@
 import mimetypes
+from logging import getLogger
+
+_logger = getLogger(__name__)
 
 # Fix for issue where Windows registry gets corrupt and mime types go missing
 if not mimetypes.inited:
@@ -10,4 +13,8 @@ MIME_TYPES = {
 }
 for extension, mime_type in MIME_TYPES.items():
     if not mimetypes.types_map.get(extension):  # pragma: no cover
+        _logger.warning(
+            f"Mime type '{mime_type}:{extension}' is missing."
+            " Please determine how to fix missing mime types on your OS."
+        )
         mimetypes.add_type(mime_type, extension)
