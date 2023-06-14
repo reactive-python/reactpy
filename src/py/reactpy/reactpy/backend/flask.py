@@ -22,6 +22,7 @@ from flask import (
 from flask_cors import CORS
 from flask_sock import Sock
 from simple_websocket import Server as WebSocket
+from werkzeug.serving import BaseWSGIServer, make_server
 
 import reactpy
 from reactpy.backend._common import (
@@ -33,13 +34,13 @@ from reactpy.backend._common import (
     read_client_index_html,
     safe_client_build_dir_path,
     safe_web_modules_dir_path,
-    serve_with_uvicorn,
 )
 from reactpy.backend.hooks import ConnectionContext
 from reactpy.backend.hooks import use_connection as _use_connection
 from reactpy.backend.types import Connection, Location
 from reactpy.core.serve import serve_layout
 from reactpy.core.types import ComponentType, RootComponentConstructor
+from reactpy.utils import Ref
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +97,37 @@ async def serve_development_app(
     started: asyncio.Event | None = None,
 ) -> None:
     """Run a development server for FastAPI"""
-    await serve_with_uvicorn(app, host, port, started)
+    loop = asyncio.get_running_loop()
+    stopped = asyncio.Event()
+
+    server: Ref[BaseWSGIServer] = Ref()
+
+    def run_server() -> None:
+        server.current = make_server(host, port, app, threaded=True)
+        if started:
+            loop.call_soon_threadsafe(started.set)
+        try:
+            server.current.serve_forever()  # type: ignore
+        finally:
+            loop.call_soon_threadsafe(stopped.set)
+
+    thread = Thread(target=run_server, daemon=True)
+    thread.start()
+
+    if started:
+        await started.wait()
+
+    try:
+        await stopped.wait()
+    finally:
+        # we may have exited because this task was cancelled
+        server.current.shutdown()
+        # the thread should eventually join
+        thread.join(timeout=3)
+        # just double check it happened
+        if thread.is_alive():  # nocov
+            msg = "Failed to shutdown server."
+            raise RuntimeError(msg)
 
 
 def use_websocket() -> WebSocket:
