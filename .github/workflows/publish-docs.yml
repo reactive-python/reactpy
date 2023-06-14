@@ -13,5 +13,5 @@ jobs:
             - uses: actions/setup-python@v4
               with:
                   python-version: 3.x
-            - run: pip install -r requirements/build-docs.txt
+            - run: pip install -r docs/requirements.txt
             - run: mkdocs gh-deploy --force
