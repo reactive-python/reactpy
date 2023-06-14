@@ -35,9 +35,7 @@ from reactpy.core.types import ComponentConstructor
 
 
 # BackendProtocol.Options
-@dataclass
-class Options(CommonOptions):
-    """Render server config for :func:`reactpy.backend.tornado.configure`"""
+Options = CommonOptions
 
 
 # BackendProtocol.configure

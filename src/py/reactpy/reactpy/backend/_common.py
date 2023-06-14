@@ -59,10 +59,7 @@ async def serve_with_uvicorn(
         await asyncio.wait_for(server.shutdown(), timeout=3)
 
 
-async def _check_if_started(server, started: asyncio.Event) -> None:
-    import uvicorn
-
-    server: uvicorn.Server = server
+async def _check_if_started(server: Any, started: asyncio.Event) -> None:
     while not server.started:
         await asyncio.sleep(0.2)
     started.set()

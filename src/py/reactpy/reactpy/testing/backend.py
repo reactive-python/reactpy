@@ -48,7 +48,7 @@ class BackendFixture:
         timeout: float | None = None,
     ) -> None:
         self.host = host
-        self.port = port or find_available_port(host, allow_reuse_waiting_ports=False)
+        self.port = port or find_available_port(host)
         self.mount, self._root_component = _hotswap()
         self.timeout = (
             REACTPY_TESTING_DEFAULT_TIMEOUT.current if timeout is None else timeout
