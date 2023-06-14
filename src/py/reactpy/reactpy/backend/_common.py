@@ -39,7 +39,6 @@ async def serve_with_uvicorn(
             host=host,
             port=port,
             loop="asyncio",
-            reload=True,
         )
     )
     server.config.setup_event_loop()
