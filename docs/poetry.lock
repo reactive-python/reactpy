@@ -1492,13 +1492,13 @@ typing-extensions = ">=3.10"
 uvicorn = {version = ">=0.19.0", extras = ["standard"], optional = true, markers = "extra == \"fastapi\" or extra == \"sanic\" or extra == \"starlette\""}
 
 [package.extras]
-all = ["reactpy[fastapi,flask,sanic,starlette,testing,tornado]"]
+all = ["reactpy[fastapi,flask,sanic,starlette,tornado]"]
 fastapi = ["fastapi (>=0.63.0)", "uvicorn[standard] (>=0.19.0)"]
 flask = ["flask", "flask-cors", "flask-sock", "markupsafe (>=1.1.1,<2.1)"]
 sanic = ["sanic (>=21)", "sanic-cors", "uvicorn[standard] (>=0.19.0)"]
 starlette = ["starlette (>=0.13.6)", "uvicorn[standard] (>=0.19.0)"]
-testing = ["playwright"]
 tornado = ["tornado"]
+testing = ["playwright"]
 
 [package.source]
 type = "directory"
