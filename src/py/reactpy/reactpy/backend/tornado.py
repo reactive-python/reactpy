@@ -4,7 +4,6 @@ import asyncio
 import json
 from asyncio import Queue as AsyncQueue
 from asyncio.futures import Future
-from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urljoin
 
@@ -32,7 +31,6 @@ from reactpy.config import REACTPY_WEB_MODULES_DIR
 from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
 from reactpy.core.types import ComponentConstructor
-
 
 # BackendProtocol.Options
 Options = CommonOptions
