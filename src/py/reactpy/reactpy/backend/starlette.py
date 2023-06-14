@@ -21,7 +21,7 @@ from reactpy.backend._common import (
     STREAM_PATH,
     CommonOptions,
     read_client_index_html,
-    serve_development_asgi,
+    serve_with_uvicorn,
 )
 from reactpy.backend.hooks import ConnectionContext
 from reactpy.backend.hooks import use_connection as _use_connection
@@ -34,6 +34,19 @@ from reactpy.core.types import RootComponentConstructor
 logger = logging.getLogger(__name__)
 
 
+# BackendProtocol.Options
+@dataclass
+class Options(CommonOptions):
+    """Render server config for :func:`reactpy.backend.starlette.configure`"""
+
+    cors: bool | dict[str, Any] = False
+    """Enable or configure Cross Origin Resource Sharing (CORS)
+
+    For more information see docs for ``starlette.middleware.cors.CORSMiddleware``
+    """
+
+
+# BackendProtocol.configure
 def configure(
     app: Starlette,
     component: RootComponentConstructor,
@@ -54,11 +67,13 @@ def configure(
     _setup_common_routes(options, app)
 
 
+# BackendProtocol.create_development_app
 def create_development_app() -> Starlette:
     """Return a :class:`Starlette` app instance in debug mode"""
     return Starlette(debug=True)
 
 
+# BackendProtocol.serve_development_app
 async def serve_development_app(
     app: Starlette,
     host: str,
@@ -66,7 +81,7 @@ async def serve_development_app(
     started: asyncio.Event | None = None,
 ) -> None:
     """Run a development server for starlette"""
-    await serve_development_asgi(app, host, port, started)
+    await serve_with_uvicorn(app, host, port, started)
 
 
 def use_websocket() -> WebSocket:
@@ -80,17 +95,6 @@ def use_connection() -> Connection[WebSocket]:
         msg = f"Connection has unexpected carrier {conn.carrier}. Are you running with a Flask server?"
         raise TypeError(msg)
     return conn
-
-
-@dataclass
-class Options(CommonOptions):
-    """Render server config for :func:`reactpy.backend.starlette.configure`"""
-
-    cors: bool | dict[str, Any] = False
-    """Enable or configure Cross Origin Resource Sharing (CORS)
-
-    For more information see docs for ``starlette.middleware.cors.CORSMiddleware``
-    """
 
 
 def _setup_common_routes(options: Options, app: Starlette) -> None:

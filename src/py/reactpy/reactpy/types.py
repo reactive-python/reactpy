@@ -4,7 +4,7 @@
 - :mod:`reactpy.backend.types`
 """
 
-from reactpy.backend.types import BackendImplementation, Connection, Location
+from reactpy.backend.types import BackendProtocol, Connection, Location
 from reactpy.core.component import Component
 from reactpy.core.hooks import Context
 from reactpy.core.types import (
@@ -27,7 +27,7 @@ from reactpy.core.types import (
 )
 
 __all__ = [
-    "BackendImplementation",
+    "BackendProtocol",
     "Component",
     "ComponentConstructor",
     "ComponentType",

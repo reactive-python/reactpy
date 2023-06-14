@@ -6,7 +6,7 @@ import reactpy
 from reactpy import html
 from reactpy.backend import default as default_implementation
 from reactpy.backend._common import PATH_PREFIX
-from reactpy.backend.types import BackendImplementation, Connection, Location
+from reactpy.backend.types import BackendProtocol, Connection, Location
 from reactpy.backend.utils import all_implementations
 from reactpy.testing import BackendFixture, DisplayFixture, poll
 
@@ -17,7 +17,7 @@ from reactpy.testing import BackendFixture, DisplayFixture, poll
     scope="module",
 )
 async def display(page, request):
-    imp: BackendImplementation = request.param
+    imp: BackendProtocol = request.param
 
     # we do this to check that route priorities for each backend are correct
     if imp is default_implementation:
@@ -158,7 +158,7 @@ async def test_use_request(display: DisplayFixture, hook_name):
 
 
 @pytest.mark.parametrize("imp", all_implementations())
-async def test_customized_head(imp: BackendImplementation, page):
+async def test_customized_head(imp: BackendProtocol, page):
     custom_title = f"Custom Title for {imp.__name__}"
 
     @reactpy.component

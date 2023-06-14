@@ -24,17 +24,15 @@ STREAM_PATH = PATH_PREFIX / "stream"
 CLIENT_BUILD_DIR = Path(_reactpy_file_path).parent / "_static" / "app" / "dist"
 
 
-
-async def serve_development_asgi(
+async def serve_with_uvicorn(
     app: ASGIApplication | Any,
     host: str,
     port: int,
     started: asyncio.Event | None,
 ) -> None:
     """Run a development server for an ASGI application"""
-
     import uvicorn
-    
+
     server = uvicorn.Server(
         uvicorn.Config(
             app,
@@ -62,7 +60,10 @@ async def serve_development_asgi(
         await asyncio.wait_for(server.shutdown(), timeout=3)
 
 
-async def _check_if_started(server: uvicorn.Server, started: asyncio.Event) -> None:
+async def _check_if_started(server, started: asyncio.Event) -> None:
+    import uvicorn
+
+    server: uvicorn.Server = server
     while not server.started:
         await asyncio.sleep(0.2)
     started.set()
@@ -71,8 +72,7 @@ async def _check_if_started(server: uvicorn.Server, started: asyncio.Event) -> N
 def safe_client_build_dir_path(path: str) -> Path:
     """Prevent path traversal out of :data:`CLIENT_BUILD_DIR`"""
     return traversal_safe_path(
-        CLIENT_BUILD_DIR,
-        *("index.html" if path in ("", "/") else path).split("/"),
+        CLIENT_BUILD_DIR, *("index.html" if path in {"", "/"} else path).split("/")
     )
 
 

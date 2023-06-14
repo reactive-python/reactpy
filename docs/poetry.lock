@@ -1494,7 +1494,7 @@ uvicorn = {version = ">=0.19.0", extras = ["standard"], optional = true, markers
 [package.extras]
 all = ["reactpy[fastapi,flask,sanic,starlette,tornado]"]
 fastapi = ["fastapi (>=0.63.0)", "uvicorn[standard] (>=0.19.0)"]
-flask = ["flask", "flask-cors", "flask-sock", "markupsafe (>=1.1.1,<2.1)"]
+flask = ["flask", "flask-cors", "flask-sock", "markupsafe (>=1.1.1,<2.1)", "uvicorn[standard] (>=0.19.0)"]
 sanic = ["sanic (>=21)", "sanic-cors", "uvicorn[standard] (>=0.19.0)"]
 starlette = ["starlette (>=0.13.6)", "uvicorn[standard] (>=0.19.0)"]
 tornado = ["tornado"]

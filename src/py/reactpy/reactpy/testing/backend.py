@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from contextlib import AsyncExitStack
+from contextlib import AsyncExitStack, suppress
 from types import TracebackType
 from typing import Any, Callable
 from urllib.parse import urlencode, urlunparse
 
 from reactpy.backend import default as default_server
-from reactpy.backend.types import BackendImplementation
+from reactpy.backend.types import BackendProtocol
 from reactpy.backend.utils import find_available_port
 from reactpy.config import REACTPY_TESTING_DEFAULT_TIMEOUT
 from reactpy.core.component import component
@@ -43,7 +43,7 @@ class BackendFixture:
         host: str = "127.0.0.1",
         port: int | None = None,
         app: Any | None = None,
-        implementation: BackendImplementation[Any] | None = None,
+        implementation: BackendProtocol[Any] | None = None,
         options: Any | None = None,
         timeout: float | None = None,
     ) -> None:
@@ -54,10 +54,9 @@ class BackendFixture:
             REACTPY_TESTING_DEFAULT_TIMEOUT.current if timeout is None else timeout
         )
 
-        if app is not None:
-            if implementation is None:
-                msg = "If an application instance its corresponding server implementation must be provided too."
-                raise ValueError(msg)
+        if app is not None and implementation is None:
+            msg = "If an application instance its corresponding server implementation must be provided too."
+            raise ValueError(msg)
 
         self._app = app
         self.implementation = implementation or default_server
@@ -124,10 +123,8 @@ class BackendFixture:
 
         async def stop_server() -> None:
             server_future.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await asyncio.wait_for(server_future, timeout=self.timeout)
-            except asyncio.CancelledError:
-                pass
 
         self._exit_stack.push_async_callback(stop_server)
 

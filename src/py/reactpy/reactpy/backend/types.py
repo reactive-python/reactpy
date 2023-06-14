@@ -11,25 +11,26 @@ _App = TypeVar("_App")
 
 
 @runtime_checkable
-class BackendImplementation(Protocol[_App]):
+class BackendProtocol(Protocol[_App]):
     """Common interface for built-in web server/framework integrations"""
 
     Options: Callable[..., Any]
-    """A constructor for options passed to :meth:`BackendImplementation.configure`"""
+    """A constructor for options passed to :meth:`BackendProtocol.configure`"""
 
+    @staticmethod
     def configure(
-        self,
         app: _App,
         component: RootComponentConstructor,
         options: Any | None = None,
     ) -> None:
         """Configure the given app instance to display the given component"""
 
-    def create_development_app(self) -> _App:
+    @staticmethod
+    def create_development_app() -> _App:
         """Create an application instance for development purposes"""
 
+    @staticmethod
     async def serve_development_app(
-        self,
         app: _App,
         host: str,
         port: int,

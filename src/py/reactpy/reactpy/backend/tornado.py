@@ -4,6 +4,7 @@ import asyncio
 import json
 from asyncio import Queue as AsyncQueue
 from asyncio.futures import Future
+from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urljoin
 
@@ -32,10 +33,14 @@ from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
 from reactpy.core.types import ComponentConstructor
 
-Options = CommonOptions
-"""Render server config for :func:`reactpy.backend.tornado.configure`"""
+
+# BackendProtocol.Options
+@dataclass
+class Options(CommonOptions):
+    """Render server config for :func:`reactpy.backend.tornado.configure`"""
 
 
+# BackendProtocol.configure
 def configure(
     app: Application,
     component: ComponentConstructor,
@@ -60,10 +65,12 @@ def configure(
     )
 
 
+# BackendProtocol.create_development_app
 def create_development_app() -> Application:
     return Application(debug=True)
 
 
+# BackendProtocol.serve_development_app
 async def serve_development_app(
     app: Application,
     host: str,

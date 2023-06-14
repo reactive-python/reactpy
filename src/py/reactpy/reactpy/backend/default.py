@@ -5,13 +5,22 @@ from logging import getLogger
 from sys import exc_info
 from typing import Any, NoReturn
 
-from reactpy.backend.types import BackendImplementation
+from reactpy.backend.types import BackendProtocol
 from reactpy.backend.utils import SUPPORTED_PACKAGES, all_implementations
 from reactpy.types import RootComponentConstructor
 
 logger = getLogger(__name__)
+_DEFAULT_IMPLEMENTATION: BackendProtocol[Any] | None = None
 
 
+# BackendProtocol.Options
+def Options(*args: Any, **kwargs: Any) -> NoReturn:  # nocov
+    """Create configuration options"""
+    msg = "Default implementation has no options."
+    raise ValueError(msg)
+
+
+# BackendProtocol.configure
 def configure(
     app: Any, component: RootComponentConstructor, options: None = None
 ) -> None:
@@ -22,17 +31,13 @@ def configure(
     return _default_implementation().configure(app, component)
 
 
+# BackendProtocol.create_development_app
 def create_development_app() -> Any:
     """Create an application instance for development purposes"""
     return _default_implementation().create_development_app()
 
 
-def Options(*args: Any, **kwargs: Any) -> NoReturn:  # nocov
-    """Create configuration options"""
-    msg = "Default implementation has no options."
-    raise ValueError(msg)
-
-
+# BackendProtocol.serve_development_app
 async def serve_development_app(
     app: Any,
     host: str,
@@ -45,10 +50,7 @@ async def serve_development_app(
     )
 
 
-_DEFAULT_IMPLEMENTATION: BackendImplementation[Any] | None = None
-
-
-def _default_implementation() -> BackendImplementation[Any]:
+def _default_implementation() -> BackendProtocol[Any]:
     """Get the first available server implementation"""
     global _DEFAULT_IMPLEMENTATION  # noqa: PLW0603
 

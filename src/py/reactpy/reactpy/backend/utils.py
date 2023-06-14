@@ -8,7 +8,7 @@ from contextlib import closing
 from importlib import import_module
 from typing import Any
 
-from reactpy.backend.types import BackendImplementation
+from reactpy.backend.types import BackendProtocol
 from reactpy.types import RootComponentConstructor
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ def run(
     component: RootComponentConstructor,
     host: str = "127.0.0.1",
     port: int | None = None,
-    implementation: BackendImplementation[Any] | None = None,
+    implementation: BackendProtocol[Any] | None = None,
 ) -> None:
     """Run a component with a development server"""
     logger.warning(_DEVELOPMENT_RUN_FUNC_WARNING)
@@ -70,7 +70,7 @@ def find_available_port(
     raise RuntimeError(msg)
 
 
-def all_implementations() -> Iterator[BackendImplementation[Any]]:
+def all_implementations() -> Iterator[BackendProtocol[Any]]:
     """Yield all available server implementations"""
     for name in SUPPORTED_PACKAGES:
         try:
