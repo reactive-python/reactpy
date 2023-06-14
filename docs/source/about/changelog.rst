@@ -23,7 +23,8 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-No changes.
+**Added**
+- :issue:`647` - Added an exmaple for how to build a custom hook that returns functions
 
 
 v1.0.0
