@@ -83,7 +83,7 @@ def all_implementations() -> Iterator[BackendProtocol[Any]]:
         yield import_module(reactpy_backend_name)
 
 
-_DEVELOPMENT_RUN_FUNC_WARNING = f"""\
+_DEVELOPMENT_RUN_FUNC_WARNING = """\
 The `run()` function is only intended for testing during development! To run in \
 production, refer to the docs on how to use reactpy.backend.*.configure.\
 """
