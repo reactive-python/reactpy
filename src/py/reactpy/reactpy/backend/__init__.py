@@ -3,7 +3,7 @@ from logging import getLogger
 
 _logger = getLogger(__name__)
 
-# Fix for issue where Windows registry gets corrupt and mime types go missing
+# Fix for missing mime types due to corrupt Windows registry 
 if not mimetypes.inited:
     mimetypes.init()
 MIME_TYPES = {
