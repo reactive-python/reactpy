@@ -1,7 +1,7 @@
 import mimetypes
 
 # Fix for issue where Windows registry gets corrupt and mime types go missing
-if not mimetypes.inited:  # pragma: no cover
+if not mimetypes.inited:
     mimetypes.init()
 MIME_TYPES = {
     ".js": "application/javascript",
