@@ -1,4 +1,4 @@
-from reactpy import component, hooks, html, run
+from reactpy import component, html, run
 
 # Import custom hook from use_counting_hook.py file
 from use_counting_hook import use_counting_hook
