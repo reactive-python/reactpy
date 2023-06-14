@@ -32,18 +32,15 @@ def run(
     logger.warning(_DEVELOPMENT_RUN_FUNC_WARNING)
 
     implementation = implementation or import_module("reactpy.backend.default")
-
     app = implementation.create_development_app()
     implementation.configure(app, component)
-
     host = host
     port = port or find_available_port(host)
-
     app_cls = type(app)
-    logger.info(
-        f"Running with {app_cls.__module__}.{app_cls.__name__} at http://{host}:{port}"
-    )
 
+    logger.info(
+        f"ReactPy is running with '{app_cls.__module__}.{app_cls.__name__}' at http://{host}:{port}"
+    )
     asyncio.run(implementation.serve_development_app(app, host, port))
 
 
@@ -77,22 +74,16 @@ def all_implementations() -> Iterator[BackendImplementation[Any]]:
     """Yield all available server implementations"""
     for name in SUPPORTED_PACKAGES:
         try:
-            relative_import_name = f"{__name__.rsplit('.', 1)[0]}.{name}"
-            module = import_module(relative_import_name)
+            import_module(name)
         except ImportError:  # nocov
             logger.debug(f"Failed to import {name!r}", exc_info=True)
             continue
 
-        if not isinstance(module, BackendImplementation):  # nocov
-            msg = f"{module.__name__!r} is an invalid implementation"
-            raise TypeError(msg)
-
-        yield module
+        reactpy_backend_name = f"{__name__.rsplit('.', 1)[0]}.{name}"
+        yield import_module(reactpy_backend_name)
 
 
 _DEVELOPMENT_RUN_FUNC_WARNING = f"""\
 The `run()` function is only intended for testing during development! To run in \
-production, consider selecting a supported backend and importing its associated \
-`configure()` function from `reactpy.backend.<package>` where `<package>` is one of \
-{list(SUPPORTED_PACKAGES)}. For details refer to the docs on how to run each package.\
+production, refer to the docs on how to use reactpy.backend.*.configure.\
 """

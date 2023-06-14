@@ -115,7 +115,7 @@ def _setup_common_routes(options: Options, app: Starlette) -> None:
     )
     # register this last so it takes least priority
     index_route = _make_index_route(options)
-    app.add_route(url_prefix + "/", index_route)
+    app.add_route(f"{url_prefix}/", index_route)
     app.add_route(url_prefix + "/{path:path}", index_route)
 
 
