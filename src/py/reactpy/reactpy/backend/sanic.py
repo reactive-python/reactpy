@@ -47,7 +47,6 @@ class Options(CommonOptions):
 
 
 # BackendProtocol.configure
-@staticmethod
 def configure(
     app: Sanic, component: RootComponentConstructor, options: Options | None = None
 ) -> None:
@@ -64,7 +63,6 @@ def configure(
 
 
 # BackendProtocol.create_development_app
-@staticmethod
 def create_development_app() -> Sanic:
     """Return a :class:`Sanic` app instance in test mode"""
     Sanic.test_mode = True
@@ -73,7 +71,6 @@ def create_development_app() -> Sanic:
 
 
 # BackendProtocol.serve_development_app
-@staticmethod
 async def serve_development_app(
     app: Sanic,
     host: str,
