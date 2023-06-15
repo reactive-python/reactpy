@@ -5,7 +5,7 @@ WORKDIR /app/
 # Install NodeJS
 # --------------
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
-RUN apt-get install -yq nodejs build-essential
+RUN apt-get install -yq nodejs npm build-essential
 RUN npm install -g npm@8.5.0
 
 # Install Poetry
