@@ -41,23 +41,27 @@ all = ["reactpy[starlette,sanic,fastapi,flask,tornado,testing]"]
 starlette = [
   "starlette >=0.13.6",
   "uvicorn[standard] >=0.19.0",
+  "jinja2-simple-tags",
 ]
 sanic = [
   "sanic >=21",
   "sanic-cors",
   "uvicorn[standard] >=0.19.0",
+  "jinja2-simple-tags",
 ]
 fastapi = [
   "fastapi >=0.63.0",
   "uvicorn[standard] >=0.19.0",
+  "jinja2-simple-tags",
 ]
 flask = [
   "flask",
   "markupsafe>=1.1.1,<2.1",
   "flask-cors",
   "flask-sock",
+  "jinja2-simple-tags",
 ]
-tornado = [
+tornado = [ # TODO: Torando does not use Jinja. We will need to write something custom for this.
   "tornado",
 ]
 testing = [
