@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import logging
 from collections.abc import Mapping, Sequence
 from functools import wraps
 from typing import Any, Protocol, cast, overload
@@ -25,9 +24,6 @@ from reactpy.core.types import (
     VdomDictConstructor,
     VdomJson,
 )
-
-logger = logging.getLogger()
-
 
 VDOM_JSON_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema",
@@ -328,18 +324,18 @@ def _is_single_child(value: Any) -> bool:
 
 def _validate_child_key_integrity(value: Any) -> None:
     if hasattr(value, "__iter__") and not hasattr(value, "__len__"):
-        logger.error(
+        warn(
             f"Did not verify key-path integrity of children in generator {value} "
             "- pass a sequence (i.e. list of finite length) in order to verify"
         )
     else:
         for child in value:
             if isinstance(child, ComponentType) and child.key is None:
-                logger.error(f"Key not specified for child in list {child}")
+                warn(f"Key not specified for child in list {child}")
             elif isinstance(child, Mapping) and "key" not in child:
                 # remove 'children' to reduce log spam
                 child_copy = {**child, "children": _EllipsisRepr()}
-                logger.error(f"Key not specified for child in list {child_copy}")
+                warn(f"Key not specified for child in list {child_copy}")
 
 
 class _CustomVdomDictConstructor(Protocol):
