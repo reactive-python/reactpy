@@ -23,10 +23,6 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-**Changed**
-
-- :pull:`1050` - Warn and attempt to fix missing mime types, which can result in ``reactpy.run`` not working as expected.
-
 **Fixed**
 
 - :issue:`930` - better traceback for JSON serialization errors (via :pull:`1008`)
@@ -36,6 +32,7 @@ Unreleased
 
 **Changed**
 
+- :pull:`1050` - Warn and attempt to fix missing mime types, which can result in ``reactpy.run`` not working as expected.
 - :pull:`1051` - Rename ``reactpy.backend.BackendImplementation`` to ``reactpy.backend.BackendProtocol``
 - :pull:`1051` - Allow ``reactpy.run`` to fail in more predictable ways
 
