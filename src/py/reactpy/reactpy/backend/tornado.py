@@ -122,12 +122,17 @@ def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
             StaticFileHandler,
             {"path": str(CLIENT_BUILD_DIR / "assets")},
         ),
-        (
-            r"/(.*)",
-            IndexHandler,
-            {"index_html": read_client_index_html(options)},
-        ),
-    ]
+    ] + (
+        [
+            (
+                r"/(.*)",
+                IndexHandler,
+                {"index_html": read_client_index_html(options)},
+            ),
+        ]
+        if options.serve_index_route
+        else []
+    )
 
 
 def _add_handler(

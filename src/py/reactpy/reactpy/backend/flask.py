@@ -169,10 +169,12 @@ def _setup_common_routes(
 
     index_html = read_client_index_html(options)
 
-    @spa_blueprint.route("/")
-    @spa_blueprint.route("/<path:_>")
-    def send_client_dir(_: str = "") -> Any:
-        return index_html
+    if options.serve_index_route:
+
+        @spa_blueprint.route("/")
+        @spa_blueprint.route("/<path:_>")
+        def send_client_dir(_: str = "") -> Any:
+            return index_html
 
 
 def _setup_single_view_dispatcher_route(

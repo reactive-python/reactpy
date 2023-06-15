@@ -118,16 +118,17 @@ def _setup_common_routes(
     ) -> response.HTTPResponse:
         return response.html(index_html)
 
-    spa_blueprint.add_route(
-        single_page_app_files,
-        "/",
-        name="single_page_app_files_root",
-    )
-    spa_blueprint.add_route(
-        single_page_app_files,
-        "/<_:path>",
-        name="single_page_app_files_path",
-    )
+    if options.serve_index_route:
+        spa_blueprint.add_route(
+            single_page_app_files,
+            "/",
+            name="single_page_app_files_root",
+        )
+        spa_blueprint.add_route(
+            single_page_app_files,
+            "/<_:path>",
+            name="single_page_app_files_path",
+        )
 
     async def asset_files(
         request: request.Request,
