@@ -114,7 +114,7 @@ def vdom_head_elements_to_html(head: Sequence[VdomDict] | VdomDict | str) -> str
             head = cast(VdomDict, {**head, "tagName": ""})
         return vdom_to_html(head)
     else:
-        return vdom_to_html(html._(head))
+        return vdom_to_html(html._(*head))
 
 
 @dataclass

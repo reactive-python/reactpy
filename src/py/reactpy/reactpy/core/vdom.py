@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import logging
+import json
 from collections.abc import Mapping, Sequence
 from functools import wraps
 from typing import Any, Protocol, cast, overload
@@ -8,7 +8,7 @@ from typing import Any, Protocol, cast, overload
 from fastjsonschema import compile as compile_json_schema
 
 from reactpy._warnings import warn
-from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_CHECK_JSON_ATTRS, REACTPY_DEBUG_MODE
 from reactpy.core._f_back import f_module_name
 from reactpy.core.events import EventHandler, to_event_handler_function
 from reactpy.core.types import (
@@ -24,9 +24,6 @@ from reactpy.core.types import (
     VdomDictConstructor,
     VdomJson,
 )
-
-logger = logging.getLogger()
-
 
 VDOM_JSON_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema",
@@ -199,6 +196,8 @@ def vdom(
     attributes, event_handlers = separate_attributes_and_event_handlers(attributes)
 
     if attributes:
+        if REACTPY_CHECK_JSON_ATTRS.current:
+            json.dumps(attributes)
         model["attributes"] = attributes
 
     if children:
@@ -325,18 +324,18 @@ def _is_single_child(value: Any) -> bool:
 
 def _validate_child_key_integrity(value: Any) -> None:
     if hasattr(value, "__iter__") and not hasattr(value, "__len__"):
-        logger.error(
+        warn(
             f"Did not verify key-path integrity of children in generator {value} "
             "- pass a sequence (i.e. list of finite length) in order to verify"
         )
     else:
         for child in value:
             if isinstance(child, ComponentType) and child.key is None:
-                logger.error(f"Key not specified for child in list {child}")
+                warn(f"Key not specified for child in list {child}", UserWarning)
             elif isinstance(child, Mapping) and "key" not in child:
                 # remove 'children' to reduce log spam
                 child_copy = {**child, "children": _EllipsisRepr()}
-                logger.error(f"Key not specified for child in list {child_copy}")
+                warn(f"Key not specified for child in list {child_copy}", UserWarning)
 
 
 class _CustomVdomDictConstructor(Protocol):
