@@ -27,6 +27,11 @@ Unreleased
 
 - :pull:`1050` - Warn when operating system has missing mime types, which can result in ``reactpy.run`` not working as expected.
 
+**Fixed**
+
+- :issue:`930` - better traceback for JSON serialization errors (via :pull:`1008`)
+- :issue:`437` - explain that JS component attributes must be JSON (via :pull:`1008`)
+
 
 v1.0.0
 ------
