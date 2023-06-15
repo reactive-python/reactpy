@@ -2,9 +2,13 @@ FROM python:3.9
 
 WORKDIR /app/
 
+# Misc Dependencies
+# -----------------
+RUN apt-get update
+RUN apt-get install -y build-essential
+
 # Install NodeJS
 # --------------
-RUN apt-get install -y build-essential
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && apt-get install -y nodejs
 RUN npm install -g npm@8.5.0
 
