@@ -23,9 +23,9 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-**Fixed**
+**Changed**
 
-- :pull:`1050` - Fix issue where JavaScript files can be detected as mime-type ``text/plain`` due to a corrupt Windows registry
+- :pull:`1050` - Warn when operating system has missing mime types, which can result in ``reactpy.run`` not working as expected.
 
 
 v1.0.0
