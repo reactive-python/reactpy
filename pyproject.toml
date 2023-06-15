@@ -132,7 +132,3 @@ ban-relative-imports = "all"
   # Allow print
   "T201",
 ]
-
-[tool.isort]
-profile = 'black'
-skip = 'migrations'

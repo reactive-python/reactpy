@@ -8,9 +8,6 @@
     "python.analysis.typeCheckingMode": "off",
     "python.languageServer": "Pylance",
     "python.formatting.provider": "black",
-    "isort.args": [
-        "--src=${workspaceFolder}"
-    ],
     "terminal.integrated.scrollback": 10000,
     "git.autofetch": true,
     "prettier.tabWidth": 4,
