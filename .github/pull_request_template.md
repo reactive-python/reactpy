@@ -1,10 +1,10 @@
 ## Summary
 
-<!-- Describe how these changes resolve the aforementioned issues -->
+<!-- Describe these changes -->
 
 ## Issues
 
-<!-- Link the issues this change resolves, or describe them -->
+<!-- Link the issues this change resolves (if any) -->
 
 ## Checklist
 
