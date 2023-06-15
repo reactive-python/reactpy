@@ -4,7 +4,7 @@ WORKDIR /app/
 
 # Install NodeJS
 # --------------
-RUN curl -sL https://deb.nodesource.com/setup_14.x  | bash -
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 RUN apt-get install -yq nodejs build-essential
 RUN npm install -g npm@8.5.0
 
