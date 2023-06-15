@@ -280,28 +280,36 @@ def test_invalid_vdom(value, error_message_pattern):
         validate_vdom_json(value)
 
 
-@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="Only logs in debug mode")
-def test_debug_log_cannot_verify_keypath_for_genereators(caplog):
-    reactpy.vdom("div", (1 for i in range(10)))
-    assert len(caplog.records) == 1
-    assert caplog.records[0].message.startswith(
-        "Did not verify key-path integrity of children in generator"
-    )
-    caplog.records.clear()
+@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="Only warns in debug mode")
+def test_warn_cannot_verify_keypath_for_genereators():
+    with pytest.warns(UserWarning) as record:
+        reactpy.vdom("div", (1 for i in range(10)))
+        assert len(record) == 1
+        assert (
+            record[0]
+            .message.args[0]
+            .startswith("Did not verify key-path integrity of children in generator")
+        )
 
 
-@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="Only logs in debug mode")
-def test_debug_log_dynamic_children_must_have_keys(caplog):
-    reactpy.vdom("div", [reactpy.vdom("div")])
-    assert len(caplog.records) == 1
-    assert caplog.records[0].message.startswith("Key not specified for child")
-
-    caplog.records.clear()
+@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="Only warns in debug mode")
+def test_warn_dynamic_children_must_have_keys():
+    with pytest.warns(UserWarning) as record:
+        reactpy.vdom("div", [reactpy.vdom("div")])
+        assert len(record) == 1
+        assert record[0].message.args[0].startswith("Key not specified for child")
 
     @reactpy.component
     def MyComponent():
         return reactpy.vdom("div")
 
-    reactpy.vdom("div", [MyComponent()])
-    assert len(caplog.records) == 1
-    assert caplog.records[0].message.startswith("Key not specified for child")
+    with pytest.warns(UserWarning) as record:
+        reactpy.vdom("div", [MyComponent()])
+        assert len(record) == 1
+        assert record[0].message.args[0].startswith("Key not specified for child")
+
+
+@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="only checked in debug mode")
+def test_raise_for_non_json_attrs():
+    with pytest.raises(TypeError, match="JSON serializable"):
+        reactpy.html.div({"non_json_serializable_object": object()})

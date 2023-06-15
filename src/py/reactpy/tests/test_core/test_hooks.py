@@ -1257,12 +1257,3 @@ async def test_error_in_component_effect_cleanup_is_gracefully_handled():
             await layout.render()
             component_hook.latest.schedule_render()
             await layout.render()  # no error
-
-
-@pytest.mark.skipif(
-    not REACTPY_DEBUG_MODE.current,
-    reason="only check json serialization in debug mode",
-)
-def test_raise_for_non_json_attrs():
-    with pytest.raises(TypeError, match="JSON serializable"):
-        reactpy.html.div({"non_json_serializable_object": object()})
