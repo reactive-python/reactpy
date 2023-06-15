@@ -4,6 +4,7 @@ from logging import getLogger
 _logger = getLogger(__name__)
 
 # Fix for missing mime types due to OS corruption/misconfiguration
+# Example: https://github.com/encode/starlette/issues/829
 if not mimetypes.inited:
     mimetypes.init()
 MIME_TYPES = {
