@@ -6,7 +6,7 @@ from sys import exc_info
 from typing import Any, NoReturn
 
 from reactpy.backend.types import BackendProtocol
-from reactpy.backend.utils import SUPPORTED_PACKAGES, all_implementations
+from reactpy.backend.utils import SUPPORTED_BACKENDS, all_implementations
 from reactpy.types import RootComponentConstructor
 
 logger = getLogger(__name__)
@@ -14,10 +14,12 @@ _DEFAULT_IMPLEMENTATION: BackendProtocol[Any] | None = None
 
 
 # BackendProtocol.Options
-def Options(*args: Any, **kwargs: Any) -> NoReturn:  # nocov
+class Options:  # nocov
     """Create configuration options"""
-    msg = "Default implementation has no options."
-    raise ValueError(msg)
+
+    def __call__(self, *args: Any, **kwds: Any) -> NoReturn:
+        msg = "Default implementation has no options."
+        raise ValueError(msg)
 
 
 # BackendProtocol.configure
@@ -61,7 +63,7 @@ def _default_implementation() -> BackendProtocol[Any]:
         implementation = next(all_implementations())
     except StopIteration:  # nocov
         logger.debug("Backend implementation import failed", exc_info=exc_info())
-        supported_backends = ", ".join(SUPPORTED_PACKAGES)
+        supported_backends = ", ".join(SUPPORTED_BACKENDS)
         msg = (
             "It seems you haven't installed a backend. To resolve this issue, "
             "you can install a backend by running:\n\n"

@@ -13,7 +13,7 @@ from reactpy.types import RootComponentConstructor
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_PACKAGES = (
+SUPPORTED_BACKENDS = (
     "fastapi",
     "sanic",
     "tornado",
@@ -24,7 +24,7 @@ SUPPORTED_PACKAGES = (
 
 def run(
     component: RootComponentConstructor,
-    host: str = "127.0.0.1",
+    host: str | None = None,
     port: int | None = None,
     implementation: BackendProtocol[Any] | None = None,
 ) -> None:
@@ -34,12 +34,16 @@ def run(
     implementation = implementation or import_module("reactpy.backend.default")
     app = implementation.create_development_app()
     implementation.configure(app, component)
-    host = host
+    host = host or "127.0.0.1"
     port = port or find_available_port(host)
     app_cls = type(app)
 
     logger.info(
-        f"ReactPy is running with '{app_cls.__module__}.{app_cls.__name__}' at http://{host}:{port}"
+        "ReactPy is running with '%s.%s' at http://%s:%s",
+        app_cls.__module__,
+        app_cls.__name__,
+        host,
+        port,
     )
     asyncio.run(implementation.serve_development_app(app, host, port))
 
@@ -60,11 +64,11 @@ def find_available_port(host: str, port_min: int = 8000, port_max: int = 9000) -
 
 def all_implementations() -> Iterator[BackendProtocol[Any]]:
     """Yield all available server implementations"""
-    for name in SUPPORTED_PACKAGES:
+    for name in SUPPORTED_BACKENDS:
         try:
             import_module(name)
         except ImportError:  # nocov
-            logger.debug(f"Failed to import {name!r}", exc_info=True)
+            logger.debug("Failed to import %s", name, exc_info=True)
             continue
 
         reactpy_backend_name = f"{__name__.rsplit('.', 1)[0]}.{name}"
@@ -72,6 +76,6 @@ def all_implementations() -> Iterator[BackendProtocol[Any]]:
 
 
 _DEVELOPMENT_RUN_FUNC_WARNING = """\
-The `run()` function is only intended for testing during development! To run in \
-production, refer to the docs on how to use reactpy.backend.*.configure.\
+The `run()` function is only intended for testing during development! To run \
+in production, refer to the docs on how to use reactpy.backend.*.configure.\
 """
