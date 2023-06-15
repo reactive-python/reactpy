@@ -7,12 +7,11 @@ _logger = getLogger(__name__)
 # Example: https://github.com/encode/starlette/issues/829
 if not mimetypes.inited:
     mimetypes.init()
-MIME_TYPES = {
+for extension, mime_type in {
     ".js": "application/javascript",
     ".css": "text/css",
     ".json": "application/json",
-}
-for extension, mime_type in MIME_TYPES.items():
+}.items():
     if not mimetypes.types_map.get(extension):  # pragma: no cover
         _logger.warning(
             "Mime type '%s = %s' is missing. Please research how to "
