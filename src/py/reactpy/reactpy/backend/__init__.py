@@ -14,7 +14,9 @@ MIME_TYPES = {
 for extension, mime_type in MIME_TYPES.items():
     if not mimetypes.types_map.get(extension):  # pragma: no cover
         _logger.warning(
-            f"Mime type '{mime_type}:{extension}' is missing."
-            " Please determine how to fix missing mime types on your OS."
+            "Mime type '%s = %s' is missing. Please research how to "
+            "fix missing mime types on your operating system.",
+            extension,
+            mime_type,
         )
         mimetypes.add_type(mime_type, extension)
