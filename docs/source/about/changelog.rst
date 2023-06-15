@@ -25,6 +25,8 @@ Unreleased
 
 **Fixed**
 
+- :issue:`930` - better traceback for JSON serialization errors (via :pull:`1008`)
+- :issue:`437` - explain that JS component attributes must be JSON (via :pull:`1008`)
 - :pull:`1051` - Fix ``reactpy.run`` port assignment sometimes attaching to in-use ports on Windows
 - :pull:`1051` - Fix ``reactpy.run`` not recognizing ``fastapi``
 

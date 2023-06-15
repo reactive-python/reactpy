@@ -27,3 +27,27 @@ def test_reactpy_debug_mode_toggle():
     # just check that nothing breaks
     config.REACTPY_DEBUG_MODE.current = True
     config.REACTPY_DEBUG_MODE.current = False
+
+
+def test_boolean():
+    assert config.boolean(True) is True
+    assert config.boolean(False) is False
+    assert config.boolean(1) is True
+    assert config.boolean(0) is False
+    assert config.boolean("true") is True
+    assert config.boolean("false") is False
+    assert config.boolean("True") is True
+    assert config.boolean("False") is False
+    assert config.boolean("TRUE") is True
+    assert config.boolean("FALSE") is False
+    assert config.boolean("1") is True
+    assert config.boolean("0") is False
+
+    with pytest.raises(ValueError):
+        config.boolean("2")
+
+    with pytest.raises(ValueError):
+        config.boolean("")
+
+    with pytest.raises(TypeError):
+        config.boolean(None)
