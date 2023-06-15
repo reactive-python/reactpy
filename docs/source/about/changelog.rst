@@ -25,7 +25,7 @@ Unreleased
 
 **Changed**
 
-- :pull:`1050` - Warn when operating system has missing mime types, which can result in ``reactpy.run`` not working as expected.
+- :pull:`1050` - Warn and attempt to fix missing mime types, which can result in ``reactpy.run`` not working as expected.
 
 **Fixed**
 
