@@ -1,0 +1,15 @@
+{
+    "recommendations": [
+        "eamodio.gitlens",
+        "github.vscode-pull-request-github",
+        "wholroyd.jinja",
+        "esbenp.prettier-vscode",
+        "ms-python.vscode-pylance",
+        "ms-python.python",
+        "mrmlnc.vscode-autoprefixer",
+        "gruntfuggly.todo-tree",
+        "sourcery.sourcery",
+        "njpwerner.autodocstring",
+        "github.copilot"
+    ]
+}

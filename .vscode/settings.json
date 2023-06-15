@@ -1,0 +1,46 @@
+{
+    "editor.detectIndentation": false,
+    "editor.formatOnSave": true,
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.mypyEnabled": true,
+    "python.analysis.typeCheckingMode": "off",
+    "python.languageServer": "Pylance",
+    "python.formatting.provider": "black",
+    "isort.args": [
+        "--src=${workspaceFolder}"
+    ],
+    "terminal.integrated.scrollback": 10000,
+    "git.autofetch": true,
+    "prettier.tabWidth": 4,
+    "prettier.useTabs": true,
+    "prettier.endOfLine": "auto",
+    "prettier.proseWrap": "never",
+    "autoprefixer.formatOnSave": true,
+    "files.associations": {
+        "**/requirements/*.txt": "pip-requirements",
+        "*.py-tpl": "python",
+        "**/templates/**.html": "jinja",
+        "**/template/**.html": "jinja",
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[css]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.python",
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        }
+    },
+    "files.insertFinalNewline": true
+}
