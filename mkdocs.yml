@@ -1,0 +1,178 @@
+---
+nav:
+    - Home: index.md
+    - Get Started:
+          - Quick Start:
+                - learn/get-started.md
+                - learn/tutorial-tic-tac-toe.md
+                - learn/thinking-in-react.md
+          - Installation:
+                - learn/start-a-new-react-project.md
+                - learn/add-react-to-an-existing-project.md
+                - learn/editor-setup.md
+                - learn/react-developer-tools.md
+          - More Tutorials:
+                - learn/tutorial-react-bootstrap.md
+                - learn/tutorial-material-ui.md
+    - Learn React:
+          - Describing the UI:
+                - learn/your-first-component.md
+                - learn/importing-and-exporting-components.md
+                - learn/writing-markup-with-psx.md
+                - learn/python-in-psx-with-curly-braces.md
+                - learn/passing-props-to-a-component.md
+                - learn/conditional-rendering.md
+                - learn/rendering-lists.md
+                - learn/keeping-components-pure.md
+          - Adding Interactivity:
+                - learn/responding-to-events.md
+                - learn/state-a-components-memory.md
+                - learn/render-and-commit.md
+                - learn/state-as-a-snapshot.md
+                - learn/queueing-a-series-of-state-updates.md
+                - learn/updating-objects-in-state.md
+                - learn/updating-arrays-in-state.md
+          - Managing State:
+                - learn/reacting-to-input-with-state.md
+                - learn/choosing-the-state-structure.md
+                - learn/sharing-state-between-components.md
+                - learn/preserving-and-resetting-state.md
+                - learn/extracting-state-logic-into-a-reducer.md
+                - learn/passing-data-deeply-with-context.md
+                - learn/scaling-up-with-reducer-and-context.md
+          - Escape Hatches:
+                - learn/referencing-values-with-refs.md
+                - learn/manipulating-the-dom-with-refs.md
+                - learn/synchronizing-with-effects.md
+                - learn/you-might-not-need-an-effect.md
+                - learn/lifecycle-of-reactive-effects.md
+                - learn/separating-events-from-effects.md
+                - learn/removing-effect-dependencies.md
+                - learn/reusing-logic-with-custom-hooks.md
+                - learn/communicate-data-between-server-and-client.md
+                - learn/convert-between-vdom-and-html.md
+                - learn/vdom-mutations.md
+                - learn/creating-vdom-event-handlers.md
+                - learn/creating-html-tags.md
+                - learn/creating-backends.md
+                - learn/manually-register-a-client.md
+    - Reference:
+          - Hooks:
+                - reference/use-state.md
+                - reference/use-effect.md
+                - reference/use-context.md
+                - reference/use-reducer.md
+                - reference/use-callback.md
+                - reference/use-memo.md
+                - reference/use-ref.md
+                - reference/use-debug-value.md
+                - reference/use-connection.md
+                - reference/use-scope.md
+                - reference/use-location.md
+          - HTML Tags:
+                - reference/common-types.md
+                - reference/common-props.md
+                - reference/common-events.md
+                - reference/usage.md
+          - Backends:
+                - reference/fastapi.md
+                - reference/flask.md
+                - reference/sanic.md
+                - reference/starlette.md
+                - reference/tornado.md
+                - reference/django.md
+                - reference/jupyter.md
+                - reference/plotly-dash.md
+          - reference/protocol-structure.md
+          - reference/client-api.md
+    - About ReactPy:
+          - about/changelog.md
+          - about/community.md
+          - about/running-tests.md
+          - about/code.md
+          - about/docs.md
+
+theme:
+    name: material
+    custom_dir: docs/overrides
+    palette:
+        - media: "(prefers-color-scheme: dark)"
+          scheme: slate
+          toggle:
+              icon: material/white-balance-sunny
+              name: Switch to light mode
+          primary: light blue
+          accent: light blue
+        - media: "(prefers-color-scheme: light)"
+          scheme: default
+          toggle:
+              icon: material/weather-night
+              name: Switch to dark mode
+          primary: black
+    features:
+        - navigation.instant
+        - navigation.tabs
+        - navigation.top
+        - content.code.copy
+    icon:
+        repo: fontawesome/brands/github
+    logo: https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg
+    favicon: https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg
+
+markdown_extensions:
+    - toc:
+          permalink: true
+    - pymdownx.emoji:
+          emoji_index: !!python/name:materialx.emoji.twemoji
+          emoji_generator: !!python/name:materialx.emoji.to_svg
+    - pymdownx.tabbed:
+          alternate_style: true
+    - pymdownx.highlight:
+          linenums: true
+    - pymdownx.superfences
+    - pymdownx.details
+    - pymdownx.inlinehilite
+    - admonition
+    - attr_list
+    - md_in_html
+
+plugins:
+    - search
+    - include-markdown
+    # - git-authors
+    # - minify:
+    #       minify_html: true
+    #       minify_js: true
+    #       minify_css: true
+    #       cache_safe: true
+    # - git-revision-date-localized:
+    #       fallback_to_build_date: true
+    # - spellcheck:
+    #       known_words: dictionary.txt
+    #       allow_unicode: no
+    #       ignore_code: yes
+
+extra:
+    generator: false
+
+extra_javascript:
+    - static/js/extra.js
+
+extra_css:
+    - static/css/extra.css
+
+watch:
+    - docs
+    - mkdocs.yml
+    - README.md
+    - CHANGELOG.md
+
+site_name: ReactPy
+site_author: Archmonger
+site_description: It's React, but in Python.
+copyright: Copyright &copy; 2023 Reactive Python
+repo_url: https://github.com/reactive-python/reactpy
+site_url: https://reactive-python.github.io/reactpy
+repo_name: reactive-python/reactpy
+edit_uri: edit/main/docs/src
+docs_dir: docs/src
