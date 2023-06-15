@@ -169,7 +169,7 @@ watch:
 
 site_name: ReactPy
 site_author: Archmonger
-site_description: React for Python developers.
+site_description: It's React, but in Python.
 copyright: Copyright &copy; 2023 Reactive Python
 repo_url: https://github.com/reactive-python/reactpy
 site_url: https://reactive-python.github.io/reactpy
