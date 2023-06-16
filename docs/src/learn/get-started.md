@@ -156,7 +156,7 @@ For example, let's say you have an array of products:
 {% include "../../examples/python/quick_start/rendering_lists_products.py" %}
 ```
 
-Inside your component, use the `map()` function to transform an array of products into an array of `<li>` items:
+Inside your component, use list comprehension to transform an array of products into an array of `<li>` items:
 
 ```python linenums="0"
 {% include "../../examples/python/quick_start/rendering_lists_list_items.py" start="# start" %}
@@ -202,7 +202,7 @@ Now you can declare a _state variable_ inside your component:
 {% include "../../examples/python/quick_start/updating_the_screen_use_state_button.py" start="# start" %}
 ```
 
-You’ll get two things from `use_state`: the current state (`count`), and the function that lets you update it (`set_sount`). You can give them any names, but the convention is to write `something, set_something = ...`.
+You’ll get two things from `use_state`: the current state (`count`), and the function that lets you update it (`set_count`). You can give them any names, but the convention is to write `something, set_something = ...`.
 
 The first time the button is displayed, `count` will be `0` because you passed `0` to `use_state()`. When you want to change state, call `set_count()` and pass the new value to it. Clicking this button will increment the counter:
 
@@ -238,7 +238,7 @@ Notice how each button "remembers" its own `count` state and doesn't affect othe
 
 Functions starting with `use` are called _Hooks_. `use_state` is a built-in Hook provided by React. You can find other built-in Hooks in the [API reference.](../reference/use-state.md) You can also write your own Hooks by combining the existing ones.
 
-Hooks are more restrictive than other functions. You can only call Hooks _at the top_ of your components (or other Hooks). If you want to use `useState` in a condition or a loop, extract a new component and put it there.
+Hooks are more restrictive than other functions. You can only call Hooks _at the top_ of your components (or other Hooks). If you want to use `use_state` in a condition or a loop, extract a new component and put it there.
 
 ## Sharing data between components
 
