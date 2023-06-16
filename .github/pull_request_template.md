@@ -1,4 +1,4 @@
-*By submitting this pull request you agree that all contributions to this project are made under the MIT license.*
+<sub>By submitting this pull request you agree that all contributions to this project are made under the MIT license.</sub>
 
 ## Issues
 
