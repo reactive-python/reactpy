@@ -84,25 +84,30 @@
 	border-color: #ffffff17 !important;
 }
 
-/* Colors for "abstract" admonition */
-[data-md-color-scheme="slate"] .md-typeset .admonition.abstract,
-[data-md-color-scheme="slate"] .md-typeset details.abstract {
+/* Colors for "note" admonition */
+[data-md-color-scheme="slate"] .md-typeset .admonition.note,
+[data-md-color-scheme="slate"] .md-typeset details.note {
 	background: rgb(43 110 98/ 0.2);
 	padding: 0.8rem 1.4rem;
 	border-radius: 0.8rem;
 }
 
-[data-md-color-scheme="slate"] .md-typeset .abstract .admonition-title,
-[data-md-color-scheme="slate"] .md-typeset .abstract summary {
+[data-md-color-scheme="slate"] .md-typeset .note .admonition-title,
+[data-md-color-scheme="slate"] .md-typeset .note summary {
 	font-size: 1rem;
 	background: transparent;
 	padding-bottom: 0;
 	color: rgb(68 172 153);
 }
 
-[data-md-color-scheme="slate"] .md-typeset .abstract .admonition-title:before {
+[data-md-color-scheme="slate"] .md-typeset .note .admonition-title:before {
 	font-size: 1.1rem;
 	background-color: rgb(68 172 153);
+}
+
+.md-typeset .note>.admonition-title:before,.md-typeset .note>summary:before {
+    -webkit-mask-image: var(--md-admonition-icon--abstract);
+    mask-image: var(--md-admonition-icon--abstract)
 }
 
 /* Move the sidebars to the edges of the page */
