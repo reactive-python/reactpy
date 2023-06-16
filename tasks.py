@@ -209,10 +209,8 @@ def publish(context: Context, dry_run: str = ""):
         "js": prepare_js_release,
         "py": prepare_py_release,
     }
-
-    parsed_tags: list[TagInfo] = [
-        parse_tag(tag) for tag in dry_run.split(",") or get_current_tags(context)
-    ]
+    current_tags = dry_run.split(",") if dry_run else get_current_tags(context)
+    parsed_tags = [parse_tag(tag) for tag in current_tags]
 
     publishers: list[Callable[[bool], None]] = []
     for tag_info in parsed_tags:
@@ -315,7 +313,7 @@ def get_current_tags(context: Context) -> set[str]:
         context.run("git diff --cached --exit-code", hide=True)
         context.run("git diff --exit-code", hide=True)
     except Exception:
-        log.error("Cannot create a tag - there are uncommitted changes")
+        log.error("Cannot get current tags - there are uncommitted changes")
         return set()
 
     # get tags for current commit
