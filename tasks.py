@@ -318,20 +318,15 @@ def get_current_tags(context: Context) -> set[str]:
         log.error("Cannot create a tag - there are uncommitted changes")
         return set()
 
-    tags_per_commit: dict[str, list[str]] = {}
-    for commit, tag in map(
-        str.split,
-        context.run(
-            r"git for-each-ref --format '%(objectname) %(refname:short)' refs/tags",
-            hide=True,
-        ).stdout.splitlines(),
-    ):
-        tags_per_commit.setdefault(commit, []).append(tag)
-
-    current_commit = context.run(
-        "git rev-parse HEAD", silent=True, external=True
-    ).stdout.strip()
-    tags = set(tags_per_commit.get(current_commit, set()))
+    # get tags for current commit
+    tags = {
+        line
+        for line in map(
+            str.strip,
+            context.run("git tag --points-at HEAD", hide=True).stdout.splitlines(),
+        )
+        if line
+    }
 
     if not tags:
         log.error("No tags found for current commit")
