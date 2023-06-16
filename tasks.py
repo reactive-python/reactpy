@@ -15,6 +15,7 @@ import toml
 from invoke import task
 from invoke.context import Context
 from invoke.exceptions import Exit
+from invoke.runners import Result
 
 # --- Typing Preamble ------------------------------------------------------------------
 
@@ -286,7 +287,9 @@ def get_packages(context: Context) -> dict[str, PackageInfo]:
 
 def make_py_pkg_info(context: Context, pkg_dir: Path) -> PackageInfo:
     with context.cd(pkg_dir):
-        proj_metadata = json.loads(context.run("hatch project metadata").stdout)
+        proj_metadata = json.loads(
+            ensure_result(context, "hatch project metadata").stdout
+        )
     return PackageInfo(
         name=proj_metadata["name"],
         path=pkg_dir,
@@ -329,7 +332,9 @@ def get_current_tags(context: Context) -> set[str]:
         line
         for line in map(
             str.strip,
-            context.run("git tag --points-at HEAD", hide=True).stdout.splitlines(),
+            ensure_result(
+                context, "git tag --points-at HEAD", hide=True
+            ).stdout.splitlines(),
         )
         if line
     }
@@ -444,3 +449,10 @@ def install_poetry_project(context: Context, path: Path) -> None:
     ]
     context.run("pip install -e .")
     context.run(f"pip install {' '.join(packages_to_install)}")
+
+
+def ensure_result(context: Context, *args: Any, **kwargs: Any) -> Result:
+    result = context.run(*args, **kwargs)
+    if result is None:
+        raise Exit("Command failed")
+    return result
