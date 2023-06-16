@@ -353,7 +353,7 @@ def parse_tag(tag: str) -> TagInfo:
         raise Exit(msg)
 
     version = match.group("version")
-    if not semver.Version.is_valid(version):
+    if not semver.VersionInfo.isvalid(version):
         raise Exit(f"Invalid version: {version} in tag {tag}")
 
     return TagInfo(tag=tag, name=match.group("name"), version=match.group("version"))
