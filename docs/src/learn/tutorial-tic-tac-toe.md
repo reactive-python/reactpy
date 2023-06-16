@@ -10,7 +10,7 @@ You will build a small tic-tac-toe game during this tutorial. This tutorial does
 
 </p>
 
-!!! abstract "Note"
+!!! note
 
     This tutorial is designed for people who prefer to **learn by doing** and want to quickly try making something tangible. If you prefer learning each concept step by step, start with [Describing the UI.](./your-first-component.md)
 
@@ -53,72 +53,39 @@ Once you've played around with the finished tic-tac-toe game, keep scrolling. Yo
 
 ## Setup for the tutorial
 
-In the live code editor below, click **Fork** in the top-right corner to open the editor in a new tab using the website CodeSandbox. CodeSandbox lets you write code in your browser and preview how your users will see the app you've created. The new tab should display an empty square and the starter code for this tutorial.
+In the code example below, click **Run** to open the editor in a new tab using the website Jupyter. Jupyter lets you write code in your browser and preview how your users will see the app you've created. The new tab should display an empty square and the starter code for this tutorial.
 
-```js
-export default function Square() {
-	return <button className="square">X</button>;
-}
-```
 
-```css
-* {
-	box-sizing: border-box;
-}
+=== "app.py"
 
-body {
-	font-family: sans-serif;
-	margin: 20px;
-	padding: 0;
-}
+	```python
+	{% include "../../examples/python/tutorial-tic-tac-toe/setup_for_the_tutorial.py" start="# start" %}
+	```
 
-.square {
-	background: #fff;
-	border: 1px solid #999;
-	float: left;
-	font-size: 24px;
-	font-weight: bold;
-	line-height: 34px;
-	height: 34px;
-	margin-right: -1px;
-	margin-top: -1px;
-	padding: 0;
-	text-align: center;
-	width: 34px;
-}
+=== "stylesheet.css"
 
-.board-row:after {
-	clear: both;
-	content: "";
-	display: table;
-}
+	```css
+	{% include "../../examples/css/tutorial-tic-tac-toe/setup_for_the_tutorial.css" %}
+	```
 
-.status {
-	margin-bottom: 10px;
-}
-.game {
-	display: flex;
-	flex-direction: row;
-}
+=== ":material-play: Run"
 
-.game-info {
-	margin-left: 20px;
-}
-```
+    ```python
+    # TODO
+    ```
 
-<Note>
+!!! note
 
-You can also follow this tutorial using your local development environment. To do this, you need to:
+	You can also follow this tutorial using your local development environment. To do this, you need to:
 
-1. Install [Node.js](https://nodejs.org/en/)
-1. In the CodeSandbox tab you opened earlier, press the top-left corner button to open the menu, and then choose **File > Export to ZIP** in that menu to download an archive of the files locally
-1. Unzip the archive, then open a terminal and `cd` to the directory you unzipped
-1. Install the dependencies with `npm install`
-1. Run `npm start` to start a local server and follow the prompts to view the code running in a browser
+	1. Install [Python](https://www.python.org/downloads/)
+	2. Copy the example above into a file called `app.py`
+	3. Install Reactpy for the [backend](../reference/fastapi.md) of your choice.
+		- For example: `pip install reactpy[fastapi]`
+	4. Run `python app.py` to start a local server and follow the prompts to view the code running in a browser
 
-If you get stuck, don't let this stop you! Follow along online instead and try a local setup again later.
+	If you get stuck, don't let this stop you! Follow along online instead and try a local setup again later.
 
-</Note>
 
 ## Overview
 
