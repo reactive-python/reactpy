@@ -29,7 +29,7 @@ To add an event handler to this button we'll do three things:
 
 It may feel weird to define a function within a function like this, but doing so allows
 the ``handle_event`` function to access information from within the scope of the
-component. That's important if you want to use any arguments that may have beend passed
+component. That's important if you want to use any arguments that may have been passed
 your component in the handler:
 
 .. reactpy:: _examples/button_prints_message

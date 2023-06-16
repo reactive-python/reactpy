@@ -58,13 +58,13 @@ Section 1: Responding to Events
 
 ReactPy lets you add event handlers to your parts of the interface. This means that you can
 define synchronous or asynchronous functions that are triggered when a particular user
-interaction occurs like clicking, hovering, of focusing on form inputs, and more.
+interaction occurs like clicking, hovering, focusing on form inputs, and more.
 
 .. reactpy:: responding-to-events/_examples/button_prints_message
 
 It may feel weird to define a function within a function like this, but doing so allows
 the ``handle_event`` function to access information from within the scope of the
-component. That's important if you want to use any arguments that may have beend passed
+component. That's important if you want to use any arguments that may have been passed
 your component in the handler.
 
 .. card::
