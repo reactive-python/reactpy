@@ -21,7 +21,7 @@
         <link rel="next" href="../thinking-in-react/">
       
       <link rel="icon" href="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.16">
     
     
       
@@ -2402,7 +2402,7 @@
 You will build a small tic-tac-toe game during this tutorial. This tutorial does not assume any existing React knowledge. The techniques you'll learn in the tutorial are fundamental to building any React app, and fully understanding it will give you a deep understanding of React.
 
 </p>
-<div class="admonition abstract">
+<div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This tutorial is designed for people who prefer to <strong>learn by doing</strong> and want to quickly try making something tangible. If you prefer learning each concept step by step, start with <a href="../your-first-component/">Describing the UI.</a></p>
 </div>
@@ -2736,13 +2736,18 @@ You will build a small tic-tac-toe game during this tutorial. This tutorial does
 <p>We recommend that you check out the tic-tac-toe game above before continuing with the tutorial. One of the features that you'll notice is that there is a numbered list to the right of the game's board. This list gives you a history of all of the moves that have occurred in the game, and it is updated as the game progresses.</p>
 <p>Once you've played around with the finished tic-tac-toe game, keep scrolling. You'll start with a simpler template in this tutorial. Our next step is to set you up so that you can start building the game.</p>
 <h2 id="setup-for-the-tutorial">Setup for the tutorial<a class="headerlink" href="#setup-for-the-tutorial" title="Permanent link">&para;</a></h2>
-<p>In the live code editor below, click <strong>Fork</strong> in the top-right corner to open the editor in a new tab using the website CodeSandbox. CodeSandbox lets you write code in your browser and preview how your users will see the app you've created. The new tab should display an empty square and the starter code for this tutorial.</p>
+<p>In the code example below, click <strong>Run</strong> to open the editor in a new tab using the website Jupyter. Jupyter lets you write code in your browser and preview how your users will see the app you've created. The new tab should display an empty square and the starter code for this tutorial.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">app.py</label><label for="__tabbed_2_2">stylesheet.css</label><label for="__tabbed_2_3"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5.14v14l11-7-11-7Z"/></svg></span> Run</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Square</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="o">&lt;</span><span class="nx">button</span><span class="w"> </span><span class="nx">className</span><span class="o">=</span><span class="s2">&quot;square&quot;</span><span class="o">&gt;</span><span class="nx">X</span><span class="o">&lt;</span><span class="err">/button&gt;;</span>
-<span class="p">}</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">square</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">button</span><span class="p">({</span><span class="s2">&quot;class_name&quot;</span><span class="p">:</span><span class="s2">&quot;square&quot;</span><span class="p">},</span> <span class="s2">&quot;X&quot;</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -2827,17 +2832,24 @@ You will build a small tic-tac-toe game during this tutorial. This tutorial does
 <span class="w">    </span><span class="k">margin-left</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="kt">px</span><span class="p">;</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
-<p><Note></p>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># TODO</span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
 <p>You can also follow this tutorial using your local development environment. To do this, you need to:</p>
 <ol>
-<li>Install <a href="https://nodejs.org/en/">Node.js</a></li>
-<li>In the CodeSandbox tab you opened earlier, press the top-left corner button to open the menu, and then choose <strong>File &gt; Export to ZIP</strong> in that menu to download an archive of the files locally</li>
-<li>Unzip the archive, then open a terminal and <code>cd</code> to the directory you unzipped</li>
-<li>Install the dependencies with <code>npm install</code></li>
-<li>Run <code>npm start</code> to start a local server and follow the prompts to view the code running in a browser</li>
+<li>Install <a href="https://www.python.org/downloads/">Python</a></li>
+<li>Copy the example above into a file called <code>app.py</code></li>
+<li>Install ReactPy for your <a href="../../reference/fastapi/">backend</a>, for example <code>pip install reactpy[fastapi]</code></li>
+<li>Run <code>python app.py</code> to start a local server and follow the prompts to view the code running in a browser</li>
 </ol>
 <p>If you get stuck, don't let this stop you! Follow along online instead and try a local setup again later.</p>
-<p></Note></p>
+</div>
 <h2 id="overview_1">Overview<a class="headerlink" href="#overview_1" title="Permanent link">&para;</a></h2>
 <p>Now that you're set up, let's get an overview of React!</p>
 <h3 id="inspecting-the-starter-code">Inspecting the starter code<a class="headerlink" href="#inspecting-the-starter-code" title="Permanent link">&para;</a></h3>
@@ -7477,9 +7489,11 @@ const nextSquares = [&quot;X&quot;, null, null, null, null, null, null, null, nu
     <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.top", "content.code.copy"], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.b4d07000.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a51614de.min.js"></script>
       
-        <script src="../../static/js/extra.js"></script>
+        
+          <script src="../../static/js/extra.js"></script>
+        
       
     
   </body>

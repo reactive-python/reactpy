@@ -21,7 +21,7 @@
         <link rel="next" href="../tutorial-tic-tac-toe/">
       
       <link rel="icon" href="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.16">
     
     
       
@@ -2375,7 +2375,7 @@ You can put more complex expressions inside the JSX curly braces too, for exampl
     <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Apple&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
 <span class="p">]</span>
 </code></pre></div>
-<p>Inside your component, use the <code>map()</code> function to transform an array of products into an array of <code>&lt;li&gt;</code> items:</p>
+<p>Inside your component, use list comprehension to transform an array of products into an array of <code>&lt;li&gt;</code> items:</p>
 <div class="highlight"><pre><span></span><code><span class="n">list_items</span> <span class="o">=</span> <span class="p">[</span><span class="n">html</span><span class="o">.</span><span class="n">li</span><span class="p">({</span><span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]},</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">product</span> <span class="ow">in</span> <span class="n">products</span><span class="p">]</span>
 </code></pre></div>
 <p>Notice how <code>&lt;li&gt;</code> has a <code>key</code> attribute. For each item in a list, you should pass a string or a number that uniquely identifies that item among its siblings. Usually, a key should be coming from your data, such as a database ID. React uses your keys to know what happened if you later insert, delete, or reorder the items.</p>
@@ -2459,7 +2459,7 @@ You can put more complex expressions inside the JSX curly braces too, for exampl
     <span class="n">count</span><span class="p">,</span> <span class="n">set_count</span> <span class="o">=</span> <span class="n">use_state</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
     <span class="c1"># ...</span>
 </code></pre></div>
-<p>You’ll get two things from <code>use_state</code>: the current state (<code>count</code>), and the function that lets you update it (<code>set_sount</code>). You can give them any names, but the convention is to write <code>something, set_something = ...</code>.</p>
+<p>You’ll get two things from <code>use_state</code>: the current state (<code>count</code>), and the function that lets you update it (<code>set_count</code>). You can give them any names, but the convention is to write <code>something, set_something = ...</code>.</p>
 <p>The first time the button is displayed, <code>count</code> will be <code>0</code> because you passed <code>0</code> to <code>use_state()</code>. When you want to change state, call <code>set_count()</code> and pass the new value to it. Clicking this button will increment the counter:</p>
 <div class="highlight"><pre><span></span><code><span class="nd">@component</span>
 <span class="k">def</span> <span class="nf">my_button</span><span class="p">():</span>
@@ -2535,7 +2535,7 @@ You can put more complex expressions inside the JSX curly braces too, for exampl
 <p>Notice how each button "remembers" its own <code>count</code> state and doesn't affect other buttons.</p>
 <h2 id="using-hooks">Using Hooks<a class="headerlink" href="#using-hooks" title="Permanent link">&para;</a></h2>
 <p>Functions starting with <code>use</code> are called <em>Hooks</em>. <code>use_state</code> is a built-in Hook provided by React. You can find other built-in Hooks in the <a href="../../reference/use-state/">API reference.</a> You can also write your own Hooks by combining the existing ones.</p>
-<p>Hooks are more restrictive than other functions. You can only call Hooks <em>at the top</em> of your components (or other Hooks). If you want to use <code>useState</code> in a condition or a loop, extract a new component and put it there.</p>
+<p>Hooks are more restrictive than other functions. You can only call Hooks <em>at the top</em> of your components (or other Hooks). If you want to use <code>use_state</code> in a condition or a loop, extract a new component and put it there.</p>
 <h2 id="sharing-data-between-components">Sharing data between components<a class="headerlink" href="#sharing-data-between-components" title="Permanent link">&para;</a></h2>
 <p>In the previous example, each <code>my_button</code> had its own independent <code>count</code>, and when each button was clicked, only the <code>count</code> for the button clicked changed:</p>
 <!-- TODO: Diagram -->
@@ -2696,9 +2696,11 @@ You can put more complex expressions inside the JSX curly braces too, for exampl
     <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.top", "content.code.copy"], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.b4d07000.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a51614de.min.js"></script>
       
-        <script src="../../static/js/extra.js"></script>
+        
+          <script src="../../static/js/extra.js"></script>
+        
       
     
   </body>
