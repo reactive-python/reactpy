@@ -11,6 +11,11 @@
         "sourcery.sourcery",
         "njpwerner.autodocstring",
         "github.copilot",
-        "charliermarsh.ruff"
+        "charliermarsh.ruff",
+        "elypia.magick-image-reader",
+        "shd101wyy.markdown-preview-enhanced",
+        "dbaeumer.vscode-eslint",
+        "ms-python.black-formatter",
+        "ms-python.mypy-type-checker"
     ]
 }
