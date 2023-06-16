@@ -418,7 +418,7 @@ def prepare_py_release(
 
             context.run(
                 "twine upload dist/*",
-                env_dict={
+                env={
                     "TWINE_USERNAME": twine_username,
                     "TWINE_PASSWORD": twine_password,
                 },
