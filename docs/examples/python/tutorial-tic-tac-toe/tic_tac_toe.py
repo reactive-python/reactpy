@@ -13,8 +13,12 @@ def square(value, on_square_click):
 
 @component
 def board(x_is_next, squares, on_play):
+
     def handle_click(i):
-        def event(_event):
+        def handle_click_event(_event):
+            """Due to a quirk of Python, if your event handler needs args other than
+            `event`, you will need to create a wrapper function as seen above.
+            Ref: https://pylint.readthedocs.io/en/stable/user_guide/messages/warning/cell-var-from-loop.html"""
             if calculate_winner(squares) or squares[i]:
                 return
 
@@ -22,7 +26,7 @@ def board(x_is_next, squares, on_play):
             next_squares[i] = "X" if x_is_next else "O"
             on_play(next_squares)
 
-        return event
+        return handle_click_event
 
     winner = calculate_winner(squares)
     status = (

@@ -81,7 +81,8 @@ In the code example below, click **Run** to open the editor in a new tab using t
 	1. Install [Python](https://www.python.org/downloads/)
 	2. Copy the example above into a file called `app.py`
 	3. Install ReactPy for your [backend](../reference/fastapi.md), for example `pip install reactpy[fastapi]`
-	4. Run `python app.py` to start a local server and follow the prompts to view the code running in a browser
+	4. Add `reactpy.run(...)` to the end of your Python file
+	5. Run `python app.py` to start a local server and follow the prompts to view the code running in a browser
 
 	If you get stuck, don't let this stop you! Follow along online instead and try a local setup again later.
 
