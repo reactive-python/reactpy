@@ -121,6 +121,26 @@
 	background-color: rgb(136 145 236);
 }
 
+/* Colors for "example" admonition */
+[data-md-color-scheme="slate"] .md-typeset .admonition.example {
+	background: rgb(94 104 126);
+	border-radius: 0.4rem;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .example .admonition-title {
+	background: rgb(78 87 105);
+	color: rgb(246 247 249);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .example .admonition-title:before {
+	background-color: rgb(246 247 249);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.example code {
+	background: transparent;
+	color: #FFF;
+}
+
 /* Move the sidebars to the edges of the page */
 .md-main__inner.md-grid {
 	margin-left: 0;

@@ -29,7 +29,7 @@ You can see what it will look like when you're finished here:
 
 === "app.py"
 
-	<!-- FIXME: Currently this example uses empty string instead of None, due to a bug with ReactPy -->
+    <!-- FIXME: Currently this example uses empty string instead of None, due to a bug with ReactPy -->
 
     ```python
     {% include "../../examples/python/tutorial_tic_tac_toe/tic_tac_toe.py" end="# end" %}
@@ -57,18 +57,17 @@ Once you've played around with the finished tic-tac-toe game, keep scrolling. Yo
 
 In the code example below, click **Run** to open the editor in a new tab using the website Jupyter. Jupyter lets you write code in your browser and preview how your users will see the app you've created. The new tab should display an empty square and the starter code for this tutorial.
 
-
 === "app.py"
 
-	```python
-	{% include "../../examples/python/tutorial_tic_tac_toe/setup_for_the_tutorial.py" start="# start" %}
-	```
+    ```python
+    {% include "../../examples/python/tutorial_tic_tac_toe/setup_for_the_tutorial.py" start="# start" %}
+    ```
 
 === "styles.css"
 
-	```css
-	{% include "../../examples/css/tutorial_tic_tac_toe/setup_for_the_tutorial.css" %}
-	```
+    ```css
+    {% include "../../examples/css/tutorial_tic_tac_toe/setup_for_the_tutorial.css" %}
+    ```
 
 === ":material-play: Run"
 
@@ -78,16 +77,15 @@ In the code example below, click **Run** to open the editor in a new tab using t
 
 !!! note
 
-	You can also follow this tutorial using your local development environment. To do this, you need to:
+    You can also follow this tutorial using your local development environment. To do this, you need to:
 
-	1. Install [Python](https://www.python.org/downloads/)
-	2. Copy the example above into a file called `app.py`
-	3. Install ReactPy for your [backend](../reference/fastapi.md), for example `pip install reactpy[fastapi]`
-	4. Add `reactpy.run(...)` to the end of your Python file
-	5. Run `python app.py` to start a local server and follow the prompts to view the code running in a browser
+    1. Install [Python](https://www.python.org/downloads/)
+    2. Copy the example above into a file called `app.py`
+    3. Install ReactPy for your [backend](../reference/fastapi.md), for example `pip install reactpy[fastapi]`
+    4. Add `reactpy.run(...)` to the end of your Python file
+    5. Run `python app.py` to start a local server and follow the prompts to view the code running in a browser
 
-	If you get stuck, don't let this stop you! Follow along online instead and try a local setup again later.
-
+    If you get stuck, don't let this stop you! Follow along online instead and try a local setup again later.
 
 ## Overview
 
@@ -98,6 +96,7 @@ Now that you're set up, let's get an overview of React!
 In Jupyter you'll see three main sections:
 
 <!-- TODO: Add screenshot -->
+
 ![TODO: screenshot of Jupyter]()
 
 1. The _Files_ section with a list of files like `tic-tac-toe.ipynb`
@@ -113,6 +112,7 @@ The `tic-tac-toe.ipynb` file should be selected in the _Files_ section. Click on
 After clicking the _run button_ the notebook should be displaying a square with a X in it like this:
 
 <!-- TODO: Add screenshot -->
+
 ![TODO: x-filled square]()
 
 Now let's have a look at the files in the starter code.

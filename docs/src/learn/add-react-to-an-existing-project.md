@@ -1,6 +1,11 @@
 ---
-title: Add React to an Existing Project 🚧
+title: Add React to an Existing Project 🚫
 ---
+
+<!--
+TODO: Template tag is needed to complete this tab
+https://github.com/reactive-python/reactpy/issues/653
+-->
 
 ## Overview
 
