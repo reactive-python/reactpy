@@ -142,7 +142,7 @@ After identifying your app’s minimal state data, you need to identify which co
 For each piece of state in your application:
 
 1. Identify _every_ component that renders something based on that state.
-2. Find their closest common parent component--a component above them all in the hierarchy.
+2. Find their closest common parent component—a component above them all in the hierarchy.
 3. Decide where the state should live:
     1. Often, you can put the state directly into their common parent.
     2. You can also put the state into some component above their common parent.
@@ -160,170 +160,44 @@ Now let's run through our strategy for them:
 
 So the state values will live in `filterable_product_table`.
 
-Add state to the component with the [`useState()` Hook.](/reference/react/useState) Hooks are special functions that let you "hook into" React. Add two state variables at the top of `filterable_product_table` and specify their initial state:
+Add state to the component with the [`use_state()` Hook.](../reference/use-state.md) Hooks are special functions that let you "hook into" React. Add two state variables at the top of `filterable_product_table` and specify their initial state:
 
-```js
-function filterable_product_table({ products }) {
-  const [filterText, setFilterText] = useState('');
-  const [inStockOnly, setInStockOnly] = useState(false);
+```python linenums="0"
+{% include "../../examples/python/thinking_in_react/use_state.py" start="# start" %}
 ```
 
-Then, pass `filterText` and `inStockOnly` to `product_table` and `search_bar` as props:
+Then, pass `filter_text` and `in_stock_only` to `product_table` and `search_bar` as props:
 
-```js
-<div>
-	<search_bar filterText={filterText} inStockOnly={inStockOnly} />
-	<product_table
-		products={products}
-		filterText={filterText}
-		inStockOnly={inStockOnly}
-	/>
-</div>
+```python linenums="0"
+{% include "../../examples/python/thinking_in_react/use_state_with_components.py" start="# start" %}
 ```
 
-You can start seeing how your application will behave. Edit the `filterText` initial value from `useState('')` to `useState('fruit')` in the sandbox code below. You'll see both the search input text and the table update:
+You can start seeing how your application will behave. Edit the `filter_text` initial value from `use_state('')` to `use_state('fruit')` in the sandbox code below. You'll see both the search input text and the table update:
 
-```jsx
-import { useState } from "react";
+=== "app.py"
 
-function filterable_product_table({ products }) {
-	const [filterText, setFilterText] = useState("");
-	const [inStockOnly, setInStockOnly] = useState(false);
+	```python
+	{% include "../../examples/python/thinking_in_react/identify_where_your_state_should_live.py" start="# start" end="# end" %}
+	```
 
-	return (
-		<div>
-			<search_bar filterText={filterText} inStockOnly={inStockOnly} />
-			<product_table
-				products={products}
-				filterText={filterText}
-				inStockOnly={inStockOnly}
-			/>
-		</div>
-	);
-}
+=== "styles.css"
 
-function product_category_row({ category }) {
-	return (
-		<tr>
-			<th colSpan="2">{category}</th>
-		</tr>
-	);
-}
+	```css
+	{% include "../../examples/css/thinking_in_react/identify_where_your_state_should_live.css" %}
+	```
 
-function product_row({ product }) {
-	const name = product.stocked ? (
-		product.name
-	) : (
-		<span style={{ color: "red" }}>{product.name}</span>
-	);
+=== ":material-play: Run"
 
-	return (
-		<tr>
-			<td>{name}</td>
-			<td>{product.price}</td>
-		</tr>
-	);
-}
+    ```python
+    # TODO
+    ```
 
-function product_table({ products, filterText, inStockOnly }) {
-	const rows = [];
-	let lastCategory = null;
+Notice that editing the form doesn't work yet.
 
-	products.forEach((product) => {
-		if (
-			product.name.toLowerCase().indexOf(filterText.toLowerCase()) === -1
-		) {
-			return;
-		}
-		if (inStockOnly && !product.stocked) {
-			return;
-		}
-		if (product.category !== lastCategory) {
-			rows.push(
-				<product_category_row
-					category={product.category}
-					key={product.category}
-				/>
-			);
-		}
-		rows.push(<product_row product={product} key={product.name} />);
-		lastCategory = product.category;
-	});
+In the code above, `product_table` and `search_bar` read the `filter_text` and `in_stock_only` props to render the table, the input, and the checkbox. For example, here is how `search_bar` populates the input value:
 
-	return (
-		<table>
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Price</th>
-				</tr>
-			</thead>
-			<tbody>{rows}</tbody>
-		</table>
-	);
-}
-
-function search_bar({ filterText, inStockOnly }) {
-	return (
-		<form>
-			<input type="text" value={filterText} placeholder="Search..." />
-			<label>
-				<input type="checkbox" checked={inStockOnly} /> Only show
-				products in stock
-			</label>
-		</form>
-	);
-}
-
-const PRODUCTS = [
-	{ category: "Fruits", price: "$1", stocked: true, name: "Apple" },
-	{ category: "Fruits", price: "$1", stocked: true, name: "Dragonfruit" },
-	{ category: "Fruits", price: "$2", stocked: false, name: "Passionfruit" },
-	{ category: "Vegetables", price: "$2", stocked: true, name: "Spinach" },
-	{ category: "Vegetables", price: "$4", stocked: false, name: "Pumpkin" },
-	{ category: "Vegetables", price: "$1", stocked: true, name: "Peas" },
-];
-
-export default function App() {
-	return <filterable_product_table products={PRODUCTS} />;
-}
-```
-
-```css
-body {
-	padding: 5px;
-}
-label {
-	display: block;
-	margin-top: 5px;
-	margin-bottom: 5px;
-}
-th {
-	padding-top: 5px;
-}
-td {
-	padding: 2px;
-}
-```
-
-Notice that editing the form doesn't work yet. There is a console error in the sandbox above explaining why:
-
-<ConsoleBlock level="error">
-
-You provided a \`value\` prop to a form field without an \`onChange\` handler. This will render a read-only field.
-
-</ConsoleBlock>
-
-In the sandbox above, `product_table` and `search_bar` read the `filterText` and `inStockOnly` props to render the table, the input, and the checkbox. For example, here is how `search_bar` populates the input value:
-
-```js
-function search_bar({ filterText, inStockOnly }) {
-  return (
-    <form>
-      <input
-        type="text"
-        value={filterText}
-        placeholder="Search..."/>
+```python linenums="0" hl_lines="2 7"
+{% include "../../examples/python/thinking_in_react/error_example.py" start="# start" %}
 ```
 
 However, you haven't added any code to respond to the user actions like typing yet. This will be your final step.
@@ -332,22 +206,22 @@ However, you haven't added any code to respond to the user actions like typing y
 
 Currently your app renders correctly with props and state flowing down the hierarchy. But to change the state according to user input, you will need to support data flowing the other way: the form components deep in the hierarchy need to update the state in `filterable_product_table`.
 
-React makes this data flow explicit, but it requires a little more typing than two-way data binding. If you try to type or check the box in the example above, you'll see that React ignores your input. This is intentional. By writing `<input value={filterText} />`, you've set the `value` prop of the `input` to always be equal to the `filterText` state passed in from `filterable_product_table`. Since `filterText` state is never set, the input never changes.
+React makes this data flow explicit, but it requires a little more typing than two-way data binding. If you try to type or check the box in the example above, you'll see that React ignores your input. This is intentional. By writing `<input value={filter_text} />`, you've set the `value` prop of the `input` to always be equal to the `filter_text` state passed in from `filterable_product_table`. Since `filter_text` state is never set, the input never changes.
 
-You want to make it so whenever the user changes the form inputs, the state updates to reflect those changes. The state is owned by `filterable_product_table`, so only it can call `setFilterText` and `setInStockOnly`. To let `search_bar` update the `filterable_product_table`'s state, you need to pass these functions down to `search_bar`:
+You want to make it so whenever the user changes the form inputs, the state updates to reflect those changes. The state is owned by `filterable_product_table`, so only it can call `set_filter_text` and `set_in_stock_only`. To let `search_bar` update the `filterable_product_table`'s state, you need to pass these functions down to `search_bar`:
 
 ```js
 function filterable_product_table({ products }) {
-  const [filterText, setFilterText] = useState('');
-  const [inStockOnly, setInStockOnly] = useState(false);
+  const [filter_text, set_filter_text] = use_state('');
+  const [in_stock_only, set_in_stock_only] = use_state(false);
 
   return (
     <div>
       <search_bar
-        filterText={filterText}
-        inStockOnly={inStockOnly}
-        onFilterTextChange={setFilterText}
-        onInStockOnlyChange={setInStockOnly} />
+        filter_text={filter_text}
+        in_stock_only={in_stock_only}
+        onfilter_textChange={set_filter_text}
+        onin_stock_onlyChange={set_in_stock_only} />
 ```
 
 Inside the `search_bar`, you will add the `onChange` event handlers and set the parent state from them:
@@ -355,33 +229,33 @@ Inside the `search_bar`, you will add the `onChange` event handlers and set the 
 ```js
 <input
 	type="text"
-	value={filterText}
+	value={filter_text}
 	placeholder="Search..."
-	onChange={(e) => onFilterTextChange(e.target.value)}
+	onChange={(e) => onfilter_textChange(e.target.value)}
 />
 ```
 
 Now the application fully works!
 
 ```jsx
-import { useState } from "react";
+import { use_state } from "react";
 
 function filterable_product_table({ products }) {
-	const [filterText, setFilterText] = useState("");
-	const [inStockOnly, setInStockOnly] = useState(false);
+	const [filter_text, set_filter_text] = use_state("");
+	const [in_stock_only, set_in_stock_only] = use_state(false);
 
 	return (
 		<div>
 			<search_bar
-				filterText={filterText}
-				inStockOnly={inStockOnly}
-				onFilterTextChange={setFilterText}
-				onInStockOnlyChange={setInStockOnly}
+				filter_text={filter_text}
+				in_stock_only={in_stock_only}
+				onfilter_textChange={set_filter_text}
+				onin_stock_onlyChange={set_in_stock_only}
 			/>
 			<product_table
 				products={products}
-				filterText={filterText}
-				inStockOnly={inStockOnly}
+				filter_text={filter_text}
+				in_stock_only={in_stock_only}
 			/>
 		</div>
 	);
@@ -410,17 +284,17 @@ function product_row({ product }) {
 	);
 }
 
-function product_table({ products, filterText, inStockOnly }) {
+function product_table({ products, filter_text, in_stock_only }) {
 	const rows = [];
 	let lastCategory = null;
 
 	products.forEach((product) => {
 		if (
-			product.name.toLowerCase().indexOf(filterText.toLowerCase()) === -1
+			product.name.toLowerCase().indexOf(filter_text.toLowerCase()) === -1
 		) {
 			return;
 		}
-		if (inStockOnly && !product.stocked) {
+		if (in_stock_only && !product.stocked) {
 			return;
 		}
 		if (product.category !== lastCategory) {
@@ -449,24 +323,24 @@ function product_table({ products, filterText, inStockOnly }) {
 }
 
 function search_bar({
-	filterText,
-	inStockOnly,
-	onFilterTextChange,
-	onInStockOnlyChange,
+	filter_text,
+	in_stock_only,
+	onfilter_textChange,
+	onin_stock_onlyChange,
 }) {
 	return (
 		<form>
 			<input
 				type="text"
-				value={filterText}
+				value={filter_text}
 				placeholder="Search..."
-				onChange={(e) => onFilterTextChange(e.target.value)}
+				onChange={(e) => onfilter_textChange(e.target.value)}
 			/>
 			<label>
 				<input
 					type="checkbox"
-					checked={inStockOnly}
-					onChange={(e) => onInStockOnlyChange(e.target.checked)}
+					checked={in_stock_only}
+					onChange={(e) => onin_stock_onlyChange(e.target.checked)}
 				/>{" "}
 				Only show products in stock
 			</label>
