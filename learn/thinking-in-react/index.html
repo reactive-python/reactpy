@@ -25,7 +25,7 @@
     
     
       
-        <title>Thinking in React 🚧 - ReactPy</title>
+        <title>Thinking in React - ReactPy</title>
       
     
     
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Thinking in React 🚧
+              Thinking in React
             
           </span>
         </div>
@@ -465,12 +465,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Thinking in React 🚧
+          Thinking in React
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Thinking in React 🚧
+        Thinking in React
       </a>
       
         
@@ -2096,7 +2096,7 @@
   
 
 
-  <h1>Thinking in React 🚧</h1>
+  <h1>Thinking in React</h1>
 
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
 <p class="intro">
@@ -2388,7 +2388,7 @@ React can change how you think about the designs you look at and the apps you bu
 <p>For each piece of state in your application:</p>
 <ol>
 <li>Identify <em>every</em> component that renders something based on that state.</li>
-<li>Find their closest common parent component--a component above them all in the hierarchy.</li>
+<li>Find their closest common parent component—a component above them all in the hierarchy.</li>
 <li>Decide where the state should live:<ol>
 <li>Often, you can put the state directly into their common parent.</li>
 <li>You can also put the state into some component above their common parent.</li>
@@ -2408,237 +2408,194 @@ React can change how you think about the designs you look at and the apps you bu
 <li><strong>Decide where the state lives</strong>: We'll keep the filter text and checked state values in <code>filterable_product_table</code>.</li>
 </ol>
 <p>So the state values will live in <code>filterable_product_table</code>.</p>
-<p>Add state to the component with the <a href="/reference/react/useState"><code>useState()</code> Hook.</a> Hooks are special functions that let you "hook into" React. Add two state variables at the top of <code>filterable_product_table</code> and specify their initial state:</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">filterable_product_table</span><span class="p">({</span><span class="w"> </span><span class="nx">products</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">filterText</span><span class="p">,</span><span class="w"> </span><span class="nx">setFilterText</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
-<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">inStockOnly</span><span class="p">,</span><span class="w"> </span><span class="nx">setInStockOnly</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<p>Add state to the component with the <a href="../../reference/use-state/"><code>use_state()</code> Hook.</a> Hooks are special functions that let you "hook into" React. Add two state variables at the top of <code>filterable_product_table</code> and specify their initial state:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">filterable_product_table</span><span class="p">(</span><span class="n">products</span><span class="p">):</span>
+    <span class="n">filter_text</span><span class="p">,</span> <span class="n">set_filter_text</span> <span class="o">=</span> <span class="n">use_state</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">in_stock_only</span><span class="p">,</span> <span class="n">set_in_stock_only</span> <span class="o">=</span> <span class="n">use_state</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div>
+<p>Then, pass <code>filter_text</code> and <code>in_stock_only</code> to <code>product_table</code> and <code>search_bar</code> as props:</p>
+<div class="highlight"><pre><span></span><code><span class="n">html</span><span class="o">.</span><span class="n">div</span><span class="p">(</span>
+    <span class="n">search_bar</span><span class="p">(</span><span class="n">filter_text</span><span class="o">=</span><span class="n">filter_text</span><span class="p">,</span> <span class="n">in_stock_only</span><span class="o">=</span><span class="n">in_stock_only</span><span class="p">),</span>
+    <span class="n">product_table</span><span class="p">(</span><span class="n">products</span><span class="o">=</span><span class="n">products</span><span class="p">,</span> <span class="n">filter_text</span><span class="o">=</span><span class="n">filter_text</span><span class="p">,</span> <span class="n">in_stock_only</span><span class="o">=</span><span class="n">in_stock_only</span><span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>You can start seeing how your application will behave. Edit the <code>filter_text</code> initial value from <code>use_state('')</code> to <code>use_state('fruit')</code> in the sandbox code below. You'll see both the search input text and the table update:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">app.py</label><label for="__tabbed_2_2">styles.css</label><label for="__tabbed_2_3"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5.14v14l11-7-11-7Z"/></svg></span> Run</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">filterable_product_table</span><span class="p">(</span><span class="n">products</span><span class="p">):</span>
+    <span class="n">filter_text</span><span class="p">,</span> <span class="n">set_filter_text</span> <span class="o">=</span> <span class="n">use_state</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">in_stock_only</span><span class="p">,</span> <span class="n">set_in_stock_only</span> <span class="o">=</span> <span class="n">use_state</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">div</span><span class="p">(</span>
+        <span class="n">search_bar</span><span class="p">(</span><span class="n">filter_text</span><span class="o">=</span><span class="n">filter_text</span><span class="p">,</span> <span class="n">in_stock_only</span><span class="o">=</span><span class="n">in_stock_only</span><span class="p">),</span>
+        <span class="n">product_table</span><span class="p">(</span>
+            <span class="n">products</span><span class="o">=</span><span class="n">products</span><span class="p">,</span> <span class="n">filter_text</span><span class="o">=</span><span class="n">filter_text</span><span class="p">,</span> <span class="n">in_stock_only</span><span class="o">=</span><span class="n">in_stock_only</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">product_category_row</span><span class="p">(</span><span class="n">category</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">tr</span><span class="p">(</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">th</span><span class="p">({</span><span class="s2">&quot;colspan&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="n">category</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">product_row</span><span class="p">(</span><span class="n">product</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;stocked&quot;</span><span class="p">]:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">span</span><span class="p">({</span><span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;red&quot;</span><span class="p">}},</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">tr</span><span class="p">(</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">td</span><span class="p">(</span><span class="n">name</span><span class="p">),</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">td</span><span class="p">(</span><span class="n">product</span><span class="p">[</span><span class="s2">&quot;price&quot;</span><span class="p">]),</span>
+    <span class="p">)</span>
+
+
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">product_table</span><span class="p">(</span><span class="n">products</span><span class="p">,</span> <span class="n">filter_text</span><span class="p">,</span> <span class="n">in_stock_only</span><span class="p">):</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">last_category</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">product</span> <span class="ow">in</span> <span class="n">products</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">filter_text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">in_stock_only</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;stocked&quot;</span><span class="p">]:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">last_category</span><span class="p">:</span>
+            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">product_category_row</span><span class="p">(</span><span class="n">product</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="n">product</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">])</span>
+            <span class="p">)</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">product_row</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">product</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]))</span>
+        <span class="n">last_category</span> <span class="o">=</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">table</span><span class="p">(</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">thead</span><span class="p">(</span>
+            <span class="n">html</span><span class="o">.</span><span class="n">tr</span><span class="p">(</span>
+                <span class="n">html</span><span class="o">.</span><span class="n">th</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">),</span>
+                <span class="n">html</span><span class="o">.</span><span class="n">th</span><span class="p">(</span><span class="s2">&quot;Price&quot;</span><span class="p">),</span>
+            <span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">tbody</span><span class="p">(</span><span class="n">rows</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">search_bar</span><span class="p">(</span><span class="n">filter_text</span><span class="p">,</span> <span class="n">in_stock_only</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">form</span><span class="p">(</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">input</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">filter_text</span><span class="p">,</span> <span class="s2">&quot;placeholder&quot;</span><span class="p">:</span> <span class="s2">&quot;Search...&quot;</span><span class="p">}),</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">label</span><span class="p">(</span>
+            <span class="n">html</span><span class="o">.</span><span class="n">input</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;checkbox&quot;</span><span class="p">,</span> <span class="s2">&quot;checked&quot;</span><span class="p">:</span> <span class="n">in_stock_only</span><span class="p">}),</span>
+            <span class="s2">&quot;Only show products in stock&quot;</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="n">PRODUCTS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Fruits&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$1&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Apple&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Fruits&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$1&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Dragonfruit&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Fruits&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$2&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Passionfruit&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Vegetables&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$2&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Spinach&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Vegetables&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$4&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Pumpkin&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Vegetables&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$1&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Peas&quot;</span><span class="p">},</span>
+<span class="p">]</span>
+
+
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">app</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">filterable_product_table</span><span class="p">(</span><span class="n">PRODUCTS</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-<p>Then, pass <code>filterText</code> and <code>inStockOnly</code> to <code>product_table</code> and <code>search_bar</code> as props:</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="o">&lt;</span><span class="nx">div</span><span class="o">&gt;</span>
-<span class="w">    </span><span class="o">&lt;</span><span class="nx">search_bar</span><span class="w"> </span><span class="nx">filterText</span><span class="o">=</span><span class="p">{</span><span class="nx">filterText</span><span class="p">}</span><span class="w"> </span><span class="nx">inStockOnly</span><span class="o">=</span><span class="p">{</span><span class="nx">inStockOnly</span><span class="p">}</span><span class="w"> </span><span class="o">/&gt;</span>
-<span class="w">    </span><span class="o">&lt;</span><span class="nx">product_table</span>
-<span class="w">        </span><span class="nx">products</span><span class="o">=</span><span class="p">{</span><span class="nx">products</span><span class="p">}</span>
-<span class="w">        </span><span class="nx">filterText</span><span class="o">=</span><span class="p">{</span><span class="nx">filterText</span><span class="p">}</span>
-<span class="w">        </span><span class="nx">inStockOnly</span><span class="o">=</span><span class="p">{</span><span class="nx">inStockOnly</span><span class="p">}</span>
-<span class="w">    </span><span class="o">/&gt;</span>
-<span class="o">&lt;</span><span class="err">/div&gt;</span>
-</code></pre></div></td></tr></table></div>
-<p>You can start seeing how your application will behave. Edit the <code>filterText</code> initial value from <code>useState('')</code> to <code>useState('fruit')</code> in the sandbox code below. You'll see both the search input text and the table update:</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">  1</span>
-<span class="normal">  2</span>
-<span class="normal">  3</span>
-<span class="normal">  4</span>
-<span class="normal">  5</span>
-<span class="normal">  6</span>
-<span class="normal">  7</span>
-<span class="normal">  8</span>
-<span class="normal">  9</span>
-<span class="normal"> 10</span>
-<span class="normal"> 11</span>
-<span class="normal"> 12</span>
-<span class="normal"> 13</span>
-<span class="normal"> 14</span>
-<span class="normal"> 15</span>
-<span class="normal"> 16</span>
-<span class="normal"> 17</span>
-<span class="normal"> 18</span>
-<span class="normal"> 19</span>
-<span class="normal"> 20</span>
-<span class="normal"> 21</span>
-<span class="normal"> 22</span>
-<span class="normal"> 23</span>
-<span class="normal"> 24</span>
-<span class="normal"> 25</span>
-<span class="normal"> 26</span>
-<span class="normal"> 27</span>
-<span class="normal"> 28</span>
-<span class="normal"> 29</span>
-<span class="normal"> 30</span>
-<span class="normal"> 31</span>
-<span class="normal"> 32</span>
-<span class="normal"> 33</span>
-<span class="normal"> 34</span>
-<span class="normal"> 35</span>
-<span class="normal"> 36</span>
-<span class="normal"> 37</span>
-<span class="normal"> 38</span>
-<span class="normal"> 39</span>
-<span class="normal"> 40</span>
-<span class="normal"> 41</span>
-<span class="normal"> 42</span>
-<span class="normal"> 43</span>
-<span class="normal"> 44</span>
-<span class="normal"> 45</span>
-<span class="normal"> 46</span>
-<span class="normal"> 47</span>
-<span class="normal"> 48</span>
-<span class="normal"> 49</span>
-<span class="normal"> 50</span>
-<span class="normal"> 51</span>
-<span class="normal"> 52</span>
-<span class="normal"> 53</span>
-<span class="normal"> 54</span>
-<span class="normal"> 55</span>
-<span class="normal"> 56</span>
-<span class="normal"> 57</span>
-<span class="normal"> 58</span>
-<span class="normal"> 59</span>
-<span class="normal"> 60</span>
-<span class="normal"> 61</span>
-<span class="normal"> 62</span>
-<span class="normal"> 63</span>
-<span class="normal"> 64</span>
-<span class="normal"> 65</span>
-<span class="normal"> 66</span>
-<span class="normal"> 67</span>
-<span class="normal"> 68</span>
-<span class="normal"> 69</span>
-<span class="normal"> 70</span>
-<span class="normal"> 71</span>
-<span class="normal"> 72</span>
-<span class="normal"> 73</span>
-<span class="normal"> 74</span>
-<span class="normal"> 75</span>
-<span class="normal"> 76</span>
-<span class="normal"> 77</span>
-<span class="normal"> 78</span>
-<span class="normal"> 79</span>
-<span class="normal"> 80</span>
-<span class="normal"> 81</span>
-<span class="normal"> 82</span>
-<span class="normal"> 83</span>
-<span class="normal"> 84</span>
-<span class="normal"> 85</span>
-<span class="normal"> 86</span>
-<span class="normal"> 87</span>
-<span class="normal"> 88</span>
-<span class="normal"> 89</span>
-<span class="normal"> 90</span>
-<span class="normal"> 91</span>
-<span class="normal"> 92</span>
-<span class="normal"> 93</span>
-<span class="normal"> 94</span>
-<span class="normal"> 95</span>
-<span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code>import { useState } from &quot;react&quot;;
-
-function filterable_product_table({ products }) {
-    const [filterText, setFilterText] = useState(&quot;&quot;);
-    const [inStockOnly, setInStockOnly] = useState(false);
-
-    return (
-        &lt;div&gt;
-            &lt;search_bar filterText={filterText} inStockOnly={inStockOnly} /&gt;
-            &lt;product_table
-                products={products}
-                filterText={filterText}
-                inStockOnly={inStockOnly}
-            /&gt;
-        &lt;/div&gt;
-    );
-}
-
-function product_category_row({ category }) {
-    return (
-        &lt;tr&gt;
-            &lt;th colSpan=&quot;2&quot;&gt;{category}&lt;/th&gt;
-        &lt;/tr&gt;
-    );
-}
-
-function product_row({ product }) {
-    const name = product.stocked ? (
-        product.name
-    ) : (
-        &lt;span style={{ color: &quot;red&quot; }}&gt;{product.name}&lt;/span&gt;
-    );
-
-    return (
-        &lt;tr&gt;
-            &lt;td&gt;{name}&lt;/td&gt;
-            &lt;td&gt;{product.price}&lt;/td&gt;
-        &lt;/tr&gt;
-    );
-}
-
-function product_table({ products, filterText, inStockOnly }) {
-    const rows = [];
-    let lastCategory = null;
-
-    products.forEach((product) =&gt; {
-        if (
-            product.name.toLowerCase().indexOf(filterText.toLowerCase()) === -1
-        ) {
-            return;
-        }
-        if (inStockOnly &amp;&amp; !product.stocked) {
-            return;
-        }
-        if (product.category !== lastCategory) {
-            rows.push(
-                &lt;product_category_row
-                    category={product.category}
-                    key={product.category}
-                /&gt;
-            );
-        }
-        rows.push(&lt;product_row product={product} key={product.name} /&gt;);
-        lastCategory = product.category;
-    });
-
-    return (
-        &lt;table&gt;
-            &lt;thead&gt;
-                &lt;tr&gt;
-                    &lt;th&gt;Name&lt;/th&gt;
-                    &lt;th&gt;Price&lt;/th&gt;
-                &lt;/tr&gt;
-            &lt;/thead&gt;
-            &lt;tbody&gt;{rows}&lt;/tbody&gt;
-        &lt;/table&gt;
-    );
-}
-
-function search_bar({ filterText, inStockOnly }) {
-    return (
-        &lt;form&gt;
-            &lt;input type=&quot;text&quot; value={filterText} placeholder=&quot;Search...&quot; /&gt;
-            &lt;label&gt;
-                &lt;input type=&quot;checkbox&quot; checked={inStockOnly} /&gt; Only show
-                products in stock
-            &lt;/label&gt;
-        &lt;/form&gt;
-    );
-}
-
-const PRODUCTS = [
-    { category: &quot;Fruits&quot;, price: &quot;$1&quot;, stocked: true, name: &quot;Apple&quot; },
-    { category: &quot;Fruits&quot;, price: &quot;$1&quot;, stocked: true, name: &quot;Dragonfruit&quot; },
-    { category: &quot;Fruits&quot;, price: &quot;$2&quot;, stocked: false, name: &quot;Passionfruit&quot; },
-    { category: &quot;Vegetables&quot;, price: &quot;$2&quot;, stocked: true, name: &quot;Spinach&quot; },
-    { category: &quot;Vegetables&quot;, price: &quot;$4&quot;, stocked: false, name: &quot;Pumpkin&quot; },
-    { category: &quot;Vegetables&quot;, price: &quot;$1&quot;, stocked: true, name: &quot;Peas&quot; },
-];
-
-export default function App() {
-    return &lt;filterable_product_table products={PRODUCTS} /&gt;;
-}
-</code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -2667,66 +2624,65 @@ export default function App() {
 <span class="w">    </span><span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="kt">px</span><span class="p">;</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
-<p>Notice that editing the form doesn't work yet. There is a console error in the sandbox above explaining why:</p>
-<p><ConsoleBlock level="error"></p>
-<p>You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field.</p>
-<p></ConsoleBlock></p>
-<p>In the sandbox above, <code>product_table</code> and <code>search_bar</code> read the <code>filterText</code> and <code>inStockOnly</code> props to render the table, the input, and the checkbox. For example, here is how <code>search_bar</code> populates the input value:</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">search_bar</span><span class="p">({</span><span class="w"> </span><span class="nx">filterText</span><span class="p">,</span><span class="w"> </span><span class="nx">inStockOnly</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
-<span class="w">    </span><span class="o">&lt;</span><span class="nx">form</span><span class="o">&gt;</span>
-<span class="w">      </span><span class="o">&lt;</span><span class="nx">input</span>
-<span class="w">        </span><span class="nx">type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span>
-<span class="w">        </span><span class="nx">value</span><span class="o">=</span><span class="p">{</span><span class="nx">filterText</span><span class="p">}</span>
-<span class="w">        </span><span class="nx">placeholder</span><span class="o">=</span><span class="s2">&quot;Search...&quot;</span><span class="o">/&gt;</span>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># TODO</span>
 </code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>Notice that editing the form doesn't work yet.</p>
+<p>In the code above, <code>product_table</code> and <code>search_bar</code> read the <code>filter_text</code> and <code>in_stock_only</code> props to render the table, the input, and the checkbox. For example, here is how <code>search_bar</code> populates the input value:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@component</span>
+<span class="hll"><span class="k">def</span> <span class="nf">search_bar</span><span class="p">(</span><span class="n">filter_text</span><span class="p">,</span> <span class="n">in_stock_only</span><span class="p">):</span>
+</span>    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">form</span><span class="p">(</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">input</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+<span class="hll">                <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">filter_text</span><span class="p">,</span>
+</span>                <span class="s2">&quot;placeholder&quot;</span><span class="p">:</span> <span class="s2">&quot;Search...&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">),</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">p</span><span class="p">(</span>
+            <span class="n">html</span><span class="o">.</span><span class="n">input</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;checkbox&quot;</span><span class="p">,</span> <span class="s2">&quot;checked&quot;</span><span class="p">:</span> <span class="n">in_stock_only</span><span class="p">}),</span>
+            <span class="s2">&quot;Only show products in stock&quot;</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+</code></pre></div>
 <p>However, you haven't added any code to respond to the user actions like typing yet. This will be your final step.</p>
 <h2 id="step-5-add-inverse-data-flow">Step 5: Add inverse data flow<a class="headerlink" href="#step-5-add-inverse-data-flow" title="Permanent link">&para;</a></h2>
 <p>Currently your app renders correctly with props and state flowing down the hierarchy. But to change the state according to user input, you will need to support data flowing the other way: the form components deep in the hierarchy need to update the state in <code>filterable_product_table</code>.</p>
-<p>React makes this data flow explicit, but it requires a little more typing than two-way data binding. If you try to type or check the box in the example above, you'll see that React ignores your input. This is intentional. By writing <code>&lt;input value={filterText} /&gt;</code>, you've set the <code>value</code> prop of the <code>input</code> to always be equal to the <code>filterText</code> state passed in from <code>filterable_product_table</code>. Since <code>filterText</code> state is never set, the input never changes.</p>
-<p>You want to make it so whenever the user changes the form inputs, the state updates to reflect those changes. The state is owned by <code>filterable_product_table</code>, so only it can call <code>setFilterText</code> and <code>setInStockOnly</code>. To let <code>search_bar</code> update the <code>filterable_product_table</code>'s state, you need to pass these functions down to <code>search_bar</code>:</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">filterable_product_table</span><span class="p">({</span><span class="w"> </span><span class="nx">products</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">filterText</span><span class="p">,</span><span class="w"> </span><span class="nx">setFilterText</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
-<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">inStockOnly</span><span class="p">,</span><span class="w"> </span><span class="nx">setInStockOnly</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
-
-<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
-<span class="w">    </span><span class="o">&lt;</span><span class="nx">div</span><span class="o">&gt;</span>
-<span class="w">      </span><span class="o">&lt;</span><span class="nx">search_bar</span>
-<span class="w">        </span><span class="nx">filterText</span><span class="o">=</span><span class="p">{</span><span class="nx">filterText</span><span class="p">}</span>
-<span class="w">        </span><span class="nx">inStockOnly</span><span class="o">=</span><span class="p">{</span><span class="nx">inStockOnly</span><span class="p">}</span>
-<span class="w">        </span><span class="nx">onFilterTextChange</span><span class="o">=</span><span class="p">{</span><span class="nx">setFilterText</span><span class="p">}</span>
-<span class="w">        </span><span class="nx">onInStockOnlyChange</span><span class="o">=</span><span class="p">{</span><span class="nx">setInStockOnly</span><span class="p">}</span><span class="w"> </span><span class="o">/&gt;</span>
-</code></pre></div></td></tr></table></div>
-<p>Inside the <code>search_bar</code>, you will add the <code>onChange</code> event handlers and set the parent state from them:</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="o">&lt;</span><span class="nx">input</span>
-<span class="w">    </span><span class="nx">type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span>
-<span class="w">    </span><span class="nx">value</span><span class="o">=</span><span class="p">{</span><span class="nx">filterText</span><span class="p">}</span>
-<span class="w">    </span><span class="nx">placeholder</span><span class="o">=</span><span class="s2">&quot;Search...&quot;</span>
-<span class="w">    </span><span class="nx">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">onFilterTextChange</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
-<span class="err">/&gt;</span>
-</code></pre></div></td></tr></table></div>
+<p>React makes this data flow explicit, but it requires a little more typing than two-way data binding. If you try to type or check the box in the example above, you'll see that React ignores your input. This is intentional. By writing <code>&lt;input value={filter_text} /&gt;</code>, you've set the <code>value</code> prop of the <code>input</code> to always be equal to the <code>filter_text</code> state passed in from <code>filterable_product_table</code>. Since <code>filter_text</code> state is never set, the input never changes.</p>
+<p>You want to make it so whenever the user changes the form inputs, the state updates to reflect those changes. The state is owned by <code>filterable_product_table</code>, so only it can call <code>set_filter_text</code> and <code>set_in_stock_only</code>. To let <code>search_bar</code> update the <code>filterable_product_table</code>'s state, you need to pass these functions down to <code>search_bar</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">filterable_product_table</span><span class="p">(</span><span class="n">products</span><span class="p">):</span>
+<span class="hll">    <span class="n">filter_text</span><span class="p">,</span> <span class="n">set_filter_text</span> <span class="o">=</span> <span class="n">hooks</span><span class="o">.</span><span class="n">use_state</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span class="hll">    <span class="n">in_stock_only</span><span class="p">,</span> <span class="n">set_in_stock_only</span> <span class="o">=</span> <span class="n">hooks</span><span class="o">.</span><span class="n">use_state</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+</span>
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">div</span><span class="p">(</span>
+        <span class="n">search_bar</span><span class="p">(</span>
+            <span class="n">filter_text</span><span class="o">=</span><span class="n">filter_text</span><span class="p">,</span>
+            <span class="n">in_stock_only</span><span class="o">=</span><span class="n">in_stock_only</span><span class="p">,</span>
+<span class="hll">            <span class="n">set_filter_text</span><span class="o">=</span><span class="n">set_filter_text</span><span class="p">,</span>
+</span><span class="hll">            <span class="n">set_in_stock_only</span><span class="o">=</span><span class="n">set_in_stock_only</span>
+</span>        <span class="p">)</span>
+    <span class="p">)</span>
+</code></pre></div>
+<p>Inside the <code>search_bar</code>, you will add the <code>on_change</code> event handlers and set the parent state from them:</p>
+<div class="highlight"><pre><span></span><code><span class="n">html</span><span class="o">.</span><span class="n">input</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">filter_text</span><span class="p">,</span>
+        <span class="s2">&quot;placeholder&quot;</span><span class="p">:</span> <span class="s2">&quot;Search...&quot;</span><span class="p">,</span>
+<span class="hll">        <span class="s2">&quot;on_change&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">event</span><span class="p">:</span> <span class="n">set_filter_text</span><span class="p">(</span><span class="n">event</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]),</span>
+</span>    <span class="p">}</span>
+<span class="p">)</span>
+</code></pre></div>
 <p>Now the application fully works!</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">app.py</label><label for="__tabbed_3_2">styles.css</label><label for="__tabbed_3_3"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5.14v14l11-7-11-7Z"/></svg></span> Run</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<!-- FIXME: Click event on the checkbox is broken. <code>event["target"]["checked"]</code> doesn't exist -->
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">  1</span>
 <span class="normal">  2</span>
 <span class="normal">  3</span>
@@ -2831,146 +2787,114 @@ export default function App() {
 <span class="normal">102</span>
 <span class="normal">103</span>
 <span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span></pre></div></td><td class="code"><div><pre><span></span><code>import { useState } from &quot;react&quot;;
+<span class="normal">105</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">filterable_product_table</span><span class="p">(</span><span class="n">products</span><span class="p">):</span>
+    <span class="n">filter_text</span><span class="p">,</span> <span class="n">set_filter_text</span> <span class="o">=</span> <span class="n">use_state</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">in_stock_only</span><span class="p">,</span> <span class="n">set_in_stock_only</span> <span class="o">=</span> <span class="n">use_state</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
 
-function filterable_product_table({ products }) {
-    const [filterText, setFilterText] = useState(&quot;&quot;);
-    const [inStockOnly, setInStockOnly] = useState(false);
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">div</span><span class="p">(</span>
+        <span class="n">search_bar</span><span class="p">(</span>
+            <span class="n">filter_text</span><span class="o">=</span><span class="n">filter_text</span><span class="p">,</span>
+            <span class="n">in_stock_only</span><span class="o">=</span><span class="n">in_stock_only</span><span class="p">,</span>
+            <span class="n">set_filter_text</span><span class="o">=</span><span class="n">set_filter_text</span><span class="p">,</span>
+            <span class="n">set_in_stock_only</span><span class="o">=</span><span class="n">set_in_stock_only</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="n">product_table</span><span class="p">(</span>
+            <span class="n">products</span><span class="o">=</span><span class="n">products</span><span class="p">,</span> <span class="n">filter_text</span><span class="o">=</span><span class="n">filter_text</span><span class="p">,</span> <span class="n">in_stock_only</span><span class="o">=</span><span class="n">in_stock_only</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
 
-    return (
-        &lt;div&gt;
-            &lt;search_bar
-                filterText={filterText}
-                inStockOnly={inStockOnly}
-                onFilterTextChange={setFilterText}
-                onInStockOnlyChange={setInStockOnly}
-            /&gt;
-            &lt;product_table
-                products={products}
-                filterText={filterText}
-                inStockOnly={inStockOnly}
-            /&gt;
-        &lt;/div&gt;
-    );
-}
 
-function product_category_row({ category }) {
-    return (
-        &lt;tr&gt;
-            &lt;th colSpan=&quot;2&quot;&gt;{category}&lt;/th&gt;
-        &lt;/tr&gt;
-    );
-}
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">product_category_row</span><span class="p">(</span><span class="n">category</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">tr</span><span class="p">(</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">th</span><span class="p">({</span><span class="s2">&quot;colspan&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="n">category</span><span class="p">),</span>
+    <span class="p">)</span>
 
-function product_row({ product }) {
-    const name = product.stocked ? (
-        product.name
-    ) : (
-        &lt;span style={{ color: &quot;red&quot; }}&gt;{product.name}&lt;/span&gt;
-    );
 
-    return (
-        &lt;tr&gt;
-            &lt;td&gt;{name}&lt;/td&gt;
-            &lt;td&gt;{product.price}&lt;/td&gt;
-        &lt;/tr&gt;
-    );
-}
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">product_row</span><span class="p">(</span><span class="n">product</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;stocked&quot;</span><span class="p">]:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">span</span><span class="p">({</span><span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;red&quot;</span><span class="p">}},</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
 
-function product_table({ products, filterText, inStockOnly }) {
-    const rows = [];
-    let lastCategory = null;
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">tr</span><span class="p">(</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">td</span><span class="p">(</span><span class="n">name</span><span class="p">),</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">td</span><span class="p">(</span><span class="n">product</span><span class="p">[</span><span class="s2">&quot;price&quot;</span><span class="p">]),</span>
+    <span class="p">)</span>
 
-    products.forEach((product) =&gt; {
-        if (
-            product.name.toLowerCase().indexOf(filterText.toLowerCase()) === -1
-        ) {
-            return;
-        }
-        if (inStockOnly &amp;&amp; !product.stocked) {
-            return;
-        }
-        if (product.category !== lastCategory) {
-            rows.push(
-                &lt;product_category_row
-                    category={product.category}
-                    key={product.category}
-                /&gt;
-            );
-        }
-        rows.push(&lt;product_row product={product} key={product.name} /&gt;);
-        lastCategory = product.category;
-    });
 
-    return (
-        &lt;table&gt;
-            &lt;thead&gt;
-                &lt;tr&gt;
-                    &lt;th&gt;Name&lt;/th&gt;
-                    &lt;th&gt;Price&lt;/th&gt;
-                &lt;/tr&gt;
-            &lt;/thead&gt;
-            &lt;tbody&gt;{rows}&lt;/tbody&gt;
-        &lt;/table&gt;
-    );
-}
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">product_table</span><span class="p">(</span><span class="n">products</span><span class="p">,</span> <span class="n">filter_text</span><span class="p">,</span> <span class="n">in_stock_only</span><span class="p">):</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">last_category</span> <span class="o">=</span> <span class="kc">None</span>
 
-function search_bar({
-    filterText,
-    inStockOnly,
-    onFilterTextChange,
-    onInStockOnlyChange,
-}) {
-    return (
-        &lt;form&gt;
-            &lt;input
-                type=&quot;text&quot;
-                value={filterText}
-                placeholder=&quot;Search...&quot;
-                onChange={(e) =&gt; onFilterTextChange(e.target.value)}
-            /&gt;
-            &lt;label&gt;
-                &lt;input
-                    type=&quot;checkbox&quot;
-                    checked={inStockOnly}
-                    onChange={(e) =&gt; onInStockOnlyChange(e.target.checked)}
-                /&gt;{&quot; &quot;}
-                Only show products in stock
-            &lt;/label&gt;
-        &lt;/form&gt;
-    );
-}
+    <span class="k">for</span> <span class="n">product</span> <span class="ow">in</span> <span class="n">products</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">filter_text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">in_stock_only</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;stocked&quot;</span><span class="p">]:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">last_category</span><span class="p">:</span>
+            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">product_category_row</span><span class="p">(</span><span class="n">product</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="n">product</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">])</span>
+            <span class="p">)</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">product_row</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">product</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]))</span>
+        <span class="n">last_category</span> <span class="o">=</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">]</span>
 
-const PRODUCTS = [
-    { category: &quot;Fruits&quot;, price: &quot;$1&quot;, stocked: true, name: &quot;Apple&quot; },
-    { category: &quot;Fruits&quot;, price: &quot;$1&quot;, stocked: true, name: &quot;Dragonfruit&quot; },
-    { category: &quot;Fruits&quot;, price: &quot;$2&quot;, stocked: false, name: &quot;Passionfruit&quot; },
-    { category: &quot;Vegetables&quot;, price: &quot;$2&quot;, stocked: true, name: &quot;Spinach&quot; },
-    { category: &quot;Vegetables&quot;, price: &quot;$4&quot;, stocked: false, name: &quot;Pumpkin&quot; },
-    { category: &quot;Vegetables&quot;, price: &quot;$1&quot;, stocked: true, name: &quot;Peas&quot; },
-];
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">table</span><span class="p">(</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">thead</span><span class="p">(</span>
+            <span class="n">html</span><span class="o">.</span><span class="n">tr</span><span class="p">(</span>
+                <span class="n">html</span><span class="o">.</span><span class="n">th</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">),</span>
+                <span class="n">html</span><span class="o">.</span><span class="n">th</span><span class="p">(</span><span class="s2">&quot;Price&quot;</span><span class="p">),</span>
+            <span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">tbody</span><span class="p">(</span><span class="n">rows</span><span class="p">),</span>
+    <span class="p">)</span>
 
-export default function App() {
-    return &lt;filterable_product_table products={PRODUCTS} /&gt;;
-}
+
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">search_bar</span><span class="p">(</span><span class="n">filter_text</span><span class="p">,</span> <span class="n">in_stock_only</span><span class="p">,</span> <span class="n">set_filter_text</span><span class="p">,</span> <span class="n">set_in_stock_only</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">form</span><span class="p">(</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">input</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">filter_text</span><span class="p">,</span>
+                <span class="s2">&quot;placeholder&quot;</span><span class="p">:</span> <span class="s2">&quot;Search...&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;on_change&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">event</span><span class="p">:</span> <span class="n">set_filter_text</span><span class="p">(</span><span class="n">event</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]),</span>
+            <span class="p">}</span>
+        <span class="p">),</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">label</span><span class="p">(</span>
+            <span class="n">html</span><span class="o">.</span><span class="n">input</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;checkbox&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;checked&quot;</span><span class="p">:</span> <span class="n">in_stock_only</span><span class="p">,</span>
+                    <span class="s2">&quot;on_change&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">event</span><span class="p">:</span> <span class="n">set_in_stock_only</span><span class="p">(</span>
+                        <span class="n">event</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">][</span><span class="s2">&quot;checked&quot;</span><span class="p">]</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;Only show products in stock&quot;</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="n">PRODUCTS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Fruits&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$1&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Apple&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Fruits&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$1&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Dragonfruit&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Fruits&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$2&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Passionfruit&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Vegetables&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$2&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Spinach&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Vegetables&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$4&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Pumpkin&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Vegetables&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$1&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Peas&quot;</span><span class="p">},</span>
+<span class="p">]</span>
+
+
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">app</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">filterable_product_table</span><span class="p">(</span><span class="n">PRODUCTS</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -2999,9 +2923,16 @@ export default function App() {
 <span class="w">    </span><span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="kt">px</span><span class="p">;</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
-<p>You can learn all about handling events and updating state in the <a href="/learn/adding-interactivity">Adding Interactivity</a> section.</p>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># TODO</span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>You can learn all about handling events and updating state in the <a href="../responding-to-events/">Adding Interactivity</a> section.</p>
 <h2 id="where-to-go-from-here">Where to go from here<a class="headerlink" href="#where-to-go-from-here" title="Permanent link">&para;</a></h2>
-<p>This was a very brief introduction to how to think about building components and applications with React. You can <a href="/learn/installation">start a React project</a> right now or <a href="/learn/describing-the-ui">dive deeper on all the syntax</a> used in this tutorial.</p>
+<p>This was a very brief introduction to how to think about building components and applications with React. You can <a href="../start-a-new-react-project/">start a React project</a> right now or <a href="../your-first-component/">dive deeper on all the syntax</a> used in this tutorial.</p>
 
 
 
