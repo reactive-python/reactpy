@@ -70,15 +70,15 @@ You can either build "top down" by starting with building the components higher 
 
 === "app.py"
 
-	```python
-	{% include "../../examples/python/thinking_in_react/build_a_static_version_in_react.py" start="# start" end="# end" %}
-	```
+    ```python
+    {% include "../../examples/python/thinking_in_react/build_a_static_version_in_react.py" start="# start" end="# end" %}
+    ```
 
 === "styles.css"
 
-	```css
-	{% include "../../examples/css/thinking_in_react/build_a_static_version_in_react.css" %}
-	```
+    ```css
+    {% include "../../examples/css/thinking_in_react/build_a_static_version_in_react.css" %}
+    ```
 
 === ":material-play: Run"
 
@@ -92,7 +92,7 @@ After building your components, you'll have a library of reusable components tha
 
 !!! warning "Pitfall"
 
-	At this point, you should not be using any state values. That’s for the next step!
+    At this point, you should not be using any state values. That’s for the next step!
 
 ## Step 3: Find the minimal but complete representation of UI state
 
@@ -124,18 +124,16 @@ Let's go through them one by one again:
 
 This means only the search text and the value of the checkbox are state! Nicely done!
 
-<DeepDive>
+!!! info "Deep Dive"
 
-#### Props vs State
+    <font size="4">**Props vs State**</font>
 
-There are two types of "model" data in React: props and state. The two are very different:
+	There are two types of "model" data in React: props and state. The two are very different:
 
--   [**Props** are like arguments you pass](/learn/passing-props-to-a-component) to a function. They let a parent component pass data to a child component and customize its appearance. For example, a `Form` can pass a `color` prop to a `Button`.
--   [**State** is like a component’s memory.](/learn/state-a-components-memory) It lets a component keep track of some information and change it in response to interactions. For example, a `Button` might keep track of `isHovered` state.
+	-   [**Props** are like arguments you pass](../learn/passing-props-to-a-component.md) to a function. They let a parent component pass data to a child component and customize its appearance. For example, a `html.form` can pass a `color` prop to a `html.button`.
+	-   [**State** is like a component’s memory.](../learn/state-a-components-memory.md) It lets a component keep track of some information and change it in response to interactions. For example, a `html.button` might keep track of `is_hovered` state.
 
-Props and state are different, but they work together. A parent component will often keep some information in state (so that it can change it), and _pass it down_ to child components as their props. It's okay if the difference still feels fuzzy on the first read. It takes a bit of practice for it to really stick!
-
-</DeepDive>
+	Props and state are different, but they work together. A parent component will often keep some information in state (so that it can change it), and _pass it down_ to child components as their props. It's okay if the difference still feels fuzzy on the first read. It takes a bit of practice for it to really stick!
 
 ## Step 4: Identify where your state should live
 
