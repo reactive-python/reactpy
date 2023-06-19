@@ -29,6 +29,8 @@ You can see what it will look like when you're finished here:
 
 === "app.py"
 
+	<!-- FIXME: Currently this example uses empty string instead of None, due to a bug with ReactPy -->
+
     ```python
     {% include "../../examples/python/tutorial_tic_tac_toe/tic_tac_toe.py" end="# end" %}
     ```
