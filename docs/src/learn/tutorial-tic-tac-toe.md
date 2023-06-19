@@ -30,13 +30,13 @@ You can see what it will look like when you're finished here:
 === "app.py"
 
     ```python
-    {% include "../../examples/python/tutorial-tic-tac-toe/tic_tac_toe.py" end="# end" %}
+    {% include "../../examples/python/tutorial_tic_tac_toe/tic_tac_toe.py" end="# end" %}
     ```
 
 === "styles.css"
 
     ```css
-    {% include "../../examples/css/tutorial-tic-tac-toe/tic_tac_toe.css" %}
+    {% include "../../examples/css/tutorial_tic_tac_toe/tic_tac_toe.css" %}
     ```
 
 === ":material-play: Run"
@@ -59,13 +59,13 @@ In the code example below, click **Run** to open the editor in a new tab using t
 === "app.py"
 
 	```python
-	{% include "../../examples/python/tutorial-tic-tac-toe/setup_for_the_tutorial.py" start="# start" %}
+	{% include "../../examples/python/tutorial_tic_tac_toe/setup_for_the_tutorial.py" start="# start" %}
 	```
 
 === "styles.css"
 
 	```css
-	{% include "../../examples/css/tutorial-tic-tac-toe/setup_for_the_tutorial.css" %}
+	{% include "../../examples/css/tutorial_tic_tac_toe/setup_for_the_tutorial.css" %}
 	```
 
 === ":material-play: Run"
@@ -105,7 +105,7 @@ In Jupyter you'll see three main sections:
 The `tic-tac-toe.ipynb` file should be selected in the _Files_ section. Click on the first code box, where the contents of that _code editor_ should be:
 
 ```python linenums="0"
-{% include "../../examples/python/tutorial-tic-tac-toe/setup_for_the_tutorial.py" start="# start" %}
+{% include "../../examples/python/tutorial_tic_tac_toe/setup_for_the_tutorial.py" start="# start" %}
 ```
 
 After clicking the _run button_ the notebook should be displaying a square with a X in it like this:
