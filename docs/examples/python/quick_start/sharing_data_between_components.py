@@ -23,5 +23,10 @@ def my_button(count, on_click):
 # end
 if __name__ == "__main__":
     from reactpy import run
+    from reactpy.utils import _read_docs_css
 
-    run(my_app)
+    @component
+    def styled_app():
+        return html._(html.style(_read_docs_css()), my_app())
+
+    run(styled_app)

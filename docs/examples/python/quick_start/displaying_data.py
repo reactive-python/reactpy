@@ -28,5 +28,10 @@ def profile():
 # end
 if __name__ == "__main__":
     from reactpy import run
+    from reactpy.utils import _read_docs_css
 
-    run(profile)
+    @component
+    def styled_app():
+        return html._(html.style(_read_docs_css()), profile())
+
+    run(styled_app)

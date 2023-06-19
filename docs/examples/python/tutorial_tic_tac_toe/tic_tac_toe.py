@@ -117,5 +117,10 @@ def calculate_winner(squares):
 # end
 if __name__ == "__main__":
     from reactpy import run
+    from reactpy.utils import _read_docs_css
 
-    run(game)
+    @component
+    def styled_app():
+        return html._(html.style(_read_docs_css()), game())
+
+    run(styled_app)

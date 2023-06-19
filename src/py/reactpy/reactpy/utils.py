@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import inspect
+import os
 import re
 from collections.abc import Iterable
 from itertools import chain
@@ -305,3 +307,16 @@ DASHED_HTML_ATTRS = {"accept_charset", "acceptCharset", "http_equiv", "httpEquiv
 
 # Pattern for delimitting camelCase names (e.g. camelCase to camel-case)
 _CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
+
+
+def _read_docs_css():
+    """Reads a CSS file in the docs with the same relative path."""
+    py_path = os.path.abspath((inspect.stack()[1])[1])
+    css_path = (
+        py_path.replace("/python/", "/css/")
+        .replace("\\python\\", "\\css\\")
+        .replace(".py", ".css")
+    )
+
+    with open(css_path, encoding="UTF-8") as css_file:
+        return css_file.read()
