@@ -1,0 +1,15 @@
+body {
+	padding: 5px;
+}
+label {
+	display: block;
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+th {
+	padding-top: 10px;
+}
+td {
+	padding: 2px;
+	padding-right: 40px;
+}

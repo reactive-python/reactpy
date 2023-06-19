@@ -16,35 +16,8 @@ Imagine that you already have a JSON API and a mockup from a designer.
 
 The JSON API returns some data that looks like this:
 
-```json
-[
-	{ "category": "Fruits", "price": "$1", "stocked": true, "name": "Apple" },
-	{
-		"category": "Fruits",
-		"price": "$1",
-		"stocked": true,
-		"name": "Dragonfruit"
-	},
-	{
-		"category": "Fruits",
-		"price": "$2",
-		"stocked": false,
-		"name": "Passionfruit"
-	},
-	{
-		"category": "Vegetables",
-		"price": "$2",
-		"stocked": true,
-		"name": "Spinach"
-	},
-	{
-		"category": "Vegetables",
-		"price": "$4",
-		"stocked": false,
-		"name": "Pumpkin"
-	},
-	{ "category": "Vegetables", "price": "$1", "stocked": true, "name": "Peas" }
-]
+```json linenums="0"
+{% include "../../examples/json/thinking_in_react/start_with_the_mockup.json" %}
 ```
 
 The mockup looks like this:
@@ -91,125 +64,35 @@ Now that you've identified the components in the mockup, arrange them into a hie
 
 Now that you have your component hierarchy, it's time to implement your app. The most straightforward approach is to build a version that renders the UI from your data model without adding any interactivity... yet! It's often easier to build the static version first and add interactivity later. Building a static version requires a lot of typing and no thinking, but adding interactivity requires a lot of thinking and not a lot of typing.
 
-To build a static version of your app that renders your data model, you'll want to build [components](your-first-component.md) that reuse other components and pass data using [props.](/learn/passing-props-to-a-component) Props are a way of passing data from parent to child. (If you're familiar with the concept of [state](/learn/state-a-components-memory), don't use state at all to build this static version. State is reserved only for interactivity, that is, data that changes over time. Since this is a static version of the app, you don't need it.)
+To build a static version of your app that renders your data model, you'll want to build [components](your-first-component.md) that reuse other components and pass data using [props.](../learn/passing-props-to-a-component.md) Props are a way of passing data from parent to child. (If you're familiar with the concept of [state](../learn/state-a-components-memory.md), don't use state at all to build this static version. State is reserved only for interactivity, that is, data that changes over time. Since this is a static version of the app, you don't need it.)
 
 You can either build "top down" by starting with building the components higher up in the hierarchy (like `filterable_product_table`) or "bottom up" by working from components lower down (like `product_row`). In simpler examples, it’s usually easier to go top-down, and on larger projects, it’s easier to go bottom-up.
 
-```jsx
-function product_category_row({ category }) {
-	return (
-		<tr>
-			<th colSpan="2">{category}</th>
-		</tr>
-	);
-}
+=== "app.py"
 
-function product_row({ product }) {
-	const name = product.stocked ? (
-		product.name
-	) : (
-		<span style={{ color: "red" }}>{product.name}</span>
-	);
+	```python
+	{% include "../../examples/python/thinking_in_react/build_a_static_version_in_react.py" start="# start" end="# end" %}
+	```
 
-	return (
-		<tr>
-			<td>{name}</td>
-			<td>{product.price}</td>
-		</tr>
-	);
-}
+=== "styles.css"
 
-function product_table({ products }) {
-	const rows = [];
-	let lastCategory = null;
+	```css
+	{% include "../../examples/css/thinking_in_react/build_a_static_version_in_react.css" %}
+	```
 
-	products.forEach((product) => {
-		if (product.category !== lastCategory) {
-			rows.push(
-				<product_category_row
-					category={product.category}
-					key={product.category}
-				/>
-			);
-		}
-		rows.push(<product_row product={product} key={product.name} />);
-		lastCategory = product.category;
-	});
+=== ":material-play: Run"
 
-	return (
-		<table>
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Price</th>
-				</tr>
-			</thead>
-			<tbody>{rows}</tbody>
-		</table>
-	);
-}
+    ```python
+    # TODO
+    ```
 
-function search_bar() {
-	return (
-		<form>
-			<input type="text" placeholder="Search..." />
-			<label>
-				<input type="checkbox" /> Only show products in stock
-			</label>
-		</form>
-	);
-}
+(If this code looks intimidating, go through the [Quick Start](../learn/get-started.md) first!)
 
-function filterable_product_table({ products }) {
-	return (
-		<div>
-			<search_bar />
-			<product_table products={products} />
-		</div>
-	);
-}
+After building your components, you'll have a library of reusable components that render your data model. Because this is a static app, the components will only return non-interactive HTML. The component at the top of the hierarchy (`filterable_product_table`) will take your data model as a prop. This is called _one-way data flow_ because the data flows down from the top-level component to the ones at the bottom of the tree.
 
-const PRODUCTS = [
-	{ category: "Fruits", price: "$1", stocked: true, name: "Apple" },
-	{ category: "Fruits", price: "$1", stocked: true, name: "Dragonfruit" },
-	{ category: "Fruits", price: "$2", stocked: false, name: "Passionfruit" },
-	{ category: "Vegetables", price: "$2", stocked: true, name: "Spinach" },
-	{ category: "Vegetables", price: "$4", stocked: false, name: "Pumpkin" },
-	{ category: "Vegetables", price: "$1", stocked: true, name: "Peas" },
-];
+!!! warning "Pitfall"
 
-export default function App() {
-	return <filterable_product_table products={PRODUCTS} />;
-}
-```
-
-```css
-body {
-	padding: 5px;
-}
-label {
-	display: block;
-	margin-top: 5px;
-	margin-bottom: 5px;
-}
-th {
-	padding-top: 10px;
-}
-td {
-	padding: 2px;
-	padding-right: 40px;
-}
-```
-
-(If this code looks intimidating, go through the [Quick Start](/learn/) first!)
-
-After building your components, you'll have a library of reusable components that render your data model. Because this is a static app, the components will only return JSX. The component at the top of the hierarchy (`filterable_product_table`) will take your data model as a prop. This is called _one-way data flow_ because the data flows down from the top-level component to the ones at the bottom of the tree.
-
-<Pitfall>
-
-At this point, you should not be using any state values. That’s for the next step!
-
-</Pitfall>
+	At this point, you should not be using any state values. That’s for the next step!
 
 ## Step 3: Find the minimal but complete representation of UI state
 
