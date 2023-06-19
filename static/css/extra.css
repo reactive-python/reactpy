@@ -217,6 +217,11 @@
 	.md-nav__item--nested .md-nav__item .md-nav__item .md-nav__link {
 		font-weight: 300;
 	}
+
+	.md-nav__item--nested .md-nav__item .md-nav__item .md-nav__link {
+		font-weight: 400;
+		padding-left: 1.25rem;
+	}
 }
 
 /* Table of Contents styling */
