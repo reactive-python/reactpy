@@ -1,5 +1,5 @@
 ---
-title: Thinking in React 🚧
+title: Thinking in React
 ---
 
 ## Overview
@@ -128,12 +128,12 @@ This means only the search text and the value of the checkbox are state! Nicely 
 
     <font size="4">**Props vs State**</font>
 
-	There are two types of "model" data in React: props and state. The two are very different:
+    There are two types of "model" data in React: props and state. The two are very different:
 
-	-   [**Props** are like arguments you pass](../learn/passing-props-to-a-component.md) to a function. They let a parent component pass data to a child component and customize its appearance. For example, a `html.form` can pass a `color` prop to a `html.button`.
-	-   [**State** is like a component’s memory.](../learn/state-a-components-memory.md) It lets a component keep track of some information and change it in response to interactions. For example, a `html.button` might keep track of `is_hovered` state.
+    -   [**Props** are like arguments you pass](../learn/passing-props-to-a-component.md) to a function. They let a parent component pass data to a child component and customize its appearance. For example, a `html.form` can pass a `color` prop to a `html.button`.
+    -   [**State** is like a component’s memory.](../learn/state-a-components-memory.md) It lets a component keep track of some information and change it in response to interactions. For example, a `html.button` might keep track of `is_hovered` state.
 
-	Props and state are different, but they work together. A parent component will often keep some information in state (so that it can change it), and _pass it down_ to child components as their props. It's okay if the difference still feels fuzzy on the first read. It takes a bit of practice for it to really stick!
+    Props and state are different, but they work together. A parent component will often keep some information in state (so that it can change it), and _pass it down_ to child components as their props. It's okay if the difference still feels fuzzy on the first read. It takes a bit of practice for it to really stick!
 
 ## Step 4: Identify where your state should live
 
@@ -176,15 +176,15 @@ You can start seeing how your application will behave. Edit the `filter_text` in
 
 === "app.py"
 
-	```python
-	{% include "../../examples/python/thinking_in_react/identify_where_your_state_should_live.py" start="# start" end="# end" %}
-	```
+    ```python
+    {% include "../../examples/python/thinking_in_react/identify_where_your_state_should_live.py" start="# start" end="# end" %}
+    ```
 
 === "styles.css"
 
-	```css
-	{% include "../../examples/css/thinking_in_react/identify_where_your_state_should_live.css" %}
-	```
+    ```css
+    {% include "../../examples/css/thinking_in_react/identify_where_your_state_should_live.css" %}
+    ```
 
 === ":material-play: Run"
 
@@ -210,177 +210,40 @@ React makes this data flow explicit, but it requires a little more typing than t
 
 You want to make it so whenever the user changes the form inputs, the state updates to reflect those changes. The state is owned by `filterable_product_table`, so only it can call `set_filter_text` and `set_in_stock_only`. To let `search_bar` update the `filterable_product_table`'s state, you need to pass these functions down to `search_bar`:
 
-```js
-function filterable_product_table({ products }) {
-  const [filter_text, set_filter_text] = use_state('');
-  const [in_stock_only, set_in_stock_only] = use_state(false);
-
-  return (
-    <div>
-      <search_bar
-        filter_text={filter_text}
-        in_stock_only={in_stock_only}
-        onfilter_textChange={set_filter_text}
-        onin_stock_onlyChange={set_in_stock_only} />
+```python linenums="0" hl_lines="3-4 10-11"
+{% include "../../examples/python/thinking_in_react/set_state_props.py" start="# start" %}
 ```
 
-Inside the `search_bar`, you will add the `onChange` event handlers and set the parent state from them:
+Inside the `search_bar`, you will add the `on_change` event handlers and set the parent state from them:
 
-```js
-<input
-	type="text"
-	value={filter_text}
-	placeholder="Search..."
-	onChange={(e) => onfilter_textChange(e.target.value)}
-/>
+```python linenums="0" hl_lines="6"
+{% include "../../examples/python/thinking_in_react/event_handlers.py" start="# start" %}
 ```
 
 Now the application fully works!
 
-```jsx
-import { use_state } from "react";
+=== "app.py"
 
-function filterable_product_table({ products }) {
-	const [filter_text, set_filter_text] = use_state("");
-	const [in_stock_only, set_in_stock_only] = use_state(false);
+    <!-- FIXME: Click event on the checkbox is broken. `event["target"]["checked"]` doesn't exist -->
 
-	return (
-		<div>
-			<search_bar
-				filter_text={filter_text}
-				in_stock_only={in_stock_only}
-				onfilter_textChange={set_filter_text}
-				onin_stock_onlyChange={set_in_stock_only}
-			/>
-			<product_table
-				products={products}
-				filter_text={filter_text}
-				in_stock_only={in_stock_only}
-			/>
-		</div>
-	);
-}
+    ```python
+    {% include "../../examples/python/thinking_in_react/add_inverse_data_flow.py" start="# start" end="# end" %}
+    ```
 
-function product_category_row({ category }) {
-	return (
-		<tr>
-			<th colSpan="2">{category}</th>
-		</tr>
-	);
-}
+=== "styles.css"
 
-function product_row({ product }) {
-	const name = product.stocked ? (
-		product.name
-	) : (
-		<span style={{ color: "red" }}>{product.name}</span>
-	);
+    ```css
+    {% include "../../examples/css/thinking_in_react/add_inverse_data_flow.css" %}
+    ```
 
-	return (
-		<tr>
-			<td>{name}</td>
-			<td>{product.price}</td>
-		</tr>
-	);
-}
+=== ":material-play: Run"
 
-function product_table({ products, filter_text, in_stock_only }) {
-	const rows = [];
-	let lastCategory = null;
+    ```python
+    # TODO
+    ```
 
-	products.forEach((product) => {
-		if (
-			product.name.toLowerCase().indexOf(filter_text.toLowerCase()) === -1
-		) {
-			return;
-		}
-		if (in_stock_only && !product.stocked) {
-			return;
-		}
-		if (product.category !== lastCategory) {
-			rows.push(
-				<product_category_row
-					category={product.category}
-					key={product.category}
-				/>
-			);
-		}
-		rows.push(<product_row product={product} key={product.name} />);
-		lastCategory = product.category;
-	});
-
-	return (
-		<table>
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Price</th>
-				</tr>
-			</thead>
-			<tbody>{rows}</tbody>
-		</table>
-	);
-}
-
-function search_bar({
-	filter_text,
-	in_stock_only,
-	onfilter_textChange,
-	onin_stock_onlyChange,
-}) {
-	return (
-		<form>
-			<input
-				type="text"
-				value={filter_text}
-				placeholder="Search..."
-				onChange={(e) => onfilter_textChange(e.target.value)}
-			/>
-			<label>
-				<input
-					type="checkbox"
-					checked={in_stock_only}
-					onChange={(e) => onin_stock_onlyChange(e.target.checked)}
-				/>{" "}
-				Only show products in stock
-			</label>
-		</form>
-	);
-}
-
-const PRODUCTS = [
-	{ category: "Fruits", price: "$1", stocked: true, name: "Apple" },
-	{ category: "Fruits", price: "$1", stocked: true, name: "Dragonfruit" },
-	{ category: "Fruits", price: "$2", stocked: false, name: "Passionfruit" },
-	{ category: "Vegetables", price: "$2", stocked: true, name: "Spinach" },
-	{ category: "Vegetables", price: "$4", stocked: false, name: "Pumpkin" },
-	{ category: "Vegetables", price: "$1", stocked: true, name: "Peas" },
-];
-
-export default function App() {
-	return <filterable_product_table products={PRODUCTS} />;
-}
-```
-
-```css
-body {
-	padding: 5px;
-}
-label {
-	display: block;
-	margin-top: 5px;
-	margin-bottom: 5px;
-}
-th {
-	padding: 4px;
-}
-td {
-	padding: 2px;
-}
-```
-
-You can learn all about handling events and updating state in the [Adding Interactivity](/learn/adding-interactivity) section.
+You can learn all about handling events and updating state in the [Adding Interactivity](../learn/responding-to-events.md) section.
 
 ## Where to go from here
 
-This was a very brief introduction to how to think about building components and applications with React. You can [start a React project](/learn/installation) right now or [dive deeper on all the syntax](/learn/describing-the-ui) used in this tutorial.
+This was a very brief introduction to how to think about building components and applications with React. You can [start a React project](../learn/start-a-new-react-project.md) right now or [dive deeper on all the syntax](../learn/your-first-component.md) used in this tutorial.
