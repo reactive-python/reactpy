@@ -1,19 +1,27 @@
 ---
-title: React Developer Tools 🚧
+title: React Developer Tools 🚫
 ---
 
 ## Overview
 
 <p class="intro" markdown>
 
-Use React Developer Tools to inspect React [components](/learn/your-first-component), edit [props](/learn/passing-props-to-a-component) and [state](/learn/state-a-components-memory), and identify performance problems.
+Use React Developer Tools to inspect React [components](../learn/your-first-component.md), edit [props](../learn/passing-props-to-a-component.md) and [state](../learn/state-a-components-memory.md), and identify performance problems.
 
 </p>
 
 !!! summary "You Will Learn"
 
-    -   How to install React Developer Tools
+    -   How to install ReactPy Developer Tools
 
+
+!!! warning "In Progress"
+
+	This feature is planned, but not yet developed.
+
+	See [this issue](https://github.com/reactive-python/reactpy/issues/1072) for more details.
+
+<!--
 ## Browser extension
 
 The easiest way to debug websites built with React is to install the React Developer Tools browser extension. It is available for several popular browsers:
@@ -82,4 +90,4 @@ It should connect to any local React Native app that's running.
 
 > Try reloading the app if developer tools doesn't connect after a few seconds.
 
-[Learn more about debugging React Native.](https://reactnative.dev/docs/debugging)
+[Learn more about debugging React Native.](https://reactnative.dev/docs/debugging) -->

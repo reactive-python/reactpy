@@ -2,11 +2,6 @@
 title: Add React to an Existing Project 🚫
 ---
 
-<!--
-TODO: Template tag is needed to complete this tab
-https://github.com/reactive-python/reactpy/issues/653
--->
-
 ## Overview
 
 <p class="intro" markdown>
@@ -15,6 +10,13 @@ If you want to add some interactivity to your existing project, you don't have t
 
 </p>
 
+!!! warning "In Progress"
+
+    This feature is planned, but not yet developed.
+
+    See [this issue](https://github.com/reactive-python/reactpy/issues/653) for more details.
+
+<!--
 <Note>
 
 **You need to install [Node.js](https://nodejs.org/en/) for local development.** Although you can [try React](/learn/installation#try-react) online or with a simple HTML page, realistically most JavaScript tooling you'll want to use for development requires Node.js.
@@ -70,7 +72,9 @@ Then add these lines of code at the top of your main JavaScript file (it might b
 	</head>
 	<body>
 		<!-- Your existing page content (in this example, it gets replaced) -->
-	</body>
+
+    </body>
+
 </html>
 ```
 
@@ -155,4 +159,4 @@ When you adopt React in an existing project, it's common to start with small int
 
 ## Using React Native in an existing native mobile app
 
-[React Native](https://reactnative.dev/) can also be integrated into existing native apps incrementally. If you have an existing native app for Android (Java or Kotlin) or iOS (Objective-C or Swift), [follow this guide](https://reactnative.dev/docs/integration-with-existing-apps) to add a React Native screen to it.
+[React Native](https://reactnative.dev/) can also be integrated into existing native apps incrementally. If you have an existing native app for Android (Java or Kotlin) or iOS (Objective-C or Swift), [follow this guide](https://reactnative.dev/docs/integration-with-existing-apps) to add a React Native screen to it. -->
