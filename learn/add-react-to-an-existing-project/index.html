@@ -555,47 +555,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#using-react-for-an-entire-subroute-of-your-existing-website" class="md-nav__link">
-    Using React for an entire subroute of your existing website
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-react-for-a-part-of-your-existing-page" class="md-nav__link">
-    Using React for a part of your existing page
-  </a>
-  
-    <nav class="md-nav" aria-label="Using React for a part of your existing page">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#step-1-set-up-a-modular-javascript-environment" class="md-nav__link">
-    Step 1: Set up a modular JavaScript environment
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#step-2-render-react-components-anywhere-on-the-page" class="md-nav__link">
-    Step 2: Render React components anywhere on the page
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-react-native-in-an-existing-native-mobile-app" class="md-nav__link">
-    Using React Native in an existing native mobile app
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -626,7 +585,7 @@
   
     <li class="md-nav__item">
       <a href="../react-developer-tools/" class="md-nav__link">
-        React Developer Tools 🚧
+        React Developer Tools 🚫
       </a>
     </li>
   
@@ -2020,47 +1979,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#using-react-for-an-entire-subroute-of-your-existing-website" class="md-nav__link">
-    Using React for an entire subroute of your existing website
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-react-for-a-part-of-your-existing-page" class="md-nav__link">
-    Using React for a part of your existing page
-  </a>
-  
-    <nav class="md-nav" aria-label="Using React for a part of your existing page">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#step-1-set-up-a-modular-javascript-environment" class="md-nav__link">
-    Step 1: Set up a modular JavaScript environment
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#step-2-render-react-components-anywhere-on-the-page" class="md-nav__link">
-    Step 2: Render React components anywhere on the page
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-react-native-in-an-existing-native-mobile-app" class="md-nav__link">
-    Using React Native in an existing native mobile app
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -2082,71 +2000,88 @@
 
   <h1>Add React to an Existing Project 🚫</h1>
 
-<!--
-TODO: Template tag is needed to complete this tab
-https://github.com/reactive-python/reactpy/issues/653
--->
-
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
 <p class="intro">
 
 If you want to add some interactivity to your existing project, you don't have to rewrite it in React. Add React to your existing stack, and render interactive React components anywhere.
 
 </p>
-<p><Note></p>
-<p><strong>You need to install <a href="https://nodejs.org/en/">Node.js</a> for local development.</strong> Although you can <a href="/learn/installation#try-react">try React</a> online or with a simple HTML page, realistically most JavaScript tooling you'll want to use for development requires Node.js.</p>
-<p></Note></p>
-<h2 id="using-react-for-an-entire-subroute-of-your-existing-website">Using React for an entire subroute of your existing website<a class="headerlink" href="#using-react-for-an-entire-subroute-of-your-existing-website" title="Permanent link">&para;</a></h2>
-<p>Let's say you have an existing web app at <code>example.com</code> built with another server technology (like Rails), and you want to implement all routes starting with <code>example.com/some-app/</code> fully with React.</p>
-<p>Here's how we recommend to set it up:</p>
-<ol>
-<li><strong>Build the React part of your app</strong> using one of the <a href="/learn/start-a-new-react-project">React-based frameworks</a>.</li>
-<li><strong>Specify <code>/some-app</code> as the <em>base path</em></strong> in your framework's configuration (here's how: <a href="https://nextjs.org/docs/api-reference/next.config.js/basepath">Next.js</a>, <a href="https://www.gatsbyjs.com/docs/how-to/previews-deploys-hosting/path-prefix/">Gatsby</a>).</li>
-<li><strong>Configure your server or a proxy</strong> so that all requests under <code>/some-app/</code> are handled by your React app.</li>
-</ol>
-<p>This ensures the React part of your app can <a href="/learn/start-a-new-react-project#can-i-use-react-without-a-framework">benefit from the best practices</a> baked into those frameworks.</p>
-<p>Many React-based frameworks are full-stack and let your React app take advantage of the server. However, you can use the same approach even if you can't or don't want to run JavaScript on the server. In that case, serve the HTML/CSS/JS export (<a href="https://nextjs.org/docs/advanced-features/static-html-export"><code>next export</code> output</a> for Next.js, default for Gatsby) at <code>/some-app/</code> instead.</p>
-<h2 id="using-react-for-a-part-of-your-existing-page">Using React for a part of your existing page<a class="headerlink" href="#using-react-for-a-part-of-your-existing-page" title="Permanent link">&para;</a></h2>
-<p>Let's say you have an existing page built with another technology (either a server one like Rails, or a client one like Backbone), and you want to render interactive React components somewhere on that page. That's a common way to integrate React--in fact, it's how most React usage looked at Meta for many years!</p>
-<p>You can do this in two steps:</p>
-<ol>
-<li><strong>Set up a JavaScript environment</strong> that lets you use the <a href="/learn/writing-markup-with-jsx">JSX syntax</a>, split your code into modules with the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import"><code>import</code></a> / <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export"><code>export</code></a> syntax, and use packages (for example, React) from the <a href="https://www.npmjs.com/">npm</a> package registry.</li>
-<li><strong>Render your React components</strong> where you want to see them on the page.</li>
-</ol>
-<p>The exact approach depends on your existing page setup, so let's walk through some details.</p>
-<h3 id="step-1-set-up-a-modular-javascript-environment">Step 1: Set up a modular JavaScript environment<a class="headerlink" href="#step-1-set-up-a-modular-javascript-environment" title="Permanent link">&para;</a></h3>
-<p>A modular JavaScript environment lets you write your React components in individual files, as opposed to writing all of your code in a single file. It also lets you use all the wonderful packages published by other developers on the <a href="https://www.npmjs.com/">npm</a> registry--including React itself! How you do this depends on your existing setup:</p>
-<ul>
-<li>
-<p><strong>If your app is already split into files that use <code>import</code> statements,</strong> try to use the setup you already have. Check whether writing <code>&lt;div /&gt;</code> in your JS code causes a syntax error. If it causes a syntax error, you might need to <a href="https://babeljs.io/setup">transform your JavaScript code with Babel</a>, and enable the <a href="https://babeljs.io/docs/babel-preset-react">Babel React preset</a> to use JSX.</p>
-</li>
-<li>
-<p><strong>If your app doesn't have an existing setup for compiling JavaScript modules,</strong> set it up with <a href="https://vitejs.dev/">Vite</a>. The Vite community maintains <a href="https://github.com/vitejs/awesome-vite#integrations-with-backends">many integrations with backend frameworks</a>, including Rails, Django, and Laravel. If your backend framework is not listed, <a href="https://vitejs.dev/guide/backend-integration.html">follow this guide</a> to manually integrate Vite builds with your backend.</p>
-</li>
-</ul>
-<p>To check whether your setup works, run this command in your project folder:</p>
-<p><TerminalBlock>
+<div class="admonition warning">
+<p class="admonition-title">In Progress</p>
+<p>This feature is planned, but not yet developed.</p>
+<p>See <a href="https://github.com/reactive-python/reactpy/issues/653">this issue</a> for more details.</p>
+</div>
+<!--
+<Note>
+
+**You need to install [Node.js](https://nodejs.org/en/) for local development.** Although you can [try React](/learn/installation#try-react) online or with a simple HTML page, realistically most JavaScript tooling you'll want to use for development requires Node.js.
+
+</Note>
+
+## Using React for an entire subroute of your existing website
+
+Let's say you have an existing web app at `example.com` built with another server technology (like Rails), and you want to implement all routes starting with `example.com/some-app/` fully with React.
+
+Here's how we recommend to set it up:
+
+1. **Build the React part of your app** using one of the [React-based frameworks](/learn/start-a-new-react-project).
+2. **Specify `/some-app` as the _base path_** in your framework's configuration (here's how: [Next.js](https://nextjs.org/docs/api-reference/next.config.js/basepath), [Gatsby](https://www.gatsbyjs.com/docs/how-to/previews-deploys-hosting/path-prefix/)).
+3. **Configure your server or a proxy** so that all requests under `/some-app/` are handled by your React app.
+
+This ensures the React part of your app can [benefit from the best practices](/learn/start-a-new-react-project#can-i-use-react-without-a-framework) baked into those frameworks.
+
+Many React-based frameworks are full-stack and let your React app take advantage of the server. However, you can use the same approach even if you can't or don't want to run JavaScript on the server. In that case, serve the HTML/CSS/JS export ([`next export` output](https://nextjs.org/docs/advanced-features/static-html-export) for Next.js, default for Gatsby) at `/some-app/` instead.
+
+## Using React for a part of your existing page
+
+Let's say you have an existing page built with another technology (either a server one like Rails, or a client one like Backbone), and you want to render interactive React components somewhere on that page. That's a common way to integrate React--in fact, it's how most React usage looked at Meta for many years!
+
+You can do this in two steps:
+
+1. **Set up a JavaScript environment** that lets you use the [JSX syntax](/learn/writing-markup-with-jsx), split your code into modules with the [`import`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import) / [`export`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export) syntax, and use packages (for example, React) from the [npm](https://www.npmjs.com/) package registry.
+2. **Render your React components** where you want to see them on the page.
+
+The exact approach depends on your existing page setup, so let's walk through some details.
+
+### Step 1: Set up a modular JavaScript environment
+
+A modular JavaScript environment lets you write your React components in individual files, as opposed to writing all of your code in a single file. It also lets you use all the wonderful packages published by other developers on the [npm](https://www.npmjs.com/) registry--including React itself! How you do this depends on your existing setup:
+
+-   **If your app is already split into files that use `import` statements,** try to use the setup you already have. Check whether writing `<div />` in your JS code causes a syntax error. If it causes a syntax error, you might need to [transform your JavaScript code with Babel](https://babeljs.io/setup), and enable the [Babel React preset](https://babeljs.io/docs/babel-preset-react) to use JSX.
+
+-   **If your app doesn't have an existing setup for compiling JavaScript modules,** set it up with [Vite](https://vitejs.dev/). The Vite community maintains [many integrations with backend frameworks](https://github.com/vitejs/awesome-vite#integrations-with-backends), including Rails, Django, and Laravel. If your backend framework is not listed, [follow this guide](https://vitejs.dev/guide/backend-integration.html) to manually integrate Vite builds with your backend.
+
+To check whether your setup works, run this command in your project folder:
+
+<TerminalBlock>
 npm install react react-dom
-</TerminalBlock></p>
-<p>Then add these lines of code at the top of your main JavaScript file (it might be called <code>index.js</code> or <code>main.js</code>):</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
-<span class="normal">2</span>
-<span class="normal">3</span>
-<span class="normal">4</span>
-<span class="normal">5</span>
-<span class="normal">6</span>
-<span class="normal">7</span>
-<span class="normal">8</span>
-<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="cp">&lt;!DOCTYPE html&gt;</span>
+</TerminalBlock>
+
+Then add these lines of code at the top of your main JavaScript file (it might be called `index.js` or `main.js`):
+
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="cp">&lt;!DOCTYPE html&gt;</span>
 <span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
     <span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
         <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>My app<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
     <span class="p">&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
     <span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
         <span class="cm">&lt;!-- Your existing page content (in this example, it gets replaced) --&gt;</span>
+
     <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+
 <span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
 </code></pre></div></td></tr></table></div>
+
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
@@ -2163,12 +2098,19 @@ npm install react react-dom
 <span class="kd">const</span><span class="w"> </span><span class="nx">root</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createRoot</span><span class="p">(</span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s2">&quot;app&quot;</span><span class="p">));</span>
 <span class="nx">root</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="o">&lt;</span><span class="nx">h1</span><span class="o">&gt;</span><span class="nx">Hello</span><span class="p">,</span><span class="w"> </span><span class="nx">world</span><span class="o">&lt;</span><span class="err">/h1&gt;);</span>
 </code></pre></div></td></tr></table></div>
-<p>If the entire content of your page was replaced by a "Hello, world!", everything worked! Keep reading.</p>
-<p><Note></p>
-<p>Integrating a modular JavaScript environment into an existing project for the first time can feel intimidating, but it's worth it! If you get stuck, try our <a href="/community">community resources</a> or the <a href="https://chat.vitejs.dev/">Vite Chat</a>.</p>
-<p></Note></p>
-<h3 id="step-2-render-react-components-anywhere-on-the-page">Step 2: Render React components anywhere on the page<a class="headerlink" href="#step-2-render-react-components-anywhere-on-the-page" title="Permanent link">&para;</a></h3>
-<p>In the previous step, you put this code at the top of your main file:</p>
+
+If the entire content of your page was replaced by a "Hello, world!", everything worked! Keep reading.
+
+<Note>
+
+Integrating a modular JavaScript environment into an existing project for the first time can feel intimidating, but it's worth it! If you get stuck, try our [community resources](/community) or the [Vite Chat](https://chat.vitejs.dev/).
+
+</Note>
+
+### Step 2: Render React components anywhere on the page
+
+In the previous step, you put this code at the top of your main file:
+
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
@@ -2185,16 +2127,22 @@ npm install react react-dom
 <span class="kd">const</span><span class="w"> </span><span class="nx">root</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createRoot</span><span class="p">(</span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s2">&quot;app&quot;</span><span class="p">));</span>
 <span class="nx">root</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="o">&lt;</span><span class="nx">h1</span><span class="o">&gt;</span><span class="nx">Hello</span><span class="p">,</span><span class="w"> </span><span class="nx">world</span><span class="o">&lt;</span><span class="err">/h1&gt;);</span>
 </code></pre></div></td></tr></table></div>
-<p>Of course, you don't actually want to clear the existing HTML content!</p>
-<p>Delete this code.</p>
-<p>Instead, you probably want to render your React components in specific places in your HTML. Open your HTML page (or the server templates that generate it) and add a unique <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id"><code>id</code></a> attribute to any tag, for example:</p>
+
+Of course, you don't actually want to clear the existing HTML content!
+
+Delete this code.
+
+Instead, you probably want to render your React components in specific places in your HTML. Open your HTML page (or the server templates that generate it) and add a unique [`id`](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id) attribute to any tag, for example:
+
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="cm">&lt;!-- ... somewhere in your html ... --&gt;</span>
 <span class="p">&lt;</span><span class="nt">nav</span> <span class="na">id</span><span class="o">=</span><span class="s">&quot;navigation&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">nav</span><span class="p">&gt;</span>
 <span class="cm">&lt;!-- ... more html ... --&gt;</span>
 </code></pre></div></td></tr></table></div>
-<p>This lets you find that HTML element with <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document/getElementById"><code>document.getElementById</code></a> and pass it to <a href="/reference/react-dom/client/createRoot"><code>createRoot</code></a> so that you can render your own React component inside:</p>
+
+This lets you find that HTML element with [`document.getElementById`](https://developer.mozilla.org/en-US/docs/Web/API/Document/getElementById) and pass it to [`createRoot`](/reference/react-dom/client/createRoot) so that you can render your own React component inside:
+
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -2217,6 +2165,7 @@ npm install react react-dom
     <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
 <span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
 </code></pre></div></td></tr></table></div>
+
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -2237,10 +2186,14 @@ npm install react react-dom
 <span class="kd">const</span><span class="w"> </span><span class="nx">root</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createRoot</span><span class="p">(</span><span class="nx">domNode</span><span class="p">);</span>
 <span class="nx">root</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="o">&lt;</span><span class="nx">NavigationBar</span><span class="w"> </span><span class="o">/&gt;</span><span class="p">);</span>
 </code></pre></div></td></tr></table></div>
-<p>Notice how the original HTML content from <code>index.html</code> is preserved, but your own <code>NavigationBar</code> React component now appears inside the <code>&lt;nav id="navigation"&gt;</code> from your HTML. Read the <a href="/reference/react-dom/client/createRoot#rendering-a-page-partially-built-with-react"><code>createRoot</code> usage documentation</a> to learn more about rendering React components inside an existing HTML page.</p>
-<p>When you adopt React in an existing project, it's common to start with small interactive components (like buttons), and then gradually keep "moving upwards" until eventually your entire page is built with React. If you ever reach that point, we recommend migrating to <a href="/learn/start-a-new-react-project">a React framework</a> right after to get the most out of React.</p>
-<h2 id="using-react-native-in-an-existing-native-mobile-app">Using React Native in an existing native mobile app<a class="headerlink" href="#using-react-native-in-an-existing-native-mobile-app" title="Permanent link">&para;</a></h2>
-<p><a href="https://reactnative.dev/">React Native</a> can also be integrated into existing native apps incrementally. If you have an existing native app for Android (Java or Kotlin) or iOS (Objective-C or Swift), <a href="https://reactnative.dev/docs/integration-with-existing-apps">follow this guide</a> to add a React Native screen to it.</p>
+
+Notice how the original HTML content from `index.html` is preserved, but your own `NavigationBar` React component now appears inside the `<nav id="navigation">` from your HTML. Read the [`createRoot` usage documentation](/reference/react-dom/client/createRoot#rendering-a-page-partially-built-with-react) to learn more about rendering React components inside an existing HTML page.
+
+When you adopt React in an existing project, it's common to start with small interactive components (like buttons), and then gradually keep "moving upwards" until eventually your entire page is built with React. If you ever reach that point, we recommend migrating to [a React framework](/learn/start-a-new-react-project) right after to get the most out of React.
+
+## Using React Native in an existing native mobile app
+
+[React Native](https://reactnative.dev/) can also be integrated into existing native apps incrementally. If you have an existing native app for Android (Java or Kotlin) or iOS (Objective-C or Swift), [follow this guide](https://reactnative.dev/docs/integration-with-existing-apps) to add a React Native screen to it. -->
 
 
 
