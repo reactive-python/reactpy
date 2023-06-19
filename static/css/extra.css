@@ -24,51 +24,26 @@
 
 /* General admonition styling */
 /* TODO: Write this in a way that supports the light theme */
-[data-md-color-scheme="slate"]
-	.md-typeset
-	details:not(.warning, .failure, .danger, .bug)
-	> .admonition-title,
-[data-md-color-scheme="slate"]
-	.md-typeset
-	details:not(.warning, .failure, .danger, .bug)
-	> summary {
-	background: var(--md-primary-fg-color) !important;
-}
-
-[data-md-color-scheme="slate"] .md-typeset .admonition,
-[data-md-color-scheme="slate"] .md-typeset details {
+[data-md-color-scheme="slate"] .md-typeset .admonition {
 	border-color: transparent !important;
-}
-
-[data-md-color-scheme="slate"] .md-typeset details > .admonition-title:after,
-[data-md-color-scheme="slate"] .md-typeset details > summary:after {
-	color: var(--md-admonition-fg-color) !important;
-}
-
-.md-typeset .admonition.summary,
-.md-typeset details.summary {
-	font-size: 0.7rem;
 }
 
 .md-typeset :is(.admonition, details) {
 	margin: 0.55em 0;
 }
 
+.md-typeset .admonition {
+	font-size: 0.7rem;
+}
+
 /* Colors for "summary" admonition */
-[data-md-color-scheme="slate"] .md-typeset .admonition.summary,
-[data-md-color-scheme="slate"] .md-typeset details.summary {
+[data-md-color-scheme="slate"] .md-typeset .admonition.summary {
 	background: #353a45;
 	padding: 0.8rem 1.4rem;
 	border-radius: 0.8rem;
 }
 
-[data-md-color-scheme="slate"] .md-typeset details.summary > .admonition-title,
-[data-md-color-scheme="slate"] .md-typeset details.summary > summary {
-	background: #353a45 !important;
-}
-
-[data-md-color-scheme="slate"] .md-typeset .summary .admonition-title,
-[data-md-color-scheme="slate"] .md-typeset .summary summary {
+[data-md-color-scheme="slate"] .md-typeset .summary .admonition-title {
 	font-size: 1rem;
 	background: transparent;
 	padding-left: 0.6rem;
@@ -79,21 +54,18 @@
 	display: none;
 }
 
-[data-md-color-scheme="slate"] .md-typeset .admonition.summary,
-[data-md-color-scheme="slate"] .md-typeset .summary details {
+[data-md-color-scheme="slate"] .md-typeset .admonition.summary {
 	border-color: #ffffff17 !important;
 }
 
 /* Colors for "note" admonition */
-[data-md-color-scheme="slate"] .md-typeset .admonition.note,
-[data-md-color-scheme="slate"] .md-typeset details.note {
+[data-md-color-scheme="slate"] .md-typeset .admonition.note {
 	background: rgb(43 110 98/ 0.2);
 	padding: 0.8rem 1.4rem;
 	border-radius: 0.8rem;
 }
 
-[data-md-color-scheme="slate"] .md-typeset .note .admonition-title,
-[data-md-color-scheme="slate"] .md-typeset .note summary {
+[data-md-color-scheme="slate"] .md-typeset .note .admonition-title {
 	font-size: 1rem;
 	background: transparent;
 	padding-bottom: 0;
@@ -105,9 +77,48 @@
 	background-color: rgb(68 172 153);
 }
 
-.md-typeset .note>.admonition-title:before,.md-typeset .note>summary:before {
-    -webkit-mask-image: var(--md-admonition-icon--abstract);
-    mask-image: var(--md-admonition-icon--abstract)
+.md-typeset .note > .admonition-title:before,
+.md-typeset .note > summary:before {
+	-webkit-mask-image: var(--md-admonition-icon--abstract);
+	mask-image: var(--md-admonition-icon--abstract);
+}
+
+/* Colors for "warning" admonition */
+[data-md-color-scheme="slate"] .md-typeset .admonition.warning {
+	background: rgb(182 87 0 / 0.2);
+	padding: 0.8rem 1.4rem;
+	border-radius: 0.8rem;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .warning .admonition-title {
+	font-size: 1rem;
+	background: transparent;
+	padding-bottom: 0;
+	color: rgb(219 125 39);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .warning .admonition-title:before {
+	font-size: 1.1rem;
+	background-color: rgb(219 125 39);
+}
+
+/* Colors for "info" admonition */
+[data-md-color-scheme="slate"] .md-typeset .admonition.info {
+	background: rgb(43 52 145 / 0.2);
+	padding: 0.8rem 1.4rem;
+	border-radius: 0.8rem;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .info .admonition-title {
+	font-size: 1rem;
+	background: transparent;
+	padding-bottom: 0;
+	color: rgb(136 145 236);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .info .admonition-title:before {
+	font-size: 1.1rem;
+	background-color: rgb(136 145 236);
 }
 
 /* Move the sidebars to the edges of the page */

@@ -519,19 +519,6 @@
     Step 3: Find the minimal but complete representation of UI state
   </a>
   
-    <nav class="md-nav" aria-label="Step 3: Find the minimal but complete representation of UI state">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#props-vs-state" class="md-nav__link">
-    Props vs State
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
         <li class="md-nav__item">
@@ -2067,19 +2054,6 @@
     Step 3: Find the minimal but complete representation of UI state
   </a>
   
-    <nav class="md-nav" aria-label="Step 3: Find the minimal but complete representation of UI state">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#props-vs-state" class="md-nav__link">
-    Props vs State
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
         <li class="md-nav__item">
@@ -2133,35 +2107,13 @@ React can change how you think about the designs you look at and the apps you bu
 <h2 id="start-with-the-mockup">Start with the mockup<a class="headerlink" href="#start-with-the-mockup" title="Permanent link">&para;</a></h2>
 <p>Imagine that you already have a JSON API and a mockup from a designer.</p>
 <p>The JSON API returns some data that looks like this:</p>
-<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="p">[</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Fruits&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;price&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$1&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;stocked&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Apple&quot;</span><span class="w"> </span><span class="p">},</span>
+<div class="highlight"><pre><span></span><code><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Fruits&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;price&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$1&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;stocked&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Apple&quot;</span>
+<span class="w">    </span><span class="p">},</span>
 <span class="w">    </span><span class="p">{</span>
 <span class="w">        </span><span class="nt">&quot;category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Fruits&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="nt">&quot;price&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$1&quot;</span><span class="p">,</span>
@@ -2186,9 +2138,14 @@ React can change how you think about the designs you look at and the apps you bu
 <span class="w">        </span><span class="nt">&quot;stocked&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
 <span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Pumpkin&quot;</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Vegetables&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;price&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$1&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;stocked&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Peas&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Vegetables&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;price&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$1&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;stocked&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Peas&quot;</span>
+<span class="w">    </span><span class="p">}</span>
 <span class="p">]</span>
-</code></pre></div></td></tr></table></div>
+</code></pre></div>
 <p>The mockup looks like this:</p>
 <p><img src="../../static/images/s_thinking-in-react_ui.png" width="300" style="margin: 0 auto" /></p>
 <p>To implement a UI in React, you will usually follow the same five steps.</p>
@@ -2227,8 +2184,11 @@ React can change how you think about the designs you look at and the apps you bu
 </ul>
 <h2 id="step-2-build-a-static-version-in-react">Step 2: Build a static version in React<a class="headerlink" href="#step-2-build-a-static-version-in-react" title="Permanent link">&para;</a></h2>
 <p>Now that you have your component hierarchy, it's time to implement your app. The most straightforward approach is to build a version that renders the UI from your data model without adding any interactivity... yet! It's often easier to build the static version first and add interactivity later. Building a static version requires a lot of typing and no thinking, but adding interactivity requires a lot of thinking and not a lot of typing.</p>
-<p>To build a static version of your app that renders your data model, you'll want to build <a href="../your-first-component/">components</a> that reuse other components and pass data using <a href="/learn/passing-props-to-a-component">props.</a> Props are a way of passing data from parent to child. (If you're familiar with the concept of <a href="/learn/state-a-components-memory">state</a>, don't use state at all to build this static version. State is reserved only for interactivity, that is, data that changes over time. Since this is a static version of the app, you don't need it.)</p>
+<p>To build a static version of your app that renders your data model, you'll want to build <a href="../your-first-component/">components</a> that reuse other components and pass data using <a href="../passing-props-to-a-component/">props.</a> Props are a way of passing data from parent to child. (If you're familiar with the concept of <a href="../state-a-components-memory/">state</a>, don't use state at all to build this static version. State is reserved only for interactivity, that is, data that changes over time. Since this is a static version of the app, you don't need it.)</p>
 <p>You can either build "top down" by starting with building the components higher up in the hierarchy (like <code>filterable_product_table</code>) or "bottom up" by working from components lower down (like <code>product_row</code>). In simpler examples, it’s usually easier to go top-down, and on larger projects, it’s easier to go bottom-up.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">app.py</label><label for="__tabbed_1_2">styles.css</label><label for="__tabbed_1_3"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5.14v14l11-7-11-7Z"/></svg></span> Run</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -2285,120 +2245,66 @@ React can change how you think about the designs you look at and the apps you bu
 <span class="normal">54</span>
 <span class="normal">55</span>
 <span class="normal">56</span>
-<span class="normal">57</span>
-<span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span>
-<span class="normal">68</span>
-<span class="normal">69</span>
-<span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span>
-<span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code>function product_category_row({ category }) {
-    return (
-        &lt;tr&gt;
-            &lt;th colSpan=&quot;2&quot;&gt;{category}&lt;/th&gt;
-        &lt;/tr&gt;
-    );
-}
+<span class="normal">57</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">product_category_row</span><span class="p">(</span><span class="n">category</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">tr</span><span class="p">(</span><span class="n">html</span><span class="o">.</span><span class="n">th</span><span class="p">({</span><span class="s2">&quot;colSpan&quot;</span><span class="p">:</span> <span class="s2">&quot;2&quot;</span><span class="p">},</span> <span class="n">category</span><span class="p">))</span>
 
-function product_row({ product }) {
-    const name = product.stocked ? (
-        product.name
-    ) : (
-        &lt;span style={{ color: &quot;red&quot; }}&gt;{product.name}&lt;/span&gt;
-    );
 
-    return (
-        &lt;tr&gt;
-            &lt;td&gt;{name}&lt;/td&gt;
-            &lt;td&gt;{product.price}&lt;/td&gt;
-        &lt;/tr&gt;
-    );
-}
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">product_row</span><span class="p">(</span><span class="n">product</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;stocked&quot;</span><span class="p">]:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">span</span><span class="p">({</span><span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;red&quot;</span><span class="p">}},</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">tr</span><span class="p">(</span><span class="n">html</span><span class="o">.</span><span class="n">td</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> <span class="n">html</span><span class="o">.</span><span class="n">td</span><span class="p">(</span><span class="n">product</span><span class="p">[</span><span class="s2">&quot;price&quot;</span><span class="p">]))</span>
 
-function product_table({ products }) {
-    const rows = [];
-    let lastCategory = null;
 
-    products.forEach((product) =&gt; {
-        if (product.category !== lastCategory) {
-            rows.push(
-                &lt;product_category_row
-                    category={product.category}
-                    key={product.category}
-                /&gt;
-            );
-        }
-        rows.push(&lt;product_row product={product} key={product.name} /&gt;);
-        lastCategory = product.category;
-    });
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">product_table</span><span class="p">(</span><span class="n">products</span><span class="p">):</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">last_category</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">product</span> <span class="ow">in</span> <span class="n">products</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">last_category</span><span class="p">:</span>
+            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">product_category_row</span><span class="p">(</span><span class="n">product</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="n">product</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">])</span>
+            <span class="p">)</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">product_row</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">product</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]))</span>
+        <span class="n">last_category</span> <span class="o">=</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">]</span>
 
-    return (
-        &lt;table&gt;
-            &lt;thead&gt;
-                &lt;tr&gt;
-                    &lt;th&gt;Name&lt;/th&gt;
-                    &lt;th&gt;Price&lt;/th&gt;
-                &lt;/tr&gt;
-            &lt;/thead&gt;
-            &lt;tbody&gt;{rows}&lt;/tbody&gt;
-        &lt;/table&gt;
-    );
-}
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">table</span><span class="p">(</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">thead</span><span class="p">(</span><span class="n">html</span><span class="o">.</span><span class="n">tr</span><span class="p">(</span><span class="n">html</span><span class="o">.</span><span class="n">th</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">),</span> <span class="n">html</span><span class="o">.</span><span class="n">th</span><span class="p">(</span><span class="s2">&quot;Price&quot;</span><span class="p">))),</span> <span class="n">html</span><span class="o">.</span><span class="n">tbody</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+    <span class="p">)</span>
 
-function search_bar() {
-    return (
-        &lt;form&gt;
-            &lt;input type=&quot;text&quot; placeholder=&quot;Search...&quot; /&gt;
-            &lt;label&gt;
-                &lt;input type=&quot;checkbox&quot; /&gt; Only show products in stock
-            &lt;/label&gt;
-        &lt;/form&gt;
-    );
-}
 
-function filterable_product_table({ products }) {
-    return (
-        &lt;div&gt;
-            &lt;search_bar /&gt;
-            &lt;product_table products={products} /&gt;
-        &lt;/div&gt;
-    );
-}
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">search_bar</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">form</span><span class="p">(</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">input</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;placeholder&quot;</span><span class="p">:</span> <span class="s2">&quot;Search...&quot;</span><span class="p">}),</span>
+        <span class="n">html</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="n">html</span><span class="o">.</span><span class="n">input</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;checkbox&quot;</span><span class="p">}),</span> <span class="s2">&quot;Only show products in stock&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
 
-const PRODUCTS = [
-    { category: &quot;Fruits&quot;, price: &quot;$1&quot;, stocked: true, name: &quot;Apple&quot; },
-    { category: &quot;Fruits&quot;, price: &quot;$1&quot;, stocked: true, name: &quot;Dragonfruit&quot; },
-    { category: &quot;Fruits&quot;, price: &quot;$2&quot;, stocked: false, name: &quot;Passionfruit&quot; },
-    { category: &quot;Vegetables&quot;, price: &quot;$2&quot;, stocked: true, name: &quot;Spinach&quot; },
-    { category: &quot;Vegetables&quot;, price: &quot;$4&quot;, stocked: false, name: &quot;Pumpkin&quot; },
-    { category: &quot;Vegetables&quot;, price: &quot;$1&quot;, stocked: true, name: &quot;Peas&quot; },
-];
 
-export default function App() {
-    return &lt;filterable_product_table products={PRODUCTS} /&gt;;
-}
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">filterable_product_table</span><span class="p">(</span><span class="n">products</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">search_bar</span><span class="p">(),</span> <span class="n">product_table</span><span class="p">(</span><span class="n">products</span><span class="p">))</span>
+
+
+<span class="n">PRODUCTS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Fruits&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$1&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Apple&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Fruits&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$1&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Dragonfruit&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Fruits&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$2&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Passionfruit&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Vegetables&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$2&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Spinach&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Vegetables&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$4&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Pumpkin&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;category&quot;</span><span class="p">:</span> <span class="s2">&quot;Vegetables&quot;</span><span class="p">,</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="s2">&quot;$1&quot;</span><span class="p">,</span> <span class="s2">&quot;stocked&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Peas&quot;</span><span class="p">},</span>
+<span class="p">]</span>
+
+
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">app</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">filterable_product_table</span><span class="p">(</span><span class="n">PRODUCTS</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
 <span class="normal"> 3</span>
@@ -2429,11 +2335,19 @@ export default function App() {
 <span class="w">    </span><span class="k">padding-right</span><span class="p">:</span><span class="w"> </span><span class="mi">40</span><span class="kt">px</span><span class="p">;</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
-<p>(If this code looks intimidating, go through the <a href="/learn/">Quick Start</a> first!)</p>
-<p>After building your components, you'll have a library of reusable components that render your data model. Because this is a static app, the components will only return JSX. The component at the top of the hierarchy (<code>filterable_product_table</code>) will take your data model as a prop. This is called <em>one-way data flow</em> because the data flows down from the top-level component to the ones at the bottom of the tree.</p>
-<p><Pitfall></p>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># TODO</span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<p>(If this code looks intimidating, go through the <a href="../get-started/">Quick Start</a> first!)</p>
+<p>After building your components, you'll have a library of reusable components that render your data model. Because this is a static app, the components will only return non-interactive HTML. The component at the top of the hierarchy (<code>filterable_product_table</code>) will take your data model as a prop. This is called <em>one-way data flow</em> because the data flows down from the top-level component to the ones at the bottom of the tree.</p>
+<div class="admonition warning">
+<p class="admonition-title">Pitfall</p>
 <p>At this point, you should not be using any state values. That’s for the next step!</p>
-<p></Pitfall></p>
+</div>
 <h2 id="step-3-find-the-minimal-but-complete-representation-of-ui-state">Step 3: Find the minimal but complete representation of UI state<a class="headerlink" href="#step-3-find-the-minimal-but-complete-representation-of-ui-state" title="Permanent link">&para;</a></h2>
 <p>To make the UI interactive, you need to let users change your underlying data model. You will use <em>state</em> for this.</p>
 <p>Think of state as the minimal set of changing data that your app needs to remember. The most important principle for structuring state is to keep it <a href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself">DRY (Don't Repeat Yourself).</a> Figure out the absolute minimal representation of the state your application needs and compute everything else on-demand. For example, if you're building a shopping list, you can store the items as an array in state. If you want to also display the number of items in the list, don't store the number of items as another state value--instead, read the length of your array.</p>
@@ -2459,15 +2373,16 @@ export default function App() {
 <li>The filtered list of products <strong>isn't state because it can be computed</strong> by taking the original list of products and filtering it according to the search text and value of the checkbox.</li>
 </ol>
 <p>This means only the search text and the value of the checkbox are state! Nicely done!</p>
-<p><DeepDive></p>
-<h4 id="props-vs-state">Props vs State<a class="headerlink" href="#props-vs-state" title="Permanent link">&para;</a></h4>
+<div class="admonition info">
+<p class="admonition-title">Deep Dive</p>
+<p><font size="4"><strong>Props vs State</strong></font></p>
 <p>There are two types of "model" data in React: props and state. The two are very different:</p>
 <ul>
-<li><a href="/learn/passing-props-to-a-component"><strong>Props</strong> are like arguments you pass</a> to a function. They let a parent component pass data to a child component and customize its appearance. For example, a <code>Form</code> can pass a <code>color</code> prop to a <code>Button</code>.</li>
-<li><a href="/learn/state-a-components-memory"><strong>State</strong> is like a component’s memory.</a> It lets a component keep track of some information and change it in response to interactions. For example, a <code>Button</code> might keep track of <code>isHovered</code> state.</li>
+<li><a href="../passing-props-to-a-component/"><strong>Props</strong> are like arguments you pass</a> to a function. They let a parent component pass data to a child component and customize its appearance. For example, a <code>html.form</code> can pass a <code>color</code> prop to a <code>html.button</code>.</li>
+<li><a href="../state-a-components-memory/"><strong>State</strong> is like a component’s memory.</a> It lets a component keep track of some information and change it in response to interactions. For example, a <code>html.button</code> might keep track of <code>is_hovered</code> state.</li>
 </ul>
 <p>Props and state are different, but they work together. A parent component will often keep some information in state (so that it can change it), and <em>pass it down</em> to child components as their props. It's okay if the difference still feels fuzzy on the first read. It takes a bit of practice for it to really stick!</p>
-<p></DeepDive></p>
+</div>
 <h2 id="step-4-identify-where-your-state-should-live">Step 4: Identify where your state should live<a class="headerlink" href="#step-4-identify-where-your-state-should-live" title="Permanent link">&para;</a></h2>
 <p>After identifying your app’s minimal state data, you need to identify which component is responsible for changing this state, or <em>owns</em> the state. Remember: React uses one-way data flow, passing data down the component hierarchy from parent to child component. It may not be immediately clear which component should own what state. This can be challenging if you’re new to this concept, but you can figure it out by following these steps!</p>
 <p>For each piece of state in your application:</p>
