@@ -15,4 +15,6 @@ In order to set up an environment to develop these docs...
 7. Follow the on-screen prompts to view the documentation in your browser
 8. You can now edit the markdown files located within `docs/src/` and see the changes in real time
 
+All unfinished tabs are marked via a construction symbol ( 🚧 ).
+
 Feel free to PR this branch with any changes you make to the documentation. If you have any questions, feel free to ask in the [Discord server](https://discord.gg/uNb5P4hA9X).
