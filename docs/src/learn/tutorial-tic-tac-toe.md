@@ -33,7 +33,7 @@ You can see what it will look like when you're finished here:
     {% include "../../examples/python/tutorial-tic-tac-toe/tic_tac_toe.py" end="# end" %}
     ```
 
-=== "stylesheet.css"
+=== "styles.css"
 
     ```css
     {% include "../../examples/css/tutorial-tic-tac-toe/tic_tac_toe.css" %}
@@ -62,7 +62,7 @@ In the code example below, click **Run** to open the editor in a new tab using t
 	{% include "../../examples/python/tutorial-tic-tac-toe/setup_for_the_tutorial.py" start="# start" %}
 	```
 
-=== "stylesheet.css"
+=== "styles.css"
 
 	```css
 	{% include "../../examples/css/tutorial-tic-tac-toe/setup_for_the_tutorial.css" %}
@@ -93,25 +93,25 @@ Now that you're set up, let's get an overview of React!
 
 ### Inspecting the starter code
 
-In CodeSandbox you'll see three main sections:
+In Jupyter you'll see three main sections:
 
-![CodeSandbox with starter code]()
+<!-- TODO: Add screenshot -->
+![TODO: screenshot of Jupyter]()
 
-1. The _Files_ section with a list of files like `App.js`, `index.js`, `styles.css` and a folder called `public`
-1. The _code editor_ where you'll see the source code of your selected file
-1. The _browser_ section where you'll see how the code you've written will be displayed
+1. The _Files_ section with a list of files like `tic-tac-toe.ipynb`
+2. The _interactive code notebook_ where you'll see the source code for each step
+3. The _run button_ located on top of the notebook in the command strip
 
-The `App.js` file should be selected in the _Files_ section. The contents of that file in the _code editor_ should be:
+The `tic-tac-toe.ipynb` file should be selected in the _Files_ section. Click on the first code box, where the contents of that _code editor_ should be:
 
-```jsx
-export default function Square() {
-	return <button className="square">X</button>;
-}
+```python linenums="0"
+{% include "../../examples/python/tutorial-tic-tac-toe/setup_for_the_tutorial.py" start="# start" %}
 ```
 
-The _browser_ section should be displaying a square with a X in it like this:
+After clicking the _run button_ the notebook should be displaying a square with a X in it like this:
 
-![x-filled square]()
+<!-- TODO: Add screenshot -->
+![TODO: x-filled square]()
 
 Now let's have a look at the files in the starter code.
 

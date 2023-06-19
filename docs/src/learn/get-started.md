@@ -112,7 +112,7 @@ You can fetch data from a variety of sources and directly embed it into your com
     {% include "../../examples/python/quick_start/displaying_data.py" end="# end" %}
     ```
 
-=== "stylesheet.css"
+=== "styles.css"
 
     ```css
     {% include "../../examples/css/quick_start/displaying_data.css" %}
@@ -220,7 +220,7 @@ If you render the same component multiple times, each will get its own state. Cl
     {% include "../../examples/python/quick_start/updating_the_screen.py"  end="# end" %}
     ```
 
-=== "stylesheet.css"
+=== "styles.css"
 
     ```css
     {% include "../../examples/css/quick_start/updating_the_screen.css" %}
@@ -284,7 +284,7 @@ When you click the button, the `on_click` handler fires. Each button's `on_click
     {% include "../../examples/python/quick_start/sharing_data_between_components.py" end="# end" %}
     ```
 
-=== "stylesheet.css"
+=== "styles.css"
 
     ```css
     {% include "../../examples/css/quick_start/sharing_data_between_components.css" %}
