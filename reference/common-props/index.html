@@ -15,10 +15,10 @@
         <link rel="canonical" href="https://reactive-python.github.io/reactpy/reference/common-props/">
       
       
-        <link rel="prev" href="../common-types/">
+        <link rel="prev" href="../use-id/">
       
       
-        <link rel="next" href="../common-events/">
+        <link rel="next" href="../usage/">
       
       <link rel="icon" href="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.16">
@@ -77,6 +77,11 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
+      
+        
+        <a href="#props" class="md-skip">
+          Skip to content
+        </a>
       
     </div>
     <div data-md-component="announce">
@@ -1522,6 +1527,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use-id/" class="md-nav__link">
+        Use ID 🚫
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -1562,20 +1581,6 @@
               
   
   
-  
-    <li class="md-nav__item">
-      <a href="../common-types/" class="md-nav__link">
-        Common Types 🚧
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
     
   
   
@@ -1585,24 +1590,46 @@
       
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Common Props 🚧
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         Common Props 🚧
       </a>
       
-    </li>
-  
+        
 
-            
-          
-            
-              
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
   
-    <li class="md-nav__item">
-      <a href="../common-events/" class="md-nav__link">
-        Common Events 🚧
-      </a>
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#props" class="md-nav__link">
+    Props
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#caveats" class="md-nav__link">
+    Caveats
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1932,6 +1959,28 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#props" class="md-nav__link">
+    Props
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#caveats" class="md-nav__link">
+    Caveats
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1951,7 +2000,228 @@
 
   <h1>Common Props 🚧</h1>
 
-
+<h4 id="props">Props<a class="headerlink" href="#props" title="Permanent link">&para;</a></h4>
+<p>These special React props are supported for all built-in components:</p>
+<ul>
+<li>
+<p><code>children</code>: A React node (an element, a string, a number, <a href="/reference/react-dom/createPortal">a portal,</a> an empty node like <code>null</code>, <code>undefined</code> and booleans, or an array of other React nodes). Specifies the content inside the component. When you use JSX, you will usually specify the <code>children</code> prop implicitly by nesting tags like <code>&lt;div&gt;&lt;span /&gt;&lt;/div&gt;</code>.</p>
+</li>
+<li>
+<p><code>dangerouslySetInnerHTML</code>: An object of the form <code>{ __html: '&lt;p&gt;some html&lt;/p&gt;' }</code> with a raw HTML string inside. Overrides the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML"><code>innerHTML</code></a> property of the DOM node and displays the passed HTML inside. This should be used with extreme caution! If the HTML inside isn't trusted (for example, if it's based on user data), you risk introducing an <a href="https://en.wikipedia.org/wiki/Cross-site_scripting">XSS</a> vulnerability. <a href="#dangerously-setting-the-inner-html">Read more about using <code>dangerouslySetInnerHTML</code>.</a></p>
+</li>
+<li>
+<p><code>ref</code>: A ref object from <a href="/reference/react/useRef"><code>useRef</code></a> or <a href="/reference/react/createRef"><code>createRef</code></a>, or a <a href="#ref-callback"><code>ref</code> callback function,</a> or a string for <a href="https://reactjs.org/docs/refs-and-the-dom.html#legacy-api-string-refs">legacy refs.</a> Your ref will be filled with the DOM element for this node. <a href="#manipulating-a-dom-node-with-a-ref">Read more about manipulating the DOM with refs.</a></p>
+</li>
+<li>
+<p><code>suppressContentEditableWarning</code>: A boolean. If <code>true</code>, suppresses the warning that React shows for elements that both have <code>children</code> and <code>contentEditable={true}</code> (which normally do not work together). Use this if you're building a text input library that manages the <code>contentEditable</code> content manually.</p>
+</li>
+<li>
+<p><code>suppressHydrationWarning</code>: A boolean. If you use <a href="/reference/react-dom/server">server rendering,</a> normally there is a warning when the server and the client render different content. In some rare cases (like timestamps), it is very hard or impossible to guarantee an exact match. If you set <code>suppressHydrationWarning</code> to <code>true</code>, React will not warn you about mismatches in the attributes and the content of that element. It only works one level deep, and is intended to be used as an escape hatch. Don't overuse it. <a href="/reference/react-dom/client/hydrateRoot#suppressing-unavoidable-hydration-mismatch-errors">Read about suppressing hydration errors.</a></p>
+</li>
+<li>
+<p><code>style</code>: An object with CSS styles, for example <code>{ fontWeight: 'bold', margin: 20 }</code>. Similarly to the DOM <a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style"><code>style</code></a> property, the CSS property names need to be written as <code>camelCase</code>, for example <code>fontWeight</code> instead of <code>font-weight</code>. You can pass strings or numbers as values. If you pass a number, like <code>width: 100</code>, React will automatically append <code>px</code> ("pixels") to the value unless it's a <a href="https://github.com/facebook/react/blob/81d4ee9ca5c405dce62f64e61506b8e155f38d8d/packages/react-dom-bindings/src/shared/CSSProperty.js#L8-L57">unitless property.</a> We recommend using <code>style</code> only for dynamic styles where you don't know the style values ahead of time. In other cases, applying plain CSS classes with <code>className</code> is more efficient. <a href="#applying-css-styles">Read more about <code>className</code> and <code>style</code>.</a></p>
+</li>
+</ul>
+<p>These standard DOM props are also supported for all built-in components:</p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/accesskey"><code>accessKey</code></a>: A string. Specifies a keyboard shortcut for the element. <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/accesskey#accessibility_concerns">Not generally recommended.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes"><code>aria-*</code></a>: ARIA attributes let you specify the accessibility tree information for this element. See <a href="https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes">ARIA attributes</a> for a complete reference. In React, all ARIA attribute names are exactly the same as in HTML.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autocapitalize"><code>autoCapitalize</code></a>: A string. Specifies whether and how the user input should be capitalized.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/className"><code>className</code></a>: A string. Specifies the element's CSS class name. <a href="#applying-css-styles">Read more about applying CSS styles.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/contenteditable"><code>contentEditable</code></a>: A boolean. If <code>true</code>, the browser lets the user edit the rendered element directly. This is used to implement rich text input libraries like <a href="https://lexical.dev/">Lexical.</a> React warns if you try to pass React children to an element with <code>contentEditable={true}</code> because React will not be able to update its content after user edits.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/data-*"><code>data-*</code></a>: Data attributes let you attach some string data to the element, for example <code>data-fruit="banana"</code>. In React, they are not commonly used because you would usually read data from props or state instead.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/dir"><code>dir</code></a>: Either <code>'ltr'</code> or <code>'rtl'</code>. Specifies the text direction of the element.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/draggable"><code>draggable</code></a>: A boolean. Specifies whether the element is draggable. Part of <a href="https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API">HTML Drag and Drop API.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/enterKeyHint"><code>enterKeyHint</code></a>: A string. Specifies which action to present for the enter key on virtual keyboards.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLLabelElement/htmlFor"><code>htmlFor</code></a>: A string. For <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label"><code>&lt;label&gt;</code></a> and <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/output"><code>&lt;output&gt;</code></a>, lets you <a href="/reference/react-dom/components/input#providing-a-label-for-an-input">associate the label with some control.</a> Same as <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/for"><code>for</code> HTML attribute.</a> React uses the standard DOM property names (<code>htmlFor</code>) instead of HTML attribute names.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/hidden"><code>hidden</code></a>: A boolean or a string. Specifies whether the element should be hidden.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id"><code>id</code></a>: A string. Specifies a unique identifier for this element, which can be used to find it later or connect it with other elements. Generate it with <a href="/reference/react/useId"><code>useId</code></a> to avoid clashes between multiple instances of the same component.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/is"><code>is</code></a>: A string. If specified, the component will behave like a <a href="/reference/react-dom/components#custom-html-elements">custom element.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/inputmode"><code>inputMode</code></a>: A string. Specifies what kind of keyboard to display (for example, text, number or telephone).</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/itemprop"><code>itemProp</code></a>: A string. Specifies which property the element represents for structured data crawlers.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/lang"><code>lang</code></a>: A string. Specifies the language of the element.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/animationend_event"><code>onAnimationEnd</code></a>: An <a href="#animationevent-handler"><code>AnimationEvent</code> handler</a> function. Fires when a CSS animation completes.</li>
+<li><code>onAnimationEndCapture</code>: A version of <code>onAnimationEnd</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/animationiteration_event"><code>onAnimationIteration</code></a>: An <a href="#animationevent-handler"><code>AnimationEvent</code> handler</a> function. Fires when an iteration of a CSS animation ends, and another one begins.</li>
+<li><code>onAnimationIterationCapture</code>: A version of <code>onAnimationIteration</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/animationstart_event"><code>onAnimationStart</code></a>: An <a href="#animationevent-handler"><code>AnimationEvent</code> handler</a> function. Fires when a CSS animation starts.</li>
+<li><code>onAnimationStartCapture</code>: <code>onAnimationStart</code>, but fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/auxclick_event"><code>onAuxClick</code></a>: A <a href="#mouseevent-handler"><code>MouseEvent</code> handler</a> function. Fires when a non-primary pointer button was clicked.</li>
+<li><code>onAuxClickCapture</code>: A version of <code>onAuxClick</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><code>onBeforeInput</code>: An <a href="#inputevent-handler"><code>InputEvent</code> handler</a> function. Fires before the value of an editable element is modified. React does <em>not</em> yet use the native <a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/beforeinput_event"><code>beforeinput</code></a> event, and instead attempts to polyfill it using other events.</li>
+<li><code>onBeforeInputCapture</code>: A version of <code>onBeforeInput</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><code>onBlur</code>: A <a href="#focusevent-handler"><code>FocusEvent</code> handler</a> function. Fires when an element lost focus. Unlike the built-in browser <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event"><code>blur</code></a> event, in React the <code>onBlur</code> event bubbles.</li>
+<li><code>onBlurCapture</code>: A version of <code>onBlur</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/click_event"><code>onClick</code></a>: A <a href="#mouseevent-handler"><code>MouseEvent</code> handler</a> function. Fires when the primary button was clicked on the pointing device.</li>
+<li><code>onClickCapture</code>: A version of <code>onClick</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionstart_event"><code>onCompositionStart</code></a>: A <a href="#compositionevent-handler"><code>CompositionEvent</code> handler</a> function. Fires when an <a href="https://developer.mozilla.org/en-US/docs/Glossary/Input_method_editor">input method editor</a> starts a new composition session.</li>
+<li><code>onCompositionStartCapture</code>: A version of <code>onCompositionStart</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event"><code>onCompositionEnd</code></a>: A <a href="#compositionevent-handler"><code>CompositionEvent</code> handler</a> function. Fires when an <a href="https://developer.mozilla.org/en-US/docs/Glossary/Input_method_editor">input method editor</a> completes or cancels a composition session.</li>
+<li><code>onCompositionEndCapture</code>: A version of <code>onCompositionEnd</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionupdate_event"><code>onCompositionUpdate</code></a>: A <a href="#compositionevent-handler"><code>CompositionEvent</code> handler</a> function. Fires when an <a href="https://developer.mozilla.org/en-US/docs/Glossary/Input_method_editor">input method editor</a> receives a new character.</li>
+<li><code>onCompositionUpdateCapture</code>: A version of <code>onCompositionUpdate</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/contextmenu_event"><code>onContextMenu</code></a>: A <a href="#mouseevent-handler"><code>MouseEvent</code> handler</a> function. Fires when the user tries to open a context menu.</li>
+<li><code>onContextMenuCapture</code>: A version of <code>onContextMenu</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/copy_event"><code>onCopy</code></a>: A <a href="#clipboardevent-handler"><code>ClipboardEvent</code> handler</a> function. Fires when the user tries to copy something into the clipboard.</li>
+<li><code>onCopyCapture</code>: A version of <code>onCopy</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/cut_event"><code>onCut</code></a>: A <a href="#clipboardevent-handler"><code>ClipboardEvent</code> handler</a> function. Fires when the user tries to cut something into the clipboard.</li>
+<li><code>onCutCapture</code>: A version of <code>onCut</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><code>onDoubleClick</code>: A <a href="#mouseevent-handler"><code>MouseEvent</code> handler</a> function. Fires when the user clicks twice. Corresponds to the browser <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/dblclick_event"><code>dblclick</code> event.</a></li>
+<li><code>onDoubleClickCapture</code>: A version of <code>onDoubleClick</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drag_event"><code>onDrag</code></a>: A <a href="#dragevent-handler"><code>DragEvent</code> handler</a> function. Fires while the user is dragging something.</li>
+<li><code>onDragCapture</code>: A version of <code>onDrag</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragend_event"><code>onDragEnd</code></a>: A <a href="#dragevent-handler"><code>DragEvent</code> handler</a> function. Fires when the user stops dragging something.</li>
+<li><code>onDragEndCapture</code>: A version of <code>onDragEnd</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragenter_event"><code>onDragEnter</code></a>: A <a href="#dragevent-handler"><code>DragEvent</code> handler</a> function. Fires when the dragged content enters a valid drop target.</li>
+<li><code>onDragEnterCapture</code>: A version of <code>onDragEnter</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragover_event"><code>onDragOver</code></a>: A <a href="#dragevent-handler"><code>DragEvent</code> handler</a> function. Fires on a valid drop target while the dragged content is dragged over it. You must call <code>e.preventDefault()</code> here to allow dropping.</li>
+<li><code>onDragOverCapture</code>: A version of <code>onDragOver</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragstart_event"><code>onDragStart</code></a>: A <a href="#dragevent-handler"><code>DragEvent</code> handler</a> function. Fires when the user starts dragging an element.</li>
+<li><code>onDragStartCapture</code>: A version of <code>onDragStart</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drop_event"><code>onDrop</code></a>: A <a href="#dragevent-handler"><code>DragEvent</code> handler</a> function. Fires when something is dropped on a valid drop target.</li>
+<li><code>onDropCapture</code>: A version of <code>onDrop</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><code>onFocus</code>: A <a href="#focusevent-handler"><code>FocusEvent</code> handler</a> function. Fires when an element lost focus. Unlike the built-in browser <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/focus_event"><code>focus</code></a> event, in React the <code>onFocus</code> event bubbles.</li>
+<li><code>onFocusCapture</code>: A version of <code>onFocus</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/gotpointercapture_event"><code>onGotPointerCapture</code></a>: A <a href="#pointerevent-handler"><code>PointerEvent</code> handler</a> function. Fires when an element programmatically captures a pointer.</li>
+<li><code>onGotPointerCaptureCapture</code>: A version of <code>onGotPointerCapture</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event"><code>onKeyDown</code></a>: A <a href="#pointerevent-handler"><code>KeyboardEvent</code> handler</a> function. Fires when a key is pressed.</li>
+<li><code>onKeyDownCapture</code>: A version of <code>onKeyDown</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/keypress_event"><code>onKeyPress</code></a>: A <a href="#pointerevent-handler"><code>KeyboardEvent</code> handler</a> function. Deprecated. Use <code>onKeyDown</code> or <code>onBeforeInput</code> instead.</li>
+<li><code>onKeyPressCapture</code>: A version of <code>onKeyPress</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/keyup_event"><code>onKeyUp</code></a>: A <a href="#pointerevent-handler"><code>KeyboardEvent</code> handler</a> function. Fires when a key is released.</li>
+<li><code>onKeyUpCapture</code>: A version of <code>onKeyUp</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/lostpointercapture_event"><code>onLostPointerCapture</code></a>: A <a href="#pointerevent-handler"><code>PointerEvent</code> handler</a> function. Fires when an element stops capturing a pointer.</li>
+<li><code>onLostPointerCaptureCapture</code>: A version of <code>onLostPointerCapture</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/mousedown_event"><code>onMouseDown</code></a>: A <a href="#mouseevent-handler"><code>MouseEvent</code> handler</a> function. Fires when the pointer is pressed down.</li>
+<li><code>onMouseDownCapture</code>: A version of <code>onMouseDown</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseenter_event"><code>onMouseEnter</code></a>: A <a href="#mouseevent-handler"><code>MouseEvent</code> handler</a> function. Fires when the pointer moves inside an element. Does not have a capture phase. Instead, <code>onMouseLeave</code> and <code>onMouseEnter</code> propagate from the element being left to the one being entered.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseleave_event"><code>onMouseLeave</code></a>: A <a href="#mouseevent-handler"><code>MouseEvent</code> handler</a> function. Fires when the pointer moves outside an element. Does not have a capture phase. Instead, <code>onMouseLeave</code> and <code>onMouseEnter</code> propagate from the element being left to the one being entered.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/mousemove_event"><code>onMouseMove</code></a>: A <a href="#mouseevent-handler"><code>MouseEvent</code> handler</a> function. Fires when the pointer changes coordinates.</li>
+<li><code>onMouseMoveCapture</code>: A version of <code>onMouseMove</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseout_event"><code>onMouseOut</code></a>: A <a href="#mouseevent-handler"><code>MouseEvent</code> handler</a> function. Fires when the pointer moves outside an element, or if it moves into a child element.</li>
+<li><code>onMouseOutCapture</code>: A version of <code>onMouseOut</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseup_event"><code>onMouseUp</code></a>: A <a href="#mouseevent-handler"><code>MouseEvent</code> handler</a> function. Fires when the pointer is released.</li>
+<li><code>onMouseUpCapture</code>: A version of <code>onMouseUp</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/pointercancel_event"><code>onPointerCancel</code></a>: A <a href="#pointerevent-handler"><code>PointerEvent</code> handler</a> function. Fires when the browser cancels a pointer interaction.</li>
+<li><code>onPointerCancelCapture</code>: A version of <code>onPointerCancel</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerdown_event"><code>onPointerDown</code></a>: A <a href="#pointerevent-handler"><code>PointerEvent</code> handler</a> function. Fires when a pointer becomes active.</li>
+<li><code>onPointerDownCapture</code>: A version of <code>onPointerDown</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerenter_event"><code>onPointerEnter</code></a>: A <a href="#pointerevent-handler"><code>PointerEvent</code> handler</a> function. Fires when a pointer moves inside an element. Does not have a capture phase. Instead, <code>onPointerLeave</code> and <code>onPointerEnter</code> propagate from the element being left to the one being entered.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerleave_event"><code>onPointerLeave</code></a>: A <a href="#pointerevent-handler"><code>PointerEvent</code> handler</a> function. Fires when a pointer moves outside an element. Does not have a capture phase. Instead, <code>onPointerLeave</code> and <code>onPointerEnter</code> propagate from the element being left to the one being entered.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/pointermove_event"><code>onPointerMove</code></a>: A <a href="#pointerevent-handler"><code>PointerEvent</code> handler</a> function. Fires when a pointer changes coordinates.</li>
+<li><code>onPointerMoveCapture</code>: A version of <code>onPointerMove</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerout_event"><code>onPointerOut</code></a>: A <a href="#pointerevent-handler"><code>PointerEvent</code> handler</a> function. Fires when a pointer moves outside an element, if the pointer interaction is cancelled, and <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerout_event">a few other reasons.</a></li>
+<li><code>onPointerOutCapture</code>: A version of <code>onPointerOut</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerup_event"><code>onPointerUp</code></a>: A <a href="#pointerevent-handler"><code>PointerEvent</code> handler</a> function. Fires when a pointer is no longer active.</li>
+<li><code>onPointerUpCapture</code>: A version of <code>onPointerUp</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/paste_event"><code>onPaste</code></a>: A <a href="#clipboardevent-handler"><code>ClipboardEvent</code> handler</a> function. Fires when the user tries to paste something from the clipboard.</li>
+<li><code>onPasteCapture</code>: A version of <code>onPaste</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/scroll_event"><code>onScroll</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when an element has been scrolled. This event does not bubble.</li>
+<li><code>onScrollCapture</code>: A version of <code>onScroll</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/select_event"><code>onSelect</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires after the selection inside an editable element like an input changes. React extends the <code>onSelect</code> event to work for <code>contentEditable={true}</code> elements as well. In addition, React extends it to fire for empty selection and on edits (which may affect the selection).</li>
+<li><code>onSelectCapture</code>: A version of <code>onSelect</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/touchcancel_event"><code>onTouchCancel</code></a>: A <a href="#touchevent-handler"><code>TouchEvent</code> handler</a> function. Fires when the browser cancels a touch interaction.</li>
+<li><code>onTouchCancelCapture</code>: A version of <code>onTouchCancel</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/touchend_event"><code>onTouchEnd</code></a>: A <a href="#touchevent-handler"><code>TouchEvent</code> handler</a> function. Fires when one or more touch points are removed.</li>
+<li><code>onTouchEndCapture</code>: A version of <code>onTouchEnd</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/touchmove_event"><code>onTouchMove</code></a>: A <a href="#touchevent-handler"><code>TouchEvent</code> handler</a> function. Fires one or more touch points are moved.</li>
+<li><code>onTouchMoveCapture</code>: A version of <code>onTouchMove</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/touchstart_event"><code>onTouchStart</code></a>: A <a href="#touchevent-handler"><code>TouchEvent</code> handler</a> function. Fires when one or more touch points are placed.</li>
+<li><code>onTouchStartCapture</code>: A version of <code>onTouchStart</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionend_event"><code>onTransitionEnd</code></a>: A <a href="#transitionevent-handler"><code>TransitionEvent</code> handler</a> function. Fires when a CSS transition completes.</li>
+<li><code>onTransitionEndCapture</code>: A version of <code>onTransitionEnd</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event"><code>onWheel</code></a>: A <a href="#wheelevent-handler"><code>WheelEvent</code> handler</a> function. Fires when the user rotates a wheel button.</li>
+<li><code>onWheelCapture</code>: A version of <code>onWheel</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles"><code>role</code></a>: A string. Specifies the element role explicitly for assistive technologies. nt.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles"><code>slot</code></a>: A string. Specifies the slot name when using shadow DOM. In React, an equivalent pattern is typically achieved by passing JSX as props, for example <code>&lt;Layout left={&lt;Sidebar /&gt;} right={&lt;Content /&gt;} /&gt;</code>.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/spellcheck"><code>spellCheck</code></a>: A boolean or null. If explicitly set to <code>true</code> or <code>false</code>, enables or disables spellchecking.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex"><code>tabIndex</code></a>: A number. Overrides the default Tab button behavior. <a href="https://www.tpgi.com/using-the-tabindex-attribute/">Avoid using values other than <code>-1</code> and <code>0</code>.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/title"><code>title</code></a>: A string. Specifies the tooltip text for the element.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/translate"><code>translate</code></a>: Either <code>'yes'</code> or <code>'no'</code>. Passing <code>'no'</code> excludes the element content from being translated.</li>
+</ul>
+<p>You can also pass custom attributes as props, for example <code>mycustomprop="someValue"</code>. This can be useful when integrating with third-party libraries. The custom attribute name must be lowercase and must not start with <code>on</code>. The value will be converted to a string. If you pass <code>null</code> or <code>undefined</code>, the custom attribute will be removed.</p>
+<p>These events fire only for the <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form"><code>&lt;form&gt;</code></a> elements:</p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reset_event"><code>onReset</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when a form gets reset.</li>
+<li><code>onResetCapture</code>: A version of <code>onReset</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/submit_event"><code>onSubmit</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when a form gets submitted.</li>
+<li><code>onSubmitCapture</code>: A version of <code>onSubmit</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+</ul>
+<p>These events fire only for the <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dialog"><code>&lt;dialog&gt;</code></a> elements. Unlike browser events, they bubble in React:</p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement/cancel_event"><code>onCancel</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the user tries to dismiss the dialog.</li>
+<li><code>onCancelCapture</code>: A version of <code>onCancel</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a> capture-phase-events)</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement/close_event"><code>onClose</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when a dialog has been closed.</li>
+<li><code>onCloseCapture</code>: A version of <code>onClose</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+</ul>
+<p>These events fire only for the <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/details"><code>&lt;details&gt;</code></a> elements. Unlike browser events, they bubble in React:</p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLDetailsElement/toggle_event"><code>onToggle</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the user toggles the details.</li>
+<li><code>onToggleCapture</code>: A version of <code>onToggle</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a> capture-phase-events)</li>
+</ul>
+<p>These events fire for <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img"><code>&lt;img&gt;</code></a>, <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe"><code>&lt;iframe&gt;</code></a>, <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/object"><code>&lt;object&gt;</code></a>, <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/embed"><code>&lt;embed&gt;</code></a>, <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link"><code>&lt;link&gt;</code></a>, and <a href="https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/SVG_Image_Tag">SVG <code>&lt;image&gt;</code></a> elements. Unlike browser events, they bubble in React:</p>
+<ul>
+<li><code>onLoad</code>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the resource has loaded.</li>
+<li><code>onLoadCapture</code>: A version of <code>onLoad</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/error_event"><code>onError</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the resource could not be loaded.</li>
+<li><code>onErrorCapture</code>: A version of <code>onError</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+</ul>
+<p>These events fire for resources like <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio"><code>&lt;audio&gt;</code></a> and <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video"><code>&lt;video&gt;</code></a>. Unlike browser events, they bubble in React:</p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/abort_event"><code>onAbort</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the resource has not fully loaded, but not due to an error.</li>
+<li><code>onAbortCapture</code>: A version of <code>onAbort</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplay_event"><code>onCanPlay</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when there's enough data to start playing, but not enough to play to the end without buffering.</li>
+<li><code>onCanPlayCapture</code>: A version of <code>onCanPlay</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event"><code>onCanPlayThrough</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when there's enough data that it's likely possible to start playing without buffering until the end.</li>
+<li><code>onCanPlayThroughCapture</code>: A version of <code>onCanPlayThrough</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/durationchange_event"><code>onDurationChange</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the media duration has updated.</li>
+<li><code>onDurationChangeCapture</code>: A version of <code>onDurationChange</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/emptied_event"><code>onEmptied</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the media has become empty.</li>
+<li><code>onEmptiedCapture</code>: A version of <code>onEmptied</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://w3c.github.io/encrypted-media/#dom-evt-encrypted"><code>onEncrypted</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the browser encounters encrypted media.</li>
+<li><code>onEncryptedCapture</code>: A version of <code>onEncrypted</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ended_event"><code>onEnded</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the playback stops because there's nothing left to play.</li>
+<li><code>onEndedCapture</code>: A version of <code>onEnded</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/error_event"><code>onError</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the resource could not be loaded.</li>
+<li><code>onErrorCapture</code>: A version of <code>onError</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadeddata_event"><code>onLoadedData</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the current playback frame has loaded.</li>
+<li><code>onLoadedDataCapture</code>: A version of <code>onLoadedData</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadedmetadata_event"><code>onLoadedMetadata</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when metadata has loaded.</li>
+<li><code>onLoadedMetadataCapture</code>: A version of <code>onLoadedMetadata</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadstart_event"><code>onLoadStart</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the browser started loading the resource.</li>
+<li><code>onLoadStartCapture</code>: A version of <code>onLoadStart</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/pause_event"><code>onPause</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the media was paused.</li>
+<li><code>onPauseCapture</code>: A version of <code>onPause</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play_event"><code>onPlay</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the media is no longer paused.</li>
+<li><code>onPlayCapture</code>: A version of <code>onPlay</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/playing_event"><code>onPlaying</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the media starts or restarts playing.</li>
+<li><code>onPlayingCapture</code>: A version of <code>onPlaying</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event"><code>onProgress</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires periodically while the resource is loading.</li>
+<li><code>onProgressCapture</code>: A version of <code>onProgress</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ratechange_event"><code>onRateChange</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when playback rate changes.</li>
+<li><code>onRateChangeCapture</code>: A version of <code>onRateChange</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><code>onResize</code>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when video changes size.</li>
+<li><code>onResizeCapture</code>: A version of <code>onResize</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeked_event"><code>onSeeked</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when a seek operation completes.</li>
+<li><code>onSeekedCapture</code>: A version of <code>onSeeked</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeking_event"><code>onSeeking</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when a seek operation starts.</li>
+<li><code>onSeekingCapture</code>: A version of <code>onSeeking</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/stalled_event"><code>onStalled</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the browser is waiting for data but it keeps not loading.</li>
+<li><code>onStalledCapture</code>: A version of <code>onStalled</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/suspend_event"><code>onSuspend</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when loading the resource was suspended.</li>
+<li><code>onSuspendCapture</code>: A version of <code>onSuspend</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/timeupdate_event"><code>onTimeUpdate</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the current playback time updates.</li>
+<li><code>onTimeUpdateCapture</code>: A version of <code>onTimeUpdate</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/volumechange_event"><code>onVolumeChange</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the volume has changed.</li>
+<li><code>onVolumeChangeCapture</code>: A version of <code>onVolumeChange</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/waiting_event"><code>onWaiting</code></a>: An <a href="#event-handler"><code>Event</code> handler</a> function. Fires when the playback stopped due to temporary lack of data.</li>
+<li><code>onWaitingCapture</code>: A version of <code>onWaiting</code> that fires in the <a href="/learn/responding-to-events#capture-phase-events">capture phase.</a></li>
+</ul>
+<h4 id="caveats">Caveats<a class="headerlink" href="#caveats" title="Permanent link">&para;</a></h4>
+<ul>
+<li>You cannot pass both <code>children</code> and <code>dangerouslySetInnerHTML</code> at the same time.</li>
+<li>Some events (like <code>onAbort</code> and <code>onLoad</code>) don't bubble in the browser, but bubble in React.</li>
+</ul>
 
 
 

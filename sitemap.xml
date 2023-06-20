@@ -266,17 +266,7 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://reactive-python.github.io/reactpy/reference/common-events/</loc>
-         <lastmod>2023-06-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://reactive-python.github.io/reactpy/reference/common-props/</loc>
-         <lastmod>2023-06-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://reactive-python.github.io/reactpy/reference/common-types/</loc>
          <lastmod>2023-06-20</lastmod>
          <changefreq>daily</changefreq>
     </url>
@@ -352,6 +342,11 @@
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-effect/</loc>
+         <lastmod>2023-06-20</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://reactive-python.github.io/reactpy/reference/use-id/</loc>
          <lastmod>2023-06-20</lastmod>
          <changefreq>daily</changefreq>
     </url>
