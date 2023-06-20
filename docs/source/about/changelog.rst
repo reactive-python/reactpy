@@ -18,6 +18,10 @@ Changelog
 Unreleased
 ----------
 
+**Changed**
+
+- :pull:`1050` - Warn and attempt to fix missing mime types, which can result in ``reactpy.run`` not working as expected.
+
 **Fixed**
 
 - :issue:`930` - better traceback for JSON serialization errors (via :pull:`1008`)

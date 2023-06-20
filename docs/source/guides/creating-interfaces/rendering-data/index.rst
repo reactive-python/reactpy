@@ -103,7 +103,7 @@ We could then add this code to our ``DataList`` component:
 
 .. warning::
 
-    The code below produces a bunch of warnings! Be sure to tead the
+    The code below produces a bunch of warnings! Be sure to read the
     :ref:`next section <Organizing Items With Keys>` to find out why.
 
 .. reactpy:: _examples/sorted_and_filtered_todo_list
