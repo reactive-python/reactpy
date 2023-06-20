@@ -69,10 +69,9 @@ nav:
                 - reference/use-connection.md
                 - reference/use-scope.md
                 - reference/use-location.md
+                - reference/use-id.md
           - HTML Tags:
-                - reference/common-types.md
                 - reference/common-props.md
-                - reference/common-events.md
                 - reference/usage.md
           - Backends:
                 - reference/fastapi.md
