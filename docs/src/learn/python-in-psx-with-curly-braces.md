@@ -1,6 +1,12 @@
 ---
-title: Python in PSX with Curly Braces 🚧
+title: Python in PSX with Curly Braces 🚫
 ---
+
+!!! warning "In Progress"
+
+    This feature is planned, but not yet developed.
+
+    See [this issue](https://github.com/reactive-python/reactpy/issues/918) for more details.
 
 ## Overview
 
@@ -17,6 +23,7 @@ JSX lets you write HTML-like markup inside a JavaScript file, keeping rendering 
     -   How to call a JavaScript function inside JSX with curly braces
     -   How to use a JavaScript object inside JSX with curly braces
 
+<!--
 ## Passing strings with quotes
 
 When you want to pass a string attribute to JSX, you put it in single or double quotes:
@@ -588,4 +595,4 @@ Variables and functions can help you keep the markup simple!
 
 </Solution>
 
-</Challenges>
+</Challenges> -->

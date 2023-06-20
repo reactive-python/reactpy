@@ -2,6 +2,12 @@
 title: Add React to an Existing Project 🚫
 ---
 
+!!! warning "In Progress"
+
+    This feature is planned, but not yet developed.
+
+    See [this issue](https://github.com/reactive-python/reactpy/issues/653) for more details.
+
 ## Overview
 
 <p class="intro" markdown>
@@ -9,12 +15,6 @@ title: Add React to an Existing Project 🚫
 If you want to add some interactivity to your existing project, you don't have to rewrite it in React. Add React to your existing stack, and render interactive React components anywhere.
 
 </p>
-
-!!! warning "In Progress"
-
-    This feature is planned, but not yet developed.
-
-    See [this issue](https://github.com/reactive-python/reactpy/issues/653) for more details.
 
 <!--
 <Note>
