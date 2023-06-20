@@ -70,6 +70,12 @@ nav:
                 - reference/use-scope.md
                 - reference/use-location.md
                 - reference/use-id.md
+                - reference/use-deferred-value.md
+                - reference/use-imperative-handle.md
+                - reference/use-insertion-effect.md
+                - reference/use-layout-effect.md
+                - reference/use-sync-external-store.md
+                - reference/use-transition.md
           - HTML Tags:
                 - reference/common-props.md
                 - reference/usage.md
