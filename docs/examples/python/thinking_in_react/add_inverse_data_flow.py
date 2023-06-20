@@ -1,7 +1,6 @@
 from reactpy import component, html, use_state
 
 
-# start
 @component
 def filterable_product_table(products):
     filter_text, set_filter_text = use_state("")

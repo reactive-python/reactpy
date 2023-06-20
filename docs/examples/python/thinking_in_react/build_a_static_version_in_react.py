@@ -1,7 +1,6 @@
 from reactpy import component, html
 
 
-# start
 @component
 def product_category_row(category):
     return html.tr(html.th({"colSpan": "2"}, category))

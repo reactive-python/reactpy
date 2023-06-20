@@ -71,7 +71,7 @@ You can either build "top down" by starting with building the components higher 
 === "app.py"
 
     ```python
-    {% include "../../examples/python/thinking_in_react/build_a_static_version_in_react.py" start="# start" end="# end" %}
+    {% include "../../examples/python/thinking_in_react/build_a_static_version_in_react.py" end="# end" %}
     ```
 
 === "styles.css"
@@ -177,7 +177,7 @@ You can start seeing how your application will behave. Edit the `filter_text` in
 === "app.py"
 
     ```python
-    {% include "../../examples/python/thinking_in_react/identify_where_your_state_should_live.py" start="# start" end="# end" %}
+    {% include "../../examples/python/thinking_in_react/identify_where_your_state_should_live.py" end="# end" %}
     ```
 
 === "styles.css"
@@ -227,7 +227,7 @@ Now the application fully works!
     <!-- FIXME: Click event on the checkbox is broken. `event["target"]["checked"]` doesn't exist -->
 
     ```python
-    {% include "../../examples/python/thinking_in_react/add_inverse_data_flow.py" start="# start" end="# end" %}
+    {% include "../../examples/python/thinking_in_react/add_inverse_data_flow.py" end="# end" %}
     ```
 
 === "styles.css"
