@@ -2219,7 +2219,7 @@
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
 <p class="intro">
 
-React lets you add <em>event handlers</em> to your JSX. Event handlers are your own functions that will be triggered in response to interactions like clicking, hovering, focusing form inputs, and so on.
+React lets you add <em>event handlers</em> to your PSX. Event handlers are your own functions that will be triggered in response to interactions like clicking, hovering, focusing form inputs, and so on.
 
 </p>
 <div class="admonition summary">
@@ -2231,39 +2231,65 @@ React lets you add <em>event handlers</em> to your JSX. Event handlers are your 
 </ul>
 </div>
 <h2 id="adding-event-handlers">Adding event handlers<a class="headerlink" href="#adding-event-handlers" title="Permanent link">&para;</a></h2>
-<p>To add an event handler, you will first define a function and then <a href="/learn/passing-props-to-a-component">pass it as a prop</a> to the appropriate JSX tag. For example, here is a button that doesn't do anything yet:</p>
+<p>To add an event handler, you will first define a function and then <a href="../passing-props-to-a-component/">pass it as a prop</a> to the appropriate PSX tag. For example, here is a button that doesn't do anything yet:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">app.py</label><label for="__tabbed_1_2"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5.14v14l11-7-11-7Z"/></svg></span> Run</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
-<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Button</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="o">&lt;</span><span class="nx">button</span><span class="o">&gt;</span><span class="nx">I</span><span class="w"> </span><span class="nx">don</span><span class="err">&#39;</span><span class="nx">t</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="nx">anything</span><span class="o">&lt;</span><span class="err">/button&gt;;</span>
-<span class="p">}</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">button</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="s2">&quot;I don&#39;t do anything&quot;</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># TODO</span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
 <p>You can make it show a message when a user clicks by following these three steps:</p>
 <ol>
-<li>Declare a function called <code>handleClick</code> <em>inside</em> your <code>Button</code> component.</li>
-<li>Implement the logic inside that function (use <code>alert</code> to show the message).</li>
-<li>Add <code>on_click={handleClick}</code> to the <code>&lt;button&gt;</code> JSX.</li>
+<li>Declare a function called <code>handle_click</code> <em>inside</em> your <code class="highlight"><span class="k">def</span> <span class="nf">button</span><span class="p">():</span></code> component.</li>
+<li>Implement the logic inside that function (use <code>print</code> to show the message).</li>
+<li>Add <code>on_click=handle_click</code> to the <code>html.button</code> PSX.</li>
 </ol>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">app.py</label><label for="__tabbed_2_2">styles.css</label><label for="__tabbed_2_3"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5.14v14l11-7-11-7Z"/></svg></span> Run</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
 <span class="normal">6</span>
-<span class="normal">7</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Button</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kd">function</span><span class="w"> </span><span class="nx">handleClick</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nx">alert</span><span class="p">(</span><span class="s2">&quot;You clicked me!&quot;</span><span class="p">);</span>
-<span class="w">    </span><span class="p">}</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span> <span class="nn">reactpy</span> <span class="kn">import</span> <span class="n">component</span><span class="p">,</span> <span class="n">html</span>
 
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="o">&lt;</span><span class="nx">button</span><span class="w"> </span><span class="nx">on_click</span><span class="o">=</span><span class="p">{</span><span class="nx">handleClick</span><span class="p">}</span><span class="o">&gt;</span><span class="nx">Click</span><span class="w"> </span><span class="nx">me</span><span class="o">&lt;</span><span class="err">/button&gt;;</span>
-<span class="p">}</span>
+
+<span class="nd">@component</span>
+<span class="k">def</span> <span class="nf">button</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">handle_click</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;You clicked me!&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">button</span><span class="p">({</span><span class="s2">&quot;on_click&quot;</span><span class="p">:</span> <span class="n">handle_click</span><span class="p">},</span> <span class="s2">&quot;Click me&quot;</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nt">button</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">margin-right</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="kt">px</span><span class="p">;</span>
 <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1"># TODO</span>
+</code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
 <p>You defined the <code>handleClick</code> function and then <a href="/learn/passing-props-to-a-component">passed it as a prop</a> to <code>&lt;button&gt;</code>. <code>handleClick</code> is an <strong>event handler.</strong> Event handler functions:</p>
 <ul>
 <li>Are usually defined <em>inside</em> your components.</li>

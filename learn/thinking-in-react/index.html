@@ -2245,7 +2245,13 @@ React can change how you think about the designs you look at and the apps you bu
 <span class="normal">54</span>
 <span class="normal">55</span>
 <span class="normal">56</span>
-<span class="normal">57</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@component</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span> <span class="nn">reactpy</span> <span class="kn">import</span> <span class="n">component</span><span class="p">,</span> <span class="n">html</span>
+
+
+<span class="nd">@component</span>
 <span class="k">def</span> <span class="nf">product_category_row</span><span class="p">(</span><span class="n">category</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">tr</span><span class="p">(</span><span class="n">html</span><span class="o">.</span><span class="n">th</span><span class="p">({</span><span class="s2">&quot;colSpan&quot;</span><span class="p">:</span> <span class="s2">&quot;2&quot;</span><span class="p">},</span> <span class="n">category</span><span class="p">))</span>
 
@@ -2508,7 +2514,13 @@ React can change how you think about the designs you look at and the apps you bu
 <span class="normal">82</span>
 <span class="normal">83</span>
 <span class="normal">84</span>
-<span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@component</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span> <span class="nn">reactpy</span> <span class="kn">import</span> <span class="n">component</span><span class="p">,</span> <span class="n">html</span><span class="p">,</span> <span class="n">use_state</span>
+
+
+<span class="nd">@component</span>
 <span class="k">def</span> <span class="nf">filterable_product_table</span><span class="p">(</span><span class="n">products</span><span class="p">):</span>
     <span class="n">filter_text</span><span class="p">,</span> <span class="n">set_filter_text</span> <span class="o">=</span> <span class="n">use_state</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
     <span class="n">in_stock_only</span><span class="p">,</span> <span class="n">set_in_stock_only</span> <span class="o">=</span> <span class="n">use_state</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
@@ -2787,7 +2799,13 @@ React can change how you think about the designs you look at and the apps you bu
 <span class="normal">102</span>
 <span class="normal">103</span>
 <span class="normal">104</span>
-<span class="normal">105</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@component</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span> <span class="nn">reactpy</span> <span class="kn">import</span> <span class="n">component</span><span class="p">,</span> <span class="n">html</span><span class="p">,</span> <span class="n">use_state</span>
+
+
+<span class="nd">@component</span>
 <span class="k">def</span> <span class="nf">filterable_product_table</span><span class="p">(</span><span class="n">products</span><span class="p">):</span>
     <span class="n">filter_text</span><span class="p">,</span> <span class="n">set_filter_text</span> <span class="o">=</span> <span class="n">use_state</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
     <span class="n">in_stock_only</span><span class="p">,</span> <span class="n">set_in_stock_only</span> <span class="o">=</span> <span class="n">use_state</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
