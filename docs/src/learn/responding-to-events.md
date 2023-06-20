@@ -6,7 +6,7 @@ title: Responding to Events 🚧
 
 <p class="intro" markdown>
 
-React lets you add _event handlers_ to your JSX. Event handlers are your own functions that will be triggered in response to interactions like clicking, hovering, focusing form inputs, and so on.
+React lets you add _event handlers_ to your PSX. Event handlers are your own functions that will be triggered in response to interactions like clicking, hovering, focusing form inputs, and so on.
 
 </p>
 
@@ -18,35 +18,43 @@ React lets you add _event handlers_ to your JSX. Event handlers are your own fun
 
 ## Adding event handlers
 
-To add an event handler, you will first define a function and then [pass it as a prop](/learn/passing-props-to-a-component) to the appropriate JSX tag. For example, here is a button that doesn't do anything yet:
+To add an event handler, you will first define a function and then [pass it as a prop](../learn/passing-props-to-a-component.md) to the appropriate PSX tag. For example, here is a button that doesn't do anything yet:
 
-```js
-export default function Button() {
-	return <button>I don't do anything</button>;
-}
-```
+=== "app.py"
+
+    ```python
+    {% include "../../examples/python/responding_to_events/simple_button.py" start="# start" %}
+    ```
+
+=== ":material-play: Run"
+
+    ```python
+    # TODO
+    ```
 
 You can make it show a message when a user clicks by following these three steps:
 
-1. Declare a function called `handleClick` _inside_ your `Button` component.
-2. Implement the logic inside that function (use `alert` to show the message).
-3. Add `on_click={handleClick}` to the `<button>` JSX.
+1. Declare a function called `handle_click` _inside_ your `#!python def button():` component.
+2. Implement the logic inside that function (use `print` to show the message).
+3. Add `on_click=handle_click` to the `html.button` PSX.
 
-```js
-export default function Button() {
-	function handleClick() {
-		alert("You clicked me!");
-	}
+=== "app.py"
 
-	return <button on_click={handleClick}>Click me</button>;
-}
-```
+    ```python
+    {% include "../../examples/python/responding_to_events/simple_button_event.py" end="# end" %}
+    ```
 
-```css
-button {
-	margin-right: 10px;
-}
-```
+=== "styles.css"
+
+    ```css
+    {% include "../../examples/css/responding_to_events/simple_button_event.css" %}
+    ```
+
+=== ":material-play: Run"
+
+    ```python
+    # TODO
+    ```
 
 You defined the `handleClick` function and then [passed it as a prop](/learn/passing-props-to-a-component) to `<button>`. `handleClick` is an **event handler.** Event handler functions:
 
