@@ -1,4 +1,3 @@
-
 #### Props
 
 These special React props are supported for all built-in components:
