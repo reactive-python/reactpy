@@ -3,99 +3,99 @@ nav:
     - Home: index.md
     - Get Started:
           - Quick Start:
-                - learn/get-started.md
-                - learn/tutorial-tic-tac-toe.md
-                - learn/thinking-in-react.md
+                - learn/quick-start.md
+                - "Tutorial: Tic-Tac-Toe 🚧" : learn/tutorial-tic-tac-toe.md
+                - Thinking in React : learn/thinking-in-react.md
           - Installation:
-                - learn/start-a-new-react-project.md
-                - learn/add-react-to-an-existing-project.md
-                - learn/editor-setup.md
-                - learn/react-developer-tools.md
+                - Start a New React Project : learn/start-a-new-react-project.md
+                - Add React to an Existing Project 🚫 : learn/add-react-to-an-existing-project.md
+                - Editor Setup 🚧 : learn/editor-setup.md
+                - React Developer Tools 🚫 : learn/react-developer-tools.md
           - More Tutorials:
-                - learn/tutorial-react-bootstrap.md
-                - learn/tutorial-material-ui.md
+                - "Tutorial: React Bootstrap 🚫" : learn/tutorial-react-bootstrap.md
+                - "Tutorial: Material UI 🚫" : learn/tutorial-material-ui.md
     - Learn React:
           - Describing the UI:
-                - learn/your-first-component.md
-                - learn/importing-and-exporting-components.md
-                - learn/writing-markup-with-psx.md
-                - learn/python-in-psx-with-curly-braces.md
-                - learn/passing-props-to-a-component.md
-                - learn/conditional-rendering.md
-                - learn/rendering-lists.md
-                - learn/keeping-components-pure.md
+                - Your First Component 🚧 : learn/your-first-component.md
+                - Importing and Exporting Components 🚧 : learn/importing-and-exporting-components.md
+                - Writing Markup with PSX 🚫 : learn/writing-markup-with-psx.md
+                - Python in PSX with Curly Braces 🚫 : learn/python-in-psx-with-curly-braces.md
+                - Passing Props to a Component 🚧 : learn/passing-props-to-a-component.md
+                - Conditional Rendering 🚧 : learn/conditional-rendering.md
+                - Rendering Lists 🚧 : learn/rendering-lists.md
+                - Keeping Components Pure 🚧 : learn/keeping-components-pure.md
           - Adding Interactivity:
-                - learn/responding-to-events.md
-                - learn/state-a-components-memory.md
-                - learn/render-and-commit.md
-                - learn/state-as-a-snapshot.md
-                - learn/queueing-a-series-of-state-updates.md
-                - learn/updating-objects-in-state.md
-                - learn/updating-arrays-in-state.md
+                - Responding to Events 🚧 : learn/responding-to-events.md
+                - "State: A Component's Memory 🚧" : learn/state-a-components-memory.md
+                - Render and Commit 🚧 : learn/render-and-commit.md
+                - State as a Snapshot 🚧 : learn/state-as-a-snapshot.md
+                - Queueing a Series of State Updates 🚧 : learn/queueing-a-series-of-state-updates.md
+                - Updating Objects in State 🚧 : learn/updating-objects-in-state.md
+                - Updating Arrays in State 🚧 : learn/updating-arrays-in-state.md
           - Managing State:
-                - learn/reacting-to-input-with-state.md
-                - learn/choosing-the-state-structure.md
-                - learn/sharing-state-between-components.md
-                - learn/preserving-and-resetting-state.md
-                - learn/extracting-state-logic-into-a-reducer.md
-                - learn/passing-data-deeply-with-context.md
-                - learn/scaling-up-with-reducer-and-context.md
+                - Reacting to Input with State 🚧 : learn/reacting-to-input-with-state.md
+                - Choosing the State Structure 🚧 : learn/choosing-the-state-structure.md
+                - Sharing State Between Components 🚧 : learn/sharing-state-between-components.md
+                - Preserving and Resetting State 🚧 : learn/preserving-and-resetting-state.md
+                - Extracting State Logic into a Reducer 🚧 : learn/extracting-state-logic-into-a-reducer.md
+                - Passing Data Deeply with Context 🚧 : learn/passing-data-deeply-with-context.md
+                - Scaling Up with Reducer and Context 🚧 : learn/scaling-up-with-reducer-and-context.md
           - Escape Hatches:
-                - learn/referencing-values-with-refs.md
-                - learn/manipulating-the-dom-with-refs.md
-                - learn/synchronizing-with-effects.md
-                - learn/you-might-not-need-an-effect.md
-                - learn/lifecycle-of-reactive-effects.md
-                - learn/separating-events-from-effects.md
-                - learn/removing-effect-dependencies.md
-                - learn/reusing-logic-with-custom-hooks.md
-                - learn/communicate-data-between-server-and-client.md
-                - learn/convert-between-vdom-and-html.md
-                - learn/vdom-mutations.md
-                - learn/creating-vdom-event-handlers.md
-                - learn/creating-html-tags.md
-                - learn/creating-backends.md
-                - learn/manually-register-a-client.md
+                - Referencing Values with Refs 🚧 : learn/referencing-values-with-refs.md
+                - Manipulating the DOM with Refs 🚧 : learn/manipulating-the-dom-with-refs.md
+                - Synchronizing with Effects 🚧 : learn/synchronizing-with-effects.md
+                - You Might Not Need an Effect 🚧 : learn/you-might-not-need-an-effect.md
+                - Lifecycle of Reactive Effects 🚧 : learn/lifecycle-of-reactive-effects.md
+                - Separating Events from Effects 🚧 : learn/separating-events-from-effects.md
+                - Removing Effect Dependencies 🚧 : learn/removing-effect-dependencies.md
+                - Reusing Logic with Custom Hooks 🚧 : learn/reusing-logic-with-custom-hooks.md
+                - Communicating Data Between Server and Client 🚧 : learn/communicate-data-between-server-and-client.md
+                - Convert Between VDOM and HTML 🚧 : learn/convert-between-vdom-and-html.md
+                - VDOM Mutations 🚧 : learn/vdom-mutations.md
+                - Creating VDOM Event Handlers 🚧 : learn/creating-vdom-event-handlers.md
+                - Creating HTML Tags 🚧 : learn/creating-html-tags.md
+                - Creating Backends 🚧 : learn/creating-backends.md
+                - Manually Register a Client 🚧 : learn/manually-register-a-client.md
     - Reference:
           - Hooks:
-                - reference/use-state.md
-                - reference/use-effect.md
-                - reference/use-context.md
-                - reference/use-reducer.md
-                - reference/use-callback.md
-                - reference/use-memo.md
-                - reference/use-ref.md
-                - reference/use-debug-value.md
-                - reference/use-connection.md
-                - reference/use-scope.md
-                - reference/use-location.md
-                - reference/use-id.md
-                - reference/use-deferred-value.md
-                - reference/use-imperative-handle.md
-                - reference/use-insertion-effect.md
-                - reference/use-layout-effect.md
-                - reference/use-sync-external-store.md
-                - reference/use-transition.md
+                - Use State 🚧 : reference/use-state.md
+                - Use Effect 🚧 : reference/use-effect.md
+                - Use Context 🚧 : reference/use-context.md
+                - Use Reducer 🚧 : reference/use-reducer.md
+                - Use Callback 🚧 : reference/use-callback.md
+                - Use Memo 🚧 : reference/use-memo.md
+                - Use Ref 🚧 : reference/use-ref.md
+                - Use Debug Value 🚧 : reference/use-debug-value.md
+                - Use Connection 🚧 : reference/use-connection.md
+                - Use Scope 🚧 : reference/use-scope.md
+                - Use Location 🚧 : reference/use-location.md
+                - Use ID 🚫 : reference/use-id.md
+                - Use Deferred Value 🚫 : reference/use-deferred-value.md
+                - Use Imperative Handle 🚫 : reference/use-imperative-handle.md
+                - Use Insertion Effect 🚫 : reference/use-insertion-effect.md
+                - Use Layout Effect 🚫 : reference/use-layout-effect.md
+                - Use Sync External Store 🚫 : reference/use-sync-external-store.md
+                - Use Transition 🚫 : reference/use-transition.md
           - HTML Tags:
-                - reference/common-props.md
-                - reference/usage.md
+                - Common Props 🚧 : reference/common-props.md
+                - Usage 🚧 : reference/usage.md
           - Backends:
-                - reference/fastapi.md
-                - reference/flask.md
-                - reference/sanic.md
-                - reference/starlette.md
-                - reference/tornado.md
-                - reference/django.md
-                - reference/jupyter.md
-                - reference/plotly-dash.md
-          - reference/protocol-structure.md
-          - reference/client-api.md
+                - FastAPI 🚧 : reference/fastapi.md
+                - Flask 🚧 : reference/flask.md
+                - Sanic 🚧 : reference/sanic.md
+                - Starlette 🚧 : reference/starlette.md
+                - Tornado 🚧 : reference/tornado.md
+                - Django 🚧 : reference/django.md
+                - Jupyter 🚧 : reference/jupyter.md
+                - Plotly Dash 🚧 : reference/plotly-dash.md
+          - Protocol Structure 🚧 : reference/protocol-structure.md
+          - Client API 🚧 : reference/client-api.md
     - About ReactPy:
-          - about/changelog.md
-          - about/community.md
-          - about/running-tests.md
-          - about/code.md
-          - about/docs.md
+          - Changelog 🚧 : about/changelog.md
+          - Community 🚧 : about/community.md
+          - Running Tests 🚧 : about/running-tests.md
+          - Contributing Code 🚧 : about/code.md
+          - Contributing Documentation 🚧 : about/docs.md
 
 theme:
     name: material
@@ -144,6 +144,7 @@ markdown_extensions:
 plugins:
     - search
     - include-markdown
+    - section-index
     # - git-authors
     # - minify:
     #       minify_html: true

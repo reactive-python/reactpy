@@ -1,6 +1,3 @@
----
-title: Use Deferred Value 🚫
----
 
 ## Overview
 

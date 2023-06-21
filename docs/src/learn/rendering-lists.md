@@ -1,6 +1,3 @@
----
-title: Rendering Lists 🚧
----
 
 ## Overview
 

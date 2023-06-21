@@ -1,6 +1,3 @@
----
-title: Use Imperative Handle 🚫
----
 
 ## Overview
 

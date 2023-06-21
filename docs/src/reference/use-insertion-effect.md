@@ -1,6 +1,3 @@
----
-title: Use Insertion Effect 🚫
----
 
 <Pitfall>
 

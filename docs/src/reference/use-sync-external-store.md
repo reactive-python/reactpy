@@ -1,6 +1,3 @@
----
-title: Use Sync External Store 🚫
----
 
 ## Overview
 

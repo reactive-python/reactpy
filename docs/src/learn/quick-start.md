@@ -1,7 +1,3 @@
----
-title: "Get Started"
----
-
 ## Overview
 
 <p class="intro" markdown>

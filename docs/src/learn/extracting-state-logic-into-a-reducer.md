@@ -1,6 +1,3 @@
----
-title: Extracting State Logic into a Reducer 🚧
----
 
 ## Overview
 

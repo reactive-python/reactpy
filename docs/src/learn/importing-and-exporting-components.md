@@ -1,6 +1,3 @@
----
-title: Importing and Exporting Components 🚧
----
 
 ## Overview
 

@@ -1,6 +1,3 @@
----
-title: Responding to Events 🚧
----
 
 ## Overview
 

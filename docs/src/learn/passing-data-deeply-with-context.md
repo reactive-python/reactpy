@@ -1,6 +1,3 @@
----
-title: Passing Data Deeply with Context 🚧
----
 
 ## Overview
 

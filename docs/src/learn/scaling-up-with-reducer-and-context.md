@@ -1,6 +1,3 @@
----
-title: Scaling Up with Reducer and Context 🚧
----
 
 ## Overview
 

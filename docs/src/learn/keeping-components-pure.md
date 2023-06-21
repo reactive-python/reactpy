@@ -1,6 +1,3 @@
----
-title: Keeping Components Pure 🚧
----
 
 ## Overview
 

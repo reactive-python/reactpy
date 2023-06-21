@@ -1,6 +1,3 @@
----
-title: Queueing a Series of State Updates 🚧
----
 
 ## Overview
 

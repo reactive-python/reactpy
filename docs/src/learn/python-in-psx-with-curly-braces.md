@@ -1,6 +1,3 @@
----
-title: Python in PSX with Curly Braces 🚫
----
 
 !!! warning "In Progress"
 

@@ -1,6 +1,3 @@
----
-title: "Removing Effect Dependencies 🚧"
----
 
 ## Overview
 

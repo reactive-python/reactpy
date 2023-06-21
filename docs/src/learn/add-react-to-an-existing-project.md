@@ -1,6 +1,3 @@
----
-title: Add React to an Existing Project 🚫
----
 
 !!! warning "In Progress"
 

@@ -1,6 +1,3 @@
----
-title: Preserving and Resetting State 🚧
----
 
 ## Overview
 

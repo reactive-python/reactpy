@@ -1,6 +1,3 @@
----
-title: "Tutorial: React Bootstrap 🚫"
----
 
 !!! warning "In Progress"
 

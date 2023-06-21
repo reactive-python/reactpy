@@ -1,6 +1,3 @@
----
-title: Thinking in React
----
 
 ## Overview
 
@@ -86,7 +83,7 @@ You can either build "top down" by starting with building the components higher 
     # TODO
     ```
 
-(If this code looks intimidating, go through the [Quick Start](../learn/get-started.md) first!)
+(If this code looks intimidating, go through the [Quick Start](../learn/quick-start.md) first!)
 
 After building your components, you'll have a library of reusable components that render your data model. Because this is a static app, the components will only return non-interactive HTML. The component at the top of the hierarchy (`filterable_product_table`) will take your data model as a prop. This is called _one-way data flow_ because the data flows down from the top-level component to the ones at the bottom of the tree.
 

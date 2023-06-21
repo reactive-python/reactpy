@@ -1,6 +1,3 @@
----
-title: "Lifecycle of Reactive Effects 🚧"
----
 
 ## Overview
 

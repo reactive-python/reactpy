@@ -1,6 +1,3 @@
----
-title: React Developer Tools 🚫
----
 
 !!! warning "In Progress"
 

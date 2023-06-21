@@ -1,6 +1,3 @@
----
-title: State as a Snapshot 🚧
----
 
 ## Overview
 

@@ -1,6 +1,3 @@
----
-title: "You Might Not Need an Effect 🚧"
----
 
 ## Overview
 

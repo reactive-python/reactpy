@@ -1,6 +1,3 @@
----
-title: Sharing State Between Components 🚧
----
 
 ## Overview
 

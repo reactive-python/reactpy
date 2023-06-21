@@ -1,6 +1,3 @@
----
-title: Updating Arrays in State 🚧
----
 
 ## Overview
 

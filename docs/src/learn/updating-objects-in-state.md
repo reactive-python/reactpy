@@ -1,6 +1,3 @@
----
-title: Updating Objects in State 🚧
----
 
 ## Overview
 

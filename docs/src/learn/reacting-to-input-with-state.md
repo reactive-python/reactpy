@@ -1,6 +1,3 @@
----
-title: Reacting to Input with State 🚧
----
 
 ## Overview
 

@@ -1,6 +1,3 @@
----
-title: "Tutorial: Tic-Tac-Toe 🚧"
----
 
 ## Overview
 

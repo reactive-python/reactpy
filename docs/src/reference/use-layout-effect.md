@@ -1,6 +1,3 @@
----
-title: Use Layout Effect 🚫
----
 
 <Pitfall>
 

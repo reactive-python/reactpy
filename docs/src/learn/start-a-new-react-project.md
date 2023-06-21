@@ -1,6 +1,3 @@
----
-title: Start a New React Project
----
 
 ## Overview
 

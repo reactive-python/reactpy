@@ -1,6 +1,3 @@
----
-title: "Separating Events from Effects 🚧"
----
 
 ## Overview
 

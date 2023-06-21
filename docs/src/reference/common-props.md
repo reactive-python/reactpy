@@ -1,6 +1,3 @@
----
-title: Common Props 🚧
----
 
 #### Props
 

@@ -1,6 +1,3 @@
----
-title: Writing Markup with PSX 🚫
----
 
 !!! warning "In Progress"
 

@@ -1,6 +1,3 @@
----
-title: Editor Setup 🚧
----
 
 ## Overview
 

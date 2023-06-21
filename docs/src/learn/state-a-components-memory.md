@@ -1,6 +1,3 @@
----
-title: "State: A Component's Memory 🚧"
----
 
 ## Overview
 

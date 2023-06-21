@@ -1,6 +1,3 @@
----
-title: "Synchronizing with Effects 🚧"
----
 
 ## Overview
 

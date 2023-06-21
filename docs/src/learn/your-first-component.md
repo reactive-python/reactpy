@@ -1,6 +1,3 @@
----
-title: Your First Component 🚧
----
 
 ## Overview
 

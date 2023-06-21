@@ -1,6 +1,3 @@
----
-title: Passing Props to a Component 🚧
----
 
 ## Overview
 

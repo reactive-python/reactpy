@@ -1,6 +1,3 @@
----
-title: "Manipulating the DOM with Refs 🚧"
----
 
 ## Overview
 

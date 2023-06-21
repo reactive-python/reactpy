@@ -1,6 +1,3 @@
----
-title: Choosing the State Structure 🚧
----
 
 ## Overview
 

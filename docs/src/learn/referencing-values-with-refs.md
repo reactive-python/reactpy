@@ -1,6 +1,3 @@
----
-title: "Referencing Values with Refs 🚧"
----
 
 ## Overview
 
