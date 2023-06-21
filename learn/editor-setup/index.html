@@ -25,7 +25,7 @@
     
     
       
-        <title>Editor Setup 🚧 - ReactPy</title>
+        <title>Editor Setup - ReactPy</title>
       
     
     
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Editor Setup 🚧
+              Editor Setup
             
           </span>
         </div>
@@ -228,18 +228,11 @@
   
   
   
-    
-
-  
-  
-  
     <li class="md-tabs__item">
-      <a href="../get-started/" class="md-tabs__link md-tabs__link--active">
+      <a href="../quick-start/" class="md-tabs__link md-tabs__link--active">
         Get Started
       </a>
     </li>
-  
-
   
 
       
@@ -409,10 +402,16 @@
       
       
       
-        <label class="md-nav__link" for="__nav_2_1" id="__nav_2_1_label" tabindex="0">
-          Quick Start
-          <span class="md-nav__icon md-icon"></span>
-        </label>
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../quick-start/">Quick Start</a>
+          
+            <label for="__nav_2_1">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+          
+        </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_2_1">
@@ -420,20 +419,6 @@
           Quick Start
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../get-started/" class="md-nav__link">
-        Get Started
-      </a>
-    </li>
-  
-
-            
           
             
               
@@ -487,10 +472,16 @@
       
       
       
-        <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
-          Installation
-          <span class="md-nav__icon md-icon"></span>
-        </label>
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../installation/">Installation</a>
+          
+            <label for="__nav_2_2">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+          
+        </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_2_2">
@@ -541,12 +532,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Editor Setup 🚧
+          Editor Setup
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Editor Setup 🚧
+        Editor Setup
       </a>
       
         
@@ -585,8 +576,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#linting" class="md-nav__link">
-    Linting
+  <a href="#python-linting" class="md-nav__link">
+    Python Linting
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#javascript-linting" class="md-nav__link">
+    JavaScript Linting
   </a>
   
 </li>
@@ -1996,7 +1994,7 @@
   
     <li class="md-nav__item">
       <a href="../../about/changelog/" class="md-nav__link">
-        Changelog
+        Changelog 🚧
       </a>
     </li>
   
@@ -2112,8 +2110,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#linting" class="md-nav__link">
-    Linting
+  <a href="#python-linting" class="md-nav__link">
+    Python Linting
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#javascript-linting" class="md-nav__link">
+    JavaScript Linting
   </a>
   
 </li>
@@ -2162,7 +2167,7 @@
   
 
 
-  <h1>Editor Setup 🚧</h1>
+  <h1>Editor Setup</h1>
 
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
 <p class="intro">
@@ -2187,8 +2192,16 @@ A properly configured editor can make code clearer to read and faster to write. 
 </ul>
 <h2 id="recommended-text-editor-features">Recommended text editor features<a class="headerlink" href="#recommended-text-editor-features" title="Permanent link">&para;</a></h2>
 <p>Some editors come with these features built in, but others might require adding an extension. Check to see what support your editor of choice provides to be sure!</p>
-<h3 id="linting">Linting<a class="headerlink" href="#linting" title="Permanent link">&para;</a></h3>
-<p>Code linters find problems in your code as you write, helping you fix them early. <a href="https://eslint.org/">ESLint</a> is a popular, open source linter for JavaScript.</p>
+<h3 id="python-linting">Python Linting<a class="headerlink" href="#python-linting" title="Permanent link">&para;</a></h3>
+<p>Linting is the process of running a program that will analyse code for potential errors. <a href="https://flake8.pycqa.org/en/latest/">Flake8</a> is a popular, open source linter for Python.</p>
+<ul>
+<li><a href="https://flake8.pycqa.org/en/latest/#installation">Install Flake8</a> (be sure you have <a href="https://www.python.org/downloads/">Python installed!</a>)</li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=ms-python.flake8">Integrate Flake8 in VSCode with the official extension</a></li>
+<li><a href="https://pypi.org/project/reactpy-flake8/">Install Reactpy-Flake8</a> to lint your ReactPy code</li>
+</ul>
+<h3 id="javascript-linting">JavaScript Linting<a class="headerlink" href="#javascript-linting" title="Permanent link">&para;</a></h3>
+<p>You typically won't use much JavaScript alongside ReactPy, but there are still some cases where you might. For example, you might want to use JavaScript to fetch data from an API or to add some interactivity to your app.</p>
+<p>In these cases, it's helpful to have a linter that can catch common mistakes in your code as you write it. <a href="https://eslint.org/">ESLint</a> is a popular, open source linter for JavaScript.</p>
 <ul>
 <li><a href="https://www.npmjs.com/package/eslint-config-react-app">Install ESLint with the recommended configuration for React</a> (be sure you have <a href="https://nodejs.org/en/download/current/">Node installed!</a>)</li>
 <li><a href="https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint">Integrate ESLint in VSCode with the official extension</a></li>
@@ -2199,22 +2212,23 @@ A properly configured editor can make code clearer to read and faster to write. 
 <p>You can install the <a href="https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode">Prettier extension in VSCode</a> by following these steps:</p>
 <ol>
 <li>Launch VS Code</li>
-<li>Use Quick Open (press Ctrl/Cmd+P)</li>
+<li>Use Quick Open, press <span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-p">P</kbd></span></li>
 <li>Paste in <code>ext install esbenp.prettier-vscode</code></li>
 <li>Press Enter</li>
 </ol>
 <h4 id="formatting-on-save">Formatting on save<a class="headerlink" href="#formatting-on-save" title="Permanent link">&para;</a></h4>
 <p>Ideally, you should format your code on every save. VS Code has settings for this!</p>
 <ol>
-<li>In VS Code, press <code>CTRL/CMD + SHIFT + P</code>.</li>
+<li>In VS Code, press <span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-shift">Shift</kbd><span>+</span><kbd class="key-p">P</kbd></span></li>
 <li>Type "settings"</li>
 <li>Hit Enter</li>
 <li>In the search bar, type "format on save"</li>
 <li>Be sure the "format on save" option is ticked!</li>
 </ol>
-<blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
 <p>If your ESLint preset has formatting rules, they may conflict with Prettier. We recommend disabling all formatting rules in your ESLint preset using <a href="https://github.com/prettier/eslint-config-prettier"><code>eslint-config-prettier</code></a> so that ESLint is <em>only</em> used for catching logical mistakes. If you want to enforce that files are formatted before a pull request is merged, use <a href="https://prettier.io/docs/en/cli.html#--check"><code>prettier --check</code></a> for your continuous integration.</p>
-</blockquote>
+</div>
 
 
 

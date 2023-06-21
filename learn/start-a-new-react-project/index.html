@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://reactive-python.github.io/reactpy/learn/start-a-new-react-project/">
       
       
-        <link rel="prev" href="../thinking-in-react/">
+        <link rel="prev" href="../installation/">
       
       
         <link rel="next" href="../add-react-to-an-existing-project/">
@@ -228,18 +228,11 @@
   
   
   
-    
-
-  
-  
-  
     <li class="md-tabs__item">
-      <a href="../get-started/" class="md-tabs__link md-tabs__link--active">
+      <a href="../quick-start/" class="md-tabs__link md-tabs__link--active">
         Get Started
       </a>
     </li>
-  
-
   
 
       
@@ -409,10 +402,16 @@
       
       
       
-        <label class="md-nav__link" for="__nav_2_1" id="__nav_2_1_label" tabindex="0">
-          Quick Start
-          <span class="md-nav__icon md-icon"></span>
-        </label>
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../quick-start/">Quick Start</a>
+          
+            <label for="__nav_2_1">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+          
+        </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_2_1">
@@ -420,20 +419,6 @@
           Quick Start
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../get-started/" class="md-nav__link">
-        Get Started
-      </a>
-    </li>
-  
-
-            
           
             
               
@@ -487,10 +472,16 @@
       
       
       
-        <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
-          Installation
-          <span class="md-nav__icon md-icon"></span>
-        </label>
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../installation/">Installation</a>
+          
+            <label for="__nav_2_2">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+          
+        </div>
       
       <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_2_2">
@@ -653,7 +644,7 @@
   
     <li class="md-nav__item">
       <a href="../editor-setup/" class="md-nav__link">
-        Editor Setup 🚧
+        Editor Setup
       </a>
     </li>
   
@@ -2031,7 +2022,7 @@
   
     <li class="md-nav__item">
       <a href="../../about/changelog/" class="md-nav__link">
-        Changelog
+        Changelog 🚧
       </a>
     </li>
   
@@ -2245,8 +2236,8 @@ If you want to build a new app or a new website fully with ReactPy, we recommend
 
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Some of our frameworks are considered <em>built-in</em>, meaning that compatibility for these backends are contained within <code>reactpy.backend.*</code>.</p>
-<p>In order to run ReactPy with these frameworks, you will need to run <code>reactpy.backend.*.configure(...)</code> on your ASGI application. This command will configure the necessary settings and routes for ReactPy to work properly.</p>
+<p>Some of our backend frameworks are considered <em>built-in</em>, meaning that compatibility for these backends are contained within <code>reactpy.backend.*</code>.</p>
+<p>In order to use ReactPy with <em>built-in</em> backend, you will need to run <code>reactpy.backend.*.configure(...)</code> on your ASGI application. This command will configure the necessary settings and routes for ReactPy to work properly.</p>
 <p>For example, this is how you would configure ReactPy for FastAPI:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">fastapi</span> <span class="kn">import</span> <span class="n">FastAPI</span>
 
@@ -2302,6 +2293,11 @@ If you want to build a new app or a new website fully with ReactPy, we recommend
 <p>If you're new to Tornado, check out the <a href="https://www.tornadoweb.org/en/stable/guide/">Tornado tutorial</a>.</p>
 <p>You will need to <a href="#built-in-backends">configure Tornado</a> in order to use it with ReactPy.</p>
 <h2 id="external-backends">External Backends<a class="headerlink" href="#external-backends" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Pitfall</p>
+<p><em>External</em> backends have ReactPy support, but have significantly different installation and configuration instructions than <em>built-in</em> backends.</p>
+<p>Make sure to follow the configuration guide for your chosen <em>external</em> backend.</p>
+</div>
 <h3 id="django">Django<a class="headerlink" href="#django" title="Permanent link">&para;</a></h3>
 <p><a href="https://www.djangoproject.com/">Django</a> is a full-featured web framework that provides a batteries-included approach to web development. It includes features such as ORM, templating, authentication, and authorization. Django is a good choice for large and complex web applications.</p>
 <div class="admonition example">
@@ -2310,7 +2306,7 @@ If you want to build a new app or a new website fully with ReactPy, we recommend
 </code></pre></div>
 </div>
 <p>If you're new to Django, check out the <a href="https://docs.djangoproject.com/en/dev/intro/tutorial01/">Django tutorial</a>.</p>
-<p>You will need to <a href="https://reactive-python.github.io/reactpy-django/get-started/installation/">configure Django</a> in order to use it with ReactPy.</p>
+<p>ReactPy has unique <a href="https://reactive-python.github.io/reactpy-django/get-started/installation/">configuration instructions</a> to use Django.</p>
 <h3 id="jupyter">Jupyter<a class="headerlink" href="#jupyter" title="Permanent link">&para;</a></h3>
 <p>Jupyter is an interactive computing environment that is used for data science and machine learning. It allows users to run code, visualize data, and collaborate with others in a live environment. Jupyter is a powerful tool for data scientists and machine learning engineers.</p>
 <div class="admonition example">
@@ -2319,7 +2315,7 @@ If you want to build a new app or a new website fully with ReactPy, we recommend
 </code></pre></div>
 </div>
 <p>If you're new to Jupyter, check out the <a href="https://jupyter.org/try">Jupyter tutorial</a>.</p>
-<p>You will need to <a href="https://github.com/reactive-python/reactpy-jupyter#readme">configure Jupyter</a> in order to use it with ReactPy.</p>
+<p>ReactPy has unique <a href="https://github.com/reactive-python/reactpy-jupyter#readme">configuration instructions</a> to use Jupyter.</p>
 <h3 id="plotly-dash">Plotly Dash<a class="headerlink" href="#plotly-dash" title="Permanent link">&para;</a></h3>
 <p>Plotly Dash is a web application framework that is used to create interactive dashboards. It allows users to create dashboards that can be used to visualize data and interact with it in real time. Plotly Dash is a good choice for creating dashboards that need to be interactive and informative.</p>
 <div class="admonition example">
@@ -2328,11 +2324,11 @@ If you want to build a new app or a new website fully with ReactPy, we recommend
 </code></pre></div>
 </div>
 <p>If you're new to Plotly Dash, check out the <a href="https://dash.plotly.com/installation">Plotly Dash tutorial</a>.</p>
-<p>You will need to <a href="https://github.com/reactive-python/reactpy-dash#readme">configure Plotly Dash</a> in order to use it with ReactPy.</p>
+<p>ReactPy has unique <a href="https://github.com/reactive-python/reactpy-dash#readme">configuration instructions</a> to use Plotly Dash.</p>
 <div class="admonition info">
 <p class="admonition-title">Deep Dive</p>
 <p><font size="4"><strong>Can I use ReactPy without a backend framework?</strong></font></p>
-<p>You can not ReactPy without a backend—this project was designed to be built on-top of existing web frameworks. </p>
+<p>You can not ReactPy without a backend—this project was designed to be built on-top of existing web frameworks.</p>
 <p>Here's why.</p>
 <p>You can think of ReactPy as ReactJS server side rendering, but with a Python server. We rely on Python web frameworks and webservers in order to process ReactPy traffic. <strong>This means that you can <a href="../creating-backends/">use any Python web framework</a> as a ReactPy backend, as long as it supports the ASGI standard.</strong> As your project grows with every new feature, you may want to switch backends in the future. As a result, we recommend keeping all backend-related logic within hook functions in order to make the "points of integration" between ReactPy and your backend as small as possible.</p>
 <p><strong>If you're building a new app or a site fully with ReactPy, we recommend using your favorite backend combined with <a href="https://github.com/reactive-python/reactpy-router"><code>reactpy-router</code></a> to create a Single Page Application (SPA).</strong></p>
