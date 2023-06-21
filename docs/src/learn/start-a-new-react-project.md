@@ -1,4 +1,3 @@
-
 ## Overview
 
 <p class="intro" markdown>
@@ -7,22 +6,21 @@ If you want to build a new app or a new website fully with ReactPy, we recommend
 
 </p>
 
-
 ## Built-in Backends
 
 <!-- FIXME: This is reliant on https://github.com/reactive-python/reactpy/issues/1071 -->
 
 !!! note
 
-    Some of our frameworks are considered _built-in_, meaning that compatibility for these backends are contained within `reactpy.backend.*`.
+    Some of our backend frameworks are considered _built-in_, meaning that compatibility for these backends are contained within `reactpy.backend.*`.
 
-    In order to run ReactPy with these frameworks, you will need to run `reactpy.backend.*.configure(...)` on your ASGI application. This command will configure the necessary settings and routes for ReactPy to work properly.
+    In order to use ReactPy with _built-in_ backend, you will need to run `reactpy.backend.*.configure(...)` on your ASGI application. This command will configure the necessary settings and routes for ReactPy to work properly.
 
     For example, this is how you would configure ReactPy for FastAPI:
 
-	```python linenums="0"
-	{% include "../../examples/python/start_a_new_react_project/configure_example.py" %}
-	```
+    ```python linenums="0"
+    {% include "../../examples/python/start_a_new_react_project/configure_example.py" %}
+    ```
 
 ### FastAPI
 
@@ -96,6 +94,12 @@ You will need to [configure Tornado](#built-in-backends) in order to use it with
 
 ## External Backends
 
+!!! warning "Pitfall"
+
+    _External_ backends have ReactPy support, but have significantly different installation and configuration instructions than _built-in_ backends.
+
+    Make sure to follow the configuration guide for your chosen _external_ backend.
+
 ### Django
 
 [Django](https://www.djangoproject.com/) is a full-featured web framework that provides a batteries-included approach to web development. It includes features such as ORM, templating, authentication, and authorization. Django is a good choice for large and complex web applications.
@@ -108,7 +112,7 @@ You will need to [configure Tornado](#built-in-backends) in order to use it with
 
 If you're new to Django, check out the [Django tutorial](https://docs.djangoproject.com/en/dev/intro/tutorial01/).
 
-You will need to [configure Django](https://reactive-python.github.io/reactpy-django/get-started/installation/) in order to use it with ReactPy.
+ReactPy has unique [configuration instructions](https://reactive-python.github.io/reactpy-django/get-started/installation/) to use Django.
 
 ### Jupyter
 
@@ -122,7 +126,7 @@ Jupyter is an interactive computing environment that is used for data science an
 
 If you're new to Jupyter, check out the [Jupyter tutorial](https://jupyter.org/try).
 
-You will need to [configure Jupyter](https://github.com/reactive-python/reactpy-jupyter#readme) in order to use it with ReactPy.
+ReactPy has unique [configuration instructions](https://github.com/reactive-python/reactpy-jupyter#readme) to use Jupyter.
 
 ### Plotly Dash
 
@@ -136,16 +140,16 @@ Plotly Dash is a web application framework that is used to create interactive da
 
 If you're new to Plotly Dash, check out the [Plotly Dash tutorial](https://dash.plotly.com/installation).
 
-You will need to [configure Plotly Dash](https://github.com/reactive-python/reactpy-dash#readme) in order to use it with ReactPy.
+ReactPy has unique [configuration instructions](https://github.com/reactive-python/reactpy-dash#readme) to use Plotly Dash.
 
 !!! info "Deep Dive"
 
     <font size="4">**Can I use ReactPy without a backend framework?**</font>
 
-    You can not ReactPy without a backend—this project was designed to be built on-top of existing web frameworks. 
+    You can not ReactPy without a backend—this project was designed to be built on-top of existing web frameworks.
 
     Here's why.
 
     You can think of ReactPy as ReactJS server side rendering, but with a Python server. We rely on Python web frameworks and webservers in order to process ReactPy traffic. **This means that you can [use any Python web framework](../learn/creating-backends.md) as a ReactPy backend, as long as it supports the ASGI standard.** As your project grows with every new feature, you may want to switch backends in the future. As a result, we recommend keeping all backend-related logic within hook functions in order to make the "points of integration" between ReactPy and your backend as small as possible.
-	
-	**If you're building a new app or a site fully with ReactPy, we recommend using your favorite backend combined with [`reactpy-router`](https://github.com/reactive-python/reactpy-router) to create a Single Page Application (SPA).**
+
+    **If you're building a new app or a site fully with ReactPy, we recommend using your favorite backend combined with [`reactpy-router`](https://github.com/reactive-python/reactpy-router) to create a Single Page Application (SPA).**
