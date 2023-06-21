@@ -26,9 +26,19 @@ Other popular text editors used in the React community include:
 
 Some editors come with these features built in, but others might require adding an extension. Check to see what support your editor of choice provides to be sure!
 
-### Linting
+### Python Linting
 
-Code linters find problems in your code as you write, helping you fix them early. [ESLint](https://eslint.org/) is a popular, open source linter for JavaScript.
+Linting is the process of running a program that will analyse code for potential errors. [Flake8](https://flake8.pycqa.org/en/latest/) is a popular, open source linter for Python.
+
+-   [Install Flake8](https://flake8.pycqa.org/en/latest/#installation) (be sure you have [Python installed!](https://www.python.org/downloads/))
+-   [Integrate Flake8 in VSCode with the official extension](https://marketplace.visualstudio.com/items?itemName=ms-python.flake8)
+-   [Install Reactpy-Flake8](https://pypi.org/project/reactpy-flake8/) to lint your ReactPy code
+
+### JavaScript Linting
+
+You typically won't use much JavaScript alongside ReactPy, but there are still some cases where you might. For example, you might want to use JavaScript to fetch data from an API or to add some interactivity to your app.
+
+In these cases, it's helpful to have a linter that can catch common mistakes in your code as you write it. [ESLint](https://eslint.org/) is a popular, open source linter for JavaScript.
 
 -   [Install ESLint with the recommended configuration for React](https://www.npmjs.com/package/eslint-config-react-app) (be sure you have [Node installed!](https://nodejs.org/en/download/current/))
 -   [Integrate ESLint in VSCode with the official extension](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
@@ -42,7 +52,7 @@ The last thing you want to do when sharing your code with another contributor is
 You can install the [Prettier extension in VSCode](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) by following these steps:
 
 1. Launch VS Code
-2. Use Quick Open (press Ctrl/Cmd+P)
+2. Use Quick Open, press ++ctrl+p++
 3. Paste in `ext install esbenp.prettier-vscode`
 4. Press Enter
 
@@ -50,10 +60,12 @@ You can install the [Prettier extension in VSCode](https://marketplace.visualstu
 
 Ideally, you should format your code on every save. VS Code has settings for this!
 
-1. In VS Code, press `CTRL/CMD + SHIFT + P`.
+1. In VS Code, press ++ctrl+shift+p++
 2. Type "settings"
 3. Hit Enter
 4. In the search bar, type "format on save"
 5. Be sure the "format on save" option is ticked!
 
-> If your ESLint preset has formatting rules, they may conflict with Prettier. We recommend disabling all formatting rules in your ESLint preset using [`eslint-config-prettier`](https://github.com/prettier/eslint-config-prettier) so that ESLint is _only_ used for catching logical mistakes. If you want to enforce that files are formatted before a pull request is merged, use [`prettier --check`](https://prettier.io/docs/en/cli.html#--check) for your continuous integration.
+!!! note
+
+    If your ESLint preset has formatting rules, they may conflict with Prettier. We recommend disabling all formatting rules in your ESLint preset using [`eslint-config-prettier`](https://github.com/prettier/eslint-config-prettier) so that ESLint is _only_ used for catching logical mistakes. If you want to enforce that files are formatted before a pull request is merged, use [`prettier --check`](https://prettier.io/docs/en/cli.html#--check) for your continuous integration.

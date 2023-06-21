@@ -10,7 +10,7 @@ nav:
                 - learn/installation.md
                 - Start a New React Project : learn/start-a-new-react-project.md
                 - Add React to an Existing Project 🚫 : learn/add-react-to-an-existing-project.md
-                - Editor Setup 🚧 : learn/editor-setup.md
+                - Editor Setup : learn/editor-setup.md
                 - React Developer Tools 🚫 : learn/react-developer-tools.md
           - More Tutorials:
                 - "Tutorial: React Bootstrap 🚫" : learn/tutorial-react-bootstrap.md
@@ -141,6 +141,7 @@ markdown_extensions:
     - admonition
     - attr_list
     - md_in_html
+    - pymdownx.keys
 
 plugins:
     - search
