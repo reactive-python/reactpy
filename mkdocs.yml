@@ -7,6 +7,7 @@ nav:
                 - "Tutorial: Tic-Tac-Toe 🚧" : learn/tutorial-tic-tac-toe.md
                 - Thinking in React : learn/thinking-in-react.md
           - Installation:
+                - learn/installation.md
                 - Start a New React Project : learn/start-a-new-react-project.md
                 - Add React to an Existing Project 🚫 : learn/add-react-to-an-existing-project.md
                 - Editor Setup 🚧 : learn/editor-setup.md
