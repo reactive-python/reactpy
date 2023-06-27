@@ -7,23 +7,18 @@
     "python.languageServer": "Pylance",
     "python.formatting.provider": "black",
     "python.analysis.autoImportCompletions": true,
-    "terminal.integrated.scrollback": 10000,
     "git.autofetch": "all",
     "prettier.tabWidth": 4,
     "prettier.useTabs": true,
     "prettier.endOfLine": "auto",
     "prettier.proseWrap": "never",
-    "autoprefixer.formatOnSave": true,
     "files.associations": {
         "**/requirements/*.txt": "pip-requirements",
         "*.py-tpl": "python",
         "**/templates/**.html": "jinja",
         "**/template/**.html": "jinja",
     },
-    "[jsonc]": {
-        "editor.defaultFormatter": "vscode.json-language-features"
-    },
-    "[json]": {
+    "[json, jsonc]": {
         "editor.defaultFormatter": "vscode.json-language-features"
     },
     "[javascript]": {
