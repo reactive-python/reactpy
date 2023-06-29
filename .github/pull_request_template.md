@@ -11,4 +11,4 @@
 -   [ ] Tests have been included for all bug fixes or added functionality.
 -   [ ] The `changelog.rst` has been updated with any significant changes.
 
-<sub>This contribution conforms the project's open source license(s).</sub>
+<sub>By submitting this pull request you agree that all contributions are made under this project's open source license(s).</sub>
