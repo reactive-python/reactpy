@@ -21,7 +21,7 @@
         <link rel="next" href="../python-in-psx-with-curly-braces/">
       
       <link rel="icon" href="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.16">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.17">
     
     
       
@@ -77,11 +77,6 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
-      
-        
-        <a href="#overview" class="md-skip">
-          Skip to content
-        </a>
       
     </div>
     <div data-md-component="announce">
@@ -542,6 +537,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extra-tools-and-packages/" class="md-nav__link">
+        Extra Tools and Packages 🚧
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -718,45 +727,9 @@
       
       
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Writing Markup with PSX 🚫
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
       <a href="./" class="md-nav__link md-nav__link--active">
         Writing Markup with PSX 🚫
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
-    Overview
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#psx-putting-markup-into-python" class="md-nav__link">
-    PSX: Putting markup into Python
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
       
     </li>
   
@@ -2034,28 +2007,6 @@
   
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
-    Overview
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#psx-putting-markup-into-python" class="md-nav__link">
-    PSX: Putting markup into Python
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -2080,34 +2031,40 @@
 <p>This feature is planned, but not yet developed.</p>
 <p>See <a href="https://github.com/reactive-python/reactpy/issues/918">this issue</a> for more details.</p>
 </div>
-<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p class="intro">
+<!-- ## Overview
 
-<em>PSX</em> is a syntax extension for JavaScript that lets you write HTML-like markup inside a JavaScript file. Although there are other ways to write components, most React developers prefer the conciseness of PSX, and most codebases use it.
+<p class="intro" markdown>
+
+_PSX_ is a syntax extension for JavaScript that lets you write HTML-like markup inside a JavaScript file. Although there are other ways to write components, most React developers prefer the conciseness of PSX, and most codebases use it.
 
 </p>
-<div class="admonition summary">
-<p class="admonition-title">You Will Learn</p>
-<ul>
-<li>Why React mixes markup with rendering logic</li>
-<li>How PSX is different from HTML</li>
-<li>How to display information with PSX</li>
-</ul>
-</div>
-<h2 id="psx-putting-markup-into-python">PSX: Putting markup into Python<a class="headerlink" href="#psx-putting-markup-into-python" title="Permanent link">&para;</a></h2>
-<p>The Web has been built on HTML, CSS, and JavaScript. For many years, web developers kept content in HTML, design in CSS, and logic in JavaScript—often in separate files! Content was marked up inside HTML while the page's logic lived separately in JavaScript:</p>
+
+!!! summary "You Will Learn"
+
+    -   Why React mixes markup with rendering logic
+    -   How PSX is different from HTML
+    -   How to display information with PSX
+
+## PSX: Putting markup into Python
+
+The Web has been built on HTML, CSS, and JavaScript. For many years, web developers kept content in HTML, design in CSS, and logic in JavaScript—often in separate files! Content was marked up inside HTML while the page's logic lived separately in JavaScript: -->
+
 <!-- TODO: Diagram -->
 
-<p>But as the Web became more interactive, logic increasingly determined content. Scripting languages are now in charge of the HTML! This is why <strong>in React, rendering logic and markup live together in the same place—components.</strong></p>
+<!-- But as the Web became more interactive, logic increasingly determined content. Scripting languages are now in charge of the HTML! This is why **in React, rendering logic and markup live together in the same place—components.** -->
+
 <!-- TODO: Diagram -->
 
-<p>Keeping a button's rendering logic and markup together ensures that they stay in sync with each other on every edit. Conversely, details that are unrelated, such as the button's markup and a sidebar's markup, are isolated from each other, making it safer to change either of them on their own.</p>
-<p>Each React component is a JavaScript function that may contain some markup that React renders into the browser. React components use a syntax extension called PSX to represent that markup. PSX looks a lot like HTML, but it is a bit stricter and can display dynamic information. The best way to understand this is to convert some HTML markup to PSX markup.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>PSX and ReactPy are two separate things. They're often used together, but you <em>can</em> use them independently of each other. PSX is a syntax extension, while ReactPy is a Python library.</p>
-</div>
-<!-- ## Converting HTML to PSX
+<!--
+Keeping a button's rendering logic and markup together ensures that they stay in sync with each other on every edit. Conversely, details that are unrelated, such as the button's markup and a sidebar's markup, are isolated from each other, making it safer to change either of them on their own.
+
+Each React component is a JavaScript function that may contain some markup that React renders into the browser. React components use a syntax extension called PSX to represent that markup. PSX looks a lot like HTML, but it is a bit stricter and can display dynamic information. The best way to understand this is to convert some HTML markup to PSX markup.
+
+!!! note
+
+    PSX and ReactPy are two separate things. They're often used together, but you _can_ use them independently of each other. PSX is a syntax extension, while ReactPy is a Python library.
+
+ ## Converting HTML to PSX
 
 Suppose that you have some (perfectly valid) HTML:
 
@@ -2575,7 +2532,7 @@ Whether to do it by hand or using the converter is up to you!
     <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.top", "content.code.copy"], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a51614de.min.js"></script>
+      <script src="../../assets/javascripts/bundle.b425cdc4.min.js"></script>
       
         
           <script src="../../static/js/extra.js"></script>
