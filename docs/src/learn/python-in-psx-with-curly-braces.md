@@ -4,6 +4,7 @@
 
     See [this issue](https://github.com/reactive-python/reactpy/issues/918) for more details.
 
+<!--
 ## Overview
 
 <p class="intro" markdown>
@@ -19,7 +20,6 @@ JSX lets you write HTML-like markup inside a JavaScript file, keeping rendering 
     -   How to call a JavaScript function inside JSX with curly braces
     -   How to use a JavaScript object inside JSX with curly braces
 
-<!--
 ## Passing strings with quotes
 
 When you want to pass a string attribute to JSX, you put it in single or double quotes:

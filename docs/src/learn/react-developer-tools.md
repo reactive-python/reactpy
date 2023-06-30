@@ -4,6 +4,7 @@
 
     See [this issue](https://github.com/reactive-python/reactpy/issues/1072) for more details.
 
+<!--
 ## Overview
 
 <p class="intro" markdown>
@@ -16,7 +17,7 @@ Use React Developer Tools to inspect React [components](../learn/your-first-comp
 
     -   How to install ReactPy Developer Tools
 
-<!--
+
 ## Browser extension
 
 The easiest way to debug websites built with React is to install the React Developer Tools browser extension. It is available for several popular browsers:
