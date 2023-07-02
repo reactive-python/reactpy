@@ -29,7 +29,7 @@ from reactpy.backend.types import Connection, Location
 from reactpy.config import REACTPY_WEB_MODULES_DIR
 from reactpy.core.layout import Layout
 from reactpy.core.serve import RecvCoroutine, SendCoroutine, serve_layout
-from reactpy.core.types import RootComponentConstructor
+from reactpy.core.types import RootComponentConstructor, LocalStorage
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ def use_connection() -> Connection[WebSocket]:
     if not isinstance(conn.carrier, WebSocket):  # nocov
         msg = f"Connection has unexpected carrier {conn.carrier}. Are you running with a Flask server?"
         raise TypeError(msg)
-    return conn
+    return 
 
 
 @dataclass
@@ -140,6 +140,7 @@ def _setup_single_view_dispatcher_route(
         pathname = "/" + socket.scope["path_params"].get("path", "")
         pathname = pathname[len(options.url_prefix) :] or "/"
         search = socket.scope["query_string"].decode()
+        storage_obj = LocalStorage(sock=socket)
 
         try:
             await serve_layout(
@@ -149,10 +150,12 @@ def _setup_single_view_dispatcher_route(
                         value=Connection(
                             scope=socket.scope,
                             location=Location(pathname, f"?{search}" if search else ""),
+                            storage=storage_obj,
                             carrier=socket,
                         ),
                     )
                 ),
+                storage_obj,
                 send,
                 recv,
             )

@@ -40,6 +40,18 @@ export function Layout(props: { client: ReactPyClient }): JSX.Element {
     [currentModel, props.client],
   );
 
+  useEffect(
+    () =>
+      props.client.onMessage("sync-local-storage", ({ type, storage}) => {
+        for (let itemKey in storage) {
+          window.localStorage.setItem(
+            itemKey,
+            storage[itemKey]
+          )
+        }
+      })
+  )
+
   return (
     <ClientContext.Provider value={props.client}>
       <Element model={currentModel} />

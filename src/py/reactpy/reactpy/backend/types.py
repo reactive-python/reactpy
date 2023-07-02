@@ -5,7 +5,7 @@ from collections.abc import MutableMapping
 from dataclasses import dataclass
 from typing import Any, Callable, Generic, Protocol, TypeVar, runtime_checkable
 
-from reactpy.core.types import RootComponentConstructor
+from reactpy.core.types import RootComponentConstructor, LocalStorage
 
 _App = TypeVar("_App")
 
@@ -50,6 +50,8 @@ class Connection(Generic[_Carrier]):
 
     location: Location
     """The current location (URL)"""
+
+    storage: LocalStorage
 
     carrier: _Carrier
     """How the connection is mediated. For example, a request or websocket.

@@ -8,8 +8,8 @@ from anyio import create_task_group
 from anyio.abc import TaskGroup
 
 from reactpy.config import REACTPY_DEBUG_MODE
-from reactpy.core.types import LayoutEventMessage, LayoutType, LayoutUpdateMessage
-
+from reactpy.core.types import StorageEventMessage, LocalStorage, LayoutEventMessage, LayoutType, LayoutUpdateMessage
+from reactpy.core.layout import Layout
 logger = getLogger(__name__)
 
 
@@ -33,6 +33,7 @@ class Stop(BaseException):
 
 async def serve_layout(
     layout: LayoutType[LayoutUpdateMessage, LayoutEventMessage],
+    storage: LocalStorage,
     send: SendCoroutine,
     recv: RecvCoroutine,
 ) -> None:
@@ -41,10 +42,9 @@ async def serve_layout(
         try:
             async with create_task_group() as task_group:
                 task_group.start_soon(_single_outgoing_loop, layout, send)
-                task_group.start_soon(_single_incoming_loop, task_group, layout, recv)
+                task_group.start_soon(_single_incoming_loop, task_group, layout, storage, recv)
         except Stop:
             logger.info(f"Stopped serving {layout}")
-
 
 async def _single_outgoing_loop(
     layout: LayoutType[LayoutUpdateMessage, LayoutEventMessage], send: SendCoroutine
@@ -63,13 +63,23 @@ async def _single_outgoing_loop(
                 logger.error(msg)
             raise
 
+async def incoming_router(
+    layout: Layout,
+    storage: LocalStorage,
+    event: LayoutEventMessage or StorageEventMessage,
+): 
+    if event["type"] == "sync-local-storage":
+        storage._sync(event["storage"])
+    else:
+        await layout.deliver(event)
 
 async def _single_incoming_loop(
     task_group: TaskGroup,
     layout: LayoutType[LayoutUpdateMessage, LayoutEventMessage],
+    storage: LocalStorage,
     recv: RecvCoroutine,
 ) -> None:
     while True:
         # We need to fire and forget here so that we avoid waiting on the completion
         # of this event handler before receiving and running the next one.
-        task_group.start_soon(layout.deliver, await recv())
+        task_group.start_soon(incoming_router, layout, storage, await recv())

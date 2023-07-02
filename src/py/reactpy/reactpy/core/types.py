@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import sys
+import sys, json
+from starlette.websockets import WebSocket
 from collections import namedtuple
 from collections.abc import Mapping, Sequence
 from types import TracebackType
@@ -233,3 +234,42 @@ class LayoutEventMessage(TypedDict):
     """The ID of the event handler."""
     data: Sequence[Any]
     """A list of event data passed to the event handler."""
+
+class StorageEventMessage(TypedDict):
+    type: Literal["sync-local-storage"]
+    storage: dict
+
+class LocalStorage():
+    _socket: WebSocket
+    storage: dict
+    
+    def __init__(self, sock):
+        self._socket = sock
+        self.storage = {}
+    
+    def _sync(self, sto):
+        self.storage = sto
+
+    async def _sync_client(self):
+        await self._socket.send_text(
+            json.dumps(
+                {
+                    "type": "sync-local-storage",
+                    "storage": self.storage
+                }
+            )
+        )
+
+    def get_item(
+        self,
+        key: str
+    ):
+        return self.storage.get(key)
+
+    async def set_item(
+        self,
+        key: str,
+        value: str
+    ):
+        self.storage[key] = value
+        await self._sync_client()

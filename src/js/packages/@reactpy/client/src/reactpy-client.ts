@@ -204,6 +204,23 @@ function createReconnectingWebSocket(
     socket.current.onopen = () => {
       everConnected = true;
       logger.log("client connected");
+
+      let storage : any = {}
+      for (let i = 0; i <= window.localStorage.length; i++) {
+        let storage_key = window.localStorage.key(i)
+        if (storage_key){
+          storage[storage_key] = window.localStorage.getItem(storage_key)
+        }
+        socket.current?.send(
+          JSON.stringify(
+            {
+              "type": "sync-local-storage",
+              "storage": storage
+            }
+          )
+        )
+      }
+
       interval = startInterval;
       retries = 0;
       if (props.onOpen) {
