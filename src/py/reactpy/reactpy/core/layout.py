@@ -37,16 +37,16 @@ logger = getLogger(__name__)
 class Layout:
     """Responsible for "rendering" components. That is, turning them into VDOM."""
 
-    __slots__ = [
+    __slots__ = (
         "root",
         "_event_handlers",
         "_rendering_queue",
         "_root_life_cycle_state_id",
         "_model_states_by_life_cycle_state_id",
-    ]
+    )
 
     if not hasattr(abc.ABC, "__weakref__"):  # nocov
-        __slots__.append("__weakref__")
+        __slots__ += ("__weakref__",)
 
     def __init__(self, root: ComponentType) -> None:
         super().__init__()

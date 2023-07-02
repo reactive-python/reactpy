@@ -77,15 +77,21 @@ def env(context: Context):
 @task
 def env_py(context: Context):
     """Install Python development environment"""
-    for py_proj in PY_PROJECTS:
-        py_proj_toml = toml.load(py_proj / "pyproject.toml")
-        hatch_default_env = py_proj_toml["tool"]["hatch"]["envs"].get("default", {})
-        hatch_default_features = hatch_default_env.get("features", [])
-        hatch_default_deps = hatch_default_env.get("dependencies", [])
+    for py_proj in [
+        DOCS_DIR,
+        # Docs installs non-editable versions of packages - ensure
+        # we overwrite that by installing projects afterwards.
+        *PY_PROJECTS,
+    ]:
+        py_proj_toml_tools = toml.load(py_proj / "pyproject.toml")["tool"]
+        if "hatch" in py_proj_toml_tools:
+            install_func = install_hatch_project
+        elif "poetry" in py_proj_toml_tools:
+            install_func = install_poetry_project
+        else:
+            raise Exit(f"Unknown project type: {py_proj}")
         with context.cd(py_proj):
-            context.run(f"pip install -e '.[{','.join(hatch_default_features)}]'")
-        context.run(f"pip install {' '.join(map(repr, hatch_default_deps))}")
-
+            install_func(context, py_proj)
 
 @task
 def env_js(context: Context):
@@ -417,3 +423,23 @@ def prepare_py_release(
             )
 
     return publish
+
+
+def install_hatch_project(context: Context, path: Path) -> None:
+    py_proj_toml = toml.load(path / "pyproject.toml")
+    hatch_default_env = py_proj_toml["tool"]["hatch"]["envs"].get("default", {})
+    hatch_default_features = hatch_default_env.get("features", [])
+    hatch_default_deps = hatch_default_env.get("dependencies", [])
+    context.run(f"pip install -e '.[{','.join(hatch_default_features)}]'")
+    context.run(f"pip install {' '.join(map(repr, hatch_default_deps))}")
+
+
+def install_poetry_project(context: Context, path: Path) -> None:
+    # install dependencies from poetry into the current environment - not in Poetry's venv
+    poetry_lock = toml.load(path / "poetry.lock")
+    packages_to_install = [
+        f"{package['name']}=={package['version']}"
+        for package in poetry_lock["package"]
+    ]
+    context.run("pip install -e .")
+    context.run(f"pip install {' '.join(packages_to_install)}")

@@ -21,7 +21,7 @@ def event(
 
 @overload
 def event(
-    function: Literal[None] = None,
+    function: Literal[None] = ...,
     *,
     stop_propagation: bool = ...,
     prevent_default: bool = ...,
