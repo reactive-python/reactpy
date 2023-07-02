@@ -37,7 +37,7 @@ logger = getLogger(__name__)
 class Layout:
     """Responsible for "rendering" components. That is, turning them into VDOM."""
 
-    __slots__ = (
+    __slots__: tuple[str, ...] = (
         "root",
         "_event_handlers",
         "_rendering_queue",

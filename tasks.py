@@ -93,6 +93,7 @@ def env_py(context: Context):
         with context.cd(py_proj):
             install_func(context, py_proj)
 
+
 @task
 def env_js(context: Context):
     """Install JS development environment"""
@@ -109,6 +110,7 @@ def lint_py(context: Context, fix: bool = False):
     """Run linters and type checkers"""
     if fix:
         context.run("ruff --fix .")
+        context.run("black .")
     else:
         context.run("ruff .")
         context.run("black --check --diff .")
@@ -438,8 +440,7 @@ def install_poetry_project(context: Context, path: Path) -> None:
     # install dependencies from poetry into the current environment - not in Poetry's venv
     poetry_lock = toml.load(path / "poetry.lock")
     packages_to_install = [
-        f"{package['name']}=={package['version']}"
-        for package in poetry_lock["package"]
+        f"{package['name']}=={package['version']}" for package in poetry_lock["package"]
     ]
     context.run("pip install -e .")
     context.run(f"pip install {' '.join(packages_to_install)}")
