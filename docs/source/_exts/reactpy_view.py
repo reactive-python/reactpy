@@ -1,7 +1,5 @@
 import os
-import sys
-
-print(sys.path)
+from typing import Any, ClassVar
 
 from docs_app.examples import get_normalized_example_name
 from docutils.nodes import raw
@@ -20,7 +18,7 @@ class IteractiveWidget(SphinxDirective):
     required_arguments = 1
     _next_id = 0
 
-    option_spec = {
+    option_spec: ClassVar[dict[str, Any]] = {
         "activate-button": directives.flag,
         "margin": float,
     }

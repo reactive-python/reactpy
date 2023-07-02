@@ -11,6 +11,7 @@
 .jupyter
 
 # --- Python ---
+.hatch
 .venv
 venv
 MANIFEST

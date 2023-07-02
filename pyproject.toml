@@ -18,6 +18,9 @@ dependencies = [
   "flake8",
   "flake8-pyproject",
   "reactpy-flake8 >=0.7",
+  # types
+  "mypy",
+  "types-toml",
   # publish
   "semver >=2, <3",
   "twine",
@@ -42,7 +45,15 @@ test-docs = "invoke test-docs"
 target-version = ["py39"]
 line-length = 88
 
-# --- Flake8 ----------------------------------------------------------------------------
+# --- MyPy -----------------------------------------------------------------------------
+
+[tool.mypy]
+ignore_missing_imports = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+# --- Flake8 ---------------------------------------------------------------------------
 
 [tool.flake8]
 select = ["RPY"]  # only need to check with reactpy-flake8
