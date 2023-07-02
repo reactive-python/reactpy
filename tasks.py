@@ -83,7 +83,7 @@ def env_py(context: Context):
         hatch_default_features = hatch_default_env.get("features", [])
         hatch_default_deps = hatch_default_env.get("dependencies", [])
         with context.cd(py_proj):
-            context.run(f"pip install '.[{','.join(hatch_default_features)}]'")
+            context.run(f"pip install -e '.[{','.join(hatch_default_features)}]'")
         context.run(f"pip install {' '.join(map(repr, hatch_default_deps))}")
 
 

@@ -118,6 +118,26 @@ Then, you should be able to activate your development environment with:
 
     hatch shell
 
+From within the shell, to install the projects in this repository, you should then run:
+
+.. code-block:: bash
+
+    invoke env
+
+Project Structure
+-----------------
+
+This repository is set up to be able to manage many applications and libraries written
+in a variety of languages. All projects can be found under the ``src`` directory:
+
+- ``src/py/{project}`` - Python packages
+- ``src/js/app`` - ReactPy's built-in JS client
+- ``src/js/packages/{project}`` - JS packages
+
+At the root of the repository is a ``pyproject.toml`` file that contains scripts and
+their respective dependencies for managing all other projects. Most of these global
+scripts can be run via ``hatch run ...`` however, for more complex scripting tasks, we
+rely on Invoke_. Scripts implements with Invoke can be found in ``tasks.py``.
 
 Running The Tests
 -----------------
@@ -308,6 +328,8 @@ you should refer to their respective documentation in the links below:
 .. Links
 .. =====
 
+.. _Hatch: https://hatch.pypa.io/
+.. _Invoke: https://www.pyinvoke.org/
 .. _Google Chrome: https://www.google.com/chrome/
 .. _Docker: https://docs.docker.com/get-docker/
 .. _Git: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
