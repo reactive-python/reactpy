@@ -3,7 +3,15 @@ repos:
     hooks:
       - id: lint-py-fix
         name: Fix Python Lint
-        entry: hatch run lint-py --fix
+        entry: hatch run lint-py
+        language: system
+        args: [--fix]
+        pass_filenames: false
+  - repo: local
+    hooks:
+      - id: lint-js-fix
+        name: Fix JS Lint
+        entry: hatch run lint-js --fix
         language: system
         pass_filenames: false
   - repo: local
@@ -11,13 +19,6 @@ repos:
       - id: lint-py-check
         name: Check Python Lint
         entry: hatch run lint-py
-        language: system
-        pass_filenames: false
-  - repo: local
-    hooks:
-      - id: lint-js-fix
-        name: Fix JS Lint
-        entry: hatch run lint-js --fix
         language: system
         pass_filenames: false
   - repo: local
