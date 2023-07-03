@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from collections import namedtuple
-from collections.abc import Mapping, Sequence
+from collections.abc import AsyncIterator, Mapping, Sequence
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -72,6 +72,9 @@ class LayoutType(Protocol[_Render, _Event]):
 
     async def render(self) -> _Render:
         """Render an update to a view"""
+
+    async def renders(self) -> AsyncIterator[_Render]:
+        """Render a series of updates to a view"""
 
     async def deliver(self, event: _Event) -> None:
         """Relay an event to its respective handler"""
@@ -213,7 +216,14 @@ class VdomDictConstructor(Protocol):
         ...
 
 
-class LayoutUpdateMessage(TypedDict):
+class Message(TypedDict):
+    """Base class for all messages"""
+
+    type: str
+    """The type of message"""
+
+
+class LayoutUpdateMessage(Message):
     """A message describing an update to a layout"""
 
     type: Literal["layout-update"]
@@ -224,7 +234,7 @@ class LayoutUpdateMessage(TypedDict):
     """The model to assign at the given JSON Pointer path"""
 
 
-class LayoutEventMessage(TypedDict):
+class LayoutEventMessage(Message):
     """Message describing an event originating from an element in the layout"""
 
     type: Literal["layout-event"]

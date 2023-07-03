@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Sequence
-from typing import Any, Callable, Literal, overload
+from typing import Any, Callable, Literal, Optional, overload
 
 from anyio import create_task_group
 

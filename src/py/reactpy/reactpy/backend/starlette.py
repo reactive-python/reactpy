@@ -3,10 +3,12 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from collections.abc import Awaitable
+from collections.abc import AsyncIterator, Awaitable
 from dataclasses import dataclass
 from typing import Any, Callable
 
+from py.reactpy.reactpy.backend.hooks import MessengerContext
+from py.reactpy.reactpy.core.serve import Messenger
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
@@ -141,6 +143,25 @@ def _setup_single_view_dispatcher_route(
         pathname = pathname[len(options.url_prefix) :] or "/"
         search = socket.scope["query_string"].decode()
 
+        async with Messenger() as msgr:
+            async with Layout(
+                MessengerContext(
+                    ConnectionContext(
+                        component(),
+                        value=Connection(
+                            scope=socket.scope,
+                            location=Location(pathname, f"?{search}" if search else ""),
+                            carrier=socket,
+                        ),
+                    ),
+                    value=msgr,
+                )
+            ) as layout:
+                msgr.start_consumer("layout-event", layout.deliver)
+                msgr.start_producer(layout.renders)
+                msgr.start_consumer("layout-update", send)
+                msgr.start_producer(recv)
+
         try:
             await serve_layout(
                 Layout(
@@ -166,7 +187,8 @@ def _make_send_recv_callbacks(
     async def sock_send(value: Any) -> None:
         await socket.send_text(json.dumps(value))
 
-    async def sock_recv() -> Any:
-        return json.loads(await socket.receive_text())
+    async def sock_recv() -> AsyncIterator[Any]:
+        while True:
+            yield json.loads(await socket.receive_text())
 
     return sock_send, sock_recv

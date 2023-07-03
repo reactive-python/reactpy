@@ -1,14 +1,20 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable
+import warnings
+from collections.abc import AsyncIterator, Awaitable
 from logging import getLogger
 from typing import Callable
 
-from anyio import create_task_group
-from anyio.abc import TaskGroup
+from anyio import Event, create_memory_object_stream, create_task_group
+from anyio.abc import ObjectReceiveStream, ObjectSendStream, TaskGroup
 
 from reactpy.config import REACTPY_DEBUG_MODE
-from reactpy.core.types import LayoutEventMessage, LayoutType, LayoutUpdateMessage
+from reactpy.core.types import (
+    LayoutEventMessage,
+    LayoutType,
+    LayoutUpdateMessage,
+    Message,
+)
 
 logger = getLogger(__name__)
 
@@ -37,6 +43,11 @@ async def serve_layout(
     recv: RecvCoroutine,
 ) -> None:
     """Run a dispatch loop for a single view instance"""
+    warnings.warn(
+        "serve_layout is deprecated. Use a Messenger object instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     async with layout:
         try:
             async with create_task_group() as task_group:
