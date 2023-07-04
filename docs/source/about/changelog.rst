@@ -23,6 +23,20 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
+Nothing yet...
+
+
+v1.0.2
+------
+
+**Fixed**
+
+- :issue:`1086` - fix rendering bug when children change positions (via :pull:`1085`)
+
+
+v1.0.1
+------
+
 **Changed**
 
 - :pull:`1050` - Warn and attempt to fix missing mime types, which can result in ``reactpy.run`` not working as expected.
@@ -31,7 +45,6 @@ Unreleased
 
 - :issue:`930` - better traceback for JSON serialization errors (via :pull:`1008`)
 - :issue:`437` - explain that JS component attributes must be JSON (via :pull:`1008`)
-- :issue:`1086` - fix rendering bug when children change positions (via :pull:`1085`)
 
 
 v1.0.0
