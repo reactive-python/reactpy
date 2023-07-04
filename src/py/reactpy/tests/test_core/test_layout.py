@@ -13,6 +13,7 @@ from reactpy.config import REACTPY_DEBUG_MODE
 from reactpy.core.component import component
 from reactpy.core.hooks import use_effect, use_state
 from reactpy.core.layout import Layout
+from reactpy.core.types import State
 from reactpy.testing import (
     HookCatcher,
     StaticEventHandler,
@@ -20,8 +21,11 @@ from reactpy.testing import (
     capture_reactpy_logs,
 )
 from reactpy.utils import Ref
+from tests.tooling import select
 from tests.tooling.common import event_message, update_message
 from tests.tooling.hooks import use_force_render, use_toggle
+from tests.tooling.layout import layout_runner
+from tests.tooling.select import element_exists, find_element
 
 
 @pytest.fixture(autouse=True)
@@ -1190,3 +1194,59 @@ async def test_render_removed_context_consumer():
         done, pending = await asyncio.wait([render_task], timeout=0.1)
         assert not done and pending
         render_task.cancel()
+
+
+async def test_ensure_model_path_udpates():
+    """
+    This is regression test for a bug in which we failed to update the path of a bug
+    that arose when the "path" of a component within the overall model was not updated
+    when the component changes position amongst its siblings. This meant that when
+    a component whose position had changed would attempt to update the view at its old
+    position.
+    """
+
+    @component
+    def Item(item: str, all_items: State[list[str]]):
+        color = use_state(None)
+
+        def deleteme(event):
+            all_items.set_value([i for i in all_items.value if (i != item)])
+
+        def colorize(event):
+            color.set_value("blue" if not color.value else None)
+
+        return html.div(
+            {"id": item, "color": color.value},
+            html.button({"on_click": colorize}, f"Color {item}"),
+            html.button({"on_click": deleteme}, f"Delete {item}"),
+        )
+
+    @component
+    def App():
+        items = use_state(["A", "B", "C"])
+        return html._([Item(item, items, key=item) for item in items.value])
+
+    async with layout_runner(reactpy.Layout(App())) as runner:
+        tree = await runner.render()
+
+        # Delete item B
+        b, b_info = find_element(tree, select.id_equals("B"))
+        assert b_info.path == (0, 1, 0)
+        b_delete, _ = find_element(b, select.text_equals("Delete B"))
+        await runner.trigger(b_delete, "on_click", {})
+
+        tree = await runner.render()
+
+        # Set color of item C
+        assert not element_exists(tree, select.id_equals("B"))
+        c, c_info = find_element(tree, select.id_equals("C"))
+        assert c_info.path == (0, 1, 0)
+        c_color, _ = find_element(c, select.text_equals("Color C"))
+        await runner.trigger(c_color, "on_click", {})
+
+        tree = await runner.render()
+
+        # Ensure position and color of item C are correct
+        c, c_info = find_element(tree, select.id_equals("C"))
+        assert c_info.path == (0, 1, 0)
+        assert c["attributes"]["color"] == "blue"

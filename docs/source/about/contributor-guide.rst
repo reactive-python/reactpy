@@ -322,7 +322,7 @@ you should refer to their respective documentation in the links below:
   Jupyter
 - `reactpy-dash <https://github.com/reactive-python/reactpy-dash>`__ - ReactPy integration for Plotly
   Dash
-- `django-reactpy <https://github.com/reactive-python/django-reactpy>`__ - ReactPy integration for
+- `reactpy-django <https://github.com/reactive-python/reactpy-django>`__ - ReactPy integration for
   Django
 
 .. Links

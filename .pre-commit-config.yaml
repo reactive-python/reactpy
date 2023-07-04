@@ -7,6 +7,7 @@ repos:
         language: system
         args: [--fix]
         pass_filenames: false
+        files: \.py$
   - repo: local
     hooks:
       - id: lint-js-fix
@@ -14,6 +15,7 @@ repos:
         entry: hatch run lint-js --fix
         language: system
         pass_filenames: false
+        files: \.(js|jsx|ts|tsx)$
   - repo: local
     hooks:
       - id: lint-py-check
@@ -21,6 +23,7 @@ repos:
         entry: hatch run lint-py
         language: system
         pass_filenames: false
+        files: \.py$
   - repo: local
     hooks:
       - id: lint-js-check
@@ -28,3 +31,4 @@ repos:
         entry: hatch run lint-py
         language: system
         pass_filenames: false
+        files: \.(js|jsx|ts|tsx)$

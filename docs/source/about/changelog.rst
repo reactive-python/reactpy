@@ -18,6 +18,20 @@ Changelog
 Unreleased
 ----------
 
+Nothing yet...
+
+
+v1.0.2
+------
+
+**Fixed**
+
+- :issue:`1086` - fix rendering bug when children change positions (via :pull:`1085`)
+
+
+v1.0.1
+------
+
 **Changed**
 
 - :pull:`1050` - Warn and attempt to fix missing mime types, which can result in ``reactpy.run`` not working as expected.
