@@ -1196,11 +1196,13 @@ async def test_render_removed_context_consumer():
         render_task.cancel()
 
 
-async def test_ensure_model_path_is_updated_on_update():
+async def test_ensure_model_path_udpates():
     """
     This is regression test for a bug in which we failed to update the path of a bug
     that arose when the "path" of a component within the overall model was not updated
-    when the component changes position amongst its siblings.
+    when the component changes position amongst its siblings. This meant that when
+    a component whose position had changed would attempt to update the view at its old
+    position.
     """
 
     @component
