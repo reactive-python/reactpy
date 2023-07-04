@@ -24,7 +24,7 @@ SUPPORTED_BACKENDS = (
 
 def run(
     component: RootComponentConstructor,
-    host: str | None = None,
+    host: str = "127.0.0.1",
     port: int | None = None,
     implementation: BackendType[Any] | None = None,
 ) -> None:
@@ -34,7 +34,6 @@ def run(
     implementation = implementation or import_module("reactpy.backend.default")
     app = implementation.create_development_app()
     implementation.configure(app, component)
-    host = host or "127.0.0.1"
     port = port or find_available_port(host)
     app_cls = type(app)
 
