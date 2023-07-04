@@ -27,7 +27,7 @@ class Ref(Generic[_RefValue]):
         You can compare the contents for two ``Ref`` objects using the ``==`` operator.
     """
 
-    __slots__ = "current"
+    __slots__ = ("current",)
 
     def __init__(self, initial_value: _RefValue = _UNDEFINED) -> None:
         if initial_value is not _UNDEFINED:
