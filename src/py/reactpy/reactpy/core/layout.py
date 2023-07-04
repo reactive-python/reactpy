@@ -489,7 +489,7 @@ def _update_component_model_state(
         index=new_index,
         key=old_model_state.key,
         model=Ref(),  # does not copy the model
-        patch_path=old_model_state.patch_path,
+        patch_path=f"{new_parent.patch_path}/children/{new_index}",
         children_by_key={},
         targets_by_event={},
         life_cycle_state=(

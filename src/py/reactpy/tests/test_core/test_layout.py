@@ -1196,7 +1196,13 @@ async def test_render_removed_context_consumer():
         render_task.cancel()
 
 
-async def test_something():
+async def test_ensure_model_path_is_updated_on_update():
+    """
+    This is regression test for a bug in which we failed to update the path of a bug
+    that arose when the "path" of a component within the overall model was not updated
+    when the component changes position amongst its siblings.
+    """
+
     @component
     def Item(item: str, all_items: State[list[str]]):
         color = use_state(None)
@@ -1219,23 +1225,26 @@ async def test_something():
         return html._([Item(item, items, key=item) for item in items.value])
 
     async with layout_runner(reactpy.Layout(App())) as runner:
-        # Delete item B
         tree = await runner.render()
+
+        # Delete item B
         b, b_info = find_element(tree, select.id_equals("B"))
         assert b_info.path == (0, 1, 0)
         b_delete, _ = find_element(b, select.text_equals("Delete B"))
         await runner.trigger(b_delete, "on_click", {})
 
-        # Set color of item C
         tree = await runner.render()
+
+        # Set color of item C
         assert not element_exists(tree, select.id_equals("B"))
         c, c_info = find_element(tree, select.id_equals("C"))
         assert c_info.path == (0, 1, 0)
         c_color, _ = find_element(c, select.text_equals("Color C"))
         await runner.trigger(c_color, "on_click", {})
 
-        # Ensure position and color of item C are correct
         tree = await runner.render()
+
+        # Ensure position and color of item C are correct
         c, c_info = find_element(tree, select.id_equals("C"))
         assert c_info.path == (0, 1, 0)
         assert c["attributes"]["color"] == "blue"
