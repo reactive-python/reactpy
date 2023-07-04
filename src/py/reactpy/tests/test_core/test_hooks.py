@@ -1,6 +1,7 @@
 import asyncio
 
 import pytest
+from anyio import CancelScope
 
 import reactpy
 from reactpy import html
@@ -10,6 +11,7 @@ from reactpy.core.hooks import (
     LifeCycleHook,
     current_hook,
     strictly_equal,
+    use_effect,
 )
 from reactpy.core.layout import Layout
 from reactpy.testing import DisplayFixture, HookCatcher, assert_reactpy_did_log, poll
@@ -1257,3 +1259,45 @@ async def test_error_in_component_effect_cleanup_is_gracefully_handled():
             await layout.render()
             component_hook.latest.schedule_render()
             await layout.render()  # no error
+
+
+async def test_async_effect_can_be_protected_from_cancellation_with_cancel_scope():
+    component_hook = HookCatcher()
+
+    cancel_initiated = asyncio.Event()
+    cancel_completed = asyncio.Event()
+    cancel_scope_complete = asyncio.Event()
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithEffect():
+        @use_effect(dependencies=None)  # run on every render
+        async def effect_with_shield():
+            async with CancelScope(shield=True):
+                await cancel_initiated.wait()
+                cancel_scope_complete.set()
+            try:
+                await asyncio.sleep(0)
+            except asyncio.CancelledError:
+                cancel_completed.set()
+                raise
+
+        return reactpy.html.div()
+
+    async with reactpy.Layout(ComponentWithEffect()) as layout:
+        await layout.render()
+
+        # sanity check that nothing has happened yet
+        assert not cancel_scope_complete.is_set()
+        assert not cancel_completed.is_set()
+
+        # schedule render that will trigger effect cancellation
+        component_hook.latest.schedule_render()
+
+        # wait for render to ensure cancellation has been initiated
+        await layout.render()
+        cancel_initiated.set()
+
+        # wait for effect to complete
+        await asyncio.wait_for(cancel_scope_complete.wait(), timeout=1)
+        await asyncio.wait_for(cancel_completed.wait(), timeout=1)

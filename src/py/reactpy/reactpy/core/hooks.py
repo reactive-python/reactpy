@@ -16,6 +16,7 @@ from typing import (
     overload,
 )
 
+from anyio import create_task_group
 from typing_extensions import TypeAlias
 
 from reactpy.config import REACTPY_DEBUG_MODE
@@ -147,15 +148,19 @@ def use_effect(
             async_function = cast(_AsyncEffectFunc, function)
 
             def sync_function() -> _EffectCleanFunc | None:
-                future = asyncio.ensure_future(async_function())
+                tg = create_task_group()
 
-                def clean_future() -> None:
-                    if not future.cancel():
-                        clean = future.result()
-                        if clean is not None:
-                            clean()
+                async def wrapper() -> None:
+                    async with tg:
+                        tg.start_soon(async_function)
 
-                return clean_future
+                # TODO: Component unmount should block until all effect tasks exit
+                # Right now we don't have a good way to do this, so we just cancel
+                # the task and hope the user's effect doesn't misbehave and ignore
+                # cancellation.
+                asyncio.create_task(wrapper())  # noqa: RUF006
+
+                return tg.cancel_scope.cancel  # type: ignore
 
         def effect() -> None:
             if last_clean_callback.current is not None:
