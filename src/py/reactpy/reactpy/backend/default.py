@@ -17,7 +17,7 @@ _DEFAULT_IMPLEMENTATION: BackendProtocol[Any] | None = None
 class Options:  # nocov
     """Create configuration options"""
 
-    def __call__(self, *args: Any, **kwds: Any) -> NoReturn:
+    def __init__(self, *args: Any, **kwds: Any) -> NoReturn:
         msg = "Default implementation has no options."
         raise ValueError(msg)
 
