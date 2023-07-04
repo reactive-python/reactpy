@@ -8,7 +8,7 @@ from typing import Any, Callable
 from urllib.parse import urlencode, urlunparse
 
 from reactpy.backend import default as default_server
-from reactpy.backend.types import BackendProtocol
+from reactpy.backend.types import BackendType
 from reactpy.backend.utils import find_available_port
 from reactpy.config import REACTPY_TESTING_DEFAULT_TIMEOUT
 from reactpy.core.component import component
@@ -43,7 +43,7 @@ class BackendFixture:
         host: str = "127.0.0.1",
         port: int | None = None,
         app: Any | None = None,
-        implementation: BackendProtocol[Any] | None = None,
+        implementation: BackendType[Any] | None = None,
         options: Any | None = None,
         timeout: float | None = None,
     ) -> None:

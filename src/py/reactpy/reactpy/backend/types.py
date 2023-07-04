@@ -11,7 +11,7 @@ _App = TypeVar("_App")
 
 
 @runtime_checkable
-class BackendProtocol(Protocol[_App]):
+class BackendType(Protocol[_App]):
     """Common interface for built-in web server/framework integrations"""
 
     Options: Callable[..., Any]

@@ -5,12 +5,12 @@ from logging import getLogger
 from sys import exc_info
 from typing import Any, NoReturn
 
-from reactpy.backend.types import BackendProtocol
+from reactpy.backend.types import BackendType
 from reactpy.backend.utils import SUPPORTED_BACKENDS, all_implementations
 from reactpy.types import RootComponentConstructor
 
 logger = getLogger(__name__)
-_DEFAULT_IMPLEMENTATION: BackendProtocol[Any] | None = None
+_DEFAULT_IMPLEMENTATION: BackendType[Any] | None = None
 
 
 # BackendProtocol.Options
@@ -52,7 +52,7 @@ async def serve_development_app(
     )
 
 
-def _default_implementation() -> BackendProtocol[Any]:
+def _default_implementation() -> BackendType[Any]:
     """Get the first available server implementation"""
     global _DEFAULT_IMPLEMENTATION  # noqa: PLW0603
 
