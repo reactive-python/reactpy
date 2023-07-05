@@ -1,5 +1,5 @@
 from reactpy import component, html, run
-from reactpy.core.hooks import use_state
+from reactpy.core.hooks import use_state, use_effect
 from reactpy.backend.hooks import use_local_storage
 from reactpy.core.types import LocalStorage
 
@@ -9,14 +9,16 @@ def App():
     key_input, set_key_input = use_state("")
     val_input, set_val_input = use_state("")
 
-    def handle_get(e):
+    @use_effect
+    def handle_get():
         set_val_input(
             storage.get_item(
                 key_input
             )
         )
 
-    async def handle_set(e):
+    @use_effect
+    async def handle_set():
         await storage.set_item(
             key_input,
             val_input
