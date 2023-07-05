@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 import asyncio
 from collections import Counter
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from contextlib import ExitStack
 from logging import getLogger
 from typing import (
@@ -98,6 +98,11 @@ class Layout:
                 f"Ignored event - handler {event['target']!r} "
                 "does not exist or its component unmounted"
             )
+
+    async def renders(self) -> AsyncIterator[LayoutUpdateMessage]:
+        """Yield all available renders"""
+        while True:
+            yield await self.render()
 
     async def render(self) -> LayoutUpdateMessage:
         """Await the next available render. This will block until a component is updated"""
