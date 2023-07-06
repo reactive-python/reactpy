@@ -18,6 +18,8 @@ class Options:  # nocov
     """Create configuration options"""
 
     def __init__(self, *args: Any, **kwds: Any) -> NoReturn:
+        """This should not be used, since default options should never
+        be constructed. Please override this method."""
         msg = "Default implementation has no options."
         raise ValueError(msg)
 
