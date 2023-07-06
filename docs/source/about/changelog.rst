@@ -23,7 +23,8 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-Nothing yet...
+**Added**
+- :issue:`1075` - Add support to localStorage and sessionStorage access
 
 
 v1.0.2
