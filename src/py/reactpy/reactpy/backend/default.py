@@ -15,11 +15,11 @@ _DEFAULT_IMPLEMENTATION: BackendType[Any] | None = None
 
 # BackendType.Options
 class Options:  # nocov
-    """Create configuration options"""
+    """Configuration options that can be provided to the backend.
+    This definition should not be used/instantiated. It exists only for
+    type hinting purposes."""
 
     def __init__(self, *args: Any, **kwds: Any) -> NoReturn:
-        """This definition should not be used. It exists only for
-        type hinting purposes."""
         msg = "Default implementation has no options."
         raise ValueError(msg)
 
