@@ -26,7 +26,7 @@ Unreleased
 **Changed**
 
 - :pull:`1050` - Warn and attempt to fix missing mime types, which can result in ``reactpy.run`` not working as expected.
-- :pull:`1051` - Rename ``reactpy.backend.BackendImplementation`` to ``reactpy.backend.BackendProtocol``
+- :pull:`1051` - Rename ``reactpy.backend.BackendImplementation`` to ``reactpy.backend.BackendType``
 - :pull:`1051` - Allow ``reactpy.run`` to fail in more predictable ways
 
 **Fixed**

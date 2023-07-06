@@ -13,7 +13,7 @@ logger = getLogger(__name__)
 _DEFAULT_IMPLEMENTATION: BackendType[Any] | None = None
 
 
-# BackendProtocol.Options
+# BackendType.Options
 class Options:  # nocov
     """Create configuration options"""
 
@@ -24,7 +24,7 @@ class Options:  # nocov
         raise ValueError(msg)
 
 
-# BackendProtocol.configure
+# BackendType.configure
 def configure(
     app: Any, component: RootComponentConstructor, options: None = None
 ) -> None:
@@ -35,13 +35,13 @@ def configure(
     return _default_implementation().configure(app, component)
 
 
-# BackendProtocol.create_development_app
+# BackendType.create_development_app
 def create_development_app() -> Any:
     """Create an application instance for development purposes"""
     return _default_implementation().create_development_app()
 
 
-# BackendProtocol.serve_development_app
+# BackendType.serve_development_app
 async def serve_development_app(
     app: Any,
     host: str,

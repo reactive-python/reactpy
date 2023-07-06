@@ -34,7 +34,7 @@ from reactpy.core.types import RootComponentConstructor
 logger = logging.getLogger(__name__)
 
 
-# BackendProtocol.Options
+# BackendType.Options
 @dataclass
 class Options(CommonOptions):
     """Render server config for :func:`reactpy.backend.starlette.configure`"""
@@ -46,7 +46,7 @@ class Options(CommonOptions):
     """
 
 
-# BackendProtocol.configure
+# BackendType.configure
 def configure(
     app: Starlette,
     component: RootComponentConstructor,
@@ -67,13 +67,13 @@ def configure(
     _setup_common_routes(options, app)
 
 
-# BackendProtocol.create_development_app
+# BackendType.create_development_app
 def create_development_app() -> Starlette:
     """Return a :class:`Starlette` app instance in debug mode"""
     return Starlette(debug=True)
 
 
-# BackendProtocol.serve_development_app
+# BackendType.serve_development_app
 async def serve_development_app(
     app: Starlette,
     host: str,

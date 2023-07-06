@@ -34,7 +34,7 @@ from reactpy.core.types import RootComponentConstructor
 logger = logging.getLogger(__name__)
 
 
-# BackendProtocol.Options
+# BackendType.Options
 @dataclass
 class Options(CommonOptions):
     """Render server config for :func:`reactpy.backend.sanic.configure`"""
@@ -46,7 +46,7 @@ class Options(CommonOptions):
     """
 
 
-# BackendProtocol.configure
+# BackendType.configure
 def configure(
     app: Sanic, component: RootComponentConstructor, options: Options | None = None
 ) -> None:
@@ -62,7 +62,7 @@ def configure(
     app.blueprint([spa_bp, api_bp])
 
 
-# BackendProtocol.create_development_app
+# BackendType.create_development_app
 def create_development_app() -> Sanic:
     """Return a :class:`Sanic` app instance in test mode"""
     Sanic.test_mode = True
@@ -70,7 +70,7 @@ def create_development_app() -> Sanic:
     return Sanic(f"reactpy_development_app_{uuid4().hex}", Config())
 
 
-# BackendProtocol.serve_development_app
+# BackendType.serve_development_app
 async def serve_development_app(
     app: Sanic,
     host: str,

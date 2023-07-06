@@ -45,7 +45,7 @@ from reactpy.utils import Ref
 logger = logging.getLogger(__name__)
 
 
-# BackendProtocol.Options
+# BackendType.Options
 @dataclass
 class Options(CommonOptions):
     """Render server config for :func:`reactpy.backend.flask.configure`"""
@@ -57,7 +57,7 @@ class Options(CommonOptions):
     """
 
 
-# BackendProtocol.configure
+# BackendType.configure
 def configure(
     app: Flask, component: RootComponentConstructor, options: Options | None = None
 ) -> None:
@@ -82,14 +82,14 @@ def configure(
     app.register_blueprint(spa_bp)
 
 
-# BackendProtocol.create_development_app
+# BackendType.create_development_app
 def create_development_app() -> Flask:
     """Create an application instance for development purposes"""
     os.environ["FLASK_DEBUG"] = "true"
     return Flask(__name__)
 
 
-# BackendProtocol.serve_development_app
+# BackendType.serve_development_app
 async def serve_development_app(
     app: Flask,
     host: str,

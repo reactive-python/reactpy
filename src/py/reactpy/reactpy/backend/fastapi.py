@@ -4,20 +4,20 @@ from fastapi import FastAPI
 
 from reactpy.backend import starlette
 
-# BackendProtocol.Options
+# BackendType.Options
 Options = starlette.Options
 
-# BackendProtocol.configure
+# BackendType.configure
 configure = starlette.configure
 
 
-# BackendProtocol.create_development_app
+# BackendType.create_development_app
 def create_development_app() -> FastAPI:
     """Create a development ``FastAPI`` application instance."""
     return FastAPI(debug=True)
 
 
-# BackendProtocol.serve_development_app
+# BackendType.serve_development_app
 serve_development_app = starlette.serve_development_app
 
 use_connection = starlette.use_connection

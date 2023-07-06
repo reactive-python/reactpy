@@ -32,11 +32,11 @@ from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
 from reactpy.core.types import ComponentConstructor
 
-# BackendProtocol.Options
+# BackendType.Options
 Options = CommonOptions
 
 
-# BackendProtocol.configure
+# BackendType.configure
 def configure(
     app: Application,
     component: ComponentConstructor,
@@ -61,12 +61,12 @@ def configure(
     )
 
 
-# BackendProtocol.create_development_app
+# BackendType.create_development_app
 def create_development_app() -> Application:
     return Application(debug=True)
 
 
-# BackendProtocol.serve_development_app
+# BackendType.serve_development_app
 async def serve_development_app(
     app: Application,
     host: str,
