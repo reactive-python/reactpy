@@ -1,10 +1,10 @@
 from reactpy import component, html, run
 from reactpy.core.hooks import use_state, use_effect
-from reactpy.backend.hooks import use_local_storage
+from reactpy.backend.hooks import use_session_storage
 
 @component
 def App():
-    storage = use_local_storage()
+    storage = use_session_storage()
     key_input, set_key_input = use_state("")
     val_input, set_val_input = use_state("")
 
@@ -16,14 +16,14 @@ def App():
             )
         )
 
-    async def handle_set():
+    async def handle_set(e):
         await storage.set_item(
             key_input,
             val_input
         )
 
     return html.div(
-        html.h1("Local Storage"),
+        html.h1("Session Storage"),
         html.input(
             {
                 "type": "text",
