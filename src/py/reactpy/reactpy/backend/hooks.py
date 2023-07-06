@@ -5,7 +5,7 @@ from typing import Any
 
 from reactpy.backend.types import Connection, Location
 from reactpy.core.hooks import Context, create_context, use_context
-from reactpy.core.types import LocalStorage
+from reactpy.core.types import LocalStorage, SessionStorage
 
 # backend implementations should establish this context at the root of an app
 ConnectionContext: Context[Connection[Any] | None] = create_context(None)
@@ -30,5 +30,9 @@ def use_location() -> Location:
     return use_connection().location
 
 def use_local_storage() -> LocalStorage:
-    """Get the storage object for the connection"""
-    return use_connection().storage
+    """Get the localStorage object for the connection"""
+    return use_connection().local_storage
+
+def use_session_storage() -> SessionStorage:
+    """Get the sessionStorage object for the connection"""
+    return use_connection().session_storage

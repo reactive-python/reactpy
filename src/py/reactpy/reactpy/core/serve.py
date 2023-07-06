@@ -8,7 +8,15 @@ from anyio import create_task_group
 from anyio.abc import TaskGroup
 
 from reactpy.config import REACTPY_DEBUG_MODE
-from reactpy.core.types import StorageEventMessage, LocalStorage, LayoutEventMessage, LayoutType, LayoutUpdateMessage
+from reactpy.core.types import (
+    LocalStorageEventMessage, 
+    SessionStorageEventMessage, 
+    LocalStorage, 
+    SessionStorage,
+    LayoutEventMessage, 
+    LayoutType, 
+    LayoutUpdateMessage
+)
 from reactpy.core.layout import Layout
 logger = getLogger(__name__)
 
@@ -33,7 +41,8 @@ class Stop(BaseException):
 
 async def serve_layout(
     layout: LayoutType[LayoutUpdateMessage, LayoutEventMessage],
-    storage: LocalStorage,
+    local_storage: LocalStorage,
+    session_storage: SessionStorage,
     send: SendCoroutine,
     recv: RecvCoroutine,
 ) -> None:
@@ -42,7 +51,7 @@ async def serve_layout(
         try:
             async with create_task_group() as task_group:
                 task_group.start_soon(_single_outgoing_loop, layout, send)
-                task_group.start_soon(_single_incoming_loop, task_group, layout, storage, recv)
+                task_group.start_soon(_single_incoming_loop, task_group, layout, local_storage, session_storage,recv)
         except Stop:
             logger.info(f"Stopped serving {layout}")
 
@@ -65,21 +74,25 @@ async def _single_outgoing_loop(
 
 async def incoming_router(
     layout: Layout,
-    storage: LocalStorage,
-    event: LayoutEventMessage or StorageEventMessage,
+    local_storage: LocalStorage,
+    session_storage: SessionStorage,
+    event: LayoutEventMessage or LocalStorageEventMessage or SessionStorageEventMessage,
 ): 
     if event["type"] == "sync-local-storage":
-        storage._sync(event["storage"])
-    else:
+        local_storage._sync(event["storage"])
+    elif event["type"] == "sync-session-storage":
+        session_storage._sync(event["storage"])
+    elif event["type"] == "layout-event":
         await layout.deliver(event)
 
 async def _single_incoming_loop(
     task_group: TaskGroup,
     layout: LayoutType[LayoutUpdateMessage, LayoutEventMessage],
-    storage: LocalStorage,
+    local_storage: LocalStorage,
+    session_storage: SessionStorage,
     recv: RecvCoroutine,
 ) -> None:
     while True:
         # We need to fire and forget here so that we avoid waiting on the completion
         # of this event handler before receiving and running the next one.
-        task_group.start_soon(incoming_router, layout, storage, await recv())
+        task_group.start_soon(incoming_router, layout, local_storage, session_storage, await recv())

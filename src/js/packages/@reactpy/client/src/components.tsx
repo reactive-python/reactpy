@@ -52,6 +52,18 @@ export function Layout(props: { client: ReactPyClient }): JSX.Element {
       })
   )
 
+  useEffect(
+    () =>
+      props.client.onMessage("sync-session-storage", ({ type, storage}) => {
+        for (let itemKey in storage) {
+          window.sessionStorage.setItem(
+            itemKey,
+            storage[itemKey]
+          )
+        }
+      })
+  )
+
   return (
     <ClientContext.Provider value={props.client}>
       <Element model={currentModel} />
