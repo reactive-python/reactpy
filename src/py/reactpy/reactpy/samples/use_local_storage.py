@@ -16,7 +16,7 @@ def App():
             )
         )
 
-    async def handle_set():
+    async def handle_set(e):
         await storage.set_item(
             key_input,
             val_input
