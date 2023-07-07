@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import socket
+import sys
 from collections.abc import Iterator
 from contextlib import closing
 from importlib import import_module
@@ -52,6 +53,12 @@ def find_available_port(host: str, port_min: int = 8000, port_max: int = 9000) -
     for port in range(port_min, port_max):
         with closing(socket.socket()) as sock:
             try:
+                if sys.platform == "linux":
+                    # Fixes bug where every time you restart the server you'll
+                    # get a different port on Linux. This cannot be set on Windows
+                    # otherwise address will always be reused.
+                    # Ref: https://stackoverflow.com/a/19247688/3159288
+                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 sock.bind((host, port))
             except OSError:
                 pass
