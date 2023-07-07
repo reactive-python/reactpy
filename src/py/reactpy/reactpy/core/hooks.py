@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Sequence
+from collections.abc import Coroutine, Sequence
+from dataclasses import dataclass
 from logging import getLogger
 from types import FunctionType
 from typing import (
@@ -9,12 +10,12 @@ from typing import (
     Any,
     Callable,
     Generic,
-    NewType,
     Protocol,
     TypeVar,
     cast,
     overload,
 )
+from weakref import WeakSet
 
 from typing_extensions import TypeAlias
 
@@ -96,30 +97,30 @@ class _CurrentState(Generic[_Type]):
 
 _EffectCleanFunc: TypeAlias = "Callable[[], None]"
 _SyncEffectFunc: TypeAlias = "Callable[[], _EffectCleanFunc | None]"
-_AsyncEffectFunc: TypeAlias = "Callable[[], Awaitable[_EffectCleanFunc | None]]"
-_EffectApplyFunc: TypeAlias = "_SyncEffectFunc | _AsyncEffectFunc"
+_AsyncEffectFunc: TypeAlias = "Callable[[asyncio.Event], Coroutine[None, None, None]]"
+_EffectFunc: TypeAlias = "_SyncEffectFunc | _AsyncEffectFunc"
 
 
 @overload
 def use_effect(
     function: None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Callable[[_EffectApplyFunc], None]:
+) -> Callable[[_EffectFunc], None]:
     ...
 
 
 @overload
 def use_effect(
-    function: _EffectApplyFunc,
+    function: _EffectFunc,
     dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> None:
     ...
 
 
 def use_effect(
-    function: _EffectApplyFunc | None = None,
+    function: _EffectFunc | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Callable[[_EffectApplyFunc], None] | None:
+) -> Callable[[_EffectFunc], None] | None:
     """See the full :ref:`Use Effect` docs for details
 
     Parameters:
@@ -135,43 +136,44 @@ def use_effect(
         If not function is provided, a decorator. Otherwise ``None``.
     """
     hook = current_hook()
-
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
-    last_clean_callback: Ref[_EffectCleanFunc | None] = use_ref(None)
+    effect_info: Ref[_EffectInfo | None] = use_ref(None)
 
-    def add_effect(function: _EffectApplyFunc) -> None:
-        if not asyncio.iscoroutinefunction(function):
-            sync_function = cast(_SyncEffectFunc, function)
-        else:
-            async_function = cast(_AsyncEffectFunc, function)
+    def add_effect(function: _EffectFunc) -> None:
+        effect = _cast_async_effect(function)
 
-            def sync_function() -> _EffectCleanFunc | None:
-                future = asyncio.ensure_future(async_function())
+        async def create_effect_task() -> _EffectInfo:
+            if effect_info.current is not None:
+                last_effect_info = effect_info.current
+                last_effect_info.stop.set()
+                await last_effect_info.task
 
-                def clean_future() -> None:
-                    if not future.cancel():
-                        clean = future.result()
-                        if clean is not None:
-                            clean()
+            stop = asyncio.Event()
+            info = _EffectInfo(asyncio.create_task(effect(stop)), stop)
+            effect_info.current = info
+            return info
 
-                return clean_future
-
-        def effect() -> None:
-            if last_clean_callback.current is not None:
-                last_clean_callback.current()
-
-            clean = last_clean_callback.current = sync_function()
-            if clean is not None:
-                hook.add_effect(COMPONENT_WILL_UNMOUNT_EFFECT, clean)
-
-        return memoize(lambda: hook.add_effect(LAYOUT_DID_RENDER_EFFECT, effect))
+        return memoize(lambda: hook.add_effect(create_effect_task))
 
     if function is not None:
         add_effect(function)
         return None
     else:
         return add_effect
+
+
+def _cast_async_effect(function: Callable[..., Any]) -> _AsyncEffectFunc:
+    if asyncio.iscoroutinefunction(function):
+        return function
+
+    async def wrapper(stop: asyncio.Event) -> None:
+        cleanup = function()
+        await stop.wait()
+        if cleanup is not None:
+            cleanup()
+
+    return wrapper
 
 
 def use_debug_value(
@@ -507,19 +509,6 @@ def current_hook() -> LifeCycleHook:
 _hook_stack: ThreadLocal[list[LifeCycleHook]] = ThreadLocal(list)
 
 
-EffectType = NewType("EffectType", str)
-"""Used in :meth:`LifeCycleHook.add_effect` to indicate what effect should be saved"""
-
-COMPONENT_DID_RENDER_EFFECT = EffectType("COMPONENT_DID_RENDER")
-"""An effect that will be triggered each time a component renders"""
-
-LAYOUT_DID_RENDER_EFFECT = EffectType("LAYOUT_DID_RENDER")
-"""An effect that will be triggered each time a layout renders"""
-
-COMPONENT_WILL_UNMOUNT_EFFECT = EffectType("COMPONENT_WILL_UNMOUNT")
-"""An effect that will be triggered just before the component is unmounted"""
-
-
 class LifeCycleHook:
     """Defines the life cycle of a layout component.
 
@@ -590,7 +579,8 @@ class LifeCycleHook:
         "__weakref__",
         "_context_providers",
         "_current_state_index",
-        "_event_effects",
+        "_effect_funcs",
+        "_effect_infos",
         "_is_rendering",
         "_rendered_atleast_once",
         "_schedule_render_callback",
@@ -612,11 +602,8 @@ class LifeCycleHook:
         self._rendered_atleast_once = False
         self._current_state_index = 0
         self._state: tuple[Any, ...] = ()
-        self._event_effects: dict[EffectType, list[Callable[[], None]]] = {
-            COMPONENT_DID_RENDER_EFFECT: [],
-            LAYOUT_DID_RENDER_EFFECT: [],
-            COMPONENT_WILL_UNMOUNT_EFFECT: [],
-        }
+        self._effect_funcs: list[_EffectStarter] = []
+        self._effect_infos: WeakSet[_EffectInfo] = WeakSet()
 
     def schedule_render(self) -> None:
         if self._is_rendering:
@@ -635,9 +622,9 @@ class LifeCycleHook:
         self._current_state_index += 1
         return result
 
-    def add_effect(self, effect_type: EffectType, function: Callable[[], None]) -> None:
+    def add_effect(self, start_effect: _EffectStarter) -> None:
         """Trigger a function on the occurrence of the given effect type"""
-        self._event_effects[effect_type].append(function)
+        self._effect_funcs.append(start_effect)
 
     def set_context_provider(self, provider: ContextProvider[Any]) -> None:
         self._context_providers[provider.type] = provider
@@ -647,52 +634,40 @@ class LifeCycleHook:
     ) -> ContextProvider[_Type] | None:
         return self._context_providers.get(context)
 
-    def affect_component_will_render(self, component: ComponentType) -> None:
+    async def affect_component_will_render(self, component: ComponentType) -> None:
         """The component is about to render"""
         self.component = component
-
         self._is_rendering = True
-        self._event_effects[COMPONENT_WILL_UNMOUNT_EFFECT].clear()
+        self.set_current()
 
-    def affect_component_did_render(self) -> None:
+    async def affect_component_did_render(self) -> None:
         """The component completed a render"""
+        self.unset_current()
         del self.component
-
-        component_did_render_effects = self._event_effects[COMPONENT_DID_RENDER_EFFECT]
-        for effect in component_did_render_effects:
-            try:
-                effect()
-            except Exception:
-                logger.exception(f"Component post-render effect {effect} failed")
-        component_did_render_effects.clear()
-
         self._is_rendering = False
         self._rendered_atleast_once = True
         self._current_state_index = 0
 
-    def affect_layout_did_render(self) -> None:
+    async def affect_layout_did_render(self) -> None:
         """The layout completed a render"""
-        layout_did_render_effects = self._event_effects[LAYOUT_DID_RENDER_EFFECT]
-        for effect in layout_did_render_effects:
-            try:
-                effect()
-            except Exception:
-                logger.exception(f"Layout post-render effect {effect} failed")
-        layout_did_render_effects.clear()
+        for start_effect in self._effect_funcs:
+            effect_info = await start_effect()
+            self._effect_infos.add(effect_info)
+        self._effect_funcs.clear()
 
         if self._schedule_render_later:
             self._schedule_render()
         self._schedule_render_later = False
 
-    def affect_component_will_unmount(self) -> None:
+    async def affect_component_will_unmount(self) -> None:
         """The component is about to be removed from the layout"""
-        will_unmount_effects = self._event_effects[COMPONENT_WILL_UNMOUNT_EFFECT]
-        for effect in will_unmount_effects:
-            try:
-                effect()
-            except Exception:
-                logger.exception(f"Pre-unmount effect {effect} failed")
-        will_unmount_effects.clear()
+        for infos in self._effect_infos:
+            infos.stop.set()
+        try:
+            await asyncio.gather(*[i.task for i in self._effect_infos])
+        except Exception:
+            logger.exception("Error during effect cancellation")
+        self._effect_infos.clear()
 
     def set_current(self) -> None:
         """Set this hook as the active hook in this thread
@@ -718,6 +693,15 @@ class LifeCycleHook:
             logger.exception(
                 f"Failed to schedule render via {self._schedule_render_callback}"
             )
+
+
+_EffectStarter: TypeAlias = "Callable[[], Coroutine[None, None, _EffectInfo]]"
+
+
+@dataclass(frozen=True)
+class _EffectInfo:
+    task: asyncio.Task[None]
+    stop: asyncio.Event
 
 
 def strictly_equal(x: Any, y: Any) -> bool:

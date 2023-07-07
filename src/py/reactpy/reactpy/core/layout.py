@@ -4,7 +4,7 @@ import abc
 import asyncio
 from collections import Counter
 from collections.abc import Iterator
-from contextlib import ExitStack
+from contextlib import AsyncExitStack
 from logging import getLogger
 from typing import (
     Any,
@@ -72,7 +72,7 @@ class Layout:
     async def __aexit__(self, *exc: Any) -> None:
         root_csid = self._root_life_cycle_state_id
         root_model_state = self._model_states_by_life_cycle_state_id[root_csid]
-        self._unmount_model_states([root_model_state])
+        await self._unmount_model_states([root_model_state])
 
         # delete attributes here to avoid access after exiting context manager
         del self._event_handlers
@@ -111,19 +111,21 @@ class Layout:
                     f"{model_state_id!r} - component already unmounted"
                 )
             else:
-                update = self._create_layout_update(model_state)
+                update = await self._create_layout_update(model_state)
                 if REACTPY_CHECK_VDOM_SPEC.current:
                     root_id = self._root_life_cycle_state_id
                     root_model = self._model_states_by_life_cycle_state_id[root_id]
                     validate_vdom_json(root_model.model.current)
                 return update
 
-    def _create_layout_update(self, old_state: _ModelState) -> LayoutUpdateMessage:
+    async def _create_layout_update(
+        self, old_state: _ModelState
+    ) -> LayoutUpdateMessage:
         new_state = _copy_component_model_state(old_state)
         component = new_state.life_cycle_state.component
 
-        with ExitStack() as exit_stack:
-            self._render_component(exit_stack, old_state, new_state, component)
+        async with AsyncExitStack() as exit_stack:
+            await self._render_component(exit_stack, old_state, new_state, component)
 
         return {
             "type": "layout-update",
@@ -131,9 +133,9 @@ class Layout:
             "model": new_state.model.current,
         }
 
-    def _render_component(
+    async def _render_component(
         self,
-        exit_stack: ExitStack,
+        exit_stack: AsyncExitStack,
         old_state: _ModelState | None,
         new_state: _ModelState,
         component: ComponentType,
@@ -143,9 +145,8 @@ class Layout:
 
         self._model_states_by_life_cycle_state_id[life_cycle_state.id] = new_state
 
-        life_cycle_hook.affect_component_will_render(component)
-        exit_stack.callback(life_cycle_hook.affect_layout_did_render)
-        life_cycle_hook.set_current()
+        await life_cycle_hook.affect_component_will_render(component)
+        exit_stack.push_async_callback(life_cycle_hook.affect_layout_did_render)
         try:
             raw_model = component.render()
             # wrap the model in a fragment (i.e. tagName="") to ensure components have
@@ -154,7 +155,7 @@ class Layout:
             wrapper_model: VdomDict = {"tagName": ""}
             if raw_model is not None:
                 wrapper_model["children"] = [raw_model]
-            self._render_model(exit_stack, old_state, new_state, wrapper_model)
+            await self._render_model(exit_stack, old_state, new_state, wrapper_model)
         except Exception as error:
             logger.exception(f"Failed to render {component}")
             new_state.model.current = {
@@ -166,8 +167,7 @@ class Layout:
                 ),
             }
         finally:
-            life_cycle_hook.unset_current()
-            life_cycle_hook.affect_component_did_render()
+            await life_cycle_hook.affect_component_did_render()
 
         try:
             parent = new_state.parent
@@ -188,9 +188,9 @@ class Layout:
                 ],
             }
 
-    def _render_model(
+    async def _render_model(
         self,
-        exit_stack: ExitStack,
+        exit_stack: AsyncExitStack,
         old_state: _ModelState | None,
         new_state: _ModelState,
         raw_model: Any,
@@ -205,7 +205,7 @@ class Layout:
         if "importSource" in raw_model:
             new_state.model.current["importSource"] = raw_model["importSource"]
         self._render_model_attributes(old_state, new_state, raw_model)
-        self._render_model_children(
+        await self._render_model_children(
             exit_stack, old_state, new_state, raw_model.get("children", [])
         )
 
@@ -272,9 +272,9 @@ class Layout:
 
         return None
 
-    def _render_model_children(
+    async def _render_model_children(
         self,
-        exit_stack: ExitStack,
+        exit_stack: AsyncExitStack,
         old_state: _ModelState | None,
         new_state: _ModelState,
         raw_children: Any,
@@ -284,12 +284,12 @@ class Layout:
 
         if old_state is None:
             if raw_children:
-                self._render_model_children_without_old_state(
+                await self._render_model_children_without_old_state(
                     exit_stack, new_state, raw_children
                 )
             return None
         elif not raw_children:
-            self._unmount_model_states(list(old_state.children_by_key.values()))
+            await self._unmount_model_states(list(old_state.children_by_key.values()))
             return None
 
         child_type_key_tuples = list(_process_child_type_and_key(raw_children))
@@ -303,7 +303,7 @@ class Layout:
 
         old_keys = set(old_state.children_by_key).difference(new_keys)
         if old_keys:
-            self._unmount_model_states(
+            await self._unmount_model_states(
                 [old_state.children_by_key[key] for key in old_keys]
             )
 
@@ -319,7 +319,7 @@ class Layout:
                         key,
                     )
                 elif old_child_state.is_component_state:
-                    self._unmount_model_states([old_child_state])
+                    await self._unmount_model_states([old_child_state])
                     new_child_state = _make_element_model_state(
                         new_state,
                         index,
@@ -332,7 +332,9 @@ class Layout:
                         new_state,
                         index,
                     )
-                self._render_model(exit_stack, old_child_state, new_child_state, child)
+                await self._render_model(
+                    exit_stack, old_child_state, new_child_state, child
+                )
                 new_state.append_child(new_child_state.model.current)
                 new_state.children_by_key[key] = new_child_state
             elif child_type is _COMPONENT_TYPE:
@@ -349,7 +351,7 @@ class Layout:
                 elif old_child_state.is_component_state and (
                     old_child_state.life_cycle_state.component.type != child.type
                 ):
-                    self._unmount_model_states([old_child_state])
+                    await self._unmount_model_states([old_child_state])
                     old_child_state = None
                     new_child_state = _make_component_model_state(
                         new_state,
@@ -366,18 +368,18 @@ class Layout:
                         child,
                         self._rendering_queue.put,
                     )
-                self._render_component(
+                await self._render_component(
                     exit_stack, old_child_state, new_child_state, child
                 )
             else:
                 old_child_state = old_state.children_by_key.get(key)
                 if old_child_state is not None:
-                    self._unmount_model_states([old_child_state])
+                    await self._unmount_model_states([old_child_state])
                 new_state.append_child(child)
 
-    def _render_model_children_without_old_state(
+    async def _render_model_children_without_old_state(
         self,
-        exit_stack: ExitStack,
+        exit_stack: AsyncExitStack,
         new_state: _ModelState,
         raw_children: list[Any],
     ) -> None:
@@ -394,18 +396,18 @@ class Layout:
         for index, (child, child_type, key) in enumerate(child_type_key_tuples):
             if child_type is _DICT_TYPE:
                 child_state = _make_element_model_state(new_state, index, key)
-                self._render_model(exit_stack, None, child_state, child)
+                await self._render_model(exit_stack, None, child_state, child)
                 new_state.append_child(child_state.model.current)
                 new_state.children_by_key[key] = child_state
             elif child_type is _COMPONENT_TYPE:
                 child_state = _make_component_model_state(
                     new_state, index, key, child, self._rendering_queue.put
                 )
-                self._render_component(exit_stack, None, child_state, child)
+                await self._render_component(exit_stack, None, child_state, child)
             else:
                 new_state.append_child(child)
 
-    def _unmount_model_states(self, old_states: list[_ModelState]) -> None:
+    async def _unmount_model_states(self, old_states: list[_ModelState]) -> None:
         to_unmount = old_states[::-1]  # unmount in reversed order of rendering
         while to_unmount:
             model_state = to_unmount.pop()
@@ -416,7 +418,7 @@ class Layout:
             if model_state.is_component_state:
                 life_cycle_state = model_state.life_cycle_state
                 del self._model_states_by_life_cycle_state_id[life_cycle_state.id]
-                life_cycle_state.hook.affect_component_will_unmount()
+                await life_cycle_state.hook.affect_component_will_unmount()
 
             to_unmount.extend(model_state.children_by_key.values())
 
