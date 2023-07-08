@@ -5,17 +5,13 @@ import pytest
 import reactpy
 from reactpy import html
 from reactpy.config import REACTPY_DEBUG_MODE
-from reactpy.core.hooks import (
-    COMPONENT_DID_RENDER_EFFECT,
-    LifeCycleHook,
-    current_hook,
-    strictly_equal,
-)
+from reactpy.core.hooks import LifeCycleHook, strictly_equal
 from reactpy.core.layout import Layout
 from reactpy.testing import DisplayFixture, HookCatcher, assert_reactpy_did_log, poll
 from reactpy.testing.logs import assert_reactpy_did_not_log
 from reactpy.utils import Ref
 from tests.tooling.common import DEFAULT_TYPE_DELAY, update_message
+from tests.tooling.concurrency import WaitForEvent
 
 
 async def test_must_be_rendering_in_layout_to_use_hooks():
@@ -327,7 +323,7 @@ async def test_use_effect_callback_occurs_after_full_render_is_complete():
 async def test_use_effect_cleanup_occurs_before_next_effect():
     component_hook = HookCatcher()
     cleanup_triggered = reactpy.Ref(False)
-    cleanup_triggered_before_next_effect = reactpy.Ref(False)
+    cleanup_triggered_before_next_effect = WaitForEvent()
 
     @reactpy.component
     @component_hook.capture
@@ -335,7 +331,7 @@ async def test_use_effect_cleanup_occurs_before_next_effect():
         @reactpy.hooks.use_effect(dependencies=None)
         def effect():
             if cleanup_triggered.current:
-                cleanup_triggered_before_next_effect.current = True
+                cleanup_triggered_before_next_effect.set()
 
             def cleanup():
                 cleanup_triggered.current = True
@@ -353,7 +349,7 @@ async def test_use_effect_cleanup_occurs_before_next_effect():
         await layout.render()
 
         assert cleanup_triggered.current
-        assert cleanup_triggered_before_next_effect.current
+        await cleanup_triggered_before_next_effect.wait()
 
 
 async def test_use_effect_cleanup_occurs_on_will_unmount():
@@ -395,10 +391,11 @@ async def test_use_effect_cleanup_occurs_on_will_unmount():
         assert cleanup_triggered_before_next_render.current
 
 
-async def test_memoized_effect_on_recreated_if_dependencies_change():
+async def test_memoized_effect_is_recreated_if_dependencies_change():
     component_hook = HookCatcher()
     set_state_callback = reactpy.Ref(None)
-    effect_run_count = reactpy.Ref(0)
+    effect_ran = WaitForEvent()
+    run_count = 0
 
     first_value = 1
     second_value = 2
@@ -410,29 +407,31 @@ async def test_memoized_effect_on_recreated_if_dependencies_change():
 
         @reactpy.hooks.use_effect(dependencies=[state])
         def effect():
-            effect_run_count.current += 1
+            nonlocal run_count
+            effect_ran.set()
+            run_count += 1
 
         return reactpy.html.div()
 
     async with reactpy.Layout(ComponentWithMemoizedEffect()) as layout:
         await layout.render()
 
-        assert effect_run_count.current == 1
+        await effect_ran.wait()
+        effect_ran.clear()
 
         component_hook.latest.schedule_render()
         await layout.render()
-
-        assert effect_run_count.current == 1
 
         set_state_callback.current(second_value)
         await layout.render()
 
-        assert effect_run_count.current == 2
+        await effect_ran.wait()
+        effect_ran.clear()
 
         component_hook.latest.schedule_render()
         await layout.render()
 
-        assert effect_run_count.current == 2
+        assert run_count == 2
 
 
 async def test_memoized_effect_cleanup_only_triggered_before_new_effect():
@@ -474,7 +473,7 @@ async def test_memoized_effect_cleanup_only_triggered_before_new_effect():
 
 
 async def test_use_async_effect():
-    effect_ran = asyncio.Event()
+    effect_ran = WaitForEvent()
 
     @reactpy.component
     def ComponentWithAsyncEffect():
@@ -486,13 +485,13 @@ async def test_use_async_effect():
 
     async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
         await layout.render()
-        await asyncio.wait_for(effect_ran.wait(), 1)
+        await effect_ran.wait()
 
 
 async def test_use_async_effect_cleanup():
     component_hook = HookCatcher()
-    effect_ran = asyncio.Event()
-    cleanup_ran = asyncio.Event()
+    effect_ran = WaitForEvent()
+    cleanup_ran = WaitForEvent()
 
     @reactpy.component
     @component_hook.capture
@@ -516,10 +515,10 @@ async def test_use_async_effect_cleanup():
 
 async def test_use_async_effect_cancel(caplog):
     component_hook = HookCatcher()
-    effect_ran = asyncio.Event()
-    effect_was_cancelled = asyncio.Event()
+    effect_ran = WaitForEvent()
+    effect_was_cancelled = WaitForEvent()
 
-    event_that_never_occurs = asyncio.Event()
+    event_that_never_occurs = WaitForEvent()
 
     @reactpy.component
     @component_hook.capture
@@ -562,7 +561,7 @@ async def test_error_in_effect_is_gracefully_handled(caplog):
 
         return reactpy.html.div()
 
-    with assert_reactpy_did_log(match_message=r"Layout post-render effect .* failed"):
+    with assert_reactpy_did_log(match_message=r"Error while applying effect"):
         async with reactpy.Layout(ComponentWithEffect()) as layout:
             await layout.render()  # no error
 
@@ -588,7 +587,7 @@ async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled():
         return reactpy.html.div()
 
     with assert_reactpy_did_log(
-        match_message=r"Pre-unmount effect .*? failed",
+        match_message=r"Error while cleaning up effect",
         error_type=ValueError,
     ):
         async with reactpy.Layout(OuterComponent()) as layout:
@@ -845,7 +844,7 @@ def test_bad_schedule_render_callback():
 
 async def test_use_effect_automatically_infers_closure_values():
     set_count = reactpy.Ref()
-    did_effect = asyncio.Event()
+    did_effect = WaitForEvent()
 
     @reactpy.component
     def CounterWithEffect():
@@ -873,7 +872,7 @@ async def test_use_effect_automatically_infers_closure_values():
 
 async def test_use_memo_automatically_infers_closure_values():
     set_count = reactpy.Ref()
-    did_memo = asyncio.Event()
+    did_memo = WaitForEvent()
 
     @reactpy.component
     def CounterWithEffect():
@@ -1001,13 +1000,16 @@ async def test_error_in_layout_effect_cleanup_is_gracefully_handled():
     def ComponentWithEffect():
         @reactpy.hooks.use_effect(dependencies=None)  # always run
         def bad_effect():
-            msg = "The error message"
-            raise ValueError(msg)
+            def bad_cleanup():
+                msg = "The error message"
+                raise ValueError(msg)
+
+            return bad_cleanup
 
         return reactpy.html.div()
 
     with assert_reactpy_did_log(
-        match_message=r"post-render effect .*? failed",
+        match_message=r"Error while cleaning up effect",
         error_type=ValueError,
         match_error="The error message",
     ):
@@ -1211,12 +1213,12 @@ async def test_use_effect_compares_with_strict_equality(get_value):
 
     async with reactpy.Layout(SomeComponent()) as layout:
         await layout.render()
-        assert effect_count.current == 1
+        await poll(lambda: effect_count.current).until_equals(1)
         value.current = "string"  # new string instance but same value
         hook.latest.schedule_render()
         await layout.render()
         # effect does not trigger
-        assert effect_count.current == 1
+        await poll(lambda: effect_count.current).until_equals(1)
 
 
 async def test_use_state_named_tuple():
@@ -1232,28 +1234,3 @@ async def test_use_state_named_tuple():
         state.current.set_value(2)
         await layout.render()
         assert state.current.value == 2
-
-
-async def test_error_in_component_effect_cleanup_is_gracefully_handled():
-    component_hook = HookCatcher()
-
-    @reactpy.component
-    @component_hook.capture
-    def ComponentWithEffect():
-        hook = current_hook()
-
-        def bad_effect():
-            raise ValueError("The error message")
-
-        hook.add_effect(COMPONENT_DID_RENDER_EFFECT, bad_effect)
-        return reactpy.html.div()
-
-    with assert_reactpy_did_log(
-        match_message="Component post-render effect .*? failed",
-        error_type=ValueError,
-        match_error="The error message",
-    ):
-        async with reactpy.Layout(ComponentWithEffect()) as layout:
-            await layout.render()
-            component_hook.latest.schedule_render()
-            await layout.render()  # no error

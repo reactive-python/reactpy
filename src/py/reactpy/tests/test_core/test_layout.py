@@ -20,6 +20,7 @@ from reactpy.testing import (
     assert_reactpy_did_log,
     capture_reactpy_logs,
 )
+from reactpy.testing.common import poll
 from reactpy.utils import Ref
 from tests.tooling import select
 from tests.tooling.common import event_message, update_message
@@ -828,20 +829,28 @@ async def test_elements_and_components_with_the_same_key_can_be_interchanged():
 
         return reactpy.html.div(name)
 
+    poll_effects = poll(lambda: effects)
+
     async with reactpy.Layout(Root()) as layout:
         await layout.render()
 
-        assert effects == ["mount x"]
+        await poll_effects.until_equals(
+            ["mount x"],
+        )
 
         set_toggle.current()
         await layout.render()
 
-        assert effects == ["mount x", "unmount x", "mount y"]
+        await poll_effects.until_equals(
+            ["mount x", "unmount x", "mount y"],
+        )
 
         set_toggle.current()
         await layout.render()
 
-        assert effects == ["mount x", "unmount x", "mount y", "unmount y", "mount x"]
+        await poll_effects.until_equals(
+            ["mount x", "unmount x", "mount y", "unmount y", "mount x"],
+        )
 
 
 async def test_layout_does_not_copy_element_children_by_key():

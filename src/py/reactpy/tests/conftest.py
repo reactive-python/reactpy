@@ -15,7 +15,7 @@ from reactpy.testing import (
     capture_reactpy_logs,
     clear_reactpy_web_modules_dir,
 )
-from tests.tooling.loop import open_event_loop
+from tests.tooling.concurrency import open_event_loop
 
 
 def pytest_addoption(parser: Parser) -> None:

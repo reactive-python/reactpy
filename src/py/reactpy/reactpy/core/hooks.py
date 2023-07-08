@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
+import warnings
 from collections.abc import Coroutine, Sequence
 from dataclasses import dataclass
 from logging import getLogger
@@ -164,16 +166,47 @@ def use_effect(
 
 
 def _cast_async_effect(function: Callable[..., Any]) -> _AsyncEffectFunc:
-    if asyncio.iscoroutinefunction(function):
-        return function
+    if inspect.iscoroutinefunction(function):
+        if len(inspect.signature(function).parameters):
+            return function
 
-    async def wrapper(stop: asyncio.Event) -> None:
-        cleanup = function()
-        await stop.wait()
-        if cleanup is not None:
-            cleanup()
+        warnings.warn(
+            'Async effect functions should accept a "stop" asyncio.Event as their first argument',
+            stacklevel=3,
+        )
 
-    return wrapper
+        async def wrapper(stop: asyncio.Event) -> None:
+            task = asyncio.create_task(function())
+            await stop.wait()
+            if not task.cancel():
+                try:
+                    cleanup = await task
+                except Exception:
+                    logger.exception("Error while applying effect")
+                    return
+                if cleanup is not None:
+                    try:
+                        cleanup()
+                    except Exception:
+                        logger.exception("Error while cleaning up effect")
+
+        return wrapper
+    else:
+
+        async def wrapper(stop: asyncio.Event) -> None:
+            try:
+                cleanup = function()
+            except Exception:
+                logger.exception("Error while applying effect")
+                return
+            await stop.wait()
+            try:
+                if cleanup is not None:
+                    cleanup()
+            except Exception:
+                logger.exception("Error while cleaning up effect")
+
+        return wrapper
 
 
 def use_debug_value(
