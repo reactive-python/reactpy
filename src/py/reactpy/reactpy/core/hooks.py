@@ -572,10 +572,8 @@ class LifeCycleHook:
 
             # --- start render cycle ---
 
-            hook.affect_component_will_render(...)
-
-            hook.set_current()
-
+            component = ...
+            await hook.affect_component_will_render(component)
             try:
                 # render the component
                 ...
@@ -587,13 +585,11 @@ class LifeCycleHook:
                 current_hook().use_state(lambda: ...)
                 current_hook().add_effect(COMPONENT_DID_RENDER_EFFECT, lambda: ...)
             finally:
-                hook.unset_current()
-
-            hook.affect_component_did_render()
+                await hook.affect_component_did_render()
 
             # This should only be called after the full set of changes associated with a
             # given render have been completed.
-            hook.affect_layout_did_render()
+            await hook.affect_layout_did_render()
 
             # Typically an event occurs and a new render is scheduled, thus beginning
             # the render cycle anew.
