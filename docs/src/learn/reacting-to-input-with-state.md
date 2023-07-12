@@ -141,7 +141,7 @@ You've seen how to implement a form imperatively above. To better understand how
 
 1. **Identify** your component's different visual states
 2. **Determine** what triggers those state changes
-3. **Represent** the state in memory using `useState`
+3. **Represent** the state in memory using `use_state`
 4. **Remove** any non-essential state variables
 5. **Connect** the event handlers to set the state
 
@@ -159,69 +159,35 @@ First, you need to visualize all the different "states" of the UI the user might
 
 Just like a designer, you'll want to "mock up" or create "mocks" for the different states before you add logic. For example, here is a mock for just the visual part of the form. This mock is controlled by a prop called `status` with a default value of `'empty'`:
 
-```js
-export default function Form({ status = "empty" }) {
-	if (status === "success") {
-		return <h1>That's right!</h1>;
-	}
-	return (
-		<>
-			<h2>City quiz</h2>
-			<p>
-				In which city is there a billboard that turns air into drinkable
-				water?
-			</p>
-			<form>
-				<textarea />
-				<br />
-				<button>Submit</button>
-			</form>
-		</>
-	);
-}
-```
+=== "app.py"
+	```python
+    {% include "../../examples/python/managing_state/basic_form_component.py" start="# start" %}
+    ```
+
+=== ":material-play: Run"
+	```python
+    # TODO
+    ```
 
 You could call that prop anything you like, the naming is not important. Try editing `status = 'empty'` to `status = 'success'` to see the success message appear. Mocking lets you quickly iterate on the UI before you wire up any logic. Here is a more fleshed out prototype of the same component, still "controlled" by the `status` prop:
 
-```js
-export default function Form({
-	// Try 'submitting', 'error', 'success':
-	status = "empty",
-}) {
-	if (status === "success") {
-		return <h1>That's right!</h1>;
-	}
-	return (
-		<>
-			<h2>City quiz</h2>
-			<p>
-				In which city is there a billboard that turns air into drinkable
-				water?
-			</p>
-			<form>
-				<textarea disabled={status === "submitting"} />
-				<br />
-				<button
-					disabled={status === "empty" || status === "submitting"}
-				>
-					Submit
-				</button>
-				{status === "error" && (
-					<p className="Error">
-						Good guess but a wrong answer. Try again!
-					</p>
-				)}
-			</form>
-		</>
-	);
-}
-```
+=== "app.py"
 
-```css
-.Error {
-	color: red;
-}
-```
+	```python
+    {% include "../../examples/python/managing_state/conditional_form_component.py" start="# start" %}
+    ```
+
+=== "styles.css"
+
+    ```css
+    {% include "../../examples/css/managing_state/conditional_form_component.css" %}
+    ```
+
+=== ":material-play: Run"
+
+	```python
+    # TODO
+    ```
 
 <DeepDive>
 
@@ -229,62 +195,30 @@ export default function Form({
 
 If a component has a lot of visual states, it can be convenient to show them all on one page:
 
-```js
-import Form from "./Form.js";
+=== "app.py"
+	
+	```python
+    {% include "../../examples/python/managing_state/multiple_form_components.py" start="# start" %}
+    ```
 
-let statuses = ["empty", "typing", "submitting", "success", "error"];
+=== "form.py"
+	
+	```python
+    {% include "../../examples/python/managing_state/conditional_form_component.py" start="# start" %}
+    ```
 
-export default function App() {
-	return (
-		<>
-			{statuses.map((status) => (
-				<section key={status}>
-					<h4>Form ({status}):</h4>
-					<Form status={status} />
-				</section>
-			))}
-		</>
-	);
-}
-```
+=== "styles.css"
 
-```js
-export default function Form({ status }) {
-	if (status === "success") {
-		return <h1>That's right!</h1>;
-	}
-	return (
-		<form>
-			<textarea disabled={status === "submitting"} />
-			<br />
-			<button disabled={status === "empty" || status === "submitting"}>
-				Submit
-			</button>
-			{status === "error" && (
-				<p className="Error">
-					Good guess but a wrong answer. Try again!
-				</p>
-			)}
-		</form>
-	);
-}
-```
+    ```css
+    {% include "../../examples/css/managing_state/multiple_form_components.css" %}
+    ```
 
-```css
-section {
-	border-bottom: 1px solid #aaa;
-	padding: 20px;
-}
-h4 {
-	color: #222;
-}
-body {
-	margin: 0;
-}
-.Error {
-	color: red;
-}
-```
+
+=== ":material-play: Run"
+	
+	```python
+    # TODO
+    ```
 
 Pages like this are often called "living styleguides" or "storybooks".
 
@@ -321,26 +255,37 @@ To help visualize this flow, try drawing each state on paper as a labeled circle
 
 ### Step 3: Represent the state in memory with `useState`
 
-Next you'll need to represent the visual states of your component in memory with [`useState`.](/reference/react/useState) Simplicity is key: each piece of state is a "moving piece", and **you want as few "moving pieces" as possible.** More complexity leads to more bugs!
+Next you'll need to represent the visual states of your component in memory with [`use_state`.](/reference/react/useState) Simplicity is key: each piece of state is a "moving piece", and **you want as few "moving pieces" as possible.** More complexity leads to more bugs!
 
 Start with the state that _absolutely must_ be there. For example, you'll need to store the `answer` for the input, and the `error` (if it exists) to store the last error:
 
-```js
-const [answer, setAnswer] = useState("");
-const [error, setError] = useState(null);
-```
+=== "app.py"
+
+	```python
+    {% include "../../examples/python/managing_state/necessary_states.py" start="# start" %}
+    ```
+
+=== ":material-play: Run"
+
+	```python
+    # TODO
+    ```
 
 Then, you'll need a state variable representing which one of the visual states that you want to display. There's usually more than a single way to represent that in memory, so you'll need to experiment with it.
 
 If you struggle to think of the best way immediately, start by adding enough state that you're _definitely_ sure that all the possible visual states are covered:
 
-```js
-const [isEmpty, setIsEmpty] = useState(true);
-const [isTyping, setIsTyping] = useState(false);
-const [isSubmitting, setIsSubmitting] = useState(false);
-const [isSuccess, setIsSuccess] = useState(false);
-const [isError, setIsError] = useState(false);
-```
+=== "app.py"
+
+	```python
+    {% include "../../examples/python/managing_state/all_possible_states.py" start="# start" %}
+    ```
+
+=== ":material-play: Run"
+
+	```python
+    # TODO
+    ```
 
 Your first idea likely won't be the best, but that's ok--refactoring state is a part of the process!
 
@@ -350,17 +295,23 @@ You want to avoid duplication in the state content so you're only tracking what 
 
 Here are some questions you can ask about your state variables:
 
--   **Does this state cause a paradox?** For example, `isTyping` and `isSubmitting` can't both be `true`. A paradox usually means that the state is not constrained enough. There are four possible combinations of two booleans, but only three correspond to valid states. To remove the "impossible" state, you can combine these into a `status` that must be one of three values: `'typing'`, `'submitting'`, or `'success'`.
--   **Is the same information available in another state variable already?** Another paradox: `isEmpty` and `isTyping` can't be `true` at the same time. By making them separate state variables, you risk them going out of sync and causing bugs. Fortunately, you can remove `isEmpty` and instead check `answer.length === 0`.
--   **Can you get the same information from the inverse of another state variable?** `isError` is not needed because you can check `error !== null` instead.
+-   **Does this state cause a paradox?** For example, `is_typing` and `is_submitting` can't both be `True`. A paradox usually means that the state is not constrained enough. There are four possible combinations of two booleans, but only three correspond to valid states. To remove the "impossible" state, you can combine these into a `status` that must be one of three values: `'typing'`, `'submitting'`, or `'success'`.
+-   **Is the same information available in another state variable already?** Another paradox: `is_empty` and `is_typing` can't be `true` at the same time. By making them separate state variables, you risk them going out of sync and causing bugs. Fortunately, you can remove `is_empty` and instead check `len(answer) == 0`.
+-   **Can you get the same information from the inverse of another state variable?** `is_error` is not needed because you can check `error != None` instead.
 
 After this clean-up, you're left with 3 (down from 7!) _essential_ state variables:
 
-```js
-const [answer, setAnswer] = useState("");
-const [error, setError] = useState(null);
-const [status, setStatus] = useState("typing"); // 'typing', 'submitting', or 'success'
-```
+=== "app.py"
+
+	```python
+    {% include "../../examples/python/managing_state/refactored_states.py" start="# start" %}
+    ```
+
+=== ":material-play: Run"
+
+	```python
+    # TODO
+    ```
 
 You know they are essential, because you can't remove any of them without breaking the functionality.
 
@@ -376,79 +327,23 @@ These three variables are a good enough representation of this form's state. How
 
 Lastly, create event handlers that update the state. Below is the final form, with all event handlers wired up:
 
-```js
-import { useState } from "react";
+=== "app.py"
 
-export default function Form() {
-	const [answer, setAnswer] = useState("");
-	const [error, setError] = useState(null);
-	const [status, setStatus] = useState("typing");
+	```python
+    {% include "../../examples/python/managing_state/stateful_form_component.py" start="# start" %}
+    ```
 
-	if (status === "success") {
-		return <h1>That's right!</h1>;
-	}
+=== "styles.css"
 
-	async function handleSubmit(e) {
-		e.preventDefault();
-		setStatus("submitting");
-		try {
-			await submitForm(answer);
-			setStatus("success");
-		} catch (err) {
-			setStatus("typing");
-			setError(err);
-		}
-	}
+	```css
+    {% include "../../examples/css/managing_state/conditional_form_component.css" %}
+    ```
 
-	function handleTextareaChange(e) {
-		setAnswer(e.target.value);
-	}
+=== ":material-play: Run"
 
-	return (
-		<>
-			<h2>City quiz</h2>
-			<p>
-				In which city is there a billboard that turns air into drinkable
-				water?
-			</p>
-			<form onSubmit={handleSubmit}>
-				<textarea
-					value={answer}
-					onChange={handleTextareaChange}
-					disabled={status === "submitting"}
-				/>
-				<br />
-				<button
-					disabled={answer.length === 0 || status === "submitting"}
-				>
-					Submit
-				</button>
-				{error !== null && <p className="Error">{error.message}</p>}
-			</form>
-		</>
-	);
-}
-
-function submitForm(answer) {
-	// Pretend it's hitting the network.
-	return new Promise((resolve, reject) => {
-		setTimeout(() => {
-			let shouldError = answer.toLowerCase() !== "lima";
-			if (shouldError) {
-				reject(new Error("Good guess but a wrong answer. Try again!"));
-			} else {
-				resolve();
-			}
-		}, 1500);
-	});
-}
-```
-
-```css
-.Error {
-	color: red;
-}
-```
+	```python
+    # TODO
+    ```
 
 Although this code is longer than the original imperative example, it is much less fragile. Expressing all interactions as state changes lets you later introduce new visual states without breaking existing ones. It also lets you change what should be displayed in each state without changing the logic of the interaction itself.
 
@@ -458,7 +353,7 @@ Although this code is longer than the original imperative example, it is much le
 -   When developing a component:
     1. Identify all its visual states.
     2. Determine the human and computer triggers for state changes.
-    3. Model the state with `useState`.
+    3. Model the state with `use_state`.
     4. Remove non-essential state to avoid bugs and paradoxes.
     5. Connect the event handlers to set state.
 
@@ -472,50 +367,23 @@ Make it so that clicking on the picture _removes_ the `background--active` CSS c
 
 Visually, you should expect that clicking on the picture removes the purple background and highlights the picture border. Clicking outside the picture highlights the background, but removes the picture border highlight.
 
-```js
-export default function Picture() {
-	return (
-		<div className="background background--active">
-			<img
-				className="picture"
-				alt="Rainbow houses in Kampung Pelangi, Indonesia"
-				src="https://i.imgur.com/5qwVYb1.jpeg"
-			/>
-		</div>
-	);
-}
-```
+=== "picture.py"
 
-```css
-body {
-	margin: 0;
-	padding: 0;
-	height: 250px;
-}
+	```python
+    {% include "../../examples/python/managing_state/picture_component.py" start="# start" %}
+    ```
 
-.background {
-	width: 100vw;
-	height: 100vh;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	background: #eee;
-}
+=== "styles.css"
 
-.background--active {
-	background: #a6b5ff;
-}
+	```css
+    {% include "../../examples/css/managing_state/picture_component.css" %}
+    ```
 
-.picture {
-	width: 200px;
-	height: 200px;
-	border-radius: 10px;
-}
+=== ":material-play: Run"
 
-.picture--active {
-	border: 5px solid #a6b5ff;
-}
-```
+	```python
+    # TODO
+    ```
 
 <Solution>
 
@@ -528,136 +396,45 @@ A single boolean state variable is enough to remember whether the image is activ
 
 Verify that this version works by clicking the image and then outside of it:
 
-```js
-import { useState } from "react";
+=== "app.py"
 
-export default function Picture() {
-	const [isActive, setIsActive] = useState(false);
+	```python
+    {% include "../../examples/python/managing_state/stateful_picture_component.py" start="# start" %}
+    ```
 
-	let backgroundClassName = "background";
-	let pictureClassName = "picture";
-	if (isActive) {
-		pictureClassName += " picture--active";
-	} else {
-		backgroundClassName += " background--active";
-	}
+=== "styles.css"
 
-	return (
-		<div
-			className={backgroundClassName}
-			on_click={() => setIsActive(false)}
-		>
-			<img
-				on_click={(e) => {
-					e.stopPropagation();
-					setIsActive(true);
-				}}
-				className={pictureClassName}
-				alt="Rainbow houses in Kampung Pelangi, Indonesia"
-				src="https://i.imgur.com/5qwVYb1.jpeg"
-			/>
-		</div>
-	);
-}
-```
+	```css
+    {% include "../../examples/css/managing_state/picture_component.css" %}
+    ```
 
-```css
-body {
-	margin: 0;
-	padding: 0;
-	height: 250px;
-}
+=== ":material-play: Run"
 
-.background {
-	width: 100vw;
-	height: 100vh;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	background: #eee;
-}
+	```python
+    # TODO
+    ```
 
-.background--active {
-	background: #a6b5ff;
-}
+Alternatively, you could return two separate chunks of PSX:
 
-.picture {
-	width: 200px;
-	height: 200px;
-	border-radius: 10px;
-	border: 5px solid transparent;
-}
+=== "app.py"
 
-.picture--active {
-	border: 5px solid #a6b5ff;
-}
-```
+	```python
+    {% include "../../examples/python/managing_state/stateful_picture_component.py" start="# start" %}
+    ```
 
-Alternatively, you could return two separate chunks of JSX:
+=== "styles.css"
 
-```js
-import { useState } from "react";
+	```css
+    {% include "../../examples/css/managing_state/picture_component.css" %}
+    ```
 
-export default function Picture() {
-	const [isActive, setIsActive] = useState(false);
-	if (isActive) {
-		return (
-			<div className="background" on_click={() => setIsActive(false)}>
-				<img
-					className="picture picture--active"
-					alt="Rainbow houses in Kampung Pelangi, Indonesia"
-					src="https://i.imgur.com/5qwVYb1.jpeg"
-					on_click={(e) => e.stopPropagation()}
-				/>
-			</div>
-		);
-	}
-	return (
-		<div className="background background--active">
-			<img
-				className="picture"
-				alt="Rainbow houses in Kampung Pelangi, Indonesia"
-				src="https://i.imgur.com/5qwVYb1.jpeg"
-				on_click={() => setIsActive(true)}
-			/>
-		</div>
-	);
-}
-```
+=== ":material-play: Run"
 
-```css
-body {
-	margin: 0;
-	padding: 0;
-	height: 250px;
-}
+	```python
+    # TODO
+    ```
 
-.background {
-	width: 100vw;
-	height: 100vh;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	background: #eee;
-}
-
-.background--active {
-	background: #a6b5ff;
-}
-
-.picture {
-	width: 200px;
-	height: 200px;
-	border-radius: 10px;
-	border: 5px solid transparent;
-}
-
-.picture--active {
-	border: 5px solid #a6b5ff;
-}
-```
-
-Keep in mind that if two different JSX chunks describe the same tree, their nesting (first `<div>` → first `<img>`) has to line up. Otherwise, toggling `isActive` would recreate the whole tree below and [reset its state.](/learn/preserving-and-resetting-state) This is why, if a similar JSX tree gets returned in both cases, it is better to write them as a single piece of JSX.
+Keep in mind that if two different PSX chunks describe the same tree, their nesting (first `html.div` → first `html.img`) has to line up. Otherwise, toggling `is_active` would recreate the whole tree below and [reset its state.](/learn/preserving-and-resetting-state) This is why, if a similar PSX tree gets returned in both cases, it is better to write them as a single piece of PSX.
 
 </Solution>
 
