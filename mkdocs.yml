@@ -90,6 +90,7 @@ nav:
                 - Django 🚧: reference/django.md
                 - Jupyter 🚧: reference/jupyter.md
                 - Plotly Dash 🚧: reference/plotly-dash.md
+                - PyScript 🚫: reference/pyscript.md
           - Protocol Structure 🚧: reference/protocol-structure.md
           - Client API 🚧: reference/client-api.md
     - About ReactPy:
