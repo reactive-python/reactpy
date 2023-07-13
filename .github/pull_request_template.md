@@ -4,7 +4,11 @@
 
 ## Issues
 
-<!-- Link the issues this change resolves (if any) -->
+<!-- Describe or link the issues this change resolves -->
+
+## Solution
+
+<!-- Describe how these changes resolve the aforementioned issues -->
 
 ## Checklist
 
