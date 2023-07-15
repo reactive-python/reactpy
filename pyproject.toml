@@ -13,7 +13,7 @@ dependencies = [
   "invoke",
   # lint
   "black",
-  "ruff",
+  "ruff==0.0.278",  # Ruff is moving really fast, so pinning for now.
   "toml",
   "flake8",
   "flake8-pyproject",
