@@ -19,7 +19,7 @@ from uuid import uuid4
 from weakref import ref as weakref
 
 from reactpy.config import REACTPY_CHECK_VDOM_SPEC, REACTPY_DEBUG_MODE
-from reactpy.core.hooks import LifeCycleHook
+from reactpy.core._life_cycle_hook import LifeCycleHook
 from reactpy.core.types import (
     ComponentType,
     EventHandlerDict,

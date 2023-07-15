@@ -20,6 +20,7 @@ from typing import (
 from typing_extensions import TypeAlias, TypedDict
 
 _Type = TypeVar("_Type")
+_Type_invariant = TypeVar("_Type_invariant", covariant=False)
 
 
 if TYPE_CHECKING or sys.version_info < (3, 9) or sys.version_info >= (3, 11):
@@ -233,3 +234,26 @@ class LayoutEventMessage(TypedDict):
     """The ID of the event handler."""
     data: Sequence[Any]
     """A list of event data passed to the event handler."""
+
+
+class Context(Protocol[_Type_invariant]):
+    """Returns a :class:`ContextProvider` component"""
+
+    def __call__(
+        self,
+        *children: Any,
+        value: _Type_invariant = ...,
+        key: Key | None = ...,
+    ) -> ContextProviderType[_Type_invariant]:
+        ...
+
+
+class ContextProviderType(ComponentType, Protocol[_Type]):
+    """A component which provides a context value to its children"""
+
+    type: Context[_Type]
+    """The context type"""
+
+    @property
+    def value(self) -> _Type:
+        "Current context value"

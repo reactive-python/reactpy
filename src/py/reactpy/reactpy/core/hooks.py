@@ -19,14 +19,9 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
-from reactpy.config import REACTPY_DEBUG_MODE
-from reactpy.core._life_cycle_hook import (
-    Context,
-    ContextProvider,
-    EffectInfo,
-    current_hook,
-)
-from reactpy.core.types import Key, State
+from reactpy.config import REACTPY_DEBUG_MODE, REACTPY_EFFECT_DEFAULT_STOP_TIMEOUT
+from reactpy.core._life_cycle_hook import EffectInfo, current_hook
+from reactpy.core.types import Context, Key, State, VdomDict
 from reactpy.utils import Ref
 
 if not TYPE_CHECKING:
@@ -109,6 +104,7 @@ _EffectFunc: TypeAlias = "_SyncEffectFunc | _AsyncEffectFunc"
 def use_effect(
     function: None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
+    stop_timeout: float = ...,
 ) -> Callable[[_EffectFunc], None]:
     ...
 
@@ -117,6 +113,7 @@ def use_effect(
 def use_effect(
     function: _EffectFunc,
     dependencies: Sequence[Any] | ellipsis | None = ...,
+    stop_timeout: float = ...,
 ) -> None:
     ...
 
@@ -124,6 +121,7 @@ def use_effect(
 def use_effect(
     function: _EffectFunc | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
+    stop_timeout: float = REACTPY_EFFECT_DEFAULT_STOP_TIMEOUT.current,
 ) -> Callable[[_EffectFunc], None] | None:
     """See the full :ref:`Use Effect` docs for details
 
@@ -135,6 +133,11 @@ def use_effect(
             of any value in the given sequence changes (i.e. their :func:`id` is
             different). By default these are inferred based on local variables that are
             referenced by the given function.
+        stop_timeout:
+            The maximum amount of time to wait for the effect to cleanup after it has
+            been signaled to stop. If the timeout is reached, an exception will be
+            logged and the effect will be cancelled. This does not apply to synchronous
+            effects.
 
     Returns:
         If not function is provided, a decorator. Otherwise ``None``.
@@ -150,8 +153,7 @@ def use_effect(
         async def create_effect_task() -> EffectInfo:
             if effect_info.current is not None:
                 last_effect_info = effect_info.current
-                last_effect_info.stop.set()
-                await last_effect_info.task
+                await last_effect_info.signal_stop(stop_timeout)
 
             stop = asyncio.Event()
             info = EffectInfo(asyncio.create_task(effect(stop)), stop)
@@ -173,7 +175,8 @@ def _cast_async_effect(function: Callable[..., Any]) -> _AsyncEffectFunc:
             return function
 
         warnings.warn(
-            'Async effect functions should accept a "stop" asyncio.Event as their first argument',
+            'Async effect functions should accept a "stop" asyncio.Event as their '
+            "first argument. This will be required in a future version of ReactPy.",
             stacklevel=3,
         )
 
@@ -249,8 +252,8 @@ def create_context(default_value: _Type) -> Context[_Type]:
         *children: Any,
         value: _Type = default_value,
         key: Key | None = None,
-    ) -> ContextProvider[_Type]:
-        return ContextProvider(
+    ) -> _ContextProvider[_Type]:
+        return _ContextProvider(
             *children,
             value=value,
             key=key,
@@ -280,7 +283,28 @@ def use_context(context: Context[_Type]) -> _Type:
             raise TypeError(f"{context} has no 'value' kwarg")  # nocov
         return cast(_Type, context.__kwdefaults__["value"])
 
-    return provider._value
+    return provider.value
+
+
+class _ContextProvider(Generic[_Type]):
+    def __init__(
+        self,
+        *children: Any,
+        value: _Type,
+        key: Key | None,
+        type: Context[_Type],
+    ) -> None:
+        self.children = children
+        self.key = key
+        self.type = type
+        self.value = value
+
+    def render(self) -> VdomDict:
+        current_hook().set_context_provider(self)
+        return {"tagName": "", "children": self.children}
+
+    def __repr__(self) -> str:
+        return f"ContextProvider({self.type})"
 
 
 _ActionType = TypeVar("_ActionType")

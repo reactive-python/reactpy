@@ -80,3 +80,11 @@ REACTPY_TESTING_DEFAULT_TIMEOUT = Option(
     validator=float,
 )
 """A default timeout for testing utilities in ReactPy"""
+
+REACTPY_EFFECT_DEFAULT_STOP_TIMEOUT = Option(
+    "REACTPY_EFFECT_DEFAULT_STOP_TIMEOUT",
+    30.0,
+    mutable=False,
+    validator=float,
+)
+"""The default amount of time to wait for an effect to complete"""

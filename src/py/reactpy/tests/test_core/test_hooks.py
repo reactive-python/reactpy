@@ -5,7 +5,8 @@ import pytest
 import reactpy
 from reactpy import html
 from reactpy.config import REACTPY_DEBUG_MODE
-from reactpy.core.hooks import LifeCycleHook, strictly_equal
+from reactpy.core._life_cycle_hook import LifeCycleHook
+from reactpy.core.hooks import strictly_equal
 from reactpy.core.layout import Layout
 from reactpy.testing import DisplayFixture, HookCatcher, assert_reactpy_did_log, poll
 from reactpy.testing.logs import assert_reactpy_did_not_log

@@ -4,16 +4,15 @@ import asyncio
 import logging
 from collections.abc import Coroutine
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Protocol, TypeVar
+from typing import Any, Callable, TypeVar
 from weakref import WeakSet
 
 from typing_extensions import TypeAlias
 
 from reactpy.core._thread_local import ThreadLocal
-from reactpy.core.types import ComponentType, Key, VdomDict
+from reactpy.core.types import ComponentType, Context, ContextProviderType
 
 T = TypeVar("T")
-
 logger = logging.getLogger(__name__)
 
 
@@ -29,43 +28,23 @@ def current_hook() -> LifeCycleHook:
 _hook_stack: ThreadLocal[list[LifeCycleHook]] = ThreadLocal(list)
 
 
-class Context(Protocol[T]):
-    """Returns a :class:`ContextProvider` component"""
-
-    def __call__(
-        self,
-        *children: Any,
-        value: T = ...,
-        key: Key | None = ...,
-    ) -> ContextProvider[T]:
-        ...
-
-
-class ContextProvider(Generic[T]):
-    def __init__(
-        self,
-        *children: Any,
-        value: T,
-        key: Key | None,
-        type: Context[T],
-    ) -> None:
-        self.children = children
-        self.key = key
-        self.type = type
-        self._value = value
-
-    def render(self) -> VdomDict:
-        current_hook().set_context_provider(self)
-        return {"tagName": "", "children": self.children}
-
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.type})"
-
-
 @dataclass(frozen=True)
 class EffectInfo:
     task: asyncio.Task[None]
     stop: asyncio.Event
+
+    async def signal_stop(self, timeout: float) -> None:
+        """Signal the effect to stop and wait for it to complete."""
+        self.stop.set()
+        try:
+            await asyncio.wait_for(self.task, timeout=timeout)
+        finally:
+            # a no-op if the task has already completed
+            if self.task.cancel():
+                try:
+                    await self.task
+                except asyncio.CancelledError:
+                    logger.exception("Effect failed to stop after %s seconds", timeout)
 
 
 class LifeCycleHook:
@@ -150,7 +129,7 @@ class LifeCycleHook:
         self,
         schedule_render: Callable[[], None],
     ) -> None:
-        self._context_providers: dict[Context[Any], ContextProvider[Any]] = {}
+        self._context_providers: dict[Context[Any], ContextProviderType[Any]] = {}
         self._schedule_render_callback = schedule_render
         self._schedule_render_later = False
         self._is_rendering = False
@@ -181,10 +160,12 @@ class LifeCycleHook:
         """Trigger a function on the occurrence of the given effect type"""
         self._effect_funcs.append(start_effect)
 
-    def set_context_provider(self, provider: ContextProvider[Any]) -> None:
+    def set_context_provider(self, provider: ContextProviderType[Any]) -> None:
         self._context_providers[provider.type] = provider
 
-    def get_context_provider(self, context: Context[T]) -> ContextProvider[T] | None:
+    def get_context_provider(
+        self, context: Context[T]
+    ) -> ContextProviderType[T] | None:
         return self._context_providers.get(context)
 
     async def affect_component_will_render(self, component: ComponentType) -> None:

@@ -6,10 +6,10 @@
 
 from reactpy.backend.types import BackendImplementation, Connection, Location
 from reactpy.core.component import Component
-from reactpy.core.hooks import Context
 from reactpy.core.types import (
     ComponentConstructor,
     ComponentType,
+    Context,
     EventHandlerDict,
     EventHandlerFunc,
     EventHandlerMapping,
