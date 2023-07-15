@@ -25,7 +25,6 @@ def clear_reactpy_web_modules_dir() -> None:
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
-_RC = TypeVar("_RC", covariant=True)
 
 
 _DEFAULT_POLL_DELAY = 0.1

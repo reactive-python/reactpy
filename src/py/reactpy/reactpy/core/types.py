@@ -62,21 +62,21 @@ class ComponentType(Protocol):
         """Render the component's view model."""
 
 
-_Render = TypeVar("_Render", covariant=True)
-_Event = TypeVar("_Event", contravariant=True)
+_Render_co = TypeVar("_Render_co", covariant=True)
+_Event_contra = TypeVar("_Event_contra", contravariant=True)
 
 
 @runtime_checkable
-class LayoutType(Protocol[_Render, _Event]):
+class LayoutType(Protocol[_Render_co, _Event_contra]):
     """Renders and delivers, updates to views and events to handlers, respectively"""
 
-    async def render(self) -> _Render:
+    async def render(self) -> _Render_co:
         """Render an update to a view"""
 
-    async def deliver(self, event: _Event) -> None:
+    async def deliver(self, event: _Event_contra) -> None:
         """Relay an event to its respective handler"""
 
-    async def __aenter__(self) -> LayoutType[_Render, _Event]:
+    async def __aenter__(self) -> LayoutType[_Render_co, _Event_contra]:
         """Prepare the layout for its first render"""
 
     async def __aexit__(
