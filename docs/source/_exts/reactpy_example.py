@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from docs_app.examples import (
     SOURCE_DIR,
@@ -21,7 +21,7 @@ class WidgetExample(SphinxDirective):
     required_arguments = 1
     _next_id = 0
 
-    option_spec = {
+    option_spec: ClassVar[dict[str, Any]] = {
         "result-is-default-tab": directives.flag,
         "activate-button": directives.flag,
     }

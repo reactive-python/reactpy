@@ -21,7 +21,7 @@ from reactpy.core.vdom import vdom
 from reactpy.utils import Ref, html_to_vdom, vdom_to_html
 
 __author__ = "The Reactive Python Team"
-__version__ = "1.0.0"  # DO NOT MODIFY
+__version__ = "1.0.2"  # DO NOT MODIFY
 
 __all__ = [
     "backend",

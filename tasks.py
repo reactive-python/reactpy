@@ -15,6 +15,7 @@ import toml
 from invoke import task
 from invoke.context import Context
 from invoke.exceptions import Exit
+from invoke.runners import Result
 
 # --- Typing Preamble ------------------------------------------------------------------
 
@@ -77,14 +78,21 @@ def env(context: Context):
 @task
 def env_py(context: Context):
     """Install Python development environment"""
-    for py_proj in PY_PROJECTS:
-        py_proj_toml = toml.load(py_proj / "pyproject.toml")
-        hatch_default_env = py_proj_toml["tool"]["hatch"]["envs"].get("default", {})
-        hatch_default_features = hatch_default_env.get("features", [])
-        hatch_default_deps = hatch_default_env.get("dependencies", [])
+    for py_proj in [
+        DOCS_DIR,
+        # Docs installs non-editable versions of packages - ensure
+        # we overwrite that by installing projects afterwards.
+        *PY_PROJECTS,
+    ]:
+        py_proj_toml_tools = toml.load(py_proj / "pyproject.toml")["tool"]
+        if "hatch" in py_proj_toml_tools:
+            install_func = install_hatch_project
+        elif "poetry" in py_proj_toml_tools:
+            install_func = install_poetry_project
+        else:
+            raise Exit(f"Unknown project type: {py_proj}")
         with context.cd(py_proj):
-            context.run(f"pip install '.[{','.join(hatch_default_features)}]'")
-        context.run(f"pip install {' '.join(map(repr, hatch_default_deps))}")
+            install_func(context, py_proj)
 
 
 @task
@@ -103,6 +111,7 @@ def lint_py(context: Context, fix: bool = False):
     """Run linters and type checkers"""
     if fix:
         context.run("ruff --fix .")
+        context.run("black .")
     else:
         context.run("ruff .")
         context.run("black --check --diff .")
@@ -209,10 +218,8 @@ def publish(context: Context, dry_run: str = ""):
         "js": prepare_js_release,
         "py": prepare_py_release,
     }
-
-    parsed_tags: list[TagInfo] = [
-        parse_tag(tag) for tag in dry_run.split(",") or get_current_tags(context)
-    ]
+    current_tags = dry_run.split(",") if dry_run else get_current_tags(context)
+    parsed_tags = [parse_tag(tag) for tag in current_tags]
 
     publishers: list[Callable[[bool], None]] = []
     for tag_info in parsed_tags:
@@ -280,7 +287,9 @@ def get_packages(context: Context) -> dict[str, PackageInfo]:
 
 def make_py_pkg_info(context: Context, pkg_dir: Path) -> PackageInfo:
     with context.cd(pkg_dir):
-        proj_metadata = json.loads(context.run("hatch project metadata").stdout)
+        proj_metadata = json.loads(
+            ensure_result(context, "hatch project metadata").stdout
+        )
     return PackageInfo(
         name=proj_metadata["name"],
         path=pkg_dir,
@@ -315,23 +324,20 @@ def get_current_tags(context: Context) -> set[str]:
         context.run("git diff --cached --exit-code", hide=True)
         context.run("git diff --exit-code", hide=True)
     except Exception:
-        log.error("Cannot create a tag - there are uncommitted changes")
+        log.error("Cannot get current tags - there are uncommitted changes")
         return set()
 
-    tags_per_commit: dict[str, list[str]] = {}
-    for commit, tag in map(
-        str.split,
-        context.run(
-            r"git for-each-ref --format '%(objectname) %(refname:short)' refs/tags",
-            hide=True,
-        ).stdout.splitlines(),
-    ):
-        tags_per_commit.setdefault(commit, []).append(tag)
-
-    current_commit = context.run(
-        "git rev-parse HEAD", silent=True, external=True
-    ).stdout.strip()
-    tags = set(tags_per_commit.get(current_commit, set()))
+    # get tags for current commit
+    tags = {
+        line
+        for line in map(
+            str.strip,
+            ensure_result(
+                context, "git tag --points-at HEAD", hide=True
+            ).stdout.splitlines(),
+        )
+        if line
+    }
 
     if not tags:
         log.error("No tags found for current commit")
@@ -353,7 +359,7 @@ def parse_tag(tag: str) -> TagInfo:
         raise Exit(msg)
 
     version = match.group("version")
-    if not semver.Version.is_valid(version):
+    if not semver.VersionInfo.isvalid(version):
         raise Exit(f"Invalid version: {version} in tag {tag}")
 
     return TagInfo(tag=tag, name=match.group("name"), version=match.group("version"))
@@ -417,10 +423,36 @@ def prepare_py_release(
 
             context.run(
                 "twine upload dist/*",
-                env_dict={
+                env={
                     "TWINE_USERNAME": twine_username,
                     "TWINE_PASSWORD": twine_password,
                 },
             )
 
     return publish
+
+
+def install_hatch_project(context: Context, path: Path) -> None:
+    py_proj_toml = toml.load(path / "pyproject.toml")
+    hatch_default_env = py_proj_toml["tool"]["hatch"]["envs"].get("default", {})
+    hatch_default_features = hatch_default_env.get("features", [])
+    hatch_default_deps = hatch_default_env.get("dependencies", [])
+    context.run(f"pip install -e '.[{','.join(hatch_default_features)}]'")
+    context.run(f"pip install {' '.join(map(repr, hatch_default_deps))}")
+
+
+def install_poetry_project(context: Context, path: Path) -> None:
+    # install dependencies from poetry into the current environment - not in Poetry's venv
+    poetry_lock = toml.load(path / "poetry.lock")
+    packages_to_install = [
+        f"{package['name']}=={package['version']}" for package in poetry_lock["package"]
+    ]
+    context.run("pip install -e .")
+    context.run(f"pip install {' '.join(packages_to_install)}")
+
+
+def ensure_result(context: Context, *args: Any, **kwargs: Any) -> Result:
+    result = context.run(*args, **kwargs)
+    if result is None:
+        raise Exit("Command failed")
+    return result

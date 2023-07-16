@@ -37,16 +37,16 @@ logger = getLogger(__name__)
 class Layout:
     """Responsible for "rendering" components. That is, turning them into VDOM."""
 
-    __slots__ = [
+    __slots__: tuple[str, ...] = (
         "root",
         "_event_handlers",
         "_rendering_queue",
         "_root_life_cycle_state_id",
         "_model_states_by_life_cycle_state_id",
-    ]
+    )
 
     if not hasattr(abc.ABC, "__weakref__"):  # nocov
-        __slots__.append("__weakref__")
+        __slots__ += ("__weakref__",)
 
     def __init__(self, root: ComponentType) -> None:
         super().__init__()
@@ -489,7 +489,7 @@ def _update_component_model_state(
         index=new_index,
         key=old_model_state.key,
         model=Ref(),  # does not copy the model
-        patch_path=old_model_state.patch_path,
+        patch_path=f"{new_parent.patch_path}/children/{new_index}",
         children_by_key={},
         targets_by_event={},
         life_cycle_state=(

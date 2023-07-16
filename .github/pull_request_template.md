@@ -1,10 +1,10 @@
-*By submitting this pull request you agree that all contributions to this project are made under the MIT license.*
+<sub>By submitting this pull request you agree that all contributions to this project are made under the MIT license.</sub>
 
 ## Issues
 
-<!-- Link the issues this change resolves, or describe them -->
+<!-- Describe or link the issues this change resolves -->
 
-## Summary
+## Solution
 
 <!-- Describe how these changes resolve the aforementioned issues -->
 

@@ -78,11 +78,11 @@ def use_linked_inputs(
     return inputs
 
 
-_CastTo = TypeVar("_CastTo", covariant=True)
+_CastTo_co = TypeVar("_CastTo_co", covariant=True)
 
 
-class _CastFunc(Protocol[_CastTo]):
-    def __call__(self, value: str) -> _CastTo:
+class _CastFunc(Protocol[_CastTo_co]):
+    def __call__(self, value: str) -> _CastTo_co:
         ...
 
 
