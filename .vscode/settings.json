@@ -6,7 +6,6 @@
     "python.analysis.typeCheckingMode": "off",
     "python.languageServer": "Pylance",
     "python.formatting.provider": "black",
-    "python.analysis.autoImportCompletions": true,
     "git.autofetch": "all",
     "prettier.tabWidth": 4,
     "prettier.useTabs": true,
