@@ -242,25 +242,28 @@ async def file_response(scope, send, file_path: Path) -> None:
     """Send a file in chunks."""
 
     # Make sure the file exists
-    if not os.path.exists(file_path):
+    if not await asyncio.to_thread(os.path.exists, file_path):
         await simple_response(send, 404, "File not found.")
         return
 
     # Make sure it's a file
-    if not os.path.isfile(file_path):
+    if not await asyncio.to_thread(os.path.isfile, file_path):
         await simple_response(send, 400, "Not a file.")
         return
 
     # Check if the file is already cached by the client
     modified_since = await get_val_from_header(scope, b"if-modified-since")
-    if modified_since and modified_since > os.path.getmtime(file_path):
+    if modified_since and modified_since > await asyncio.to_thread(
+        os.path.getmtime, file_path
+    ):
         await simple_response(send, 304, "Not modified.")
         return
 
     # Get the file's MIME type
     mime_type = (
-        DEFAULT_MIME_TYPES.get(file_path.rsplit(".")[1], None)
-        or mimetypes.guess_type(file_path, strict=False)[0]
+        MIME_TYPES.get(file_path.rsplit(".")[1], None)
+        # Fallback to guess_type to allow for the user to define custom MIME types on their system
+        or (await asyncio.to_thread(mimetypes.guess_type, file_path, strict=False))[0]
     )
     if mime_type is None:
         mime_type = "text/plain"

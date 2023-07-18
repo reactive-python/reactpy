@@ -1,4 +1,9 @@
-DEFAULT_MIME_TYPES = {
+"""
+We ship our own mime types to ensure consistent behavior across platforms.
+This dictionary is based on: https://github.com/micnic/mime.json
+"""
+
+MIME_TYPES = {
     "123": "application/vnd.lotus-1-2-3",
     "1km": "application/vnd.1000minds.decision-model+xml",
     "3dml": "text/vnd.in3d.3dml",
