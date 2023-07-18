@@ -2,21 +2,18 @@
     "editor.detectIndentation": false,
     "editor.formatOnSave": true,
     "python.linting.enabled": true,
-    "python.linting.mypyEnabled": true,
     "python.analysis.typeCheckingMode": "off",
     "python.languageServer": "Pylance",
     "python.formatting.provider": "black",
     "git.autofetch": "all",
     "prettier.tabWidth": 4,
-    "prettier.useTabs": true,
     "prettier.endOfLine": "auto",
     "prettier.proseWrap": "never",
     "files.associations": {
-        "**/requirements/*.txt": "pip-requirements",
         "**/templates/**.html": "jinja",
         "**/template/**.html": "jinja",
     },
-    "[json, jsonc]": {
+    "[json]": {
         "editor.defaultFormatter": "vscode.json-language-features"
     },
     "[javascript]": {
@@ -26,7 +23,6 @@
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
     "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter",
         "editor.codeActionsOnSave": {
             "source.organizeImports": true
         }
