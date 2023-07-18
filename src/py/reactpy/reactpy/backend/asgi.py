@@ -1,11 +1,14 @@
+import asyncio
 import logging
 import mimetypes
 import os
 import re
+import urllib.parse
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 import aiofiles
+import orjson
 from asgiref.compatibility import guarantee_single_callable
 
 from reactpy.backend._common import (
@@ -13,8 +16,12 @@ from reactpy.backend._common import (
     traversal_safe_path,
     vdom_head_elements_to_html,
 )
+from reactpy.backend.hooks import ConnectionContext
 from reactpy.backend.mimetypes import DEFAULT_MIME_TYPES
+from reactpy.backend.types import Connection, Location
 from reactpy.config import REACTPY_WEB_MODULES_DIR
+from reactpy.core.layout import Layout
+from reactpy.core.serve import serve_layout
 from reactpy.core.types import VdomDict
 
 DEFAULT_STATIC_PATH = f"{os.getcwd()}/static"
@@ -88,6 +95,43 @@ class ReactPy:
 
     async def component_dispatch_app(self, scope, receive, send) -> None:
         """The ASGI application for ReactPy Python components."""
+
+        self._reactpy_recv_queue: asyncio.Queue = asyncio.Queue()
+        parsed_url = urllib.parse.urlparse(scope["path"])
+
+        # TODO: Get the component via URL attached to template tag
+        parsed_url_query = urllib.parse.parse_qs(parsed_url.query)
+        component = lambda _: None
+
+        while True:
+            event = await receive()
+
+            if event["type"] == "websocket.connect":
+                await send({"type": "websocket.accept"})
+
+                await serve_layout(
+                    Layout(
+                        ConnectionContext(
+                            component(),
+                            value=Connection(
+                                scope=scope,
+                                location=Location(
+                                    parsed_url.path,
+                                    f"?{parsed_url.query}" if parsed_url.query else "",
+                                ),
+                                carrier=self,
+                            ),
+                        )
+                    ),
+                    send_json(send),
+                    self._reactpy_recv_queue.get,
+                )
+
+            if event["type"] == "websocket.disconnect":
+                break
+
+            if event["type"] == "websocket.receive":
+                await self._reactpy_recv_queue.put(orjson.loads(event["text"]))
 
     async def js_modules_app(self, scope, receive, send) -> None:
         """The ASGI application for ReactPy web modules."""
@@ -164,6 +208,15 @@ class ReactPy:
             content_type=b"text/html",
             headers=[(b"cache-control", b"no-cache")],
         )
+
+
+def send_json(send) -> None:
+    """Use orjson to send JSON over an ASGI websocket."""
+
+    async def _send_json(value) -> None:
+        await send({"type": "websocket.send", "text": orjson.dumps(value)})
+
+    return _send_json
 
 
 async def simple_response(
