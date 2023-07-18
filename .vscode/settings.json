@@ -1,31 +1,31 @@
 {
-    "editor.detectIndentation": false,
-    "editor.formatOnSave": true,
-    "python.linting.enabled": true,
-    "python.analysis.typeCheckingMode": "off",
-    "python.languageServer": "Pylance",
-    "python.formatting.provider": "black",
-    "git.autofetch": "all",
-    "prettier.tabWidth": 4,
-    "prettier.endOfLine": "auto",
-    "prettier.proseWrap": "never",
-    "files.associations": {
-        "**/templates/**.html": "jinja",
-        "**/template/**.html": "jinja",
-    },
-    "[json]": {
-        "editor.defaultFormatter": "vscode.json-language-features"
+    "[css]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
     "[javascript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
-    "[css]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
     },
     "[python]": {
         "editor.codeActionsOnSave": {
             "source.organizeImports": true
         }
     },
-    "files.insertFinalNewline": true
+    "editor.detectIndentation": false,
+    "editor.formatOnSave": true,
+    "files.associations": {
+        "**/template/**.html": "jinja",
+        "**/templates/**.html": "jinja"
+    },
+    "files.insertFinalNewline": true,
+    "git.autofetch": "all",
+    "prettier.endOfLine": "auto",
+    "prettier.proseWrap": "never",
+    "prettier.tabWidth": 4,
+    "python.analysis.typeCheckingMode": "off",
+    "python.formatting.provider": "black",
+    "python.languageServer": "Pylance",
+    "python.linting.enabled": true
 }
