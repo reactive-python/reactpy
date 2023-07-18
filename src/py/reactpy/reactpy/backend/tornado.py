@@ -32,10 +32,11 @@ from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
 from reactpy.core.types import ComponentConstructor
 
+# BackendType.Options
 Options = CommonOptions
-"""Render server config for :func:`reactpy.backend.tornado.configure`"""
 
 
+# BackendType.configure
 def configure(
     app: Application,
     component: ComponentConstructor,
@@ -60,10 +61,12 @@ def configure(
     )
 
 
+# BackendType.create_development_app
 def create_development_app() -> Application:
     return Application(debug=True)
 
 
+# BackendType.serve_development_app
 async def serve_development_app(
     app: Application,
     host: str,
@@ -119,12 +122,17 @@ def _setup_common_routes(options: Options) -> _RouteHandlerSpecs:
             StaticFileHandler,
             {"path": str(CLIENT_BUILD_DIR / "assets")},
         ),
-        (
-            r"/(.*)",
-            IndexHandler,
-            {"index_html": read_client_index_html(options)},
-        ),
-    ]
+    ] + (
+        [
+            (
+                r"/(.*)",
+                IndexHandler,
+                {"index_html": read_client_index_html(options)},
+            ),
+        ]
+        if options.serve_index_route
+        else []
+    )
 
 
 def _add_handler(

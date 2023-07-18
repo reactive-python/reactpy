@@ -11,11 +11,11 @@ _App = TypeVar("_App")
 
 
 @runtime_checkable
-class BackendImplementation(Protocol[_App]):
+class BackendType(Protocol[_App]):
     """Common interface for built-in web server/framework integrations"""
 
     Options: Callable[..., Any]
-    """A constructor for options passed to :meth:`BackendImplementation.configure`"""
+    """A constructor for options passed to :meth:`BackendType.configure`"""
 
     def configure(
         self,

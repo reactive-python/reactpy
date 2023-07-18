@@ -40,11 +40,15 @@ v1.0.1
 **Changed**
 
 - :pull:`1050` - Warn and attempt to fix missing mime types, which can result in ``reactpy.run`` not working as expected.
+- :pull:`1051` - Rename ``reactpy.backend.BackendImplementation`` to ``reactpy.backend.BackendType``
+- :pull:`1051` - Allow ``reactpy.run`` to fail in more predictable ways
 
 **Fixed**
 
 - :issue:`930` - better traceback for JSON serialization errors (via :pull:`1008`)
 - :issue:`437` - explain that JS component attributes must be JSON (via :pull:`1008`)
+- :pull:`1051` - Fix ``reactpy.run`` port assignment sometimes attaching to in-use ports on Windows
+- :pull:`1051` - Fix ``reactpy.run`` not recognizing ``fastapi``
 
 
 v1.0.0
