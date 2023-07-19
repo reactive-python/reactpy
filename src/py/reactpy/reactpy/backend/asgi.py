@@ -6,6 +6,7 @@ import re
 import urllib.parse
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Coroutine
 
 import aiofiles
 import orjson
@@ -17,12 +18,12 @@ from reactpy.backend._common import (
     vdom_head_elements_to_html,
 )
 from reactpy.backend.hooks import ConnectionContext
-from reactpy.backend.mimetypes import DEFAULT_MIME_TYPES
+from reactpy.backend.mimetypes import MIME_TYPES
 from reactpy.backend.types import Connection, Location
 from reactpy.config import REACTPY_WEB_MODULES_DIR
 from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
-from reactpy.core.types import VdomDict
+from reactpy.core.types import ComponentConstructor, VdomDict
 
 DEFAULT_STATIC_PATH = f"{os.getcwd()}/static"
 DEFAULT_BLOCK_SIZE = 8192
@@ -32,14 +33,28 @@ _logger = logging.getLogger(__name__)
 class ReactPy:
     def __init__(
         self,
-        application=None,
+        app_or_component: ComponentConstructor | Coroutine,
+        *,
         dispatcher_path: str = "^reactpy/stream/([^/]+)/?",
         js_modules_path: str | None = "^reactpy/modules/([^/]+)/?",
         static_path: str | None = "^reactpy/static/([^/]+)/?",
         static_dir: str | None = DEFAULT_STATIC_PATH,
         head: Sequence[VdomDict] | VdomDict | str = "",
     ) -> None:
-        self.user_app = guarantee_single_callable(application)
+        self.component = (
+            app_or_component
+            if isinstance(app_or_component, ComponentConstructor)
+            else None
+        )
+        self.user_app = (
+            guarantee_single_callable(app_or_component)
+            if not self.component and asyncio.iscoroutinefunction(app_or_component)
+            else None
+        )
+        if not self.component and not self.user_app:
+            raise TypeError(
+                "The first argument to `ReactPy` must be a component or an ASGI application."
+            )
         self.dispatch_path = re.compile(dispatcher_path)
         self.js_modules_path = re.compile(js_modules_path)
         self.static_path = re.compile(static_path)
@@ -66,32 +81,35 @@ class ReactPy:
                 return
 
             # User tried to use an unsupported HTTP method
-            if scope["method"] not in ("GET", "HEAD"):
+            if scope["type"] == "http" and scope["method"] not in ("GET", "HEAD"):
                 await simple_response(
                     scope, send, status=405, content="Method Not Allowed"
                 )
                 return
 
-            # Serve a JS web module
+            # Route requests to our JS web module app
             if scope["type"] == "http" and re.match(
                 self.js_modules_path, scope["path"]
             ):
                 await self.js_modules_app(scope, receive, send)
                 return
 
-            # Serve a static file
+            # Route requests to our static file server app
             if scope["type"] == "http" and re.match(self.static_path, scope["path"]):
                 await self.static_file_app(scope, receive, send)
                 return
 
-            # Serve index.html
-            if scope["type"] == "http":
+            # Route all other requests to serve a component (user is in standalone mode)
+            if scope["type"] == "http" and self.component:
                 await self.index_html_app(scope, receive, send)
                 return
 
         # Serve the user's application
-        else:
+        if self.user_app:
             await self.user_app(scope, receive, send)
+            return
+
+        _logger.error("ReactPy appears to be misconfigured. Request not handled.")
 
     async def component_dispatch_app(self, scope, receive, send) -> None:
         """The ASGI application for ReactPy Python components."""
