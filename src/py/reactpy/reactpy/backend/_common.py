@@ -117,16 +117,7 @@ def vdom_head_elements_to_html(head: Sequence[VdomDict] | VdomDict | str) -> str
 class CommonOptions:
     """Options for ReactPy's built-in backed server implementations"""
 
-    head: Sequence[VdomDict] | VdomDict | str = (
-        html.title("ReactPy"),
-        html.link(
-            {
-                "rel": "icon",
-                "href": "/_reactpy/assets/reactpy-logo.ico",
-                "type": "image/x-icon",
-            }
-        ),
-    )
+    head: Sequence[VdomDict] | VdomDict | str = (html.title("ReactPy App"),)
     """Add elements to the ``<head>`` of the application.
 
     For example, this can be used to customize the title of the page, link extra
