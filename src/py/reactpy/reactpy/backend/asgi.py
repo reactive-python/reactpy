@@ -35,7 +35,7 @@ class ReactPy:
         self,
         app_or_component: ComponentConstructor | Coroutine,
         *,
-        dispatcher_path: str = "^reactpy/stream/([^/]+)/?",
+        dispatcher_path: str = "^reactpy/([^/]+)/?",
         js_modules_path: str | None = "^reactpy/modules/([^/]+)/?",
         static_path: str | None = "^reactpy/static/([^/]+)/?",
         static_dir: str | None = DEFAULT_STATIC_PATH,
@@ -117,9 +117,9 @@ class ReactPy:
         self._reactpy_recv_queue: asyncio.Queue = asyncio.Queue()
         parsed_url = urllib.parse.urlparse(scope["path"])
 
-        # TODO: Get the component via URL attached to template tag
-        parsed_url_query = urllib.parse.parse_qs(parsed_url.query)
-        component = lambda _: None
+        # If in standalone mode, serve the user provided component.
+        # In middleware mode, get the component from the URL.
+        component = self.component or re.match(self.dispatch_path, scope["path"])[1]
 
         while True:
             event = await receive()
