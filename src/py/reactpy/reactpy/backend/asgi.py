@@ -275,8 +275,8 @@ async def file_response(scope, send, file_path: Path) -> None:
         return
 
     # Check if the file is already cached by the client
-    modified_since = await get_val_from_header(scope, b"if-modified-since")
-    if modified_since and modified_since > await asyncio.to_thread(
+    etag = await get_val_from_header(scope, b"ETag")
+    if etag and etag != await asyncio.to_thread(
         os.path.getmtime, file_path
     ):
         await simple_response(send, 304, "Not modified.")
@@ -303,7 +303,7 @@ async def file_response(scope, send, file_path: Path) -> None:
                 "headers": [
                     (b"content-type", mime_type.encode()),
                     (
-                        b"last-modified",
+                        b"ETag",
                         str(
                             await asyncio.to_thread(os.path.getmtime, file_path)
                         ).encode(),
