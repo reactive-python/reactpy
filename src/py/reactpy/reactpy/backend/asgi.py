@@ -93,8 +93,6 @@ class ReactPy:
         # Serve the user's application
         await self.user_app(scope, receive, send)
 
-        _logger.error("ReactPy appears to be misconfigured. Request not handled.")
-
     async def reactpy_app(self, scope, receive, send) -> None:
         """Determine what type of request this is and route it to the appropriate
         ReactPy ASGI sub-application."""
