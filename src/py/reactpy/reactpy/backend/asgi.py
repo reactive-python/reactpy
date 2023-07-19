@@ -137,7 +137,11 @@ class ReactPy:
                                     parsed_url.path,
                                     f"?{parsed_url.query}" if parsed_url.query else "",
                                 ),
-                                carrier=self,
+                                carrier={
+                                    "scope": scope,
+                                    "send": send,
+                                    "receive": receive,
+                                },
                             ),
                         )
                     ),
