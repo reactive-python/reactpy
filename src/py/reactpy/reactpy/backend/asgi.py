@@ -118,7 +118,6 @@ class ReactPy:
     async def component_dispatch_app(self, scope, receive, send) -> None:
         """The ASGI application for ReactPy Python components."""
 
-        self._reactpy_recv_queue: asyncio.Queue = asyncio.Queue()
         parsed_url = urllib.parse.urlparse(scope["path"])
 
         # If in standalone mode, serve the user provided component.
@@ -130,7 +129,7 @@ class ReactPy:
 
             if event["type"] == "websocket.connect":
                 await send({"type": "websocket.accept"})
-
+                self.recv_queue: asyncio.Queue = asyncio.Queue()
                 await serve_layout(
                     Layout(
                         ConnectionContext(
@@ -150,14 +149,14 @@ class ReactPy:
                         )
                     ),
                     send_json(send),
-                    self._reactpy_recv_queue.get,
+                    self.recv_queue.get,
                 )
 
             if event["type"] == "websocket.disconnect":
                 break
 
             if event["type"] == "websocket.receive":
-                await self._reactpy_recv_queue.put(orjson.loads(event["text"]))
+                await self.recv_queue.put(orjson.loads(event["text"]))
 
     async def js_modules_app(self, scope, receive, send) -> None:
         """The ASGI application for ReactPy web modules."""
