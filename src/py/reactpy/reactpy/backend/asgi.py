@@ -4,9 +4,8 @@ import mimetypes
 import os
 import re
 import urllib.parse
-from collections.abc import Sequence
+from collections.abc import Coroutine, Sequence
 from pathlib import Path
-from typing import Coroutine
 
 import aiofiles
 import orjson
@@ -14,7 +13,7 @@ from asgiref.compatibility import guarantee_single_callable
 
 from reactpy.backend._common import (
     CLIENT_BUILD_DIR,
-    traversal_safe_path,
+    safe_join_path,
     vdom_head_elements_to_html,
 )
 from reactpy.backend.hooks import ConnectionContext
@@ -25,7 +24,6 @@ from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
 from reactpy.core.types import ComponentConstructor, VdomDict
 
-DEFAULT_STATIC_PATH = f"{os.getcwd()}/static"
 DEFAULT_BLOCK_SIZE = 8192
 _logger = logging.getLogger(__name__)
 
@@ -38,7 +36,7 @@ class ReactPy:
         dispatcher_path: str = "^reactpy/([^/]+)/?",
         js_modules_path: str | None = "^reactpy/modules/([^/]+)/?",
         static_path: str | None = "^reactpy/static/([^/]+)/?",
-        static_dir: str | None = DEFAULT_STATIC_PATH,
+        static_dir: Path | str | None = None,
         head: Sequence[VdomDict] | VdomDict | str = "",
     ) -> None:
         self.component = (
@@ -56,8 +54,8 @@ class ReactPy:
                 "The first argument to `ReactPy` must be a component or an ASGI application."
             )
         self.dispatch_path = re.compile(dispatcher_path)
-        self.js_modules_path = re.compile(js_modules_path)
-        self.static_path = re.compile(static_path)
+        self.js_modules_path = re.compile(js_modules_path) if js_modules_path else None
+        self.static_path = re.compile(static_path) if static_path else None
         self.static_dir = static_dir
         self.all_paths = re.compile(
             "|".join(
@@ -88,14 +86,20 @@ class ReactPy:
                 return
 
             # Route requests to our JS web module app
-            if scope["type"] == "http" and re.match(
-                self.js_modules_path, scope["path"]
+            if (
+                scope["type"] == "http"
+                and self.js_modules_path
+                and re.match(self.js_modules_path, scope["path"])
             ):
                 await self.js_modules_app(scope, receive, send)
                 return
 
             # Route requests to our static file server app
-            if scope["type"] == "http" and re.match(self.static_path, scope["path"]):
+            if (
+                scope["type"] == "http"
+                and self.static_path
+                and re.match(self.static_path, scope["path"])
+            ):
                 await self.static_file_app(scope, receive, send)
                 return
 
@@ -159,45 +163,42 @@ class ReactPy:
         """The ASGI application for ReactPy web modules."""
 
         if not REACTPY_WEB_MODULES_DIR.current:
-            raise RuntimeError("No web modules directory configured")
-
-        # Get the relative file path from the URL
-        file_url_path = re.match(self.js_modules_path, scope["path"])[1]
+            raise RuntimeError("No web modules directory configured.")
 
         # Make sure the user hasn't tried to escape the web modules directory
         try:
-            file_path = traversal_safe_path(
+            abs_file_path = safe_join_path(
                 REACTPY_WEB_MODULES_DIR.current,
                 REACTPY_WEB_MODULES_DIR.current,
-                file_url_path,
+                re.match(self.js_modules_path, scope["path"])[1],
             )
         except ValueError:
             await simple_response(send, 403, "Forbidden")
             return
 
         # Serve the file
-        await file_response(scope, send, file_path)
+        await file_response(scope, send, abs_file_path)
 
     async def static_file_app(self, scope, receive, send) -> None:
         """The ASGI application for ReactPy static files."""
 
-        if self.static_dir is None:
-            raise RuntimeError("No static directory configured")
-
-        # Get the relative file path from the URL
-        file_url_path = re.match(self.static_path, scope["path"])[1]
+        if not self.static_dir:
+            raise RuntimeError(
+                "Static files cannot be served without defining `static_dir`."
+            )
 
         # Make sure the user hasn't tried to escape the static directory
         try:
-            file_path = traversal_safe_path(
-                self.static_dir, self.static_dir, file_url_path
+            abs_file_path = safe_join_path(
+                self.static_dir,
+                re.match(self.static_path, scope["path"])[1],
             )
         except ValueError:
             await simple_response(send, 403, "Forbidden")
             return
 
         # Serve the file
-        await file_response(scope, send, file_path)
+        await file_response(scope, send, abs_file_path)
 
     async def index_html_app(self, scope, receive, send) -> None:
         """The ASGI application for ReactPy index.html."""
@@ -289,7 +290,9 @@ async def file_response(scope, send, file_path: Path) -> None:
     )
     if mime_type is None:
         mime_type = "text/plain"
-        _logger.error(f"Could not determine MIME type for {file_path}.")
+        _logger.error(
+            f"Could not determine MIME type for {file_path}. Defaulting to 'text/plain'."
+        )
 
     # Send the file in chunks
     async with aiofiles.open(file_path, "rb") as file_handle:
@@ -299,7 +302,12 @@ async def file_response(scope, send, file_path: Path) -> None:
                 "status": 200,
                 "headers": [
                     (b"content-type", mime_type.encode()),
-                    (b"last-modified", str(os.path.getmtime(file_path)).encode()),
+                    (
+                        b"last-modified",
+                        str(
+                            await asyncio.to_thread(os.path.getmtime, file_path)
+                        ).encode(),
+                    ),
                 ],
             }
         )

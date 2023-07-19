@@ -3,7 +3,7 @@ import pytest
 from reactpy import html
 from reactpy.backend._common import (
     CommonOptions,
-    traversal_safe_path,
+    safe_join_path,
     vdom_head_elements_to_html,
 )
 
@@ -25,8 +25,8 @@ def test_common_options_url_prefix_starts_with_slash():
     ],
 )
 def test_catch_unsafe_relative_path_traversal(tmp_path, bad_path):
-    with pytest.raises(ValueError, match="Unsafe path"):
-        traversal_safe_path(tmp_path, *bad_path.split("/"))
+    with pytest.raises(ValueError):
+        safe_join_path(tmp_path, *bad_path.split("/"))
 
 
 @pytest.mark.parametrize(
