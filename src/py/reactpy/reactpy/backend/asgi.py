@@ -268,7 +268,7 @@ async def http_response(
         {
             "type": "http.response.start",
             "status": code,
-            "headers": [(b"content-type", content_type, *headers)],
+            "headers": [(b"content-type", content_type), *headers],
         }
     )
     # Head requests don't need a body
