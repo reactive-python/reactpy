@@ -78,7 +78,7 @@ class ReactPy:
         self._cached_index_html = ""
         self.connected = False
         self.backhaul_thread = backhaul_thread
-        self.dispatcher_future = None
+        self.dispatcher_future_or_task = None
         if self.backhaul_thread and not _backhaul_thread.is_alive():
             _backhaul_thread.start()
 
@@ -138,15 +138,15 @@ class ReactPy:
                 await send({"type": "websocket.accept"})
                 run_dispatcher = self.run_dispatcher(scope, receive, send)
                 if self.backhaul_thread:
-                    self.dispatcher_future = asyncio.run_coroutine_threadsafe(
+                    self.dispatcher_future_or_task = asyncio.run_coroutine_threadsafe(
                         run_dispatcher, _backhaul_loop
                     )
                 else:
-                    await run_dispatcher
+                    self.dispatcher_future_or_task = asyncio.create_task(run_dispatcher)
 
             if event["type"] == "websocket.disconnect":
-                if self.dispatcher_future:
-                    self.dispatcher_future.cancel()
+                if self.dispatcher_future_or_task:
+                    self.dispatcher_future_or_task.cancel()
                 break
 
             if event["type"] == "websocket.receive":
@@ -164,7 +164,6 @@ class ReactPy:
         # Make sure the user hasn't tried to escape the web modules directory
         try:
             abs_file_path = safe_join_path(
-                REACTPY_WEB_MODULES_DIR.current,
                 REACTPY_WEB_MODULES_DIR.current,
                 re.match(self.js_modules_path, scope["path"])[1],
             )
