@@ -6,6 +6,7 @@ import re
 import urllib.parse
 from collections.abc import Coroutine, Sequence
 from pathlib import Path
+from threading import Thread
 
 import aiofiles
 import orjson
@@ -26,6 +27,16 @@ from reactpy.core.types import ComponentConstructor, VdomDict
 
 DEFAULT_BLOCK_SIZE = 8192
 _logger = logging.getLogger(__name__)
+_backhaul_loop = asyncio.new_event_loop()
+
+
+def start_backhaul_loop():
+    """Starts the asyncio event loop that will perform component rendering tasks."""
+    asyncio.set_event_loop(_backhaul_loop)
+    _backhaul_loop.run_forever()
+
+
+_backhaul_thread = Thread(target=start_backhaul_loop, daemon=True)
 
 
 class ReactPy:
@@ -38,6 +49,7 @@ class ReactPy:
         static_path: str | None = "^reactpy/static/([^/]+)/?",
         static_dir: Path | str | None = None,
         head: Sequence[VdomDict] | VdomDict | str = "",
+        backhaul_thread: bool = True,
     ) -> None:
         self.component = (
             app_or_component
@@ -65,6 +77,10 @@ class ReactPy:
         self.head = vdom_head_elements_to_html(head)
         self._cached_index_html = ""
         self.connected = False
+        self.backhaul_thread = backhaul_thread
+        self.dispatcher_future = None
+        if self.backhaul_thread and not _backhaul_thread.is_alive():
+            _backhaul_thread.start()
 
     async def __call__(self, scope, receive, send) -> None:
         """The ASGI callable. This determines whether ReactPy should route the the
@@ -120,13 +136,25 @@ class ReactPy:
             if event["type"] == "websocket.connect" and not self.connected:
                 self.connected = True
                 await send({"type": "websocket.accept"})
-                await self.run_dispatcher(scope, receive, send)
+                run_dispatcher = self.run_dispatcher(scope, receive, send)
+                if self.backhaul_thread:
+                    self.dispatcher_future = asyncio.run_coroutine_threadsafe(
+                        run_dispatcher, _backhaul_loop
+                    )
+                else:
+                    await run_dispatcher
 
             if event["type"] == "websocket.disconnect":
+                if self.dispatcher_future:
+                    self.dispatcher_future.cancel()
                 break
 
             if event["type"] == "websocket.receive":
-                await self.recv_queue.put(orjson.loads(event["text"]))
+                recv_queue_put = self.recv_queue.put(orjson.loads(event["text"]))
+                if self.backhaul_thread:
+                    asyncio.run_coroutine_threadsafe(recv_queue_put, _backhaul_loop)
+                else:
+                    await recv_queue_put
 
     async def js_modules_app(self, scope, receive, send) -> None:
         """ASGI app for ReactPy web modules."""
