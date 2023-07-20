@@ -78,8 +78,8 @@ class ReactPy:
         self._cached_index_html = ""
         self.connected = False
         self.backhaul_thread = backhaul_thread
+        self.dispatcher = None
         self.block_size = block_size
-        self.dispatcher_future_or_task = None
         if self.backhaul_thread and not _backhaul_thread.is_alive():
             _backhaul_thread.start()
 
@@ -93,8 +93,6 @@ class ReactPy:
 
         # Serve the user's application
         await self.user_app(scope, receive, send)
-
-        _logger.error("ReactPy appears to be misconfigured. Request not handled.")
 
     async def reactpy_app(self, scope, receive, send) -> None:
         """Determine what type of request this is and route it to the appropriate
@@ -139,15 +137,15 @@ class ReactPy:
                 await send({"type": "websocket.accept"})
                 run_dispatcher = self.run_dispatcher(scope, receive, send)
                 if self.backhaul_thread:
-                    self.dispatcher_future_or_task = asyncio.run_coroutine_threadsafe(
+                    self.dispatcher = asyncio.run_coroutine_threadsafe(
                         run_dispatcher, _backhaul_loop
                     )
                 else:
-                    self.dispatcher_future_or_task = asyncio.create_task(run_dispatcher)
+                    self.dispatcher = asyncio.create_task(run_dispatcher)
 
             if event["type"] == "websocket.disconnect":
-                if self.dispatcher_future_or_task:
-                    self.dispatcher_future_or_task.cancel()
+                if self.dispatcher:
+                    self.dispatcher.cancel()
                 break
 
             if event["type"] == "websocket.receive":
