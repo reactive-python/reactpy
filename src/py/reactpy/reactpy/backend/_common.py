@@ -86,7 +86,7 @@ def safe_join_path(root: str | Path, *unsafe: str | Path) -> Path:
     path = os.path.abspath(os.path.join(root, *unsafe))
 
     if os.path.commonprefix([root, path]) != root:
-        # If the common prefix is not root directory we resolved outside the root dir
+        # We resolved outside the root dir, potential directory traversal attack.
         raise ValueError(
             f"Unsafe path detected. Path '{path}' is outside root directory '{root}'"
         )

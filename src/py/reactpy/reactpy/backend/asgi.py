@@ -25,7 +25,6 @@ from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
 from reactpy.core.types import ComponentConstructor, VdomDict
 
-DEFAULT_BLOCK_SIZE = 8192
 _logger = logging.getLogger(__name__)
 _backhaul_loop = asyncio.new_event_loop()
 
@@ -50,6 +49,7 @@ class ReactPy:
         static_dir: Path | str | None = None,
         head: Sequence[VdomDict] | VdomDict | str = "",
         backhaul_thread: bool = True,
+        block_size: int = 8192,
     ) -> None:
         self.component = (
             app_or_component
@@ -78,6 +78,7 @@ class ReactPy:
         self._cached_index_html = ""
         self.connected = False
         self.backhaul_thread = backhaul_thread
+        self.block_size = block_size
         self.dispatcher_future_or_task = None
         if self.backhaul_thread and not _backhaul_thread.is_alive():
             _backhaul_thread.start()
@@ -172,7 +173,7 @@ class ReactPy:
             return
 
         # Serve the file
-        await file_response(scope, send, abs_file_path)
+        await file_response(scope, send, abs_file_path, self.block_size)
 
     async def static_file_app(self, scope, receive, send) -> None:
         """ASGI app for ReactPy static files."""
@@ -192,7 +193,7 @@ class ReactPy:
             return
 
         # Serve the file
-        await file_response(scope, send, abs_file_path)
+        await file_response(scope, send, abs_file_path, self.block_size)
 
     async def standalone_app(self, scope, receive, send) -> None:
         """ASGI app for ReactPy standalone mode."""
@@ -276,7 +277,7 @@ async def http_response(
         await send({"type": "http.response.body", "body": message.encode()})
 
 
-async def file_response(scope, send, file_path: Path) -> None:
+async def file_response(scope, send, file_path: Path, block_size: int) -> None:
     """Send a file in chunks."""
     # Make sure the file exists
     if not await asyncio.to_thread(os.path.exists, file_path):
@@ -289,7 +290,7 @@ async def file_response(scope, send, file_path: Path) -> None:
         return
 
     # Check if the file is already cached by the client
-    etag = await get_val_from_header(scope, b"etag")
+    etag = await header_val(scope, b"etag")
     modification_time = await asyncio.to_thread(os.path.getmtime, file_path)
     if etag and etag != modification_time:
         await http_response(scope, send, 304, "Not modified.")
@@ -325,7 +326,7 @@ async def file_response(scope, send, file_path: Path) -> None:
         # Head requests don't need a body
         if scope["method"] != "HEAD":
             while True:
-                chunk = await file_handle.read(DEFAULT_BLOCK_SIZE)
+                chunk = await file_handle.read(block_size)
                 more_body = bool(chunk)
                 await send(
                     {
@@ -338,9 +339,7 @@ async def file_response(scope, send, file_path: Path) -> None:
                     break
 
 
-async def get_val_from_header(
-    scope: dict, key: str, default: str | None = None
-) -> str | None:
+async def header_val(scope: dict, key: str, default: str | int | None = None) -> str | int | None:
     """Get a value from a scope's headers."""
     return await anext(
         (
