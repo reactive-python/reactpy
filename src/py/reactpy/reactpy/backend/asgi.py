@@ -343,7 +343,9 @@ async def file_response(scope, send, file_path: Path, block_size: int) -> None:
                     break
 
 
-async def header_val(scope: dict, key: str, default: str | int | None = None) -> str | int | None:
+async def header_val(
+    scope: dict, key: str, default: str | int | None = None
+) -> str | int | None:
     """Get a value from a scope's headers."""
     return await anext(
         (
