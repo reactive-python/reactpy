@@ -24,6 +24,7 @@ from reactpy.config import REACTPY_WEB_MODULES_DIR
 from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
 from reactpy.core.types import ComponentConstructor, VdomDict
+from concurrent.futures import Future
 
 _logger = logging.getLogger(__name__)
 _backhaul_loop = asyncio.new_event_loop()
@@ -51,35 +52,40 @@ class ReactPy:
         backhaul_thread: bool = True,
         block_size: int = 8192,
     ) -> None:
-        self.component = (
-            app_or_component
-            if isinstance(app_or_component, ComponentConstructor)
-            else None
-        )
-        self.user_app = (
-            guarantee_single_callable(app_or_component)
-            if not self.component and asyncio.iscoroutinefunction(app_or_component)
-            else None
-        )
-        if not self.component and not self.user_app:
-            raise TypeError(
-                "The first argument to ReactPy(...) must be a component or an ASGI application."
-            )
+        # Convert kwargs to class attributes
         self.dispatch_path = re.compile(dispatcher_path)
         self.js_modules_path = re.compile(js_modules_path) if js_modules_path else None
         self.static_path = re.compile(static_path) if static_path else None
         self.static_dir = static_dir
-        self.all_paths = re.compile(
+        self.head = vdom_head_elements_to_html(head)
+        self.backhaul_thread = backhaul_thread
+        self.block_size = block_size
+
+        # Internal attributes (not using the same name as a kwarg)
+        self.component: re.Pattern = (
+            app_or_component
+            if isinstance(app_or_component, ComponentConstructor)
+            else None
+        )
+        self.user_app: re.Pattern = (
+            guarantee_single_callable(app_or_component)
+            if not self.component and asyncio.iscoroutinefunction(app_or_component)
+            else None
+        )
+        self.all_paths: re.Pattern = re.compile(
             "|".join(
                 path for path in [dispatcher_path, js_modules_path, static_path] if path
             )
         )
-        self.head = vdom_head_elements_to_html(head)
-        self._cached_index_html = ""
-        self.connected = False
-        self.backhaul_thread = backhaul_thread
-        self.dispatcher = None
-        self.block_size = block_size
+        self.dispatcher: Future | asyncio.Task | None = None
+        self._cached_index_html: str = ""
+        self.connected: bool = False
+
+        # Validate the arguments
+        if not self.component and not self.user_app:
+            raise TypeError(
+                "The first argument to ReactPy(...) must be a component or an ASGI application."
+            )
         if self.backhaul_thread and not _backhaul_thread.is_alive():
             _backhaul_thread.start()
 
