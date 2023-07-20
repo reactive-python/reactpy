@@ -2,6 +2,11 @@
 We ship our own mime types to ensure consistent behavior across platforms.
 This dictionary is based on: https://github.com/micnic/mime.json
 """
+import mimetypes
+import os
+import typing
+
+from starlette import responses
 
 MIME_TYPES = {
     "123": "application/vnd.lotus-1-2-3",
@@ -1206,3 +1211,18 @@ MIME_TYPES = {
     "zirz": "application/vnd.zul",
     "zmm": "application/vnd.handheld-entertainment+xml",
 }
+
+
+def guess_type(
+    url: typing.Union[str, "os.PathLike[str]"],
+    strict: bool = True,
+):
+    """Mime type checker that prefers our predefined types over the built-in
+    mimetypes module."""
+    mime_type, encoding = mimetypes.guess_type(url, strict)
+
+    return (MIME_TYPES.get(str(url).rsplit(".")[1]) or mime_type, encoding)
+
+
+# Monkey patch starlette's mime types
+responses.guess_type = guess_type
