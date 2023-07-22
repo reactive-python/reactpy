@@ -118,24 +118,19 @@ In both cases, what you want to pass is a function:
 
 Because event handlers are declared inside of a component, they have access to the component's props. Here is a button that, when clicked, shows an alert with its `message` prop:
 
-```python
-@component
-def alert_button(message, children):
-	return html.button({"on_click": lambda event: print(message)}, f"children")
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/reading_props_in_event_handlers.py" start="# start" %}
+	```
+=== "styles.css"
+	```css
+	{% include "../../examples/css/responding_to_events/reading_props_in_event_handlers.css" %}
+	```
 
-@component
-def toolbar():
-	return html.div(
-		alert_button("message": "Playing!", "Play Movie")
-		alert_button("message": "Uploading!", "Upload Image")
-	)
-```
-
-```css
-button {
-	margin-right: 10px;
-}
-```
+=== ":material-play: Run"
+	```python
+	# TODO
+	```
 
 This lets these two buttons show different messages. Try changing the messages passed to them.
 
@@ -145,35 +140,20 @@ Often you'll want the parent component to specify a child's event handler. Consi
 
 To do this, pass a prop the component receives from its parent as the event handler like so:
 
-```python
-@component
-def button(on_click, children):
-	return html.button({"on_click": on_click}, children)
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/passing_event_handlers_as_props.py" start="# start" %}
+	```
 
-@component
-def play_button(movie_name):
-	def handle_play_click(event):
-		print(f"Playing {movie_name}")
-		
-	return html.button({"on_click": handle_play_click}, f"Play {movie_name}")
+=== "styles.css"
+	```css
+	{% include "../../examples/css/responding_to_events/passing_event_handlers_as_props.css" %}
+	```
 
-@component
-def upload_button():
-	return html.button({"on_click": lambda event: print("Uploading!")})
-
-@component
-def toolbar():
-	return html.div(
-			play_button({"movie_name": "Kiki's Delivery Service"})
-			upload_button()
-	)
-```
-
-```css
-button {
-	margin-right: 10px;
-}
-```
+=== ":material-play: Run"
+	```python
+	# TODO
+	```
 
 Here, the `toolbar` component renders a `play_button` and an `upload_button`:
 
@@ -192,50 +172,40 @@ By convention, event handler props should start with `on`, followed by an unders
 
 For example, the `button` component's `on_click` prop could have been called `on_smash`:
 
-```python
-@component
-def button(on_smash, children):
-	return html.button({"on_click": on_smash}, f"children")
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/naming_event_handler_props.py" start="# start" %}
+	```
 
-@component
-def app():
-	return html.div(
-		html.button({"on_smash": lambda event: print("Playing!"), "Play Movie"), 
-		html.button({"on_smash": lambda event: print("Uploading!"), "Upload Image")
-```
+=== "styles.css"
+	```css
+	{% include "../../examples/css/responding_to_events/naming_event_handler_props.css" %}
+	```
 
-```css
-button {
-	margin-right: 10px;
-}
-```
+=== ":material-play: Run"
+	```python
+	# TODO
+	```
 
 In this example, `html.button("on_click"=on_smash)` shows that the browser `<button>` (lowercase) still needs a prop called `on_click`, but the prop name received by your custom `button` component is up to you!
 
 When your component supports multiple interactions, you might name event handler props for app-specific concepts. For example, this `toolbar` component receives `on_play_movie` and `on_upload_image` event handlers:
 
-```python
-def app():
-	return toolbar({
-		"on_play_movie": lambda event: print("Playing!"),
-		"on_upload_image": lambda event: print("Uploading!")
-	})
+=== "app.py"
+	```python
 
-def toolbar(on_play_movie, on_upload_image):
-	return html.div(
-		html.button({"on_click": on_play_movie}, "Play Movie"),
-		html.button({"on_click": on_upload_image}, "Upload Image)
-	)
+	{% include "../../examples/python/responding_to_events/naming_event_handler_props_2.py" start="# start" %}
+	```
 
-def button(on_click, children):
-	return html.button({"on_click": on_click}, f"children")
-```
+=== "styles.css"
+	```css
+	{% include "../../examples/css/responding_to_events/naming_event_handler_props.css" %}
+	```
 
-```css
-button {
-	margin-right: 10px;
-}
-```
+=== ":material-play: Run"
+	```python
+	# TODO
+	```
 
 Notice how the `app` component does not need to know _what_ `toolbar` will do with `on_play_movie` or `on_upload_image`. That's an implementation detail of the `toolbar`. Here, `toolbar` passes them down as `on_click` handlers to its `button`s, but it could later also trigger them on a keyboard shortcut. Naming props after app-specific interactions like `on_play_movie` gives you the flexibility to change how they're used later.
 
@@ -251,29 +221,20 @@ Event handlers will also catch events from any children your component might hav
 
 This `<div>` contains two buttons. Both the `<div>` _and_ each button have their own `on_click` handlers. Which handlers do you think will fire when you click a button?
 
-```python
-def toolbar():
-	return (
-		html.div(
-			{
-				"className": "Toolbar",
-				"on_click": lambda event: print("You clicked on the toolbar!")
-			},
-			html.button("on_click": lambda event: print("Playing"), "Play Movie"),
-			html.button("on_click": lambda event: print("Uploading"), "Upload Image")
-		)
-	)
-```
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/event_propagation.py" start="# start" %}
+	```
 
-```css
-.Toolbar {
-	background: #aaa;
-	padding: 5px;
-}
-button {
-	margin: 5px;
-}
-```
+=== "styles.css"
+	```css
+	{% include "../../examples/css/responding_to_events/event_propagation.css" %}
+	```
+
+=== ":material-play: Run"
+	```python
+	# TODO
+	```
 
 If you click on either button, its `on_click` will run first, followed by the parent `<div>`'s `on_click`. So two messages will appear. If you click the toolbar itself, only the parent `<div>`'s `on_click` will run.
 
@@ -289,36 +250,21 @@ Event handlers receive an **event object** as their only argument. By convention
 
 That event object also lets you stop the propagation. If you want to prevent an event from reaching parent components, you need to call `e.stopPropagation()` like this `Button` component does:
 
-```python
-def button(on_click, children): 
-	return html.button(
-			"on_click": lambda event:
-				event.stop_propagation()
-				on_click,
-			f"children")
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/stopping_propagation.py" start="# start" %}
+	```
 
-def toolbar():
-	return
-		html.div(
-			{
-				"class_name": "Toolbar",
-				"on_click": lambda event: print("You clicked on the toolbar!")
-			}
-			html.button("on_click": lambda event: print("Playing!"), "Play Movie"),
-			html.button("on_click": lambda event: print("Uploading!"), "Upload Image")
-		)
+=== "styles.css"
+	```css
+	{% include "../../examples/css/responding_to_events/stopping_propagation.css" %}
+	
+	```
 
-```
-
-```css
-.Toolbar {
-	background: #aaa;
-	padding: 5px;
-}
-button {
-	margin: 5px;
-}
-```
+=== ":material-play: Run"
+	```python
+	# TODO
+	```
 
 When you click on a button:
 
@@ -337,16 +283,16 @@ As a result of `e.stop_propagation()`, clicking on the buttons now only shows a 
 
 In rare cases, you might need to catch all events on child elements, _even if they stopped propagation_. For example, maybe you want to log every click to analytics, regardless of the propagation logic. You can do this by adding `capture` at the end of the event name:
 
-```python
-html.div(
-	{
-		"on_click_capture": lambda event:
-			# this runs first
-	}
-	html.button("on_click": lambda event: event.stop_propagation())
-	html.button("on_click": lambda event: event.stop_propagation())
-)
-```
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/capture_phase_events.py" start="# start" %}
+	```
+
+
+=== ":material-play: Run"
+	```python
+	# TODO
+	```
 
 Each event propagates in three phases:
 
@@ -362,18 +308,16 @@ Capture events are useful for code like routers or analytics, but you probably w
 
 Notice how this click handler runs a line of code _and then_ calls the `on_click` prop passed by the parent:
 
-```python
-def button(on_click, children)
-	return
-		html.button(
-			{
-				"on_click": lambda event:
-					event.stop_propagation()
-					on_click,
-				f"{children}
-			}
-		)
-```
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/passing_handlers_as_alternative_to_propagation.py" start="# start" %}
+	```
+
+
+=== ":material-play: Run"
+	```python
+	# TODO
+	```
 
 You could add more code to this handler before calling the parent `on_click` event handler, too. This pattern provides an _alternative_ to propagation. It lets the child component handle the event, while also letting the parent component specify some additional behavior. Unlike propagation, it's not automatic. But the benefit of this pattern is that you can clearly follow the whole chain of code that executes as a result of some event.
 
@@ -383,44 +327,37 @@ If you rely on propagation and it's difficult to trace which handlers execute an
 
 Some browser events have default behavior associated with them. For example, a `<form>` submit event, which happens when a button inside of it is clicked, will reload the whole page by default:
 
-```python
-def signup():
-	return
-		html.form(
-			{
-				"on_submit": lambda event: print("Submitting"),
-				html.input()
-				html.button("Send")
-			}
-		)
-```
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/preventing_default_behavior.py" start="# start" %}
+	```
 
-```css
-button {
-	margin-left: 5px;
-}
-```
+=== "styles.css"
+	```css
+	{% include "../../examples/css/responding_to_events/preventing_default_behavior.css" %}
+	```
+
+=== ":material-play: Run"
+	```python
+	# TODO
+	```
 
 You can call `e.prevent_default()` on the event object to stop this from happening:
 
-```python
-def signup():
-	return 
-		html.form(
-			{"on_submit":
-				lambda event: event.preventDefault()
-				print("Submitting")
-			},
-			html.input(),
-			html.button("Send")
-		)
-```
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/preventing_default_behavior_2.py" start="# start" %}
+	```
 
-```css
-button {
-	margin-left: 5px;
-}
-```
+=== "styles.css"
+	```css
+	{% include "../../examples/css/responding_to_events/preventing_default_behavior_2.css" %}
+	```
+
+=== ":material-play: Run"
+	```python
+	# TODO
+	```
 
 Don't confuse `event.stop_propagation()` and `event.prevent_default()`. They are both useful, but are unrelated:
 
@@ -453,46 +390,41 @@ Unlike rendering functions, event handlers don't need to be [pure](../learn/keep
 
 Clicking this button is supposed to switch the page background between white and black. However, nothing happens when you click it. Fix the problem. (Don't worry about the logic inside `handle_click`—that part is fine.)
 
-```python
-def light_switch():
-	def handle_click()
-		body_style = document.body.style
-		if bodyStyle.backgroundColor == "black":
-			bodyStyle.backgroundColor = "white"
-		else:
-			bodyStyle.backgroundColor = "black"
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/fix_an_event_handler_problem.py" start="# start" %}
+	```
 
-	return html.button({"on_click": handleClick()}, "Toggle the lights")
-```
+=== ":material-play: Run"
+	```python
+	# TODO
+	```
 
 <Solution>
 
 The problem is that `html.button("on_click": handle_click())` _calls_ the `handle_click` function while rendering instead of _passing_ it. Removing the `()` call so that it's `html.button("on_click": handleClick)` fixes the issue:
 
-```python
-def light_switch():
-	def handle_click()
-		body_style = document.body.style
-		if bodyStyle.backgroundColor == "black":
-			bodyStyle.backgroundColor = "white"
-		else:
-			bodyStyle.backgroundColor = "black"
-	return html.button({"on_click": handleClick}, "Toggle the lights")
-```
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/fix_an_event_handler_solution.py" start="# start" %}
+	```
+
+=== ":material-play: Run"
+	```python
+	# TODO	
+	```
 
 Alternatively, you could wrap the call into another function, like `html.button({"on_click": lambda event: handle_click()})`
 
-```python
-def light_switch():
-	def handle_click():
-		body_style = document.body.style
-		if body_style.background_color == "black:
-			body_style.background_color = "white"
-		else:
-			body_style.background_color = "black"
-	return html.button({"on_click": lambda event: handleClick()}, Toggle the lights)
-```
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/fix_an_event_handler_solution_2.py" start="# start" %}
+	```
 
+=== ":material-play: Run"
+	```python
+	# TODO	
+	```
 </Solution>
 
 #### Wire up the events
@@ -501,53 +433,20 @@ This `color_switch` component renders a button. It's supposed to change the page
 
 After you do this, notice that clicking the button also increments the page click counter. Your colleague who wrote the parent component insists that `on_change_color` does not increment any counters. What else might be happening? Fix it so that clicking the button _only_ changes the color, and does _not_ increment the counter.
 
-```python
-def color_switch(on_change_color):
-	return html.button("Change color")
-```
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/wire_up_the_events_problem.py" start="# start" %}
+	```
 
-```python
-import { useState } from "react";
-import ColorSwitch from "./ColorSwitch.js";
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/wire_up_the_events_problem_2.py" start="# start" %}
+	```
 
-def app():
-	const (clicks, set_clicks) = use_state(0)
-
-	def handle_click_outside():
-		set_clicks(lambda )
-
-export default function App() {
-	const [clicks, setClicks] = useState(0);
-
-	function handleClickOutside() {
-		setClicks((c) => c + 1);
-	}
-
-	function getRandomLightColor() {
-		let r = 150 + Math.round(100 * Math.random());
-		let g = 150 + Math.round(100 * Math.random());
-		let b = 150 + Math.round(100 * Math.random());
-		return `rgb(${r}, ${g}, ${b})`;
-	}
-
-	function handleChangeColor() {
-		let bodyStyle = document.body.style;
-		bodyStyle.backgroundColor = getRandomLightColor();
-	}
-
-	return (
-		<div
-			style={{ width: "100%", height: "100%" }}
-			on_click={handleClickOutside}
-		>
-			<ColorSwitch onChangeColor={handleChangeColor} />
-			<br />
-			<br />
-			<h2>Clicks on the page: {clicks}</h2>
-		</div>
-	);
-}
-```
+=== ":material-play: Run"
+	```python
+	# TODO	
+	```
 
 <Solution>
 
@@ -555,53 +454,21 @@ First, you need to add the event handler, like `html.button("on_click": on_chang
 
 However, this introduces the problem of the incrementing counter. If `on_change_color` does not do this, as your colleague insists, then the problem is that this event propagates up, and some handler above does it. To solve this problem, you need to stop the propagation. But don't forget that you should still call `on_change_color`.
 
-```python
-def color_switch(onChangeColor) {
-	return
-		html.button({"on_click": lambda event:
-			event.stop_propagation,
-			on_change_color()
-		}, "Change color")	
-```
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/wire_up_the_events_solution.py" start="# start" %}
+	```
 
-```python
-from reactpy import use_state
-from "./ColorSwitch" import color_switch
 
-@component
-def app():
-	clicks, setClicks = useState(0)
+=== "app.py"
+	```python
+	{% include "../../examples/python/responding_to_events/wire_up_the_events_solution_2.py" start="# start" %}
+	```
 
-	def handle_click_outside():
-		set_clicks((c) => c + 1);
-	}
-
-	def get_random_light_color():
-		r = 150 + math.round(100 * math.random())
-		g = 150 + math.round(100 * math.random())
-		b = 150 + math.round(100 * math.random())
-		return f"rgb({r}, {g}, {b})"
-
-	def handle_change_color():
-		body_style = document.body.style
-		body_style.background_color = get_random_light_color()
-
-	return
-		html.div(
-			{
-				"style": {
-					"width": "100%",
-					"height": "100%"
-				},
-				"on_click"="handle_click_outside"
-			},
-			color_switch(
-				"on_change_color": handle_change_color
-			),
-			html.br()
-			html.br()
-			html.h2(f"Clicks on page: {clicks}")
-```
+=== ":material-play: Run"
+	```python
+	# TODO	
+	```
 
 </Solution>
 
