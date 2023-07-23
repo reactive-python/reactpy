@@ -152,11 +152,14 @@ class ReactPy:
         send: Callable[..., Coroutine],
     ) -> None:
         """ASGI app for rendering ReactPy Python components."""
+        ws_connected: bool = False
+
         while True:
+            # Future WS events on this connection will always be received here
             event = await receive()
 
-            if event["type"] == "websocket.connect" and not self.connected:
-                self.connected = True
+            if event["type"] == "websocket.connect" and not ws_connected:
+                ws_connected = True
                 await send({"type": "websocket.accept"})
                 run_dispatcher = self.run_dispatcher(scope, receive, send)
                 if self.backhaul_thread:
