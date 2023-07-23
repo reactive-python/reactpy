@@ -21,9 +21,10 @@ from reactpy.backend._common import (
 from reactpy.backend.hooks import ConnectionContext
 from reactpy.backend.types import Connection, Location
 from reactpy.config import REACTPY_WEB_MODULES_DIR
+from reactpy.core.component import Component
 from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
-from reactpy.core.types import ComponentConstructor, VdomDict
+from reactpy.core.types import ComponentType, VdomDict
 
 _logger = logging.getLogger(__name__)
 _backhaul_loop = asyncio.new_event_loop()
@@ -42,20 +43,24 @@ _backhaul_thread = Thread(target=start_backhaul_loop, daemon=True)
 class ReactPy:
     def __init__(
         self,
-        app_or_component: ComponentConstructor | Callable[..., Coroutine],
+        app_or_component: ComponentType | Callable[..., Coroutine],
         *,
-        dispatcher_path: str = "^reactpy/([^/]+)/?",
-        js_modules_path: str | None = "^reactpy/modules/([^/]+)/?",
-        static_path: str | None = "^reactpy/static/([^/]+)/?",
+        dispatcher_path: str = "reactpy/",
+        web_modules_path: str = "reactpy/modules/",
+        web_modules_dir: Path | str | None = REACTPY_WEB_MODULES_DIR.current,
+        static_path: str = "reactpy/static/",
         static_dir: Path | str | None = None,
         head: Sequence[VdomDict] | VdomDict | str = "",
         backhaul_thread: bool = True,
         block_size: int = 8192,
     ) -> None:
+        """Anything initialized in this method will be shared across all
+        requests."""
         # Convert kwargs to class attributes
-        self.dispatch_path = re.compile(dispatcher_path)
-        self.js_modules_path = re.compile(js_modules_path) if js_modules_path else None
-        self.static_path = re.compile(static_path) if static_path else None
+        self.dispatch_path = re.compile(f"^{dispatcher_path}(?P<dotted_path>[^/]+)/?")
+        self.js_modules_path = re.compile(f"^{web_modules_path}")
+        self.web_modules_dir = web_modules_dir
+        self.static_path = re.compile(f"^{static_path}")
         self.static_dir = static_dir
         self.head = vdom_head_elements_to_html(head)
         self.backhaul_thread = backhaul_thread
@@ -67,21 +72,26 @@ class ReactPy:
             if asyncio.iscoroutinefunction(app_or_component)
             else None
         )
-        self.component: ComponentConstructor | None = (
-            None if self.user_app else app_or_component
+        self.component: ComponentType | None = (
+            None if self.user_app else app_or_component  # type: ignore
         )
         self.all_paths: re.Pattern = re.compile(
             "|".join(
-                path for path in [dispatcher_path, js_modules_path, static_path] if path
+                path
+                for path in [dispatcher_path, web_modules_path, static_path]
+                if path
             )
         )
         self.dispatcher: Future | asyncio.Task | None = None
         self._cached_index_html: str = ""
         self._static_file_server: StaticFiles | None = None
-        self._js_module_server: StaticFiles | None = None
-        self.connected: bool = False
-        # TODO: Remove this setting from ReactPy config
-        self.js_modules_dir: Path | None = REACTPY_WEB_MODULES_DIR.current
+        self._web_module_server: StaticFiles | None = None
+
+        # Startup tasks
+        if self.backhaul_thread and not _backhaul_thread.is_alive():
+            _backhaul_thread.start()
+        if self.web_modules_dir != REACTPY_WEB_MODULES_DIR.current:
+            REACTPY_WEB_MODULES_DIR.set_current(self.web_modules_dir)
 
         # Validate the arguments
         if not self.component and not self.user_app:
@@ -89,8 +99,12 @@ class ReactPy:
                 "The first argument to ReactPy(...) must be a component or an "
                 "ASGI application."
             )
-        if self.backhaul_thread and not _backhaul_thread.is_alive():
-            _backhaul_thread.start()
+        if check_path(dispatcher_path):
+            raise ValueError("Invalid `dispatcher_path`.")
+        if check_path(web_modules_path):
+            raise ValueError("Invalid `web_modules_path`.")
+        if check_path(static_path):
+            raise ValueError("Invalid `static_path`.")
 
     async def __call__(
         self,
@@ -131,12 +145,12 @@ class ReactPy:
             return
 
         # JS modules app
-        if self.js_modules_path and re.match(self.js_modules_path, scope["path"]):
-            await self.js_module_app(scope, receive, send)
+        if re.match(self.js_modules_path, scope["path"]):
+            await self.web_module_app(scope, receive, send)
             return
 
         # Static file app
-        if self.static_path and re.match(self.static_path, scope["path"]):
+        if re.match(self.static_path, scope["path"]):
             await self.static_file_app(scope, receive, send)
             return
 
@@ -181,23 +195,25 @@ class ReactPy:
                 else:
                     await recv_queue_put
 
-    async def js_module_app(
+    async def web_module_app(
         self,
         scope: dict[str, Any],
         receive: Callable[..., Coroutine],
         send: Callable[..., Coroutine],
     ) -> None:
         """ASGI app for ReactPy web modules."""
-        if not self.js_modules_dir:
-            raise RuntimeError("No web modules directory configured.")
-        if not self.js_modules_path:
-            raise RuntimeError(
-                "Web modules cannot be served without defining `js_module_path`."
+        if not self.web_modules_dir:
+            await asyncio.to_thread(
+                _logger.info,
+                "Tried to serve web module without a configured directory.",
             )
-        if not self._js_module_server:
-            self._js_module_server = StaticFiles(directory=self.js_modules_dir)
+            if self.user_app:
+                await self.user_app(scope, receive, send)
+            return
 
-        await self._js_module_server(scope, receive, send)
+        if not self._web_module_server:
+            self._web_module_server = StaticFiles(directory=self.web_modules_dir)
+        await self._web_module_server(scope, receive, send)
 
     async def static_file_app(
         self,
@@ -206,17 +222,18 @@ class ReactPy:
         send: Callable[..., Coroutine],
     ) -> None:
         """ASGI app for ReactPy static files."""
+        # If no static directory is configured, serve the user's application
         if not self.static_dir:
-            raise RuntimeError(
-                "Static files cannot be served without defining `static_dir`."
+            await asyncio.to_thread(
+                _logger.info,
+                "Tried to serve static file without a configured directory.",
             )
-        if not self.static_path:
-            raise RuntimeError(
-                "Static files cannot be served without defining `static_path`."
-            )
+            if self.user_app:
+                await self.user_app(scope, receive, send)
+            return
+
         if not self._static_file_server:
             self._static_file_server = StaticFiles(directory=self.static_dir)
-
         await self._static_file_server(scope, receive, send)
 
     async def standalone_app(
@@ -317,3 +334,13 @@ async def http_response(
     # Head requests don't need a body
     if scope["method"] != "HEAD":
         await send({"type": "http.response.body", "body": message.encode()})
+
+
+def check_path(url_path: str) -> bool:
+    """Check that a path is valid URL path."""
+    return (
+        not url_path
+        or not isinstance(url_path, str)
+        or not url_path[0].isalnum()
+        or not url_path.endswith("/")
+    )
