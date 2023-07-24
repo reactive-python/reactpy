@@ -23,7 +23,9 @@ more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 Unreleased
 ----------
 
-Nothing yet...
+**Fixed**
+
+- :pull:`1118` - `module_from_template` is broken with a recent release of `requests`
 
 
 v1.0.2
