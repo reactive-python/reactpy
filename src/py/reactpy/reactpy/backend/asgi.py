@@ -99,11 +99,11 @@ class ReactPy:
                 "The first argument to ReactPy(...) must be a component or an "
                 "ASGI application."
             )
-        if check_path(dispatcher_path):
+        if not check_path(dispatcher_path):
             raise ValueError("Invalid `dispatcher_path`.")
-        if check_path(web_modules_path):
+        if not check_path(web_modules_path):
             raise ValueError("Invalid `web_modules_path`.")
-        if check_path(static_path):
+        if not check_path(static_path):
             raise ValueError("Invalid `static_path`.")
 
     async def __call__(
