@@ -45,6 +45,19 @@ from reactpy.utils import Ref
 logger = logging.getLogger(__name__)
 
 
+# BackendType.Options
+@dataclass
+class Options(CommonOptions):
+    """Render server config for :func:`reactpy.backend.flask.configure`"""
+
+    cors: bool | dict[str, Any] = False
+    """Enable or configure Cross Origin Resource Sharing (CORS)
+
+    For more information see docs for ``flask_cors.CORS``
+    """
+
+
+# BackendType.configure
 def configure(
     app: Flask, component: RootComponentConstructor, options: Options | None = None
 ) -> None:
@@ -69,20 +82,21 @@ def configure(
     app.register_blueprint(spa_bp)
 
 
+# BackendType.create_development_app
 def create_development_app() -> Flask:
     """Create an application instance for development purposes"""
     os.environ["FLASK_DEBUG"] = "true"
-    app = Flask(__name__)
-    return app
+    return Flask(__name__)
 
 
+# BackendType.serve_development_app
 async def serve_development_app(
     app: Flask,
     host: str,
     port: int,
     started: asyncio.Event | None = None,
 ) -> None:
-    """Run an application using a development server"""
+    """Run a development server for FastAPI"""
     loop = asyncio.get_running_loop()
     stopped = asyncio.Event()
 
@@ -135,17 +149,6 @@ def use_connection() -> Connection[_FlaskCarrier]:
     return conn
 
 
-@dataclass
-class Options(CommonOptions):
-    """Render server config for :func:`reactpy.backend.flask.configure`"""
-
-    cors: bool | dict[str, Any] = False
-    """Enable or configure Cross Origin Resource Sharing (CORS)
-
-    For more information see docs for ``flask_cors.CORS``
-    """
-
-
 def _setup_common_routes(
     api_blueprint: Blueprint,
     spa_blueprint: Blueprint,
@@ -166,10 +169,12 @@ def _setup_common_routes(
 
     index_html = read_client_index_html(options)
 
-    @spa_blueprint.route("/")
-    @spa_blueprint.route("/<path:_>")
-    def send_client_dir(_: str = "") -> Any:
-        return index_html
+    if options.serve_index_route:
+
+        @spa_blueprint.route("/")
+        @spa_blueprint.route("/<path:_>")
+        def send_client_dir(_: str = "") -> Any:
+            return index_html
 
 
 def _setup_single_view_dispatcher_route(
