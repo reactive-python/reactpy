@@ -303,7 +303,7 @@ const elementConverters: { [key: string]: (element: any) => any } = {
   FORM: (element: HTMLFormElement) => ({
     elements: Array.from(element.elements).map(convertElement),
   }),
-  INPUT: (element: HTMLInputElement) => ({ value: element.value }),
+  INPUT: (element: HTMLInputElement) => ({ value: element.value, checked: element.checked }),
   METER: (element: HTMLMeterElement) => ({ value: element.value }),
   OPTION: (element: HTMLOptionElement) => ({ value: element.value }),
   OUTPUT: (element: HTMLOutputElement) => ({ value: element.value }),
