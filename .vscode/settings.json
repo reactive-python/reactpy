@@ -25,7 +25,5 @@
     "prettier.proseWrap": "never",
     "prettier.tabWidth": 4,
     "python.analysis.typeCheckingMode": "off",
-    "python.formatting.provider": "black",
     "python.languageServer": "Pylance",
-    "python.linting.enabled": true
 }
