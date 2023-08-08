@@ -22,7 +22,7 @@ from reactpy.backend._common import (
     read_client_index_html,
     safe_client_build_dir_path,
     safe_web_modules_dir_path,
-    serve_development_asgi,
+    serve_with_uvicorn,
 )
 from reactpy.backend.hooks import ConnectionContext
 from reactpy.backend.hooks import use_connection as _use_connection
@@ -34,6 +34,19 @@ from reactpy.core.types import RootComponentConstructor
 logger = logging.getLogger(__name__)
 
 
+# BackendType.Options
+@dataclass
+class Options(CommonOptions):
+    """Render server config for :func:`reactpy.backend.sanic.configure`"""
+
+    cors: bool | dict[str, Any] = False
+    """Enable or configure Cross Origin Resource Sharing (CORS)
+
+    For more information see docs for ``sanic_cors.CORS``
+    """
+
+
+# BackendType.configure
 def configure(
     app: Sanic, component: RootComponentConstructor, options: Options | None = None
 ) -> None:
@@ -49,14 +62,15 @@ def configure(
     app.blueprint([spa_bp, api_bp])
 
 
+# BackendType.create_development_app
 def create_development_app() -> Sanic:
     """Return a :class:`Sanic` app instance in test mode"""
     Sanic.test_mode = True
     logger.warning("Sanic.test_mode is now active")
-    app = Sanic(f"reactpy_development_app_{uuid4().hex}", Config())
-    return app
+    return Sanic(f"reactpy_development_app_{uuid4().hex}", Config())
 
 
+# BackendType.serve_development_app
 async def serve_development_app(
     app: Sanic,
     host: str,
@@ -64,7 +78,7 @@ async def serve_development_app(
     started: asyncio.Event | None = None,
 ) -> None:
     """Run a development server for :mod:`sanic`"""
-    await serve_development_asgi(app, host, port, started)
+    await serve_with_uvicorn(app, host, port, started)
 
 
 def use_request() -> request.Request:
@@ -86,17 +100,6 @@ def use_connection() -> Connection[_SanicCarrier]:
     return conn
 
 
-@dataclass
-class Options(CommonOptions):
-    """Render server config for :func:`reactpy.backend.sanic.configure`"""
-
-    cors: bool | dict[str, Any] = False
-    """Enable or configure Cross Origin Resource Sharing (CORS)
-
-    For more information see docs for ``sanic_cors.CORS``
-    """
-
-
 def _setup_common_routes(
     api_blueprint: Blueprint,
     spa_blueprint: Blueprint,
@@ -115,16 +118,17 @@ def _setup_common_routes(
     ) -> response.HTTPResponse:
         return response.html(index_html)
 
-    spa_blueprint.add_route(
-        single_page_app_files,
-        "/",
-        name="single_page_app_files_root",
-    )
-    spa_blueprint.add_route(
-        single_page_app_files,
-        "/<_:path>",
-        name="single_page_app_files_path",
-    )
+    if options.serve_index_route:
+        spa_blueprint.add_route(
+            single_page_app_files,
+            "/",
+            name="single_page_app_files_root",
+        )
+        spa_blueprint.add_route(
+            single_page_app_files,
+            "/<_:path>",
+            name="single_page_app_files_path",
+        )
 
     async def asset_files(
         request: request.Request,
