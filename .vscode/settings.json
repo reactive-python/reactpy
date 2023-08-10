@@ -15,10 +15,6 @@
     },
     "editor.detectIndentation": false,
     "editor.formatOnSave": true,
-    "files.associations": {
-        "**/template/**.html": "jinja",
-        "**/templates/**.html": "jinja"
-    },
     "files.insertFinalNewline": true,
     "git.autofetch": "all",
     "prettier.endOfLine": "auto",
