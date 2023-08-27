@@ -24,6 +24,7 @@
 
 /* General admonition styling */
 /* TODO: Write this in a way that supports the light theme */
+[data-md-color-scheme="slate"] .md-typeset details,
 [data-md-color-scheme="slate"] .md-typeset .admonition {
 	border-color: transparent !important;
 }
@@ -34,6 +35,11 @@
 
 .md-typeset .admonition {
 	font-size: 0.7rem;
+}
+
+.md-typeset .admonition:focus-within,
+.md-typeset details:focus-within {
+	box-shadow: var(--md-shadow-z1) !important;
 }
 
 /* Colors for "summary" admonition */
@@ -227,6 +233,7 @@
 		margin: 0;
 		border-radius: 0 10px 10px 0;
 		font-weight: 600;
+		overflow: hidden;
 	}
 
 	.md-sidebar__scrollwrap {
@@ -341,15 +348,15 @@ h2#overview {
 }
 
 .md-typeset .tabbed-block {
-	border-bottom-left-radius: 16px;
-	border-bottom-right-radius: 16px;
-	border-bottom: 20px solid var(--tabbed-labels-color);
+	border-bottom-left-radius: 8px;
+	border-bottom-right-radius: 8px;
+	overflow: hidden;
 }
 
 .js .md-typeset .tabbed-labels {
 	background: var(--tabbed-labels-color);
-	border-top-left-radius: 16px;
-	border-top-right-radius: 16px;
+	border-top-left-radius: 8px;
+	border-top-right-radius: 8px;
 }
 
 .md-typeset .tabbed-labels > label {
@@ -361,4 +368,9 @@ h2#overview {
 
 .md-typeset pre > code {
 	max-height: var(--code-max-height);
+}
+
+/* Reduce height of outdated banner */
+.md-banner__inner {
+	margin: 0.45rem auto;
 }
