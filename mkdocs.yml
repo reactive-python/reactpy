@@ -164,6 +164,8 @@ plugins:
 
 extra:
     generator: false
+    version:
+        provider: mike
 
 extra_javascript:
     - static/js/extra.js
