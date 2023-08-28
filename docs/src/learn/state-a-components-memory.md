@@ -6,7 +6,7 @@ Components often need to change what's on the screen as a result of an interacti
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to add a state variable with the [`useState`](/reference/react/useState) Hook
     -   What pair of values the `useState` Hook returns

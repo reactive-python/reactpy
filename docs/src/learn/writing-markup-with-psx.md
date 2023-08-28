@@ -12,7 +12,7 @@ _PSX_ is a syntax extension for JavaScript that lets you write HTML-like markup 
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   Why React mixes markup with rendering logic
     -   How PSX is different from HTML

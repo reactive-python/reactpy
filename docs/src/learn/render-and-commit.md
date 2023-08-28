@@ -6,7 +6,7 @@ Before your components are displayed on screen, they must be rendered by React. 
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   What rendering means in React
     -   When and why React renders a component

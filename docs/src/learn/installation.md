@@ -6,7 +6,7 @@ React has been designed from the start for gradual adoption. You can use as litt
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     * [How to start a new React project](../learn/start-a-new-react-project.md)
     * [How to add React to an existing project](../learn/add-react-to-an-existing-project.md)

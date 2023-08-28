@@ -6,7 +6,7 @@ Welcome to the ReactPy documentation! This page will give you an introduction to
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to create and nest components
     -   How to add markup and styles

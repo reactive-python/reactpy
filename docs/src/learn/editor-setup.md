@@ -6,7 +6,7 @@ A properly configured editor can make code clearer to read and faster to write. 
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   What the most popular editors are
     -   How to format your code automatically

@@ -6,7 +6,7 @@ React provides a declarative way to manipulate the UI. Instead of manipulating i
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How declarative UI programming differs from imperative UI programming
     -   How to enumerate the different visual states your component can be in

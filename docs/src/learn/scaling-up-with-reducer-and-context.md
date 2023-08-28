@@ -6,7 +6,7 @@ Reducers let you consolidate a component's state update logic. Context lets you 
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to combine a reducer with context
     -   How to avoid passing state and dispatch through props

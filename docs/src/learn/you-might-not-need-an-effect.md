@@ -6,7 +6,7 @@ Effects are an escape hatch from the React paradigm. They let you "step outside"
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   Why and how to remove unnecessary Effects from your components
     -   How to cache expensive computations without Effects

@@ -6,7 +6,7 @@ React lets you add _event handlers_ to your PSX. Event handlers are your own fun
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   Different ways to write an event handler
     -   How to pass event handling logic from a parent component

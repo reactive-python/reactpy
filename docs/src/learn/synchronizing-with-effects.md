@@ -6,7 +6,7 @@ Some components need to synchronize with external systems. For example, you migh
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   What Effects are
     -   How Effects are different from events

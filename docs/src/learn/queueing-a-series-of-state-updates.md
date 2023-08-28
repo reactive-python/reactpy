@@ -6,7 +6,7 @@ Setting a state variable will queue another render. But sometimes you might want
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   What "batching" is and how React uses it to process multiple state updates
     -   How to apply several updates to the same state variable in a row

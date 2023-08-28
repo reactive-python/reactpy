@@ -6,7 +6,7 @@ Arrays are mutable in JavaScript, but you should treat them as immutable when yo
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to add, remove, or change items in an array in React state
     -   How to update an object inside of an array

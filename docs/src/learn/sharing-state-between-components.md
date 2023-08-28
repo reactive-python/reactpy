@@ -6,7 +6,7 @@ Sometimes, you want the state of two components to always change together. To do
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to share state between components by lifting it up
     -   What are controlled and uncontrolled components

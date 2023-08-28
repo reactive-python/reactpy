@@ -6,7 +6,7 @@ Event handlers only re-run when you perform the same interaction again. Unlike e
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to choose between an event handler and an Effect
     -   Why Effects are reactive, and event handlers are not

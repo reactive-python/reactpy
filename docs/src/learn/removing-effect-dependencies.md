@@ -6,7 +6,7 @@ When you write an Effect, the linter will verify that you've included every reac
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to fix infinite Effect dependency loops
     -   What to do when you want to remove a dependency

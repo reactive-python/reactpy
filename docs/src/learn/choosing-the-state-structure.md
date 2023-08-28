@@ -6,7 +6,7 @@ Structuring state well can make a difference between a component that is pleasan
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   When to use a single vs multiple state variables
     -   What to avoid when organizing state

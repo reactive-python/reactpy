@@ -6,7 +6,7 @@ React comes with several built-in Hooks like `useState`, `useContext`, and `useE
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   What custom Hooks are, and how to write your own
     -   How to reuse logic between components

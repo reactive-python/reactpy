@@ -6,7 +6,7 @@ State variables might look like regular JavaScript variables that you can read a
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How setting state triggers re-renders
     -   When and how state updates

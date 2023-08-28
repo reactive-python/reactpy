@@ -13,7 +13,7 @@ Use React Developer Tools to inspect React [components](../learn/your-first-comp
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to install ReactPy Developer Tools
 

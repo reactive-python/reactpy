@@ -6,7 +6,7 @@ The magic of components lies in their reusability: you can create components tha
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   What a root component file is
     -   How to import and export a component

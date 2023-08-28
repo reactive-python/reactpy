@@ -6,7 +6,7 @@ State can hold any kind of JavaScript value, including objects. But you shouldn'
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to correctly update an object in React state
     -   How to update a nested object without mutating it

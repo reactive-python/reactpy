@@ -13,7 +13,7 @@ JSX lets you write HTML-like markup inside a JavaScript file, keeping rendering 
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to pass strings with quotes
     -   How to reference a JavaScript variable inside JSX with curly braces
