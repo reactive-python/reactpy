@@ -48,7 +48,9 @@ class Options(CommonOptions):
 
 # BackendType.configure
 def configure(
-    app: Sanic, component: RootComponentConstructor, options: Options | None = None
+    app: Sanic[Any, Any],
+    component: RootComponentConstructor,
+    options: Options | None = None,
 ) -> None:
     """Configure an application instance to display the given component"""
     options = options or Options()
@@ -63,7 +65,7 @@ def configure(
 
 
 # BackendType.create_development_app
-def create_development_app() -> Sanic:
+def create_development_app() -> Sanic[Any, Any]:
     """Return a :class:`Sanic` app instance in test mode"""
     Sanic.test_mode = True
     logger.warning("Sanic.test_mode is now active")
@@ -72,7 +74,7 @@ def create_development_app() -> Sanic:
 
 # BackendType.serve_development_app
 async def serve_development_app(
-    app: Sanic,
+    app: Sanic[Any, Any],
     host: str,
     port: int,
     started: asyncio.Event | None = None,
@@ -81,7 +83,7 @@ async def serve_development_app(
     await serve_with_uvicorn(app, host, port, started)
 
 
-def use_request() -> request.Request:
+def use_request() -> request.Request[Any, Any]:
     """Get the current ``Request``"""
     return use_connection().carrier.request
 
@@ -113,7 +115,7 @@ def _setup_common_routes(
     index_html = read_client_index_html(options)
 
     async def single_page_app_files(
-        request: request.Request,
+        request: request.Request[Any, Any],
         _: str = "",
     ) -> response.HTTPResponse:
         return response.html(index_html)
@@ -131,7 +133,7 @@ def _setup_common_routes(
         )
 
     async def asset_files(
-        request: request.Request,
+        request: request.Request[Any, Any],
         path: str = "",
     ) -> response.HTTPResponse:
         path = urllib_parse.unquote(path)
@@ -140,7 +142,7 @@ def _setup_common_routes(
     api_blueprint.add_route(asset_files, f"/{ASSETS_PATH.name}/<path:path>")
 
     async def web_module_files(
-        request: request.Request,
+        request: request.Request[Any, Any],
         path: str,
         _: str = "",  # this is not used
     ) -> response.HTTPResponse:
@@ -159,7 +161,9 @@ def _setup_single_view_dispatcher_route(
     options: Options,
 ) -> None:
     async def model_stream(
-        request: request.Request, socket: WebSocketConnection, path: str = ""
+        request: request.Request[Any, Any],
+        socket: WebSocketConnection,
+        path: str = "",
     ) -> None:
         asgi_app = getattr(request.app, "_asgi_app", None)
         scope = asgi_app.transport.scope if asgi_app else {}
@@ -220,7 +224,7 @@ def _make_send_recv_callbacks(
 class _SanicCarrier:
     """A simple wrapper for holding connection information"""
 
-    request: request.Request
+    request: request.Request[Sanic[Any, Any], Any]
     """The current request object"""
 
     websocket: WebSocketConnection
