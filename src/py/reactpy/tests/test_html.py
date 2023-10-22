@@ -122,6 +122,7 @@ async def test_script_from_src(display: DisplayFixture):
             """
         )
 
+        await poll(lambda: hasattr(incr_src_id, "current")).until_is(True)
         incr_src_id.current()
 
         run_count = await display.page.wait_for_selector("#run-count", state="attached")
