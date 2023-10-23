@@ -5,13 +5,26 @@ from logging import getLogger
 from sys import exc_info
 from typing import Any, NoReturn
 
-from reactpy.backend.types import BackendImplementation
-from reactpy.backend.utils import SUPPORTED_PACKAGES, all_implementations
+from reactpy.backend.types import BackendType
+from reactpy.backend.utils import SUPPORTED_BACKENDS, all_implementations
 from reactpy.types import RootComponentConstructor
 
 logger = getLogger(__name__)
+_DEFAULT_IMPLEMENTATION: BackendType[Any] | None = None
 
 
+# BackendType.Options
+class Options:  # nocov
+    """Configuration options that can be provided to the backend.
+    This definition should not be used/instantiated. It exists only for
+    type hinting purposes."""
+
+    def __init__(self, *args: Any, **kwds: Any) -> NoReturn:
+        msg = "Default implementation has no options."
+        raise ValueError(msg)
+
+
+# BackendType.configure
 def configure(
     app: Any, component: RootComponentConstructor, options: None = None
 ) -> None:
@@ -22,17 +35,13 @@ def configure(
     return _default_implementation().configure(app, component)
 
 
+# BackendType.create_development_app
 def create_development_app() -> Any:
     """Create an application instance for development purposes"""
     return _default_implementation().create_development_app()
 
 
-def Options(*args: Any, **kwargs: Any) -> NoReturn:  # nocov
-    """Create configuration options"""
-    msg = "Default implementation has no options."
-    raise ValueError(msg)
-
-
+# BackendType.serve_development_app
 async def serve_development_app(
     app: Any,
     host: str,
@@ -45,10 +54,7 @@ async def serve_development_app(
     )
 
 
-_DEFAULT_IMPLEMENTATION: BackendImplementation[Any] | None = None
-
-
-def _default_implementation() -> BackendImplementation[Any]:
+def _default_implementation() -> BackendType[Any]:
     """Get the first available server implementation"""
     global _DEFAULT_IMPLEMENTATION  # noqa: PLW0603
 
@@ -59,7 +65,7 @@ def _default_implementation() -> BackendImplementation[Any]:
         implementation = next(all_implementations())
     except StopIteration:  # nocov
         logger.debug("Backend implementation import failed", exc_info=exc_info())
-        supported_backends = ", ".join(SUPPORTED_PACKAGES)
+        supported_backends = ", ".join(SUPPORTED_BACKENDS)
         msg = (
             "It seems you haven't installed a backend. To resolve this issue, "
             "you can install a backend by running:\n\n"

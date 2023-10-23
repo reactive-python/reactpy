@@ -1,7 +1,7 @@
 import logging
 import re
 from pathlib import Path, PurePosixPath
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 import requests
 
@@ -130,7 +130,11 @@ def resolve_module_exports_from_source(
 
 def _resolve_relative_url(base_url: str, rel_url: str) -> str:
     if not rel_url.startswith("."):
-        return rel_url
+        if rel_url.startswith("/"):
+            # copy scheme and hostname from base_url
+            return urlunparse(urlparse(base_url)[:2] + urlparse(rel_url)[2:])
+        else:
+            return rel_url
 
     base_url = base_url.rsplit("/", 1)[0]
 

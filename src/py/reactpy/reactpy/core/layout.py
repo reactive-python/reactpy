@@ -180,7 +180,7 @@ class Layout:
             old_parent_model = parent.model.current
             old_parent_children = old_parent_model["children"]
             parent.model.current = {
-                **old_parent_model,  # type: ignore[misc]
+                **old_parent_model,
                 "children": [
                     *old_parent_children[:index],
                     new_state.model.current,
