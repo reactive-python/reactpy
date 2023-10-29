@@ -130,8 +130,9 @@ ignore = [
   "PLR0915",
 ]
 unfixable = [
-  # Don't touch unused imports
+  # Don't touch unused imports or unused variables
   "F401",
+  "F841",
 ]
 
 [tool.ruff.isort]

@@ -3,48 +3,28 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Coroutine
-from dataclasses import dataclass
 from typing import Any, Callable, TypeVar
-from weakref import WeakSet
-
-from typing_extensions import TypeAlias
 
 from reactpy.core._thread_local import ThreadLocal
 from reactpy.core.types import ComponentType, Context, ContextProviderType
 
 T = TypeVar("T")
+
+StopEffect = Callable[[], Coroutine[None, None, None]]
+StartEffect = Callable[[], Coroutine[None, None, StopEffect]]
+
 logger = logging.getLogger(__name__)
+
+_HOOK_STATE: ThreadLocal[list[LifeCycleHook]] = ThreadLocal(list)
 
 
 def current_hook() -> LifeCycleHook:
     """Get the current :class:`LifeCycleHook`"""
-    hook_stack = _hook_stack.get()
+    hook_stack = _HOOK_STATE.get()
     if not hook_stack:
         msg = "No life cycle hook is active. Are you rendering in a layout?"
         raise RuntimeError(msg)
     return hook_stack[-1]
-
-
-_hook_stack: ThreadLocal[list[LifeCycleHook]] = ThreadLocal(list)
-
-
-@dataclass(frozen=True)
-class EffectInfo:
-    task: asyncio.Task[None]
-    stop: asyncio.Event
-
-    async def signal_stop(self, timeout: float) -> None:
-        """Signal the effect to stop and wait for it to complete."""
-        self.stop.set()
-        try:
-            await asyncio.wait_for(self.task, timeout=timeout)
-        finally:
-            # a no-op if the task has already completed
-            if self.task.cancel():
-                try:
-                    await self.task
-                except asyncio.CancelledError:
-                    logger.exception("Effect failed to stop after %s seconds", timeout)
 
 
 class LifeCycleHook:
@@ -114,7 +94,8 @@ class LifeCycleHook:
         "_context_providers",
         "_current_state_index",
         "_effect_funcs",
-        "_effect_infos",
+        "_effect_starts",
+        "_effect_stops",
         "_is_rendering",
         "_rendered_atleast_once",
         "_schedule_render_callback",
@@ -136,8 +117,8 @@ class LifeCycleHook:
         self._rendered_atleast_once = False
         self._current_state_index = 0
         self._state: tuple[Any, ...] = ()
-        self._effect_funcs: list[_EffectStarter] = []
-        self._effect_infos: WeakSet[EffectInfo] = WeakSet()
+        self._effect_starts: list[StartEffect] = []
+        self._effect_stops: list[StopEffect] = []
 
     def schedule_render(self) -> None:
         if self._is_rendering:
@@ -156,9 +137,9 @@ class LifeCycleHook:
         self._current_state_index += 1
         return result
 
-    def add_effect(self, start_effect: _EffectStarter) -> None:
-        """Trigger a function on the occurrence of the given effect type"""
-        self._effect_funcs.append(start_effect)
+    def add_effect(self, start_effect: StartEffect) -> None:
+        """Add an effect to this hook"""
+        self._effect_starts.append(start_effect)
 
     def set_context_provider(self, provider: ContextProviderType[Any]) -> None:
         self._context_providers[provider.type] = provider
@@ -184,10 +165,10 @@ class LifeCycleHook:
 
     async def affect_layout_did_render(self) -> None:
         """The layout completed a render"""
-        for start_effect in self._effect_funcs:
-            effect_info = await start_effect()
-            self._effect_infos.add(effect_info)
-        self._effect_funcs.clear()
+        self._effect_stops.extend(
+            await asyncio.gather(*[start() for start in self._effect_starts])
+        )
+        self._effect_starts.clear()
 
         if self._schedule_render_later:
             self._schedule_render()
@@ -195,13 +176,12 @@ class LifeCycleHook:
 
     async def affect_component_will_unmount(self) -> None:
         """The component is about to be removed from the layout"""
-        for infos in self._effect_infos:
-            infos.stop.set()
         try:
-            await asyncio.gather(*[i.task for i in self._effect_infos])
+            await asyncio.gather(*[stop() for stop in self._effect_stops])
         except Exception:
             logger.exception("Error during effect cancellation")
-        self._effect_infos.clear()
+        finally:
+            self._effect_stops.clear()
 
     def set_current(self) -> None:
         """Set this hook as the active hook in this thread
@@ -209,7 +189,7 @@ class LifeCycleHook:
         This method is called by a layout before entering the render method
         of this hook's associated component.
         """
-        hook_stack = _hook_stack.get()
+        hook_stack = _HOOK_STATE.get()
         if hook_stack:
             parent = hook_stack[-1]
             self._context_providers.update(parent._context_providers)
@@ -217,7 +197,7 @@ class LifeCycleHook:
 
     def unset_current(self) -> None:
         """Unset this hook as the active hook in this thread"""
-        if _hook_stack.get().pop() is not self:
+        if _HOOK_STATE.get().pop() is not self:
             raise RuntimeError("Hook stack is in an invalid state")  # nocov
 
     def _schedule_render(self) -> None:
@@ -227,6 +207,3 @@ class LifeCycleHook:
             logger.exception(
                 f"Failed to schedule render via {self._schedule_render_callback}"
             )
-
-
-_EffectStarter: TypeAlias = "Callable[[], Coroutine[None, None, EffectInfo]]"

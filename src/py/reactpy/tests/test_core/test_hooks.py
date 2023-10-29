@@ -302,7 +302,7 @@ async def test_use_effect_callback_occurs_after_full_render_is_complete():
 
     @reactpy.component
     def ComponentWithEffect():
-        @reactpy.hooks.use_effect
+        @reactpy.use_effect
         def effect():
             effect_triggered.current = True
 
@@ -329,7 +329,7 @@ async def test_use_effect_cleanup_occurs_before_next_effect():
     @reactpy.component
     @component_hook.capture
     def ComponentWithEffect():
-        @reactpy.hooks.use_effect(dependencies=None)
+        @reactpy.use_effect(dependencies=None)
         def effect():
             if cleanup_triggered.current:
                 cleanup_triggered_before_next_effect.set()
@@ -371,7 +371,7 @@ async def test_use_effect_cleanup_occurs_on_will_unmount():
 
         component_did_render.current = True
 
-        @reactpy.hooks.use_effect
+        @reactpy.use_effect
         def effect():
             def cleanup():
                 cleanup_triggered.current = True
@@ -406,7 +406,7 @@ async def test_memoized_effect_is_recreated_if_dependencies_change():
     def ComponentWithMemoizedEffect():
         state, set_state_callback.current = reactpy.hooks.use_state(first_value)
 
-        @reactpy.hooks.use_effect(dependencies=[state])
+        @reactpy.use_effect(dependencies=[state])
         def effect():
             nonlocal run_count
             effect_ran.set()
@@ -448,7 +448,7 @@ async def test_memoized_effect_cleanup_only_triggered_before_new_effect():
     def ComponentWithEffect():
         state, set_state_callback.current = reactpy.hooks.use_state(first_value)
 
-        @reactpy.hooks.use_effect(dependencies=[state])
+        @reactpy.use_effect(dependencies=[state])
         def effect():
             def cleanup():
                 cleanup_trigger_count.current += 1
@@ -474,19 +474,41 @@ async def test_memoized_effect_cleanup_only_triggered_before_new_effect():
 
 
 async def test_use_async_effect():
-    effect_ran = WaitForEvent()
+    effect_started = WaitForEvent()
+    unblock_effect = WaitForEvent()
+    effect_running = WaitForEvent()
 
     @reactpy.component
     def ComponentWithAsyncEffect():
-        @reactpy.hooks.use_effect
-        async def effect():
-            effect_ran.set()
+        @reactpy.use_effect
+        async def effect(e):
+            effect_started.set()
+            await unblock_effect.wait()
+            async with e:
+                effect_running.set()
 
         return reactpy.html.div()
 
     async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
-        await layout.render()
-        await effect_ran.wait()
+        render_task = asyncio.create_task(layout.render())
+        wait_for_effect_started = asyncio.create_task(effect_started.wait())
+
+        done, pending = await asyncio.wait(
+            [wait_for_effect_started, render_task],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+
+        # effect should start before render completes
+        assert wait_for_effect_started in done
+        assert render_task in pending
+
+        # effect body should only begin after render completes
+        assert not effect_running.is_set()
+
+        # effect body runs eventually after render completes
+        unblock_effect.set()
+        await render_task
+        await effect_running.wait()
 
 
 async def test_use_async_effect_cleanup():
@@ -497,10 +519,11 @@ async def test_use_async_effect_cleanup():
     @reactpy.component
     @component_hook.capture
     def ComponentWithAsyncEffect():
-        @reactpy.hooks.use_effect(dependencies=None)  # force this to run every time
-        async def effect():
-            effect_ran.set()
-            return cleanup_ran.set
+        @reactpy.use_effect(dependencies=None)  # force this to run every time
+        async def effect(e):
+            async with e:
+                effect_ran.set()
+            cleanup_ran.set()
 
         return reactpy.html.div()
 
@@ -518,20 +541,23 @@ async def test_use_async_effect_cancel(caplog):
     component_hook = HookCatcher()
     effect_ran = WaitForEvent()
     effect_was_cancelled = WaitForEvent()
+    effect_cleanup_ran_after_cancel = WaitForEvent()
 
     event_that_never_occurs = WaitForEvent()
 
     @reactpy.component
     @component_hook.capture
     def ComponentWithLongWaitingEffect():
-        @reactpy.hooks.use_effect(dependencies=None)  # force this to run every time
-        async def effect():
+        @reactpy.use_effect(dependencies=None)  # force this to run every time
+        async def effect(e):
             effect_ran.set()
-            try:
-                await event_that_never_occurs.wait()
-            except asyncio.CancelledError:
-                effect_was_cancelled.set()
-                raise
+            async with e:
+                try:
+                    await event_that_never_occurs.wait()
+                except asyncio.CancelledError:
+                    effect_was_cancelled.set()
+                    raise
+            effect_cleanup_ran_after_cancel.set()
 
         return reactpy.html.div()
 
@@ -544,6 +570,7 @@ async def test_use_async_effect_cancel(caplog):
         await layout.render()
 
     await asyncio.wait_for(effect_was_cancelled.wait(), 1)
+    await asyncio.wait_for(effect_cleanup_ran_after_cancel.wait(), 1)
 
     # So I know we said the event never occurs but... to ensure the effect's future is
     # cancelled before the test is cleaned up we need to set the event. This is because
@@ -555,7 +582,7 @@ async def test_use_async_effect_cancel(caplog):
 async def test_error_in_effect_is_gracefully_handled(caplog):
     @reactpy.component
     def ComponentWithEffect():
-        @reactpy.hooks.use_effect
+        @reactpy.use_effect
         def bad_effect():
             msg = "Something went wong :("
             raise ValueError(msg)
@@ -577,7 +604,7 @@ async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled():
 
     @reactpy.component
     def ComponentWithEffect():
-        @reactpy.hooks.use_effect
+        @reactpy.use_effect
         def ok_effect():
             def bad_cleanup():
                 msg = "Something went wong :("
@@ -851,7 +878,7 @@ async def test_use_effect_automatically_infers_closure_values():
     def CounterWithEffect():
         count, set_count.current = reactpy.hooks.use_state(0)
 
-        @reactpy.hooks.use_effect
+        @reactpy.use_effect
         def some_effect_that_uses_count():
             """should automatically trigger on count change"""
             _ = count  # use count in this closure
@@ -999,7 +1026,7 @@ async def test_error_in_layout_effect_cleanup_is_gracefully_handled():
     @reactpy.component
     @component_hook.capture
     def ComponentWithEffect():
-        @reactpy.hooks.use_effect(dependencies=None)  # always run
+        @reactpy.use_effect(dependencies=None)  # always run
         def bad_effect():
             def bad_cleanup():
                 msg = "The error message"
