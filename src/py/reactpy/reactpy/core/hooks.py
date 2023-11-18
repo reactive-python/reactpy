@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 import sys
 import warnings
-from asyncio import CancelledError, Event, create_task
+from asyncio import FIRST_COMPLETED, CancelledError, Event, create_task, wait
 from collections.abc import Awaitable, Coroutine, Sequence
 from logging import getLogger
 from types import FunctionType
@@ -240,19 +240,35 @@ class Effect:
             # propagate non-cancellation exceptions
             return None
 
+        if not self._maybe_uncancel_task():
+            return None
+
+        wait_for_stop = create_task(self._stop.wait())
         try:
-            await self._stop.wait()
+            await wait([wait_for_stop, self.task], return_when=FIRST_COMPLETED)
         except CancelledError:
-            if self.task.cancelling() > self._cancel_count:
-                # Task has been cancelled by something else - propagate it
-                return None
-            self.task.uncancel()
+            if not self._maybe_uncancel_task():
+                raise
 
         return True
 
     def _cancel_task(self) -> None:
         self.task.cancel()
         self._cancel_count += 1
+
+    def _maybe_uncancel_task(self) -> bool:
+        """Return if task was uncancelled
+
+        If task was not cancelled by this effect then returns. Otherwise, if the task
+        was cancelled at all, uncancell it and return True
+        """
+        if self.task.cancelling() > self._cancel_count:
+            # Task has been cancelled by something else - propagate it
+            return False
+        elif self._cancel_count:
+            for _ in range(self._cancel_count):
+                self.task.uncancel()
+        return True
 
 
 def _cast_async_effect(function: Callable[..., Any]) -> _AsyncEffectFunc:

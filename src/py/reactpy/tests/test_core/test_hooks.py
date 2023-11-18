@@ -587,6 +587,29 @@ async def test_long_effect_is_cancelled():
     await did_cleanup.wait()
 
 
+async def test_effect_internal_cancellation_is_propagated():
+    did_start = WaitForEvent()
+    did_cleanup = Ref(False)
+    never_happens = asyncio.Event()
+
+    async def effect_func(e):
+        async with e:
+            did_start.set()
+            asyncio.current_task().cancel()
+            await never_happens.wait()
+        did_cleanup.current = True
+
+    async def main():
+        effect = Effect(effect_func)
+        await did_start.wait()
+        await effect.task
+
+    with pytest.raises(asyncio.CancelledError):
+        await main()
+
+    assert not did_cleanup.current
+
+
 async def test_effect_external_cancellation_is_propagated():
     did_start = WaitForEvent()
     did_cleanup = Ref(False)
@@ -594,20 +617,16 @@ async def test_effect_external_cancellation_is_propagated():
     async def effect_func(e):
         async with e:
             did_start.set()
-            # We don't use e.task or asyncio.current_task() because there seems to
-            # be some platform dependence on whether the task is cancelled properly
-            outer_task.cancel()
-            # Allow cancellation to propagate
-            await asyncio.sleep(0)
         did_cleanup.current = True
 
     async def main():
         effect = Effect(effect_func)
-        await did_start.wait()
-        await effect.stop()
+        await effect.task
 
     with pytest.raises(asyncio.CancelledError):
         outer_task = asyncio.create_task(main())
+        await did_start.wait()
+        outer_task.cancel()
         await outer_task
 
     assert not did_cleanup.current
