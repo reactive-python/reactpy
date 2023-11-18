@@ -183,13 +183,12 @@ class Effect:
             await self._stopped.wait()
             return None
 
-        if self._started.is_set():
-            self._cancel_task()
-        self._stop.set()
+        self.stop_no_wait()
         try:
             cleanup = await self.task
         except Exception:
             logger.exception("Error while stopping effect")
+            cleanup = None
 
         if cleanup is not None:
             try:
@@ -199,13 +198,18 @@ class Effect:
 
         self._stopped.set()
 
+    def stop_no_wait(self) -> None:
+        """Signal the effect to stop without waiting for it to finish."""
+        if self._started.is_set():
+            self._cancel_task()
+        self._stop.set()
+
     async def started(self) -> None:
         """Wait for the effect to start."""
         await self._started.wait()
 
     async def __aenter__(self) -> Self:
         self._started.set()
-        self._cancel_count = self.task.cancelling()
         if self._stop.is_set():
             self._cancel_task()
         return self

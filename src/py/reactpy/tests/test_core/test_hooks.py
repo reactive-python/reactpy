@@ -7,7 +7,7 @@ import reactpy
 from reactpy import html
 from reactpy.config import REACTPY_DEBUG_MODE
 from reactpy.core._life_cycle_hook import LifeCycleHook
-from reactpy.core.hooks import strictly_equal
+from reactpy.core.hooks import Effect, strictly_equal
 from reactpy.core.layout import Layout
 from reactpy.testing import DisplayFixture, HookCatcher, assert_reactpy_did_log, poll
 from reactpy.testing.logs import assert_reactpy_did_not_log
@@ -276,18 +276,18 @@ async def test_double_set_state(display: DisplayFixture):
     first = await display.page.wait_for_selector("#first")
     second = await display.page.wait_for_selector("#second")
 
-    await poll(first.get_attribute("data-value")).until_equals("0")
-    await poll(second.get_attribute("data-value")).until_equals("0")
+    await poll(first.get_attribute, "data-value").until_equals("0")
+    await poll(second.get_attribute, "data-value").until_equals("0")
 
     await button.click()
 
-    await poll(first.get_attribute("data-value")).until_equals("1")
-    await poll(second.get_attribute("data-value")).until_equals("1")
+    await poll(first.get_attribute, "data-value").until_equals("1")
+    await poll(second.get_attribute, "data-value").until_equals("1")
 
     await button.click()
 
-    await poll(first.get_attribute("data-value")).until_equals("2")
-    await poll(second.get_attribute("data-value")).until_equals("2")
+    await poll(first.get_attribute, "data-value").until_equals("2")
+    await poll(second.get_attribute, "data-value").until_equals("2")
 
 
 async def test_use_effect_callback_occurs_after_full_render_is_complete():
@@ -531,11 +531,82 @@ async def test_use_async_effect_cleanup():
     async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
         await layout.render()
 
+        await effect_ran.wait()
+
         component_hook.latest.schedule_render()
 
         await layout.render()
 
     await asyncio.wait_for(cleanup_ran.wait(), 1)
+
+
+async def test_effect_with_early_stop_cancels_immediately():
+    never_happens = asyncio.Event()
+    did_start = WaitForEvent()
+    did_cleanup = WaitForEvent()
+    did_cancel = WaitForEvent()
+
+    async def effect_func(e):
+        async with e:
+            did_start.set()
+            try:
+                await never_happens.wait()
+            except asyncio.CancelledError:
+                did_cancel.set()
+                raise
+        did_cleanup.set()
+
+    effect = Effect(effect_func)
+    effect.stop_no_wait()
+    await did_start.wait()
+    await did_cancel.wait()
+    await did_cleanup.wait()
+
+
+async def test_long_effect_is_cancelled():
+    never_happens = asyncio.Event()
+    did_start = WaitForEvent()
+    did_cleanup = WaitForEvent()
+    did_cancel = WaitForEvent()
+
+    async def effect_func(e):
+        async with e:
+            did_start.set()
+            try:
+                await never_happens.wait()
+            except asyncio.CancelledError:
+                did_cancel.set()
+                raise
+        did_cleanup.set()
+
+    effect = Effect(effect_func)
+
+    await did_start.wait()
+    await effect.stop()
+    await did_cancel.wait()
+    await did_cleanup.wait()
+
+
+async def test_effect_external_cancellation_is_propagated():
+    did_start = WaitForEvent()
+    did_cleanup = Ref(False)
+
+    async def effect_func(e):
+        async with e:
+            did_start.set()
+            asyncio.current_task().cancel()
+            await asyncio.sleep(0)  # allow cancellation to propagate
+        did_cleanup.current = True
+
+    async def main():
+        effect = Effect(effect_func)
+        await did_start.wait()
+        await effect.stop()
+
+    with pytest.raises(asyncio.CancelledError):
+        await main()
+
+    assert not did_cleanup.current
 
 
 @pytest.mark.skipif(
@@ -569,6 +640,64 @@ async def test_use_async_effect_with_await_in_cleanup():
         await layout.render()
 
     await asyncio.wait_for(cleanup_ran.wait(), 1)
+
+
+async def test_use_async_effect_error_in_effect_is_propagated_and_handled_gracefully():
+    component_hook = HookCatcher()
+    effect_ran = WaitForEvent()
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithAsyncEffect():
+        @reactpy.use_effect(dependencies=None)  # force this to run every time
+        async def effect(e):
+            async with e:
+                effect_ran.set()
+                raise ValueError("Something went wrong")
+
+        return reactpy.html.div()
+
+    with assert_reactpy_did_log(
+        match_message=r"Error while stopping effect",
+        error_type=ValueError,
+    ):
+        async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
+            await layout.render()
+
+            component_hook.latest.schedule_render()
+
+            await layout.render()
+
+
+async def test_use_async_effect_error_after_stop_is_handled_gracefully():
+    component_hook = HookCatcher()
+    effect_ran = WaitForEvent()
+    cleanup_ran = WaitForEvent()
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithAsyncEffect():
+        @reactpy.use_effect(dependencies=None)  # force this to run every time
+        async def effect(e):
+            async with e:
+                effect_ran.set()
+            cleanup_ran.set()
+            raise ValueError("Something went wrong")
+
+        return reactpy.html.div()
+
+    with assert_reactpy_did_log(
+        match_message=r"Error while stopping effect",
+        error_type=ValueError,
+    ):
+        async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
+            await layout.render()
+
+            component_hook.latest.schedule_render()
+
+            await layout.render()
+
+        await asyncio.wait_for(cleanup_ran.wait(), 1)
 
 
 async def test_use_async_effect_cleanup_task():
