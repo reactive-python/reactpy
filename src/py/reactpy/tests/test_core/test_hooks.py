@@ -1,4 +1,5 @@
 import asyncio
+import sys
 
 import pytest
 
@@ -524,6 +525,68 @@ async def test_use_async_effect_cleanup():
             async with e:
                 effect_ran.set()
             cleanup_ran.set()
+
+        return reactpy.html.div()
+
+    async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
+        await layout.render()
+
+        component_hook.latest.schedule_render()
+
+        await layout.render()
+
+    await asyncio.wait_for(cleanup_ran.wait(), 1)
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 11),
+    reason="asyncio.Task.uncancel does not exist",
+)
+async def test_use_async_effect_with_await_in_cleanup():
+    component_hook = HookCatcher()
+    effect_ran = WaitForEvent()
+    cleanup_ran = WaitForEvent()
+
+    async def cleanup_task():
+        cleanup_ran.set()
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithAsyncEffect():
+        @reactpy.use_effect(dependencies=None)  # force this to run every time
+        async def effect(e):
+            async with e:
+                effect_ran.set()
+            await cleanup_task()
+
+        return reactpy.html.div()
+
+    async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
+        await layout.render()
+
+        component_hook.latest.schedule_render()
+
+        await layout.render()
+
+    await asyncio.wait_for(cleanup_ran.wait(), 1)
+
+
+async def test_use_async_effect_cleanup_task():
+    component_hook = HookCatcher()
+    effect_ran = WaitForEvent()
+    cleanup_ran = WaitForEvent()
+
+    async def cleanup_task():
+        cleanup_ran.set()
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithAsyncEffect():
+        @reactpy.use_effect(dependencies=None)  # force this to run every time
+        async def effect(e):
+            async with e:
+                effect_ran.set()
+            return cleanup_task()
 
         return reactpy.html.div()
 

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import asyncio
 import inspect
 import sys
 import warnings
-from collections.abc import Coroutine, Sequence
+from asyncio import CancelledError, Event, create_task
+from collections.abc import Awaitable, Coroutine, Sequence
 from logging import getLogger
 from types import FunctionType
 from typing import (
@@ -95,9 +95,10 @@ class _CurrentState(Generic[_Type]):
         self.dispatch = dispatch
 
 
+_Coro = Coroutine[None, None, _Type]
 _EffectCleanFunc: TypeAlias = "Callable[[], None]"
 _SyncEffectFunc: TypeAlias = "Callable[[], _EffectCleanFunc | None]"
-_AsyncEffectFunc: TypeAlias = "Callable[[Effect], Coroutine[None, None, None]]"
+_AsyncEffectFunc: TypeAlias = "Callable[[Effect], _Coro[Awaitable[Any] | None]]"
 _EffectFunc: TypeAlias = "_SyncEffectFunc | _AsyncEffectFunc"
 
 
@@ -152,8 +153,7 @@ def use_effect(
             if effect_ref.current is not None:
                 await effect_ref.current.stop()
 
-            effect = effect_ref.current = Effect()
-            effect.task = asyncio.create_task(effect_func(effect))
+            effect = effect_ref.current = Effect(effect_func)
             await effect.started()
 
             return effect.stop
@@ -170,25 +170,36 @@ def use_effect(
 class Effect:
     """A context manager for running asynchronous effects."""
 
-    task: asyncio.Task[Any]
-    """The task that is running the effect."""
-
-    def __init__(self) -> None:
-        self._stop = asyncio.Event()
-        self._started = asyncio.Event()
+    def __init__(self, effect_func: _AsyncEffectFunc) -> None:
+        self.task = create_task(effect_func(self))
+        self._stop = Event()
+        self._started = Event()
+        self._stopped = Event()
         self._cancel_count = 0
 
     async def stop(self) -> None:
         """Signal the effect to stop."""
+        if self._stop.is_set():
+            await self._stopped.wait()
+            return None
+
         if self._started.is_set():
             self._cancel_task()
         self._stop.set()
         try:
-            await self.task
-        except asyncio.CancelledError:
+            cleanup = await self.task
+        except CancelledError:
             pass
         except Exception:
             logger.exception("Error while stopping effect")
+
+        if cleanup is not None:
+            try:
+                await cleanup
+            except Exception:
+                logger.exception("Error while cleaning up effect")
+
+        self._stopped.set()
 
     async def started(self) -> None:
         """Wait for the effect to start."""
@@ -205,6 +216,7 @@ class Effect:
 
     if sys.version_info < (3, 11):  # nocov
         # Python<3.11 doesn't have Task.cancelling so we need to track it ourselves.
+        # Task.uncancel is a no-op since there's no way to backport the behavior.
 
         async def __aenter__(self) -> Self:
             cancel_count = 0
@@ -217,20 +229,22 @@ class Effect:
 
             self.task.cancel = new_cancel
             self.task.cancelling = lambda: cancel_count
+            self.task.uncancel = lambda: None
 
             return await self._3_11__aenter__()
 
     async def __aexit__(self, exc_type: type[BaseException], *exc: Any) -> Any:
-        if exc_type is not None and not issubclass(exc_type, asyncio.CancelledError):
+        if exc_type is not None and not issubclass(exc_type, CancelledError):
             # propagate non-cancellation exceptions
             return None
 
         try:
             await self._stop.wait()
-        except asyncio.CancelledError:
+        except CancelledError:
             if self.task.cancelling() > self._cancel_count:
                 # Task has been cancelled by something else - propagate it
                 return None
+            self.task.uncancel()
 
         return True
 
