@@ -191,6 +191,7 @@ class Effect:
             cleanup = None
 
         if cleanup is not None:
+            # backwards compat for async cleanup in Python<3.11
             try:
                 await cleanup
             except Exception:
