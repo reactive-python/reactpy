@@ -594,8 +594,11 @@ async def test_effect_external_cancellation_is_propagated():
     async def effect_func(e):
         async with e:
             did_start.set()
-            asyncio.current_task().cancel()
-            await asyncio.sleep(0)  # allow cancellation to propagate
+            # We don't use e.task or asyncio.current_task() because there seems to
+            # be some platform dependence on whether the task is cancelled properly
+            outer_task.cancel()
+            # Allow cancellation to propagate
+            await asyncio.sleep(0)
         did_cleanup.current = True
 
     async def main():
@@ -604,7 +607,8 @@ async def test_effect_external_cancellation_is_propagated():
         await effect.stop()
 
     with pytest.raises(asyncio.CancelledError):
-        await main()
+        outer_task = asyncio.create_task(main())
+        await outer_task
 
     assert not did_cleanup.current
 
