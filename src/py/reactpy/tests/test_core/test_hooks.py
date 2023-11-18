@@ -276,18 +276,18 @@ async def test_double_set_state(display: DisplayFixture):
     first = await display.page.wait_for_selector("#first")
     second = await display.page.wait_for_selector("#second")
 
-    assert (await first.get_attribute("data-value")) == "0"
-    assert (await second.get_attribute("data-value")) == "0"
+    await poll(first.get_attribute("data-value")).until_equals("0")
+    await poll(second.get_attribute("data-value")).until_equals("0")
 
     await button.click()
 
-    assert (await first.get_attribute("data-value")) == "1"
-    assert (await second.get_attribute("data-value")) == "1"
+    await poll(first.get_attribute("data-value")).until_equals("1")
+    await poll(second.get_attribute("data-value")).until_equals("1")
 
     await button.click()
 
-    assert (await first.get_attribute("data-value")) == "2"
-    assert (await second.get_attribute("data-value")) == "2"
+    await poll(first.get_attribute("data-value")).until_equals("2")
+    await poll(second.get_attribute("data-value")).until_equals("2")
 
 
 async def test_use_effect_callback_occurs_after_full_render_is_complete():
@@ -598,6 +598,40 @@ async def test_use_async_effect_cleanup_task():
         await layout.render()
 
     await asyncio.wait_for(cleanup_ran.wait(), 1)
+
+
+async def test_use_async_effect_cleanup_task_error_handled_gradefully():
+    component_hook = HookCatcher()
+    effect_ran = WaitForEvent()
+    cleanup_ran = WaitForEvent()
+
+    async def cleanup_task():
+        cleanup_ran.set()
+        raise ValueError("Something went wrong")
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithAsyncEffect():
+        @reactpy.use_effect(dependencies=None)  # force this to run every time
+        async def effect(e):
+            async with e:
+                effect_ran.set()
+            return cleanup_task()
+
+        return reactpy.html.div()
+
+    with assert_reactpy_did_log(
+        match_message=r"Error while cleaning up effect",
+        error_type=ValueError,
+    ):
+        async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
+            await layout.render()
+
+            component_hook.latest.schedule_render()
+
+            await layout.render()
+
+        await asyncio.wait_for(cleanup_ran.wait(), 1)
 
 
 async def test_use_async_effect_cancel(caplog):

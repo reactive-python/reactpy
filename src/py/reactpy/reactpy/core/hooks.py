@@ -188,8 +188,6 @@ class Effect:
         self._stop.set()
         try:
             cleanup = await self.task
-        except CancelledError:
-            pass
         except Exception:
             logger.exception("Error while stopping effect")
 

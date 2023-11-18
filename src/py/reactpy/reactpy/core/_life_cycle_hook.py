@@ -178,7 +178,7 @@ class LifeCycleHook:
         """The component is about to be removed from the layout"""
         try:
             await asyncio.gather(*[stop() for stop in self._effect_stops])
-        except Exception:
+        except Exception:  # nocov
             logger.exception("Error during effect cancellation")
         finally:
             self._effect_stops.clear()
