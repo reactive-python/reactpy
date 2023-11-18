@@ -34,6 +34,8 @@ dependencies = [
   "colorlog >=6",
   "asgiref >=3",
   "lxml >=4",
+  # required by some packages during install
+  "setuptools",
 ]
 [project.optional-dependencies]
 all = ["reactpy[starlette,sanic,fastapi,flask,tornado,testing]"]
@@ -92,8 +94,8 @@ dependencies = [
   "jsonpointer",
 ]
 [tool.hatch.envs.default.scripts]
-test = "playwright install && pytest {args:tests}"
-test-cov = "playwright install && coverage run -m pytest {args:tests}"
+test = "playwright install chromium && pytest {args:tests}"
+test-cov = "playwright install chromium && coverage run -m pytest {args:tests}"
 cov-report = [
   # "- coverage combine",
   "coverage report",

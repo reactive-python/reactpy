@@ -25,6 +25,8 @@ dependencies = [
   "semver >=2, <3",
   "twine",
   "pre-commit",
+  # required by some packages during install
+  "setuptools",
 ]
 
 [tool.hatch.envs.default.scripts]
