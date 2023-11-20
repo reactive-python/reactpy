@@ -281,6 +281,7 @@ __all__ = (
     "var",
     "video",
     "wbr",
+    "marquee",
 )
 
 
@@ -402,6 +403,9 @@ math = make_vdom_constructor("math")
 # Scripting
 canvas = make_vdom_constructor("canvas")
 noscript = make_vdom_constructor("noscript")
+
+# Other
+marquee = make_vdom_constructor("marquee")
 
 
 def _script(
