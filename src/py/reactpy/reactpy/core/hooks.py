@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 import inspect
-import sys
 import warnings
-from asyncio import FIRST_COMPLETED, CancelledError, Event, create_task, wait
-from collections.abc import Awaitable, Coroutine, Sequence
+from asyncio import CancelledError, Event, create_task
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterator,
+    Coroutine,
+    Generator,
+    Sequence,
+)
 from logging import getLogger
 from types import FunctionType
 from typing import (
@@ -18,7 +23,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import TypeAlias
 
 from reactpy.config import REACTPY_DEBUG_MODE
 from reactpy.core._life_cycle_hook import StopEffect, current_hook
@@ -95,33 +100,38 @@ class _CurrentState(Generic[_Type]):
         self.dispatch = dispatch
 
 
-_Coro = Coroutine[None, None, _Type]
-_EffectCleanFunc: TypeAlias = "Callable[[], None]"
-_SyncEffectFunc: TypeAlias = "Callable[[], _EffectCleanFunc | None]"
-_AsyncEffectFunc: TypeAlias = "Callable[[Effect], _Coro[Awaitable[Any] | None]]"
-_EffectFunc: TypeAlias = "_SyncEffectFunc | _AsyncEffectFunc"
+_SyncGeneratorEffect: TypeAlias = Callable[[], Generator[None, None, None]]
+_SyncFunctionEffect: TypeAlias = Callable[[], Callable[[], None] | None]
+_SyncEffect: TypeAlias = _SyncGeneratorEffect | _SyncFunctionEffect
+
+_AsyncGeneratorEffect: TypeAlias = Callable[[], AsyncGenerator[None, None]]
+_AsyncFunctionEffect: TypeAlias = Callable[
+    [], Coroutine[None, None, Callable[[], None] | None]
+]
+_AsyncEffect: TypeAlias = _AsyncGeneratorEffect | _AsyncFunctionEffect
+_Effect: TypeAlias = _SyncEffect | _AsyncEffect
 
 
 @overload
 def use_effect(
     function: None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Callable[[_EffectFunc], None]:
+) -> Callable[[_Effect], None]:
     ...
 
 
 @overload
 def use_effect(
-    function: _EffectFunc,
+    function: _Effect,
     dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> None:
     ...
 
 
 def use_effect(
-    function: _EffectFunc | None = None,
+    function: _Effect | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Callable[[_EffectFunc], None] | None:
+) -> Callable[[_Effect], None] | None:
     """See the full :ref:`Use Effect` docs for details
 
     Parameters:
@@ -131,32 +141,54 @@ def use_effect(
             Dependencies for the effect. The effect will only trigger if the identity
             of any value in the given sequence changes (i.e. their :func:`id` is
             different). By default these are inferred based on local variables that are
-            referenced by the given function.
-        stop_timeout:
-            The maximum amount of time to wait for the effect to cleanup after it has
-            been signaled to stop. If the timeout is reached, an exception will be
-            logged and the effect will be cancelled. This does not apply to synchronous
-            effects.
+            referenced by the given function. If ``None``, then the effect runs on every
+            render.
 
     Returns:
-        If not function is provided, a decorator. Otherwise ``None``.
+        If no function is provided, a decorator. Otherwise ``None``.
     """
     hook = current_hook()
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
-    effect_ref: Ref[Effect | None] = use_ref(None)
+    stop_last_effect: Ref[StopEffect | None] = use_ref(None)
 
-    def add_effect(function: _EffectFunc) -> None:
+    def add_effect(function: _Effect) -> None:
         effect_func = _cast_async_effect(function)
 
-        async def start_effect() -> StopEffect:
-            if effect_ref.current is not None:
-                await effect_ref.current.stop()
+        async def start_effect() -> Callable:
+            if stop_last_effect.current is not None:
+                await stop_last_effect.current()
 
-            effect = effect_ref.current = Effect(effect_func)
-            await effect.started()
+            stop = Event()
 
-            return effect.stop
+            async def run_effect() -> StopEffect:
+                effect_gen = effect_func()
+                # start running the effect
+                effect_task = create_task(effect_gen.asend(None))
+                # wait for re-render or unmount
+                await stop.wait()
+                # signal effect to stop (no-op if already complete)
+                effect_task.cancel()
+                # wait for effect to halt
+                try:
+                    await effect_task
+                except CancelledError:
+                    pass
+                # wait for effect cleanup
+                await effect_gen.aclose()
+
+            effect_task = create_task(run_effect())
+
+            async def stop_effect() -> None:
+                stop.set()
+                try:
+                    await effect_task
+                except Exception:
+                    logger.exception("Error in effect")
+
+            stop_last_effect.current = stop_effect
+
+            return stop_effect
 
         return memoize(lambda: hook.add_effect(start_effect))
 
@@ -167,153 +199,51 @@ def use_effect(
         return add_effect
 
 
-class Effect:
-    """A context manager for running asynchronous effects."""
+def _cast_async_effect(function: Callable[..., Any]) -> _AsyncGeneratorEffect:
+    if inspect.isasyncgenfunction(function):
+        async_generator_effect = function
+    elif inspect.iscoroutinefunction(function):
+        async_function_effect = cast(_AsyncFunctionEffect, function)
 
-    def __init__(self, effect_func: _AsyncEffectFunc) -> None:
-        self.task = create_task(effect_func(self))
-        self._stop = Event()
-        self._started = Event()
-        self._stopped = Event()
-        self._cancel_count = 0
-
-    async def stop(self) -> None:
-        """Signal the effect to stop."""
-        if self._stop.is_set():
-            await self._stopped.wait()
-            return None
-
-        self.stop_no_wait()
-        try:
-            cleanup = await self.task
-        except Exception:
-            logger.exception("Error while stopping effect")
-            cleanup = None
-
-        if cleanup is not None:
-            # backwards compat for async cleanup in Python<3.11
+        async def async_generator_effect() -> AsyncIterator[None]:
+            task = create_task(async_function_effect())
             try:
-                await cleanup
-            except Exception:
-                logger.exception("Error while cleaning up effect")
-
-        self._stopped.set()
-
-    def stop_no_wait(self) -> None:
-        """Signal the effect to stop without waiting for it to finish."""
-        if self._started.is_set():
-            self._cancel_task()
-        self._stop.set()
-
-    async def started(self) -> None:
-        """Wait for the effect to start."""
-        await self._started.wait()
-
-    async def __aenter__(self) -> Self:
-        self._started.set()
-        if self._stop.is_set():
-            self._cancel_task()
-        return self
-
-    _3_11__aenter__ = __aenter__
-
-    if sys.version_info < (3, 11):  # nocov
-        # Python<3.11 doesn't have Task.cancelling so we need to track it ourselves.
-        # Task.uncancel is a no-op since there's no way to backport the behavior.
-
-        async def __aenter__(self) -> Self:
-            cancel_count = 0
-            old_cancel = self.task.cancel
-
-            def new_cancel(*a, **kw) -> None:
-                nonlocal cancel_count
-                cancel_count += 1
-                return old_cancel(*a, **kw)
-
-            self.task.cancel = new_cancel
-            self.task.cancelling = lambda: cancel_count
-            self.task.uncancel = lambda: None
-
-            return await self._3_11__aenter__()
-
-    async def __aexit__(self, exc_type: type[BaseException], *exc: Any) -> Any:
-        if exc_type is not None and not issubclass(exc_type, CancelledError):
-            # propagate non-cancellation exceptions
-            return None
-
-        if not self._maybe_uncancel_task():
-            return None
-
-        wait_for_stop = create_task(self._stop.wait())
-        try:
-            await wait([wait_for_stop, self.task], return_when=FIRST_COMPLETED)
-        except CancelledError:
-            if not self._maybe_uncancel_task():
-                raise
-
-        return True
-
-    def _cancel_task(self) -> None:
-        self.task.cancel()
-        self._cancel_count += 1
-
-    def _maybe_uncancel_task(self) -> bool:
-        """Return if task was uncancelled
-
-        If task was not cancelled by this effect then returns. Otherwise, if the task
-        was cancelled at all, uncancell it and return True
-        """
-        if self.task.cancelling() > self._cancel_count:
-            # Task has been cancelled by something else - propagate it
-            return False
-        elif self._cancel_count:
-            for _ in range(self._cancel_count):
-                self.task.uncancel()
-        return True
-
-
-def _cast_async_effect(function: Callable[..., Any]) -> _AsyncEffectFunc:
-    if inspect.iscoroutinefunction(function):
-        if len(inspect.signature(function).parameters):
-            return function
-
-        warnings.warn(
-            "Async effect functions should accept an Effect context manager as their "
-            "first argument. This will be required in a future version of ReactPy.",
-            stacklevel=3,
-        )
-
-        async def wrapper(effect: Effect) -> None:
-            cleanup = None
-            async with effect:
-                try:
-                    cleanup = await function()
-                except Exception:
-                    logger.exception("Error while applying effect")
-            if cleanup is not None:
-                try:
+                yield
+            finally:
+                cleanup = await task
+                if cleanup is not None:
+                    warnings.warn(
+                        "Async effect returned a cleanup function - use an async "
+                        "generator instead by yielding inside a try/finally block. "
+                        "This will be an error in a future version of ReactPy.",
+                        DeprecationWarning,
+                        stacklevel=3,
+                    )
                     cleanup()
-                except Exception:
-                    logger.exception("Error while cleaning up effect")
 
-        return wrapper
+    elif inspect.isgeneratorfunction(function):
+        sync_generator_effect = cast(_SyncGeneratorEffect, function)
+
+        async def async_generator_effect() -> AsyncIterator[None]:
+            gen = sync_generator_effect()
+            gen.send(None)
+            try:
+                yield
+            finally:
+                gen.close()
+
     else:
+        sync_function_effect = cast(_SyncFunctionEffect, function)
 
-        async def wrapper(effect: Effect) -> None:
-            cleanup = None
-            async with effect:
-                try:
-                    cleanup = function()
-                except Exception:
-                    logger.exception("Error while applying effect")
-
-            if cleanup is not None:
-                try:
+        async def async_generator_effect() -> AsyncIterator[None]:
+            cleanup = sync_function_effect()
+            try:
+                yield
+            finally:
+                if cleanup is not None:
                     cleanup()
-                except Exception:
-                    logger.exception("Error while cleaning up effect")
 
-        return wrapper
+    return async_generator_effect
 
 
 def use_debug_value(

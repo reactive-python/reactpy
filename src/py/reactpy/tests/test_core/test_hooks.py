@@ -1,5 +1,4 @@
 import asyncio
-import sys
 
 import pytest
 
@@ -7,7 +6,7 @@ import reactpy
 from reactpy import html
 from reactpy.config import REACTPY_DEBUG_MODE
 from reactpy.core._life_cycle_hook import LifeCycleHook
-from reactpy.core.hooks import Effect, strictly_equal
+from reactpy.core.hooks import strictly_equal, use_effect
 from reactpy.core.layout import Layout
 from reactpy.testing import DisplayFixture, HookCatcher, assert_reactpy_did_log, poll
 from reactpy.testing.logs import assert_reactpy_did_not_log
@@ -474,339 +473,21 @@ async def test_memoized_effect_cleanup_only_triggered_before_new_effect():
         assert cleanup_trigger_count.current == 1
 
 
-async def test_use_async_effect():
-    effect_started = WaitForEvent()
-    unblock_effect = WaitForEvent()
-    effect_running = WaitForEvent()
-
-    @reactpy.component
-    def ComponentWithAsyncEffect():
-        @reactpy.use_effect
-        async def effect(e):
-            effect_started.set()
-            await unblock_effect.wait()
-            async with e:
-                effect_running.set()
-
-        return reactpy.html.div()
-
-    async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
-        render_task = asyncio.create_task(layout.render())
-        wait_for_effect_started = asyncio.create_task(effect_started.wait())
-
-        done, pending = await asyncio.wait(
-            [wait_for_effect_started, render_task],
-            return_when=asyncio.FIRST_COMPLETED,
-        )
-
-        # effect should start before render completes
-        assert wait_for_effect_started in done
-        assert render_task in pending
-
-        # effect body should only begin after render completes
-        assert not effect_running.is_set()
-
-        # effect body runs eventually after render completes
-        unblock_effect.set()
-        await render_task
-        await effect_running.wait()
-
-
-async def test_use_async_effect_cleanup():
-    component_hook = HookCatcher()
-    effect_ran = WaitForEvent()
-    cleanup_ran = WaitForEvent()
-
-    @reactpy.component
-    @component_hook.capture
-    def ComponentWithAsyncEffect():
-        @reactpy.use_effect(dependencies=None)  # force this to run every time
-        async def effect(e):
-            async with e:
-                effect_ran.set()
-            cleanup_ran.set()
-
-        return reactpy.html.div()
-
-    async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
-        await layout.render()
-
-        await effect_ran.wait()
-
-        component_hook.latest.schedule_render()
-
-        await layout.render()
-
-    await asyncio.wait_for(cleanup_ran.wait(), 1)
-
-
-async def test_effect_with_early_stop_cancels_immediately():
-    never_happens = asyncio.Event()
-    did_start = WaitForEvent()
-    did_cleanup = WaitForEvent()
-    did_cancel = WaitForEvent()
-
-    async def effect_func(e):
-        async with e:
-            did_start.set()
-            try:
-                await never_happens.wait()
-            except asyncio.CancelledError:
-                did_cancel.set()
-                raise
-        did_cleanup.set()
-
-    effect = Effect(effect_func)
-    effect.stop_no_wait()
-    await did_start.wait()
-    await did_cancel.wait()
-    await did_cleanup.wait()
-
-
-async def test_long_effect_is_cancelled():
-    never_happens = asyncio.Event()
-    did_start = WaitForEvent()
-    did_cleanup = WaitForEvent()
-    did_cancel = WaitForEvent()
-
-    async def effect_func(e):
-        async with e:
-            did_start.set()
-            try:
-                await never_happens.wait()
-            except asyncio.CancelledError:
-                did_cancel.set()
-                raise
-        did_cleanup.set()
-
-    effect = Effect(effect_func)
-
-    await did_start.wait()
-    await effect.stop()
-    await did_cancel.wait()
-    await did_cleanup.wait()
-
-
-async def test_effect_internal_cancellation_is_propagated():
-    did_start = WaitForEvent()
-    did_cleanup = Ref(False)
-    never_happens = asyncio.Event()
-
-    async def effect_func(e):
-        async with e:
-            did_start.set()
-            asyncio.current_task().cancel()
-            await never_happens.wait()
-        did_cleanup.current = True
-
-    async def main():
-        effect = Effect(effect_func)
-        await did_start.wait()
-        await effect.task
-
-    with pytest.raises(asyncio.CancelledError):
-        await main()
-
-    assert not did_cleanup.current
-
-
-async def test_effect_external_cancellation_is_propagated():
-    did_start = WaitForEvent()
-    did_cleanup = Ref(False)
-
-    async def effect_func(e):
-        async with e:
-            did_start.set()
-        did_cleanup.current = True
-
-    async def main():
-        effect = Effect(effect_func)
-        await effect.task
-
-    with pytest.raises(asyncio.CancelledError):
-        outer_task = asyncio.create_task(main())
-        await did_start.wait()
-        outer_task.cancel()
-        await outer_task
-
-    assert not did_cleanup.current
-
-
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="asyncio.Task.uncancel does not exist",
-)
-async def test_use_async_effect_with_await_in_cleanup():
-    component_hook = HookCatcher()
-    effect_ran = WaitForEvent()
-    cleanup_ran = WaitForEvent()
-
-    async def cleanup_task():
-        cleanup_ran.set()
-
-    @reactpy.component
-    @component_hook.capture
-    def ComponentWithAsyncEffect():
-        @reactpy.use_effect(dependencies=None)  # force this to run every time
-        async def effect(e):
-            async with e:
-                effect_ran.set()
-            await cleanup_task()
-
-        return reactpy.html.div()
-
-    async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
-        await layout.render()
-
-        component_hook.latest.schedule_render()
-
-        await layout.render()
-
-    await asyncio.wait_for(cleanup_ran.wait(), 1)
-
-
-async def test_use_async_effect_error_in_effect_is_propagated_and_handled_gracefully():
-    component_hook = HookCatcher()
-    effect_ran = WaitForEvent()
-
-    @reactpy.component
-    @component_hook.capture
-    def ComponentWithAsyncEffect():
-        @reactpy.use_effect(dependencies=None)  # force this to run every time
-        async def effect(e):
-            async with e:
-                effect_ran.set()
-                raise ValueError("Something went wrong")
-
-        return reactpy.html.div()
-
-    with assert_reactpy_did_log(
-        match_message=r"Error while stopping effect",
-        error_type=ValueError,
-    ):
-        async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
-            await layout.render()
-
-            component_hook.latest.schedule_render()
-
-            await layout.render()
-
-
-async def test_use_async_effect_error_after_stop_is_handled_gracefully():
-    component_hook = HookCatcher()
-    effect_ran = WaitForEvent()
-    cleanup_ran = WaitForEvent()
-
-    @reactpy.component
-    @component_hook.capture
-    def ComponentWithAsyncEffect():
-        @reactpy.use_effect(dependencies=None)  # force this to run every time
-        async def effect(e):
-            async with e:
-                effect_ran.set()
-            cleanup_ran.set()
-            raise ValueError("Something went wrong")
-
-        return reactpy.html.div()
-
-    with assert_reactpy_did_log(
-        match_message=r"Error while stopping effect",
-        error_type=ValueError,
-    ):
-        async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
-            await layout.render()
-
-            component_hook.latest.schedule_render()
-
-            await layout.render()
-
-        await asyncio.wait_for(cleanup_ran.wait(), 1)
-
-
-async def test_use_async_effect_cleanup_task():
-    component_hook = HookCatcher()
-    effect_ran = WaitForEvent()
-    cleanup_ran = WaitForEvent()
-
-    async def cleanup_task():
-        cleanup_ran.set()
-
-    @reactpy.component
-    @component_hook.capture
-    def ComponentWithAsyncEffect():
-        @reactpy.use_effect(dependencies=None)  # force this to run every time
-        async def effect(e):
-            async with e:
-                effect_ran.set()
-            return cleanup_task()
-
-        return reactpy.html.div()
-
-    async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
-        await layout.render()
-
-        component_hook.latest.schedule_render()
-
-        await layout.render()
-
-    await asyncio.wait_for(cleanup_ran.wait(), 1)
-
-
-async def test_use_async_effect_cleanup_task_error_handled_gradefully():
-    component_hook = HookCatcher()
-    effect_ran = WaitForEvent()
-    cleanup_ran = WaitForEvent()
-
-    async def cleanup_task():
-        cleanup_ran.set()
-        raise ValueError("Something went wrong")
-
-    @reactpy.component
-    @component_hook.capture
-    def ComponentWithAsyncEffect():
-        @reactpy.use_effect(dependencies=None)  # force this to run every time
-        async def effect(e):
-            async with e:
-                effect_ran.set()
-            return cleanup_task()
-
-        return reactpy.html.div()
-
-    with assert_reactpy_did_log(
-        match_message=r"Error while cleaning up effect",
-        error_type=ValueError,
-    ):
-        async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
-            await layout.render()
-
-            component_hook.latest.schedule_render()
-
-            await layout.render()
-
-        await asyncio.wait_for(cleanup_ran.wait(), 1)
-
-
 async def test_use_async_effect_cancel(caplog):
     component_hook = HookCatcher()
     effect_ran = WaitForEvent()
-    effect_was_cancelled = WaitForEvent()
-    effect_cleanup_ran_after_cancel = WaitForEvent()
-
-    event_that_never_occurs = WaitForEvent()
+    effect_cleanup = WaitForEvent()
 
     @reactpy.component
     @component_hook.capture
     def ComponentWithLongWaitingEffect():
         @reactpy.use_effect(dependencies=None)  # force this to run every time
-        async def effect(e):
+        async def effect():
             effect_ran.set()
-            async with e:
-                try:
-                    await event_that_never_occurs.wait()
-                except asyncio.CancelledError:
-                    effect_was_cancelled.set()
-                    raise
-            effect_cleanup_ran_after_cancel.set()
+            try:
+                yield
+            finally:
+                effect_cleanup.set()
 
         return reactpy.html.div()
 
@@ -818,14 +499,7 @@ async def test_use_async_effect_cancel(caplog):
 
         await layout.render()
 
-    await asyncio.wait_for(effect_was_cancelled.wait(), 1)
-    await asyncio.wait_for(effect_cleanup_ran_after_cancel.wait(), 1)
-
-    # So I know we said the event never occurs but... to ensure the effect's future is
-    # cancelled before the test is cleaned up we need to set the event. This is because
-    # the cancellation doesn't propagate before the test is resolved which causes
-    # delayed log messages that impact other tests.
-    event_that_never_occurs.set()
+    await effect_cleanup.wait(1)
 
 
 async def test_error_in_effect_is_gracefully_handled(caplog):
@@ -838,7 +512,7 @@ async def test_error_in_effect_is_gracefully_handled(caplog):
 
         return reactpy.html.div()
 
-    with assert_reactpy_did_log(match_message=r"Error while applying effect"):
+    with assert_reactpy_did_log(match_message=r"Error in effect"):
         async with reactpy.Layout(ComponentWithEffect()) as layout:
             await layout.render()  # no error
 
@@ -864,7 +538,7 @@ async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled():
         return reactpy.html.div()
 
     with assert_reactpy_did_log(
-        match_message=r"Error while cleaning up effect",
+        match_message=r"Error in effect",
         error_type=ValueError,
     ):
         async with reactpy.Layout(OuterComponent()) as layout:
@@ -1286,7 +960,7 @@ async def test_error_in_layout_effect_cleanup_is_gracefully_handled():
         return reactpy.html.div()
 
     with assert_reactpy_did_log(
-        match_message=r"Error while cleaning up effect",
+        match_message=r"Error in effect",
         error_type=ValueError,
         match_error="The error message",
     ):
@@ -1511,3 +1185,71 @@ async def test_use_state_named_tuple():
         state.current.set_value(2)
         await layout.render()
         assert state.current.value == 2
+
+
+async def test_slow_async_generator_effect_is_cancelled_and_cleaned_up():
+    hook_catcher = HookCatcher()
+
+    never = asyncio.Event()
+    did_run = WaitForEvent()
+    did_cancel = WaitForEvent()
+    did_cleanup = WaitForEvent()
+
+    @reactpy.component
+    @hook_catcher.capture
+    def some_component():
+        @use_effect(dependencies=None)
+        async def slow_effect():
+            try:
+                did_run.set()
+                await never.wait()
+                yield
+            except asyncio.CancelledError:
+                did_cancel.set()
+                raise
+            finally:
+                # should be allowed to await in finally
+                await asyncio.sleep(0)
+                did_cleanup.set()
+
+    async with reactpy.Layout(some_component()) as layout:
+        await layout.render()
+
+        await did_run.wait()
+
+        hook_catcher.latest.schedule_render()
+        render_task = asyncio.create_task(layout.render())
+
+        await did_cancel.wait()
+        await did_cleanup.wait()
+
+        await render_task
+
+
+async def test_sync_generator_style_effect():
+    hook_catcher = HookCatcher()
+
+    did_run = WaitForEvent()
+    did_cleanup = WaitForEvent()
+
+    @reactpy.component
+    @hook_catcher.capture
+    def some_component():
+        @use_effect(dependencies=None)
+        def sync_generator_effect():
+            try:
+                did_run.set()
+                yield
+            finally:
+                did_cleanup.set()
+
+    async with reactpy.Layout(some_component()) as layout:
+        await layout.render()
+
+        await did_run.wait()
+
+        hook_catcher.latest.schedule_render()
+        render_task = asyncio.create_task(layout.render())
+
+        await did_cleanup.wait()
+        await render_task

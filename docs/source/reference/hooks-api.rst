@@ -154,27 +154,54 @@ Async Effects
 .............
 
 A behavior unique to ReactPy's implementation of ``use_effect`` is that it natively
-supports ``async`` functions:
+supports ``async`` effects. Async effect functions may either be an async function
+or an async generator. If your effect doesn't need to do any cleanup, then you can
+simply write an async function.
 
 .. code-block::
 
     async def non_blocking_effect():
-        resource = await do_something_asynchronously()
-        return lambda: blocking_close(resource)
+        await do_something()
 
     use_effect(non_blocking_effect)
 
+However, if you need to do any cleanup, then you must ``yield False`` inside a try-finally
+block and place your cleanup logic in the finally block. Yielding ``False`` indicates to
+ReactPy that the effect will not yield again before it is cleaned up.
 
-There are **three important subtleties** to note about using asynchronous effects:
+.. code-block::
 
-1. The cleanup function must be a normal synchronous function.
+    async def blocking_effect():
+        await do_something()
+        try:
+            yield False
+        finally:
+            await do_cleanup()
 
-2. Asynchronous effects which do not complete before the next effect is created
-   following a re-render will be cancelled. This means an
-   :class:`~asyncio.CancelledError` will be raised somewhere in the body of the effect.
+    use_effect(blocking_effect)
 
-3. An asynchronous effect may occur any time after the update which added this effect
-   and before the next effect following a subsequent update.
+If you have a long-lived effect, you may ``yield True`` multiple times. ``True`` indicates
+to ReactPy that the effect will yield again if the effect doesn't need to be cleanup up
+yet.
+
+.. code-block::
+
+    async def establish_connection():
+        connection = await open_connection()
+        try:
+            while True:
+                yield False
+                await connection.send(create_message())
+                handle_message(await connection.recv())
+        finally:
+            await close_connection(connection)
+
+    use_effect(non_blocking_effect)
+
+Note that, if an effect needs to be cleaned up, it will only do so when the effect
+function yields control back to ReactPy. So you should ensure that either, you can
+be sure that the effect will yield in a timely manner, or that you enforce a timeout
+on the effect. Otherwise, ReactPy may hang while waiting for the effect to yield.
 
 
 Manual Effect Conditions

@@ -322,6 +322,7 @@ intersphinx_mapping = {
     "sanic": ("https://sanic.readthedocs.io/en/latest/", None),
     "tornado": ("https://www.tornadoweb.org/en/stable/", None),
     "flask": ("https://flask.palletsprojects.com/en/1.1.x/", None),
+    "anyio": ("https://anyio.readthedocs.io/en/stable", None),
 }
 
 # -- Options for todo extension ----------------------------------------------
