@@ -155,16 +155,18 @@ def use_effect(
     def add_effect(function: _Effect) -> None:
         effect_func = _cast_async_effect(function)
 
-        async def start_effect() -> Callable:
+        async def start_effect() -> StopEffect:
             if stop_last_effect.current is not None:
                 await stop_last_effect.current()
 
             stop = Event()
 
-            async def run_effect() -> StopEffect:
+            async def run_effect() -> None:
                 effect_gen = effect_func()
                 # start running the effect
-                effect_task = create_task(effect_gen.asend(None))
+                effect_task = create_task(
+                    cast(Coroutine[None, None, None], effect_gen.asend(None))
+                )
                 # wait for re-render or unmount
                 await stop.wait()
                 # signal effect to stop (no-op if already complete)

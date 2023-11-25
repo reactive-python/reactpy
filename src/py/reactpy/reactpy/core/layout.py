@@ -1,7 +1,16 @@
 from __future__ import annotations
 
 import abc
-import asyncio
+from asyncio import (
+    FIRST_COMPLETED,
+    Event,
+    Queue,
+    Task,
+    create_task,
+    gather,
+    get_running_loop,
+    wait,
+)
 from collections import Counter
 from collections.abc import Iterator
 from contextlib import AsyncExitStack
@@ -41,6 +50,7 @@ class Layout:
         "root",
         "_event_handlers",
         "_rendering_queue",
+        "_render_tasks",
         "_root_life_cycle_state_id",
         "_model_states_by_life_cycle_state_id",
     )
@@ -58,6 +68,7 @@ class Layout:
     async def __aenter__(self) -> Layout:
         # create attributes here to avoid access before entering context manager
         self._event_handlers: EventHandlerDict = {}
+        self._render_tasks: set[Task[LayoutUpdateMessage]] = set()
 
         self._rendering_queue: _ThreadSafeQueue[_LifeCycleStateId] = _ThreadSafeQueue()
         root_model_state = _new_root_model_state(self.root, self._rendering_queue.put)
@@ -72,6 +83,7 @@ class Layout:
     async def __aexit__(self, *exc: Any) -> None:
         root_csid = self._root_life_cycle_state_id
         root_model_state = self._model_states_by_life_cycle_state_id[root_csid]
+        await gather(*self._render_tasks, return_exceptions=True)
         await self._unmount_model_states([root_model_state])
 
         # delete attributes here to avoid access after exiting context manager
@@ -102,21 +114,35 @@ class Layout:
     async def render(self) -> LayoutUpdateMessage:
         """Await the next available render. This will block until a component is updated"""
         while True:
-            model_state_id = await self._rendering_queue.get()
-            try:
-                model_state = self._model_states_by_life_cycle_state_id[model_state_id]
-            except KeyError:
-                logger.debug(
-                    "Did not render component with model state ID "
-                    f"{model_state_id!r} - component already unmounted"
-                )
+            render_completed = (
+                create_task(wait(self._render_tasks, return_when=FIRST_COMPLETED))
+                if self._render_tasks
+                else get_running_loop().create_future()
+            )
+            await wait(
+                (create_task(self._rendering_queue.ready()), render_completed),
+                return_when=FIRST_COMPLETED,
+            )
+            if render_completed.done():
+                done, _ = await render_completed
+                update_task: Task[LayoutUpdateMessage] = done.pop()
+                self._render_tasks.remove(update_task)
+                return update_task.result()
             else:
-                update = await self._create_layout_update(model_state)
-                if REACTPY_CHECK_VDOM_SPEC.current:
-                    root_id = self._root_life_cycle_state_id
-                    root_model = self._model_states_by_life_cycle_state_id[root_id]
-                    validate_vdom_json(root_model.model.current)
-                return update
+                model_state_id = await self._rendering_queue.get()
+                try:
+                    model_state = self._model_states_by_life_cycle_state_id[
+                        model_state_id
+                    ]
+                except KeyError:
+                    logger.debug(
+                        "Did not render component with model state ID "
+                        f"{model_state_id!r} - component already unmounted"
+                    )
+                else:
+                    self._render_tasks.add(
+                        create_task(self._create_layout_update(model_state))
+                    )
 
     async def _create_layout_update(
         self, old_state: _ModelState
@@ -126,6 +152,9 @@ class Layout:
 
         async with AsyncExitStack() as exit_stack:
             await self._render_component(exit_stack, old_state, new_state, component)
+
+        if REACTPY_CHECK_VDOM_SPEC.current:
+            validate_vdom_json(new_state.model.current)
 
         return {
             "type": "layout-update",
@@ -540,6 +569,7 @@ class _ModelState:
     __slots__ = (
         "__weakref__",
         "_parent_ref",
+        "_render_semaphore",
         "children_by_key",
         "index",
         "key",
@@ -651,24 +681,27 @@ _Type = TypeVar("_Type")
 
 
 class _ThreadSafeQueue(Generic[_Type]):
-    __slots__ = "_loop", "_queue", "_pending"
-
     def __init__(self) -> None:
-        self._loop = asyncio.get_running_loop()
-        self._queue: asyncio.Queue[_Type] = asyncio.Queue()
+        self._loop = get_running_loop()
+        self._queue: Queue[_Type] = Queue()
         self._pending: set[_Type] = set()
+        self._ready = Event()
 
     def put(self, value: _Type) -> None:
         if value not in self._pending:
             self._pending.add(value)
             self._loop.call_soon_threadsafe(self._queue.put_nowait, value)
+            self._ready.set()
+
+    async def ready(self) -> None:
+        """Return when the next value is available"""
+        await self._ready.wait()
 
     async def get(self) -> _Type:
-        while True:
-            value = await self._queue.get()
-            if value in self._pending:
-                break
+        value = await self._queue.get()
         self._pending.remove(value)
+        if not self._pending:
+            self._ready.clear()
         return value
 
 

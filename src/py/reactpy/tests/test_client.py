@@ -42,7 +42,7 @@ async def test_automatic_reconnect(browser: Browser):
         incr = await page.wait_for_selector("#incr")
 
         for i in range(3):
-            assert (await count.get_attribute("data-count")) == str(i)
+            await poll(count.get_attribute, "data-count").until_equals(str(i))
             await incr.click()
 
     # the server is disconnected but the last view state is still shown
@@ -102,7 +102,9 @@ async def test_style_can_be_changed(display: DisplayFixture):
 
     for color in ["blue", "red"] * 2:
         await button.click()
-        assert (await _get_style(button))["background-color"] == color
+        await poll(_get_style, button).until(
+            lambda style, c=color: style["background-color"] == c
+        )
 
 
 async def _get_style(element):

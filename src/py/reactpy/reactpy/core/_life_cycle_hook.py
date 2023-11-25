@@ -5,6 +5,8 @@ import logging
 from collections.abc import Coroutine
 from typing import Any, Callable, TypeVar
 
+from anyio import Semaphore
+
 from reactpy.core._thread_local import ThreadLocal
 from reactpy.core.types import ComponentType, Context, ContextProviderType
 
@@ -93,6 +95,7 @@ class LifeCycleHook:
         "_effect_starts",
         "_effect_stops",
         "_is_rendering",
+        "_render_access",
         "_rendered_atleast_once",
         "_schedule_render_callback",
         "_schedule_render_later",
@@ -115,6 +118,7 @@ class LifeCycleHook:
         self._state: tuple[Any, ...] = ()
         self._effect_starts: list[StartEffect] = []
         self._effect_stops: list[StopEffect] = []
+        self._render_access = Semaphore(1)  # ensure only one render at a time
 
     def schedule_render(self) -> None:
         if self._is_rendering:
@@ -147,6 +151,7 @@ class LifeCycleHook:
 
     async def affect_component_will_render(self, component: ComponentType) -> None:
         """The component is about to render"""
+        await self._render_access.acquire()
         self.component = component
         self._is_rendering = True
         self.set_current()
@@ -158,6 +163,7 @@ class LifeCycleHook:
         self._is_rendering = False
         self._rendered_atleast_once = True
         self._current_state_index = 0
+        self._render_access.release()
 
     async def affect_layout_did_render(self) -> None:
         """The layout completed a render"""
