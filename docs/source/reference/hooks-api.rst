@@ -89,7 +89,9 @@ Use Effect
 
 .. code-block::
 
-    use_effect(did_render)
+    @use_effect
+    def did_render():
+        ...  # imperative or state mutating logic
 
 The ``use_effect`` hook accepts a function which may be imperative, or mutate state. The
 function will be called immediately after the layout has fully updated.
@@ -117,11 +119,10 @@ then closing a connection:
 
 .. code-block::
 
+    @use_effect
     def establish_connection():
         connection = open_connection()
         return lambda: close_connection(connection)
-
-    use_effect(establish_connection)
 
 The clean-up function will be run before the component is unmounted or, before the next
 effect is triggered when the component re-renders. You can
@@ -141,13 +142,18 @@ example, imagine that we had an effect that connected to a ``url`` state variabl
 
     url, set_url = use_state("https://example.com")
 
+    @use_effect
     def establish_connection():
         connection = open_connection(url)
         return lambda: close_connection(connection)
 
-    use_effect(establish_connection)
-
 Here, a new connection will be established whenever a new ``url`` is set.
+
+.. warning::
+
+    A component will be unable to render until all its outstanding effects have been
+    cleaned up. As such, it's best to keep cleanup logic as simple as possible and/or
+    to impose a time limit.
 
 
 Async Effects
@@ -160,48 +166,52 @@ simply write an async function.
 
 .. code-block::
 
-    async def non_blocking_effect():
+    @use_effect
+    async def my_async_effect():
         await do_something()
 
-    use_effect(non_blocking_effect)
-
-However, if you need to do any cleanup, then you must ``yield False`` inside a try-finally
-block and place your cleanup logic in the finally block. Yielding ``False`` indicates to
-ReactPy that the effect will not yield again before it is cleaned up.
+However, if you need to do any cleanup, then you'll need to write an async generator
+instead. The generator should run the effect logic in a ``try`` block, ``yield`` control
+back to ReactPy, and then run the cleanup logic in a ``finally`` block:
 
 .. code-block::
 
-    async def blocking_effect():
-        await do_something()
+    @use_effect
+    async def my_async_effect():
         try:
-            yield False
+            await effect_logic()
+            yield
         finally:
-            await do_cleanup()
+            await cleanup_logic()
 
-    use_effect(blocking_effect)
-
-If you have a long-lived effect, you may ``yield True`` multiple times. ``True`` indicates
-to ReactPy that the effect will yield again if the effect doesn't need to be cleanup up
-yet.
+When a component is re-rendered or unmounted the effect will be cancelled if it is still
+running. This will typically happen for long-lived effects. One example might be an
+effect that opens a connection and then responds to messages for the lifetime of the
+connection:
 
 .. code-block::
 
-    async def establish_connection():
-        connection = await open_connection()
+    @use_effect
+    async def my_async_effect():
+        conn = await open_connection()
         try:
             while True:
-                yield False
-                await connection.send(create_message())
-                handle_message(await connection.recv())
+                msg = await conn.recv()
+                await handle_message(msg)
         finally:
-            await close_connection(connection)
+            await close_connection(conn)
 
-    use_effect(non_blocking_effect)
+.. warning::
 
-Note that, if an effect needs to be cleaned up, it will only do so when the effect
-function yields control back to ReactPy. So you should ensure that either, you can
-be sure that the effect will yield in a timely manner, or that you enforce a timeout
-on the effect. Otherwise, ReactPy may hang while waiting for the effect to yield.
+    Because an effect can be cancelled at any time, it's possible that the cleanup logic
+    will run before all of the effect logic has finished. For example, in the code
+    above, we exclude ``conn = await open_connection()`` from the ``try`` block because
+    if the effect is cancelled before the connection is opened, then we don't need to
+    close it.
+
+.. note::
+
+    We don't need a yield statement here because the effect only ends when it's cancelled.
 
 
 Manual Effect Conditions
