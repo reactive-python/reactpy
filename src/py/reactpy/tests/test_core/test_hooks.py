@@ -5,12 +5,8 @@ import pytest
 import reactpy
 from reactpy import html
 from reactpy.config import REACTPY_DEBUG_MODE
-from reactpy.core.hooks import (
-    COMPONENT_DID_RENDER_EFFECT,
-    LifeCycleHook,
-    current_hook,
-    strictly_equal,
-)
+from reactpy.core._life_cycle_hook import LifeCycleHook
+from reactpy.core.hooks import strictly_equal, use_effect
 from reactpy.core.layout import Layout
 from reactpy.testing import DisplayFixture, HookCatcher, assert_reactpy_did_log, poll
 from reactpy.testing.logs import assert_reactpy_did_not_log
@@ -1240,12 +1236,13 @@ async def test_error_in_component_effect_cleanup_is_gracefully_handled():
     @reactpy.component
     @component_hook.capture
     def ComponentWithEffect():
-        hook = current_hook()
+        @use_effect
+        def effect():
+            def bad_cleanup():
+                raise ValueError("The error message")
 
-        def bad_effect():
-            raise ValueError("The error message")
+            return bad_cleanup
 
-        hook.add_effect(COMPONENT_DID_RENDER_EFFECT, bad_effect)
         return reactpy.html.div()
 
     with assert_reactpy_did_log(
