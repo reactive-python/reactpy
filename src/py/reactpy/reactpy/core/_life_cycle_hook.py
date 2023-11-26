@@ -94,7 +94,6 @@ class LifeCycleHook:
         "_effect_funcs",
         "_effect_starts",
         "_effect_stops",
-        "_is_rendering",
         "_render_access",
         "_rendered_atleast_once",
         "_schedule_render_callback",
@@ -112,7 +111,6 @@ class LifeCycleHook:
         self._context_providers: dict[Context[Any], ContextProviderType[Any]] = {}
         self._schedule_render_callback = schedule_render
         self._schedule_render_later = False
-        self._is_rendering = False
         self._rendered_atleast_once = False
         self._current_state_index = 0
         self._state: tuple[Any, ...] = ()
@@ -121,7 +119,7 @@ class LifeCycleHook:
         self._render_access = Semaphore(1)  # ensure only one render at a time
 
     def schedule_render(self) -> None:
-        if self._is_rendering:
+        if self._is_rendering():
             self._schedule_render_later = True
         else:
             self._schedule_render()
@@ -153,14 +151,12 @@ class LifeCycleHook:
         """The component is about to render"""
         await self._render_access.acquire()
         self.component = component
-        self._is_rendering = True
         self.set_current()
 
     async def affect_component_did_render(self) -> None:
         """The component completed a render"""
         self.unset_current()
         del self.component
-        self._is_rendering = False
         self._rendered_atleast_once = True
         self._current_state_index = 0
         self._render_access.release()
@@ -201,6 +197,9 @@ class LifeCycleHook:
         """Unset this hook as the active hook in this thread"""
         if _HOOK_STATE.get().pop() is not self:
             raise RuntimeError("Hook stack is in an invalid state")  # nocov
+
+    def _is_rendering(self) -> bool:
+        return self._render_access.value != 0
 
     def _schedule_render(self) -> None:
         try:

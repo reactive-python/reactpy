@@ -28,6 +28,14 @@ Unreleased
 - :pull:`1118` - `module_from_template` is broken with a recent release of `requests`
 - :pull:`1131` - `module_from_template` did not work when using Flask backend
 
+**Added**
+
+- :pull:`1093` - Better async effects (see :ref:`Async Effects`)
+- :pull:`1093` - Support concurrent renders - multiple components are now able to render
+  simultaneously. This is a significant change to the underlying rendering logic and
+  should be considered experimental. You can enable this feature by setting
+  ``REACTPY_FEATURE_CONCURRENT_RENDER=1`` when running ReactPy.
+
 
 v1.0.2
 ------

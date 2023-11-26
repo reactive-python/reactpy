@@ -27,7 +27,11 @@ from typing import (
 from uuid import uuid4
 from weakref import ref as weakref
 
-from reactpy.config import REACTPY_CHECK_VDOM_SPEC, REACTPY_DEBUG_MODE
+from reactpy.config import (
+    REACTPY_CHECK_VDOM_SPEC,
+    REACTPY_CONCURRENT_RENDERING,
+    REACTPY_DEBUG_MODE,
+)
 from reactpy.core._life_cycle_hook import LifeCycleHook
 from reactpy.core.types import (
     ComponentType,
@@ -112,6 +116,26 @@ class Layout:
             )
 
     async def render(self) -> LayoutUpdateMessage:
+        if REACTPY_CONCURRENT_RENDERING.current:
+            return await self._concurrent_render()
+        else:  # nocov
+            return await self._serial_render()
+
+    async def _serial_render(self) -> LayoutUpdateMessage:  # nocov
+        """Await the next available render. This will block until a component is updated"""
+        while True:
+            model_state_id = await self._rendering_queue.get()
+            try:
+                model_state = self._model_states_by_life_cycle_state_id[model_state_id]
+            except KeyError:
+                logger.debug(
+                    "Did not render component with model state ID "
+                    f"{model_state_id!r} - component already unmounted"
+                )
+            else:
+                return await self._create_layout_update(model_state)
+
+    async def _concurrent_render(self) -> LayoutUpdateMessage:
         """Await the next available render. This will block until a component is updated"""
         while True:
             render_completed = (

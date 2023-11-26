@@ -88,3 +88,11 @@ REACTPY_EFFECT_DEFAULT_STOP_TIMEOUT = Option(
     validator=float,
 )
 """The default amount of time to wait for an effect to complete"""
+
+REACTPY_CONCURRENT_RENDERING = Option(
+    "REACTPY_CONCURRENT_RENDERING",
+    default=False,
+    mutable=True,
+    validator=boolean,
+)
+"""Whether to render components concurrently. This is currently an experimental feature."""
