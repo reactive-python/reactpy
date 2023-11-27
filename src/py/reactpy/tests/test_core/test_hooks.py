@@ -274,18 +274,18 @@ async def test_double_set_state(display: DisplayFixture):
     first = await display.page.wait_for_selector("#first")
     second = await display.page.wait_for_selector("#second")
 
-    assert (await first.get_attribute("data-value")) == "0"
-    assert (await second.get_attribute("data-value")) == "0"
+    await poll(first.get_attribute, "data-value").until_equals("0")
+    await poll(second.get_attribute, "data-value").until_equals("0")
 
     await button.click()
 
-    assert (await first.get_attribute("data-value")) == "1"
-    assert (await second.get_attribute("data-value")) == "1"
+    await poll(first.get_attribute, "data-value").until_equals("1")
+    await poll(second.get_attribute, "data-value").until_equals("1")
 
     await button.click()
 
-    assert (await first.get_attribute("data-value")) == "2"
-    assert (await second.get_attribute("data-value")) == "2"
+    await poll(first.get_attribute, "data-value").until_equals("2")
+    await poll(second.get_attribute, "data-value").until_equals("2")
 
 
 async def test_use_effect_callback_occurs_after_full_render_is_complete():
@@ -558,7 +558,7 @@ async def test_error_in_effect_is_gracefully_handled(caplog):
 
         return reactpy.html.div()
 
-    with assert_reactpy_did_log(match_message=r"Layout post-render effect .* failed"):
+    with assert_reactpy_did_log(match_message=r"Error during effect startup"):
         async with reactpy.Layout(ComponentWithEffect()) as layout:
             await layout.render()  # no error
 
@@ -584,7 +584,7 @@ async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled():
         return reactpy.html.div()
 
     with assert_reactpy_did_log(
-        match_message=r"Pre-unmount effect .*? failed",
+        match_message=r"Error during effect cleanup",
         error_type=ValueError,
     ):
         async with reactpy.Layout(OuterComponent()) as layout:
@@ -1003,7 +1003,7 @@ async def test_error_in_layout_effect_cleanup_is_gracefully_handled():
         return reactpy.html.div()
 
     with assert_reactpy_did_log(
-        match_message=r"post-render effect .*? failed",
+        match_message=r"Error during effect startup",
         error_type=ValueError,
         match_error="The error message",
     ):
@@ -1246,7 +1246,7 @@ async def test_error_in_component_effect_cleanup_is_gracefully_handled():
         return reactpy.html.div()
 
     with assert_reactpy_did_log(
-        match_message="Component post-render effect .*? failed",
+        match_message="Error during effect cleanup",
         error_type=ValueError,
         match_error="The error message",
     ):

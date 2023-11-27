@@ -160,12 +160,20 @@ def use_effect(
             if last_clean_callback.current is not None:
                 last_clean_callback.current()
 
-            clean = last_clean_callback.current = sync_function()
+            cleaned = False
+            clean = sync_function()
+
+            def callback() -> None:
+                nonlocal cleaned
+                if clean and not cleaned:
+                    cleaned = True
+                    clean()
+
+            last_clean_callback.current = callback
             try:
                 yield
             finally:
-                if clean is not None:
-                    clean()
+                callback()
 
         return memoize(lambda: hook.add_effect(effect))
 
@@ -266,7 +274,7 @@ class _ContextProvider(Generic[_Type]):
         return {"tagName": "", "children": self.children}
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.type})"
+        return f"ContextProvider({self.type})"
 
 
 _ActionType = TypeVar("_ActionType")

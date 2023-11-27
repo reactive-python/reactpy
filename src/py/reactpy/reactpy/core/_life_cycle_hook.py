@@ -88,9 +88,10 @@ class LifeCycleHook:
         "__weakref__",
         "_context_providers",
         "_current_state_index",
-        "_effect_generators",
+        "_pending_effects",
         "_render_access",
         "_rendered_atleast_once",
+        "_running_effects",
         "_schedule_render_callback",
         "_schedule_render_later",
         "_state",
@@ -109,7 +110,8 @@ class LifeCycleHook:
         self._rendered_atleast_once = False
         self._current_state_index = 0
         self._state: tuple[Any, ...] = ()
-        self._effect_generators: list[AsyncGenerator[None, None]] = []
+        self._pending_effects: list[AsyncGenerator[None, None]] = []
+        self._running_effects: list[AsyncGenerator[None, None]] = []
         self._render_access = Semaphore(1)  # ensure only one render at a time
 
     def schedule_render(self) -> None:
@@ -131,7 +133,7 @@ class LifeCycleHook:
 
     def add_effect(self, effect_func: Callable[[], AsyncGenerator[None, None]]) -> None:
         """Add an effect to this hook"""
-        self._effect_generators.append(effect_func())
+        self._pending_effects.append(effect_func())
 
     def set_context_provider(self, provider: ContextProviderType[Any]) -> None:
         self._context_providers[provider.type] = provider
@@ -150,7 +152,6 @@ class LifeCycleHook:
     async def affect_component_did_render(self) -> None:
         """The component completed a render"""
         self.unset_current()
-        del self.component
         self._rendered_atleast_once = True
         self._current_state_index = 0
         self._render_access.release()
@@ -158,21 +159,25 @@ class LifeCycleHook:
     async def affect_layout_did_render(self) -> None:
         """The layout completed a render"""
         try:
-            await gather(*[g.asend(None) for g in self._effect_generators])
+            await gather(*[g.asend(None) for g in self._pending_effects])
+            self._running_effects.extend(self._pending_effects)
         except Exception:
-            logger.exception("Error during effect execution")
+            logger.exception("Error during effect startup")
+        finally:
+            self._pending_effects.clear()
         if self._schedule_render_later:
             self._schedule_render()
         self._schedule_render_later = False
+        del self.component
 
     async def affect_component_will_unmount(self) -> None:
         """The component is about to be removed from the layout"""
         try:
-            await gather(*[g.aclose() for g in self._effect_generators])
+            await gather(*[g.aclose() for g in self._running_effects])
         except Exception:
-            logger.exception("Error during effect cancellation")
+            logger.exception("Error during effect cleanup")
         finally:
-            self._effect_generators.clear()
+            self._running_effects.clear()
 
     def set_current(self) -> None:
         """Set this hook as the active hook in this thread
@@ -192,7 +197,7 @@ class LifeCycleHook:
             raise RuntimeError("Hook stack is in an invalid state")  # nocov
 
     def _is_rendering(self) -> bool:
-        return self._render_access.value != 0
+        return self._render_access.value == 0
 
     def _schedule_render(self) -> None:
         try:

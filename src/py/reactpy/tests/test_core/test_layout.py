@@ -164,7 +164,7 @@ async def test_nested_component_layout():
 async def test_layout_render_error_has_partial_update_with_error_message():
     @reactpy.component
     def Main():
-        return reactpy.html.div([OkChild(), BadChild(), OkChild()])
+        return reactpy.html.div(OkChild(), BadChild(), OkChild())
 
     @reactpy.component
     def OkChild():
@@ -622,7 +622,7 @@ async def test_hooks_for_keyed_components_get_garbage_collected():
     def Outer():
         items, set_items = reactpy.hooks.use_state([1, 2, 3])
         pop_item.current = lambda: set_items(items[:-1])
-        return reactpy.html.div(Inner(key=k, finalizer_id=k) for k in items)
+        return reactpy.html.div([Inner(key=k, finalizer_id=k) for k in items])
 
     @reactpy.component
     def Inner(finalizer_id):
