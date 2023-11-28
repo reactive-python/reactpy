@@ -68,6 +68,10 @@ class Option(Generic[_O]):
     def current(self, new: _O) -> None:
         self.set_current(new)
 
+    @current.deleter
+    def current(self) -> None:
+        self.unset()
+
     def subscribe(self, handler: Callable[[_O], None]) -> Callable[[_O], None]:
         """Register a callback that will be triggered when this option changes"""
         if not self.mutable:
@@ -123,7 +127,8 @@ class Option(Generic[_O]):
             msg = f"{self} cannot be modified after initial load"
             raise TypeError(msg)
         old = self.current
-        delattr(self, "_current")
+        if hasattr(self, "_current"):
+            delattr(self, "_current")
         if self.current != old:
             for sub_func in self._subscribers:
                 sub_func(self.current)

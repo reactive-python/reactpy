@@ -2,6 +2,7 @@ import asyncio
 import gc
 import random
 import re
+from unittest.mock import patch
 from weakref import finalize
 from weakref import ref as weakref
 
@@ -9,7 +10,7 @@ import pytest
 
 import reactpy
 from reactpy import html
-from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_DEBUG_MODE, REACTPY_FEATURE_CONCURRENT_RENDERING
 from reactpy.core.component import component
 from reactpy.core.hooks import use_effect, use_state
 from reactpy.core.layout import Layout
@@ -20,6 +21,7 @@ from reactpy.testing import (
     assert_reactpy_did_log,
     capture_reactpy_logs,
 )
+from reactpy.testing.common import poll
 from reactpy.utils import Ref
 from tests.tooling import select
 from tests.tooling.aio import Event
@@ -27,6 +29,12 @@ from tests.tooling.common import event_message, update_message
 from tests.tooling.hooks import use_force_render, use_toggle
 from tests.tooling.layout import layout_runner
 from tests.tooling.select import element_exists, find_element
+
+
+@pytest.fixture(autouse=True, params=[True, False])
+def concurrent_rendering(request):
+    with patch.object(REACTPY_FEATURE_CONCURRENT_RENDERING, "current", request.param):
+        yield request.param
 
 
 @pytest.fixture(autouse=True)
@@ -832,17 +840,19 @@ async def test_elements_and_components_with_the_same_key_can_be_interchanged():
     async with reactpy.Layout(Root()) as layout:
         await layout.render()
 
-        assert effects == ["mount x"]
+        await poll(lambda: effects).until_equals(["mount x"])
 
         set_toggle.current()
         await layout.render()
 
-        assert effects == ["mount x", "unmount x", "mount y"]
+        await poll(lambda: effects).until_equals(["mount x", "unmount x", "mount y"])
 
         set_toggle.current()
         await layout.render()
 
-        assert effects == ["mount x", "unmount x", "mount y", "unmount y", "mount x"]
+        await poll(lambda: effects).until_equals(
+            ["mount x", "unmount x", "mount y", "unmount y", "mount x"]
+        )
 
 
 async def test_layout_does_not_copy_element_children_by_key():
@@ -1253,7 +1263,10 @@ async def test_ensure_model_path_udpates():
         assert c["attributes"]["color"] == "blue"
 
 
-async def test_concurrent_renders():
+async def test_concurrent_renders(concurrent_rendering):
+    if not concurrent_rendering:
+        raise pytest.skip("Concurrent rendering not enabled")
+
     child_1_hook = HookCatcher()
     child_2_hook = HookCatcher()
     child_1_rendered = Event()
