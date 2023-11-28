@@ -64,10 +64,13 @@ class LifeCycleHook:
                 # and save state or add effects
                 current_hook().use_state(lambda: ...)
 
-                async def effect():
-                    yield
+                async def start_effect():
+                    ...
 
-                current_hook().add_effect(effect)
+                async def stop_effect():
+                    ...
+
+                current_hook().add_effect(start_effect, stop_effect)
             finally:
                 await hook.affect_component_did_render()
 
@@ -140,7 +143,12 @@ class LifeCycleHook:
         start_effect: Callable[[], Awaitable[None]],
         clean_effect: Callable[[], Awaitable[None]],
     ) -> None:
-        """Add an effect to this hook"""
+        """Add an effect to this hook
+
+        Effects are started when the component is done renderig and cleaned up when the
+        component is removed from the layout. Any other actions (e.g. re-running the
+        effect if a dependency changes) are the responsibility of the effect itself.
+        """
         self._effect_startups.append(start_effect)
         self._effect_cleanups.append(clean_effect)
 
