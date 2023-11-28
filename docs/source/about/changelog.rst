@@ -28,6 +28,13 @@ Unreleased
 - :pull:`1118` - `module_from_template` is broken with a recent release of `requests`
 - :pull:`1131` - `module_from_template` did not work when using Flask backend
 
+**Added**
+
+- :pull:`1165` - Concurrent renders - enable this experimental feature by setting
+  `REACTPY_FEATURE_CONCURRENT_RENDERING=true`. This should improve the overall
+  responsiveness of your app, particularly when handling larger renders that
+  would otherwise block faster renders from being processed.
+
 
 v1.0.2
 ------

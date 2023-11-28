@@ -29,8 +29,8 @@ from weakref import ref as weakref
 
 from reactpy.config import (
     REACTPY_CHECK_VDOM_SPEC,
-    REACTPY_CONCURRENT_RENDERING,
     REACTPY_DEBUG_MODE,
+    REACTPY_FEATURE_CONCURRENT_RENDERING,
 )
 from reactpy.core._life_cycle_hook import LifeCycleHook
 from reactpy.core.types import (
@@ -116,7 +116,7 @@ class Layout:
             )
 
     async def render(self) -> LayoutUpdateMessage:
-        if REACTPY_CONCURRENT_RENDERING.current:
+        if REACTPY_FEATURE_CONCURRENT_RENDERING.current:
             return await self._concurrent_render()
         else:  # nocov
             return await self._serial_render()

@@ -8,7 +8,10 @@ from _pytest.config import Config
 from _pytest.config.argparsing import Parser
 from playwright.async_api import async_playwright
 
-from reactpy.config import REACTPY_CONCURRENT_RENDERING, REACTPY_TESTING_DEFAULT_TIMEOUT
+from reactpy.config import (
+    REACTPY_FEATURE_CONCURRENT_RENDERING,
+    REACTPY_TESTING_DEFAULT_TIMEOUT,
+)
 from reactpy.testing import (
     BackendFixture,
     DisplayFixture,
@@ -27,7 +30,7 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
-REACTPY_CONCURRENT_RENDERING.current = True
+REACTPY_FEATURE_CONCURRENT_RENDERING.current = True
 
 
 @pytest.fixture
