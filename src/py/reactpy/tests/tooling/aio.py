@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from asyncio import Event as _Event
 from asyncio import wait_for
 
