@@ -40,7 +40,7 @@ class LifeCycleHook:
 
         .. testcode::
 
-            from reactpy.core._life_cycle_hooks import LifeCycleHook
+            from reactpy.core._life_cycle_hook import LifeCycleHook
             from reactpy.core.hooks import current_hook, COMPONENT_DID_RENDER_EFFECT
 
             # this function will come from a layout implementation
