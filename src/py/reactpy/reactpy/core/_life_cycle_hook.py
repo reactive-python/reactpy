@@ -101,12 +101,12 @@ class LifeCycleHook:
         "_context_providers",
         "_current_state_index",
         "_effect_funcs",
-        "_effect_tasks",
         "_effect_stops",
+        "_effect_tasks",
         "_render_access",
         "_rendered_atleast_once",
         "_schedule_render_callback",
-        "_schedule_render_later",
+        "_scheduled_render",
         "_state",
         "component",
     )
@@ -119,7 +119,7 @@ class LifeCycleHook:
     ) -> None:
         self._context_providers: dict[Context[Any], ContextProviderType[Any]] = {}
         self._schedule_render_callback = schedule_render
-        self._schedule_render_later = False
+        self._scheduled_render = False
         self._rendered_atleast_once = False
         self._current_state_index = 0
         self._state: tuple[Any, ...] = ()
@@ -129,10 +129,15 @@ class LifeCycleHook:
         self._render_access = Semaphore(1)  # ensure only one render at a time
 
     def schedule_render(self) -> None:
-        if self._is_rendering():
-            self._schedule_render_later = True
+        if self._scheduled_render:
+            return None
+        try:
+            self._schedule_render_callback()
+        except Exception:
+            msg = f"Failed to schedule render via {self._schedule_render_callback}"
+            logger.exception(msg)
         else:
-            self._schedule_render()
+            self._scheduled_render = True
 
     def use_state(self, function: Callable[[], T]) -> T:
         if not self._rendered_atleast_once:
@@ -166,6 +171,7 @@ class LifeCycleHook:
     async def affect_component_will_render(self, component: ComponentType) -> None:
         """The component is about to render"""
         await self._render_access.acquire()
+        self._scheduled_render = False
         self.component = component
         self.set_current()
 
@@ -183,9 +189,6 @@ class LifeCycleHook:
         self._effect_stops.append(stop)
         self._effect_tasks.extend(create_task(e(stop)) for e in self._effect_funcs)
         self._effect_funcs.clear()
-        if self._schedule_render_later:
-            self._schedule_render()
-        self._schedule_render_later = False
 
     async def affect_component_will_unmount(self) -> None:
         """The component is about to be removed from the layout"""
@@ -215,14 +218,3 @@ class LifeCycleHook:
         """Unset this hook as the active hook in this thread"""
         if _HOOK_STATE.get().pop() is not self:
             raise RuntimeError("Hook stack is in an invalid state")  # nocov
-
-    def _is_rendering(self) -> bool:
-        return self._render_access.value == 0
-
-    def _schedule_render(self) -> None:
-        try:
-            self._schedule_render_callback()
-        except Exception:
-            logger.exception(
-                f"Failed to schedule render via {self._schedule_render_callback}"
-            )

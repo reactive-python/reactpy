@@ -22,6 +22,7 @@ from reactpy.testing import (
 )
 from reactpy.utils import Ref
 from tests.tooling import select
+from tests.tooling.aio import Event
 from tests.tooling.common import event_message, update_message
 from tests.tooling.hooks import use_force_render, use_toggle
 from tests.tooling.layout import layout_runner
@@ -1250,3 +1251,49 @@ async def test_ensure_model_path_udpates():
         c, c_info = find_element(tree, select.id_equals("C"))
         assert c_info.path == (0, 1, 0)
         assert c["attributes"]["color"] == "blue"
+
+
+async def test_concurrent_renders():
+    child_1_hook = HookCatcher()
+    child_2_hook = HookCatcher()
+    child_1_rendered = Event()
+    child_2_rendered = Event()
+    child_1_render_count = Ref(0)
+    child_2_render_count = Ref(0)
+
+    @component
+    def outer():
+        return html._(child_1(), child_2())
+
+    @component
+    @child_1_hook.capture
+    def child_1():
+        child_1_rendered.set()
+        child_1_render_count.current += 1
+
+    @component
+    @child_2_hook.capture
+    def child_2():
+        child_2_rendered.set()
+        child_2_render_count.current += 1
+
+    async with Layout(outer()) as layout:
+        await layout.render()
+
+        # clear render events and counts
+        child_1_rendered.clear()
+        child_2_rendered.clear()
+        child_1_render_count.current = 0
+        child_2_render_count.current = 0
+
+        # we schedule two renders but expect only one
+        child_1_hook.latest.schedule_render()
+        child_1_hook.latest.schedule_render()
+        child_2_hook.latest.schedule_render()
+        child_2_hook.latest.schedule_render()
+
+        await child_1_rendered.wait()
+        await child_2_rendered.wait()
+
+        assert child_1_render_count.current == 1
+        assert child_2_render_count.current == 1

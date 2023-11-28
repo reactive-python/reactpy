@@ -3,11 +3,11 @@ from __future__ import annotations
 import abc
 from asyncio import (
     FIRST_COMPLETED,
+    CancelledError,
     Event,
     Queue,
     Task,
     create_task,
-    gather,
     get_running_loop,
     wait,
 )
@@ -26,6 +26,8 @@ from typing import (
 )
 from uuid import uuid4
 from weakref import ref as weakref
+
+from anyio import Semaphore
 
 from reactpy.config import (
     REACTPY_CHECK_VDOM_SPEC,
@@ -55,6 +57,7 @@ class Layout:
         "_event_handlers",
         "_rendering_queue",
         "_render_tasks",
+        "_render_tasks_ready",
         "_root_life_cycle_state_id",
         "_model_states_by_life_cycle_state_id",
     )
@@ -73,21 +76,28 @@ class Layout:
         # create attributes here to avoid access before entering context manager
         self._event_handlers: EventHandlerDict = {}
         self._render_tasks: set[Task[LayoutUpdateMessage]] = set()
+        self._render_tasks_ready: Semaphore = Semaphore(0)
 
         self._rendering_queue: _ThreadSafeQueue[_LifeCycleStateId] = _ThreadSafeQueue()
-        root_model_state = _new_root_model_state(self.root, self._rendering_queue.put)
+        root_model_state = _new_root_model_state(self.root, self._schedule_render_task)
 
         self._root_life_cycle_state_id = root_id = root_model_state.life_cycle_state.id
-        self._rendering_queue.put(root_id)
-
         self._model_states_by_life_cycle_state_id = {root_id: root_model_state}
+        self._schedule_render_task(root_id)
 
         return self
 
     async def __aexit__(self, *exc: Any) -> None:
         root_csid = self._root_life_cycle_state_id
         root_model_state = self._model_states_by_life_cycle_state_id[root_csid]
-        await gather(*self._render_tasks, return_exceptions=True)
+
+        for t in self._render_tasks:
+            t.cancel()
+            try:
+                await t
+            except CancelledError:
+                pass
+
         await self._unmount_model_states([root_model_state])
 
         # delete attributes here to avoid access after exiting context manager
@@ -137,40 +147,11 @@ class Layout:
 
     async def _concurrent_render(self) -> LayoutUpdateMessage:
         """Await the next available render. This will block until a component is updated"""
-        while True:
-            render_completed = (
-                create_task(wait(self._render_tasks, return_when=FIRST_COMPLETED))
-                if self._render_tasks
-                else get_running_loop().create_future()
-            )
-            queue_ready = create_task(self._rendering_queue.ready())
-            try:
-                await wait((queue_ready, render_completed), return_when=FIRST_COMPLETED)
-            finally:
-                # Ensure we delete this task to avoid warnings that
-                # task was deleted without being awaited.
-                queue_ready.cancel()
-
-            if render_completed.done():
-                done, _ = await render_completed
-                update_task: Task[LayoutUpdateMessage] = done.pop()
-                self._render_tasks.remove(update_task)
-                return update_task.result()
-            else:
-                model_state_id = await self._rendering_queue.get()
-                try:
-                    model_state = self._model_states_by_life_cycle_state_id[
-                        model_state_id
-                    ]
-                except KeyError:
-                    logger.debug(
-                        "Did not render component with model state ID "
-                        f"{model_state_id!r} - component already unmounted"
-                    )
-                else:
-                    self._render_tasks.add(
-                        create_task(self._create_layout_update(model_state))
-                    )
+        await self._render_tasks_ready.acquire()
+        done, _ = await wait(self._render_tasks, return_when=FIRST_COMPLETED)
+        update_task: Task[LayoutUpdateMessage] = done.pop()
+        self._render_tasks.remove(update_task)
+        return update_task.result()
 
     async def _create_layout_update(
         self, old_state: _ModelState
@@ -403,7 +384,7 @@ class Layout:
                         index,
                         key,
                         child,
-                        self._rendering_queue.put,
+                        self._schedule_render_task,
                     )
                 elif old_child_state.is_component_state and (
                     old_child_state.life_cycle_state.component.type != child.type
@@ -415,7 +396,7 @@ class Layout:
                         index,
                         key,
                         child,
-                        self._rendering_queue.put,
+                        self._schedule_render_task,
                     )
                 else:
                     new_child_state = _update_component_model_state(
@@ -423,7 +404,7 @@ class Layout:
                         new_state,
                         index,
                         child,
-                        self._rendering_queue.put,
+                        self._schedule_render_task,
                     )
                 await self._render_component(
                     exit_stack, old_child_state, new_child_state, child
@@ -458,7 +439,7 @@ class Layout:
                 new_state.children_by_key[key] = child_state
             elif child_type is _COMPONENT_TYPE:
                 child_state = _make_component_model_state(
-                    new_state, index, key, child, self._rendering_queue.put
+                    new_state, index, key, child, self._schedule_render_task
                 )
                 await self._render_component(exit_stack, None, child_state, child)
             else:
@@ -478,6 +459,21 @@ class Layout:
                 await life_cycle_state.hook.affect_component_will_unmount()
 
             to_unmount.extend(model_state.children_by_key.values())
+
+    def _schedule_render_task(self, lcs_id: _LifeCycleStateId) -> None:
+        if not REACTPY_FEATURE_CONCURRENT_RENDERING.current:
+            self._rendering_queue.put(lcs_id)
+            return None
+        try:
+            model_state = self._model_states_by_life_cycle_state_id[lcs_id]
+        except KeyError:
+            logger.debug(
+                "Did not render component with model state ID "
+                f"{lcs_id!r} - component already unmounted"
+            )
+        else:
+            self._render_tasks.add(create_task(self._create_layout_update(model_state)))
+            self._render_tasks_ready.release()
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.root})"

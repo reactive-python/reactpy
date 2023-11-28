@@ -28,10 +28,15 @@ async def test_must_be_rendering_in_layout_to_use_hooks():
 
 
 async def test_simple_stateful_component():
+    index = 0
+
+    def set_index(x):
+        return None
+
     @reactpy.component
     def SimpleStatefulComponent():
+        nonlocal index, set_index
         index, set_index = reactpy.hooks.use_state(0)
-        set_index(index + 1)
         return reactpy.html.div(index)
 
     sse = SimpleStatefulComponent()
@@ -45,6 +50,7 @@ async def test_simple_stateful_component():
                 "children": [{"tagName": "div", "children": ["0"]}],
             },
         )
+        set_index(index + 1)
 
         update_2 = await layout.render()
         assert update_2 == update_message(
@@ -54,6 +60,7 @@ async def test_simple_stateful_component():
                 "children": [{"tagName": "div", "children": ["1"]}],
             },
         )
+        set_index(index + 1)
 
         update_3 = await layout.render()
         assert update_3 == update_message(
@@ -1026,13 +1033,13 @@ async def test_set_state_during_render():
 
     async with Layout(SetStateDuringRender()) as layout:
         await layout.render()
-        assert render_count.current == 1
-        await layout.render()
-        assert render_count.current == 2
 
-        # there should be no more renders to perform
+        # we expect a second render to be triggered in the background
+        await poll(lambda: render_count.current).until_equals(2)
+
+        # there should be no more renders that happen
         with pytest.raises(asyncio.TimeoutError):
-            await asyncio.wait_for(layout.render(), timeout=0.1)
+            await poll(lambda: render_count.current).until_equals(3, timeout=0.1)
 
 
 @pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="only logs in debug mode")
