@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import logging
-from asyncio import gather
-from collections.abc import Awaitable
-from typing import Any, Callable, TypeVar
+from asyncio import Event, Task, create_task, gather
+from typing import Any, Callable, Protocol, TypeVar
 
 from anyio import Semaphore
 
@@ -11,6 +10,12 @@ from reactpy.core._thread_local import ThreadLocal
 from reactpy.core.types import ComponentType, Context, ContextProviderType
 
 T = TypeVar("T")
+
+
+class EffectFunc(Protocol):
+    async def __call__(self, stop: Event) -> None:
+        ...
+
 
 logger = logging.getLogger(__name__)
 
@@ -95,8 +100,9 @@ class LifeCycleHook:
         "__weakref__",
         "_context_providers",
         "_current_state_index",
-        "_effect_cleanups",
-        "_effect_startups",
+        "_effect_funcs",
+        "_effect_tasks",
+        "_effect_stops",
         "_render_access",
         "_rendered_atleast_once",
         "_schedule_render_callback",
@@ -117,8 +123,9 @@ class LifeCycleHook:
         self._rendered_atleast_once = False
         self._current_state_index = 0
         self._state: tuple[Any, ...] = ()
-        self._effect_startups: list[Callable[[], Awaitable[None]]] = []
-        self._effect_cleanups: list[Callable[[], Awaitable[None]]] = []
+        self._effect_funcs: list[EffectFunc] = []
+        self._effect_tasks: list[Task[None]] = []
+        self._effect_stops: list[Event] = []
         self._render_access = Semaphore(1)  # ensure only one render at a time
 
     def schedule_render(self) -> None:
@@ -138,19 +145,15 @@ class LifeCycleHook:
         self._current_state_index += 1
         return result
 
-    def add_effect(
-        self,
-        start_effect: Callable[[], Awaitable[None]],
-        clean_effect: Callable[[], Awaitable[None]],
-    ) -> None:
+    def add_effect(self, effect_func: EffectFunc) -> None:
         """Add an effect to this hook
 
-        Effects are started when the component is done renderig and cleaned up when the
-        component is removed from the layout. Any other actions (e.g. re-running the
-        effect if a dependency changes) are the responsibility of the effect itself.
+        A task to run the effect is created when the component is done rendering.
+        When the component will be unmounted, the event passed to the effect is
+        triggered and the task is awaited. The effect should eventually halt after
+        the event is triggered.
         """
-        self._effect_startups.append(start_effect)
-        self._effect_cleanups.append(clean_effect)
+        self._effect_funcs.append(effect_func)
 
     def set_context_provider(self, provider: ContextProviderType[Any]) -> None:
         self._context_providers[provider.type] = provider
@@ -176,24 +179,25 @@ class LifeCycleHook:
 
     async def affect_layout_did_render(self) -> None:
         """The layout completed a render"""
-        try:
-            await gather(*[start() for start in self._effect_startups])
-        except Exception:
-            logger.exception("Error during effect startup")
-        finally:
-            self._effect_startups.clear()
-            if self._schedule_render_later:
-                self._schedule_render()
-            self._schedule_render_later = False
+        stop = Event()
+        self._effect_stops.append(stop)
+        self._effect_tasks.extend(create_task(e(stop)) for e in self._effect_funcs)
+        self._effect_funcs.clear()
+        if self._schedule_render_later:
+            self._schedule_render()
+        self._schedule_render_later = False
 
     async def affect_component_will_unmount(self) -> None:
         """The component is about to be removed from the layout"""
+        for stop in self._effect_stops:
+            stop.set()
+        self._effect_stops.clear()
         try:
-            await gather(*[clean() for clean in self._effect_cleanups])
+            await gather(*self._effect_tasks)
         except Exception:
-            logger.exception("Error during effect cleanup")
+            logger.exception("Error in effect")
         finally:
-            self._effect_cleanups.clear()
+            self._effect_tasks.clear()
 
     def set_current(self) -> None:
         """Set this hook as the active hook in this thread

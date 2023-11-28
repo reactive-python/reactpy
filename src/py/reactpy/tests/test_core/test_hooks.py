@@ -558,7 +558,7 @@ async def test_error_in_effect_is_gracefully_handled(caplog):
 
         return reactpy.html.div()
 
-    with assert_reactpy_did_log(match_message=r"Error during effect startup"):
+    with assert_reactpy_did_log(match_message=r"Error in effect"):
         async with reactpy.Layout(ComponentWithEffect()) as layout:
             await layout.render()  # no error
 
@@ -584,7 +584,7 @@ async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled():
         return reactpy.html.div()
 
     with assert_reactpy_did_log(
-        match_message=r"Error during effect cleanup",
+        match_message=r"Error in effect",
         error_type=ValueError,
     ):
         async with reactpy.Layout(OuterComponent()) as layout:
@@ -1003,7 +1003,7 @@ async def test_error_in_layout_effect_cleanup_is_gracefully_handled():
         return reactpy.html.div()
 
     with assert_reactpy_did_log(
-        match_message=r"Error during effect startup",
+        match_message=r"Error in effect",
         error_type=ValueError,
         match_error="The error message",
     ):
@@ -1246,7 +1246,7 @@ async def test_error_in_component_effect_cleanup_is_gracefully_handled():
         return reactpy.html.div()
 
     with assert_reactpy_did_log(
-        match_message="Error during effect cleanup",
+        match_message="Error in effect",
         error_type=ValueError,
         match_error="The error message",
     ):

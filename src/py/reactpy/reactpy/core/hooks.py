@@ -152,24 +152,26 @@ def use_effect(
 
                 def clean_future() -> None:
                     if not task.cancel():
-                        clean = task.result()
-                        if clean is not None:
-                            clean()
+                        try:
+                            clean = task.result()
+                        except asyncio.CancelledError:
+                            pass
+                        else:
+                            if clean is not None:
+                                clean()
 
                 return clean_future
 
-        async def start_effect() -> None:
+        async def effect(stop: asyncio.Event) -> None:
             if last_clean_callback.current is not None:
                 last_clean_callback.current()
                 last_clean_callback.current = None
-            last_clean_callback.current = sync_function()
+            clean = last_clean_callback.current = sync_function()
+            await stop.wait()
+            if clean is not None:
+                clean()
 
-        async def clean_effect() -> None:
-            if last_clean_callback.current is not None:
-                last_clean_callback.current()
-                last_clean_callback.current = None
-
-        return memoize(lambda: hook.add_effect(start_effect, clean_effect))
+        return memoize(lambda: hook.add_effect(effect))
 
     if function is not None:
         add_effect(function)

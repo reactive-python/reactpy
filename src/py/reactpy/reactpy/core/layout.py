@@ -143,10 +143,14 @@ class Layout:
                 if self._render_tasks
                 else get_running_loop().create_future()
             )
-            await wait(
-                (create_task(self._rendering_queue.ready()), render_completed),
-                return_when=FIRST_COMPLETED,
-            )
+            queue_ready = create_task(self._rendering_queue.ready())
+            try:
+                await wait((queue_ready, render_completed), return_when=FIRST_COMPLETED)
+            finally:
+                # Ensure we delete this task to avoid warnings that
+                # task was deleted without being awaited.
+                queue_ready.cancel()
+
             if render_completed.done():
                 done, _ = await render_completed
                 update_task: Task[LayoutUpdateMessage] = done.pop()
