@@ -4,7 +4,6 @@ import abc
 from asyncio import (
     FIRST_COMPLETED,
     CancelledError,
-    Event,
     Queue,
     Task,
     create_task,
@@ -709,23 +708,15 @@ class _ThreadSafeQueue(Generic[_Type]):
         self._loop = get_running_loop()
         self._queue: Queue[_Type] = Queue()
         self._pending: set[_Type] = set()
-        self._ready = Event()
 
     def put(self, value: _Type) -> None:
         if value not in self._pending:
             self._pending.add(value)
             self._loop.call_soon_threadsafe(self._queue.put_nowait, value)
-            self._ready.set()
-
-    async def ready(self) -> None:
-        """Return when the next value is available"""
-        await self._ready.wait()
 
     async def get(self) -> _Type:
         value = await self._queue.get()
         self._pending.remove(value)
-        if not self._pending:
-            self._ready.clear()
         return value
 
 
