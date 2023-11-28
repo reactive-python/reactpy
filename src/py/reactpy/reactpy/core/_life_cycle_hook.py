@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from asyncio import gather
-from collections.abc import AsyncGenerator
+from collections.abc import Awaitable
 from typing import Any, Callable, TypeVar
 
 from anyio import Semaphore
@@ -41,7 +41,7 @@ class LifeCycleHook:
         .. testcode::
 
             from reactpy.core._life_cycle_hook import LifeCycleHook
-            from reactpy.core.hooks import current_hook, COMPONENT_DID_RENDER_EFFECT
+            from reactpy.core.hooks import current_hook
 
             # this function will come from a layout implementation
             schedule_render = lambda: ...
@@ -63,7 +63,11 @@ class LifeCycleHook:
 
                 # and save state or add effects
                 current_hook().use_state(lambda: ...)
-                current_hook().add_effect(COMPONENT_DID_RENDER_EFFECT, lambda: ...)
+
+                async def effect():
+                    yield
+
+                current_hook().add_effect(effect)
             finally:
                 await hook.affect_component_did_render()
 
@@ -88,10 +92,10 @@ class LifeCycleHook:
         "__weakref__",
         "_context_providers",
         "_current_state_index",
-        "_pending_effects",
+        "_effect_cleanups",
+        "_effect_startups",
         "_render_access",
         "_rendered_atleast_once",
-        "_running_effects",
         "_schedule_render_callback",
         "_schedule_render_later",
         "_state",
@@ -110,8 +114,8 @@ class LifeCycleHook:
         self._rendered_atleast_once = False
         self._current_state_index = 0
         self._state: tuple[Any, ...] = ()
-        self._pending_effects: list[AsyncGenerator[None, None]] = []
-        self._running_effects: list[AsyncGenerator[None, None]] = []
+        self._effect_startups: list[Callable[[], Awaitable[None]]] = []
+        self._effect_cleanups: list[Callable[[], Awaitable[None]]] = []
         self._render_access = Semaphore(1)  # ensure only one render at a time
 
     def schedule_render(self) -> None:
@@ -131,9 +135,14 @@ class LifeCycleHook:
         self._current_state_index += 1
         return result
 
-    def add_effect(self, effect_func: Callable[[], AsyncGenerator[None, None]]) -> None:
+    def add_effect(
+        self,
+        start_effect: Callable[[], Awaitable[None]],
+        clean_effect: Callable[[], Awaitable[None]],
+    ) -> None:
         """Add an effect to this hook"""
-        self._pending_effects.append(effect_func())
+        self._effect_startups.append(start_effect)
+        self._effect_cleanups.append(clean_effect)
 
     def set_context_provider(self, provider: ContextProviderType[Any]) -> None:
         self._context_providers[provider.type] = provider
@@ -155,29 +164,28 @@ class LifeCycleHook:
         self._rendered_atleast_once = True
         self._current_state_index = 0
         self._render_access.release()
+        del self.component
 
     async def affect_layout_did_render(self) -> None:
         """The layout completed a render"""
         try:
-            await gather(*[g.asend(None) for g in self._pending_effects])
-            self._running_effects.extend(self._pending_effects)
+            await gather(*[start() for start in self._effect_startups])
         except Exception:
             logger.exception("Error during effect startup")
         finally:
-            self._pending_effects.clear()
-        if self._schedule_render_later:
-            self._schedule_render()
-        self._schedule_render_later = False
-        del self.component
+            self._effect_startups.clear()
+            if self._schedule_render_later:
+                self._schedule_render()
+            self._schedule_render_later = False
 
     async def affect_component_will_unmount(self) -> None:
         """The component is about to be removed from the layout"""
         try:
-            await gather(*[g.aclose() for g in self._running_effects])
+            await gather(*[clean() for clean in self._effect_cleanups])
         except Exception:
             logger.exception("Error during effect cleanup")
         finally:
-            self._running_effects.clear()
+            self._effect_cleanups.clear()
 
     def set_current(self) -> None:
         """Set this hook as the active hook in this thread

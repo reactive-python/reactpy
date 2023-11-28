@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncGenerator, Awaitable, Sequence
+from collections.abc import Coroutine, Sequence
 from logging import getLogger
 from types import FunctionType
 from typing import (
@@ -95,7 +95,9 @@ class _CurrentState(Generic[_Type]):
 
 _EffectCleanFunc: TypeAlias = "Callable[[], None]"
 _SyncEffectFunc: TypeAlias = "Callable[[], _EffectCleanFunc | None]"
-_AsyncEffectFunc: TypeAlias = "Callable[[], Awaitable[_EffectCleanFunc | None]]"
+_AsyncEffectFunc: TypeAlias = (
+    "Callable[[], Coroutine[None, None, _EffectCleanFunc | None]]"
+)
 _EffectApplyFunc: TypeAlias = "_SyncEffectFunc | _AsyncEffectFunc"
 
 
@@ -146,36 +148,28 @@ def use_effect(
             async_function = cast(_AsyncEffectFunc, function)
 
             def sync_function() -> _EffectCleanFunc | None:
-                future = asyncio.ensure_future(async_function())
+                task = asyncio.create_task(async_function())
 
                 def clean_future() -> None:
-                    if not future.cancel():
-                        clean = future.result()
+                    if not task.cancel():
+                        clean = task.result()
                         if clean is not None:
                             clean()
 
                 return clean_future
 
-        async def effect() -> AsyncGenerator[None, None]:
+        async def start_effect() -> None:
             if last_clean_callback.current is not None:
                 last_clean_callback.current()
+                last_clean_callback.current = None
+            last_clean_callback.current = sync_function()
 
-            cleaned = False
-            clean = sync_function()
+        async def clean_effect() -> None:
+            if last_clean_callback.current is not None:
+                last_clean_callback.current()
+                last_clean_callback.current = None
 
-            def callback() -> None:
-                nonlocal cleaned
-                if clean and not cleaned:
-                    cleaned = True
-                    clean()
-
-            last_clean_callback.current = callback
-            try:
-                yield
-            finally:
-                callback()
-
-        return memoize(lambda: hook.add_effect(effect))
+        return memoize(lambda: hook.add_effect(start_effect, clean_effect))
 
     if function is not None:
         add_effect(function)
