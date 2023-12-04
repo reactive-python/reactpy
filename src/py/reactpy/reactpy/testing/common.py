@@ -67,7 +67,7 @@ class poll(Generic[_R]):  # noqa: N801
                 break
             elif (time.time() - started_at) > timeout:  # nocov
                 msg = f"Expected {description} after {timeout} seconds - last value was {result!r}"
-                raise TimeoutError(msg)
+                raise asyncio.TimeoutError(msg)
 
     async def until_is(
         self,

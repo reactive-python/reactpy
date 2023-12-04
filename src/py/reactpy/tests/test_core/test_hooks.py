@@ -1037,9 +1037,11 @@ async def test_set_state_during_render():
         # we expect a second render to be triggered in the background
         await poll(lambda: render_count.current).until_equals(2)
 
-        # there should be no more renders that happen
-        with pytest.raises(asyncio.TimeoutError):
-            await poll(lambda: render_count.current).until_equals(3, timeout=0.1)
+        # give an opportunity for a render to happen if it were to.
+        await asyncio.sleep(0.1)
+
+    # however, we don't expect any more renders
+    assert render_count.current == 2
 
 
 @pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="only logs in debug mode")
