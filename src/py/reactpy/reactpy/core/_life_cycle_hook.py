@@ -32,7 +32,19 @@ def current_hook() -> LifeCycleHook:
 
 
 class LifeCycleHook:
-    """Defines the life cycle of a layout component.
+    """An object which manages the "life cycle" of a layout component.
+
+    The "life cycle" of a component is the set of events which occur from the time
+    a component is first rendered until it is removed from the layout. The life cycle
+    is ultimately driven by the layout itself, but components can "hook" into those
+    events to perform actions. Components gain access to their own life cycle hook
+    by calling :func:`current_hook`. They can then perform actions such as:
+
+    1. Adding state via :meth:`use_state`
+    2. Adding effects via :meth:`add_effect`
+    3. Setting or getting context providers via
+       :meth:`LifeCycleHook.set_context_provider` and
+       :meth:`get_context_provider` respectively.
 
     Components can request access to their own life cycle events and state through hooks
     while :class:`~reactpy.core.proto.LayoutType` objects drive drive the life cycle
@@ -137,6 +149,12 @@ class LifeCycleHook:
             self._scheduled_render = True
 
     def use_state(self, function: Callable[[], T]) -> T:
+        """Add state to this hook
+
+        If this hook has not yet rendered, the state is appended to the state tuple.
+        Otherwise, the state is retrieved from the tuple. This allows state to be
+        preserved across renders.
+        """
         if not self._rendered_atleast_once:
             # since we're not initialized yet we're just appending state
             result = function()
@@ -158,11 +176,21 @@ class LifeCycleHook:
         self._effect_funcs.append(effect_func)
 
     def set_context_provider(self, provider: ContextProviderType[Any]) -> None:
+        """Set a context provider for this hook
+
+        The context provider will be used to provide state to any child components
+        of this hook's component which request a context provider of the same type.
+        """
         self._context_providers[provider.type] = provider
 
     def get_context_provider(
         self, context: Context[T]
     ) -> ContextProviderType[T] | None:
+        """Get a context provider for this hook of the given type
+
+        The context provider will have been set by a parent component. If no provider
+        is found, ``None`` is returned.
+        """
         return self._context_providers.get(context)
 
     async def affect_component_will_render(self, component: ComponentType) -> None:
