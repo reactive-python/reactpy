@@ -80,7 +80,7 @@ pre-install-command = "hatch build --hooks-only"
 dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
-  "pytest-asyncio>=0.17",
+  "pytest-asyncio>=0.23",
   "pytest-mock",
   "pytest-rerunfailures",
   "pytest-timeout",

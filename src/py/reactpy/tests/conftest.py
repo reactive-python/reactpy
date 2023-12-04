@@ -18,7 +18,8 @@ from reactpy.testing import (
     capture_reactpy_logs,
     clear_reactpy_web_modules_dir,
 )
-from tests.tooling.loop import open_event_loop
+
+REACTPY_FEATURE_CONCURRENT_RENDERING.current = True
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -30,22 +31,19 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
-REACTPY_FEATURE_CONCURRENT_RENDERING.current = True
-
-
 @pytest.fixture
 async def display(server, page):
     async with DisplayFixture(server, page) as display:
         yield display
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 async def server():
     async with BackendFixture() as server:
         yield server
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 async def page(browser):
     pg = await browser.new_page()
     pg.set_default_timeout(REACTPY_TESTING_DEFAULT_TIMEOUT.current * 1000)
@@ -55,18 +53,18 @@ async def page(browser):
         await pg.close()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 async def browser(pytestconfig: Config):
     async with async_playwright() as pw:
         yield await pw.chromium.launch(headless=not bool(pytestconfig.option.headed))
 
 
 @pytest.fixture(scope="session")
-def event_loop():
+def event_loop_policy():
     if os.name == "nt":  # nocov
-        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-    with open_event_loop() as loop:
-        yield loop
+        return asyncio.WindowsProactorEventLoopPolicy()
+    else:
+        return asyncio.DefaultEventLoopPolicy()
 
 
 @pytest.fixture(autouse=True)
