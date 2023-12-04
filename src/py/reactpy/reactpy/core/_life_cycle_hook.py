@@ -69,13 +69,10 @@ class LifeCycleHook:
                 # and save state or add effects
                 current_hook().use_state(lambda: ...)
 
-                async def start_effect():
+                async def my_effect(stop_event):
                     ...
 
-                async def stop_effect():
-                    ...
-
-                current_hook().add_effect(start_effect, stop_effect)
+                current_hook().add_effect(my_effect)
             finally:
                 await hook.affect_component_did_render()
 
