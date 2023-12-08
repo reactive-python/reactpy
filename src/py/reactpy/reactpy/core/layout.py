@@ -29,9 +29,9 @@ from weakref import ref as weakref
 from anyio import Semaphore
 
 from reactpy.config import (
+    REACTPY_ASYNC_RENDERING,
     REACTPY_CHECK_VDOM_SPEC,
     REACTPY_DEBUG_MODE,
-    REACTPY_FEATURE_CONCURRENT_RENDERING,
 )
 from reactpy.core._life_cycle_hook import LifeCycleHook
 from reactpy.core.types import (
@@ -125,7 +125,7 @@ class Layout:
             )
 
     async def render(self) -> LayoutUpdateMessage:
-        if REACTPY_FEATURE_CONCURRENT_RENDERING.current:
+        if REACTPY_ASYNC_RENDERING.current:
             return await self._concurrent_render()
         else:  # nocov
             return await self._serial_render()
@@ -460,7 +460,7 @@ class Layout:
             to_unmount.extend(model_state.children_by_key.values())
 
     def _schedule_render_task(self, lcs_id: _LifeCycleStateId) -> None:
-        if not REACTPY_FEATURE_CONCURRENT_RENDERING.current:
+        if not REACTPY_ASYNC_RENDERING.current:
             self._rendering_queue.put(lcs_id)
             return None
         try:

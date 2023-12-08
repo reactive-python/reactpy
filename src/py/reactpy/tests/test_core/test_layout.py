@@ -10,7 +10,7 @@ import pytest
 
 import reactpy
 from reactpy import html
-from reactpy.config import REACTPY_DEBUG_MODE, REACTPY_FEATURE_CONCURRENT_RENDERING
+from reactpy.config import REACTPY_ASYNC_RENDERING, REACTPY_DEBUG_MODE
 from reactpy.core.component import component
 from reactpy.core.hooks import use_effect, use_state
 from reactpy.core.layout import Layout
@@ -33,7 +33,7 @@ from tests.tooling.select import element_exists, find_element
 
 @pytest.fixture(autouse=True, params=[True, False])
 def concurrent_rendering(request):
-    with patch.object(REACTPY_FEATURE_CONCURRENT_RENDERING, "current", request.param):
+    with patch.object(REACTPY_ASYNC_RENDERING, "current", request.param):
         yield request.param
 
 

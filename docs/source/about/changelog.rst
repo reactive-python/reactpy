@@ -30,11 +30,10 @@ Unreleased
 
 **Added**
 
-- :pull:`1165` - Allow concurrent renders of distinct components - enable this
-  experimental feature by setting `REACTPY_FEATURE_CONCURRENT_RENDERING=true`.
-  This should improve the overall responsiveness of your app, particularly when
-  handling larger renders that would otherwise block faster renders from being
-  processed.
+- :pull:`1165` - Allow concurrent renders of discrete component tree - enable this
+  experimental feature by setting `REACTPY_ASYNC_RENDERING=true`. This should improve
+  the overall responsiveness of your app, particularly when handling larger renders
+  that would otherwise block faster renders from being processed.
 
 v1.0.2
 ------

@@ -81,7 +81,7 @@ REACTPY_TESTING_DEFAULT_TIMEOUT = Option(
 )
 """A default timeout for testing utilities in ReactPy"""
 
-REACTPY_FEATURE_CONCURRENT_RENDERING = Option(
+REACTPY_ASYNC_RENDERING = Option(
     "REACTPY_CONCURRENT_RENDERING",
     default=False,
     mutable=True,

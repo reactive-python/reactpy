@@ -9,7 +9,7 @@ from _pytest.config.argparsing import Parser
 from playwright.async_api import async_playwright
 
 from reactpy.config import (
-    REACTPY_FEATURE_CONCURRENT_RENDERING,
+    REACTPY_ASYNC_RENDERING,
     REACTPY_TESTING_DEFAULT_TIMEOUT,
 )
 from reactpy.testing import (
@@ -19,7 +19,7 @@ from reactpy.testing import (
     clear_reactpy_web_modules_dir,
 )
 
-REACTPY_FEATURE_CONCURRENT_RENDERING.current = True
+REACTPY_ASYNC_RENDERING.current = True
 
 
 def pytest_addoption(parser: Parser) -> None:
