@@ -202,19 +202,18 @@ class LifeCycleHook:
 
     async def affect_component_did_render(self) -> None:
         """The component completed a render"""
-        stop = Event()
-        self._effect_stops.append(stop)
-        self._effect_tasks.extend(create_task(e(stop)) for e in self._effect_funcs)
-        self._effect_funcs.clear()
+        self.unset_current()
         self._rendered_atleast_once = True
         self._current_state_index = 0
         self._render_access.release()
         del self.component
-        self.unset_current()
 
     async def affect_layout_did_render(self) -> None:
         """The layout completed a render"""
-        pass
+        stop = Event()
+        self._effect_stops.append(stop)
+        self._effect_tasks.extend(create_task(e(stop)) for e in self._effect_funcs)
+        self._effect_funcs.clear()
 
     async def affect_component_will_unmount(self) -> None:
         """The component is about to be removed from the layout"""
