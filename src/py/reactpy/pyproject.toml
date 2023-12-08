@@ -45,6 +45,8 @@ starlette = [
 sanic = [
   "sanic >=21",
   "sanic-cors",
+  "tracerite>=1.1.1",
+  "setuptools",
   "uvicorn[standard] >=0.19.0",
 ]
 fastapi = [
