@@ -16,7 +16,7 @@ on:
             python-version-array:
                 required: false
                 type: string
-                default: '["3.11"]'
+                default: '["3.x"]'
             node-registry-url:
                 required: false
                 type: string
