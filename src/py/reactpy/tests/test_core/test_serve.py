@@ -5,10 +5,12 @@ from typing import Any
 from jsonpointer import set_pointer
 
 import reactpy
+from reactpy.core.hooks import use_effect
 from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
 from reactpy.core.types import LayoutUpdateMessage
 from reactpy.testing import StaticEventHandler
+from tests.tooling.aio import Event
 from tests.tooling.common import event_message
 
 EVENT_NAME = "on_event"
@@ -96,9 +98,10 @@ async def test_dispatch():
 
 
 async def test_dispatcher_handles_more_than_one_event_at_a_time():
-    block_and_never_set = asyncio.Event()
-    will_block = asyncio.Event()
-    second_event_did_execute = asyncio.Event()
+    did_render = Event()
+    block_and_never_set = Event()
+    will_block = Event()
+    second_event_did_execute = Event()
 
     blocked_handler = StaticEventHandler()
     non_blocked_handler = StaticEventHandler()
@@ -113,6 +116,10 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
         @non_blocked_handler.use
         async def handle_event():
             second_event_did_execute.set()
+
+        @use_effect
+        def set_did_render():
+            did_render.set()
 
         return reactpy.html.div(
             reactpy.html.button({"on_click": block_forever}),
@@ -129,11 +136,12 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
             recv_queue.get,
         )
     )
+    try:
+        await did_render.wait()
+        await recv_queue.put(event_message(blocked_handler.target))
+        await will_block.wait()
 
-    await recv_queue.put(event_message(blocked_handler.target))
-    await will_block.wait()
-
-    await recv_queue.put(event_message(non_blocked_handler.target))
-    await second_event_did_execute.wait()
-
-    task.cancel()
+        await recv_queue.put(event_message(non_blocked_handler.target))
+        await second_event_did_execute.wait()
+    finally:
+        task.cancel()

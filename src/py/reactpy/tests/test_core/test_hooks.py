@@ -5,12 +5,8 @@ import pytest
 import reactpy
 from reactpy import html
 from reactpy.config import REACTPY_DEBUG_MODE
-from reactpy.core.hooks import (
-    COMPONENT_DID_RENDER_EFFECT,
-    LifeCycleHook,
-    current_hook,
-    strictly_equal,
-)
+from reactpy.core._life_cycle_hook import LifeCycleHook
+from reactpy.core.hooks import strictly_equal, use_effect
 from reactpy.core.layout import Layout
 from reactpy.testing import DisplayFixture, HookCatcher, assert_reactpy_did_log, poll
 from reactpy.testing.logs import assert_reactpy_did_not_log
@@ -32,10 +28,15 @@ async def test_must_be_rendering_in_layout_to_use_hooks():
 
 
 async def test_simple_stateful_component():
+    index = 0
+
+    def set_index(x):
+        return None
+
     @reactpy.component
     def SimpleStatefulComponent():
+        nonlocal index, set_index
         index, set_index = reactpy.hooks.use_state(0)
-        set_index(index + 1)
         return reactpy.html.div(index)
 
     sse = SimpleStatefulComponent()
@@ -49,6 +50,7 @@ async def test_simple_stateful_component():
                 "children": [{"tagName": "div", "children": ["0"]}],
             },
         )
+        set_index(index + 1)
 
         update_2 = await layout.render()
         assert update_2 == update_message(
@@ -58,6 +60,7 @@ async def test_simple_stateful_component():
                 "children": [{"tagName": "div", "children": ["1"]}],
             },
         )
+        set_index(index + 1)
 
         update_3 = await layout.render()
         assert update_3 == update_message(
@@ -278,18 +281,18 @@ async def test_double_set_state(display: DisplayFixture):
     first = await display.page.wait_for_selector("#first")
     second = await display.page.wait_for_selector("#second")
 
-    assert (await first.get_attribute("data-value")) == "0"
-    assert (await second.get_attribute("data-value")) == "0"
+    await poll(first.get_attribute, "data-value").until_equals("0")
+    await poll(second.get_attribute, "data-value").until_equals("0")
 
     await button.click()
 
-    assert (await first.get_attribute("data-value")) == "1"
-    assert (await second.get_attribute("data-value")) == "1"
+    await poll(first.get_attribute, "data-value").until_equals("1")
+    await poll(second.get_attribute, "data-value").until_equals("1")
 
     await button.click()
 
-    assert (await first.get_attribute("data-value")) == "2"
-    assert (await second.get_attribute("data-value")) == "2"
+    await poll(first.get_attribute, "data-value").until_equals("2")
+    await poll(second.get_attribute, "data-value").until_equals("2")
 
 
 async def test_use_effect_callback_occurs_after_full_render_is_complete():
@@ -562,7 +565,7 @@ async def test_error_in_effect_is_gracefully_handled(caplog):
 
         return reactpy.html.div()
 
-    with assert_reactpy_did_log(match_message=r"Layout post-render effect .* failed"):
+    with assert_reactpy_did_log(match_message=r"Error in effect"):
         async with reactpy.Layout(ComponentWithEffect()) as layout:
             await layout.render()  # no error
 
@@ -588,7 +591,7 @@ async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled():
         return reactpy.html.div()
 
     with assert_reactpy_did_log(
-        match_message=r"Pre-unmount effect .*? failed",
+        match_message=r"Error in effect",
         error_type=ValueError,
     ):
         async with reactpy.Layout(OuterComponent()) as layout:
@@ -1007,7 +1010,7 @@ async def test_error_in_layout_effect_cleanup_is_gracefully_handled():
         return reactpy.html.div()
 
     with assert_reactpy_did_log(
-        match_message=r"post-render effect .*? failed",
+        match_message=r"Error in effect",
         error_type=ValueError,
         match_error="The error message",
     ):
@@ -1030,13 +1033,15 @@ async def test_set_state_during_render():
 
     async with Layout(SetStateDuringRender()) as layout:
         await layout.render()
-        assert render_count.current == 1
-        await layout.render()
-        assert render_count.current == 2
 
-        # there should be no more renders to perform
-        with pytest.raises(asyncio.TimeoutError):
-            await asyncio.wait_for(layout.render(), timeout=0.1)
+        # we expect a second render to be triggered in the background
+        await poll(lambda: render_count.current).until_equals(2)
+
+        # give an opportunity for a render to happen if it were to.
+        await asyncio.sleep(0.1)
+
+    # however, we don't expect any more renders
+    assert render_count.current == 2
 
 
 @pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="only logs in debug mode")
@@ -1240,16 +1245,17 @@ async def test_error_in_component_effect_cleanup_is_gracefully_handled():
     @reactpy.component
     @component_hook.capture
     def ComponentWithEffect():
-        hook = current_hook()
+        @use_effect
+        def effect():
+            def bad_cleanup():
+                raise ValueError("The error message")
 
-        def bad_effect():
-            raise ValueError("The error message")
+            return bad_cleanup
 
-        hook.add_effect(COMPONENT_DID_RENDER_EFFECT, bad_effect)
         return reactpy.html.div()
 
     with assert_reactpy_did_log(
-        match_message="Component post-render effect .*? failed",
+        match_message="Error in effect",
         error_type=ValueError,
         match_error="The error message",
     ):

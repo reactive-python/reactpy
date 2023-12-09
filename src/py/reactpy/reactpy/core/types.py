@@ -233,3 +233,26 @@ class LayoutEventMessage(TypedDict):
     """The ID of the event handler."""
     data: Sequence[Any]
     """A list of event data passed to the event handler."""
+
+
+class Context(Protocol[_Type]):
+    """Returns a :class:`ContextProvider` component"""
+
+    def __call__(
+        self,
+        *children: Any,
+        value: _Type = ...,
+        key: Key | None = ...,
+    ) -> ContextProviderType[_Type]:
+        ...
+
+
+class ContextProviderType(ComponentType, Protocol[_Type]):
+    """A component which provides a context value to its children"""
+
+    type: Context[_Type]
+    """The context type"""
+
+    @property
+    def value(self) -> _Type:
+        "Current context value"

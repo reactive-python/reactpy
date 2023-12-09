@@ -13,8 +13,8 @@ from weakref import ref
 from typing_extensions import ParamSpec
 
 from reactpy.config import REACTPY_TESTING_DEFAULT_TIMEOUT, REACTPY_WEB_MODULES_DIR
+from reactpy.core._life_cycle_hook import LifeCycleHook, current_hook
 from reactpy.core.events import EventHandler, to_event_handler_function
-from reactpy.core.hooks import LifeCycleHook, current_hook
 
 
 def clear_reactpy_web_modules_dir() -> None:
@@ -67,7 +67,7 @@ class poll(Generic[_R]):  # noqa: N801
                 break
             elif (time.time() - started_at) > timeout:  # nocov
                 msg = f"Expected {description} after {timeout} seconds - last value was {result!r}"
-                raise TimeoutError(msg)
+                raise asyncio.TimeoutError(msg)
 
     async def until_is(
         self,

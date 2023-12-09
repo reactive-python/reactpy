@@ -4,7 +4,8 @@ from collections.abc import MutableMapping
 from typing import Any
 
 from reactpy.backend.types import Connection, Location
-from reactpy.core.hooks import Context, create_context, use_context
+from reactpy.core.hooks import create_context, use_context
+from reactpy.core.types import Context
 
 # backend implementations should establish this context at the root of an app
 ConnectionContext: Context[Connection[Any] | None] = create_context(None)
