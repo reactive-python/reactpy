@@ -16,8 +16,10 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Optional,
     Protocol,
     TypeVar,
+    Union,
     cast,
     overload,
 )
@@ -100,14 +102,14 @@ class _CurrentState(Generic[_Type]):
 
 
 _SyncGeneratorEffect = Callable[[], Generator[None, None, None]]
-_SyncFunctionEffect = Callable[[], Callable[[], None] | None]
-_SyncEffect = _SyncGeneratorEffect | _SyncFunctionEffect
+_SyncFunctionEffect = Callable[[], Optional[Callable[[], None]]]
+_SyncEffect = Union[_SyncGeneratorEffect, _SyncFunctionEffect]
 
 _AsyncGeneratorEffect = Callable[[], AsyncGenerator[None, None]]
-_AsyncFunctionEffect = Callable[[], Coroutine[None, None, Callable[[], None] | None]]
-_AsyncEffect = _AsyncGeneratorEffect | _AsyncFunctionEffect
+_AsyncFunctionEffect = Callable[[], Coroutine[None, None, Optional[Callable[[], None]]]]
+_AsyncEffect = Union[_AsyncGeneratorEffect, _AsyncFunctionEffect]
 
-_Effect = _SyncEffect | _AsyncEffect
+_Effect = Union[_SyncEffect, _AsyncEffect]
 
 
 @overload
