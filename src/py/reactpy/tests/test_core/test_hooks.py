@@ -1,4 +1,4 @@
-from asyncio import CancelledError, create_task, sleep, wait_for
+from asyncio import CancelledError, TimeoutError, create_task, sleep, wait_for
 from asyncio import Event as EventNoTimeout
 
 import pytest
@@ -1213,7 +1213,7 @@ async def test_use_state_compares_with_strict_equality(get_value):
 @pytest.mark.parametrize("get_value", STRICT_EQUALITY_VALUE_CONSTRUCTORS)
 async def test_use_effect_compares_with_strict_equality(get_value):
     effect_count = reactpy.Ref(0)
-    value = reactpy.Ref("string")
+    value = reactpy.Ref(get_value())
     hook = HookCatcher()
 
     @reactpy.component
@@ -1226,7 +1226,7 @@ async def test_use_effect_compares_with_strict_equality(get_value):
     async with reactpy.Layout(SomeComponent()) as layout:
         await layout.render()
         assert effect_count.current == 1
-        value.current = "string"  # new string instance but same value
+        value.current = get_value()
         hook.latest.schedule_render()
         await layout.render()
         # effect does not trigger
