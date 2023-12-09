@@ -89,7 +89,9 @@ Use Effect
 
 .. code-block::
 
-    use_effect(did_render)
+    @use_effect
+    def did_render():
+        ...  # imperative or state mutating logic
 
 The ``use_effect`` hook accepts a function which may be imperative, or mutate state. The
 function will be called immediately after the layout has fully updated.
@@ -111,22 +113,45 @@ Cleaning Up Effects
 ...................
 
 If the effect you wish to enact creates resources, you'll probably need to clean them
-up. In such cases you may simply return a function that addresses this from the
-``did_render`` function which created the resource. Consider the case of opening and
-then closing a connection:
+up. In this case you can write a generator function that will ``yield`` until your
+cleanup logic needs to run. Similarly to a
+`context manager <https://realpython.com/python-with-statement/>`__, you'll also need to
+use a ``try/finally`` block to ensure that the cleanup logic always runs:
 
 .. code-block::
 
+    @use_effect
     def establish_connection():
-        connection = open_connection()
-        return lambda: close_connection(connection)
+        conn = open_connection()
+        try:
+            # do something with the connection
+            yield
+        finally:
+            conn.close()
 
-    use_effect(establish_connection)
+.. warning::
+    
+    If you never ``yield`` control back to ReactPy, then the component will never
+    re-render and the effect will never be cleaned up. This is a common mistake when
+    using ``use_effect`` for the first time.
 
-The clean-up function will be run before the component is unmounted or, before the next
-effect is triggered when the component re-renders. You can
+The clean-up logic inside the ``finally`` block will be run before the component is
+unmounted or, before the next effect is triggered when the component re-renders. You can
 :ref:`conditionally fire events <Conditional Effects>` to avoid triggering them each
 time a component renders.
+
+Alternatively to the generator style of cleanup, you can return a cleanup function from
+your effect function. As with the generator style, the cleanup function will be run
+before the component is unmounted or before the next effect is triggered when the
+component re-renders:
+
+.. code-block::
+
+    @use_effect
+    def establish_connection():
+        conn = open_connection()
+        # do something with the connection
+        return conn.close
 
 
 Conditional Effects
@@ -141,40 +166,77 @@ example, imagine that we had an effect that connected to a ``url`` state variabl
 
     url, set_url = use_state("https://example.com")
 
+    @use_effect
     def establish_connection():
         connection = open_connection(url)
         return lambda: close_connection(connection)
 
-    use_effect(establish_connection)
-
 Here, a new connection will be established whenever a new ``url`` is set.
+
+.. warning::
+
+    A component will be unable to render until all its outstanding effects have been
+    cleaned up. As such, it's best to keep cleanup logic as simple as possible and/or
+    to impose a time limit.
 
 
 Async Effects
 .............
 
 A behavior unique to ReactPy's implementation of ``use_effect`` is that it natively
-supports ``async`` functions:
+supports ``async`` effects. Async effect functions may either be an async function
+or an async generator. If your effect doesn't need to do any cleanup, then you can
+simply write an async function.
 
 .. code-block::
 
-    async def non_blocking_effect():
-        resource = await do_something_asynchronously()
-        return lambda: blocking_close(resource)
+    @use_effect
+    async def my_async_effect():
+        await do_something()
 
-    use_effect(non_blocking_effect)
+However, if you need to do any cleanup, then you'll need to write an async generator
+instead. The generator, as in :ref:`sync effects <Cleaning Up Effects>` should run the
+effect logic in a ``try`` block, ``yield`` control back to ReactPy, and then run the
+cleanup logic in a ``finally`` block:
 
+.. code-block::
 
-There are **three important subtleties** to note about using asynchronous effects:
+    @use_effect
+    async def my_async_effect():
+        try:
+            await effect_logic()
+            yield
+        finally:
+            await cleanup_logic()
 
-1. The cleanup function must be a normal synchronous function.
+Unlike sync effects, when a component is re-rendered or unmounted the effect will be
+cancelled if it is still running. This will typically happen for long-lived effects.
+One example might be an effect that opens a connection and then responds to messages
+for the lifetime of the connection:
 
-2. Asynchronous effects which do not complete before the next effect is created
-   following a re-render will be cancelled. This means an
-   :class:`~asyncio.CancelledError` will be raised somewhere in the body of the effect.
+.. code-block::
 
-3. An asynchronous effect may occur any time after the update which added this effect
-   and before the next effect following a subsequent update.
+    @use_effect
+    async def my_async_effect():
+        conn = await open_connection()
+        try:
+            while True:
+                msg = await conn.recv()
+                await handle_message(msg)
+        finally:
+            await conn.close()
+
+.. warning::
+
+    Because an effect can be cancelled at any time, it's possible that the cleanup logic
+    will run before all of the effect logic has finished. For example, in the code
+    above, we exclude ``conn = await open_connection()`` from the ``try`` block because
+    if the effect is cancelled before the connection is opened, then we don't need to
+    close it.
+
+.. note::
+
+    We don't need a yield statement here because the effect only ends when it's cancelled.
 
 
 Manual Effect Conditions

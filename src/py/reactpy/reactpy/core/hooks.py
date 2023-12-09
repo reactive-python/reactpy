@@ -1,7 +1,14 @@
 from __future__ import annotations
 
-import asyncio
-from collections.abc import Coroutine, Sequence
+from asyncio import CancelledError, Event, Task, create_task
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterator,
+    Coroutine,
+    Generator,
+    Sequence,
+)
+from inspect import isasyncgenfunction, iscoroutinefunction, isgeneratorfunction
 from logging import getLogger
 from types import FunctionType
 from typing import (
@@ -14,8 +21,7 @@ from typing import (
     cast,
     overload,
 )
-
-from typing_extensions import TypeAlias
+from warnings import warn
 
 from reactpy.config import REACTPY_DEBUG_MODE
 from reactpy.core._life_cycle_hook import current_hook
@@ -93,34 +99,37 @@ class _CurrentState(Generic[_Type]):
         self.dispatch = dispatch
 
 
-_EffectCleanFunc: TypeAlias = "Callable[[], None]"
-_SyncEffectFunc: TypeAlias = "Callable[[], _EffectCleanFunc | None]"
-_AsyncEffectFunc: TypeAlias = (
-    "Callable[[], Coroutine[None, None, _EffectCleanFunc | None]]"
-)
-_EffectApplyFunc: TypeAlias = "_SyncEffectFunc | _AsyncEffectFunc"
+_SyncGeneratorEffect = Callable[[], Generator[None, None, None]]
+_SyncFunctionEffect = Callable[[], Callable[[], None] | None]
+_SyncEffect = _SyncGeneratorEffect | _SyncFunctionEffect
+
+_AsyncGeneratorEffect = Callable[[], AsyncGenerator[None, None]]
+_AsyncFunctionEffect = Callable[[], Coroutine[None, None, Callable[[], None] | None]]
+_AsyncEffect = _AsyncGeneratorEffect | _AsyncFunctionEffect
+
+_Effect = _SyncEffect | _AsyncEffect
 
 
 @overload
 def use_effect(
     function: None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Callable[[_EffectApplyFunc], None]:
+) -> Callable[[_Effect], None]:
     ...
 
 
 @overload
 def use_effect(
-    function: _EffectApplyFunc,
+    function: _Effect,
     dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> None:
     ...
 
 
 def use_effect(
-    function: _EffectApplyFunc | None = None,
+    function: _Effect | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Callable[[_EffectApplyFunc], None] | None:
+) -> Callable[[_Effect], None] | None:
     """See the full :ref:`Use Effect` docs for details
 
     Parameters:
@@ -130,54 +139,103 @@ def use_effect(
             Dependencies for the effect. The effect will only trigger if the identity
             of any value in the given sequence changes (i.e. their :func:`id` is
             different). By default these are inferred based on local variables that are
-            referenced by the given function.
+            referenced by the given function. If ``None``, then the effect runs on every
+            render.
 
     Returns:
-        If not function is provided, a decorator. Otherwise ``None``.
+        If no function is provided, a decorator. Otherwise ``None``.
     """
     hook = current_hook()
-
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
-    last_clean_callback: Ref[_EffectCleanFunc | None] = use_ref(None)
+    last_effect: Ref[tuple[Event, Task[None]] | None] = use_ref(None)
 
-    def add_effect(function: _EffectApplyFunc) -> None:
-        if not asyncio.iscoroutinefunction(function):
-            sync_function = cast(_SyncEffectFunc, function)
-        else:
-            async_function = cast(_AsyncEffectFunc, function)
+    def add_effect(function: _Effect) -> None:
+        effect_func = _cast_async_effect(function)
 
-            def sync_function() -> _EffectCleanFunc | None:
-                task = asyncio.create_task(async_function())
-
-                def clean_future() -> None:
-                    if not task.cancel():
-                        try:
-                            clean = task.result()
-                        except asyncio.CancelledError:
-                            pass
-                        else:
-                            if clean is not None:
-                                clean()
-
-                return clean_future
-
-        async def effect(stop: asyncio.Event) -> None:
-            if last_clean_callback.current is not None:
-                last_clean_callback.current()
-                last_clean_callback.current = None
-            clean = last_clean_callback.current = sync_function()
+        async def run_effect(stop: Event) -> None:
+            # stop the last effect (if any)
+            if last_effect.current is not None:
+                last_stop, last_task = last_effect.current
+                last_stop.set()
+                try:
+                    await last_task
+                except Exception:
+                    logger.exception("Error in effect")
+                except CancelledError:
+                    pass
+            # create the effect
+            effect_gen = effect_func()
+            # start running the effect
+            gen_coro = cast(Coroutine[None, None, None], effect_gen.asend(None))
+            effect_task = create_task(gen_coro)
+            last_effect.current = stop, effect_task
+            # wait for re-render or unmount
             await stop.wait()
-            if clean is not None:
-                clean()
+            # signal effect to stop (no-op if already complete)
+            effect_task.cancel()
+            # wait for effect to halt
+            try:
+                await effect_task
+            except CancelledError:
+                pass
+            # wait for effect cleanup
+            await effect_gen.aclose()
 
-        return memoize(lambda: hook.add_effect(effect))
+        return memoize(lambda: hook.add_effect(run_effect))
 
     if function is not None:
         add_effect(function)
         return None
     else:
         return add_effect
+
+
+def _cast_async_effect(function: Callable[..., Any]) -> _AsyncGeneratorEffect:
+    if isasyncgenfunction(function):
+        async_generator_effect = function
+    elif iscoroutinefunction(function):
+        async_function_effect = cast(_AsyncFunctionEffect, function)
+
+        async def async_generator_effect() -> AsyncIterator[None]:
+            cleanup = await async_function_effect()
+            try:
+                yield
+            finally:
+                if cleanup is not None:
+                    warn(
+                        f"Async effect {async_function_effect} returned a cleanup "
+                        f"function - use an async generator instead by yielding inside "
+                        "a try/finally block. This will be an error in a future "
+                        "version of ReactPy.",
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
+                    cleanup()
+
+    elif isgeneratorfunction(function):
+        sync_generator_effect = cast(_SyncGeneratorEffect, function)
+
+        async def async_generator_effect() -> AsyncIterator[None]:
+            gen = sync_generator_effect()
+            gen.send(None)
+            try:
+                yield
+            finally:
+                gen.close()
+
+    else:
+        sync_function_effect = cast(_SyncFunctionEffect, function)
+
+        async def async_generator_effect() -> AsyncIterator[None]:
+            cleanup = sync_function_effect()
+            try:
+                yield
+            finally:
+                if cleanup is not None:
+                    cleanup()
+
+    return async_generator_effect
 
 
 def use_debug_value(

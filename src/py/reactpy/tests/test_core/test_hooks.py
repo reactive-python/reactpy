@@ -1,4 +1,5 @@
-import asyncio
+from asyncio import CancelledError, create_task, sleep, wait_for
+from asyncio import Event as EventNoTimeout
 
 import pytest
 
@@ -11,6 +12,7 @@ from reactpy.core.layout import Layout
 from reactpy.testing import DisplayFixture, HookCatcher, assert_reactpy_did_log, poll
 from reactpy.testing.logs import assert_reactpy_did_not_log
 from reactpy.utils import Ref
+from tests.tooling.aio import Event
 from tests.tooling.common import DEFAULT_TYPE_DELAY, update_message
 
 
@@ -355,8 +357,10 @@ async def test_use_effect_cleanup_occurs_before_next_effect():
         component_hook.latest.schedule_render()
         await layout.render()
 
-        assert cleanup_triggered.current
-        assert cleanup_triggered_before_next_effect.current
+        assert poll(
+            lambda: cleanup_triggered.current
+            and cleanup_triggered_before_next_effect.current
+        ).until_is(True)
 
 
 async def test_use_effect_cleanup_occurs_on_will_unmount():
@@ -468,16 +472,16 @@ async def test_memoized_effect_cleanup_only_triggered_before_new_effect():
         component_hook.latest.schedule_render()
         await layout.render()
 
-        assert cleanup_trigger_count.current == 0
+        assert poll(lambda: cleanup_trigger_count.current).until_equals(0)
 
         set_state_callback.current(second_value)
         await layout.render()
 
-        assert cleanup_trigger_count.current == 1
+        assert poll(lambda: cleanup_trigger_count.current).until_equals(1)
 
 
 async def test_use_async_effect():
-    effect_ran = asyncio.Event()
+    effect_ran = Event()
 
     @reactpy.component
     def ComponentWithAsyncEffect():
@@ -489,13 +493,13 @@ async def test_use_async_effect():
 
     async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
         await layout.render()
-        await asyncio.wait_for(effect_ran.wait(), 1)
+        await effect_ran.wait()
 
 
 async def test_use_async_effect_cleanup():
     component_hook = HookCatcher()
-    effect_ran = asyncio.Event()
-    cleanup_ran = asyncio.Event()
+    effect_ran = Event()
+    cleanup_ran = Event()
 
     @reactpy.component
     @component_hook.capture
@@ -510,19 +514,24 @@ async def test_use_async_effect_cleanup():
     async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
         await layout.render()
 
+        await effect_ran.wait()
+        effect_ran.clear()
         component_hook.latest.schedule_render()
 
         await layout.render()
+        await cleanup_ran.wait()
+        cleanup_ran.clear()
+        await effect_ran.wait()
 
-    await asyncio.wait_for(cleanup_ran.wait(), 1)
+    await cleanup_ran.wait()
 
 
-async def test_use_async_effect_cancel(caplog):
+async def test_use_async_effect_cancel():
     component_hook = HookCatcher()
-    effect_ran = asyncio.Event()
-    effect_was_cancelled = asyncio.Event()
+    effect_ran = Event()
+    effect_was_cancelled = Event()
 
-    event_that_never_occurs = asyncio.Event()
+    event_that_never_occurs = EventNoTimeout()
 
     @reactpy.component
     @component_hook.capture
@@ -532,7 +541,7 @@ async def test_use_async_effect_cancel(caplog):
             effect_ran.set()
             try:
                 await event_that_never_occurs.wait()
-            except asyncio.CancelledError:
+            except CancelledError:
                 effect_was_cancelled.set()
                 raise
 
@@ -546,7 +555,7 @@ async def test_use_async_effect_cancel(caplog):
 
         await layout.render()
 
-    await asyncio.wait_for(effect_was_cancelled.wait(), 1)
+    await effect_was_cancelled.wait()
 
     # So I know we said the event never occurs but... to ensure the effect's future is
     # cancelled before the test is cleaned up we need to set the event. This is because
@@ -848,7 +857,7 @@ def test_bad_schedule_render_callback():
 
 async def test_use_effect_automatically_infers_closure_values():
     set_count = reactpy.Ref()
-    did_effect = asyncio.Event()
+    did_effect = Event()
 
     @reactpy.component
     def CounterWithEffect():
@@ -876,7 +885,7 @@ async def test_use_effect_automatically_infers_closure_values():
 
 async def test_use_memo_automatically_infers_closure_values():
     set_count = reactpy.Ref()
-    did_memo = asyncio.Event()
+    did_memo = Event()
 
     @reactpy.component
     def CounterWithEffect():
@@ -1038,7 +1047,7 @@ async def test_set_state_during_render():
         await poll(lambda: render_count.current).until_equals(2)
 
         # give an opportunity for a render to happen if it were to.
-        await asyncio.sleep(0.1)
+        await sleep(0.1)
 
     # however, we don't expect any more renders
     assert render_count.current == 2
@@ -1197,8 +1206,8 @@ async def test_use_state_compares_with_strict_equality(get_value):
         await layout.render()
         assert render_count.current == 1
         set_state.current(get_value())
-        with pytest.raises(asyncio.TimeoutError):
-            await asyncio.wait_for(layout.render(), timeout=0.1)
+        with pytest.raises(TimeoutError):
+            await wait_for(layout.render(), timeout=0.1)
 
 
 @pytest.mark.parametrize("get_value", STRICT_EQUALITY_VALUE_CONSTRUCTORS)
@@ -1263,3 +1272,71 @@ async def test_error_in_component_effect_cleanup_is_gracefully_handled():
             await layout.render()
             component_hook.latest.schedule_render()
             await layout.render()  # no error
+
+
+async def test_slow_async_generator_effect_is_cancelled_and_cleaned_up():
+    hook_catcher = HookCatcher()
+
+    never = Event()
+    did_run = Event()
+    did_cancel = Event()
+    did_cleanup = Event()
+
+    @reactpy.component
+    @hook_catcher.capture
+    def some_component():
+        @use_effect(dependencies=None)
+        async def slow_effect():
+            try:
+                did_run.set()
+                await never.wait()
+                yield
+            except CancelledError:
+                did_cancel.set()
+                raise
+            finally:
+                # should be allowed to await in finally
+                await sleep(0)
+                did_cleanup.set()
+
+    async with reactpy.Layout(some_component()) as layout:
+        await layout.render()
+
+        await did_run.wait()
+
+        hook_catcher.latest.schedule_render()
+        render_task = create_task(layout.render())
+
+        await did_cancel.wait()
+        await did_cleanup.wait()
+
+        await render_task
+
+
+async def test_sync_generator_style_effect():
+    hook_catcher = HookCatcher()
+
+    did_run = Event()
+    did_cleanup = Event()
+
+    @reactpy.component
+    @hook_catcher.capture
+    def some_component():
+        @use_effect(dependencies=None)
+        def sync_generator_effect():
+            try:
+                did_run.set()
+                yield
+            finally:
+                did_cleanup.set()
+
+    async with reactpy.Layout(some_component()) as layout:
+        await layout.render()
+
+        await did_run.wait()
+
+        hook_catcher.latest.schedule_render()
+        render_task = create_task(layout.render())
+
+        await did_cleanup.wait()
+        await render_task
