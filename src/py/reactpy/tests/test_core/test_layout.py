@@ -1320,3 +1320,26 @@ async def test_none_does_not_render():
                 {"tagName": "div", "children": [{"tagName": "", "children": []}]}
             ],
         }
+
+
+async def test_conditionally_render_none_does_not_trigger_state_change_in_siblings():
+    toggle_condition = Ref()
+    effect_run_count = Ref(0)
+
+    @component
+    def Root():
+        condition, toggle_condition.current = use_toggle(True)
+        return html.div("text" if condition else None, Child())
+
+    @component
+    def Child():
+        @reactpy.use_effect
+        def effect():
+            effect_run_count.current += 1
+
+    async with layout_runner(Layout(Root())) as runner:
+        await runner.render()
+        poll(lambda: effect_run_count.current).until_equals(1)
+        toggle_condition.current()
+        await runner.render()
+    assert effect_run_count.current == 1
