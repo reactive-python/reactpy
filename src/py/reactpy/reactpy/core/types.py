@@ -91,7 +91,7 @@ class LayoutType(Protocol[_Render_co, _Event_contra]):
 VdomAttributes = Mapping[str, Any]
 """Describes the attributes of a :class:`VdomDict`"""
 
-VdomChild: TypeAlias = "ComponentType | VdomDict | str"
+VdomChild: TypeAlias = "ComponentType | VdomDict | str | None | Any"
 """A single child element of a :class:`VdomDict`"""
 
 VdomChildren: TypeAlias = "Sequence[VdomChild] | VdomChild"
@@ -100,14 +100,7 @@ VdomChildren: TypeAlias = "Sequence[VdomChild] | VdomChild"
 
 class _VdomDictOptional(TypedDict, total=False):
     key: Key | None
-    children: Sequence[
-        # recursive types are not allowed yet:
-        # https://github.com/python/mypy/issues/731
-        ComponentType
-        | dict[str, Any]
-        | str
-        | Any
-    ]
+    children: Sequence[ComponentType | VdomChild]
     attributes: VdomAttributes
     eventHandlers: EventHandlerDict
     importSource: ImportSourceDict

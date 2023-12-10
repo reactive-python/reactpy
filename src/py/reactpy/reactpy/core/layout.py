@@ -39,6 +39,7 @@ from reactpy.core.types import (
     EventHandlerDict,
     LayoutEventMessage,
     LayoutUpdateMessage,
+    VdomChild,
     VdomDict,
     VdomJson,
 )
@@ -189,9 +190,7 @@ class Layout:
             # wrap the model in a fragment (i.e. tagName="") to ensure components have
             # a separate node in the model state tree. This could be removed if this
             # components are given a node in the tree some other way
-            wrapper_model: VdomDict = {"tagName": ""}
-            if raw_model is not None:
-                wrapper_model["children"] = [raw_model]
+            wrapper_model: VdomDict = {"tagName": "", "children": [raw_model]}
             await self._render_model(exit_stack, old_state, new_state, wrapper_model)
         except Exception as error:
             logger.exception(f"Failed to render {component}")
@@ -332,7 +331,7 @@ class Layout:
         child_type_key_tuples = list(_process_child_type_and_key(raw_children))
 
         new_keys = {item[2] for item in child_type_key_tuples}
-        if len(new_keys) != len(raw_children):
+        if len(new_keys) != len(child_type_key_tuples):
             key_counter = Counter(item[2] for item in child_type_key_tuples)
             duplicate_keys = [key for key, count in key_counter.items() if count > 1]
             msg = f"Duplicate keys {duplicate_keys} at {new_state.patch_path or '/'!r}"
@@ -423,7 +422,7 @@ class Layout:
         child_type_key_tuples = list(_process_child_type_and_key(raw_children))
 
         new_keys = {item[2] for item in child_type_key_tuples}
-        if len(new_keys) != len(raw_children):
+        if len(new_keys) != len(child_type_key_tuples):
             key_counter = Counter(item[2] for item in child_type_key_tuples)
             duplicate_keys = [key for key, count in key_counter.items() if count > 1]
             msg = f"Duplicate keys {duplicate_keys} at {new_state.patch_path or '/'!r}"
@@ -721,10 +720,12 @@ class _ThreadSafeQueue(Generic[_Type]):
 
 
 def _process_child_type_and_key(
-    children: list[Any],
+    children: list[VdomChild],
 ) -> Iterator[tuple[Any, _ElementType, Any]]:
     for index, child in enumerate(children):
-        if isinstance(child, dict):
+        if child is None:
+            continue
+        elif isinstance(child, dict):
             child_type = _DICT_TYPE
             key = child.get("key")
         elif isinstance(child, ComponentType):

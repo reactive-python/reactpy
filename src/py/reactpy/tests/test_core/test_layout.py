@@ -102,15 +102,6 @@ async def test_simple_layout():
         )
 
 
-async def test_component_can_return_none():
-    @reactpy.component
-    def SomeComponent():
-        return None
-
-    async with reactpy.Layout(SomeComponent()) as layout:
-        assert (await layout.render())["model"] == {"tagName": ""}
-
-
 async def test_nested_component_layout():
     parent_set_state = reactpy.Ref(None)
     child_set_state = reactpy.Ref(None)
@@ -1310,3 +1301,22 @@ async def test_concurrent_renders(concurrent_rendering):
 
         assert child_1_render_count.current == 1
         assert child_2_render_count.current == 1
+
+
+async def test_none_does_not_render():
+    @component
+    def Root():
+        return html.div(None, Child())
+
+    @component
+    def Child():
+        return None
+
+    async with layout_runner(Layout(Root())) as runner:
+        tree = await runner.render()
+        assert tree == {
+            "tagName": "",
+            "children": [
+                {"tagName": "div", "children": [{"tagName": "", "children": []}]}
+            ],
+        }
