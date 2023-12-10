@@ -35,6 +35,18 @@ Unreleased
   the overall responsiveness of your app, particularly when handling larger renders
   that would otherwise block faster renders from being processed.
 
+**Changed**
+
+- :pull:`1171` - Previously ``None``, when present in an HTML element, would render as
+  the string ``"None"``. Now ``None`` will not render at all. This is consistent with
+  how ``None`` is handled when returned from components. It also makes it easier to
+  conditionally render elements. For example, previously you would have needed to use a
+  fragment to conditionally render an element (e.g.
+  ``something if condition else html._()``). Now you can write:
+  ``something if condition else None``. The latter now has the minor performance
+  advantage of not needing to create and render a fragment.
+
+
 v1.0.2
 ------
 
