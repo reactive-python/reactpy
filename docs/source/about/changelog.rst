@@ -45,6 +45,12 @@ Unreleased
   ``something if condition else html._()``. Now you can simply write
   ``something if condition else None``.
 
+**Deprecated**
+
+- :pull:`1171` - The ``Stop`` exception. Recent releases of ``anyio`` have made this
+  exception difficult to use since it now raises an ``ExceptionGroup``. This exception
+  was primarily used for internal testing purposes and so is now deprecated.
+
 
 v1.0.2
 ------

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Awaitable
 from logging import getLogger
 from typing import Callable
+from warnings import warn
 
 from anyio import create_task_group
 from anyio.abc import TaskGroup
@@ -24,7 +25,9 @@ The event will then trigger an :class:`reactpy.core.proto.EventHandlerType` in a
 
 
 class Stop(BaseException):
-    """Stop serving changes and events
+    """Deprecated
+
+    Stop serving changes and events
 
     Raising this error will tell dispatchers to gracefully exit. Typically this is
     called by code running inside a layout to tell it to stop rendering.
@@ -42,7 +45,12 @@ async def serve_layout(
             async with create_task_group() as task_group:
                 task_group.start_soon(_single_outgoing_loop, layout, send)
                 task_group.start_soon(_single_incoming_loop, task_group, layout, recv)
-        except Stop:
+        except Stop:  # nocov
+            warn(
+                "The Stop exception is deprecated and will be removed in a future version",
+                UserWarning,
+                stacklevel=1,
+            )
             logger.info(f"Stopped serving {layout}")
 
 
