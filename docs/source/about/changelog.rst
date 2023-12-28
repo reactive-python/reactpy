@@ -41,10 +41,9 @@ Unreleased
   the string ``"None"``. Now ``None`` will not render at all. This is consistent with
   how ``None`` is handled when returned from components. It also makes it easier to
   conditionally render elements. For example, previously you would have needed to use a
-  fragment to conditionally render an element (e.g.
-  ``something if condition else html._()``). Now you can write:
-  ``something if condition else None``. The latter now has the minor performance
-  advantage of not needing to create and render a fragment.
+  fragment to conditionally render an element by writing
+  ``something if condition else html._()``. Now you can simply write
+  ``something if condition else None``.
 
 
 v1.0.2

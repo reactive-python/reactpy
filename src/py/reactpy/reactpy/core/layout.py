@@ -11,7 +11,7 @@ from asyncio import (
     wait,
 )
 from collections import Counter
-from collections.abc import Iterator
+from collections.abc import Sequence
 from contextlib import AsyncExitStack
 from logging import getLogger
 from typing import (
@@ -27,6 +27,7 @@ from uuid import uuid4
 from weakref import ref as weakref
 
 from anyio import Semaphore
+from typing_extensions import TypeAlias
 
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
@@ -37,6 +38,7 @@ from reactpy.core._life_cycle_hook import LifeCycleHook
 from reactpy.core.types import (
     ComponentType,
     EventHandlerDict,
+    Key,
     LayoutEventMessage,
     LayoutUpdateMessage,
     VdomChild,
@@ -328,11 +330,11 @@ class Layout:
             await self._unmount_model_states(list(old_state.children_by_key.values()))
             return None
 
-        child_type_key_tuples = list(_process_child_type_and_key(raw_children))
+        children_info = _get_children_info(raw_children)
 
-        new_keys = {item[2] for item in child_type_key_tuples}
-        if len(new_keys) != len(child_type_key_tuples):
-            key_counter = Counter(item[2] for item in child_type_key_tuples)
+        new_keys = {k for _, _, k in children_info}
+        if len(new_keys) != len(children_info):
+            key_counter = Counter(item[2] for item in children_info)
             duplicate_keys = [key for key, count in key_counter.items() if count > 1]
             msg = f"Duplicate keys {duplicate_keys} at {new_state.patch_path or '/'!r}"
             raise ValueError(msg)
@@ -344,7 +346,7 @@ class Layout:
             )
 
         new_state.model.current["children"] = []
-        for index, (child, child_type, key) in enumerate(child_type_key_tuples):
+        for index, (child, child_type, key) in enumerate(children_info):
             old_child_state = old_state.children_by_key.get(key)
             if child_type is _DICT_TYPE:
                 old_child_state = old_state.children_by_key.get(key)
@@ -419,17 +421,17 @@ class Layout:
         new_state: _ModelState,
         raw_children: list[Any],
     ) -> None:
-        child_type_key_tuples = list(_process_child_type_and_key(raw_children))
+        children_info = _get_children_info(raw_children)
 
-        new_keys = {item[2] for item in child_type_key_tuples}
-        if len(new_keys) != len(child_type_key_tuples):
-            key_counter = Counter(item[2] for item in child_type_key_tuples)
+        new_keys = {k for _, _, k in children_info}
+        if len(new_keys) != len(children_info):
+            key_counter = Counter(k for _, _, k in children_info)
             duplicate_keys = [key for key, count in key_counter.items() if count > 1]
             msg = f"Duplicate keys {duplicate_keys} at {new_state.patch_path or '/'!r}"
             raise ValueError(msg)
 
         new_state.model.current["children"] = []
-        for index, (child, child_type, key) in enumerate(child_type_key_tuples):
+        for index, (child, child_type, key) in enumerate(children_info):
             if child_type is _DICT_TYPE:
                 child_state = _make_element_model_state(new_state, index, key)
                 await self._render_model(exit_stack, None, child_state, child)
@@ -608,7 +610,7 @@ class _ModelState:
         key: Any,
         model: Ref[VdomJson],
         patch_path: str,
-        children_by_key: dict[str, _ModelState],
+        children_by_key: dict[Key, _ModelState],
         targets_by_event: dict[str, str],
         life_cycle_state: _LifeCycleState | None = None,
     ):
@@ -719,9 +721,8 @@ class _ThreadSafeQueue(Generic[_Type]):
         return value
 
 
-def _process_child_type_and_key(
-    children: list[VdomChild],
-) -> Iterator[tuple[Any, _ElementType, Any]]:
+def _get_children_info(children: list[VdomChild]) -> Sequence[_ChildInfo]:
+    infos: list[_ChildInfo] = []
     for index, child in enumerate(children):
         if child is None:
             continue
@@ -730,7 +731,7 @@ def _process_child_type_and_key(
             key = child.get("key")
         elif isinstance(child, ComponentType):
             child_type = _COMPONENT_TYPE
-            key = getattr(child, "key", None)
+            key = child.key
         else:
             child = f"{child}"
             child_type = _STRING_TYPE
@@ -739,8 +740,12 @@ def _process_child_type_and_key(
         if key is None:
             key = index
 
-        yield (child, child_type, key)
+        infos.append((child, child_type, key))
 
+    return infos
+
+
+_ChildInfo: TypeAlias = tuple[Any, "_ElementType", Key]
 
 # used in _process_child_type_and_key
 _ElementType = NewType("_ElementType", int)
