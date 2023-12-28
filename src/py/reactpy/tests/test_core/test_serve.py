@@ -18,10 +18,6 @@ EVENT_NAME = "on_event"
 STATIC_EVENT_HANDLER = StaticEventHandler()
 
 
-class StopError(Exception):
-    """Stop the dispatcher"""
-
-
 def make_send_recv_callbacks(events_to_inject):
     changes = []
 
@@ -36,7 +32,7 @@ def make_send_recv_callbacks(events_to_inject):
         changes.append(patch)
         sem.release()
         if not events_to_inject:
-            raise StopError()
+            raise Exception("Stop running")
 
     async def recv():
         await sem.acquire()
@@ -98,7 +94,7 @@ def Counter():
 async def test_dispatch():
     events, expected_model = make_events_and_expected_model()
     changes, send, recv = make_send_recv_callbacks(events)
-    with pytest.raises(StopError):
+    with pytest.raises(ExceptionGroup):
         await asyncio.wait_for(serve_layout(Layout(Counter()), send, recv), 1)
     assert_changes_produce_expected_model(changes, expected_model)
 
