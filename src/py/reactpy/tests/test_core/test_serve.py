@@ -1,7 +1,9 @@
 import asyncio
+import sys
 from collections.abc import Sequence
 from typing import Any
 
+import pytest
 from jsonpointer import set_pointer
 
 import reactpy
@@ -31,7 +33,7 @@ def make_send_recv_callbacks(events_to_inject):
         changes.append(patch)
         sem.release()
         if not events_to_inject:
-            raise reactpy.Stop()
+            raise Exception("Stop running")
 
     async def recv():
         await sem.acquire()
@@ -90,10 +92,12 @@ def Counter():
     return reactpy.html.div({EVENT_NAME: handler, "count": count})
 
 
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="ExceptionGroup not available")
 async def test_dispatch():
     events, expected_model = make_events_and_expected_model()
     changes, send, recv = make_send_recv_callbacks(events)
-    await asyncio.wait_for(serve_layout(Layout(Counter()), send, recv), 1)
+    with pytest.raises(ExceptionGroup):
+        await asyncio.wait_for(serve_layout(Layout(Counter()), send, recv), 1)
     assert_changes_produce_expected_model(changes, expected_model)
 
 
