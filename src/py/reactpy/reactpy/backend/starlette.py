@@ -166,7 +166,7 @@ def _setup_single_view_dispatcher_route(
                 if isinstance(e, WebSocketDisconnect):
                     logger.info(f"WebSocket disconnect: {e.code}")
                     break
-            else:
+            else:  # nocov
                 raise
 
     app.add_websocket_route(str(STREAM_PATH), model_stream)
