@@ -133,7 +133,7 @@ class LifeCycleHook:
         self._current_state_index = 0
         self._state: tuple[Any, ...] = ()
         self._effect_funcs: list[EffectFunc] = []
-        self._effect_tasks: list[Task[None]] = []
+        self._effect_tasks: set[Task[None]] = set()
         self._effect_stops: list[Event] = []
         self._render_access = Semaphore(1)  # ensure only one render at a time
 
@@ -212,7 +212,12 @@ class LifeCycleHook:
         """The layout completed a render"""
         stop = Event()
         self._effect_stops.append(stop)
-        self._effect_tasks.extend(create_task(e(stop)) for e in self._effect_funcs)
+        for effect_func in self._effect_funcs:
+            effect_task = create_task(effect_func(stop))
+            # potential memory leak if the task doesn't remove itself when complete
+            effect_task.add_done_callback(lambda t: self._effect_tasks.remove(t))
+            self._effect_tasks.add(effect_task)
+        self._effect_tasks.update()
         self._effect_funcs.clear()
 
     async def affect_component_will_unmount(self) -> None:
