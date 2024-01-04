@@ -128,7 +128,7 @@ all = ["types"]
 only-include = ["js", "reactpy"]
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
-work_dir = "../../js"
+work_dir = "js"
 out_dir = "reactpy/_static"
 commands = [
   "npm ci",
