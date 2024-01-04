@@ -124,6 +124,9 @@ dependencies = [
 types = "mypy --strict reactpy"
 all = ["types"]
 
+[tool.hatch.build.targets.sdist]
+only-include = ["js", "reactpy"]
+
 [[tool.hatch.build.hooks.build-scripts.scripts]]
 work_dir = "../../js"
 out_dir = "reactpy/_static"
