@@ -131,8 +131,8 @@ This repository is set up to be able to manage many applications and libraries w
 in a variety of languages. All projects can be found under the ``src`` directory:
 
 - ``src/py/{project}`` - Python packages
-- ``src/js/app`` - ReactPy's built-in JS client
-- ``src/js/packages/{project}`` - JS packages
+- ``src/py/reactpy/js/app`` - ReactPy's built-in JS client
+- ``src/py/reactpy/js/packages/{project}`` - JS packages
 
 At the root of the repository is a ``pyproject.toml`` file that contains scripts and
 their respective dependencies for managing all other projects. Most of these global
@@ -162,7 +162,7 @@ For Javascript, you'd do:
 
 .. code-block:: bash
 
-    cd src/js/packages/event-to-object
+    cd src/py/reactpy/js/packages/event-to-object
     npm run check:tests
 
 
