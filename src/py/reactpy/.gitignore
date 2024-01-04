@@ -1,4 +1,22 @@
 .coverage.*
 
+# --- External gitignores ---
+# For hatch, this is the only .gitignore that matters!
+# Changes to another .gitignore may need to be reflected here
+# if it is necessary to exclude them from the source distribution,
+# such as build artifacts.
+#
+# When duplicating patterns, keep in mind that their meaning changes
+# between .gitignore locations:
+# https://git-scm.com/docs/gitignore#_pattern_format
+
+# /.gitignore
+node_modules
+
+# /src/py/reactpy/js/.gitignore
+js/**/tsconfig.tsbuildinfo
+js/packages/**/package-lock.json
+js/**/dist
+
 # --- Build Artifacts ---
 reactpy/_static
