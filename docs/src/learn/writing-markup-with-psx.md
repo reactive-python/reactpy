@@ -33,7 +33,7 @@ Keeping a button's rendering logic and markup together ensures that they stay in
 
 Each React component is a JavaScript function that may contain some markup that React renders into the browser. React components use a syntax extension called PSX to represent that markup. PSX looks a lot like HTML, but it is a bit stricter and can display dynamic information. The best way to understand this is to convert some HTML markup to PSX markup.
 
-!!! note
+!!! abstract "Note"
 
     PSX and ReactPy are two separate things. They're often used together, but you _can_ use them independently of each other. PSX is a syntax extension, while ReactPy is a Python library.
 

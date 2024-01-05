@@ -6,7 +6,7 @@ You will build a small tic-tac-toe game during this tutorial. This tutorial does
 
 </p>
 
-!!! note
+!!! abstract "Note"
 
     This tutorial is designed for people who prefer to **learn by doing** and want to quickly try making something tangible. If you prefer learning each concept step by step, start with [Describing the UI.](./your-first-component.md)
 
@@ -71,7 +71,7 @@ In the code example below, click **Run** to open the editor in a new tab using t
     # TODO
     ```
 
-!!! note
+!!! abstract "Note"
 
     You can also follow this tutorial using your local development environment. To do this, you need to:
 

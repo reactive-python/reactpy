@@ -10,7 +10,7 @@ If you want to build a new app or a new website fully with ReactPy, we recommend
 
 <!-- FIXME: This is reliant on https://github.com/reactive-python/reactpy/issues/1071 -->
 
-!!! note
+!!! abstract "Note"
 
     Some of our backend frameworks are considered _built-in_, meaning that compatibility for these backends are contained within `reactpy.backend.*`.
 
