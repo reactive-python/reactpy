@@ -7,18 +7,19 @@ from reactpy import component, html, use_state
 def square(value, on_square_click):
     return html.button(
         {"className": "square", "on_click": on_square_click},
-        value or "",
+        value,
     )
 
 
 @component
 def board(x_is_next, squares, on_play):
-
     def handle_click(i):
         def handle_click_event(_event):
-            """Due to a quirk of Python, if your event handler needs args other than
+            """
+            Due to a quirk of Python, if your event handler needs args other than
             `event`, you will need to create a wrapper function as seen above.
-            Ref: https://pylint.readthedocs.io/en/stable/user_guide/messages/warning/cell-var-from-loop.html"""
+            Ref: https://pylint.readthedocs.io/en/stable/user_guide/messages/warning/cell-var-from-loop.html
+            """
             if calculate_winner(squares) or squares[i]:
                 return
 
