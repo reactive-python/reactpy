@@ -27,6 +27,7 @@ Unreleased
 
 - :pull:`1118` - `module_from_template` is broken with a recent release of `requests`
 - :pull:`1131` - `module_from_template` did not work when using Flask backend
+- :pull:`1183` - Fix broken source distributions due to missing JavaScript client source code
 
 **Added**
 
