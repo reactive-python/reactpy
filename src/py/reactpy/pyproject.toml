@@ -130,6 +130,9 @@ only-include = ["js", "reactpy"]
 [tool.hatch.build.targets.wheel.force-include]
 "reactpy/_static" = "reactpy/_static"  # bypass .gitignore
 
+[tool.hatch.build.targets.sdist.hooks.custom]
+path = "hatch_build_sdist.py"
+
 [[tool.hatch.build.targets.wheel.hooks.build-scripts.scripts]]
 work_dir = "js"
 out_dir = "reactpy/_static"
