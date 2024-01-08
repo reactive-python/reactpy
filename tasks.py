@@ -50,7 +50,7 @@ log.addHandler(log_handler)
 ROOT = Path(__file__).parent
 DOCS_DIR = ROOT / "docs"
 SRC_DIR = ROOT / "src"
-JS_DIR = SRC_DIR / "js"
+JS_DIR = SRC_DIR / "py" / "reactpy" / "js"
 PY_DIR = SRC_DIR / "py"
 PY_PROJECTS = [p for p in PY_DIR.iterdir() if (p / "pyproject.toml").exists()]
 TAG_PATTERN = re.compile(
