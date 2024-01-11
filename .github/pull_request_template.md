@@ -1,15 +1,14 @@
-## Issues
+## Description
 
-<!-- Describe or link the issues this change resolves -->
+<!-- A summary of the changes. -->
 
-## Solution
+## Checklist:
 
-<!-- Describe how these changes resolves the issues -->
+<!-- Please update this checklist as you complete each item -->
 
-## Checklist
+-   [ ] Tests have been developed for bug fixes or new functionality.
+-   [ ] The changelog has been updated, if necessary.
+-   [ ] Documentation has been updated, if necessary.
+-   [ ] GitHub Issues closed by this PR have been linked.
 
--   [ ] Tests have been included for all bug fixes or added functionality.
--   [ ] The `changelog.rst` has been updated with any significant changes.
--   [ ] The documentation has been updated, if needed.
-
-<sub>By submitting this pull request you agree that all contributions are made under this project's open source license(s).</sub>
+<sub>By submitting this pull request you agree that all contributions comply with this project's open source license(s).</sub>
