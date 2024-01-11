@@ -14,7 +14,6 @@ from reactpy.testing import BackendFixture, DisplayFixture, poll
 @pytest.fixture(
     params=[*list(all_implementations()), default_implementation],
     ids=lambda imp: imp.__name__,
-    scope="module",
 )
 async def display(page, request):
     imp: BackendType = request.param

@@ -13,7 +13,7 @@ dependencies = [
   "invoke",
   # lint
   "black",
-  "ruff==0.0.278",  # Ruff is moving really fast, so pinning for now.
+  "ruff==0.0.278",        # Ruff is moving really fast, so pinning for now.
   "toml",
   "flake8",
   "flake8-pyproject",
@@ -32,9 +32,11 @@ publish = "invoke publish {args}"
 docs = "invoke docs {args}"
 check = ["lint-py", "lint-js", "test-py", "test-js", "test-docs"]
 
+lint = ["lint-py", "lint-js"]
 lint-py = "invoke lint-py {args}"
 lint-js = "invoke lint-js {args}"
 
+test = ["test-py", "test-js", "test-docs"]
 test-py = "invoke test-py {args}"
 test-js = "invoke test-js"
 test-docs = "invoke test-docs"
@@ -56,7 +58,7 @@ warn_unused_ignores = true
 # --- Flake8 ---------------------------------------------------------------------------
 
 [tool.flake8]
-select = ["RPY"]  # only need to check with reactpy-flake8
+select = ["RPY"]                                                  # only need to check with reactpy-flake8
 exclude = ["**/node_modules/*", ".eggs/*", ".tox/*", "**/venv/*"]
 
 # --- Ruff -----------------------------------------------------------------------------
@@ -95,7 +97,8 @@ select = [
 ]
 ignore = [
   # TODO: turn this on later
-  "N802", "N806",  # allow TitleCase functions/variables
+  "N802",
+  "N806", # allow TitleCase functions/variables
   # We're not any cryptography
   "S311",
   # For loop variable re-assignment seems like an uncommon mistake
@@ -103,9 +106,12 @@ ignore = [
   # Let Black deal with line-length
   "E501",
   # Allow args/attrs to shadow built-ins
-  "A002", "A003",
+  "A002",
+  "A003",
   # Allow unused args (useful for documenting what the parameter is for later)
-  "ARG001", "ARG002", "ARG005",
+  "ARG001",
+  "ARG002",
+  "ARG005",
   # Allow non-abstract empty methods in abstract base classes
   "B027",
   # Allow boolean positional values in function calls, like `dict.get(... True)`
@@ -113,9 +119,15 @@ ignore = [
   # If we're making an explicit comparison to a falsy value it was probably intentional
   "PLC1901",
   # Ignore checks for possible passwords
-  "S105", "S106", "S107",
+  "S105",
+  "S106",
+  "S107",
   # Ignore complexity
-  "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+  "C901",
+  "PLR0911",
+  "PLR0912",
+  "PLR0913",
+  "PLR0915",
 ]
 unfixable = [
   # Don't touch unused imports
