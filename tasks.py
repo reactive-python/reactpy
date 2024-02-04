@@ -416,8 +416,14 @@ def prepare_py_release(
 
     def publish(dry_run: bool):
         with context.cd(package.path):
+            context.run("twine check dist/*")
+
+            # check sdist install
+            context.run("pip install ./dist/*.tar.gz")
+            # check wheel install
+            context.run("pip install ./dist/*.whl")
+
             if dry_run:
-                context.run("twine check dist/*")
                 return
 
             context.run(

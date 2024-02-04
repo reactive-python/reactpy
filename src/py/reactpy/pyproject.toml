@@ -12,9 +12,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
 keywords = ["react", "javascript", "reactpy", "component"]
-authors = [
-  { name = "Ryan Morshead", email = "ryan.morshead@gmail.com" },
-]
+authors = [{ name = "Ryan Morshead", email = "ryan.morshead@gmail.com" }]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
@@ -39,10 +37,7 @@ dependencies = [
 [project.optional-dependencies]
 all = ["reactpy[starlette,sanic,fastapi,flask,tornado,testing]"]
 
-starlette = [
-  "starlette >=0.13.6",
-  "uvicorn[standard] >=0.19.0",
-]
+starlette = ["starlette >=0.13.6", "uvicorn[standard] >=0.19.0"]
 sanic = [
   "sanic >=21",
   "sanic-cors",
@@ -50,22 +45,10 @@ sanic = [
   "setuptools",
   "uvicorn[standard] >=0.19.0",
 ]
-fastapi = [
-  "fastapi >=0.63.0",
-  "uvicorn[standard] >=0.19.0",
-]
-flask = [
-  "flask",
-  "markupsafe>=1.1.1,<2.1",
-  "flask-cors",
-  "flask-sock",
-]
-tornado = [
-  "tornado",
-]
-testing = [
-  "playwright",
-]
+fastapi = ["fastapi >=0.63.0", "uvicorn[standard] >=0.19.0"]
+flask = ["flask", "markupsafe>=1.1.1,<2.1", "flask-cors", "flask-sock"]
+tornado = ["tornado"]
+testing = ["playwright"]
 
 [project.urls]
 Source = "https://github.com/reactive-python/reactpy"
@@ -101,13 +84,10 @@ cov-report = [
   # "- coverage combine",
   "coverage report",
 ]
-cov = [
-  "test-cov {args}",
-  "cov-report",
-]
+cov = ["test-cov {args}", "cov-report"]
 
 [tool.hatch.envs.default.env-vars]
-REACTPY_DEBUG_MODE="1"
+REACTPY_DEBUG_MODE = "1"
 
 [tool.hatch.envs.lint]
 features = ["all"]
@@ -124,16 +104,16 @@ dependencies = [
 types = "mypy --strict reactpy"
 all = ["types"]
 
+[tool.hatch.build.targets.sdist]
+artifacts = ["js"]
+
 [[tool.hatch.build.hooks.build-scripts.scripts]]
-work_dir = "../../js"
 out_dir = "reactpy/_static"
 commands = [
-  "npm ci",
-  "npm run build"
+  "if [ ! -d js ]; then ln -s ../../js js; fi",
+  "cd js && npm ci && npm run build; echo 'done'",
 ]
-artifacts = [
-  "app/dist/"
-]
+artifacts = ["js/app/dist/"]
 
 # --- Pytest ---------------------------------------------------------------------------
 
@@ -159,9 +139,7 @@ warn_unused_ignores = true
 source_pkgs = ["reactpy"]
 branch = false
 parallel = false
-omit = [
-  "reactpy/__init__.py",
-]
+omit = ["reactpy/__init__.py"]
 
 [tool.coverage.report]
 fail_under = 100
@@ -174,6 +152,4 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
-omit = [
-    "reactpy/__main__.py",
-]
+omit = ["reactpy/__main__.py"]
