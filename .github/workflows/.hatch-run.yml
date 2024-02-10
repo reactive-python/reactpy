@@ -57,3 +57,4 @@ jobs:
                   PYPI_USERNAME: ${{ secrets.pypi-username }}
                   PYPI_PASSWORD: ${{ secrets.pypi-password }}
               run: hatch run ${{ inputs.hatch-run }}
+              shell: bash
