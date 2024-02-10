@@ -106,9 +106,9 @@ def test_rewrite_camel_case_props_declarations_no_files():
             None,
         ),
     ],
-    ids=lambda item: " ".join(map(str.strip, item.split()))
-    if isinstance(item, str)
-    else item,
+    ids=lambda item: (
+        " ".join(map(str.strip, item.split())) if isinstance(item, str) else item
+    ),
 )
 def test_generate_rewrite(source, expected):
     actual = generate_rewrite(Path("test.py"), dedent(source).strip())

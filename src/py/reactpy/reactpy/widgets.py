@@ -82,8 +82,7 @@ _CastTo_co = TypeVar("_CastTo_co", covariant=True)
 
 
 class _CastFunc(Protocol[_CastTo_co]):
-    def __call__(self, value: str) -> _CastTo_co:
-        ...
+    def __call__(self, value: str) -> _CastTo_co: ...
 
 
 if TYPE_CHECKING:

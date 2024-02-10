@@ -28,8 +28,7 @@ if TYPE_CHECKING:
     class ReleasePrepFunc(Protocol):
         def __call__(
             self, context: Context, package: PackageInfo
-        ) -> Callable[[bool], None]:
-            ...
+        ) -> Callable[[bool], None]: ...
 
     LanguageName: TypeAlias = "Literal['py', 'js']"
 
