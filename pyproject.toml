@@ -12,10 +12,10 @@ detached = true
 dependencies = [
   "invoke",
   # lint
-  "black",
-  "ruff==0.0.278",        # Ruff is moving really fast, so pinning for now.
+  "black==24.1.1",        # Pin lint tools we don't control to avoid breaking changes
+  "ruff==0.0.278",        # Pin lint tools we don't control to avoid breaking changes
   "toml",
-  "flake8",
+  "flake8==7.0.0",        # Pin lint tools we don't control to avoid breaking changes
   "flake8-pyproject",
   "reactpy-flake8 >=0.7",
   # types

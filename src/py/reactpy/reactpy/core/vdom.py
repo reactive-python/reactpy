@@ -125,13 +125,11 @@ def is_vdom(value: Any) -> bool:
 
 
 @overload
-def vdom(tag: str, *children: VdomChildren) -> VdomDict:
-    ...
+def vdom(tag: str, *children: VdomChildren) -> VdomDict: ...
 
 
 @overload
-def vdom(tag: str, attributes: VdomAttributes, *children: VdomChildren) -> VdomDict:
-    ...
+def vdom(tag: str, attributes: VdomAttributes, *children: VdomChildren) -> VdomDict: ...
 
 
 def vdom(
@@ -345,8 +343,7 @@ class _CustomVdomDictConstructor(Protocol):
         children: Sequence[VdomChild],
         key: Key | None,
         event_handlers: EventHandlerDict,
-    ) -> VdomDict:
-        ...
+    ) -> VdomDict: ...
 
 
 class _EllipsisRepr:
