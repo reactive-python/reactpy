@@ -110,7 +110,8 @@ artifacts = ["js"]
 [[tool.hatch.build.hooks.build-scripts.scripts]]
 out_dir = "reactpy/_static"
 commands = [
-  "if [ ! -d js ]; then ln -s ../../js js; fi",
+  # link the js directory using python (e.g. if [ ! -d js ]; then ln -s ../../js js; fi)
+  "python -c \"import pathlib as p;js=p.Path('js');js.exists() or js.symlink_to(p.Path('..','..','js'),target_is_directory=True);\"",
   "cd js && npm ci && npm run build; echo 'done'",
 ]
 artifacts = ["js/app/dist/"]
