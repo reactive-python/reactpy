@@ -111,7 +111,11 @@ artifacts = ["js"]
 out_dir = "reactpy/_static"
 commands = [
   # link the js directory if it doesn't exist - use Python to avoid platform differences
-  "python -c \"import pathlib as p;js=p.Path('js');js.symlink_to(p.Path('..','..','js').resolve(),target_is_directory=True);\"",
+  """python -c \"
+  from pathlib import Path
+  js = Path('js')
+  js.symlink_to(Path('..','..','js').resolve(),target_is_directory=True)
+  \"""",
   "cd js && npm ci && npm run build; echo 'done'",
 ]
 artifacts = ["js/app/dist/"]
