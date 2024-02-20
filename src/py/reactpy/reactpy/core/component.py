@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import inspect
 from functools import wraps
-from typing import Any, Callable
+from typing import Any, Callable, TypeVar
 
 from reactpy.core.types import ComponentType, VdomDict
 
+T = TypeVar("T", bound=Callable[..., ComponentType | VdomDict | str | None])
 
 def component(
-    function: Callable[..., ComponentType | VdomDict | str | None]
-) -> Callable[..., Component]:
+    function: T
+) -> T:
     """A decorator for defining a new component.
 
     Parameters:
