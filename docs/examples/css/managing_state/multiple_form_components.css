@@ -1,0 +1,13 @@
+section {
+	border-bottom: 1px solid #aaa;
+	padding: 20px;
+}
+h4 {
+	color: #222;
+}
+body {
+	margin: 0;
+}
+.Error {
+	color: red;
+}
