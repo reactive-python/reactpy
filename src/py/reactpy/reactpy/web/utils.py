@@ -29,7 +29,7 @@ def resolve_module_exports_from_file(
         return set()
 
     export_names, references = resolve_module_exports_from_source(
-        file.read_text(), exclude_default=is_re_export
+        file.read_text(encoding="utf-8"), exclude_default=is_re_export
     )
 
     for ref in references:
