@@ -16,6 +16,8 @@ export interface ReactPyClient {
    */
   onMessage(type: string, handler: (message: any) => void): () => void;
 
+  onLayoutUpdate(handler: (path: string, model: any) => void): void;
+
   /**
    * Send a message to the server.
    *
@@ -43,6 +45,7 @@ export abstract class BaseReactPyClient implements ReactPyClient {
   private resolveReady: (value: undefined) => void;
   protected stateVars: object;
   protected debugMessages: boolean;
+  protected layoutUpdateHandlers: Array<(path: string, model: any) => void> = [];
 
   constructor() {
     this.resolveReady = () => { };
@@ -57,6 +60,10 @@ export abstract class BaseReactPyClient implements ReactPyClient {
     return () => {
       this.handlers[type] = this.handlers[type].filter((h) => h !== handler);
     };
+  }
+
+  onLayoutUpdate(handler: (path: string, model: any) => void): void {
+    this.layoutUpdateHandlers.push(handler);
   }
 
   abstract sendMessage(message: any): void;
@@ -146,7 +153,8 @@ enum messageTypes {
   isReady = "is-ready",
   reconnectingCheck = "reconnecting-check",
   clientState = "client-state",
-  stateUpdate = "state-update"
+  stateUpdate = "state-update",
+  layoutUpdate = "layout-update",
 };
 
 export class SimpleReactPyClient
@@ -198,6 +206,10 @@ export class SimpleReactPyClient
     this.onMessage(messageTypes.isReady, (msg) => { this.isReady = true; this.salt = msg.salt; });
     this.onMessage(messageTypes.clientState, () => { this.sendClientState() });
     this.onMessage(messageTypes.stateUpdate, (msg) => { this.updateClientState(msg.state_vars) });
+    this.onMessage(messageTypes.layoutUpdate, (msg) => {
+      this.updateClientState(msg.state_vars);
+      this.invokeLayoutUpdateHandlers(msg.path, msg.model);
+    })
 
     this.reconnect()
 
@@ -211,7 +223,13 @@ export class SimpleReactPyClient
     window.addEventListener('scroll', reconnectOnUserAction);
   }
 
-  showReconnectingGrayout() {
+  protected invokeLayoutUpdateHandlers(path: string, model: any) {
+    this.layoutUpdateHandlers.forEach(func => {
+      func(path, model);
+    });
+  }
+
+  protected showReconnectingGrayout() {
     const overlay = document.createElement('div');
     overlay.id = 'reactpy-reconnect-overlay';
 
@@ -229,7 +247,7 @@ export class SimpleReactPyClient
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 1000;
+      z-index: 100000;
     `;
 
     pipeContainer.style.cssText = `
@@ -328,6 +346,10 @@ export class SimpleReactPyClient
     const maxInterval = this.reconnectOptions?.maxInterval || 20000;
     const maxRetries = this.reconnectOptions?.maxRetries || 20;
 
+    if (this.layoutUpdateHandlers.length == 0) {
+      setTimeout(() => { this.reconnect(onOpen, interval, connectionAttemptsRemaining, lastAttempt); }, 10);
+      return
+    }
 
     if (connectionAttemptsRemaining <= 0) {
       logger.warn("Giving up on reconnecting (hit retry limit)");
@@ -344,7 +366,7 @@ export class SimpleReactPyClient
     this.shouldReconnect = true;
 
     window.setTimeout(() => {
-      if (!this.didReconnectingCallback && this.reconnectingCallback) {
+      if (!this.didReconnectingCallback && this.reconnectingCallback && maxRetries != connectionAttemptsRemaining) {
         this.didReconnectingCallback = true;
         this.reconnectingCallback();
       }

@@ -1,5 +1,6 @@
 import asyncio
 import base64
+from dataclasses import asdict, is_dataclass
 import datetime
 import hashlib
 import time
@@ -58,6 +59,8 @@ class StateRecoveryManager:
                 datetime.datetime,
                 datetime.date,
                 datetime.time,
+                datetime.timezone,
+                datetime.timedelta,
             ]
         )
 
@@ -65,7 +68,7 @@ class StateRecoveryManager:
         self._object_to_type_id = {}
         self._type_id_to_object = {}
         for idx, typ in enumerate(
-            (None, bool, str, int, float, list, tuple, UUID, *serializable_types)
+            (None, bool, str, int, float, list, tuple, UUID, datetime.timezone, datetime.timedelta, *serializable_types)
         ):
             idx_as_bytes = str(idx).encode("utf-8")
             self._object_to_type_id[typ] = idx_as_bytes
@@ -132,8 +135,13 @@ class StateRecoverySerializer:
         self._type_id_to_object = type_id_to_object
         self._max_object_length = max_object_length
         self._max_num_state_objects = max_num_state_objects
-        self._default_serializer = default_serializer
-        self._deserializer_map = deserializer_map or {}
+        self._provided_default_serializer = default_serializer
+        deserialization_map = {
+            datetime.timezone: lambda x: datetime.timezone(
+                datetime.timedelta(**x["offset"]), x["name"]
+            ),
+        }
+        self._deserializer_map = deserialization_map | (deserializer_map or {})
 
     def _get_otp_code(self, target_time: float) -> str:
         at = self._totp.at
@@ -252,6 +260,17 @@ class StateRecoverySerializer:
 
     def _serialize_object(self, obj: Any) -> bytes:
         return orjson.dumps(obj, default=self._default_serializer)
+
+    def _default_serializer(self, obj: Any) -> bytes:
+        if isinstance(obj, datetime.timezone):
+            return {"name": obj.tzname(None), "offset": obj.utcoffset(None)}
+        if isinstance(obj, datetime.timedelta):
+            return {"days": obj.days, "seconds": obj.seconds, "microseconds": obj.microseconds}
+        if is_dataclass(obj):
+            return asdict(obj)
+        if self._provided_default_serializer:
+            return self._provided_default_serializer(obj)
+        raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
     def _do_deserialize(
         self, typ: type, result: Any, custom_deserializer: Callable | None

@@ -193,16 +193,6 @@ def _setup_single_view_dispatcher_route(
             ),
             constructor,
         )
-        # await serve_layout(
-        #     Layout(
-        #         ConnectionContext(
-        #             constructor(),
-        #             value=,
-        #         )
-        #     ),
-        #     send,
-        #     recv,
-        # )
 
     api_blueprint.add_websocket_route(
         model_stream,
