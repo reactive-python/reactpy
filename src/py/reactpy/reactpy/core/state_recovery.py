@@ -14,6 +14,7 @@ from uuid import UUID
 import orjson
 import pyotp
 from more_itertools import chunked
+from reactpy.backend.types import Location
 
 logger = getLogger(__name__)
 
@@ -61,6 +62,7 @@ class StateRecoveryManager:
                 datetime.time,
                 datetime.timezone,
                 datetime.timedelta,
+                Location,
             ]
         )
 
