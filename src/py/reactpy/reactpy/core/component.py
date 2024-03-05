@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from functools import wraps
-from typing import Any, Callable, TypeVar, ParamSpec
+from typing import Any, Callable, ParamSpec, TypeVar
 
 from reactpy.core.types import ComponentType, VdomDict
 
@@ -11,33 +11,52 @@ P = ParamSpec("P")
 
 
 def component(
-    function: Callable[P, T],
+    function: Callable[P, T] | None = None,
+    *,
+    priority: int = 0,
 ) -> Callable[P, Component]:
     """A decorator for defining a new component.
 
     Parameters:
-        function: The component's :meth:`reactpy.core.proto.ComponentType.render` function.
+        priority: The rendering priority. Lower numbers are higher priority.
     """
-    sig = inspect.signature(function)
 
-    if "key" in sig.parameters and sig.parameters["key"].kind in (
-        inspect.Parameter.KEYWORD_ONLY,
-        inspect.Parameter.POSITIONAL_OR_KEYWORD,
-    ):
-        msg = f"Component render function {function} uses reserved parameter 'key'"
-        raise TypeError(msg)
+    def _component(function: Callable[P, T]) -> Callable[P, Component]:
+        sig = inspect.signature(function)
 
-    @wraps(function)
-    def constructor(*args: P.args, key: Any | None = None, **kwargs: P.kwargs) -> Component:
-        return Component(function, key, args, kwargs, sig)
+        if "key" in sig.parameters and sig.parameters["key"].kind in (
+            inspect.Parameter.KEYWORD_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ):
+            msg = f"Component render function {function} uses reserved parameter 'key'"
+            raise TypeError(msg)
 
-    return constructor
+        @wraps(function)
+        def constructor(
+            *args: P.args, key: Any | None = None, **kwargs: P.kwargs
+        ) -> Component:
+            return Component(function, key, args, kwargs, sig, priority)
+
+        return constructor
+
+    if function:
+        return _component(function)
+    return _component
 
 
 class Component:
     """An object for rending component models."""
 
-    __slots__ = "__weakref__", "_func", "_args", "_kwargs", "_sig", "key", "type"
+    __slots__ = (
+        "__weakref__",
+        "_func",
+        "_args",
+        "_kwargs",
+        "_sig",
+        "key",
+        "type",
+        "priority",
+    )
 
     def __init__(
         self,
@@ -46,12 +65,14 @@ class Component:
         args: tuple[Any, ...],
         kwargs: dict[str, Any],
         sig: inspect.Signature,
+        priority: int = 0,
     ) -> None:
         self.key = key
         self.type = function
         self._args = args
         self._kwargs = kwargs
         self._sig = sig
+        self.priority = priority
 
     def render(self) -> ComponentType | VdomDict | str | None:
         return self.type(*self._args, **self._kwargs)

@@ -12,6 +12,11 @@ export type LayoutEventMessage = {
   data: any;
 };
 
-export type IncomingMessage = LayoutUpdateMessage;
-export type OutgoingMessage = LayoutEventMessage;
+export type ReconnectingCheckMessage = {
+  type: "reconnecting-check";
+  value: string;
+}
+
+export type IncomingMessage = LayoutUpdateMessage | ReconnectingCheckMessage;
+export type OutgoingMessage = LayoutEventMessage | ReconnectingCheckMessage;
 export type Message = IncomingMessage | OutgoingMessage;

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import abc
+import asyncio
+import copy
 from asyncio import (
     FIRST_COMPLETED,
     CancelledError,
+    PriorityQueue,
     Queue,
     Task,
     create_task,
@@ -16,7 +19,9 @@ from contextlib import AsyncExitStack
 from logging import getLogger
 from typing import (
     Any,
+    Awaitable,
     Callable,
+    Coroutine,
     Generic,
     NamedTuple,
     NewType,
@@ -34,13 +39,22 @@ from reactpy.config import (
     REACTPY_CHECK_VDOM_SPEC,
     REACTPY_DEBUG_MODE,
 )
-from reactpy.core._life_cycle_hook import LifeCycleHook
+from reactpy.core._life_cycle_hook import (
+    LifeCycleHook,
+    clear_hook_state,
+    create_hook_state,
+    get_hook_state,
+)
+from reactpy.core.component import Component
+from reactpy.core.hooks import _ContextProvider
+from reactpy.core.state_recovery import StateRecoverySerializer
 from reactpy.core.types import (
     ComponentType,
     EventHandlerDict,
     Key,
     LayoutEventMessage,
     LayoutUpdateMessage,
+    StateUpdateMessage,
     VdomChild,
     VdomDict,
     VdomJson,
@@ -62,34 +76,64 @@ class Layout:
         "_render_tasks_ready",
         "_root_life_cycle_state_id",
         "_model_states_by_life_cycle_state_id",
+        "reconnecting",
+        "client_state",
+        "_state_recovery_serializer",
+        "_state_var_lock",
+        "_hook_state_token",
+        "_previous_states",
     )
 
     if not hasattr(abc.ABC, "__weakref__"):  # nocov
         __slots__ += ("__weakref__",)
 
-    def __init__(self, root: ComponentType) -> None:
+    def __init__(
+        self,
+        root: ComponentType,
+    ) -> None:
         super().__init__()
-        if not isinstance(root, ComponentType):
-            msg = f"Expected a ComponentType, not {type(root)!r}."
-            raise TypeError(msg)
+        # slow
+        # if not isinstance(root, ComponentType):
+        #     msg = f"Expected a ComponentType, not {type(root)!r}."
+        #     raise TypeError(msg)
         self.root = root
+        self.reconnecting = Ref(False)
+        self._state_recovery_serializer = None
+        self.client_state = {}
+        self._previous_states = {}
+
+    def set_recovery_serializer(self, serializer: StateRecoverySerializer) -> None:
+        self._state_recovery_serializer = serializer
 
     async def __aenter__(self) -> Layout:
+        return await self.start()
+
+    async def start(self) -> Layout:
+        self._hook_state_token = create_hook_state()
+
         # create attributes here to avoid access before entering context manager
         self._event_handlers: EventHandlerDict = {}
         self._render_tasks: set[Task[LayoutUpdateMessage]] = set()
         self._render_tasks_ready: Semaphore = Semaphore(0)
 
         self._rendering_queue: _ThreadSafeQueue[_LifeCycleStateId] = _ThreadSafeQueue()
-        root_model_state = _new_root_model_state(self.root, self._schedule_render_task)
+        root_model_state = _new_root_model_state(
+            self.root,
+            self._schedule_render_task,
+            self.reconnecting,
+            self.client_state,
+            self._previous_states,
+        )
 
         self._root_life_cycle_state_id = root_id = root_model_state.life_cycle_state.id
         self._model_states_by_life_cycle_state_id = {root_id: root_model_state}
-        self._schedule_render_task(root_id)
 
         return self
 
     async def __aexit__(self, *exc: Any) -> None:
+        return await self.finish()
+
+    async def finish(self) -> None:
         root_csid = self._root_life_cycle_state_id
         root_model_state = self._model_states_by_life_cycle_state_id[root_csid]
 
@@ -108,6 +152,14 @@ class Layout:
         del self._root_life_cycle_state_id
         del self._model_states_by_life_cycle_state_id
 
+        clear_hook_state(self._hook_state_token)
+
+    def start_rendering(self) -> None:
+        self._schedule_render_task(self._root_life_cycle_state_id)
+
+    def start_rendering_for_reconnect(self) -> None:
+        self._rendering_queue.put(self._root_life_cycle_state_id)
+
     async def deliver(self, event: LayoutEventMessage) -> None:
         """Dispatch an event to the targeted handler"""
         # It is possible for an element in the frontend to produce an event
@@ -122,7 +174,7 @@ class Layout:
             except Exception:
                 logger.exception(f"Failed to execute event handler {handler}")
         else:
-            logger.info(
+            logger.warning(
                 f"Ignored event - handler {event['target']!r} "
                 "does not exist or its component unmounted"
             )
@@ -132,6 +184,32 @@ class Layout:
             return await self._concurrent_render()
         else:  # nocov
             return await self._serial_render()
+
+    async def render_until_queue_empty(self) -> None:
+        model_state_id = await self._rendering_queue.get()
+        while True:
+            try:
+                model_state = self._model_states_by_life_cycle_state_id[model_state_id]
+            except KeyError:
+                logger.debug(
+                    "Did not render component with model state ID "
+                    f"{model_state_id!r} - component already unmounted"
+                )
+            else:
+                await self._create_layout_update(model_state, get_hook_state())
+            # this might seem counterintuitive. What's happening is that events can get kicked off
+            # and currently there's no (obvious) visibility on if we're waiting for them to finish
+            # so this will wait up to 0.15 * 5 = 750 ms to see if any renders come in before
+            # declaring it done. In the future, it would be better to just track the pending events
+            for _ in range(5):
+                try:
+                    model_state_id = await self._rendering_queue.get_nowait()
+                except asyncio.QueueEmpty:
+                    await asyncio.sleep(0.15)  # make sure
+                else:
+                    break
+            else:
+                return
 
     async def _serial_render(self) -> LayoutUpdateMessage:  # nocov
         """Await the next available render. This will block until a component is updated"""
@@ -145,7 +223,7 @@ class Layout:
                     f"{model_state_id!r} - component already unmounted"
                 )
             else:
-                return await self._create_layout_update(model_state)
+                return await self._create_layout_update(model_state, get_hook_state())
 
     async def _concurrent_render(self) -> LayoutUpdateMessage:
         """Await the next available render. This will block until a component is updated"""
@@ -156,8 +234,9 @@ class Layout:
         return update_task.result()
 
     async def _create_layout_update(
-        self, old_state: _ModelState
+        self, old_state: _ModelState, incoming_hook_state: list
     ) -> LayoutUpdateMessage:
+        token = create_hook_state(copy.copy(incoming_hook_state))
         new_state = _copy_component_model_state(old_state)
         component = new_state.life_cycle_state.component
 
@@ -167,11 +246,21 @@ class Layout:
         if REACTPY_CHECK_VDOM_SPEC.current:
             validate_vdom_json(new_state.model.current)
 
-        return {
-            "type": "layout-update",
-            "path": new_state.patch_path,
-            "model": new_state.model.current,
-        }
+        updated_states = new_state.life_cycle_state.hook._updated_states
+        state_vars = (
+            (await self._state_recovery_serializer.serialize_state_vars(updated_states))
+            if self._state_recovery_serializer
+            else {}
+        )
+        self._previous_states.update(updated_states)
+        updated_states.clear()
+        clear_hook_state(token)
+        return LayoutUpdateMessage(
+            type="layout-update",
+            path=new_state.patch_path,
+            model=new_state.model.current,
+            state_vars=state_vars,
+        )
 
     async def _render_component(
         self,
@@ -188,6 +277,7 @@ class Layout:
         await life_cycle_hook.affect_component_will_render(component)
         exit_stack.push_async_callback(life_cycle_hook.affect_layout_did_render)
         try:
+            patch_path_for_state = new_state.patch_path  # type: ignore  # noqa
             raw_model = component.render()
             # wrap the model in a fragment (i.e. tagName="") to ensure components have
             # a separate node in the model state tree. This could be removed if this
@@ -278,7 +368,11 @@ class Layout:
             if event in old_state.targets_by_event:
                 target = old_state.targets_by_event[event]
             else:
-                target = uuid4().hex if handler.target is None else handler.target
+                target = (
+                    new_state.patch_path + event
+                    if handler.target is None
+                    else handler.target
+                )
             new_state.targets_by_event[event] = target
             self._event_handlers[target] = handler
             model_event_handlers[event] = {
@@ -299,7 +393,11 @@ class Layout:
 
         model_event_handlers = new_state.model.current["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
-            target = uuid4().hex if handler.target is None else handler.target
+            target = (
+                new_state.patch_path + event
+                if handler.target is None
+                else handler.target
+            )
             new_state.targets_by_event[event] = target
             self._event_handlers[target] = handler
             model_event_handlers[event] = {
@@ -385,6 +483,8 @@ class Layout:
                         key,
                         child,
                         self._schedule_render_task,
+                        self.reconnecting,
+                        self.client_state,
                     )
                 elif old_child_state.is_component_state and (
                     old_child_state.life_cycle_state.component.type != child.type
@@ -397,6 +497,8 @@ class Layout:
                         key,
                         child,
                         self._schedule_render_task,
+                        self.reconnecting,
+                        self.client_state,
                     )
                 else:
                     new_child_state = _update_component_model_state(
@@ -405,6 +507,8 @@ class Layout:
                         index,
                         child,
                         self._schedule_render_task,
+                        self.reconnecting,
+                        self.client_state,
                     )
                 await self._render_component(
                     exit_stack, old_child_state, new_child_state, child
@@ -439,7 +543,13 @@ class Layout:
                 new_state.children_by_key[key] = child_state
             elif child_type is _COMPONENT_TYPE:
                 child_state = _make_component_model_state(
-                    new_state, index, key, child, self._schedule_render_task
+                    new_state,
+                    index,
+                    key,
+                    child,
+                    self._schedule_render_task,
+                    self.reconnecting,
+                    self.client_state,
                 )
                 await self._render_component(exit_stack, None, child_state, child)
             else:
@@ -455,14 +565,19 @@ class Layout:
 
             if model_state.is_component_state:
                 life_cycle_state = model_state.life_cycle_state
-                del self._model_states_by_life_cycle_state_id[life_cycle_state.id]
-                await life_cycle_state.hook.affect_component_will_unmount()
+                try:
+                    del self._model_states_by_life_cycle_state_id[life_cycle_state.id]
+                    await life_cycle_state.hook.affect_component_will_unmount()
+                except KeyError:
+                    pass  # sideeffect of reusing model states
 
             to_unmount.extend(model_state.children_by_key.values())
 
-    def _schedule_render_task(self, lcs_id: _LifeCycleStateId) -> None:
+    def _schedule_render_task(
+        self, lcs_id: _LifeCycleStateId, priority: int = 0
+    ) -> None:
         if not REACTPY_ASYNC_RENDERING.current:
-            self._rendering_queue.put(lcs_id)
+            self._rendering_queue.put(lcs_id, priority)
             return None
         try:
             model_state = self._model_states_by_life_cycle_state_id[lcs_id]
@@ -480,7 +595,11 @@ class Layout:
 
 
 def _new_root_model_state(
-    component: ComponentType, schedule_render: Callable[[_LifeCycleStateId], None]
+    component: ComponentType,
+    schedule_render: Callable[[_LifeCycleStateId], None],
+    reconnecting: bool,
+    client_state: dict[str, Any],
+    previous_states: dict[str, Any],
 ) -> _ModelState:
     return _ModelState(
         parent=None,
@@ -490,7 +609,9 @@ def _new_root_model_state(
         patch_path="",
         children_by_key={},
         targets_by_event={},
-        life_cycle_state=_make_life_cycle_state(component, schedule_render),
+        life_cycle_state=_make_life_cycle_state(
+            component, schedule_render, reconnecting, client_state, {}, previous_states
+        ),
     )
 
 
@@ -499,8 +620,11 @@ def _make_component_model_state(
     index: int,
     key: Any,
     component: ComponentType,
-    schedule_render: Callable[[_LifeCycleStateId], None],
+    schedule_render: Callable[[_LifeCycleStateId, int], None],
+    reconnecting: bool,
+    client_state: dict[str, Any],
 ) -> _ModelState:
+    hook = (parent.life_cycle_state or parent.parent_life_cycle_state).hook
     return _ModelState(
         parent=parent,
         index=index,
@@ -509,7 +633,14 @@ def _make_component_model_state(
         patch_path=f"{parent.patch_path}/children/{index}",
         children_by_key={},
         targets_by_event={},
-        life_cycle_state=_make_life_cycle_state(component, schedule_render),
+        life_cycle_state=_make_life_cycle_state(
+            component,
+            schedule_render,
+            reconnecting,
+            client_state,
+            hook._updated_states,
+            hook._previous_states,
+        ),
     )
 
 
@@ -537,8 +668,11 @@ def _update_component_model_state(
     new_parent: _ModelState,
     new_index: int,
     new_component: ComponentType,
-    schedule_render: Callable[[_LifeCycleStateId], None],
+    schedule_render: Callable[[_LifeCycleStateId, int], None],
+    reconnecting: bool,
+    client_state: dict[str, Any],
 ) -> _ModelState:
+    hook = (new_parent.life_cycle_state or new_parent.parent_life_cycle_state).hook
     return _ModelState(
         parent=new_parent,
         index=new_index,
@@ -550,7 +684,14 @@ def _update_component_model_state(
         life_cycle_state=(
             _update_life_cycle_state(old_model_state.life_cycle_state, new_component)
             if old_model_state.is_component_state
-            else _make_life_cycle_state(new_component, schedule_render)
+            else _make_life_cycle_state(
+                new_component,
+                schedule_render,
+                reconnecting,
+                client_state,
+                hook._updated_states,
+                hook._previous_states,
+            )
         ),
     )
 
@@ -568,6 +709,9 @@ def _make_element_model_state(
         patch_path=f"{parent.patch_path}/children/{index}",
         children_by_key={},
         targets_by_event={},
+        parent_life_cycle_state=(
+            parent.life_cycle_state or parent.parent_life_cycle_state
+        ),
     )
 
 
@@ -584,6 +728,9 @@ def _update_element_model_state(
         patch_path=old_model_state.patch_path,
         children_by_key={},
         targets_by_event={},
+        parent_life_cycle_state=(
+            new_parent.life_cycle_state or new_parent.parent_life_cycle_state
+        ),
     )
 
 
@@ -598,6 +745,7 @@ class _ModelState:
         "index",
         "key",
         "life_cycle_state",
+        "parent_life_cycle_state",
         "model",
         "patch_path",
         "targets_by_event",
@@ -613,6 +761,7 @@ class _ModelState:
         children_by_key: dict[Key, _ModelState],
         targets_by_event: dict[str, str],
         life_cycle_state: _LifeCycleState | None = None,
+        parent_life_cycle_state: _LifeCycleState | None = None,
     ):
         self.index = index
         """The index of the element amongst its siblings"""
@@ -639,13 +788,14 @@ class _ModelState:
             self._parent_ref = weakref(parent)
             """The parent model state"""
 
-        if life_cycle_state is not None:
-            self.life_cycle_state = life_cycle_state
-            """The state for the element's component (if it has one)"""
+        self.life_cycle_state = life_cycle_state
+        """The state for the element's component (if it has one)"""
+
+        self.parent_life_cycle_state = parent_life_cycle_state
 
     @property
     def is_component_state(self) -> bool:
-        return hasattr(self, "life_cycle_state")
+        return self.life_cycle_state is not None
 
     @property
     def parent(self) -> _ModelState:
@@ -663,12 +813,22 @@ class _ModelState:
 
 def _make_life_cycle_state(
     component: ComponentType,
-    schedule_render: Callable[[_LifeCycleStateId], None],
+    schedule_render: Callable[[_LifeCycleStateId, int], None],
+    reconnecting: bool,
+    client_state: dict[str, Any],
+    updated_states: dict[str, Any],
+    previous_states: dict[str, Any],
 ) -> _LifeCycleState:
     life_cycle_state_id = _LifeCycleStateId(uuid4().hex)
     return _LifeCycleState(
         life_cycle_state_id,
-        LifeCycleHook(lambda: schedule_render(life_cycle_state_id)),
+        LifeCycleHook(
+            lambda: schedule_render(life_cycle_state_id, component.priority),
+            reconnecting=reconnecting,
+            client_state=client_state,
+            updated_states=updated_states,
+            previous_states=previous_states,
+        ),
         component,
     )
 
@@ -707,16 +867,21 @@ _Type = TypeVar("_Type")
 class _ThreadSafeQueue(Generic[_Type]):
     def __init__(self) -> None:
         self._loop = get_running_loop()
-        self._queue: Queue[_Type] = Queue()
+        self._queue: PriorityQueue[_Type] = PriorityQueue()
         self._pending: set[_Type] = set()
 
-    def put(self, value: _Type) -> None:
+    def put(self, value: _Type, priority: int = 0) -> None:
         if value not in self._pending:
             self._pending.add(value)
-            self._loop.call_soon_threadsafe(self._queue.put_nowait, value)
+            self._loop.call_soon_threadsafe(self._queue.put_nowait, (priority, value))
 
     async def get(self) -> _Type:
-        value = await self._queue.get()
+        priority, value = await self._queue.get()
+        self._pending.remove(value)
+        return value
+
+    async def get_nowait(self) -> _Type:
+        priority, value = self._queue.get_nowait()
         self._pending.remove(value)
         return value
 
@@ -729,7 +894,7 @@ def _get_children_info(children: list[VdomChild]) -> Sequence[_ChildInfo]:
         elif isinstance(child, dict):
             child_type = _DICT_TYPE
             key = child.get("key")
-        elif isinstance(child, ComponentType):
+        elif isinstance(child, (Component, _ContextProvider)):
             child_type = _COMPONENT_TYPE
             key = child.key
         else:

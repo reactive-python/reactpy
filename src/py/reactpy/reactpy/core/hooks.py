@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+from functools import lru_cache
+import hashlib
+import sys
 from collections.abc import Coroutine, Sequence
+from hashlib import md5
 from logging import getLogger
 from types import FunctionType
 from typing import (
@@ -18,7 +22,8 @@ from typing import (
 from typing_extensions import TypeAlias
 
 from reactpy.config import REACTPY_DEBUG_MODE
-from reactpy.core._life_cycle_hook import current_hook
+from reactpy.core._life_cycle_hook import get_current_hook
+from reactpy.core.state_recovery import StateRecoveryFailureError
 from reactpy.core.types import Context, Key, State, VdomDict
 from reactpy.utils import Ref
 
@@ -38,6 +43,13 @@ __all__ = [
 
 logger = getLogger(__name__)
 
+
+class ReconnectingOnly(list):
+    """
+    Used to indicate that a hook should only be used during reconnection
+    """
+
+
 _Type = TypeVar("_Type")
 
 
@@ -49,7 +61,9 @@ def use_state(initial_value: Callable[[], _Type]) -> State[_Type]: ...
 def use_state(initial_value: _Type) -> State[_Type]: ...
 
 
-def use_state(initial_value: _Type | Callable[[], _Type]) -> State[_Type]:
+def use_state(
+    initial_value: _Type | Callable[[], _Type], *, server_only: bool = False
+) -> State[_Type]:
     """See the full :ref:`Use State` docs for details
 
     Parameters:
@@ -61,23 +75,62 @@ def use_state(initial_value: _Type | Callable[[], _Type]) -> State[_Type]:
     Returns:
         A tuple containing the current state and a function to update it.
     """
-    current_state = _use_const(lambda: _CurrentState(initial_value))
+    if server_only:
+        key = None
+    else:
+        hook = get_current_hook()
+        caller_info = get_caller_info()
+        key = get_state_key(caller_info)
+        if hook.reconnecting.current:
+            try:
+                initial_value = hook.client_state[key]
+            except KeyError as err:
+                raise StateRecoveryFailureError(
+                    f"Missing expected key {key} on client"
+                ) from err
+    current_state = _use_const(lambda: _CurrentState(key, initial_value))
     return State(current_state.value, current_state.dispatch)
 
 
+def get_caller_info():
+    # Get the current stack frame and then the frame above it
+    caller_frame = sys._getframe(2)
+    for i in range(50):
+        render_frame = sys._getframe(4 + i)
+        patch_path = render_frame.f_locals.get("patch_path_for_state")
+        if patch_path is not None:
+            break
+    # Extract the relevant information: file path and line number and hash it
+    return f"{caller_frame.f_code.co_filename} {caller_frame.f_lineno} {patch_path}"
+
+
+__DEBUG_CALLER_INFO_TO_STATE_KEY = {}
+
+
+@lru_cache(8192)
+def get_state_key(caller_info: str) -> str:
+    result = hashlib.sha256(caller_info.encode("utf8")).hexdigest()[:20]
+    if __debug__:
+        __DEBUG_CALLER_INFO_TO_STATE_KEY[result] = caller_info
+    return result
+
+
 class _CurrentState(Generic[_Type]):
-    __slots__ = "value", "dispatch"
+    __slots__ = "key", "value", "dispatch"
 
     def __init__(
         self,
+        key: str | None,
         initial_value: _Type | Callable[[], _Type],
     ) -> None:
+        self.key = key
         if callable(initial_value):
             self.value = initial_value()
         else:
             self.value = initial_value
 
-        hook = current_hook()
+        hook = get_current_hook()
+        hook.add_state_update(self)
 
         def dispatch(new: _Type | Callable[[_Type], _Type]) -> None:
             if callable(new):
@@ -86,6 +139,7 @@ class _CurrentState(Generic[_Type]):
                 next_value = new
             if not strictly_equal(next_value, self.value):
                 self.value = next_value
+                hook.add_state_update(self)
                 hook.schedule_render()
 
         self.dispatch = dispatch
@@ -131,11 +185,17 @@ def use_effect(
     Returns:
         If not function is provided, a decorator. Otherwise ``None``.
     """
-    hook = current_hook()
-
-    dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
     last_clean_callback: Ref[_EffectCleanFunc | None] = use_ref(None)
+    hook = get_current_hook()
+    if hook.reconnecting.current:
+        if not isinstance(dependencies, ReconnectingOnly):
+            return
+        dependencies = None
+    else:
+        if isinstance(dependencies, ReconnectingOnly):
+            return
+        dependencies = _try_to_infer_closure_values(function, dependencies)
 
     def add_effect(function: _EffectApplyFunc) -> None:
         if not asyncio.iscoroutinefunction(function):
@@ -204,7 +264,7 @@ def use_debug_value(
 
     if REACTPY_DEBUG_MODE.current and old.current != new:
         old.current = new
-        logger.debug(f"{current_hook().component} {new}")
+        logger.debug(f"{get_current_hook().component} {new}")
 
 
 def create_context(default_value: _Type) -> Context[_Type]:
@@ -232,7 +292,7 @@ def use_context(context: Context[_Type]) -> _Type:
 
     See the full :ref:`Use Context` docs for more information.
     """
-    hook = current_hook()
+    hook = get_current_hook()
     provider = hook.get_context_provider(context)
 
     if provider is None:
@@ -255,14 +315,16 @@ class _ContextProvider(Generic[_Type]):
         value: _Type,
         key: Key | None,
         type: Context[_Type],
+        priority: int = -1,
     ) -> None:
         self.children = children
         self.key = key
         self.type = type
         self.value = value
+        self.priority = priority
 
     def render(self) -> VdomDict:
-        current_hook().set_context_provider(self)
+        get_current_hook().set_context_provider(self)
         return {"tagName": "", "children": self.children}
 
     def __repr__(self) -> str:
@@ -447,7 +509,7 @@ class _Memo(Generic[_Type]):
             return False
 
 
-def use_ref(initial_value: _Type) -> Ref[_Type]:
+def use_ref(initial_value: _Type, server_only: bool = True) -> Ref[_Type]:
     """See the full :ref:`Use State` docs for details
 
     Parameters:
@@ -456,11 +518,24 @@ def use_ref(initial_value: _Type) -> Ref[_Type]:
     Returns:
         A :class:`Ref` object.
     """
-    return _use_const(lambda: Ref(initial_value))
+    if server_only:
+        key = None
+    else:
+        hook = get_current_hook()
+        caller_info = get_caller_info()
+        key = get_state_key(caller_info)
+        if hook.reconnecting.current:
+            try:
+                initial_value = hook.client_state[key]
+            except KeyError as err:
+                raise StateRecoveryFailureError(
+                    f"Missing expected key {key} on client"
+                ) from err
+    return _use_const(lambda: Ref(initial_value, key))
 
 
 def _use_const(function: Callable[[], _Type]) -> _Type:
-    return current_hook().use_state(function)
+    return get_current_hook().use_state(function)
 
 
 def _try_to_infer_closure_values(

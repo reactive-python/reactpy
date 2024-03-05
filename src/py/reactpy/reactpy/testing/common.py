@@ -13,7 +13,7 @@ from weakref import ref
 from typing_extensions import ParamSpec
 
 from reactpy.config import REACTPY_TESTING_DEFAULT_TIMEOUT, REACTPY_WEB_MODULES_DIR
-from reactpy.core._life_cycle_hook import LifeCycleHook, current_hook
+from reactpy.core._life_cycle_hook import LifeCycleHook, get_current_hook
 from reactpy.core.events import EventHandler, to_event_handler_function
 
 
@@ -143,7 +143,7 @@ class HookCatcher:
             if self is None:
                 raise RuntimeError("Hook catcher has been garbage collected")
 
-            hook = current_hook()
+            hook = get_current_hook()
             if self.index_by_kwarg is not None:
                 self.index[kwargs[self.index_by_kwarg]] = hook
             self.latest = hook

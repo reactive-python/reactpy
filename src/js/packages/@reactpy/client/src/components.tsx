@@ -29,12 +29,13 @@ export function Layout(props: { client: ReactPyClient }): JSX.Element {
 
   useEffect(
     () =>
-      props.client.onMessage("layout-update", ({ path, model }) => {
+      props.client.onMessage("layout-update", ({ path, model, state_vars }) => {
         if (path === "") {
           Object.assign(currentModel, model);
         } else {
           setJsonPointer(currentModel, path, model);
         }
+        props.client.updateStateVars(state_vars);
         forceUpdate();
       }),
     [currentModel, props.client],
@@ -125,23 +126,15 @@ function ScriptElement({ model }: { model: ReactPyVdom }) {
       (value): value is string => typeof value == "string",
     )[0];
 
-    let scriptElement: HTMLScriptElement;
-    if (model.attributes) {
-      scriptElement = document.createElement("script");
-      for (const [k, v] of Object.entries(model.attributes)) {
-        scriptElement.setAttribute(k, v);
-      }
-      if (scriptContent) {
-        scriptElement.appendChild(document.createTextNode(scriptContent));
-      }
-      ref.current.appendChild(scriptElement);
-    } else if (scriptContent) {
-      const scriptResult = eval(scriptContent);
-      if (typeof scriptResult == "function") {
-        return scriptResult();
-      }
+    const scriptElement: HTMLScriptElement = document.createElement("script");
+    for (const [k, v] of Object.entries(model.attributes || {})) {
+      scriptElement.setAttribute(k, v);
     }
-  }, [model.key, ref.current]);
+    if (scriptContent) {
+      scriptElement.appendChild(document.createTextNode(scriptContent));
+    }
+    ref.current.appendChild(scriptElement);
+  }, [model.key]);
 
   return <div ref={ref} />;
 }

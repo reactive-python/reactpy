@@ -57,6 +57,7 @@ class ComponentType(Protocol):
 
     This is used to see if two component instances share the same definition.
     """
+    priority: int
 
     def render(self) -> VdomDict | ComponentType | str | None:
         """Render the component's view model."""
@@ -213,6 +214,42 @@ class LayoutUpdateMessage(TypedDict):
     """JSON Pointer path to the model element being updated"""
     model: VdomJson
     """The model to assign at the given JSON Pointer path"""
+    state_vars: dict[str, Any]
+
+
+class StateUpdateMessage(TypedDict):
+    """A message describing an update to state variables"""
+
+    type: Literal["state-update"]
+    """The type of message"""
+    state_vars: dict[str, Any]
+
+
+class ReconnectingCheckMessage(TypedDict):
+    """A message describing an update to a layout"""
+
+    type: Literal["reconnecting-check"]
+    """The type of message"""
+    value: Literal["yes", "no"]
+
+
+class ClientStateMessage(TypedDict):
+    """A message requesting the current state of the client"""
+
+    type: Literal["client-state"]
+    """The type of message"""
+    value: dict[str, Any]
+    """The client state"""
+    salt: str
+    """The salt provided to the user"""
+
+
+class IsReadyMessage(TypedDict):
+    """Indicate server is ready for client events"""
+
+    type: Literal["is-ready"]
+
+    salt: str
 
 
 class LayoutEventMessage(TypedDict):

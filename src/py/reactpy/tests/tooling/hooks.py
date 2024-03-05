@@ -1,8 +1,8 @@
-from reactpy.core.hooks import current_hook, use_state
+from reactpy.core.hooks import get_current_hook, use_state
 
 
 def use_force_render():
-    return current_hook().schedule_render
+    return get_current_hook().schedule_render
 
 
 def use_toggle(init=False):
