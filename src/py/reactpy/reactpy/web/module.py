@@ -314,8 +314,7 @@ def export(
     export_names: str,
     fallback: Any | None = ...,
     allow_children: bool = ...,
-) -> VdomDictConstructor:
-    ...
+) -> VdomDictConstructor: ...
 
 
 @overload
@@ -324,8 +323,7 @@ def export(
     export_names: list[str] | tuple[str, ...],
     fallback: Any | None = ...,
     allow_children: bool = ...,
-) -> list[VdomDictConstructor]:
-    ...
+) -> list[VdomDictConstructor]: ...
 
 
 def export(
