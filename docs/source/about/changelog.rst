@@ -3,15 +3,10 @@ Changelog
 
 .. note::
 
-    The ReactPy team manages their short and long term plans with `GitHub Projects
-    <https://github.com/orgs/reactive-python/projects/1>`__. If you have questions about what
-    the team are working on, or have feedback on how issues should be prioritized, feel
-    free to :discussion-type:`open up a discussion <question>`.
-
-All notable changes to this project will be recorded in this document. The style of
-which is based on `Keep a Changelog <https://keepachangelog.com/>`__. The versioning
-scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__. For
-more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
+    All notable changes to this project will be recorded in this document. The style of
+    which is based on `Keep a Changelog <https://keepachangelog.com/>`__. The versioning
+    scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__. For
+    more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 
 
 .. INSTRUCTIONS FOR CHANGELOG CONTRIBUTORS
