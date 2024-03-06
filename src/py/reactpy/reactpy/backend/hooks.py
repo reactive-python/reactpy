@@ -1,10 +1,16 @@
 from __future__ import annotations
 
 from collections.abc import MutableMapping
-from typing import Any
+from typing import Any, Callable
 
 from reactpy.backend.types import Connection, Location
-from reactpy.core.hooks import create_context, use_context
+from reactpy.core.hooks import (
+    ReconnectingOnly,
+    _EffectApplyFunc,
+    create_context,
+    use_context,
+    use_effect,
+)
 from reactpy.core.types import Context
 
 # backend implementations should establish this context at the root of an app
@@ -28,3 +34,10 @@ def use_scope() -> MutableMapping[str, Any]:
 def use_location() -> Location:
     """Get the current :class:`~reactpy.backend.types.Connection`'s location."""
     return use_connection().location
+
+
+def use_reconnect_effect(
+    function: _EffectApplyFunc | None = None,
+) -> Callable[[_EffectApplyFunc], None] | None:
+    """Apply an effect only on reconnection"""
+    return use_effect(function, ReconnectingOnly())

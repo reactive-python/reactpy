@@ -27,12 +27,26 @@ class Ref(Generic[_RefValue]):
         You can compare the contents for two ``Ref`` objects using the ``==`` operator.
     """
 
-    __slots__ = ("current",)
+    __slots__ = ("current", "key", "_hook")
 
-    def __init__(self, initial_value: _RefValue = _UNDEFINED) -> None:
+    def __init__(
+        self, initial_value: _RefValue = _UNDEFINED, key: str | None = None
+    ) -> None:
+        from reactpy.core._life_cycle_hook import get_current_hook
+
         if initial_value is not _UNDEFINED:
             self.current = initial_value
             """The present value"""
+        self.key = key
+        self._hook = None
+        if key:
+            hook = get_current_hook()
+            hook.add_state_update(self)
+            self._hook = hook
+
+    @property
+    def value(self) -> _RefValue:
+        return self.current
 
     def set_current(self, new: _RefValue) -> _RefValue:
         """Set the current value and return what is now the old value
@@ -41,6 +55,8 @@ class Ref(Generic[_RefValue]):
         """
         old = self.current
         self.current = new
+        if self.key:
+            self._hook.add_state_update(self)
         return old
 
     def __eq__(self, other: Any) -> bool:

@@ -1,10 +1,16 @@
 from reactpy import backend, config, html, logging, sample, svg, types, web, widgets
-from reactpy.backend.hooks import use_connection, use_location, use_scope
+from reactpy.backend.hooks import (
+    use_connection,
+    use_location,
+    use_reconnect_effect,
+    use_scope,
+)
 from reactpy.backend.utils import run
 from reactpy.core import hooks
 from reactpy.core.component import component
 from reactpy.core.events import event
 from reactpy.core.hooks import (
+    ReconnectingOnly,
     create_context,
     use_callback,
     use_context,
@@ -33,6 +39,7 @@ __all__ = [
     "html",
     "Layout",
     "logging",
+    "ReconnectingOnly",
     "Ref",
     "run",
     "sample",
@@ -46,6 +53,7 @@ __all__ = [
     "use_effect",
     "use_location",
     "use_memo",
+    "use_reconnect_effect",
     "use_reducer",
     "use_ref",
     "use_scope",

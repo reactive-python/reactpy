@@ -35,6 +35,9 @@ dependencies = [
   "colorlog >=6",
   "asgiref >=3",
   "lxml >=4",
+  "pyotp",
+  "orjson",
+  "more-itertools",
 ]
 [project.optional-dependencies]
 all = ["reactpy[starlette,sanic,fastapi,flask,tornado,testing]"]

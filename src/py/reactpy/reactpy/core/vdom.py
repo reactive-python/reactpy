@@ -328,7 +328,7 @@ def _validate_child_key_integrity(value: Any) -> None:
         )
     else:
         for child in value:
-            if isinstance(child, ComponentType) and child.key is None:
+            if child.key is None and isinstance(child, ComponentType):
                 warn(f"Key not specified for child in list {child}", UserWarning)
             elif isinstance(child, Mapping) and "key" not in child:
                 # remove 'children' to reduce log spam
