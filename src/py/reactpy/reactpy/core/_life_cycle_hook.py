@@ -13,8 +13,7 @@ T = TypeVar("T")
 
 
 class EffectFunc(Protocol):
-    async def __call__(self, stop: Event) -> None:
-        ...
+    async def __call__(self, stop: Event) -> None: ...
 
 
 logger = logging.getLogger(__name__)

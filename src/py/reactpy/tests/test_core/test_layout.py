@@ -48,8 +48,7 @@ def no_logged_errors():
 
 def test_layout_repr():
     @reactpy.component
-    def MyComponent():
-        ...
+    def MyComponent(): ...
 
     my_component = MyComponent()
     layout = reactpy.Layout(my_component)
@@ -65,8 +64,7 @@ def test_layout_expects_abstract_component():
 
 async def test_layout_cannot_be_used_outside_context_manager(caplog):
     @reactpy.component
-    def Component():
-        ...
+    def Component(): ...
 
     component = Component()
     layout = reactpy.Layout(component)

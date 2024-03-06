@@ -159,8 +159,7 @@ EventHandlerDict: TypeAlias = "dict[str, EventHandlerType]"
 class EventHandlerFunc(Protocol):
     """A coroutine which can handle event data"""
 
-    async def __call__(self, data: Sequence[Any]) -> None:
-        ...
+    async def __call__(self, data: Sequence[Any]) -> None: ...
 
 
 @runtime_checkable
@@ -192,18 +191,17 @@ class VdomDictConstructor(Protocol):
     """Standard function for constructing a :class:`VdomDict`"""
 
     @overload
-    def __call__(self, attributes: VdomAttributes, *children: VdomChildren) -> VdomDict:
-        ...
+    def __call__(
+        self, attributes: VdomAttributes, *children: VdomChildren
+    ) -> VdomDict: ...
 
     @overload
-    def __call__(self, *children: VdomChildren) -> VdomDict:
-        ...
+    def __call__(self, *children: VdomChildren) -> VdomDict: ...
 
     @overload
     def __call__(
         self, *attributes_and_children: VdomAttributes | VdomChildren
-    ) -> VdomDict:
-        ...
+    ) -> VdomDict: ...
 
 
 class LayoutUpdateMessage(TypedDict):
@@ -236,8 +234,7 @@ class Context(Protocol[_Type]):
         *children: Any,
         value: _Type = ...,
         key: Key | None = ...,
-    ) -> ContextProviderType[_Type]:
-        ...
+    ) -> ContextProviderType[_Type]: ...
 
 
 class ContextProviderType(ComponentType, Protocol[_Type]):

@@ -42,13 +42,11 @@ _Type = TypeVar("_Type")
 
 
 @overload
-def use_state(initial_value: Callable[[], _Type]) -> State[_Type]:
-    ...
+def use_state(initial_value: Callable[[], _Type]) -> State[_Type]: ...
 
 
 @overload
-def use_state(initial_value: _Type) -> State[_Type]:
-    ...
+def use_state(initial_value: _Type) -> State[_Type]: ...
 
 
 def use_state(initial_value: _Type | Callable[[], _Type]) -> State[_Type]:
@@ -105,16 +103,14 @@ _EffectApplyFunc: TypeAlias = "_SyncEffectFunc | _AsyncEffectFunc"
 def use_effect(
     function: None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Callable[[_EffectApplyFunc], None]:
-    ...
+) -> Callable[[_EffectApplyFunc], None]: ...
 
 
 @overload
 def use_effect(
     function: _EffectApplyFunc,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> None:
-    ...
+) -> None: ...
 
 
 def use_effect(
@@ -313,16 +309,14 @@ _CallbackFunc = TypeVar("_CallbackFunc", bound=Callable[..., Any])
 def use_callback(
     function: None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Callable[[_CallbackFunc], _CallbackFunc]:
-    ...
+) -> Callable[[_CallbackFunc], _CallbackFunc]: ...
 
 
 @overload
 def use_callback(
     function: _CallbackFunc,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> _CallbackFunc:
-    ...
+) -> _CallbackFunc: ...
 
 
 def use_callback(
@@ -358,24 +352,21 @@ def use_callback(
 class _LambdaCaller(Protocol):
     """MyPy doesn't know how to deal with TypeVars only used in function return"""
 
-    def __call__(self, func: Callable[[], _Type]) -> _Type:
-        ...
+    def __call__(self, func: Callable[[], _Type]) -> _Type: ...
 
 
 @overload
 def use_memo(
     function: None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> _LambdaCaller:
-    ...
+) -> _LambdaCaller: ...
 
 
 @overload
 def use_memo(
     function: Callable[[], _Type],
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> _Type:
-    ...
+) -> _Type: ...
 
 
 def use_memo(
