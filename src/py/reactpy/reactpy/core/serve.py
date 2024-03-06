@@ -191,20 +191,20 @@ class WebsocketServer:
             client_state = serializer.deserialize_client_state(state_vars)
             layout.reconnecting.set_current(True)
             layout.client_state = client_state
-        except StateRecoveryFailureError:
-            logger.exception("State recovery failed")
-            layout.reconnecting.set_current(False)
-            layout.client_state = {}
-        else:
+
             salt = client_state_msg["salt"]
-        try:
             layout.start_rendering_for_reconnect()
             await layout.render_until_queue_empty()
         except StateRecoveryFailureError:
-            logger.warning("Client state non-recoverable. Starting fresh")
+            logger.warning(
+                "State recovery failed (likely client from different version). Starting fresh"
+            )
             await layout.finish()
+            layout.reconnecting.set_current(False)
+            layout.client_state = {}
             await layout.start()
             layout.start_rendering()
+            return salt
         layout.reconnecting.set_current(False)
         layout.client_state = {}
         return salt
