@@ -3,15 +3,10 @@ Changelog
 
 .. note::
 
-    The ReactPy team manages their short and long term plans with `GitHub Projects
-    <https://github.com/orgs/reactive-python/projects/1>`__. If you have questions about what
-    the team are working on, or have feedback on how issues should be prioritized, feel
-    free to :discussion-type:`open up a discussion <question>`.
-
-All notable changes to this project will be recorded in this document. The style of
-which is based on `Keep a Changelog <https://keepachangelog.com/>`__. The versioning
-scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__. For
-more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
+    All notable changes to this project will be recorded in this document. The style of
+    which is based on `Keep a Changelog <https://keepachangelog.com/>`__. The versioning
+    scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__. For
+    more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
 
 
 .. INSTRUCTIONS FOR CHANGELOG CONTRIBUTORS
@@ -26,6 +21,31 @@ Unreleased
 **Fixed**
 
 - :pull:`1118` - `module_from_template` is broken with a recent release of `requests`
+- :pull:`1131` - `module_from_template` did not work when using Flask backend
+- :pull:`1200` - Fixed `UnicodeDecodeError` when using `reactpy.web.export`
+
+**Added**
+
+- :pull:`1165` - Allow concurrent renders of discrete component tree - enable this
+  experimental feature by setting `REACTPY_ASYNC_RENDERING=true`. This should improve
+  the overall responsiveness of your app, particularly when handling larger renders
+  that would otherwise block faster renders from being processed.
+
+**Changed**
+
+- :pull:`1171` - Previously ``None``, when present in an HTML element, would render as
+  the string ``"None"``. Now ``None`` will not render at all. This is consistent with
+  how ``None`` is handled when returned from components. It also makes it easier to
+  conditionally render elements. For example, previously you would have needed to use a
+  fragment to conditionally render an element by writing
+  ``something if condition else html._()``. Now you can simply write
+  ``something if condition else None``.
+
+**Deprecated**
+
+- :pull:`1171` - The ``Stop`` exception. Recent releases of ``anyio`` have made this
+  exception difficult to use since it now raises an ``ExceptionGroup``. This exception
+  was primarily used for internal testing purposes and so is now deprecated.
 
 
 v1.0.2

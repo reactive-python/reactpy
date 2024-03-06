@@ -30,6 +30,11 @@ async def test_automatic_reconnect(browser: Browser):
             ),
         )
 
+    async def get_count():
+        # need to refetch element because may unmount on reconnect
+        count = await page.wait_for_selector("#count")
+        return await count.get_attribute("data-count")
+
     async with AsyncExitStack() as exit_stack:
         server = await exit_stack.enter_async_context(BackendFixture(port=port))
         display = await exit_stack.enter_async_context(
@@ -38,11 +43,10 @@ async def test_automatic_reconnect(browser: Browser):
 
         await display.show(SomeComponent)
 
-        count = await page.wait_for_selector("#count")
         incr = await page.wait_for_selector("#incr")
 
         for i in range(3):
-            assert (await count.get_attribute("data-count")) == str(i)
+            await poll(get_count).until_equals(str(i))
             await incr.click()
 
     # the server is disconnected but the last view state is still shown
@@ -57,13 +61,7 @@ async def test_automatic_reconnect(browser: Browser):
         # use mount instead of show to avoid a page refresh
         display.backend.mount(SomeComponent)
 
-        async def get_count():
-            # need to refetch element because may unmount on reconnect
-            count = await page.wait_for_selector("#count")
-            return await count.get_attribute("data-count")
-
         for i in range(3):
-            # it may take a moment for the websocket to reconnect so need to poll
             await poll(get_count).until_equals(str(i))
 
             # need to refetch element because may unmount on reconnect
@@ -98,11 +96,15 @@ async def test_style_can_be_changed(display: DisplayFixture):
 
     button = await display.page.wait_for_selector("#my-button")
 
-    assert (await _get_style(button))["background-color"] == "red"
+    await poll(_get_style, button).until(
+        lambda style: style["background-color"] == "red"
+    )
 
     for color in ["blue", "red"] * 2:
         await button.click()
-        assert (await _get_style(button))["background-color"] == color
+        await poll(_get_style, button).until(
+            lambda style, c=color: style["background-color"] == c
+        )
 
 
 async def _get_style(element):
