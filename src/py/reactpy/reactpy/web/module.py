@@ -145,7 +145,7 @@ def module_from_template(
         raise ValueError(msg)
 
     variables = {"PACKAGE": package, "CDN": cdn, "VERSION": template_version}
-    content = Template(template_file.read_text()).substitute(variables)
+    content = Template(template_file.read_text(encoding="utf-8")).substitute(variables)
 
     return module_from_string(
         _FROM_TEMPLATE_DIR + "/" + package_name,
@@ -270,7 +270,7 @@ def module_from_string(
 
     target_file = _web_module_path(name)
 
-    if target_file.exists() and target_file.read_text() != content:
+    if target_file.exists() and target_file.read_text(encoding="utf-8") != content:
         logger.info(
             f"Existing web module {name!r} will "
             f"be replaced with {target_file.resolve()}"

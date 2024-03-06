@@ -22,6 +22,7 @@ Unreleased
 
 - :pull:`1118` - `module_from_template` is broken with a recent release of `requests`
 - :pull:`1131` - `module_from_template` did not work when using Flask backend
+- :pull:`1200` - Fixed `UnicodeDecodeError` when using `reactpy.web.export`
 
 **Added**
 

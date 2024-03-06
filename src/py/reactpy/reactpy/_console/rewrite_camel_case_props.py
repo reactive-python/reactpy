@@ -29,7 +29,7 @@ def rewrite_camel_case_props(paths: list[str]) -> None:
 
     for p in map(Path, paths):
         for f in [p] if p.is_file() else p.rglob("*.py"):
-            result = generate_rewrite(file=f, source=f.read_text())
+            result = generate_rewrite(file=f, source=f.read_text(encoding="utf-8"))
             if result is not None:
                 f.write_text(result)
 
