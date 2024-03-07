@@ -40,6 +40,7 @@ Unreleased
   fragment to conditionally render an element by writing
   ``something if condition else html._()``. Now you can simply write
   ``something if condition else None``.
+- :pull:`1210` - Move hooks in `reactpy.backend.core` into `reactpy.core.hooks`.
 
 **Deprecated**
 
