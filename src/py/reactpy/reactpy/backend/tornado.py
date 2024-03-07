@@ -24,8 +24,8 @@ from reactpy.backend._common import (
     CommonOptions,
     read_client_index_html,
 )
-from reactpy.backend.hooks import ConnectionContext
-from reactpy.backend.hooks import use_connection as _use_connection
+from reactpy.core.hooks import ConnectionContext
+from reactpy.core.hooks import use_connection as _use_connection
 from reactpy.backend.types import Connection, Location
 from reactpy.config import REACTPY_WEB_MODULES_DIR
 from reactpy.core.layout import Layout

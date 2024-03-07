@@ -35,8 +35,8 @@ from reactpy.backend._common import (
     safe_client_build_dir_path,
     safe_web_modules_dir_path,
 )
-from reactpy.backend.hooks import ConnectionContext
-from reactpy.backend.hooks import use_connection as _use_connection
+from reactpy.core.hooks import ConnectionContext
+from reactpy.core.hooks import use_connection as _use_connection
 from reactpy.backend.types import Connection, Location
 from reactpy.core.serve import serve_layout
 from reactpy.core.types import ComponentType, RootComponentConstructor
@@ -70,7 +70,8 @@ def configure(
     """
     options = options or Options()
 
-    api_bp = Blueprint(f"reactpy_api_{id(app)}", __name__, url_prefix=str(PATH_PREFIX))
+    api_bp = Blueprint(f"reactpy_api_{id(app)}",
+                       __name__, url_prefix=str(PATH_PREFIX))
     spa_bp = Blueprint(
         f"reactpy_spa_{id(app)}", __name__, url_prefix=options.url_prefix
     )
@@ -192,14 +193,15 @@ def _setup_single_view_dispatcher_route(
         _dispatch_in_thread(
             ws,
             # remove any url prefix from path
-            path[len(options.url_prefix) :],
+            path[len(options.url_prefix):],
             constructor(),
             send,
             recv,
         )
 
     sock.route(STREAM_PATH.name, endpoint="without_path")(model_stream)
-    sock.route(f"{STREAM_PATH.name}/<path:path>", endpoint="with_path")(model_stream)
+    sock.route(f"{STREAM_PATH.name}/<path:path>",
+               endpoint="with_path")(model_stream)
 
 
 def _dispatch_in_thread(
@@ -260,7 +262,8 @@ def _dispatch_in_thread(
     Thread(target=run_dispatcher, daemon=True).start()
 
     dispatch_thread_info_created.wait()
-    dispatch_thread_info = cast(_DispatcherThreadInfo, dispatch_thread_info_ref.current)
+    dispatch_thread_info = cast(
+        _DispatcherThreadInfo, dispatch_thread_info_ref.current)
 
     if dispatch_thread_info is None:
         raise RuntimeError("Failed to create dispatcher thread")  # nocov
