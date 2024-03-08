@@ -107,6 +107,7 @@ export type SimpleReactPyClientProps = {
   idleDisconnectTimeSeconds?: number;
   connectionTimeout?: number;
   debugMessages?: boolean;
+  socketLoopThrottle?: number;
 };
 
 /**
@@ -178,6 +179,7 @@ export class SimpleReactPyClient
   private reconnectedCallback: () => void;
   private didReconnectingCallback: boolean;
   private willReconnect: boolean;
+  private socketLoopThrottle: number;
 
   constructor(props: SimpleReactPyClientProps) {
     super();
@@ -194,6 +196,7 @@ export class SimpleReactPyClient
     this.lastActivityTime = Date.now()
     this.reconnectOptions = props.reconnectOptions
     this.debugMessages = props.debugMessages || false;
+    this.socketLoopThrottle = props.socketLoopThrottle || 5;
     this.sleeping = false;
     this.isReconnecting = false;
     this.willReconnect = false;
@@ -421,7 +424,7 @@ export class SimpleReactPyClient
         onMessage: async ({ data }) => { this.lastActivityTime = Date.now(); this.handleIncoming(JSON.parse(data)) },
         ...this.reconnectOptions,
       });
-      this.socketLoopIntervalId = window.setInterval(() => { this.socketLoop() }, 30);
+      this.socketLoopIntervalId = window.setInterval(() => { this.socketLoop() }, this.socketLoopThrottle);
       this.idleCheckIntervalId = window.setInterval(() => { this.idleTimeoutCheck() }, 10000);
 
     }, interval)
