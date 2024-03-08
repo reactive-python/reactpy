@@ -148,7 +148,9 @@ class Layout:
                 return await self._create_layout_update(model_state)
 
     async def _parallel_render(self) -> LayoutUpdateMessage:
-        """Await the next available render within an asyncio task group."""
+        """Await to fetch the first completed render within our asyncio task group.
+        We use the `asyncio.tasks.wait` API in order to return the first completed task.
+        """
         await self._render_tasks_ready.acquire()
         done, _ = await wait(self._render_tasks, return_when=FIRST_COMPLETED)
         update_task: Task[LayoutUpdateMessage] = done.pop()
