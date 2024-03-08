@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import inspect
 from functools import wraps
-from typing import Any, Callable
+from typing import Any, Callable, TypeVar, ParamSpec
 
 from reactpy.core.types import ComponentType, VdomDict
 
+T = TypeVar("T", bound=ComponentType | VdomDict | str | None)
+P = ParamSpec("P")
+
 
 def component(
-    function: Callable[..., ComponentType | VdomDict | str | None]
-) -> Callable[..., Component]:
+    function: Callable[P, T],
+) -> Callable[P, Component]:
     """A decorator for defining a new component.
 
     Parameters:
@@ -25,7 +28,7 @@ def component(
         raise TypeError(msg)
 
     @wraps(function)
-    def constructor(*args: Any, key: Any | None = None, **kwargs: Any) -> Component:
+    def constructor(*args: P.args, key: Any | None = None, **kwargs: P.kwargs) -> Component:
         return Component(function, key, args, kwargs, sig)
 
     return constructor
