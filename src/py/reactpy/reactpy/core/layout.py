@@ -129,7 +129,7 @@ class Layout:
 
     async def render(self) -> LayoutUpdateMessage:
         if REACTPY_ASYNC_RENDERING.current:
-            return await self._concurrent_render()
+            return await self._parallel_render()
         else:  # nocov
             return await self._serial_render()
 
@@ -147,8 +147,8 @@ class Layout:
             else:
                 return await self._create_layout_update(model_state)
 
-    async def _concurrent_render(self) -> LayoutUpdateMessage:
-        """Await the next available render. This will block until a component is updated"""
+    async def _parallel_render(self) -> LayoutUpdateMessage:
+        """Await the next available render within an asyncio task group."""
         await self._render_tasks_ready.acquire()
         done, _ = await wait(self._render_tasks, return_when=FIRST_COMPLETED)
         update_task: Task[LayoutUpdateMessage] = done.pop()
