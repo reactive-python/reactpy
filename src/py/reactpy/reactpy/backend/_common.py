@@ -67,17 +67,17 @@ async def _check_if_started(server: uvicorn.Server, started: asyncio.Event) -> N
 
 def safe_client_build_dir_path(path: str) -> Path:
     """Prevent path traversal out of :data:`CLIENT_BUILD_DIR`"""
-    return traversal_safe_path(
+    return safe_join_path(
         CLIENT_BUILD_DIR, *("index.html" if path in {"", "/"} else path).split("/")
     )
 
 
 def safe_web_modules_dir_path(path: str) -> Path:
     """Prevent path traversal out of :data:`reactpy.config.REACTPY_WEB_MODULES_DIR`"""
-    return traversal_safe_path(REACTPY_WEB_MODULES_DIR.current, *path.split("/"))
+    return safe_join_path(REACTPY_WEB_MODULES_DIR.current, *path.split("/"))
 
 
-def traversal_safe_path(root: str | Path, *unsafe: str | Path) -> Path:
+def safe_join_path(root: str | Path, *unsafe: str | Path) -> Path:
     """Raise a ``ValueError`` if the ``unsafe`` path resolves outside the root dir."""
     root = os.path.abspath(root)
 
@@ -86,9 +86,10 @@ def traversal_safe_path(root: str | Path, *unsafe: str | Path) -> Path:
     path = os.path.abspath(os.path.join(root, *unsafe))
 
     if os.path.commonprefix([root, path]) != root:
-        # If the common prefix is not root directory we resolved outside the root dir
-        msg = "Unsafe path"
-        raise ValueError(msg)
+        # We resolved outside the root dir, potential directory traversal attack.
+        raise ValueError(
+            f"Unsafe path detected. Path '{path}' is outside root directory '{root}'"
+        )
 
     return Path(path)
 
@@ -116,16 +117,7 @@ def vdom_head_elements_to_html(head: Sequence[VdomDict] | VdomDict | str) -> str
 class CommonOptions:
     """Options for ReactPy's built-in backed server implementations"""
 
-    head: Sequence[VdomDict] | VdomDict | str = (
-        html.title("ReactPy"),
-        html.link(
-            {
-                "rel": "icon",
-                "href": "/_reactpy/assets/reactpy-logo.ico",
-                "type": "image/x-icon",
-            }
-        ),
-    )
+    head: Sequence[VdomDict] | VdomDict | str = (html.title("ReactPy App"),)
     """Add elements to the ``<head>`` of the application.
 
     For example, this can be used to customize the title of the page, link extra
