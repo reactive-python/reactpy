@@ -47,7 +47,10 @@ from reactpy.core._life_cycle_hook import (
 )
 from reactpy.core.component import Component
 from reactpy.core.hooks import _ContextProvider
-from reactpy.core.state_recovery import StateRecoverySerializer
+from reactpy.core.state_recovery import (
+    StateRecoveryFailureError,
+    StateRecoverySerializer,
+)
 from reactpy.core.types import (
     ComponentType,
     EventHandlerDict,
@@ -284,6 +287,8 @@ class Layout:
             # components are given a node in the tree some other way
             wrapper_model: VdomDict = {"tagName": "", "children": [raw_model]}
             await self._render_model(exit_stack, old_state, new_state, wrapper_model)
+        except StateRecoveryFailureError:
+            raise
         except Exception as error:
             logger.exception(f"Failed to render {component}")
             new_state.model.current = {

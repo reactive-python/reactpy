@@ -188,7 +188,10 @@ class WebsocketServer:
             serializer = self._state_recovery_manager.create_serializer(
                 client_state_msg["salt"]
             )
-            client_state = serializer.deserialize_client_state(state_vars)
+            try:
+                client_state = serializer.deserialize_client_state(state_vars)
+            except Exception as err:
+                raise StateRecoveryFailureError() from err
             layout.reconnecting.set_current(True)
             layout.client_state = client_state
 
