@@ -7,6 +7,7 @@ export default defineConfig({
       react: "preact/compat",
       "react-dom": "preact/compat",
     },
+    preserveSymlinks: true,
   },
   base: "/_reactpy/",
 });
