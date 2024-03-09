@@ -229,19 +229,6 @@ def create_context(default_value: _Type) -> Context[_Type]:
     return context
 
 
-# backend implementations should establish this context at the root of an app
-ConnectionContext: Context[Connection[Any] | None] = create_context(None)
-
-
-def use_connection() -> Connection[Any]:
-    """Get the current :class:`~reactpy.backend.types.Connection`."""
-    conn = use_context(ConnectionContext)
-    if conn is None:  # nocov
-        msg = "No backend established a connection."
-        raise RuntimeError(msg)
-    return conn
-
-
 def use_context(context: Context[_Type]) -> _Type:
     """Get the current value for the given context type.
 
@@ -261,6 +248,19 @@ def use_context(context: Context[_Type]) -> _Type:
         return cast(_Type, context.__kwdefaults__["value"])
 
     return provider.value
+
+
+# backend implementations should establish this context at the root of an app
+ConnectionContext: Context[Connection[Any] | None] = create_context(None)
+
+
+def use_connection() -> Connection[Any]:
+    """Get the current :class:`~reactpy.backend.types.Connection`."""
+    conn = use_context(ConnectionContext)
+    if conn is None:  # nocov
+        msg = "No backend established a connection."
+        raise RuntimeError(msg)
+    return conn
 
 
 def use_scope() -> MutableMapping[str, Any]:
