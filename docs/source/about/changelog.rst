@@ -40,13 +40,15 @@ Unreleased
   fragment to conditionally render an element by writing
   ``something if condition else html._()``. Now you can simply write
   ``something if condition else None``.
-- :pull:`1210` - Move hooks in `reactpy.backend.core` into `reactpy.core.hooks`.
+- :pull:`1210` - Move hooks from `reactpy.backend.hooks` into `reactpy.core.hooks`.
 
 **Deprecated**
 
 - :pull:`1171` - The ``Stop`` exception. Recent releases of ``anyio`` have made this
   exception difficult to use since it now raises an ``ExceptionGroup``. This exception
   was primarily used for internal testing purposes and so is now deprecated.
+- :pull:`1210` - Deprecate `reactpy.backend.hooks` since the hooks have been moved into
+  `reactpy.core.hooks`.
 
 
 v1.0.2
