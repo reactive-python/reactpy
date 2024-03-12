@@ -14,6 +14,10 @@ P = ParamSpec("P")
 def component(function: None = None, *, priority: int) -> Callable[P, Component]: ...
 
 
+@overload
+def component(function: Callable[P, T] | None) -> Callable[P, Component]: ...
+
+
 def component(
     function: Callable[P, T] | None = None,
     *,
