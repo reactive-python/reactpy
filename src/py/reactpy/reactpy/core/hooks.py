@@ -54,11 +54,11 @@ _Type = TypeVar("_Type")
 
 
 @overload
-def use_state(initial_value: Callable[[], _Type]) -> State[_Type]: ...
+def use_state(initial_value: Callable[[], _Type], *, server_only: bool = False) -> State[_Type]: ...
 
 
 @overload
-def use_state(initial_value: _Type) -> State[_Type]: ...
+def use_state(initial_value: _Type, *, server_only: bool = False) -> State[_Type]: ...
 
 
 def use_state(
@@ -509,7 +509,7 @@ class _Memo(Generic[_Type]):
             return False
 
 
-def use_ref(initial_value: _Type, server_only: bool = True) -> Ref[_Type]:
+def use_ref(initial_value: _Type, *, server_only: bool = True) -> Ref[_Type]:
     """See the full :ref:`Use State` docs for details
 
     Parameters:

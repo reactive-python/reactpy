@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import inspect
 from functools import wraps
-from typing import Any, Callable, ParamSpec, TypeVar
+from typing import Any, Callable, ParamSpec, TypeVar, overload
 
 from reactpy.core.types import ComponentType, VdomDict
 
 T = TypeVar("T", bound=ComponentType | VdomDict | str | None)
 P = ParamSpec("P")
+
+
+@overload
+def component(function: None = None, *, priority: int) -> Callable[P, Component]: ...
 
 
 def component(
