@@ -32,7 +32,7 @@ from tests.tooling.select import element_exists, find_element
 
 
 @pytest.fixture(autouse=True, params=[True, False])
-def concurrent_rendering(request):
+def async_rendering(request):
     with patch.object(REACTPY_ASYNC_RENDERING, "current", request.param):
         yield request.param
 
@@ -1252,9 +1252,9 @@ async def test_ensure_model_path_udpates():
         assert c["attributes"]["color"] == "blue"
 
 
-async def test_concurrent_renders(concurrent_rendering):
-    if not concurrent_rendering:
-        raise pytest.skip("Concurrent rendering not enabled")
+async def test_async_renders(async_rendering):
+    if not async_rendering:
+        raise pytest.skip("Async rendering not enabled")
 
     child_1_hook = HookCatcher()
     child_2_hook = HookCatcher()
