@@ -1,9 +1,7 @@
 from __future__ import annotations
-from collections.abc import MutableMapping
-from reactpy.backend.types import Connection, Location
 
 import asyncio
-from collections.abc import Coroutine, Sequence
+from collections.abc import Coroutine, MutableMapping, Sequence
 from logging import getLogger
 from types import FunctionType
 from typing import (
@@ -19,6 +17,7 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
+from reactpy.backend.types import Connection, Location
 from reactpy.config import REACTPY_DEBUG_MODE
 from reactpy.core._life_cycle_hook import current_hook
 from reactpy.core.types import Context, Key, State, VdomDict
