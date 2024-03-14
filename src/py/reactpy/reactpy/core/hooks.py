@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Coroutine, Sequence
+from collections.abc import Coroutine, MutableMapping, Sequence
 from logging import getLogger
 from types import FunctionType
 from typing import (
@@ -17,6 +17,7 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
+from reactpy.backend.types import Connection, Location
 from reactpy.config import REACTPY_DEBUG_MODE
 from reactpy.core._life_cycle_hook import current_hook
 from reactpy.core.types import Context, Key, State, VdomDict
@@ -246,6 +247,29 @@ def use_context(context: Context[_Type]) -> _Type:
         return cast(_Type, context.__kwdefaults__["value"])
 
     return provider.value
+
+
+# backend implementations should establish this context at the root of an app
+ConnectionContext: Context[Connection[Any] | None] = create_context(None)
+
+
+def use_connection() -> Connection[Any]:
+    """Get the current :class:`~reactpy.backend.types.Connection`."""
+    conn = use_context(ConnectionContext)
+    if conn is None:  # nocov
+        msg = "No backend established a connection."
+        raise RuntimeError(msg)
+    return conn
+
+
+def use_scope() -> MutableMapping[str, Any]:
+    """Get the current :class:`~reactpy.backend.types.Connection`'s scope."""
+    return use_connection().scope
+
+
+def use_location() -> Location:
+    """Get the current :class:`~reactpy.backend.types.Connection`'s location."""
+    return use_connection().location
 
 
 class _ContextProvider(Generic[_Type]):
