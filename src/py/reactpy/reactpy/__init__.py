@@ -16,7 +16,6 @@ from reactpy.core.hooks import (
     use_state,
 )
 from reactpy.core.layout import Layout
-from reactpy.core.serve import Stop
 from reactpy.core.vdom import vdom
 from reactpy.utils import Ref, html_to_vdom, vdom_to_html
 

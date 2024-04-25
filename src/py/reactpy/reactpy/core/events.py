@@ -15,8 +15,7 @@ def event(
     *,
     stop_propagation: bool = ...,
     prevent_default: bool = ...,
-) -> EventHandler:
-    ...
+) -> EventHandler: ...
 
 
 @overload
@@ -25,8 +24,7 @@ def event(
     *,
     stop_propagation: bool = ...,
     prevent_default: bool = ...,
-) -> Callable[[Callable[..., Any]], EventHandler]:
-    ...
+) -> Callable[[Callable[..., Any]], EventHandler]: ...
 
 
 def event(

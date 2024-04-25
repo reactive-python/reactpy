@@ -1,14 +1,14 @@
-<sub>By submitting this pull request you agree that all contributions to this project are made under the MIT license.</sub>
+## Description
 
-## Issues
-
-<!-- Describe or link the issues this change resolves -->
-
-## Solution
-
-<!-- Describe how these changes resolve the aforementioned issues -->
+<!-- A summary of the changes. -->
 
 ## Checklist
 
-- [ ] Tests have been included for all bug fixes or added functionality.
-- [ ] The `changelog.rst` has been updated with any significant changes.
+Please update this checklist as you complete each item:
+
+-   [ ] Tests have been developed for bug fixes or new functionality.
+-   [ ] The changelog has been updated, if necessary.
+-   [ ] Documentation has been updated, if necessary.
+-   [ ] GitHub Issues closed by this PR have been linked.
+
+<sub>By submitting this pull request I agree that all contributions comply with this project's open source license(s).</sub>

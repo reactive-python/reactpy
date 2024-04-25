@@ -165,7 +165,7 @@ def _setup_common_routes(
 
     @api_blueprint.route(f"/{MODULES_PATH.name}/<path:path>")
     def send_modules_dir(path: str = "") -> Any:
-        return send_file(safe_web_modules_dir_path(path))
+        return send_file(safe_web_modules_dir_path(path), mimetype="text/javascript")
 
     index_html = read_client_index_html(options)
 

@@ -2,6 +2,7 @@ import asyncio
 import gc
 import random
 import re
+from unittest.mock import patch
 from weakref import finalize
 from weakref import ref as weakref
 
@@ -9,7 +10,7 @@ import pytest
 
 import reactpy
 from reactpy import html
-from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_ASYNC_RENDERING, REACTPY_DEBUG_MODE
 from reactpy.core.component import component
 from reactpy.core.hooks import use_effect, use_state
 from reactpy.core.layout import Layout
@@ -20,12 +21,20 @@ from reactpy.testing import (
     assert_reactpy_did_log,
     capture_reactpy_logs,
 )
+from reactpy.testing.common import poll
 from reactpy.utils import Ref
 from tests.tooling import select
+from tests.tooling.aio import Event
 from tests.tooling.common import event_message, update_message
 from tests.tooling.hooks import use_force_render, use_toggle
 from tests.tooling.layout import layout_runner
 from tests.tooling.select import element_exists, find_element
+
+
+@pytest.fixture(autouse=True, params=[True, False])
+def async_rendering(request):
+    with patch.object(REACTPY_ASYNC_RENDERING, "current", request.param):
+        yield request.param
 
 
 @pytest.fixture(autouse=True)
@@ -39,8 +48,7 @@ def no_logged_errors():
 
 def test_layout_repr():
     @reactpy.component
-    def MyComponent():
-        ...
+    def MyComponent(): ...
 
     my_component = MyComponent()
     layout = reactpy.Layout(my_component)
@@ -56,8 +64,7 @@ def test_layout_expects_abstract_component():
 
 async def test_layout_cannot_be_used_outside_context_manager(caplog):
     @reactpy.component
-    def Component():
-        ...
+    def Component(): ...
 
     component = Component()
     layout = reactpy.Layout(component)
@@ -91,15 +98,6 @@ async def test_simple_layout():
             path="",
             model={"tagName": "", "children": [{"tagName": "table"}]},
         )
-
-
-async def test_component_can_return_none():
-    @reactpy.component
-    def SomeComponent():
-        return None
-
-    async with reactpy.Layout(SomeComponent()) as layout:
-        assert (await layout.render())["model"] == {"tagName": ""}
 
 
 async def test_nested_component_layout():
@@ -164,7 +162,7 @@ async def test_nested_component_layout():
 async def test_layout_render_error_has_partial_update_with_error_message():
     @reactpy.component
     def Main():
-        return reactpy.html.div([OkChild(), BadChild(), OkChild()])
+        return reactpy.html.div(OkChild(), BadChild(), OkChild())
 
     @reactpy.component
     def OkChild():
@@ -622,7 +620,7 @@ async def test_hooks_for_keyed_components_get_garbage_collected():
     def Outer():
         items, set_items = reactpy.hooks.use_state([1, 2, 3])
         pop_item.current = lambda: set_items(items[:-1])
-        return reactpy.html.div(Inner(key=k, finalizer_id=k) for k in items)
+        return reactpy.html.div([Inner(key=k, finalizer_id=k) for k in items])
 
     @reactpy.component
     def Inner(finalizer_id):
@@ -831,17 +829,19 @@ async def test_elements_and_components_with_the_same_key_can_be_interchanged():
     async with reactpy.Layout(Root()) as layout:
         await layout.render()
 
-        assert effects == ["mount x"]
+        await poll(lambda: effects).until_equals(["mount x"])
 
         set_toggle.current()
         await layout.render()
 
-        assert effects == ["mount x", "unmount x", "mount y"]
+        await poll(lambda: effects).until_equals(["mount x", "unmount x", "mount y"])
 
         set_toggle.current()
         await layout.render()
 
-        assert effects == ["mount x", "unmount x", "mount y", "unmount y", "mount x"]
+        await poll(lambda: effects).until_equals(
+            ["mount x", "unmount x", "mount y", "unmount y", "mount x"]
+        )
 
 
 async def test_layout_does_not_copy_element_children_by_key():
@@ -1250,3 +1250,94 @@ async def test_ensure_model_path_udpates():
         c, c_info = find_element(tree, select.id_equals("C"))
         assert c_info.path == (0, 1, 0)
         assert c["attributes"]["color"] == "blue"
+
+
+async def test_async_renders(async_rendering):
+    if not async_rendering:
+        raise pytest.skip("Async rendering not enabled")
+
+    child_1_hook = HookCatcher()
+    child_2_hook = HookCatcher()
+    child_1_rendered = Event()
+    child_2_rendered = Event()
+    child_1_render_count = Ref(0)
+    child_2_render_count = Ref(0)
+
+    @component
+    def outer():
+        return html._(child_1(), child_2())
+
+    @component
+    @child_1_hook.capture
+    def child_1():
+        child_1_rendered.set()
+        child_1_render_count.current += 1
+
+    @component
+    @child_2_hook.capture
+    def child_2():
+        child_2_rendered.set()
+        child_2_render_count.current += 1
+
+    async with Layout(outer()) as layout:
+        await layout.render()
+
+        # clear render events and counts
+        child_1_rendered.clear()
+        child_2_rendered.clear()
+        child_1_render_count.current = 0
+        child_2_render_count.current = 0
+
+        # we schedule two renders but expect only one
+        child_1_hook.latest.schedule_render()
+        child_1_hook.latest.schedule_render()
+        child_2_hook.latest.schedule_render()
+        child_2_hook.latest.schedule_render()
+
+        await child_1_rendered.wait()
+        await child_2_rendered.wait()
+
+        assert child_1_render_count.current == 1
+        assert child_2_render_count.current == 1
+
+
+async def test_none_does_not_render():
+    @component
+    def Root():
+        return html.div(None, Child())
+
+    @component
+    def Child():
+        return None
+
+    async with layout_runner(Layout(Root())) as runner:
+        tree = await runner.render()
+        assert tree == {
+            "tagName": "",
+            "children": [
+                {"tagName": "div", "children": [{"tagName": "", "children": []}]}
+            ],
+        }
+
+
+async def test_conditionally_render_none_does_not_trigger_state_change_in_siblings():
+    toggle_condition = Ref()
+    effect_run_count = Ref(0)
+
+    @component
+    def Root():
+        condition, toggle_condition.current = use_toggle(True)
+        return html.div("text" if condition else None, Child())
+
+    @component
+    def Child():
+        @reactpy.use_effect
+        def effect():
+            effect_run_count.current += 1
+
+    async with layout_runner(Layout(Root())) as runner:
+        await runner.render()
+        poll(lambda: effect_run_count.current).until_equals(1)
+        toggle_condition.current()
+        await runner.render()
+    assert effect_run_count.current == 1

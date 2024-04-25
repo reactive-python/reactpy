@@ -7,6 +7,7 @@ from collections.abc import Awaitable
 from dataclasses import dataclass
 from typing import Any, Callable
 
+from exceptiongroup import BaseExceptionGroup
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
@@ -137,8 +138,6 @@ def _make_index_route(options: Options) -> Callable[[Request], Awaitable[HTMLRes
 def _setup_single_view_dispatcher_route(
     options: Options, app: Starlette, component: RootComponentConstructor
 ) -> None:
-    @app.websocket_route(str(STREAM_PATH))
-    @app.websocket_route(f"{STREAM_PATH}/{{path:path}}")
     async def model_stream(socket: WebSocket) -> None:
         await socket.accept()
         send, recv = _make_send_recv_callbacks(socket)
@@ -162,8 +161,16 @@ def _setup_single_view_dispatcher_route(
                 send,
                 recv,
             )
-        except WebSocketDisconnect as error:
-            logger.info(f"WebSocket disconnect: {error.code}")
+        except BaseExceptionGroup as egroup:
+            for e in egroup.exceptions:
+                if isinstance(e, WebSocketDisconnect):
+                    logger.info(f"WebSocket disconnect: {e.code}")
+                    break
+            else:  # nocov
+                raise
+
+    app.add_websocket_route(str(STREAM_PATH), model_stream)
+    app.add_websocket_route(f"{STREAM_PATH}/{{path:path}}", model_stream)
 
 
 def _make_send_recv_callbacks(
