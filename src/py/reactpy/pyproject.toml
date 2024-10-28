@@ -96,6 +96,7 @@ dependencies = [
   "types-click",
   "types-tornado",
   "types-flask",
+  "pkg_resources; sys_platform != 'win32'",
   "types-requests",
 ]
 
