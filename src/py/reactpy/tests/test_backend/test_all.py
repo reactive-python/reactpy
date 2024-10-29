@@ -1,4 +1,3 @@
-import sys
 from collections.abc import MutableMapping
 
 import pytest
@@ -107,17 +106,13 @@ async def test_use_scope(display: DisplayFixture):
     assert isinstance(scope.current, MutableMapping)
 
 
-@pytest.mark.skipIf(
-    sys.platform == "darwin",
-    reason="Tornado and Flask backends are currently buggy on MacOS.",
-)
 async def test_use_location(display: DisplayFixture):
     location = reactpy.Ref()
 
     @poll
     async def poll_location():
         """This needs to be async to allow the server to respond"""
-        return location.current
+        return getattr(location, "current", None)
 
     @reactpy.component
     def ShowRoute():
