@@ -10,7 +10,7 @@ def picture():
             {
                 "class_name": "picture",
                 "alt": "Rainbow houses in Kampung Pelangi, Indonesia",
-                "src": "https://i.imgur.com/5qwVYb1.jpeg"
+                "src": "https://i.imgur.com/5qwVYb1.jpeg",
             }
-        )
+        ),
     )

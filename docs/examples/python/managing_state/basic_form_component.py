@@ -9,10 +9,8 @@ def form(status="empty"):
     else:
         return html._(
             html.h2("City quiz"),
-            html.p("In which city is there a billboard that turns air into drinkable water?"),
-            html.form(
-                html.textarea(),
-                html.br(),
-                html.button("Submit")
-            )
+            html.p(
+                "In which city is there a billboard that turns air into drinkable water?"
+            ),
+            html.form(html.textarea(), html.br(), html.button("Submit")),
         )

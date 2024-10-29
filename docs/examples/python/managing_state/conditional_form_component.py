@@ -6,8 +6,7 @@ from reactpy import component, html
 def error(status):
     if status == "error":
         return html.p(
-            {"class_name": "error"},
-            "Good guess but a wrong answer. Try again!"
+            {"class_name": "error"}, "Good guess but a wrong answer. Try again!"
         )
     else:
         return ""
@@ -27,19 +26,17 @@ def form(status="empty"):
             ),
             html.form(
                 html.textarea(
-                    {
-                        "disabled": "True" if status == "submitting"
-                        else "False"
-                    }
+                    {"disabled": "True" if status == "submitting" else "False"}
                 ),
                 html.br(),
                 html.button(
                     {
-                        "disabled": True if status == "empty" 
-                        or status == "submitting" else "False"
+                        "disabled": (
+                            True if status in ["empty", "submitting"] else "False"
+                        )
                     },
-                    "Submit"
+                    "Submit",
                 ),
-                error(status)
-            )
+                error(status),
+            ),
         )

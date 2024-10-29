@@ -1,8 +1,9 @@
-from reactpy import component, event, html, hooks
 import asyncio
 
+from reactpy import component, event, hooks, html
 
-async def submit_form():
+
+async def submit_form(*args):
     await asyncio.wait(5)
 
 
@@ -11,19 +12,18 @@ async def submit_form():
 def error_msg(error):
     if error:
         return html.p(
-            {"class_name": "error"}, 
-            "Good guess but a wrong answer. Try again!"
+            {"class_name": "error"}, "Good guess but a wrong answer. Try again!"
         )
     else:
         return ""
-    
+
 
 @component
 def form(status="empty"):
     answer, set_answer = hooks.use_state("")
     error, set_error = hooks.use_state(None)
     status, set_status = hooks.use_state("typing")
-    
+
     @event(prevent_default=True)
     async def handle_submit(event):
         set_status("submitting")
@@ -37,7 +37,7 @@ def form(status="empty"):
     @event()
     def handle_textarea_change(event):
         set_answer(event["target"]["value"])
-    
+
     if status == "success":
         return html.h1("That's right!")
     else:
@@ -51,19 +51,20 @@ def form(status="empty"):
                 {"on_submit": handle_submit},
                 html.textarea(
                     {
-                        "value": answer, 
-                        "on_change": handle_textarea_change, 
-                        "disabled": True if status == "submitting" else "False"
+                        "value": answer,
+                        "on_change": handle_textarea_change,
+                        "disabled": (True if status == "submitting" else "False"),
                     }
                 ),
                 html.br(),
                 html.button(
-                    {   
-                        "disabled": True if status == "empty" 
-                            or status == "submitting" else "False"
-                    }, 
-                     "Submit"
+                    {
+                        "disabled": (
+                            True if status in ["empty", "submitting"] else "False"
+                        )
+                    },
+                    "Submit",
                 ),
-                error_msg(error)
-            )
+                error_msg(error),
+            ),
         )

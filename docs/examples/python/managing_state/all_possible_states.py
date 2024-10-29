@@ -1,6 +1,5 @@
 from reactpy import hooks
 
-
 # start
 is_empty, set_is_empty = hooks.use_state(True)
 is_typing, set_is_typing = hooks.use_state(False)

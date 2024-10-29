@@ -1,14 +1,12 @@
-from reactpy import component, html
 from conditional_form_component import form
+
+from reactpy import component, html
 
 
 # start
 @component
 def item(status):
-    return html.section(
-        html.h4("Form", status, ':'),
-        form(status)
-    )
+    return html.section(html.h4("Form", status, ":"), form(status))
 
 
 @component
