@@ -20,15 +20,16 @@ Unreleased
 
 **Fixed**
 
-- :pull:`1118` - `module_from_template` is broken with a recent release of `requests`
-- :pull:`1131` - `module_from_template` did not work when using Flask backend
-- :pull:`1200` - Fixed `UnicodeDecodeError` when using `reactpy.web.export`
+- :pull:`1118` - ``module_from_template`` is broken with a recent release of ``requests``
+- :pull:`1131` - ``module_from_template`` did not work when using Flask backend
+- :pull:`1200` - Fixed ``UnicodeDecodeError`` when using ``reactpy.web.export``
 - :pull:`1224` - Fixes needless unmounting of JavaScript components during each ReactPy render.
+- :pull:`1126` - Fixed missing ``event["target"]["checked"]`` on checkbox inputs
 
 **Added**
 
 - :pull:`1165` - Allow concurrently rendering discrete component trees - enable this
-  experimental feature by setting `REACTPY_ASYNC_RENDERING=true`. This improves
+  experimental feature by setting ``REACTPY_ASYNC_RENDERING=true``. This improves
   the overall responsiveness of your app in situations where larger renders would
   otherwise block smaller renders from executing.
 
