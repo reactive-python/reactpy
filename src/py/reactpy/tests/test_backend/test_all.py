@@ -1,4 +1,3 @@
-import sys
 from collections.abc import MutableMapping
 
 import pytest
