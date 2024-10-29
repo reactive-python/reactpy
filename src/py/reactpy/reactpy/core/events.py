@@ -109,7 +109,7 @@ class EventHandler:
         self.stop_propagation = stop_propagation
         self.target = target
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         undefined = object()
         for attr in (
             "function",
