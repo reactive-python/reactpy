@@ -1,5 +1,4 @@
 from reactpy import backend, config, html, logging, sample, svg, types, web, widgets
-from reactpy.backend.hooks import use_connection, use_location, use_scope
 from reactpy.backend.utils import run
 from reactpy.core import hooks
 from reactpy.core.component import component
@@ -7,12 +6,15 @@ from reactpy.core.events import event
 from reactpy.core.hooks import (
     create_context,
     use_callback,
+    use_connection,
     use_context,
     use_debug_value,
     use_effect,
+    use_location,
     use_memo,
     use_reducer,
     use_ref,
+    use_scope,
     use_state,
 )
 from reactpy.core.layout import Layout
