@@ -107,7 +107,10 @@ async def test_use_scope(display: DisplayFixture):
     assert isinstance(scope.current, MutableMapping)
 
 
-@pytest.mark.skipIf(sys.platform == "darwin", reason="Tornado and Flask backends are currently buggy on MacOS.")
+@pytest.mark.skipIf(
+    sys.platform == "darwin",
+    reason="Tornado and Flask backends are currently buggy on MacOS.",
+)
 async def test_use_location(display: DisplayFixture):
     location = reactpy.Ref()
 

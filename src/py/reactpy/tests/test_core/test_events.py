@@ -193,7 +193,7 @@ async def test_can_stop_event_propagation(display: DisplayFixture):
             clicked.current = True
 
         def outer_click_is_not_triggered(event):
-            raise AssertionError()
+            raise AssertionError
 
         outer = reactpy.html.div(
             {
