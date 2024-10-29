@@ -43,7 +43,7 @@ class Ref(Generic[_RefValue]):
         self.current = new
         return old
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         try:
             return isinstance(other, Ref) and (other.current == self.current)
         except AttributeError:
