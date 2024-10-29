@@ -89,7 +89,7 @@ class Layout:
 
         return self
 
-    async def __aexit__(self, *exc: Any) -> None:
+    async def __aexit__(self, *exc: object) -> None:
         root_csid = self._root_life_cycle_state_id
         root_model_state = self._model_states_by_life_cycle_state_id[root_csid]
 
