@@ -4,17 +4,17 @@
 name: publish
 
 on:
-  release:
-    types: [published]
+    release:
+        types: [published]
 
 jobs:
-  publish:
-    uses: ./.github/workflows/.hatch-run.yml
-    with:
-      job-name: "publish"
-      hatch-run: "publish"
-      node-registry-url: "https://registry.npmjs.org"
-    secrets:
-      node-auth-token: ${{ secrets.NODE_AUTH_TOKEN }}
-      pypi-username: ${{ secrets.PYPI_USERNAME }}
-      pypi-password: ${{ secrets.PYPI_PASSWORD }}
+    publish:
+        uses: ./.github/workflows/.hatch-run.yml
+        with:
+            job-name: "publish"
+            hatch-run: "publish"
+            node-registry-url: "https://registry.npmjs.org"
+        secrets:
+            node-auth-token: ${{ secrets.NODE_AUTH_TOKEN }}
+            pypi-username: ${{ secrets.PYPI_USERNAME }}
+            pypi-password: ${{ secrets.PYPI_PASSWORD }}
