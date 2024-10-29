@@ -177,7 +177,7 @@ function useForceUpdate() {
 
 function useImportSource(model: ReactPyVdom): MutableRefObject<any> {
   const vdomImportSource = model.importSource;
-
+  const vdomImportSourceJsonString = JSON.stringify(vdomImportSource);
   const mountPoint = useRef<HTMLElement>(null);
   const client = React.useContext(ClientContext);
   const [binding, setBinding] = useState<ImportSourceBinding | null>(null);
@@ -203,7 +203,7 @@ function useImportSource(model: ReactPyVdom): MutableRefObject<any> {
         binding.unmount();
       }
     };
-  }, [client, vdomImportSource, setBinding, mountPoint.current]);
+  }, [client, vdomImportSourceJsonString, setBinding, mountPoint.current]);
 
   // this effect must run every time in case the model has changed
   useEffect(() => {
