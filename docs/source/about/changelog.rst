@@ -23,6 +23,7 @@ Unreleased
 - :pull:`1118` - `module_from_template` is broken with a recent release of `requests`
 - :pull:`1131` - `module_from_template` did not work when using Flask backend
 - :pull:`1200` - Fixed `UnicodeDecodeError` when using `reactpy.web.export`
+- :pull:`1224` - Fixes needless unmounting of JavaScript components during each ReactPy render.
 
 **Added**
 
@@ -40,12 +41,15 @@ Unreleased
   fragment to conditionally render an element by writing
   ``something if condition else html._()``. Now you can simply write
   ``something if condition else None``.
+- :pull:`1210` - Move hooks from ``reactpy.backend.hooks`` into ``reactpy.core.hooks``.
 
 **Deprecated**
 
 - :pull:`1171` - The ``Stop`` exception. Recent releases of ``anyio`` have made this
   exception difficult to use since it now raises an ``ExceptionGroup``. This exception
   was primarily used for internal testing purposes and so is now deprecated.
+- :pull:`1210` - Deprecate ``reactpy.backend.hooks`` since the hooks have been moved into
+  ``reactpy.core.hooks``.
 
 
 v1.0.2

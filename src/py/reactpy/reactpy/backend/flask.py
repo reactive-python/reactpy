@@ -35,9 +35,9 @@ from reactpy.backend._common import (
     safe_client_build_dir_path,
     safe_web_modules_dir_path,
 )
-from reactpy.backend.hooks import ConnectionContext
-from reactpy.backend.hooks import use_connection as _use_connection
 from reactpy.backend.types import Connection, Location
+from reactpy.core.hooks import ConnectionContext
+from reactpy.core.hooks import use_connection as _use_connection
 from reactpy.core.serve import serve_layout
 from reactpy.core.types import ComponentType, RootComponentConstructor
 from reactpy.utils import Ref

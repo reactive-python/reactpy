@@ -17,11 +17,12 @@ export default ({ children, ...props }) => {
 };
 
 export function bind(node, config) {
+  const root = ReactDOM.createRoot(node);
   return {
     create: (component, props, children) =>
       React.createElement(component, wrapEventHandlers(props), ...children),
-    render: (element) => ReactDOM.render(element, node),
-    unmount: () => ReactDOM.unmountComponentAtNode(node),
+    render: (element) => root.render(element),
+    unmount: () => root.unmount()
   };
 }
 
