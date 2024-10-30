@@ -89,7 +89,7 @@ class Layout:
 
         return self
 
-    async def __aexit__(self, *exc: Any) -> None:
+    async def __aexit__(self, *exc: object) -> None:
         root_csid = self._root_life_cycle_state_id
         root_model_state = self._model_states_by_life_cycle_state_id[root_csid]
 
@@ -129,7 +129,7 @@ class Layout:
 
     async def render(self) -> LayoutUpdateMessage:
         if REACTPY_ASYNC_RENDERING.current:
-            return await self._concurrent_render()
+            return await self._parallel_render()
         else:  # nocov
             return await self._serial_render()
 
@@ -147,8 +147,10 @@ class Layout:
             else:
                 return await self._create_layout_update(model_state)
 
-    async def _concurrent_render(self) -> LayoutUpdateMessage:
-        """Await the next available render. This will block until a component is updated"""
+    async def _parallel_render(self) -> LayoutUpdateMessage:
+        """Await to fetch the first completed render within our asyncio task group.
+        We use the `asyncio.tasks.wait` API in order to return the first completed task.
+        """
         await self._render_tasks_ready.acquire()
         done, _ = await wait(self._render_tasks, return_when=FIRST_COMPLETED)
         update_task: Task[LayoutUpdateMessage] = done.pop()

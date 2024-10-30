@@ -112,7 +112,7 @@ async def test_use_location(display: DisplayFixture):
     @poll
     async def poll_location():
         """This needs to be async to allow the server to respond"""
-        return location.current
+        return getattr(location, "current", None)
 
     @reactpy.component
     def ShowRoute():

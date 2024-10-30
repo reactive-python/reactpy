@@ -92,10 +92,9 @@ REACTPY_DEBUG_MODE = "1"
 [tool.hatch.envs.lint]
 features = ["all"]
 dependencies = [
-  "mypy>=1.0.0",
+  "mypy==1.8",
   "types-click",
   "types-tornado",
-  "types-pkg-resources",
   "types-flask",
   "types-requests",
 ]
