@@ -104,7 +104,10 @@ types = "mypy --strict reactpy"
 all = ["types"]
 
 [tool.hatch.build.targets.sdist]
-artifacts = ["js"]
+artifacts = ["_static"]
+
+[tool.hatch.build.targets.wheel]
+artifacts = ["_static"]
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
 out_dir = "reactpy/_static"
