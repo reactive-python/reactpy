@@ -1,0 +1,32 @@
+# http://editorconfig.org
+
+root = true
+
+[*]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+charset = utf-8
+end_of_line = lf
+
+[*.py]
+indent_size = 4
+max_line_length = 120
+
+[*.md]
+indent_size = 4
+
+[*.html]
+max_line_length = off
+
+[*.js]
+max_line_length = off
+
+[*.css]
+indent_size = 4
+max_line_length = off
+
+# Tests can violate line width restrictions in the interest of clarity.
+[**/test_*.py]
+max_line_length = off
