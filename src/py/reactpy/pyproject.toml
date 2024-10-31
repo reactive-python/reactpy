@@ -103,11 +103,20 @@ dependencies = [
 types = "mypy --strict reactpy"
 all = ["types"]
 
+[tool.hatch.build.targets.sdist]
+artifacts = ["_static"]
+
+[tool.hatch.build.targets.wheel]
+artifacts = ["_static"]
+
 [[tool.hatch.build.hooks.build-scripts.scripts]]
-work_dir = "../../js"
 out_dir = "reactpy/_static"
-commands = ["npm ci", "npm run build"]
-artifacts = ["app/dist/"]
+commands = [
+  # link the js directory if it doesn't exist - use Python to avoid platform differences
+  "python -c \"import pathlib as p;js=p.Path('js');js.unlink(missing_ok=True);js.symlink_to(p.Path('..','..','js').resolve(),target_is_directory=True);\"",
+  "cd js && npm ci && npm run build",
+]
+artifacts = ["js/app/dist/"]
 
 # --- Pytest ---------------------------------------------------------------------------
 

@@ -416,8 +416,9 @@ def prepare_py_release(
 
     def publish(dry_run: bool):
         with context.cd(package.path):
+            context.run("twine check dist/*")
+
             if dry_run:
-                context.run("twine check dist/*")
                 return
 
             context.run(
