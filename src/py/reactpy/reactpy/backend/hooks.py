@@ -11,7 +11,7 @@ from reactpy.core.hooks import ConnectionContext, use_context  # nocov
 def use_connection() -> Connection[Any]:  # nocov
     """Get the current :class:`~reactpy.backend.types.Connection`."""
     warn(
-        "The module reactpy.backend.hooks has been deprecated and will be deleted in the future. ",
+        "The module reactpy.backend.hooks has been deprecated and will be deleted in the future. "
         "Call reactpy.use_connection instead.",
         DeprecationWarning,
     )
@@ -26,7 +26,7 @@ def use_connection() -> Connection[Any]:  # nocov
 def use_scope() -> MutableMapping[str, Any]:  # nocov
     """Get the current :class:`~reactpy.backend.types.Connection`'s scope."""
     warn(
-        "The module reactpy.backend.hooks has been deprecated and will be deleted in the future. ",
+        "The module reactpy.backend.hooks has been deprecated and will be deleted in the future. "
         "Call reactpy.use_scope instead.",
         DeprecationWarning,
     )
@@ -37,7 +37,7 @@ def use_scope() -> MutableMapping[str, Any]:  # nocov
 def use_location() -> Location:  # nocov
     """Get the current :class:`~reactpy.backend.types.Connection`'s location."""
     warn(
-        "The module reactpy.backend.hooks has been deprecated and will be deleted in the future. ",
+        "The module reactpy.backend.hooks has been deprecated and will be deleted in the future. "
         "Call reactpy.use_location instead.",
         DeprecationWarning,
     )
