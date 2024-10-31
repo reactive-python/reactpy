@@ -25,6 +25,7 @@ Unreleased
 - :pull:`1200` - Fixed ``UnicodeDecodeError`` when using ``reactpy.web.export``
 - :pull:`1224` - Fixes needless unmounting of JavaScript components during each ReactPy render.
 - :pull:`1126` - Fixed missing ``event["target"]["checked"]`` on checkbox inputs
+- :pull:`1191` - Fixed missing static files on `sdist` Python distribution
 
 **Added**
 
