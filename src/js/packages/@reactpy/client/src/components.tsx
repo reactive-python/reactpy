@@ -135,6 +135,8 @@ function ScriptElement({ model }: { model: ReactPyVdom }) {
     ref.current.appendChild(scriptElement);
   }, [model.key]);
 
+  // FIXME: We currently return an extraneous div to attach the script to, but there
+  // might be a better way to do this.
   return <div ref={ref} />;
 }
 
