@@ -21,7 +21,7 @@ PATH_PREFIX = PurePosixPath("/_reactpy")
 MODULES_PATH = PATH_PREFIX / "modules"
 ASSETS_PATH = PATH_PREFIX / "assets"
 STREAM_PATH = PATH_PREFIX / "stream"
-CLIENT_BUILD_DIR = Path(_reactpy_file_path).parent / "_static" / "js" / "app" / "dist"
+CLIENT_BUILD_DIR = Path(_reactpy_file_path).parent / "_static"
 
 
 async def serve_with_uvicorn(
