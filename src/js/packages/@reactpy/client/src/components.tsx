@@ -121,28 +121,30 @@ function ScriptElement({ model }: { model: ReactPyVdom }) {
     if (!ref.current) {
       return;
     }
-    const scriptContent = model?.children?.filter(
+
+    const element: HTMLScriptElement = document.createElement("script");
+    const content = model?.children?.filter(
       (value): value is string => typeof value == "string",
     )[0];
 
-    let scriptElement: HTMLScriptElement;
-    if (model.attributes) {
-      scriptElement = document.createElement("script");
-      for (const [k, v] of Object.entries(model.attributes)) {
-        scriptElement.setAttribute(k, v);
-      }
-      if (scriptContent) {
-        scriptElement.appendChild(document.createTextNode(scriptContent));
-      }
-      ref.current.appendChild(scriptElement);
-    } else if (scriptContent) {
-      const scriptResult = eval(scriptContent);
-      if (typeof scriptResult == "function") {
-        return scriptResult();
-      }
+    // Add the script text if it exists
+    if (content) {
+      element.appendChild(document.createTextNode(content));
     }
-  }, [model.key, ref.current]);
+    // Add all attributes to the script element
+    for (const [k, v] of Object.entries(model.attributes || {})) {
+      element.setAttribute(k, v);
+    }
+    // Remove all previous script elements
+    while (ref.current.firstChild) {
+      ref.current.removeChild(ref.current.firstChild);
+    }
+    // Render the script element
+    ref.current.appendChild(element);
+  }, [model.key]);
 
+  // We return an extraneous div to attach the script to since ReactJS does not allow
+  // script tags to be executed when rendered directly.
   return <div ref={ref} />;
 }
 

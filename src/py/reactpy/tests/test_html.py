@@ -3,47 +3,7 @@ import pytest
 from reactpy import component, config, html
 from reactpy.testing import DisplayFixture, poll
 from reactpy.utils import Ref
-from tests.tooling.hooks import use_counter, use_toggle
-
-
-async def test_script_mount_unmount(display: DisplayFixture):
-    toggle_is_mounted = Ref()
-
-    @component
-    def Root():
-        is_mounted, toggle_is_mounted.current = use_toggle(True)
-        return html.div(
-            html.div({"id": "mount-state", "data_value": False}),
-            HasScript() if is_mounted else html.div(),
-        )
-
-    @component
-    def HasScript():
-        return html.script(
-            """() => {
-                const mapping = {"false": false, "true": true};
-                const mountStateEl = document.getElementById("mount-state");
-                mountStateEl.setAttribute(
-                    "data-value", !mapping[mountStateEl.getAttribute("data-value")]);
-                return () => mountStateEl.setAttribute(
-                    "data-value", !mapping[mountStateEl.getAttribute("data-value")]);
-            }"""
-        )
-
-    await display.show(Root)
-
-    mount_state = await display.page.wait_for_selector("#mount-state", state="attached")
-    poll_mount_state = poll(mount_state.get_attribute, "data-value")
-
-    await poll_mount_state.until_equals("true")
-
-    toggle_is_mounted.current()
-
-    await poll_mount_state.until_equals("false")
-
-    toggle_is_mounted.current()
-
-    await poll_mount_state.until_equals("true")
+from tests.tooling.hooks import use_counter
 
 
 async def test_script_re_run_on_content_change(display: DisplayFixture):
@@ -54,14 +14,9 @@ async def test_script_re_run_on_content_change(display: DisplayFixture):
         count, incr_count.current = use_counter(1)
         return html.div(
             html.div({"id": "mount-count", "data_value": 0}),
-            html.div({"id": "unmount-count", "data_value": 0}),
             html.script(
-                f"""() => {{
-                    const mountCountEl = document.getElementById("mount-count");
-                    const unmountCountEl = document.getElementById("unmount-count");
-                    mountCountEl.setAttribute("data-value", {count});
-                    return () => unmountCountEl.setAttribute("data-value", {count});;
-                }}"""
+                'const mountCountEl = document.getElementById("mount-count");'
+                f'mountCountEl.setAttribute("data-value", {count});'
             ),
         )
 
@@ -70,23 +25,11 @@ async def test_script_re_run_on_content_change(display: DisplayFixture):
     mount_count = await display.page.wait_for_selector("#mount-count", state="attached")
     poll_mount_count = poll(mount_count.get_attribute, "data-value")
 
-    unmount_count = await display.page.wait_for_selector(
-        "#unmount-count", state="attached"
-    )
-    poll_unmount_count = poll(unmount_count.get_attribute, "data-value")
-
     await poll_mount_count.until_equals("1")
-    await poll_unmount_count.until_equals("0")
-
     incr_count.current()
-
     await poll_mount_count.until_equals("2")
-    await poll_unmount_count.until_equals("1")
-
     incr_count.current()
-
     await poll_mount_count.until_equals("3")
-    await poll_unmount_count.until_equals("2")
 
 
 async def test_script_from_src(display: DisplayFixture):
