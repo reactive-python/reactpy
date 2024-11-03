@@ -437,13 +437,12 @@ def _script(
         if len(children) > 1:
             msg = "'script' nodes may have, at most, one child."
             raise ValueError(msg)
-        elif not isinstance(children[0], str):
+        if not isinstance(children[0], str):
             msg = "The child of a 'script' must be a string."
             raise ValueError(msg)
-        else:
-            model["children"] = children
-            if key is None:
-                key = children[0]
+        model["children"] = children
+        if key is None:
+            key = children[0]
 
     if attributes:
         model["attributes"] = attributes
