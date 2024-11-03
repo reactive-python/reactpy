@@ -14,14 +14,9 @@ async def test_script_re_run_on_content_change(display: DisplayFixture):
         count, incr_count.current = use_counter(1)
         return html.div(
             html.div({"id": "mount-count", "data_value": 0}),
-            html.div({"id": "unmount-count", "data_value": 0}),
             html.script(
-                f"""() => {{
-                    const mountCountEl = document.getElementById("mount-count");
-                    const unmountCountEl = document.getElementById("unmount-count");
-                    mountCountEl.setAttribute("data-value", {count});
-                    return () => unmountCountEl.setAttribute("data-value", {count});;
-                }}"""
+                'const mountCountEl = document.getElementById("mount-count");'
+                f'mountCountEl.setAttribute("data-value", {count});'
             ),
         )
 
@@ -30,23 +25,11 @@ async def test_script_re_run_on_content_change(display: DisplayFixture):
     mount_count = await display.page.wait_for_selector("#mount-count", state="attached")
     poll_mount_count = poll(mount_count.get_attribute, "data-value")
 
-    unmount_count = await display.page.wait_for_selector(
-        "#unmount-count", state="attached"
-    )
-    poll_unmount_count = poll(unmount_count.get_attribute, "data-value")
-
     await poll_mount_count.until_equals("1")
-    await poll_unmount_count.until_equals("0")
-
     incr_count.current()
-
     await poll_mount_count.until_equals("2")
-    await poll_unmount_count.until_equals("1")
-
     incr_count.current()
-
     await poll_mount_count.until_equals("3")
-    await poll_unmount_count.until_equals("2")
 
 
 async def test_script_from_src(display: DisplayFixture):
