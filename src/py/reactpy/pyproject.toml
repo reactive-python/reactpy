@@ -105,18 +105,18 @@ all = ["types"]
 
 [tool.hatch.build.targets.sdist]
 artifacts = ["_static"]
+exclude = ["scripts/", "tests/"]
 
 [tool.hatch.build.targets.wheel]
 artifacts = ["_static"]
+exclude = ["scripts/", "tests/"]
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
-out_dir = "reactpy/_static"
 commands = [
-  # link the js directory if it doesn't exist - use Python to avoid platform differences
-  "python -c \"import pathlib as p;js=p.Path('js');js.unlink(missing_ok=True);js.symlink_to(p.Path('..','..','js').resolve(),target_is_directory=True);\"",
-  "cd js && npm ci && npm run build",
+  "cd .. && cd .. && cd js && npm install && npm run build",
+  "cd scripts && python copy_js_output.py",
 ]
-artifacts = ["js/app/dist/"]
+artifacts = []
 
 # --- Pytest ---------------------------------------------------------------------------
 
