@@ -22,23 +22,22 @@ from reactpy.core.vdom import vdom
 from reactpy.utils import Ref, html_to_vdom, vdom_to_html
 
 __author__ = "The Reactive Python Team"
-__version__ = "1.0.2"  # DO NOT MODIFY
+__version__ = "1.1.0"
 
 __all__ = [
+    "Layout",
+    "Ref",
     "backend",
     "component",
     "config",
     "create_context",
     "event",
     "hooks",
-    "html_to_vdom",
     "html",
-    "Layout",
+    "html_to_vdom",
     "logging",
-    "Ref",
     "run",
     "sample",
-    "Stop",
     "svg",
     "types",
     "use_callback",
@@ -52,8 +51,8 @@ __all__ = [
     "use_ref",
     "use_scope",
     "use_state",
-    "vdom_to_html",
     "vdom",
+    "vdom_to_html",
     "web",
     "widgets",
 ]
