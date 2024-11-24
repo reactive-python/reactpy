@@ -18,6 +18,11 @@ Changelog
 Unreleased
 ----------
 
+Nothing (yet)!
+
+v1.1.0
+------
+
 **Fixed**
 
 - :pull:`1118` - ``module_from_template`` is broken with a recent release of ``requests``
