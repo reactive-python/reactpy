@@ -1,3 +1,6 @@
+# --- Build Artifacts ---
+src/reactpy/static
+
 # --- Jupyter ---
 *.ipynb_checkpoints
 *Untitled*.ipynb
@@ -29,6 +32,7 @@ pip-wheel-metadata
 .python-version
 
 # -- Python Tests ---
+.coverage.*
 *.coverage
 *.pytest_cache
 *.mypy_cache

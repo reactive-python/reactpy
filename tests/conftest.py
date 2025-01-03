@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import os
+import subprocess
 
 import pytest
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
-from playwright.async_api import async_playwright
 
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
@@ -29,6 +29,11 @@ def pytest_addoption(parser: Parser) -> None:
         action="store_true",
         help="Open a browser window when running web-based tests",
     )
+
+
+@pytest.fixture(autouse=True, scope="session")
+def install_playwright():
+    subprocess.run(["playwright", "install", "chromium"], check=True)
 
 
 @pytest.fixture
@@ -55,6 +60,8 @@ async def page(browser):
 
 @pytest.fixture
 async def browser(pytestconfig: Config):
+    from playwright.async_api import async_playwright
+
     async with async_playwright() as pw:
         yield await pw.chromium.launch(headless=not bool(pytestconfig.option.headed))
 
