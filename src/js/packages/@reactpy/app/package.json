@@ -3,9 +3,10 @@
   "license": "MIT",
   "main": "src/dist/index.js",
   "types": "src/dist/index.d.ts",
+  "name": "@reactpy/app",
   "description": "Main entry point for ReactPy.",
   "dependencies": {
-    "@reactpy/client": "file:../packages/@reactpy/client",
+    "@reactpy/client": "file:../client",
     "preact": "^10.7.0"
   },
   "devDependencies": {

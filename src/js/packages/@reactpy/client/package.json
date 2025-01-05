@@ -8,7 +8,7 @@
   "type": "module",
   "version": "0.3.2",
   "dependencies": {
-    "event-to-object": "file:../event-to-object",
+    "event-to-object": "file:../../event-to-object",
     "json-pointer": "^0.6.2"
   },
   "devDependencies": {
