@@ -2,6 +2,9 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
+    "publish": "npm --workspaces publish",
+    "test": "npm --workspaces test",
+    "build": "npm --workspaces run build",
     "fix:format": "npm run prettier -- --write && npm run eslint -- --fix",
     "check:format": "npm run prettier -- --check && npm run eslint",
     "check:tests": "npm --workspaces run check:tests",
@@ -10,8 +13,7 @@
     "eslint": "eslint --ignore-path .gitignore ."
   },
   "workspaces": [
-    "packages/@reactpy/client",
-    "packages/@reactpy/app",
+    "packages/@reactpy/*",
     "packages/*"
   ],
   "devDependencies": {
