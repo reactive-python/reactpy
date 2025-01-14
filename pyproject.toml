@@ -58,7 +58,7 @@ installer = "uv"
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
 commands = [
-  "bun install --production --force --frozen-lockfile --no-save --cwd 'src/js/packages/@reactpy/app'",
+  "bun install --cwd 'src/js/packages/@reactpy/app' --production --frozen-lockfile",
   "bun build './src/js/packages/@reactpy/app/src/index.ts' --outdir './src/js/packages/@reactpy/app/dist' --minify --sourcemap=linked",
   # "cd scripts && python copy_js_output.py",
 ]
