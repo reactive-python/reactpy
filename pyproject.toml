@@ -57,11 +57,10 @@ license-files = { paths = ["LICENSE.md"] }
 installer = "uv"
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
-# TODO: Nuke NPM from the repo
 commands = [
-  # TODO: Need to build JS here. Try switching to bun.
-  "cd src && cd js && npm install && npm run build",
-  "cd scripts && python copy_js_output.py",
+  "cd src && cd js && cd packages && cd '@reactpy' && cd app && bun install --production --force --frozen-lockfile --no-save",
+  "cd src && cd js && cd '@reactpy' && cd app && bun build ./src/index.ts --outdir ./dist --minify --sourcemap=linked",
+  # "cd scripts && python copy_js_output.py",
 ]
 artifacts = []
 

@@ -1,29 +1,19 @@
 {
   "author": "Ryan Morshead",
   "license": "MIT",
-  "main": "src/dist/index.js",
-  "types": "src/dist/index.d.ts",
   "name": "@reactpy/app",
   "description": "Main entry point for ReactPy.",
   "dependencies": {
-    "@reactpy/client": "file:../client",
+    "@reactpy/client": "^0.3.2",
+    "event-to-object": "^0.1.2",
     "preact": "^10.7.0"
   },
   "devDependencies": {
     "@types/react": "^17.0",
-    "@types/react-dom": "^17.0",
-    "typescript": "^4.9.5",
-    "vite": "^3.2.11"
+    "@types/react-dom": "^17.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/reactive-python/reactpy"
-  },
-  "scripts": {
-    "build": "vite build",
-    "format": "prettier --write . && eslint --fix .",
-    "test": "npm run check:tests",
-    "check:tests": "echo 'no tests'",
-    "check:types": "tsc --noEmit"
   }
 }

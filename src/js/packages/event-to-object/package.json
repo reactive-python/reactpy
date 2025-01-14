@@ -1,8 +1,6 @@
 {
   "author": "Ryan Morshead",
   "license": "MIT",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "name": "event-to-object",
   "description": "Convert native events to JSON serializable objects",
   "type": "module",
@@ -13,8 +11,6 @@
   "devDependencies": {
     "happy-dom": "^8.9.0",
     "lodash": "^4.17.21",
-    "tsm": "^2.0.0",
-    "typescript": "^4.9.5",
     "uvu": "^0.5.1"
   },
   "repository": {
