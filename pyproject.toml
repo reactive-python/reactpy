@@ -93,10 +93,24 @@ extra-dependencies = [
   "coverage[toml]>=6.5",
   "responses",
   "playwright",
-  # TODO: Nuke this after removing backends from deps
-  "sanic-testing",
   # TODO: This dependency needs to be pulled out. ReactPy no longer uses this in the core logic.
   "jsonpointer",
+  # TODO: Nuke everything past this point after removing backends from deps
+  "starlette >=0.13.6",
+  "uvicorn[standard] >=0.19.0",
+  "sanic>=21",
+  "sanic-cors",
+  "sanic-testing",
+  "tracerite>=1.1.1",
+  "setuptools",
+  "uvicorn[standard]>=0.19.0",
+  "fastapi >=0.63.0",
+  "uvicorn[standard] >=0.19.0",
+  "flask",
+  "markupsafe>=1.1.1,<2.1",
+  "flask-cors",
+  "flask-sock",
+  "tornado",
 ]
 
 [[tool.hatch.envs.hatch-test.matrix]]
@@ -111,7 +125,6 @@ testpaths = "tests"
 xfail_strict = true
 asyncio_mode = "auto"
 log_cli_level = "INFO"
-features = ["all"]
 
 [tool.hatch.envs.default.scripts]
 test-cov = "playwright install && coverage run -m pytest {args:tests}"
@@ -129,7 +142,6 @@ REACTPY_DEBUG_MODE = "1"
 ################################
 
 [tool.hatch.envs.lint]
-features = ["all"]
 extra-dependencies = [
   "black==24.1.1",
   "ruff==0.0.278",

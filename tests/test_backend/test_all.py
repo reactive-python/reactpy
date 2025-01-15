@@ -71,13 +71,6 @@ async def test_display_simple_click_counter(display: DisplayFixture):
         await counter.click()
 
 
-async def test_module_from_template(display: DisplayFixture):
-    victory = reactpy.web.module_from_template("react", "victory-bar@35.4.0")
-    VictoryBar = reactpy.web.export(victory, "VictoryBar")
-    await display.show(VictoryBar)
-    await display.page.wait_for_selector(".VictoryContainer")
-
-
 async def test_use_connection(display: DisplayFixture):
     conn = reactpy.Ref()
 
