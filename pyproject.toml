@@ -58,9 +58,9 @@ installer = "uv"
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
 commands = [
-  "bun install --cwd 'src/js/packages/@reactpy/app' --production --frozen-lockfile",
-  "bun build './src/js/packages/@reactpy/app/src/index.ts' --outdir './src/js/packages/@reactpy/app/dist' --minify --sourcemap=linked",
-  # "cd scripts && python copy_js_output.py",
+  'bun install --cwd "src/js/packages/@reactpy/app" --production --frozen-lockfile',
+  # TODO: Remove 'assets' from this path after turning ReactPy into ASGI middleware.
+  'bun build "./src/js/packages/@reactpy/app/src/index.ts" --outdir "./src/reactpy/static/assets/" --minify --sourcemap=linked',
 ]
 artifacts = []
 

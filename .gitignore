@@ -1,5 +1,5 @@
 # --- Build Artifacts ---
-src/reactpy/static
+src/reactpy/static/**/index.js*
 
 # --- Jupyter ---
 *.ipynb_checkpoints

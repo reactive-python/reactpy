@@ -1,6 +1,6 @@
 import { mount, SimpleReactPyClient } from "@reactpy/client";
 
-export function app(element: HTMLElement) {
+function app(element: HTMLElement) {
   const client = new SimpleReactPyClient({
     serverLocation: {
       url: document.location.origin,
@@ -9,4 +9,12 @@ export function app(element: HTMLElement) {
     },
   });
   mount(element, client);
+}
+
+let element = document.getElementById("app");
+if (element){
+  app(element);
+}
+else {
+  console.error("Element with id 'app' not found");
 }
