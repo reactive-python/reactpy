@@ -1337,7 +1337,7 @@ async def test_conditionally_render_none_does_not_trigger_state_change_in_siblin
 
     async with layout_runner(Layout(Root())) as runner:
         await runner.render()
-        poll(lambda: effect_run_count.current).until_equals(1)
+        await poll(lambda: effect_run_count.current).until_equals(1)
         toggle_condition.current()
         await runner.render()
     assert effect_run_count.current == 1

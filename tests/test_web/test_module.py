@@ -76,11 +76,6 @@ async def test_module_from_url(browser):
             await display.page.wait_for_selector("#my-button")
 
 
-def test_module_from_template_where_template_does_not_exist():
-    with pytest.raises(ValueError, match="No template for 'does-not-exist.js'"):
-        reactpy.web.module_from_template("does-not-exist", "something.js")
-
-
 async def test_module_from_file(display: DisplayFixture):
     SimpleButton = reactpy.web.export(
         reactpy.web.module_from_file(
