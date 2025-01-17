@@ -1,10 +1,14 @@
 {
-  "license": "MIT",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.58.0",
     "@typescript-eslint/parser": "^5.58.0",
     "eslint": "^8.38.0",
     "eslint-plugin-react": "^7.32.2",
     "prettier": "^3.0.0-alpha.6"
+  },
+  "license": "MIT",
+  "scripts": {
+    "check": "prettier --check . && eslint",
+    "format": "prettier --write . && eslint --fix"
   }
 }

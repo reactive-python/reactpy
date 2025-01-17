@@ -11,10 +11,9 @@ function app(element: HTMLElement) {
   mount(element, client);
 }
 
-let element = document.getElementById("app");
-if (element){
+const element = document.getElementById("app");
+if (element) {
   app(element);
-}
-else {
+} else {
   console.error("Element with id 'app' not found");
 }

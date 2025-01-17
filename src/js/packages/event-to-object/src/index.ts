@@ -324,9 +324,6 @@ const convertGamepad = (gamepad: Gamepad): e.GamepadObject => ({
   index: gamepad.index,
   mapping: gamepad.mapping,
   timestamp: gamepad.timestamp,
-  hapticActuators: Array.from(gamepad.hapticActuators).map(
-    convertGamepadHapticActuator,
-  ),
 });
 
 const convertGamepadButton = (
@@ -335,12 +332,6 @@ const convertGamepadButton = (
   pressed: button.pressed,
   touched: button.touched,
   value: button.value,
-});
-
-const convertGamepadHapticActuator = (
-  actuator: GamepadHapticActuator,
-): e.GamepadHapticActuatorObject => ({
-  type: actuator.type,
 });
 
 const convertFile = (file: File) => ({

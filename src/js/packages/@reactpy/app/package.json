@@ -1,8 +1,7 @@
 {
-  "author": "Ryan Morshead",
-  "license": "MIT",
   "name": "@reactpy/app",
-  "description": "Main entry point for ReactPy.",
+  "description": "ReactPy's client-side entry point. This is strictly for internal use and is not designed to be distributed.",
+  "license": "MIT",
   "dependencies": {
     "@reactpy/client": "^0.3.2",
     "event-to-object": "^0.1.2",
@@ -11,9 +10,5 @@
   "devDependencies": {
     "@types/react": "^17.0",
     "@types/react-dom": "^17.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/reactive-python/reactpy"
   }
 }

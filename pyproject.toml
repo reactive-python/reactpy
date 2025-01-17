@@ -128,17 +128,14 @@ log_cli_level = "INFO"
 
 [tool.hatch.envs.default.scripts]
 test-cov = "playwright install && coverage run -m pytest {args:tests}"
-cov-report = [
-  # "- coverage combine",
-  "coverage report",
-]
+cov-report = ["coverage report"]
 cov = ["test-cov {args}", "cov-report"]
 
 [tool.hatch.envs.default.env-vars]
 REACTPY_DEBUG_MODE = "1"
 
 ################################
-# >>> Hatch Lint Scripts <<< #
+# >>> Hatch Python Scripts <<< #
 ################################
 
 [tool.hatch.envs.lint]
@@ -157,12 +154,26 @@ extra-dependencies = [
   "types-requests",
 ]
 
-[tool.hatch.envs.lint.scripts]
-types = "mypy --strict reactpy"
-all = ["types"]
+[tool.hatch.envs.python.scripts]
+# TODO: Replace mypy with pylint
+type_check = "mypy --strict src/reactpy"
 
-[tool.hatch.envs.publish]
-extra-dependencies = ["semver >=2, <3", "twine", "pre-commit"]
+############################
+# >>> Hatch JS Scripts <<< #
+############################
+
+[tool.hatch.envs.javascript]
+detached = true
+
+[tool.hatch.envs.javascript.scripts]
+check = [
+  'bun install --cwd "src/js" --frozen-lockfile',
+  'bun run --cwd "src/js" check',
+]
+fix = [
+  'bun install --cwd "src/js" --frozen-lockfile',
+  'bun run --cwd "src/js" format',
+]
 
 #########################
 # >>> Generic Tools <<< #
