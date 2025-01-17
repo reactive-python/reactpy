@@ -58,9 +58,8 @@ installer = "uv"
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
 commands = [
-  'bun install --cwd "src/js/packages/@reactpy/app" --production --frozen-lockfile',
-  # TODO: Remove 'assets' from this path after turning ReactPy into ASGI middleware.
-  'bun build "./src/js/packages/@reactpy/app/src/index.ts" --outdir "./src/reactpy/static/assets/" --minify --sourcemap=linked',
+  "hatch run javascript:build",
+  'hatch run "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/dist" "src/reactpy/static/assets"',
 ]
 artifacts = []
 
@@ -166,13 +165,23 @@ type_check = "mypy --strict src/reactpy"
 detached = true
 
 [tool.hatch.envs.javascript.scripts]
-check = [
-  'bun install --cwd "src/js" --frozen-lockfile',
-  'bun run --cwd "src/js" check',
+check = ['bun install --cwd "src/js"', 'bun run --cwd "src/js" check']
+fix = ['bun install --cwd "src/js"', 'bun run --cwd "src/js" format']
+build = [
+  'hatch run "src/build_scripts/clean_js_dir.py"',
+  'hatch run javascript:build_packages',
+  'hatch run javascript:build_app',
 ]
-fix = [
-  'bun install --cwd "src/js" --frozen-lockfile',
-  'bun run --cwd "src/js" format',
+build_packages = [
+  'bun install --cwd "src/js"',
+  'bun install --cwd "src/js/packages/event-to-object"',
+  'bun install --cwd "src/js/packages/@reactpy/client"',
+  'bun run --cwd "src/js/packages/event-to-object" build',
+  'bun run --cwd "src/js/packages/@reactpy/client" build',
+]
+build_app = [
+  'bun install --cwd "src/js/packages/@reactpy/app"',
+  'bun run --cwd "src/js/packages/@reactpy/app" build',
 ]
 
 #########################

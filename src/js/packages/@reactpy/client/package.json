@@ -17,7 +17,6 @@
   "type": "module",
   "main": "dist/index.js",
   "dependencies": {
-    "event-to-object": "^0.1.2",
     "json-pointer": "^0.6.2",
     "preact": "^10.25.4"
   },
@@ -25,6 +24,9 @@
     "@types/json-pointer": "^1.0.31",
     "@types/react": "^17.0",
     "@types/react-dom": "^17.0"
+  },
+  "peerDependencies": {
+    "event-to-object": "<1.0.0"
   },
   "scripts": {
     "build": "tsc -b",
