@@ -92,7 +92,6 @@ extra-dependencies = [
   "coverage[toml]>=6.5",
   "responses",
   "playwright",
-  # TODO: This dependency needs to be pulled out. ReactPy no longer uses this in the core logic.
   "jsonpointer",
   # TODO: Nuke everything past this point after removing backends from deps
   "starlette >=0.13.6",

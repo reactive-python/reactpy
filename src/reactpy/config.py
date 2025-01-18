@@ -75,7 +75,7 @@ set of publicly available APIs for working with the client.
 
 REACTPY_TESTING_DEFAULT_TIMEOUT = Option(
     "REACTPY_TESTING_DEFAULT_TIMEOUT",
-    5.0,
+    10.0,
     mutable=False,
     validator=float,
 )
