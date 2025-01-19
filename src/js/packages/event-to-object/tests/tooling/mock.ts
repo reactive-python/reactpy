@@ -32,11 +32,6 @@ export const mockGamepad = {
       value: 0,
     },
   ],
-  hapticActuators: [
-    {
-      type: "vibration",
-    },
-  ],
   timestamp: undefined,
 };
 

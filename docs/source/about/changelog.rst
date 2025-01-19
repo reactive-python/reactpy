@@ -18,7 +18,9 @@ Changelog
 Unreleased
 ----------
 
-Nothing (yet)!
+**Changed**
+
+- Substitute ``react`` rendering on the client with ``preact``.
 
 v1.1.0
 ------

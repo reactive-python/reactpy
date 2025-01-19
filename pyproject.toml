@@ -164,23 +164,43 @@ type_check = "mypy --strict src/reactpy"
 detached = true
 
 [tool.hatch.envs.javascript.scripts]
-check = ['bun install --cwd "src/js"', 'bun run --cwd "src/js" check']
+check = [
+  'bun install --cwd "src/js"',
+  'bun run --cwd "src/js" lint',
+  'bun run --cwd "src/js/packages/event-to-object" checkTypes',
+  'bun run --cwd "src/js/packages/@reactpy/client" checkTypes',
+  'bun run --cwd "src/js/packages/@reactpy/app" checkTypes',
+]
 fix = ['bun install --cwd "src/js"', 'bun run --cwd "src/js" format']
+test = [
+  'bun install --cwd "src/js"',
+  'bun run --cwd "src/js/packages/event-to-object" test',
+]
 build = [
   'hatch run "src/build_scripts/clean_js_dir.py"',
-  'hatch run javascript:build_packages',
+  'hatch run javascript:build_event_to_object',
+  'hatch run javascript:build_client',
   'hatch run javascript:build_app',
 ]
-build_packages = [
-  'bun install --cwd "src/js"',
+build_event_to_object = [
   'bun install --cwd "src/js/packages/event-to-object"',
-  'bun install --cwd "src/js/packages/@reactpy/client"',
   'bun run --cwd "src/js/packages/event-to-object" build',
+]
+build_client = [
+  'bun install --cwd "src/js/packages/@reactpy/client"',
   'bun run --cwd "src/js/packages/@reactpy/client" build',
 ]
 build_app = [
   'bun install --cwd "src/js/packages/@reactpy/app"',
   'bun run --cwd "src/js/packages/@reactpy/app" build',
+]
+publish_event_to_object = [
+  'hatch run javascript:build_event_to_object',
+  'cd "src/js/packages/event-to-object" && bun publish --access public',
+]
+publish_client = [
+  'hatch run javascript:build_client',
+  'cd "src/js/packages/@reactpy/client" && bun publish --access public',
 ]
 
 #########################

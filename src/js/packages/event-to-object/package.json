@@ -1,7 +1,7 @@
 {
   "name": "event-to-object",
   "version": "0.1.2",
-  "description": "Convert native events to JSON serializable objects",
+  "description": "Converts a JavaScript events to JSON serializable objects.",
   "author": "Ryan Morshead",
   "license": "MIT",
   "repository": {
@@ -28,7 +28,7 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "test": "uvu -r tsm tests",
-    "checkTypes": "tsc --noEmit"
+    "checkTypes": "tsc --noEmit",
+    "test": "uvu -r tsm tests"
   }
 }
