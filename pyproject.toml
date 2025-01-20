@@ -154,6 +154,10 @@ check = [
   "cd docs && poetry run sphinx-build -a -T -W --keep-going -b doctest source build",
   "cd docs && docker build . --file Dockerfile",
 ]
+serve = [
+  "cd docs && poetry install",
+  "cd docs && poetry run python main.py --watch=../src/ --ignore=**/_auto/* --ignore=**/custom.js --ignore=**/node_modules/* --ignore=**/package-lock.json -a -E -b html source build",
+]
 
 ################################
 # >>> Hatch Python Scripts <<< #
