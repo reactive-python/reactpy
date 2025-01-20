@@ -12,7 +12,7 @@ RUN apt-get install nodejs -y
 
 # Install Poetry
 # --------------
-RUN pip install poetry
+RUN pip install --upgrade poetry hatch uv
 
 # Create/Activate Python Venv
 # ---------------------------
