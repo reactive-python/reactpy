@@ -12,7 +12,10 @@ description = "It's React, but in Python."
 readme = "README.md"
 keywords = ["react", "javascript", "reactpy", "component"]
 license = "MIT"
-authors = [{ name = "Ryan Morshead", email = "ryan.morshead@gmail.com" }]
+authors = [
+  { name = "Ryan Morshead", email = "ryan.morshead@gmail.com" },
+  { name = "Mark Bakhit", email = "archiethemonger@gmail.com" },
+]
 requires-python = ">=3.9"
 classifiers = [
   "Development Status :: 4 - Beta",

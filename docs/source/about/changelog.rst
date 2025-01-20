@@ -20,7 +20,7 @@ Unreleased
 
 **Changed**
 
-- Substitute ``react`` rendering on the client with ``preact``.
+- :pull:`1251` Substitute ``react`` rendering on the client with ``preact``.
 
 v1.1.0
 ------
