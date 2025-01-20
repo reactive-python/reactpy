@@ -152,7 +152,7 @@ docker_build = [
 check = [
   "cd docs && poetry install",
   "cd docs && poetry run sphinx-build -a -T -W --keep-going -b doctest source build",
-  "cd docs && docker build . --file docs/Dockerfile",
+  "cd docs && docker build . --file Dockerfile",
 ]
 
 ################################
@@ -184,6 +184,7 @@ detached = true
 
 [tool.hatch.envs.javascript.scripts]
 check = [
+  'hatch run javascript:build',
   'bun install --cwd "src/js"',
   'bun run --cwd "src/js" lint',
   'bun run --cwd "src/js/packages/event-to-object" checkTypes',
@@ -192,7 +193,7 @@ check = [
 ]
 fix = ['bun install --cwd "src/js"', 'bun run --cwd "src/js" format']
 test = [
-  'bun install --cwd "src/js"',
+  'hatch run javascript:build_event_to_object',
   'bun run --cwd "src/js/packages/event-to-object" test',
 ]
 build = [
