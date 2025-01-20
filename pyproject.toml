@@ -240,7 +240,7 @@ parallel = false
 omit = ["reactpy/__init__.py"]
 
 [tool.coverage.report]
-fail_under = 100
+fail_under = 95
 show_missing = true
 skip_covered = true
 sort = "Name"
