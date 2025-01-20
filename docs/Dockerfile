@@ -24,6 +24,8 @@ RUN pip install --upgrade pip
 # Copy Files
 # ----------
 COPY LICENSE ./
+COPY README.md ./
+COPY pyproject.toml ./
 COPY src ./src
 COPY docs ./docs
 COPY branding ./branding
