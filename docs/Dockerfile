@@ -5,10 +5,9 @@ RUN apt-get update
 
 # Install NodeJS
 # --------------
-RUN curl -SLO https://deb.nodesource.com/nsolid_setup_deb.sh
-RUN chmod 500 nsolid_setup_deb.sh
-RUN ./nsolid_setup_deb.sh 20
-RUN apt-get install nodejs -y
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x -o nodesource_setup.sh
+RUN bash nodesource_setup.sh
+RUN apt-get install -y nodejs
 
 # Install Poetry
 # --------------
@@ -36,7 +35,7 @@ RUN sphinx-build -v -W -b html source build
 
 # Define Entrypoint
 # -----------------
-ENV PORT 5000
+ENV PORT=5000
 ENV REACTPY_DEBUG_MODE=1
 ENV REACTPY_CHECK_VDOM_SPEC=0
-CMD python main.py
+CMD ["python", "main.py"]
