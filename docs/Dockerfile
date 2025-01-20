@@ -5,21 +5,21 @@ RUN apt-get update
 
 # Install NodeJS
 # --------------
-RUN curl -SLO https://deb.nodesource.com/nsolid_setup_deb.sh
+RUN curl -fsSL https://deb.nodesource.com/nsolid_setup_deb.sh
 RUN chmod 500 nsolid_setup_deb.sh
 RUN ./nsolid_setup_deb.sh 20
 RUN apt-get install nodejs -y
-
-# Install Poetry
-# --------------
-RUN pip install --upgrade poetry hatch uv
 
 # Create/Activate Python Venv
 # ---------------------------
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN pip install --upgrade pip
+
+# Install Python Build
+# ---------------------------
+RUN pip install --upgrade pip poetry hatch uv
+RUN curl -fsSL https://bun.sh/install | bash
 
 # Copy Files
 # ----------
