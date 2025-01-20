@@ -3,22 +3,17 @@ WORKDIR /app/
 
 RUN apt-get update
 
-# Install NodeJS
-# --------------
-RUN curl -fsSL https://deb.nodesource.com/setup_23.x -o nodesource_setup.sh
-RUN bash nodesource_setup.sh
-RUN apt-get install -y nodejs
-
 # Create/Activate Python Venv
 # ---------------------------
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Install Python Build
-# ---------------------------
+# Install Python Build Dependencies
+# ---------------------------------
 RUN pip install --upgrade pip poetry hatch uv
 RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:$PATH"
 
 # Copy Files
 # ----------

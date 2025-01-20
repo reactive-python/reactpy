@@ -149,6 +149,10 @@ docker_build = [
   "hatch run docs:build",
   "docker build . --file ./docs/Dockerfile --tag reactpy-docs:latest",
 ]
+docker_serve = [
+  "hatch run docs:docker_build",
+  "docker run --rm -p 5000:5000 reactpy-docs:latest",
+]
 check = [
   "cd docs && poetry install",
   "cd docs && poetry run sphinx-build -a -T -W --keep-going -b doctest source build",
