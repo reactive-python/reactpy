@@ -5,9 +5,10 @@ RUN apt-get update
 
 # Install NodeJS
 # --------------
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x -o nodesource_setup.sh
-RUN bash nodesource_setup.sh
-RUN apt-get install -y nodejs
+RUN curl -SLO https://deb.nodesource.com/nsolid_setup_deb.sh
+RUN chmod 500 nsolid_setup_deb.sh
+RUN ./nsolid_setup_deb.sh 20
+RUN apt-get install nodejs -y
 
 # Install Poetry
 # --------------
@@ -29,8 +30,8 @@ COPY branding ./branding
 
 # Install and Build Docs
 # ----------------------
-WORKDIR /app/docs
-RUN poetry install
+WORKDIR /app/docs/
+RUN poetry install -v
 RUN sphinx-build -v -W -b html source build
 
 # Define Entrypoint
