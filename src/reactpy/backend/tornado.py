@@ -162,7 +162,7 @@ def _setup_single_view_dispatcher_route(
     ]
 
 
-class IndexHandler(RequestHandler):
+class IndexHandler(RequestHandler):  # type: ignore
     _index_html: str
 
     def initialize(self, index_html: str) -> None:
@@ -172,7 +172,7 @@ class IndexHandler(RequestHandler):
         self.finish(self._index_html)
 
 
-class ModelStreamHandler(WebSocketHandler):
+class ModelStreamHandler(WebSocketHandler):  # type: ignore
     """A web-socket handler that serves up a new model stream to each new client"""
 
     _dispatch_future: Future[None]
@@ -202,7 +202,7 @@ class ModelStreamHandler(WebSocketHandler):
                         value=Connection(
                             scope=_FAKE_WSGI_CONTAINER.environ(self.request),
                             location=Location(
-                                pathname=f"/{path[len(self._url_prefix):]}",
+                                pathname=f"/{path[len(self._url_prefix) :]}",
                                 search=(
                                     f"?{self.request.query}"
                                     if self.request.query

@@ -282,7 +282,7 @@ def separate_attributes_and_children(
 
 
 def separate_attributes_and_event_handlers(
-    attributes: Mapping[str, Any]
+    attributes: Mapping[str, Any],
 ) -> tuple[dict[str, Any], EventHandlerDict]:
     separated_attributes = {}
     separated_event_handlers: dict[str, EventHandlerType] = {}
@@ -295,8 +295,7 @@ def separate_attributes_and_event_handlers(
         elif (
             # isinstance check on protocols is slow - use function attr pre-check as a
             # quick filter before actually performing slow EventHandlerType type check
-            hasattr(v, "function")
-            and isinstance(v, EventHandlerType)
+            hasattr(v, "function") and isinstance(v, EventHandlerType)
         ):
             handler = v
         else:

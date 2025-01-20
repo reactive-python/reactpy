@@ -174,17 +174,21 @@ def _hotswap(update_on_change: bool = False) -> tuple[_MountFunc, ComponentConst
             show, root = reactpy.hotswap()
             PerClientStateServer(root).run_in_thread("localhost", 8765)
 
+
             @reactpy.component
             def DivOne(self):
                 return {"tagName": "div", "children": [1]}
+
 
             show(DivOne)
 
             # displaying the output now will show DivOne
 
+
             @reactpy.component
             def DivTwo(self):
                 return {"tagName": "div", "children": [2]}
+
 
             show(DivTwo)
 

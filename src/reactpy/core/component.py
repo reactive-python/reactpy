@@ -8,7 +8,7 @@ from reactpy.core.types import ComponentType, VdomDict
 
 
 def component(
-    function: Callable[..., ComponentType | VdomDict | str | None]
+    function: Callable[..., ComponentType | VdomDict | str | None],
 ) -> Callable[..., Component]:
     """A decorator for defining a new component.
 

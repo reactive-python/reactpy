@@ -48,8 +48,8 @@ def event(
     .. code-block:: python
 
         @event(stop_propagation=True, prevent_default=True)
-        def my_callback(*data):
-            ...
+        def my_callback(*data): ...
+
 
         element = reactpy.html.button({"onClick": my_callback})
 

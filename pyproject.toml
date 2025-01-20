@@ -132,20 +132,39 @@ cov = ["test-cov {args}", "cov-report"]
 [tool.hatch.envs.default.env-vars]
 REACTPY_DEBUG_MODE = "1"
 
+#######################################
+# >>> Hatch Documentation Scripts <<< #
+#######################################
+[tool.hatch.envs.docs]
+template = "docs"
+dependencies = ["poetry"]
+detached = true
+
+[tool.hatch.envs.docs.scripts]
+build = [
+  "cd docs && poetry install",
+  "cd docs && poetry run sphinx-build -a -T -W --keep-going -b doctest source build",
+]
+docker_build = [
+  "hatch run docs:build",
+  "cd docs && docker build . --file ./docs/Dockerfile --tag reactpy-docs:latest",
+]
+check = [
+  "cd docs && poetry install",
+  "cd docs && poetry run sphinx-build -a -T -W --keep-going -b doctest source build",
+  "cd docs && docker build . --file docs/Dockerfile",
+]
+
 ################################
 # >>> Hatch Python Scripts <<< #
 ################################
 
-[tool.hatch.envs.lint]
+[tool.hatch.envs.python]
 extra-dependencies = [
-  "black==24.1.1",
-  "ruff==0.0.278",
-  "flake8==7.0.0",
+  "ruff",
   "toml",
-  "flake8-pyproject",
-  "mypy",
-  "types-toml",
   "mypy==1.8",
+  "types-toml",
   "types-click",
   "types-tornado",
   "types-flask",
@@ -153,8 +172,8 @@ extra-dependencies = [
 ]
 
 [tool.hatch.envs.python.scripts]
-# TODO: Replace mypy with pylint
-type_check = "mypy --strict src/reactpy"
+# TODO: Replace mypy with pyright
+check = ["mypy --strict src/reactpy", "hatch fmt src/reactpy --check"]
 
 ############################
 # >>> Hatch JS Scripts <<< #
@@ -236,7 +255,7 @@ omit = ["reactpy/__main__.py"]
 [tool.ruff]
 target-version = "py39"
 line-length = 88
-select = [
+lint.select = [
   "A",
   "ARG",
   "B",
@@ -250,7 +269,6 @@ select = [
   # "FBT",
   "I",
   "ICN",
-  "ISC",
   "N",
   "PLC",
   "PLE",
@@ -265,7 +283,7 @@ select = [
   "W",
   "YTT",
 ]
-ignore = [
+lint.ignore = [
   # TODO: turn this on later
   "N802",
   "N806", # allow TitleCase functions/variables
@@ -299,22 +317,22 @@ ignore = [
   "PLR0913",
   "PLR0915",
 ]
-unfixable = [
+lint.unfixable = [
   # Don't touch unused imports
   "F401",
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["reactpy"]
 
-[tool.ruff.flake8-tidy-imports]
+[tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
 [tool.flake8]
 select = ["RPY"]                                                  # only need to check with reactpy-flake8
 exclude = ["**/node_modules/*", ".eggs/*", ".tox/*", "**/venv/*"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 # Tests can use magic values, assertions, and relative imports
 "**/tests/**/*" = ["PLR2004", "S101", "TID252"]
 "docs/**/*.py" = [

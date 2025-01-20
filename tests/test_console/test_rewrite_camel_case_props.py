@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 from textwrap import dedent
 
@@ -9,9 +8,6 @@ from reactpy._console.rewrite_camel_case_props import (
     generate_rewrite,
     rewrite_camel_case_props,
 )
-
-if sys.version_info < (3, 9):
-    pytestmark = pytest.mark.skip(reason="ast.unparse is Python>=3.9")
 
 
 def test_rewrite_camel_case_props_declarations(tmp_path):

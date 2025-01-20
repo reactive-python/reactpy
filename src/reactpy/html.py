@@ -458,6 +458,7 @@ def _script(
         .. code-block:: python
 
             import json
+
             my_script = html.script(f"console.log({json.dumps(user_bio)});")
 
         This would prevent the injection of Javascript code by escaping the ``user_bio``

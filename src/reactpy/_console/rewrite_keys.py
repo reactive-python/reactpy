@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import ast
-import sys
 from pathlib import Path
 
 import click
@@ -45,9 +44,6 @@ def rewrite_keys(paths: list[str]) -> None:
     just above its changes. As such it requires manual intervention to put those
     comments back in their original location.
     """
-    if sys.version_info < (3, 9):  # nocov
-        msg = "This command requires Python>=3.9"
-        raise RuntimeError(msg)
 
     for p in map(Path, paths):
         for f in [p] if p.is_file() else p.rglob("*.py"):

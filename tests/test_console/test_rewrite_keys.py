@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 from textwrap import dedent
 
@@ -6,9 +5,6 @@ import pytest
 from click.testing import CliRunner
 
 from reactpy._console.rewrite_keys import generate_rewrite, rewrite_keys
-
-if sys.version_info < (3, 9):
-    pytestmark = pytest.mark.skip(reason="ast.unparse is Python>=3.9")
 
 
 def test_rewrite_key_declarations(tmp_path):

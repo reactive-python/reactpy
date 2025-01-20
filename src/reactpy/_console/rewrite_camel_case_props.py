@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 import re
-import sys
 from copy import copy
 from keyword import kwlist
 from pathlib import Path
@@ -23,9 +22,6 @@ CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
 def rewrite_camel_case_props(paths: list[str]) -> None:
     """Rewrite camelCase props to snake_case"""
-    if sys.version_info < (3, 9):  # nocov
-        msg = "This command requires Python>=3.9"
-        raise RuntimeError(msg)
 
     for p in map(Path, paths):
         for f in [p] if p.is_file() else p.rglob("*.py"):
