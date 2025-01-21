@@ -11,38 +11,36 @@ on:
         - cron: "0 0 * * 0"
 
 jobs:
-    test-py-cov:
+    test-python-coverage:
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "python-{0}"
-            hatch-run: "test-py"
-    lint-py:
+            run-cmd: "hatch test --cover"
+    lint-python:
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "python-{0}"
-            hatch-run: "lint-py"
-    test-py-matrix:
+            run-cmd: "hatch fmt src/reactpy --check && hatch run python:type_check"
+    test-python:
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "python-{0} {1}"
-            hatch-run: "test-py --no-cov"
-            runs-on-array: '["ubuntu-latest", "macos-latest", "windows-latest"]'
-            python-version-array: '["3.9", "3.10", "3.11"]'
-    test-docs:
+            run-cmd: "hatch test"
+            runs-on: '["ubuntu-latest", "macos-latest", "windows-latest"]'
+            python-version: '["3.9", "3.10", "3.11"]'
+    test-documentation:
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "python-{0}"
-            hatch-run: "test-docs"
-            # as of Dec 2023 lxml does have wheels for 3.12
-            # https://bugs.launchpad.net/lxml/+bug/2040440
-            python-version-array: '["3.11"]'
-    test-js:
+            run-cmd: "hatch run docs:check"
+            python-version: '["3.11"]'
+    test-javascript:
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "{1}"
-            hatch-run: "test-js"
-    lint-js:
+            run-cmd: "hatch run javascript:test"
+    lint-javascript:
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "{1}"
-            hatch-run: "lint-js"
+            run-cmd: "hatch run javascript:check"

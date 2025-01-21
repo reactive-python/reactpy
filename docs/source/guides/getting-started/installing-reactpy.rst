@@ -101,14 +101,14 @@ For Development
 
 If you want to contribute to the development of ReactPy or modify it, you'll want to
 install a development version of ReactPy. This involves cloning the repository where ReactPy's
-source is maintained, and setting up a :ref:`development environment`. From there you'll
-be able to modifying ReactPy's source code and :ref:`run its tests <Running The Tests>` to
+source is maintained, and setting up a :ref:`Contributor Guide`. From there you'll
+be able to modifying ReactPy's source code and :ref:`run its tests <Python Tests>` to
 ensure the modifications you've made are backwards compatible. If you want to add a new
 feature to ReactPy you should write your own test that validates its behavior.
 
 If you have questions about how to modify ReactPy or help with its development, be sure to
 :discussion:`start a discussion <new?category=question>`. The ReactPy team are always
-excited to :ref:`welcome <everyone can contribute>` new contributions and contributors
+excited to welcome new contributions and contributors
 of all kinds
 
 .. card::

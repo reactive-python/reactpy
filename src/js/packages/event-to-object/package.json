@@ -1,12 +1,21 @@
 {
+  "name": "event-to-object",
+  "version": "0.1.2",
+  "description": "Converts a JavaScript events to JSON serializable objects.",
   "author": "Ryan Morshead",
   "license": "MIT",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "name": "event-to-object",
-  "description": "Convert native events to JSON serializable objects",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/reactive-python/reactpy"
+  },
+  "keywords": [
+    "event",
+    "json",
+    "object",
+    "convert"
+  ],
   "type": "module",
-  "version": "0.1.2",
+  "main": "dist/index.js",
   "dependencies": {
     "json-pointer": "^0.6.2"
   },
@@ -14,17 +23,12 @@
     "happy-dom": "^8.9.0",
     "lodash": "^4.17.21",
     "tsm": "^2.0.0",
-    "typescript": "^4.9.5",
+    "typescript": "^5.7.3",
     "uvu": "^0.5.1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/reactive-python/reactpy"
   },
   "scripts": {
     "build": "tsc -b",
-    "test": "npm run check:tests",
-    "check:tests": "uvu -r tsm tests",
-    "check:types": "tsc --noEmit"
+    "checkTypes": "tsc --noEmit",
+    "test": "uvu -r tsm tests"
   }
 }

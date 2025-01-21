@@ -1,26 +1,14 @@
 {
-  "license": "MIT",
-  "scripts": {
-    "publish": "npm --workspaces publish",
-    "test": "npm --workspaces test",
-    "build": "npm --workspaces run build",
-    "fix:format": "npm run prettier -- --write && npm run eslint -- --fix",
-    "check:format": "npm run prettier -- --check && npm run eslint",
-    "check:tests": "npm --workspaces run check:tests",
-    "check:types": "npm --workspaces run check:types",
-    "prettier": "prettier --ignore-path .gitignore .",
-    "eslint": "eslint --ignore-path .gitignore ."
-  },
-  "workspaces": [
-    "packages/event-to-object",
-    "packages/@reactpy/client",
-    "app"
-  ],
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.58.0",
     "@typescript-eslint/parser": "^5.58.0",
     "eslint": "^8.38.0",
     "eslint-plugin-react": "^7.32.2",
     "prettier": "^3.0.0-alpha.6"
+  },
+  "license": "MIT",
+  "scripts": {
+    "lint": "prettier --check . && eslint",
+    "format": "prettier --write . && eslint --fix"
   }
 }

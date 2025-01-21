@@ -6,21 +6,17 @@ on:
             job-name:
                 required: true
                 type: string
-            hatch-run:
+            run-cmd:
                 required: true
                 type: string
-            runs-on-array:
+            runs-on:
                 required: false
                 type: string
                 default: '["ubuntu-latest"]'
-            python-version-array:
+            python-version:
                 required: false
                 type: string
                 default: '["3.x"]'
-            node-registry-url:
-                required: false
-                type: string
-                default: ""
         secrets:
             node-auth-token:
                 required: false
@@ -34,26 +30,23 @@ jobs:
         name: ${{ format(inputs.job-name, matrix.python-version, matrix.runs-on) }}
         strategy:
             matrix:
-                python-version: ${{ fromJson(inputs.python-version-array) }}
-                runs-on: ${{ fromJson(inputs.runs-on-array) }}
+                python-version: ${{ fromJson(inputs.python-version) }}
+                runs-on: ${{ fromJson(inputs.runs-on) }}
         runs-on: ${{ matrix.runs-on }}
         steps:
             - uses: actions/checkout@v4
-            - uses: actions/setup-node@v4
+            - uses: oven-sh/setup-bun@v2
               with:
-                  node-version: "23.x"
-                  registry-url: ${{ inputs.node-registry-url }}
-            - name: Pin NPM Version
-              run: npm install -g npm@8.19.3
+                  bun-version: latest
             - name: Use Python ${{ matrix.python-version }}
               uses: actions/setup-python@v5
               with:
                   python-version: ${{ matrix.python-version }}
             - name: Install Python Dependencies
-              run: pip install hatch poetry
+              run: pip install --upgrade pip hatch uv
             - name: Run Scripts
               env:
-                  NODE_AUTH_TOKEN: ${{ secrets.node-auth-token }}
-                  PYPI_USERNAME: ${{ secrets.pypi-username }}
-                  PYPI_PASSWORD: ${{ secrets.pypi-password }}
-              run: hatch run ${{ inputs.hatch-run }}
+                  NPM_CONFIG_TOKEN: ${{ secrets.node-auth-token }}
+                  HATCH_INDEX_USER: ${{ secrets.pypi-username }}
+                  HATCH_INDEX_AUTH: ${{ secrets.pypi-password }}
+              run: ${{ inputs.run-cmd }}
