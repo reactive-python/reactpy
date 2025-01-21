@@ -120,13 +120,8 @@ function ScriptElement({ model }: { model: ReactPyVdom }) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
-    // Fetch the script's content
-    const scriptContent = model?.children?.filter(
-      (value): value is string => typeof value == "string",
-    )[0];
-
-    // Don't run if the parent element or script content is missing
-    if (!ref.current || !scriptContent) {
+    // Don't run if the parent element is missing
+    if (!ref.current) {
       return;
     }
 
@@ -136,8 +131,15 @@ function ScriptElement({ model }: { model: ReactPyVdom }) {
       scriptElement.setAttribute(k, v);
     }
 
-    // Append the script content to the script element
-    scriptElement.appendChild(document.createTextNode(scriptContent));
+    // Add the script content as text
+    const scriptContent = model?.children?.filter(
+      (value): value is string => typeof value == "string",
+    )[0];
+    if (scriptContent) {
+      scriptElement.appendChild(document.createTextNode(scriptContent));
+    }
+
+    // Append the script element to the parent element
     ref.current.appendChild(scriptElement);
 
     // Remove the script element when the component is unmounted
