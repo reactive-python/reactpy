@@ -20,7 +20,7 @@ jobs:
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "python-{0}"
-            run-cmd: "hatch run python:check"
+            run-cmd: "hatch fmt src/reactpy --check && hatch run python:type_check"
     test-python:
         uses: ./.github/workflows/.hatch-run.yml
         with:

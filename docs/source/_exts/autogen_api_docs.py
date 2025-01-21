@@ -104,10 +104,10 @@ def walk_python_files(root: Path, ignore_dirs: Collection[str]) -> Iterator[Path
 
     We yield the files in this order::
 
-        project/__init__.py
-        project/package/__init__.py
-        project/package/module_a.py
-        project/module_b.py
+        project / __init__.py
+        project / package / __init__.py
+        project / package / module_a.py
+        project / module_b.py
 
     In this way we generate the section titles in the appropriate order::
 

@@ -184,7 +184,7 @@ extra-dependencies = [
 
 [tool.hatch.envs.python.scripts]
 # TODO: Replace mypy with pyright
-check = ["mypy --strict src/reactpy", "hatch fmt src/reactpy --check"]
+type_check = ["mypy --strict src/reactpy"]
 
 ############################
 # >>> Hatch JS Scripts <<< #

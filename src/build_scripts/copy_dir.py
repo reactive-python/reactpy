@@ -23,7 +23,7 @@ def copy_files(source: Path, destination: Path) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 3:  # noqa
         logging.error(
             "Script used incorrectly!\nUsage: python copy_dir.py <source_dir> <destination>"
         )
