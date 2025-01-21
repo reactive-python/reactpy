@@ -120,30 +120,33 @@ function ScriptElement({ model }: { model: ReactPyVdom }) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
+    // Don't run if the parent element is missing
     if (!ref.current) {
       return;
     }
+
+    // Create the script element
+    const scriptElement: HTMLScriptElement = document.createElement("script");
+    for (const [k, v] of Object.entries(model.attributes || {})) {
+      scriptElement.setAttribute(k, v);
+    }
+
+    // Add the script content as text
     const scriptContent = model?.children?.filter(
       (value): value is string => typeof value == "string",
     )[0];
-
-    let scriptElement: HTMLScriptElement;
-    if (model.attributes) {
-      scriptElement = document.createElement("script");
-      for (const [k, v] of Object.entries(model.attributes)) {
-        scriptElement.setAttribute(k, v);
-      }
-      if (scriptContent) {
-        scriptElement.appendChild(document.createTextNode(scriptContent));
-      }
-      ref.current.appendChild(scriptElement);
-    } else if (scriptContent) {
-      const scriptResult = eval(scriptContent);
-      if (typeof scriptResult == "function") {
-        return scriptResult();
-      }
+    if (scriptContent) {
+      scriptElement.appendChild(document.createTextNode(scriptContent));
     }
-  }, [model.key, ref.current]);
+
+    // Append the script element to the parent element
+    ref.current.appendChild(scriptElement);
+
+    // Remove the script element when the component is unmounted
+    return () => {
+      ref.current?.removeChild(scriptElement);
+    };
+  }, [model.key]);
 
   return <div ref={ref} />;
 }

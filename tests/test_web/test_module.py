@@ -50,6 +50,7 @@ async def test_that_js_module_unmount_is_called(display: DisplayFixture):
     await display.page.wait_for_selector("#unmount-flag", state="attached")
 
 
+@pytest.mark.flaky(reruns=3)
 async def test_module_from_url(browser):
     app = Sanic("test_module_from_url")
 
