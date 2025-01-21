@@ -8,18 +8,21 @@ Changelog
     scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__.
 
 
-.. INSTRUCTIONS FOR CHANGELOG CONTRIBUTORS
-.. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-.. If you're adding a changelog entry, be sure to read the "Creating a Changelog Entry"
-.. section of the documentation before doing so for instructions on how to adhere to the
-.. "Keep a Changelog" style guide (https://keepachangelog.com).
+.. Using the following categories, list your changes in this order:
+.. [Added, Changed, Deprecated, Removed, Fixed, Security]
+.. Don't forget to remove deprecated code on each major release!
 
 Unreleased
 ----------
 
 **Changed**
 
-- :pull:`1251` Substitute client-side usage of ``react`` with ``preact``.
+- :pull:`1251` - Substitute client-side usage of ``react`` with ``preact``.
+- :pull:`1239` - Script elements no longer support behaving like effects. They now strictly behave like plain HTML script elements.
+
+**Fixed**
+
+- :pull:`1239` - Fixed a bug where script elements would not render to the DOM as plain text.
 
 v1.1.0
 ------
