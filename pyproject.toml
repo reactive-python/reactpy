@@ -54,7 +54,7 @@ artifacts = ["/src/reactpy/static/"]
 artifacts = ["/src/reactpy/static/"]
 
 [tool.hatch.metadata]
-license-files = { paths = ["LICENSE.md"] }
+license-files = { paths = ["LICENSE"] }
 
 [tool.hatch.envs.default]
 installer = "uv"
