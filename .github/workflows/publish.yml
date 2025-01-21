@@ -1,6 +1,3 @@
-# This workflows will upload a Javscript Package using NPM to npmjs.org when a release is created
-# For more information see: https://docs.github.com/en/actions/guides/publishing-nodejs-packages
-
 name: publish
 
 on:
@@ -8,13 +5,30 @@ on:
         types: [published]
 
 jobs:
-    publish:
+    publish-reactpy:
+        if: startsWith(github.event.release.name, 'reactpy ')
         uses: ./.github/workflows/.hatch-run.yml
         with:
-            job-name: "publish"
-            hatch-run: "publish"
-            node-registry-url: "https://registry.npmjs.org"
+            job-name: "Publish to PyPI"
+            run-cmd: "hatch build --clean && hatch publish --yes"
         secrets:
-            node-auth-token: ${{ secrets.NODE_AUTH_TOKEN }}
             pypi-username: ${{ secrets.PYPI_USERNAME }}
             pypi-password: ${{ secrets.PYPI_PASSWORD }}
+
+    publish-reactpy-client:
+        if: startsWith(github.event.release.name, '@reactpy/client ')
+        uses: ./.github/workflows/.hatch-run.yml
+        with:
+            job-name: "Publish to NPM"
+            run-cmd: "hatch run javascript:publish_reactpy_client"
+        secrets:
+            node-auth-token: ${{ secrets.NODE_AUTH_TOKEN }}
+
+    publish-event-to-object:
+        if: startsWith(github.event.release.name, 'event-to-object ')
+        uses: ./.github/workflows/.hatch-run.yml
+        with:
+            job-name: "Publish to NPM"
+            run-cmd: "hatch run javascript:publish_event_to_object"
+        secrets:
+            node-auth-token: ${{ secrets.NODE_AUTH_TOKEN }}

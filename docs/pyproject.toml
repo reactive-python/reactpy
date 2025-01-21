@@ -7,8 +7,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-reactpy = { path = "../src/py/reactpy", extras = ["starlette", "sanic", "fastapi", "flask", "tornado", "testing"], develop = false }
 furo = "2022.04.07"
+reactpy = { path = "..", extras = ["all"], develop = false }
 sphinx = "*"
 sphinx-autodoc-typehints = "*"
 sphinx-copybutton = "*"

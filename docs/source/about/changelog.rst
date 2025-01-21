@@ -5,8 +5,7 @@ Changelog
 
     All notable changes to this project will be recorded in this document. The style of
     which is based on `Keep a Changelog <https://keepachangelog.com/>`__. The versioning
-    scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__. For
-    more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
+    scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__.
 
 
 .. INSTRUCTIONS FOR CHANGELOG CONTRIBUTORS
@@ -18,7 +17,9 @@ Changelog
 Unreleased
 ----------
 
-Nothing (yet)!
+**Changed**
+
+- :pull:`1251` Substitute client-side usage of ``react`` with ``preact``.
 
 v1.1.0
 ------
@@ -42,12 +43,8 @@ v1.1.0
 **Changed**
 
 - :pull:`1171` - Previously ``None``, when present in an HTML element, would render as
-  the string ``"None"``. Now ``None`` will not render at all. This is consistent with
-  how ``None`` is handled when returned from components. It also makes it easier to
-  conditionally render elements. For example, previously you would have needed to use a
-  fragment to conditionally render an element by writing
-  ``something if condition else html._()``. Now you can simply write
-  ``something if condition else None``.
+  the string ``"None"``. Now ``None`` will not render at all. This is now equivalent to
+  how ``None`` is handled when returned from components.
 - :pull:`1210` - Move hooks from ``reactpy.backend.hooks`` into ``reactpy.core.hooks``.
 
 **Deprecated**

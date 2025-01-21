@@ -8,7 +8,7 @@ import React, {
   Fragment,
   MutableRefObject,
   ChangeEvent,
-} from "react";
+} from "preact/compat";
 // @ts-ignore
 import { set as setJsonPointer } from "json-pointer";
 import {
@@ -95,7 +95,9 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
   if (typeof givenOnChange === "function") {
     props.onChange = (event: ChangeEvent<any>) => {
       // immediately update the value to give the user feedback
-      setValue(event.target.value);
+      if (event.target) {
+        setValue((event.target as HTMLInputElement).value);
+      }
       // allow the client to respond (and possibly change the value)
       givenOnChange(event);
     };
