@@ -252,17 +252,17 @@ parallel = false
 omit = ["reactpy/__init__.py"]
 
 [tool.coverage.report]
-fail_under = 95
+fail_under = 98
 show_missing = true
 skip_covered = true
 sort = "Name"
-exclude_lines = [
+exclude_also = [
   "no ?cov",
   '\.\.\.',
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
-omit = ["reactpy/__main__.py"]
+omit = ["**/reactpy/__main__.py"]
 
 [tool.ruff]
 target-version = "py39"
