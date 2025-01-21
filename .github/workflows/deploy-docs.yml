@@ -17,6 +17,8 @@ jobs:
               run: |
                   git fetch --prune --unshallow
                   git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+            - name: Install Heroku CLI
+              run: curl https://cli-assets.heroku.com/install.sh | sh
             - name: Login to Heroku Container Registry
               run: echo ${{ secrets.HEROKU_API_KEY }} | docker login -u ${{ secrets.HEROKU_EMAIL }} --password-stdin registry.heroku.com
             - name: Build Docker Image
