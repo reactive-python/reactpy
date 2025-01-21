@@ -15,8 +15,7 @@ async def test_script_re_run_on_content_change(display: DisplayFixture):
         return html.div(
             html.div({"id": "mount-count", "data_value": 0}),
             html.script(
-                'const mountCountEl = document.getElementById("mount-count");'
-                f'mountCountEl.setAttribute("data-value", {count});'
+                f'document.getElementById("mount-count").setAttribute("data-value", {count});'
             ),
         )
 

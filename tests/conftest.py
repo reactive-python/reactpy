@@ -36,6 +36,11 @@ def install_playwright():
     subprocess.run(["playwright", "install", "chromium"], check=True)  # noqa: S607, S603
 
 
+@pytest.fixture(autouse=True, scope="session")
+def rebuild_javascript():
+    subprocess.run(["hatch", "run", "javascript:build"], check=True)  # noqa: S607, S603
+
+
 @pytest.fixture
 async def display(server, page):
     async with DisplayFixture(server, page) as display:
