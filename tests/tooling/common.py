@@ -1,9 +1,12 @@
+import os
 from typing import Any
 
 from reactpy.core.types import LayoutEventMessage, LayoutUpdateMessage
 
-# see: https://github.com/microsoft/playwright-python/issues/1614
-DEFAULT_TYPE_DELAY = 100  # milliseconds
+GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "False")
+DEFAULT_TYPE_DELAY = (
+    250 if GITHUB_ACTIONS.lower() in {"y", "yes", "t", "true", "on", "1"} else 25
+)
 
 
 def event_message(target: str, *data: Any) -> LayoutEventMessage:
