@@ -5,11 +5,11 @@
   "dependencies": {
     "@reactpy/client": "file:../client",
     "event-to-object": "file:../../event-to-object",
-    "preact": "^10.7.0"
+    "preact": "^10.25.4"
   },
   "devDependencies": {
-    "@types/react": "^17.0",
-    "@types/react-dom": "^17.0",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
     "typescript": "^5.7.3"
   },
   "scripts": {

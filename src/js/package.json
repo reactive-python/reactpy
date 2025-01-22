@@ -1,10 +1,13 @@
 {
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.58.0",
-    "@typescript-eslint/parser": "^5.58.0",
-    "eslint": "^8.38.0",
-    "eslint-plugin-react": "^7.32.2",
-    "prettier": "^3.0.0-alpha.6"
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.18.0",
+    "@typescript-eslint/eslint-plugin": "^8.21.0",
+    "@typescript-eslint/parser": "^8.21.0",
+    "eslint": "^9.18.0",
+    "eslint-plugin-react": "^7.37.4",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.2"
   },
   "license": "MIT",
   "scripts": {

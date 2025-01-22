@@ -20,11 +20,11 @@
     "json-pointer": "^0.6.2"
   },
   "devDependencies": {
-    "happy-dom": "^8.9.0",
+    "happy-dom": "^16.7.2",
     "lodash": "^4.17.21",
-    "tsm": "^2.0.0",
+    "tsm": "^2.3.0",
     "typescript": "^5.7.3",
-    "uvu": "^0.5.1"
+    "uvu": "^0.5.6"
   },
   "scripts": {
     "build": "tsc -b",
