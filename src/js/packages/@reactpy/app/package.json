@@ -1,0 +1,17 @@
+{
+  "name": "@reactpy/app",
+  "description": "ReactPy's client-side entry point. This is strictly for internal use and is not designed to be distributed.",
+  "license": "MIT",
+  "dependencies": {
+    "@reactpy/client": "file:../client",
+    "event-to-object": "file:../../event-to-object",
+    "preact": "^10.25.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  },
+  "scripts": {
+    "build": "bun build \"src/index.ts\" --outdir \"dist\" --minify --sourcemap=linked",
+    "checkTypes": "tsc --noEmit"
+  }
+}

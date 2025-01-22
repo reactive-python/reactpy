@@ -8,7 +8,7 @@ import React, {
   Fragment,
   MutableRefObject,
   ChangeEvent,
-} from "react";
+} from "preact/compat";
 // @ts-ignore
 import { set as setJsonPointer } from "json-pointer";
 import {
@@ -95,7 +95,9 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
   if (typeof givenOnChange === "function") {
     props.onChange = (event: ChangeEvent<any>) => {
       // immediately update the value to give the user feedback
-      setValue(event.target.value);
+      if (event.target) {
+        setValue((event.target as HTMLInputElement).value);
+      }
       // allow the client to respond (and possibly change the value)
       givenOnChange(event);
     };
@@ -118,30 +120,33 @@ function ScriptElement({ model }: { model: ReactPyVdom }) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
+    // Don't run if the parent element is missing
     if (!ref.current) {
       return;
     }
+
+    // Create the script element
+    const scriptElement: HTMLScriptElement = document.createElement("script");
+    for (const [k, v] of Object.entries(model.attributes || {})) {
+      scriptElement.setAttribute(k, v);
+    }
+
+    // Add the script content as text
     const scriptContent = model?.children?.filter(
       (value): value is string => typeof value == "string",
     )[0];
-
-    let scriptElement: HTMLScriptElement;
-    if (model.attributes) {
-      scriptElement = document.createElement("script");
-      for (const [k, v] of Object.entries(model.attributes)) {
-        scriptElement.setAttribute(k, v);
-      }
-      if (scriptContent) {
-        scriptElement.appendChild(document.createTextNode(scriptContent));
-      }
-      ref.current.appendChild(scriptElement);
-    } else if (scriptContent) {
-      const scriptResult = eval(scriptContent);
-      if (typeof scriptResult == "function") {
-        return scriptResult();
-      }
+    if (scriptContent) {
+      scriptElement.appendChild(document.createTextNode(scriptContent));
     }
-  }, [model.key, ref.current]);
+
+    // Append the script element to the parent element
+    ref.current.appendChild(scriptElement);
+
+    // Remove the script element when the component is unmounted
+    return () => {
+      ref.current?.removeChild(scriptElement);
+    };
+  }, [model.key]);
 
   return <div ref={ref} />;
 }
@@ -177,7 +182,7 @@ function useForceUpdate() {
 
 function useImportSource(model: ReactPyVdom): MutableRefObject<any> {
   const vdomImportSource = model.importSource;
-
+  const vdomImportSourceJsonString = JSON.stringify(vdomImportSource);
   const mountPoint = useRef<HTMLElement>(null);
   const client = React.useContext(ClientContext);
   const [binding, setBinding] = useState<ImportSourceBinding | null>(null);
@@ -203,7 +208,7 @@ function useImportSource(model: ReactPyVdom): MutableRefObject<any> {
         binding.unmount();
       }
     };
-  }, [client, vdomImportSource, setBinding, mountPoint.current]);
+  }, [client, vdomImportSourceJsonString, setBinding, mountPoint.current]);
 
   // this effect must run every time in case the model has changed
   useEffect(() => {

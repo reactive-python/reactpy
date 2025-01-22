@@ -3,7 +3,7 @@
 Build the javascript with
 
 ```
-npm run build
+bun run build
 ```
 
 This will drop a javascript bundle into `../_static/custom.js`

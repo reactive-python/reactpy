@@ -3,27 +3,60 @@ Changelog
 
 .. note::
 
-    The ReactPy team manages their short and long term plans with `GitHub Projects
-    <https://github.com/orgs/reactive-python/projects/1>`__. If you have questions about what
-    the team are working on, or have feedback on how issues should be prioritized, feel
-    free to :discussion-type:`open up a discussion <question>`.
-
-All notable changes to this project will be recorded in this document. The style of
-which is based on `Keep a Changelog <https://keepachangelog.com/>`__. The versioning
-scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__. For
-more info, see the :ref:`Contributor Guide <Creating a Changelog Entry>`.
+    All notable changes to this project will be recorded in this document. The style of
+    which is based on `Keep a Changelog <https://keepachangelog.com/>`__. The versioning
+    scheme for the project adheres to `Semantic Versioning <https://semver.org/>`__.
 
 
-.. INSTRUCTIONS FOR CHANGELOG CONTRIBUTORS
-.. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-.. If you're adding a changelog entry, be sure to read the "Creating a Changelog Entry"
-.. section of the documentation before doing so for instructions on how to adhere to the
-.. "Keep a Changelog" style guide (https://keepachangelog.com).
+.. Using the following categories, list your changes in this order:
+.. [Added, Changed, Deprecated, Removed, Fixed, Security]
+.. Don't forget to remove deprecated code on each major release!
 
 Unreleased
 ----------
 
-Nothing yet...
+**Changed**
+
+- :pull:`1251` - Substitute client-side usage of ``react`` with ``preact``.
+- :pull:`1239` - Script elements no longer support behaving like effects. They now strictly behave like plain HTML script elements.
+
+**Fixed**
+
+- :pull:`1239` - Fixed a bug where script elements would not render to the DOM as plain text.
+
+v1.1.0
+------
+
+**Fixed**
+
+- :pull:`1118` - ``module_from_template`` is broken with a recent release of ``requests``
+- :pull:`1131` - ``module_from_template`` did not work when using Flask backend
+- :pull:`1200` - Fixed ``UnicodeDecodeError`` when using ``reactpy.web.export``
+- :pull:`1224` - Fixes needless unmounting of JavaScript components during each ReactPy render.
+- :pull:`1126` - Fixed missing ``event["target"]["checked"]`` on checkbox inputs
+- :pull:`1191` - Fixed missing static files on `sdist` Python distribution
+
+**Added**
+
+- :pull:`1165` - Allow concurrently rendering discrete component trees - enable this
+  experimental feature by setting ``REACTPY_ASYNC_RENDERING=true``. This improves
+  the overall responsiveness of your app in situations where larger renders would
+  otherwise block smaller renders from executing.
+
+**Changed**
+
+- :pull:`1171` - Previously ``None``, when present in an HTML element, would render as
+  the string ``"None"``. Now ``None`` will not render at all. This is now equivalent to
+  how ``None`` is handled when returned from components.
+- :pull:`1210` - Move hooks from ``reactpy.backend.hooks`` into ``reactpy.core.hooks``.
+
+**Deprecated**
+
+- :pull:`1171` - The ``Stop`` exception. Recent releases of ``anyio`` have made this
+  exception difficult to use since it now raises an ``ExceptionGroup``. This exception
+  was primarily used for internal testing purposes and so is now deprecated.
+- :pull:`1210` - Deprecate ``reactpy.backend.hooks`` since the hooks have been moved into
+  ``reactpy.core.hooks``.
 
 
 v1.0.2

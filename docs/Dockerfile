@@ -1,40 +1,38 @@
-FROM python:3.9
-
+FROM python:3.11
 WORKDIR /app/
 
-# Install NodeJS
-# --------------
-RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
-RUN apt-get install -y build-essential nodejs npm
-RUN npm install -g npm@8.5.0
-
-# Install Poetry
-# --------------
-RUN pip install poetry
+RUN apt-get update
 
 # Create/Activate Python Venv
 # ---------------------------
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN pip install --upgrade pip
+
+# Install Python Build Dependencies
+# ---------------------------------
+RUN pip install --upgrade pip poetry hatch uv
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:$PATH"
 
 # Copy Files
 # ----------
 COPY LICENSE ./
+COPY README.md ./
+COPY pyproject.toml ./
 COPY src ./src
 COPY docs ./docs
 COPY branding ./branding
 
 # Install and Build Docs
 # ----------------------
-WORKDIR /app/docs
-RUN poetry install
+WORKDIR /app/docs/
+RUN poetry install -v
 RUN sphinx-build -v -W -b html source build
 
 # Define Entrypoint
 # -----------------
-ENV PORT 5000
+ENV PORT=5000
 ENV REACTPY_DEBUG_MODE=1
 ENV REACTPY_CHECK_VDOM_SPEC=0
-CMD python main.py
+CMD ["python", "main.py"]

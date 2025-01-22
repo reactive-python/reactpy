@@ -303,7 +303,10 @@ const elementConverters: { [key: string]: (element: any) => any } = {
   FORM: (element: HTMLFormElement) => ({
     elements: Array.from(element.elements).map(convertElement),
   }),
-  INPUT: (element: HTMLInputElement) => ({ value: element.value }),
+  INPUT: (element: HTMLInputElement) => ({
+    value: element.value,
+    checked: element.checked,
+  }),
   METER: (element: HTMLMeterElement) => ({ value: element.value }),
   OPTION: (element: HTMLOptionElement) => ({ value: element.value }),
   OUTPUT: (element: HTMLOutputElement) => ({ value: element.value }),
@@ -321,9 +324,6 @@ const convertGamepad = (gamepad: Gamepad): e.GamepadObject => ({
   index: gamepad.index,
   mapping: gamepad.mapping,
   timestamp: gamepad.timestamp,
-  hapticActuators: Array.from(gamepad.hapticActuators).map(
-    convertGamepadHapticActuator,
-  ),
 });
 
 const convertGamepadButton = (
@@ -332,12 +332,6 @@ const convertGamepadButton = (
   pressed: button.pressed,
   touched: button.touched,
   value: button.value,
-});
-
-const convertGamepadHapticActuator = (
-  actuator: GamepadHapticActuator,
-): e.GamepadHapticActuatorObject => ({
-  type: actuator.type,
 });
 
 const convertFile = (file: File) => ({

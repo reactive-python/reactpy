@@ -1,5 +1,5 @@
-import React from "react";
-import { render } from "react-dom";
+import React from "preact/compat";
+import { render } from "preact/compat";
 import { Layout } from "./components";
 import { ReactPyClient } from "./reactpy-client";
 

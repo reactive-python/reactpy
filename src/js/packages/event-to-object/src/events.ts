@@ -56,7 +56,6 @@ export interface GamepadObject {
   axes: number[];
   buttons: GamepadButtonObject[];
   connected: boolean;
-  hapticActuators: GamepadHapticActuatorObject[];
   id: string;
   index: number;
   mapping: GamepadMappingType;
