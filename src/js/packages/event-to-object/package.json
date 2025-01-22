@@ -20,7 +20,7 @@
     "json-pointer": "^0.6.2"
   },
   "devDependencies": {
-    "happy-dom": "^16.7.2",
+    "happy-dom": "^8.9.0",
     "lodash": "^4.17.21",
     "tsm": "^2.3.0",
     "typescript": "^5.7.3",
