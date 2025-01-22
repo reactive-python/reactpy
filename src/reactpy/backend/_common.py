@@ -67,17 +67,17 @@ async def _check_if_started(server: uvicorn.Server, started: asyncio.Event) -> N
 
 def safe_client_build_dir_path(path: str) -> Path:
     """Prevent path traversal out of :data:`CLIENT_BUILD_DIR`"""
-    return safe_join_path(
+    return traversal_safe_path(
         CLIENT_BUILD_DIR, *("index.html" if path in {"", "/"} else path).split("/")
     )
 
 
 def safe_web_modules_dir_path(path: str) -> Path:
     """Prevent path traversal out of :data:`reactpy.config.REACTPY_WEB_MODULES_DIR`"""
-    return safe_join_path(REACTPY_WEB_MODULES_DIR.current, *path.split("/"))
+    return traversal_safe_path(REACTPY_WEB_MODULES_DIR.current, *path.split("/"))
 
 
-def safe_join_path(root: str | Path, *unsafe: str | Path) -> Path:
+def traversal_safe_path(root: str | Path, *unsafe: str | Path) -> Path:
     """Raise a ``ValueError`` if the ``unsafe`` path resolves outside the root dir."""
     root = os.path.abspath(root)
 
