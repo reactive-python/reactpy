@@ -9,7 +9,7 @@ from anyio import create_task_group
 from anyio.abc import TaskGroup
 
 from reactpy.config import REACTPY_DEBUG_MODE
-from reactpy.core._life_cycle_hook import clear_hook_state, create_hook_state
+from reactpy.core._life_cycle_hook import _HOOK_STATE, clear_hook_state
 from reactpy.core.types import LayoutEventMessage, LayoutType, LayoutUpdateMessage
 
 logger = getLogger(__name__)
@@ -59,7 +59,7 @@ async def _single_outgoing_loop(
     layout: LayoutType[LayoutUpdateMessage, LayoutEventMessage], send: SendCoroutine
 ) -> None:
     while True:
-        token = create_hook_state()
+        token = _HOOK_STATE.set([])
         try:
             update = await layout.render()
             try:
