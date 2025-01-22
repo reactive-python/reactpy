@@ -21,7 +21,7 @@
     "preact": "^10.25.4"
   },
   "devDependencies": {
-    "@types/json-pointer": "^1.0.31",
+    "@types/json-pointer": "^1.0.34",
     "@types/react": "^17.0",
     "@types/react-dom": "^17.0",
     "typescript": "^5.7.3"

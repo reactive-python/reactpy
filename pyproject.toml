@@ -60,9 +60,16 @@ license-files = { paths = ["LICENSE"] }
 installer = "uv"
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
+# Note: `hatch` can't be called within `build-scripts` when installing packages in editable mode, so we have to write the commands long-form
 commands = [
-  "hatch run javascript:build",
-  'hatch run "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/dist" "src/reactpy/static/assets"',
+  'python "src/build_scripts/clean_js_dir.py"',
+  'bun install --cwd "src/js/packages/event-to-object"',
+  'bun run --cwd "src/js/packages/event-to-object" build',
+  'bun install --cwd "src/js/packages/@reactpy/client"',
+  'bun run --cwd "src/js/packages/@reactpy/client" build',
+  'bun install --cwd "src/js/packages/@reactpy/app"',
+  'bun run --cwd "src/js/packages/@reactpy/app" build',
+  'python "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/dist" "src/reactpy/static/assets"',
 ]
 artifacts = []
 
