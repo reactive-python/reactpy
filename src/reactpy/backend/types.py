@@ -1,48 +1,14 @@
 from __future__ import annotations
 
-import asyncio
 from collections.abc import MutableMapping
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Protocol, TypeVar, runtime_checkable
+from typing import Any, Generic, TypeVar
 
-from reactpy.core.types import RootComponentConstructor
-
-_App = TypeVar("_App")
-
-
-@runtime_checkable
-class BackendType(Protocol[_App]):
-    """Common interface for built-in web server/framework integrations"""
-
-    Options: Callable[..., Any]
-    """A constructor for options passed to :meth:`BackendType.configure`"""
-
-    def configure(
-        self,
-        app: _App,
-        component: RootComponentConstructor,
-        options: Any | None = None,
-    ) -> None:
-        """Configure the given app instance to display the given component"""
-
-    def create_development_app(self) -> _App:
-        """Create an application instance for development purposes"""
-
-    async def serve_development_app(
-        self,
-        app: _App,
-        host: str,
-        port: int,
-        started: asyncio.Event | None = None,
-    ) -> None:
-        """Run an application using a development server"""
-
-
-_Carrier = TypeVar("_Carrier")
+CarrierType = TypeVar("CarrierType")
 
 
 @dataclass
-class Connection(Generic[_Carrier]):
+class Connection(Generic[CarrierType]):
     """Represents a connection with a client"""
 
     scope: MutableMapping[str, Any]
@@ -51,7 +17,7 @@ class Connection(Generic[_Carrier]):
     location: Location
     """The current location (URL)"""
 
-    carrier: _Carrier
+    carrier: CarrierType
     """How the connection is mediated. For example, a request or websocket.
 
     This typically depends on the backend implementation.
