@@ -1,29 +1,26 @@
+import { set as setJsonPointer } from "json-pointer";
 import React, {
-  createElement,
+  ChangeEvent,
   createContext,
-  useState,
-  useRef,
-  useContext,
-  useEffect,
+  createElement,
   Fragment,
   MutableRefObject,
-  ChangeEvent,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
 } from "preact/compat";
-// @ts-ignore
-import { set as setJsonPointer } from "json-pointer";
 import {
-  ReactPyVdom,
-  ReactPyComponent,
-  createChildren,
-  createAttributes,
-  loadImportSource,
   ImportSourceBinding,
-} from "./reactpy-vdom";
-import { ReactPyClient } from "./reactpy-client";
+  ReactPyComponent,
+  ReactPyVdom,
+  ReactPyClientInterface,
+} from "./types";
+import { createAttributes, createChildren, loadImportSource } from "./vdom";
 
-const ClientContext = createContext<ReactPyClient>(null as any);
+const ClientContext = createContext<ReactPyClientInterface>(null as any);
 
-export function Layout(props: { client: ReactPyClient }): JSX.Element {
+export function Layout(props: { client: ReactPyClientInterface }): JSX.Element {
   const currentModel: ReactPyVdom = useState({ tagName: "" })[0];
   const forceUpdate = useForceUpdate();
 
