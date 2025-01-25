@@ -25,7 +25,11 @@ export function createReconnectingWebSocket(
         props.onOpen();
       }
     };
-    socket.current.onmessage = props.onMessage;
+    socket.current.onmessage = (event) => {
+      if (props.onMessage) {
+        props.onMessage(event);
+      }
+    };
     socket.current.onclose = () => {
       if (props.onClose) {
         props.onClose();

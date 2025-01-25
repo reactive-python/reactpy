@@ -1,5 +1,6 @@
 import hashlib
 import os
+import re
 from collections.abc import Coroutine, Sequence
 from email.utils import formatdate
 from logging import getLogger
@@ -19,6 +20,7 @@ class ReactPyStandalone(ReactPyMiddleware):
     last_modified: str = ""
     templates_dir = Path(__file__).parent.parent / "templates"
     index_html_path = templates_dir / "index.html"
+    single_root_component: bool = True
 
     def __init__(
         self,
@@ -36,6 +38,7 @@ class ReactPyStandalone(ReactPyMiddleware):
         )
         self.root_component = root_component
         self.extra_headers = http_headers or {}
+        self.dispatcher_pattern = re.compile(f"^{self.dispatcher_path}?")
 
     async def standalone_app(
         self,

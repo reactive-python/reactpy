@@ -1,12 +1,11 @@
 import asyncio
 import logging
 import re
+import traceback
 import urllib.parse
 from collections.abc import Coroutine, Iterable
 from concurrent.futures import Future
-from importlib import import_module
 from pathlib import Path
-from threading import Thread
 from typing import Any, Callable
 
 import orjson
@@ -22,20 +21,15 @@ from reactpy.core.serve import serve_layout
 from reactpy.core.types import ComponentType
 
 _logger = logging.getLogger(__name__)
-_backhaul_loop = asyncio.new_event_loop()
-
-
-def start_backhaul_loop():
-    """Starts the asyncio event loop that will perform component rendering
-    tasks."""
-    asyncio.set_event_loop(_backhaul_loop)
-    _backhaul_loop.run_forever()
-
-
-_backhaul_thread = Thread(target=start_backhaul_loop, daemon=True)
 
 
 class ReactPyMiddleware:
+    _asgi_single_callable = True
+    servestatic_static: ServeStaticASGI | None = None
+    servestatic_web_modules: ServeStaticASGI | None = None
+    single_root_component: bool = False
+    root_component: ComponentType | None = None
+
     def __init__(
         self,
         app: Callable[..., Coroutine],
@@ -58,22 +52,14 @@ class ReactPyMiddleware:
         self.static_pattern = re.compile(f"^{self.static_path}.*")
         self.web_modules_dir = web_modules_dir or REACTPY_WEB_MODULES_DIR.current
         self.static_dir = Path(__file__).parent.parent / "static"
-        self.backhaul_thread = False  # TODO: Add backhaul_thread settings
         self.user_app = guarantee_single_callable(app)
-        self.servestatic_static: ServeStaticASGI | None = None
-        self.servestatic_web_modules: ServeStaticASGI | None = None
         self.component_dotted_paths = set(root_components)
         self.components: dict[str, ComponentType] = import_components(
             self.component_dotted_paths
         )
-        self.dispatcher: Future | asyncio.Task | None = None
-        self.recv_queue: asyncio.Queue = asyncio.Queue()
+
         if self.web_modules_dir != REACTPY_WEB_MODULES_DIR.current:
             REACTPY_WEB_MODULES_DIR.set_current(self.web_modules_dir)
-
-        # Start the backhaul thread if it's not already running
-        if self.backhaul_thread and not _backhaul_thread.is_alive():
-            _backhaul_thread.start()
 
         # Validate the arguments
         reason = check_path(self.path_prefix)
@@ -110,34 +96,26 @@ class ReactPyMiddleware:
         send: Callable[..., Coroutine],
     ) -> None:
         """ASGI app for rendering ReactPy Python components."""
-        ws_connected: bool = False
+        dispatcher: Future | asyncio.Task | None = None
+        recv_queue: asyncio.Queue = asyncio.Queue()
 
+        # Start a loop that handles ASGI websocket events
         while True:
-            # Future WS events on this connection will always be received here
             event = await receive()
-
-            if event["type"] == "websocket.connect" and not ws_connected:
-                ws_connected = True
+            if event["type"] == "websocket.connect":
                 await send({"type": "websocket.accept"})
-                run_dispatcher_coro = self.run_dispatcher(scope, receive, send)
-                if self.backhaul_thread:
-                    self.dispatcher = asyncio.run_coroutine_threadsafe(
-                        run_dispatcher_coro, _backhaul_loop
-                    )
-                else:
-                    self.dispatcher = asyncio.create_task(run_dispatcher_coro)
+                dispatcher = asyncio.create_task(
+                    self.run_dispatcher(scope, receive, send, recv_queue)
+                )
 
             if event["type"] == "websocket.disconnect":
-                if self.dispatcher:
-                    self.dispatcher.cancel()
+                if dispatcher:
+                    dispatcher.cancel()
                 break
 
             if event["type"] == "websocket.receive":
-                queue_put_coro = self.recv_queue.put(orjson.loads(event["text"]))
-                if self.backhaul_thread:
-                    asyncio.run_coroutine_threadsafe(queue_put_coro, _backhaul_loop)
-                else:
-                    await queue_put_coro
+                queue_put_func = recv_queue.put(orjson.loads(event["text"]))
+                await queue_put_func
 
     async def web_module_app(
         self,
@@ -190,45 +168,50 @@ class ReactPyMiddleware:
         scope: dict[str, Any],
         receive: Callable[..., Coroutine],
         send: Callable[..., Coroutine],
+        recv_queue: asyncio.Queue,
     ) -> None:
         # Get the component from the URL.
-        url_path = re.match(self.dispatcher_pattern, scope["path"])
-        if not url_path:
-            raise RuntimeError("Could not find component in URL path.")
-        dotted_path = url_path[1]
-        module_str, component_str = dotted_path.rsplit(".", 1)
-        module = import_module(module_str)
-        component = getattr(module, component_str)
-        parsed_url = urllib.parse.urlparse(scope["path"])
+        try:
+            if not self.single_root_component:
+                url_match = re.match(self.dispatcher_pattern, scope["path"])
+                if not url_match:
+                    raise RuntimeError("Could not find component in URL path.")
+                dotted_path = url_match[1]
+                component = self.components[dotted_path]
+            else:
+                component = self.root_component
+            parsed_url = urllib.parse.urlparse(scope["path"])
 
-        await serve_layout(
-            Layout(  # type: ignore
-                ConnectionContext(
-                    component(),
-                    value=Connection(
-                        scope=scope,
-                        location=Location(
-                            parsed_url.path,
-                            f"?{parsed_url.query}" if parsed_url.query else "",
+            await serve_layout(
+                Layout(  # type: ignore
+                    ConnectionContext(
+                        component,
+                        value=Connection(
+                            scope=scope,
+                            location=Location(
+                                parsed_url.path,
+                                f"?{parsed_url.query}" if parsed_url.query else "",
+                            ),
+                            carrier={
+                                "scope": scope,
+                                "send": send,
+                                "receive": receive,
+                            },
                         ),
-                        carrier={
-                            "scope": scope,
-                            "send": send,
-                            "receive": receive,
-                        },
-                    ),
-                )
-            ),
-            self.send_json_ws(send),
-            self.recv_queue.get,
-        )
+                    )
+                ),
+                self.send_json_ws(send),
+                recv_queue.get,
+            )
+        except Exception as error:
+            await asyncio.to_thread(_logger.error, f"{error}\n{traceback.format_exc()}")
 
     @staticmethod
     def send_json_ws(send: Callable) -> Callable[..., Coroutine]:
         """Use orjson to send JSON over an ASGI websocket."""
 
         async def _send_json(value: Any) -> None:
-            await send({"type": "websocket.send", "text": orjson.dumps(value)})
+            await send({"type": "websocket.send", "text": orjson.dumps(value).decode()})
 
         return _send_json
 
