@@ -3,7 +3,7 @@ import { ComponentType } from "react";
 // #### CONNECTION TYPES ####
 
 export type ReconnectOptions = {
-  startInterval: number;
+  interval: number;
   maxInterval: number;
   maxRetries: number;
   backoffMultiplier: number;
@@ -15,7 +15,7 @@ export type CreateReconnectingWebSocketProps = {
   onMessage: (message: MessageEvent<any>) => void;
   onOpen?: () => void;
   onClose?: () => void;
-  startInterval: number;
+  interval: number;
   maxInterval: number;
   maxRetries: number;
   backoffMultiplier: number;
@@ -35,9 +35,8 @@ export type GenericReactPyClientProps = {
 
 export type MountProps = {
   mountElement: HTMLElement;
-  componentPath: string;
-  jsModulesPath: string;
-  reconnectStartInterval?: number;
+  pathPrefix: string;
+  reconnectInterval?: number;
   reconnectMaxInterval?: number;
   reconnectMaxRetries?: number;
   reconnectBackoffMultiplier?: number;

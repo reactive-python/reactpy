@@ -1,1 +1,1 @@
-export { mount } from "@reactpy/client";
+export { mountReactPy } from "@reactpy/client";

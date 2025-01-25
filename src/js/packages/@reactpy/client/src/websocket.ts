@@ -4,9 +4,9 @@ import log from "./logger";
 export function createReconnectingWebSocket(
   props: CreateReconnectingWebSocketProps,
 ) {
-  const { startInterval, maxInterval, maxRetries, backoffMultiplier } = props;
+  const { interval, maxInterval, maxRetries, backoffMultiplier } = props;
   let retries = 0;
-  let interval = startInterval;
+  let currentInterval = interval;
   let everConnected = false;
   const closed = false;
   const socket: { current?: WebSocket } = {};
@@ -18,8 +18,8 @@ export function createReconnectingWebSocket(
     socket.current = new WebSocket(props.url);
     socket.current.onopen = () => {
       everConnected = true;
-      log.info("ReactPy connected!");
-      interval = startInterval;
+      log.info("Connected!");
+      currentInterval = interval;
       retries = 0;
       if (props.onOpen) {
         props.onOpen();
@@ -31,26 +31,28 @@ export function createReconnectingWebSocket(
         props.onClose();
       }
       if (!everConnected) {
-        log.info("ReactPy failed to connect!");
+        log.info("Failed to connect!");
         return;
       }
-      log.info("ReactPy disconnected!");
+      log.info("Disconnected!");
       if (retries >= maxRetries) {
-        log.info("ReactPy connection max retries exhausted!");
+        log.info("Connection max retries exhausted!");
         return;
       }
       log.info(
-        `ReactPy reconnecting in ${(interval / 1000).toPrecision(4)} seconds...`,
+        `Reconnecting in ${(currentInterval / 1000).toPrecision(4)} seconds...`,
       );
-      setTimeout(connect, interval);
-      interval = nextInterval(interval, backoffMultiplier, maxInterval);
+      setTimeout(connect, currentInterval);
+      currentInterval = nextInterval(
+        currentInterval,
+        backoffMultiplier,
+        maxInterval,
+      );
       retries++;
     };
   };
 
-  props.readyPromise
-    .then(() => log.info("Starting ReactPy client..."))
-    .then(connect);
+  props.readyPromise.then(() => log.info("Starting client...")).then(connect);
 
   return socket;
 }

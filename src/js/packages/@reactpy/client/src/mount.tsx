@@ -3,11 +3,11 @@ import { ReactPyClient } from "./client";
 import { Layout } from "./components";
 import { MountProps } from "./types";
 
-export function mount(props: MountProps) {
+export function mountReactPy(props: MountProps) {
   // WebSocket route for component rendering
   const wsProtocol = `ws${window.location.protocol === "https:" ? "s" : ""}:`;
-  let wsOrigin = `${wsProtocol}//${window.location.host}`;
-  let componentUrl = new URL(`${wsOrigin}/${props.componentPath}`);
+  const wsOrigin = `${wsProtocol}//${window.location.host}`;
+  const componentUrl = new URL(`${wsOrigin}/${props.pathPrefix}/`);
 
   // Embed the initial HTTP path into the WebSocket URL
   componentUrl.searchParams.append("http_pathname", window.location.pathname);
@@ -20,10 +20,10 @@ export function mount(props: MountProps) {
     urls: {
       componentUrl: componentUrl,
       query: document.location.search,
-      jsModules: `${window.location.origin}/${props.jsModulesPath}`,
+      jsModules: `${window.location.origin}/${props.pathPrefix}/modules/`,
     },
     reconnectOptions: {
-      startInterval: props.reconnectStartInterval || 750,
+      interval: props.reconnectInterval || 750,
       maxInterval: props.reconnectMaxInterval || 60000,
       backoffMultiplier: props.reconnectBackoffMultiplier || 1.25,
       maxRetries: props.reconnectMaxRetries || 150,

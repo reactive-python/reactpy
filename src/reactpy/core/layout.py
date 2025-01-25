@@ -37,6 +37,7 @@ from reactpy.config import (
 from reactpy.core._life_cycle_hook import LifeCycleHook
 from reactpy.core.types import (
     ComponentType,
+    Context,
     EventHandlerDict,
     Key,
     LayoutEventMessage,
@@ -67,7 +68,7 @@ class Layout:
     if not hasattr(abc.ABC, "__weakref__"):  # nocov
         __slots__ += ("__weakref__",)
 
-    def __init__(self, root: ComponentType) -> None:
+    def __init__(self, root: ComponentType | Context[Any]) -> None:
         super().__init__()
         if not isinstance(root, ComponentType):
             msg = f"Expected a ComponentType, not {type(root)!r}."

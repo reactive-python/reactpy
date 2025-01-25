@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+</head>
+
+<body>
+  <div id="app"></div>
+  <script type="module" crossorigin="anonymous">
+    import { mountReactPy } from "index.ts";
+    mountReactPy({
+      mountElement: document.getElementById("app"),
+      pathPrefix: "{path_prefix}",
+      reconnectInterval: Number("{reconnect_interval}"),
+      reconnectMaxInterval: Number("{reconnect_max_interval}"),
+      reconnectMaxRetries: Number("{reconnect_max_retries}"),
+      reconnectBackoffMultiplier: Number("{reconnect_backoff_multiplier}"),
+    });
+  </script>
+</body>
+
+</html>

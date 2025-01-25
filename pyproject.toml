@@ -37,6 +37,7 @@ dependencies = [
   "colorlog >=6",
   "asgiref >=3",
   "lxml >=4",
+  "servestatic >= 3.0.0",
 ]
 dynamic = ["version"]
 urls.Changelog = "https://reactpy.dev/docs/about/changelog.html"
@@ -69,7 +70,7 @@ commands = [
   'bun run --cwd "src/js/packages/@reactpy/client" build',
   'bun install --cwd "src/js/packages/@reactpy/app"',
   'bun run --cwd "src/js/packages/@reactpy/app" build',
-  'python "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/dist" "src/reactpy/static"',
+  'python "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/dist" "src/reactpy/static" ".*\.js(\.map)?$"',
 ]
 artifacts = []
 

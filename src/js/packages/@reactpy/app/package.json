@@ -11,7 +11,7 @@
     "typescript": "^5.7.3"
   },
   "scripts": {
-    "build": "bun build \"src/index.html\" --outdir=\"dist\" --minify --sourcemap=\"linked\" --experimental-html --public-path=\"reactpy/static/\"",
+    "build": "bun build \"src/index.ts\" --outdir=\"dist\" --minify --sourcemap=\"linked\"",
     "checkTypes": "tsc --noEmit"
   }
 }
