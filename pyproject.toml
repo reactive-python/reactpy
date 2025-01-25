@@ -29,7 +29,6 @@ classifiers = [
 dependencies = [
   "exceptiongroup >=1.0",
   "typing-extensions >=3.10",
-  "mypy-extensions >=0.4.3",
   "anyio >=3",
   "jsonpatch >=1.32",
   "fastjsonschema >=2.14.5",
@@ -37,7 +36,8 @@ dependencies = [
   "colorlog >=6",
   "asgiref >=3",
   "lxml >=4",
-  "servestatic >= 3.0.0",
+  "servestatic >=3.0.0",
+  "jinja2 >=3",
 ]
 dynamic = ["version"]
 urls.Changelog = "https://reactpy.dev/docs/about/changelog.html"
@@ -76,18 +76,8 @@ artifacts = []
 
 [project.optional-dependencies]
 # TODO: Nuke backends from the optional deps
-all = ["reactpy[starlette,sanic,fastapi,flask,tornado,testing]"]
-starlette = ["starlette >=0.13.6", "uvicorn[standard] >=0.19.0"]
-sanic = [
-  "sanic>=21",
-  "sanic-cors",
-  "tracerite>=1.1.1",
-  "setuptools",
-  "uvicorn[standard]>=0.19.0",
-]
-fastapi = ["fastapi >=0.63.0", "uvicorn[standard] >=0.19.0"]
-flask = ["flask", "markupsafe>=1.1.1,<2.1", "flask-cors", "flask-sock"]
-tornado = ["tornado"]
+all = ["reactpy[uvicorn,testing]"]
+uvicorn = ["uvicorn[standard]"]
 testing = ["playwright"]
 
 
@@ -104,22 +94,7 @@ extra-dependencies = [
   "responses",
   "playwright",
   "jsonpointer",
-  # TODO: Nuke everything past this point after removing backends from deps
-  "starlette >=0.13.6",
-  "uvicorn[standard] >=0.19.0",
-  "sanic>=21",
-  "sanic-cors",
-  "sanic-testing",
-  "tracerite>=1.1.1",
-  "setuptools",
-  "uvicorn[standard]>=0.19.0",
-  "fastapi >=0.63.0",
-  "uvicorn[standard] >=0.19.0",
-  "flask",
-  "markupsafe>=1.1.1,<2.1",
-  "flask-cors",
-  "flask-sock",
-  "tornado",
+  "uvicorn[standard]",
 ]
 
 [[tool.hatch.envs.hatch-test.matrix]]
