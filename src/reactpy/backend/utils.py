@@ -109,3 +109,24 @@ def check_path(url_path: str) -> str:
         return "URL path must start with an alphanumeric character."
 
     return ""
+
+
+def find_and_replace(content: str, replacements: dict[str, str]) -> str:
+    """Find and replace several key-values, and throw and error if the substring is not found."""
+    for key, value in replacements.items():
+        if key not in content:
+            raise ValueError(f"Could not find {key} in content")
+        content = content.replace(key, value)
+    return content
+
+
+def dict_to_byte_list(
+    data: dict[str, str | int],
+) -> list[tuple[bytes, bytes]]:
+    """Convert a dictionary to a list of byte tuples."""
+    result: list[tuple[bytes, bytes]] = []
+    for key, value in data.items():
+        new_key = key.encode()
+        new_value = value.encode() if isinstance(value, str) else str(value).encode()
+        result.append((new_key, new_value))
+    return result

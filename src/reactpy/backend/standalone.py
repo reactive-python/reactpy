@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from reactpy.backend.middleware import ReactPyMiddleware
+from reactpy.backend.utils import dict_to_byte_list, find_and_replace
 from reactpy.core.types import ComponentType
 
 _logger = getLogger(__name__)
@@ -45,11 +46,13 @@ class ReactPyStandalone(ReactPyMiddleware):
         """ASGI app for ReactPy standalone mode."""
         if scope["type"] != "http":
             if scope["type"] != "lifespan":
-                _logger.warning(
+                msg = (
                     "ReactPy app received unsupported request of type '%s' at path '%s'",
                     scope["type"],
                     scope["path"],
                 )
+                _logger.warning(msg)
+                raise NotImplementedError(msg)
             return
 
         # Store the HTTP response in memory for performance
@@ -59,10 +62,11 @@ class ReactPyStandalone(ReactPyMiddleware):
         # Return headers for all HTTP responses
         request_headers = dict(scope["headers"])
         response_headers: dict[str, str | int] = {
-            "etag": f'"{self.etag}"',
+            "etag": self.etag,
             "last-modified": self.last_modified,
             "access-control-allow-origin": "*",
             "cache-control": "max-age=60, public",
+            "content-length": len(self.cached_index_html),
             **self.extra_headers,
         }
 
@@ -74,18 +78,19 @@ class ReactPyStandalone(ReactPyMiddleware):
                 200,
                 "",
                 content_type=b"text/html",
-                headers=self.dict_to_byte_list(response_headers),
+                headers=dict_to_byte_list(response_headers),
             )
 
         # Browser already has the content cached
         if request_headers.get(b"if-none-match") == self.etag.encode():
+            response_headers.pop("content-length")
             return await http_response(
                 scope["method"],
                 send,
                 304,
                 "",
                 content_type=b"text/html",
-                headers=self.dict_to_byte_list(response_headers),
+                headers=dict_to_byte_list(response_headers),
             )
 
         # Send the index.html
@@ -95,9 +100,7 @@ class ReactPyStandalone(ReactPyMiddleware):
             200,
             self.cached_index_html,
             content_type=b"text/html",
-            headers=self.dict_to_byte_list(
-                response_headers | {"content-length": len(self.cached_index_html)}
-            ),
+            headers=dict_to_byte_list(response_headers),
         )
 
     def match_dispatch_path(self, scope: dict) -> bool:
@@ -109,7 +112,7 @@ class ReactPyStandalone(ReactPyMiddleware):
         with open(self.index_html_path, encoding="utf-8") as file_handle:
             cached_index_html = file_handle.read()
 
-        self.cached_index_html = self.find_and_replace(
+        self.cached_index_html = find_and_replace(
             cached_index_html,
             {
                 'from "index.ts"': f'from "{self.static_path}index.js"',
@@ -124,43 +127,10 @@ class ReactPyStandalone(ReactPyMiddleware):
         self.etag = hashlib.md5(
             self.cached_index_html.encode(), usedforsecurity=False
         ).hexdigest()
+        self.etag = f'"{self.etag}"'
 
         last_modified = os.stat(self.index_html_path).st_mtime
         self.last_modified = formatdate(last_modified, usegmt=True)
-
-    # @staticmethod
-    # def find_js_filename(content: str) -> str:
-    #     """Find the qualified filename of the index.js file."""
-    #     substring = 'src="reactpy/static/index-'
-    #     location = content.find(substring)
-    #     if location == -1:
-    #         raise ValueError(f"Could not find {substring} in content")
-    #     start = content[location + len(substring) :]
-    #     end = start.find('"')
-    #     return f"index-{start[:end]}"
-
-    @staticmethod
-    def dict_to_byte_list(
-        data: dict[str, str | int],
-    ) -> list[tuple[bytes, bytes]]:
-        """Convert a dictionary to a list of byte tuples."""
-        result: list[tuple[bytes, bytes]] = []
-        for key, value in data.items():
-            new_key = key.encode()
-            new_value = (
-                value.encode() if isinstance(value, str) else str(value).encode()
-            )
-            result.append((new_key, new_value))
-        return result
-
-    @staticmethod
-    def find_and_replace(content: str, replacements: dict[str, str]) -> str:
-        """Find and replace content. Throw and error if the substring is not found."""
-        for key, value in replacements.items():
-            if key not in content:
-                raise ValueError(f"Could not find {key} in content")
-            content = content.replace(key, value)
-        return content
 
 
 async def http_response(
