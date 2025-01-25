@@ -1,5 +1,4 @@
 from reactpy import backend, config, html, logging, sample, svg, types, web, widgets
-from reactpy.backend.utils import run
 from reactpy.core import hooks
 from reactpy.core.component import component
 from reactpy.core.events import event
@@ -36,7 +35,6 @@ __all__ = [
     "html",
     "html_to_vdom",
     "logging",
-    "run",
     "sample",
     "svg",
     "types",

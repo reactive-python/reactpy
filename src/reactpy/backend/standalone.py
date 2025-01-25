@@ -7,31 +7,35 @@ from logging import getLogger
 from pathlib import Path
 from typing import Any, Callable
 
+from reactpy import html
 from reactpy.backend.middleware import ReactPyMiddleware
-from reactpy.backend.utils import dict_to_byte_list, find_and_replace
-from reactpy.core.types import ComponentType
+from reactpy.backend.utils import dict_to_byte_list, find_and_replace, vdom_head_to_html
+from reactpy.core.types import VdomDict
+from reactpy.types import RootComponentConstructor
 
 _logger = getLogger(__name__)
 
 
-class ReactPyStandalone(ReactPyMiddleware):
-    cached_index_html: str = ""
-    etag: str = ""
-    last_modified: str = ""
+class ReactPy(ReactPyMiddleware):
+    cached_index_html = ""
+    etag = ""
+    last_modified = ""
     templates_dir = Path(__file__).parent.parent / "templates"
     index_html_path = templates_dir / "index.html"
-    single_root_component: bool = True
+    single_root_component = True
 
     def __init__(
         self,
-        root_component: ComponentType,
+        root_component: RootComponentConstructor,
         *,
         path_prefix: str = "reactpy/",
         web_modules_dir: Path | None = None,
         http_headers: dict[str, str | int] | None = None,
+        html_head: VdomDict | None = None,
+        html_lang: str = "en",
     ) -> None:
         super().__init__(
-            app=self.standalone_app,
+            app=self.reactpy_app,
             root_components=[],
             path_prefix=path_prefix,
             web_modules_dir=web_modules_dir,
@@ -39,8 +43,10 @@ class ReactPyStandalone(ReactPyMiddleware):
         self.root_component = root_component
         self.extra_headers = http_headers or {}
         self.dispatcher_pattern = re.compile(f"^{self.dispatcher_path}?")
+        self.html_head = html_head or html.head()
+        self.html_lang = html_lang
 
-    async def standalone_app(
+    async def reactpy_app(
         self,
         scope: dict[str, Any],
         receive: Callable[..., Coroutine],
@@ -119,6 +125,8 @@ class ReactPyStandalone(ReactPyMiddleware):
             cached_index_html,
             {
                 'from "index.ts"': f'from "{self.static_path}index.js"',
+                '<html lang="en">': f'<html lang="{self.html_lang}">',
+                "<head></head>": vdom_head_to_html(self.html_head),
                 "{path_prefix}": self.path_prefix,
                 "{reconnect_interval}": "750",
                 "{reconnect_max_interval}": "60000",
@@ -131,9 +139,9 @@ class ReactPyStandalone(ReactPyMiddleware):
             self.cached_index_html.encode(), usedforsecurity=False
         ).hexdigest()
         self.etag = f'"{self.etag}"'
-
-        last_modified = os.stat(self.index_html_path).st_mtime
-        self.last_modified = formatdate(last_modified, usegmt=True)
+        self.last_modified = formatdate(
+            os.stat(self.index_html_path).st_mtime, usegmt=True
+        )
 
 
 async def http_response(
