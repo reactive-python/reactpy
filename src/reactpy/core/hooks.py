@@ -523,6 +523,6 @@ def strictly_equal(x: Any, y: Any) -> bool:
 
     with contextlib.suppress(Exception):
         if hasattr(x, "__eq__"):
-            return x == y
+            return x == y  # type: ignore
 
     return x is y
