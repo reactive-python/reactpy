@@ -1,4 +1,5 @@
-from reactpy import backend, config, html, logging, sample, svg, types, web, widgets
+from reactpy import backend, config, logging, types, web, widgets
+from reactpy._html import html
 from reactpy.backend.utils import run
 from reactpy.core import hooks
 from reactpy.core.component import component
@@ -37,8 +38,6 @@ __all__ = [
     "html_to_vdom",
     "logging",
     "run",
-    "sample",
-    "svg",
     "types",
     "use_callback",
     "use_connection",

@@ -1,5 +1,5 @@
-from reactpy.sample import SampleApp
 from reactpy.testing import DisplayFixture
+from tests.sample import SampleApp
 
 
 async def test_sample_app(display: DisplayFixture):

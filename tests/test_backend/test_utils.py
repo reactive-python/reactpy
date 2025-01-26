@@ -8,7 +8,7 @@ from playwright.async_api import Page
 from reactpy.backend import flask as flask_implementation
 from reactpy.backend.utils import find_available_port
 from reactpy.backend.utils import run as sync_run
-from reactpy.sample import SampleApp
+from tests.sample import SampleApp
 
 
 @pytest.fixture
