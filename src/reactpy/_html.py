@@ -174,7 +174,6 @@ def _script(
 class SvgConstructor:
     """Constructor specifically for SVG children."""
 
-    # ruff: noqa: N815
     __cache__: ClassVar[dict[str, VdomDictConstructor]] = {}
 
     def __call__(
