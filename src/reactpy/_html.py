@@ -278,7 +278,6 @@ class HtmlConstructor:
     __cache__: ClassVar[dict[str, VdomDictConstructor]] = {
         "script": custom_vdom_constructor(_script),
         "fragment": custom_vdom_constructor(_fragment),
-        "_": custom_vdom_constructor(_fragment),
     }
 
     def __getattr__(self, value: str) -> VdomDictConstructor:
