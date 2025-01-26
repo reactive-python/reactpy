@@ -979,7 +979,7 @@ async def test_context_values_are_scoped():
 
     @reactpy.component
     def Parent():
-        return html._(
+        return html.fragment(
             Context(Context(Child1(), value=1), value="something-else"),
             Context(Child2(), value=2),
         )

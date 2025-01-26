@@ -23,7 +23,7 @@ async def test_automatic_reconnect(browser: Browser):
     @reactpy.component
     def SomeComponent():
         count, incr_count = use_counter(0)
-        return reactpy.html._(
+        return reactpy.html.fragment(
             reactpy.html.p({"data_count": count, "id": "count"}, "count", count),
             reactpy.html.button(
                 {"on_click": lambda e: incr_count(), "id": "incr"}, "incr"

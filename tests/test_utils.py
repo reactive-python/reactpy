@@ -215,11 +215,11 @@ SOME_OBJECT = object()
             "<button></button>",
         ),
         (
-            html._("hello ", html._("world")),
+            html.fragment("hello ", html.fragment("world")),
             "hello world",
         ),
         (
-            html._(html.div("hello"), html._("world")),
+            html.fragment(html.div("hello"), html.fragment("world")),
             "<div>hello</div>world",
         ),
         (
@@ -231,7 +231,7 @@ SOME_OBJECT = object()
             '<div style="background-color:blue;margin-left:10px"></div>',
         ),
         (
-            html._(
+            html.fragment(
                 html.div("hello"),
                 html.a({"href": "https://example.com"}, "example"),
             ),
@@ -239,7 +239,7 @@ SOME_OBJECT = object()
         ),
         (
             html.div(
-                html._(
+                html.fragment(
                     html.div("hello"),
                     html.a({"href": "https://example.com"}, "example"),
                 ),

@@ -6,9 +6,9 @@ import pytest
 from reactpy import Ref, component, html, testing
 from reactpy.backend import starlette as starlette_implementation
 from reactpy.logging import ROOT_LOGGER
-from reactpy.sample import SampleApp
 from reactpy.testing.backend import _hotswap
 from reactpy.testing.display import DisplayFixture
+from tests.sample import SampleApp
 
 
 def test_assert_reactpy_logged_does_not_suppress_errors():
