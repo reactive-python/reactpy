@@ -406,71 +406,7 @@ class HtmlConstructor:
     var: VdomDictConstructor
     video: VdomDictConstructor
     wbr: VdomDictConstructor
-    a: VdomDictConstructor
-    animate: VdomDictConstructor
-    animateMotion: VdomDictConstructor
-    animateTransform: VdomDictConstructor
-    circle: VdomDictConstructor
-    clipPath: VdomDictConstructor
-    defs: VdomDictConstructor
-    desc: VdomDictConstructor
-    discard: VdomDictConstructor
-    ellipse: VdomDictConstructor
-    feBlend: VdomDictConstructor
-    feColorMatrix: VdomDictConstructor
-    feComponentTransfer: VdomDictConstructor
-    feComposite: VdomDictConstructor
-    feConvolveMatrix: VdomDictConstructor
-    feDiffuseLighting: VdomDictConstructor
-    feDisplacementMap: VdomDictConstructor
-    feDistantLight: VdomDictConstructor
-    feDropShadow: VdomDictConstructor
-    feFlood: VdomDictConstructor
-    feFuncA: VdomDictConstructor
-    feFuncB: VdomDictConstructor
-    feFuncG: VdomDictConstructor
-    feFuncR: VdomDictConstructor
-    feGaussianBlur: VdomDictConstructor
-    feImage: VdomDictConstructor
-    feMerge: VdomDictConstructor
-    feMergeNode: VdomDictConstructor
-    feMorphology: VdomDictConstructor
-    feOffset: VdomDictConstructor
-    fePointLight: VdomDictConstructor
-    feSpecularLighting: VdomDictConstructor
-    feSpotLight: VdomDictConstructor
-    feTile: VdomDictConstructor
-    feTurbulence: VdomDictConstructor
-    filter: VdomDictConstructor
-    foreignObject: VdomDictConstructor
-    g: VdomDictConstructor
-    hatch: VdomDictConstructor
-    hatchpath: VdomDictConstructor
-    image: VdomDictConstructor
-    line: VdomDictConstructor
-    linearGradient: VdomDictConstructor
-    marker: VdomDictConstructor
-    mask: VdomDictConstructor
-    metadata: VdomDictConstructor
-    mpath: VdomDictConstructor
-    path: VdomDictConstructor
-    pattern: VdomDictConstructor
-    polygon: VdomDictConstructor
-    polyline: VdomDictConstructor
-    radialGradient: VdomDictConstructor
-    rect: VdomDictConstructor
-    script: VdomDictConstructor
-    set: VdomDictConstructor
-    stop: VdomDictConstructor
-    style: VdomDictConstructor
-    switch: VdomDictConstructor
-    symbol: VdomDictConstructor
-    text: VdomDictConstructor
-    textPath: VdomDictConstructor
-    title: VdomDictConstructor
-    tspan: VdomDictConstructor
-    use: VdomDictConstructor
-    view: VdomDictConstructor
+    fragment: VdomDictConstructor
 
     # Special Case: SVG elements
     # Since SVG elements have a different set of allowed children, they are
