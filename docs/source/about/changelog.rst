@@ -20,6 +20,7 @@ Unreleased
 - :pull:`1251` - Substitute client-side usage of ``react`` with ``preact``.
 - :pull:`1239` - Script elements no longer support behaving like effects. They now strictly behave like plain HTML script elements.
 - :pull:`1255` - The ``reactpy.html`` module has been modified to allow for auto-creation of any HTML nodes. For example, you can create a ``<data-table>`` element by calling ``html.data_table()``.
+- :pull:`1256` - Change ``set_state`` comparison method to check equality with ``==`` more consistently.
 
 **Removed**
 
@@ -34,6 +35,7 @@ Unreleased
 
 v1.1.0
 ------
+:octicon:`milestone` *released on 2024-11-24*
 
 **Fixed**
 
@@ -69,6 +71,7 @@ v1.1.0
 
 v1.0.2
 ------
+:octicon:`milestone` *released on 2023-07-03*
 
 **Fixed**
 
@@ -77,6 +80,7 @@ v1.0.2
 
 v1.0.1
 ------
+:octicon:`milestone` *released on 2023-06-16*
 
 **Changed**
 
