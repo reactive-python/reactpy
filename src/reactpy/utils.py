@@ -156,24 +156,24 @@ def _etree_to_vdom(
     return el
 
 
-def _add_vdom_to_etree(parent: etree._Element, node: VdomDict | dict[str, Any]) -> None:
+def _add_vdom_to_etree(parent: etree._Element, vdom: VdomDict | dict[str, Any]) -> None:
     try:
-        tag = node["tagName"]
+        tag = vdom["tagName"]
     except KeyError as e:
-        msg = f"Expected a VDOM dict, not {type(node)}"
+        msg = f"Expected a VDOM dict, not {type(vdom)}"
         raise TypeError(msg) from e
     else:
-        node = cast(VdomDict, node)
+        vdom = cast(VdomDict, vdom)
 
     if tag:
         element = etree.SubElement(parent, tag)
         element.attrib.update(
-            _vdom_attr_to_html_str(k, v) for k, v in node.get("attributes", {}).items()
+            _vdom_attr_to_html_str(k, v) for k, v in vdom.get("attributes", {}).items()
         )
     else:
         element = parent
 
-    for c in node.get("children", []):
+    for c in vdom.get("children", []):
         if hasattr(c, "render"):
             c = _component_to_vdom(cast(ComponentType, c))
         if isinstance(c, dict):
