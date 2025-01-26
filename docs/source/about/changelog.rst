@@ -19,6 +19,14 @@ Unreleased
 
 - :pull:`1251` - Substitute client-side usage of ``react`` with ``preact``.
 - :pull:`1239` - Script elements no longer support behaving like effects. They now strictly behave like plain HTML script elements.
+- :pull:`1255` - The ``reactpy.html`` module has been modified to allow for auto-creation of any HTML nodes. For example, you can create a ``<data-table>`` element by calling ``html.data_table()``.
+
+**Removed**
+
+- :pull:`1255` - Removed the ability to import ``reactpy.html.*`` elements directly. You must now call ``html.*`` to access the elements.
+- :pull:`1255` - Removed ``reactpy.sample`` module.
+- :pull:`1255` - Removed ``reactpy.svg`` module. Contents previously within ``reactpy.svg.*`` can now be accessed via ``html.svg.*``.
+- :pull:`1255` - Removed ``reactpy.html._`` function. Use ``html.fragment`` instead.
 
 **Fixed**
 
