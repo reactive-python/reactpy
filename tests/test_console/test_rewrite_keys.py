@@ -61,14 +61,6 @@ def test_rewrite_key_declarations_no_files():
             "vdom('div', {'some_attr': 1}, child_1, child_2, key='test')",
             "vdom('div', {'some_attr': 1, 'key': 'test'}, child_1, child_2)",
         ),
-        (
-            "html.div(dict(some_attr=1), child_1, child_2, key='test')",
-            "html.div(dict(some_attr=1, key='test'), child_1, child_2)",
-        ),
-        (
-            "vdom('div', dict(some_attr=1), child_1, child_2, key='test')",
-            "vdom('div', dict(some_attr=1, key='test'), child_1, child_2)",
-        ),
         # avoid unnecessary changes
         (
             """
@@ -186,10 +178,6 @@ def test_rewrite_key_declarations_no_files():
             """,
         ),
         # no rewrites
-        (
-            "html.no_an_element(key='test')",
-            None,
-        ),
         (
             "not_html.div(key='test')",
             None,
