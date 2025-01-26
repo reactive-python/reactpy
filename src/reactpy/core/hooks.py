@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from collections.abc import Coroutine, MutableMapping, Sequence
 from logging import getLogger
 from types import FunctionType
@@ -517,18 +518,11 @@ def strictly_equal(x: Any, y: Any) -> bool:
     - ``bytearray``
     - ``memoryview``
     """
-    return x is y or (type(x) in _NUMERIC_TEXT_BINARY_TYPES and x == y)
+    if type(x) is not type(y):
+        return False
 
+    with contextlib.suppress(Exception):
+        if hasattr(x, "__eq__"):
+            return x == y
 
-_NUMERIC_TEXT_BINARY_TYPES = {
-    # numeric
-    int,
-    float,
-    complex,
-    # text
-    str,
-    # binary types
-    bytes,
-    bytearray,
-    memoryview,
-}
+    return x is y
