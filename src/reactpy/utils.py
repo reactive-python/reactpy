@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 from itertools import chain
-from typing import Any, Callable, Generic, TypeVar, cast
+from typing import Any, Callable, Generic, TypeVar, Union, cast
 
 from lxml import etree
 from lxml.html import fromstring, tostring
@@ -254,7 +254,7 @@ def _component_to_vdom(component: ComponentType) -> VdomDict | str | None:
     result = component.render()
     if hasattr(result, "render"):
         result = _component_to_vdom(cast(ComponentType, result))
-    return cast(VdomDict | str | None, result)
+    return cast(Union[VdomDict, str, None], result)
 
 
 def del_html_head_body_transform(vdom: VdomDict) -> VdomDict:
