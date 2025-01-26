@@ -518,11 +518,30 @@ def strictly_equal(x: Any, y: Any) -> bool:
     - ``bytearray``
     - ``memoryview``
     """
+    # Return early if the objects are not the same type
     if type(x) is not type(y):
         return False
 
-    with contextlib.suppress(Exception):
-        if hasattr(x, "__eq__"):
+    # Compare the source code of lambda and local functions
+    if (
+        hasattr(x, "__qualname__")
+        and ("<lambda>" in x.__qualname__ or "<locals>" in x.__qualname__)
+        and hasattr(x, "__code__")
+    ):
+        if x.__qualname__ != y.__qualname__:
+            return False
+
+        return all(
+            getattr(x.__code__, attr) == getattr(y.__code__, attr)
+            for attr in dir(x.__code__)
+            if attr.startswith("co_")
+            and attr not in {"co_positions", "co_linetable", "co_lines"}
+        )
+
+    # Check via the `==` operator if possible
+    if hasattr(x, "__eq__"):
+        with contextlib.suppress(Exception):
             return x == y  # type: ignore
 
+    # Fallback to identity check
     return x is y

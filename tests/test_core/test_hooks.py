@@ -1172,6 +1172,28 @@ def test_strictly_equal(x, y, result):
     assert strictly_equal(x, y) is result
 
 
+def test_strictly_equal_named_closures():
+    assert strictly_equal(lambda: "text", lambda: "text") is True
+    assert strictly_equal(lambda: "text", lambda: "not-text") is False
+
+    def x():
+        return "text"
+
+    def y():
+        return "not-text"
+
+    def generator():
+        def z():
+            return "text"
+
+        return z
+
+    assert strictly_equal(x, x) is True
+    assert strictly_equal(x, y) is False
+    assert strictly_equal(x, generator()) is False
+    assert strictly_equal(generator(), generator()) is True
+
+
 STRICT_EQUALITY_VALUE_CONSTRUCTORS = [
     lambda: "string-text",
     lambda: b"byte-text",
