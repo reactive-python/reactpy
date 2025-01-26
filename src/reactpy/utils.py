@@ -9,7 +9,7 @@ from lxml import etree
 from lxml.html import fromstring, tostring
 
 from reactpy.core.types import ComponentType, VdomDict
-from reactpy.core.vdom import vdom
+from reactpy.core.vdom import vdom as make_vdom
 
 _RefValue = TypeVar("_RefValue")
 _ModelTransform = Callable[[VdomDict], Any]
@@ -144,7 +144,7 @@ def _etree_to_vdom(
     children = _generate_vdom_children(node, transforms)
 
     # Convert the lxml node to a VDOM dict
-    el = vdom(node.tag, dict(node.items()), *children)
+    el = make_vdom(node.tag, dict(node.items()), *children)
 
     # Perform any necessary mutations on the VDOM attributes to meet VDOM spec
     _mutate_vdom(el)
@@ -178,25 +178,25 @@ def _add_vdom_to_etree(parent: etree._Element, node: VdomDict | dict[str, Any]) 
             c = _component_to_vdom(cast(ComponentType, c))
         if isinstance(c, dict):
             _add_vdom_to_etree(element, c)
+
+        # LXML handles string children by storing them under `text` and `tail`
+        # attributes of Element objects. The `text` attribute, if present, effectively
+        # becomes that element's first child. Then the `tail` attribute, if present,
+        # becomes a sibling that follows that element. For example, consider the
+        # following HTML:
+
+        #     <p><a>hello</a>world</p>
+
+        # In this code sample, "hello" is the `text` attribute of the `<a>` element
+        # and "world" is the `tail` attribute of that same `<a>` element. It's for
+        # this reason that, depending on whether the element being constructed has
+        # non-string a child element, we need to assign a `text` vs `tail` attribute
+        # to that element or the last non-string child respectively.
+        elif len(element):
+            last_child = element[-1]
+            last_child.tail = f"{last_child.tail or ''}{c}"
         else:
-            # LXML handles string children by storing them under `text` and `tail`
-            # attributes of Element objects. The `text` attribute, if present, effectively
-            # becomes that element's first child. Then the `tail` attribute, if present,
-            # becomes a sibling that follows that element. For example, consider the
-            # following HTML:
-
-            #     <p><a>hello</a>world</p>
-
-            # In this code sample, "hello" is the `text` attribute of the `<a>` element
-            # and "world" is the `tail` attribute of that same `<a>` element. It's for
-            # this reason that, depending on whether the element being constructed has
-            # non-string a child element, we need to assign a `text` vs `tail` attribute
-            # to that element or the last non-string child respectively.
-            if len(element):
-                last_child = element[-1]
-                last_child.tail = f"{last_child.tail or ''}{c}"
-            else:
-                element.text = f"{element.text or ''}{c}"
+            element.text = f"{element.text or ''}{c}"
 
 
 def _mutate_vdom(vdom: VdomDict) -> None:

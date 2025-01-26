@@ -195,6 +195,11 @@ SOME_OBJECT = object()
 
 @component
 def example_parent():
+    return example_middle()
+
+
+@component
+def example_middle():
     return html.div({"id": "sample", "style": {"padding": "15px"}}, example_child())
 
 
