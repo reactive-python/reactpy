@@ -3,7 +3,7 @@ from html import escape as html_escape
 import pytest
 
 import reactpy
-from reactpy import html
+from reactpy import component, html
 from reactpy.utils import (
     HTMLParseError,
     del_html_head_body_transform,
@@ -193,6 +193,16 @@ def test_del_html_body_transform():
 SOME_OBJECT = object()
 
 
+@component
+def example_parent():
+    return html.div({"id": "sample", "style": {"padding": "15px"}}, example_child())
+
+
+@component
+def example_child():
+    return html.h1("Sample Application")
+
+
 @pytest.mark.parametrize(
     "vdom_in, html_out",
     [
@@ -254,10 +264,8 @@ SOME_OBJECT = object()
             '<div data-something="1" data-something-else="2" dataisnotdashed="3"></div>',
         ),
         (
-            html.div(
-                {"dataSomething": 1, "dataSomethingElse": 2, "dataisnotdashed": 3}
-            ),
-            '<div data-something="1" data-something-else="2" dataisnotdashed="3"></div>',
+            html.div(example_parent()),
+            '<div><div id="sample" style="padding:15px"><h1>Sample Application</h1></div></div>',
         ),
     ],
 )

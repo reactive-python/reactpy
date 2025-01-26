@@ -8,7 +8,7 @@ from typing import Any, Callable, Generic, TypeVar, cast
 from lxml import etree
 from lxml.html import fromstring, tostring
 
-from reactpy.core.types import VdomDict
+from reactpy.core.types import ComponentType, VdomDict
 from reactpy.core.vdom import vdom
 
 _RefValue = TypeVar("_RefValue")
@@ -156,42 +156,42 @@ def _etree_to_vdom(
     return el
 
 
-def _add_vdom_to_etree(parent: etree._Element, vdom: VdomDict | dict[str, Any]) -> None:
+def _add_vdom_to_etree(parent: etree._Element, node: VdomDict | dict[str, Any]) -> None:
     try:
-        tag = vdom["tagName"]
+        tag = node["tagName"]
     except KeyError as e:
-        msg = f"Expected a VDOM dict, not {vdom}"
+        msg = f"Expected a VDOM dict, not {type(node)}"
         raise TypeError(msg) from e
     else:
-        vdom = cast(VdomDict, vdom)
+        node = cast(VdomDict, node)
 
     if tag:
         element = etree.SubElement(parent, tag)
         element.attrib.update(
-            _vdom_attr_to_html_str(k, v) for k, v in vdom.get("attributes", {}).items()
+            _vdom_attr_to_html_str(k, v) for k, v in node.get("attributes", {}).items()
         )
     else:
         element = parent
 
-    for c in vdom.get("children", []):
+    for c in node.get("children", []):
+        if hasattr(c, "render"):
+            c = _component_to_vdom(cast(ComponentType, c))
         if isinstance(c, dict):
             _add_vdom_to_etree(element, c)
         else:
-            """
-            LXML handles string children by storing them under `text` and `tail`
-            attributes of Element objects. The `text` attribute, if present, effectively
-            becomes that element's first child. Then the `tail` attribute, if present,
-            becomes a sibling that follows that element. For example, consider the
-            following HTML:
+            # LXML handles string children by storing them under `text` and `tail`
+            # attributes of Element objects. The `text` attribute, if present, effectively
+            # becomes that element's first child. Then the `tail` attribute, if present,
+            # becomes a sibling that follows that element. For example, consider the
+            # following HTML:
 
-                <p><a>hello</a>world</p>
+            #     <p><a>hello</a>world</p>
 
-            In this code sample, "hello" is the `text` attribute of the `<a>` element
-            and "world" is the `tail` attribute of that same `<a>` element. It's for
-            this reason that, depending on whether the element being constructed has
-            non-string a child element, we need to assign a `text` vs `tail` attribute
-            to that element or the last non-string child respectively.
-            """
+            # In this code sample, "hello" is the `text` attribute of the `<a>` element
+            # and "world" is the `tail` attribute of that same `<a>` element. It's for
+            # this reason that, depending on whether the element being constructed has
+            # non-string a child element, we need to assign a `text` vs `tail` attribute
+            # to that element or the last non-string child respectively.
             if len(element):
                 last_child = element[-1]
                 last_child.tail = f"{last_child.tail or ''}{c}"
@@ -247,6 +247,14 @@ def _generate_vdom_children(
             )
         )
     )
+
+
+def _component_to_vdom(component: ComponentType) -> VdomDict | str | None:
+    """Convert a component to a VDOM dictionary"""
+    result = component.render()
+    if hasattr(result, "render"):
+        result = _component_to_vdom(cast(ComponentType, result))
+    return cast(VdomDict, result)
 
 
 def del_html_head_body_transform(vdom: VdomDict) -> VdomDict:
