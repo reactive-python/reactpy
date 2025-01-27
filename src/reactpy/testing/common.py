@@ -12,7 +12,7 @@ from weakref import ref
 
 from typing_extensions import ParamSpec
 
-from reactpy.config import REACTPY_TESTING_DEFAULT_TIMEOUT, REACTPY_WEB_MODULES_DIR
+from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT, REACTPY_WEB_MODULES_DIR
 from reactpy.core._life_cycle_hook import LifeCycleHook, current_hook
 from reactpy.core.events import EventHandler, to_event_handler_function
 
@@ -54,7 +54,7 @@ class poll(Generic[_R]):  # noqa: N801
     async def until(
         self,
         condition: Callable[[_R], bool],
-        timeout: float = REACTPY_TESTING_DEFAULT_TIMEOUT.current,
+        timeout: float = REACTPY_TESTS_DEFAULT_TIMEOUT.current,
         delay: float = _DEFAULT_POLL_DELAY,
         description: str = "condition to be true",
     ) -> None:
@@ -72,7 +72,7 @@ class poll(Generic[_R]):  # noqa: N801
     async def until_is(
         self,
         right: _R,
-        timeout: float = REACTPY_TESTING_DEFAULT_TIMEOUT.current,
+        timeout: float = REACTPY_TESTS_DEFAULT_TIMEOUT.current,
         delay: float = _DEFAULT_POLL_DELAY,
     ) -> None:
         """Wait until the result is identical to the given value"""
@@ -86,7 +86,7 @@ class poll(Generic[_R]):  # noqa: N801
     async def until_equals(
         self,
         right: _R,
-        timeout: float = REACTPY_TESTING_DEFAULT_TIMEOUT.current,
+        timeout: float = REACTPY_TESTS_DEFAULT_TIMEOUT.current,
         delay: float = _DEFAULT_POLL_DELAY,
     ) -> None:
         """Wait until the result is equal to the given value"""

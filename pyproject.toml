@@ -74,7 +74,6 @@ commands = [
 artifacts = []
 
 [project.optional-dependencies]
-# TODO: Nuke backends from the optional deps
 all = ["reactpy[jinja,uvicorn,testing]"]
 jinja = ["jinja2-simple-tags", "jinja2 >=3"]
 uvicorn = ["uvicorn[standard]"]

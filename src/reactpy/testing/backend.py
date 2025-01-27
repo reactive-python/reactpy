@@ -9,7 +9,7 @@ from urllib.parse import urlencode, urlunparse
 
 from reactpy.asgi import default as default_server
 from reactpy.asgi.utils import find_available_port
-from reactpy.config import REACTPY_TESTING_DEFAULT_TIMEOUT
+from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.core.component import component
 from reactpy.core.hooks import use_callback, use_effect, use_state
 from reactpy.core.types import ComponentConstructor
@@ -51,7 +51,7 @@ class BackendFixture:
         self.port = port or find_available_port(host)
         self.mount, self._root_component = _hotswap()
         self.timeout = (
-            REACTPY_TESTING_DEFAULT_TIMEOUT.current if timeout is None else timeout
+            REACTPY_TESTS_DEFAULT_TIMEOUT.current if timeout is None else timeout
         )
 
         if app is not None and implementation is None:

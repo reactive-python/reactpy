@@ -8,6 +8,8 @@ from logging import getLogger
 from pathlib import Path
 from typing import Any, Callable
 
+from typing_extensions import Unpack
+
 from reactpy import html
 from reactpy.asgi.middleware import ReactPyMiddleware
 from reactpy.asgi.utils import (
@@ -16,8 +18,7 @@ from reactpy.asgi.utils import (
     replace_many,
     vdom_head_to_html,
 )
-from reactpy.core.types import VdomDict
-from reactpy.types import RootComponentConstructor
+from reactpy.types import ReactPyConfig, RootComponentConstructor, VdomDict
 
 _logger = getLogger(__name__)
 
@@ -29,18 +30,13 @@ class ReactPy(ReactPyMiddleware):
         self,
         root_component: RootComponentConstructor,
         *,
-        path_prefix: str = "/reactpy/",
-        web_modules_dir: Path | None = None,
         http_headers: dict[str, str | int] | None = None,
         html_head: VdomDict | None = None,
         html_lang: str = "en",
+        **settings: Unpack[ReactPyConfig],
     ) -> None:
-        super().__init__(
-            app=ReactPyApp(self),
-            root_components=[],
-            path_prefix=path_prefix,
-            web_modules_dir=web_modules_dir,
-        )
+        """TODO: Add docstring"""
+        super().__init__(app=ReactPyApp(self), root_components=[], **settings)
         self.root_component = root_component
         self.extra_headers = http_headers or {}
         self.dispatcher_pattern = re.compile(f"^{self.dispatcher_path}?")
@@ -123,7 +119,7 @@ class ReactPyApp:
         """Method override to remove `dotted_path` from the dispatcher URL."""
         return str(scope["path"]) == self.parent.dispatcher_path
 
-    def process_index_html(self):
+    def process_index_html(self) -> None:
         """Process the index.html and store the results in memory."""
         with open(self._index_html_path, encoding="utf-8") as file_handle:
             cached_index_html = file_handle.read()

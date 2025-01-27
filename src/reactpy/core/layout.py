@@ -32,7 +32,7 @@ from typing_extensions import TypeAlias
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
     REACTPY_CHECK_VDOM_SPEC,
-    REACTPY_DEBUG_MODE,
+    REACTPY_DEBUG,
 )
 from reactpy.core._life_cycle_hook import LifeCycleHook
 from reactpy.core.types import (
@@ -202,9 +202,7 @@ class Layout:
             new_state.model.current = {
                 "tagName": "",
                 "error": (
-                    f"{type(error).__name__}: {error}"
-                    if REACTPY_DEBUG_MODE.current
-                    else ""
+                    f"{type(error).__name__}: {error}" if REACTPY_DEBUG.current else ""
                 ),
             }
         finally:

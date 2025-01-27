@@ -8,7 +8,7 @@ from typing import Any, Protocol, cast, overload
 from fastjsonschema import compile as compile_json_schema
 
 from reactpy._warnings import warn
-from reactpy.config import REACTPY_CHECK_JSON_ATTRS, REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_CHECK_JSON_ATTRS, REACTPY_DEBUG
 from reactpy.core._f_back import f_module_name
 from reactpy.core.events import EventHandler, to_event_handler_function
 from reactpy.core.types import (
@@ -314,7 +314,7 @@ def _is_attributes(value: Any) -> bool:
 def _is_single_child(value: Any) -> bool:
     if isinstance(value, (str, Mapping)) or not hasattr(value, "__iter__"):
         return True
-    if REACTPY_DEBUG_MODE.current:
+    if REACTPY_DEBUG.current:
         _validate_child_key_integrity(value)
     return False
 

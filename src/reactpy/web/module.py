@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, NewType, overload
 
-from reactpy.config import REACTPY_DEBUG_MODE, REACTPY_WEB_MODULES_DIR
+from reactpy.config import REACTPY_DEBUG, REACTPY_WEB_MODULES_DIR
 from reactpy.core.types import ImportSourceDict, VdomDictConstructor
 from reactpy.core.vdom import make_vdom_constructor
 from reactpy.web.utils import (
@@ -62,7 +62,7 @@ def module_from_url(
             if (
                 resolve_exports
                 if resolve_exports is not None
-                else REACTPY_DEBUG_MODE.current
+                else REACTPY_DEBUG.current
             )
             else None
         ),
@@ -128,7 +128,7 @@ def module_from_file(
             if (
                 resolve_exports
                 if resolve_exports is not None
-                else REACTPY_DEBUG_MODE.current
+                else REACTPY_DEBUG.current
             )
             else None
         ),
@@ -203,7 +203,7 @@ def module_from_string(
             if (
                 resolve_exports
                 if resolve_exports is not None
-                else REACTPY_DEBUG_MODE.current
+                else REACTPY_DEBUG.current
             )
             else None
         ),

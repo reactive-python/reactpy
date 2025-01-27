@@ -18,7 +18,7 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
-from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_DEBUG
 from reactpy.core._life_cycle_hook import current_hook
 from reactpy.core.types import Context, Key, State, VdomDict
 from reactpy.types import Connection, Location
@@ -204,7 +204,7 @@ def use_debug_value(
     memo_func = message if callable(message) else lambda: message
     new = use_memo(memo_func, dependencies)
 
-    if REACTPY_DEBUG_MODE.current and old.current != new:
+    if REACTPY_DEBUG.current and old.current != new:
         old.current = new
         logger.debug(f"{current_hook().component} {new}")
 

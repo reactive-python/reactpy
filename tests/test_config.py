@@ -25,8 +25,8 @@ def reset_options():
 
 def test_reactpy_debug_mode_toggle():
     # just check that nothing breaks
-    config.REACTPY_DEBUG_MODE.current = True
-    config.REACTPY_DEBUG_MODE.current = False
+    config.REACTPY_DEBUG.current = True
+    config.REACTPY_DEBUG.current = False
 
 
 def test_boolean():

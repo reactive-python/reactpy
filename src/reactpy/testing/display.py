@@ -12,7 +12,7 @@ from playwright.async_api import (
     async_playwright,
 )
 
-from reactpy.config import REACTPY_TESTING_DEFAULT_TIMEOUT
+from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.testing.backend import BackendFixture
 from reactpy.types import RootComponentConstructor
 
@@ -73,7 +73,7 @@ class DisplayFixture:
                 browser = self._browser
             self.page = await browser.new_page()
 
-        self.page.set_default_timeout(REACTPY_TESTING_DEFAULT_TIMEOUT.current * 1000)
+        self.page.set_default_timeout(REACTPY_TESTS_DEFAULT_TIMEOUT.current * 1000)
 
         if not hasattr(self, "backend"):
             self.backend = BackendFixture()

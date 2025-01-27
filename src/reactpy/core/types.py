@@ -4,6 +4,7 @@ import sys
 from collections import namedtuple
 from collections.abc import Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -284,3 +285,15 @@ class Location:
 
     If there are no search parameters this should be an empty string
     """
+
+
+class ReactPyConfig(TypedDict, total=False):
+    path_prefix: str
+    web_modules_dir: Path
+    reconnect_interval: int
+    reconnect_max_interval: int
+    reconnect_max_retries: int
+    reconnect_backoff_multiplier: float
+    async_rendering: bool
+    debug: bool
+    tests_default_timeout: int

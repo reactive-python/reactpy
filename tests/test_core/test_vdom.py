@@ -4,7 +4,7 @@ import pytest
 from fastjsonschema import JsonSchemaException
 
 import reactpy
-from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_DEBUG
 from reactpy.core.events import EventHandler
 from reactpy.core.types import VdomDict
 from reactpy.core.vdom import is_vdom, make_vdom_constructor, validate_vdom_json
@@ -280,7 +280,7 @@ def test_invalid_vdom(value, error_message_pattern):
         validate_vdom_json(value)
 
 
-@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="Only warns in debug mode")
+@pytest.mark.skipif(not REACTPY_DEBUG.current, reason="Only warns in debug mode")
 def test_warn_cannot_verify_keypath_for_genereators():
     with pytest.warns(UserWarning) as record:
         reactpy.vdom("div", (1 for i in range(10)))
@@ -292,7 +292,7 @@ def test_warn_cannot_verify_keypath_for_genereators():
         )
 
 
-@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="Only warns in debug mode")
+@pytest.mark.skipif(not REACTPY_DEBUG.current, reason="Only warns in debug mode")
 def test_warn_dynamic_children_must_have_keys():
     with pytest.warns(UserWarning) as record:
         reactpy.vdom("div", [reactpy.vdom("div")])
@@ -309,7 +309,7 @@ def test_warn_dynamic_children_must_have_keys():
         assert record[0].message.args[0].startswith("Key not specified for child")
 
 
-@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="only checked in debug mode")
+@pytest.mark.skipif(not REACTPY_DEBUG.current, reason="only checked in debug mode")
 def test_raise_for_non_json_attrs():
     with pytest.raises(TypeError, match="JSON serializable"):
         reactpy.html.div({"non_json_serializable_object": object()})

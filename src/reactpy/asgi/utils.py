@@ -5,7 +5,8 @@ from collections.abc import Coroutine, Iterable, Sequence
 from importlib import import_module
 from typing import Any, Callable
 
-from reactpy.core.types import VdomDict
+from reactpy._option import Option
+from reactpy.types import ReactPyConfig, VdomDict
 from reactpy.utils import vdom_to_html
 
 logger = logging.getLogger(__name__)
@@ -93,3 +94,16 @@ async def http_response(
 
     await send(start_msg)
     await send(body_msg)
+
+
+def process_settings(settings: ReactPyConfig):
+    """Process the settings and return the final configuration."""
+    from reactpy import config
+
+    for setting in settings:
+        config_name = f"REACTPY_{setting.upper()}"
+        config_object: Option | None = getattr(config, config_name, None)
+        if config_object:
+            config_object.set_current(settings[setting])
+        else:
+            raise ValueError(f"Unknown ReactPy setting {setting!r}.")

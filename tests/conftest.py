@@ -10,7 +10,7 @@ from _pytest.config.argparsing import Parser
 
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
-    REACTPY_TESTING_DEFAULT_TIMEOUT,
+    REACTPY_TESTS_DEFAULT_TIMEOUT,
 )
 from reactpy.testing import (
     BackendFixture,
@@ -56,7 +56,7 @@ async def server():
 @pytest.fixture
 async def page(browser):
     pg = await browser.new_page()
-    pg.set_default_timeout(REACTPY_TESTING_DEFAULT_TIMEOUT.current * 1000)
+    pg.set_default_timeout(REACTPY_TESTS_DEFAULT_TIMEOUT.current * 1000)
     try:
         yield pg
     finally:

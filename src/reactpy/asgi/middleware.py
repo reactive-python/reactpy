@@ -13,13 +13,14 @@ from typing import Any, Callable
 import orjson
 from asgiref.compatibility import guarantee_single_callable
 from servestatic import ServeStaticASGI
+from typing_extensions import Unpack
 
-from reactpy.asgi.utils import check_path, import_components
-from reactpy.config import REACTPY_WEB_MODULES_DIR
+from reactpy import config
+from reactpy.asgi.utils import check_path, import_components, process_settings
 from reactpy.core.hooks import ConnectionContext
 from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
-from reactpy.types import Connection, Location, RootComponentConstructor
+from reactpy.types import Connection, Location, ReactPyConfig, RootComponentConstructor
 
 _logger = logging.getLogger(__name__)
 
@@ -34,14 +35,15 @@ class ReactPyMiddleware:
         self,
         app: Callable[..., Coroutine],
         root_components: Iterable[str],
-        *,
-        # TODO: Add a setting attribute to this class. Or maybe just put a shit ton of kwargs here. Or add a **kwargs that resolves to a TypedDict?
-        path_prefix: str = "/reactpy/",
-        web_modules_dir: Path | None = None,
+        **settings: Unpack[ReactPyConfig],
     ) -> None:
-        """Configure the ASGI app. Anything initialized in this method will be shared across all future requests."""
+        """Configure the ASGI app. Anything initialized in this method will be shared across all future requests.
+        TODO: Add types in docstring"""
+        # Process global settings
+        process_settings(settings)
+
         # URL path attributes
-        self.path_prefix = path_prefix
+        self.path_prefix = config.REACTPY_PATH_PREFIX.current
         self.dispatcher_path = self.path_prefix
         self.web_modules_path = f"{self.path_prefix}modules/"
         self.static_path = f"{self.path_prefix}static/"
@@ -56,10 +58,8 @@ class ReactPyMiddleware:
         self.root_components = import_components(root_components)
 
         # Directory attributes
-        self.web_modules_dir = web_modules_dir or REACTPY_WEB_MODULES_DIR.current
+        self.web_modules_dir = config.REACTPY_WEB_MODULES_DIR.current
         self.static_dir = Path(__file__).parent.parent / "static"
-        if self.web_modules_dir != REACTPY_WEB_MODULES_DIR.current:
-            REACTPY_WEB_MODULES_DIR.set_current(self.web_modules_dir)
 
         # Sub-applications
         self.component_dispatch_app = ComponentDispatchApp(parent=self)
@@ -67,9 +67,13 @@ class ReactPyMiddleware:
         self.web_modules_app = WebModuleApp(parent=self)
 
         # Validate the configuration
-        reason = check_path(path_prefix)
+        reason = check_path(self.path_prefix)
         if reason:
             raise ValueError(f"Invalid `path_prefix`. {reason}")
+        if not self.web_modules_dir.exists():
+            raise ValueError(
+                f"Web modules directory {self.web_modules_dir} does not exist."
+            )
 
     async def __call__(
         self,
@@ -127,12 +131,12 @@ class ComponentDispatchApp:
                     self.run_dispatcher(scope, receive, send, recv_queue)
                 )
 
-            if event["type"] == "websocket.disconnect":
+            elif event["type"] == "websocket.disconnect":
                 if dispatcher:
                     dispatcher.cancel()
                 break
 
-            if event["type"] == "websocket.receive":
+            elif event["type"] == "websocket.receive":
                 queue_put_func = recv_queue.put(orjson.loads(event["text"]))
                 await queue_put_func
 
@@ -143,8 +147,9 @@ class ComponentDispatchApp:
         send: Callable[..., Coroutine],
         recv_queue: asyncio.Queue,
     ) -> None:
-        # Get the component from the URL.
+        """Asyncio background task that renders and transmits layout updates of ReactPy components."""
         try:
+            # Determine component to serve by analyzing the URL and/or class parameters.
             if self.parent.multiple_root_components:
                 url_match = re.match(self.parent.dispatcher_pattern, scope["path"])
                 if not url_match:
@@ -160,42 +165,38 @@ class ComponentDispatchApp:
             else:
                 raise RuntimeError("No root component provided.")
 
-            # TODO: Get HTTP URL from `http_pathname` and `http_query_string`
-            parsed_url = urllib.parse.urlparse(scope["path"])
-            pathname = parsed_url.path
-            query_string = f"?{parsed_url.query}" if parsed_url.query else ""
-
-            await serve_layout(
-                Layout(  # type: ignore
-                    ConnectionContext(
-                        component(),
-                        value=Connection(
-                            scope=scope,
-                            location=Location(
-                                pathname=pathname, query_string=query_string
-                            ),
-                            carrier={
-                                "scope": scope,
-                                "send": send,
-                                "receive": receive,
-                            },
-                        ),
-                    )
+            # Create a connection object by analyzing the websocket's query string.
+            ws_query_string = urllib.parse.parse_qs(
+                scope["query_string"].decode(), strict_parsing=True
+            )
+            connection = Connection(
+                scope=scope,
+                location=Location(
+                    pathname=ws_query_string.get("http_pathname", [""])[0],
+                    query_string=ws_query_string.get("http_search", [""])[0],
                 ),
-                self.send_json(send),
+                carrier=self,
+            )
+
+            # Start the ReactPy component rendering loop
+            await serve_layout(
+                Layout(ConnectionContext(component(), value=connection)),  # type: ignore
+                self._send_json(send),
                 recv_queue.get,
             )
+
+        # Manually log exceptions since this function is running in a separate asyncio task.
         except Exception as error:
             await asyncio.to_thread(_logger.error, f"{error}\n{traceback.format_exc()}")
 
     @staticmethod
-    def send_json(send: Callable) -> Callable[..., Coroutine]:
+    def _send_json(send: Callable) -> Callable[..., Coroutine]:
         """Use orjson to send JSON over an ASGI websocket."""
 
-        async def _send_json(value: Any) -> None:
+        async def _send(value: Any) -> None:
             await send({"type": "websocket.send", "text": orjson.dumps(value).decode()})
 
-        return _send_json
+        return _send
 
 
 @dataclass
@@ -210,14 +211,6 @@ class StaticFileApp:
         send: Callable[..., Coroutine],
     ) -> None:
         """ASGI app for ReactPy static files."""
-        # If no static directory is configured, serve the user's application
-        if not self.parent.static_dir:
-            await asyncio.to_thread(
-                _logger.info,
-                "Tried to serve static file without a configured directory.",
-            )
-            return await self.parent.user_app(scope, receive, send)
-
         if not self._static_file_server:
             self._static_file_server = ServeStaticASGI(
                 self.parent.user_app,
@@ -240,13 +233,6 @@ class WebModuleApp:
         send: Callable[..., Coroutine],
     ) -> None:
         """ASGI app for ReactPy web modules."""
-        if not self.parent.web_modules_dir:
-            await asyncio.to_thread(
-                _logger.info,
-                "Tried to serve web module without a configured directory.",
-            )
-            return await self.parent.user_app(scope, receive, send)
-
         if not self._static_file_server:
             self._static_file_server = ServeStaticASGI(
                 self.parent.user_app,
