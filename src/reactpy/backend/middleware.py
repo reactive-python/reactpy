@@ -163,6 +163,8 @@ class ComponentDispatchApp:
 
             # TODO: Get HTTP URL from `http_pathname` and `http_query_string`
             parsed_url = urllib.parse.urlparse(scope["path"])
+            pathname = parsed_url.path
+            query_string = f"?{parsed_url.query}" if parsed_url.query else ""
 
             await serve_layout(
                 Layout(  # type: ignore
@@ -170,10 +172,8 @@ class ComponentDispatchApp:
                         component(),
                         value=Connection(
                             scope=scope,
-                            # TODO: Rename `search` to `query_string`
                             location=Location(
-                                parsed_url.path,
-                                f"?{parsed_url.query}" if parsed_url.query else "",
+                                pathname=pathname, query_string=query_string
                             ),
                             carrier={
                                 "scope": scope,
