@@ -30,7 +30,7 @@ Unreleased
 - :pull:`1257` - Add support for rendering ``@component`` children within ``vdom_to_html``.
 - :pull:`1113` - Renamed the ``use_location`` hook's ``search`` attribute to ``query_string``.
 - :pull:`1113` - Renamed the ``use_location`` hook's ``pathname`` attribute to ``path``.
-- :pull:`1113` - Renamed ``reatpy.config.REACTPY_DEBUG_MODE`` to ``reactpy.config.REACTPY_DEBUG``.
+- :pull:`1113` - Renamed ``reactpy.config.REACTPY_DEBUG_MODE`` to ``reactpy.config.REACTPY_DEBUG``.
 
 **Removed**
 
