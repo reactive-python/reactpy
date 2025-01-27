@@ -15,7 +15,7 @@ src/reactpy/static/*
 
 # --- Python ---
 .hatch
-.venv
+.venv*
 venv
 MANIFEST
 build
