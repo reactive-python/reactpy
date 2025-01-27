@@ -11,7 +11,7 @@ from reactpy._warnings import warn
 from reactpy.config import REACTPY_CHECK_JSON_ATTRS, REACTPY_DEBUG
 from reactpy.core._f_back import f_module_name
 from reactpy.core.events import EventHandler, to_event_handler_function
-from reactpy.core.types import (
+from reactpy.types import (
     ComponentType,
     EventHandlerDict,
     EventHandlerType,

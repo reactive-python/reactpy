@@ -6,7 +6,7 @@ from typing import Any, Callable, Literal, overload
 
 from anyio import create_task_group
 
-from reactpy.core.types import EventHandlerFunc, EventHandlerType
+from reactpy.types import EventHandlerFunc, EventHandlerType
 
 
 @overload

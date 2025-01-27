@@ -12,13 +12,12 @@ from reactpy.asgi.utils import find_available_port
 from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.core.component import component
 from reactpy.core.hooks import use_callback, use_effect, use_state
-from reactpy.core.types import ComponentConstructor
 from reactpy.testing.logs import (
     LogAssertionError,
     capture_reactpy_logs,
     list_logged_exceptions,
 )
-from reactpy.types import BackendType
+from reactpy.types import BackendType, ComponentConstructor
 from reactpy.utils import Ref
 
 

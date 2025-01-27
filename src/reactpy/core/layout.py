@@ -35,7 +35,8 @@ from reactpy.config import (
     REACTPY_DEBUG,
 )
 from reactpy.core._life_cycle_hook import LifeCycleHook
-from reactpy.core.types import (
+from reactpy.core.vdom import validate_vdom_json
+from reactpy.types import (
     ComponentType,
     Context,
     EventHandlerDict,
@@ -46,7 +47,6 @@ from reactpy.core.types import (
     VdomDict,
     VdomJson,
 )
-from reactpy.core.vdom import validate_vdom_json
 from reactpy.utils import Ref
 
 logger = getLogger(__name__)

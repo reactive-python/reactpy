@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Any, NewType, overload
 
 from reactpy.config import REACTPY_DEBUG, REACTPY_WEB_MODULES_DIR
-from reactpy.core.types import ImportSourceDict, VdomDictConstructor
 from reactpy.core.vdom import make_vdom_constructor
+from reactpy.types import ImportSourceDict, VdomDictConstructor
 from reactpy.web.utils import (
     module_name_suffix,
     resolve_module_exports_from_file,

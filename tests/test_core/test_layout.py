@@ -14,7 +14,6 @@ from reactpy.config import REACTPY_ASYNC_RENDERING, REACTPY_DEBUG
 from reactpy.core.component import component
 from reactpy.core.hooks import use_effect, use_state
 from reactpy.core.layout import Layout
-from reactpy.core.types import State
 from reactpy.testing import (
     HookCatcher,
     StaticEventHandler,
@@ -22,6 +21,7 @@ from reactpy.testing import (
     capture_reactpy_logs,
 )
 from reactpy.testing.common import poll
+from reactpy.types import State
 from reactpy.utils import Ref
 from tests.tooling import select
 from tests.tooling.aio import Event

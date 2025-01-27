@@ -6,8 +6,8 @@ from fastjsonschema import JsonSchemaException
 import reactpy
 from reactpy.config import REACTPY_DEBUG
 from reactpy.core.events import EventHandler
-from reactpy.core.types import VdomDict
 from reactpy.core.vdom import is_vdom, make_vdom_constructor, validate_vdom_json
+from reactpy.types import VdomDict
 
 FAKE_EVENT_HANDLER = EventHandler(lambda data: None)
 FAKE_EVENT_HANDLER_DICT = {"on_event": FAKE_EVENT_HANDLER}

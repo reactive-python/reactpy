@@ -8,8 +8,8 @@ from typing import Any, Callable, Generic, TypeVar, Union, cast
 from lxml import etree
 from lxml.html import fromstring, tostring
 
-from reactpy.core.types import ComponentType, VdomDict
 from reactpy.core.vdom import vdom as make_vdom
+from reactpy.types import ComponentType, VdomDict
 
 _RefValue = TypeVar("_RefValue")
 _ModelTransform = Callable[[VdomDict], Any]

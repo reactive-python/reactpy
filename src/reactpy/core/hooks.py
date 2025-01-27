@@ -20,8 +20,7 @@ from typing_extensions import TypeAlias
 
 from reactpy.config import REACTPY_DEBUG
 from reactpy.core._life_cycle_hook import current_hook
-from reactpy.core.types import Context, Key, State, VdomDict
-from reactpy.types import Connection, Location
+from reactpy.types import Connection, Context, Key, Location, State, VdomDict
 from reactpy.utils import Ref
 
 if not TYPE_CHECKING:
