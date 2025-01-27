@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import logging
-import re
-from collections.abc import Iterable
+from collections.abc import Coroutine, Iterable, Sequence
 from importlib import import_module
-from typing import Any
+from typing import Any, Callable
 
 from reactpy.core.types import ComponentType, VdomDict
 from reactpy.utils import vdom_to_html
@@ -86,3 +85,23 @@ def vdom_head_to_html(head: VdomDict) -> str:
     raise ValueError(
         "Invalid head element! Element must be either `html.head` or a string."
     )
+
+
+async def http_response(
+    *,
+    send: Callable[[dict[str, Any]], Coroutine],
+    method: str,
+    code: int = 200,
+    message: str = "",
+    headers: Sequence = (),
+) -> None:
+    """Sends a HTTP response using the ASGI `send` API."""
+    start_msg = {"type": "http.response.start", "status": code, "headers": [*headers]}
+    body_msg: dict[str, str | bytes] = {"type": "http.response.body"}
+
+    # Add the content type and body to everything other than a HEAD request
+    if method != "HEAD":
+        body_msg["body"] = message.encode()
+
+    await send(start_msg)
+    await send(body_msg)

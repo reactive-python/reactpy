@@ -1,7 +1,7 @@
 import hashlib
 import os
 import re
-from collections.abc import Coroutine, Sequence
+from collections.abc import Coroutine
 from dataclasses import dataclass
 from email.utils import formatdate
 from logging import getLogger
@@ -10,7 +10,12 @@ from typing import Any, Callable
 
 from reactpy import html
 from reactpy.backend.middleware import ReactPyMiddleware
-from reactpy.backend.utils import dict_to_byte_list, replace_many, vdom_head_to_html
+from reactpy.backend.utils import (
+    dict_to_byte_list,
+    http_response,
+    replace_many,
+    vdom_head_to_html,
+)
 from reactpy.core.types import VdomDict
 from reactpy.types import RootComponentConstructor
 
@@ -45,6 +50,9 @@ class ReactPy(ReactPyMiddleware):
 
 @dataclass
 class ReactPyApp:
+    """ASGI app for ReactPy's standalone mode. This is utilized by `ReactPyMiddleware` as an alternative
+    to a user provided ASGI app."""
+
     parent: ReactPy
     _cached_index_html = ""
     _etag = ""
@@ -58,7 +66,6 @@ class ReactPyApp:
         receive: Callable[..., Coroutine],
         send: Callable[..., Coroutine],
     ) -> None:
-        """ASGI app for ReactPy standalone mode."""
         if scope["type"] != "http":
             if scope["type"] != "lifespan":
                 msg = (
@@ -74,7 +81,7 @@ class ReactPyApp:
         if not self._cached_index_html:
             self.process_index_html()
 
-        # Return headers for all HTTP responses
+        # Response headers for `index.html` responses
         request_headers = dict(scope["headers"])
         response_headers: dict[str, str | int] = {
             "etag": self._etag,
@@ -82,17 +89,15 @@ class ReactPyApp:
             "access-control-allow-origin": "*",
             "cache-control": "max-age=60, public",
             "content-length": len(self._cached_index_html),
+            "content-type": "text/html; charset=utf-8",
             **self.parent.extra_headers,
         }
 
         # Browser is asking for the headers
         if scope["method"] == "HEAD":
             return await http_response(
-                scope["method"],
-                send,
-                200,
-                "",
-                content_type=b"text/html",
+                send=send,
+                method=scope["method"],
                 headers=dict_to_byte_list(response_headers),
             )
 
@@ -100,21 +105,17 @@ class ReactPyApp:
         if request_headers.get(b"if-none-match") == self._etag.encode():
             response_headers.pop("content-length")
             return await http_response(
-                scope["method"],
-                send,
-                304,
-                "",
-                content_type=b"text/html",
+                send=send,
+                method=scope["method"],
+                code=304,
                 headers=dict_to_byte_list(response_headers),
             )
 
         # Send the index.html
         await http_response(
-            scope["method"],
-            send,
-            200,
-            self._cached_index_html,
-            content_type=b"text/html",
+            send=send,
+            method=scope["method"],
+            message=self._cached_index_html,
             headers=dict_to_byte_list(response_headers),
         )
 
@@ -145,33 +146,3 @@ class ReactPyApp:
         self._last_modified = formatdate(
             os.stat(self._index_html_path).st_mtime, usegmt=True
         )
-
-
-async def http_response(
-    method: str,
-    send: Callable[..., Coroutine],
-    code: int,
-    message: str,
-    content_type: bytes = b"text/plain",
-    headers: Sequence = (),
-) -> None:
-    """Sends a HTTP response using the ASGI `send` API."""
-    # Head requests don't need body content
-    if method == "HEAD":
-        await send(
-            {
-                "type": "http.response.start",
-                "status": code,
-                "headers": [*headers],
-            }
-        )
-        await send({"type": "http.response.body"})
-    else:
-        await send(
-            {
-                "type": "http.response.start",
-                "status": code,
-                "headers": [(b"content-type", content_type), *headers],
-            }
-        )
-        await send({"type": "http.response.body", "body": message.encode()})
