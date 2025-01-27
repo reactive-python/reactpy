@@ -1,7 +1,6 @@
 """Exports common types from:
 
 - :mod:`reactpy.core.types`
-- :mod:`reactpy.backend.types`
 """
 
 from reactpy.core.component import Component
