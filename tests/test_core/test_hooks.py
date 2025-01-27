@@ -159,7 +159,7 @@ async def test_set_state_with_reducer_instead_of_value():
             await layout.render()
 
 
-async def test_set_state_checks_identity_not_equality(display: DisplayFixture):
+async def test_set_state_checks_equality_not_identity(display: DisplayFixture):
     r_1 = reactpy.Ref("value")
     r_2 = reactpy.Ref("value")
 
@@ -219,12 +219,12 @@ async def test_set_state_checks_identity_not_equality(display: DisplayFixture):
     await client_r_2_button.click()
 
     await poll_event_count.until_equals(2)
-    await poll_render_count.until_equals(2)
+    await poll_render_count.until_equals(1)
 
     await client_r_2_button.click()
 
     await poll_event_count.until_equals(3)
-    await poll_render_count.until_equals(2)
+    await poll_render_count.until_equals(1)
 
 
 async def test_simple_input_with_use_state(display: DisplayFixture):
@@ -979,7 +979,7 @@ async def test_context_values_are_scoped():
 
     @reactpy.component
     def Parent():
-        return html._(
+        return html.fragment(
             Context(Context(Child1(), value=1), value="something-else"),
             Context(Child2(), value=2),
         )
@@ -1170,6 +1170,28 @@ async def test_conditionally_rendered_components_can_use_context():
 )
 def test_strictly_equal(x, y, result):
     assert strictly_equal(x, y) is result
+
+
+def test_strictly_equal_named_closures():
+    assert strictly_equal(lambda: "text", lambda: "text") is True
+    assert strictly_equal(lambda: "text", lambda: "not-text") is False
+
+    def x():
+        return "text"
+
+    def y():
+        return "not-text"
+
+    def generator():
+        def z():
+            return "text"
+
+        return z
+
+    assert strictly_equal(x, x) is True
+    assert strictly_equal(x, y) is False
+    assert strictly_equal(x, generator()) is False
+    assert strictly_equal(generator(), generator()) is True
 
 
 STRICT_EQUALITY_VALUE_CONSTRUCTORS = [

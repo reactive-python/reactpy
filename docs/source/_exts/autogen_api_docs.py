@@ -43,7 +43,7 @@ def generate_api_docs():
         if file.name == "__init__.py":
             if file.parent != PYTHON_PACKAGE:
                 content.append(make_package_section(file))
-        else:
+        elif not file.name.startswith("_"):
             content.append(make_module_section(file))
 
     API_FILE.write_text("\n".join(content))

@@ -51,7 +51,7 @@ def test_catch_unsafe_relative_path_traversal(tmp_path, bad_path):
             '<meta charset="utf-8"><title>example</title>',
         ),
         (
-            html._(
+            html.fragment(
                 html.meta({"charset": "utf-8"}),
                 html.title("example"),
             ),
