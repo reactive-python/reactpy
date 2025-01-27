@@ -40,6 +40,7 @@ Unreleased
 - :pull:`1255` - Removed ``reactpy.html._`` function. Use ``html.fragment`` instead.
 - :pull:`1113` - Removed ``reactpy.run``. See the documentation for the new method to run ReactPy applications.
 - :pull:`1113` - Removed ``reactpy.backend.*``. See the documentation for the new method to run ReactPy applications.
+- :pull:`1113` - Removed ``reactpy.core.types`` module. Use ``reactpy.types`` instead.
 - :pull:`1113` - All backend related installation extras (such as ``pip install reactpy[starlette]``) have been removed.
 - :pull:`1113` - Removed deprecated function ``module_from_template``.
 

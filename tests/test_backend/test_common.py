@@ -25,7 +25,7 @@ def test_common_options_url_prefix_starts_with_slash():
     ],
 )
 def test_catch_unsafe_relative_path_traversal(tmp_path, bad_path):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unsafe path"):
         traversal_safe_path(tmp_path, *bad_path.split("/"))
 
 

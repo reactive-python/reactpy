@@ -23,7 +23,8 @@ except ImportError as e:
 
 
 class ReactPyTemplateTag(StandaloneTag):
-    """This allows enables a `component` tag to be used in any Jinja2 rendering context."""
+    """This allows enables a `component` tag to be used in any Jinja2 rendering context,
+    as long as this template tag is registered as a Jinja2 extension."""
 
     safe_output = True
     tags: ClassVar[set[str]] = {"component"}

@@ -26,7 +26,7 @@ CarrierType = TypeVar("CarrierType")
 _Type = TypeVar("_Type")
 
 
-if TYPE_CHECKING or sys.version_info < (3, 9) or sys.version_info >= (3, 11):
+if TYPE_CHECKING or sys.version_info >= (3, 11):
 
     class State(NamedTuple, Generic[_Type]):
         value: _Type
@@ -44,9 +44,6 @@ RootComponentConstructor = Callable[[], "ComponentType"]
 
 
 Key: TypeAlias = "str | int"
-
-
-_OwnType = TypeVar("_OwnType")
 
 
 @runtime_checkable
