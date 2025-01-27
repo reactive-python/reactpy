@@ -5,7 +5,7 @@ from collections.abc import Coroutine, Iterable, Sequence
 from importlib import import_module
 from typing import Any, Callable
 
-from reactpy.core.types import ComponentType, VdomDict
+from reactpy.core.types import VdomDict
 from reactpy.utils import vdom_to_html
 
 logger = logging.getLogger(__name__)
