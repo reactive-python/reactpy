@@ -23,8 +23,8 @@ export type CreateReconnectingWebSocketProps = {
 
 export type ReactPyUrls = {
   componentUrl: URL;
-  query: string;
-  jsModules: string;
+  jsModulesPath: string;
+  queryString: string;
 };
 
 export type GenericReactPyClientProps = {
@@ -36,6 +36,7 @@ export type GenericReactPyClientProps = {
 export type MountProps = {
   mountElement: HTMLElement;
   pathPrefix: string;
+  appendComponentPath?: string;
   reconnectInterval?: number;
   reconnectMaxInterval?: number;
   reconnectMaxRetries?: number;

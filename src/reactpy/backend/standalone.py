@@ -22,7 +22,7 @@ class ReactPy(ReactPyMiddleware):
     last_modified = ""
     templates_dir = Path(__file__).parent.parent / "templates"
     index_html_path = templates_dir / "index.html"
-    single_root_component = True
+    multiple_root_components = False
 
     def __init__(
         self,
@@ -66,7 +66,7 @@ class ReactPy(ReactPyMiddleware):
 
         # Store the HTTP response in memory for performance
         if not self.cached_index_html:
-            await self.process_index_html()
+            self.process_index_html()
 
         # Return headers for all HTTP responses
         request_headers = dict(scope["headers"])
@@ -113,11 +113,11 @@ class ReactPy(ReactPyMiddleware):
         )
 
     def match_dispatch_path(self, scope: dict) -> bool:
-        """Check if the path matches the dispatcher path."""
-        return str(scope["path"]).startswith(self.dispatcher_path)
+        """Method override to remove `dotted_path` from the dispatcher URL."""
+        return str(scope["path"]) == self.dispatcher_path
 
-    async def process_index_html(self):
-        """Process the index.html file."""
+    def process_index_html(self):
+        """Process the index.html and store the results in memory."""
         with open(self.index_html_path, encoding="utf-8") as file_handle:
             cached_index_html = file_handle.read()
 
@@ -135,10 +135,7 @@ class ReactPy(ReactPyMiddleware):
             },
         )
 
-        self.etag = hashlib.md5(
-            self.cached_index_html.encode(), usedforsecurity=False
-        ).hexdigest()
-        self.etag = f'"{self.etag}"'
+        self.etag = f'"{hashlib.md5(self.cached_index_html.encode(), usedforsecurity=False).hexdigest()}"'
         self.last_modified = formatdate(
             os.stat(self.index_html_path).st_mtime, usegmt=True
         )
@@ -152,7 +149,7 @@ async def http_response(
     content_type: bytes = b"text/plain",
     headers: Sequence = (),
 ) -> None:
-    """Send a simple response."""
+    """Sends a HTTP response using the ASGI `send` API."""
     # Head requests don't need body content
     if method == "HEAD":
         await send(

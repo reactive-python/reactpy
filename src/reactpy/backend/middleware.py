@@ -26,9 +26,10 @@ _logger = logging.getLogger(__name__)
 
 
 class ReactPyMiddleware:
-    _asgi_single_callable = True
-    single_root_component: bool = False
+    _asgi_single_callable: bool = True
     root_component: RootComponentConstructor | None = None
+    root_components: dict[str, RootComponentConstructor]
+    multiple_root_components: bool = True
 
     def __init__(
         self,
@@ -53,10 +54,7 @@ class ReactPyMiddleware:
 
         # Component attributes
         self.user_app = guarantee_single_callable(app)
-        self.component_dotted_paths = set(root_components)
-        self.components: dict[str, RootComponentConstructor] = import_components(
-            self.component_dotted_paths
-        )
+        self.root_components = import_components(root_components)
 
         # Directory attributes
         self.web_modules_dir = web_modules_dir or REACTPY_WEB_MODULES_DIR.current
@@ -148,12 +146,16 @@ class ComponentDispatchApp:
     ) -> None:
         # Get the component from the URL.
         try:
-            if not self.parent.single_root_component:
+            if self.parent.multiple_root_components:
                 url_match = re.match(self.parent.dispatcher_pattern, scope["path"])
                 if not url_match:
                     raise RuntimeError("Could not find component in URL path.")
-                dotted_path = url_match[1]
-                component = self.parent.components[dotted_path]
+                dotted_path = url_match["dotted_path"]
+                if dotted_path not in self.parent.root_components:
+                    raise RuntimeError(
+                        f"Attempting to use an unregistered root component {dotted_path}."
+                    )
+                component = self.parent.root_components[dotted_path]
             elif self.parent.root_component:
                 component = self.parent.root_component
             else:

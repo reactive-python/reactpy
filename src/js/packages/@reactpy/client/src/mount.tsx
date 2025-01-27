@@ -7,26 +7,26 @@ export function mountReactPy(props: MountProps) {
   // WebSocket route for component rendering
   const wsProtocol = `ws${window.location.protocol === "https:" ? "s" : ""}:`;
   const wsOrigin = `${wsProtocol}//${window.location.host}`;
-  const componentUrl = new URL(`${wsOrigin}/${props.pathPrefix}/`);
+  const componentUrl = new URL(`${wsOrigin}/${props.pathPrefix}/${props.appendComponentPath || ""}`);
 
   // Embed the initial HTTP path into the WebSocket URL
   componentUrl.searchParams.append("http_pathname", window.location.pathname);
   if (window.location.search) {
-    componentUrl.searchParams.append("http_search", window.location.search);
+    componentUrl.searchParams.append("http_query_string", window.location.search);
   }
 
   // Configure a new ReactPy client
   const client = new ReactPyClient({
     urls: {
       componentUrl: componentUrl,
-      query: document.location.search,
-      jsModules: `${window.location.origin}/${props.pathPrefix}/modules/`,
+      jsModulesPath: `${window.location.origin}/${props.pathPrefix}/modules/`,
+      queryString: document.location.search,
     },
     reconnectOptions: {
       interval: props.reconnectInterval || 750,
       maxInterval: props.reconnectMaxInterval || 60000,
-      backoffMultiplier: props.reconnectBackoffMultiplier || 1.25,
       maxRetries: props.reconnectMaxRetries || 150,
+      backoffMultiplier: props.reconnectBackoffMultiplier || 1.25,
     },
     mountElement: props.mountElement,
   });
