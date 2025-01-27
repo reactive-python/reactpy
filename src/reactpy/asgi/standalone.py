@@ -14,7 +14,7 @@ from reactpy import html
 from reactpy.asgi.middleware import ReactPyMiddleware
 from reactpy.asgi.utils import dict_to_byte_list, http_response, vdom_head_to_html
 from reactpy.types import ReactPyConfig, RootComponentConstructor, VdomDict
-from reactpy.utils import render_reactpy_template
+from reactpy.utils import render_mount_template
 
 _logger = getLogger(__name__)
 
@@ -134,7 +134,7 @@ class ReactPyApp:
             f"{vdom_head_to_html(self.parent.html_head)}"
             "<body>"
             f'<div id="app"></div>'
-            f"{render_reactpy_template('app', '', '')}"
+            f"{render_mount_template('app', '', '')}"
             "</body>"
             "</html>"
         )

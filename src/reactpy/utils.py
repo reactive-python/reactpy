@@ -316,7 +316,7 @@ DASHED_HTML_ATTRS = {"accept_charset", "acceptCharset", "http_equiv", "httpEquiv
 _CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
 
 
-def render_reactpy_template(
+def render_mount_template(
     element_id: str, class_: str, append_component_path: str
 ) -> str:
     return (

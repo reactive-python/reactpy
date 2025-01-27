@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from jinja2_simple_tags import StandaloneTag
 
-from reactpy.utils import render_reactpy_template
+from reactpy.utils import render_mount_template
 
 try:
     import_module("jinja2")
@@ -37,4 +37,4 @@ class ReactPyTemplateTag(StandaloneTag):
         if kwargs:
             append_component_path += f"?{urllib.parse.urlencode(kwargs)}"
 
-        return render_reactpy_template(uuid, class_, append_component_path)
+        return render_mount_template(uuid, class_, append_component_path)
