@@ -68,11 +68,6 @@ class ReactPyMiddleware:
         self.web_modules_dir = config.REACTPY_WEB_MODULES_DIR.current
         self.static_dir = Path(__file__).parent.parent / "static"
 
-        # Sub-applications
-        self.component_dispatch_app = ComponentDispatchApp(parent=self)
-        self.static_file_app = StaticFileApp(parent=self)
-        self.web_modules_app = WebModuleApp(parent=self)
-
         # Validate the configuration
         reason = check_path(self.path_prefix)
         if reason:
@@ -81,6 +76,11 @@ class ReactPyMiddleware:
             raise ValueError(
                 f"Web modules directory {self.web_modules_dir} does not exist."
             )
+
+        # Initialize the sub-applications
+        self.component_dispatch_app = ComponentDispatchApp(parent=self)
+        self.static_file_app = StaticFileApp(parent=self)
+        self.web_modules_app = WebModuleApp(parent=self)
 
     async def __call__(
         self,
@@ -188,22 +188,15 @@ class ComponentDispatchApp:
             # Start the ReactPy component rendering loop
             await serve_layout(
                 Layout(ConnectionContext(component(), value=connection)),  # type: ignore
-                self._send_json(send),
+                lambda msg: send(
+                    {"type": "websocket.send", "text": orjson.dumps(msg).decode()}
+                ),
                 recv_queue.get,
             )
 
         # Manually log exceptions since this function is running in a separate asyncio task.
         except Exception as error:
             await asyncio.to_thread(_logger.error, f"{error}\n{traceback.format_exc()}")
-
-    @staticmethod
-    def _send_json(send: Callable) -> Callable[..., Coroutine]:
-        """Use orjson to send JSON over an ASGI websocket."""
-
-        async def _send(value: Any) -> None:
-            await send({"type": "websocket.send", "text": orjson.dumps(value).decode()})
-
-        return _send
 
 
 @dataclass
