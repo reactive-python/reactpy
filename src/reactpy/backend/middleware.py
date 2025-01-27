@@ -15,7 +15,7 @@ from asgiref.compatibility import guarantee_single_callable
 from servestatic import ServeStaticASGI
 
 from reactpy.backend.types import Connection, Location
-from reactpy.backend.utils import check_path, import_components, normalize_url_path
+from reactpy.backend.utils import check_path, import_components
 from reactpy.config import REACTPY_WEB_MODULES_DIR
 from reactpy.core.hooks import ConnectionContext
 from reactpy.core.layout import Layout
@@ -37,15 +37,15 @@ class ReactPyMiddleware:
         root_components: Iterable[str],
         *,
         # TODO: Add a setting attribute to this class. Or maybe just put a shit ton of kwargs here. Or add a **kwargs that resolves to a TypedDict?
-        path_prefix: str = "reactpy/",
+        path_prefix: str = "/reactpy/",
         web_modules_dir: Path | None = None,
     ) -> None:
         """Configure the ASGI app. Anything initialized in this method will be shared across all future requests."""
         # URL path attributes
-        self.path_prefix = normalize_url_path(path_prefix)
-        self.dispatcher_path = f"/{self.path_prefix}/"
-        self.web_modules_path = f"/{self.path_prefix}/modules/"
-        self.static_path = f"/{self.path_prefix}/static/"
+        self.path_prefix = path_prefix
+        self.dispatcher_path = self.path_prefix
+        self.web_modules_path = f"{self.path_prefix}modules/"
+        self.static_path = f"{self.path_prefix}static/"
         self.dispatcher_pattern = re.compile(
             f"^{self.dispatcher_path}(?P<dotted_path>[^/]+)/?"
         )
@@ -161,6 +161,7 @@ class ComponentDispatchApp:
             else:
                 raise RuntimeError("No root component provided.")
 
+            # TODO: Get HTTP URL from `http_pathname` and `http_query_string`
             parsed_url = urllib.parse.urlparse(scope["path"])
 
             await serve_layout(
@@ -169,6 +170,7 @@ class ComponentDispatchApp:
                         component(),
                         value=Connection(
                             scope=scope,
+                            # TODO: Rename `search` to `query_string`
                             location=Location(
                                 parsed_url.path,
                                 f"?{parsed_url.query}" if parsed_url.query else "",

@@ -12,14 +12,6 @@ from reactpy.utils import vdom_to_html
 logger = logging.getLogger(__name__)
 
 
-def normalize_url_path(url: str) -> str:
-    """Normalize a URL path."""
-    new_url = re.sub(r"/+", "/", url)
-    new_url = new_url.lstrip("/")
-    new_url = new_url.rstrip("/")
-    return new_url
-
-
 def import_dotted_path(dotted_path: str) -> Any:
     """Imports a dotted path and returns the callable."""
     module_name, component_name = dotted_path.rsplit(".", 1)
@@ -58,13 +50,15 @@ def check_path(url_path: str) -> str:
         return "URL path must not be empty."
     if not isinstance(url_path, str):
         return "URL path is must be a string."
-    if not url_path[0].isalnum():
-        return "URL path must start with an alphanumeric character."
+    if not url_path.startswith("/"):
+        return "URL path must start with a forward slash."
+    if not url_path.endswith("/"):
+        return "URL path must end with a forward slash."
 
     return ""
 
 
-def find_and_replace(content: str, replacements: dict[str, str]) -> str:
+def replace_many(content: str, replacements: dict[str, str]) -> str:
     """Find and replace several key-values, and throw and error if the substring is not found."""
     for key, value in replacements.items():
         if key not in content:
