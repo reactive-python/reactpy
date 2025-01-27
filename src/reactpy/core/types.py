@@ -277,8 +277,9 @@ class Location:
     ``document.location`` object.
     """
 
-    pathname: str
-    """the path of the URL for the location"""
+    path: str
+    """The URL's path segment. This typically represents the current
+    HTTP request's path."""
 
     query_string: str
     """HTTP query string - a '?' followed by the parameters of the URL.

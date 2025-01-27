@@ -124,7 +124,7 @@ async def test_use_location(display: DisplayFixture):
         Location("/another/something/file.txt", "?key=value"),
         Location("/another/something/file.txt", "?key1=value1&key2=value2"),
     ]:
-        await display.goto(loc.pathname + loc.query_string)
+        await display.goto(loc.path + loc.query_string)
         await poll_location.until_equals(loc)
 
 

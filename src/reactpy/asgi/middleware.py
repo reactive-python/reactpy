@@ -172,7 +172,7 @@ class ComponentDispatchApp:
             connection = Connection(
                 scope=scope,
                 location=Location(
-                    pathname=ws_query_string.get("http_pathname", [""])[0],
+                    path=ws_query_string.get("http_pathname", [""])[0],
                     query_string=ws_query_string.get("http_search", [""])[0],
                 ),
                 carrier=self,
