@@ -102,7 +102,10 @@ class ReactPyApp:
             )
 
         # Browser already has the content cached
-        if request_headers.get(b"if-none-match") == self._etag.encode():
+        if (
+            request_headers.get(b"if-none-match") == self._etag.encode()
+            or request_headers.get(b"if-modified-since") == self._last_modified.encode()
+        ):
             response_headers.pop("content-length")
             return await http_response(
                 send=send,
