@@ -57,8 +57,6 @@ class ReactPyApp:
     _cached_index_html = ""
     _etag = ""
     _last_modified = ""
-    _templates_dir = Path(__file__).parent.parent / "templates"
-    _index_html_path = _templates_dir / "index.html"
 
     async def __call__(
         self,
