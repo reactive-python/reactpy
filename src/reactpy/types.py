@@ -4,11 +4,11 @@
 - :mod:`reactpy.backend.types`
 """
 
-from reactpy.backend.types import Connection, Location
 from reactpy.core.component import Component
 from reactpy.core.types import (
     ComponentConstructor,
     ComponentType,
+    Connection,
     Context,
     EventHandlerDict,
     EventHandlerFunc,
@@ -17,6 +17,7 @@ from reactpy.core.types import (
     ImportSourceDict,
     Key,
     LayoutType,
+    Location,
     RootComponentConstructor,
     State,
     VdomAttributes,

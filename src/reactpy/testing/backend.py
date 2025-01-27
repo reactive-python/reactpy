@@ -7,9 +7,8 @@ from types import TracebackType
 from typing import Any, Callable
 from urllib.parse import urlencode, urlunparse
 
-from reactpy.backend import default as default_server
-from reactpy.backend.types import BackendType
-from reactpy.backend.utils import find_available_port
+from reactpy.asgi import default as default_server
+from reactpy.asgi.utils import find_available_port
 from reactpy.config import REACTPY_TESTING_DEFAULT_TIMEOUT
 from reactpy.core.component import component
 from reactpy.core.hooks import use_callback, use_effect, use_state
@@ -19,6 +18,7 @@ from reactpy.testing.logs import (
     capture_reactpy_logs,
     list_logged_exceptions,
 )
+from reactpy.types import BackendType
 from reactpy.utils import Ref
 
 

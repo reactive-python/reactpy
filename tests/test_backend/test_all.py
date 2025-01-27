@@ -4,11 +4,11 @@ import pytest
 
 import reactpy
 from reactpy import html
-from reactpy.backend import default as default_implementation
-from reactpy.backend._common import PATH_PREFIX
-from reactpy.backend.types import BackendType, Connection, Location
-from reactpy.backend.utils import all_implementations
+from reactpy.asgi import default as default_implementation
+from reactpy.asgi._common import PATH_PREFIX
+from reactpy.asgi.utils import all_implementations
 from reactpy.testing import BackendFixture, DisplayFixture, poll
+from reactpy.types import BackendType, Connection, Location
 
 
 @pytest.fixture(

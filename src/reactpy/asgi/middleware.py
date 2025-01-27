@@ -14,13 +14,12 @@ import orjson
 from asgiref.compatibility import guarantee_single_callable
 from servestatic import ServeStaticASGI
 
-from reactpy.backend.types import Connection, Location
-from reactpy.backend.utils import check_path, import_components
+from reactpy.asgi.utils import check_path, import_components
 from reactpy.config import REACTPY_WEB_MODULES_DIR
 from reactpy.core.hooks import ConnectionContext
 from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
-from reactpy.types import RootComponentConstructor
+from reactpy.types import Connection, Location, RootComponentConstructor
 
 _logger = logging.getLogger(__name__)
 

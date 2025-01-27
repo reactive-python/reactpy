@@ -9,8 +9,8 @@ from pathlib import Path
 from typing import Any, Callable
 
 from reactpy import html
-from reactpy.backend.middleware import ReactPyMiddleware
-from reactpy.backend.utils import (
+from reactpy.asgi.middleware import ReactPyMiddleware
+from reactpy.asgi.utils import (
     dict_to_byte_list,
     http_response,
     replace_many,

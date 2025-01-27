@@ -1,4 +1,4 @@
-from reactpy import backend, config, logging, types, web, widgets
+from reactpy import asgi, config, logging, types, web, widgets
 from reactpy._html import html
 from reactpy.core import hooks
 from reactpy.core.component import component
@@ -27,7 +27,7 @@ __version__ = "1.1.0"
 __all__ = [
     "Layout",
     "Ref",
-    "backend",
+    "asgi",
     "component",
     "config",
     "create_context",

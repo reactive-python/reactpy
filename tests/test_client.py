@@ -5,7 +5,7 @@ from pathlib import Path
 from playwright.async_api import Browser
 
 import reactpy
-from reactpy.backend.utils import find_available_port
+from reactpy.asgi.utils import find_available_port
 from reactpy.testing import BackendFixture, DisplayFixture, poll
 from tests.tooling.common import DEFAULT_TYPE_DELAY
 from tests.tooling.hooks import use_counter

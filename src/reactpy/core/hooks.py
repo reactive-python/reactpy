@@ -18,10 +18,10 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
-from reactpy.backend.types import Connection, Location
 from reactpy.config import REACTPY_DEBUG_MODE
 from reactpy.core._life_cycle_hook import current_hook
 from reactpy.core.types import Context, Key, State, VdomDict
+from reactpy.types import Connection, Location
 from reactpy.utils import Ref
 
 if not TYPE_CHECKING:
@@ -264,12 +264,12 @@ def use_connection() -> Connection[Any]:
 
 
 def use_scope() -> MutableMapping[str, Any]:
-    """Get the current :class:`~reactpy.backend.types.Connection`'s scope."""
+    """Get the current :class:`~reactpy.types.Connection`'s scope."""
     return use_connection().scope
 
 
 def use_location() -> Location:
-    """Get the current :class:`~reactpy.backend.types.Connection`'s location."""
+    """Get the current :class:`~reactpy.types.Connection`'s location."""
     return use_connection().location
 
 

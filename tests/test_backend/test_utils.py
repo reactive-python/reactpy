@@ -5,9 +5,9 @@ from contextlib import ExitStack
 import pytest
 from playwright.async_api import Page
 
-from reactpy.backend import flask as flask_implementation
-from reactpy.backend.utils import find_available_port
-from reactpy.backend.utils import run as sync_run
+from reactpy.asgi import flask as flask_implementation
+from reactpy.asgi.utils import find_available_port
+from reactpy.asgi.utils import run as sync_run
 from tests.sample import SampleApp
 
 

@@ -1,15 +1,24 @@
 import urllib.parse
+from importlib import import_module
 from typing import ClassVar
 from uuid import uuid4
 
 from jinja2_simple_tags import StandaloneTag
 
+try:
+    import_module("jinja2")
+except ImportError as e:
+    raise ImportError(
+        "The Jinja2 library is required to use the ReactPy template tag. "
+        "Please install it via `pip install reactpy[jinja]`."
+    ) from e
 
-class ComponentTag(StandaloneTag):
+
+class ReactPyTemplateTag(StandaloneTag):
     """This allows enables a `component` tag to be used in any Jinja2 rendering context."""
 
     safe_output = True
-    tags: ClassVar[set[str]] = {"reactpy_component"}
+    tags: ClassVar[set[str]] = {"component"}
 
     def render(self, dotted_path: str, *args, **kwargs):
         uuid = uuid4().hex

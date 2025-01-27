@@ -4,7 +4,7 @@ import pytest
 from sanic import Sanic
 
 import reactpy
-from reactpy.backend import sanic as sanic_implementation
+from reactpy.asgi import sanic as sanic_implementation
 from reactpy.testing import (
     BackendFixture,
     DisplayFixture,

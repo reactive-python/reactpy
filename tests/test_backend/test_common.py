@@ -1,7 +1,7 @@
 import pytest
 
 from reactpy import html
-from reactpy.backend._common import (
+from reactpy.asgi._common import (
     CommonOptions,
     traversal_safe_path,
     vdom_head_elements_to_html,
