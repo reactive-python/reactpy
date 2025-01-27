@@ -46,15 +46,6 @@ def check_path(url_path: str) -> str:
     return ""
 
 
-def replace_many(content: str, replacements: dict[str, str]) -> str:
-    """Find and replace several key-values, and throw and error if the substring is not found."""
-    for key, value in replacements.items():
-        if key not in content:
-            raise ValueError(f"Could not find {key} in content")
-        content = content.replace(key, value)
-    return content
-
-
 def dict_to_byte_list(
     data: dict[str, str | int],
 ) -> list[tuple[bytes, bytes]]:

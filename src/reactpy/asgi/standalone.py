@@ -1,8 +1,8 @@
 import hashlib
-import os
 import re
 from collections.abc import Coroutine
 from dataclasses import dataclass
+from datetime import datetime
 from email.utils import formatdate
 from logging import getLogger
 from pathlib import Path
@@ -12,13 +12,9 @@ from typing_extensions import Unpack
 
 from reactpy import html
 from reactpy.asgi.middleware import ReactPyMiddleware
-from reactpy.asgi.utils import (
-    dict_to_byte_list,
-    http_response,
-    replace_many,
-    vdom_head_to_html,
-)
+from reactpy.asgi.utils import dict_to_byte_list, http_response, vdom_head_to_html
 from reactpy.types import ReactPyConfig, RootComponentConstructor, VdomDict
+from reactpy.utils import render_reactpy_template
 
 _logger = getLogger(__name__)
 
@@ -129,24 +125,16 @@ class ReactPyApp:
 
     def process_index_html(self) -> None:
         """Process the index.html and store the results in memory."""
-        with open(self._index_html_path, encoding="utf-8") as file_handle:
-            cached_index_html = file_handle.read()
-
-        self._cached_index_html = replace_many(
-            cached_index_html,
-            {
-                'from "index.ts"': f'from "{self.parent.static_path}index.js"',
-                '<html lang="en">': f'<html lang="{self.parent.html_lang}">',
-                "<head></head>": vdom_head_to_html(self.parent.html_head),
-                "{path_prefix}": self.parent.path_prefix,
-                "{reconnect_interval}": "750",
-                "{reconnect_max_interval}": "60000",
-                "{reconnect_max_retries}": "150",
-                "{reconnect_backoff_multiplier}": "1.25",
-            },
+        self._cached_index_html = (
+            "<!doctype html>"
+            f'<html lang="{self.parent.html_lang}">'
+            f"{vdom_head_to_html(self.parent.html_head)}"
+            "<body>"
+            f'<div id="app"></div>'
+            f"{render_reactpy_template('app', '', '')}"
+            "</body>"
+            "</html>"
         )
 
         self._etag = f'"{hashlib.md5(self._cached_index_html.encode(), usedforsecurity=False).hexdigest()}"'
-        self._last_modified = formatdate(
-            os.stat(self._index_html_path).st_mtime, usegmt=True
-        )
+        self._last_modified = formatdate(datetime.now().timestamp(), usegmt=True)
