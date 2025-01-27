@@ -26,21 +26,9 @@ def import_dotted_path(dotted_path: str) -> Any:
 
 def import_components(dotted_paths: Iterable[str]) -> dict[str, Any]:
     """Imports a list of dotted paths and returns the callables."""
-    results = {
+    return {
         dotted_path: import_dotted_path(dotted_path) for dotted_path in dotted_paths
     }
-
-    # Check that all imports are components
-    for dotted_path, component in results.items():
-        errors: list[str] = []
-        if not isinstance(component, ComponentType):
-            errors.append(
-                f"Expected ComponentType, got {type(component)} for {dotted_path}"
-            )
-        if errors:
-            raise RuntimeError(". ".join(errors))
-
-    return results
 
 
 def check_path(url_path: str) -> str:
