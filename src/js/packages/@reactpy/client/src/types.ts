@@ -24,7 +24,6 @@ export type CreateReconnectingWebSocketProps = {
 export type ReactPyUrls = {
   componentUrl: URL;
   jsModulesPath: string;
-  queryString: string;
 };
 
 export type GenericReactPyClientProps = {

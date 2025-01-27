@@ -20,7 +20,6 @@ export function mountReactPy(props: MountProps) {
     urls: {
       componentUrl: componentUrl,
       jsModulesPath: `${window.location.origin}${props.pathPrefix}modules/`,
-      queryString: document.location.search,
     },
     reconnectOptions: {
       interval: props.reconnectInterval || 750,
