@@ -38,7 +38,14 @@ class ReactPyMiddleware:
         **settings: Unpack[ReactPyConfig],
     ) -> None:
         """Configure the ASGI app. Anything initialized in this method will be shared across all future requests.
-        TODO: Add types in docstring"""
+
+        Parameters:
+            app: The ASGI application to serve when the request does not match a ReactPy route.
+            root_components:
+                A list, set, or tuple containing the dotted path of your root components. This dotted path
+                must be valid to Python's import system.
+            settings: Global ReactPy configuration settings that affect behavior and performance.
+        """
         # Process global settings
         process_settings(settings)
 

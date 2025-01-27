@@ -35,7 +35,15 @@ class ReactPy(ReactPyMiddleware):
         html_lang: str = "en",
         **settings: Unpack[ReactPyConfig],
     ) -> None:
-        """TODO: Add docstring"""
+        """ReactPy's standalone ASGI application.
+
+        Parameters:
+            root_component: The root component to render. This component is assumed to be a single page application.
+            http_headers: Additional headers to include in the HTTP response for the base HTML document.
+            html_head: Additional head elements to include in the HTML response.
+            html_lang: The language of the HTML document.
+            settings: Global ReactPy configuration settings that affect behavior and performance.
+        """
         super().__init__(app=ReactPyApp(self), root_components=[], **settings)
         self.root_component = root_component
         self.extra_headers = http_headers or {}
