@@ -4,7 +4,7 @@ import hashlib
 import re
 from collections.abc import Coroutine
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from email.utils import formatdate
 from logging import getLogger
 from typing import Any, Callable
@@ -139,4 +139,6 @@ class ReactPyApp:
         )
 
         self._etag = f'"{hashlib.md5(self._cached_index_html.encode(), usedforsecurity=False).hexdigest()}"'
-        self._last_modified = formatdate(datetime.now().timestamp(), usegmt=True)
+        self._last_modified = formatdate(
+            datetime.now(tz=timezone.utc).timestamp(), usegmt=True
+        )
