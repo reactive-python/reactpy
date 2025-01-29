@@ -180,7 +180,7 @@ class ComponentDispatchApp:
                 scope=scope,
                 location=Location(
                     path=ws_query_string.get("http_pathname", [""])[0],
-                    query_string=ws_query_string.get("http_search", [""])[0],
+                    query_string=ws_query_string.get("http_query_string", [""])[0],
                 ),
                 carrier=self,
             )
