@@ -4,34 +4,15 @@ import pytest
 
 import reactpy
 from reactpy import html
-from reactpy.asgi import default as default_implementation
-from reactpy.asgi._common import PATH_PREFIX
-from reactpy.asgi.utils import all_implementations
+from reactpy.asgi.standalone import ReactPy
 from reactpy.testing import BackendFixture, DisplayFixture, poll
-from reactpy.types import BackendType, Connection, Location
+from reactpy.types import Connection, Location
 
 
-@pytest.fixture(
-    params=[*list(all_implementations()), default_implementation],
-    ids=lambda imp: imp.__name__,
-)
+@pytest.fixture()
 async def display(page, request):
-    imp: BackendType = request.param
-
-    # we do this to check that route priorities for each backend are correct
-    if imp is default_implementation:
-        url_prefix = ""
-        opts = None
-    else:
-        url_prefix = str(PATH_PREFIX)
-        opts = imp.Options(url_prefix=url_prefix)
-
-    async with BackendFixture(implementation=imp, options=opts) as server:
-        async with DisplayFixture(
-            backend=server,
-            driver=page,
-            url_prefix=url_prefix,
-        ) as display:
+    async with BackendFixture() as server:
+        async with DisplayFixture(backend=server, driver=page) as display:
             yield display
 
 
@@ -128,17 +109,12 @@ async def test_use_location(display: DisplayFixture):
         await poll_location.until_equals(loc)
 
 
-@pytest.mark.parametrize("hook_name", ["use_request", "use_websocket"])
-async def test_use_request(display: DisplayFixture, hook_name):
-    hook = getattr(display.backend.implementation, hook_name, None)
-    if hook is None:
-        pytest.skip(f"{display.backend.implementation} has no '{hook_name}' hook")
-
+async def test_carrier(display: DisplayFixture):
     hook_val = reactpy.Ref()
 
     @reactpy.component
     def ShowRoute():
-        hook_val.current = hook()
+        hook_val.current = reactpy.hooks.use_connection().carrier
         return html.pre({"id": "hook"}, str(hook_val.current))
 
     await display.show(ShowRoute)
@@ -149,18 +125,16 @@ async def test_use_request(display: DisplayFixture, hook_name):
     assert hook_val.current is not None
 
 
-@pytest.mark.parametrize("imp", all_implementations())
-async def test_customized_head(imp: BackendType, page):
-    custom_title = f"Custom Title for {imp.__name__}"
+async def test_customized_head(page):
+    custom_title = "Custom Title for ReactPy"
 
     @reactpy.component
     def sample():
         return html.h1(f"^ Page title is customized to: '{custom_title}'")
 
-    async with BackendFixture(
-        implementation=imp,
-        options=imp.Options(head=html.title(custom_title)),
-    ) as server:
-        async with DisplayFixture(backend=server, driver=page) as display:
-            await display.show(sample)
-            assert (await display.page.title()) == custom_title
+    app = ReactPy(sample, html_head=html.head(html.title(custom_title)))
+
+    async with BackendFixture(app) as server:
+        async with DisplayFixture(backend=server, driver=page) as new_display:
+            await new_display.show(sample)
+            assert (await new_display.page.title()) == custom_title
