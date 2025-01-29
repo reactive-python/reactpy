@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import re
 from collections.abc import Coroutine
@@ -5,7 +7,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from email.utils import formatdate
 from logging import getLogger
-from pathlib import Path
 from typing import Any, Callable
 
 from typing_extensions import Unpack

@@ -46,7 +46,7 @@ async def test_script_from_src(display: DisplayFixture):
                 html.div({"id": "run-count", "data_value": 0}),
                 html.script(
                     {
-                        "src": f"/_reactpy/modules/{file_name_template.format(src_id=src_id)}"
+                        "src": f"/reactpy/modules/{file_name_template.format(src_id=src_id)}"
                     }
                 ),
             )

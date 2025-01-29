@@ -78,6 +78,6 @@ export class ReactPyClient
   }
 
   loadModule(moduleName: string): Promise<ReactPyModule> {
-    return import(`${this.urls.jsModulesPath}/${moduleName}`);
+    return import(`${this.urls.jsModulesPath}${moduleName}`);
   }
 }

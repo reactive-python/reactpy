@@ -20,14 +20,22 @@ from reactpy.testing import (
 )
 
 REACTPY_ASYNC_RENDERING.current = True
+GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "False") in {
+    "y",
+    "yes",
+    "t",
+    "true",
+    "on",
+    "1",
+}
 
 
 def pytest_addoption(parser: Parser) -> None:
     parser.addoption(
-        "--headed",
-        dest="headed",
+        "--headless",
+        dest="headless",
         action="store_true",
-        help="Open a browser window when running web-based tests",
+        help="Don't open a browser window when running web-based tests",
     )
 
 
@@ -37,8 +45,8 @@ def install_playwright():
 
 
 @pytest.fixture(autouse=True, scope="session")
-def rebuild_javascript():
-    subprocess.run(["hatch", "run", "javascript:build"], check=True)  # noqa: S607, S603
+def rebuild():
+    subprocess.run(["hatch", "build", "-t", "wheel"], check=True)  # noqa: S607, S603
 
 
 @pytest.fixture
@@ -68,7 +76,9 @@ async def browser(pytestconfig: Config):
     from playwright.async_api import async_playwright
 
     async with async_playwright() as pw:
-        yield await pw.chromium.launch(headless=not bool(pytestconfig.option.headed))
+        yield await pw.chromium.launch(
+            headless=bool(pytestconfig.option.headless) or GITHUB_ACTIONS
+        )
 
 
 @pytest.fixture(scope="session")

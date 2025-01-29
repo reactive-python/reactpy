@@ -37,6 +37,7 @@ dependencies = [
   "asgiref >=3",
   "lxml >=4",
   "servestatic >=3.0.0",
+  "orjson >=3",
 ]
 dynamic = ["version"]
 urls.Changelog = "https://reactpy.dev/docs/about/changelog.html"
@@ -94,6 +95,9 @@ extra-dependencies = [
   "playwright",
   "jsonpointer",
   "uvicorn[standard]",
+  "jinja2-simple-tags",
+  "jinja2 >=3",
+  "starlette",
 ]
 
 [[tool.hatch.envs.hatch-test.matrix]]
@@ -101,18 +105,17 @@ python = ["3.9", "3.10", "3.11", "3.12"]
 
 [tool.pytest.ini_options]
 addopts = """\
-    --strict-config
-    --strict-markers
-    """
+  --strict-config
+  --strict-markers
+"""
+filterwarnings = """
+  ignore::DeprecationWarning:uvicorn.*
+  ignore::DeprecationWarning:websockets.*
+"""
 testpaths = "tests"
 xfail_strict = true
 asyncio_mode = "auto"
 log_cli_level = "INFO"
-
-[tool.hatch.envs.default.scripts]
-test-cov = "playwright install && coverage run -m pytest {args:tests}"
-cov-report = ["coverage report"]
-cov = ["test-cov {args}", "cov-report"]
 
 [tool.hatch.envs.default.env-vars]
 REACTPY_DEBUG_MODE = "1"
