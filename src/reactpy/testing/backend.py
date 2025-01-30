@@ -111,6 +111,9 @@ class BackendFixture:
         self._records = self._exit_stack.enter_context(capture_reactpy_logs())
         Thread(target=self.webserver.run, daemon=True).start()
 
+        # Wait for the server to start
+        await asyncio.sleep(1)
+
         return self
 
     async def __aexit__(
