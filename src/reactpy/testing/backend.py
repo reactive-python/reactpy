@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Coroutine
 from contextlib import AsyncExitStack
 from threading import Thread
 from types import TracebackType
@@ -10,6 +9,7 @@ from typing import Any, Callable
 from urllib.parse import urlencode, urlunparse
 
 import uvicorn
+from asgiref import typing as asgi_types
 
 from reactpy.asgi.standalone import ReactPy
 from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
@@ -43,7 +43,7 @@ class BackendFixture:
 
     def __init__(
         self,
-        app: Callable[..., Coroutine] | None = None,
+        app: asgi_types.ASGIApplication | None = None,
         host: str = "127.0.0.1",
         port: int | None = None,
         timeout: float | None = None,

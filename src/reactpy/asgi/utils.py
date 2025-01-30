@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Coroutine, Iterable, Sequence
+from collections.abc import Iterable
 from importlib import import_module
-from typing import Any, Callable
+from typing import Any
+
+from asgiref import typing as asgi_types
 
 from reactpy._option import Option
 from reactpy.types import ReactPyConfig, VdomDict
@@ -69,15 +71,24 @@ def vdom_head_to_html(head: VdomDict) -> str:
 
 async def http_response(
     *,
-    send: Callable[[dict[str, Any]], Coroutine],
+    send: asgi_types.ASGISendCallable,
     method: str,
     code: int = 200,
     message: str = "",
-    headers: Sequence = (),
+    headers: Iterable[tuple[bytes, bytes]] = (),
 ) -> None:
     """Sends a HTTP response using the ASGI `send` API."""
-    start_msg = {"type": "http.response.start", "status": code, "headers": [*headers]}
-    body_msg: dict[str, str | bytes] = {"type": "http.response.body"}
+    start_msg: asgi_types.HTTPResponseStartEvent = {
+        "type": "http.response.start",
+        "status": code,
+        "headers": [*headers],
+        "trailers": False,
+    }
+    body_msg: asgi_types.HTTPResponseBodyEvent = {
+        "type": "http.response.body",
+        "body": b"",
+        "more_body": False,
+    }
 
     # Add the content type and body to everything other than a HEAD request
     if method != "HEAD":
@@ -87,14 +98,14 @@ async def http_response(
     await send(body_msg)
 
 
-def process_settings(settings: ReactPyConfig):
+def process_settings(settings: ReactPyConfig) -> None:
     """Process the settings and return the final configuration."""
     from reactpy import config
 
     for setting in settings:
         config_name = f"REACTPY_{setting.upper()}"
-        config_object: Option | None = getattr(config, config_name, None)
+        config_object: Option[Any] | None = getattr(config, config_name, None)
         if config_object:
-            config_object.set_current(settings[setting])
+            config_object.set_current(settings[setting])  # type: ignore
         else:
             raise ValueError(f"Unknown ReactPy setting {setting!r}.")

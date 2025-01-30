@@ -5,12 +5,13 @@ import logging
 import re
 import traceback
 import urllib.parse
-from collections.abc import Coroutine, Iterable
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import orjson
+from asgiref import typing as asgi_types
 from asgiref.compatibility import guarantee_single_callable
 from servestatic import ServeStaticASGI
 from typing_extensions import Unpack
@@ -33,7 +34,7 @@ class ReactPyMiddleware:
 
     def __init__(
         self,
-        app: Callable[..., Coroutine],
+        app: asgi_types.ASGIApplication,
         root_components: Iterable[str],
         **settings: Unpack[ReactPyConfig],
     ) -> None:
@@ -61,7 +62,7 @@ class ReactPyMiddleware:
         self.static_pattern = re.compile(f"^{self.static_path}.*")
 
         # Component attributes
-        self.user_app = guarantee_single_callable(app)
+        self.user_app: asgi_types.ASGI3Application = guarantee_single_callable(app)  # type: ignore
         self.root_components = import_components(root_components)
 
         # Directory attributes
@@ -84,9 +85,9 @@ class ReactPyMiddleware:
 
     async def __call__(
         self,
-        scope: dict[str, Any],
-        receive: Callable[..., Coroutine],
-        send: Callable[..., Coroutine],
+        scope: asgi_types.Scope,
+        receive: asgi_types.ASGIReceiveCallable,
+        send: asgi_types.ASGISendCallable,
     ) -> None:
         """The ASGI entrypoint that determines whether ReactPy should route the
         request to ourselves or to the user application."""
@@ -105,13 +106,13 @@ class ReactPyMiddleware:
         # Serve the user's application
         await self.user_app(scope, receive, send)
 
-    def match_dispatch_path(self, scope: dict) -> bool:
+    def match_dispatch_path(self, scope: asgi_types.WebSocketScope) -> bool:
         return bool(re.match(self.dispatcher_pattern, scope["path"]))
 
-    def match_static_path(self, scope: dict) -> bool:
+    def match_static_path(self, scope: asgi_types.HTTPScope) -> bool:
         return bool(re.match(self.static_pattern, scope["path"]))
 
-    def match_web_modules_path(self, scope: dict) -> bool:
+    def match_web_modules_path(self, scope: asgi_types.HTTPScope) -> bool:
         return bool(re.match(self.js_modules_pattern, scope["path"]))
 
 
@@ -121,19 +122,21 @@ class ComponentDispatchApp:
 
     async def __call__(
         self,
-        scope: dict[str, Any],
-        receive: Callable[..., Coroutine],
-        send: Callable[..., Coroutine],
+        scope: asgi_types.WebSocketScope,
+        receive: asgi_types.ASGIReceiveCallable,
+        send: asgi_types.ASGISendCallable,
     ) -> None:
         """ASGI app for rendering ReactPy Python components."""
-        dispatcher: asyncio.Task | None = None
-        recv_queue: asyncio.Queue = asyncio.Queue()
+        dispatcher: asyncio.Task[Any] | None = None
+        recv_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
 
         # Start a loop that handles ASGI websocket events
         while True:
             event = await receive()
             if event["type"] == "websocket.connect":
-                await send({"type": "websocket.accept"})
+                await send(
+                    {"type": "websocket.accept", "subprotocol": None, "headers": []}
+                )
                 dispatcher = asyncio.create_task(
                     self.run_dispatcher(scope, receive, send, recv_queue)
                 )
@@ -143,16 +146,16 @@ class ComponentDispatchApp:
                     dispatcher.cancel()
                 break
 
-            elif event["type"] == "websocket.receive":
+            elif event["type"] == "websocket.receive" and event["text"]:
                 queue_put_func = recv_queue.put(orjson.loads(event["text"]))
                 await queue_put_func
 
     async def run_dispatcher(
         self,
-        scope: dict[str, Any],
-        receive: Callable[..., Coroutine],
-        send: Callable[..., Coroutine],
-        recv_queue: asyncio.Queue,
+        scope: asgi_types.WebSocketScope,
+        receive: asgi_types.ASGIReceiveCallable,
+        send: asgi_types.ASGISendCallable,
+        recv_queue: asyncio.Queue[dict[str, Any]],
     ) -> None:
         """Asyncio background task that renders and transmits layout updates of ReactPy components."""
         try:
@@ -187,11 +190,15 @@ class ComponentDispatchApp:
 
             # Start the ReactPy component rendering loop
             await serve_layout(
-                Layout(ConnectionContext(component(), value=connection)),  # type: ignore
+                Layout(ConnectionContext(component(), value=connection)),
                 lambda msg: send(
-                    {"type": "websocket.send", "text": orjson.dumps(msg).decode()}
+                    {
+                        "type": "websocket.send",
+                        "text": orjson.dumps(msg).decode(),
+                        "bytes": None,
+                    }
                 ),
-                recv_queue.get,
+                recv_queue.get,  # type: ignore
             )
 
         # Manually log exceptions since this function is running in a separate asyncio task.
@@ -206,9 +213,9 @@ class StaticFileApp:
 
     async def __call__(
         self,
-        scope: dict[str, Any],
-        receive: Callable[..., Coroutine],
-        send: Callable[..., Coroutine],
+        scope: asgi_types.HTTPScope,
+        receive: asgi_types.ASGIReceiveCallable,
+        send: asgi_types.ASGISendCallable,
     ) -> None:
         """ASGI app for ReactPy static files."""
         if not self._static_file_server:
@@ -218,7 +225,7 @@ class StaticFileApp:
                 prefix=self.parent.static_path,
             )
 
-        return await self._static_file_server(scope, receive, send)
+        await self._static_file_server(scope, receive, send)
 
 
 @dataclass
@@ -228,9 +235,9 @@ class WebModuleApp:
 
     async def __call__(
         self,
-        scope: dict[str, Any],
-        receive: Callable[..., Coroutine],
-        send: Callable[..., Coroutine],
+        scope: asgi_types.HTTPScope,
+        receive: asgi_types.ASGIReceiveCallable,
+        send: asgi_types.ASGISendCallable,
     ) -> None:
         """ASGI app for ReactPy web modules."""
         if not self._static_file_server:
@@ -241,4 +248,4 @@ class WebModuleApp:
                 autorefresh=True,
             )
 
-        return await self._static_file_server(scope, receive, send)
+        await self._static_file_server(scope, receive, send)

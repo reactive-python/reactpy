@@ -7,12 +7,17 @@ export function mountReactPy(props: MountProps) {
   // WebSocket route for component rendering
   const wsProtocol = `ws${window.location.protocol === "https:" ? "s" : ""}:`;
   const wsOrigin = `${wsProtocol}//${window.location.host}`;
-  const componentUrl = new URL(`${wsOrigin}${props.pathPrefix}${props.appendComponentPath || ""}`);
+  const componentUrl = new URL(
+    `${wsOrigin}${props.pathPrefix}${props.appendComponentPath || ""}`,
+  );
 
   // Embed the initial HTTP path into the WebSocket URL
   componentUrl.searchParams.append("http_pathname", window.location.pathname);
   if (window.location.search) {
-    componentUrl.searchParams.append("http_query_string", window.location.search);
+    componentUrl.searchParams.append(
+      "http_query_string",
+      window.location.search,
+    );
   }
 
   // Configure a new ReactPy client

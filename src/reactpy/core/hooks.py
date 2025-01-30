@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-from collections.abc import Coroutine, MutableMapping, Sequence
+from collections.abc import Coroutine, Sequence
 from logging import getLogger
 from types import FunctionType
 from typing import (
@@ -16,6 +16,7 @@ from typing import (
     overload,
 )
 
+from asgiref import typing as asgi_types
 from typing_extensions import TypeAlias
 
 from reactpy.config import REACTPY_DEBUG
@@ -262,7 +263,7 @@ def use_connection() -> Connection[Any]:
     return conn
 
 
-def use_scope() -> MutableMapping[str, Any]:
+def use_scope() -> asgi_types.HTTPScope | asgi_types.WebSocketScope:
     """Get the current :class:`~reactpy.types.Connection`'s scope."""
     return use_connection().scope
 

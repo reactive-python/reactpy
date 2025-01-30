@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from collections import namedtuple
-from collections.abc import Mapping, MutableMapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
@@ -19,6 +19,7 @@ from typing import (
     runtime_checkable,
 )
 
+from asgiref import typing as asgi_types
 from typing_extensions import TypeAlias, TypedDict
 
 CarrierType = TypeVar("CarrierType")
@@ -253,8 +254,8 @@ class ContextProviderType(ComponentType, Protocol[_Type]):
 class Connection(Generic[CarrierType]):
     """Represents a connection with a client"""
 
-    scope: MutableMapping[str, Any]
-    """An ASGI scope dictionary"""
+    scope: asgi_types.HTTPScope | asgi_types.WebSocketScope
+    """A scope dictionary related to the current connection."""
 
     location: Location
     """The current location (URL)"""

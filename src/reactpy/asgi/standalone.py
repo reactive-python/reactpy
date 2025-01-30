@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import hashlib
 import re
-from collections.abc import Coroutine
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import formatdate
 from logging import getLogger
-from typing import Any, Callable
 
+from asgiref import typing as asgi_types
 from typing_extensions import Unpack
 
 from reactpy import html
@@ -61,9 +60,9 @@ class ReactPyApp:
 
     async def __call__(
         self,
-        scope: dict[str, Any],
-        receive: Callable[..., Coroutine],
-        send: Callable[..., Coroutine],
+        scope: asgi_types.Scope,
+        receive: asgi_types.ASGIReceiveCallable,
+        send: asgi_types.ASGISendCallable,
     ) -> None:
         if scope["type"] != "http":
             if scope["type"] != "lifespan":
@@ -121,7 +120,7 @@ class ReactPyApp:
             headers=dict_to_byte_list(response_headers),
         )
 
-    def match_dispatch_path(self, scope: dict) -> bool:
+    def match_dispatch_path(self, scope: asgi_types.WebSocketScope) -> bool:
         """Method override to remove `dotted_path` from the dispatcher URL."""
         return str(scope["path"]) == self.parent.dispatcher_path
 
