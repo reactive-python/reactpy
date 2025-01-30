@@ -60,7 +60,6 @@ class BackendFixture:
                 app=self._app, host=self.host, port=self.port, loop="asyncio"
             )
         )
-        self.webserver_thread: Thread
 
     @property
     def log_records(self) -> list[logging.LogRecord]:
@@ -112,8 +111,7 @@ class BackendFixture:
         self._records = self._exit_stack.enter_context(capture_reactpy_logs())
 
         # Wait for the server to start
-        self.webserver_thread: Thread = Thread(target=self.webserver.run, daemon=True)
-        self.webserver_thread.start()
+        Thread(target=self.webserver.run, daemon=True).start()
         await asyncio.sleep(1)
 
         return self
@@ -126,8 +124,6 @@ class BackendFixture:
     ) -> None:
         await self._exit_stack.aclose()
 
-        self.mount(None)  # reset the view
-
         logged_errors = self.list_logged_exceptions(del_log_records=False)
         if logged_errors:  # nocov
             msg = "Unexpected logged exception"
@@ -136,7 +132,6 @@ class BackendFixture:
         await asyncio.wait_for(
             self.webserver.shutdown(), timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
         )
-        self.webserver_thread.join(timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current)
 
     async def restart(self) -> None:
         """Restart the server"""

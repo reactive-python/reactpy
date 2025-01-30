@@ -46,7 +46,6 @@ async def test_automatic_reconnect(
     await incr.click()
 
     await server.restart()
-    await display.show(SomeComponent)
 
     await poll(get_count).until_equals("0")
     incr = await page.wait_for_selector("#incr")
