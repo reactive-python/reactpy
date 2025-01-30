@@ -60,6 +60,7 @@ class BackendFixture:
                 app=self._app, host=self.host, port=self.port, loop="asyncio"
             )
         )
+        self.webserver_thread: Thread
 
     @property
     def log_records(self) -> list[logging.LogRecord]:
@@ -109,9 +110,10 @@ class BackendFixture:
     async def __aenter__(self) -> BackendFixture:
         self._exit_stack = AsyncExitStack()
         self._records = self._exit_stack.enter_context(capture_reactpy_logs())
-        Thread(target=self.webserver.run, daemon=True).start()
 
         # Wait for the server to start
+        self.webserver_thread: Thread = Thread(target=self.webserver.run, daemon=True)
+        self.webserver_thread.start()
         await asyncio.sleep(1)
 
         return self
@@ -131,7 +133,15 @@ class BackendFixture:
             msg = "Unexpected logged exception"
             raise LogAssertionError(msg) from logged_errors[0]
 
-        await asyncio.wait_for(self.webserver.shutdown(), timeout=5)
+        await asyncio.wait_for(
+            self.webserver.shutdown(), timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+        )
+        self.webserver_thread.join(timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current)
+
+    async def restart(self) -> None:
+        """Restart the server"""
+        await self.__aexit__(None, None, None)
+        await self.__aenter__()
 
 
 _MountFunc = Callable[["Callable[[], Any] | None"], None]
