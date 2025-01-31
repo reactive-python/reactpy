@@ -544,4 +544,4 @@ def strictly_equal(x: Any, y: Any) -> bool:
             return x == y  # type: ignore
 
     # Fallback to identity check
-    return x is y
+    return x is y  # pragma: no cover

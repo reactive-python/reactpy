@@ -56,7 +56,7 @@ class ReactPyMiddleware:
         self.web_modules_path = f"{self.path_prefix}modules/"
         self.static_path = f"{self.path_prefix}static/"
         self.dispatcher_pattern = re.compile(
-            f"^{self.dispatcher_path}(?P<dotted_path>[^/]+)/?"
+            f"^{self.dispatcher_path}(?P<dotted_path>[a-zA-Z0-9_.]+)/$"
         )
         self.js_modules_pattern = re.compile(f"^{self.web_modules_path}.*")
         self.static_pattern = re.compile(f"^{self.static_path}.*")

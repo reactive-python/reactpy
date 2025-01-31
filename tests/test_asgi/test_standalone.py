@@ -1,11 +1,13 @@
 from collections.abc import MutableMapping
 
 import pytest
+from requests import request
 
 import reactpy
 from reactpy import html
 from reactpy.asgi.standalone import ReactPy
 from reactpy.testing import BackendFixture, DisplayFixture, poll
+from reactpy.testing.common import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.types import Connection, Location
 
 
@@ -138,3 +140,24 @@ async def test_customized_head(page):
         async with DisplayFixture(backend=server, driver=page) as new_display:
             await new_display.show(sample)
             assert (await new_display.page.title()) == custom_title
+
+
+async def test_head_request(page):
+    @reactpy.component
+    def sample():
+        return html.h1("Hello World")
+
+    app = ReactPy(sample)
+
+    async with BackendFixture(app) as server:
+        async with DisplayFixture(backend=server, driver=page) as new_display:
+            await new_display.show(sample)
+            url = f"http://{server.host}:{server.port}"
+            response = request(
+                "HEAD", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+            )
+            assert response.status_code == 200
+            assert response.headers["content-type"] == "text/html; charset=utf-8"
+            assert response.headers["cache-control"] == "max-age=60, public"
+            assert response.headers["access-control-allow-origin"] == "*"
+            assert response.content == b""

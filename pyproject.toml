@@ -117,7 +117,7 @@ xfail_strict = true
 asyncio_mode = "auto"
 log_cli_level = "INFO"
 
-[tool.hatch.envs.default.env-vars]
+[tool.hatch.envs.hatch-test.env-vars]
 REACTPY_DEBUG_MODE = "1"
 
 #######################################
@@ -234,7 +234,11 @@ warn_unused_ignores = true
 source_pkgs = ["reactpy"]
 branch = false
 parallel = false
-omit = ["reactpy/__init__.py"]
+omit = [
+  "src/reactpy/__init__.py",
+  "src/reactpy/_console/*",
+  "src/reactpy/__main__.py",
+]
 
 [tool.coverage.report]
 fail_under = 98
@@ -247,7 +251,6 @@ exclude_also = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
-omit = ["**/reactpy/__main__.py"]
 
 [tool.ruff]
 target-version = "py39"

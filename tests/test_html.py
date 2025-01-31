@@ -115,3 +115,27 @@ def test_simple_fragment():
 def test_fragment_can_have_no_attributes():
     with pytest.raises(TypeError, match="Fragments cannot have attributes"):
         html.fragment({"some_attribute": 1})
+
+
+async def test_svg(display: DisplayFixture):
+    @component
+    def SvgComponent():
+        return html.svg(
+            {"width": 100, "height": 100},
+            html.svg.circle(
+                {"cx": 50, "cy": 50, "r": 40, "fill": "red"},
+            ),
+            html.svg.circle(
+                {"cx": 50, "cy": 50, "r": 40, "fill": "red"},
+            ),
+        )
+
+    await display.show(SvgComponent)
+    svg = await display.page.wait_for_selector("svg", state="attached")
+    assert await svg.get_attribute("width") == "100"
+    assert await svg.get_attribute("height") == "100"
+    circle = await display.page.wait_for_selector("circle", state="attached")
+    assert await circle.get_attribute("cx") == "50"
+    assert await circle.get_attribute("cy") == "50"
+    assert await circle.get_attribute("r") == "40"
+    assert await circle.get_attribute("fill") == "red"

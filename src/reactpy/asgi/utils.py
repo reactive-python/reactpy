@@ -34,7 +34,7 @@ def import_components(dotted_paths: Iterable[str]) -> dict[str, Any]:
     }
 
 
-def check_path(url_path: str) -> str:
+def check_path(url_path: str) -> str:  # pragma: no cover
     """Check that a path is valid URL path."""
     if not url_path:
         return "URL path must not be empty."

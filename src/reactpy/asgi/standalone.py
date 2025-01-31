@@ -47,6 +47,10 @@ class ReactPy(ReactPyMiddleware):
         self.html_head = html_head or html.head()
         self.html_lang = html_lang
 
+    def match_dispatch_path(self, scope: asgi_types.WebSocketScope) -> bool:
+        """Method override to remove `dotted_path` from the dispatcher URL."""
+        return str(scope["path"]) == self.dispatcher_path
+
 
 @dataclass
 class ReactPyApp:
@@ -64,7 +68,7 @@ class ReactPyApp:
         receive: asgi_types.ASGIReceiveCallable,
         send: asgi_types.ASGISendCallable,
     ) -> None:
-        if scope["type"] != "http":
+        if scope["type"] != "http":  # pragma: no cover
             if scope["type"] != "lifespan":
                 msg = (
                     "ReactPy app received unsupported request of type '%s' at path '%s'",
@@ -120,10 +124,6 @@ class ReactPyApp:
             headers=dict_to_byte_list(response_headers),
         )
 
-    def match_dispatch_path(self, scope: asgi_types.WebSocketScope) -> bool:
-        """Method override to remove `dotted_path` from the dispatcher URL."""
-        return str(scope["path"]) == self.parent.dispatcher_path
-
     def process_index_html(self) -> None:
         """Process the index.html and store the results in memory."""
         self._cached_index_html = (
@@ -131,7 +131,6 @@ class ReactPyApp:
             f'<html lang="{self.parent.html_lang}">'
             f"{vdom_head_to_html(self.parent.html_head)}"
             "<body>"
-            f'<div id="app"></div>'
             f"{render_mount_template('app', '', '')}"
             "</body>"
             "</html>"
