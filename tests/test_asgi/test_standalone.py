@@ -12,7 +12,7 @@ from reactpy.types import Connection, Location
 
 
 @pytest.fixture()
-async def display(page, request):
+async def display(page):
     async with BackendFixture() as server:
         async with DisplayFixture(backend=server, driver=page) as display:
             yield display

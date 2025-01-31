@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 def import_dotted_path(dotted_path: str) -> Any:
     """Imports a dotted path and returns the callable."""
+    if "." not in dotted_path:
+        raise ValueError(f"{dotted_path!r} is not a valid dotted path.")
+
     module_name, component_name = dotted_path.rsplit(".", 1)
 
     try:

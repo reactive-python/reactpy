@@ -47,6 +47,18 @@ class ReactPyMiddleware:
                 must be valid to Python's import system.
             settings: Global ReactPy configuration settings that affect behavior and performance.
         """
+        # Validate the configuration
+        if "path_prefix" in settings:
+            reason = check_path(settings["path_prefix"])
+            if reason:
+                raise ValueError(
+                    f'Invalid `path_prefix` of "{settings["path_prefix"]}". {reason}'
+                )
+        if "web_modules_dir" in settings and not settings["web_modules_dir"].exists():
+            raise ValueError(
+                f'Web modules directory "{settings["web_modules_dir"]}" does not exist.'
+            )
+
         # Process global settings
         process_settings(settings)
 
@@ -68,15 +80,6 @@ class ReactPyMiddleware:
         # Directory attributes
         self.web_modules_dir = config.REACTPY_WEB_MODULES_DIR.current
         self.static_dir = Path(__file__).parent.parent / "static"
-
-        # Validate the configuration
-        reason = check_path(self.path_prefix)
-        if reason:
-            raise ValueError(f"Invalid `path_prefix`. {reason}")
-        if not self.web_modules_dir.exists():
-            raise ValueError(
-                f"Web modules directory {self.web_modules_dir} does not exist."
-            )
 
         # Initialize the sub-applications
         self.component_dispatch_app = ComponentDispatchApp(parent=self)
@@ -162,7 +165,7 @@ class ComponentDispatchApp:
             # Determine component to serve by analyzing the URL and/or class parameters.
             if self.parent.multiple_root_components:
                 url_match = re.match(self.parent.dispatcher_pattern, scope["path"])
-                if not url_match:
+                if not url_match:  # pragma: no cover
                     raise RuntimeError("Could not find component in URL path.")
                 dotted_path = url_match["dotted_path"]
                 if dotted_path not in self.parent.root_components:
@@ -172,7 +175,7 @@ class ComponentDispatchApp:
                 component = self.parent.root_components[dotted_path]
             elif self.parent.root_component:
                 component = self.parent.root_component
-            else:
+            else:  # pragma: no cover
                 raise RuntimeError("No root component provided.")
 
             # Create a connection object by analyzing the websocket's query string.
