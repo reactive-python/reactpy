@@ -27,7 +27,7 @@ jobs:
             job-name: "python-{0} {1}"
             run-cmd: "hatch test"
             runs-on: '["ubuntu-latest", "macos-latest", "windows-latest"]'
-            python-version: '["3.9", "3.10", "3.11"]'
+            python-version: '["3.10", "3.11", "3.12", "3.13"]'
     test-documentation:
         uses: ./.github/workflows/.hatch-run.yml
         with:

@@ -20,6 +20,7 @@ Unreleased
 - :pull:`1113` - Added ``reactpy.ReactPyMiddleware`` that can be used to run ReactPy with any ASGI compatible framework.
 - :pull:`1113` - Added ``reactpy.ReactPyMiddleware`` that can be used to run ReactPy with any ASGI compatible framework.
 - :pull:`1113` - Added ``uvicorn`` and ``jinja`` installation extras (for example ``pip install reactpy[uvicorn,jinja]``).
+- :pull:`1113` - Added support for Python 3.12 and 3.13.
 
 **Changed**
 
@@ -43,6 +44,7 @@ Unreleased
 - :pull:`1113` - Removed ``reactpy.core.types`` module. Use ``reactpy.types`` instead.
 - :pull:`1113` - All backend related installation extras (such as ``pip install reactpy[starlette]``) have been removed.
 - :pull:`1113` - Removed deprecated function ``module_from_template``.
+- :pull:`1113` - Removed support for Python 3.9.
 
 **Fixed**
 

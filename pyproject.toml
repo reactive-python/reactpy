@@ -101,7 +101,7 @@ extra-dependencies = [
 ]
 
 [[tool.hatch.envs.hatch-test.matrix]]
-python = ["3.9", "3.10", "3.11", "3.12"]
+python = ["3.10", "3.11", "3.12", "3.13"]
 
 [tool.pytest.ini_options]
 addopts = """\
@@ -111,10 +111,12 @@ addopts = """\
 filterwarnings = """
   ignore::DeprecationWarning:uvicorn.*
   ignore::DeprecationWarning:websockets.*
+  ignore::UserWarning:tests.test_core.test_vdom
 """
 testpaths = "tests"
 xfail_strict = true
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 log_cli_level = "INFO"
 
 #######################################
