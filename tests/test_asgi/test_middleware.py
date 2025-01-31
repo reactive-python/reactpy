@@ -1,5 +1,6 @@
 # ruff: noqa: S701
 import asyncio
+import os
 from pathlib import Path
 
 import pytest
@@ -77,11 +78,13 @@ async def test_unregistered_root_component():
         async with DisplayFixture(backend=server) as new_display:
             await new_display.show(Stub)
 
+            # Wait for the log record to be popualted
             for _ in range(10):
-                await asyncio.sleep(0.25)
                 if len(server.log_records) > 0:
                     break
+                await asyncio.sleep(0.25)
 
+            # Check that the log record was populated with the "unregistered component" message
             assert (
                 "Attempting to use an unregistered root component"
                 in server.log_records[-1].message
