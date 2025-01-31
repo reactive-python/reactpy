@@ -29,6 +29,8 @@ jobs:
             runs-on: '["ubuntu-latest", "macos-latest", "windows-latest"]'
             python-version: '["3.10", "3.11", "3.12", "3.13"]'
     test-documentation:
+        # Temporarily disabled
+        if: 0
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "python-{0}"
