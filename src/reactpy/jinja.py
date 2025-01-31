@@ -6,7 +6,7 @@ from jinja2_simple_tags import StandaloneTag
 from reactpy.utils import render_mount_template
 
 
-class ReactPyTemplateTag(StandaloneTag):  # type: ignore
+class Component(StandaloneTag):  # type: ignore
     """This allows enables a `component` tag to be used in any Jinja2 rendering context,
     as long as this template tag is registered as a Jinja2 extension."""
 

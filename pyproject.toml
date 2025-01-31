@@ -76,6 +76,7 @@ artifacts = []
 
 [project.optional-dependencies]
 all = ["reactpy[jinja,uvicorn,testing]"]
+standard = ["reactpy[jinja,uvicorn]"]
 jinja = ["jinja2-simple-tags", "jinja2 >=3"]
 uvicorn = ["uvicorn[standard]"]
 testing = ["playwright"]

@@ -1,6 +1,5 @@
 # ruff: noqa: S701
 import asyncio
-import os
 from pathlib import Path
 
 import pytest
@@ -20,7 +19,7 @@ async def display(page):
     templates = Jinja2Templates(
         env=JinjaEnvironment(
             loader=JinjaFileSystemLoader("tests/templates"),
-            extensions=["reactpy.jinja.ReactPyTemplateTag"],
+            extensions=["reactpy.jinja.Component"],
         )
     )
 
@@ -60,7 +59,7 @@ async def test_unregistered_root_component():
     templates = Jinja2Templates(
         env=JinjaEnvironment(
             loader=JinjaFileSystemLoader("tests/templates"),
-            extensions=["reactpy.jinja.ReactPyTemplateTag"],
+            extensions=["reactpy.jinja.Component"],
         )
     )
 

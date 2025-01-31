@@ -188,7 +188,7 @@ loaded with :func:`~reactpy.web.module.export`.
 
 .. note::
 
-    When :data:`reactpy.config.REACTPY_DEBUG_MODE` is active, named exports will be validated.
+    When :data:`reactpy.config.REACTPY_DEBUG` is active, named exports will be validated.
 
 The remaining files that we need to create are concerned with creating a Python package.
 We won't cover all the details here, so refer to the Setuptools_ documentation for
