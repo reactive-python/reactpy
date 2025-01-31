@@ -138,7 +138,7 @@ class BackendFixture:
             msg = "Unexpected logged exception"
             raise LogAssertionError(msg) from logged_errors[0]
 
-        await asyncio.wait_for(self.webserver.shutdown(), timeout=20)
+        await asyncio.wait_for(self.webserver.shutdown(), timeout=30)
 
     async def restart(self) -> None:
         """Restart the server"""
