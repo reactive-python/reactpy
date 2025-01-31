@@ -66,7 +66,7 @@ async def _single_outgoing_loop(
                 msg = (
                     "Failed to send update. More info may be available "
                     "if you enabling debug mode by setting "
-                    "`reactpy.config.REACTPY_DEBUG_MODE.current = True`."
+                    "`reactpy.config.REACTPY_DEBUG.current = True`."
                 )
                 logger.error(msg)
             raise

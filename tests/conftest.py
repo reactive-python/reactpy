@@ -10,6 +10,7 @@ from _pytest.config.argparsing import Parser
 
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
+    REACTPY_DEBUG,
     REACTPY_TESTS_DEFAULT_TIMEOUT,
 )
 from reactpy.testing import (
@@ -19,7 +20,8 @@ from reactpy.testing import (
     clear_reactpy_web_modules_dir,
 )
 
-REACTPY_ASYNC_RENDERING.current = True
+REACTPY_ASYNC_RENDERING.set_current(True)
+REACTPY_DEBUG.set_current(True)
 GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "False") in {
     "y",
     "yes",

@@ -117,9 +117,6 @@ xfail_strict = true
 asyncio_mode = "auto"
 log_cli_level = "INFO"
 
-[tool.hatch.envs.hatch-test.env-vars]
-REACTPY_DEBUG_MODE = "1"
-
 #######################################
 # >>> Hatch Documentation Scripts <<< #
 #######################################
@@ -241,7 +238,7 @@ omit = [
 ]
 
 [tool.coverage.report]
-fail_under = 98
+fail_under = 100
 show_missing = true
 skip_covered = true
 sort = "Name"

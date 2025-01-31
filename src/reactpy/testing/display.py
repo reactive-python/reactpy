@@ -67,7 +67,7 @@ class DisplayFixture:
 
         self.page.set_default_timeout(REACTPY_TESTS_DEFAULT_TIMEOUT.current * 1000)
 
-        if not hasattr(self, "backend"):
+        if not hasattr(self, "backend"):  # pragma: no cover
             self.backend = BackendFixture()
             await es.enter_async_context(self.backend)
 

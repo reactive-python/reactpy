@@ -33,6 +33,6 @@ RUN sphinx-build -v -W -b html source build
 # Define Entrypoint
 # -----------------
 ENV PORT=5000
-ENV REACTPY_DEBUG_MODE=1
+ENV REACTPY_DEBUG=1
 ENV REACTPY_CHECK_VDOM_SPEC=0
 CMD ["python", "main.py"]

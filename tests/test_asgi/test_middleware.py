@@ -1,3 +1,4 @@
+# ruff: noqa: S701
 from pathlib import Path
 
 import pytest

@@ -185,7 +185,7 @@ def use_debug_value(
     """Log debug information when the given message changes.
 
     .. note::
-        This hook only logs if :data:`~reactpy.config.REACTPY_DEBUG_MODE` is active.
+        This hook only logs if :data:`~reactpy.config.REACTPY_DEBUG` is active.
 
     Unlike other hooks, a message is considered to have changed if the old and new
     values are ``!=``. Because this comparison is performed on every render of the

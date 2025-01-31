@@ -11,7 +11,8 @@ from urllib.parse import urlencode, urlunparse
 import uvicorn
 from asgiref import typing as asgi_types
 
-from reactpy.asgi.standalone import ReactPy, ReactPyMiddleware
+from reactpy.asgi.middleware import ReactPyMiddleware
+from reactpy.asgi.standalone import ReactPy
 from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.core.component import component
 from reactpy.core.hooks import use_callback, use_effect, use_state

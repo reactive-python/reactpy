@@ -1,12 +1,10 @@
 import asyncio
-from contextlib import AsyncExitStack
 from pathlib import Path
 
 from playwright.async_api import Page
 
 import reactpy
 from reactpy.testing import BackendFixture, DisplayFixture, poll
-from reactpy.testing.utils import find_available_port
 from tests.tooling.common import DEFAULT_TYPE_DELAY
 from tests.tooling.hooks import use_counter
 
