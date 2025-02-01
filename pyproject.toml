@@ -194,6 +194,7 @@ test = [
 ]
 build = [
   'hatch run "src/build_scripts/clean_js_dir.py"',
+  'bun install --cwd "src/js"',
   'hatch run javascript:build_event_to_object',
   'hatch run javascript:build_client',
   'hatch run javascript:build_app',

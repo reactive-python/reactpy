@@ -1,8 +1,8 @@
 import click
 
 import reactpy
-from reactpy._console.rewrite_camel_case_props import rewrite_camel_case_props
 from reactpy._console.rewrite_keys import rewrite_keys
+from reactpy._console.rewrite_props import rewrite_props
 
 
 @click.group()
@@ -12,7 +12,7 @@ def app() -> None:
 
 
 app.add_command(rewrite_keys)
-app.add_command(rewrite_camel_case_props)
+app.add_command(rewrite_props)
 
 
 if __name__ == "__main__":

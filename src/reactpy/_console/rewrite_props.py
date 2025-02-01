@@ -20,8 +20,8 @@ CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
 
 @click.command()
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
-def rewrite_camel_case_props(paths: list[str]) -> None:
-    """Rewrite camelCase props to snake_case"""
+def rewrite_props(paths: list[str]) -> None:
+    """Rewrite snake_case to props to camelCase"""
 
     for p in map(Path, paths):
         for f in [p] if p.is_file() else p.rglob("*.py"):
@@ -50,8 +50,11 @@ def find_nodes_to_change(tree: ast.AST) -> list[ChangedNode]:
 
 
 def conv_attr_name(name: str) -> str:
-    new_name = CAMEL_CASE_SUB_PATTERN.sub("_", name).lower()
-    return f"{new_name}_" if new_name in kwlist else new_name
+    if name in kwlist:
+        return name
+    result = name.replace("_", " ").title().replace(" ", "")
+    result = name[0].lower() + name[1:]
+    return result
 
 
 def _construct_prop_item(key: str, value: ast.expr) -> tuple[str, ast.expr]:

@@ -4,9 +4,9 @@ from textwrap import dedent
 import pytest
 from click.testing import CliRunner
 
-from reactpy._console.rewrite_camel_case_props import (
+from reactpy._console.rewrite_props import (
     generate_rewrite,
-    rewrite_camel_case_props,
+    rewrite_props,
 )
 
 
@@ -16,7 +16,7 @@ def test_rewrite_camel_case_props_declarations(tmp_path):
     tempfile: Path = tmp_path / "temp.py"
     tempfile.write_text("html.div(dict(camelCase='test'))")
     result = runner.invoke(
-        rewrite_camel_case_props,
+        rewrite_props,
         args=[str(tmp_path)],
         catch_exceptions=False,
     )
@@ -29,7 +29,7 @@ def test_rewrite_camel_case_props_declarations_no_files():
     runner = CliRunner()
 
     result = runner.invoke(
-        rewrite_camel_case_props,
+        rewrite_props,
         args=["directory-does-no-exist"],
         catch_exceptions=False,
     )
