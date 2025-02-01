@@ -5,6 +5,7 @@ import responses
 
 from reactpy.testing import assert_reactpy_did_log
 from reactpy.web.utils import (
+    _resolve_relative_url,
     module_name_suffix,
     resolve_module_exports_from_file,
     resolve_module_exports_from_source,
@@ -150,3 +151,15 @@ def test_log_on_unknown_export_type():
         assert resolve_module_exports_from_source(
             "export something unknown;", exclude_default=False
         ) == (set(), set())
+
+
+def test_resolve_relative_url():
+    assert (
+        _resolve_relative_url("https://some.url", "path/to/another.js")
+        == "path/to/another.js"
+    )
+    assert (
+        _resolve_relative_url("https://some.url", "/path/to/another.js")
+        == "https://some.url/path/to/another.js"
+    )
+    assert _resolve_relative_url("/some/path", "to/another.js") == "to/another.js"

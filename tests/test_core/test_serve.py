@@ -10,8 +10,8 @@ import reactpy
 from reactpy.core.hooks import use_effect
 from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
-from reactpy.core.types import LayoutUpdateMessage
 from reactpy.testing import StaticEventHandler
+from reactpy.types import LayoutUpdateMessage
 from tests.tooling.aio import Event
 from tests.tooling.common import event_message
 

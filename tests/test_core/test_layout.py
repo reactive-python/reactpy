@@ -10,11 +10,10 @@ import pytest
 
 import reactpy
 from reactpy import html
-from reactpy.config import REACTPY_ASYNC_RENDERING, REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_ASYNC_RENDERING, REACTPY_DEBUG
 from reactpy.core.component import component
 from reactpy.core.hooks import use_effect, use_state
 from reactpy.core.layout import Layout
-from reactpy.core.types import State
 from reactpy.testing import (
     HookCatcher,
     StaticEventHandler,
@@ -22,6 +21,7 @@ from reactpy.testing import (
     capture_reactpy_logs,
 )
 from reactpy.testing.common import poll
+from reactpy.types import State
 from reactpy.utils import Ref
 from tests.tooling import select
 from tests.tooling.aio import Event
@@ -156,7 +156,7 @@ async def test_nested_component_layout():
 
 
 @pytest.mark.skipif(
-    not REACTPY_DEBUG_MODE.current,
+    not REACTPY_DEBUG.current,
     reason="errors only reported in debug mode",
 )
 async def test_layout_render_error_has_partial_update_with_error_message():
@@ -207,7 +207,7 @@ async def test_layout_render_error_has_partial_update_with_error_message():
 
 
 @pytest.mark.skipif(
-    REACTPY_DEBUG_MODE.current,
+    REACTPY_DEBUG.current,
     reason="errors only reported in debug mode",
 )
 async def test_layout_render_error_has_partial_update_without_error_message():
@@ -1224,7 +1224,7 @@ async def test_ensure_model_path_udpates():
     @component
     def App():
         items = use_state(["A", "B", "C"])
-        return html._([Item(item, items, key=item) for item in items.value])
+        return html.fragment([Item(item, items, key=item) for item in items.value])
 
     async with layout_runner(reactpy.Layout(App())) as runner:
         tree = await runner.render()
@@ -1265,7 +1265,7 @@ async def test_async_renders(async_rendering):
 
     @component
     def outer():
-        return html._(child_1(), child_2())
+        return html.fragment(child_1(), child_2())
 
     @component
     @child_1_hook.capture

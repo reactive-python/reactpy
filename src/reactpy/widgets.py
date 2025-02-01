@@ -5,9 +5,9 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Callable, Protocol, TypeVar
 
 import reactpy
-from reactpy import html
+from reactpy._html import html
 from reactpy._warnings import warn
-from reactpy.core.types import ComponentConstructor, VdomDict
+from reactpy.types import ComponentConstructor, VdomDict
 
 
 def image(

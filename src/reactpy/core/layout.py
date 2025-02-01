@@ -32,11 +32,13 @@ from typing_extensions import TypeAlias
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
     REACTPY_CHECK_VDOM_SPEC,
-    REACTPY_DEBUG_MODE,
+    REACTPY_DEBUG,
 )
 from reactpy.core._life_cycle_hook import LifeCycleHook
-from reactpy.core.types import (
+from reactpy.core.vdom import validate_vdom_json
+from reactpy.types import (
     ComponentType,
+    Context,
     EventHandlerDict,
     Key,
     LayoutEventMessage,
@@ -45,7 +47,6 @@ from reactpy.core.types import (
     VdomDict,
     VdomJson,
 )
-from reactpy.core.vdom import validate_vdom_json
 from reactpy.utils import Ref
 
 logger = getLogger(__name__)
@@ -67,7 +68,7 @@ class Layout:
     if not hasattr(abc.ABC, "__weakref__"):  # nocov
         __slots__ += ("__weakref__",)
 
-    def __init__(self, root: ComponentType) -> None:
+    def __init__(self, root: ComponentType | Context[Any]) -> None:
         super().__init__()
         if not isinstance(root, ComponentType):
             msg = f"Expected a ComponentType, not {type(root)!r}."
@@ -201,9 +202,7 @@ class Layout:
             new_state.model.current = {
                 "tagName": "",
                 "error": (
-                    f"{type(error).__name__}: {error}"
-                    if REACTPY_DEBUG_MODE.current
-                    else ""
+                    f"{type(error).__name__}: {error}" if REACTPY_DEBUG.current else ""
                 ),
             }
         finally:

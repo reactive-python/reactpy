@@ -4,7 +4,7 @@ import pytest
 
 import reactpy
 from reactpy import html
-from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_DEBUG
 from reactpy.core._life_cycle_hook import LifeCycleHook
 from reactpy.core.hooks import strictly_equal, use_effect
 from reactpy.core.layout import Layout
@@ -159,7 +159,7 @@ async def test_set_state_with_reducer_instead_of_value():
             await layout.render()
 
 
-async def test_set_state_checks_identity_not_equality(display: DisplayFixture):
+async def test_set_state_checks_equality_not_identity(display: DisplayFixture):
     r_1 = reactpy.Ref("value")
     r_2 = reactpy.Ref("value")
 
@@ -219,12 +219,12 @@ async def test_set_state_checks_identity_not_equality(display: DisplayFixture):
     await client_r_2_button.click()
 
     await poll_event_count.until_equals(2)
-    await poll_render_count.until_equals(2)
+    await poll_render_count.until_equals(1)
 
     await client_r_2_button.click()
 
     await poll_event_count.until_equals(3)
-    await poll_render_count.until_equals(2)
+    await poll_render_count.until_equals(1)
 
 
 async def test_simple_input_with_use_state(display: DisplayFixture):
@@ -979,7 +979,7 @@ async def test_context_values_are_scoped():
 
     @reactpy.component
     def Parent():
-        return html._(
+        return html.fragment(
             Context(Context(Child1(), value=1), value="something-else"),
             Context(Child2(), value=2),
         )
@@ -1044,7 +1044,7 @@ async def test_set_state_during_render():
     assert render_count.current == 2
 
 
-@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="only logs in debug mode")
+@pytest.mark.skipif(not REACTPY_DEBUG.current, reason="only logs in debug mode")
 async def test_use_debug_mode():
     set_message = reactpy.Ref()
     component_hook = HookCatcher()
@@ -1071,7 +1071,7 @@ async def test_use_debug_mode():
             await layout.render()
 
 
-@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="only logs in debug mode")
+@pytest.mark.skipif(not REACTPY_DEBUG.current, reason="only logs in debug mode")
 async def test_use_debug_mode_with_factory():
     set_message = reactpy.Ref()
     component_hook = HookCatcher()
@@ -1098,7 +1098,7 @@ async def test_use_debug_mode_with_factory():
             await layout.render()
 
 
-@pytest.mark.skipif(REACTPY_DEBUG_MODE.current, reason="logs in debug mode")
+@pytest.mark.skipif(REACTPY_DEBUG.current, reason="logs in debug mode")
 async def test_use_debug_mode_does_not_log_if_not_in_debug_mode():
     set_message = reactpy.Ref()
 
@@ -1170,6 +1170,28 @@ async def test_conditionally_rendered_components_can_use_context():
 )
 def test_strictly_equal(x, y, result):
     assert strictly_equal(x, y) is result
+
+
+def test_strictly_equal_named_closures():
+    assert strictly_equal(lambda: "text", lambda: "text") is True
+    assert strictly_equal(lambda: "text", lambda: "not-text") is False
+
+    def x():
+        return "text"
+
+    def y():
+        return "not-text"
+
+    def generator():
+        def z():
+            return "text"
+
+        return z
+
+    assert strictly_equal(x, x) is True
+    assert strictly_equal(x, y) is False
+    assert strictly_equal(x, generator()) is False
+    assert strictly_equal(generator(), generator()) is True
 
 
 STRICT_EQUALITY_VALUE_CONSTRUCTORS = [

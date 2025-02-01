@@ -1,10 +1,10 @@
 from pathlib import Path
 
 import pytest
-from sanic import Sanic
+from servestatic import ServeStaticASGI
 
 import reactpy
-from reactpy.backend import sanic as sanic_implementation
+from reactpy.asgi.standalone import ReactPy
 from reactpy.testing import (
     BackendFixture,
     DisplayFixture,
@@ -50,19 +50,9 @@ async def test_that_js_module_unmount_is_called(display: DisplayFixture):
     await display.page.wait_for_selector("#unmount-flag", state="attached")
 
 
-@pytest.mark.flaky(reruns=3)
 async def test_module_from_url(browser):
-    app = Sanic("test_module_from_url")
-
-    # instead of directing the URL to a CDN, we just point it to this static file
-    app.static(
-        "/simple-button.js",
-        str(JS_FIXTURES_DIR / "simple-button.js"),
-        content_type="text/javascript",
-    )
-
     SimpleButton = reactpy.web.export(
-        reactpy.web.module_from_url("/simple-button.js", resolve_exports=False),
+        reactpy.web.module_from_url("/static/simple-button.js", resolve_exports=False),
         "SimpleButton",
     )
 
@@ -70,7 +60,10 @@ async def test_module_from_url(browser):
     def ShowSimpleButton():
         return SimpleButton({"id": "my-button"})
 
-    async with BackendFixture(app=app, implementation=sanic_implementation) as server:
+    app = ReactPy(ShowSimpleButton)
+    app = ServeStaticASGI(app, JS_FIXTURES_DIR, "/static/")
+
+    async with BackendFixture(app) as server:
         async with DisplayFixture(server, browser) as display:
             await display.show(ShowSimpleButton)
 

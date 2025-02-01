@@ -1,37 +1,20 @@
 from collections.abc import MutableMapping
 
 import pytest
+from requests import request
 
 import reactpy
 from reactpy import html
-from reactpy.backend import default as default_implementation
-from reactpy.backend._common import PATH_PREFIX
-from reactpy.backend.types import BackendType, Connection, Location
-from reactpy.backend.utils import all_implementations
+from reactpy.asgi.standalone import ReactPy
 from reactpy.testing import BackendFixture, DisplayFixture, poll
+from reactpy.testing.common import REACTPY_TESTS_DEFAULT_TIMEOUT
+from reactpy.types import Connection, Location
 
 
-@pytest.fixture(
-    params=[*list(all_implementations()), default_implementation],
-    ids=lambda imp: imp.__name__,
-)
-async def display(page, request):
-    imp: BackendType = request.param
-
-    # we do this to check that route priorities for each backend are correct
-    if imp is default_implementation:
-        url_prefix = ""
-        opts = None
-    else:
-        url_prefix = str(PATH_PREFIX)
-        opts = imp.Options(url_prefix=url_prefix)
-
-    async with BackendFixture(implementation=imp, options=opts) as server:
-        async with DisplayFixture(
-            backend=server,
-            driver=page,
-            url_prefix=url_prefix,
-        ) as display:
+@pytest.fixture()
+async def display(page):
+    async with BackendFixture() as server:
+        async with DisplayFixture(backend=server, driver=page) as display:
             yield display
 
 
@@ -124,21 +107,16 @@ async def test_use_location(display: DisplayFixture):
         Location("/another/something/file.txt", "?key=value"),
         Location("/another/something/file.txt", "?key1=value1&key2=value2"),
     ]:
-        await display.goto(loc.pathname + loc.search)
+        await display.goto(loc.path + loc.query_string)
         await poll_location.until_equals(loc)
 
 
-@pytest.mark.parametrize("hook_name", ["use_request", "use_websocket"])
-async def test_use_request(display: DisplayFixture, hook_name):
-    hook = getattr(display.backend.implementation, hook_name, None)
-    if hook is None:
-        pytest.skip(f"{display.backend.implementation} has no '{hook_name}' hook")
-
+async def test_carrier(display: DisplayFixture):
     hook_val = reactpy.Ref()
 
     @reactpy.component
     def ShowRoute():
-        hook_val.current = hook()
+        hook_val.current = reactpy.hooks.use_connection().carrier
         return html.pre({"id": "hook"}, str(hook_val.current))
 
     await display.show(ShowRoute)
@@ -149,18 +127,37 @@ async def test_use_request(display: DisplayFixture, hook_name):
     assert hook_val.current is not None
 
 
-@pytest.mark.parametrize("imp", all_implementations())
-async def test_customized_head(imp: BackendType, page):
-    custom_title = f"Custom Title for {imp.__name__}"
+async def test_customized_head(page):
+    custom_title = "Custom Title for ReactPy"
 
     @reactpy.component
     def sample():
         return html.h1(f"^ Page title is customized to: '{custom_title}'")
 
-    async with BackendFixture(
-        implementation=imp,
-        options=imp.Options(head=html.title(custom_title)),
-    ) as server:
-        async with DisplayFixture(backend=server, driver=page) as display:
-            await display.show(sample)
-            assert (await display.page.title()) == custom_title
+    app = ReactPy(sample, html_head=html.head(html.title(custom_title)))
+
+    async with BackendFixture(app) as server:
+        async with DisplayFixture(backend=server, driver=page) as new_display:
+            await new_display.show(sample)
+            assert (await new_display.page.title()) == custom_title
+
+
+async def test_head_request(page):
+    @reactpy.component
+    def sample():
+        return html.h1("Hello World")
+
+    app = ReactPy(sample)
+
+    async with BackendFixture(app) as server:
+        async with DisplayFixture(backend=server, driver=page) as new_display:
+            await new_display.show(sample)
+            url = f"http://{server.host}:{server.port}"
+            response = request(
+                "HEAD", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+            )
+            assert response.status_code == 200
+            assert response.headers["content-type"] == "text/html; charset=utf-8"
+            assert response.headers["cache-control"] == "max-age=60, public"
+            assert response.headers["access-control-allow-origin"] == "*"
+            assert response.content == b""

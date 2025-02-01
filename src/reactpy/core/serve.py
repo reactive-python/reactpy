@@ -8,9 +8,9 @@ from warnings import warn
 from anyio import create_task_group
 from anyio.abc import TaskGroup
 
-from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_DEBUG
 from reactpy.core._life_cycle_hook import _HOOK_STATE, clear_hook_state
-from reactpy.core.types import LayoutEventMessage, LayoutType, LayoutUpdateMessage
+from reactpy.types import LayoutEventMessage, LayoutType, LayoutUpdateMessage
 
 logger = getLogger(__name__)
 
@@ -65,11 +65,11 @@ async def _single_outgoing_loop(
             try:
                 await send(update)
             except Exception:  # nocov
-                if not REACTPY_DEBUG_MODE.current:
+                if not REACTPY_DEBUG.current:
                     msg = (
                         "Failed to send update. More info may be available "
                         "if you enabling debug mode by setting "
-                        "`reactpy.config.REACTPY_DEBUG_MODE.current = True`."
+                        "`reactpy.config.REACTPY_DEBUG.current = True`."
                     )
                     logger.error(msg)
                 raise

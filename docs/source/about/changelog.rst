@@ -15,10 +15,36 @@ Changelog
 Unreleased
 ----------
 
+**Added**
+- :pull:`1113` - Added ``reactpy.ReactPy`` that can be used to run ReactPy in standalone mode.
+- :pull:`1113` - Added ``reactpy.ReactPyMiddleware`` that can be used to run ReactPy with any ASGI compatible framework.
+- :pull:`1113` - Added ``reactpy.jinja.Component`` that can be used alongside ``ReactPyMiddleware`` to embed several ReactPy components into your existing application.
+- :pull:`1113` - Added ``standard``, ``uvicorn``, ``jinja`` installation extras (for example ``pip install reactpy[standard]``).
+- :pull:`1113` - Added support for Python 3.12 and 3.13.
+
 **Changed**
 
 - :pull:`1251` - Substitute client-side usage of ``react`` with ``preact``.
 - :pull:`1239` - Script elements no longer support behaving like effects. They now strictly behave like plain HTML script elements.
+- :pull:`1255` - The ``reactpy.html`` module has been modified to allow for auto-creation of any HTML nodes. For example, you can create a ``<data-table>`` element by calling ``html.data_table()``.
+- :pull:`1256` - Change ``set_state`` comparison method to check equality with ``==`` more consistently.
+- :pull:`1257` - Add support for rendering ``@component`` children within ``vdom_to_html``.
+- :pull:`1113` - Renamed the ``use_location`` hook's ``search`` attribute to ``query_string``.
+- :pull:`1113` - Renamed the ``use_location`` hook's ``pathname`` attribute to ``path``.
+- :pull:`1113` - Renamed ``reactpy.config.REACTPY_DEBUG_MODE`` to ``reactpy.config.REACTPY_DEBUG``.
+
+**Removed**
+
+- :pull:`1255` - Removed the ability to import ``reactpy.html.*`` elements directly. You must now call ``html.*`` to access the elements.
+- :pull:`1255` - Removed ``reactpy.sample`` module.
+- :pull:`1255` - Removed ``reactpy.svg`` module. Contents previously within ``reactpy.svg.*`` can now be accessed via ``html.svg.*``.
+- :pull:`1255` - Removed ``reactpy.html._`` function. Use ``html.fragment`` instead.
+- :pull:`1113` - Removed ``reactpy.run``. See the documentation for the new method to run ReactPy applications.
+- :pull:`1113` - Removed ``reactpy.backend.*``. See the documentation for the new method to run ReactPy applications.
+- :pull:`1113` - Removed ``reactpy.core.types`` module. Use ``reactpy.types`` instead.
+- :pull:`1113` - All backend related installation extras (such as ``pip install reactpy[starlette]``) have been removed.
+- :pull:`1113` - Removed deprecated function ``module_from_template``.
+- :pull:`1113` - Removed support for Python 3.9.
 
 **Fixed**
 
@@ -26,6 +52,7 @@ Unreleased
 
 v1.1.0
 ------
+:octicon:`milestone` *released on 2024-11-24*
 
 **Fixed**
 
@@ -61,6 +88,7 @@ v1.1.0
 
 v1.0.2
 ------
+:octicon:`milestone` *released on 2023-07-03*
 
 **Fixed**
 
@@ -69,6 +97,7 @@ v1.0.2
 
 v1.0.1
 ------
+:octicon:`milestone` *released on 2023-06-16*
 
 **Changed**
 

@@ -3,13 +3,14 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 from itertools import chain
-from typing import Any, Callable, Generic, TypeVar, cast
+from typing import Any, Callable, Generic, TypeVar, Union, cast
 
 from lxml import etree
 from lxml.html import fromstring, tostring
 
-from reactpy.core.types import VdomDict
-from reactpy.core.vdom import vdom
+from reactpy import config
+from reactpy.core.vdom import vdom as make_vdom
+from reactpy.types import ComponentType, VdomDict
 
 _RefValue = TypeVar("_RefValue")
 _ModelTransform = Callable[[VdomDict], Any]
@@ -144,7 +145,7 @@ def _etree_to_vdom(
     children = _generate_vdom_children(node, transforms)
 
     # Convert the lxml node to a VDOM dict
-    el = vdom(node.tag, dict(node.items()), *children)
+    el = make_vdom(node.tag, dict(node.items()), *children)
 
     # Perform any necessary mutations on the VDOM attributes to meet VDOM spec
     _mutate_vdom(el)
@@ -160,7 +161,7 @@ def _add_vdom_to_etree(parent: etree._Element, vdom: VdomDict | dict[str, Any]) 
     try:
         tag = vdom["tagName"]
     except KeyError as e:
-        msg = f"Expected a VDOM dict, not {vdom}"
+        msg = f"Expected a VDOM dict, not {type(vdom)}"
         raise TypeError(msg) from e
     else:
         vdom = cast(VdomDict, vdom)
@@ -174,29 +175,29 @@ def _add_vdom_to_etree(parent: etree._Element, vdom: VdomDict | dict[str, Any]) 
         element = parent
 
     for c in vdom.get("children", []):
+        if hasattr(c, "render"):
+            c = _component_to_vdom(cast(ComponentType, c))
         if isinstance(c, dict):
             _add_vdom_to_etree(element, c)
+
+        # LXML handles string children by storing them under `text` and `tail`
+        # attributes of Element objects. The `text` attribute, if present, effectively
+        # becomes that element's first child. Then the `tail` attribute, if present,
+        # becomes a sibling that follows that element. For example, consider the
+        # following HTML:
+
+        #     <p><a>hello</a>world</p>
+
+        # In this code sample, "hello" is the `text` attribute of the `<a>` element
+        # and "world" is the `tail` attribute of that same `<a>` element. It's for
+        # this reason that, depending on whether the element being constructed has
+        # non-string a child element, we need to assign a `text` vs `tail` attribute
+        # to that element or the last non-string child respectively.
+        elif len(element):
+            last_child = element[-1]
+            last_child.tail = f"{last_child.tail or ''}{c}"
         else:
-            """
-            LXML handles string children by storing them under `text` and `tail`
-            attributes of Element objects. The `text` attribute, if present, effectively
-            becomes that element's first child. Then the `tail` attribute, if present,
-            becomes a sibling that follows that element. For example, consider the
-            following HTML:
-
-                <p><a>hello</a>world</p>
-
-            In this code sample, "hello" is the `text` attribute of the `<a>` element
-            and "world" is the `tail` attribute of that same `<a>` element. It's for
-            this reason that, depending on whether the element being constructed has
-            non-string a child element, we need to assign a `text` vs `tail` attribute
-            to that element or the last non-string child respectively.
-            """
-            if len(element):
-                last_child = element[-1]
-                last_child.tail = f"{last_child.tail or ''}{c}"
-            else:
-                element.text = f"{element.text or ''}{c}"
+            element.text = f"{element.text or ''}{c}"
 
 
 def _mutate_vdom(vdom: VdomDict) -> None:
@@ -247,6 +248,14 @@ def _generate_vdom_children(
             )
         )
     )
+
+
+def _component_to_vdom(component: ComponentType) -> VdomDict | str | None:
+    """Convert a component to a VDOM dictionary"""
+    result = component.render()
+    if hasattr(result, "render"):
+        result = _component_to_vdom(cast(ComponentType, result))
+    return cast(Union[VdomDict, str, None], result)
 
 
 def del_html_head_body_transform(vdom: VdomDict) -> VdomDict:
@@ -305,3 +314,23 @@ DASHED_HTML_ATTRS = {"accept_charset", "acceptCharset", "http_equiv", "httpEquiv
 
 # Pattern for delimitting camelCase names (e.g. camelCase to camel-case)
 _CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
+
+
+def render_mount_template(
+    element_id: str, class_: str, append_component_path: str
+) -> str:
+    return (
+        f'<div id="{element_id}" class="{class_}"></div>'
+        '<script type="module" crossorigin="anonymous">'
+        f'import {{ mountReactPy }} from "{config.REACTPY_PATH_PREFIX.current}static/index.js";'
+        "mountReactPy({"
+        f' mountElement: document.getElementById("{element_id}"),'
+        f' pathPrefix: "{config.REACTPY_PATH_PREFIX.current}",'
+        f' appendComponentPath: "{append_component_path}",'
+        f" reconnectInterval: {config.REACTPY_RECONNECT_INTERVAL.current},"
+        f" reconnectMaxInterval: {config.REACTPY_RECONNECT_MAX_INTERVAL.current},"
+        f" reconnectMaxRetries: {config.REACTPY_RECONNECT_MAX_RETRIES.current},"
+        f" reconnectBackoffMultiplier: {config.REACTPY_RECONNECT_BACKOFF_MULTIPLIER.current},"
+        "});"
+        "</script>"
+    )

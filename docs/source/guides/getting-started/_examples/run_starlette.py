@@ -1,4 +1,4 @@
-# :lines: 11-
+# :lines: 10-
 
 from reactpy import run
 from reactpy.backend import starlette as starlette_server

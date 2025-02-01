@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Coroutine, MutableMapping, Sequence
+import contextlib
+from collections.abc import Coroutine, Sequence
 from logging import getLogger
 from types import FunctionType
 from typing import (
@@ -15,12 +16,12 @@ from typing import (
     overload,
 )
 
+from asgiref import typing as asgi_types
 from typing_extensions import TypeAlias
 
-from reactpy.backend.types import Connection, Location
-from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_DEBUG
 from reactpy.core._life_cycle_hook import current_hook
-from reactpy.core.types import Context, Key, State, VdomDict
+from reactpy.types import Connection, Context, Key, Location, State, VdomDict
 from reactpy.utils import Ref
 
 if not TYPE_CHECKING:
@@ -184,7 +185,7 @@ def use_debug_value(
     """Log debug information when the given message changes.
 
     .. note::
-        This hook only logs if :data:`~reactpy.config.REACTPY_DEBUG_MODE` is active.
+        This hook only logs if :data:`~reactpy.config.REACTPY_DEBUG` is active.
 
     Unlike other hooks, a message is considered to have changed if the old and new
     values are ``!=``. Because this comparison is performed on every render of the
@@ -203,7 +204,7 @@ def use_debug_value(
     memo_func = message if callable(message) else lambda: message
     new = use_memo(memo_func, dependencies)
 
-    if REACTPY_DEBUG_MODE.current and old.current != new:
+    if REACTPY_DEBUG.current and old.current != new:
         old.current = new
         logger.debug(f"{current_hook().component} {new}")
 
@@ -262,13 +263,13 @@ def use_connection() -> Connection[Any]:
     return conn
 
 
-def use_scope() -> MutableMapping[str, Any]:
-    """Get the current :class:`~reactpy.backend.types.Connection`'s scope."""
+def use_scope() -> asgi_types.HTTPScope | asgi_types.WebSocketScope:
+    """Get the current :class:`~reactpy.types.Connection`'s scope."""
     return use_connection().scope
 
 
 def use_location() -> Location:
-    """Get the current :class:`~reactpy.backend.types.Connection`'s location."""
+    """Get the current :class:`~reactpy.types.Connection`'s location."""
     return use_connection().location
 
 
@@ -517,18 +518,30 @@ def strictly_equal(x: Any, y: Any) -> bool:
     - ``bytearray``
     - ``memoryview``
     """
-    return x is y or (type(x) in _NUMERIC_TEXT_BINARY_TYPES and x == y)
+    # Return early if the objects are not the same type
+    if type(x) is not type(y):
+        return False
 
+    # Compare the source code of lambda and local functions
+    if (
+        hasattr(x, "__qualname__")
+        and ("<lambda>" in x.__qualname__ or "<locals>" in x.__qualname__)
+        and hasattr(x, "__code__")
+    ):
+        if x.__qualname__ != y.__qualname__:
+            return False
 
-_NUMERIC_TEXT_BINARY_TYPES = {
-    # numeric
-    int,
-    float,
-    complex,
-    # text
-    str,
-    # binary types
-    bytes,
-    bytearray,
-    memoryview,
-}
+        return all(
+            getattr(x.__code__, attr) == getattr(y.__code__, attr)
+            for attr in dir(x.__code__)
+            if attr.startswith("co_")
+            and attr not in {"co_positions", "co_linetable", "co_lines", "co_lnotab"}
+        )
+
+    # Check via the `==` operator if possible
+    if hasattr(x, "__eq__"):
+        with contextlib.suppress(Exception):
+            return x == y  # type: ignore
+
+    # Fallback to identity check
+    return x is y  # pragma: no cover
