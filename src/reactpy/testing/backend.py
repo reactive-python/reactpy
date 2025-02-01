@@ -2,23 +2,27 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from contextlib import AsyncExitStack, suppress
+from contextlib import AsyncExitStack
+from threading import Thread
 from types import TracebackType
 from typing import Any, Callable
 from urllib.parse import urlencode, urlunparse
 
-from reactpy.backend import default as default_server
-from reactpy.backend.types import BackendType
-from reactpy.backend.utils import find_available_port
-from reactpy.config import REACTPY_TESTING_DEFAULT_TIMEOUT
+import uvicorn
+from asgiref import typing as asgi_types
+
+from reactpy.asgi.middleware import ReactPyMiddleware
+from reactpy.asgi.standalone import ReactPy
+from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.core.component import component
 from reactpy.core.hooks import use_callback, use_effect, use_state
-from reactpy.core.types import ComponentConstructor
 from reactpy.testing.logs import (
     LogAssertionError,
     capture_reactpy_logs,
     list_logged_exceptions,
 )
+from reactpy.testing.utils import find_available_port
+from reactpy.types import ComponentConstructor, ReactPyConfig
 from reactpy.utils import Ref
 
 
@@ -34,38 +38,42 @@ class BackendFixture:
                 server.mount(MyComponent)
     """
 
-    _records: list[logging.LogRecord]
+    log_records: list[logging.LogRecord]
     _server_future: asyncio.Task[Any]
     _exit_stack = AsyncExitStack()
 
     def __init__(
         self,
+        app: asgi_types.ASGIApplication | None = None,
         host: str = "127.0.0.1",
         port: int | None = None,
-        app: Any | None = None,
-        implementation: BackendType[Any] | None = None,
-        options: Any | None = None,
         timeout: float | None = None,
+        reactpy_config: ReactPyConfig | None = None,
     ) -> None:
         self.host = host
         self.port = port or find_available_port(host)
-        self.mount, self._root_component = _hotswap()
+        self.mount = mount_to_hotswap
         self.timeout = (
-            REACTPY_TESTING_DEFAULT_TIMEOUT.current if timeout is None else timeout
+            REACTPY_TESTS_DEFAULT_TIMEOUT.current if timeout is None else timeout
         )
-
-        if app is not None and implementation is None:
-            msg = "If an application instance its corresponding server implementation must be provided too."
-            raise ValueError(msg)
-
-        self._app = app
-        self.implementation = implementation or default_server
-        self._options = options
-
-    @property
-    def log_records(self) -> list[logging.LogRecord]:
-        """A list of captured log records"""
-        return self._records
+        if isinstance(app, (ReactPyMiddleware, ReactPy)):
+            self._app = app
+        elif app:
+            self._app = ReactPyMiddleware(
+                app,
+                root_components=["reactpy.testing.backend.root_hotswap_component"],
+                **(reactpy_config or {}),
+            )
+        else:
+            self._app = ReactPy(
+                root_hotswap_component,
+                **(reactpy_config or {}),
+            )
+        self.webserver = uvicorn.Server(
+            uvicorn.Config(
+                app=self._app, host=self.host, port=self.port, loop="asyncio"
+            )
+        )
 
     def url(self, path: str = "", query: Any | None = None) -> str:
         """Return a URL string pointing to the host and point of the server
@@ -109,31 +117,11 @@ class BackendFixture:
 
     async def __aenter__(self) -> BackendFixture:
         self._exit_stack = AsyncExitStack()
-        self._records = self._exit_stack.enter_context(capture_reactpy_logs())
+        self.log_records = self._exit_stack.enter_context(capture_reactpy_logs())
 
-        app = self._app or self.implementation.create_development_app()
-        self.implementation.configure(app, self._root_component, self._options)
-
-        started = asyncio.Event()
-        server_future = asyncio.create_task(
-            self.implementation.serve_development_app(
-                app, self.host, self.port, started
-            )
-        )
-
-        async def stop_server() -> None:
-            server_future.cancel()
-            with suppress(asyncio.CancelledError):
-                await asyncio.wait_for(server_future, timeout=self.timeout)
-
-        self._exit_stack.push_async_callback(stop_server)
-
-        try:
-            await asyncio.wait_for(started.wait(), timeout=self.timeout)
-        except Exception:  # nocov
-            # see if we can await the future for a more helpful error
-            await asyncio.wait_for(server_future, timeout=self.timeout)
-            raise
+        # Wait for the server to start
+        Thread(target=self.webserver.run, daemon=True).start()
+        await asyncio.sleep(1)
 
         return self
 
@@ -145,12 +133,17 @@ class BackendFixture:
     ) -> None:
         await self._exit_stack.aclose()
 
-        self.mount(None)  # reset the view
-
         logged_errors = self.list_logged_exceptions(del_log_records=False)
         if logged_errors:  # nocov
             msg = "Unexpected logged exception"
             raise LogAssertionError(msg) from logged_errors[0]
+
+        await asyncio.wait_for(self.webserver.shutdown(), timeout=60)
+
+    async def restart(self) -> None:
+        """Restart the server"""
+        await self.__aexit__(None, None, None)
+        await self.__aenter__()
 
 
 _MountFunc = Callable[["Callable[[], Any] | None"], None]
@@ -229,3 +222,6 @@ def _hotswap(update_on_change: bool = False) -> tuple[_MountFunc, ComponentConst
             constructor_ref.current = constructor or (lambda: None)
 
     return swap, HotSwap
+
+
+mount_to_hotswap, root_hotswap_component = _hotswap()

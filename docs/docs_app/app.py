@@ -6,7 +6,7 @@ from sanic import Sanic, response
 from docs_app.examples import get_normalized_example_name, load_examples
 from reactpy import component
 from reactpy.backend.sanic import Options, configure, use_request
-from reactpy.core.types import ComponentConstructor
+from reactpy.types import ComponentConstructor
 
 THIS_DIR = Path(__file__).parent
 DOCS_DIR = THIS_DIR.parent

@@ -4,7 +4,7 @@ from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from typing import Callable
 
-from reactpy.core.types import VdomJson
+from reactpy.types import VdomJson
 
 Selector = Callable[[VdomJson, "ElementInfo"], bool]
 

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 from reactpy.core.vdom import custom_vdom_constructor, make_vdom_constructor
 
 if TYPE_CHECKING:
-    from reactpy.core.types import (
+    from reactpy.types import (
         EventHandlerDict,
         Key,
         VdomAttributes,

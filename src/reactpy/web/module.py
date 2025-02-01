@@ -5,14 +5,11 @@ import logging
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from string import Template
 from typing import Any, NewType, overload
-from urllib.parse import urlparse
 
-from reactpy._warnings import warn
-from reactpy.config import REACTPY_DEBUG_MODE, REACTPY_WEB_MODULES_DIR
-from reactpy.core.types import ImportSourceDict, VdomDictConstructor
+from reactpy.config import REACTPY_DEBUG, REACTPY_WEB_MODULES_DIR
 from reactpy.core.vdom import make_vdom_constructor
+from reactpy.types import ImportSourceDict, VdomDictConstructor
 from reactpy.web.utils import (
     module_name_suffix,
     resolve_module_exports_from_file,
@@ -65,94 +62,10 @@ def module_from_url(
             if (
                 resolve_exports
                 if resolve_exports is not None
-                else REACTPY_DEBUG_MODE.current
+                else REACTPY_DEBUG.current
             )
             else None
         ),
-        unmount_before_update=unmount_before_update,
-    )
-
-
-_FROM_TEMPLATE_DIR = "__from_template__"
-
-
-def module_from_template(
-    template: str,
-    package: str,
-    cdn: str = "https://esm.sh",
-    fallback: Any | None = None,
-    resolve_exports: bool | None = None,
-    resolve_exports_depth: int = 5,
-    unmount_before_update: bool = False,
-) -> WebModule:
-    """Create a :class:`WebModule` from a framework template
-
-    This is useful for experimenting with component libraries that do not already
-    support ReactPy's :ref:`Custom Javascript Component` interface.
-
-    .. warning::
-
-        This approach is not recommended for use in a production setting because the
-        framework templates may use unpinned dependencies that could change without
-        warning. It's best to author a module adhering to the
-        :ref:`Custom Javascript Component` interface instead.
-
-    **Templates**
-
-    - ``react``: for modules exporting React components
-
-    Parameters:
-        template:
-            The name of the framework template to use with the given ``package``.
-        package:
-            The name of a package to load. May include a file extension (defaults to
-            ``.js`` if not given)
-        cdn:
-            Where the package should be loaded from. The CDN must distribute ESM modules
-        fallback:
-            What to temporarily display while the module is being loaded.
-        resolve_imports:
-            Whether to try and find all the named exports of this module.
-        resolve_exports_depth:
-            How deeply to search for those exports.
-        unmount_before_update:
-            Cause the component to be unmounted before each update. This option should
-            only be used if the imported package fails to re-render when props change.
-            Using this option has negative performance consequences since all DOM
-            elements must be changed on each render. See :issue:`461` for more info.
-    """
-    warn(
-        "module_from_template() is deprecated due to instability - use the Javascript "
-        "Components API instead. This function will be removed in a future release.",
-        DeprecationWarning,
-    )
-    template_name, _, template_version = template.partition("@")
-    template_version = "@" + template_version if template_version else ""
-
-    # We do this since the package may be any valid URL path. Thus we may need to strip
-    # object parameters or query information so we save the resulting template under the
-    # correct file name.
-    package_name = urlparse(package).path
-
-    # downstream code assumes no trailing slash
-    cdn = cdn.rstrip("/")
-
-    template_file_name = template_name + module_name_suffix(package_name)
-
-    template_file = Path(__file__).parent / "templates" / template_file_name
-    if not template_file.exists():
-        msg = f"No template for {template_file_name!r} exists"
-        raise ValueError(msg)
-
-    variables = {"PACKAGE": package, "CDN": cdn, "VERSION": template_version}
-    content = Template(template_file.read_text(encoding="utf-8")).substitute(variables)
-
-    return module_from_string(
-        _FROM_TEMPLATE_DIR + "/" + package_name,
-        content,
-        fallback,
-        resolve_exports,
-        resolve_exports_depth,
         unmount_before_update=unmount_before_update,
     )
 
@@ -215,7 +128,7 @@ def module_from_file(
             if (
                 resolve_exports
                 if resolve_exports is not None
-                else REACTPY_DEBUG_MODE.current
+                else REACTPY_DEBUG.current
             )
             else None
         ),
@@ -290,7 +203,7 @@ def module_from_string(
             if (
                 resolve_exports
                 if resolve_exports is not None
-                else REACTPY_DEBUG_MODE.current
+                else REACTPY_DEBUG.current
             )
             else None
         ),

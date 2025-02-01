@@ -8,7 +8,7 @@ from typing import Any
 from jsonpointer import set_pointer
 
 from reactpy.core.layout import Layout
-from reactpy.core.types import VdomJson
+from reactpy.types import VdomJson
 from tests.tooling.common import event_message
 
 logger = logging.getLogger(__name__)
