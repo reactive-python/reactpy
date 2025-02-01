@@ -10,7 +10,8 @@ from _pytest.config.argparsing import Parser
 
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
-    REACTPY_TESTING_DEFAULT_TIMEOUT,
+    REACTPY_DEBUG,
+    REACTPY_TESTS_DEFAULT_TIMEOUT,
 )
 from reactpy.testing import (
     BackendFixture,
@@ -19,15 +20,24 @@ from reactpy.testing import (
     clear_reactpy_web_modules_dir,
 )
 
-REACTPY_ASYNC_RENDERING.current = True
+REACTPY_ASYNC_RENDERING.set_current(True)
+REACTPY_DEBUG.set_current(True)
+GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "False") in {
+    "y",
+    "yes",
+    "t",
+    "true",
+    "on",
+    "1",
+}
 
 
 def pytest_addoption(parser: Parser) -> None:
     parser.addoption(
-        "--headed",
-        dest="headed",
+        "--headless",
+        dest="headless",
         action="store_true",
-        help="Open a browser window when running web-based tests",
+        help="Don't open a browser window when running web-based tests",
     )
 
 
@@ -37,8 +47,8 @@ def install_playwright():
 
 
 @pytest.fixture(autouse=True, scope="session")
-def rebuild_javascript():
-    subprocess.run(["hatch", "run", "javascript:build"], check=True)  # noqa: S607, S603
+def rebuild():
+    subprocess.run(["hatch", "build", "-t", "wheel"], check=True)  # noqa: S607, S603
 
 
 @pytest.fixture
@@ -56,7 +66,7 @@ async def server():
 @pytest.fixture
 async def page(browser):
     pg = await browser.new_page()
-    pg.set_default_timeout(REACTPY_TESTING_DEFAULT_TIMEOUT.current * 1000)
+    pg.set_default_timeout(REACTPY_TESTS_DEFAULT_TIMEOUT.current * 1000)
     try:
         yield pg
     finally:
@@ -68,7 +78,9 @@ async def browser(pytestconfig: Config):
     from playwright.async_api import async_playwright
 
     async with async_playwright() as pw:
-        yield await pw.chromium.launch(headless=not bool(pytestconfig.option.headed))
+        yield await pw.chromium.launch(
+            headless=bool(pytestconfig.option.headless) or GITHUB_ACTIONS
+        )
 
 
 @pytest.fixture(scope="session")

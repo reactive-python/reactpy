@@ -1,10 +1,19 @@
-import React, { ComponentType } from "react";
-import { ReactPyClient } from "./reactpy-client";
+import React from "react";
+import { ReactPyClientInterface } from "./types";
 import serializeEvent from "event-to-object";
+import {
+  ReactPyVdom,
+  ReactPyVdomImportSource,
+  ReactPyVdomEventHandler,
+  ReactPyModule,
+  BindImportSource,
+  ReactPyModuleBinding,
+} from "./types";
+import log from "./logger";
 
 export async function loadImportSource(
   vdomImportSource: ReactPyVdomImportSource,
-  client: ReactPyClient,
+  client: ReactPyClientInterface,
 ): Promise<BindImportSource> {
   let module: ReactPyModule;
   if (vdomImportSource.sourceType === "URL") {
@@ -30,7 +39,7 @@ export async function loadImportSource(
         typeof binding.unmount === "function"
       )
     ) {
-      console.error(`${vdomImportSource.source} returned an impropper binding`);
+      log.error(`${vdomImportSource.source} returned an impropper binding`);
       return null;
     }
 
@@ -51,7 +60,7 @@ export async function loadImportSource(
 }
 
 function createImportSourceElement(props: {
-  client: ReactPyClient;
+  client: ReactPyClientInterface;
   module: ReactPyModule;
   binding: ReactPyModuleBinding;
   model: ReactPyVdom;
@@ -62,7 +71,7 @@ function createImportSourceElement(props: {
     if (
       !isImportSourceEqual(props.currentImportSource, props.model.importSource)
     ) {
-      console.error(
+      log.error(
         "Parent element import source " +
           stringifyImportSource(props.currentImportSource) +
           " does not match child's import source " +
@@ -70,7 +79,7 @@ function createImportSourceElement(props: {
       );
       return null;
     } else if (!props.module[props.model.tagName]) {
-      console.error(
+      log.error(
         "Module from source " +
           stringifyImportSource(props.currentImportSource) +
           ` does not export ${props.model.tagName}`,
@@ -131,7 +140,7 @@ export function createChildren<Child>(
 
 export function createAttributes(
   model: ReactPyVdom,
-  client: ReactPyClient,
+  client: ReactPyClientInterface,
 ): { [key: string]: any } {
   return Object.fromEntries(
     Object.entries({
@@ -149,7 +158,7 @@ export function createAttributes(
 }
 
 function createEventHandler(
-  client: ReactPyClient,
+  client: ReactPyClientInterface,
   name: string,
   { target, preventDefault, stopPropagation }: ReactPyVdomEventHandler,
 ): [string, () => void] {
@@ -203,59 +212,3 @@ function snakeToCamel(str: string): string {
 // see list of HTML attributes with dashes in them:
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#attribute_list
 const DASHED_HTML_ATTRS = ["accept_charset", "http_equiv"];
-
-export type ReactPyComponent = ComponentType<{ model: ReactPyVdom }>;
-
-export type ReactPyVdom = {
-  tagName: string;
-  key?: string;
-  attributes?: { [key: string]: string };
-  children?: (ReactPyVdom | string)[];
-  error?: string;
-  eventHandlers?: { [key: string]: ReactPyVdomEventHandler };
-  importSource?: ReactPyVdomImportSource;
-};
-
-export type ReactPyVdomEventHandler = {
-  target: string;
-  preventDefault?: boolean;
-  stopPropagation?: boolean;
-};
-
-export type ReactPyVdomImportSource = {
-  source: string;
-  sourceType?: "URL" | "NAME";
-  fallback?: string | ReactPyVdom;
-  unmountBeforeUpdate?: boolean;
-};
-
-export type ReactPyModule = {
-  bind: (
-    node: HTMLElement,
-    context: ReactPyModuleBindingContext,
-  ) => ReactPyModuleBinding;
-} & { [key: string]: any };
-
-export type ReactPyModuleBindingContext = {
-  sendMessage: ReactPyClient["sendMessage"];
-  onMessage: ReactPyClient["onMessage"];
-};
-
-export type ReactPyModuleBinding = {
-  create: (
-    type: any,
-    props?: any,
-    children?: (any | string | ReactPyVdom)[],
-  ) => any;
-  render: (element: any) => void;
-  unmount: () => void;
-};
-
-export type BindImportSource = (
-  node: HTMLElement,
-) => ImportSourceBinding | null;
-
-export type ImportSourceBinding = {
-  render: (model: ReactPyVdom) => void;
-  unmount: () => void;
-};

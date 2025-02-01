@@ -4,7 +4,7 @@ import pytest
 
 import reactpy
 from reactpy import html
-from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_DEBUG
 from reactpy.core._life_cycle_hook import LifeCycleHook
 from reactpy.core.hooks import strictly_equal, use_effect
 from reactpy.core.layout import Layout
@@ -1044,7 +1044,7 @@ async def test_set_state_during_render():
     assert render_count.current == 2
 
 
-@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="only logs in debug mode")
+@pytest.mark.skipif(not REACTPY_DEBUG.current, reason="only logs in debug mode")
 async def test_use_debug_mode():
     set_message = reactpy.Ref()
     component_hook = HookCatcher()
@@ -1071,7 +1071,7 @@ async def test_use_debug_mode():
             await layout.render()
 
 
-@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="only logs in debug mode")
+@pytest.mark.skipif(not REACTPY_DEBUG.current, reason="only logs in debug mode")
 async def test_use_debug_mode_with_factory():
     set_message = reactpy.Ref()
     component_hook = HookCatcher()
@@ -1098,7 +1098,7 @@ async def test_use_debug_mode_with_factory():
             await layout.render()
 
 
-@pytest.mark.skipif(REACTPY_DEBUG_MODE.current, reason="logs in debug mode")
+@pytest.mark.skipif(REACTPY_DEBUG.current, reason="logs in debug mode")
 async def test_use_debug_mode_does_not_log_if_not_in_debug_mode():
     set_message = reactpy.Ref()
 

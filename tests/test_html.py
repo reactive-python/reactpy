@@ -1,34 +1,48 @@
 import pytest
+from playwright.async_api import expect
 
-from reactpy import component, config, html
+from reactpy import component, config, hooks, html
 from reactpy.testing import DisplayFixture, poll
 from reactpy.utils import Ref
+from tests.tooling.common import DEFAULT_TYPE_DELAY
 from tests.tooling.hooks import use_counter
 
 
 async def test_script_re_run_on_content_change(display: DisplayFixture):
-    incr_count = Ref()
-
     @component
     def HasScript():
-        count, incr_count.current = use_counter(1)
+        count, set_count = hooks.use_state(0)
+
+        def on_click(event):
+            set_count(count + 1)
+
         return html.div(
             html.div({"id": "mount-count", "data_value": 0}),
             html.script(
                 f'document.getElementById("mount-count").setAttribute("data-value", {count});'
             ),
+            html.button({"onClick": on_click, "id": "incr"}, "Increment"),
         )
 
     await display.show(HasScript)
 
-    mount_count = await display.page.wait_for_selector("#mount-count", state="attached")
-    poll_mount_count = poll(mount_count.get_attribute, "data-value")
+    await display.page.wait_for_selector("#mount-count", state="attached")
+    button = await display.page.wait_for_selector("#incr", state="attached")
 
-    await poll_mount_count.until_equals("1")
-    incr_count.current()
-    await poll_mount_count.until_equals("2")
-    incr_count.current()
-    await poll_mount_count.until_equals("3")
+    await button.click(delay=DEFAULT_TYPE_DELAY)
+    await expect(display.page.locator("#mount-count")).to_have_attribute(
+        "data-value", "1"
+    )
+
+    await button.click(delay=DEFAULT_TYPE_DELAY)
+    await expect(display.page.locator("#mount-count")).to_have_attribute(
+        "data-value", "2"
+    )
+
+    await button.click(delay=DEFAULT_TYPE_DELAY)
+    await expect(display.page.locator("#mount-count")).to_have_attribute(
+        "data-value", "3", timeout=100000
+    )
 
 
 async def test_script_from_src(display: DisplayFixture):
@@ -46,7 +60,7 @@ async def test_script_from_src(display: DisplayFixture):
                 html.div({"id": "run-count", "data_value": 0}),
                 html.script(
                     {
-                        "src": f"/_reactpy/modules/{file_name_template.format(src_id=src_id)}"
+                        "src": f"/reactpy/modules/{file_name_template.format(src_id=src_id)}"
                     }
                 ),
             )
@@ -101,3 +115,27 @@ def test_simple_fragment():
 def test_fragment_can_have_no_attributes():
     with pytest.raises(TypeError, match="Fragments cannot have attributes"):
         html.fragment({"some_attribute": 1})
+
+
+async def test_svg(display: DisplayFixture):
+    @component
+    def SvgComponent():
+        return html.svg(
+            {"width": 100, "height": 100},
+            html.svg.circle(
+                {"cx": 50, "cy": 50, "r": 40, "fill": "red"},
+            ),
+            html.svg.circle(
+                {"cx": 50, "cy": 50, "r": 40, "fill": "red"},
+            ),
+        )
+
+    await display.show(SvgComponent)
+    svg = await display.page.wait_for_selector("svg", state="attached")
+    assert await svg.get_attribute("width") == "100"
+    assert await svg.get_attribute("height") == "100"
+    circle = await display.page.wait_for_selector("circle", state="attached")
+    assert await circle.get_attribute("cx") == "50"
+    assert await circle.get_attribute("cy") == "50"
+    assert await circle.get_attribute("r") == "40"
+    assert await circle.get_attribute("fill") == "red"

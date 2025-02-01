@@ -12,7 +12,7 @@ from playwright.async_api import (
     async_playwright,
 )
 
-from reactpy.config import REACTPY_TESTING_DEFAULT_TIMEOUT
+from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.testing.backend import BackendFixture
 from reactpy.types import RootComponentConstructor
 
@@ -26,7 +26,6 @@ class DisplayFixture:
         self,
         backend: BackendFixture | None = None,
         driver: Browser | BrowserContext | Page | None = None,
-        url_prefix: str = "",
     ) -> None:
         if backend is not None:
             self.backend = backend
@@ -35,7 +34,6 @@ class DisplayFixture:
                 self.page = driver
             else:
                 self._browser = driver
-        self.url_prefix = url_prefix
 
     async def show(
         self,
@@ -45,14 +43,8 @@ class DisplayFixture:
         await self.goto("/")
         await self.root_element()  # check that root element is attached
 
-    async def goto(
-        self, path: str, query: Any | None = None, add_url_prefix: bool = True
-    ) -> None:
-        await self.page.goto(
-            self.backend.url(
-                f"{self.url_prefix}{path}" if add_url_prefix else path, query
-            )
-        )
+    async def goto(self, path: str, query: Any | None = None) -> None:
+        await self.page.goto(self.backend.url(path, query))
 
     async def root_element(self) -> ElementHandle:
         element = await self.page.wait_for_selector("#app", state="attached")
@@ -73,9 +65,9 @@ class DisplayFixture:
                 browser = self._browser
             self.page = await browser.new_page()
 
-        self.page.set_default_timeout(REACTPY_TESTING_DEFAULT_TIMEOUT.current * 1000)
+        self.page.set_default_timeout(REACTPY_TESTS_DEFAULT_TIMEOUT.current * 1000)
 
-        if not hasattr(self, "backend"):
+        if not hasattr(self, "backend"):  # pragma: no cover
             self.backend = BackendFixture()
             await es.enter_async_context(self.backend)
 

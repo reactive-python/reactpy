@@ -2,7 +2,7 @@ import logging
 import sys
 from logging.config import dictConfig
 
-from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_DEBUG
 
 dictConfig(
     {
@@ -33,7 +33,7 @@ ROOT_LOGGER = logging.getLogger("reactpy")
 """ReactPy's root logger instance"""
 
 
-@REACTPY_DEBUG_MODE.subscribe
+@REACTPY_DEBUG.subscribe
 def _set_debug_level(debug: bool) -> None:
     if debug:
         ROOT_LOGGER.setLevel("DEBUG")

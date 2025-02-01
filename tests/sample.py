@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from reactpy import html
 from reactpy.core.component import component
-from reactpy.core.types import VdomDict
+from reactpy.types import VdomDict
 
 
 @component
