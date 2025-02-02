@@ -500,9 +500,8 @@ async def test_use_async_effect_cleanup():
     @reactpy.component
     @component_hook.capture
     def ComponentWithAsyncEffect():
-        @reactpy.hooks.use_async_effect(
-            dependencies=None
-        )  # force this to run every time
+        # force this to run every time
+        @reactpy.hooks.use_async_effect(dependencies=None)
         async def effect():
             effect_ran.set()
             return cleanup_ran.set
