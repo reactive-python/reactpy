@@ -1,6 +1,6 @@
 {
   "name": "@reactpy/client",
-  "version": "0.3.2",
+  "version": "1.0.0",
   "description": "A client for ReactPy implemented in React",
   "author": "Ryan Morshead",
   "license": "MIT",
