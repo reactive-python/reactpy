@@ -16,6 +16,7 @@ from reactpy.asgi.standalone import ReactPy
 from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.core.component import component
 from reactpy.core.hooks import use_callback, use_effect, use_state
+from reactpy.testing.common import GITHUB_ACTIONS
 from reactpy.testing.logs import (
     LogAssertionError,
     capture_reactpy_logs,
@@ -138,7 +139,9 @@ class BackendFixture:
             msg = "Unexpected logged exception"
             raise LogAssertionError(msg) from logged_errors[0]
 
-        await asyncio.wait_for(self.webserver.shutdown(), timeout=60)
+        await asyncio.wait_for(
+            self.webserver.shutdown(), timeout=60 if GITHUB_ACTIONS else 5
+        )
 
     async def restart(self) -> None:
         """Restart the server"""

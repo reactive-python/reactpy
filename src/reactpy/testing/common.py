@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import os
 import shutil
 import time
 from collections.abc import Awaitable
@@ -28,6 +29,14 @@ _R = TypeVar("_R")
 
 
 _DEFAULT_POLL_DELAY = 0.1
+GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "False") in {
+    "y",
+    "yes",
+    "t",
+    "true",
+    "on",
+    "1",
+}
 
 
 class poll(Generic[_R]):  # noqa: N801
