@@ -32,6 +32,7 @@ Unreleased
 - :pull:`1113` - Renamed the ``use_location`` hook's ``search`` attribute to ``query_string``.
 - :pull:`1113` - Renamed the ``use_location`` hook's ``pathname`` attribute to ``path``.
 - :pull:`1113` - Renamed ``reactpy.config.REACTPY_DEBUG_MODE`` to ``reactpy.config.REACTPY_DEBUG``.
+- :pull:`1263` - ReactPy no longer auto-converts ``snake_case`` props to ``camelCase``. It is now the responsibility of the user to ensure that props are in the correct format.
 
 **Removed**
 
