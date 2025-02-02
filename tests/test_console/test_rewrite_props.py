@@ -14,7 +14,7 @@ def test_rewrite_camel_case_props_declarations(tmp_path):
     runner = CliRunner()
 
     tempfile: Path = tmp_path / "temp.py"
-    tempfile.write_text("html.div(dict(camelCase='test'))")
+    tempfile.write_text("html.div(dict(example_attribute='test'))")
     result = runner.invoke(
         rewrite_props,
         args=[str(tmp_path)],
@@ -22,7 +22,7 @@ def test_rewrite_camel_case_props_declarations(tmp_path):
     )
 
     assert result.exit_code == 0
-    assert tempfile.read_text() == "html.div(dict(camel_case='test'))"
+    assert tempfile.read_text() == "html.div(dict(exampleAttribute='test'))"
 
 
 def test_rewrite_camel_case_props_declarations_no_files():
@@ -41,40 +41,40 @@ def test_rewrite_camel_case_props_declarations_no_files():
     "source, expected",
     [
         (
-            "html.div(dict(camelCase='test'))",
             "html.div(dict(camel_case='test'))",
+            "html.div(dict(camelCase='test'))",
         ),
         (
-            "reactpy.html.button({'onClick': block_forever})",
             "reactpy.html.button({'on_click': block_forever})",
+            "reactpy.html.button({'onClick': block_forever})",
         ),
         (
-            "html.div(dict(style={'testThing': test}))",
             "html.div(dict(style={'test_thing': test}))",
+            "html.div(dict(style={'testThing': test}))",
         ),
         (
-            "html.div(dict(style=dict(testThing=test)))",
             "html.div(dict(style=dict(test_thing=test)))",
+            "html.div(dict(style=dict(testThing=test)))",
         ),
         (
-            "vdom('tag', dict(camelCase='test'))",
             "vdom('tag', dict(camel_case='test'))",
+            "vdom('tag', dict(camelCase='test'))",
         ),
         (
-            "vdom('tag', dict(camelCase='test', **props))",
             "vdom('tag', dict(camel_case='test', **props))",
+            "vdom('tag', dict(camelCase='test', **props))",
         ),
         (
-            "html.div({'camelCase': test, 'data-thing': test})",
             "html.div({'camel_case': test, 'data-thing': test})",
+            "html.div({'camelCase': test, 'data-thing': test})",
         ),
         (
-            "html.div({'camelCase': test, ignore: this})",
             "html.div({'camel_case': test, ignore: this})",
+            "html.div({'camelCase': test, ignore: this})",
         ),
         # no rewrite
         (
-            "html.div({'snake_case': test})",
+            "html.div({'camelCase': test})",
             None,
         ),
         (
@@ -82,7 +82,7 @@ def test_rewrite_camel_case_props_declarations_no_files():
             None,
         ),
         (
-            "html.div(dict(snake_case='test'))",
+            "html.div(dict(camelCase='test'))",
             None,
         ),
         (

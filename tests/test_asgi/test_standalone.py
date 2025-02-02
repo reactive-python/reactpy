@@ -40,7 +40,7 @@ async def test_display_simple_click_counter(display: DisplayFixture):
         return reactpy.html.button(
             {
                 "id": "counter",
-                "on_click": lambda event: set_count(lambda old_count: old_count + 1),
+                "onClick": lambda event: set_count(lambda old_count: old_count + 1),
             },
             f"Count: {count}",
         )

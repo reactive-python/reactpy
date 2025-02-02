@@ -10,7 +10,7 @@ from reactpy.core.vdom import is_vdom, make_vdom_constructor, validate_vdom_json
 from reactpy.types import VdomDict
 
 FAKE_EVENT_HANDLER = EventHandler(lambda data: None)
-FAKE_EVENT_HANDLER_DICT = {"on_event": FAKE_EVENT_HANDLER}
+FAKE_EVENT_HANDLER_DICT = {"onEvent": FAKE_EVENT_HANDLER}
 
 
 @pytest.mark.parametrize(
@@ -47,7 +47,7 @@ def test_is_vdom(result, value):
             },
         ),
         (
-            reactpy.vdom("div", {"on_event": FAKE_EVENT_HANDLER}),
+            reactpy.vdom("div", {"onEvent": FAKE_EVENT_HANDLER}),
             {"tagName": "div", "eventHandlers": FAKE_EVENT_HANDLER_DICT},
         ),
         (
@@ -82,14 +82,14 @@ async def test_callable_attributes_are_cast_to_event_handlers():
     params_from_calls = []
 
     node = reactpy.vdom(
-        "div", {"on_event": lambda *args: params_from_calls.append(args)}
+        "div", {"onEvent": lambda *args: params_from_calls.append(args)}
     )
 
     event_handlers = node.pop("eventHandlers")
     assert node == {"tagName": "div"}
 
-    handler = event_handlers["on_event"]
-    assert event_handlers == {"on_event": EventHandler(handler.function)}
+    handler = event_handlers["onEvent"]
+    assert event_handlers == {"onEvent": EventHandler(handler.function)}
 
     await handler.function([1, 2])
     await handler.function([3, 4, 5])
@@ -217,39 +217,39 @@ def test_valid_vdom(value):
             r"data\.eventHandlers must be object",
         ),
         (
-            {"tagName": "tag", "eventHandlers": {"on_event": None}},
-            r"data\.eventHandlers\.on_event must be object",
+            {"tagName": "tag", "eventHandlers": {"onEvent": None}},
+            r"data\.eventHandlers\.onEvent must be object",
         ),
         (
             {
                 "tagName": "tag",
-                "eventHandlers": {"on_event": {}},
+                "eventHandlers": {"onEvent": {}},
             },
-            r"data\.eventHandlers\.on_event\ must contain \['target'\] properties",
+            r"data\.eventHandlers\.onEvent\ must contain \['target'\] properties",
         ),
         (
             {
                 "tagName": "tag",
                 "eventHandlers": {
-                    "on_event": {
+                    "onEvent": {
                         "target": "something",
                         "preventDefault": None,
                     }
                 },
             },
-            r"data\.eventHandlers\.on_event\.preventDefault must be boolean",
+            r"data\.eventHandlers\.onEvent\.preventDefault must be boolean",
         ),
         (
             {
                 "tagName": "tag",
                 "eventHandlers": {
-                    "on_event": {
+                    "onEvent": {
                         "target": "something",
                         "stopPropagation": None,
                     }
                 },
             },
-            r"data\.eventHandlers\.on_event\.stopPropagation must be boolean",
+            r"data\.eventHandlers\.onEvent\.stopPropagation must be boolean",
         ),
         (
             {"tagName": "tag", "importSource": None},
@@ -312,4 +312,4 @@ def test_warn_dynamic_children_must_have_keys():
 @pytest.mark.skipif(not REACTPY_DEBUG.current, reason="only checked in debug mode")
 def test_raise_for_non_json_attrs():
     with pytest.raises(TypeError, match="JSON serializable"):
-        reactpy.html.div({"non_json_serializable_object": object()})
+        reactpy.html.div({"nonJsonSerializableObject": object()})

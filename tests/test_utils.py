@@ -226,7 +226,7 @@ def example_child():
             '<div>hello<a href="https://example.com">example</a>world</div>',
         ),
         (
-            html.button({"on_click": lambda event: None}),
+            html.button({"onClick": lambda event: None}),
             "<button></button>",
         ),
         (
@@ -264,7 +264,7 @@ def example_child():
         ),
         (
             html.div(
-                {"data_something": 1, "data_something_else": 2, "dataisnotdashed": 3}
+                {"dataSomething": 1, "dataSomethingElse": 2, "dataisnotdashed": 3}
             ),
             '<div data-something="1" data-something-else="2" dataisnotdashed="3"></div>',
         ),
