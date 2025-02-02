@@ -21,6 +21,7 @@ Unreleased
 - :pull:`1113` - Added ``reactpy.jinja.Component`` that can be used alongside ``ReactPyMiddleware`` to embed several ReactPy components into your existing application.
 - :pull:`1113` - Added ``standard``, ``uvicorn``, ``jinja`` installation extras (for example ``pip install reactpy[standard]``).
 - :pull:`1113` - Added support for Python 3.12 and 3.13.
+- :pull:`1264` - Added ``reactpy.use_async_effect`` hook.
 
 **Changed**
 
@@ -46,6 +47,7 @@ Unreleased
 - :pull:`1113` - All backend related installation extras (such as ``pip install reactpy[starlette]``) have been removed.
 - :pull:`1113` - Removed deprecated function ``module_from_template``.
 - :pull:`1113` - Removed support for Python 3.9.
+- :pull:`1264` - Removed support for async functions within ``reactpy.use_effect`` hook. Use ``reactpy.use_async_effect`` instead.
 
 **Fixed**
 
