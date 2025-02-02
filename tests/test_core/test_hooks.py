@@ -481,7 +481,7 @@ async def test_use_async_effect():
 
     @reactpy.component
     def ComponentWithAsyncEffect():
-        @reactpy.hooks.use_effect
+        @reactpy.hooks.use_async_effect
         async def effect():
             effect_ran.set()
 
@@ -500,7 +500,9 @@ async def test_use_async_effect_cleanup():
     @reactpy.component
     @component_hook.capture
     def ComponentWithAsyncEffect():
-        @reactpy.hooks.use_effect(dependencies=None)  # force this to run every time
+        @reactpy.hooks.use_async_effect(
+            dependencies=None
+        )  # force this to run every time
         async def effect():
             effect_ran.set()
             return cleanup_ran.set
@@ -527,7 +529,8 @@ async def test_use_async_effect_cancel(caplog):
     @reactpy.component
     @component_hook.capture
     def ComponentWithLongWaitingEffect():
-        @reactpy.hooks.use_effect(dependencies=None)  # force this to run every time
+        # force this to run every time
+        @reactpy.hooks.use_async_effect(dependencies=None)
         async def effect():
             effect_ran.set()
             try:
