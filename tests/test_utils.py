@@ -264,7 +264,7 @@ def example_child():
         ),
         (
             html.div(
-                {"dataSomething": 1, "dataSomethingElse": 2, "dataisnotdashed": 3}
+                {"data_Something": 1, "dataSomethingElse": 2, "dataisnotdashed": 3}
             ),
             '<div data-something="1" data-something-else="2" dataisnotdashed="3"></div>',
         ),

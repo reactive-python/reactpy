@@ -2,11 +2,12 @@
 
 import click
 
+import reactpy
 from reactpy._console.rewrite_props import rewrite_props
 
 
 @click.group()
-@click.version_option(package_name="reactpy")
+@click.version_option(version=reactpy.__version__, prog_name=reactpy.__name__)
 def entry_point() -> None:
     pass
 
