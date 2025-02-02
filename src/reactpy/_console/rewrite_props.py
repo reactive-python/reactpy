@@ -54,13 +54,20 @@ def find_nodes_to_change(tree: ast.AST) -> list[ChangedNode]:
 
 def conv_attr_name(name: str) -> str:
     """Convert snake_case attribute name to camelCase"""
+    # Return early if the value is a Python keyword
     if name in kwlist:
-        return name  # Return the name as is if it's a Python keyword
-    # Convert snake_case to CamelCase
-    result = name.replace("_", " ").title().replace(" ", "")
-    # Ensure the first letter is lowercase
-    result = name[0].lower() + name[1:]
-    return result
+        return name
+
+    # Return early if the value is not snake_case
+    if "_" not in name:
+        return name
+
+    # Split the string by underscores
+    components = name.split("_")
+
+    # Capitalize the first letter of each component except the first one
+    # and join them together
+    return components[0] + "".join(x.title() for x in components[1:])
 
 
 def _construct_prop_item(key: str, value: ast.expr) -> tuple[str, ast.expr]:
