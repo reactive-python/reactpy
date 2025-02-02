@@ -17,7 +17,7 @@ async def test_script_re_run_on_content_change(display: DisplayFixture):
             set_count(count + 1)
 
         return html.div(
-            html.div({"id": "mount-count", "dataValue": 0}),
+            html.div({"id": "mount-count", "data-value": 0}),
             html.script(
                 f'document.getElementById("mount-count").setAttribute("data-value", {count});'
             ),
@@ -57,7 +57,7 @@ async def test_script_from_src(display: DisplayFixture):
             return html.div()
         else:
             return html.div(
-                html.div({"id": "run-count", "dataValue": 0}),
+                html.div({"id": "run-count", "data-value": 0}),
                 html.script(
                     {
                         "src": f"/reactpy/modules/{file_name_template.format(src_id=src_id)}"

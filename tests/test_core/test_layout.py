@@ -12,7 +12,7 @@ import reactpy
 from reactpy import html
 from reactpy.config import REACTPY_ASYNC_RENDERING, REACTPY_DEBUG
 from reactpy.core.component import component
-from reactpy.core.hooks import use_effect, use_state
+from reactpy.core.hooks import use_async_effect, use_effect, use_state
 from reactpy.core.layout import Layout
 from reactpy.testing import (
     HookCatcher,
@@ -1016,7 +1016,7 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
     def Child(child_key):
         state, set_state = use_state(0)
 
-        @use_effect
+        @use_async_effect
         async def record_if_state_is_reset():
             if state:
                 return

@@ -30,12 +30,12 @@ if not TYPE_CHECKING:
 
 
 __all__ = [
-    "use_state",
-    "use_effect",
-    "use_reducer",
     "use_callback",
-    "use_ref",
+    "use_effect",
     "use_memo",
+    "use_reducer",
+    "use_ref",
+    "use_state",
 ]
 
 logger = getLogger(__name__)
@@ -110,15 +110,15 @@ def use_effect(
 
 @overload
 def use_effect(
-    function: _EffectApplyFunc,
+    function: _SyncEffectFunc,
     dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> None: ...
 
 
 def use_effect(
-    function: _EffectApplyFunc | None = None,
+    function: _SyncEffectFunc | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Callable[[_EffectApplyFunc], None] | None:
+) -> Callable[[_SyncEffectFunc], None] | None:
     """See the full :ref:`Use Effect` docs for details
 
     Parameters:
@@ -134,37 +134,16 @@ def use_effect(
         If not function is provided, a decorator. Otherwise ``None``.
     """
     hook = current_hook()
-
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
     last_clean_callback: Ref[_EffectCleanFunc | None] = use_ref(None)
 
-    def add_effect(function: _EffectApplyFunc) -> None:
-        if not asyncio.iscoroutinefunction(function):
-            sync_function = cast(_SyncEffectFunc, function)
-        else:
-            async_function = cast(_AsyncEffectFunc, function)
-
-            def sync_function() -> _EffectCleanFunc | None:
-                task = asyncio.create_task(async_function())
-
-                def clean_future() -> None:
-                    if not task.cancel():
-                        try:
-                            clean = task.result()
-                        except asyncio.CancelledError:
-                            pass
-                        else:
-                            if clean is not None:
-                                clean()
-
-                return clean_future
-
+    def add_effect(function: _SyncEffectFunc) -> None:
         async def effect(stop: asyncio.Event) -> None:
             if last_clean_callback.current is not None:
                 last_clean_callback.current()
                 last_clean_callback.current = None
-            clean = last_clean_callback.current = sync_function()
+            clean = last_clean_callback.current = function()
             await stop.wait()
             if clean is not None:
                 clean()
@@ -174,8 +153,79 @@ def use_effect(
     if function is not None:
         add_effect(function)
         return None
-    else:
-        return add_effect
+
+    return add_effect
+
+
+@overload
+def use_async_effect(
+    function: None = None,
+    dependencies: Sequence[Any] | ellipsis | None = ...,
+) -> Callable[[_EffectApplyFunc], None]: ...
+
+
+@overload
+def use_async_effect(
+    function: _AsyncEffectFunc,
+    dependencies: Sequence[Any] | ellipsis | None = ...,
+) -> None: ...
+
+
+def use_async_effect(
+    function: _AsyncEffectFunc | None = None,
+    dependencies: Sequence[Any] | ellipsis | None = ...,
+) -> Callable[[_AsyncEffectFunc], None] | None:
+    """See the full :ref:`Use Effect` docs for details
+
+    Parameters:
+        function:
+            Applies the effect and can return a clean-up function
+        dependencies:
+            Dependencies for the effect. The effect will only trigger if the identity
+            of any value in the given sequence changes (i.e. their :func:`id` is
+            different). By default these are inferred based on local variables that are
+            referenced by the given function.
+
+    Returns:
+        If not function is provided, a decorator. Otherwise ``None``.
+    """
+    hook = current_hook()
+    dependencies = _try_to_infer_closure_values(function, dependencies)
+    memoize = use_memo(dependencies=dependencies)
+    last_clean_callback: Ref[_EffectCleanFunc | None] = use_ref(None)
+
+    def add_effect(function: _AsyncEffectFunc) -> None:
+        def sync_executor() -> _EffectCleanFunc | None:
+            task = asyncio.create_task(function())
+
+            def clean_future() -> None:
+                if not task.cancel():
+                    try:
+                        clean = task.result()
+                    except asyncio.CancelledError:
+                        pass
+                    else:
+                        if clean is not None:
+                            clean()
+
+            return clean_future
+
+        async def effect(stop: asyncio.Event) -> None:
+            if last_clean_callback.current is not None:
+                last_clean_callback.current()
+                last_clean_callback.current = None
+            clean = last_clean_callback.current = sync_executor()
+            await stop.wait()
+            if clean is not None:
+                clean()
+
+        return memoize(lambda: hook.add_effect(effect))
+
+    if function is not None:
+        add_effect(function)
+        return None
+
+    return add_effect
 
 
 def use_debug_value(
