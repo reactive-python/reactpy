@@ -60,6 +60,9 @@ license-files = { paths = ["LICENSE"] }
 [tool.hatch.envs.default]
 installer = "uv"
 
+[project.scripts]
+reactpy = "reactpy._console.cli:entry_point"
+
 [[tool.hatch.build.hooks.build-scripts.scripts]]
 # Note: `hatch` can't be called within `build-scripts` when installing packages in editable mode, so we have to write the commands long-form
 commands = [

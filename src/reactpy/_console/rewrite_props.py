@@ -18,7 +18,7 @@ from reactpy._console.ast_utils import (
 @click.command()
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
 def rewrite_props(paths: list[str]) -> None:
-    """Rewrite snake_case props to camelCase in the specified paths"""
+    """Rewrite snake_case props to camelCase within <PATHS>."""
     for p in map(Path, paths):
         # Process each file or recursively process each Python file in directories
         for f in [p] if p.is_file() else p.rglob("*.py"):
