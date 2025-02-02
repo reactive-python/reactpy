@@ -21,13 +21,21 @@ from reactpy.asgi.utils import check_path, import_components, process_settings
 from reactpy.core.hooks import ConnectionContext
 from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
-from reactpy.types import Connection, Location, ReactPyConfig, RootComponentConstructor
+from reactpy.types import (
+    AsgiApp,
+    AsgiHttpApp,
+    AsgiLifespanApp,
+    AsgiWebsocketApp,
+    Connection,
+    Location,
+    ReactPyConfig,
+    RootComponentConstructor,
+)
 
 _logger = logging.getLogger(__name__)
 
 
 class ReactPyMiddleware:
-    _asgi_single_callable: bool = True
     root_component: RootComponentConstructor | None = None
     root_components: dict[str, RootComponentConstructor]
     multiple_root_components: bool = True
@@ -73,8 +81,13 @@ class ReactPyMiddleware:
         self.js_modules_pattern = re.compile(f"^{self.web_modules_path}.*")
         self.static_pattern = re.compile(f"^{self.static_path}.*")
 
+        # User defined ASGI apps
+        self.extra_http_routes: dict[str, AsgiHttpApp] = {}
+        self.extra_ws_routes: dict[str, AsgiWebsocketApp] = {}
+        self.extra_lifespan_app: AsgiLifespanApp | None = None
+
         # Component attributes
-        self.user_app: asgi_types.ASGI3Application = guarantee_single_callable(app)  # type: ignore
+        self.asgi_app: asgi_types.ASGI3Application = guarantee_single_callable(app)  # type: ignore
         self.root_components = import_components(root_components)
 
         # Directory attributes
@@ -106,8 +119,13 @@ class ReactPyMiddleware:
         if scope["type"] == "http" and self.match_web_modules_path(scope):
             return await self.web_modules_app(scope, receive, send)
 
+        # URL routing for user-defined routes
+        matched_app = self.match_extra_paths(scope)
+        if matched_app:
+            return await matched_app(scope, receive, send)  # type: ignore
+
         # Serve the user's application
-        await self.user_app(scope, receive, send)
+        await self.asgi_app(scope, receive, send)
 
     def match_dispatch_path(self, scope: asgi_types.WebSocketScope) -> bool:
         return bool(re.match(self.dispatcher_pattern, scope["path"]))
@@ -117,6 +135,11 @@ class ReactPyMiddleware:
 
     def match_web_modules_path(self, scope: asgi_types.HTTPScope) -> bool:
         return bool(re.match(self.js_modules_pattern, scope["path"]))
+
+    def match_extra_paths(self, scope: asgi_types.Scope) -> AsgiApp | None:
+        # Custom defined routes are unused within middleware to encourage users to handle
+        # routing within their root ASGI application.
+        return None
 
 
 @dataclass
@@ -223,7 +246,7 @@ class StaticFileApp:
         """ASGI app for ReactPy static files."""
         if not self._static_file_server:
             self._static_file_server = ServeStaticASGI(
-                self.parent.user_app,
+                self.parent.asgi_app,
                 root=self.parent.static_dir,
                 prefix=self.parent.static_path,
             )
@@ -245,7 +268,7 @@ class WebModuleApp:
         """ASGI app for ReactPy web modules."""
         if not self._static_file_server:
             self._static_file_server = ServeStaticASGI(
-                self.parent.user_app,
+                self.parent.asgi_app,
                 root=self.parent.web_modules_dir,
                 prefix=self.parent.web_modules_path,
                 autorefresh=True,

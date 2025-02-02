@@ -1,11 +1,13 @@
 from collections.abc import MutableMapping
 
 import pytest
+from asgiref.testing import ApplicationCommunicator
 from requests import request
 
 import reactpy
 from reactpy import html
 from reactpy.asgi.standalone import ReactPy
+from reactpy.asgi.utils import http_response
 from reactpy.testing import BackendFixture, DisplayFixture, poll
 from reactpy.testing.common import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.types import Connection, Location
@@ -161,3 +163,110 @@ async def test_head_request(page):
             assert response.headers["cache-control"] == "max-age=60, public"
             assert response.headers["access-control-allow-origin"] == "*"
             assert response.content == b""
+
+
+async def test_custom_http_app():
+    @reactpy.component
+    def sample():
+        return html.h1("Hello World")
+
+    app = ReactPy(sample)
+    rendered = reactpy.Ref(False)
+
+    @app.route("/example/")
+    async def custom_http_app(scope, receive, send) -> None:
+        if scope["type"] != "http":
+            raise ValueError("Custom HTTP app received a non-HTTP scope")
+
+        rendered.current = True
+        await http_response(send=send, method=scope["method"], message="Hello World")
+
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "method": "GET",
+        "scheme": "http",
+        "path": "/example/",
+        "raw_path": b"/example/",
+        "query_string": b"",
+        "root_path": "",
+        "headers": [],
+    }
+
+    # Test that the custom HTTP app is called
+    communicator = ApplicationCommunicator(app, scope)
+    await communicator.send_input(scope)
+    await communicator.receive_output()
+    assert rendered.current
+
+
+async def test_custom_websocket_app():
+    @reactpy.component
+    def sample():
+        return html.h1("Hello World")
+
+    app = ReactPy(sample)
+    rendered = reactpy.Ref(False)
+
+    @app.route("/example/", type="websocket")
+    async def custom_websocket_app(scope, receive, send) -> None:
+        if scope["type"] != "websocket":
+            raise ValueError("Custom WebSocket app received a non-WebSocket scope")
+
+        rendered.current = True
+        await send({"type": "websocket.accept"})
+
+    scope = {
+        "type": "websocket",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "scheme": "ws",
+        "path": "/example/",
+        "raw_path": b"/example/",
+        "query_string": b"",
+        "root_path": "",
+        "headers": [],
+        "subprotocols": [],
+    }
+
+    # Test that the WebSocket app is called
+    communicator = ApplicationCommunicator(app, scope)
+    await communicator.send_input(scope)
+    await communicator.receive_output()
+    assert rendered.current
+
+
+async def test_custom_lifespan_app():
+    @reactpy.component
+    def sample():
+        return html.h1("Hello World")
+
+    app = ReactPy(sample)
+    rendered = reactpy.Ref(False)
+
+    @app.lifespan
+    async def custom_lifespan_app(scope, receive, send) -> None:
+        if scope["type"] != "lifespan":
+            raise ValueError("Custom Lifespan app received a non-Lifespan scope")
+
+        rendered.current = True
+        await send({"type": "lifespan.startup.complete"})
+
+    scope = {
+        "type": "lifespan",
+        "asgi": {"version": "3.0"},
+    }
+
+    # Test that the lifespan app is called
+    communicator = ApplicationCommunicator(app, scope)
+    await communicator.send_input(scope)
+    await communicator.receive_output()
+    assert rendered.current
+
+    # Test if error is raised when re-registering a lifespan app
+    with pytest.raises(ValueError):
+
+        @app.lifespan
+        async def custom_lifespan_app2(scope, receive, send) -> None:
+            pass
