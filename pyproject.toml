@@ -18,11 +18,12 @@ authors = [
 ]
 requires-python = ">=3.9"
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
@@ -59,6 +60,9 @@ license-files = { paths = ["LICENSE"] }
 
 [tool.hatch.envs.default]
 installer = "uv"
+
+[project.scripts]
+reactpy = "reactpy._console.cli:entry_point"
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
 # Note: `hatch` can't be called within `build-scripts` when installing packages in editable mode, so we have to write the commands long-form
@@ -162,8 +166,6 @@ extra-dependencies = [
   "mypy==1.8",
   "types-toml",
   "types-click",
-  "types-tornado",
-  "types-flask",
   "types-requests",
 ]
 
@@ -194,6 +196,7 @@ test = [
 ]
 build = [
   'hatch run "src/build_scripts/clean_js_dir.py"',
+  'bun install --cwd "src/js"',
   'hatch run javascript:build_event_to_object',
   'hatch run javascript:build_client',
   'hatch run javascript:build_app',

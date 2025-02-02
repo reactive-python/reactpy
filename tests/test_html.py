@@ -17,7 +17,7 @@ async def test_script_re_run_on_content_change(display: DisplayFixture):
             set_count(count + 1)
 
         return html.div(
-            html.div({"id": "mount-count", "data_value": 0}),
+            html.div({"id": "mount-count", "dataValue": 0}),
             html.script(
                 f'document.getElementById("mount-count").setAttribute("data-value", {count});'
             ),
@@ -57,7 +57,7 @@ async def test_script_from_src(display: DisplayFixture):
             return html.div()
         else:
             return html.div(
-                html.div({"id": "run-count", "data_value": 0}),
+                html.div({"id": "run-count", "dataValue": 0}),
                 html.script(
                     {
                         "src": f"/reactpy/modules/{file_name_template.format(src_id=src_id)}"
@@ -98,7 +98,7 @@ def test_child_of_script_must_be_string():
 
 def test_script_has_no_event_handlers():
     with pytest.raises(ValueError, match="do not support event handlers"):
-        html.script({"on_event": lambda: None})
+        html.script({"onEvent": lambda: None})
 
 
 def test_simple_fragment():
@@ -114,7 +114,7 @@ def test_simple_fragment():
 
 def test_fragment_can_have_no_attributes():
     with pytest.raises(TypeError, match="Fragments cannot have attributes"):
-        html.fragment({"some_attribute": 1})
+        html.fragment({"someAttribute": 1})
 
 
 async def test_svg(display: DisplayFixture):
