@@ -165,6 +165,7 @@ extra-dependencies = [
   "toml",
   "mypy==1.8",
   "types-toml",
+  "types-click",
   "types-requests",
 ]
 
