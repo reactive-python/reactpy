@@ -6,14 +6,28 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import formatdate
 from logging import getLogger
+from typing import Callable, Literal, cast, overload
 
 from asgiref import typing as asgi_types
 from typing_extensions import Unpack
 
 from reactpy import html
 from reactpy.asgi.middleware import ReactPyMiddleware
-from reactpy.asgi.utils import dict_to_byte_list, http_response, vdom_head_to_html
-from reactpy.types import ReactPyConfig, RootComponentConstructor, VdomDict
+from reactpy.asgi.utils import (
+    dict_to_byte_list,
+    http_response,
+    import_dotted_path,
+    vdom_head_to_html,
+)
+from reactpy.types import (
+    AsgiApp,
+    AsgiHttpApp,
+    AsgiLifespanApp,
+    AsgiWebsocketApp,
+    ReactPyConfig,
+    RootComponentConstructor,
+    VdomDict,
+)
 from reactpy.utils import render_mount_template
 
 _logger = getLogger(__name__)
@@ -34,7 +48,7 @@ class ReactPy(ReactPyMiddleware):
         """ReactPy's standalone ASGI application.
 
         Parameters:
-            root_component: The root component to render. This component is assumed to be a single page application.
+            root_component: The root component to render. This app is typically a single page application.
             http_headers: Additional headers to include in the HTTP response for the base HTML document.
             html_head: Additional head elements to include in the HTML response.
             html_lang: The language of the HTML document.
@@ -50,6 +64,89 @@ class ReactPy(ReactPyMiddleware):
     def match_dispatch_path(self, scope: asgi_types.WebSocketScope) -> bool:
         """Method override to remove `dotted_path` from the dispatcher URL."""
         return str(scope["path"]) == self.dispatcher_path
+
+    def match_extra_paths(self, scope: asgi_types.Scope) -> AsgiApp | None:
+        """Method override to match user-provided HTTP/Websocket routes."""
+        if scope["type"] == "lifespan":
+            return self.extra_lifespan_app
+
+        if scope["type"] == "http":
+            routing_dictionary = self.extra_http_routes.items()
+
+        if scope["type"] == "websocket":
+            routing_dictionary = self.extra_ws_routes.items()  # type: ignore
+
+        return next(
+            (
+                app
+                for route, app in routing_dictionary
+                if re.match(route, scope["path"])
+            ),
+            None,
+        )
+
+    @overload
+    def route(
+        self,
+        path: str,
+        type: Literal["http"] = "http",
+    ) -> Callable[[AsgiHttpApp | str], AsgiApp]: ...
+
+    @overload
+    def route(
+        self,
+        path: str,
+        type: Literal["websocket"],
+    ) -> Callable[[AsgiWebsocketApp | str], AsgiApp]: ...
+
+    def route(
+        self,
+        path: str,
+        type: Literal["http", "websocket"] = "http",
+    ) -> (
+        Callable[[AsgiHttpApp | str], AsgiApp]
+        | Callable[[AsgiWebsocketApp | str], AsgiApp]
+    ):
+        """Interface that allows user to define their own HTTP/Websocket routes
+        within the current ReactPy application.
+
+        Parameters:
+            path: The URL route to match, using regex format.
+            type: The protocol to route for. Can be 'http' or 'websocket'.
+        """
+
+        def decorator(
+            app: AsgiApp | str,
+        ) -> AsgiApp:
+            re_path = path
+            if not re_path.startswith("^"):
+                re_path = f"^{re_path}"
+            if not re_path.endswith("$"):
+                re_path = f"{re_path}$"
+
+            asgi_app: AsgiApp = import_dotted_path(app) if isinstance(app, str) else app
+            if type == "http":
+                self.extra_http_routes[re_path] = cast(AsgiHttpApp, asgi_app)
+            elif type == "websocket":
+                self.extra_ws_routes[re_path] = cast(AsgiWebsocketApp, asgi_app)
+
+            return asgi_app
+
+        return decorator
+
+    def lifespan(self, app: AsgiLifespanApp | str) -> None:
+        """Interface that allows user to define their own lifespan app
+        within the current ReactPy application.
+
+        Parameters:
+            app: The ASGI application to route to.
+        """
+        if self.extra_lifespan_app:
+            raise ValueError("Only one lifespan app can be defined.")
+
+        self.extra_lifespan_app = (
+            import_dotted_path(app) if isinstance(app, str) else app
+        )
 
 
 @dataclass

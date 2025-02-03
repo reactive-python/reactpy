@@ -256,7 +256,6 @@ exclude_also = [
 ]
 
 [tool.ruff]
-target-version = "py39"
 line-length = 88
 lint.select = [
   "A",
@@ -328,13 +327,6 @@ lint.unfixable = [
 [tool.ruff.lint.isort]
 known-first-party = ["reactpy"]
 
-[tool.ruff.lint.flake8-tidy-imports]
-ban-relative-imports = "all"
-
-[tool.flake8]
-select = ["RPY"]                                                  # only need to check with reactpy-flake8
-exclude = ["**/node_modules/*", ".eggs/*", ".tox/*", "**/venv/*"]
-
 [tool.ruff.lint.per-file-ignores]
 # Tests can use magic values, assertions, and relative imports
 "**/tests/**/*" = ["PLR2004", "S101", "TID252"]
@@ -350,7 +342,3 @@ exclude = ["**/node_modules/*", ".eggs/*", ".tox/*", "**/venv/*"]
   # Allow print
   "T201",
 ]
-
-[tool.black]
-target-version = ["py39"]
-line-length = 88

@@ -140,7 +140,7 @@ class BackendFixture:
             raise LogAssertionError(msg) from logged_errors[0]
 
         await asyncio.wait_for(
-            self.webserver.shutdown(), timeout=60 if GITHUB_ACTIONS else 5
+            self.webserver.shutdown(), timeout=90 if GITHUB_ACTIONS else 5
         )
 
     async def restart(self) -> None:
