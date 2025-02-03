@@ -173,6 +173,7 @@ def use_effect(
 def use_async_effect(
     function: None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
+    shutdown_timeout: float = 0.1,
 ) -> Callable[[_EffectApplyFunc], None]: ...
 
 
@@ -180,6 +181,7 @@ def use_async_effect(
 def use_async_effect(
     function: _AsyncEffectFunc,
     dependencies: Sequence[Any] | ellipsis | None = ...,
+    shutdown_timeout: float = 0.1,
 ) -> None: ...
 
 
@@ -227,8 +229,8 @@ def use_async_effect(
             # Wait until we get the signal to stop this effect
             await stop.wait()
 
-            # If renders are queued back-to-back, then this effect function might have
-            # not completed. So, we give the task a small amount of time to finish.
+            # If renders are queued back-to-back, the effect might not have
+            # completed. So, we give the task a small amount of time to finish.
             # If it manages to finish, we can obtain a clean-up function.
             results, _ = await asyncio.wait([task], timeout=shutdown_timeout)
             if results:
