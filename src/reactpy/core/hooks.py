@@ -137,21 +137,21 @@ def use_effect(
     hook = current_hook()
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
-    unmount_func: Ref[_EffectCleanFunc | None] = use_ref(None)
+    cleanup_func: Ref[_EffectCleanFunc | None] = use_ref(None)
 
     def decorator(func: _SyncEffectFunc) -> None:
         async def effect(stop: asyncio.Event) -> None:
-            if unmount_func.current:
-                unmount_func.current()
-                unmount_func.current = None
+            if cleanup_func.current:
+                cleanup_func.current()
+                cleanup_func.current = None
 
             # Execute the effect and store the clean-up function
-            unmount = unmount_func.current = func()
+            cleanup_func.current = func()
 
             # Run the clean-up function when the effect is stopped
             await stop.wait()
-            if unmount:
-                unmount()
+            if cleanup_func.current:
+                cleanup_func.current()
 
         return memoize(lambda: hook.add_effect(effect))
 
@@ -179,54 +179,34 @@ def use_async_effect(
 def use_async_effect(
     function: _AsyncEffectFunc | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
+    shutdown_timeout: float = 0.1,
 ) -> Callable[[_AsyncEffectFunc], None] | None:
-    """See the full :ref:`Use Effect` docs for details
-
-    Parameters:
-        function:
-            Applies the effect and can return a clean-up function
-        dependencies:
-            Dependencies for the effect. The effect will only trigger if the identity
-            of any value in the given sequence changes (i.e. their :func:`id` is
-            different). By default these are inferred based on local variables that are
-            referenced by the given function.
-
-    Returns:
-        If not function is provided, a decorator. Otherwise ``None``.
-    """
     hook = current_hook()
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
-    unmount_func: Ref[_EffectCleanFunc | None] = use_ref(None)
+    cleanup_func: Ref[_EffectCleanFunc | None] = use_ref(None)
 
     def decorator(func: _AsyncEffectFunc) -> None:
-        def sync_executor() -> _EffectCleanFunc | None:
+        async def effect(stop: asyncio.Event) -> None:
+            if cleanup_func.current:
+                cleanup_func.current()
+                cleanup_func.current = None
+
+            # Execute the effect in a background task
             task = asyncio.create_task(func())
 
-            def unmount_executor() -> None:
-                if not task.cancel():
-                    try:
-                        unmount = task.result()
-                    except asyncio.CancelledError:
-                        pass
-                    else:
-                        if unmount:
-                            unmount()
-
-            return unmount_executor
-
-        async def effect(stop: asyncio.Event) -> None:
-            if unmount_func.current:
-                unmount_func.current()
-                unmount_func.current = None
-
-            # Execute the effect and store the clean-up function
-            unmount = unmount_func.current = sync_executor()
-
-            # Run the clean-up function when the effect is stopped
+            # Wait until the effect is stopped
             await stop.wait()
-            if unmount:
-                unmount()
+
+            # Try to fetch the results of the task
+            results, _ = await asyncio.wait([task], timeout=shutdown_timeout)
+            if results:
+                cleanup_func.current = results.pop().result()
+            if cleanup_func.current:
+                cleanup_func.current()
+
+            # Cancel the task if it's still running
+            task.cancel()
 
         return memoize(lambda: hook.add_effect(effect))
 
