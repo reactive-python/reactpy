@@ -90,20 +90,23 @@ class ReactPy(ReactPyMiddleware):
         self,
         path: str,
         type: Literal["http"] = "http",
-    ) -> Callable[[AsgiHttpApp | str], None]: ...
+    ) -> Callable[[AsgiHttpApp | str], AsgiApp]: ...
 
     @overload
     def route(
         self,
         path: str,
         type: Literal["websocket"],
-    ) -> Callable[[AsgiWebsocketApp | str], None]: ...
+    ) -> Callable[[AsgiWebsocketApp | str], AsgiApp]: ...
 
     def route(
         self,
         path: str,
         type: Literal["http", "websocket"] = "http",
-    ) -> Callable[[AsgiHttpApp | str], None] | Callable[[AsgiWebsocketApp | str], None]:
+    ) -> (
+        Callable[[AsgiHttpApp | str], AsgiApp]
+        | Callable[[AsgiWebsocketApp | str], AsgiApp]
+    ):
         """Interface that allows user to define their own HTTP/Websocket routes
         within the current ReactPy application.
 
@@ -114,7 +117,7 @@ class ReactPy(ReactPyMiddleware):
 
         def decorator(
             app: AsgiApp | str,
-        ) -> None:
+        ) -> AsgiApp:
             re_path = path
             if not re_path.startswith("^"):
                 re_path = f"^{re_path}"
@@ -126,6 +129,8 @@ class ReactPy(ReactPyMiddleware):
                 self.extra_http_routes[re_path] = cast(AsgiHttpApp, asgi_app)
             elif type == "websocket":
                 self.extra_ws_routes[re_path] = cast(AsgiWebsocketApp, asgi_app)
+
+            return asgi_app
 
         return decorator
 
