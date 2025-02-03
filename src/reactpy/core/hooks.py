@@ -137,25 +137,29 @@ def use_effect(
     hook = current_hook()
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
-    last_clean_callback: Ref[_EffectCleanFunc | None] = use_ref(None)
+    unmount_func: Ref[_EffectCleanFunc | None] = use_ref(None)
 
-    def add_effect(function: _SyncEffectFunc) -> None:
+    def decorator(func: _SyncEffectFunc) -> None:
         async def effect(stop: asyncio.Event) -> None:
-            if last_clean_callback.current is not None:
-                last_clean_callback.current()
-                last_clean_callback.current = None
-            clean = last_clean_callback.current = function()
+            if unmount_func.current:
+                unmount_func.current()
+                unmount_func.current = None
+
+            # Execute the effect and store the clean-up function
+            unmount = unmount_func.current = func()
+
+            # Run the clean-up function when the effect is stopped
             await stop.wait()
-            if clean is not None:
-                clean()
+            if unmount:
+                unmount()
 
         return memoize(lambda: hook.add_effect(effect))
 
-    if function is not None:
-        add_effect(function)
+    # Handle decorator usage
+    if function:
+        decorator(function)
         return None
-
-    return add_effect
+    return decorator
 
 
 @overload
@@ -193,40 +197,44 @@ def use_async_effect(
     hook = current_hook()
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
-    last_clean_callback: Ref[_EffectCleanFunc | None] = use_ref(None)
+    unmount_func: Ref[_EffectCleanFunc | None] = use_ref(None)
 
-    def add_effect(function: _AsyncEffectFunc) -> None:
+    def decorator(func: _AsyncEffectFunc) -> None:
         def sync_executor() -> _EffectCleanFunc | None:
-            task = asyncio.create_task(function())
+            task = asyncio.create_task(func())
 
-            def clean_future() -> None:
+            def unmount_executor() -> None:
                 if not task.cancel():
                     try:
-                        clean = task.result()
+                        unmount = task.result()
                     except asyncio.CancelledError:
                         pass
                     else:
-                        if clean is not None:
-                            clean()
+                        if unmount:
+                            unmount()
 
-            return clean_future
+            return unmount_executor
 
         async def effect(stop: asyncio.Event) -> None:
-            if last_clean_callback.current is not None:
-                last_clean_callback.current()
-                last_clean_callback.current = None
-            clean = last_clean_callback.current = sync_executor()
+            if unmount_func.current:
+                unmount_func.current()
+                unmount_func.current = None
+
+            # Execute the effect and store the clean-up function
+            unmount = unmount_func.current = sync_executor()
+
+            # Run the clean-up function when the effect is stopped
             await stop.wait()
-            if clean is not None:
-                clean()
+            if unmount:
+                unmount()
 
         return memoize(lambda: hook.add_effect(effect))
 
-    if function is not None:
-        add_effect(function)
+    # Handle decorator usage
+    if function:
+        decorator(function)
         return None
-
-    return add_effect
+    return decorator
 
 
 def use_debug_value(
