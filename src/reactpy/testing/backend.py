@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import logging
 from contextlib import AsyncExitStack
-from threading import Thread
 from types import TracebackType
 from typing import Any, Callable
 from urllib.parse import urlencode, urlunparse
@@ -16,7 +15,6 @@ from reactpy.asgi.standalone import ReactPy
 from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.core.component import component
 from reactpy.core.hooks import use_callback, use_effect, use_state
-from reactpy.testing.common import GITHUB_ACTIONS
 from reactpy.testing.logs import (
     LogAssertionError,
     capture_reactpy_logs,
