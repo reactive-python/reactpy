@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import logging
 from contextlib import AsyncExitStack
-from threading import Thread
 from types import TracebackType
 from typing import Any, Callable
 from urllib.parse import urlencode, urlunparse
@@ -16,7 +15,6 @@ from reactpy.asgi.standalone import ReactPy
 from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.core.component import component
 from reactpy.core.hooks import use_callback, use_effect, use_state
-from reactpy.testing.common import GITHUB_ACTIONS
 from reactpy.testing.logs import (
     LogAssertionError,
     capture_reactpy_logs,
@@ -121,7 +119,8 @@ class BackendFixture:
         self.log_records = self._exit_stack.enter_context(capture_reactpy_logs())
 
         # Wait for the server to start
-        Thread(target=self.webserver.run, daemon=True).start()
+        self.webserver.config.setup_event_loop()
+        self.webserver_task = asyncio.create_task(self.webserver.serve())
         await asyncio.sleep(1)
 
         return self
@@ -139,9 +138,8 @@ class BackendFixture:
             msg = "Unexpected logged exception"
             raise LogAssertionError(msg) from logged_errors[0]
 
-        await asyncio.wait_for(
-            self.webserver.shutdown(), timeout=90 if GITHUB_ACTIONS else 5
-        )
+        await self.webserver.shutdown()
+        self.webserver_task.cancel()
 
     async def restart(self) -> None:
         """Restart the server"""

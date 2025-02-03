@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import MutableMapping
 
 import pytest
@@ -155,8 +156,8 @@ async def test_head_request(page):
         async with DisplayFixture(backend=server, driver=page) as new_display:
             await new_display.show(sample)
             url = f"http://{server.host}:{server.port}"
-            response = request(
-                "HEAD", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+            response = await asyncio.to_thread(
+                request, "HEAD", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
             )
             assert response.status_code == 200
             assert response.headers["content-type"] == "text/html; charset=utf-8"
