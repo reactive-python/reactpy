@@ -120,7 +120,12 @@ def use_effect(
     function: _SyncEffectFunc | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> Callable[[_SyncEffectFunc], None] | None:
-    """See the full :ref:`Use Effect` docs for details
+    """
+    A hook that manages an synchronous side effect in a React-like component.
+
+    This hook allows you to run a synchronous function as a side effect and
+    ensures that the effect is properly cleaned up when the component is
+    re-rendered or unmounted.
 
     Parameters:
         function:
