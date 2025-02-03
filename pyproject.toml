@@ -93,15 +93,13 @@ testing = ["playwright"]
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
   "pytest-sugar",
-  "pytest-asyncio>=0.23",
-  "pytest-timeout",
-  "coverage[toml]>=6.5",
+  "pytest-asyncio",
   "responses",
   "playwright",
   "jsonpointer",
   "uvicorn[standard]",
   "jinja2-simple-tags",
-  "jinja2 >=3",
+  "jinja2",
   "starlette",
 ]
 

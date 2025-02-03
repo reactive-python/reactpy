@@ -30,6 +30,7 @@ if not TYPE_CHECKING:
 
 
 __all__ = [
+    "use_async_effect",
     "use_callback",
     "use_effect",
     "use_memo",
@@ -119,7 +120,12 @@ def use_effect(
     function: _SyncEffectFunc | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> Callable[[_SyncEffectFunc], None] | None:
-    """See the full :ref:`Use Effect` docs for details
+    """
+    A hook that manages an synchronous side effect in a React-like component.
+
+    This hook allows you to run a synchronous function as a side effect and
+    ensures that the effect is properly cleaned up when the component is
+    re-rendered or unmounted.
 
     Parameters:
         function:
@@ -136,31 +142,38 @@ def use_effect(
     hook = current_hook()
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
-    last_clean_callback: Ref[_EffectCleanFunc | None] = use_ref(None)
+    cleanup_func: Ref[_EffectCleanFunc | None] = use_ref(None)
 
-    def add_effect(function: _SyncEffectFunc) -> None:
+    def decorator(func: _SyncEffectFunc) -> None:
         async def effect(stop: asyncio.Event) -> None:
-            if last_clean_callback.current is not None:
-                last_clean_callback.current()
-                last_clean_callback.current = None
-            clean = last_clean_callback.current = function()
+            # Since the effect is asynchronous, we need to make sure we
+            # always clean up the previous effect's resources
+            run_effect_cleanup(cleanup_func)
+
+            # Execute the effect and store the clean-up function
+            cleanup_func.current = func()
+
+            # Wait until we get the signal to stop this effect
             await stop.wait()
-            if clean is not None:
-                clean()
+
+            # Run the clean-up function when the effect is stopped,
+            # if it hasn't been run already by a new effect
+            run_effect_cleanup(cleanup_func)
 
         return memoize(lambda: hook.add_effect(effect))
 
-    if function is not None:
-        add_effect(function)
+    # Handle decorator usage
+    if function:
+        decorator(function)
         return None
-
-    return add_effect
+    return decorator
 
 
 @overload
 def use_async_effect(
     function: None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
+    shutdown_timeout: float = 0.1,
 ) -> Callable[[_EffectApplyFunc], None]: ...
 
 
@@ -168,16 +181,23 @@ def use_async_effect(
 def use_async_effect(
     function: _AsyncEffectFunc,
     dependencies: Sequence[Any] | ellipsis | None = ...,
+    shutdown_timeout: float = 0.1,
 ) -> None: ...
 
 
 def use_async_effect(
     function: _AsyncEffectFunc | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
+    shutdown_timeout: float = 0.1,
 ) -> Callable[[_AsyncEffectFunc], None] | None:
-    """See the full :ref:`Use Effect` docs for details
+    """
+    A hook that manages an asynchronous side effect in a React-like component.
 
-    Parameters:
+    This hook allows you to run an asynchronous function as a side effect and
+    ensures that the effect is properly cleaned up when the component is
+    re-rendered or unmounted.
+
+    Args:
         function:
             Applies the effect and can return a clean-up function
         dependencies:
@@ -185,6 +205,9 @@ def use_async_effect(
             of any value in the given sequence changes (i.e. their :func:`id` is
             different). By default these are inferred based on local variables that are
             referenced by the given function.
+        shutdown_timeout:
+            The amount of time (in seconds) to wait for the effect to complete before
+            forcing a shutdown.
 
     Returns:
         If not function is provided, a decorator. Otherwise ``None``.
@@ -192,40 +215,41 @@ def use_async_effect(
     hook = current_hook()
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
-    last_clean_callback: Ref[_EffectCleanFunc | None] = use_ref(None)
+    cleanup_func: Ref[_EffectCleanFunc | None] = use_ref(None)
 
-    def add_effect(function: _AsyncEffectFunc) -> None:
-        def sync_executor() -> _EffectCleanFunc | None:
-            task = asyncio.create_task(function())
-
-            def clean_future() -> None:
-                if not task.cancel():
-                    try:
-                        clean = task.result()
-                    except asyncio.CancelledError:
-                        pass
-                    else:
-                        if clean is not None:
-                            clean()
-
-            return clean_future
-
+    def decorator(func: _AsyncEffectFunc) -> None:
         async def effect(stop: asyncio.Event) -> None:
-            if last_clean_callback.current is not None:
-                last_clean_callback.current()
-                last_clean_callback.current = None
-            clean = last_clean_callback.current = sync_executor()
+            # Since the effect is asynchronous, we need to make sure we
+            # always clean up the previous effect's resources
+            run_effect_cleanup(cleanup_func)
+
+            # Execute the effect in a background task
+            task = asyncio.create_task(func())
+
+            # Wait until we get the signal to stop this effect
             await stop.wait()
-            if clean is not None:
-                clean()
+
+            # If renders are queued back-to-back, the effect might not have
+            # completed. So, we give the task a small amount of time to finish.
+            # If it manages to finish, we can obtain a clean-up function.
+            results, _ = await asyncio.wait([task], timeout=shutdown_timeout)
+            if results:
+                cleanup_func.current = results.pop().result()
+
+            # Run the clean-up function when the effect is stopped,
+            # if it hasn't been run already by a new effect
+            run_effect_cleanup(cleanup_func)
+
+            # Cancel the task if it's still running
+            task.cancel()
 
         return memoize(lambda: hook.add_effect(effect))
 
-    if function is not None:
-        add_effect(function)
+    # Handle decorator usage
+    if function:
+        decorator(function)
         return None
-
-    return add_effect
+    return decorator
 
 
 def use_debug_value(
@@ -595,3 +619,9 @@ def strictly_equal(x: Any, y: Any) -> bool:
 
     # Fallback to identity check
     return x is y  # pragma: no cover
+
+
+def run_effect_cleanup(cleanup_func: Ref[_EffectCleanFunc | None]) -> None:
+    if cleanup_func.current:
+        cleanup_func.current()
+        cleanup_func.current = None
