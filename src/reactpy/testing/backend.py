@@ -121,7 +121,8 @@ class BackendFixture:
         self.log_records = self._exit_stack.enter_context(capture_reactpy_logs())
 
         # Wait for the server to start
-        Thread(target=self.webserver.run, daemon=True).start()
+        self.webserver.config.setup_event_loop()
+        self.webserver_task = asyncio.create_task(self.webserver.serve())
         await asyncio.sleep(1)
 
         return self
@@ -139,9 +140,8 @@ class BackendFixture:
             msg = "Unexpected logged exception"
             raise LogAssertionError(msg) from logged_errors[0]
 
-        await asyncio.wait_for(
-            self.webserver.shutdown(), timeout=90 if GITHUB_ACTIONS else 5
-        )
+        await self.webserver.shutdown()
+        self.webserver_task.cancel()
 
     async def restart(self) -> None:
         """Restart the server"""
