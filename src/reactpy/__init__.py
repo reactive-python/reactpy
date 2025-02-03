@@ -25,7 +25,7 @@ from reactpy.core.vdom import vdom
 from reactpy.utils import Ref, html_to_vdom, vdom_to_html
 
 __author__ = "The Reactive Python Team"
-__version__ = "2.0.0a0"
+__version__ = "2.0.0a1"
 
 __all__ = [
     "Layout",
