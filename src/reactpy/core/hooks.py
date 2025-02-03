@@ -141,17 +141,19 @@ def use_effect(
 
     def decorator(func: _SyncEffectFunc) -> None:
         async def effect(stop: asyncio.Event) -> None:
-            if cleanup_func.current:
-                cleanup_func.current()
-                cleanup_func.current = None
+            # Since the effect is asynchronous, we need to make sure we
+            # always clean up the previous effect's resources
+            run_effect_cleanup(cleanup_func)
 
             # Execute the effect and store the clean-up function
             cleanup_func.current = func()
 
-            # Run the clean-up function when the effect is stopped
+            # Wait until we get the signal to stop this effect
             await stop.wait()
-            if cleanup_func.current:
-                cleanup_func.current()
+
+            # Run the clean-up function when the effect is stopped,
+            # if it hasn't been run already by a new effect
+            run_effect_cleanup(cleanup_func)
 
         return memoize(lambda: hook.add_effect(effect))
 
@@ -181,6 +183,28 @@ def use_async_effect(
     dependencies: Sequence[Any] | ellipsis | None = ...,
     shutdown_timeout: float = 0.1,
 ) -> Callable[[_AsyncEffectFunc], None] | None:
+    """
+    A hook that manages an asynchronous side effect in a React-like component.
+
+    This hook allows you to run an asynchronous function as a side effect and
+    ensures that the effect is properly cleaned up when the component is
+    re-rendered or unmounted.
+
+    Args:
+        function:
+            Applies the effect and can return a clean-up function
+        dependencies:
+            Dependencies for the effect. The effect will only trigger if the identity
+            of any value in the given sequence changes (i.e. their :func:`id` is
+            different). By default these are inferred based on local variables that are
+            referenced by the given function.
+        shutdown_timeout:
+            The amount of time (in seconds) to wait for the effect to complete before
+            forcing a shutdown.
+
+    Returns:
+        If not function is provided, a decorator. Otherwise ``None``.
+    """
     hook = current_hook()
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
@@ -188,22 +212,26 @@ def use_async_effect(
 
     def decorator(func: _AsyncEffectFunc) -> None:
         async def effect(stop: asyncio.Event) -> None:
-            if cleanup_func.current:
-                cleanup_func.current()
-                cleanup_func.current = None
+            # Since the effect is asynchronous, we need to make sure we
+            # always clean up the previous effect's resources
+            run_effect_cleanup(cleanup_func)
 
             # Execute the effect in a background task
             task = asyncio.create_task(func())
 
-            # Wait until the effect is stopped
+            # Wait until we get the signal to stop this effect
             await stop.wait()
 
-            # Try to fetch the results of the task
+            # If renders are queued back-to-back, then this effect function might have
+            # not completed. So, we give the task a small amount of time to finish.
+            # If it manages to finish, we can obtain a clean-up function.
             results, _ = await asyncio.wait([task], timeout=shutdown_timeout)
             if results:
                 cleanup_func.current = results.pop().result()
-            if cleanup_func.current:
-                cleanup_func.current()
+
+            # Run the clean-up function when the effect is stopped,
+            # if it hasn't been run already by a new effect
+            run_effect_cleanup(cleanup_func)
 
             # Cancel the task if it's still running
             task.cancel()
@@ -584,3 +612,9 @@ def strictly_equal(x: Any, y: Any) -> bool:
 
     # Fallback to identity check
     return x is y  # pragma: no cover
+
+
+def run_effect_cleanup(cleanup_func: Ref[_EffectCleanFunc | None]) -> None:
+    if cleanup_func.current:
+        cleanup_func.current()
+        cleanup_func.current = None
