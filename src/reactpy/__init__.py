@@ -7,6 +7,7 @@ from reactpy.core.component import component
 from reactpy.core.events import event
 from reactpy.core.hooks import (
     create_context,
+    use_async_effect,
     use_callback,
     use_connection,
     use_context,
@@ -41,6 +42,7 @@ __all__ = [
     "html_to_vdom",
     "logging",
     "types",
+    "use_async_effect",
     "use_callback",
     "use_connection",
     "use_context",

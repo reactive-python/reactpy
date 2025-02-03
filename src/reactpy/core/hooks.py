@@ -30,6 +30,7 @@ if not TYPE_CHECKING:
 
 
 __all__ = [
+    "use_async_effect",
     "use_callback",
     "use_effect",
     "use_memo",
