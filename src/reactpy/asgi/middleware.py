@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import orjson
+from asgi_tools import ResponseWebSocket
 from asgiref import typing as asgi_types
 from asgiref.compatibility import guarantee_single_callable
 from servestatic import ServeStaticASGI
@@ -26,6 +27,8 @@ from reactpy.types import (
     AsgiHttpApp,
     AsgiLifespanApp,
     AsgiWebsocketApp,
+    AsgiWebsocketReceive,
+    AsgiWebsocketSend,
     Connection,
     Location,
     ReactPyConfig,
@@ -153,48 +156,52 @@ class ComponentDispatchApp:
         send: asgi_types.ASGISendCallable,
     ) -> None:
         """ASGI app for rendering ReactPy Python components."""
-        dispatcher: asyncio.Task[Any] | None = None
-        recv_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
-
         # Start a loop that handles ASGI websocket events
-        while True:
-            event = await receive()
-            if event["type"] == "websocket.connect":
-                await send(
-                    {"type": "websocket.accept", "subprotocol": None, "headers": []}
-                )
-                dispatcher = asyncio.create_task(
-                    self.run_dispatcher(scope, receive, send, recv_queue)
-                )
+        async with ReactPyWebsocket(scope, receive, send, parent=self.parent) as ws:  # type: ignore
+            while True:
+                event: dict[str, Any] = await ws.receive(raw=True)  # type: ignore
+                if event["type"] == "websocket.receive" and event["text"]:
+                    msg: dict[str, str] = orjson.loads(event["text"])
+                    if msg.get("type") == "layout-event":
+                        queue_put_func = ws.recv_queue.put(msg)
+                        await queue_put_func
+                    else:
+                        await asyncio.to_thread(
+                            _logger.warning, f"Unknown message type: {msg.get('type')}"
+                        )
+                elif event["type"] == "websocket.disconnect":
+                    break
 
-            elif event["type"] == "websocket.disconnect":
-                if dispatcher:
-                    dispatcher.cancel()
-                break
 
-            elif event["type"] == "websocket.receive" and event["text"]:
-                msg = orjson.loads(event["text"])
-                msg_type = msg.get("type")
-                if msg_type == "layout-event":
-                    queue_put_func = recv_queue.put(msg)
-                    await queue_put_func
-                else:
-                    await asyncio.to_thread(
-                        _logger.warning, f"Unknown message type: {msg_type}"
-                    )
-
-    async def run_dispatcher(
+class ReactPyWebsocket(ResponseWebSocket):
+    def __init__(
         self,
         scope: asgi_types.WebSocketScope,
-        receive: asgi_types.ASGIReceiveCallable,
-        send: asgi_types.ASGISendCallable,
-        recv_queue: asyncio.Queue[dict[str, Any]],
+        receive: AsgiWebsocketReceive,
+        send: AsgiWebsocketSend,
+        parent: ReactPyMiddleware,
     ) -> None:
+        super().__init__(scope=scope, receive=receive, send=send)  # type: ignore
+        self.scope = scope
+        self.parent = parent
+        self.recv_queue: asyncio.Queue[dict[str, str]] = asyncio.Queue()
+        self.dispatcher: asyncio.Task[Any] | None = None
+
+    async def __aenter__(self) -> ReactPyWebsocket:
+        self.dispatcher = asyncio.create_task(self.run_dispatcher())
+        return await super().__aenter__()  # type: ignore
+
+    async def __aexit__(self, *_: Any) -> None:
+        if self.dispatcher:
+            self.dispatcher.cancel()
+        await super().__aexit__()  # type: ignore
+
+    async def run_dispatcher(self) -> None:
         """Asyncio background task that renders and transmits layout updates of ReactPy components."""
         try:
             # Determine component to serve by analyzing the URL and/or class parameters.
             if self.parent.multiple_root_components:
-                url_match = re.match(self.parent.dispatcher_pattern, scope["path"])
+                url_match = re.match(self.parent.dispatcher_pattern, self.scope["path"])
                 if not url_match:  # pragma: no cover
                     raise RuntimeError("Could not find component in URL path.")
                 dotted_path = url_match["dotted_path"]
@@ -210,10 +217,10 @@ class ComponentDispatchApp:
 
             # Create a connection object by analyzing the websocket's query string.
             ws_query_string = urllib.parse.parse_qs(
-                scope["query_string"].decode(), strict_parsing=True
+                self.scope["query_string"].decode(), strict_parsing=True
             )
             connection = Connection(
-                scope=scope,
+                scope=self.scope,
                 location=Location(
                     path=ws_query_string.get("http_pathname", [""])[0],
                     query_string=ws_query_string.get("http_query_string", [""])[0],
@@ -224,19 +231,18 @@ class ComponentDispatchApp:
             # Start the ReactPy component rendering loop
             await serve_layout(
                 Layout(ConnectionContext(component(), value=connection)),
-                lambda msg: send(
-                    {
-                        "type": "websocket.send",
-                        "text": orjson.dumps(msg).decode(),
-                        "bytes": None,
-                    }
-                ),
-                recv_queue.get,  # type: ignore
+                self.send_json,
+                self.recv_queue.get,  # type: ignore
             )
 
         # Manually log exceptions since this function is running in a separate asyncio task.
         except Exception as error:
             await asyncio.to_thread(_logger.error, f"{error}\n{traceback.format_exc()}")
+
+    async def send_json(self, data: Any) -> None:
+        return await self._send(
+            {"type": "websocket.send", "text": orjson.dumps(data).decode()}
+        )
 
 
 @dataclass
