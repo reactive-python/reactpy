@@ -8,17 +8,13 @@ from email.utils import formatdate
 from logging import getLogger
 from typing import Callable, Literal, cast, overload
 
+from asgi_tools import ResponseHTML
 from asgiref import typing as asgi_types
 from typing_extensions import Unpack
 
 from reactpy import html
 from reactpy.asgi.middleware import ReactPyMiddleware
-from reactpy.asgi.utils import (
-    dict_to_byte_list,
-    http_response,
-    import_dotted_path,
-    vdom_head_to_html,
-)
+from reactpy.asgi.utils import import_dotted_path, vdom_head_to_html
 from reactpy.types import (
     AsgiApp,
     AsgiHttpApp,
@@ -40,7 +36,7 @@ class ReactPy(ReactPyMiddleware):
         self,
         root_component: RootComponentConstructor,
         *,
-        http_headers: dict[str, str | int] | None = None,
+        http_headers: dict[str, str] | None = None,
         html_head: VdomDict | None = None,
         html_lang: str = "en",
         **settings: Unpack[ReactPyConfig],
@@ -182,23 +178,20 @@ class ReactPyApp:
 
         # Response headers for `index.html` responses
         request_headers = dict(scope["headers"])
-        response_headers: dict[str, str | int] = {
+        response_headers: dict[str, str] = {
             "etag": self._etag,
             "last-modified": self._last_modified,
             "access-control-allow-origin": "*",
             "cache-control": "max-age=60, public",
-            "content-length": len(self._cached_index_html),
+            "content-length": str(len(self._cached_index_html)),
             "content-type": "text/html; charset=utf-8",
             **self.parent.extra_headers,
         }
 
         # Browser is asking for the headers
         if scope["method"] == "HEAD":
-            return await http_response(
-                send=send,
-                method=scope["method"],
-                headers=dict_to_byte_list(response_headers),
-            )
+            response = ResponseHTML("", headers=response_headers)
+            return await response(scope, receive, send)  # type: ignore
 
         # Browser already has the content cached
         if (
@@ -206,20 +199,12 @@ class ReactPyApp:
             or request_headers.get(b"if-modified-since") == self._last_modified.encode()
         ):
             response_headers.pop("content-length")
-            return await http_response(
-                send=send,
-                method=scope["method"],
-                code=304,
-                headers=dict_to_byte_list(response_headers),
-            )
+            response = ResponseHTML("", headers=response_headers, status_code=304)
+            return await response(scope, receive, send)  # type: ignore
 
         # Send the index.html
-        await http_response(
-            send=send,
-            method=scope["method"],
-            message=self._cached_index_html,
-            headers=dict_to_byte_list(response_headers),
-        )
+        response = ResponseHTML(self._cached_index_html, headers=response_headers)
+        await response(scope, receive, send)  # type: ignore
 
     def process_index_html(self) -> None:
         """Process the index.html and store the results in memory."""
