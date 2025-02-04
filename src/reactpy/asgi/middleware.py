@@ -173,8 +173,15 @@ class ComponentDispatchApp:
                 break
 
             elif event["type"] == "websocket.receive" and event["text"]:
-                queue_put_func = recv_queue.put(orjson.loads(event["text"]))
-                await queue_put_func
+                msg = orjson.loads(event["text"])
+                msg_type = msg.get("type")
+                if msg_type == "layout-event":
+                    queue_put_func = recv_queue.put(msg)
+                    await queue_put_func
+                else:
+                    await asyncio.to_thread(
+                        _logger.warning, f"Unknown message type: {msg_type}"
+                    )
 
     async def run_dispatcher(
         self,
