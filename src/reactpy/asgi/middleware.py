@@ -201,7 +201,7 @@ class ReactPyWebsocket(ResponseWebSocket):
         await super().__aexit__()  # type: ignore
 
     async def run_dispatcher(self) -> None:
-        """Asyncio background task that renders and transmits layout updates of ReactPy components."""
+        """Async background task that renders ReactPy components over a websocket."""
         try:
             # Determine component to serve by analyzing the URL and/or class parameters.
             if self.parent.multiple_root_components:
