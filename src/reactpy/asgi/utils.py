@@ -5,8 +5,6 @@ from collections.abc import Iterable
 from importlib import import_module
 from typing import Any
 
-from asgiref import typing as asgi_types
-
 from reactpy._option import Option
 from reactpy.types import ReactPyConfig, VdomDict
 from reactpy.utils import vdom_to_html
@@ -55,18 +53,6 @@ def check_path(url_path: str) -> str:  # pragma: no cover
     return ""
 
 
-def dict_to_byte_list(
-    data: dict[str, str | int],
-) -> list[tuple[bytes, bytes]]:
-    """Convert a dictionary to a list of byte tuples."""
-    result: list[tuple[bytes, bytes]] = []
-    for key, value in data.items():
-        new_key = key.encode()
-        new_value = value.encode() if isinstance(value, str) else str(value).encode()
-        result.append((new_key, new_value))
-    return result
-
-
 def vdom_head_to_html(head: VdomDict) -> str:
     if isinstance(head, dict) and head.get("tagName") == "head":
         return vdom_to_html(head)
@@ -74,35 +60,6 @@ def vdom_head_to_html(head: VdomDict) -> str:
     raise ValueError(
         "Invalid head element! Element must be either `html.head` or a string."
     )
-
-
-async def http_response(
-    *,
-    send: asgi_types.ASGISendCallable,
-    method: str,
-    code: int = 200,
-    message: str = "",
-    headers: Iterable[tuple[bytes, bytes]] = (),
-) -> None:
-    """Sends a HTTP response using the ASGI `send` API."""
-    start_msg: asgi_types.HTTPResponseStartEvent = {
-        "type": "http.response.start",
-        "status": code,
-        "headers": [*headers],
-        "trailers": False,
-    }
-    body_msg: asgi_types.HTTPResponseBodyEvent = {
-        "type": "http.response.body",
-        "body": b"",
-        "more_body": False,
-    }
-
-    # Add the content type and body to everything other than a HEAD request
-    if method != "HEAD":
-        body_msg["body"] = message.encode()
-
-    await send(start_msg)
-    await send(body_msg)
 
 
 def process_settings(settings: ReactPyConfig) -> None:

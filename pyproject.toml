@@ -39,6 +39,7 @@ dependencies = [
   "lxml >=4",
   "servestatic >=3.0.0",
   "orjson >=3",
+  "asgi-tools",
 ]
 dynamic = ["version"]
 urls.Changelog = "https://reactpy.dev/docs/about/changelog.html"
