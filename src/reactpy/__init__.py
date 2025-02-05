@@ -1,7 +1,7 @@
 from reactpy import asgi, config, logging, types, web, widgets
 from reactpy._html import html
+from reactpy.asgi.executors.standalone import ReactPy
 from reactpy.asgi.middleware import ReactPyMiddleware
-from reactpy.asgi.standalone import ReactPy
 from reactpy.core import hooks
 from reactpy.core.component import component
 from reactpy.core.events import event

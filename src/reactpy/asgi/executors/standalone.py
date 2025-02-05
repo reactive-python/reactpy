@@ -151,7 +151,7 @@ class ReactPyApp:
     to a user provided ASGI app."""
 
     parent: ReactPy
-    _cached_index_html = ""
+    _index_html = ""
     _etag = ""
     _last_modified = ""
 
@@ -173,8 +173,8 @@ class ReactPyApp:
             return
 
         # Store the HTTP response in memory for performance
-        if not self._cached_index_html:
-            self.process_index_html()
+        if not self._index_html:
+            self.render_index_template()
 
         # Response headers for `index.html` responses
         request_headers = dict(scope["headers"])
@@ -183,7 +183,7 @@ class ReactPyApp:
             "last-modified": self._last_modified,
             "access-control-allow-origin": "*",
             "cache-control": "max-age=60, public",
-            "content-length": str(len(self._cached_index_html)),
+            "content-length": str(len(self._index_html)),
             "content-type": "text/html; charset=utf-8",
             **self.parent.extra_headers,
         }
@@ -203,12 +203,12 @@ class ReactPyApp:
             return await response(scope, receive, send)  # type: ignore
 
         # Send the index.html
-        response = ResponseHTML(self._cached_index_html, headers=response_headers)
+        response = ResponseHTML(self._index_html, headers=response_headers)
         await response(scope, receive, send)  # type: ignore
 
-    def process_index_html(self) -> None:
-        """Process the index.html and store the results in memory."""
-        self._cached_index_html = (
+    def render_index_template(self) -> None:
+        """Process the index.html and store the results in this class."""
+        self._index_html = (
             "<!doctype html>"
             f'<html lang="{self.parent.html_lang}">'
             f"{vdom_head_to_html(self.parent.html_head)}"
@@ -217,8 +217,7 @@ class ReactPyApp:
             "</body>"
             "</html>"
         )
-
-        self._etag = f'"{hashlib.md5(self._cached_index_html.encode(), usedforsecurity=False).hexdigest()}"'
+        self._etag = f'"{hashlib.md5(self._index_html.encode(), usedforsecurity=False).hexdigest()}"'
         self._last_modified = formatdate(
             datetime.now(tz=timezone.utc).timestamp(), usegmt=True
         )
