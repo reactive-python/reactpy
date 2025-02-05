@@ -159,16 +159,20 @@ class ComponentDispatchApp:
         # Start a loop that handles ASGI websocket events
         async with ReactPyWebsocket(scope, receive, send, parent=self.parent) as ws:  # type: ignore
             while True:
+                # Wait for the webserver to notify us of a new event
                 event: dict[str, Any] = await ws.receive(raw=True)  # type: ignore
-                if event["type"] == "websocket.receive" and event["text"]:
+
+                # If the event is a `receive` event, parse the message and send it to the rendering queue
+                if event["type"] == "websocket.receive":
                     msg: dict[str, str] = orjson.loads(event["text"])
                     if msg.get("type") == "layout-event":
-                        queue_put_func = ws.recv_queue.put(msg)
-                        await queue_put_func
-                    else:
+                        await ws.rendering_queue.put(msg)
+                    else:  # pragma: no cover
                         await asyncio.to_thread(
                             _logger.warning, f"Unknown message type: {msg.get('type')}"
                         )
+
+                # If the event is a `disconnect` event, break the rendering loop and close the connection
                 elif event["type"] == "websocket.disconnect":
                     break
 
@@ -184,7 +188,7 @@ class ReactPyWebsocket(ResponseWebSocket):
         super().__init__(scope=scope, receive=receive, send=send)  # type: ignore
         self.scope = scope
         self.parent = parent
-        self.recv_queue: asyncio.Queue[dict[str, str]] = asyncio.Queue()
+        self.rendering_queue: asyncio.Queue[dict[str, str]] = asyncio.Queue()
         self.dispatcher: asyncio.Task[Any] | None = None
 
     async def __aenter__(self) -> ReactPyWebsocket:
@@ -232,7 +236,7 @@ class ReactPyWebsocket(ResponseWebSocket):
             await serve_layout(
                 Layout(ConnectionContext(component(), value=connection)),
                 self.send_json,
-                self.recv_queue.get,  # type: ignore
+                self.rendering_queue.get,  # type: ignore
             )
 
         # Manually log exceptions since this function is running in a separate asyncio task.
