@@ -4,14 +4,14 @@ import functools
 import json
 import textwrap
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import jsonpointer
 import orjson
 
 import reactpy
-from reactpy.config import REACTPY_PATH_PREFIX
+from reactpy.config import REACTPY_DEBUG, REACTPY_PATH_PREFIX
 from reactpy.types import VdomDict
 from reactpy.utils import vdom_to_html
 
@@ -46,7 +46,7 @@ def render_pyscript_executor(file_paths: tuple[str, ...], uuid: str, root: str) 
     return executor.replace("    def root(): ...", user_code)
 
 
-def render_pyscript_template(
+def pyscript_component_html(
     file_paths: tuple[str, ...], initial: str | VdomDict, root: str
 ) -> str:
     """Renders a PyScript component with the user's code."""
@@ -61,6 +61,23 @@ def render_pyscript_template(
         f"{_initial}"
         "</div>"
         f"<py-script async>{executor_code}</py-script>"
+    )
+
+
+def pyscript_setup_html(
+    extra_py: Sequence[str], extra_js: dict | str, config: dict | str
+) -> str:
+    """Renders the PyScript setup code."""
+    hide_pyscript_debugger = f'<link rel="stylesheet" href="{REACTPY_PATH_PREFIX.current}static/pyscript-hide-debug.css" />'
+    pyscript_config = extend_pyscript_config(extra_py, extra_js, config)
+
+    return (
+        f'<link rel="stylesheet" href="{REACTPY_PATH_PREFIX.current}static/pyscript/core.css" />'
+        f'<link rel="stylesheet" href="{REACTPY_PATH_PREFIX.current}static/pyscript-custom.css" />'
+        f"{'' if REACTPY_DEBUG.current else hide_pyscript_debugger}"
+        f'<script type="module" async crossorigin="anonymous" src="{REACTPY_PATH_PREFIX.current}static/pyscript/core.js">'
+        "</script>"
+        f'<py-script async config="{pyscript_config}">{PYSCRIPT_LAYOUT_HANDLER}</py-script>'
     )
 
 

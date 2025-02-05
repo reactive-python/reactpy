@@ -2,11 +2,11 @@
 import asyncio
 import logging
 
+import js
 from jsonpointer import set_pointer
 from pyodide.ffi.wrappers import add_event_listener
 from pyscript.js_modules import morphdom
 
-import js
 from reactpy.core.layout import Layout
 
 

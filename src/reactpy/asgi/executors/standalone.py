@@ -24,7 +24,7 @@ from reactpy.types import (
     RootComponentConstructor,
     VdomDict,
 )
-from reactpy.utils import render_mount_template
+from reactpy.utils import asgi_component_html
 
 _logger = getLogger(__name__)
 
@@ -174,7 +174,7 @@ class ReactPyApp:
 
         # Store the HTTP response in memory for performance
         if not self._index_html:
-            self.render_index_template()
+            self.render_index_html()
 
         # Response headers for `index.html` responses
         request_headers = dict(scope["headers"])
@@ -206,14 +206,14 @@ class ReactPyApp:
         response = ResponseHTML(self._index_html, headers=response_headers)
         await response(scope, receive, send)  # type: ignore
 
-    def render_index_template(self) -> None:
+    def render_index_html(self) -> None:
         """Process the index.html and store the results in this class."""
         self._index_html = (
             "<!doctype html>"
             f'<html lang="{self.parent.html_lang}">'
             f"{vdom_head_to_html(self.parent.html_head)}"
             "<body>"
-            f"{render_mount_template('app', '', '')}"
+            f"{asgi_component_html(element_id='app', class_='', component_path='')}"
             "</body>"
             "</html>"
         )

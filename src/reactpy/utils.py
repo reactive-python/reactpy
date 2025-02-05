@@ -316,9 +316,7 @@ DASHED_HTML_ATTRS = {"accept_charset", "acceptCharset", "http_equiv", "httpEquiv
 _CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
 
 
-def render_mount_template(
-    element_id: str, class_: str, append_component_path: str
-) -> str:
+def asgi_component_html(element_id: str, class_: str, component_path: str) -> str:
     return (
         f'<div id="{element_id}" class="{class_}"></div>'
         '<script type="module" crossorigin="anonymous">'
@@ -326,7 +324,7 @@ def render_mount_template(
         "mountReactPy({"
         f' mountElement: document.getElementById("{element_id}"),'
         f' pathPrefix: "{config.REACTPY_PATH_PREFIX.current}",'
-        f' appendComponentPath: "{append_component_path}",'
+        f' componentPath: "{component_path}",'
         f" reconnectInterval: {config.REACTPY_RECONNECT_INTERVAL.current},"
         f" reconnectMaxInterval: {config.REACTPY_RECONNECT_MAX_INTERVAL.current},"
         f" reconnectMaxRetries: {config.REACTPY_RECONNECT_MAX_RETRIES.current},"

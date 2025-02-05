@@ -8,7 +8,7 @@ export function mountReactPy(props: MountProps) {
   const wsProtocol = `ws${window.location.protocol === "https:" ? "s" : ""}:`;
   const wsOrigin = `${wsProtocol}//${window.location.host}`;
   const componentUrl = new URL(
-    `${wsOrigin}${props.pathPrefix}${props.appendComponentPath || ""}`,
+    `${wsOrigin}${props.pathPrefix}${props.componentPath || ""}`,
   );
 
   // Embed the initial HTTP path into the WebSocket URL
