@@ -13,8 +13,8 @@ readme = "README.md"
 keywords = ["react", "javascript", "reactpy", "component"]
 license = "MIT"
 authors = [
-  { name = "Ryan Morshead", email = "ryan.morshead@gmail.com" },
   { name = "Mark Bakhit", email = "archiethemonger@gmail.com" },
+  { name = "Ryan Morshead", email = "ryan.morshead@gmail.com" },
 ]
 requires-python = ">=3.9"
 classifiers = [
