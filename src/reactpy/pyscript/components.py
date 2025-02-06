@@ -17,7 +17,7 @@ def _pyscript_component(
     *file_paths: str,
     initial: str | VdomDict = "",
     root: str = "root",
-):
+) -> None | VdomDict:
     if not file_paths:
         raise ValueError("At least one file path must be provided.")
 

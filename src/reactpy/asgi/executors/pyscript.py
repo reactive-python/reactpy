@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import formatdate
 from pathlib import Path
+from typing import Any
 
 from asgiref.typing import WebSocketScope
 from typing_extensions import Unpack
@@ -26,8 +27,8 @@ class ReactPyCSR(ReactPy):
         self,
         *component_paths: str | Path,
         extra_py: tuple[str, ...] = (),
-        extra_js: dict | str = "",
-        pyscript_config: dict | str = "",
+        extra_js: dict[str, Any] | str = "",
+        pyscript_config: dict[str, Any] | str = "",
         root_name: str = "root",
         initial: str | VdomDict = "",
         http_headers: dict[str, str] | None = None,

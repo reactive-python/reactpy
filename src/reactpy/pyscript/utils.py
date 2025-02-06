@@ -4,7 +4,7 @@ import functools
 import json
 import textwrap
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 import jsonpointer
@@ -65,7 +65,9 @@ def pyscript_component_html(
 
 
 def pyscript_setup_html(
-    extra_py: Sequence[str], extra_js: dict | str, config: dict | str
+    extra_py: Sequence[str],
+    extra_js: dict[str, Any] | str,
+    config: dict[str, Any] | str,
 ) -> str:
     """Renders the PyScript setup code."""
     hide_pyscript_debugger = f'<link rel="stylesheet" href="{REACTPY_PATH_PREFIX.current}static/pyscript-hide-debug.css" />'
@@ -82,10 +84,12 @@ def pyscript_setup_html(
 
 
 def extend_pyscript_config(
-    extra_py: Sequence[str], extra_js: dict | str, config: dict | str
+    extra_py: Sequence[str],
+    extra_js: dict[str, Any] | str,
+    config: dict[str, Any] | str,
 ) -> str:
     # Extends ReactPy's default PyScript config with user provided values.
-    pyscript_config = {
+    pyscript_config: dict[str, Any] = {
         "packages": [
             f"reactpy=={reactpy.__version__}",
             f"jsonpointer=={jsonpointer.__version__}",

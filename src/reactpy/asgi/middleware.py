@@ -293,6 +293,11 @@ class WebModuleApp:
 
 
 class Error404App:
-    async def __call__(self, scope, receive, send):
+    async def __call__(
+        self,
+        scope: asgi_types.HTTPScope,
+        receive: asgi_types.ASGIReceiveCallable,
+        send: asgi_types.ASGISendCallable,
+    ) -> None:
         response = ResponseText("Resource not found on this server.", status_code=404)
-        await response(scope, receive, send)
+        await response(scope, receive, send)  # type: ignore

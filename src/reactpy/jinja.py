@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Any, ClassVar
 from uuid import uuid4
 
 from jinja2_simple_tags import StandaloneTag
@@ -37,7 +37,10 @@ class PyScriptSetup(StandaloneTag):  # type: ignore
     tags: ClassVar[set[str]] = {"pyscript_setup"}
 
     def render(
-        self, *extra_py: str, extra_js: str | dict = "", config: str | dict = ""
+        self,
+        *extra_py: str,
+        extra_js: str | dict[str, Any] = "",
+        config: str | dict[str, Any] = "",
     ) -> str:
         """
         Args:
