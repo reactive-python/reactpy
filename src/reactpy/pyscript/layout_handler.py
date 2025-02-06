@@ -2,11 +2,11 @@
 import asyncio
 import logging
 
-import js
 from jsonpointer import set_pointer
 from pyodide.ffi.wrappers import add_event_listener
-from pyscript.js_modules import morphdom
 
+import js
+from pyscript.js_modules import morphdom
 from reactpy.core.layout import Layout
 
 
@@ -106,6 +106,11 @@ class ReactPyLayoutHandler:
             # Store the task to prevent automatic garbage collection from killing it
             self.running_tasks.add(task)
             task.add_done_callback(self.running_tasks.remove)
+
+        # Convert ReactJS-style event names to HTML event names
+        event_name = event_name.lower()
+        if event_name.startswith("on"):
+            event_name = event_name[2:]
 
         add_event_listener(element, event_name, event_handler)
 
