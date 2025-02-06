@@ -8,7 +8,9 @@
     "preact": "^10.25.4"
   },
   "devDependencies": {
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "@pyscript/core": "^0.6",
+    "morphdom": "^2"
   },
   "scripts": {
     "build": "bun build \"src/index.ts\" --outdir=\"dist\" --minify --sourcemap=\"linked\"",

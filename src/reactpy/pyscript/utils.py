@@ -77,7 +77,7 @@ def pyscript_setup_html(
         f"{'' if REACTPY_DEBUG.current else hide_pyscript_debugger}"
         f'<script type="module" async crossorigin="anonymous" src="{REACTPY_PATH_PREFIX.current}static/pyscript/core.js">'
         "</script>"
-        f'<py-script async config="{pyscript_config}">{PYSCRIPT_LAYOUT_HANDLER}</py-script>'
+        f"<py-script async config='{pyscript_config}'>{PYSCRIPT_LAYOUT_HANDLER}</py-script>"
     )
 
 

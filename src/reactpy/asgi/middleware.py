@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import orjson
-from asgi_tools import ResponseWebSocket
+from asgi_tools import ResponseText, ResponseWebSocket
 from asgiref import typing as asgi_types
 from asgiref.compatibility import guarantee_single_callable
 from servestatic import ServeStaticASGI
@@ -81,8 +81,6 @@ class ReactPyMiddleware:
         self.dispatcher_pattern = re.compile(
             f"^{self.dispatcher_path}(?P<dotted_path>[a-zA-Z0-9_.]+)/$"
         )
-        self.js_modules_pattern = re.compile(f"^{self.web_modules_path}.*")
-        self.static_pattern = re.compile(f"^{self.static_path}.*")
 
         # User defined ASGI apps
         self.extra_http_routes: dict[str, AsgiHttpApp] = {}
@@ -134,13 +132,13 @@ class ReactPyMiddleware:
         return bool(re.match(self.dispatcher_pattern, scope["path"]))
 
     def match_static_path(self, scope: asgi_types.HTTPScope) -> bool:
-        return bool(re.match(self.static_pattern, scope["path"]))
+        return scope["path"].startswith(self.static_path)
 
     def match_web_modules_path(self, scope: asgi_types.HTTPScope) -> bool:
-        return bool(re.match(self.js_modules_pattern, scope["path"]))
+        return scope["path"].startswith(self.web_modules_path)
 
     def match_extra_paths(self, scope: asgi_types.Scope) -> AsgiApp | None:
-        # Custom defined routes are unused within middleware to encourage users to handle
+        # Custom defined routes are unused by default to encourage users to handle
         # routing within their root ASGI application.
         return None
 
@@ -263,7 +261,7 @@ class StaticFileApp:
         """ASGI app for ReactPy static files."""
         if not self._static_file_server:
             self._static_file_server = ServeStaticASGI(
-                self.parent.asgi_app,
+                Error404App(),
                 root=self.parent.static_dir,
                 prefix=self.parent.static_path,
             )
@@ -285,10 +283,16 @@ class WebModuleApp:
         """ASGI app for ReactPy web modules."""
         if not self._static_file_server:
             self._static_file_server = ServeStaticASGI(
-                self.parent.asgi_app,
+                Error404App(),
                 root=self.parent.web_modules_dir,
                 prefix=self.parent.web_modules_path,
                 autorefresh=True,
             )
 
         await self._static_file_server(scope, receive, send)
+
+
+class Error404App:
+    async def __call__(self, scope, receive, send):
+        response = ResponseText("Resource not found on this server.", status_code=404)
+        await response(scope, receive, send)

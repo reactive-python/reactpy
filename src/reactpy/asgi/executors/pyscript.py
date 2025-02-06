@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from email.utils import formatdate
 from pathlib import Path
 
+from asgiref.typing import WebSocketScope
 from typing_extensions import Unpack
 
 from reactpy import html
@@ -55,6 +56,9 @@ class ReactPyCSR(ReactPy):
         self.html_head = html_head or html.head()
         self.html_lang = html_lang
 
+    def match_dispatch_path(self, scope: WebSocketScope) -> bool:
+        return False
+
 
 @dataclass
 class ReactPyAppCSR(ReactPyApp):
@@ -78,7 +82,7 @@ class ReactPyAppCSR(ReactPyApp):
             initial=self.parent.initial,
             root=self.parent.root_name,
         )
-        head_content.replace("</head>", f"{pyscript_setup}</head>")
+        head_content = head_content.replace("</head>", f"{pyscript_setup}</head>")
 
         self._index_html = (
             "<!doctype html>"
