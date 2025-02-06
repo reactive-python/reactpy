@@ -46,6 +46,12 @@ urls.Changelog = "https://reactpy.dev/docs/about/changelog.html"
 urls.Documentation = "https://reactpy.dev/"
 urls.Source = "https://github.com/reactive-python/reactpy"
 
+[project.optional-dependencies]
+all = ["reactpy[jinja,uvicorn,testing]"]
+jinja = ["jinja2-simple-tags", "jinja2 >=3"]
+uvicorn = ["uvicorn[standard]"]
+testing = ["playwright"]
+
 [tool.hatch.version]
 path = "src/reactpy/__init__.py"
 
@@ -79,12 +85,6 @@ commands = [
   'python "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/node_modules/morphdom/dist" "src/reactpy/static/morphdom"',
 ]
 artifacts = []
-
-[project.optional-dependencies]
-all = ["reactpy[jinja,uvicorn,testing]"]
-jinja = ["jinja2-simple-tags", "jinja2 >=3"]
-uvicorn = ["uvicorn[standard]"]
-testing = ["playwright"]
 
 
 #############################
