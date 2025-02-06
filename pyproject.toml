@@ -75,7 +75,8 @@ commands = [
   'bun run --cwd "src/js/packages/@reactpy/client" build',
   'bun install --cwd "src/js/packages/@reactpy/app"',
   'bun run --cwd "src/js/packages/@reactpy/app" build',
-  'python "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/dist" "src/reactpy/static"',
+  'python "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/node_modules/@pyscript/core/dist" "src/reactpy/static/pyscript"',
+  'python "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/node_modules/morphdom/dist" "src/reactpy/static/morphdom"',
 ]
 artifacts = []
 
