@@ -22,7 +22,6 @@ dictConfig(
             "generic": {
                 "format": "%(asctime)s | %(log_color)s%(levelname)s%(reset)s | %(message)s",
                 "datefmt": r"%Y-%m-%dT%H:%M:%S%z",
-                "class": "colorlog.ColoredFormatter",
             }
         },
     }
