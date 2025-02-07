@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import functools
 import json
+import re
 import shutil
 import subprocess
 import textwrap
@@ -22,14 +23,29 @@ from reactpy.utils import vdom_to_html
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-
-PYSCRIPT_COMPONENT_TEMPLATE = (
-    Path(__file__).parent / "component_template.py"
-).read_text(encoding="utf-8")
-PYSCRIPT_LAYOUT_HANDLER = (Path(__file__).parent / "layout_handler.py").read_text(
-    encoding="utf-8"
-)
 _logger = getLogger(__name__)
+
+
+def minify_python(source: str):
+    """Minify Python source code."""
+    # Remove comments
+    source = re.sub(r"#.*\n", "\n", source)
+    # Remove docstrings
+    source = re.sub(r'""".*?"""', "", source, flags=re.DOTALL)
+    # Remove extra newlines
+    source = re.sub(r"\n+", "\n", source)
+    # Remove empty lines
+    source = re.sub(r"\s+\n", "\n", source)
+    # Remove leading and trailing whitespace
+    return source.strip()
+
+
+PYSCRIPT_COMPONENT_TEMPLATE = minify_python(
+    (Path(__file__).parent / "component_template.py").read_text(encoding="utf-8")
+)
+PYSCRIPT_LAYOUT_HANDLER = minify_python(
+    (Path(__file__).parent / "layout_handler.py").read_text(encoding="utf-8")
+)
 
 
 def render_pyscript_executor(file_paths: tuple[str, ...], uuid: str, root: str) -> str:
@@ -206,5 +222,6 @@ def reactpy_version_string() -> str:  # pragma: no cover
 
 
 @functools.cache
-def cached_file_read(file_path: str) -> str:
-    return Path(file_path).read_text(encoding="utf-8").strip()
+def cached_file_read(file_path: str, minifiy=True) -> str:
+    content = Path(file_path).read_text(encoding="utf-8").strip()
+    return minify_python(content) if minifiy else content
