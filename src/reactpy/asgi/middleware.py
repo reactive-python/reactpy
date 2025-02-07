@@ -18,22 +18,19 @@ from servestatic import ServeStaticASGI
 from typing_extensions import Unpack
 
 from reactpy import config
-from reactpy.asgi.utils import check_path, import_components, process_settings
-from reactpy.core.hooks import ConnectionContext
-from reactpy.core.layout import Layout
-from reactpy.core.serve import serve_layout
-from reactpy.types import (
+from reactpy.asgi.types import (
     AsgiApp,
     AsgiHttpApp,
     AsgiLifespanApp,
     AsgiWebsocketApp,
     AsgiWebsocketReceive,
     AsgiWebsocketSend,
-    Connection,
-    Location,
-    ReactPyConfig,
-    RootComponentConstructor,
 )
+from reactpy.asgi.utils import check_path, import_components, process_settings
+from reactpy.core.hooks import ConnectionContext
+from reactpy.core.layout import Layout
+from reactpy.core.serve import serve_layout
+from reactpy.types import Connection, Location, ReactPyConfig, RootComponentConstructor
 
 _logger = logging.getLogger(__name__)
 
@@ -222,7 +219,7 @@ class ReactPyWebsocket(ResponseWebSocket):
                 self.scope["query_string"].decode(), strict_parsing=True
             )
             connection = Connection(
-                scope=self.scope,
+                scope=self.scope,  # type: ignore
                 location=Location(
                     path=ws_query_string.get("http_pathname", [""])[0],
                     query_string=ws_query_string.get("http_query_string", [""])[0],

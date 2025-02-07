@@ -28,16 +28,11 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "exceptiongroup >=1.0",
-  "typing-extensions >=3.10",
-  "anyio >=3",
   "fastjsonschema >=2.14.5",
   "requests >=2",
-  "asgiref >=3",
   "lxml >=4",
-  "servestatic >=3.0.0",
-  "orjson >=3",
-  "asgi-tools",
+  "anyio >=3",
+  "typing-extensions >=3.10",
 ]
 dynamic = ["version"]
 urls.Changelog = "https://reactpy.dev/docs/about/changelog.html"
@@ -45,7 +40,9 @@ urls.Documentation = "https://reactpy.dev/"
 urls.Source = "https://github.com/reactive-python/reactpy"
 
 [project.optional-dependencies]
-all = ["reactpy[jinja,uvicorn,testing]"]
+all = ["reactpy[asgi,jinja,uvicorn,testing]"]
+standard = ["reactpy[asgi]"]
+asgi = ["asgiref", "asgi-tools", "servestatic", "orjson"]
 jinja = ["jinja2-simple-tags", "jinja2 >=3"]
 uvicorn = ["uvicorn[standard]"]
 testing = ["playwright"]
@@ -91,14 +88,12 @@ artifacts = []
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
+  "reactpy[all]",
   "pytest-sugar",
   "pytest-asyncio",
   "responses",
-  "playwright",
+  "exceptiongroup",
   "jsonpointer",
-  "uvicorn[standard]",
-  "jinja2-simple-tags",
-  "jinja2",
   "starlette",
 ]
 
@@ -158,6 +153,7 @@ serve = [
 
 [tool.hatch.envs.python]
 extra-dependencies = [
+  "reactpy[all]",
   "ruff",
   "toml",
   "mypy==1.8",

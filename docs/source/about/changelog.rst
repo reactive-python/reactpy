@@ -16,8 +16,8 @@ Unreleased
 ----------
 
 **Added**
-- :pull:`1113` - Added ``reactpy.ReactPy`` that can be used to run ReactPy in standalone mode.
-- :pull:`1113` - Added ``reactpy.ReactPyMiddleware`` that can be used to run ReactPy with any ASGI compatible framework.
+- :pull:`1113` - Added ``reactpy.asgi.ReactPy`` that can be used to run ReactPy in standalone mode via ASGI.
+- :pull:`1113` - Added ``reactpy.asgi.ReactPyMiddleware`` that can be used to utilize ReactPy within any ASGI compatible framework.
 - :pull:`1113` - Added ``reactpy.templatetags.Jinja`` that can be used alongside ``ReactPyMiddleware`` to embed several ReactPy components into your existing application.
 - :pull:`1113` - Added ``uvicorn`` and ``jinja`` installation extras (for example ``pip install reactpy[jinja]``).
 - :pull:`1113` - Added support for Python 3.12 and 3.13.

@@ -39,7 +39,7 @@ def test_invalid_path_prefix():
         async def app(scope, receive, send):
             pass
 
-        reactpy.ReactPyMiddleware(app, root_components=["abc"], path_prefix="invalid")
+        ReactPyMiddleware(app, root_components=["abc"], path_prefix="invalid")
 
 
 def test_invalid_web_modules_dir():
@@ -50,9 +50,7 @@ def test_invalid_web_modules_dir():
         async def app(scope, receive, send):
             pass
 
-        reactpy.ReactPyMiddleware(
-            app, root_components=["abc"], web_modules_dir=Path("invalid")
-        )
+        ReactPyMiddleware(app, root_components=["abc"], web_modules_dir=Path("invalid"))
 
 
 async def test_unregistered_root_component():

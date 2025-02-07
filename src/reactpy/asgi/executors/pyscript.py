@@ -16,10 +16,7 @@ from reactpy.asgi.executors.standalone import ReactPy, ReactPyApp
 from reactpy.asgi.middleware import ReactPyMiddleware
 from reactpy.asgi.utils import vdom_head_to_html
 from reactpy.pyscript.utils import pyscript_component_html, pyscript_setup_html
-from reactpy.types import (
-    ReactPyConfig,
-    VdomDict,
-)
+from reactpy.types import ReactPyConfig, VdomDict
 
 
 class ReactPyCSR(ReactPy):
