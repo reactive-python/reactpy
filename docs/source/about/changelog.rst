@@ -17,7 +17,7 @@ Unreleased
 
 **Added**
 - :pull:`1113` - Added ``reactpy.asgi.ReactPy`` that can be used to run ReactPy in standalone mode via ASGI.
-- :pull:`1269` - Added ``reactpy.asgi.ReactPyCSR`` that can be used to run ReactPy in standalone mode via ASGI, but rendered entirely client-sided.
+- :pull:`1269` - Added ``reactpy.asgi.ReactPyPyodide`` that can be used to run ReactPy in standalone mode via ASGI, but rendered entirely client-sided.
 - :pull:`1113` - Added ``reactpy.asgi.ReactPyMiddleware`` that can be used to utilize ReactPy within any ASGI compatible framework.
 - :pull:`1113` :pull:`1269` - Added ``reactpy.templatetags.Jinja`` that can be used alongside ``ReactPyMiddleware`` to embed several ReactPy components into your existing application. This includes the following template tags: ``{% component %}``, ``{% pyscript_component %}``, and ``{% pyscript_setup %}``.
 - :pull:`1269` - Added ``reactpy.pyscript_component`` that can be used to embed ReactPy components into your existing application.

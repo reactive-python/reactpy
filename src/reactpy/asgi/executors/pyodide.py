@@ -19,7 +19,7 @@ from reactpy.pyscript.utils import pyscript_component_html, pyscript_setup_html
 from reactpy.types import ReactPyConfig, VdomDict
 
 
-class ReactPyCSR(ReactPy):
+class ReactPyPyodide(ReactPy):
     def __init__(
         self,
         *component_paths: str | Path,
@@ -33,7 +33,8 @@ class ReactPyCSR(ReactPy):
         html_lang: str = "en",
         **settings: Unpack[ReactPyConfig],
     ) -> None:
-        """Variant of ReactPy's standalone that only performs Client-Side Rendering (CSR).
+        """Variant of ReactPy's standalone that only performs Client-Side Rendering (CSR) via
+        PyScript (using a Pyodide interpreter).
 
         This ASGI webserver is only used to serve the initial HTML document and static files.
 
@@ -62,7 +63,7 @@ class ReactPyCSR(ReactPy):
                 are not applicable to CSR and will have no effect.
         """
         ReactPyMiddleware.__init__(
-            self, app=ReactPyCSRApp(self), root_components=[], **settings
+            self, app=ReactPyPyodideApp(self), root_components=[], **settings
         )
         if not component_paths:
             raise ValueError("At least one component file path must be provided.")
@@ -83,10 +84,10 @@ class ReactPyCSR(ReactPy):
 
 
 @dataclass
-class ReactPyCSRApp(ReactPyApp):
+class ReactPyPyodideApp(ReactPyApp):
     """ReactPy's standalone ASGI application for Client-Side Rendering (CSR)."""
 
-    parent: ReactPyCSR
+    parent: ReactPyPyodide
     _index_html = ""
     _etag = ""
     _last_modified = ""
