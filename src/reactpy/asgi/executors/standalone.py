@@ -15,9 +15,12 @@ from typing_extensions import Unpack
 from reactpy import html
 from reactpy.asgi.middleware import ReactPyMiddleware
 from reactpy.asgi.types import AsgiApp, AsgiHttpApp, AsgiLifespanApp, AsgiWebsocketApp
-from reactpy.asgi.utils import import_dotted_path, vdom_head_to_html
+from reactpy.asgi.utils import (
+    asgi_component_html,
+    import_dotted_path,
+    vdom_head_to_html,
+)
 from reactpy.types import ReactPyConfig, RootComponentConstructor, VdomDict
-from reactpy.utils import asgi_component_html
 
 _logger = getLogger(__name__)
 

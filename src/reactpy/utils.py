@@ -8,7 +8,6 @@ from typing import Any, Callable, Generic, TypeVar, Union, cast
 from lxml import etree
 from lxml.html import fromstring, tostring
 
-from reactpy import config
 from reactpy.core.vdom import vdom as make_vdom
 from reactpy.types import ComponentType, VdomDict
 
@@ -314,21 +313,3 @@ DASHED_HTML_ATTRS = {"accept_charset", "acceptCharset", "http_equiv", "httpEquiv
 
 # Pattern for delimitting camelCase names (e.g. camelCase to camel-case)
 _CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
-
-
-def asgi_component_html(element_id: str, class_: str, component_path: str) -> str:
-    return (
-        f'<div id="{element_id}" class="{class_}"></div>'
-        '<script type="module" crossorigin="anonymous">'
-        f'import {{ mountReactPy }} from "{config.REACTPY_PATH_PREFIX.current}static/index.js";'
-        "mountReactPy({"
-        f' mountElement: document.getElementById("{element_id}"),'
-        f' pathPrefix: "{config.REACTPY_PATH_PREFIX.current}",'
-        f' componentPath: "{component_path}",'
-        f" reconnectInterval: {config.REACTPY_RECONNECT_INTERVAL.current},"
-        f" reconnectMaxInterval: {config.REACTPY_RECONNECT_MAX_INTERVAL.current},"
-        f" reconnectMaxRetries: {config.REACTPY_RECONNECT_MAX_RETRIES.current},"
-        f" reconnectBackoffMultiplier: {config.REACTPY_RECONNECT_BACKOFF_MULTIPLIER.current},"
-        "});"
-        "</script>"
-    )

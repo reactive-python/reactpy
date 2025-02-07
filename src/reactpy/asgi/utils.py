@@ -6,6 +6,13 @@ from importlib import import_module
 from typing import Any
 
 from reactpy._option import Option
+from reactpy.config import (
+    REACTPY_PATH_PREFIX,
+    REACTPY_RECONNECT_BACKOFF_MULTIPLIER,
+    REACTPY_RECONNECT_INTERVAL,
+    REACTPY_RECONNECT_MAX_INTERVAL,
+    REACTPY_RECONNECT_MAX_RETRIES,
+)
 from reactpy.types import ReactPyConfig, VdomDict
 from reactpy.utils import vdom_to_html
 
@@ -73,3 +80,21 @@ def process_settings(settings: ReactPyConfig) -> None:
             config_object.set_current(settings[setting])  # type: ignore
         else:
             raise ValueError(f'Unknown ReactPy setting "{setting}".')
+
+
+def asgi_component_html(element_id: str, class_: str, component_path: str) -> str:
+    return (
+        f'<div id="{element_id}" class="{class_}"></div>'
+        '<script type="module" crossorigin="anonymous">'
+        f'import {{ mountReactPy }} from "{REACTPY_PATH_PREFIX.current}static/index.js";'
+        "mountReactPy({"
+        f' mountElement: document.getElementById("{element_id}"),'
+        f' pathPrefix: "{REACTPY_PATH_PREFIX.current}",'
+        f' componentPath: "{component_path}",'
+        f" reconnectInterval: {REACTPY_RECONNECT_INTERVAL.current},"
+        f" reconnectMaxInterval: {REACTPY_RECONNECT_MAX_INTERVAL.current},"
+        f" reconnectMaxRetries: {REACTPY_RECONNECT_MAX_RETRIES.current},"
+        f" reconnectBackoffMultiplier: {REACTPY_RECONNECT_BACKOFF_MULTIPLIER.current},"
+        "});"
+        "</script>"
+    )
