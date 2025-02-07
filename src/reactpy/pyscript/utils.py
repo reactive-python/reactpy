@@ -107,6 +107,7 @@ def extend_pyscript_config(
                 f"{REACTPY_PATH_PREFIX.current}static/morphdom/morphdom-esm.js": "morphdom"
             }
         },
+        "packages_cache": "never",
     }
     pyscript_config["packages"].extend(extra_py)
 
