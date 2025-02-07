@@ -406,7 +406,6 @@ class HtmlConstructor:
     video: VdomDictConstructor
     wbr: VdomDictConstructor
     fragment: VdomDictConstructor
-    py_script: VdomDictConstructor
 
     # Special Case: SVG elements
     # Since SVG elements have a different set of allowed children, they are

@@ -37,7 +37,7 @@ def _pyscript_component(
             {"id": f"pyscript-{uuid}", "className": "pyscript", "data-uuid": uuid},
             initial,
         ),
-        html.py_script(executor),
+        html.script({"type": "py"}, executor),
     )
 
 

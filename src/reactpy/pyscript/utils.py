@@ -65,7 +65,7 @@ def pyscript_component_html(
         f'<div id="pyscript-{uuid}" class="pyscript" data-uuid="{uuid}">'
         f"{_initial}"
         "</div>"
-        f"<py-script>{executor_code}</py-script>"
+        f"<script type='py'>{executor_code}</script>"
     )
 
 
@@ -80,11 +80,10 @@ def pyscript_setup_html(
 
     return (
         f'<link rel="stylesheet" href="{REACTPY_PATH_PREFIX.current}static/pyscript/core.css" />'
-        f'<link rel="stylesheet" href="{REACTPY_PATH_PREFIX.current}static/pyscript-custom.css" />'
         f"{'' if REACTPY_DEBUG.current else hide_pyscript_debugger}"
         f'<script type="module" async crossorigin="anonymous" src="{REACTPY_PATH_PREFIX.current}static/pyscript/core.js">'
         "</script>"
-        f"<py-script config='{pyscript_config}'>{PYSCRIPT_LAYOUT_HANDLER}</py-script>"
+        f"<script type='py' config='{pyscript_config}'>{PYSCRIPT_LAYOUT_HANDLER}</script>"
     )
 
 
