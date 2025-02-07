@@ -20,6 +20,7 @@ from reactpy.core.hooks import (
 )
 from reactpy.core.layout import Layout
 from reactpy.core.vdom import vdom
+from reactpy.pyscript.components import pyscript_component
 from reactpy.utils import Ref, html_to_vdom, vdom_to_html
 
 __author__ = "The Reactive Python Team"
@@ -36,6 +37,7 @@ __all__ = [
     "html",
     "html_to_vdom",
     "logging",
+    "pyscript_component",
     "types",
     "use_async_effect",
     "use_callback",
