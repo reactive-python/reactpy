@@ -1,8 +1,13 @@
+# ruff: noqa: S603, S607
 from __future__ import annotations
 
 import functools
 import json
+import shutil
+import subprocess
 import textwrap
+from glob import glob
+from logging import getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
@@ -11,7 +16,7 @@ import jsonpointer
 import orjson
 
 import reactpy
-from reactpy.config import REACTPY_DEBUG, REACTPY_PATH_PREFIX
+from reactpy.config import REACTPY_DEBUG, REACTPY_PATH_PREFIX, REACTPY_WEB_MODULES_DIR
 from reactpy.types import VdomDict
 from reactpy.utils import vdom_to_html
 
@@ -25,6 +30,7 @@ PYSCRIPT_COMPONENT_TEMPLATE = (
 PYSCRIPT_LAYOUT_HANDLER = (Path(__file__).parent / "layout_handler.py").read_text(
     encoding="utf-8"
 )
+_logger = getLogger(__name__)
 
 
 def render_pyscript_executor(file_paths: tuple[str, ...], uuid: str, root: str) -> str:
@@ -91,7 +97,7 @@ def extend_pyscript_config(
     # Extends ReactPy's default PyScript config with user provided values.
     pyscript_config: dict[str, Any] = {
         "packages": [
-            f"reactpy=={reactpy.__version__}",
+            reactpy_version_string(),
             f"jsonpointer=={jsonpointer.__version__}",
             "ssl",
         ],
@@ -115,6 +121,87 @@ def extend_pyscript_config(
     elif config and isinstance(config, dict):
         pyscript_config.update(config)
     return orjson.dumps(pyscript_config).decode("utf-8")
+
+
+@functools.cache
+def reactpy_version_string() -> str:  # pragma: no cover
+    local_version = reactpy.__version__
+
+    # Get a list of all versions via `pip index versions`
+    result = subprocess.run(
+        ["pip", "index", "versions", "reactpy"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    # Check if the command failed
+    if result.returncode != 0:
+        _logger.warning(
+            "Failed to verify what versions of ReactPy exist on PyPi. "
+            "PyScript functionality may not work as expected.",
+        )
+        return f"reactpy=={local_version}"
+
+    # Have `pip` tell us what versions are available
+    available_version_symbol = "Available versions: "
+    latest_version_symbol = "LATEST: "
+    known_versions: list[str] = []
+    latest_version: str = ""
+    for line in result.stdout.splitlines():
+        if line.startswith(available_version_symbol):
+            known_versions.extend(line[len(available_version_symbol) :].split(", "))
+        elif latest_version_symbol in line:
+            symbol_postion = line.index(latest_version_symbol)
+            latest_version = line[symbol_postion + len(latest_version_symbol) :].strip()
+
+    # Return early if local version of ReactPy is available on PyPi
+    if local_version in known_versions:
+        return f"reactpy=={local_version}"
+
+    # Begin determining an alternative method of installing ReactPy
+    _logger.warning(
+        "'reactpy==%s' is not available on PyPi, "
+        "Attempting to determine an alternative to use within PyScript...",
+        local_version,
+    )
+    if not latest_version:
+        _logger.warning("Failed to determine the latest version of ReactPy on PyPi. ")
+
+    # Build a local wheel for ReactPy, if needed
+    dist_dir = Path(reactpy.__file__).parent.parent.parent / "dist"
+    wheel_glob = glob(str(dist_dir / f"reactpy-{local_version}-*.whl"))
+    if not wheel_glob:
+        _logger.warning("Attempting to build a local wheel for ReactPy...")
+        subprocess.run(
+            ["hatch", "build", "-t", "wheel"],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=Path(reactpy.__file__).parent.parent.parent,
+        )
+    wheel_glob = glob(str(dist_dir / f"reactpy-{local_version}-*.whl"))
+
+    # Building a local wheel failed, find an alternative installation method
+    if not wheel_glob:
+        if latest_version:
+            _logger.warning(
+                "Failed to build a local wheel for ReactPy, likely due to missing build dependencies. "
+                "PyScript will default to using the latest ReactPy version on PyPi."
+            )
+            return f"reactpy=={latest_version}"
+        _logger.error(
+            "Failed to build a local wheel for ReactPy and could not determine the latest version on PyPi. "
+            "PyScript functionality may not work as expected.",
+        )
+        return f"reactpy=={local_version}"
+
+    # Move the wheel file to the web_modules directory, if needed
+    wheel_file = Path(wheel_glob[0])
+    new_path = REACTPY_WEB_MODULES_DIR.current / wheel_file.name
+    if not new_path.exists():
+        shutil.copy(wheel_file, new_path)
+    return f"{REACTPY_PATH_PREFIX.current}modules/{wheel_file.name}"
 
 
 @functools.cache
