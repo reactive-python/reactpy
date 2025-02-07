@@ -91,7 +91,7 @@ def pyscript_setup_html(
 
 def extend_pyscript_config(
     extra_py: Sequence[str],
-    extra_js: dict[str, Any] | str,
+    extra_js: dict[str, str] | str,
     config: dict[str, Any] | str,
 ) -> str:
     # Extends ReactPy's default PyScript config with user provided values.

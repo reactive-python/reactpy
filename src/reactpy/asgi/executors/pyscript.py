@@ -24,8 +24,8 @@ class ReactPyCSR(ReactPy):
         self,
         *component_paths: str | Path,
         extra_py: tuple[str, ...] = (),
-        extra_js: dict[str, Any] | str = "",
-        pyscript_config: dict[str, Any] | str = "",
+        extra_js: dict[str, str] | None = None,
+        pyscript_config: dict[str, Any] | None = None,
         root_name: str = "root",
         initial: str | VdomDict = "",
         http_headers: dict[str, str] | None = None,
@@ -35,8 +35,31 @@ class ReactPyCSR(ReactPy):
     ) -> None:
         """Variant of ReactPy's standalone that only performs Client-Side Rendering (CSR).
 
+        This ASGI webserver is only used to serve the initial HTML document and static files.
+
         Parameters:
-            ...
+            component_paths:
+                File paths to the Python files containing the root component. If multuple paths are
+                provided, the components will be concatenated in the order they were provided.
+            extra_py:
+                Additional Python packages to be made available to the root component. These packages
+                will be automatically installed from PyPi. Any packages names ending with `.whl` will
+                be assumed to be a URL to a wheel file.
+            extra_js: Dictionary where the `key` is the URL to the JavaScript file and the `value` is
+                the name you'd like to export it as. Any JavaScript files declared here will be available
+                to your root component via the `pyscript.js_modules.*` object.
+            pyscript_config:
+                Additional configuration options for the PyScript runtime. This will be merged with the
+                default configuration.
+            root_name: The name of the root component in your Python file.
+            initial: The initial HTML that is rendered prior to your component loading in. This is most
+                commonly used to render a loading animation.
+            http_headers: Additional headers to include in the HTTP response for the base HTML document.
+            html_head: Additional head elements to include in the HTML response.
+            html_lang: The language of the HTML document.
+            settings:
+                Global ReactPy configuration settings that affect behavior and performance. Most settings
+                are not applicable to CSR and will have no effect.
         """
         ReactPyMiddleware.__init__(
             self, app=ReactPyAppCSR(self), root_components=[], **settings
@@ -45,8 +68,8 @@ class ReactPyCSR(ReactPy):
             raise ValueError("At least one component file path must be provided.")
         self.component_paths = tuple(str(path) for path in component_paths)
         self.extra_py = extra_py
-        self.extra_js = extra_js
-        self.pyscript_config = pyscript_config
+        self.extra_js = extra_js or {}
+        self.pyscript_config = pyscript_config or {}
         self.root_name = root_name
         self.initial = initial
         self.extra_headers = http_headers or {}
@@ -55,6 +78,7 @@ class ReactPyCSR(ReactPy):
         self.html_lang = html_lang
 
     def match_dispatch_path(self, scope: WebSocketScope) -> bool:
+        """We do not use a WebSocket dispatcher for Client-Side Rendering (CSR)."""
         return False
 
 
