@@ -318,6 +318,7 @@ lint.unfixable = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["reactpy"]
+known-third-party = ["js"]
 
 [tool.ruff.lint.per-file-ignores]
 # Tests can use magic values, assertions, and relative imports
