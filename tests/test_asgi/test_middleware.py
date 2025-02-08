@@ -5,17 +5,20 @@ from pathlib import Path
 import pytest
 from jinja2 import Environment as JinjaEnvironment
 from jinja2 import FileSystemLoader as JinjaFileSystemLoader
+from requests import request
 from starlette.applications import Starlette
 from starlette.routing import Route
 from starlette.templating import Jinja2Templates
 
 import reactpy
 from reactpy.asgi.middleware import ReactPyMiddleware
+from reactpy.config import REACTPY_PATH_PREFIX, REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.testing import BackendFixture, DisplayFixture
 
 
 @pytest.fixture()
 async def display(page):
+    """Override for the display fixture that uses ReactPyMiddleware."""
     templates = Jinja2Templates(
         env=JinjaEnvironment(
             loader=JinjaFileSystemLoader("tests/templates"),
@@ -101,3 +104,16 @@ async def test_display_simple_hello_world(display: DisplayFixture):
     await display.page.reload()
 
     await display.page.wait_for_selector("#hello")
+
+
+async def test_static_file_not_found(page):
+    async def app(scope, receive, send): ...
+
+    app = ReactPyMiddleware(app, [])
+
+    async with BackendFixture(app) as server:
+        url = f"http://{server.host}:{server.port}{REACTPY_PATH_PREFIX.current}static/invalid.js"
+        response = await asyncio.to_thread(
+            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+        )
+        assert response.status_code == 404
