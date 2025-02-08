@@ -22,7 +22,7 @@ from reactpy.types import ReactPyConfig, VdomDict
 class ReactPyPyodide(ReactPy):
     def __init__(
         self,
-        *component_paths: str | Path,
+        *file_paths: str | Path,
         extra_py: tuple[str, ...] = (),
         extra_js: dict[str, str] | None = None,
         pyscript_config: dict[str, Any] | None = None,
@@ -34,13 +34,13 @@ class ReactPyPyodide(ReactPy):
         **settings: Unpack[ReactPyConfig],
     ) -> None:
         """Variant of ReactPy's standalone that only performs Client-Side Rendering (CSR) via
-        PyScript (using a Pyodide interpreter).
+        Pyodide (using the PyScript API).
 
         This ASGI webserver is only used to serve the initial HTML document and static files.
 
         Parameters:
-            component_paths:
-                File paths to the Python files containing the root component. If multuple paths are
+            file_paths:
+                File path(s) to the Python files containing the root component. If multuple paths are
                 provided, the components will be concatenated in the order they were provided.
             extra_py:
                 Additional Python packages to be made available to the root component. These packages
@@ -65,9 +65,9 @@ class ReactPyPyodide(ReactPy):
         ReactPyMiddleware.__init__(
             self, app=ReactPyPyodideApp(self), root_components=[], **settings
         )
-        if not component_paths:
+        if not file_paths:
             raise ValueError("At least one component file path must be provided.")
-        self.component_paths = tuple(str(path) for path in component_paths)
+        self.file_paths = tuple(str(path) for path in file_paths)
         self.extra_py = extra_py
         self.extra_js = extra_js or {}
         self.pyscript_config = pyscript_config or {}
@@ -101,7 +101,7 @@ class ReactPyPyodideApp(ReactPyApp):
             config=self.parent.pyscript_config,
         )
         pyscript_component = pyscript_component_html(
-            file_paths=self.parent.component_paths,
+            file_paths=self.parent.file_paths,
             initial=self.parent.initial,
             root=self.parent.root_name,
         )
