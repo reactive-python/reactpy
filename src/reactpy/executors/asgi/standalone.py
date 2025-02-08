@@ -13,14 +13,16 @@ from asgiref import typing as asgi_types
 from typing_extensions import Unpack
 
 from reactpy import html
-from reactpy.asgi.middleware import ReactPyMiddleware
-from reactpy.asgi.types import AsgiApp, AsgiHttpApp, AsgiLifespanApp, AsgiWebsocketApp
-from reactpy.asgi.utils import (
-    asgi_component_html,
-    import_dotted_path,
-    vdom_head_to_html,
+from reactpy.executors.asgi.middleware import ReactPyMiddleware
+from reactpy.executors.asgi.types import (
+    AsgiApp,
+    AsgiHttpApp,
+    AsgiLifespanApp,
+    AsgiWebsocketApp,
 )
+from reactpy.executors.utils import server_side_component_html, vdom_head_to_html
 from reactpy.types import ReactPyConfig, RootComponentConstructor, VdomDict
+from reactpy.utils import import_dotted_path
 
 _logger = getLogger(__name__)
 
@@ -209,7 +211,7 @@ class ReactPyApp:
             f'<html lang="{self.parent.html_lang}">'
             f"{vdom_head_to_html(self.parent.html_head)}"
             "<body>"
-            f"{asgi_component_html(element_id='app', class_='', component_path='')}"
+            f"{server_side_component_html(element_id='app', class_='', component_path='')}"
             "</body>"
             "</html>"
         )

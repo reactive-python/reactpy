@@ -18,7 +18,10 @@ from servestatic import ServeStaticASGI
 from typing_extensions import Unpack
 
 from reactpy import config
-from reactpy.asgi.types import (
+from reactpy.core.hooks import ConnectionContext
+from reactpy.core.layout import Layout
+from reactpy.core.serve import serve_layout
+from reactpy.executors.asgi.types import (
     AsgiApp,
     AsgiHttpApp,
     AsgiLifespanApp,
@@ -26,10 +29,7 @@ from reactpy.asgi.types import (
     AsgiWebsocketReceive,
     AsgiWebsocketSend,
 )
-from reactpy.asgi.utils import check_path, import_components, process_settings
-from reactpy.core.hooks import ConnectionContext
-from reactpy.core.layout import Layout
-from reactpy.core.serve import serve_layout
+from reactpy.executors.utils import check_path, import_components, process_settings
 from reactpy.types import Connection, Location, ReactPyConfig, RootComponentConstructor
 
 _logger = logging.getLogger(__name__)
@@ -90,7 +90,7 @@ class ReactPyMiddleware:
 
         # Directory attributes
         self.web_modules_dir = config.REACTPY_WEB_MODULES_DIR.current
-        self.static_dir = Path(__file__).parent.parent / "static"
+        self.static_dir = Path(__file__).parent.parent.parent / "static"
 
         # Initialize the sub-applications
         self.component_dispatch_app = ComponentDispatchApp(parent=self)

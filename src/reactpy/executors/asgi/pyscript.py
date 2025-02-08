@@ -12,14 +12,14 @@ from asgiref.typing import WebSocketScope
 from typing_extensions import Unpack
 
 from reactpy import html
-from reactpy.asgi.executors.standalone import ReactPy, ReactPyApp
-from reactpy.asgi.middleware import ReactPyMiddleware
-from reactpy.asgi.utils import vdom_head_to_html
+from reactpy.executors.asgi.middleware import ReactPyMiddleware
+from reactpy.executors.asgi.standalone import ReactPy, ReactPyApp
+from reactpy.executors.utils import vdom_head_to_html
 from reactpy.pyscript.utils import pyscript_component_html, pyscript_setup_html
 from reactpy.types import ReactPyConfig, VdomDict
 
 
-class ReactPyPyodide(ReactPy):
+class ReactPyPyscript(ReactPy):
     def __init__(
         self,
         *file_paths: str | Path,
@@ -34,7 +34,7 @@ class ReactPyPyodide(ReactPy):
         **settings: Unpack[ReactPyConfig],
     ) -> None:
         """Variant of ReactPy's standalone that only performs Client-Side Rendering (CSR) via
-        Pyodide (using the PyScript API).
+        PyScript (using the Pyodide interpreter).
 
         This ASGI webserver is only used to serve the initial HTML document and static files.
 
@@ -87,7 +87,7 @@ class ReactPyPyodide(ReactPy):
 class ReactPyPyodideApp(ReactPyApp):
     """ReactPy's standalone ASGI application for Client-Side Rendering (CSR)."""
 
-    parent: ReactPyPyodide
+    parent: ReactPyPyscript
     _index_html = ""
     _etag = ""
     _last_modified = ""

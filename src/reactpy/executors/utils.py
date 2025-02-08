@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Iterable
-from importlib import import_module
 from typing import Any
 
 from reactpy._option import Option
@@ -14,29 +13,9 @@ from reactpy.config import (
     REACTPY_RECONNECT_MAX_RETRIES,
 )
 from reactpy.types import ReactPyConfig, VdomDict
-from reactpy.utils import vdom_to_html
+from reactpy.utils import import_dotted_path, vdom_to_html
 
 logger = logging.getLogger(__name__)
-
-
-def import_dotted_path(dotted_path: str) -> Any:
-    """Imports a dotted path and returns the callable."""
-    if "." not in dotted_path:
-        raise ValueError(f'"{dotted_path}" is not a valid dotted path.')
-
-    module_name, component_name = dotted_path.rsplit(".", 1)
-
-    try:
-        module = import_module(module_name)
-    except ImportError as error:
-        msg = f'ReactPy failed to import "{module_name}"'
-        raise ImportError(msg) from error
-
-    try:
-        return getattr(module, component_name)
-    except AttributeError as error:
-        msg = f'ReactPy failed to import "{component_name}" from "{module_name}"'
-        raise AttributeError(msg) from error
 
 
 def import_components(dotted_paths: Iterable[str]) -> dict[str, Any]:
@@ -82,7 +61,9 @@ def process_settings(settings: ReactPyConfig) -> None:
             raise ValueError(f'Unknown ReactPy setting "{setting}".')
 
 
-def asgi_component_html(element_id: str, class_: str, component_path: str) -> str:
+def server_side_component_html(
+    element_id: str, class_: str, component_path: str
+) -> str:
     return (
         f'<div id="{element_id}" class="{class_}"></div>'
         '<script type="module" crossorigin="anonymous">'

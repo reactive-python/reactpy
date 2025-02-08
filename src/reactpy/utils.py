@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable
+from importlib import import_module
 from itertools import chain
 from typing import Any, Callable, Generic, TypeVar, Union, cast
 
@@ -313,3 +314,23 @@ DASHED_HTML_ATTRS = {"accept_charset", "acceptCharset", "http_equiv", "httpEquiv
 
 # Pattern for delimitting camelCase names (e.g. camelCase to camel-case)
 _CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
+
+
+def import_dotted_path(dotted_path: str) -> Any:
+    """Imports a dotted path and returns the callable."""
+    if "." not in dotted_path:
+        raise ValueError(f'"{dotted_path}" is not a valid dotted path.')
+
+    module_name, component_name = dotted_path.rsplit(".", 1)
+
+    try:
+        module = import_module(module_name)
+    except ImportError as error:
+        msg = f'ReactPy failed to import "{module_name}"'
+        raise ImportError(msg) from error
+
+    try:
+        return getattr(module, component_name)
+    except AttributeError as error:
+        msg = f'ReactPy failed to import "{component_name}" from "{module_name}"'
+        raise AttributeError(msg) from error
