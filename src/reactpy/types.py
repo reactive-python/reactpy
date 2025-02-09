@@ -295,3 +295,9 @@ class ReactPyConfig(TypedDict, total=False):
     async_rendering: bool
     debug: bool
     tests_default_timeout: int
+
+
+class PyScriptOptions(TypedDict, total=False):
+    extra_py: Sequence[str]
+    extra_js: dict[str, Any] | str
+    config: dict[str, Any] | str

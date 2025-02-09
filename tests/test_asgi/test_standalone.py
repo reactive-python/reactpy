@@ -8,7 +8,7 @@ from requests import request
 
 import reactpy
 from reactpy import html
-from reactpy.asgi.executors.standalone import ReactPy
+from reactpy.executors.asgi.standalone import ReactPy
 from reactpy.testing import BackendFixture, DisplayFixture, poll
 from reactpy.testing.common import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.types import Connection, Location

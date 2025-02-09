@@ -140,17 +140,11 @@ def extend_pyscript_config(
     return orjson.dumps(pyscript_config).decode("utf-8")
 
 
-@functools.cache
 def reactpy_version_string() -> str:  # pragma: no cover
     local_version = reactpy.__version__
 
     # Get a list of all versions via `pip index versions`
-    result = subprocess.run(
-        ["pip", "index", "versions", "reactpy"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    result = cached_pip_index_versions("reactpy")
 
     # Check if the command failed
     if result.returncode != 0:
@@ -177,11 +171,7 @@ def reactpy_version_string() -> str:  # pragma: no cover
         return f"reactpy=={local_version}"
 
     # Begin determining an alternative method of installing ReactPy
-    _logger.warning(
-        "'reactpy==%s' is not available on PyPi, "
-        "Attempting to determine an alternative to use within PyScript...",
-        local_version,
-    )
+
     if not latest_version:
         _logger.warning("Failed to determine the latest version of ReactPy on PyPi. ")
 
@@ -199,7 +189,7 @@ def reactpy_version_string() -> str:  # pragma: no cover
         )
     wheel_glob = glob(str(dist_dir / f"reactpy-{local_version}-*.whl"))
 
-    # Building a local wheel failed, find an alternative installation method
+    # Building a local wheel failed, try our best to give the user any possible version.
     if not wheel_glob:
         if latest_version:
             _logger.warning(
@@ -213,12 +203,27 @@ def reactpy_version_string() -> str:  # pragma: no cover
         )
         return f"reactpy=={local_version}"
 
-    # Move the wheel file to the web_modules directory, if needed
+    # Move the local file to the web modules directory, if needed
     wheel_file = Path(wheel_glob[0])
     new_path = REACTPY_WEB_MODULES_DIR.current / wheel_file.name
     if not new_path.exists():
+        _logger.warning(
+            "'reactpy==%s' is not available on PyPi. "
+            "PyScript will utilize a local wheel of ReactPy instead.",
+            local_version,
+        )
         shutil.copy(wheel_file, new_path)
     return f"{REACTPY_PATH_PREFIX.current}modules/{wheel_file.name}"
+
+
+@functools.cache
+def cached_pip_index_versions(package_name: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["pip", "index", "versions", package_name],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
 
 @functools.cache

@@ -4,7 +4,7 @@ import pytest
 from servestatic import ServeStaticASGI
 
 import reactpy
-from reactpy.asgi.executors.standalone import ReactPy
+from reactpy.executors.asgi.standalone import ReactPy
 from reactpy.testing import (
     BackendFixture,
     DisplayFixture,

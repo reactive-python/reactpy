@@ -11,8 +11,8 @@ from starlette.routing import Route
 from starlette.templating import Jinja2Templates
 
 import reactpy
-from reactpy.asgi.middleware import ReactPyMiddleware
 from reactpy.config import REACTPY_PATH_PREFIX, REACTPY_TESTS_DEFAULT_TIMEOUT
+from reactpy.executors.asgi.middleware import ReactPyMiddleware
 from reactpy.testing import BackendFixture, DisplayFixture
 
 

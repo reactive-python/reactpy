@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from jinja2_simple_tags import StandaloneTag
 
-from reactpy.asgi.utils import asgi_component_html
+from reactpy.executors.utils import server_side_component_html
 from reactpy.pyscript.utils import pyscript_component_html, pyscript_setup_html
 
 
@@ -28,7 +28,7 @@ def component(dotted_path: str, **kwargs: str) -> str:
     class_ = kwargs.pop("class", "")
     if kwargs:
         raise ValueError(f"Unexpected keyword arguments: {', '.join(kwargs)}")
-    return asgi_component_html(
+    return server_side_component_html(
         element_id=uuid4().hex, class_=class_, component_path=f"{dotted_path}/"
     )
 
