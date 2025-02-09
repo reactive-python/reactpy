@@ -31,8 +31,8 @@ def minify_python(source: str) -> str:
     # Remove comments
     source = re.sub(r"#.*\n", "\n", source)
     # Remove docstrings
-    source = re.sub(r'""".*?"""', "", source, flags=re.DOTALL)
-    # Remove extra newlines
+    source = re.sub(r'\n\s*""".*?"""', "", source, flags=re.DOTALL)
+    # Remove excess newlines
     source = re.sub(r"\n+", "\n", source)
     # Remove empty lines
     source = re.sub(r"\s+\n", "\n", source)

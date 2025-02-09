@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from reactpy import component, hooks
 from reactpy.pyscript.utils import pyscript_component_html
-from reactpy.types import ComponentType
+from reactpy.types import ComponentType, Key
 from reactpy.utils import html_to_vdom
 
 if TYPE_CHECKING:
@@ -30,17 +30,18 @@ def _pyscript_component(
         set_rendered(True)
         return None
 
-    result = html_to_vdom(
+    component_vdom = html_to_vdom(
         pyscript_component_html(tuple(str(fp) for fp in file_paths), initial, root)
     )
-    result["tagName"] = ""
-    return result
+    component_vdom["tagName"] = ""
+    return component_vdom
 
 
 def pyscript_component(
     *file_paths: str | Path,
     initial: str | VdomDict | ComponentType = "",
     root: str = "root",
+    key: Key | None = None,
 ) -> ComponentType:
     """
     Args:
@@ -57,4 +58,5 @@ def pyscript_component(
         *file_paths,
         initial=initial,
         root=root,
+        key=key,
     )

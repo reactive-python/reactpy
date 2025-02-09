@@ -136,7 +136,7 @@ class ReactPyMiddleware:
 
     def match_extra_paths(self, scope: asgi_types.Scope) -> AsgiApp | None:
         # Custom defined routes are unused by default to encourage users to handle
-        # routing within their root ASGI application.
+        # routing within their ASGI framework of choice.
         return None
 
 

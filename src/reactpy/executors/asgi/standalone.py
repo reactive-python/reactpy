@@ -71,9 +71,11 @@ class ReactPy(ReactPyMiddleware):
             extra_py = pyscript_options.get("extra_py", [])
             extra_js = pyscript_options.get("extra_js", {})
             config = pyscript_options.get("config", {})
-            self.html_head["children"].append(  # type: ignore
-                html_to_vdom(pyscript_setup_html(extra_py, extra_js, config))
+            pyscript_head_vdom = html_to_vdom(
+                pyscript_setup_html(extra_py, extra_js, config)
             )
+            pyscript_head_vdom["tagName"] = ""
+            self.html_head["children"].append(pyscript_head_vdom)  # type: ignore
 
     def match_dispatch_path(self, scope: asgi_types.WebSocketScope) -> bool:
         """Method override to remove `dotted_path` from the dispatcher URL."""
