@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
-from uuid import uuid4
 
-from reactpy import component, hooks, html
-from reactpy.pyscript.utils import render_pyscript_executor
+from reactpy import component, hooks
+from reactpy.pyscript.utils import pyscript_component_html
 from reactpy.types import ComponentType
-from reactpy.utils import vdom_to_html
+from reactpy.utils import html_to_vdom
 
 if TYPE_CHECKING:
     from reactpy.types import VdomDict
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 @component
 def _pyscript_component(
-    *file_paths: str,
+    *file_paths: str | Path,
     initial: str | VdomDict = "",
     root: str = "root",
 ) -> None | VdomDict:
@@ -22,9 +22,7 @@ def _pyscript_component(
         raise ValueError("At least one file path must be provided.")
 
     rendered, set_rendered = hooks.use_state(False)
-    uuid = hooks.use_ref(uuid4().hex.replace("-", "")).current
-    initial = initial if isinstance(initial, str) else vdom_to_html(initial)
-    executor = render_pyscript_executor(file_paths=file_paths, uuid=uuid, root=root)
+    initial = html_to_vdom(initial) if isinstance(initial, str) else initial
 
     if not rendered:
         # FIXME: This is needed to properly re-render PyScript during a WebSocket
@@ -32,17 +30,15 @@ def _pyscript_component(
         set_rendered(True)
         return None
 
-    return html.fragment(
-        html.div(
-            {"id": f"pyscript-{uuid}", "className": "pyscript", "data-uuid": uuid},
-            initial,
-        ),
-        html.script({"type": "py"}, executor),
+    result = html_to_vdom(
+        pyscript_component_html(tuple(str(fp) for fp in file_paths), initial, root)
     )
+    result["tagName"] = ""
+    return result
 
 
 def pyscript_component(
-    *file_paths: str,
+    *file_paths: str | Path,
     initial: str | VdomDict | ComponentType = "",
     root: str = "root",
 ) -> ComponentType:

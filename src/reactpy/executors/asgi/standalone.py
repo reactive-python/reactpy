@@ -21,8 +21,14 @@ from reactpy.executors.asgi.types import (
     AsgiWebsocketApp,
 )
 from reactpy.executors.utils import server_side_component_html, vdom_head_to_html
-from reactpy.types import ReactPyConfig, RootComponentConstructor, VdomDict
-from reactpy.utils import import_dotted_path
+from reactpy.pyscript.utils import pyscript_setup_html
+from reactpy.types import (
+    PyScriptOptions,
+    ReactPyConfig,
+    RootComponentConstructor,
+    VdomDict,
+)
+from reactpy.utils import html_to_vdom, import_dotted_path
 
 _logger = getLogger(__name__)
 
@@ -37,6 +43,8 @@ class ReactPy(ReactPyMiddleware):
         http_headers: dict[str, str] | None = None,
         html_head: VdomDict | None = None,
         html_lang: str = "en",
+        pyscript_setup: bool = False,
+        pyscript_options: PyScriptOptions | None = None,
         **settings: Unpack[ReactPyConfig],
     ) -> None:
         """ReactPy's standalone ASGI application.
@@ -46,6 +54,8 @@ class ReactPy(ReactPyMiddleware):
             http_headers: Additional headers to include in the HTTP response for the base HTML document.
             html_head: Additional head elements to include in the HTML response.
             html_lang: The language of the HTML document.
+            pyscript_setup: Whether to automatically load PyScript within your HTML head.
+            pyscript_options: Options to configure PyScript behavior.
             settings: Global ReactPy configuration settings that affect behavior and performance.
         """
         super().__init__(app=ReactPyApp(self), root_components=[], **settings)
@@ -54,6 +64,16 @@ class ReactPy(ReactPyMiddleware):
         self.dispatcher_pattern = re.compile(f"^{self.dispatcher_path}?")
         self.html_head = html_head or html.head()
         self.html_lang = html_lang
+
+        if pyscript_setup:
+            self.html_head.setdefault("children", [])
+            pyscript_options = pyscript_options or {}
+            extra_py = pyscript_options.get("extra_py", [])
+            extra_js = pyscript_options.get("extra_js", {})
+            config = pyscript_options.get("config", {})
+            self.html_head["children"].append(  # type: ignore
+                html_to_vdom(pyscript_setup_html(extra_py, extra_js, config))
+            )
 
     def match_dispatch_path(self, scope: asgi_types.WebSocketScope) -> bool:
         """Method override to remove `dotted_path` from the dispatcher URL."""

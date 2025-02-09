@@ -48,7 +48,7 @@ PYSCRIPT_LAYOUT_HANDLER = minify_python(
 )
 
 
-def render_pyscript_executor(file_paths: tuple[str, ...], uuid: str, root: str) -> str:
+def pyscript_executor_html(file_paths: Sequence[str], uuid: str, root: str) -> str:
     """Inserts the user's code into the PyScript template using pattern matching."""
     # Create a valid PyScript executor by replacing the template values
     executor = PYSCRIPT_COMPONENT_TEMPLATE.replace("UUID", uuid)
@@ -63,19 +63,23 @@ def render_pyscript_executor(file_paths: tuple[str, ...], uuid: str, root: str) 
     user_code = user_code.replace("\t", "    ")  # Normalize the text
     user_code = textwrap.indent(user_code, "    ")  # Add indentation to match template
 
+    # Ensure the root component exists
+    if f"def {root}():" not in user_code:
+        raise ValueError(
+            f"Could not find the root component function '{root}' in your PyScript file(s)."
+        )
+
     # Insert the user code into the PyScript template
     return executor.replace("    def root(): ...", user_code)
 
 
 def pyscript_component_html(
-    file_paths: tuple[str, ...], initial: str | VdomDict, root: str
+    file_paths: Sequence[str], initial: str | VdomDict, root: str
 ) -> str:
     """Renders a PyScript component with the user's code."""
     _initial = initial if isinstance(initial, str) else vdom_to_html(initial)
     uuid = uuid4().hex
-    executor_code = render_pyscript_executor(
-        file_paths=file_paths, uuid=uuid, root=root
-    )
+    executor_code = pyscript_executor_html(file_paths=file_paths, uuid=uuid, root=root)
 
     return (
         f'<div id="pyscript-{uuid}" class="pyscript" data-uuid="{uuid}">'

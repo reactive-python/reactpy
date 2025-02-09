@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import formatdate
@@ -23,7 +24,7 @@ class ReactPyPyscript(ReactPy):
     def __init__(
         self,
         *file_paths: str | Path,
-        extra_py: tuple[str, ...] = (),
+        extra_py: Sequence[str] = (),
         extra_js: dict[str, str] | None = None,
         pyscript_config: dict[str, Any] | None = None,
         root_name: str = "root",
