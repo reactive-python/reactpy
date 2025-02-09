@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 _logger = getLogger(__name__)
 
 
-def minify_python(source: str):
+def minify_python(source: str) -> str:
     """Minify Python source code."""
     # Remove comments
     source = re.sub(r"#.*\n", "\n", source)
@@ -231,6 +231,6 @@ def cached_pip_index_versions(package_name: str) -> subprocess.CompletedProcess[
 
 
 @functools.cache
-def cached_file_read(file_path: str, minifiy=True) -> str:
+def cached_file_read(file_path: str, minifiy: bool = True) -> str:
     content = Path(file_path).read_text(encoding="utf-8").strip()
     return minify_python(content) if minifiy else content
