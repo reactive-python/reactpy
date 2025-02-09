@@ -78,7 +78,7 @@ async def test_unregistered_root_component():
         async with DisplayFixture(backend=server) as new_display:
             await new_display.show(Stub)
 
-            # Wait for the log record to be popualted
+            # Wait for the log record to be populated
             for _ in range(10):
                 if len(server.log_records) > 0:
                     break
@@ -117,3 +117,26 @@ async def test_static_file_not_found(page):
             request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
         )
         assert response.status_code == 404
+
+
+async def test_templatetag_bad_kwargs(page, caplog):
+    """Override for the display fixture that uses ReactPyMiddleware."""
+    templates = Jinja2Templates(
+        env=JinjaEnvironment(
+            loader=JinjaFileSystemLoader("tests/templates"),
+            extensions=["reactpy.templatetags.Jinja"],
+        )
+    )
+
+    async def homepage(request):
+        return templates.TemplateResponse(request, "jinja_bad_kwargs.html")
+
+    app = Starlette(routes=[Route("/", homepage)])
+
+    async with BackendFixture(app) as server:
+        async with DisplayFixture(backend=server, driver=page) as new_display:
+            await new_display.goto("/")
+
+            # This test could be improved by actually checking if `bad kwargs` error message is shown in
+            # `stderr`, but I was struggling to get that to work.
+            assert "internal server error" in (await new_display.page.content()).lower()

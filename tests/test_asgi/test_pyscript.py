@@ -51,7 +51,7 @@ async def jinja_display(page):
     )
 
     async def homepage(request):
-        return templates.TemplateResponse(request, "index.html")
+        return templates.TemplateResponse(request, "pyscript.html")
 
     app = Starlette(routes=[Route("/", homepage)])
 
@@ -94,3 +94,19 @@ async def test_multi_file_components(multi_file_display: DisplayFixture):
 def test_bad_file_path():
     with pytest.raises(ValueError):
         ReactPyPyscript()
+
+
+async def test_jinja_template_tag(jinja_display: DisplayFixture):
+    await jinja_display.goto("/")
+
+    await jinja_display.page.wait_for_selector("#loading")
+    await jinja_display.page.wait_for_selector("#incr")
+
+    await jinja_display.page.click("#incr")
+    await jinja_display.page.wait_for_selector("#incr[data-count='1']")
+
+    await jinja_display.page.click("#incr")
+    await jinja_display.page.wait_for_selector("#incr[data-count='2']")
+
+    await jinja_display.page.click("#incr")
+    await jinja_display.page.wait_for_selector("#incr[data-count='3']")

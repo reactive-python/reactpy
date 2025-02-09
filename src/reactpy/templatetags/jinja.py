@@ -21,7 +21,8 @@ class Jinja(StandaloneTag):  # type: ignore
         if self.tag_name == "pyscript_setup":
             return pyscript_setup(*args, **kwargs)
 
-        raise ValueError(f"Unknown tag: {self.tag_name}")
+        # This should never happen, but we validate it for safety.
+        raise ValueError(f"Unknown tag: {self.tag_name}")  # pragma: no cover
 
 
 def component(dotted_path: str, **kwargs: str) -> str:
