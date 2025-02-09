@@ -134,7 +134,7 @@ def extend_pyscript_config(
     if extra_js and isinstance(extra_js, str):
         pyscript_config["js_modules"]["main"].update(json.loads(extra_js))
     elif extra_js and isinstance(extra_js, dict):
-        pyscript_config["js_modules"]["main"].update(extra_py)
+        pyscript_config["js_modules"]["main"].update(extra_js)
 
     # Update other config attributes
     if config and isinstance(config, str):

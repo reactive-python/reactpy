@@ -89,3 +89,8 @@ async def test_multi_file_components(multi_file_display: DisplayFixture):
 
     await multi_file_display.page.click("#incr")
     await multi_file_display.page.wait_for_selector("#incr[data-count='3']")
+
+
+def test_bad_file_path():
+    with pytest.raises(ValueError):
+        ReactPyPyscript()
