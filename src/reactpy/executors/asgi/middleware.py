@@ -12,7 +12,6 @@ from typing import Any
 
 import orjson
 from asgi_tools import ResponseText, ResponseWebSocket
-from asgiref import typing as asgi_types
 from asgiref.compatibility import guarantee_single_callable
 from servestatic import ServeStaticASGI
 from typing_extensions import Unpack
@@ -23,10 +22,18 @@ from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
 from reactpy.executors.asgi.types import (
     AsgiApp,
-    AsgiHttpApp,
-    AsgiLifespanApp,
-    AsgiWebsocketApp,
+    AsgiHttpReceive,
+    AsgiHttpScope,
+    AsgiHttpSend,
+    AsgiReceive,
+    AsgiScope,
+    AsgiSend,
+    AsgiV3App,
+    AsgiV3HttpApp,
+    AsgiV3LifespanApp,
+    AsgiV3WebsocketApp,
     AsgiWebsocketReceive,
+    AsgiWebsocketScope,
     AsgiWebsocketSend,
 )
 from reactpy.executors.utils import check_path, import_components, process_settings
@@ -42,7 +49,7 @@ class ReactPyMiddleware:
 
     def __init__(
         self,
-        app: asgi_types.ASGIApplication,
+        app: AsgiApp,
         root_components: Iterable[str],
         **settings: Unpack[ReactPyConfig],
     ) -> None:
@@ -80,12 +87,12 @@ class ReactPyMiddleware:
         )
 
         # User defined ASGI apps
-        self.extra_http_routes: dict[str, AsgiHttpApp] = {}
-        self.extra_ws_routes: dict[str, AsgiWebsocketApp] = {}
-        self.extra_lifespan_app: AsgiLifespanApp | None = None
+        self.extra_http_routes: dict[str, AsgiV3HttpApp] = {}
+        self.extra_ws_routes: dict[str, AsgiV3WebsocketApp] = {}
+        self.extra_lifespan_app: AsgiV3LifespanApp | None = None
 
         # Component attributes
-        self.asgi_app: asgi_types.ASGI3Application = guarantee_single_callable(app)  # type: ignore
+        self.asgi_app: AsgiV3App = guarantee_single_callable(app)  # type: ignore
         self.root_components = import_components(root_components)
 
         # Directory attributes
@@ -98,10 +105,7 @@ class ReactPyMiddleware:
         self.web_modules_app = WebModuleApp(parent=self)
 
     async def __call__(
-        self,
-        scope: asgi_types.Scope,
-        receive: asgi_types.ASGIReceiveCallable,
-        send: asgi_types.ASGISendCallable,
+        self, scope: AsgiScope, receive: AsgiReceive, send: AsgiSend
     ) -> None:
         """The ASGI entrypoint that determines whether ReactPy should route the
         request to ourselves or to the user application."""
@@ -125,16 +129,16 @@ class ReactPyMiddleware:
         # Serve the user's application
         await self.asgi_app(scope, receive, send)
 
-    def match_dispatch_path(self, scope: asgi_types.WebSocketScope) -> bool:
+    def match_dispatch_path(self, scope: AsgiWebsocketScope) -> bool:
         return bool(re.match(self.dispatcher_pattern, scope["path"]))
 
-    def match_static_path(self, scope: asgi_types.HTTPScope) -> bool:
+    def match_static_path(self, scope: AsgiHttpScope) -> bool:
         return scope["path"].startswith(self.static_path)
 
-    def match_web_modules_path(self, scope: asgi_types.HTTPScope) -> bool:
+    def match_web_modules_path(self, scope: AsgiHttpScope) -> bool:
         return scope["path"].startswith(self.web_modules_path)
 
-    def match_extra_paths(self, scope: asgi_types.Scope) -> AsgiApp | None:
+    def match_extra_paths(self, scope: AsgiScope) -> AsgiApp | None:
         # Custom defined routes are unused by default to encourage users to handle
         # routing within their ASGI framework of choice.
         return None
@@ -146,13 +150,13 @@ class ComponentDispatchApp:
 
     async def __call__(
         self,
-        scope: asgi_types.WebSocketScope,
-        receive: asgi_types.ASGIReceiveCallable,
-        send: asgi_types.ASGISendCallable,
+        scope: AsgiWebsocketScope,
+        receive: AsgiWebsocketReceive,
+        send: AsgiWebsocketSend,
     ) -> None:
         """ASGI app for rendering ReactPy Python components."""
         # Start a loop that handles ASGI websocket events
-        async with ReactPyWebsocket(scope, receive, send, parent=self.parent) as ws:  # type: ignore
+        async with ReactPyWebsocket(scope, receive, send, parent=self.parent) as ws:
             while True:
                 # Wait for the webserver to notify us of a new event
                 event: dict[str, Any] = await ws.receive(raw=True)  # type: ignore
@@ -175,7 +179,7 @@ class ComponentDispatchApp:
 class ReactPyWebsocket(ResponseWebSocket):
     def __init__(
         self,
-        scope: asgi_types.WebSocketScope,
+        scope: AsgiWebsocketScope,
         receive: AsgiWebsocketReceive,
         send: AsgiWebsocketSend,
         parent: ReactPyMiddleware,
@@ -250,10 +254,7 @@ class StaticFileApp:
     _static_file_server: ServeStaticASGI | None = None
 
     async def __call__(
-        self,
-        scope: asgi_types.HTTPScope,
-        receive: asgi_types.ASGIReceiveCallable,
-        send: asgi_types.ASGISendCallable,
+        self, scope: AsgiHttpScope, receive: AsgiHttpReceive, send: AsgiHttpSend
     ) -> None:
         """ASGI app for ReactPy static files."""
         if not self._static_file_server:
@@ -272,10 +273,7 @@ class WebModuleApp:
     _static_file_server: ServeStaticASGI | None = None
 
     async def __call__(
-        self,
-        scope: asgi_types.HTTPScope,
-        receive: asgi_types.ASGIReceiveCallable,
-        send: asgi_types.ASGISendCallable,
+        self, scope: AsgiHttpScope, receive: AsgiHttpReceive, send: AsgiHttpSend
     ) -> None:
         """ASGI app for ReactPy web modules."""
         if not self._static_file_server:
@@ -291,10 +289,7 @@ class WebModuleApp:
 
 class Error404App:
     async def __call__(
-        self,
-        scope: asgi_types.HTTPScope,
-        receive: asgi_types.ASGIReceiveCallable,
-        send: asgi_types.ASGISendCallable,
+        self, scope: AsgiScope, receive: AsgiReceive, send: AsgiSend
     ) -> None:
         response = ResponseText("Resource not found on this server.", status_code=404)
         await response(scope, receive, send)  # type: ignore

@@ -338,9 +338,9 @@ def use_connection() -> Connection[Any]:
     return conn
 
 
-def use_scope() -> asgi_types.HTTPScope | asgi_types.WebSocketScope:
+def use_scope() -> dict[str, Any] | asgi_types.HTTPScope | asgi_types.WebSocketScope:
     """Get the current :class:`~reactpy.types.Connection`'s scope."""
-    return use_connection().scope  # type: ignore
+    return use_connection().scope
 
 
 def use_location() -> Location:
