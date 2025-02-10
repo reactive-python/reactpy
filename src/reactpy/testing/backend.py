@@ -4,17 +4,16 @@ import asyncio
 import logging
 from contextlib import AsyncExitStack
 from types import TracebackType
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 from urllib.parse import urlencode, urlunparse
 
 import uvicorn
-from asgiref import typing as asgi_types
 
-from reactpy.asgi.middleware import ReactPyMiddleware
-from reactpy.asgi.standalone import ReactPy
 from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.core.component import component
 from reactpy.core.hooks import use_callback, use_effect, use_state
+from reactpy.executors.asgi.middleware import ReactPyMiddleware
+from reactpy.executors.asgi.standalone import ReactPy
 from reactpy.testing.logs import (
     LogAssertionError,
     capture_reactpy_logs,
@@ -23,6 +22,9 @@ from reactpy.testing.logs import (
 from reactpy.testing.utils import find_available_port
 from reactpy.types import ComponentConstructor, ReactPyConfig
 from reactpy.utils import Ref
+
+if TYPE_CHECKING:
+    from asgiref import typing as asgi_types
 
 
 class BackendFixture:

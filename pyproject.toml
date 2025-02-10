@@ -13,8 +13,8 @@ readme = "README.md"
 keywords = ["react", "javascript", "reactpy", "component"]
 license = "MIT"
 authors = [
-  { name = "Ryan Morshead", email = "ryan.morshead@gmail.com" },
   { name = "Mark Bakhit", email = "archiethemonger@gmail.com" },
+  { name = "Ryan Morshead", email = "ryan.morshead@gmail.com" },
 ]
 requires-python = ">=3.9"
 classifiers = [
@@ -28,23 +28,23 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "exceptiongroup >=1.0",
-  "typing-extensions >=3.10",
-  "anyio >=3",
-  "jsonpatch >=1.32",
   "fastjsonschema >=2.14.5",
   "requests >=2",
-  "colorlog >=6",
-  "asgiref >=3",
   "lxml >=4",
-  "servestatic >=3.0.0",
-  "orjson >=3",
-  "asgi-tools",
+  "anyio >=3",
+  "typing-extensions >=3.10",
 ]
 dynamic = ["version"]
 urls.Changelog = "https://reactpy.dev/docs/about/changelog.html"
 urls.Documentation = "https://reactpy.dev/"
 urls.Source = "https://github.com/reactive-python/reactpy"
+
+[project.optional-dependencies]
+all = ["reactpy[asgi,jinja,uvicorn,testing]"]
+asgi = ["asgiref", "asgi-tools", "servestatic", "orjson", "pip"]
+jinja = ["jinja2-simple-tags", "jinja2 >=3"]
+uvicorn = ["uvicorn[standard]"]
+testing = ["playwright"]
 
 [tool.hatch.version]
 path = "src/reactpy/__init__.py"
@@ -75,16 +75,10 @@ commands = [
   'bun run --cwd "src/js/packages/@reactpy/client" build',
   'bun install --cwd "src/js/packages/@reactpy/app"',
   'bun run --cwd "src/js/packages/@reactpy/app" build',
-  'python "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/dist" "src/reactpy/static"',
+  'python "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/node_modules/@pyscript/core/dist" "src/reactpy/static/pyscript"',
+  'python "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/node_modules/morphdom/dist" "src/reactpy/static/morphdom"',
 ]
 artifacts = []
-
-[project.optional-dependencies]
-all = ["reactpy[jinja,uvicorn,testing]"]
-standard = ["reactpy[jinja,uvicorn]"]
-jinja = ["jinja2-simple-tags", "jinja2 >=3"]
-uvicorn = ["uvicorn[standard]"]
-testing = ["playwright"]
 
 
 #############################
@@ -93,14 +87,12 @@ testing = ["playwright"]
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
+  "reactpy[all]",
   "pytest-sugar",
   "pytest-asyncio",
   "responses",
-  "playwright",
+  "exceptiongroup",
   "jsonpointer",
-  "uvicorn[standard]",
-  "jinja2-simple-tags",
-  "jinja2",
   "starlette",
 ]
 
@@ -160,6 +152,7 @@ serve = [
 
 [tool.hatch.envs.python]
 extra-dependencies = [
+  "reactpy[all]",
   "ruff",
   "toml",
   "mypy==1.8",
@@ -240,6 +233,8 @@ omit = [
   "src/reactpy/__init__.py",
   "src/reactpy/_console/*",
   "src/reactpy/__main__.py",
+  "src/reactpy/pyscript/layout_handler.py",
+  "src/reactpy/pyscript/component_template.py",
 ]
 
 [tool.coverage.report]
@@ -325,6 +320,7 @@ lint.unfixable = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["reactpy"]
+known-third-party = ["js"]
 
 [tool.ruff.lint.per-file-ignores]
 # Tests can use magic values, assertions, and relative imports

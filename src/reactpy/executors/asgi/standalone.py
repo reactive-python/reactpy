@@ -13,18 +13,22 @@ from asgiref import typing as asgi_types
 from typing_extensions import Unpack
 
 from reactpy import html
-from reactpy.asgi.middleware import ReactPyMiddleware
-from reactpy.asgi.utils import import_dotted_path, vdom_head_to_html
-from reactpy.types import (
+from reactpy.executors.asgi.middleware import ReactPyMiddleware
+from reactpy.executors.asgi.types import (
     AsgiApp,
     AsgiHttpApp,
     AsgiLifespanApp,
     AsgiWebsocketApp,
+)
+from reactpy.executors.utils import server_side_component_html, vdom_head_to_html
+from reactpy.pyscript.utils import pyscript_setup_html
+from reactpy.types import (
+    PyScriptOptions,
     ReactPyConfig,
     RootComponentConstructor,
     VdomDict,
 )
-from reactpy.utils import render_mount_template
+from reactpy.utils import html_to_vdom, import_dotted_path
 
 _logger = getLogger(__name__)
 
@@ -39,6 +43,8 @@ class ReactPy(ReactPyMiddleware):
         http_headers: dict[str, str] | None = None,
         html_head: VdomDict | None = None,
         html_lang: str = "en",
+        pyscript_setup: bool = False,
+        pyscript_options: PyScriptOptions | None = None,
         **settings: Unpack[ReactPyConfig],
     ) -> None:
         """ReactPy's standalone ASGI application.
@@ -48,6 +54,8 @@ class ReactPy(ReactPyMiddleware):
             http_headers: Additional headers to include in the HTTP response for the base HTML document.
             html_head: Additional head elements to include in the HTML response.
             html_lang: The language of the HTML document.
+            pyscript_setup: Whether to automatically load PyScript within your HTML head.
+            pyscript_options: Options to configure PyScript behavior.
             settings: Global ReactPy configuration settings that affect behavior and performance.
         """
         super().__init__(app=ReactPyApp(self), root_components=[], **settings)
@@ -56,6 +64,18 @@ class ReactPy(ReactPyMiddleware):
         self.dispatcher_pattern = re.compile(f"^{self.dispatcher_path}?")
         self.html_head = html_head or html.head()
         self.html_lang = html_lang
+
+        if pyscript_setup:
+            self.html_head.setdefault("children", [])
+            pyscript_options = pyscript_options or {}
+            extra_py = pyscript_options.get("extra_py", [])
+            extra_js = pyscript_options.get("extra_js", {})
+            config = pyscript_options.get("config", {})
+            pyscript_head_vdom = html_to_vdom(
+                pyscript_setup_html(extra_py, extra_js, config)
+            )
+            pyscript_head_vdom["tagName"] = ""
+            self.html_head["children"].append(pyscript_head_vdom)  # type: ignore
 
     def match_dispatch_path(self, scope: asgi_types.WebSocketScope) -> bool:
         """Method override to remove `dotted_path` from the dispatcher URL."""
@@ -151,7 +171,7 @@ class ReactPyApp:
     to a user provided ASGI app."""
 
     parent: ReactPy
-    _cached_index_html = ""
+    _index_html = ""
     _etag = ""
     _last_modified = ""
 
@@ -173,8 +193,8 @@ class ReactPyApp:
             return
 
         # Store the HTTP response in memory for performance
-        if not self._cached_index_html:
-            self.process_index_html()
+        if not self._index_html:
+            self.render_index_html()
 
         # Response headers for `index.html` responses
         request_headers = dict(scope["headers"])
@@ -183,7 +203,7 @@ class ReactPyApp:
             "last-modified": self._last_modified,
             "access-control-allow-origin": "*",
             "cache-control": "max-age=60, public",
-            "content-length": str(len(self._cached_index_html)),
+            "content-length": str(len(self._index_html)),
             "content-type": "text/html; charset=utf-8",
             **self.parent.extra_headers,
         }
@@ -203,22 +223,21 @@ class ReactPyApp:
             return await response(scope, receive, send)  # type: ignore
 
         # Send the index.html
-        response = ResponseHTML(self._cached_index_html, headers=response_headers)
+        response = ResponseHTML(self._index_html, headers=response_headers)
         await response(scope, receive, send)  # type: ignore
 
-    def process_index_html(self) -> None:
-        """Process the index.html and store the results in memory."""
-        self._cached_index_html = (
+    def render_index_html(self) -> None:
+        """Process the index.html and store the results in this class."""
+        self._index_html = (
             "<!doctype html>"
             f'<html lang="{self.parent.html_lang}">'
             f"{vdom_head_to_html(self.parent.html_head)}"
             "<body>"
-            f"{render_mount_template('app', '', '')}"
+            f"{server_side_component_html(element_id='app', class_='', component_path='')}"
             "</body>"
             "</html>"
         )
-
-        self._etag = f'"{hashlib.md5(self._cached_index_html.encode(), usedforsecurity=False).hexdigest()}"'
+        self._etag = f'"{hashlib.md5(self._index_html.encode(), usedforsecurity=False).hexdigest()}"'
         self._last_modified = formatdate(
             datetime.now(tz=timezone.utc).timestamp(), usegmt=True
         )

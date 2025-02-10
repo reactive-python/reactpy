@@ -1,24 +1,7 @@
 import pytest
 
 from reactpy import config
-from reactpy.asgi import utils
-
-
-def test_invalid_dotted_path():
-    with pytest.raises(ValueError, match='"abc" is not a valid dotted path.'):
-        utils.import_dotted_path("abc")
-
-
-def test_invalid_component():
-    with pytest.raises(
-        AttributeError, match='ReactPy failed to import "foobar" from "reactpy"'
-    ):
-        utils.import_dotted_path("reactpy.foobar")
-
-
-def test_invalid_module():
-    with pytest.raises(ImportError, match='ReactPy failed to import "foo"'):
-        utils.import_dotted_path("foo.bar")
+from reactpy.executors import utils
 
 
 def test_invalid_vdom_head():

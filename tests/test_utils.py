@@ -3,13 +3,7 @@ from html import escape as html_escape
 import pytest
 
 import reactpy
-from reactpy import component, html
-from reactpy.utils import (
-    HTMLParseError,
-    del_html_head_body_transform,
-    html_to_vdom,
-    vdom_to_html,
-)
+from reactpy import component, html, utils
 
 
 def test_basic_ref_behavior():
@@ -68,7 +62,7 @@ def test_ref_repr():
     ],
 )
 def test_html_to_vdom(case):
-    assert html_to_vdom(case["source"]) == case["model"]
+    assert utils.html_to_vdom(case["source"]) == case["model"]
 
 
 def test_html_to_vdom_transform():
@@ -98,7 +92,7 @@ def test_html_to_vdom_transform():
         ],
     }
 
-    assert html_to_vdom(source, make_links_blue) == expected
+    assert utils.html_to_vdom(source, make_links_blue) == expected
 
 
 def test_non_html_tag_behavior():
@@ -112,10 +106,10 @@ def test_non_html_tag_behavior():
         ],
     }
 
-    assert html_to_vdom(source, strict=False) == expected
+    assert utils.html_to_vdom(source, strict=False) == expected
 
-    with pytest.raises(HTMLParseError):
-        html_to_vdom(source, strict=True)
+    with pytest.raises(utils.HTMLParseError):
+        utils.html_to_vdom(source, strict=True)
 
 
 def test_html_to_vdom_with_null_tag():
@@ -130,7 +124,7 @@ def test_html_to_vdom_with_null_tag():
         ],
     }
 
-    assert html_to_vdom(source) == expected
+    assert utils.html_to_vdom(source) == expected
 
 
 def test_html_to_vdom_with_style_attr():
@@ -142,7 +136,7 @@ def test_html_to_vdom_with_style_attr():
         "tagName": "p",
     }
 
-    assert html_to_vdom(source) == expected
+    assert utils.html_to_vdom(source) == expected
 
 
 def test_html_to_vdom_with_no_parent_node():
@@ -156,7 +150,7 @@ def test_html_to_vdom_with_no_parent_node():
         ],
     }
 
-    assert html_to_vdom(source) == expected
+    assert utils.html_to_vdom(source) == expected
 
 
 def test_del_html_body_transform():
@@ -187,7 +181,7 @@ def test_del_html_body_transform():
         ],
     }
 
-    assert html_to_vdom(source, del_html_head_body_transform) == expected
+    assert utils.html_to_vdom(source, utils.del_html_head_body_transform) == expected
 
 
 SOME_OBJECT = object()
@@ -275,9 +269,26 @@ def example_child():
     ],
 )
 def test_vdom_to_html(vdom_in, html_out):
-    assert vdom_to_html(vdom_in) == html_out
+    assert utils.vdom_to_html(vdom_in) == html_out
 
 
 def test_vdom_to_html_error():
     with pytest.raises(TypeError, match="Expected a VDOM dict"):
-        vdom_to_html({"notVdom": True})
+        utils.vdom_to_html({"notVdom": True})
+
+
+def test_invalid_dotted_path():
+    with pytest.raises(ValueError, match='"abc" is not a valid dotted path.'):
+        utils.import_dotted_path("abc")
+
+
+def test_invalid_component():
+    with pytest.raises(
+        AttributeError, match='ReactPy failed to import "foobar" from "reactpy"'
+    ):
+        utils.import_dotted_path("reactpy.foobar")
+
+
+def test_invalid_module():
+    with pytest.raises(ImportError, match='ReactPy failed to import "foo"'):
+        utils.import_dotted_path("foo.bar")
