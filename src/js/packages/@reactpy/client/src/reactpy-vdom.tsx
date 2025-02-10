@@ -133,6 +133,14 @@ export function createAttributes(
   model: ReactPyVdom,
   client: ReactPyClient,
 ): { [key: string]: any } {
+  // Add key to attributes
+  if (model.key) {
+    if (model.attributes) {
+      model.attributes['key'] = model.key
+    } else {
+      model.attributes = {'key': model.key}
+    }
+  }
   return Object.fromEntries(
     Object.entries({
       // Normal HTML attributes
