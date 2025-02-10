@@ -16,7 +16,6 @@ from typing import (
     overload,
 )
 
-from asgiref import typing as asgi_types
 from typing_extensions import TypeAlias
 
 from reactpy.config import REACTPY_DEBUG
@@ -25,8 +24,10 @@ from reactpy.types import Connection, Context, Key, Location, State, VdomDict
 from reactpy.utils import Ref
 
 if not TYPE_CHECKING:
-    # make flake8 think that this variable exists
     ellipsis = type(...)
+
+if TYPE_CHECKING:
+    from asgiref import typing as asgi_types
 
 
 __all__ = [
@@ -339,7 +340,7 @@ def use_connection() -> Connection[Any]:
 
 def use_scope() -> asgi_types.HTTPScope | asgi_types.WebSocketScope:
     """Get the current :class:`~reactpy.types.Connection`'s scope."""
-    return use_connection().scope
+    return use_connection().scope  # type: ignore
 
 
 def use_location() -> Location:

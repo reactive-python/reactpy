@@ -1,7 +1,5 @@
-from reactpy import asgi, config, logging, types, web, widgets
+from reactpy import config, logging, types, web, widgets
 from reactpy._html import html
-from reactpy.asgi.middleware import ReactPyMiddleware
-from reactpy.asgi.standalone import ReactPy
 from reactpy.core import hooks
 from reactpy.core.component import component
 from reactpy.core.events import event
@@ -22,6 +20,7 @@ from reactpy.core.hooks import (
 )
 from reactpy.core.layout import Layout
 from reactpy.core.vdom import vdom
+from reactpy.pyscript.components import pyscript_component
 from reactpy.utils import Ref, html_to_vdom, vdom_to_html
 
 __author__ = "The Reactive Python Team"
@@ -29,10 +28,7 @@ __version__ = "2.0.0a1"
 
 __all__ = [
     "Layout",
-    "ReactPy",
-    "ReactPyMiddleware",
     "Ref",
-    "asgi",
     "component",
     "config",
     "create_context",
@@ -41,6 +37,7 @@ __all__ = [
     "html",
     "html_to_vdom",
     "logging",
+    "pyscript_component",
     "types",
     "use_async_effect",
     "use_callback",
