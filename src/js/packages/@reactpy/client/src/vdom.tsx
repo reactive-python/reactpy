@@ -147,7 +147,7 @@ export function createAttributes(
     if (model.attributes) {
       model.attributes.key = model.key;
     } else {
-      model.attributes = {key: model.key};
+      model.attributes = { key: model.key };
     }
   }
   return Object.fromEntries(
