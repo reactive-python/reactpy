@@ -16,6 +16,7 @@ Unreleased
 ----------
 
 **Added**
+
 - :pull:`1113` - Added ``reactpy.executors.asgi.ReactPy`` that can be used to run ReactPy in standalone mode via ASGI.
 - :pull:`1269` - Added ``reactpy.executors.asgi.ReactPyPyodide`` that can be used to run ReactPy in standalone mode via ASGI, but rendered entirely client-sided.
 - :pull:`1113` - Added ``reactpy.executors.asgi.ReactPyMiddleware`` that can be used to utilize ReactPy within any ASGI compatible framework.
@@ -56,6 +57,7 @@ Unreleased
 **Fixed**
 
 - :pull:`1239` - Fixed a bug where script elements would not render to the DOM as plain text.
+- :pull:`1271` - Fixed bug where JavaScript components were unable to obtain the ``key`` attribute provided within ReactPy.
 
 v1.1.0
 ------
