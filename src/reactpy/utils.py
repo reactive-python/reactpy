@@ -334,3 +334,13 @@ def import_dotted_path(dotted_path: str) -> Any:
     except AttributeError as error:
         msg = f'ReactPy failed to import "{component_name}" from "{module_name}"'
         raise AttributeError(msg) from error
+
+
+class Singleton:
+    """A class that only allows one instance to be created."""
+
+    def __new__(cls, *args, **kw):
+        if not hasattr(cls, "_instance"):
+            orig = super()
+            cls._instance = orig.__new__(cls, *args, **kw)
+        return cls._instance
