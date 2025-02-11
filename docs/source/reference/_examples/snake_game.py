@@ -90,7 +90,7 @@ def GameLoop(grid_size, block_scale, set_game_state):
 
     interval = use_interval(0.5)
 
-    @reactpy.hooks.use_effect
+    @reactpy.hooks.use_async_effect
     async def animate():
         if new_game_state is not None:
             await asyncio.sleep(1)

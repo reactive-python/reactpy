@@ -4,7 +4,7 @@ import pytest
 
 import reactpy
 from reactpy import html
-from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_DEBUG
 from reactpy.core._life_cycle_hook import LifeCycleHook
 from reactpy.core.hooks import strictly_equal, use_effect
 from reactpy.core.layout import Layout
@@ -186,14 +186,14 @@ async def test_set_state_checks_equality_not_identity(display: DisplayFixture):
             reactpy.html.button(
                 {
                     "id": "r_1",
-                    "on_click": event_count_tracker(lambda event: set_state(r_1)),
+                    "onClick": event_count_tracker(lambda event: set_state(r_1)),
                 },
                 "r_1",
             ),
             reactpy.html.button(
                 {
                     "id": "r_2",
-                    "on_click": event_count_tracker(lambda event: set_state(r_2)),
+                    "onClick": event_count_tracker(lambda event: set_state(r_2)),
                 },
                 "r_2",
             ),
@@ -240,7 +240,7 @@ async def test_simple_input_with_use_state(display: DisplayFixture):
                 set_message(event["target"]["value"])
 
         if message is None:
-            return reactpy.html.input({"id": "input", "on_change": on_change})
+            return reactpy.html.input({"id": "input", "onChange": on_change})
         else:
             return reactpy.html.p({"id": "complete"}, ["Complete"])
 
@@ -271,7 +271,7 @@ async def test_double_set_state(display: DisplayFixture):
                 {"id": "second", "data-value": state_2}, f"value is: {state_2}"
             ),
             reactpy.html.button(
-                {"id": "button", "on_click": double_set_state}, "click me"
+                {"id": "button", "onClick": double_set_state}, "click me"
             ),
         )
 
@@ -481,7 +481,7 @@ async def test_use_async_effect():
 
     @reactpy.component
     def ComponentWithAsyncEffect():
-        @reactpy.hooks.use_effect
+        @reactpy.hooks.use_async_effect
         async def effect():
             effect_ran.set()
 
@@ -500,7 +500,8 @@ async def test_use_async_effect_cleanup():
     @reactpy.component
     @component_hook.capture
     def ComponentWithAsyncEffect():
-        @reactpy.hooks.use_effect(dependencies=None)  # force this to run every time
+        # force this to run every time
+        @reactpy.hooks.use_async_effect(dependencies=None)
         async def effect():
             effect_ran.set()
             return cleanup_ran.set
@@ -527,7 +528,8 @@ async def test_use_async_effect_cancel(caplog):
     @reactpy.component
     @component_hook.capture
     def ComponentWithLongWaitingEffect():
-        @reactpy.hooks.use_effect(dependencies=None)  # force this to run every time
+        # force this to run every time
+        @reactpy.hooks.use_async_effect(dependencies=None)
         async def effect():
             effect_ran.set()
             try:
@@ -1044,7 +1046,7 @@ async def test_set_state_during_render():
     assert render_count.current == 2
 
 
-@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="only logs in debug mode")
+@pytest.mark.skipif(not REACTPY_DEBUG.current, reason="only logs in debug mode")
 async def test_use_debug_mode():
     set_message = reactpy.Ref()
     component_hook = HookCatcher()
@@ -1071,7 +1073,7 @@ async def test_use_debug_mode():
             await layout.render()
 
 
-@pytest.mark.skipif(not REACTPY_DEBUG_MODE.current, reason="only logs in debug mode")
+@pytest.mark.skipif(not REACTPY_DEBUG.current, reason="only logs in debug mode")
 async def test_use_debug_mode_with_factory():
     set_message = reactpy.Ref()
     component_hook = HookCatcher()
@@ -1098,7 +1100,7 @@ async def test_use_debug_mode_with_factory():
             await layout.render()
 
 
-@pytest.mark.skipif(REACTPY_DEBUG_MODE.current, reason="logs in debug mode")
+@pytest.mark.skipif(REACTPY_DEBUG.current, reason="logs in debug mode")
 async def test_use_debug_mode_does_not_log_if_not_in_debug_mode():
     set_message = reactpy.Ref()
 

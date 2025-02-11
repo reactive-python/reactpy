@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable, Protocol, TypeVar
 import reactpy
 from reactpy._html import html
 from reactpy._warnings import warn
-from reactpy.core.types import ComponentConstructor, VdomDict
+from reactpy.types import ComponentConstructor, VdomDict
 
 
 def image(
@@ -73,7 +73,7 @@ def use_linked_inputs(
 
     inputs: list[VdomDict] = []
     for attrs in attributes:
-        inputs.append(html.input({**attrs, "on_change": sync_inputs, "value": value}))
+        inputs.append(html.input({**attrs, "onChange": sync_inputs, "value": value}))
 
     return inputs
 

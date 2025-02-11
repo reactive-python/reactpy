@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable
+from importlib import import_module
 from itertools import chain
 from typing import Any, Callable, Generic, TypeVar, Union, cast
 
 from lxml import etree
 from lxml.html import fromstring, tostring
 
-from reactpy.core.types import ComponentType, VdomDict
 from reactpy.core.vdom import vdom as make_vdom
+from reactpy.types import ComponentType, VdomDict
 
 _RefValue = TypeVar("_RefValue")
 _ModelTransform = Callable[[VdomDict], Any]
@@ -73,7 +74,7 @@ def vdom_to_html(vdom: VdomDict) -> str:
     """
     temp_root = etree.Element("__temp__")
     _add_vdom_to_etree(temp_root, vdom)
-    html = cast(bytes, tostring(temp_root)).decode()
+    html = cast(bytes, tostring(temp_root)).decode()  # type: ignore
     # strip out temp root <__temp__> element
     return html[10:-11]
 
@@ -144,7 +145,7 @@ def _etree_to_vdom(
     children = _generate_vdom_children(node, transforms)
 
     # Convert the lxml node to a VDOM dict
-    el = make_vdom(node.tag, dict(node.items()), *children)
+    el = make_vdom(str(node.tag), dict(node.items()), *children)
 
     # Perform any necessary mutations on the VDOM attributes to meet VDOM spec
     _mutate_vdom(el)
@@ -267,7 +268,7 @@ def del_html_head_body_transform(vdom: VdomDict) -> VdomDict:
             The VDOM dictionary to transform.
     """
     if vdom["tagName"] in {"html", "body", "head"}:
-        return {"tagName": "", "children": vdom["children"]}
+        return {"tagName": "", "children": vdom.setdefault("children", [])}
     return vdom
 
 
@@ -313,3 +314,23 @@ DASHED_HTML_ATTRS = {"accept_charset", "acceptCharset", "http_equiv", "httpEquiv
 
 # Pattern for delimitting camelCase names (e.g. camelCase to camel-case)
 _CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
+
+
+def import_dotted_path(dotted_path: str) -> Any:
+    """Imports a dotted path and returns the callable."""
+    if "." not in dotted_path:
+        raise ValueError(f'"{dotted_path}" is not a valid dotted path.')
+
+    module_name, component_name = dotted_path.rsplit(".", 1)
+
+    try:
+        module = import_module(module_name)
+    except ImportError as error:
+        msg = f'ReactPy failed to import "{module_name}"'
+        raise ImportError(msg) from error
+
+    try:
+        return getattr(module, component_name)
+    except AttributeError as error:
+        msg = f'ReactPy failed to import "{component_name}" from "{module_name}"'
+        raise AttributeError(msg) from error

@@ -2,7 +2,7 @@ import logging
 import sys
 from logging.config import dictConfig
 
-from reactpy.config import REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_DEBUG
 
 dictConfig(
     {
@@ -18,13 +18,7 @@ dictConfig(
                 "stream": sys.stdout,
             }
         },
-        "formatters": {
-            "generic": {
-                "format": "%(asctime)s | %(log_color)s%(levelname)s%(reset)s | %(message)s",
-                "datefmt": r"%Y-%m-%dT%H:%M:%S%z",
-                "class": "colorlog.ColoredFormatter",
-            }
-        },
+        "formatters": {"generic": {"datefmt": r"%Y-%m-%dT%H:%M:%S%z"}},
     }
 )
 
@@ -33,7 +27,7 @@ ROOT_LOGGER = logging.getLogger("reactpy")
 """ReactPy's root logger instance"""
 
 
-@REACTPY_DEBUG_MODE.subscribe
+@REACTPY_DEBUG.subscribe
 def _set_debug_level(debug: bool) -> None:
     if debug:
         ROOT_LOGGER.setLevel("DEBUG")

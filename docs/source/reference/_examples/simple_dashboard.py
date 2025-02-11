@@ -49,7 +49,7 @@ def RandomWalkGraph(mu, sigma):
     interval = use_interval(0.5)
     data, set_data = reactpy.hooks.use_state([{"x": 0, "y": 0}] * 50)
 
-    @reactpy.hooks.use_effect
+    @reactpy.hooks.use_async_effect
     async def animate():
         await interval
         last_data_point = data[-1]

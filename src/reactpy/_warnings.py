@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from functools import wraps
 from inspect import currentframe
 from types import FrameType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from warnings import warn as _warn
 
 
@@ -13,7 +13,7 @@ def warn(*args: Any, **kwargs: Any) -> Any:
 
 
 if TYPE_CHECKING:
-    warn = _warn
+    warn = cast(Any, _warn)
 
 
 def _frame_depth_in_module() -> int:

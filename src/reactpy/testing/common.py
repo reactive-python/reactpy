@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import os
 import shutil
 import time
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Coroutine
 from functools import wraps
 from typing import Any, Callable, Generic, TypeVar, cast
 from uuid import uuid4
@@ -12,7 +13,7 @@ from weakref import ref
 
 from typing_extensions import ParamSpec
 
-from reactpy.config import REACTPY_TESTING_DEFAULT_TIMEOUT, REACTPY_WEB_MODULES_DIR
+from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT, REACTPY_WEB_MODULES_DIR
 from reactpy.core._life_cycle_hook import LifeCycleHook, current_hook
 from reactpy.core.events import EventHandler, to_event_handler_function
 
@@ -28,6 +29,14 @@ _R = TypeVar("_R")
 
 
 _DEFAULT_POLL_DELAY = 0.1
+GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "False") in {
+    "y",
+    "yes",
+    "t",
+    "true",
+    "on",
+    "1",
+}
 
 
 class poll(Generic[_R]):  # noqa: N801
@@ -42,11 +51,12 @@ class poll(Generic[_R]):  # noqa: N801
         coro: Callable[_P, Awaitable[_R]]
         if not inspect.iscoroutinefunction(function):
 
-            async def coro(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            async def async_func(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 return cast(_R, function(*args, **kwargs))
 
+            coro = async_func
         else:
-            coro = cast(Callable[_P, Awaitable[_R]], function)
+            coro = cast(Callable[_P, Coroutine[Any, Any, _R]], function)
         self._func = coro
         self._args = args
         self._kwargs = kwargs
@@ -54,7 +64,7 @@ class poll(Generic[_R]):  # noqa: N801
     async def until(
         self,
         condition: Callable[[_R], bool],
-        timeout: float = REACTPY_TESTING_DEFAULT_TIMEOUT.current,
+        timeout: float = REACTPY_TESTS_DEFAULT_TIMEOUT.current,
         delay: float = _DEFAULT_POLL_DELAY,
         description: str = "condition to be true",
     ) -> None:
@@ -72,7 +82,7 @@ class poll(Generic[_R]):  # noqa: N801
     async def until_is(
         self,
         right: _R,
-        timeout: float = REACTPY_TESTING_DEFAULT_TIMEOUT.current,
+        timeout: float = REACTPY_TESTS_DEFAULT_TIMEOUT.current,
         delay: float = _DEFAULT_POLL_DELAY,
     ) -> None:
         """Wait until the result is identical to the given value"""
@@ -86,7 +96,7 @@ class poll(Generic[_R]):  # noqa: N801
     async def until_equals(
         self,
         right: _R,
-        timeout: float = REACTPY_TESTING_DEFAULT_TIMEOUT.current,
+        timeout: float = REACTPY_TESTS_DEFAULT_TIMEOUT.current,
         delay: float = _DEFAULT_POLL_DELAY,
     ) -> None:
         """Wait until the result is equal to the given value"""

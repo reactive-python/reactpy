@@ -103,7 +103,7 @@ Running ReactPy in Debug Mode
 -----------------------------
 
 ReactPy provides a debug mode that is turned off by default. This can be enabled when you
-run your application by setting the ``REACTPY_DEBUG_MODE`` environment variable.
+run your application by setting the ``REACTPY_DEBUG`` environment variable.
 
 .. tab-set::
 
@@ -111,21 +111,21 @@ run your application by setting the ``REACTPY_DEBUG_MODE`` environment variable.
 
         .. code-block::
 
-            export REACTPY_DEBUG_MODE=1
+            export REACTPY_DEBUG=1
             python my_reactpy_app.py
 
     .. tab-item:: Command Prompt
 
         .. code-block:: text
 
-            set REACTPY_DEBUG_MODE=1
+            set REACTPY_DEBUG=1
             python my_reactpy_app.py
 
     .. tab-item:: PowerShell
 
         .. code-block:: powershell
 
-            $env:REACTPY_DEBUG_MODE = "1"
+            $env:REACTPY_DEBUG = "1"
             python my_reactpy_app.py
 
 .. danger::

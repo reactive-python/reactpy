@@ -10,12 +10,12 @@ import reactpy
 from reactpy.core.hooks import use_effect
 from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
-from reactpy.core.types import LayoutUpdateMessage
 from reactpy.testing import StaticEventHandler
+from reactpy.types import LayoutUpdateMessage
 from tests.tooling.aio import Event
 from tests.tooling.common import event_message
 
-EVENT_NAME = "on_event"
+EVENT_NAME = "onEvent"
 STATIC_EVENT_HANDLER = StaticEventHandler()
 
 
@@ -126,8 +126,8 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
             did_render.set()
 
         return reactpy.html.div(
-            reactpy.html.button({"on_click": block_forever}),
-            reactpy.html.button({"on_click": handle_event}),
+            reactpy.html.button({"onClick": block_forever}),
+            reactpy.html.button({"onClick": handle_event}),
         )
 
     send_queue = asyncio.Queue()

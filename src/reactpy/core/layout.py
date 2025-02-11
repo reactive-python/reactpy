@@ -14,6 +14,7 @@ from collections import Counter
 from collections.abc import Sequence
 from contextlib import AsyncExitStack
 from logging import getLogger
+from types import TracebackType
 from typing import (
     Any,
     Callable,
@@ -32,11 +33,13 @@ from typing_extensions import TypeAlias
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
     REACTPY_CHECK_VDOM_SPEC,
-    REACTPY_DEBUG_MODE,
+    REACTPY_DEBUG,
 )
 from reactpy.core._life_cycle_hook import LifeCycleHook
-from reactpy.core.types import (
+from reactpy.core.vdom import validate_vdom_json
+from reactpy.types import (
     ComponentType,
+    Context,
     EventHandlerDict,
     Key,
     LayoutEventMessage,
@@ -45,7 +48,6 @@ from reactpy.core.types import (
     VdomDict,
     VdomJson,
 )
-from reactpy.core.vdom import validate_vdom_json
 from reactpy.utils import Ref
 
 logger = getLogger(__name__)
@@ -55,19 +57,19 @@ class Layout:
     """Responsible for "rendering" components. That is, turning them into VDOM."""
 
     __slots__: tuple[str, ...] = (
-        "root",
         "_event_handlers",
-        "_rendering_queue",
+        "_model_states_by_life_cycle_state_id",
         "_render_tasks",
         "_render_tasks_ready",
+        "_rendering_queue",
         "_root_life_cycle_state_id",
-        "_model_states_by_life_cycle_state_id",
+        "root",
     )
 
     if not hasattr(abc.ABC, "__weakref__"):  # nocov
         __slots__ += ("__weakref__",)
 
-    def __init__(self, root: ComponentType) -> None:
+    def __init__(self, root: ComponentType | Context[Any]) -> None:
         super().__init__()
         if not isinstance(root, ComponentType):
             msg = f"Expected a ComponentType, not {type(root)!r}."
@@ -79,17 +81,17 @@ class Layout:
         self._event_handlers: EventHandlerDict = {}
         self._render_tasks: set[Task[LayoutUpdateMessage]] = set()
         self._render_tasks_ready: Semaphore = Semaphore(0)
-
         self._rendering_queue: _ThreadSafeQueue[_LifeCycleStateId] = _ThreadSafeQueue()
         root_model_state = _new_root_model_state(self.root, self._schedule_render_task)
-
         self._root_life_cycle_state_id = root_id = root_model_state.life_cycle_state.id
         self._model_states_by_life_cycle_state_id = {root_id: root_model_state}
         self._schedule_render_task(root_id)
 
         return self
 
-    async def __aexit__(self, *exc: object) -> None:
+    async def __aexit__(
+        self, exc_type: type[Exception], exc_value: Exception, traceback: TracebackType
+    ) -> None:
         root_csid = self._root_life_cycle_state_id
         root_model_state = self._model_states_by_life_cycle_state_id[root_csid]
 
@@ -108,7 +110,7 @@ class Layout:
         del self._root_life_cycle_state_id
         del self._model_states_by_life_cycle_state_id
 
-    async def deliver(self, event: LayoutEventMessage) -> None:
+    async def deliver(self, event: LayoutEventMessage | dict[str, Any]) -> None:
         """Dispatch an event to the targeted handler"""
         # It is possible for an element in the frontend to produce an event
         # associated with a backend model that has been deleted. We only handle
@@ -201,9 +203,7 @@ class Layout:
             new_state.model.current = {
                 "tagName": "",
                 "error": (
-                    f"{type(error).__name__}: {error}"
-                    if REACTPY_DEBUG_MODE.current
-                    else ""
+                    f"{type(error).__name__}: {error}" if REACTPY_DEBUG.current else ""
                 ),
             }
         finally:
@@ -218,7 +218,7 @@ class Layout:
             parent.children_by_key[key] = new_state
             # need to add this model to parent's children without mutating parent model
             old_parent_model = parent.model.current
-            old_parent_children = old_parent_model["children"]
+            old_parent_children = old_parent_model.setdefault("children", [])
             parent.model.current = {
                 **old_parent_model,
                 "children": [
@@ -319,8 +319,11 @@ class Layout:
         new_state: _ModelState,
         raw_children: Any,
     ) -> None:
-        if not isinstance(raw_children, (list, tuple)):
-            raw_children = [raw_children]
+        if not isinstance(raw_children, list):
+            if isinstance(raw_children, tuple):
+                raw_children = list(raw_children)
+            else:
+                raw_children = [raw_children]
 
         if old_state is None:
             if raw_children:
@@ -610,7 +613,7 @@ class _ModelState:
         parent: _ModelState | None,
         index: int,
         key: Any,
-        model: Ref[VdomJson],
+        model: Ref[VdomJson | dict[str, Any]],
         patch_path: str,
         children_by_key: dict[Key, _ModelState],
         targets_by_event: dict[str, str],
@@ -657,7 +660,7 @@ class _ModelState:
         return parent
 
     def append_child(self, child: Any) -> None:
-        self.model.current["children"].append(child)
+        self.model.current.setdefault("children", []).append(child)
 
     def __repr__(self) -> str:  # nocov
         return f"ModelState({ {s: getattr(self, s, None) for s in self.__slots__} })"

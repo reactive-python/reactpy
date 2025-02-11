@@ -1,5 +1,7 @@
 # --- Build Artifacts ---
-src/reactpy/static/**/index.js*
+src/reactpy/static/index.js*
+src/reactpy/static/morphdom/
+src/reactpy/static/pyscript/
 
 # --- Jupyter ---
 *.ipynb_checkpoints
@@ -15,8 +17,8 @@ src/reactpy/static/**/index.js*
 
 # --- Python ---
 .hatch
-.venv
-venv
+.venv*
+venv*
 MANIFEST
 build
 dist

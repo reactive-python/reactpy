@@ -1,11 +1,9 @@
 import asyncio
-from contextlib import AsyncExitStack
 from pathlib import Path
 
-from playwright.async_api import Browser
+from playwright.async_api import Page
 
 import reactpy
-from reactpy.backend.utils import find_available_port
 from reactpy.testing import BackendFixture, DisplayFixture, poll
 from tests.tooling.common import DEFAULT_TYPE_DELAY
 from tests.tooling.hooks import use_counter
@@ -13,20 +11,16 @@ from tests.tooling.hooks import use_counter
 JS_DIR = Path(__file__).parent / "js"
 
 
-async def test_automatic_reconnect(browser: Browser):
-    port = find_available_port("localhost")
-    page = await browser.new_page()
-
-    # we need to wait longer here because the automatic reconnect is not instant
-    page.set_default_timeout(10000)
-
+async def test_automatic_reconnect(
+    display: DisplayFixture, page: Page, server: BackendFixture
+):
     @reactpy.component
     def SomeComponent():
         count, incr_count = use_counter(0)
         return reactpy.html.fragment(
-            reactpy.html.p({"data_count": count, "id": "count"}, "count", count),
+            reactpy.html.p({"data-count": count, "id": "count"}, "count", count),
             reactpy.html.button(
-                {"on_click": lambda e: incr_count(), "id": "incr"}, "incr"
+                {"onClick": lambda e: incr_count(), "id": "incr"}, "incr"
             ),
         )
 
@@ -35,39 +29,33 @@ async def test_automatic_reconnect(browser: Browser):
         count = await page.wait_for_selector("#count")
         return await count.get_attribute("data-count")
 
-    async with AsyncExitStack() as exit_stack:
-        server = await exit_stack.enter_async_context(BackendFixture(port=port))
-        display = await exit_stack.enter_async_context(
-            DisplayFixture(server, driver=page)
-        )
+    await display.show(SomeComponent)
 
-        await display.show(SomeComponent)
+    await poll(get_count).until_equals("0")
+    incr = await page.wait_for_selector("#incr")
+    await incr.click()
 
-        incr = await page.wait_for_selector("#incr")
+    await poll(get_count).until_equals("1")
+    incr = await page.wait_for_selector("#incr")
+    await incr.click()
 
-        for i in range(3):
-            await poll(get_count).until_equals(str(i))
-            await incr.click()
+    await poll(get_count).until_equals("2")
+    incr = await page.wait_for_selector("#incr")
+    await incr.click()
 
-    # the server is disconnected but the last view state is still shown
-    await page.wait_for_selector("#count")
+    await server.restart()
 
-    async with AsyncExitStack() as exit_stack:
-        server = await exit_stack.enter_async_context(BackendFixture(port=port))
-        display = await exit_stack.enter_async_context(
-            DisplayFixture(server, driver=page)
-        )
+    await poll(get_count).until_equals("0")
+    incr = await page.wait_for_selector("#incr")
+    await incr.click()
 
-        # use mount instead of show to avoid a page refresh
-        display.backend.mount(SomeComponent)
+    await poll(get_count).until_equals("1")
+    incr = await page.wait_for_selector("#incr")
+    await incr.click()
 
-        for i in range(3):
-            await poll(get_count).until_equals(str(i))
-
-            # need to refetch element because may unmount on reconnect
-            incr = await page.wait_for_selector("#incr")
-
-            await incr.click()
+    await poll(get_count).until_equals("2")
+    incr = await page.wait_for_selector("#incr")
+    await incr.click()
 
 
 async def test_style_can_be_changed(display: DisplayFixture):
@@ -86,8 +74,8 @@ async def test_style_can_be_changed(display: DisplayFixture):
         return reactpy.html.button(
             {
                 "id": "my-button",
-                "on_click": lambda event: set_color_toggle(not color_toggle),
-                "style": {"background_color": color, "color": "white"},
+                "onClick": lambda event: set_color_toggle(not color_toggle),
+                "style": {"backgroundColor": color, "color": "white"},
             },
             f"color: {color}",
         )
@@ -129,7 +117,7 @@ async def test_slow_server_response_on_input_change(display: DisplayFixture):
             await asyncio.sleep(delay)
             set_value(event["target"]["value"])
 
-        return reactpy.html.input({"on_change": handle_change, "id": "test-input"})
+        return reactpy.html.input({"onChange": handle_change, "id": "test-input"})
 
     await display.show(SomeComponent)
 
@@ -137,27 +125,3 @@ async def test_slow_server_response_on_input_change(display: DisplayFixture):
     await inp.type("hello", delay=DEFAULT_TYPE_DELAY)
 
     assert (await inp.evaluate("node => node.value")) == "hello"
-
-
-async def test_snake_case_attributes(display: DisplayFixture):
-    @reactpy.component
-    def SomeComponent():
-        return reactpy.html.h1(
-            {
-                "id": "my-title",
-                "style": {"background_color": "blue"},
-                "class_name": "hello",
-                "data_some_thing": "some-data",
-                "aria_some_thing": "some-aria",
-            },
-            "title with some attributes",
-        )
-
-    await display.show(SomeComponent)
-
-    title = await display.page.wait_for_selector("#my-title")
-
-    assert await title.get_attribute("class") == "hello"
-    assert await title.get_attribute("style") == "background-color: blue;"
-    assert await title.get_attribute("data-some-thing") == "some-data"
-    assert await title.get_attribute("aria-some-thing") == "some-aria"

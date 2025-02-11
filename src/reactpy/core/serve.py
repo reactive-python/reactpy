@@ -2,22 +2,22 @@ from __future__ import annotations
 
 from collections.abc import Awaitable
 from logging import getLogger
-from typing import Callable
+from typing import Any, Callable
 from warnings import warn
 
 from anyio import create_task_group
 from anyio.abc import TaskGroup
 
-from reactpy.config import REACTPY_DEBUG_MODE
-from reactpy.core.types import LayoutEventMessage, LayoutType, LayoutUpdateMessage
+from reactpy.config import REACTPY_DEBUG
+from reactpy.types import LayoutEventMessage, LayoutType, LayoutUpdateMessage
 
 logger = getLogger(__name__)
 
 
-SendCoroutine = Callable[[LayoutUpdateMessage], Awaitable[None]]
+SendCoroutine = Callable[[LayoutUpdateMessage | dict[str, Any]], Awaitable[None]]
 """Send model patches given by a dispatcher"""
 
-RecvCoroutine = Callable[[], Awaitable[LayoutEventMessage]]
+RecvCoroutine = Callable[[], Awaitable[LayoutEventMessage | dict[str, Any]]]
 """Called by a dispatcher to return a :class:`reactpy.core.layout.LayoutEventMessage`
 
 The event will then trigger an :class:`reactpy.core.proto.EventHandlerType` in a layout.
@@ -35,7 +35,9 @@ class Stop(BaseException):
 
 
 async def serve_layout(
-    layout: LayoutType[LayoutUpdateMessage, LayoutEventMessage],
+    layout: LayoutType[
+        LayoutUpdateMessage | dict[str, Any], LayoutEventMessage | dict[str, Any]
+    ],
     send: SendCoroutine,
     recv: RecvCoroutine,
 ) -> None:
@@ -55,18 +57,21 @@ async def serve_layout(
 
 
 async def _single_outgoing_loop(
-    layout: LayoutType[LayoutUpdateMessage, LayoutEventMessage], send: SendCoroutine
+    layout: LayoutType[
+        LayoutUpdateMessage | dict[str, Any], LayoutEventMessage | dict[str, Any]
+    ],
+    send: SendCoroutine,
 ) -> None:
     while True:
         update = await layout.render()
         try:
             await send(update)
         except Exception:  # nocov
-            if not REACTPY_DEBUG_MODE.current:
+            if not REACTPY_DEBUG.current:
                 msg = (
                     "Failed to send update. More info may be available "
                     "if you enabling debug mode by setting "
-                    "`reactpy.config.REACTPY_DEBUG_MODE.current = True`."
+                    "`reactpy.config.REACTPY_DEBUG.current = True`."
                 )
                 logger.error(msg)
             raise
@@ -74,7 +79,9 @@ async def _single_outgoing_loop(
 
 async def _single_incoming_loop(
     task_group: TaskGroup,
-    layout: LayoutType[LayoutUpdateMessage, LayoutEventMessage],
+    layout: LayoutType[
+        LayoutUpdateMessage | dict[str, Any], LayoutEventMessage | dict[str, Any]
+    ],
     recv: RecvCoroutine,
 ) -> None:
     while True:

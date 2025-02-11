@@ -3,15 +3,15 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, Sequence
 from functools import wraps
-from typing import Any, Protocol, cast, overload
+from typing import Any, Callable, Protocol, cast
 
 from fastjsonschema import compile as compile_json_schema
 
 from reactpy._warnings import warn
-from reactpy.config import REACTPY_CHECK_JSON_ATTRS, REACTPY_DEBUG_MODE
+from reactpy.config import REACTPY_CHECK_JSON_ATTRS, REACTPY_DEBUG
 from reactpy.core._f_back import f_module_name
 from reactpy.core.events import EventHandler, to_event_handler_function
-from reactpy.core.types import (
+from reactpy.types import (
     ComponentType,
     EventHandlerDict,
     EventHandlerType,
@@ -92,7 +92,7 @@ VDOM_JSON_SCHEMA = {
 
 
 # we can't add a docstring to this because Sphinx doesn't know how to find its source
-_COMPILED_VDOM_VALIDATOR = compile_json_schema(VDOM_JSON_SCHEMA)
+_COMPILED_VDOM_VALIDATOR: Callable = compile_json_schema(VDOM_JSON_SCHEMA)  # type: ignore
 
 
 def validate_vdom_json(value: Any) -> VdomJson:
@@ -124,19 +124,7 @@ def is_vdom(value: Any) -> bool:
     )
 
 
-@overload
-def vdom(tag: str, *children: VdomChildren) -> VdomDict: ...
-
-
-@overload
-def vdom(tag: str, attributes: VdomAttributes, *children: VdomChildren) -> VdomDict: ...
-
-
-def vdom(
-    tag: str,
-    *attributes_and_children: Any,
-    **kwargs: Any,
-) -> VdomDict:
+def vdom(tag: str, *attributes_and_children: VdomAttributes | VdomChildren) -> VdomDict:
     """A helper function for creating VDOM elements.
 
     Parameters:
@@ -157,33 +145,6 @@ def vdom(
             (subject to change) specifies javascript that, when evaluated returns a
             React component.
     """
-    if kwargs:  # nocov
-        if "key" in kwargs:
-            if attributes_and_children:
-                maybe_attributes, *children = attributes_and_children
-                if _is_attributes(maybe_attributes):
-                    attributes_and_children = (
-                        {**maybe_attributes, "key": kwargs.pop("key")},
-                        *children,
-                    )
-                else:
-                    attributes_and_children = (
-                        {"key": kwargs.pop("key")},
-                        maybe_attributes,
-                        *children,
-                    )
-            else:
-                attributes_and_children = ({"key": kwargs.pop("key")},)
-            warn(
-                "An element's 'key' must be declared in an attribute dict instead "
-                "of as a keyword argument. This will error in a future version.",
-                DeprecationWarning,
-            )
-
-        if kwargs:
-            msg = f"Extra keyword arguments {kwargs}"
-            raise ValueError(msg)
-
     model: VdomDict = {"tagName": tag}
 
     if not attributes_and_children:
@@ -314,7 +275,7 @@ def _is_attributes(value: Any) -> bool:
 def _is_single_child(value: Any) -> bool:
     if isinstance(value, (str, Mapping)) or not hasattr(value, "__iter__"):
         return True
-    if REACTPY_DEBUG_MODE.current:
+    if REACTPY_DEBUG.current:
         _validate_child_key_integrity(value)
     return False
 

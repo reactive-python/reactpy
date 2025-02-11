@@ -33,9 +33,7 @@ def boolean(value: str | bool | int) -> bool:
         )
 
 
-REACTPY_DEBUG_MODE = Option(
-    "REACTPY_DEBUG_MODE", default=False, validator=boolean, mutable=True
-)
+REACTPY_DEBUG = Option("REACTPY_DEBUG", default=False, validator=boolean, mutable=True)
 """Get extra logs and validation checks at the cost of performance.
 
 This will enable the following:
@@ -44,13 +42,17 @@ This will enable the following:
 - :data:`REACTPY_CHECK_JSON_ATTRS`
 """
 
-REACTPY_CHECK_VDOM_SPEC = Option("REACTPY_CHECK_VDOM_SPEC", parent=REACTPY_DEBUG_MODE)
+REACTPY_CHECK_VDOM_SPEC = Option(
+    "REACTPY_CHECK_VDOM_SPEC", parent=REACTPY_DEBUG, validator=boolean
+)
 """Checks which ensure VDOM is rendered to spec
 
 For more info on the VDOM spec, see here: :ref:`VDOM JSON Schema`
 """
 
-REACTPY_CHECK_JSON_ATTRS = Option("REACTPY_CHECK_JSON_ATTRS", parent=REACTPY_DEBUG_MODE)
+REACTPY_CHECK_JSON_ATTRS = Option(
+    "REACTPY_CHECK_JSON_ATTRS", parent=REACTPY_DEBUG, validator=boolean
+)
 """Checks that all VDOM attributes are JSON serializable
 
 The VDOM spec is not able to enforce this on its own since attributes could anything.
@@ -73,8 +75,8 @@ assume anything about the structure of this directory see :mod:`reactpy.web.modu
 set of publicly available APIs for working with the client.
 """
 
-REACTPY_TESTING_DEFAULT_TIMEOUT = Option(
-    "REACTPY_TESTING_DEFAULT_TIMEOUT",
+REACTPY_TESTS_DEFAULT_TIMEOUT = Option(
+    "REACTPY_TESTS_DEFAULT_TIMEOUT",
     10.0,
     mutable=False,
     validator=float,
@@ -88,3 +90,43 @@ REACTPY_ASYNC_RENDERING = Option(
     validator=boolean,
 )
 """Whether to render components asynchronously. This is currently an experimental feature."""
+
+REACTPY_RECONNECT_INTERVAL = Option(
+    "REACTPY_RECONNECT_INTERVAL",
+    default=750,
+    mutable=True,
+    validator=int,
+)
+"""The interval in milliseconds between reconnection attempts for the websocket server"""
+
+REACTPY_RECONNECT_MAX_INTERVAL = Option(
+    "REACTPY_RECONNECT_MAX_INTERVAL",
+    default=60000,
+    mutable=True,
+    validator=int,
+)
+"""The maximum interval in milliseconds between reconnection attempts for the websocket server"""
+
+REACTPY_RECONNECT_MAX_RETRIES = Option(
+    "REACTPY_RECONNECT_MAX_RETRIES",
+    default=150,
+    mutable=True,
+    validator=int,
+)
+"""The maximum number of reconnection attempts for the websocket server"""
+
+REACTPY_RECONNECT_BACKOFF_MULTIPLIER = Option(
+    "REACTPY_RECONNECT_BACKOFF_MULTIPLIER",
+    default=1.25,
+    mutable=True,
+    validator=float,
+)
+"""The multiplier for exponential backoff between reconnection attempts for the websocket server"""
+
+REACTPY_PATH_PREFIX = Option(
+    "REACTPY_PATH_PREFIX",
+    default="/reactpy/",
+    mutable=True,
+    validator=str,
+)
+"""The prefix for all ReactPy routes"""

@@ -4,7 +4,7 @@ import inspect
 from functools import wraps
 from typing import Any, Callable
 
-from reactpy.core.types import ComponentType, VdomDict
+from reactpy.types import ComponentType, VdomDict
 
 
 def component(

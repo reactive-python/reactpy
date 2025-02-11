@@ -7,7 +7,7 @@ from typing import Any, Callable, Protocol, TypeVar
 from anyio import Semaphore
 
 from reactpy.core._thread_local import ThreadLocal
-from reactpy.core.types import ComponentType, Context, ContextProviderType
+from reactpy.types import ComponentType, Context, ContextProviderType
 
 T = TypeVar("T")
 
