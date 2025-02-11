@@ -66,7 +66,9 @@ def use_state(initial_value: _Type | Callable[[], _Type]) -> State[_Type]:
         A tuple containing the current state and a function to update it.
     """
     current_state = _use_const(lambda: _CurrentState(initial_value))
-    return State(current_state.value, current_state.dispatch)
+
+    # FIXME: Not sure why this type hint is not being inferred correctly when using pyright
+    return State(current_state.value, current_state.dispatch)  # type: ignore
 
 
 class _CurrentState(Generic[_Type]):
@@ -84,10 +86,7 @@ class _CurrentState(Generic[_Type]):
         hook = current_hook()
 
         def dispatch(new: _Type | Callable[[_Type], _Type]) -> None:
-            if callable(new):
-                next_value = new(self.value)
-            else:
-                next_value = new
+            next_value = new(self.value) if callable(new) else new  # type: ignore
             if not strictly_equal(next_value, self.value):
                 self.value = next_value
                 hook.schedule_render()
@@ -511,8 +510,6 @@ def use_memo(
     else:
         changed = False
 
-    setup: Callable[[Callable[[], _Type]], _Type]
-
     if changed:
 
         def setup(function: Callable[[], _Type]) -> _Type:
@@ -524,10 +521,7 @@ def use_memo(
         def setup(function: Callable[[], _Type]) -> _Type:
             return memo.value
 
-    if function is not None:
-        return setup(function)
-    else:
-        return setup
+    return setup(function) if function is not None else setup
 
 
 class _Memo(Generic[_Type]):

@@ -235,7 +235,7 @@ class ReactPyWebsocket(ResponseWebSocket):
             await serve_layout(
                 Layout(ConnectionContext(component(), value=connection)),
                 self.send_json,
-                self.rendering_queue.get,  # type: ignore
+                self.rendering_queue.get,
             )
 
         # Manually log exceptions since this function is running in a separate asyncio task.

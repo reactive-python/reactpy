@@ -74,7 +74,7 @@ def vdom_to_html(vdom: VdomDict) -> str:
     """
     temp_root = etree.Element("__temp__")
     _add_vdom_to_etree(temp_root, vdom)
-    html = cast(bytes, tostring(temp_root)).decode()
+    html = cast(bytes, tostring(temp_root)).decode()  # type: ignore
     # strip out temp root <__temp__> element
     return html[10:-11]
 
@@ -145,7 +145,7 @@ def _etree_to_vdom(
     children = _generate_vdom_children(node, transforms)
 
     # Convert the lxml node to a VDOM dict
-    el = make_vdom(node.tag, dict(node.items()), *children)
+    el = make_vdom(str(node.tag), dict(node.items()), *children)
 
     # Perform any necessary mutations on the VDOM attributes to meet VDOM spec
     _mutate_vdom(el)
@@ -268,7 +268,7 @@ def del_html_head_body_transform(vdom: VdomDict) -> VdomDict:
             The VDOM dictionary to transform.
     """
     if vdom["tagName"] in {"html", "body", "head"}:
-        return {"tagName": "", "children": vdom["children"]}
+        return {"tagName": "", "children": vdom.setdefault("children", [])}
     return vdom
 
 

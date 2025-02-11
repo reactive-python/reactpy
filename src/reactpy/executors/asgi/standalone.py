@@ -89,11 +89,12 @@ class ReactPy(ReactPyMiddleware):
         if scope["type"] == "lifespan":
             return self.extra_lifespan_app
 
+        routing_dictionary = {}
         if scope["type"] == "http":
             routing_dictionary = self.extra_http_routes.items()
 
         if scope["type"] == "websocket":
-            routing_dictionary = self.extra_ws_routes.items()  # type: ignore
+            routing_dictionary = self.extra_ws_routes.items()
 
         return next(
             (
