@@ -9,6 +9,7 @@ from anyio import create_task_group
 from anyio.abc import TaskGroup
 
 from reactpy.config import REACTPY_DEBUG
+from reactpy.core._life_cycle_hook import HOOK_STACK
 from reactpy.types import LayoutEventMessage, LayoutType, LayoutUpdateMessage
 
 logger = getLogger(__name__)
@@ -63,18 +64,22 @@ async def _single_outgoing_loop(
     send: SendCoroutine,
 ) -> None:
     while True:
-        update = await layout.render()
+        token = HOOK_STACK.initialize()
         try:
-            await send(update)
-        except Exception:  # nocov
-            if not REACTPY_DEBUG.current:
-                msg = (
-                    "Failed to send update. More info may be available "
-                    "if you enabling debug mode by setting "
-                    "`reactpy.config.REACTPY_DEBUG.current = True`."
-                )
-                logger.error(msg)
-            raise
+            update = await layout.render()
+            try:
+                await send(update)
+            except Exception:  # nocov
+                if not REACTPY_DEBUG.current:
+                    msg = (
+                        "Failed to send update. More info may be available "
+                        "if you enabling debug mode by setting "
+                        "`reactpy.config.REACTPY_DEBUG.current = True`."
+                    )
+                    logger.error(msg)
+                raise
+        finally:
+            HOOK_STACK.reset(token)
 
 
 async def _single_incoming_loop(

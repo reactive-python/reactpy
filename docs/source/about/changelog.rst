@@ -56,6 +56,7 @@ Unreleased
 **Fixed**
 
 - :pull:`1239` - Fixed a bug where script elements would not render to the DOM as plain text.
+- :pull:`1254` - Fixed a bug where ``RuntimeError("Hook stack is in an invalid state")`` errors would be provided when using a webserver that reuses threads.
 
 v1.1.0
 ------

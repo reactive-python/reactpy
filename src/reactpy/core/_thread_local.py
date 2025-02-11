@@ -5,8 +5,10 @@ from weakref import WeakKeyDictionary
 _StateType = TypeVar("_StateType")
 
 
-class ThreadLocal(Generic[_StateType]):
-    """Utility for managing per-thread state information"""
+class ThreadLocal(Generic[_StateType]):  # pragma: no cover
+    """Utility for managing per-thread state information. This is only used in
+    environments where ContextVars are not available, such as the `pyodide`
+    executor."""
 
     def __init__(self, default: Callable[[], _StateType]):
         self._default = default
