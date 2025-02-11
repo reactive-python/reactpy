@@ -44,6 +44,15 @@ def rebuild():
     subprocess.run(["hatch", "build", "-t", "wheel"], check=True)  # noqa: S607, S603
 
 
+@pytest.fixture(autouse=True, scope="function")
+def create_hook_state():
+    from reactpy.core._life_cycle_hook import _HOOK_STATE
+
+    token = _HOOK_STATE.set([])
+    yield token
+    _HOOK_STATE.reset(token)
+
+
 @pytest.fixture
 async def display(server, page):
     async with DisplayFixture(server, page) as display:
