@@ -15,14 +15,12 @@ from typing import (
     NamedTuple,
     Protocol,
     TypeVar,
-    overload,
     runtime_checkable,
 )
 
 from typing_extensions import TypeAlias, TypedDict
 
 CarrierType = TypeVar("CarrierType")
-
 _Type = TypeVar("_Type")
 
 
@@ -71,14 +69,19 @@ _Event_contra = TypeVar("_Event_contra", contravariant=True)
 class LayoutType(Protocol[_Render_co, _Event_contra]):
     """Renders and delivers, updates to views and events to handlers, respectively"""
 
-    async def render(self) -> _Render_co:
-        """Render an update to a view"""
+    async def render(
+        self,
+    ) -> _Render_co: ...  # Render an update to a view
 
-    async def deliver(self, event: _Event_contra) -> None:
-        """Relay an event to its respective handler"""
+    async def deliver(
+        self, event: _Event_contra
+    ) -> None: ...  # Relay an event to its respective handler
 
-    async def __aenter__(self) -> LayoutType[_Render_co, _Event_contra]:
-        """Prepare the layout for its first render"""
+    async def __aenter__(
+        self,
+    ) -> LayoutType[
+        _Render_co, _Event_contra
+    ]: ...  # Prepare the layout for its first render
 
     async def __aexit__(
         self,
@@ -191,15 +194,6 @@ class EventHandlerType(Protocol):
 class VdomDictConstructor(Protocol):
     """Standard function for constructing a :class:`VdomDict`"""
 
-    @overload
-    def __call__(
-        self, attributes: VdomAttributes, *children: VdomChildren
-    ) -> VdomDict: ...
-
-    @overload
-    def __call__(self, *children: VdomChildren) -> VdomDict: ...
-
-    @overload
     def __call__(
         self, *attributes_and_children: VdomAttributes | VdomChildren
     ) -> VdomDict: ...
@@ -212,7 +206,7 @@ class LayoutUpdateMessage(TypedDict):
     """The type of message"""
     path: str
     """JSON Pointer path to the model element being updated"""
-    model: VdomJson
+    model: VdomJson | dict[str, Any]
     """The model to assign at the given JSON Pointer path"""
 
 
@@ -245,8 +239,7 @@ class ContextProviderType(ComponentType, Protocol[_Type]):
     """The context type"""
 
     @property
-    def value(self) -> _Type:
-        "Current context value"
+    def value(self) -> _Type: ...  # Current context value
 
 
 @dataclass

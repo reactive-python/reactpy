@@ -9,12 +9,12 @@ from email.utils import formatdate
 from pathlib import Path
 from typing import Any
 
-from asgiref.typing import WebSocketScope
 from typing_extensions import Unpack
 
 from reactpy import html
 from reactpy.executors.asgi.middleware import ReactPyMiddleware
 from reactpy.executors.asgi.standalone import ReactPy, ReactPyApp
+from reactpy.executors.asgi.types import AsgiWebsocketScope
 from reactpy.executors.utils import vdom_head_to_html
 from reactpy.pyscript.utils import pyscript_component_html, pyscript_setup_html
 from reactpy.types import ReactPyConfig, VdomDict
@@ -79,7 +79,9 @@ class ReactPyPyscript(ReactPy):
         self.html_head = html_head or html.head()
         self.html_lang = html_lang
 
-    def match_dispatch_path(self, scope: WebSocketScope) -> bool:  # pragma: no cover
+    def match_dispatch_path(
+        self, scope: AsgiWebsocketScope
+    ) -> bool:  # pragma: no cover
         """We do not use a WebSocket dispatcher for Client-Side Rendering (CSR)."""
         return False
 

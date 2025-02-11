@@ -9,16 +9,19 @@ from logging import getLogger
 from typing import Callable, Literal, cast, overload
 
 from asgi_tools import ResponseHTML
-from asgiref import typing as asgi_types
 from typing_extensions import Unpack
 
 from reactpy import html
 from reactpy.executors.asgi.middleware import ReactPyMiddleware
 from reactpy.executors.asgi.types import (
     AsgiApp,
-    AsgiHttpApp,
-    AsgiLifespanApp,
-    AsgiWebsocketApp,
+    AsgiReceive,
+    AsgiScope,
+    AsgiSend,
+    AsgiV3HttpApp,
+    AsgiV3LifespanApp,
+    AsgiV3WebsocketApp,
+    AsgiWebsocketScope,
 )
 from reactpy.executors.utils import server_side_component_html, vdom_head_to_html
 from reactpy.pyscript.utils import pyscript_setup_html
@@ -77,20 +80,21 @@ class ReactPy(ReactPyMiddleware):
             pyscript_head_vdom["tagName"] = ""
             self.html_head["children"].append(pyscript_head_vdom)  # type: ignore
 
-    def match_dispatch_path(self, scope: asgi_types.WebSocketScope) -> bool:
+    def match_dispatch_path(self, scope: AsgiWebsocketScope) -> bool:
         """Method override to remove `dotted_path` from the dispatcher URL."""
         return str(scope["path"]) == self.dispatcher_path
 
-    def match_extra_paths(self, scope: asgi_types.Scope) -> AsgiApp | None:
+    def match_extra_paths(self, scope: AsgiScope) -> AsgiApp | None:
         """Method override to match user-provided HTTP/Websocket routes."""
         if scope["type"] == "lifespan":
             return self.extra_lifespan_app
 
+        routing_dictionary = {}
         if scope["type"] == "http":
             routing_dictionary = self.extra_http_routes.items()
 
         if scope["type"] == "websocket":
-            routing_dictionary = self.extra_ws_routes.items()  # type: ignore
+            routing_dictionary = self.extra_ws_routes.items()
 
         return next(
             (
@@ -106,22 +110,22 @@ class ReactPy(ReactPyMiddleware):
         self,
         path: str,
         type: Literal["http"] = "http",
-    ) -> Callable[[AsgiHttpApp | str], AsgiApp]: ...
+    ) -> Callable[[AsgiV3HttpApp | str], AsgiApp]: ...
 
     @overload
     def route(
         self,
         path: str,
         type: Literal["websocket"],
-    ) -> Callable[[AsgiWebsocketApp | str], AsgiApp]: ...
+    ) -> Callable[[AsgiV3WebsocketApp | str], AsgiApp]: ...
 
     def route(
         self,
         path: str,
         type: Literal["http", "websocket"] = "http",
     ) -> (
-        Callable[[AsgiHttpApp | str], AsgiApp]
-        | Callable[[AsgiWebsocketApp | str], AsgiApp]
+        Callable[[AsgiV3HttpApp | str], AsgiApp]
+        | Callable[[AsgiV3WebsocketApp | str], AsgiApp]
     ):
         """Interface that allows user to define their own HTTP/Websocket routes
         within the current ReactPy application.
@@ -142,15 +146,15 @@ class ReactPy(ReactPyMiddleware):
 
             asgi_app: AsgiApp = import_dotted_path(app) if isinstance(app, str) else app
             if type == "http":
-                self.extra_http_routes[re_path] = cast(AsgiHttpApp, asgi_app)
+                self.extra_http_routes[re_path] = cast(AsgiV3HttpApp, asgi_app)
             elif type == "websocket":
-                self.extra_ws_routes[re_path] = cast(AsgiWebsocketApp, asgi_app)
+                self.extra_ws_routes[re_path] = cast(AsgiV3WebsocketApp, asgi_app)
 
             return asgi_app
 
         return decorator
 
-    def lifespan(self, app: AsgiLifespanApp | str) -> None:
+    def lifespan(self, app: AsgiV3LifespanApp | str) -> None:
         """Interface that allows user to define their own lifespan app
         within the current ReactPy application.
 
@@ -176,10 +180,7 @@ class ReactPyApp:
     _last_modified = ""
 
     async def __call__(
-        self,
-        scope: asgi_types.Scope,
-        receive: asgi_types.ASGIReceiveCallable,
-        send: asgi_types.ASGISendCallable,
+        self, scope: AsgiScope, receive: AsgiReceive, send: AsgiSend
     ) -> None:
         if scope["type"] != "http":  # pragma: no cover
             if scope["type"] != "lifespan":
