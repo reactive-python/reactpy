@@ -153,17 +153,16 @@ serve = [
 [tool.hatch.envs.python]
 extra-dependencies = [
   "reactpy[all]",
-  "ruff",
-  "toml",
-  "mypy==1.8",
+  "pyright",
   "types-toml",
   "types-click",
   "types-requests",
+  "types-lxml",
+  "jsonpointer",
 ]
 
 [tool.hatch.envs.python.scripts]
-# TODO: Replace mypy with pyright
-type_check = ["mypy --strict src/reactpy"]
+type_check = ["pyright src/reactpy"]
 
 ############################
 # >>> Hatch JS Scripts <<< #
@@ -218,12 +217,8 @@ publish_client = [
 # >>> Generic Tools <<< #
 #########################
 
-[tool.mypy]
-incremental = false
-ignore_missing_imports = true
-warn_unused_configs = true
-warn_redundant_casts = true
-warn_unused_ignores = true
+[tool.pyright]
+reportIncompatibleVariableOverride = false
 
 [tool.coverage.run]
 source_pkgs = ["reactpy"]

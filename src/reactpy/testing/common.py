@@ -5,7 +5,7 @@ import inspect
 import os
 import shutil
 import time
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Coroutine
 from functools import wraps
 from typing import Any, Callable, Generic, TypeVar, cast
 from uuid import uuid4
@@ -51,11 +51,12 @@ class poll(Generic[_R]):  # noqa: N801
         coro: Callable[_P, Awaitable[_R]]
         if not inspect.iscoroutinefunction(function):
 
-            async def coro(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            async def async_func(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 return cast(_R, function(*args, **kwargs))
 
+            coro = async_func
         else:
-            coro = cast(Callable[_P, Awaitable[_R]], function)
+            coro = cast(Callable[_P, Coroutine[Any, Any, _R]], function)
         self._func = coro
         self._args = args
         self._kwargs = kwargs
