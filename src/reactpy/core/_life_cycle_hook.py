@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import logging
+import sys
 from asyncio import Event, Task, create_task, gather
 from contextvars import ContextVar, Token
 from typing import Any, Callable, Protocol, TypeVar
 
 from anyio import Semaphore
 
+from reactpy.core._thread_local import ThreadLocal
 from reactpy.types import ComponentType, Context, ContextProviderType
+from reactpy.utils import Singleton
 
 T = TypeVar("T")
 
@@ -17,23 +20,40 @@ class EffectFunc(Protocol):
 
 
 logger = logging.getLogger(__name__)
-_HOOK_STATE: ContextVar[list[LifeCycleHook]] = ContextVar("_hook_state")
 
 
-def clear_hook_state(token: Token[list]) -> None:
-    hook_stack = _HOOK_STATE.get()
-    if hook_stack:
-        logger.warning("clear_hook_state: Hook stack was not empty")
-    _HOOK_STATE.reset(token)
+class __HookStack(Singleton):  # pragma: no cover
+    """A singleton object which manages the current component tree's hooks.
+    Life cycle hooks can be stored in a thread local or context variable depending
+    on the platform."""
+
+    _state: ThreadLocal[list[LifeCycleHook]] | ContextVar[list[LifeCycleHook]] = (
+        ThreadLocal(list) if sys.platform == "emscripten" else ContextVar("hook_state")
+    )
+
+    def get(self) -> list[LifeCycleHook]:
+        return self._state.get()
+
+    def initialize(self) -> Token[list[LifeCycleHook]] | None:
+        return None if isinstance(self._state, ThreadLocal) else self._state.set([])
+
+    def reset(self, token: Token[list[LifeCycleHook]] | None) -> None:
+        if isinstance(self._state, ThreadLocal):
+            self._state.get().clear()
+        elif token:
+            self._state.reset(token)
+        else:
+            raise RuntimeError("Hook stack is an ContextVar but no token was provided")
+
+    def current_hook(self) -> LifeCycleHook:
+        hook_stack = self.get()
+        if not hook_stack:
+            msg = "No life cycle hook is active. Are you rendering in a layout?"
+            raise RuntimeError(msg)
+        return hook_stack[-1]
 
 
-def current_hook() -> LifeCycleHook:
-    """Get the current :class:`LifeCycleHook`"""
-    hook_stack = _HOOK_STATE.get()
-    if not hook_stack:
-        msg = "No life cycle hook is active. Are you rendering in a layout?"
-        raise RuntimeError(msg)
-    return hook_stack[-1]
+HOOK_STACK = __HookStack()
 
 
 class LifeCycleHook:
@@ -43,7 +63,7 @@ class LifeCycleHook:
     a component is first rendered until it is removed from the layout. The life cycle
     is ultimately driven by the layout itself, but components can "hook" into those
     events to perform actions. Components gain access to their own life cycle hook
-    by calling :func:`current_hook`. They can then perform actions such as:
+    by calling :func:`HOOK_STACK.current_hook`. They can then perform actions such as:
 
     1. Adding state via :meth:`use_state`
     2. Adding effects via :meth:`add_effect`
@@ -63,7 +83,7 @@ class LifeCycleHook:
         .. testcode::
 
             from reactpy.core._life_cycle_hook import LifeCycleHook
-            from reactpy.core.hooks import current_hook
+            from reactpy.core.hooks import HOOK_STACK
 
             # this function will come from a layout implementation
             schedule_render = lambda: ...
@@ -81,15 +101,15 @@ class LifeCycleHook:
                 ...
 
                 # the component may access the current hook
-                assert current_hook() is hook
+                assert HOOK_STACK.current_hook() is hook
 
                 # and save state or add effects
-                current_hook().use_state(lambda: ...)
+                HOOK_STACK.current_hook().use_state(lambda: ...)
 
                 async def my_effect(stop_event):
                     ...
 
-                current_hook().add_effect(my_effect)
+                HOOK_STACK.current_hook().add_effect(my_effect)
             finally:
                 await hook.affect_component_did_render()
 
@@ -238,7 +258,7 @@ class LifeCycleHook:
         This method is called by a layout before entering the render method
         of this hook's associated component.
         """
-        hook_stack = _HOOK_STATE.get()
+        hook_stack = HOOK_STACK.get()
         if hook_stack:
             parent = hook_stack[-1]
             self._context_providers.update(parent._context_providers)
@@ -246,5 +266,5 @@ class LifeCycleHook:
 
     def unset_current(self) -> None:
         """Unset this hook as the active hook in this thread"""
-        if _HOOK_STATE.get().pop() is not self:
+        if HOOK_STACK.get().pop() is not self:
             raise RuntimeError("Hook stack is in an invalid state")  # nocov
