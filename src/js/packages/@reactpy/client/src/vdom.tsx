@@ -152,8 +152,7 @@ export function createAttributes(
           createEventHandler(client, name, handler),
         ),
       ),
-      // Convert snake_case to camelCase names
-    }).map(normalizeAttribute),
+    }),
   );
 }
 
@@ -182,33 +181,3 @@ function createEventHandler(
     },
   ];
 }
-
-function normalizeAttribute([key, value]: [string, any]): [string, any] {
-  let normKey = key;
-  let normValue = value;
-
-  if (key === "style" && typeof value === "object") {
-    normValue = Object.fromEntries(
-      Object.entries(value).map(([k, v]) => [snakeToCamel(k), v]),
-    );
-  } else if (
-    key.startsWith("data_") ||
-    key.startsWith("aria_") ||
-    DASHED_HTML_ATTRS.includes(key)
-  ) {
-    normKey = key.split("_").join("-");
-  } else {
-    normKey = snakeToCamel(key);
-  }
-  return [normKey, normValue];
-}
-
-function snakeToCamel(str: string): string {
-  return str.replace(/([_][a-z])/g, (group) =>
-    group.toUpperCase().replace("_", ""),
-  );
-}
-
-// see list of HTML attributes with dashes in them:
-// https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#attribute_list
-const DASHED_HTML_ATTRS = ["accept_charset", "http_equiv"];

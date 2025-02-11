@@ -73,7 +73,7 @@ def use_linked_inputs(
 
     inputs: list[VdomDict] = []
     for attrs in attributes:
-        inputs.append(html.input({**attrs, "on_change": sync_inputs, "value": value}))
+        inputs.append(html.input({**attrs, "onChange": sync_inputs, "value": value}))
 
     return inputs
 

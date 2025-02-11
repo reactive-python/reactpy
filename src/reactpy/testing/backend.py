@@ -3,19 +3,18 @@ from __future__ import annotations
 import asyncio
 import logging
 from contextlib import AsyncExitStack
-from threading import Thread
 from types import TracebackType
 from typing import Any, Callable
 from urllib.parse import urlencode, urlunparse
 
 import uvicorn
-from asgiref import typing as asgi_types
 
-from reactpy.asgi.middleware import ReactPyMiddleware
-from reactpy.asgi.standalone import ReactPy
 from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.core.component import component
 from reactpy.core.hooks import use_callback, use_effect, use_state
+from reactpy.executors.asgi.middleware import ReactPyMiddleware
+from reactpy.executors.asgi.standalone import ReactPy
+from reactpy.executors.asgi.types import AsgiApp
 from reactpy.testing.logs import (
     LogAssertionError,
     capture_reactpy_logs,
@@ -44,7 +43,7 @@ class BackendFixture:
 
     def __init__(
         self,
-        app: asgi_types.ASGIApplication | None = None,
+        app: AsgiApp | None = None,
         host: str = "127.0.0.1",
         port: int | None = None,
         timeout: float | None = None,
@@ -120,7 +119,8 @@ class BackendFixture:
         self.log_records = self._exit_stack.enter_context(capture_reactpy_logs())
 
         # Wait for the server to start
-        Thread(target=self.webserver.run, daemon=True).start()
+        self.webserver.config.setup_event_loop()
+        self.webserver_task = asyncio.create_task(self.webserver.serve())
         await asyncio.sleep(1)
 
         return self
@@ -138,7 +138,8 @@ class BackendFixture:
             msg = "Unexpected logged exception"
             raise LogAssertionError(msg) from logged_errors[0]
 
-        await asyncio.wait_for(self.webserver.shutdown(), timeout=60)
+        await self.webserver.shutdown()
+        self.webserver_task.cancel()
 
     async def restart(self) -> None:
         """Restart the server"""

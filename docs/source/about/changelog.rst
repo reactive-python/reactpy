@@ -16,11 +16,15 @@ Unreleased
 ----------
 
 **Added**
-- :pull:`1113` - Added ``reactpy.ReactPy`` that can be used to run ReactPy in standalone mode.
-- :pull:`1113` - Added ``reactpy.ReactPyMiddleware`` that can be used to run ReactPy with any ASGI compatible framework.
-- :pull:`1113` - Added ``reactpy.jinja.Component`` that can be used alongside ``ReactPyMiddleware`` to embed several ReactPy components into your existing application.
-- :pull:`1113` - Added ``standard``, ``uvicorn``, ``jinja`` installation extras (for example ``pip install reactpy[standard]``).
+- :pull:`1113` - Added ``reactpy.executors.asgi.ReactPy`` that can be used to run ReactPy in standalone mode via ASGI.
+- :pull:`1269` - Added ``reactpy.executors.asgi.ReactPyPyodide`` that can be used to run ReactPy in standalone mode via ASGI, but rendered entirely client-sided.
+- :pull:`1113` - Added ``reactpy.executors.asgi.ReactPyMiddleware`` that can be used to utilize ReactPy within any ASGI compatible framework.
+- :pull:`1113` :pull:`1269` - Added ``reactpy.templatetags.Jinja`` that can be used alongside ``ReactPyMiddleware`` to embed several ReactPy components into your existing application. This includes the following template tags: ``{% component %}``, ``{% pyscript_component %}``, and ``{% pyscript_setup %}``.
+- :pull:`1269` - Added ``reactpy.pyscript_component`` that can be used to embed ReactPy components into your existing application.
+- :pull:`1113` - Added ``uvicorn`` and ``jinja`` installation extras (for example ``pip install reactpy[jinja]``).
 - :pull:`1113` - Added support for Python 3.12 and 3.13.
+- :pull:`1264` - Added ``reactpy.use_async_effect`` hook.
+- :pull:`1267` - Added ``shutdown_timeout`` parameter to the ``reactpy.use_async_effect`` hook.
 
 **Changed**
 
@@ -32,6 +36,8 @@ Unreleased
 - :pull:`1113` - Renamed the ``use_location`` hook's ``search`` attribute to ``query_string``.
 - :pull:`1113` - Renamed the ``use_location`` hook's ``pathname`` attribute to ``path``.
 - :pull:`1113` - Renamed ``reactpy.config.REACTPY_DEBUG_MODE`` to ``reactpy.config.REACTPY_DEBUG``.
+- :pull:`1113` - ``@reactpy/client`` now exports ``React`` and ``ReactDOM``.
+- :pull:`1263` - ReactPy no longer auto-converts ``snake_case`` props to ``camelCase``. It is now the responsibility of the user to ensure that props are in the correct format.
 
 **Removed**
 
@@ -45,6 +51,7 @@ Unreleased
 - :pull:`1113` - All backend related installation extras (such as ``pip install reactpy[starlette]``) have been removed.
 - :pull:`1113` - Removed deprecated function ``module_from_template``.
 - :pull:`1113` - Removed support for Python 3.9.
+- :pull:`1264` - Removed support for async functions within ``reactpy.use_effect`` hook. Use ``reactpy.use_async_effect`` instead.
 
 **Fixed**
 

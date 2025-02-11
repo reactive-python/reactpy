@@ -7,7 +7,6 @@ from typing import Any
 from playwright.async_api import (
     Browser,
     BrowserContext,
-    ElementHandle,
     Page,
     async_playwright,
 )
@@ -41,17 +40,9 @@ class DisplayFixture:
     ) -> None:
         self.backend.mount(component)
         await self.goto("/")
-        await self.root_element()  # check that root element is attached
 
     async def goto(self, path: str, query: Any | None = None) -> None:
         await self.page.goto(self.backend.url(path, query))
-
-    async def root_element(self) -> ElementHandle:
-        element = await self.page.wait_for_selector("#app", state="attached")
-        if element is None:  # nocov
-            msg = "Root element not attached"
-            raise RuntimeError(msg)
-        return element
 
     async def __aenter__(self) -> DisplayFixture:
         es = self._exit_stack = AsyncExitStack()

@@ -42,13 +42,17 @@ This will enable the following:
 - :data:`REACTPY_CHECK_JSON_ATTRS`
 """
 
-REACTPY_CHECK_VDOM_SPEC = Option("REACTPY_CHECK_VDOM_SPEC", parent=REACTPY_DEBUG)
+REACTPY_CHECK_VDOM_SPEC = Option(
+    "REACTPY_CHECK_VDOM_SPEC", parent=REACTPY_DEBUG, validator=boolean
+)
 """Checks which ensure VDOM is rendered to spec
 
 For more info on the VDOM spec, see here: :ref:`VDOM JSON Schema`
 """
 
-REACTPY_CHECK_JSON_ATTRS = Option("REACTPY_CHECK_JSON_ATTRS", parent=REACTPY_DEBUG)
+REACTPY_CHECK_JSON_ATTRS = Option(
+    "REACTPY_CHECK_JSON_ATTRS", parent=REACTPY_DEBUG, validator=boolean
+)
 """Checks that all VDOM attributes are JSON serializable
 
 The VDOM spec is not able to enforce this on its own since attributes could anything.

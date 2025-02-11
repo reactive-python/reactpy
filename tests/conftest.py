@@ -19,17 +19,10 @@ from reactpy.testing import (
     capture_reactpy_logs,
     clear_reactpy_web_modules_dir,
 )
+from reactpy.testing.common import GITHUB_ACTIONS
 
 REACTPY_ASYNC_RENDERING.set_current(True)
 REACTPY_DEBUG.set_current(True)
-GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "False") in {
-    "y",
-    "yes",
-    "t",
-    "true",
-    "on",
-    "1",
-}
 
 
 def pytest_addoption(parser: Parser) -> None:

@@ -16,7 +16,6 @@ from typing import (
     overload,
 )
 
-from asgiref import typing as asgi_types
 from typing_extensions import TypeAlias
 
 from reactpy.config import REACTPY_DEBUG
@@ -25,17 +24,20 @@ from reactpy.types import Connection, Context, Key, Location, State, VdomDict
 from reactpy.utils import Ref
 
 if not TYPE_CHECKING:
-    # make flake8 think that this variable exists
     ellipsis = type(...)
+
+if TYPE_CHECKING:
+    from asgiref import typing as asgi_types
 
 
 __all__ = [
-    "use_state",
-    "use_effect",
-    "use_reducer",
+    "use_async_effect",
     "use_callback",
-    "use_ref",
+    "use_effect",
     "use_memo",
+    "use_reducer",
+    "use_ref",
+    "use_state",
 ]
 
 logger = getLogger(__name__)
@@ -64,7 +66,9 @@ def use_state(initial_value: _Type | Callable[[], _Type]) -> State[_Type]:
         A tuple containing the current state and a function to update it.
     """
     current_state = _use_const(lambda: _CurrentState(initial_value))
-    return State(current_state.value, current_state.dispatch)
+
+    # FIXME: Not sure why this type hint is not being inferred correctly when using pyright
+    return State(current_state.value, current_state.dispatch)  # type: ignore
 
 
 class _CurrentState(Generic[_Type]):
@@ -82,10 +86,7 @@ class _CurrentState(Generic[_Type]):
         hook = current_hook()
 
         def dispatch(new: _Type | Callable[[_Type], _Type]) -> None:
-            if callable(new):
-                next_value = new(self.value)
-            else:
-                next_value = new
+            next_value = new(self.value) if callable(new) else new  # type: ignore
             if not strictly_equal(next_value, self.value):
                 self.value = next_value
                 hook.schedule_render()
@@ -110,16 +111,21 @@ def use_effect(
 
 @overload
 def use_effect(
-    function: _EffectApplyFunc,
+    function: _SyncEffectFunc,
     dependencies: Sequence[Any] | ellipsis | None = ...,
 ) -> None: ...
 
 
 def use_effect(
-    function: _EffectApplyFunc | None = None,
+    function: _SyncEffectFunc | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-) -> Callable[[_EffectApplyFunc], None] | None:
-    """See the full :ref:`Use Effect` docs for details
+) -> Callable[[_SyncEffectFunc], None] | None:
+    """
+    A hook that manages an synchronous side effect in a React-like component.
+
+    This hook allows you to run a synchronous function as a side effect and
+    ensures that the effect is properly cleaned up when the component is
+    re-rendered or unmounted.
 
     Parameters:
         function:
@@ -134,48 +140,116 @@ def use_effect(
         If not function is provided, a decorator. Otherwise ``None``.
     """
     hook = current_hook()
-
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
-    last_clean_callback: Ref[_EffectCleanFunc | None] = use_ref(None)
+    cleanup_func: Ref[_EffectCleanFunc | None] = use_ref(None)
 
-    def add_effect(function: _EffectApplyFunc) -> None:
-        if not asyncio.iscoroutinefunction(function):
-            sync_function = cast(_SyncEffectFunc, function)
-        else:
-            async_function = cast(_AsyncEffectFunc, function)
-
-            def sync_function() -> _EffectCleanFunc | None:
-                task = asyncio.create_task(async_function())
-
-                def clean_future() -> None:
-                    if not task.cancel():
-                        try:
-                            clean = task.result()
-                        except asyncio.CancelledError:
-                            pass
-                        else:
-                            if clean is not None:
-                                clean()
-
-                return clean_future
-
+    def decorator(func: _SyncEffectFunc) -> None:
         async def effect(stop: asyncio.Event) -> None:
-            if last_clean_callback.current is not None:
-                last_clean_callback.current()
-                last_clean_callback.current = None
-            clean = last_clean_callback.current = sync_function()
+            # Since the effect is asynchronous, we need to make sure we
+            # always clean up the previous effect's resources
+            run_effect_cleanup(cleanup_func)
+
+            # Execute the effect and store the clean-up function
+            cleanup_func.current = func()
+
+            # Wait until we get the signal to stop this effect
             await stop.wait()
-            if clean is not None:
-                clean()
+
+            # Run the clean-up function when the effect is stopped,
+            # if it hasn't been run already by a new effect
+            run_effect_cleanup(cleanup_func)
 
         return memoize(lambda: hook.add_effect(effect))
 
-    if function is not None:
-        add_effect(function)
+    # Handle decorator usage
+    if function:
+        decorator(function)
         return None
-    else:
-        return add_effect
+    return decorator
+
+
+@overload
+def use_async_effect(
+    function: None = None,
+    dependencies: Sequence[Any] | ellipsis | None = ...,
+    shutdown_timeout: float = 0.1,
+) -> Callable[[_EffectApplyFunc], None]: ...
+
+
+@overload
+def use_async_effect(
+    function: _AsyncEffectFunc,
+    dependencies: Sequence[Any] | ellipsis | None = ...,
+    shutdown_timeout: float = 0.1,
+) -> None: ...
+
+
+def use_async_effect(
+    function: _AsyncEffectFunc | None = None,
+    dependencies: Sequence[Any] | ellipsis | None = ...,
+    shutdown_timeout: float = 0.1,
+) -> Callable[[_AsyncEffectFunc], None] | None:
+    """
+    A hook that manages an asynchronous side effect in a React-like component.
+
+    This hook allows you to run an asynchronous function as a side effect and
+    ensures that the effect is properly cleaned up when the component is
+    re-rendered or unmounted.
+
+    Args:
+        function:
+            Applies the effect and can return a clean-up function
+        dependencies:
+            Dependencies for the effect. The effect will only trigger if the identity
+            of any value in the given sequence changes (i.e. their :func:`id` is
+            different). By default these are inferred based on local variables that are
+            referenced by the given function.
+        shutdown_timeout:
+            The amount of time (in seconds) to wait for the effect to complete before
+            forcing a shutdown.
+
+    Returns:
+        If not function is provided, a decorator. Otherwise ``None``.
+    """
+    hook = current_hook()
+    dependencies = _try_to_infer_closure_values(function, dependencies)
+    memoize = use_memo(dependencies=dependencies)
+    cleanup_func: Ref[_EffectCleanFunc | None] = use_ref(None)
+
+    def decorator(func: _AsyncEffectFunc) -> None:
+        async def effect(stop: asyncio.Event) -> None:
+            # Since the effect is asynchronous, we need to make sure we
+            # always clean up the previous effect's resources
+            run_effect_cleanup(cleanup_func)
+
+            # Execute the effect in a background task
+            task = asyncio.create_task(func())
+
+            # Wait until we get the signal to stop this effect
+            await stop.wait()
+
+            # If renders are queued back-to-back, the effect might not have
+            # completed. So, we give the task a small amount of time to finish.
+            # If it manages to finish, we can obtain a clean-up function.
+            results, _ = await asyncio.wait([task], timeout=shutdown_timeout)
+            if results:
+                cleanup_func.current = results.pop().result()
+
+            # Run the clean-up function when the effect is stopped,
+            # if it hasn't been run already by a new effect
+            run_effect_cleanup(cleanup_func)
+
+            # Cancel the task if it's still running
+            task.cancel()
+
+        return memoize(lambda: hook.add_effect(effect))
+
+    # Handle decorator usage
+    if function:
+        decorator(function)
+        return None
+    return decorator
 
 
 def use_debug_value(
@@ -263,7 +337,7 @@ def use_connection() -> Connection[Any]:
     return conn
 
 
-def use_scope() -> asgi_types.HTTPScope | asgi_types.WebSocketScope:
+def use_scope() -> dict[str, Any] | asgi_types.HTTPScope | asgi_types.WebSocketScope:
     """Get the current :class:`~reactpy.types.Connection`'s scope."""
     return use_connection().scope
 
@@ -436,8 +510,6 @@ def use_memo(
     else:
         changed = False
 
-    setup: Callable[[Callable[[], _Type]], _Type]
-
     if changed:
 
         def setup(function: Callable[[], _Type]) -> _Type:
@@ -449,10 +521,7 @@ def use_memo(
         def setup(function: Callable[[], _Type]) -> _Type:
             return memo.value
 
-    if function is not None:
-        return setup(function)
-    else:
-        return setup
+    return setup(function) if function is not None else setup
 
 
 class _Memo(Generic[_Type]):
@@ -545,3 +614,9 @@ def strictly_equal(x: Any, y: Any) -> bool:
 
     # Fallback to identity check
     return x is y  # pragma: no cover
+
+
+def run_effect_cleanup(cleanup_func: Ref[_EffectCleanFunc | None]) -> None:
+    if cleanup_func.current:
+        cleanup_func.current()
+        cleanup_func.current = None

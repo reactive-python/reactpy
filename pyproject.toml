@@ -13,36 +13,38 @@ readme = "README.md"
 keywords = ["react", "javascript", "reactpy", "component"]
 license = "MIT"
 authors = [
-  { name = "Ryan Morshead", email = "ryan.morshead@gmail.com" },
   { name = "Mark Bakhit", email = "archiethemonger@gmail.com" },
+  { name = "Ryan Morshead", email = "ryan.morshead@gmail.com" },
 ]
 requires-python = ">=3.9"
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "exceptiongroup >=1.0",
-  "typing-extensions >=3.10",
-  "anyio >=3",
-  "jsonpatch >=1.32",
   "fastjsonschema >=2.14.5",
   "requests >=2",
-  "colorlog >=6",
-  "asgiref >=3",
   "lxml >=4",
-  "servestatic >=3.0.0",
-  "orjson >=3",
+  "anyio >=3",
+  "typing-extensions >=3.10",
 ]
 dynamic = ["version"]
 urls.Changelog = "https://reactpy.dev/docs/about/changelog.html"
 urls.Documentation = "https://reactpy.dev/"
 urls.Source = "https://github.com/reactive-python/reactpy"
+
+[project.optional-dependencies]
+all = ["reactpy[asgi,jinja,uvicorn,testing]"]
+asgi = ["asgiref", "asgi-tools", "servestatic", "orjson", "pip"]
+jinja = ["jinja2-simple-tags", "jinja2 >=3"]
+uvicorn = ["uvicorn[standard]"]
+testing = ["playwright"]
 
 [tool.hatch.version]
 path = "src/reactpy/__init__.py"
@@ -60,6 +62,9 @@ license-files = { paths = ["LICENSE"] }
 [tool.hatch.envs.default]
 installer = "uv"
 
+[project.scripts]
+reactpy = "reactpy._console.cli:entry_point"
+
 [[tool.hatch.build.hooks.build-scripts.scripts]]
 # Note: `hatch` can't be called within `build-scripts` when installing packages in editable mode, so we have to write the commands long-form
 commands = [
@@ -70,16 +75,10 @@ commands = [
   'bun run --cwd "src/js/packages/@reactpy/client" build',
   'bun install --cwd "src/js/packages/@reactpy/app"',
   'bun run --cwd "src/js/packages/@reactpy/app" build',
-  'python "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/dist" "src/reactpy/static"',
+  'python "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/node_modules/@pyscript/core/dist" "src/reactpy/static/pyscript"',
+  'python "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/node_modules/morphdom/dist" "src/reactpy/static/morphdom"',
 ]
 artifacts = []
-
-[project.optional-dependencies]
-all = ["reactpy[jinja,uvicorn,testing]"]
-standard = ["reactpy[jinja,uvicorn]"]
-jinja = ["jinja2-simple-tags", "jinja2 >=3"]
-uvicorn = ["uvicorn[standard]"]
-testing = ["playwright"]
 
 #############################
 # >>> Hatch Test Runner <<< #
@@ -87,16 +86,12 @@ testing = ["playwright"]
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
+  "reactpy[all]",
   "pytest-sugar",
-  "pytest-asyncio>=0.23",
-  "pytest-timeout",
-  "coverage[toml]>=6.5",
+  "pytest-asyncio",
   "responses",
-  "playwright",
+  "exceptiongroup",
   "jsonpointer",
-  "uvicorn[standard]",
-  "jinja2-simple-tags",
-  "jinja2 >=3",
   "starlette",
 ]
 
@@ -156,19 +151,17 @@ serve = [
 
 [tool.hatch.envs.python]
 extra-dependencies = [
-  "ruff",
-  "toml",
-  "mypy==1.8",
+  "reactpy[all]",
+  "pyright",
   "types-toml",
   "types-click",
-  "types-tornado",
-  "types-flask",
   "types-requests",
+  "types-lxml",
+  "jsonpointer",
 ]
 
 [tool.hatch.envs.python.scripts]
-# TODO: Replace mypy with pyright
-type_check = ["mypy --strict src/reactpy"]
+type_check = ["pyright src/reactpy"]
 
 ############################
 # >>> Hatch JS Scripts <<< #
@@ -193,6 +186,7 @@ test = [
 ]
 build = [
   'hatch run "src/build_scripts/clean_js_dir.py"',
+  'bun install --cwd "src/js"',
   'hatch run javascript:build_event_to_object',
   'hatch run javascript:build_client',
   'hatch run javascript:build_app',
@@ -222,12 +216,8 @@ publish_client = [
 # >>> Generic Tools <<< #
 #########################
 
-[tool.mypy]
-incremental = false
-ignore_missing_imports = true
-warn_unused_configs = true
-warn_redundant_casts = true
-warn_unused_ignores = true
+[tool.pyright]
+reportIncompatibleVariableOverride = false
 
 [tool.coverage.run]
 source_pkgs = ["reactpy"]
@@ -237,6 +227,8 @@ omit = [
   "src/reactpy/__init__.py",
   "src/reactpy/_console/*",
   "src/reactpy/__main__.py",
+  "src/reactpy/pyscript/layout_handler.py",
+  "src/reactpy/pyscript/component_template.py",
 ]
 
 [tool.coverage.report]
@@ -252,7 +244,6 @@ exclude_also = [
 ]
 
 [tool.ruff]
-target-version = "py39"
 line-length = 88
 lint.select = [
   "A",
@@ -323,13 +314,7 @@ lint.unfixable = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["reactpy"]
-
-[tool.ruff.lint.flake8-tidy-imports]
-ban-relative-imports = "all"
-
-[tool.flake8]
-select = ["RPY"]                                                  # only need to check with reactpy-flake8
-exclude = ["**/node_modules/*", ".eggs/*", ".tox/*", "**/venv/*"]
+known-third-party = ["js"]
 
 [tool.ruff.lint.per-file-ignores]
 # Tests can use magic values, assertions, and relative imports
@@ -346,7 +331,3 @@ exclude = ["**/node_modules/*", ".eggs/*", ".tox/*", "**/venv/*"]
   # Allow print
   "T201",
 ]
-
-[tool.black]
-target-version = ["py39"]
-line-length = 88

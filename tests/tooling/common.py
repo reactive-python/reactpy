@@ -1,12 +1,9 @@
-import os
 from typing import Any
 
+from reactpy.testing.common import GITHUB_ACTIONS
 from reactpy.types import LayoutEventMessage, LayoutUpdateMessage
 
-GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "False")
-DEFAULT_TYPE_DELAY = (
-    250 if GITHUB_ACTIONS.lower() in {"y", "yes", "t", "true", "on", "1"} else 50
-)
+DEFAULT_TYPE_DELAY = 250 if GITHUB_ACTIONS else 50
 
 
 def event_message(target: str, *data: Any) -> LayoutEventMessage:

@@ -193,7 +193,7 @@ async def test_hotswap_update_on_change(display: DisplayFixture):
                 mount(hotswap_3)
 
         return html.div(
-            html.button({"on_click": on_click, "id": "incr-button"}, "incr"),
+            html.button({"onClick": on_click, "id": "incr-button"}, "incr"),
             hostswap(),
         )
 

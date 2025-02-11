@@ -12,7 +12,7 @@ import reactpy
 from reactpy import html
 from reactpy.config import REACTPY_ASYNC_RENDERING, REACTPY_DEBUG
 from reactpy.core.component import component
-from reactpy.core.hooks import use_effect, use_state
+from reactpy.core.hooks import use_async_effect, use_effect, use_state
 from reactpy.core.layout import Layout
 from reactpy.testing import (
     HookCatcher,
@@ -510,10 +510,10 @@ async def test_model_key_preserves_callback_identity_for_common_elements(caplog)
 
         children = [
             reactpy.html.button(
-                {"on_click": good_trigger, "id": "good", "key": "good"}, "good"
+                {"onClick": good_trigger, "id": "good", "key": "good"}, "good"
             ),
             reactpy.html.button(
-                {"on_click": bad_trigger, "id": "bad", "key": "bad"}, "bad"
+                {"onClick": bad_trigger, "id": "bad", "key": "bad"}, "bad"
             ),
         ]
 
@@ -572,7 +572,7 @@ async def test_model_key_preserves_callback_identity_for_components():
                 msg = "Called bad trigger"
                 raise ValueError(msg)
 
-        return reactpy.html.button({"on_click": callback, "id": "good"}, "good")
+        return reactpy.html.button({"onClick": callback, "id": "good"}, "good")
 
     async with reactpy.Layout(RootComponent()) as layout:
         await layout.render()
@@ -654,8 +654,8 @@ async def test_event_handler_at_component_root_is_garbage_collected():
         value, set_value = reactpy.hooks.use_state(False)
         set_value(not value)  # trigger renders forever
         event_handler.current = weakref(set_value)
-        button = reactpy.html.button({"on_click": set_value}, "state is: ", value)
-        event_handler.current = weakref(button["eventHandlers"]["on_click"].function)
+        button = reactpy.html.button({"onClick": set_value}, "state is: ", value)
+        event_handler.current = weakref(button["eventHandlers"]["onClick"].function)
         return button
 
     async with reactpy.Layout(HasEventHandlerAtRoot()) as layout:
@@ -676,8 +676,8 @@ async def test_event_handler_deep_in_component_layout_is_garbage_collected():
         value, set_value = reactpy.hooks.use_state(False)
         set_value(not value)  # trigger renders forever
         event_handler.current = weakref(set_value)
-        button = reactpy.html.button({"on_click": set_value}, "state is: ", value)
-        event_handler.current = weakref(button["eventHandlers"]["on_click"].function)
+        button = reactpy.html.button({"onClick": set_value}, "state is: ", value)
+        event_handler.current = weakref(button["eventHandlers"]["onClick"].function)
         return reactpy.html.div(reactpy.html.div(button))
 
     async with reactpy.Layout(HasNestedEventHandler()) as layout:
@@ -759,7 +759,7 @@ async def test_log_error_on_bad_event_handler():
             msg = "bad event handler"
             raise Exception(msg)
 
-        return reactpy.html.button({"on_click": raise_error})
+        return reactpy.html.button({"onClick": raise_error})
 
     with assert_reactpy_did_log(match_error="bad event handler"):
         async with reactpy.Layout(ComponentWithBadEventHandler()) as layout:
@@ -857,7 +857,7 @@ async def test_layout_does_not_copy_element_children_by_key():
             [
                 reactpy.html.div(
                     {"key": i},
-                    reactpy.html.input({"on_change": lambda event: None}),
+                    reactpy.html.input({"onChange": lambda event: None}),
                 )
                 for i in items
             ]
@@ -915,14 +915,14 @@ async def test_switching_node_type_with_event_handlers():
         toggle, toggle_type.current = use_toggle(True)
         handler = element_static_handler.use(lambda: None)
         if toggle:
-            return html.div(html.button({"on_event": handler}))
+            return html.div(html.button({"onEvent": handler}))
         else:
             return html.div(SomeComponent())
 
     @reactpy.component
     def SomeComponent():
         handler = component_static_handler.use(lambda: None)
-        return html.button({"on_another_event": handler})
+        return html.button({"onAnotherEvent": handler})
 
     async with reactpy.Layout(Root()) as layout:
         await layout.render()
@@ -1005,7 +1005,7 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
         state, set_state = use_state(0)
         return html.div(
             html.button(
-                {"on_click": set_child_key_num.use(lambda: set_state(state + 1))},
+                {"onClick": set_child_key_num.use(lambda: set_state(state + 1))},
                 "click me",
             ),
             Child("some-key"),
@@ -1016,7 +1016,7 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
     def Child(child_key):
         state, set_state = use_state(0)
 
-        @use_effect
+        @use_async_effect
         async def record_if_state_is_reset():
             if state:
                 return
@@ -1217,8 +1217,8 @@ async def test_ensure_model_path_udpates():
 
         return html.div(
             {"id": item, "color": color.value},
-            html.button({"on_click": colorize}, f"Color {item}"),
-            html.button({"on_click": deleteme}, f"Delete {item}"),
+            html.button({"onClick": colorize}, f"Color {item}"),
+            html.button({"onClick": deleteme}, f"Delete {item}"),
         )
 
     @component
@@ -1233,7 +1233,7 @@ async def test_ensure_model_path_udpates():
         b, b_info = find_element(tree, select.id_equals("B"))
         assert b_info.path == (0, 1, 0)
         b_delete, _ = find_element(b, select.text_equals("Delete B"))
-        await runner.trigger(b_delete, "on_click", {})
+        await runner.trigger(b_delete, "onClick", {})
 
         tree = await runner.render()
 
@@ -1242,7 +1242,7 @@ async def test_ensure_model_path_udpates():
         c, c_info = find_element(tree, select.id_equals("C"))
         assert c_info.path == (0, 1, 0)
         c_color, _ = find_element(c, select.text_equals("Color C"))
-        await runner.trigger(c_color, "on_click", {})
+        await runner.trigger(c_color, "onClick", {})
 
         tree = await runner.render()
 
