@@ -79,9 +79,7 @@ class ReactPyPyscript(ReactPy):
         self.html_head = html_head or html.head()
         self.html_lang = html_lang
 
-    def match_dispatch_path(
-        self, scope: AsgiWebsocketScope
-    ) -> bool:  # pragma: no cover
+    def match_dispatch_path(self, scope: AsgiWebsocketScope) -> bool:  # nocov
         """We do not use a WebSocket dispatcher for Client-Side Rendering (CSR)."""
         return False
 

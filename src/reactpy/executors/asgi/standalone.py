@@ -182,7 +182,7 @@ class ReactPyApp:
     async def __call__(
         self, scope: AsgiScope, receive: AsgiReceive, send: AsgiSend
     ) -> None:
-        if scope["type"] != "http":  # pragma: no cover
+        if scope["type"] != "http":  # nocov
             if scope["type"] != "lifespan":
                 msg = (
                     "ReactPy app received unsupported request of type '%s' at path '%s'",

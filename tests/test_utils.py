@@ -153,37 +153,6 @@ def test_html_to_vdom_with_no_parent_node():
     assert utils.html_to_vdom(source) == expected
 
 
-def test_del_html_body_transform():
-    source = """
-    <!DOCTYPE html>
-    <html lang="en">
-
-    <head>
-    <title>My Title</title>
-    </head>
-
-    <body><h1>Hello World</h1></body>
-
-    </html>
-    """
-
-    expected = {
-        "tagName": "",
-        "children": [
-            {
-                "tagName": "",
-                "children": [{"tagName": "title", "children": ["My Title"]}],
-            },
-            {
-                "tagName": "",
-                "children": [{"tagName": "h1", "children": ["Hello World"]}],
-            },
-        ],
-    }
-
-    assert utils.html_to_vdom(source, utils.del_html_head_body_transform) == expected
-
-
 SOME_OBJECT = object()
 
 

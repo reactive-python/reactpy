@@ -5,7 +5,7 @@ from weakref import WeakKeyDictionary
 _StateType = TypeVar("_StateType")
 
 
-class ThreadLocal(Generic[_StateType]):  # pragma: no cover
+class ThreadLocal(Generic[_StateType]):  # nocov
     """Utility for managing per-thread state information. This is only used in
     environments where ContextVars are not available, such as the `pyodide`
     executor."""

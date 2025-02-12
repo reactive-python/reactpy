@@ -144,7 +144,7 @@ def extend_pyscript_config(
     return orjson.dumps(pyscript_config).decode("utf-8")
 
 
-def reactpy_version_string() -> str:  # pragma: no cover
+def reactpy_version_string() -> str:  # nocov
     from reactpy.testing.common import GITHUB_ACTIONS
 
     local_version = reactpy.__version__
