@@ -10,6 +10,7 @@ from lxml import etree
 from lxml.html import fromstring, tostring
 
 from reactpy.core.vdom import vdom as make_vdom
+from reactpy.transforms import RequiredTransforms
 from reactpy.types import ComponentType, VdomDict
 
 _RefValue = TypeVar("_RefValue")
@@ -80,7 +81,10 @@ def vdom_to_html(vdom: VdomDict) -> str:
 
 
 def html_to_vdom(
-    html: str, *transforms: _ModelTransform, strict: bool = True
+    html: str,
+    *transforms: _ModelTransform,
+    strict: bool = True,
+    intercept_links: bool = True,
 ) -> VdomDict:
     """Transform HTML into a DOM model. Unique keys can be provided to HTML elements
     using a ``key=...`` attribute within your HTML tag.
@@ -89,12 +93,16 @@ def html_to_vdom(
         html:
             The raw HTML as a string
         transforms:
-            Functions of the form ``transform(old) -> new`` where ``old`` is a VDOM
-            dictionary which will be replaced by ``new``. For example, you could use a
-            transform function to add highlighting to a ``<code/>`` block.
+            Function that takes a VDOM dictionary input and returns the new (mutated)
+            VDOM in the form ``transform(old) -> new``. This function is automatically
+            called on every node within the VDOM tree.
         strict:
             If ``True``, raise an exception if the HTML does not perfectly follow HTML5
             syntax.
+        intercept_links:
+            If ``True``, convert all anchor tags into ``<a>`` tags with an ``onClick``
+            event handler that prevents the browser from navigating to the link. This is
+            useful if you would rather have `reactpy-router` handle your URL navigation.
     """
     if not isinstance(html, str):  # nocov
         msg = f"Expected html to be a string, not {type(html).__name__}"
@@ -114,10 +122,16 @@ def html_to_vdom(
     except etree.XMLSyntaxError as e:
         if not strict:
             raise e  # nocov
-        msg = "An error has occurred while parsing the HTML.\n\nThis HTML may be malformatted, or may not perfectly adhere to HTML5.\nIf you believe the exception above was due to something intentional, you can disable the strict parameter on html_to_vdom().\nOtherwise, repair your broken HTML and try again."
+        msg = (
+            "An error has occurred while parsing the HTML.\n\n"
+            "This HTML may be malformatted, or may not perfectly adhere to HTML5.\n"
+            "If you believe the exception above was due to something intentional, you "
+            "can disable the strict parameter on html_to_vdom().\n"
+            "Otherwise, repair your broken HTML and try again."
+        )
         raise HTMLParseError(msg) from e
 
-    return _etree_to_vdom(root_node, transforms)
+    return _etree_to_vdom(root_node, transforms, intercept_links)
 
 
 class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
@@ -125,32 +139,23 @@ class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
 
 
 def _etree_to_vdom(
-    node: etree._Element, transforms: Iterable[_ModelTransform]
+    node: etree._Element, transforms: Iterable[_ModelTransform], intercept_links: bool
 ) -> VdomDict:
-    """Transform an lxml etree node into a DOM model
-
-    Parameters:
-        node:
-            The ``lxml.etree._Element`` node
-        transforms:
-            Functions of the form ``transform(old) -> new`` where ``old`` is a VDOM
-            dictionary which will be replaced by ``new``. For example, you could use a
-            transform function to add highlighting to a ``<code/>`` block.
-    """
+    """Transform an lxml etree node into a DOM model."""
     if not isinstance(node, etree._Element):  # nocov
         msg = f"Expected node to be a etree._Element, not {type(node).__name__}"
         raise TypeError(msg)
 
     # Recursively call _etree_to_vdom() on all children
-    children = _generate_vdom_children(node, transforms)
+    children = _generate_vdom_children(node, transforms, intercept_links)
 
     # Convert the lxml node to a VDOM dict
     el = make_vdom(str(node.tag), dict(node.items()), *children)
 
-    # Perform any necessary mutations on the VDOM attributes to meet VDOM spec
-    _mutate_vdom(el)
+    # Perform necessary transformations on the VDOM attributes to meet VDOM spec
+    RequiredTransforms(el, intercept_links)
 
-    # Apply any provided transforms.
+    # Apply any user provided transforms.
     for transform in transforms:
         el = transform(el)
 
@@ -169,14 +174,15 @@ def _add_vdom_to_etree(parent: etree._Element, vdom: VdomDict | dict[str, Any]) 
     if tag:
         element = etree.SubElement(parent, tag)
         element.attrib.update(
-            _vdom_attr_to_html_str(k, v) for k, v in vdom.get("attributes", {}).items()
+            _react_attribute_to_html(k, v)
+            for k, v in vdom.get("attributes", {}).items()
         )
     else:
         element = parent
 
     for c in vdom.get("children", []):
         if hasattr(c, "render"):
-            c = _component_to_vdom(cast(ComponentType, c))
+            c = component_to_vdom(cast(ComponentType, c))
         if isinstance(c, dict):
             _add_vdom_to_etree(element, c)
 
@@ -200,36 +206,8 @@ def _add_vdom_to_etree(parent: etree._Element, vdom: VdomDict | dict[str, Any]) 
             element.text = f"{element.text or ''}{c}"
 
 
-def _mutate_vdom(vdom: VdomDict) -> None:
-    """Performs any necessary mutations on the VDOM attributes to meet VDOM spec.
-
-    Currently, this function only transforms the ``style`` attribute into a dictionary whose keys are
-    camelCase so as to be renderable by React.
-
-    This function may be extended in the future.
-    """
-    # Determine if the style attribute needs to be converted to a dict
-    if (
-        "attributes" in vdom
-        and "style" in vdom["attributes"]
-        and isinstance(vdom["attributes"]["style"], str)
-    ):
-        # Convince type checker that it's safe to mutate attributes
-        assert isinstance(vdom["attributes"], dict)  # noqa: S101
-
-        # Convert style attribute from str -> dict with camelCase keys
-        vdom["attributes"]["style"] = {
-            key.strip().replace("-", "_"): value.strip()
-            for key, value in (
-                part.split(":", 1)
-                for part in vdom["attributes"]["style"].split(";")
-                if ":" in part
-            )
-        }
-
-
 def _generate_vdom_children(
-    node: etree._Element, transforms: Iterable[_ModelTransform]
+    node: etree._Element, transforms: Iterable[_ModelTransform], intercept_links: bool
 ) -> list[VdomDict | str]:
     """Generates a list of VDOM children from an lxml node.
 
@@ -241,7 +219,7 @@ def _generate_vdom_children(
         chain(
             *(
                 # Recursively convert each child node to VDOM
-                [_etree_to_vdom(child, transforms)]
+                [_etree_to_vdom(child, transforms, intercept_links)]
                 # Insert the tail text between each child node
                 + ([child.tail] if child.tail else [])
                 for child in node.iterchildren(None)
@@ -250,70 +228,43 @@ def _generate_vdom_children(
     )
 
 
-def _component_to_vdom(component: ComponentType) -> VdomDict | str | None:
-    """Convert a component to a VDOM dictionary"""
+def component_to_vdom(component: ComponentType) -> VdomDict | str | None:
+    """Convert the first render of a component into a VDOM dictionary"""
     result = component.render()
     if hasattr(result, "render"):
-        result = _component_to_vdom(cast(ComponentType, result))
+        result = component_to_vdom(cast(ComponentType, result))
     return cast(Union[VdomDict, str, None], result)
 
 
-def del_html_head_body_transform(vdom: VdomDict) -> VdomDict:
-    """Transform intended for use with `html_to_vdom`.
-
-    Removes `<html>`, `<head>`, and `<body>` while preserving their children.
-
-    Parameters:
-        vdom:
-            The VDOM dictionary to transform.
-    """
-    if vdom["tagName"] in {"html", "body", "head"}:
-        return {"tagName": "", "children": vdom.setdefault("children", [])}
-    return vdom
-
-
-def _vdom_attr_to_html_str(key: str, value: Any) -> tuple[str, str]:
-    if key == "style":
-        if isinstance(value, dict):
-            value = ";".join(
-                # We lower only to normalize - CSS is case-insensitive:
-                # https://www.w3.org/TR/css-fonts-3/#font-family-casing
-                f"{_CAMEL_CASE_SUB_PATTERN.sub('-', k).lower()}:{v}"
-                for k, v in value.items()
-            )
-    elif (
-        # camel to data-* attributes
-        key.startswith("data_")
-        # camel to aria-* attributes
-        or key.startswith("aria_")
-        # handle special cases
-        or key in DASHED_HTML_ATTRS
-    ):
-        key = key.replace("_", "-")
-    elif (
-        # camel to data-* attributes
-        key.startswith("data")
-        # camel to aria-* attributes
-        or key.startswith("aria")
-        # handle special cases
-        or key in DASHED_HTML_ATTRS
-    ):
-        key = _CAMEL_CASE_SUB_PATTERN.sub("-", key)
-
+def _react_attribute_to_html(key: str, value: Any) -> tuple[str, str]:
+    """Convert a React attribute to an HTML attribute string."""
     if callable(value):  # nocov
         raise TypeError(f"Cannot convert callable attribute {key}={value} to HTML")
 
-    # Again, we lower the attribute name only to normalize - HTML is case-insensitive:
-    # http://w3c.github.io/html-reference/documents.html#case-insensitivity
+    if key == "style":
+        if isinstance(value, dict):
+            value = ";".join(
+                f"{CAMEL_CASE_PATTERN.sub('-', k).lower()}:{v}"
+                for k, v in value.items()
+            )
+
+    # Convert special attributes to kebab-case
+    elif key in DASHED_HTML_ATTRS:
+        key = CAMEL_CASE_PATTERN.sub("-", key)
+
+    # Retain data-* and aria-* attributes as provided
+    elif key.startswith("data-") or key.startswith("aria-"):
+        return key, str(value)
+
     return key.lower(), str(value)
 
 
 # see list of HTML attributes with dashes in them:
 # https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#attribute_list
-DASHED_HTML_ATTRS = {"accept_charset", "acceptCharset", "http_equiv", "httpEquiv"}
+DASHED_HTML_ATTRS = {"acceptCharset", "httpEquiv"}
 
 # Pattern for delimitting camelCase names (e.g. camelCase to camel-case)
-_CAMEL_CASE_SUB_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
+CAMEL_CASE_PATTERN = re.compile(r"(?<!^)(?=[A-Z])")
 
 
 def import_dotted_path(dotted_path: str) -> Any:
@@ -344,3 +295,8 @@ class Singleton:
             orig = super()
             cls._instance = orig.__new__(cls, *args, **kw)
         return cls._instance
+
+
+def str_to_bool(s: str) -> bool:
+    """Convert a string to a boolean value."""
+    return s.lower() in {"y", "yes", "t", "true", "on", "1"}

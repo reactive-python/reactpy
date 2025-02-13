@@ -40,23 +40,50 @@ def test_ref_repr():
 @pytest.mark.parametrize(
     "case",
     [
+        # 0: Single terminating tag
         {"source": "<div/>", "model": {"tagName": "div"}},
+        # 1: Single terminating tag with attributes
         {
             "source": "<div style='background-color:blue'/>",
             "model": {
                 "tagName": "div",
-                "attributes": {"style": {"background_color": "blue"}},
+                "attributes": {"style": {"backgroundColor": "blue"}},
             },
         },
+        # 2: Single tag with closure and a text-based child
         {
             "source": "<div>Hello!</div>",
             "model": {"tagName": "div", "children": ["Hello!"]},
         },
+        # 3: Single tag with closure and a tag-based child
         {
             "source": "<div>Hello!<p>World!</p></div>",
             "model": {
                 "tagName": "div",
                 "children": ["Hello!", {"tagName": "p", "children": ["World!"]}],
+            },
+        },
+        # 4: A snippet with no root HTML node
+        {
+            "source": "<p>Hello</p><div>World</div>",
+            "model": {
+                "tagName": "div",
+                "children": [
+                    {"tagName": "p", "children": ["Hello"]},
+                    {"tagName": "div", "children": ["World"]},
+                ],
+            },
+        },
+        # 5: Self-closing tags
+        {
+            "source": "<p>hello<br>world</p>",
+            "model": {
+                "tagName": "p",
+                "children": [
+                    "hello",
+                    {"tagName": "br"},
+                    "world",
+                ],
             },
         },
     ],
@@ -65,7 +92,123 @@ def test_html_to_vdom(case):
     assert utils.html_to_vdom(case["source"]) == case["model"]
 
 
-def test_html_to_vdom_transform():
+@pytest.mark.parametrize(
+    "case",
+    [
+        # 0: Style attribute transformation
+        {
+            "source": '<p style="color: red; background-color : green; ">Hello World.</p>',
+            "model": {
+                "tagName": "p",
+                "attributes": {"style": {"backgroundColor": "green", "color": "red"}},
+                "children": ["Hello World."],
+            },
+        },
+        # 1: Convert HTML style properties to ReactJS style
+        {
+            "source": '<p class="my-class">Hello World.</p>',
+            "model": {
+                "tagName": "p",
+                "attributes": {"className": "my-class"},
+                "children": ["Hello World."],
+            },
+        },
+        # 2: Convert <textarea> children into the ReactJS `defaultValue` prop
+        {
+            "source": "<textarea>Hello World.</textarea>",
+            "model": {
+                "tagName": "textarea",
+                "attributes": {"defaultValue": "Hello World."},
+            },
+        },
+        # 3: Convert <select> trees into ReactJS equivalent
+        {
+            "source": "<select><option selected>Option 1</option></select>",
+            "model": {
+                "tagName": "select",
+                "attributes": {"defaultValue": "Option 1"},
+                "children": [
+                    {
+                        "children": ["Option 1"],
+                        "tagName": "option",
+                        "attributes": {"value": "Option 1"},
+                    }
+                ],
+            },
+        },
+        # 4: Convert <select> trees into ReactJS equivalent (multiple choice, multiple selected)
+        {
+            "source": "<select multiple><option selected>Option 1</option><option selected>Option 2</option></select>",
+            "model": {
+                "tagName": "select",
+                "attributes": {
+                    "defaultValue": ["Option 1", "Option 2"],
+                    "multiple": True,
+                },
+                "children": [
+                    {
+                        "children": ["Option 1"],
+                        "tagName": "option",
+                        "attributes": {"value": "Option 1"},
+                    },
+                    {
+                        "children": ["Option 2"],
+                        "tagName": "option",
+                        "attributes": {"value": "Option 2"},
+                    },
+                ],
+            },
+        },
+        # 5: Convert <input> value attribute into `defaultValue`
+        {
+            "source": '<input type="text" value="Hello World.">',
+            "model": {
+                "tagName": "input",
+                "attributes": {"defaultValue": "Hello World.", "type": "text"},
+            },
+        },
+        # 6: Infer ReactJS `key` from the `id` attribute
+        {
+            "source": '<div id="my-key"></div>',
+            "model": {
+                "tagName": "div",
+                "key": "my-key",
+                "attributes": {"id": "my-key"},
+            },
+        },
+        # 7: Infer ReactJS `key` from the `name` attribute
+        {
+            "source": '<input type="text" name="my-input">',
+            "model": {
+                "tagName": "input",
+                "key": "my-input",
+                "attributes": {"type": "text", "name": "my-input"},
+            },
+        },
+    ],
+)
+def test_html_to_vdom_default_transforms(case):
+    assert utils.html_to_vdom(case["source"]) == case["model"]
+
+
+def test_html_to_vdom_intercept_links():
+    source = '<a href="https://example.com">Hello World</a>'
+    expected = {
+        "tagName": "a",
+        "children": ["Hello World"],
+        "attributes": {"href": "https://example.com"},
+    }
+    result = utils.html_to_vdom(source, intercept_links=True)
+
+    # Check if the result equals expected when removing `eventHandlers` from the result dict
+    event_handlers = result.pop("eventHandlers", {})
+    assert result == expected
+
+    # Make sure the event handlers dict contains an `onClick` key
+    assert "onClick" in event_handlers
+
+
+def test_html_to_vdom_custom_transform():
     source = "<p>hello <a>world</a> and <a>universe</a>lmao</p>"
 
     def make_links_blue(node):
@@ -92,7 +235,9 @@ def test_html_to_vdom_transform():
         ],
     }
 
-    assert utils.html_to_vdom(source, make_links_blue) == expected
+    assert (
+        utils.html_to_vdom(source, make_links_blue, intercept_links=False) == expected
+    )
 
 
 def test_non_html_tag_behavior():
@@ -110,47 +255,6 @@ def test_non_html_tag_behavior():
 
     with pytest.raises(utils.HTMLParseError):
         utils.html_to_vdom(source, strict=True)
-
-
-def test_html_to_vdom_with_null_tag():
-    source = "<p>hello<br>world</p>"
-
-    expected = {
-        "tagName": "p",
-        "children": [
-            "hello",
-            {"tagName": "br"},
-            "world",
-        ],
-    }
-
-    assert utils.html_to_vdom(source) == expected
-
-
-def test_html_to_vdom_with_style_attr():
-    source = '<p style="color: red; background-color : green; ">Hello World.</p>'
-
-    expected = {
-        "attributes": {"style": {"background_color": "green", "color": "red"}},
-        "children": ["Hello World."],
-        "tagName": "p",
-    }
-
-    assert utils.html_to_vdom(source) == expected
-
-
-def test_html_to_vdom_with_no_parent_node():
-    source = "<p>Hello</p><div>World</div>"
-
-    expected = {
-        "tagName": "div",
-        "children": [
-            {"tagName": "p", "children": ["Hello"]},
-            {"tagName": "div", "children": ["World"]},
-        ],
-    }
-
-    assert utils.html_to_vdom(source) == expected
 
 
 SOME_OBJECT = object()
@@ -226,10 +330,8 @@ def example_child():
             '<div><div>hello</div><a href="https://example.com">example</a><button></button></div>',
         ),
         (
-            html.div(
-                {"data_Something": 1, "dataSomethingElse": 2, "dataisnotdashed": 3}
-            ),
-            '<div data-something="1" data-something-else="2" dataisnotdashed="3"></div>',
+            html.div({"data-Something": 1, "dataCamelCase": 2, "datalowercase": 3}),
+            '<div data-Something="1" datacamelcase="2" datalowercase="3"></div>',
         ),
         (
             html.div(example_parent()),

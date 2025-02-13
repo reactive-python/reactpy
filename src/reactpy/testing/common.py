@@ -16,6 +16,7 @@ from typing_extensions import ParamSpec
 from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT, REACTPY_WEB_MODULES_DIR
 from reactpy.core._life_cycle_hook import HOOK_STACK, LifeCycleHook
 from reactpy.core.events import EventHandler, to_event_handler_function
+from reactpy.utils import str_to_bool
 
 
 def clear_reactpy_web_modules_dir() -> None:
@@ -29,14 +30,7 @@ _R = TypeVar("_R")
 
 
 _DEFAULT_POLL_DELAY = 0.1
-GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "False") in {
-    "y",
-    "yes",
-    "t",
-    "true",
-    "on",
-    "1",
-}
+GITHUB_ACTIONS = str_to_bool(os.getenv("GITHUB_ACTIONS", ""))
 
 
 class poll(Generic[_R]):  # noqa: N801
