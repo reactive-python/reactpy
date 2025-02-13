@@ -185,6 +185,11 @@ def test_html_to_vdom(case):
                 "attributes": {"type": "text", "name": "my-input"},
             },
         },
+        # 8: Infer ReactJS `key` from the `key` attribute
+        {
+            "source": '<div key="my-key"></div>',
+            "model": {"tagName": "div", "key": "my-key"},
+        },
     ],
 )
 def test_html_to_vdom_default_transforms(case):

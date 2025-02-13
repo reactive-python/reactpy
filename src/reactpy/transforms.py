@@ -98,12 +98,18 @@ class RequiredTransforms:
     def infer_key_from_attributes(vdom: VdomDict) -> None:
         """Infer the ReactJS `key` by looking at any attributes that should be unique."""
         attributes = vdom.get("attributes", {})
+        if not attributes:
+            return
 
-        # Infer 'key' from 'id'
+        # Infer 'key' from 'attributes.key'
+        key = attributes.pop("key", None)
+
+        # Infer 'key' from 'attributes.id'
+        if key is None:
         key = attributes.get("id")
 
-        # Fallback: Infer 'key' from 'name'
-        if not key and vdom["tagName"] in {"input", "select", "textarea"}:
+        # Infer 'key' from 'attributes.name'
+        if key is None and vdom["tagName"] in {"input", "select", "textarea"}:
             key = attributes.get("name")
 
         if key:
