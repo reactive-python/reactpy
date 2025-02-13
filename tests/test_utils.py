@@ -337,6 +337,10 @@ def example_child():
             html.div(example_parent()),
             '<div><div id="sample" style="padding:15px"><h1>Sample Application</h1></div></div>',
         ),
+        (
+            html.form({"acceptCharset": "utf-8"}),
+            '<form accept-charset="utf-8"></form>',
+        ),
     ],
 )
 def test_vdom_to_html(vdom_in, html_out):
