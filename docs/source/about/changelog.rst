@@ -25,6 +25,7 @@ Unreleased
 - :pull:`1113` - Added support for Python 3.12 and 3.13.
 - :pull:`1264` - Added ``reactpy.use_async_effect`` hook.
 - :pull:`1267` - Added ``shutdown_timeout`` parameter to the ``reactpy.use_async_effect`` hook.
+- :pull:`1278` - ``reactpy.utils.html_to_vdom`` has been upgraded to handle more complex scenarios without causing ReactJS rendering errors.
 
 **Changed**
 
@@ -38,6 +39,7 @@ Unreleased
 - :pull:`1113` - Renamed ``reactpy.config.REACTPY_DEBUG_MODE`` to ``reactpy.config.REACTPY_DEBUG``.
 - :pull:`1113` - ``@reactpy/client`` now exports ``React`` and ``ReactDOM``.
 - :pull:`1263` - ReactPy no longer auto-converts ``snake_case`` props to ``camelCase``. It is now the responsibility of the user to ensure that props are in the correct format.
+- :pull:`1278` - ``reactpy.utils.vdom_to_html`` will now retain the user's original casing for element ``data-*`` and ``aria-*`` attributes.
 
 **Removed**
 
