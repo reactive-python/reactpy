@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, overload
 
 from reactpy.core.vdom import custom_vdom_constructor, make_vdom_constructor
 
@@ -176,6 +176,14 @@ class SvgConstructor:
 
     __cache__: ClassVar[dict[str, VdomDictConstructor]] = {}
 
+    @overload
+    def __call__(
+        self, attributes: VdomAttributes, /, *children: VdomChildren
+    ) -> VdomDict: ...
+
+    @overload
+    def __call__(self, *children: VdomChildren) -> VdomDict: ...
+
     def __call__(
         self, *attributes_and_children: VdomAttributes | VdomChildren
     ) -> VdomDict:
@@ -261,6 +269,7 @@ class SvgConstructor:
     tspan: VdomDictConstructor
     use: VdomDictConstructor
     view: VdomDictConstructor
+    svg: VdomDictConstructor
 
 
 class HtmlConstructor:
@@ -277,6 +286,7 @@ class HtmlConstructor:
     __cache__: ClassVar[dict[str, VdomDictConstructor]] = {
         "script": custom_vdom_constructor(_script),
         "fragment": custom_vdom_constructor(_fragment),
+        "svg": SvgConstructor(),
     }
 
     def __getattr__(self, value: str) -> VdomDictConstructor:
@@ -410,7 +420,7 @@ class HtmlConstructor:
     # Special Case: SVG elements
     # Since SVG elements have a different set of allowed children, they are
     # separated into a different constructor, and are accessed via `html.svg.example()`
-    svg: SvgConstructor = SvgConstructor()
+    svg: SvgConstructor
 
 
 html = HtmlConstructor()
