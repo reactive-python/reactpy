@@ -88,8 +88,8 @@ def test_ref_repr():
         },
     ],
 )
-def test_html_to_vdom(case):
-    assert utils.html_to_vdom(case["source"]) == case["model"]
+def test_string_to_reactpy(case):
+    assert utils.string_to_reactpy(case["source"]) == case["model"]
 
 
 @pytest.mark.parametrize(
@@ -192,18 +192,18 @@ def test_html_to_vdom(case):
         },
     ],
 )
-def test_html_to_vdom_default_transforms(case):
-    assert utils.html_to_vdom(case["source"]) == case["model"]
+def test_string_to_reactpy_default_transforms(case):
+    assert utils.string_to_reactpy(case["source"]) == case["model"]
 
 
-def test_html_to_vdom_intercept_links():
+def test_string_to_reactpy_intercept_links():
     source = '<a href="https://example.com">Hello World</a>'
     expected = {
         "tagName": "a",
         "children": ["Hello World"],
         "attributes": {"href": "https://example.com"},
     }
-    result = utils.html_to_vdom(source, intercept_links=True)
+    result = utils.string_to_reactpy(source, intercept_links=True)
 
     # Check if the result equals expected when removing `eventHandlers` from the result dict
     event_handlers = result.pop("eventHandlers", {})
@@ -213,7 +213,7 @@ def test_html_to_vdom_intercept_links():
     assert "onClick" in event_handlers
 
 
-def test_html_to_vdom_custom_transform():
+def test_string_to_reactpy_custom_transform():
     source = "<p>hello <a>world</a> and <a>universe</a>lmao</p>"
 
     def make_links_blue(node):
@@ -241,7 +241,8 @@ def test_html_to_vdom_custom_transform():
     }
 
     assert (
-        utils.html_to_vdom(source, make_links_blue, intercept_links=False) == expected
+        utils.string_to_reactpy(source, make_links_blue, intercept_links=False)
+        == expected
     )
 
 
@@ -256,10 +257,10 @@ def test_non_html_tag_behavior():
         ],
     }
 
-    assert utils.html_to_vdom(source, strict=False) == expected
+    assert utils.string_to_reactpy(source, strict=False) == expected
 
     with pytest.raises(utils.HTMLParseError):
-        utils.html_to_vdom(source, strict=True)
+        utils.string_to_reactpy(source, strict=True)
 
 
 SOME_OBJECT = object()
@@ -343,18 +344,22 @@ def example_child():
             '<div><div id="sample" style="padding:15px"><h1>Sample Application</h1></div></div>',
         ),
         (
+            example_parent(),
+            '<div id="sample" style="padding:15px"><h1>Sample Application</h1></div>',
+        ),
+        (
             html.form({"acceptCharset": "utf-8"}),
             '<form accept-charset="utf-8"></form>',
         ),
     ],
 )
-def test_vdom_to_html(vdom_in, html_out):
-    assert utils.vdom_to_html(vdom_in) == html_out
+def test_reactpy_to_string(vdom_in, html_out):
+    assert utils.reactpy_to_string(vdom_in) == html_out
 
 
-def test_vdom_to_html_error():
+def test_reactpy_to_string_error():
     with pytest.raises(TypeError, match="Expected a VDOM dict"):
-        utils.vdom_to_html({"notVdom": True})
+        utils.reactpy_to_string({"notVdom": True})
 
 
 def test_invalid_dotted_path():

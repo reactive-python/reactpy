@@ -13,7 +13,7 @@ from reactpy.config import (
     REACTPY_RECONNECT_MAX_RETRIES,
 )
 from reactpy.types import ReactPyConfig, VdomDict
-from reactpy.utils import import_dotted_path, vdom_to_html
+from reactpy.utils import import_dotted_path, reactpy_to_string
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ def check_path(url_path: str) -> str:  # nocov
 
 def vdom_head_to_html(head: VdomDict) -> str:
     if isinstance(head, dict) and head.get("tagName") == "head":
-        return vdom_to_html(head)
+        return reactpy_to_string(head)
 
     raise ValueError(
         "Invalid head element! Element must be either `html.head` or a string."

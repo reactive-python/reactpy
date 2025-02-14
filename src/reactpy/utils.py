@@ -61,32 +61,31 @@ class Ref(Generic[_RefValue]):
         return f"{type(self).__name__}({current})"
 
 
-def vdom_to_html(vdom: VdomDict) -> str:
-    """Convert a VDOM dictionary into an HTML string
-
-    Only the following keys are translated to HTML:
-
-    - ``tagName``
-    - ``attributes``
-    - ``children`` (must be strings or more VDOM dicts)
+def reactpy_to_string(root: VdomDict | ComponentType) -> str:
+    """Convert a ReactPy component or `reactpy.html` element into an HTML string.
 
     Parameters:
-        vdom: The VdomDict element to convert to HTML
+        root: The ReactPy element to convert to a string.
     """
-    temp_root = etree.Element("__temp__")
-    _add_vdom_to_etree(temp_root, vdom)
-    html = cast(bytes, tostring(temp_root)).decode()  # type: ignore
-    # strip out temp root <__temp__> element
+    temp_container = etree.Element("__temp__")
+
+    if not isinstance(root, dict):
+        root = component_to_vdom(root)
+
+    _add_vdom_to_etree(temp_container, root)
+    html = cast(bytes, tostring(temp_container)).decode()  # type: ignore
+
+    # Strip out temp root <__temp__> element
     return html[10:-11]
 
 
-def html_to_vdom(
+def string_to_reactpy(
     html: str,
     *transforms: _ModelTransform,
     strict: bool = True,
     intercept_links: bool = True,
 ) -> VdomDict:
-    """Transform HTML into a DOM model. Unique keys can be provided to HTML elements
+    """Transform HTML string into a ReactPy DOM model. ReactJS keys can be provided to HTML elements
     using a ``key=...`` attribute within your HTML tag.
 
     Parameters:
@@ -126,7 +125,7 @@ def html_to_vdom(
             "An error has occurred while parsing the HTML.\n\n"
             "This HTML may be malformatted, or may not perfectly adhere to HTML5.\n"
             "If you believe the exception above was due to something intentional, you "
-            "can disable the strict parameter on html_to_vdom().\n"
+            "can disable the strict parameter on string_to_reactpy().\n"
             "Otherwise, repair your broken HTML and try again."
         )
         raise HTMLParseError(msg) from e
@@ -228,12 +227,17 @@ def _generate_vdom_children(
     )
 
 
-def component_to_vdom(component: ComponentType) -> VdomDict | str | None:
+def component_to_vdom(component: ComponentType) -> VdomDict:
     """Convert the first render of a component into a VDOM dictionary"""
     result = component.render()
+
+    if isinstance(result, dict):
+        return result
     if hasattr(result, "render"):
-        result = component_to_vdom(cast(ComponentType, result))
-    return cast(Union[VdomDict, str, None], result)
+        return component_to_vdom(cast(ComponentType, result))
+    elif isinstance(result, str):
+        return make_vdom("div", {}, result)
+    return make_vdom("")
 
 
 def _react_attribute_to_html(key: str, value: Any) -> tuple[str, str]:

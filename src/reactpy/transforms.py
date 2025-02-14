@@ -7,7 +7,7 @@ from reactpy.types import VdomDict
 
 
 class RequiredTransforms:
-    """Performs any necessary transformations related to `html_to_vdom` to automatically prevent
+    """Performs any necessary transformations related to `string_to_reactpy` to automatically prevent
     issues with React's rendering engine.
     """
 
@@ -83,7 +83,7 @@ class RequiredTransforms:
     def input_element_value_prop_to_defaultValue(vdom: VdomDict) -> None:
         """ReactJS will complain that inputs are uncontrolled if defining the `value` prop,
         so we use `defaultValue` instead. This has an added benefit of not deleting/overriding
-        any user input when a `html_to_vdom` re-renders fields that do not retain their `value`,
+        any user input when a `string_to_reactpy` re-renders fields that do not retain their `value`,
         such as password fields."""
         if vdom["tagName"] != "input":
             return
@@ -106,7 +106,7 @@ class RequiredTransforms:
 
         # Infer 'key' from 'attributes.id'
         if key is None:
-        key = attributes.get("id")
+            key = attributes.get("id")
 
         # Infer 'key' from 'attributes.name'
         if key is None and vdom["tagName"] in {"input", "select", "textarea"}:
