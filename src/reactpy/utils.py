@@ -4,7 +4,7 @@ import re
 from collections.abc import Iterable
 from importlib import import_module
 from itertools import chain
-from typing import Any, Callable, Generic, TypeVar, Union, cast
+from typing import Any, Callable, Generic, TypeVar, cast
 
 from lxml import etree
 from lxml.html import fromstring, tostring
