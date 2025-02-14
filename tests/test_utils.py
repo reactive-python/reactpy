@@ -278,7 +278,17 @@ def example_middle():
 
 @component
 def example_child():
-    return html.h1("Sample Application")
+    return html.h1("Example")
+
+
+@component
+def example_str_return():
+    return "Example"
+
+
+@component
+def example_none_return():
+    return None
 
 
 @pytest.mark.parametrize(
@@ -341,15 +351,23 @@ def example_child():
         ),
         (
             html.div(example_parent()),
-            '<div><div id="sample" style="padding:15px"><h1>Sample Application</h1></div></div>',
+            '<div><div id="sample" style="padding:15px"><h1>Example</h1></div></div>',
         ),
         (
             example_parent(),
-            '<div id="sample" style="padding:15px"><h1>Sample Application</h1></div>',
+            '<div id="sample" style="padding:15px"><h1>Example</h1></div>',
         ),
         (
             html.form({"acceptCharset": "utf-8"}),
             '<form accept-charset="utf-8"></form>',
+        ),
+        (
+            example_str_return(),
+            "<div>Example</div>",
+        ),
+        (
+            example_none_return(),
+            "",
         ),
     ],
 )
