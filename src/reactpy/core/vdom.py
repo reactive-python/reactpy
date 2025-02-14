@@ -220,11 +220,11 @@ def custom_vdom_constructor(func: _CustomVdomDictConstructor) -> VdomDictConstru
 
 def separate_attributes_and_children(
     values: Sequence[Any],
-) -> tuple[dict[str, Any], list[Any]]:
+) -> tuple[VdomAttributes, list[Any]]:
     if not values:
         return {}, []
 
-    attributes: dict[str, Any]
+    attributes: VdomAttributes
     children_or_iterables: Sequence[Any]
     if _is_attributes(values[0]):
         attributes, *children_or_iterables = values
@@ -244,8 +244,8 @@ def separate_attributes_and_children(
 
 def separate_attributes_and_event_handlers(
     attributes: Mapping[str, Any],
-) -> tuple[dict[str, Any], EventHandlerDict]:
-    separated_attributes = {}
+) -> tuple[VdomAttributes, EventHandlerDict]:
+    separated_attributes: VdomAttributes = {}
     separated_event_handlers: dict[str, EventHandlerType] = {}
 
     for k, v in attributes.items():
@@ -265,7 +265,7 @@ def separate_attributes_and_event_handlers(
 
         separated_event_handlers[k] = handler
 
-    return separated_attributes, dict(separated_event_handlers.items())
+    return separated_attributes, separated_event_handlers
 
 
 def _is_attributes(value: Any) -> bool:

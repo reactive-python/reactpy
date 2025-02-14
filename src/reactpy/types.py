@@ -2,18 +2,18 @@ from __future__ import annotations
 
 import sys
 from collections import namedtuple
-from collections.abc import Mapping, Sequence
+from collections.abc import Awaitable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     Callable,
     Generic,
     Literal,
     NamedTuple,
+    NotRequired,
     Protocol,
     TypeVar,
     overload,
@@ -101,6 +101,9 @@ EventFunc = Callable[[dict[str, Any]], Awaitable[None] | None]
 VdomAttributes = TypedDict(
     "VdomAttributes",
     {
+        "key": Key,
+        "value": Any,
+        "defaultValue": Any,
         "dangerouslySetInnerHTML": dict[str, str],
         "suppressContentEditableWarning": bool,
         "suppressHydrationWarning": bool,
@@ -225,9 +228,7 @@ VdomAttributes = TypedDict(
         "onSubmitCapture": EventFunc,
         "formAction": str | Callable,
         "checked": bool,
-        "value": str,
         "defaultChecked": bool,
-        "defaultValue": str,
         "accept": str,
         "alt": str,
         "capture": str,
@@ -340,24 +341,20 @@ VdomAttributes = TypedDict(
         "onWaitingCapture": EventFunc,
     },
     total=False,
-    extra_items=Any,
+    # TODO: Enable this when Python 3.14 typing extensions are released
+    # extra_items=Any,
 )
 
 
-class _VdomDictOptional(TypedDict, total=False):
-    key: Key | None
-    children: Sequence[ComponentType | VdomChild]
-    attributes: VdomAttributes
-    eventHandlers: EventHandlerDict
-    importSource: ImportSourceDict
-
-
-class _VdomDictRequired(TypedDict, total=True):
-    tagName: str
-
-
-class VdomDict(_VdomDictRequired, _VdomDictOptional):
+class VdomDict(TypedDict):
     """A :ref:`VDOM` dictionary"""
+
+    tagName: str
+    key: NotRequired[Key | None]
+    children: NotRequired[Sequence[ComponentType | VdomChild]]
+    attributes: NotRequired[VdomAttributes]
+    eventHandlers: NotRequired[EventHandlerDict]
+    importSource: NotRequired[ImportSourceDict]
 
 
 VdomChild: TypeAlias = "ComponentType | VdomDict | str | None | Any"
@@ -378,7 +375,7 @@ class _OptionalVdomJson(TypedDict, total=False):
     key: Key
     error: str
     children: list[Any]
-    attributes: dict[str, Any]
+    attributes: VdomAttributes
     eventHandlers: dict[str, _JsonEventTarget]
     importSource: _JsonImportSource
 
