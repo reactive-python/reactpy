@@ -18,7 +18,7 @@ import jsonpointer
 import reactpy
 from reactpy.config import REACTPY_DEBUG, REACTPY_PATH_PREFIX, REACTPY_WEB_MODULES_DIR
 from reactpy.types import VdomDict
-from reactpy.utils import vdom_to_html
+from reactpy.utils import reactpy_to_string
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -77,7 +77,7 @@ def pyscript_component_html(
     file_paths: Sequence[str], initial: str | VdomDict, root: str
 ) -> str:
     """Renders a PyScript component with the user's code."""
-    _initial = initial if isinstance(initial, str) else vdom_to_html(initial)
+    _initial = initial if isinstance(initial, str) else reactpy_to_string(initial)
     uuid = uuid4().hex
     executor_code = pyscript_executor_html(file_paths=file_paths, uuid=uuid, root=root)
 
@@ -144,7 +144,7 @@ def extend_pyscript_config(
     return orjson.dumps(pyscript_config).decode("utf-8")
 
 
-def reactpy_version_string() -> str:  # pragma: no cover
+def reactpy_version_string() -> str:  # nocov
     from reactpy.testing.common import GITHUB_ACTIONS
 
     local_version = reactpy.__version__

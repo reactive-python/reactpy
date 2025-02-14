@@ -22,7 +22,7 @@ class EffectFunc(Protocol):
 logger = logging.getLogger(__name__)
 
 
-class _HookStack(Singleton):  # pragma: no cover
+class _HookStack(Singleton):  # nocov
     """A singleton object which manages the current component tree's hooks.
     Life cycle hooks can be stored in a thread local or context variable depending
     on the platform."""

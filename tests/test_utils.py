@@ -40,18 +40,22 @@ def test_ref_repr():
 @pytest.mark.parametrize(
     "case",
     [
+        # 0: Single terminating tag
         {"source": "<div/>", "model": {"tagName": "div"}},
+        # 1: Single terminating tag with attributes
         {
             "source": "<div style='background-color:blue'/>",
             "model": {
                 "tagName": "div",
-                "attributes": {"style": {"background_color": "blue"}},
+                "attributes": {"style": {"backgroundColor": "blue"}},
             },
         },
+        # 2: Single tag with closure and a text-based child
         {
             "source": "<div>Hello!</div>",
             "model": {"tagName": "div", "children": ["Hello!"]},
         },
+        # 3: Single tag with closure and a tag-based child
         {
             "source": "<div>Hello!<p>World!</p></div>",
             "model": {
@@ -59,13 +63,157 @@ def test_ref_repr():
                 "children": ["Hello!", {"tagName": "p", "children": ["World!"]}],
             },
         },
+        # 4: A snippet with no root HTML node
+        {
+            "source": "<p>Hello</p><div>World</div>",
+            "model": {
+                "tagName": "div",
+                "children": [
+                    {"tagName": "p", "children": ["Hello"]},
+                    {"tagName": "div", "children": ["World"]},
+                ],
+            },
+        },
+        # 5: Self-closing tags
+        {
+            "source": "<p>hello<br>world</p>",
+            "model": {
+                "tagName": "p",
+                "children": [
+                    "hello",
+                    {"tagName": "br"},
+                    "world",
+                ],
+            },
+        },
     ],
 )
-def test_html_to_vdom(case):
-    assert utils.html_to_vdom(case["source"]) == case["model"]
+def test_string_to_reactpy(case):
+    assert utils.string_to_reactpy(case["source"]) == case["model"]
 
 
-def test_html_to_vdom_transform():
+@pytest.mark.parametrize(
+    "case",
+    [
+        # 0: Style attribute transformation
+        {
+            "source": '<p style="color: red; background-color : green; ">Hello World.</p>',
+            "model": {
+                "tagName": "p",
+                "attributes": {"style": {"backgroundColor": "green", "color": "red"}},
+                "children": ["Hello World."],
+            },
+        },
+        # 1: Convert HTML style properties to ReactJS style
+        {
+            "source": '<p class="my-class">Hello World.</p>',
+            "model": {
+                "tagName": "p",
+                "attributes": {"className": "my-class"},
+                "children": ["Hello World."],
+            },
+        },
+        # 2: Convert <textarea> children into the ReactJS `defaultValue` prop
+        {
+            "source": "<textarea>Hello World.</textarea>",
+            "model": {
+                "tagName": "textarea",
+                "attributes": {"defaultValue": "Hello World."},
+            },
+        },
+        # 3: Convert <select> trees into ReactJS equivalent
+        {
+            "source": "<select><option selected>Option 1</option></select>",
+            "model": {
+                "tagName": "select",
+                "attributes": {"defaultValue": "Option 1"},
+                "children": [
+                    {
+                        "children": ["Option 1"],
+                        "tagName": "option",
+                        "attributes": {"value": "Option 1"},
+                    }
+                ],
+            },
+        },
+        # 4: Convert <select> trees into ReactJS equivalent (multiple choice, multiple selected)
+        {
+            "source": "<select multiple><option selected>Option 1</option><option selected>Option 2</option></select>",
+            "model": {
+                "tagName": "select",
+                "attributes": {
+                    "defaultValue": ["Option 1", "Option 2"],
+                    "multiple": True,
+                },
+                "children": [
+                    {
+                        "children": ["Option 1"],
+                        "tagName": "option",
+                        "attributes": {"value": "Option 1"},
+                    },
+                    {
+                        "children": ["Option 2"],
+                        "tagName": "option",
+                        "attributes": {"value": "Option 2"},
+                    },
+                ],
+            },
+        },
+        # 5: Convert <input> value attribute into `defaultValue`
+        {
+            "source": '<input type="text" value="Hello World.">',
+            "model": {
+                "tagName": "input",
+                "attributes": {"defaultValue": "Hello World.", "type": "text"},
+            },
+        },
+        # 6: Infer ReactJS `key` from the `id` attribute
+        {
+            "source": '<div id="my-key"></div>',
+            "model": {
+                "tagName": "div",
+                "key": "my-key",
+                "attributes": {"id": "my-key"},
+            },
+        },
+        # 7: Infer ReactJS `key` from the `name` attribute
+        {
+            "source": '<input type="text" name="my-input">',
+            "model": {
+                "tagName": "input",
+                "key": "my-input",
+                "attributes": {"type": "text", "name": "my-input"},
+            },
+        },
+        # 8: Infer ReactJS `key` from the `key` attribute
+        {
+            "source": '<div key="my-key"></div>',
+            "model": {"tagName": "div", "key": "my-key"},
+        },
+    ],
+)
+def test_string_to_reactpy_default_transforms(case):
+    assert utils.string_to_reactpy(case["source"]) == case["model"]
+
+
+def test_string_to_reactpy_intercept_links():
+    source = '<a href="https://example.com">Hello World</a>'
+    expected = {
+        "tagName": "a",
+        "children": ["Hello World"],
+        "attributes": {"href": "https://example.com"},
+    }
+    result = utils.string_to_reactpy(source, intercept_links=True)
+
+    # Check if the result equals expected when removing `eventHandlers` from the result dict
+    event_handlers = result.pop("eventHandlers", {})
+    assert result == expected
+
+    # Make sure the event handlers dict contains an `onClick` key
+    assert "onClick" in event_handlers
+
+
+def test_string_to_reactpy_custom_transform():
     source = "<p>hello <a>world</a> and <a>universe</a>lmao</p>"
 
     def make_links_blue(node):
@@ -92,7 +240,10 @@ def test_html_to_vdom_transform():
         ],
     }
 
-    assert utils.html_to_vdom(source, make_links_blue) == expected
+    assert (
+        utils.string_to_reactpy(source, make_links_blue, intercept_links=False)
+        == expected
+    )
 
 
 def test_non_html_tag_behavior():
@@ -106,82 +257,10 @@ def test_non_html_tag_behavior():
         ],
     }
 
-    assert utils.html_to_vdom(source, strict=False) == expected
+    assert utils.string_to_reactpy(source, strict=False) == expected
 
     with pytest.raises(utils.HTMLParseError):
-        utils.html_to_vdom(source, strict=True)
-
-
-def test_html_to_vdom_with_null_tag():
-    source = "<p>hello<br>world</p>"
-
-    expected = {
-        "tagName": "p",
-        "children": [
-            "hello",
-            {"tagName": "br"},
-            "world",
-        ],
-    }
-
-    assert utils.html_to_vdom(source) == expected
-
-
-def test_html_to_vdom_with_style_attr():
-    source = '<p style="color: red; background-color : green; ">Hello World.</p>'
-
-    expected = {
-        "attributes": {"style": {"background_color": "green", "color": "red"}},
-        "children": ["Hello World."],
-        "tagName": "p",
-    }
-
-    assert utils.html_to_vdom(source) == expected
-
-
-def test_html_to_vdom_with_no_parent_node():
-    source = "<p>Hello</p><div>World</div>"
-
-    expected = {
-        "tagName": "div",
-        "children": [
-            {"tagName": "p", "children": ["Hello"]},
-            {"tagName": "div", "children": ["World"]},
-        ],
-    }
-
-    assert utils.html_to_vdom(source) == expected
-
-
-def test_del_html_body_transform():
-    source = """
-    <!DOCTYPE html>
-    <html lang="en">
-
-    <head>
-    <title>My Title</title>
-    </head>
-
-    <body><h1>Hello World</h1></body>
-
-    </html>
-    """
-
-    expected = {
-        "tagName": "",
-        "children": [
-            {
-                "tagName": "",
-                "children": [{"tagName": "title", "children": ["My Title"]}],
-            },
-            {
-                "tagName": "",
-                "children": [{"tagName": "h1", "children": ["Hello World"]}],
-            },
-        ],
-    }
-
-    assert utils.html_to_vdom(source, utils.del_html_head_body_transform) == expected
+        utils.string_to_reactpy(source, strict=True)
 
 
 SOME_OBJECT = object()
@@ -199,7 +278,17 @@ def example_middle():
 
 @component
 def example_child():
-    return html.h1("Sample Application")
+    return html.h1("Example")
+
+
+@component
+def example_str_return():
+    return "Example"
+
+
+@component
+def example_none_return():
+    return None
 
 
 @pytest.mark.parametrize(
@@ -257,24 +346,38 @@ def example_child():
             '<div><div>hello</div><a href="https://example.com">example</a><button></button></div>',
         ),
         (
-            html.div(
-                {"data_Something": 1, "dataSomethingElse": 2, "dataisnotdashed": 3}
-            ),
-            '<div data-something="1" data-something-else="2" dataisnotdashed="3"></div>',
+            html.div({"data-Something": 1, "dataCamelCase": 2, "datalowercase": 3}),
+            '<div data-Something="1" datacamelcase="2" datalowercase="3"></div>',
         ),
         (
             html.div(example_parent()),
-            '<div><div id="sample" style="padding:15px"><h1>Sample Application</h1></div></div>',
+            '<div><div id="sample" style="padding:15px"><h1>Example</h1></div></div>',
+        ),
+        (
+            example_parent(),
+            '<div id="sample" style="padding:15px"><h1>Example</h1></div>',
+        ),
+        (
+            html.form({"acceptCharset": "utf-8"}),
+            '<form accept-charset="utf-8"></form>',
+        ),
+        (
+            example_str_return(),
+            "<div>Example</div>",
+        ),
+        (
+            example_none_return(),
+            "",
         ),
     ],
 )
-def test_vdom_to_html(vdom_in, html_out):
-    assert utils.vdom_to_html(vdom_in) == html_out
+def test_reactpy_to_string(vdom_in, html_out):
+    assert utils.reactpy_to_string(vdom_in) == html_out
 
 
-def test_vdom_to_html_error():
+def test_reactpy_to_string_error():
     with pytest.raises(TypeError, match="Expected a VDOM dict"):
-        utils.vdom_to_html({"notVdom": True})
+        utils.reactpy_to_string({"notVdom": True})
 
 
 def test_invalid_dotted_path():

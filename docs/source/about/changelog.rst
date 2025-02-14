@@ -38,6 +38,8 @@ Unreleased
 - :pull:`1113` - Renamed ``reactpy.config.REACTPY_DEBUG_MODE`` to ``reactpy.config.REACTPY_DEBUG``.
 - :pull:`1113` - ``@reactpy/client`` now exports ``React`` and ``ReactDOM``.
 - :pull:`1263` - ReactPy no longer auto-converts ``snake_case`` props to ``camelCase``. It is now the responsibility of the user to ensure that props are in the correct format.
+- :pull:`1278` - ``reactpy.utils.reactpy_to_string`` will now retain the user's original casing for ``data-*`` and ``aria-*`` attributes.
+- :pull:`1278` - ``reactpy.utils.string_to_reactpy`` has been upgraded to handle more complex scenarios without causing ReactJS rendering errors.
 
 **Removed**
 
@@ -48,6 +50,8 @@ Unreleased
 - :pull:`1113` - Removed ``reactpy.run``. See the documentation for the new method to run ReactPy applications.
 - :pull:`1113` - Removed ``reactpy.backend.*``. See the documentation for the new method to run ReactPy applications.
 - :pull:`1113` - Removed ``reactpy.core.types`` module. Use ``reactpy.types`` instead.
+- :pull:`1278` - Removed ``reactpy.utils.html_to_vdom``. Use ``reactpy.utils.string_to_reactpy`` instead.
+- :pull:`1278` - Removed ``reactpy.utils.vdom_to_html``. Use ``reactpy.utils.reactpy_to_string`` instead.
 - :pull:`1113` - All backend related installation extras (such as ``pip install reactpy[starlette]``) have been removed.
 - :pull:`1113` - Removed deprecated function ``module_from_template``.
 - :pull:`1113` - Removed support for Python 3.9.
