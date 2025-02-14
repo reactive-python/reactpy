@@ -92,7 +92,7 @@ class LayoutType(Protocol[_Render_co, _Event_contra]):
         """Clean up the view after its final render"""
 
 
-VdomAttributes = Mapping[str, Any]
+VdomAttributes = dict[str, Any]
 """Describes the attributes of a :class:`VdomDict`"""
 
 VdomChild: TypeAlias = "ComponentType | VdomDict | str | None | Any"

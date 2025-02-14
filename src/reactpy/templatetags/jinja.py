@@ -22,7 +22,7 @@ class Jinja(StandaloneTag):  # type: ignore
             return pyscript_setup(*args, **kwargs)
 
         # This should never happen, but we validate it for safety.
-        raise ValueError(f"Unknown tag: {self.tag_name}")  # pragma: no cover
+        raise ValueError(f"Unknown tag: {self.tag_name}")  # nocov
 
 
 def component(dotted_path: str, **kwargs: str) -> str:

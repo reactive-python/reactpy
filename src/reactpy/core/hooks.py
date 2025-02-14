@@ -613,7 +613,7 @@ def strictly_equal(x: Any, y: Any) -> bool:
             return x == y  # type: ignore
 
     # Fallback to identity check
-    return x is y  # pragma: no cover
+    return x is y  # nocov
 
 
 def run_effect_cleanup(cleanup_func: Ref[_EffectCleanFunc | None]) -> None:

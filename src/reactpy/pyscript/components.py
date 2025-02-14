@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from reactpy import component, hooks
 from reactpy.pyscript.utils import pyscript_component_html
 from reactpy.types import ComponentType, Key
-from reactpy.utils import html_to_vdom
+from reactpy.utils import string_to_reactpy
 
 if TYPE_CHECKING:
     from reactpy.types import VdomDict
@@ -22,7 +22,7 @@ def _pyscript_component(
         raise ValueError("At least one file path must be provided.")
 
     rendered, set_rendered = hooks.use_state(False)
-    initial = html_to_vdom(initial) if isinstance(initial, str) else initial
+    initial = string_to_reactpy(initial) if isinstance(initial, str) else initial
 
     if not rendered:
         # FIXME: This is needed to properly re-render PyScript during a WebSocket
@@ -30,7 +30,7 @@ def _pyscript_component(
         set_rendered(True)
         return None
 
-    component_vdom = html_to_vdom(
+    component_vdom = string_to_reactpy(
         pyscript_component_html(tuple(str(fp) for fp in file_paths), initial, root)
     )
     component_vdom["tagName"] = ""
