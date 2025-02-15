@@ -43,7 +43,7 @@ RootComponentConstructor = Callable[[], "ComponentType"]
 """The root component should be constructed by a function accepting no arguments."""
 
 
-Key: TypeAlias = "str | int"
+Key: TypeAlias = str | int
 
 
 @runtime_checkable
@@ -98,8 +98,8 @@ EventFunc = Callable[[dict[str, Any]], Awaitable[None] | None]
 
 # TODO: It's probably better to break this one attributes dict down into what each specific
 # HTML node's attributes can be, and make sure those types are resolved correctly within `HtmlConstructor`
-VdomAttributes = TypedDict(
-    "VdomAttributes",
+_VdomAttributes = TypedDict(
+    "_VdomAttributes",
     {
         "key": Key,
         "value": Any,
@@ -107,7 +107,7 @@ VdomAttributes = TypedDict(
         "dangerouslySetInnerHTML": dict[str, str],
         "suppressContentEditableWarning": bool,
         "suppressHydrationWarning": bool,
-        "style": dict[str, str | int | float],
+        "style": dict[str, Any],
         "accessKey": str,
         "aria-": None,
         "autoCapitalize": str,
@@ -341,9 +341,11 @@ VdomAttributes = TypedDict(
         "onWaitingCapture": EventFunc,
     },
     total=False,
-    # TODO: Enable this when Python 3.14 typing extensions are released
     # extra_items=Any,
 )
+
+# TODO: Enable `extra_items` when PEP 728 is merged, likely in Python 3.14. Ref: https://peps.python.org/pep-0728/
+VdomAttributes = _VdomAttributes | dict[str, Any]
 
 
 class VdomDict(TypedDict):
@@ -357,10 +359,10 @@ class VdomDict(TypedDict):
     importSource: NotRequired[ImportSourceDict]
 
 
-VdomChild: TypeAlias = "ComponentType | VdomDict | str | None | Any"
+VdomChild: TypeAlias = ComponentType | VdomDict | str | None | Any
 """A single child element of a :class:`VdomDict`"""
 
-VdomChildren: TypeAlias = "Sequence[VdomChild] | VdomChild"
+VdomChildren: TypeAlias = Sequence[VdomChild] | VdomChild
 """Describes a series of :class:`VdomChild` elements"""
 
 
@@ -371,39 +373,27 @@ class ImportSourceDict(TypedDict):
     unmountBeforeUpdate: bool
 
 
-class _OptionalVdomJson(TypedDict, total=False):
-    key: Key
-    error: str
-    children: list[Any]
-    attributes: VdomAttributes
-    eventHandlers: dict[str, _JsonEventTarget]
-    importSource: _JsonImportSource
-
-
-class _RequiredVdomJson(TypedDict, total=True):
-    tagName: str
-
-
-class VdomJson(_RequiredVdomJson, _OptionalVdomJson):
+class VdomJson(TypedDict):
     """A JSON serializable form of :class:`VdomDict` matching the :data:`VDOM_JSON_SCHEMA`"""
 
+    tagName: str
+    key: NotRequired[Key]
+    error: NotRequired[str]
+    children: NotRequired[list[Any]]
+    attributes: NotRequired[VdomAttributes]
+    eventHandlers: NotRequired[dict[str, JsonEventTarget]]
+    importSource: NotRequired[JsonImportSource]
 
-class _JsonEventTarget(TypedDict):
+
+class JsonEventTarget(TypedDict):
     target: str
     preventDefault: bool
     stopPropagation: bool
 
 
-class _JsonImportSource(TypedDict):
+class JsonImportSource(TypedDict):
     source: str
     fallback: Any
-
-
-EventHandlerMapping = Mapping[str, "EventHandlerType"]
-"""A generic mapping between event names to their handlers"""
-
-EventHandlerDict: TypeAlias = "dict[str, EventHandlerType]"
-"""A dict mapping between event names to their handlers"""
 
 
 class EventHandlerFunc(Protocol):
@@ -435,6 +425,13 @@ class EventHandlerType(Protocol):
 
         When ``None``, it is left to a :class:`LayoutType` to auto generate a unique ID.
     """
+
+
+EventHandlerMapping = Mapping[str, EventHandlerType]
+"""A generic mapping between event names to their handlers"""
+
+EventHandlerDict: TypeAlias = dict[str, EventHandlerType]
+"""A dict mapping between event names to their handlers"""
 
 
 class VdomDictConstructor(Protocol):
