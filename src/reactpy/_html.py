@@ -301,9 +301,9 @@ class HtmlConstructor:
 
         return self.__cache__[value]
 
-    # HTML elements, written out here for auto-complete purposes
-    # The actual elements are created dynamically in the __getattr__ method.
-    # Elements other than these can still be created.
+    # Standard HTML elements are written below for auto-complete purposes
+    # The actual elements are created dynamically when __getattr__ is called.
+    # Elements other than those type-hinted below can still be created.
     a: VdomDictConstructor
     abbr: VdomDictConstructor
     address: VdomDictConstructor
