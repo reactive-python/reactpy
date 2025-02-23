@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, NewType, overload
 
 from reactpy.config import REACTPY_DEBUG, REACTPY_WEB_MODULES_DIR
-from reactpy.core.vdom import make_vdom_constructor
+from reactpy.core.vdom import Vdom
 from reactpy.types import ImportSourceDict, VdomDictConstructor
 from reactpy.web.utils import (
     module_name_suffix,
@@ -283,10 +283,10 @@ def _make_export(
     fallback: Any | None,
     allow_children: bool,
 ) -> VdomDictConstructor:
-    return make_vdom_constructor(
-        name,
+    return Vdom(
+        tagName=name,
         allow_children=allow_children,
-        import_source=ImportSourceDict(
+        importSource=ImportSourceDict(
             source=web_module.source,
             sourceType=web_module.source_type,
             fallback=(fallback or web_module.default_fallback),

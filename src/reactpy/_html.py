@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, ClassVar, overload
 
-from reactpy.core.vdom import custom_vdom_constructor, make_vdom_constructor
+from reactpy.core.vdom import Vdom
 
 if TYPE_CHECKING:
     from reactpy.types import (
@@ -195,8 +195,8 @@ class SvgConstructor:
         if value in self.__cache__:
             return self.__cache__[value]
 
-        self.__cache__[value] = make_vdom_constructor(
-            value, allow_children=value not in NO_CHILDREN_ALLOWED_SVG
+        self.__cache__[value] = Vdom(
+            tagName=value, allow_children=value not in NO_CHILDREN_ALLOWED_SVG
         )
 
         return self.__cache__[value]
@@ -284,8 +284,8 @@ class HtmlConstructor:
 
     # ruff: noqa: N815
     __cache__: ClassVar[dict[str, VdomDictConstructor]] = {
-        "script": custom_vdom_constructor(_script),
-        "fragment": custom_vdom_constructor(_fragment),
+        "script": Vdom(tagName="script", custom_constructor=_script),
+        "fragment": Vdom(tagName="", custom_constructor=_fragment),
         "svg": SvgConstructor(),
     }
 
@@ -295,8 +295,8 @@ class HtmlConstructor:
         if value in self.__cache__:
             return self.__cache__[value]
 
-        self.__cache__[value] = make_vdom_constructor(
-            value, allow_children=value not in NO_CHILDREN_ALLOWED_HTML_BODY
+        self.__cache__[value] = Vdom(
+            tagName=value, allow_children=value not in NO_CHILDREN_ALLOWED_HTML_BODY
         )
 
         return self.__cache__[value]

@@ -20,7 +20,7 @@ class RequiredTransforms:
             if not name.startswith("_"):
                 getattr(self, name)(vdom)
 
-    def normalize_style_attributes(self, vdom: VdomDict) -> None:
+    def normalize_style_attributes(self, vdom: dict[str, Any]) -> None:
         """Convert style attribute from str -> dict with camelCase keys"""
         if (
             "attributes" in vdom
