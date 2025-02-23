@@ -6,12 +6,12 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import (
     Any,
     Callable,
-    Unpack,
     cast,
     overload,
 )
 
 from fastjsonschema import compile as compile_json_schema
+from typing_extensions import Unpack
 
 from reactpy._warnings import warn
 from reactpy.config import REACTPY_CHECK_JSON_ATTRS, REACTPY_DEBUG

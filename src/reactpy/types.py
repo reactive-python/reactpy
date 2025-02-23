@@ -9,14 +9,13 @@ from typing import (
     Callable,
     Generic,
     Literal,
-    NotRequired,
     Protocol,
     TypeVar,
     overload,
     runtime_checkable,
 )
 
-from typing_extensions import NamedTuple, TypeAlias, TypedDict
+from typing_extensions import NamedTuple, NotRequired, TypeAlias, TypedDict
 
 CarrierType = TypeVar("CarrierType")
 _Type = TypeVar("_Type")
@@ -764,11 +763,21 @@ VdomAttributesTypeDict = TypedDict(
 VdomAttributes = VdomAttributesTypeDict | dict[str, Any]
 
 VdomDictKeys = Literal[
-    "tagName", "key", "children", "attributes", "eventHandlers", "importSource"
+    "tagName",
+    "key",
+    "children",
+    "attributes",
+    "eventHandlers",
+    "importSource",
 ]
-
-# This is a hack to pull the keys from the TypedDict
-ALLOWED_VDOM_KEYS = set(VdomDictKeys._determine_new_args([]))  # type: ignore
+ALLOWED_VDOM_KEYS = {
+    "tagName",
+    "key",
+    "children",
+    "attributes",
+    "eventHandlers",
+    "importSource",
+}
 
 
 class _VdomDict(TypedDict):
