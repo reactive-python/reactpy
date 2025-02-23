@@ -79,6 +79,10 @@ def test_is_vdom(result, value):
             reactpy.Vdom(tagName="div")((x**2 for x in [1, 2, 3])),
             {"tagName": "div", "children": [1, 4, 9]},
         ),
+        (
+            reactpy.Vdom(tagName="div")(["child_1", ["child_2"]]),
+            {"tagName": "div", "children": ["child_1", "child_2"]},
+        ),
     ],
 )
 def test_simple_node_construction(actual, expected):
