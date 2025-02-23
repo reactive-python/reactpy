@@ -19,12 +19,15 @@ Unreleased
 - :pull:`1113` - Added ``reactpy.executors.asgi.ReactPy`` that can be used to run ReactPy in standalone mode via ASGI.
 - :pull:`1269` - Added ``reactpy.executors.asgi.ReactPyPyodide`` that can be used to run ReactPy in standalone mode via ASGI, but rendered entirely client-sided.
 - :pull:`1113` - Added ``reactpy.executors.asgi.ReactPyMiddleware`` that can be used to utilize ReactPy within any ASGI compatible framework.
-- :pull:`1113` :pull:`1269` - Added ``reactpy.templatetags.Jinja`` that can be used alongside ``ReactPyMiddleware`` to embed several ReactPy components into your existing application. This includes the following template tags: ``{% component %}``, ``{% pyscript_component %}``, and ``{% pyscript_setup %}``.
+- :pull:`1269` - Added ``reactpy.templatetags.Jinja`` that can be used alongside ``ReactPyMiddleware`` to embed several ReactPy components into your existing application. This includes the following template tags: ``{% component %}``, ``{% pyscript_component %}``, and ``{% pyscript_setup %}``.
 - :pull:`1269` - Added ``reactpy.pyscript_component`` that can be used to embed ReactPy components into your existing application.
 - :pull:`1113` - Added ``uvicorn`` and ``jinja`` installation extras (for example ``pip install reactpy[jinja]``).
 - :pull:`1113` - Added support for Python 3.12 and 3.13.
 - :pull:`1264` - Added ``reactpy.use_async_effect`` hook.
 - :pull:`1267` - Added ``shutdown_timeout`` parameter to the ``reactpy.use_async_effect`` hook.
+- :pull:`1281` - ``reactpy.html`` will now automatically flatten lists recursively (ex. ``reactpy.html(["child1", ["child2"]])``)
+- :pull:`1281` - Added ``reactpy.Vdom`` primitive interface for creating VDOM dictionaries.
+- :pull:`1281` - Added type hints to ``reactpy.html`` attributes.
 
 **Changed**
 
@@ -56,6 +59,9 @@ Unreleased
 - :pull:`1113` - Removed deprecated function ``module_from_template``.
 - :pull:`1113` - Removed support for Python 3.9.
 - :pull:`1264` - Removed support for async functions within ``reactpy.use_effect`` hook. Use ``reactpy.use_async_effect`` instead.
+- :pull:`1281` - Removed ``reactpy.vdom``. Use ``reactpy.Vdom`` instead.
+- :pull:`1281` - Removed ``reactpy.core.make_vdom_constructor``. Use ``reactpy.Vdom`` instead.
+- :pull:`1281` - Removed ``reactpy.core.custom_vdom_constructor``. Use ``reactpy.Vdom`` instead.
 
 **Fixed**
 
