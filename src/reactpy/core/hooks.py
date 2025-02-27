@@ -369,7 +369,7 @@ class _ContextProvider(Generic[_Type]):
 
     def render(self) -> VdomDict:
         HOOK_STACK.current_hook().set_context_provider(self)
-        return VdomDict(tagName="ContextProvider", children=self.children)
+        return VdomDict(tagName="", children=self.children)
 
     def __repr__(self) -> str:
         return f"ContextProvider({self.type})"

@@ -329,7 +329,7 @@ def test_raise_for_non_json_attrs():
 
 def test_invalid_vdom_keys():
     with pytest.raises(ValueError, match="Invalid keys*"):
-        reactpy.Vdom(tagName="div", foo="bar")
+        reactpy.Vdom(tagName="div", foo="bar")()
 
     with pytest.raises(ValueError, match="You must specify a 'tagName'*"):
         reactpy.Vdom()

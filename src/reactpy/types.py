@@ -792,7 +792,7 @@ class VdomTypeDict(TypedDict):
 
 
 class VdomDict(dict):
-    """A dictionary representing a virtual DOM element."""
+    """A light wrapper around Python `dict` that represents a Virtual DOM element."""
 
     def __init__(self, **kwargs: Unpack[VdomTypeDict]) -> None:
         if "tagName" not in kwargs:
@@ -923,7 +923,7 @@ EventHandlerDict: TypeAlias = dict[str, EventHandlerType]
 """A dict mapping between event names to their handlers"""
 
 
-class VdomDictConstructor(Protocol):
+class VdomConstructor(Protocol):
     """Standard function for constructing a :class:`VdomDict`"""
 
     @overload

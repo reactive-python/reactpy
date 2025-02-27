@@ -43,6 +43,9 @@ Unreleased
 - :pull:`1263` - ReactPy no longer auto-converts ``snake_case`` props to ``camelCase``. It is now the responsibility of the user to ensure that props are in the correct format.
 - :pull:`1278` - ``reactpy.utils.reactpy_to_string`` will now retain the user's original casing for ``data-*`` and ``aria-*`` attributes.
 - :pull:`1278` - ``reactpy.utils.string_to_reactpy`` has been upgraded to handle more complex scenarios without causing ReactJS rendering errors.
+- :pull:`1281` - ``reactpy.core.vdom._CustomVdomDictConstructor`` has been moved to ``reactpy.types.CustomVdomConstructor``.
+- :pull:`1281` - ``reactpy.core.vdom._EllipsisRepr`` has been moved to ``reactpy.types.EllipsisRepr``.
+- :pull:`1281` - ``reactpy.types.VdomDictConstructor`` has been renamed to ``reactpy.types.VdomConstructor``.
 
 **Removed**
 

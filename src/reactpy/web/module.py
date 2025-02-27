@@ -9,7 +9,7 @@ from typing import Any, NewType, overload
 
 from reactpy.config import REACTPY_DEBUG, REACTPY_WEB_MODULES_DIR
 from reactpy.core.vdom import Vdom
-from reactpy.types import ImportSourceDict, VdomDictConstructor
+from reactpy.types import ImportSourceDict, VdomConstructor
 from reactpy.web.utils import (
     module_name_suffix,
     resolve_module_exports_from_file,
@@ -227,7 +227,7 @@ def export(
     export_names: str,
     fallback: Any | None = ...,
     allow_children: bool = ...,
-) -> VdomDictConstructor: ...
+) -> VdomConstructor: ...
 
 
 @overload
@@ -236,7 +236,7 @@ def export(
     export_names: list[str] | tuple[str, ...],
     fallback: Any | None = ...,
     allow_children: bool = ...,
-) -> list[VdomDictConstructor]: ...
+) -> list[VdomConstructor]: ...
 
 
 def export(
@@ -244,7 +244,7 @@ def export(
     export_names: str | list[str] | tuple[str, ...],
     fallback: Any | None = None,
     allow_children: bool = True,
-) -> VdomDictConstructor | list[VdomDictConstructor]:
+) -> VdomConstructor | list[VdomConstructor]:
     """Return one or more VDOM constructors from a :class:`WebModule`
 
     Parameters:
@@ -282,7 +282,7 @@ def _make_export(
     name: str,
     fallback: Any | None,
     allow_children: bool,
-) -> VdomDictConstructor:
+) -> VdomConstructor:
     return Vdom(
         tagName=name,
         allow_children=allow_children,

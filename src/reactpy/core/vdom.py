@@ -18,7 +18,6 @@ from reactpy.config import REACTPY_CHECK_JSON_ATTRS, REACTPY_DEBUG
 from reactpy.core._f_back import f_module_name
 from reactpy.core.events import EventHandler, to_event_handler_function
 from reactpy.types import (
-    ALLOWED_VDOM_KEYS,
     ComponentType,
     CustomVdomConstructor,
     EllipsisRepr,
@@ -122,12 +121,11 @@ class Vdom:
         custom_constructor: CustomVdomConstructor | None = None,
         **kwargs: Unpack[VdomTypeDict],
     ) -> None:
-        """This init method is used to declare the VDOM dictionary default values, as well as configurable properties
-        related to the construction of VDOM dictionaries."""
+        """`**kwargs` provided here are considered as defaults for dictionary key values.
+        Other arguments exist to configure the way VDOM dictionaries are constructed."""
         if "tagName" not in kwargs:
             msg = "You must specify a 'tagName' for a VDOM element."
             raise ValueError(msg)
-        self._validate_keys(kwargs.keys())
         self.allow_children = allow_children
         self.custom_constructor = custom_constructor
         self.default_values = kwargs
@@ -178,17 +176,8 @@ class Vdom:
         if children and not self.allow_children:
             msg = f"{self.default_values.get('tagName')!r} nodes cannot have children."
             raise TypeError(msg)
-        if REACTPY_DEBUG.current:
-            self._validate_keys(result.keys())
 
         return VdomDict(**(self.default_values | result))  # type: ignore
-
-    @staticmethod
-    def _validate_keys(keys: Sequence[str] | Iterable[str]) -> None:
-        invalid_keys = set(keys) - ALLOWED_VDOM_KEYS
-        if invalid_keys:
-            msg = f"Invalid keys {invalid_keys} provided."
-            raise ValueError(msg)
 
 
 def separate_attributes_and_children(
@@ -222,11 +211,7 @@ def separate_attributes_and_event_handlers(
 
         if callable(v):
             handler = EventHandler(to_event_handler_function(v))
-        elif (
-            # `isinstance` check on `Protocol` types is slow. We use pre-checks as an optimization
-            # before actually performing slow EventHandlerType type check
-            hasattr(v, "function") and isinstance(v, EventHandlerType)
-        ):
+        elif isinstance(v, EventHandler):
             handler = v
         else:
             _attributes[k] = v
