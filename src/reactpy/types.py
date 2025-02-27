@@ -11,12 +11,11 @@ from typing import (
     Literal,
     Protocol,
     TypeVar,
-    Unpack,
     overload,
     runtime_checkable,
 )
 
-from typing_extensions import NamedTuple, NotRequired, TypeAlias, TypedDict
+from typing_extensions import NamedTuple, NotRequired, TypeAlias, TypedDict, Unpack
 
 CarrierType = TypeVar("CarrierType")
 _Type = TypeVar("_Type")
