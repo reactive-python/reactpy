@@ -1,9 +1,14 @@
+# pyright: reportIncompatibleMethodOverride=false
 from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
-from functools import wraps
-from typing import Any, Callable, Protocol, cast
+from typing import (
+    Any,
+    Callable,
+    cast,
+    overload,
+)
 
 from fastjsonschema import compile as compile_json_schema
 
@@ -13,15 +18,14 @@ from reactpy.core._f_back import f_module_name
 from reactpy.core.events import EventHandler, to_event_handler_function
 from reactpy.types import (
     ComponentType,
+    CustomVdomConstructor,
+    EllipsisRepr,
     EventHandlerDict,
     EventHandlerType,
     ImportSourceDict,
-    Key,
     VdomAttributes,
-    VdomChild,
     VdomChildren,
     VdomDict,
-    VdomDictConstructor,
     VdomJson,
 )
 
@@ -102,174 +106,131 @@ def validate_vdom_json(value: Any) -> VdomJson:
 
 
 def is_vdom(value: Any) -> bool:
-    """Return whether a value is a :class:`VdomDict`
-
-    This employs a very simple heuristic - something is VDOM if:
-
-    1. It is a ``dict`` instance
-    2. It contains the key ``"tagName"``
-    3. The value of the key ``"tagName"`` is a string
-
-    .. note::
-
-        Performing an ``isinstance(value, VdomDict)`` check is too restrictive since the
-        user would be forced to import ``VdomDict`` every time they needed to declare a
-        VDOM element. Giving the user more flexibility, at the cost of this check's
-        accuracy, is worth it.
-    """
-    return (
-        isinstance(value, dict)
-        and "tagName" in value
-        and isinstance(value["tagName"], str)
-    )
+    """Return whether a value is a :class:`VdomDict`"""
+    return isinstance(value, VdomDict)
 
 
-def vdom(tag: str, *attributes_and_children: VdomAttributes | VdomChildren) -> VdomDict:
-    """A helper function for creating VDOM elements.
+class Vdom:
+    """Class-based constructor for VDOM dictionaries.
+    Once initialized, the `__call__` method on this class is used as the user API
+    for `reactpy.html`."""
 
-    Parameters:
-        tag:
-            The type of element (e.g. 'div', 'h1', 'img')
-        attributes_and_children:
-            An optional attribute mapping followed by any number of children or
-            iterables of children. The attribute mapping **must** precede the children,
-            or children which will be merged into their respective parts of the model.
-        key:
-            A string indicating the identity of a particular element. This is significant
-            to preserve event handlers across updates - without a key, a re-render would
-            cause these handlers to be deleted, but with a key, they would be redirected
-            to any newly defined handlers.
-        event_handlers:
-            Maps event types to coroutines that are responsible for handling those events.
-        import_source:
-            (subject to change) specifies javascript that, when evaluated returns a
-            React component.
-    """
-    model: VdomDict = {"tagName": tag}
+    def __init__(
+        self,
+        tag_name: str,
+        /,
+        allow_children: bool = True,
+        custom_constructor: CustomVdomConstructor | None = None,
+        import_source: ImportSourceDict | None = None,
+    ) -> None:
+        """Initialize a VDOM constructor for the provided `tag_name`."""
+        self.allow_children = allow_children
+        self.custom_constructor = custom_constructor
+        self.import_source = import_source
 
-    if not attributes_and_children:
-        return model
+        # Configure Python debugger attributes
+        self.__name__ = tag_name
+        module_name = f_module_name(1)
+        if module_name:
+            self.__module__ = module_name
+            self.__qualname__ = f"{module_name}.{tag_name}"
 
-    attributes, children = separate_attributes_and_children(attributes_and_children)
-    key = attributes.pop("key", None)
-    attributes, event_handlers = separate_attributes_and_event_handlers(attributes)
+    @overload
+    def __call__(
+        self, attributes: VdomAttributes, /, *children: VdomChildren
+    ) -> VdomDict: ...
 
-    if attributes:
-        if REACTPY_CHECK_JSON_ATTRS.current:
-            json.dumps(attributes)
-        model["attributes"] = attributes
+    @overload
+    def __call__(self, *children: VdomChildren) -> VdomDict: ...
 
-    if children:
-        model["children"] = children
-
-    if key is not None:
-        model["key"] = key
-
-    if event_handlers:
-        model["eventHandlers"] = event_handlers
-
-    return model
-
-
-def make_vdom_constructor(
-    tag: str, allow_children: bool = True, import_source: ImportSourceDict | None = None
-) -> VdomDictConstructor:
-    """Return a constructor for VDOM dictionaries with the given tag name.
-
-    The resulting callable will have the same interface as :func:`vdom` but without its
-    first ``tag`` argument.
-    """
-
-    def constructor(*attributes_and_children: Any, **kwargs: Any) -> VdomDict:
-        model = vdom(tag, *attributes_and_children, **kwargs)
-        if not allow_children and "children" in model:
-            msg = f"{tag!r} nodes cannot have children."
-            raise TypeError(msg)
-        if import_source:
-            model["importSource"] = import_source
-        return model
-
-    # replicate common function attributes
-    constructor.__name__ = tag
-    constructor.__doc__ = (
-        "Return a new "
-        f"`<{tag}> <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/{tag}>`__ "
-        "element represented by a :class:`VdomDict`."
-    )
-
-    module_name = f_module_name(1)
-    if module_name:
-        constructor.__module__ = module_name
-        constructor.__qualname__ = f"{module_name}.{tag}"
-
-    return cast(VdomDictConstructor, constructor)
-
-
-def custom_vdom_constructor(func: _CustomVdomDictConstructor) -> VdomDictConstructor:
-    """Cast function to VdomDictConstructor"""
-
-    @wraps(func)
-    def wrapper(*attributes_and_children: Any) -> VdomDict:
+    def __call__(
+        self, *attributes_and_children: VdomAttributes | VdomChildren
+    ) -> VdomDict:
+        """The entry point for the VDOM API, for example reactpy.html(<WE_ARE_HERE>)."""
         attributes, children = separate_attributes_and_children(attributes_and_children)
         key = attributes.pop("key", None)
         attributes, event_handlers = separate_attributes_and_event_handlers(attributes)
-        return func(attributes, children, key, event_handlers)
+        if REACTPY_CHECK_JSON_ATTRS.current:
+            json.dumps(attributes)
 
-    return cast(VdomDictConstructor, wrapper)
+        # Run custom constructor, if defined
+        if self.custom_constructor:
+            result = self.custom_constructor(
+                key=key,
+                children=children,
+                attributes=attributes,
+                event_handlers=event_handlers,
+            )
+
+        # Otherwise, use the default constructor
+        else:
+            result = {
+                **({"key": key} if key is not None else {}),
+                **({"children": children} if children else {}),
+                **({"attributes": attributes} if attributes else {}),
+                **({"eventHandlers": event_handlers} if event_handlers else {}),
+                **({"importSource": self.import_source} if self.import_source else {}),
+            }
+
+        # Validate the result
+        result = result | {"tagName": self.__name__}
+        if children and not self.allow_children:
+            msg = f"{self.__name__!r} nodes cannot have children."
+            raise TypeError(msg)
+
+        return VdomDict(**result)  # type: ignore
 
 
 def separate_attributes_and_children(
     values: Sequence[Any],
-) -> tuple[dict[str, Any], list[Any]]:
+) -> tuple[VdomAttributes, list[Any]]:
     if not values:
         return {}, []
 
-    attributes: dict[str, Any]
+    _attributes: VdomAttributes
     children_or_iterables: Sequence[Any]
-    if _is_attributes(values[0]):
-        attributes, *children_or_iterables = values
+    # ruff: noqa: E721
+    if type(values[0]) is dict:
+        _attributes, *children_or_iterables = values
     else:
-        attributes = {}
+        _attributes = {}
         children_or_iterables = values
 
-    children: list[Any] = []
-    for child in children_or_iterables:
-        if _is_single_child(child):
-            children.append(child)
-        else:
-            children.extend(child)
+    _children: list[Any] = _flatten_children(children_or_iterables)
 
-    return attributes, children
+    return _attributes, _children
 
 
 def separate_attributes_and_event_handlers(
     attributes: Mapping[str, Any],
-) -> tuple[dict[str, Any], EventHandlerDict]:
-    separated_attributes = {}
-    separated_event_handlers: dict[str, EventHandlerType] = {}
+) -> tuple[VdomAttributes, EventHandlerDict]:
+    _attributes: VdomAttributes = {}
+    _event_handlers: dict[str, EventHandlerType] = {}
 
     for k, v in attributes.items():
         handler: EventHandlerType
 
         if callable(v):
             handler = EventHandler(to_event_handler_function(v))
-        elif (
-            # isinstance check on protocols is slow - use function attr pre-check as a
-            # quick filter before actually performing slow EventHandlerType type check
-            hasattr(v, "function") and isinstance(v, EventHandlerType)
-        ):
+        elif isinstance(v, EventHandler):
             handler = v
         else:
-            separated_attributes[k] = v
+            _attributes[k] = v
             continue
 
-        separated_event_handlers[k] = handler
+        _event_handlers[k] = handler
 
-    return separated_attributes, dict(separated_event_handlers.items())
+    return _attributes, _event_handlers
 
 
-def _is_attributes(value: Any) -> bool:
-    return isinstance(value, Mapping) and "tagName" not in value
+def _flatten_children(children: Sequence[Any]) -> list[Any]:
+    _children: list[VdomChildren] = []
+    for child in children:
+        if _is_single_child(child):
+            _children.append(child)
+        else:
+            _children.extend(_flatten_children(child))
+    return _children
 
 
 def _is_single_child(value: Any) -> bool:
@@ -292,20 +253,5 @@ def _validate_child_key_integrity(value: Any) -> None:
                 warn(f"Key not specified for child in list {child}", UserWarning)
             elif isinstance(child, Mapping) and "key" not in child:
                 # remove 'children' to reduce log spam
-                child_copy = {**child, "children": _EllipsisRepr()}
+                child_copy = {**child, "children": EllipsisRepr()}
                 warn(f"Key not specified for child in list {child_copy}", UserWarning)
-
-
-class _CustomVdomDictConstructor(Protocol):
-    def __call__(
-        self,
-        attributes: VdomAttributes,
-        children: Sequence[VdomChild],
-        key: Key | None,
-        event_handlers: EventHandlerDict,
-    ) -> VdomDict: ...
-
-
-class _EllipsisRepr:
-    def __repr__(self) -> str:
-        return "..."

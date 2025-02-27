@@ -19,7 +19,7 @@ from reactpy.core.hooks import (
     use_state,
 )
 from reactpy.core.layout import Layout
-from reactpy.core.vdom import vdom
+from reactpy.core.vdom import Vdom
 from reactpy.pyscript.components import pyscript_component
 from reactpy.utils import Ref, reactpy_to_string, string_to_reactpy
 
@@ -29,6 +29,7 @@ __version__ = "2.0.0a1"
 __all__ = [
     "Layout",
     "Ref",
+    "Vdom",
     "component",
     "config",
     "create_context",
@@ -52,7 +53,6 @@ __all__ = [
     "use_ref",
     "use_scope",
     "use_state",
-    "vdom",
     "web",
     "widgets",
 ]

@@ -82,7 +82,7 @@ async def test_simple_layout():
     @reactpy.component
     def SimpleComponent():
         tag, set_state_hook.current = reactpy.hooks.use_state("div")
-        return reactpy.vdom(tag)
+        return reactpy.Vdom(tag)()
 
     async with reactpy.Layout(SimpleComponent()) as layout:
         update_1 = await layout.render()

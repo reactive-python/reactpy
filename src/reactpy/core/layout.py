@@ -196,7 +196,7 @@ class Layout:
             # wrap the model in a fragment (i.e. tagName="") to ensure components have
             # a separate node in the model state tree. This could be removed if this
             # components are given a node in the tree some other way
-            wrapper_model: VdomDict = {"tagName": "", "children": [raw_model]}
+            wrapper_model = VdomDict(tagName="", children=[raw_model])
             await self._render_model(exit_stack, old_state, new_state, wrapper_model)
         except Exception as error:
             logger.exception(f"Failed to render {component}")

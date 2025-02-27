@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from reactpy.core.events import EventHandler, to_event_handler_function
-from reactpy.types import VdomDict
+from reactpy.types import VdomAttributes, VdomDict
 
 
 class RequiredTransforms:
@@ -20,7 +20,7 @@ class RequiredTransforms:
             if not name.startswith("_"):
                 getattr(self, name)(vdom)
 
-    def normalize_style_attributes(self, vdom: VdomDict) -> None:
+    def normalize_style_attributes(self, vdom: dict[str, Any]) -> None:
         """Convert style attribute from str -> dict with camelCase keys"""
         if (
             "attributes" in vdom
@@ -40,10 +40,11 @@ class RequiredTransforms:
     def html_props_to_reactjs(vdom: VdomDict) -> None:
         """Convert HTML prop names to their ReactJS equivalents."""
         if "attributes" in vdom:
-            vdom["attributes"] = {
-                REACT_PROP_SUBSTITUTIONS.get(k, k): v
-                for k, v in vdom["attributes"].items()
-            }
+            items = cast(VdomAttributes, vdom["attributes"].items())
+            vdom["attributes"] = cast(
+                VdomAttributes,
+                {REACT_PROP_SUBSTITUTIONS.get(k, k): v for k, v in items},
+            )
 
     @staticmethod
     def textarea_children_to_prop(vdom: VdomDict) -> None:

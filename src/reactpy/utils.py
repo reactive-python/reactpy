@@ -7,9 +7,9 @@ from itertools import chain
 from typing import Any, Callable, Generic, TypeVar, cast
 
 from lxml import etree
-from lxml.html import fromstring, tostring
+from lxml.html import fromstring
 
-from reactpy.core.vdom import vdom as make_vdom
+from reactpy import html
 from reactpy.transforms import RequiredTransforms
 from reactpy.types import ComponentType, VdomDict
 
@@ -73,7 +73,7 @@ def reactpy_to_string(root: VdomDict | ComponentType) -> str:
         root = component_to_vdom(root)
 
     _add_vdom_to_etree(temp_container, root)
-    html = cast(bytes, tostring(temp_container)).decode()  # type: ignore
+    html = etree.tostring(temp_container, method="html").decode()
 
     # Strip out temp root <__temp__> element
     return html[10:-11]
@@ -149,7 +149,8 @@ def _etree_to_vdom(
     children = _generate_vdom_children(node, transforms, intercept_links)
 
     # Convert the lxml node to a VDOM dict
-    el = make_vdom(str(node.tag), dict(node.items()), *children)
+    constructor = getattr(html, str(node.tag))
+    el = constructor(dict(node.items()), children)
 
     # Perform necessary transformations on the VDOM attributes to meet VDOM spec
     RequiredTransforms(el, intercept_links)
@@ -236,8 +237,8 @@ def component_to_vdom(component: ComponentType) -> VdomDict:
     if hasattr(result, "render"):
         return component_to_vdom(cast(ComponentType, result))
     elif isinstance(result, str):
-        return make_vdom("div", {}, result)
-    return make_vdom("")
+        return html.div(result)
+    return html.fragment()
 
 
 def _react_attribute_to_html(key: str, value: Any) -> tuple[str, str]:
