@@ -284,9 +284,9 @@ def _make_export(
     allow_children: bool,
 ) -> VdomConstructor:
     return Vdom(
-        tagName=name,
+        name,
         allow_children=allow_children,
-        importSource=ImportSourceDict(
+        import_source=ImportSourceDict(
             source=web_module.source,
             sourceType=web_module.source_type,
             fallback=(fallback or web_module.default_fallback),

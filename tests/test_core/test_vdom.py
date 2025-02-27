@@ -32,19 +32,19 @@ def test_is_vdom(result, value):
     "actual, expected",
     [
         (
-            reactpy.Vdom(tagName="div")([reactpy.Vdom(tagName="div")()]),
+            reactpy.Vdom("div")([reactpy.Vdom("div")()]),
             {"tagName": "div", "children": [{"tagName": "div"}]},
         ),
         (
-            reactpy.Vdom(tagName="div")({"style": {"backgroundColor": "red"}}),
+            reactpy.Vdom("div")({"style": {"backgroundColor": "red"}}),
             {"tagName": "div", "attributes": {"style": {"backgroundColor": "red"}}},
         ),
         (
             # multiple iterables of children are merged
-            reactpy.Vdom(tagName="div")(
+            reactpy.Vdom("div")(
                 (
-                    [reactpy.Vdom(tagName="div")(), 1],
-                    (reactpy.Vdom(tagName="div")(), 2),
+                    [reactpy.Vdom("div")(), 1],
+                    (reactpy.Vdom("div")(), 2),
                 )
             ),
             {
@@ -53,13 +53,11 @@ def test_is_vdom(result, value):
             },
         ),
         (
-            reactpy.Vdom(tagName="div")({"onEvent": FAKE_EVENT_HANDLER}),
+            reactpy.Vdom("div")({"onEvent": FAKE_EVENT_HANDLER}),
             {"tagName": "div", "eventHandlers": FAKE_EVENT_HANDLER_DICT},
         ),
         (
-            reactpy.Vdom(
-                tagName="div",
-            )((reactpy.html.h1("hello"), reactpy.html.h2("world"))),
+            reactpy.Vdom("div")((reactpy.html.h1("hello"), reactpy.html.h2("world"))),
             {
                 "tagName": "div",
                 "children": [
@@ -69,19 +67,19 @@ def test_is_vdom(result, value):
             },
         ),
         (
-            reactpy.Vdom(tagName="div")({"tagName": "div"}),
+            reactpy.Vdom("div")({"tagName": "div"}),
             {"tagName": "div", "attributes": {"tagName": "div"}},
         ),
         (
-            reactpy.Vdom(tagName="div")((i for i in range(3))),
+            reactpy.Vdom("div")((i for i in range(3))),
             {"tagName": "div", "children": [0, 1, 2]},
         ),
         (
-            reactpy.Vdom(tagName="div")((x**2 for x in [1, 2, 3])),
+            reactpy.Vdom("div")((x**2 for x in [1, 2, 3])),
             {"tagName": "div", "children": [1, 4, 9]},
         ),
         (
-            reactpy.Vdom(tagName="div")(["child_1", ["child_2"]]),
+            reactpy.Vdom("div")(["child_1", ["child_2"]]),
             {"tagName": "div", "children": ["child_1", "child_2"]},
         ),
     ],
@@ -93,7 +91,7 @@ def test_simple_node_construction(actual, expected):
 async def test_callable_attributes_are_cast_to_event_handlers():
     params_from_calls = []
 
-    node = reactpy.Vdom(tagName="div")(
+    node = reactpy.Vdom("div")(
         {"onEvent": lambda *args: params_from_calls.append(args)}
     )
 
@@ -109,7 +107,7 @@ async def test_callable_attributes_are_cast_to_event_handlers():
 
 
 def test_make_vdom_constructor():
-    elmt = Vdom(tagName="some-tag")
+    elmt = Vdom("some-tag")
 
     assert elmt({"data": 1}, [elmt()]) == {
         "tagName": "some-tag",
@@ -117,7 +115,7 @@ def test_make_vdom_constructor():
         "attributes": {"data": 1},
     }
 
-    no_children = Vdom(tagName="no-children", allow_children=False)
+    no_children = Vdom("no-children", allow_children=False)
 
     with pytest.raises(TypeError, match="cannot have children"):
         no_children([1, 2, 3])
@@ -295,7 +293,7 @@ def test_invalid_vdom(value, error_message_pattern):
 @pytest.mark.skipif(not REACTPY_DEBUG.current, reason="Only warns in debug mode")
 def test_warn_cannot_verify_keypath_for_genereators():
     with pytest.warns(UserWarning) as record:
-        reactpy.Vdom(tagName="div")((1 for i in range(10)))
+        reactpy.Vdom("div")((1 for i in range(10)))
         assert len(record) == 1
         assert (
             record[0]
@@ -307,16 +305,16 @@ def test_warn_cannot_verify_keypath_for_genereators():
 @pytest.mark.skipif(not REACTPY_DEBUG.current, reason="Only warns in debug mode")
 def test_warn_dynamic_children_must_have_keys():
     with pytest.warns(UserWarning) as record:
-        reactpy.Vdom(tagName="div")([reactpy.Vdom(tagName="div")()])
+        reactpy.Vdom("div")([reactpy.Vdom("div")()])
         assert len(record) == 1
         assert record[0].message.args[0].startswith("Key not specified for child")
 
     @reactpy.component
     def MyComponent():
-        return reactpy.Vdom(tagName="div")()
+        return reactpy.Vdom("div")()
 
     with pytest.warns(UserWarning) as record:
-        reactpy.Vdom(tagName="div")([MyComponent()])
+        reactpy.Vdom("div")([MyComponent()])
         assert len(record) == 1
         assert record[0].message.args[0].startswith("Key not specified for child")
 
@@ -328,12 +326,6 @@ def test_raise_for_non_json_attrs():
 
 
 def test_invalid_vdom_keys():
-    with pytest.raises(ValueError, match="Invalid keys*"):
-        reactpy.Vdom(tagName="div", foo="bar")()
-
-    with pytest.raises(ValueError, match="You must specify a 'tagName'*"):
-        reactpy.Vdom()
-
     with pytest.raises(ValueError, match="Invalid keys:*"):
         reactpy.types.VdomDict(tagName="test", foo="bar")
 

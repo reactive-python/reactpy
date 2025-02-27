@@ -27,7 +27,7 @@ async def test_simple_component():
 async def test_simple_parameterized_component():
     @reactpy.component
     def SimpleParamComponent(tag):
-        return reactpy.Vdom(tagName=tag)()
+        return reactpy.Vdom(tag)()
 
     assert SimpleParamComponent("div").render() == {"tagName": "div"}
 

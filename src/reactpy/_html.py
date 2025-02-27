@@ -194,7 +194,7 @@ class SvgConstructor:
             return self.__cache__[value]
 
         self.__cache__[value] = Vdom(
-            tagName=value, allow_children=value not in NO_CHILDREN_ALLOWED_SVG
+            value, allow_children=value not in NO_CHILDREN_ALLOWED_SVG
         )
 
         return self.__cache__[value]
@@ -282,8 +282,8 @@ class HtmlConstructor:
 
     # ruff: noqa: N815
     __cache__: ClassVar[dict[str, VdomConstructor]] = {
-        "script": Vdom(tagName="script", custom_constructor=_script),
-        "fragment": Vdom(tagName="", custom_constructor=_fragment),
+        "script": Vdom("script", custom_constructor=_script),
+        "fragment": Vdom("", custom_constructor=_fragment),
         "svg": SvgConstructor(),
     }
 
@@ -294,7 +294,7 @@ class HtmlConstructor:
             return self.__cache__[value]
 
         self.__cache__[value] = Vdom(
-            tagName=value, allow_children=value not in NO_CHILDREN_ALLOWED_HTML_BODY
+            value, allow_children=value not in NO_CHILDREN_ALLOWED_HTML_BODY
         )
 
         return self.__cache__[value]

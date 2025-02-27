@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from typing import (
     Any,
     Callable,
@@ -11,7 +11,6 @@ from typing import (
 )
 
 from fastjsonschema import compile as compile_json_schema
-from typing_extensions import Unpack
 
 from reactpy._warnings import warn
 from reactpy.config import REACTPY_CHECK_JSON_ATTRS, REACTPY_DEBUG
@@ -23,11 +22,11 @@ from reactpy.types import (
     EllipsisRepr,
     EventHandlerDict,
     EventHandlerType,
+    ImportSourceDict,
     VdomAttributes,
     VdomChildren,
     VdomDict,
     VdomJson,
-    VdomTypeDict,
 )
 
 VDOM_JSON_SCHEMA = {
@@ -112,30 +111,29 @@ def is_vdom(value: Any) -> bool:
 
 
 class Vdom:
-    """Class that follows VDOM spec, and exposes the user API that can create VDOM elements."""
+    """Class-based constructor for VDOM dictionaries.
+    Once initialized, the `__call__` method on this class is used as the user API
+    for `reactpy.html`."""
 
     def __init__(
         self,
+        tag_name: str,
         /,
         allow_children: bool = True,
         custom_constructor: CustomVdomConstructor | None = None,
-        **kwargs: Unpack[VdomTypeDict],
+        import_source: ImportSourceDict | None = None,
     ) -> None:
-        """`**kwargs` provided here are considered as defaults for dictionary key values.
-        Other arguments exist to configure the way VDOM dictionaries are constructed."""
-        if "tagName" not in kwargs:
-            msg = "You must specify a 'tagName' for a VDOM element."
-            raise ValueError(msg)
+        """Initialize a VDOM constructor for the provided `tag_name`."""
         self.allow_children = allow_children
         self.custom_constructor = custom_constructor
-        self.default_values = kwargs
+        self.import_source = import_source
 
         # Configure Python debugger attributes
-        self.__name__ = kwargs["tagName"]
+        self.__name__ = tag_name
         module_name = f_module_name(1)
         if module_name:
             self.__module__ = module_name
-            self.__qualname__ = f"{module_name}.{kwargs['tagName']}"
+            self.__qualname__ = f"{module_name}.{tag_name}"
 
     @overload
     def __call__(
@@ -163,6 +161,7 @@ class Vdom:
                 attributes=attributes,
                 event_handlers=event_handlers,
             )
+
         # Otherwise, use the default constructor
         else:
             result = {
@@ -170,14 +169,16 @@ class Vdom:
                 **({"children": children} if children else {}),
                 **({"attributes": attributes} if attributes else {}),
                 **({"eventHandlers": event_handlers} if event_handlers else {}),
+                **({"importSource": self.import_source} if self.import_source else {}),
             }
 
         # Validate the result
+        result = result | {"tagName": self.__name__}
         if children and not self.allow_children:
-            msg = f"{self.default_values.get('tagName')!r} nodes cannot have children."
+            msg = f"{self.__name__!r} nodes cannot have children."
             raise TypeError(msg)
 
-        return VdomDict(**(self.default_values | result))  # type: ignore
+        return VdomDict(**result)  # type: ignore
 
 
 def separate_attributes_and_children(
