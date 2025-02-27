@@ -1,20 +1,18 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, ClassVar, overload
+from typing import ClassVar, overload
 
 from reactpy.core.vdom import Vdom
-
-if TYPE_CHECKING:
-    from reactpy.types import (
-        EventHandlerDict,
-        Key,
-        VdomAttributes,
-        VdomChild,
-        VdomChildren,
-        VdomDict,
-        VdomDictConstructor,
-    )
+from reactpy.types import (
+    EventHandlerDict,
+    Key,
+    VdomAttributes,
+    VdomChild,
+    VdomChildren,
+    VdomDict,
+    VdomDictConstructor,
+)
 
 __all__ = ["html"]
 
@@ -109,7 +107,7 @@ def _fragment(
     if attributes or event_handlers:
         msg = "Fragments cannot have attributes besides 'key'"
         raise TypeError(msg)
-    model: VdomDict = {"tagName": ""}
+    model = VdomDict(tagName="")
 
     if children:
         model["children"] = children
@@ -143,7 +141,7 @@ def _script(
         Doing so may allow for malicious code injection
         (`XSS <https://en.wikipedia.org/wiki/Cross-site_scripting>`__`).
     """
-    model: VdomDict = {"tagName": "script"}
+    model = VdomDict(tagName="script")
 
     if event_handlers:
         msg = "'script' elements do not support event handlers"

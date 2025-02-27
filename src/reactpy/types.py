@@ -11,6 +11,7 @@ from typing import (
     Literal,
     Protocol,
     TypeVar,
+    Unpack,
     overload,
     runtime_checkable,
 )
@@ -780,8 +781,8 @@ ALLOWED_VDOM_KEYS = {
 }
 
 
-class _VdomDict(TypedDict):
-    """Dictionary representation of what the `Vdom` class eventually resolves into."""
+class VdomTypeDict(TypedDict):
+    """TypedDict representation of what the `VdomDict` should look like."""
 
     tagName: str
     key: NotRequired[Key | None]
@@ -791,7 +792,58 @@ class _VdomDict(TypedDict):
     importSource: NotRequired[ImportSourceDict]
 
 
-VdomDict = _VdomDict | dict[str, Any]
+class VdomDict(dict):
+    """A dictionary representing a virtual DOM element."""
+
+    def __init__(self, **kwargs: Unpack[VdomTypeDict]) -> None:
+        invalid_keys = set(kwargs) - ALLOWED_VDOM_KEYS
+        if invalid_keys:
+            msg = f"Invalid keys: {invalid_keys}."
+            raise ValueError(msg)
+
+        super().__init__(**kwargs)
+
+    @overload
+    def __getitem__(self, key: Literal["tagName"]) -> str: ...
+    @overload
+    def __getitem__(self, key: Literal["key"]) -> Key | None: ...
+    @overload
+    def __getitem__(
+        self, key: Literal["children"]
+    ) -> Sequence[ComponentType | VdomChild]: ...
+    @overload
+    def __getitem__(self, key: Literal["attributes"]) -> VdomAttributes: ...
+    @overload
+    def __getitem__(self, key: Literal["eventHandlers"]) -> EventHandlerDict: ...
+    @overload
+    def __getitem__(self, key: Literal["importSource"]) -> ImportSourceDict: ...
+    def __getitem__(self, key: VdomDictKeys) -> Any:
+        return super().__getitem__(key)
+
+    @overload
+    def __setitem__(self, key: Literal["tagName"], value: str) -> None: ...
+    @overload
+    def __setitem__(self, key: Literal["key"], value: Key | None) -> None: ...
+    @overload
+    def __setitem__(
+        self, key: Literal["children"], value: Sequence[ComponentType | VdomChild]
+    ) -> None: ...
+    @overload
+    def __setitem__(
+        self, key: Literal["attributes"], value: VdomAttributes
+    ) -> None: ...
+    @overload
+    def __setitem__(
+        self, key: Literal["eventHandlers"], value: EventHandlerDict
+    ) -> None: ...
+    @overload
+    def __setitem__(
+        self, key: Literal["importSource"], value: ImportSourceDict
+    ) -> None: ...
+    def __setitem__(self, key: VdomDictKeys, value: Any) -> None:
+        if key not in ALLOWED_VDOM_KEYS:
+            raise KeyError(f"Invalid key: {key}")
+        super().__setitem__(key, value)
 
 
 VdomChild: TypeAlias = ComponentType | VdomDict | str | None | Any
@@ -875,14 +927,14 @@ class VdomDictConstructor(Protocol):
     @overload
     def __call__(
         self, attributes: VdomAttributes, /, *children: VdomChildren
-    ) -> VdomDict | dict[str, Any]: ...
+    ) -> VdomDict: ...
 
     @overload
-    def __call__(self, *children: VdomChildren) -> VdomDict | dict[str, Any]: ...
+    def __call__(self, *children: VdomChildren) -> VdomDict: ...
 
     def __call__(
         self, *attributes_and_children: VdomAttributes | VdomChildren
-    ) -> VdomDict | dict[str, Any]: ...
+    ) -> VdomDict: ...
 
 
 class LayoutUpdateMessage(TypedDict):

@@ -7,7 +7,7 @@ import reactpy
 from reactpy.config import REACTPY_DEBUG
 from reactpy.core.events import EventHandler
 from reactpy.core.vdom import Vdom, is_vdom, validate_vdom_json
-from reactpy.types import _VdomDict
+from reactpy.types import VdomDict, VdomTypeDict
 
 FAKE_EVENT_HANDLER = EventHandler(lambda data: None)
 FAKE_EVENT_HANDLER_DICT = {"onEvent": FAKE_EVENT_HANDLER}
@@ -18,13 +18,15 @@ FAKE_EVENT_HANDLER_DICT = {"onEvent": FAKE_EVENT_HANDLER}
     [
         (False, {}),
         (False, {"tagName": None}),
-        (False, _VdomDict()),
-        (True, {"tagName": ""}),
-        (True, _VdomDict(tagName="")),
+        (False, {"tagName": ""}),
+        (False, VdomTypeDict()),
+        (False, VdomDict()),
+        (True, VdomDict(tagName="")),
+        (True, VdomDict(tagName="div")),
     ],
 )
 def test_is_vdom(result, value):
-    assert is_vdom(value) == result
+    assert result == is_vdom(value)
 
 
 @pytest.mark.parametrize(
@@ -332,3 +334,9 @@ def test_invalid_vdom_keys():
 
     with pytest.raises(ValueError, match="You must specify a 'tagName'*"):
         reactpy.Vdom()
+
+    with pytest.raises(ValueError, match="Invalid keys:*"):
+        reactpy.types.VdomDict(foo="bar")
+
+    with pytest.raises(KeyError, match="Invalid key:*"):
+        reactpy.types.VdomDict()["foo"] = "bar"

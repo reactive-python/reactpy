@@ -30,7 +30,7 @@ def image(
     base64_value = b64encode(bytes_value).decode()
     src = f"data:image/{format};base64,{base64_value}"
 
-    return {"tagName": "img", "attributes": {"src": src, **(attributes or {})}}
+    return VdomDict(tagName="img", attributes={"src": src, **(attributes or {})})
 
 
 _Value = TypeVar("_Value")

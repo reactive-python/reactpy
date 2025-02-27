@@ -26,8 +26,9 @@ from reactpy.types import (
     EventHandlerType,
     VdomAttributes,
     VdomChildren,
+    VdomDict,
     VdomJson,
-    _VdomDict,
+    VdomTypeDict,
 )
 
 VDOM_JSON_SCHEMA = {
@@ -107,26 +108,8 @@ def validate_vdom_json(value: Any) -> VdomJson:
 
 
 def is_vdom(value: Any) -> bool:
-    """Return whether a value is a :class:`VdomDict`
-
-    This employs a very simple heuristic - something is VDOM if:
-
-    1. It is a ``dict`` instance
-    2. It contains the key ``"tagName"``
-    3. The value of the key ``"tagName"`` is a string
-
-    .. note::
-
-        Performing an ``isinstance(value, VdomDict)`` check is too restrictive since the
-        user would be forced to import ``VdomDict`` every time they needed to declare a
-        VDOM element. Giving the user more flexibility, at the cost of this check's
-        accuracy, is worth it.
-    """
-    return (
-        isinstance(value, dict)
-        and "tagName" in value
-        and isinstance(value["tagName"], str)
-    )
+    """Return whether a value is a :class:`VdomDict`"""
+    return isinstance(value, VdomDict)
 
 
 class Vdom:
@@ -137,7 +120,7 @@ class Vdom:
         /,
         allow_children: bool = True,
         custom_constructor: CustomVdomConstructor | None = None,
-        **kwargs: Unpack[_VdomDict],
+        **kwargs: Unpack[VdomTypeDict],
     ) -> None:
         """This init method is used to declare the VDOM dictionary default values, as well as configurable properties
         related to the construction of VDOM dictionaries."""
@@ -159,14 +142,14 @@ class Vdom:
     @overload
     def __call__(
         self, attributes: VdomAttributes, /, *children: VdomChildren
-    ) -> _VdomDict: ...
+    ) -> VdomDict: ...
 
     @overload
-    def __call__(self, *children: VdomChildren) -> _VdomDict: ...
+    def __call__(self, *children: VdomChildren) -> VdomDict: ...
 
     def __call__(
         self, *attributes_and_children: VdomAttributes | VdomChildren
-    ) -> _VdomDict:
+    ) -> VdomDict:
         """The entry point for the VDOM API, for example reactpy.html(<WE_ARE_HERE>)."""
         attributes, children = separate_attributes_and_children(attributes_and_children)
         key = attributes.pop("key", None)
@@ -198,7 +181,7 @@ class Vdom:
         if REACTPY_DEBUG.current:
             self._validate_keys(result.keys())
 
-        return cast(_VdomDict, self.default_values | result)
+        return VdomDict(**(self.default_values | result))  # type: ignore
 
     @staticmethod
     def _validate_keys(keys: Sequence[str] | Iterable[str]) -> None:
