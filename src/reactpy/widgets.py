@@ -7,13 +7,13 @@ from typing import TYPE_CHECKING, Any, Callable, Protocol, TypeVar
 import reactpy
 from reactpy._html import html
 from reactpy._warnings import warn
-from reactpy.types import ComponentConstructor, VdomDict
+from reactpy.types import ComponentConstructor, VdomAttributes, VdomDict
 
 
 def image(
     format: str,
     value: str | bytes = "",
-    attributes: dict[str, Any] | None = None,
+    attributes: VdomAttributes | None = None,
 ) -> VdomDict:
     """Utility for constructing an image from a string or bytes
 
@@ -30,7 +30,7 @@ def image(
     base64_value = b64encode(bytes_value).decode()
     src = f"data:image/{format};base64,{base64_value}"
 
-    return {"tagName": "img", "attributes": {"src": src, **(attributes or {})}}
+    return VdomDict(tagName="img", attributes={"src": src, **(attributes or {})})
 
 
 _Value = TypeVar("_Value")

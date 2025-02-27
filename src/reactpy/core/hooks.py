@@ -20,7 +20,14 @@ from typing_extensions import TypeAlias
 
 from reactpy.config import REACTPY_DEBUG
 from reactpy.core._life_cycle_hook import HOOK_STACK
-from reactpy.types import Connection, Context, Key, Location, State, VdomDict
+from reactpy.types import (
+    Connection,
+    Context,
+    Key,
+    Location,
+    State,
+    VdomDict,
+)
 from reactpy.utils import Ref
 
 if not TYPE_CHECKING:
@@ -362,7 +369,7 @@ class _ContextProvider(Generic[_Type]):
 
     def render(self) -> VdomDict:
         HOOK_STACK.current_hook().set_context_provider(self)
-        return {"tagName": "", "children": self.children}
+        return VdomDict(tagName="", children=self.children)
 
     def __repr__(self) -> str:
         return f"ContextProvider({self.type})"

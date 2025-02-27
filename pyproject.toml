@@ -107,6 +107,8 @@ filterwarnings = """
   ignore::DeprecationWarning:uvicorn.*
   ignore::DeprecationWarning:websockets.*
   ignore::UserWarning:tests.test_core.test_vdom
+  ignore::UserWarning:tests.test_pyscript.test_components
+  ignore::UserWarning:tests.test_utils
 """
 testpaths = "tests"
 xfail_strict = true
