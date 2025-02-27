@@ -796,6 +796,9 @@ class VdomDict(dict):
     """A dictionary representing a virtual DOM element."""
 
     def __init__(self, **kwargs: Unpack[VdomTypeDict]) -> None:
+        if "tagName" not in kwargs:
+            msg = "VdomDict requires a 'tagName' key."
+            raise ValueError(msg)
         invalid_keys = set(kwargs) - ALLOWED_VDOM_KEYS
         if invalid_keys:
             msg = f"Invalid keys: {invalid_keys}."

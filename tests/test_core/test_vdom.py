@@ -19,8 +19,7 @@ FAKE_EVENT_HANDLER_DICT = {"onEvent": FAKE_EVENT_HANDLER}
         (False, {}),
         (False, {"tagName": None}),
         (False, {"tagName": ""}),
-        (False, VdomTypeDict()),
-        (False, VdomDict()),
+        (False, VdomTypeDict(tagName="div")),
         (True, VdomDict(tagName="")),
         (True, VdomDict(tagName="div")),
     ],
@@ -71,7 +70,7 @@ def test_is_vdom(result, value):
         ),
         (
             reactpy.Vdom(tagName="div")({"tagName": "div"}),
-            {"tagName": "div", "children": [{"tagName": "div"}]},
+            {"tagName": "div", "attributes": {"tagName": "div"}},
         ),
         (
             reactpy.Vdom(tagName="div")((i for i in range(3))),
@@ -336,7 +335,10 @@ def test_invalid_vdom_keys():
         reactpy.Vdom()
 
     with pytest.raises(ValueError, match="Invalid keys:*"):
-        reactpy.types.VdomDict(foo="bar")
+        reactpy.types.VdomDict(tagName="test", foo="bar")
 
     with pytest.raises(KeyError, match="Invalid key:*"):
-        reactpy.types.VdomDict()["foo"] = "bar"
+        reactpy.types.VdomDict(tagName="test")["foo"] = "bar"
+
+    with pytest.raises(ValueError, match="VdomDict requires a 'tagName' key."):
+        reactpy.types.VdomDict(foo="bar")

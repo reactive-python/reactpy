@@ -199,7 +199,7 @@ def separate_attributes_and_children(
 
     _attributes: VdomAttributes
     children_or_iterables: Sequence[Any]
-    if _is_attributes(values[0]):
+    if type(values[0]) is dict:
         _attributes, *children_or_iterables = values
     else:
         _attributes = {}
@@ -244,10 +244,6 @@ def _flatten_children(children: Sequence[Any]) -> list[Any]:
         else:
             _children.extend(_flatten_children(child))
     return _children
-
-
-def _is_attributes(value: Any) -> bool:
-    return isinstance(value, Mapping) and "tagName" not in value
 
 
 def _is_single_child(value: Any) -> bool:
