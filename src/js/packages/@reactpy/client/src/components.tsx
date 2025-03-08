@@ -101,6 +101,11 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
       // allow the client to respond (and possibly change the value)
       givenOnChange(event);
     };
+  } else if (!givenOnChange) {
+    props.onChange = (event: ChangeEvent<any>) => {
+      // set the value so rerender doesn't stomp on state
+      setValue(event.target.value);
+    }
   }
 
   // Use createElement here to avoid warning about variable numbers of children not
