@@ -31,7 +31,7 @@ from reactpy.types import (
     RootComponentConstructor,
     VdomDict,
 )
-from reactpy.utils import html_to_vdom, import_dotted_path
+from reactpy.utils import import_dotted_path, string_to_reactpy
 
 _logger = getLogger(__name__)
 
@@ -74,7 +74,7 @@ class ReactPy(ReactPyMiddleware):
             extra_py = pyscript_options.get("extra_py", [])
             extra_js = pyscript_options.get("extra_js", {})
             config = pyscript_options.get("config", {})
-            pyscript_head_vdom = html_to_vdom(
+            pyscript_head_vdom = string_to_reactpy(
                 pyscript_setup_html(extra_py, extra_js, config)
             )
             pyscript_head_vdom["tagName"] = ""
@@ -182,7 +182,7 @@ class ReactPyApp:
     async def __call__(
         self, scope: AsgiScope, receive: AsgiReceive, send: AsgiSend
     ) -> None:
-        if scope["type"] != "http":  # pragma: no cover
+        if scope["type"] != "http":  # nocov
             if scope["type"] != "lifespan":
                 msg = (
                     "ReactPy app received unsupported request of type '%s' at path '%s'",

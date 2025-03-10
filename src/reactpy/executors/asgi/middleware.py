@@ -166,7 +166,7 @@ class ComponentDispatchApp:
                     msg: dict[str, str] = orjson.loads(event["text"])
                     if msg.get("type") == "layout-event":
                         await ws.rendering_queue.put(msg)
-                    else:  # pragma: no cover
+                    else:  # nocov
                         await asyncio.to_thread(
                             _logger.warning, f"Unknown message type: {msg.get('type')}"
                         )
@@ -205,7 +205,7 @@ class ReactPyWebsocket(ResponseWebSocket):
             # Determine component to serve by analyzing the URL and/or class parameters.
             if self.parent.multiple_root_components:
                 url_match = re.match(self.parent.dispatcher_pattern, self.scope["path"])
-                if not url_match:  # pragma: no cover
+                if not url_match:  # nocov
                     raise RuntimeError("Could not find component in URL path.")
                 dotted_path = url_match["dotted_path"]
                 if dotted_path not in self.parent.root_components:
@@ -215,7 +215,7 @@ class ReactPyWebsocket(ResponseWebSocket):
                 component = self.parent.root_components[dotted_path]
             elif self.parent.root_component:
                 component = self.parent.root_component
-            else:  # pragma: no cover
+            else:  # nocov
                 raise RuntimeError("No root component provided.")
 
             # Create a connection object by analyzing the websocket's query string.

@@ -7,7 +7,7 @@ from contextlib import closing
 
 def find_available_port(
     host: str, port_min: int = 8000, port_max: int = 9000
-) -> int:  # pragma: no cover
+) -> int:  # nocov
     """Get a port that's available for the given host and port range"""
     for port in range(port_min, port_max):
         with closing(socket.socket()) as sock:

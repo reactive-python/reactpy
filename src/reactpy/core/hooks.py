@@ -19,8 +19,15 @@ from typing import (
 from typing_extensions import TypeAlias
 
 from reactpy.config import REACTPY_DEBUG
-from reactpy.core._life_cycle_hook import current_hook
-from reactpy.types import Connection, Context, Key, Location, State, VdomDict
+from reactpy.core._life_cycle_hook import HOOK_STACK
+from reactpy.types import (
+    Connection,
+    Context,
+    Key,
+    Location,
+    State,
+    VdomDict,
+)
 from reactpy.utils import Ref
 
 if not TYPE_CHECKING:
@@ -83,7 +90,7 @@ class _CurrentState(Generic[_Type]):
         else:
             self.value = initial_value
 
-        hook = current_hook()
+        hook = HOOK_STACK.current_hook()
 
         def dispatch(new: _Type | Callable[[_Type], _Type]) -> None:
             next_value = new(self.value) if callable(new) else new  # type: ignore
@@ -139,7 +146,7 @@ def use_effect(
     Returns:
         If not function is provided, a decorator. Otherwise ``None``.
     """
-    hook = current_hook()
+    hook = HOOK_STACK.current_hook()
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
     cleanup_func: Ref[_EffectCleanFunc | None] = use_ref(None)
@@ -212,7 +219,7 @@ def use_async_effect(
     Returns:
         If not function is provided, a decorator. Otherwise ``None``.
     """
-    hook = current_hook()
+    hook = HOOK_STACK.current_hook()
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
     cleanup_func: Ref[_EffectCleanFunc | None] = use_ref(None)
@@ -280,7 +287,7 @@ def use_debug_value(
 
     if REACTPY_DEBUG.current and old.current != new:
         old.current = new
-        logger.debug(f"{current_hook().component} {new}")
+        logger.debug(f"{HOOK_STACK.current_hook().component} {new}")
 
 
 def create_context(default_value: _Type) -> Context[_Type]:
@@ -308,7 +315,7 @@ def use_context(context: Context[_Type]) -> _Type:
 
     See the full :ref:`Use Context` docs for more information.
     """
-    hook = current_hook()
+    hook = HOOK_STACK.current_hook()
     provider = hook.get_context_provider(context)
 
     if provider is None:
@@ -361,8 +368,8 @@ class _ContextProvider(Generic[_Type]):
         self.value = value
 
     def render(self) -> VdomDict:
-        current_hook().set_context_provider(self)
-        return {"tagName": "", "children": self.children}
+        HOOK_STACK.current_hook().set_context_provider(self)
+        return VdomDict(tagName="", children=self.children)
 
     def __repr__(self) -> str:
         return f"ContextProvider({self.type})"
@@ -554,7 +561,7 @@ def use_ref(initial_value: _Type) -> Ref[_Type]:
 
 
 def _use_const(function: Callable[[], _Type]) -> _Type:
-    return current_hook().use_state(function)
+    return HOOK_STACK.current_hook().use_state(function)
 
 
 def _try_to_infer_closure_values(
@@ -613,7 +620,7 @@ def strictly_equal(x: Any, y: Any) -> bool:
             return x == y  # type: ignore
 
     # Fallback to identity check
-    return x is y  # pragma: no cover
+    return x is y  # nocov
 
 
 def run_effect_cleanup(cleanup_func: Ref[_EffectCleanFunc | None]) -> None:

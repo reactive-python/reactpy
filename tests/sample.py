@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from reactpy import html
 from reactpy.core.component import component
-from reactpy.types import VdomDict
 
 
 @component
-def SampleApp() -> VdomDict:
+def SampleApp():
     return html.div(
         {"id": "sample", "style": {"padding": "15px"}},
         html.h1("Sample Application"),

@@ -13,7 +13,7 @@ from reactpy.config import (
     REACTPY_RECONNECT_MAX_RETRIES,
 )
 from reactpy.types import ReactPyConfig, VdomDict
-from reactpy.utils import import_dotted_path, vdom_to_html
+from reactpy.utils import import_dotted_path, reactpy_to_string
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ def import_components(dotted_paths: Iterable[str]) -> dict[str, Any]:
     }
 
 
-def check_path(url_path: str) -> str:  # pragma: no cover
+def check_path(url_path: str) -> str:  # nocov
     """Check that a path is valid URL path."""
     if not url_path:
         return "URL path must not be empty."
@@ -41,7 +41,7 @@ def check_path(url_path: str) -> str:  # pragma: no cover
 
 def vdom_head_to_html(head: VdomDict) -> str:
     if isinstance(head, dict) and head.get("tagName") == "head":
-        return vdom_to_html(head)
+        return reactpy_to_string(head)
 
     raise ValueError(
         "Invalid head element! Element must be either `html.head` or a string."

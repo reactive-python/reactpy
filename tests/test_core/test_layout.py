@@ -82,7 +82,7 @@ async def test_simple_layout():
     @reactpy.component
     def SimpleComponent():
         tag, set_state_hook.current = reactpy.hooks.use_state("div")
-        return reactpy.vdom(tag)
+        return reactpy.Vdom(tag)()
 
     async with reactpy.Layout(SimpleComponent()) as layout:
         update_1 = await layout.render()
@@ -343,7 +343,7 @@ async def test_root_component_life_cycle_hook_is_garbage_collected():
     def add_to_live_hooks(constructor):
         def wrapper(*args, **kwargs):
             result = constructor(*args, **kwargs)
-            hook = reactpy.hooks.current_hook()
+            hook = reactpy.hooks.HOOK_STACK.current_hook()
             hook_id = id(hook)
             live_hooks.add(hook_id)
             finalize(hook, live_hooks.discard, hook_id)
@@ -375,7 +375,7 @@ async def test_life_cycle_hooks_are_garbage_collected():
     def add_to_live_hooks(constructor):
         def wrapper(*args, **kwargs):
             result = constructor(*args, **kwargs)
-            hook = reactpy.hooks.current_hook()
+            hook = reactpy.hooks.HOOK_STACK.current_hook()
             hook_id = id(hook)
             live_hooks.add(hook_id)
             finalize(hook, live_hooks.discard, hook_id)
@@ -625,7 +625,7 @@ async def test_hooks_for_keyed_components_get_garbage_collected():
     @reactpy.component
     def Inner(finalizer_id):
         if finalizer_id not in registered_finalizers:
-            hook = reactpy.hooks.current_hook()
+            hook = reactpy.hooks.HOOK_STACK.current_hook()
             finalize(hook, lambda: garbage_collect_items.append(finalizer_id))
             registered_finalizers.add(finalizer_id)
         return reactpy.html.div(finalizer_id)

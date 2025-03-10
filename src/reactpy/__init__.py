@@ -19,9 +19,9 @@ from reactpy.core.hooks import (
     use_state,
 )
 from reactpy.core.layout import Layout
-from reactpy.core.vdom import vdom
+from reactpy.core.vdom import Vdom
 from reactpy.pyscript.components import pyscript_component
-from reactpy.utils import Ref, html_to_vdom, vdom_to_html
+from reactpy.utils import Ref, reactpy_to_string, string_to_reactpy
 
 __author__ = "The Reactive Python Team"
 __version__ = "2.0.0a1"
@@ -29,15 +29,17 @@ __version__ = "2.0.0a1"
 __all__ = [
     "Layout",
     "Ref",
+    "Vdom",
     "component",
     "config",
     "create_context",
     "event",
     "hooks",
     "html",
-    "html_to_vdom",
     "logging",
     "pyscript_component",
+    "reactpy_to_string",
+    "string_to_reactpy",
     "types",
     "use_async_effect",
     "use_callback",
@@ -51,8 +53,6 @@ __all__ = [
     "use_ref",
     "use_scope",
     "use_state",
-    "vdom",
-    "vdom_to_html",
     "web",
     "widgets",
 ]

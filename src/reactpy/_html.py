@@ -1,20 +1,18 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar, overload
 
-from reactpy.core.vdom import custom_vdom_constructor, make_vdom_constructor
-
-if TYPE_CHECKING:
-    from reactpy.types import (
-        EventHandlerDict,
-        Key,
-        VdomAttributes,
-        VdomChild,
-        VdomChildren,
-        VdomDict,
-        VdomDictConstructor,
-    )
+from reactpy.core.vdom import Vdom
+from reactpy.types import (
+    EventHandlerDict,
+    Key,
+    VdomAttributes,
+    VdomChild,
+    VdomChildren,
+    VdomConstructor,
+    VdomDict,
+)
 
 __all__ = ["html"]
 
@@ -109,7 +107,7 @@ def _fragment(
     if attributes or event_handlers:
         msg = "Fragments cannot have attributes besides 'key'"
         raise TypeError(msg)
-    model: VdomDict = {"tagName": ""}
+    model = VdomDict(tagName="")
 
     if children:
         model["children"] = children
@@ -143,7 +141,7 @@ def _script(
         Doing so may allow for malicious code injection
         (`XSS <https://en.wikipedia.org/wiki/Cross-site_scripting>`__`).
     """
-    model: VdomDict = {"tagName": "script"}
+    model = VdomDict(tagName="script")
 
     if event_handlers:
         msg = "'script' elements do not support event handlers"
@@ -174,20 +172,28 @@ def _script(
 class SvgConstructor:
     """Constructor specifically for SVG children."""
 
-    __cache__: ClassVar[dict[str, VdomDictConstructor]] = {}
+    __cache__: ClassVar[dict[str, VdomConstructor]] = {}
+
+    @overload
+    def __call__(
+        self, attributes: VdomAttributes, /, *children: VdomChildren
+    ) -> VdomDict: ...
+
+    @overload
+    def __call__(self, *children: VdomChildren) -> VdomDict: ...
 
     def __call__(
         self, *attributes_and_children: VdomAttributes | VdomChildren
     ) -> VdomDict:
         return self.svg(*attributes_and_children)
 
-    def __getattr__(self, value: str) -> VdomDictConstructor:
+    def __getattr__(self, value: str) -> VdomConstructor:
         value = value.rstrip("_").replace("_", "-")
 
         if value in self.__cache__:
             return self.__cache__[value]
 
-        self.__cache__[value] = make_vdom_constructor(
+        self.__cache__[value] = Vdom(
             value, allow_children=value not in NO_CHILDREN_ALLOWED_SVG
         )
 
@@ -196,71 +202,72 @@ class SvgConstructor:
     # SVG child elements, written out here for auto-complete purposes
     # The actual elements are created dynamically in the __getattr__ method.
     # Elements other than these can still be created.
-    a: VdomDictConstructor
-    animate: VdomDictConstructor
-    animateMotion: VdomDictConstructor
-    animateTransform: VdomDictConstructor
-    circle: VdomDictConstructor
-    clipPath: VdomDictConstructor
-    defs: VdomDictConstructor
-    desc: VdomDictConstructor
-    discard: VdomDictConstructor
-    ellipse: VdomDictConstructor
-    feBlend: VdomDictConstructor
-    feColorMatrix: VdomDictConstructor
-    feComponentTransfer: VdomDictConstructor
-    feComposite: VdomDictConstructor
-    feConvolveMatrix: VdomDictConstructor
-    feDiffuseLighting: VdomDictConstructor
-    feDisplacementMap: VdomDictConstructor
-    feDistantLight: VdomDictConstructor
-    feDropShadow: VdomDictConstructor
-    feFlood: VdomDictConstructor
-    feFuncA: VdomDictConstructor
-    feFuncB: VdomDictConstructor
-    feFuncG: VdomDictConstructor
-    feFuncR: VdomDictConstructor
-    feGaussianBlur: VdomDictConstructor
-    feImage: VdomDictConstructor
-    feMerge: VdomDictConstructor
-    feMergeNode: VdomDictConstructor
-    feMorphology: VdomDictConstructor
-    feOffset: VdomDictConstructor
-    fePointLight: VdomDictConstructor
-    feSpecularLighting: VdomDictConstructor
-    feSpotLight: VdomDictConstructor
-    feTile: VdomDictConstructor
-    feTurbulence: VdomDictConstructor
-    filter: VdomDictConstructor
-    foreignObject: VdomDictConstructor
-    g: VdomDictConstructor
-    hatch: VdomDictConstructor
-    hatchpath: VdomDictConstructor
-    image: VdomDictConstructor
-    line: VdomDictConstructor
-    linearGradient: VdomDictConstructor
-    marker: VdomDictConstructor
-    mask: VdomDictConstructor
-    metadata: VdomDictConstructor
-    mpath: VdomDictConstructor
-    path: VdomDictConstructor
-    pattern: VdomDictConstructor
-    polygon: VdomDictConstructor
-    polyline: VdomDictConstructor
-    radialGradient: VdomDictConstructor
-    rect: VdomDictConstructor
-    script: VdomDictConstructor
-    set: VdomDictConstructor
-    stop: VdomDictConstructor
-    style: VdomDictConstructor
-    switch: VdomDictConstructor
-    symbol: VdomDictConstructor
-    text: VdomDictConstructor
-    textPath: VdomDictConstructor
-    title: VdomDictConstructor
-    tspan: VdomDictConstructor
-    use: VdomDictConstructor
-    view: VdomDictConstructor
+    a: VdomConstructor
+    animate: VdomConstructor
+    animateMotion: VdomConstructor
+    animateTransform: VdomConstructor
+    circle: VdomConstructor
+    clipPath: VdomConstructor
+    defs: VdomConstructor
+    desc: VdomConstructor
+    discard: VdomConstructor
+    ellipse: VdomConstructor
+    feBlend: VdomConstructor
+    feColorMatrix: VdomConstructor
+    feComponentTransfer: VdomConstructor
+    feComposite: VdomConstructor
+    feConvolveMatrix: VdomConstructor
+    feDiffuseLighting: VdomConstructor
+    feDisplacementMap: VdomConstructor
+    feDistantLight: VdomConstructor
+    feDropShadow: VdomConstructor
+    feFlood: VdomConstructor
+    feFuncA: VdomConstructor
+    feFuncB: VdomConstructor
+    feFuncG: VdomConstructor
+    feFuncR: VdomConstructor
+    feGaussianBlur: VdomConstructor
+    feImage: VdomConstructor
+    feMerge: VdomConstructor
+    feMergeNode: VdomConstructor
+    feMorphology: VdomConstructor
+    feOffset: VdomConstructor
+    fePointLight: VdomConstructor
+    feSpecularLighting: VdomConstructor
+    feSpotLight: VdomConstructor
+    feTile: VdomConstructor
+    feTurbulence: VdomConstructor
+    filter: VdomConstructor
+    foreignObject: VdomConstructor
+    g: VdomConstructor
+    hatch: VdomConstructor
+    hatchpath: VdomConstructor
+    image: VdomConstructor
+    line: VdomConstructor
+    linearGradient: VdomConstructor
+    marker: VdomConstructor
+    mask: VdomConstructor
+    metadata: VdomConstructor
+    mpath: VdomConstructor
+    path: VdomConstructor
+    pattern: VdomConstructor
+    polygon: VdomConstructor
+    polyline: VdomConstructor
+    radialGradient: VdomConstructor
+    rect: VdomConstructor
+    script: VdomConstructor
+    set: VdomConstructor
+    stop: VdomConstructor
+    style: VdomConstructor
+    switch: VdomConstructor
+    symbol: VdomConstructor
+    text: VdomConstructor
+    textPath: VdomConstructor
+    title: VdomConstructor
+    tspan: VdomConstructor
+    use: VdomConstructor
+    view: VdomConstructor
+    svg: VdomConstructor
 
 
 class HtmlConstructor:
@@ -274,143 +281,144 @@ class HtmlConstructor:
     with underscores (eg. `html.data_table` for `<data-table>`)."""
 
     # ruff: noqa: N815
-    __cache__: ClassVar[dict[str, VdomDictConstructor]] = {
-        "script": custom_vdom_constructor(_script),
-        "fragment": custom_vdom_constructor(_fragment),
+    __cache__: ClassVar[dict[str, VdomConstructor]] = {
+        "script": Vdom("script", custom_constructor=_script),
+        "fragment": Vdom("", custom_constructor=_fragment),
+        "svg": SvgConstructor(),
     }
 
-    def __getattr__(self, value: str) -> VdomDictConstructor:
+    def __getattr__(self, value: str) -> VdomConstructor:
         value = value.rstrip("_").replace("_", "-")
 
         if value in self.__cache__:
             return self.__cache__[value]
 
-        self.__cache__[value] = make_vdom_constructor(
+        self.__cache__[value] = Vdom(
             value, allow_children=value not in NO_CHILDREN_ALLOWED_HTML_BODY
         )
 
         return self.__cache__[value]
 
-    # HTML elements, written out here for auto-complete purposes
-    # The actual elements are created dynamically in the __getattr__ method.
-    # Elements other than these can still be created.
-    a: VdomDictConstructor
-    abbr: VdomDictConstructor
-    address: VdomDictConstructor
-    area: VdomDictConstructor
-    article: VdomDictConstructor
-    aside: VdomDictConstructor
-    audio: VdomDictConstructor
-    b: VdomDictConstructor
-    body: VdomDictConstructor
-    base: VdomDictConstructor
-    bdi: VdomDictConstructor
-    bdo: VdomDictConstructor
-    blockquote: VdomDictConstructor
-    br: VdomDictConstructor
-    button: VdomDictConstructor
-    canvas: VdomDictConstructor
-    caption: VdomDictConstructor
-    cite: VdomDictConstructor
-    code: VdomDictConstructor
-    col: VdomDictConstructor
-    colgroup: VdomDictConstructor
-    data: VdomDictConstructor
-    dd: VdomDictConstructor
-    del_: VdomDictConstructor
-    details: VdomDictConstructor
-    dialog: VdomDictConstructor
-    div: VdomDictConstructor
-    dl: VdomDictConstructor
-    dt: VdomDictConstructor
-    em: VdomDictConstructor
-    embed: VdomDictConstructor
-    fieldset: VdomDictConstructor
-    figcaption: VdomDictConstructor
-    figure: VdomDictConstructor
-    footer: VdomDictConstructor
-    form: VdomDictConstructor
-    h1: VdomDictConstructor
-    h2: VdomDictConstructor
-    h3: VdomDictConstructor
-    h4: VdomDictConstructor
-    h5: VdomDictConstructor
-    h6: VdomDictConstructor
-    head: VdomDictConstructor
-    header: VdomDictConstructor
-    hr: VdomDictConstructor
-    html: VdomDictConstructor
-    i: VdomDictConstructor
-    iframe: VdomDictConstructor
-    img: VdomDictConstructor
-    input: VdomDictConstructor
-    ins: VdomDictConstructor
-    kbd: VdomDictConstructor
-    label: VdomDictConstructor
-    legend: VdomDictConstructor
-    li: VdomDictConstructor
-    link: VdomDictConstructor
-    main: VdomDictConstructor
-    map: VdomDictConstructor
-    mark: VdomDictConstructor
-    math: VdomDictConstructor
-    menu: VdomDictConstructor
-    menuitem: VdomDictConstructor
-    meta: VdomDictConstructor
-    meter: VdomDictConstructor
-    nav: VdomDictConstructor
-    noscript: VdomDictConstructor
-    object: VdomDictConstructor
-    ol: VdomDictConstructor
-    option: VdomDictConstructor
-    output: VdomDictConstructor
-    p: VdomDictConstructor
-    param: VdomDictConstructor
-    picture: VdomDictConstructor
-    portal: VdomDictConstructor
-    pre: VdomDictConstructor
-    progress: VdomDictConstructor
-    q: VdomDictConstructor
-    rp: VdomDictConstructor
-    rt: VdomDictConstructor
-    ruby: VdomDictConstructor
-    s: VdomDictConstructor
-    samp: VdomDictConstructor
-    script: VdomDictConstructor
-    section: VdomDictConstructor
-    select: VdomDictConstructor
-    slot: VdomDictConstructor
-    small: VdomDictConstructor
-    source: VdomDictConstructor
-    span: VdomDictConstructor
-    strong: VdomDictConstructor
-    style: VdomDictConstructor
-    sub: VdomDictConstructor
-    summary: VdomDictConstructor
-    sup: VdomDictConstructor
-    table: VdomDictConstructor
-    tbody: VdomDictConstructor
-    td: VdomDictConstructor
-    template: VdomDictConstructor
-    textarea: VdomDictConstructor
-    tfoot: VdomDictConstructor
-    th: VdomDictConstructor
-    thead: VdomDictConstructor
-    time: VdomDictConstructor
-    title: VdomDictConstructor
-    tr: VdomDictConstructor
-    track: VdomDictConstructor
-    u: VdomDictConstructor
-    ul: VdomDictConstructor
-    var: VdomDictConstructor
-    video: VdomDictConstructor
-    wbr: VdomDictConstructor
-    fragment: VdomDictConstructor
+    # Standard HTML elements are written below for auto-complete purposes
+    # The actual elements are created dynamically when __getattr__ is called.
+    # Elements other than those type-hinted below can still be created.
+    a: VdomConstructor
+    abbr: VdomConstructor
+    address: VdomConstructor
+    area: VdomConstructor
+    article: VdomConstructor
+    aside: VdomConstructor
+    audio: VdomConstructor
+    b: VdomConstructor
+    body: VdomConstructor
+    base: VdomConstructor
+    bdi: VdomConstructor
+    bdo: VdomConstructor
+    blockquote: VdomConstructor
+    br: VdomConstructor
+    button: VdomConstructor
+    canvas: VdomConstructor
+    caption: VdomConstructor
+    cite: VdomConstructor
+    code: VdomConstructor
+    col: VdomConstructor
+    colgroup: VdomConstructor
+    data: VdomConstructor
+    dd: VdomConstructor
+    del_: VdomConstructor
+    details: VdomConstructor
+    dialog: VdomConstructor
+    div: VdomConstructor
+    dl: VdomConstructor
+    dt: VdomConstructor
+    em: VdomConstructor
+    embed: VdomConstructor
+    fieldset: VdomConstructor
+    figcaption: VdomConstructor
+    figure: VdomConstructor
+    footer: VdomConstructor
+    form: VdomConstructor
+    h1: VdomConstructor
+    h2: VdomConstructor
+    h3: VdomConstructor
+    h4: VdomConstructor
+    h5: VdomConstructor
+    h6: VdomConstructor
+    head: VdomConstructor
+    header: VdomConstructor
+    hr: VdomConstructor
+    html: VdomConstructor
+    i: VdomConstructor
+    iframe: VdomConstructor
+    img: VdomConstructor
+    input: VdomConstructor
+    ins: VdomConstructor
+    kbd: VdomConstructor
+    label: VdomConstructor
+    legend: VdomConstructor
+    li: VdomConstructor
+    link: VdomConstructor
+    main: VdomConstructor
+    map: VdomConstructor
+    mark: VdomConstructor
+    math: VdomConstructor
+    menu: VdomConstructor
+    menuitem: VdomConstructor
+    meta: VdomConstructor
+    meter: VdomConstructor
+    nav: VdomConstructor
+    noscript: VdomConstructor
+    object: VdomConstructor
+    ol: VdomConstructor
+    option: VdomConstructor
+    output: VdomConstructor
+    p: VdomConstructor
+    param: VdomConstructor
+    picture: VdomConstructor
+    portal: VdomConstructor
+    pre: VdomConstructor
+    progress: VdomConstructor
+    q: VdomConstructor
+    rp: VdomConstructor
+    rt: VdomConstructor
+    ruby: VdomConstructor
+    s: VdomConstructor
+    samp: VdomConstructor
+    script: VdomConstructor
+    section: VdomConstructor
+    select: VdomConstructor
+    slot: VdomConstructor
+    small: VdomConstructor
+    source: VdomConstructor
+    span: VdomConstructor
+    strong: VdomConstructor
+    style: VdomConstructor
+    sub: VdomConstructor
+    summary: VdomConstructor
+    sup: VdomConstructor
+    table: VdomConstructor
+    tbody: VdomConstructor
+    td: VdomConstructor
+    template: VdomConstructor
+    textarea: VdomConstructor
+    tfoot: VdomConstructor
+    th: VdomConstructor
+    thead: VdomConstructor
+    time: VdomConstructor
+    title: VdomConstructor
+    tr: VdomConstructor
+    track: VdomConstructor
+    u: VdomConstructor
+    ul: VdomConstructor
+    var: VdomConstructor
+    video: VdomConstructor
+    wbr: VdomConstructor
+    fragment: VdomConstructor
 
     # Special Case: SVG elements
     # Since SVG elements have a different set of allowed children, they are
     # separated into a different constructor, and are accessed via `html.svg.example()`
-    svg: SvgConstructor = SvgConstructor()
+    svg: SvgConstructor
 
 
 html = HtmlConstructor()

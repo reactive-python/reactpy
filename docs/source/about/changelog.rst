@@ -20,12 +20,15 @@ Unreleased
 - :pull:`1113` - Added ``reactpy.executors.asgi.ReactPy`` that can be used to run ReactPy in standalone mode via ASGI.
 - :pull:`1269` - Added ``reactpy.executors.asgi.ReactPyPyodide`` that can be used to run ReactPy in standalone mode via ASGI, but rendered entirely client-sided.
 - :pull:`1113` - Added ``reactpy.executors.asgi.ReactPyMiddleware`` that can be used to utilize ReactPy within any ASGI compatible framework.
-- :pull:`1113` :pull:`1269` - Added ``reactpy.templatetags.Jinja`` that can be used alongside ``ReactPyMiddleware`` to embed several ReactPy components into your existing application. This includes the following template tags: ``{% component %}``, ``{% pyscript_component %}``, and ``{% pyscript_setup %}``.
+- :pull:`1269` - Added ``reactpy.templatetags.Jinja`` that can be used alongside ``ReactPyMiddleware`` to embed several ReactPy components into your existing application. This includes the following template tags: ``{% component %}``, ``{% pyscript_component %}``, and ``{% pyscript_setup %}``.
 - :pull:`1269` - Added ``reactpy.pyscript_component`` that can be used to embed ReactPy components into your existing application.
 - :pull:`1113` - Added ``uvicorn`` and ``jinja`` installation extras (for example ``pip install reactpy[jinja]``).
 - :pull:`1113` - Added support for Python 3.12 and 3.13.
 - :pull:`1264` - Added ``reactpy.use_async_effect`` hook.
 - :pull:`1267` - Added ``shutdown_timeout`` parameter to the ``reactpy.use_async_effect`` hook.
+- :pull:`1281` - ``reactpy.html`` will now automatically flatten lists recursively (ex. ``reactpy.html(["child1", ["child2"]])``)
+- :pull:`1281` - Added ``reactpy.Vdom`` primitive interface for creating VDOM dictionaries.
+- :pull:`1281` - Added type hints to ``reactpy.html`` attributes.
 
 **Changed**
 
@@ -39,6 +42,11 @@ Unreleased
 - :pull:`1113` - Renamed ``reactpy.config.REACTPY_DEBUG_MODE`` to ``reactpy.config.REACTPY_DEBUG``.
 - :pull:`1113` - ``@reactpy/client`` now exports ``React`` and ``ReactDOM``.
 - :pull:`1263` - ReactPy no longer auto-converts ``snake_case`` props to ``camelCase``. It is now the responsibility of the user to ensure that props are in the correct format.
+- :pull:`1278` - ``reactpy.utils.reactpy_to_string`` will now retain the user's original casing for ``data-*`` and ``aria-*`` attributes.
+- :pull:`1278` - ``reactpy.utils.string_to_reactpy`` has been upgraded to handle more complex scenarios without causing ReactJS rendering errors.
+- :pull:`1281` - ``reactpy.core.vdom._CustomVdomDictConstructor`` has been moved to ``reactpy.types.CustomVdomConstructor``.
+- :pull:`1281` - ``reactpy.core.vdom._EllipsisRepr`` has been moved to ``reactpy.types.EllipsisRepr``.
+- :pull:`1281` - ``reactpy.types.VdomDictConstructor`` has been renamed to ``reactpy.types.VdomConstructor``.
 
 **Removed**
 
@@ -49,15 +57,21 @@ Unreleased
 - :pull:`1113` - Removed ``reactpy.run``. See the documentation for the new method to run ReactPy applications.
 - :pull:`1113` - Removed ``reactpy.backend.*``. See the documentation for the new method to run ReactPy applications.
 - :pull:`1113` - Removed ``reactpy.core.types`` module. Use ``reactpy.types`` instead.
+- :pull:`1278` - Removed ``reactpy.utils.html_to_vdom``. Use ``reactpy.utils.string_to_reactpy`` instead.
+- :pull:`1278` - Removed ``reactpy.utils.vdom_to_html``. Use ``reactpy.utils.reactpy_to_string`` instead.
 - :pull:`1113` - All backend related installation extras (such as ``pip install reactpy[starlette]``) have been removed.
 - :pull:`1113` - Removed deprecated function ``module_from_template``.
 - :pull:`1113` - Removed support for Python 3.9.
 - :pull:`1264` - Removed support for async functions within ``reactpy.use_effect`` hook. Use ``reactpy.use_async_effect`` instead.
+- :pull:`1281` - Removed ``reactpy.vdom``. Use ``reactpy.Vdom`` instead.
+- :pull:`1281` - Removed ``reactpy.core.make_vdom_constructor``. Use ``reactpy.Vdom`` instead.
+- :pull:`1281` - Removed ``reactpy.core.custom_vdom_constructor``. Use ``reactpy.Vdom`` instead.
 
 **Fixed**
 
 - :pull:`1239` - Fixed a bug where script elements would not render to the DOM as plain text.
 - :pull:`1271` - Fixed bug where JavaScript components were unable to obtain the ``key`` attribute provided within ReactPy.
+- :pull:`1254` - Fixed a bug where ``RuntimeError("Hook stack is in an invalid state")`` errors would be provided when using a webserver that reuses threads.
 
 v1.1.0
 ------
