@@ -208,6 +208,60 @@ async def test_imported_components_can_render_children(display: DisplayFixture):
         assert (await child.get_attribute("id")) == f"child-{index + 1}"
 
 
+async def test_keys_properly_propagated(display: DisplayFixture):
+    module = reactpy.web.module_from_file(
+        "keys-properly-propagated", JS_FIXTURES_DIR / "keys-properly-propagated.js"
+    )
+    GridLayout = reactpy.web.export(module, "GridLayout")
+
+    await display.show(
+        lambda: GridLayout({
+            "layout": [
+                {
+                    "i": "a",
+                    "x": 0,
+                    "y": 0,
+                    "w": 1,
+                    "h": 2,
+                    "static": True,
+                },
+                {
+                    "i": "b",
+                    "x": 1,
+                    "y": 0,
+                    "w": 3,
+                    "h": 2,
+                    "minW": 2,
+                    "maxW": 4,
+                },
+                {
+                    "i": "c",
+                    "x": 4,
+                    "y": 0,
+                    "w": 1,
+                    "h": 2,
+                }
+            ],
+            "cols": 12,
+            "rowHeight": 30,
+            "width": 1200,
+        },
+            reactpy.html.div({"key": "a"}, "a"),
+            reactpy.html.div({"key": "b"}, "b"),
+            reactpy.html.div({"key": "c"}, "c"),
+        )
+    )
+
+    parent = await display.page.wait_for_selector(".react-grid-layout", state="attached", timeout=0)
+    children = await parent.query_selector_all("div")
+
+    # The children simply will not render unless they receive the key prop
+    assert len(children) == 3
+
+    # for index, child in enumerate(children):
+    #     assert (await child.get_attribute("key")) == child.get_text()
+
+
 def test_module_from_string():
     reactpy.web.module_from_string("temp", "old")
     with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
