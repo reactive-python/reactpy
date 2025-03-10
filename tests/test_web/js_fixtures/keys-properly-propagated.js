@@ -4,7 +4,6 @@ import GridLayout from "https://esm.sh/react-grid-layout@1.5.0";
 export {GridLayout};
 
 export function bind(node, config) {
-  debugger;
   const root = ReactDOM.createRoot(node);
   return {
     create: (type, props, children) => 
