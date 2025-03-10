@@ -258,9 +258,6 @@ async def test_keys_properly_propagated(display: DisplayFixture):
     # The children simply will not render unless they receive the key prop
     assert len(children) == 3
 
-    # for index, child in enumerate(children):
-    #     assert (await child.get_attribute("key")) == child.get_text()
-
 
 def test_module_from_string():
     reactpy.web.module_from_string("temp", "old")
