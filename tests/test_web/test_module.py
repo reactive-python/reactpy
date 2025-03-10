@@ -252,7 +252,7 @@ async def test_keys_properly_propagated(display: DisplayFixture):
         )
     )
 
-    parent = await display.page.wait_for_selector(".react-grid-layout", state="attached", timeout=0)
+    parent = await display.page.wait_for_selector(".react-grid-layout", state="attached")
     children = await parent.query_selector_all("div")
 
     # The children simply will not render unless they receive the key prop
