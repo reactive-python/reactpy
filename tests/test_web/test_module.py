@@ -209,11 +209,13 @@ async def test_imported_components_can_render_children(display: DisplayFixture):
 
 
 async def test_keys_properly_propagated(display: DisplayFixture):
-    """ Addresses issue #1271
-    The "key" property was being lost in its propagation from
-    the server-side ReactPy definition to the front-end JavaScript.
-    This is a critical issue for the proper functionality of
-    certain components, such as the GridLayout from 
+    """
+    Fix https://github.com/reactive-python/reactpy/issues/1275
+
+    The `key` property was being lost in its propagation from the server-side ReactPy
+    definition to the front-end JavaScript.
+    
+    This property is required for certain JS components, such as the GridLayout from 
     react-grid-layout.
     """
     module = reactpy.web.module_from_file(
