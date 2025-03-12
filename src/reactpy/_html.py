@@ -104,7 +104,8 @@ def _fragment(
     event_handlers: EventHandlerDict,
 ) -> VdomDict:
     """An HTML fragment - this element will not appear in the DOM"""
-    if (attributes and any(a != "key" for a in attributes)) or event_handlers:
+    attributes.pop("key", None)
+    if attributes or event_handlers:
         msg = "Fragments cannot have attributes besides 'key'"
         raise TypeError(msg)
     model = VdomDict(tagName="")
