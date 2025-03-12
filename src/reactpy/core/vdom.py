@@ -148,7 +148,7 @@ class Vdom:
     ) -> VdomDict:
         """The entry point for the VDOM API, for example reactpy.html(<WE_ARE_HERE>)."""
         attributes, children = separate_attributes_and_children(attributes_and_children)
-        key = attributes.pop("key", None)
+        key = attributes.get("key", None)
         attributes, event_handlers = separate_attributes_and_event_handlers(attributes)
         if REACTPY_CHECK_JSON_ATTRS.current:
             json.dumps(attributes)
