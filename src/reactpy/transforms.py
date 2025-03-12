@@ -103,7 +103,7 @@ class RequiredTransforms:
             return
 
         # Infer 'key' from 'attributes.key'
-        key = attributes.pop("key", None)
+        key = attributes.get("key", None)
 
         # Infer 'key' from 'attributes.id'
         if key is None:

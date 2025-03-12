@@ -188,7 +188,7 @@ def test_string_to_reactpy(case):
         # 8: Infer ReactJS `key` from the `key` attribute
         {
             "source": '<div key="my-key"></div>',
-            "model": {"tagName": "div", "key": "my-key"},
+            "model": {"tagName": "div", "attributes": {"key": "my-key"}, "key": "my-key"},
         },
     ],
 )
@@ -253,7 +253,7 @@ def test_non_html_tag_behavior():
         "tagName": "my-tag",
         "attributes": {"data-x": "something"},
         "children": [
-            {"tagName": "my-other-tag", "key": "a-key"},
+            {"tagName": "my-other-tag", "attributes": {"key": "a-key"}, "key": "a-key"},
         ],
     }
 
