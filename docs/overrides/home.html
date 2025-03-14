@@ -1,0 +1,135 @@
+<!-- TODO: Use markdown code blocks whenever mkdocs starts supported markdown embeds -->
+{% extends "main.html" %}
+
+<!-- Set the content block to empty -->
+{% block content %}{% endblock %}
+
+<!-- Override the tabs block to create the homepage -->
+{% block tabs %}
+<style>
+  /* Variables */
+  [data-md-color-scheme="slate"] {
+    --row-stripe-bg-color: conic-gradient(from 90deg at -10% 100%,
+        #2b303b 0deg,
+        #2b303b 90deg,
+        #16181d 1turn);
+    --row-bg-color: conic-gradient(from -90deg at 110% 100%, #2b303b 0deg, #16181d 90deg, #16181d 1turn);
+    --stripe-border-color: rgba(246, 247, 249, 0.1);
+    --code-block-filter: none;
+    --home-tabbed-set-bg-color: #1f1f1f;
+  }
+
+  [data-md-color-scheme="default"] {
+    --row-stripe-bg-color: conic-gradient(from 90deg at -10% 100%,
+        #bcc1cd 0deg,
+        #bcc1cd 90deg,
+        #fff 1turn);
+    --row-bg-color: var(--row-stripe-bg-color);
+    --stripe-border-color: rgba(35, 39, 47, 0.1);
+    --code-block-filter: invert(1) contrast(1.3) hue-rotate(180deg) saturate(2);
+    --code-tab-color: rgb(246 247 249);
+    --home-tabbed-set-bg-color: #fff;
+  }
+
+  /* Application header should be static for the landing page */
+  .md-header {
+    position: initial;
+  }
+
+  /* Hide markdown area */
+  .md-main__inner {
+    margin: 0;
+  }
+
+  .md-content {
+    display: none;
+  }
+</style>
+<section class="home md-typeset">
+  <div class="row first">
+    <img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg"
+      alt="ReactPy Logo" class="home-logo">
+    <h1>{{ config.site_name }}</h1>
+    <p>{{ config.site_description }}</p>
+    <div class="home-btns">
+      <a href="{{ page.next_page.url | url }}" class="md-button md-button--primary">
+        Get Started
+      </a>
+      <a href="{{ 'reference/components/' | url }}" class="md-button">
+        API Reference
+      </a>
+      <a href="{{ 'about/changelog/' | url }}" class="md-button">
+        Changelog
+      </a>
+    </div>
+  </div>
+
+  <div class="row stripe">
+    <h1>Create user interfaces from components</h1>
+    <p class="md-grid">
+      ReactPy lets you build user interfaces out of individual pieces called components. Create your own ReactPy
+      components like <code>thumbnail</code>, <code>like_button</code>, and <code>video</code>. Then combine
+      them into entire screens, pages, and apps.
+    </p>
+    <div class="example-container">
+      {% with image="create-user-interfaces.png", class="pop-left" %}
+      {% include "homepage_examples/code_block.html" %}
+      {% endwith %}
+      {% include "homepage_examples/create_user_interfaces_demo.html" %}
+    </div>
+    <p>
+      Whether you work on your own or with thousands of other developers, using React feels the same. It is
+      designed to let you seamlessly combine components written by independent people, teams, and
+      organizations.
+    </p>
+  </div>
+
+  <div class="row">
+    <h1>Write components with pure Python code</h1>
+    <p>
+      ReactPy components are Python functions. Want to show some content conditionally? Use an
+      <code>if</code> statement. Displaying a list? Try using
+      <a href="https://www.w3schools.com/python/python_lists_comprehension.asp">list comprehension</a>.
+      Learning ReactPy is learning programming.
+    </p>
+    <div class="example-container">
+      {% with image="write-components-with-python.png", class="pop-left" %}
+      {% include "homepage_examples/code_block.html" %}
+      {% endwith %}
+      {% include "homepage_examples/write_components_with_python_demo.html" %}
+
+    </div>
+  </div>
+
+  <div class="row stripe">
+    <h1>Add interactivity wherever you need it</h1>
+    <p>
+      ReactPy components receive data and return what should appear on the screen. You can pass them new data in
+      response to an interaction, like when the user types into an input. ReactPy will then update the screen to
+      match the new data.
+    </p>
+    <div class="example-container">
+      {% with image="add-interactivity.png" %}
+      {% include "homepage_examples/code_block.html" %}
+      {% endwith %}
+      {% include "homepage_examples/add_interactivity_demo.html" %}
+    </div>
+    <p>
+      You don't have to build your whole page in ReactPy. Add React to your existing HTML page, and render
+      interactive ReactPy components anywhere on it.
+    </p>
+  </div>
+
+  <div class="row">
+    <h1>Go full-stack with a framework</h1>
+    <p>
+      ReactPy is a library. It lets you put components together, but it doesn't prescribe how to do routing and
+      data fetching. To build an entire app with ReactPy, we recommend a backend framework like
+      <a href="https://www.djangoproject.com/">Django</a> or <a href="https://fastapi.tiangolo.com/">FastAPI</a>.
+    </p>
+    <a href="{{ page.next_page.url | url }}" class="md-button md-button--primary">
+      Get Started
+    </a>
+  </div>
+</section>
+{% endblock %}

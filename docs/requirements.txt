@@ -1,10 +1,12 @@
 mkdocs
 mkdocs-git-revision-date-localized-plugin
-mkdocs-material
+mkdocs-material==9.4.0
 mkdocs-include-markdown-plugin
-linkcheckmd
 mkdocs-spellcheck[all]
 mkdocs-git-authors-plugin
 mkdocs-minify-plugin
-mkdocs-section-index
 mike
+mkdocstrings[python]
+black
+linkcheckmd
+mkdocs-section-index

@@ -1,0 +1,85 @@
+/* Variable overrides */
+:root {
+	--reactpy-color: #58b962;
+	--reactpy-color-dark: #42914a;
+	--reactpy-color-darker: #34743b;
+	--reactpy-color-opacity-10: rgba(88, 185, 98, 0.1);
+}
+
+[data-md-color-accent="red"] {
+	--md-primary-fg-color--light: var(--reactpy-color);
+	--md-primary-fg-color--dark: var(--reactpy-color-dark);
+}
+
+[data-md-color-scheme="slate"] {
+	--md-default-bg-color: rgb(35, 39, 47);
+	--md-default-bg-color--light: hsla(var(--md-hue), 15%, 16%, 0.54);
+	--md-default-bg-color--lighter: hsla(var(--md-hue), 15%, 16%, 0.26);
+	--md-default-bg-color--lightest: hsla(var(--md-hue), 15%, 16%, 0.07);
+	--md-primary-fg-color: var(--md-default-bg-color);
+	--md-default-fg-color: hsla(var(--md-hue), 75%, 95%, 1);
+	--md-default-fg-color--light: #fff;
+	--md-typeset-a-color: var(--reactpy-color);
+	--md-accent-fg-color: var(--reactpy-color-dark);
+}
+
+[data-md-color-scheme="default"] {
+	--md-primary-fg-color: var(--md-default-bg-color);
+	--md-default-fg-color--light: #000;
+	--md-default-fg-color--lighter: #0000007e;
+	--md-default-fg-color--lightest: #00000029;
+	--md-typeset-color: rgb(35, 39, 47);
+	--md-typeset-a-color: var(--reactpy-color);
+	--md-accent-fg-color: var(--reactpy-color-dark);
+}
+
+/* Font changes */
+.md-typeset {
+	font-weight: 300;
+}
+
+.md-typeset h1 {
+	font-weight: 600;
+	margin: 0;
+	font-size: 2.5em;
+}
+
+.md-typeset h2 {
+	font-weight: 500;
+}
+
+.md-typeset h3 {
+	font-weight: 400;
+}
+
+/* Intro section styling */
+p.intro {
+	font-size: 0.9rem;
+	font-weight: 500;
+}
+
+/* Hide "Overview" jump selector */
+h2#overview {
+	visibility: hidden;
+	height: 0;
+	margin: 0;
+	padding: 0;
+}
+
+/* Reduce size of the outdated banner */
+.md-banner__inner {
+	margin: 0.45rem auto;
+}
+
+/* Desktop Styles */
+@media screen and (min-width: 60em) {
+	/* Remove max width on desktop */
+	.md-grid {
+		max-width: none;
+	}
+}
+
+/* Max size of page content */
+.md-content {
+	max-width: 56rem;
+}

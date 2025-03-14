@@ -11,3 +11,10 @@
 </div>
 {% endif %}
 {% endblock %}
+
+{% block outdated %}
+You're not viewing the latest release.
+<a href="{{ '../' ~ base_url }}">
+    <strong>Click here to go to latest.</strong>
+</a>
+{% endblock %}

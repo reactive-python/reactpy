@@ -102,28 +102,33 @@ nav:
 
 theme:
     name: material
-    custom_dir: docs/overrides
+    custom_dir: overrides
     palette:
         - media: "(prefers-color-scheme: dark)"
           scheme: slate
           toggle:
               icon: material/white-balance-sunny
               name: Switch to light mode
-          primary: light blue
-          accent: light blue
+          primary: red # We use red to indicate that something is unthemed
+          accent: red
         - media: "(prefers-color-scheme: light)"
           scheme: default
           toggle:
               icon: material/weather-night
               name: Switch to dark mode
-          primary: black
+          primary: white
+          accent: red
     features:
         - navigation.instant
         - navigation.tabs
+        - navigation.tabs.sticky
         - navigation.top
         - content.code.copy
+        - search.highlight
     icon:
         repo: fontawesome/brands/github
+        admonition:
+            note: fontawesome/solid/note-sticky
     logo: https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg
     favicon: https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg
 
@@ -131,8 +136,8 @@ markdown_extensions:
     - toc:
           permalink: true
     - pymdownx.emoji:
-          emoji_index: !!python/name:materialx.emoji.twemoji
-          emoji_generator: !!python/name:materialx.emoji.to_svg
+          emoji_index: !!python/name:material.extensions.emoji.twemoji
+          emoji_generator: !!python/name:material.extensions.emoji.to_svg
     - pymdownx.tabbed:
           alternate_style: true
     - pymdownx.highlight:
@@ -148,19 +153,41 @@ markdown_extensions:
 plugins:
     - search
     - include-markdown
-    - section-index
-    # - git-authors
-    # - minify:
-    #       minify_html: true
-    #       minify_js: true
-    #       minify_css: true
-    #       cache_safe: true
-    # - git-revision-date-localized:
-    #       fallback_to_build_date: true
+    - git-authors
+    # - section-index
+    - minify:
+          minify_html: true
+          minify_js: true
+          minify_css: true
+          cache_safe: true
+    - git-revision-date-localized:
+          fallback_to_build_date: true
     # - spellcheck:
     #       known_words: dictionary.txt
     #       allow_unicode: no
-    #       ignore_code: yes
+    - mkdocstrings:
+          default_handler: python
+          handlers:
+              python:
+                  paths: ["../"]
+                  import:
+                      - https://installer.readthedocs.io/en/stable/objects.inv
+                  options:
+                      signature_crossrefs: true
+                      scoped_crossrefs: true
+                      relative_crossrefs: true
+                      modernize_annotations: true
+                      unwrap_annotated: true
+                      find_stubs_package: true
+                      show_root_members_full_path: true
+                      show_bases: false
+                      show_source: false
+                      show_root_toc_entry: false
+                      show_labels: false
+                      show_symbol_type_toc: true
+                      show_symbol_type_heading: true
+                      show_object_full_path: true
+                      heading_level: 3
 
 extra:
     generator: false
@@ -168,23 +195,33 @@ extra:
         provider: mike
 
 extra_javascript:
-    - static/js/extra.js
+    - assets/js/main.js
 
 extra_css:
-    - static/css/extra.css
+    - assets/css/main.css
+    - assets/css/button.css
+    - assets/css/admonition.css
+    - assets/css/banner.css
+    - assets/css/sidebar.css
+    - assets/css/navbar.css
+    - assets/css/table-of-contents.css
+    - assets/css/code.css
+    - assets/css/footer.css
+    - assets/css/home.css
 
 watch:
-    - docs
-    - mkdocs.yml
-    - README.md
-    - CHANGELOG.md
+    - "../docs"
+    - ../README.md
+    - ../CHANGELOG.md
+    - ../LICENSE.md
+    - "../src"
 
 site_name: ReactPy
 site_author: Archmonger
 site_description: It's React, but in Python.
-copyright: Copyright &copy; 2023 Reactive Python
+copyright: '&copy;<div id="year"> </div> <script> document.getElementById("year").innerHTML = new Date().getFullYear(); </script>Reactive Python and affiliates.<div class="legal-footer-right">This project has no affiliation to ReactJS or Meta Platforms, Inc.</div>'
 repo_url: https://github.com/reactive-python/reactpy
 site_url: https://reactive-python.github.io/reactpy
-repo_name: reactive-python/reactpy
+repo_name: ReactPy
 edit_uri: edit/main/docs/src
-docs_dir: docs/src
+docs_dir: src

@@ -1,0 +1,15 @@
+body[data-md-color-scheme="slate"] {
+	--md-banner-bg-color: rgb(55, 81, 78);
+	--md-banner-font-color: #fff;
+}
+
+body[data-md-color-scheme="default"] {
+	--md-banner-bg-color: #ff9;
+	--md-banner-font-color: #000;
+}
+
+.md-banner--warning {
+	background-color: var(--md-banner-bg-color);
+	color: var(--md-banner-font-color);
+	text-align: center;
+}
