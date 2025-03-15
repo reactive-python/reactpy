@@ -1,0 +1,160 @@
+[data-md-color-scheme="slate"] {
+	--admonition-border-color: transparent;
+	--admonition-expanded-border-color: rgba(255, 255, 255, 0.1);
+	--note-bg-color: rgba(43, 110, 98, 0.2);
+	--terminal-bg-color: #0c0c0c;
+	--terminal-title-bg-color: #000;
+	--deep-dive-bg-color: rgba(43, 52, 145, 0.2);
+	--you-will-learn-bg-color: #353a45;
+	--pitfall-bg-color: rgba(182, 87, 0, 0.2);
+}
+[data-md-color-scheme="default"] {
+	--admonition-border-color: rgba(0, 0, 0, 0.08);
+	--admonition-expanded-border-color: var(--admonition-border-color);
+	--note-bg-color: rgb(244, 251, 249);
+	--terminal-bg-color: rgb(64, 71, 86);
+	--terminal-title-bg-color: rgb(35, 39, 47);
+	--deep-dive-bg-color: rgb(243, 244, 253);
+	--you-will-learn-bg-color: rgb(246, 247, 249);
+	--pitfall-bg-color: rgb(254, 245, 231);
+}
+
+.md-typeset details,
+.md-typeset .admonition {
+	border-color: var(--admonition-border-color) !important;
+	box-shadow: none;
+}
+
+.md-typeset :is(.admonition, details) {
+	margin: 0.55em 0;
+}
+
+.md-typeset .admonition {
+	font-size: 0.7rem;
+}
+
+.md-typeset .admonition:focus-within,
+.md-typeset details:focus-within {
+	box-shadow: none !important;
+}
+
+.md-typeset details[open] {
+	border-color: var(--admonition-expanded-border-color) !important;
+}
+
+/* 
+Admonition: "summary" 
+React Name: "You will learn"
+*/
+.md-typeset .admonition.summary {
+	background: var(--you-will-learn-bg-color);
+	padding: 0.8rem 1.4rem;
+	border-radius: 0.8rem;
+}
+
+.md-typeset .summary .admonition-title {
+	font-size: 1rem;
+	background: transparent;
+	padding-left: 0.6rem;
+	padding-bottom: 0;
+}
+
+.md-typeset .summary .admonition-title:before {
+	display: none;
+}
+
+.md-typeset .admonition.summary {
+	border-color: #ffffff17 !important;
+}
+
+/* 
+Admonition: "abstract" 
+React Name: "Note"
+*/
+.md-typeset .admonition.abstract {
+	background: var(--note-bg-color);
+	padding: 0.8rem 1.4rem;
+	border-radius: 0.8rem;
+}
+
+.md-typeset .abstract .admonition-title {
+	font-size: 1rem;
+	background: transparent;
+	padding-bottom: 0;
+	color: rgb(68, 172, 153);
+}
+
+.md-typeset .abstract .admonition-title:before {
+	font-size: 1.1rem;
+	background: rgb(68, 172, 153);
+}
+
+/* 
+Admonition: "warning" 
+React Name: "Pitfall"
+*/
+.md-typeset .admonition.warning {
+	background: var(--pitfall-bg-color);
+	padding: 0.8rem 1.4rem;
+	border-radius: 0.8rem;
+}
+
+.md-typeset .warning .admonition-title {
+	font-size: 1rem;
+	background: transparent;
+	padding-bottom: 0;
+	color: rgb(219, 125, 39);
+}
+
+.md-typeset .warning .admonition-title:before {
+	font-size: 1.1rem;
+	background: rgb(219, 125, 39);
+}
+
+/* 
+Admonition: "info" 
+React Name: "Deep Dive"
+*/
+.md-typeset .admonition.info {
+	background: var(--deep-dive-bg-color);
+	padding: 0.8rem 1.4rem;
+	border-radius: 0.8rem;
+}
+
+.md-typeset .info .admonition-title {
+	font-size: 1rem;
+	background: transparent;
+	padding-bottom: 0;
+	color: rgb(136, 145, 236);
+}
+
+.md-typeset .info .admonition-title:before {
+	font-size: 1.1rem;
+	background: rgb(136, 145, 236);
+}
+
+/* 
+Admonition: "example" 
+React Name: "Terminal"
+*/
+.md-typeset .admonition.example {
+	background: var(--terminal-bg-color);
+	border-radius: 0.4rem;
+	overflow: hidden;
+	border: none;
+}
+
+.md-typeset .example .admonition-title {
+	background: var(--terminal-title-bg-color);
+	color: rgb(246, 247, 249);
+}
+
+.md-typeset .example .admonition-title:before {
+	background: rgb(246, 247, 249);
+}
+
+.md-typeset .admonition.example code {
+	background: transparent;
+	color: #fff;
+	box-shadow: none;
+}

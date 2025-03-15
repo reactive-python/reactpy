@@ -1,0 +1,41 @@
+[data-md-color-scheme="slate"] {
+	--md-button-font-color: #fff;
+	--md-button-border-color: #404756;
+}
+
+[data-md-color-scheme="default"] {
+	--md-button-font-color: #000;
+	--md-button-border-color: #8d8d8d;
+}
+
+.md-typeset .md-button {
+	border-width: 1px;
+	border-color: var(--md-button-border-color);
+	border-radius: 9999px;
+	color: var(--md-button-font-color);
+	transition: color 125ms, background 125ms, border-color 125ms,
+		transform 125ms;
+}
+
+.md-typeset .md-button:focus,
+.md-typeset .md-button:hover {
+	border-color: var(--md-button-border-color);
+	color: var(--md-button-font-color);
+	background: rgba(78, 87, 105, 0.05);
+}
+
+.md-typeset .md-button.md-button--primary {
+	color: #fff;
+	border-color: transparent;
+	background: var(--reactpy-color-dark);
+}
+
+.md-typeset .md-button.md-button--primary:focus,
+.md-typeset .md-button.md-button--primary:hover {
+	border-color: transparent;
+	background: var(--reactpy-color-darker);
+}
+
+.md-typeset .md-button:focus {
+	transform: scale(0.98);
+}

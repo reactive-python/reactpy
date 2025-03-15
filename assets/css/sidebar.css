@@ -1,0 +1,104 @@
+:root {
+	--sizebar-font-size: 0.62rem;
+}
+
+.md-nav__link {
+	word-break: break-word;
+}
+
+/* Desktop Styling */
+@media screen and (min-width: 76.1875em) {
+	/* Move the sidebar and TOC to the edge of the page */
+	.md-main__inner.md-grid {
+		margin-left: 0;
+		margin-right: 0;
+		max-width: unset;
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+	}
+
+	.md-content {
+		justify-self: center;
+		width: 100%;
+	}
+	/* Made the sidebar buttons look React-like */
+	.md-nav--lifted > .md-nav__list > .md-nav__item--active > .md-nav__link {
+		text-transform: uppercase;
+	}
+
+	.md-nav__title[for="__toc"] {
+		text-transform: uppercase;
+		margin: 0.5rem;
+	}
+
+	.md-nav--lifted > .md-nav__list > .md-nav__item--active > .md-nav__link {
+		color: rgb(133, 142, 159);
+		margin: 0.5rem;
+	}
+
+	.md-nav__item .md-nav__link {
+		position: relative;
+	}
+
+	.md-nav__link:is(:focus, :hover):not(.md-nav__link--active) {
+		color: unset;
+	}
+
+	.md-nav__item
+		.md-nav__link:is(:focus, :hover):not(.md-nav__link--active):before {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		opacity: 0.2;
+		z-index: -1;
+		background: grey;
+	}
+
+	.md-nav__item .md-nav__link--active:before {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: -1;
+		background: var(--reactpy-color-opacity-10);
+	}
+
+	.md-nav__link {
+		padding: 0.5rem 0.5rem 0.5rem 1rem;
+		margin: 0;
+		border-radius: 0 10px 10px 0;
+		font-weight: 500;
+		overflow: hidden;
+		font-size: var(--sizebar-font-size);
+	}
+
+	.md-sidebar__scrollwrap {
+		margin: 0;
+	}
+
+	[dir="ltr"]
+		.md-nav--lifted
+		.md-nav[data-md-level="1"]
+		> .md-nav__list
+		> .md-nav__item {
+		padding: 0;
+	}
+
+	.md-nav__item--nested .md-nav__item .md-nav__item {
+		padding: 0;
+	}
+
+	.md-nav__item--nested .md-nav__item .md-nav__item .md-nav__link {
+		font-weight: 300;
+	}
+
+	.md-nav__item--nested .md-nav__item .md-nav__item .md-nav__link {
+		font-weight: 400;
+		padding-left: 1.25rem;
+	}
+}

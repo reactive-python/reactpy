@@ -1,0 +1,48 @@
+/* Table of Contents styling */
+@media screen and (min-width: 60em) {
+	[data-md-component="sidebar"] .md-nav__title[for="__toc"] {
+		text-transform: uppercase;
+		margin: 0.5rem;
+		margin-left: 0;
+		font-size: var(--sizebar-font-size);
+	}
+
+	[data-md-component="toc"] .md-nav__item .md-nav__link--active {
+		position: relative;
+	}
+
+	[data-md-component="toc"] .md-nav__item .md-nav__link--active:before {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		opacity: 0.15;
+		z-index: -1;
+		background: var(--md-typeset-a-color);
+	}
+
+	[data-md-component="toc"] .md-nav__link {
+		padding: 0.5rem 0.5rem;
+		margin: 0;
+		border-radius: 10px 0 0 10px;
+		font-weight: 400;
+	}
+
+	[data-md-component="toc"]
+		.md-nav__item
+		.md-nav__list
+		.md-nav__item
+		.md-nav__link {
+		padding-left: 1.25rem;
+	}
+
+	[dir="ltr"] .md-sidebar__inner {
+		padding: 0;
+	}
+
+	.md-nav__item {
+		padding: 0;
+	}
+}
