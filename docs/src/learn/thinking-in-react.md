@@ -13,12 +13,12 @@ Imagine that you already have a JSON API and a mockup from a designer.
 The JSON API returns some data that looks like this:
 
 ```json linenums="0"
-{% include "../../examples/json/thinking_in_react/start_with_the_mockup.json" %}
+{% include "../../examples/thinking_in_react/start_with_the_mockup.json" %}
 ```
 
 The mockup looks like this:
 
-<img src="../../static/images/s_thinking-in-react_ui.png" width="300" style="margin: 0 auto" />
+<img src="../../assets/images/s_thinking-in-react_ui.png" width="300" style="margin: 0 auto" />
 
 To implement a UI in React, you will usually follow the same five steps.
 
@@ -38,7 +38,7 @@ There are five components on this screen:
 
 <!-- TODO: Change this image to use snake_case -->
 
-<img src="../../static/images/s_thinking-in-react_ui_outline.png" width="500" style="margin: 0 auto" />
+<img src="../../assets/images/s_thinking-in-react_ui_outline.png" width="500" style="margin: 0 auto" />
 
 1. `filterable_product_table` (grey) contains the entire app.
 2. `search_bar` (blue) receives the user input.
@@ -67,13 +67,13 @@ You can either build "top down" by starting with building the components higher 
 === "app.py"
 
     ```python
-    {% include "../../examples/python/thinking_in_react/build_a_static_version_in_react.py" end="# end" %}
+    {% include "../../examples/thinking_in_react/build_a_static_version_in_react.py" %}
     ```
 
 === "styles.css"
 
     ```css
-    {% include "../../examples/css/thinking_in_react/build_a_static_version_in_react.css" %}
+    {% include "../../examples/thinking_in_react/build_a_static_version_in_react.css" %}
     ```
 
 === ":material-play: Run"
@@ -159,13 +159,13 @@ So the state values will live in `filterable_product_table`.
 Add state to the component with the [`use_state()` Hook.](../reference/use-state.md) Hooks are special functions that let you "hook into" React. Add two state variables at the top of `filterable_product_table` and specify their initial state:
 
 ```python linenums="0"
-{% include "../../examples/python/thinking_in_react/use_state.py" start="# start" %}
+{% include "../../examples/thinking_in_react/use_state.py" start="# start" %}
 ```
 
 Then, pass `filter_text` and `in_stock_only` to `product_table` and `search_bar` as props:
 
 ```python linenums="0"
-{% include "../../examples/python/thinking_in_react/use_state_with_components.py" start="# start" %}
+{% include "../../examples/thinking_in_react/use_state_with_components.py" start="# start" %}
 ```
 
 You can start seeing how your application will behave. Edit the `filter_text` initial value from `use_state('')` to `use_state('fruit')` in the sandbox code below. You'll see both the search input text and the table update:
@@ -173,13 +173,13 @@ You can start seeing how your application will behave. Edit the `filter_text` in
 === "app.py"
 
     ```python
-    {% include "../../examples/python/thinking_in_react/identify_where_your_state_should_live.py" end="# end" %}
+    {% include "../../examples/thinking_in_react/identify_where_your_state_should_live.py" %}
     ```
 
 === "styles.css"
 
     ```css
-    {% include "../../examples/css/thinking_in_react/identify_where_your_state_should_live.css" %}
+    {% include "../../examples/thinking_in_react/identify_where_your_state_should_live.css" %}
     ```
 
 === ":material-play: Run"
@@ -193,7 +193,7 @@ Notice that editing the form doesn't work yet.
 In the code above, `product_table` and `search_bar` read the `filter_text` and `in_stock_only` props to render the table, the input, and the checkbox. For example, here is how `search_bar` populates the input value:
 
 ```python linenums="0" hl_lines="2 7"
-{% include "../../examples/python/thinking_in_react/error_example.py" start="# start" %}
+{% include "../../examples/thinking_in_react/error_example.py" start="# start" %}
 ```
 
 However, you haven't added any code to respond to the user actions like typing yet. This will be your final step.
@@ -207,13 +207,13 @@ React makes this data flow explicit, but it requires a little more typing than t
 You want to make it so whenever the user changes the form inputs, the state updates to reflect those changes. The state is owned by `filterable_product_table`, so only it can call `set_filter_text` and `set_in_stock_only`. To let `search_bar` update the `filterable_product_table`'s state, you need to pass these functions down to `search_bar`:
 
 ```python linenums="0" hl_lines="3-4 10-11"
-{% include "../../examples/python/thinking_in_react/set_state_props.py" start="# start" %}
+{% include "../../examples/thinking_in_react/set_state_props.py" start="# start" %}
 ```
 
-Inside the `search_bar`, you will add the `on_change` event handlers and set the parent state from them:
+Inside the `search_bar`, you will add the `onChange` event handlers and set the parent state from them:
 
 ```python linenums="0" hl_lines="6"
-{% include "../../examples/python/thinking_in_react/event_handlers.py" start="# start" %}
+{% include "../../examples/thinking_in_react/event_handlers.py" start="# start" %}
 ```
 
 Now the application fully works!
@@ -223,13 +223,13 @@ Now the application fully works!
     <!-- FIXME: Click event on the checkbox is broken. `event["target"]["checked"]` doesn't exist -->
 
     ```python
-    {% include "../../examples/python/thinking_in_react/add_inverse_data_flow.py" end="# end" %}
+    {% include "../../examples/thinking_in_react/add_inverse_data_flow.py" %}
     ```
 
 === "styles.css"
 
     ```css
-    {% include "../../examples/css/thinking_in_react/add_inverse_data_flow.css" %}
+    {% include "../../examples/thinking_in_react/add_inverse_data_flow.css" %}
     ```
 
 === ":material-play: Run"

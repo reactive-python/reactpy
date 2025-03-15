@@ -7,16 +7,16 @@ nav:
                 - "Tutorial: Tic-Tac-Toe 🚧": learn/tutorial-tic-tac-toe.md
                 - Thinking in React: learn/thinking-in-react.md
           - Installation:
-                - learn/installation.md
-                - Start a New React Project: learn/start-a-new-react-project.md
-                - Add React to an Existing Project 🚫: learn/add-react-to-an-existing-project.md
+                - Creating a Standalone React App: learn/creating-a-react-app.md
+                - Add React to an Existing Project: learn/add-react-to-an-existing-project.md
+          - Setup:
                 - Editor Setup: learn/editor-setup.md
                 - React Developer Tools 🚫: learn/react-developer-tools.md
                 - Extra Tools and Packages 🚧: learn/extra-tools-and-packages.md
           - More Tutorials:
                 - "Tutorial: React Bootstrap 🚫": learn/tutorial-react-bootstrap.md
                 - "Tutorial: Material UI 🚫": learn/tutorial-material-ui.md
-    - Learn React:
+    - Learn:
           - Describing the UI:
                 - Your First Component 🚧: learn/your-first-component.md
                 - Importing and Exporting Components 🚧: learn/importing-and-exporting-components.md
@@ -93,7 +93,7 @@ nav:
                 - PyScript 🚫: reference/pyscript.md
           - Protocol Structure 🚧: reference/protocol-structure.md
           - Client API 🚧: reference/client-api.md
-    - About ReactPy:
+    - About:
           - Changelog 🚧: about/changelog.md
           - Community 🚧: about/community.md
           - Running Tests 🚧: about/running-tests.md
@@ -119,7 +119,7 @@ theme:
           primary: white
           accent: red
     features:
-        - navigation.instant
+        # - navigation.instant
         - navigation.tabs
         - navigation.tabs.sticky
         - navigation.top

@@ -13,9 +13,9 @@ React has been designed from the start for gradual adoption. You can use as litt
     * [How to set up your editor](../learn/editor-setup.md)
     * [How to install React Developer Tools](../learn/react-developer-tools.md)
 
-## Try React
+<!-- ## Try React
 
-You don't need to install anything to play with React. [Try ReactPy within Jupyter Notebooks](https://mybinder.org/v2/gh/reactive-python/reactpy-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb)!
+You don't need to install anything to play with React. [Try ReactPy within Jupyter Notebooks](https://mybinder.org/v2/gh/reactive-python/reactpy-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb)! -->
 
 ## Start a new React project
 
