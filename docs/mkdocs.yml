@@ -11,17 +11,17 @@ nav:
                 - Add React to an Existing Project: learn/add-react-to-an-existing-project.md
           - Setup:
                 - Editor Setup: learn/editor-setup.md
-                - React Developer Tools 🚫: learn/react-developer-tools.md
-                - Extra Tools and Packages 🚧: learn/extra-tools-and-packages.md
-          - More Tutorials:
-                - "Tutorial: React Bootstrap 🚫": learn/tutorial-react-bootstrap.md
-                - "Tutorial: Material UI 🚫": learn/tutorial-material-ui.md
+                # - ReactPy Developer Tools 🚫: learn/react-developer-tools.md
+                - Tools, Modules, and Packages 🚧: learn/extra-tools-and-packages.md
+          # - More Tutorials:
+          #       - "Tutorial: React Bootstrap 🚫": learn/tutorial-react-bootstrap.md
+          #       - "Tutorial: Material UI 🚫": learn/tutorial-material-ui.md
     - Learn:
           - Describing the UI:
                 - Your First Component 🚧: learn/your-first-component.md
                 - Importing and Exporting Components 🚧: learn/importing-and-exporting-components.md
-                - Writing Markup with PSX 🚫: learn/writing-markup-with-psx.md
-                - Python in PSX with Curly Braces 🚫: learn/python-in-psx-with-curly-braces.md
+                # - Writing Markup with PSX 🚫: learn/writing-markup-with-psx.md
+                # - Python in PSX with Curly Braces 🚫: learn/python-in-psx-with-curly-braces.md
                 - Passing Props to a Component 🚧: learn/passing-props-to-a-component.md
                 - Conditional Rendering 🚧: learn/conditional-rendering.md
                 - Rendering Lists 🚧: learn/rendering-lists.md
@@ -59,9 +59,11 @@ nav:
                 - Creating Backends 🚧: learn/creating-backends.md
                 - Manually Register a Client 🚧: learn/manually-register-a-client.md
     - Reference:
+          - Overview: reference/overview.md
           - Hooks:
                 - Use State 🚧: reference/use-state.md
                 - Use Effect 🚧: reference/use-effect.md
+                - Use Async Effect 🚧: reference/use-async-effect.md
                 - Use Context 🚧: reference/use-context.md
                 - Use Reducer 🚧: reference/use-reducer.md
                 - Use Callback 🚧: reference/use-callback.md
@@ -71,26 +73,20 @@ nav:
                 - Use Connection 🚧: reference/use-connection.md
                 - Use Scope 🚧: reference/use-scope.md
                 - Use Location 🚧: reference/use-location.md
-                - Use ID 🚫: reference/use-id.md
-                - Use Deferred Value 🚫: reference/use-deferred-value.md
-                - Use Imperative Handle 🚫: reference/use-imperative-handle.md
-                - Use Insertion Effect 🚫: reference/use-insertion-effect.md
-                - Use Layout Effect 🚫: reference/use-layout-effect.md
-                - Use Sync External Store 🚫: reference/use-sync-external-store.md
-                - Use Transition 🚫: reference/use-transition.md
           - HTML Tags:
                 - Common Props 🚧: reference/common-props.md
                 - Usage 🚧: reference/usage.md
-          - Backends:
-                - FastAPI 🚧: reference/fastapi.md
-                - Flask 🚧: reference/flask.md
-                - Sanic 🚧: reference/sanic.md
-                - Starlette 🚧: reference/starlette.md
-                - Tornado 🚧: reference/tornado.md
-                - Django 🚧: reference/django.md
-                - Jupyter 🚧: reference/jupyter.md
-                - Plotly Dash 🚧: reference/plotly-dash.md
-                - PyScript 🚫: reference/pyscript.md
+          - Executors:
+                - ReactPy: reference/reactpy.md
+                - ReactPyCsr 🚧: reference/reactpy-csr.md
+                - ReactPyMiddleware 🚧: reference/reactpy-middleware.md
+          - Rules of React:
+                - Overview 🚧: reference/rules-of-react.md
+                - Components and Hooks must be pure 🚧: reference/components-and-hooks-must-be-pure.md
+                - React calls Components and Hooks 🚧: reference/react-calls-components-and-hooks.md
+                - Rules of Hooks 🚧: reference/rules-of-hooks.md
+          # - Template Tags:
+          #       - Jinja 🚧: reference/jinja.md
           - Protocol Structure 🚧: reference/protocol-structure.md
           - Client API 🚧: reference/client-api.md
     - About:
@@ -99,6 +95,7 @@ nav:
           - Running Tests 🚧: about/running-tests.md
           - Contributing Code 🚧: about/code.md
           - Contributing Documentation 🚧: about/docs.md
+          - Licenses 🚧: about/licenses.md
 
 theme:
     name: material
