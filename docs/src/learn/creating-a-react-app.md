@@ -20,7 +20,7 @@ These standalone executors are the easiest way to get started with ReactPy, as t
 
     In order to serve the initial HTML page, you will need to run a server. The ASGI examples below use [Uvicorn](https://www.uvicorn.org/), but you can use [any ASGI server](https://github.com/florimondmanca/awesome-asgi#servers).
 
-    Executors on this page can either support client-side rendering ([CSR](https://developer.mozilla.org/en-US/docs/Glossary/CSR)) or server-side rendering ([SSR](https://developer.mozilla.org/en-US/docs/Glossary/SSR))
+    Executors on this page can either support client-side rendering ([CSR](https://developer.mozilla.org/en-US/docs/Glossary/CSR)) or server-side rendering ([SSR](https://developer.mozilla.org/en-US/docs/Glossary/SSR)).
 
 ### Running via ASGI SSR
 
@@ -93,3 +93,7 @@ Support for WSGI executors is coming in a [future version](https://github.com/re
 ### Running via WSGI CSR
 
 Support for WSGI executors is coming in a [future version](https://github.com/reactive-python/reactpy/issues/1260).
+
+### Running as a native app
+
+Support for native apps (iO, Android, Windows, etc.) is coming in a [future version](https://github.com/reactive-python/reactpy/issues/570).

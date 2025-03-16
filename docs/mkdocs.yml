@@ -11,8 +11,7 @@ nav:
                 - Add React to an Existing Project: learn/add-react-to-an-existing-project.md
           - Setup:
                 - Editor Setup: learn/editor-setup.md
-                # - ReactPy Developer Tools 🚫: learn/react-developer-tools.md
-                - Tools, Modules, and Packages 🚧: learn/extra-tools-and-packages.md
+                - Tools, Libraries, and Packages: learn/tools-and-packages.md
           # - More Tutorials:
           #       - "Tutorial: React Bootstrap 🚫": learn/tutorial-react-bootstrap.md
           #       - "Tutorial: Material UI 🚫": learn/tutorial-material-ui.md
@@ -85,8 +84,8 @@ nav:
                 - Components and Hooks must be pure 🚧: reference/components-and-hooks-must-be-pure.md
                 - React calls Components and Hooks 🚧: reference/react-calls-components-and-hooks.md
                 - Rules of Hooks 🚧: reference/rules-of-hooks.md
-          # - Template Tags:
-          #       - Jinja 🚧: reference/jinja.md
+          - Template Tags:
+                - Jinja 🚧: reference/jinja.md
           - Protocol Structure 🚧: reference/protocol-structure.md
           - Client API 🚧: reference/client-api.md
     - About:
