@@ -51,7 +51,7 @@ Once you've played around with the finished tic-tac-toe game, keep scrolling. Yo
 
 ## Setup for the tutorial
 
-In the code example below, click **Run** to open the editor in a new tab using the website Jupyter. Jupyter lets you write code in your browser and preview how your users will see the app you've created. The new tab should display an empty square and the starter code for this tutorial.
+In the code example below, click **Run** to open the example in your browser and preview the provided code. The run tab below should display an empty square.
 
 === "app.py"
 
@@ -77,9 +77,8 @@ In the code example below, click **Run** to open the editor in a new tab using t
 
     1. Install [Python](https://www.python.org/downloads/)
     2. Copy the example above into a file called `app.py`
-    3. Install ReactPy for your [backend](../reference/fastapi.md), for example `pip install reactpy[fastapi]`
-    4. Add `reactpy.run(...)` to the end of your Python file
-    5. Run `python app.py` to start a local server and follow the prompts to view the code running in a browser
+    3. [Create a standalone ReactPy app](./creating-a-react-app.md) to run the code
+    4. Run `python app.py` to start a local server and follow the prompts to view the code running in a browser
 
     If you get stuck, don't let this stop you! Follow along online instead and try a local setup again later.
 
@@ -88,28 +87,6 @@ In the code example below, click **Run** to open the editor in a new tab using t
 Now that you're set up, let's get an overview of React!
 
 ### Inspecting the starter code
-
-In Jupyter you'll see three main sections:
-
-<!-- TODO: Add screenshot -->
-
-![TODO: screenshot of Jupyter]()
-
-1. The _Files_ section with a list of files like `tic-tac-toe.ipynb`
-2. The _interactive code notebook_ where you'll see the source code for each step
-3. The _run button_ located on top of the notebook in the command strip
-
-The `tic-tac-toe.ipynb` file should be selected in the _Files_ section. Click on the first code box, where the contents of that _code editor_ should be:
-
-```python linenums="0"
-{% include "../../examples/tutorial_tic_tac_toe/setup_for_the_tutorial.py" start="# start" %}
-```
-
-After clicking the _run button_ the notebook should be displaying a square with a X in it like this:
-
-<!-- TODO: Add screenshot -->
-
-![TODO: x-filled square]()
 
 Now let's have a look at the files in the starter code.
 
