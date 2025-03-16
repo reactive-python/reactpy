@@ -6,7 +6,7 @@ You will often want to display multiple similar components from a collection of 
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to render components from an array using JavaScript's `map()`
     -   How to render only specific components using JavaScript's `filter()`

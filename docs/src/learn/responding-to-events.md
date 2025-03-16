@@ -6,7 +6,7 @@ React lets you add _event handlers_ to your PSX. Event handlers are your own fun
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   Different ways to write an event handler
     -   How to pass event handling logic from a parent component
@@ -19,7 +19,7 @@ To add an event handler, you will first define a function and then [pass it as a
 === "app.py"
 
     ```python
-    {% include "../../examples/python/responding_to_events/simple_button.py" start="# start" %}
+    {% include "../../examples/responding_to_events/simple_button.py" start="# start" %}
     ```
 
 === ":material-play: Run"
@@ -37,13 +37,13 @@ You can make it show a message when a user clicks by following these three steps
 === "app.py"
 
     ```python
-    {% include "../../examples/python/responding_to_events/simple_button_event.py" end="# end" %}
+    {% include "../../examples/responding_to_events/simple_button_event.py" %}
     ```
 
 === "styles.css"
 
     ```css
-    {% include "../../examples/css/responding_to_events/simple_button_event.css" %}
+    {% include "../../examples/responding_to_events/simple_button_event.css" %}
     ```
 
 === ":material-play: Run"
@@ -91,8 +91,8 @@ In the second example, the `()` at the end of `handleClick()` fires the function
 
 When you write code inline, the same pitfall presents itself in a different way:
 
-| passing a function (correct) | calling a function (incorrect) |
-| --- | --- |
+| passing a function (correct)             | calling a function (incorrect)     |
+| ---------------------------------------- | ---------------------------------- |
 | `<button on_click={() => alert('...')}>` | `<button on_click={alert('...')}>` |
 
 Passing inline code like this won't fire on click—it fires every time the component renders:
@@ -125,22 +125,22 @@ Because event handlers are declared inside of a component, they have access to t
 
 ```js
 function AlertButton({ message, children }) {
-	return <button on_click={() => alert(message)}>{children}</button>;
+    return <button on_click={() => alert(message)}>{children}</button>;
 }
 
 export default function Toolbar() {
-	return (
-		<div>
-			<AlertButton message="Playing!">Play Movie</AlertButton>
-			<AlertButton message="Uploading!">Upload Image</AlertButton>
-		</div>
-	);
+    return (
+        <div>
+            <AlertButton message="Playing!">Play Movie</AlertButton>
+            <AlertButton message="Uploading!">Upload Image</AlertButton>
+        </div>
+    );
 }
 ```
 
 ```css
 button {
-	margin-right: 10px;
+    margin-right: 10px;
 }
 ```
 
@@ -154,34 +154,34 @@ To do this, pass a prop the component receives from its parent as the event hand
 
 ```js
 function Button({ on_click, children }) {
-	return <button on_click={on_click}>{children}</button>;
+    return <button on_click={on_click}>{children}</button>;
 }
 
 function PlayButton({ movieName }) {
-	function handlePlayClick() {
-		alert(`Playing ${movieName}!`);
-	}
+    function handlePlayClick() {
+        alert(`Playing ${movieName}!`);
+    }
 
-	return <Button on_click={handlePlayClick}>Play "{movieName}"</Button>;
+    return <Button on_click={handlePlayClick}>Play "{movieName}"</Button>;
 }
 
 function UploadButton() {
-	return <Button on_click={() => alert("Uploading!")}>Upload Image</Button>;
+    return <Button on_click={() => alert("Uploading!")}>Upload Image</Button>;
 }
 
 export default function Toolbar() {
-	return (
-		<div>
-			<PlayButton movieName="Kiki's Delivery Service" />
-			<UploadButton />
-		</div>
-	);
+    return (
+        <div>
+            <PlayButton movieName="Kiki's Delivery Service" />
+            <UploadButton />
+        </div>
+    );
 }
 ```
 
 ```css
 button {
-	margin-right: 10px;
+    margin-right: 10px;
 }
 ```
 
@@ -204,22 +204,22 @@ For example, the `Button` component's `on_click` prop could have been called `on
 
 ```js
 function Button({ onSmash, children }) {
-	return <button on_click={onSmash}>{children}</button>;
+    return <button on_click={onSmash}>{children}</button>;
 }
 
 export default function App() {
-	return (
-		<div>
-			<Button onSmash={() => alert("Playing!")}>Play Movie</Button>
-			<Button onSmash={() => alert("Uploading!")}>Upload Image</Button>
-		</div>
-	);
+    return (
+        <div>
+            <Button onSmash={() => alert("Playing!")}>Play Movie</Button>
+            <Button onSmash={() => alert("Uploading!")}>Upload Image</Button>
+        </div>
+    );
 }
 ```
 
 ```css
 button {
-	margin-right: 10px;
+    margin-right: 10px;
 }
 ```
 
@@ -229,31 +229,31 @@ When your component supports multiple interactions, you might name event handler
 
 ```js
 export default function App() {
-	return (
-		<Toolbar
-			onPlayMovie={() => alert("Playing!")}
-			onUploadImage={() => alert("Uploading!")}
-		/>
-	);
+    return (
+        <Toolbar
+            onPlayMovie={() => alert("Playing!")}
+            onUploadImage={() => alert("Uploading!")}
+        />
+    );
 }
 
 function Toolbar({ onPlayMovie, onUploadImage }) {
-	return (
-		<div>
-			<Button on_click={onPlayMovie}>Play Movie</Button>
-			<Button on_click={onUploadImage}>Upload Image</Button>
-		</div>
-	);
+    return (
+        <div>
+            <Button on_click={onPlayMovie}>Play Movie</Button>
+            <Button on_click={onUploadImage}>Upload Image</Button>
+        </div>
+    );
 }
 
 function Button({ on_click, children }) {
-	return <button on_click={on_click}>{children}</button>;
+    return <button on_click={on_click}>{children}</button>;
 }
 ```
 
 ```css
 button {
-	margin-right: 10px;
+    margin-right: 10px;
 }
 ```
 
@@ -273,27 +273,27 @@ This `<div>` contains two buttons. Both the `<div>` _and_ each button have their
 
 ```js
 export default function Toolbar() {
-	return (
-		<div
-			className="Toolbar"
-			on_click={() => {
-				alert("You clicked on the toolbar!");
-			}}
-		>
-			<button on_click={() => alert("Playing!")}>Play Movie</button>
-			<button on_click={() => alert("Uploading!")}>Upload Image</button>
-		</div>
-	);
+    return (
+        <div
+            className="Toolbar"
+            on_click={() => {
+                alert("You clicked on the toolbar!");
+            }}
+        >
+            <button on_click={() => alert("Playing!")}>Play Movie</button>
+            <button on_click={() => alert("Uploading!")}>Upload Image</button>
+        </div>
+    );
 }
 ```
 
 ```css
 .Toolbar {
-	background: #aaa;
-	padding: 5px;
+    background: #aaa;
+    padding: 5px;
 }
 button {
-	margin: 5px;
+    margin: 5px;
 }
 ```
 
@@ -313,40 +313,40 @@ That event object also lets you stop the propagation. If you want to prevent an 
 
 ```js
 function Button({ on_click, children }) {
-	return (
-		<button
-			on_click={(e) => {
-				e.stopPropagation();
-				on_click();
-			}}
-		>
-			{children}
-		</button>
-	);
+    return (
+        <button
+            on_click={(e) => {
+                e.stopPropagation();
+                on_click();
+            }}
+        >
+            {children}
+        </button>
+    );
 }
 
 export default function Toolbar() {
-	return (
-		<div
-			className="Toolbar"
-			on_click={() => {
-				alert("You clicked on the toolbar!");
-			}}
-		>
-			<Button on_click={() => alert("Playing!")}>Play Movie</Button>
-			<Button on_click={() => alert("Uploading!")}>Upload Image</Button>
-		</div>
-	);
+    return (
+        <div
+            className="Toolbar"
+            on_click={() => {
+                alert("You clicked on the toolbar!");
+            }}
+        >
+            <Button on_click={() => alert("Playing!")}>Play Movie</Button>
+            <Button on_click={() => alert("Uploading!")}>Upload Image</Button>
+        </div>
+    );
 }
 ```
 
 ```css
 .Toolbar {
-	background: #aaa;
-	padding: 5px;
+    background: #aaa;
+    padding: 5px;
 }
 button {
-	margin: 5px;
+    margin: 5px;
 }
 ```
 
@@ -369,12 +369,12 @@ In rare cases, you might need to catch all events on child elements, _even if th
 
 ```js
 <div
-	on_clickCapture={() => {
-		/* this runs first */
-	}}
+    on_clickCapture={() => {
+        /* this runs first */
+    }}
 >
-	<button on_click={(e) => e.stopPropagation()} />
-	<button on_click={(e) => e.stopPropagation()} />
+    <button on_click={(e) => e.stopPropagation()} />
+    <button on_click={(e) => e.stopPropagation()} />
 </div>
 ```
 
@@ -394,16 +394,16 @@ Notice how this click handler runs a line of code _and then_ calls the `on_click
 
 ```js
 function Button({ on_click, children }) {
-	return (
-		<button
-			on_click={(e) => {
-				e.stopPropagation();
-				on_click();
-			}}
-		>
-			{children}
-		</button>
-	);
+    return (
+        <button
+            on_click={(e) => {
+                e.stopPropagation();
+                on_click();
+            }}
+        >
+            {children}
+        </button>
+    );
 }
 ```
 
@@ -417,18 +417,18 @@ Some browser events have default behavior associated with them. For example, a `
 
 ```js
 export default function Signup() {
-	return (
-		<form onSubmit={() => alert("Submitting!")}>
-			<input />
-			<button>Send</button>
-		</form>
-	);
+    return (
+        <form onSubmit={() => alert("Submitting!")}>
+            <input />
+            <button>Send</button>
+        </form>
+    );
 }
 ```
 
 ```css
 button {
-	margin-left: 5px;
+    margin-left: 5px;
 }
 ```
 
@@ -436,23 +436,23 @@ You can call `e.preventDefault()` on the event object to stop this from happenin
 
 ```js
 export default function Signup() {
-	return (
-		<form
-			onSubmit={(e) => {
-				e.preventDefault();
-				alert("Submitting!");
-			}}
-		>
-			<input />
-			<button>Send</button>
-		</form>
-	);
+    return (
+        <form
+            onSubmit={(e) => {
+                e.preventDefault();
+                alert("Submitting!");
+            }}
+        >
+            <input />
+            <button>Send</button>
+        </form>
+    );
 }
 ```
 
 ```css
 button {
-	margin-left: 5px;
+    margin-left: 5px;
 }
 ```
 
@@ -489,16 +489,16 @@ Clicking this button is supposed to switch the page background between white and
 
 ```js
 export default function LightSwitch() {
-	function handleClick() {
-		let bodyStyle = document.body.style;
-		if (bodyStyle.backgroundColor === "black") {
-			bodyStyle.backgroundColor = "white";
-		} else {
-			bodyStyle.backgroundColor = "black";
-		}
-	}
+    function handleClick() {
+        let bodyStyle = document.body.style;
+        if (bodyStyle.backgroundColor === "black") {
+            bodyStyle.backgroundColor = "white";
+        } else {
+            bodyStyle.backgroundColor = "black";
+        }
+    }
 
-	return <button on_click={handleClick()}>Toggle the lights</button>;
+    return <button on_click={handleClick()}>Toggle the lights</button>;
 }
 ```
 
@@ -508,16 +508,16 @@ The problem is that `<button on_click={handleClick()}>` _calls_ the `handleClick
 
 ```js
 export default function LightSwitch() {
-	function handleClick() {
-		let bodyStyle = document.body.style;
-		if (bodyStyle.backgroundColor === "black") {
-			bodyStyle.backgroundColor = "white";
-		} else {
-			bodyStyle.backgroundColor = "black";
-		}
-	}
+    function handleClick() {
+        let bodyStyle = document.body.style;
+        if (bodyStyle.backgroundColor === "black") {
+            bodyStyle.backgroundColor = "white";
+        } else {
+            bodyStyle.backgroundColor = "black";
+        }
+    }
 
-	return <button on_click={handleClick}>Toggle the lights</button>;
+    return <button on_click={handleClick}>Toggle the lights</button>;
 }
 ```
 
@@ -525,16 +525,16 @@ Alternatively, you could wrap the call into another function, like `<button on_c
 
 ```js
 export default function LightSwitch() {
-	function handleClick() {
-		let bodyStyle = document.body.style;
-		if (bodyStyle.backgroundColor === "black") {
-			bodyStyle.backgroundColor = "white";
-		} else {
-			bodyStyle.backgroundColor = "black";
-		}
-	}
+    function handleClick() {
+        let bodyStyle = document.body.style;
+        if (bodyStyle.backgroundColor === "black") {
+            bodyStyle.backgroundColor = "white";
+        } else {
+            bodyStyle.backgroundColor = "black";
+        }
+    }
 
-	return <button on_click={() => handleClick()}>Toggle the lights</button>;
+    return <button on_click={() => handleClick()}>Toggle the lights</button>;
 }
 ```
 
@@ -548,7 +548,7 @@ After you do this, notice that clicking the button also increments the page clic
 
 ```js
 export default function ColorSwitch({ onChangeColor }) {
-	return <button>Change color</button>;
+    return <button>Change color</button>;
 }
 ```
 
@@ -557,35 +557,35 @@ import { useState } from "react";
 import ColorSwitch from "./ColorSwitch.js";
 
 export default function App() {
-	const [clicks, setClicks] = useState(0);
+    const [clicks, setClicks] = useState(0);
 
-	function handleClickOutside() {
-		setClicks((c) => c + 1);
-	}
+    function handleClickOutside() {
+        setClicks((c) => c + 1);
+    }
 
-	function getRandomLightColor() {
-		let r = 150 + Math.round(100 * Math.random());
-		let g = 150 + Math.round(100 * Math.random());
-		let b = 150 + Math.round(100 * Math.random());
-		return `rgb(${r}, ${g}, ${b})`;
-	}
+    function getRandomLightColor() {
+        let r = 150 + Math.round(100 * Math.random());
+        let g = 150 + Math.round(100 * Math.random());
+        let b = 150 + Math.round(100 * Math.random());
+        return `rgb(${r}, ${g}, ${b})`;
+    }
 
-	function handleChangeColor() {
-		let bodyStyle = document.body.style;
-		bodyStyle.backgroundColor = getRandomLightColor();
-	}
+    function handleChangeColor() {
+        let bodyStyle = document.body.style;
+        bodyStyle.backgroundColor = getRandomLightColor();
+    }
 
-	return (
-		<div
-			style={{ width: "100%", height: "100%" }}
-			on_click={handleClickOutside}
-		>
-			<ColorSwitch onChangeColor={handleChangeColor} />
-			<br />
-			<br />
-			<h2>Clicks on the page: {clicks}</h2>
-		</div>
-	);
+    return (
+        <div
+            style={{ width: "100%", height: "100%" }}
+            on_click={handleClickOutside}
+        >
+            <ColorSwitch onChangeColor={handleChangeColor} />
+            <br />
+            <br />
+            <h2>Clicks on the page: {clicks}</h2>
+        </div>
+    );
 }
 ```
 
@@ -597,16 +597,16 @@ However, this introduces the problem of the incrementing counter. If `onChangeCo
 
 ```js
 export default function ColorSwitch({ onChangeColor }) {
-	return (
-		<button
-			on_click={(e) => {
-				e.stopPropagation();
-				onChangeColor();
-			}}
-		>
-			Change color
-		</button>
-	);
+    return (
+        <button
+            on_click={(e) => {
+                e.stopPropagation();
+                onChangeColor();
+            }}
+        >
+            Change color
+        </button>
+    );
 }
 ```
 
@@ -615,35 +615,35 @@ import { useState } from "react";
 import ColorSwitch from "./ColorSwitch.js";
 
 export default function App() {
-	const [clicks, setClicks] = useState(0);
+    const [clicks, setClicks] = useState(0);
 
-	function handleClickOutside() {
-		setClicks((c) => c + 1);
-	}
+    function handleClickOutside() {
+        setClicks((c) => c + 1);
+    }
 
-	function getRandomLightColor() {
-		let r = 150 + Math.round(100 * Math.random());
-		let g = 150 + Math.round(100 * Math.random());
-		let b = 150 + Math.round(100 * Math.random());
-		return `rgb(${r}, ${g}, ${b})`;
-	}
+    function getRandomLightColor() {
+        let r = 150 + Math.round(100 * Math.random());
+        let g = 150 + Math.round(100 * Math.random());
+        let b = 150 + Math.round(100 * Math.random());
+        return `rgb(${r}, ${g}, ${b})`;
+    }
 
-	function handleChangeColor() {
-		let bodyStyle = document.body.style;
-		bodyStyle.backgroundColor = getRandomLightColor();
-	}
+    function handleChangeColor() {
+        let bodyStyle = document.body.style;
+        bodyStyle.backgroundColor = getRandomLightColor();
+    }
 
-	return (
-		<div
-			style={{ width: "100%", height: "100%" }}
-			on_click={handleClickOutside}
-		>
-			<ColorSwitch onChangeColor={handleChangeColor} />
-			<br />
-			<br />
-			<h2>Clicks on the page: {clicks}</h2>
-		</div>
-	);
+    return (
+        <div
+            style={{ width: "100%", height: "100%" }}
+            on_click={handleClickOutside}
+        >
+            <ColorSwitch onChangeColor={handleChangeColor} />
+            <br />
+            <br />
+            <h2>Clicks on the page: {clicks}</h2>
+        </div>
+    );
 }
 ```
 

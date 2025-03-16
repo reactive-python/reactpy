@@ -1,0 +1,335 @@
+img.home-logo {
+	height: 120px;
+}
+
+.home .row {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+	padding: 6rem 0.8rem;
+}
+
+.home .row:not(.first, .stripe) {
+	background: var(--row-bg-color);
+}
+
+.home .row.stripe {
+	background: var(--row-stripe-bg-color);
+	border: 0 solid var(--stripe-border-color);
+	border-top-width: 1px;
+	border-bottom-width: 1px;
+}
+
+.home .row.first {
+	text-align: center;
+}
+
+.home .row h1 {
+	max-width: 28rem;
+	line-height: 1.15;
+	font-weight: 500;
+	margin-bottom: 0.55rem;
+	margin-top: -1rem;
+}
+
+.home .row.first h1 {
+	margin-top: 0.55rem;
+	margin-bottom: -0.75rem;
+}
+
+.home .row > p {
+	max-width: 35rem;
+	line-height: 1.5;
+	font-weight: 400;
+}
+
+.home .row.first > p {
+	font-size: 32px;
+	font-weight: 500;
+}
+
+/* Code blocks */
+.home .row .tabbed-set {
+	background: var(--home-tabbed-set-bg-color);
+	margin: 0;
+}
+
+.home .row .tabbed-content {
+	padding: 20px 18px;
+	overflow-x: auto;
+}
+
+.home .row .tabbed-content img {
+	user-select: none;
+	-moz-user-select: none;
+	-webkit-user-drag: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+	max-width: 580px;
+}
+
+.home .row .tabbed-content {
+	-webkit-filter: var(--code-block-filter);
+	filter: var(--code-block-filter);
+}
+
+/* Code examples */
+.home .example-container {
+	background: radial-gradient(
+			circle at 0% 100%,
+			rgb(41 84 147 / 11%) 0%,
+			rgb(22 89 189 / 4%) 70%,
+			rgb(48 99 175 / 0%) 80%
+		),
+		radial-gradient(
+			circle at 100% 100%,
+			rgb(24 87 45 / 55%) 0%,
+			rgb(29 61 12 / 4%) 70%,
+			rgb(94 116 93 / 0%) 80%
+		),
+		radial-gradient(
+			circle at 100% 0%,
+			rgba(54, 66, 84, 0.55) 0%,
+			rgb(102 111 125 / 4%) 70%,
+			rgba(54, 66, 84, 0) 80%
+		),
+		radial-gradient(
+			circle at 0% 0%,
+			rgba(91, 114, 135, 0.55) 0%,
+			rgb(45 111 171 / 4%) 70%,
+			rgb(5 82 153 / 0%) 80%
+		),
+		rgb(0, 0, 0) center center/cover no-repeat fixed;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	align-items: center;
+	border-radius: 16px;
+	margin: 30px 0;
+	max-width: 100%;
+	grid-column-gap: 20px;
+	padding-left: 20px;
+	padding-right: 20px;
+}
+
+.home .demo .white-bg {
+	background: #fff;
+	border-radius: 16px;
+	display: flex;
+	flex-direction: column;
+	max-width: 590px;
+	min-width: -webkit-min-content;
+	min-width: -moz-min-content;
+	min-width: min-content;
+	row-gap: 1rem;
+	padding: 1rem;
+}
+
+.home .demo .vid-row {
+	display: flex;
+	flex-direction: row;
+	-moz-column-gap: 12px;
+	column-gap: 12px;
+}
+
+.home .demo {
+	color: #000;
+}
+
+.home .demo .vid-thumbnail {
+	background: radial-gradient(
+			circle at 0% 100%,
+			rgb(41 84 147 / 55%) 0%,
+			rgb(22 89 189 / 4%) 70%,
+			rgb(48 99 175 / 0%) 80%
+		),
+		radial-gradient(
+			circle at 100% 100%,
+			rgb(24 63 87 / 55%) 0%,
+			rgb(29 61 12 / 4%) 70%,
+			rgb(94 116 93 / 0%) 80%
+		),
+		radial-gradient(
+			circle at 100% 0%,
+			rgba(54, 66, 84, 0.55) 0%,
+			rgb(102 111 125 / 4%) 70%,
+			rgba(54, 66, 84, 0) 80%
+		),
+		radial-gradient(
+			circle at 0% 0%,
+			rgba(91, 114, 135, 0.55) 0%,
+			rgb(45 111 171 / 4%) 70%,
+			rgb(5 82 153 / 0%) 80%
+		),
+		rgb(0, 0, 0) center center/cover no-repeat fixed;
+	width: 9rem;
+	aspect-ratio: 16 / 9;
+	border-radius: 8px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.home .demo .vid-text {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: flex-start;
+	width: 100%;
+}
+
+.home .demo h2 {
+	font-size: 18px;
+	line-height: 1.375;
+	margin: 0;
+	text-align: left;
+	font-weight: 700;
+}
+
+.home .demo h3 {
+	font-size: 16px;
+	line-height: 1.25;
+	margin: 0;
+}
+
+.home .demo p {
+	font-size: 14px;
+	line-height: 1.375;
+	margin: 0;
+}
+
+.home .demo .browser-nav-url {
+	background: rgba(153, 161, 179, 0.2);
+	border-radius: 9999px;
+	font-size: 14px;
+	color: grey;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	-moz-column-gap: 5px;
+	column-gap: 5px;
+}
+
+.home .demo .browser-navbar {
+	margin: -1rem;
+	margin-bottom: 0;
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid darkgrey;
+}
+
+.home .demo .browser-viewport {
+	background: #fff;
+	border-radius: 16px;
+	display: flex;
+	flex-direction: column;
+	row-gap: 1rem;
+	height: 400px;
+	overflow-y: scroll;
+	margin: -1rem;
+	padding: 1rem;
+}
+
+.home .demo .browser-viewport .search-header > h1 {
+	color: #000;
+	text-align: left;
+	font-size: 24px;
+	margin: 0;
+}
+
+.home .demo .browser-viewport .search-header > p {
+	text-align: left;
+	font-size: 16px;
+	margin: 10px 0;
+}
+
+.home .demo .search-bar input {
+	width: 100%;
+	background: rgba(153, 161, 179, 0.2);
+	border-radius: 9999px;
+	padding-left: 40px;
+	padding-right: 40px;
+	height: 40px;
+	color: #000;
+}
+
+.home .demo .search-bar svg {
+	height: 40px;
+	position: absolute;
+	transform: translateX(75%);
+}
+
+.home .demo .search-bar {
+	position: relative;
+}
+
+/* Desktop Styling */
+@media screen and (min-width: 60em) {
+	.home .row {
+		text-align: center;
+	}
+	.home .row > p {
+		font-size: 21px;
+	}
+	.home .row > h1 {
+		font-size: 52px;
+	}
+	.home .row .pop-left {
+		margin-left: -20px;
+		margin-right: 0;
+		margin-top: -20px;
+		margin-bottom: -20px;
+	}
+	.home .row .pop-right {
+		margin-left: 0px;
+		margin-right: 0px;
+		margin-top: -20px;
+		margin-bottom: -20px;
+	}
+}
+
+/* Mobile Styling */
+@media screen and (max-width: 60em) {
+	.home .row {
+		padding: 4rem 0.8rem;
+	}
+	.home .row > h1,
+	.home .row > p {
+		padding-left: 1rem;
+		padding-right: 1rem;
+	}
+	.home .row.first {
+		padding-top: 2rem;
+	}
+	.home-btns {
+		width: 100%;
+		display: grid;
+		grid-gap: 0.5rem;
+		gap: 0.5rem;
+	}
+	.home .example-container {
+		display: flex;
+		flex-direction: column;
+		row-gap: 20px;
+		width: 100%;
+		justify-content: center;
+		border-radius: 0;
+		padding: 1rem 0;
+	}
+	.home .row {
+		padding-left: 0;
+		padding-right: 0;
+	}
+	.home .tabbed-set {
+		width: 100%;
+		border-radius: 0;
+	}
+	.home .demo {
+		width: 100%;
+		display: flex;
+		justify-content: center;
+	}
+	.home .demo > .white-bg {
+		width: 80%;
+		max-width: 80%;
+	}
+}

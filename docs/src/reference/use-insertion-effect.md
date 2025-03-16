@@ -1,3 +1,7 @@
+!!! warning "Planned / Undeveloped"
+
+    This feature is planned, but not yet developed.
+<!-- 
 <Pitfall>
 
 `useInsertionEffect` is for CSS-in-JS library authors. Unless you are working on a CSS-in-JS library and need a place to inject the styles, you probably want [`useEffect`](/reference/react/useEffect) or [`useLayoutEffect`](/reference/react/useLayoutEffect) instead.
@@ -132,4 +136,4 @@ If you insert styles during rendering and React is processing a [non-blocking up
 
 `useInsertionEffect` is better than inserting styles during [`useLayoutEffect`](/reference/react/useLayoutEffect) or [`useEffect`](/reference/react/useEffect) because it ensures that by the time other Effects run in your components, the `<style>` tags have already been inserted. Otherwise, layout calculations in regular Effects would be wrong due to outdated styles.
 
-</DeepDive>
+</DeepDive> -->

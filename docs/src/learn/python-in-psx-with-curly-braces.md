@@ -1,9 +1,10 @@
-!!! warning "In Progress"
+!!! warning "Planned / Undeveloped"
 
     This feature is planned, but not yet developed.
 
     See [this issue](https://github.com/reactive-python/reactpy/issues/918) for more details.
 
+<!--
 ## Overview
 
 <p class="intro" markdown>
@@ -12,14 +13,13 @@ JSX lets you write HTML-like markup inside a JavaScript file, keeping rendering 
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to pass strings with quotes
     -   How to reference a JavaScript variable inside JSX with curly braces
     -   How to call a JavaScript function inside JSX with curly braces
     -   How to use a JavaScript object inside JSX with curly braces
 
-<!--
 ## Passing strings with quotes
 
 When you want to pass a string attribute to JSX, you put it in single or double quotes:

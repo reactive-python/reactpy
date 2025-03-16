@@ -1,3 +1,8 @@
+# --- Build Artifacts ---
+src/reactpy/static/index.js*
+src/reactpy/static/morphdom/
+src/reactpy/static/pyscript/
+
 # --- Jupyter ---
 *.ipynb_checkpoints
 *Untitled*.ipynb
@@ -11,8 +16,9 @@
 .jupyter
 
 # --- Python ---
-.venv
-venv
+.hatch
+.venv*
+venv*
 MANIFEST
 build
 dist
@@ -28,6 +34,7 @@ pip-wheel-metadata
 .python-version
 
 # -- Python Tests ---
+.coverage.*
 *.coverage
 *.pytest_cache
 *.mypy_cache
@@ -38,4 +45,3 @@ pip-wheel-metadata
 
 # --- JS ---
 node_modules
-

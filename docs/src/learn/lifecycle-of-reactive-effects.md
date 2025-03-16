@@ -6,7 +6,7 @@ Effects have a different lifecycle from components. Components may mount, update
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How an Effect's lifecycle is different from a component's lifecycle
     -   How to think about each individual Effect in isolation

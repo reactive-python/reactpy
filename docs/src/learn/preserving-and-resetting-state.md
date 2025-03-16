@@ -6,7 +6,7 @@ State is isolated between components. React keeps track of which state belongs t
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How React "sees" component structures
     -   When React chooses to preserve or reset the state

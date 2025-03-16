@@ -6,7 +6,7 @@ Welcome to the ReactPy documentation! This page will give you an introduction to
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to create and nest components
     -   How to add markup and styles
@@ -22,13 +22,13 @@ React apps are made out of _components_. A component is a piece of the UI (user 
 React components are Python functions that return markup:
 
 ```python linenums="0"
-{% include "../../examples/python/quick_start/my_button.py" start="# start" %}
+{% include "../../examples/quick_start/my_button.py" start="# start" %}
 ```
 
 Now that you've declared `my_button`, you can nest it into another component:
 
 ```python linenums="0" hl_lines="5"
-{% include "../../examples/python/quick_start/my_app.py" start="# start" %}
+{% include "../../examples/quick_start/my_app.py" start="# start" %}
 ```
 
 Have a look at the result:
@@ -36,7 +36,7 @@ Have a look at the result:
 === "app.py"
 
     ```python
-    {% include "../../examples/python/quick_start/creating_and_nesting_components.py" end="# end" %}
+    {% include "../../examples/quick_start/creating_and_nesting_components.py" %}
     ```
 
 === ":material-play: Run"
@@ -70,16 +70,16 @@ If you have a lot of HTML to port to JSX, you can use an [online converter.](htt
 
 ## Adding styles
 
-In React, you specify a CSS class with `class_name`. It works the same way as the HTML [`class`](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/class) attribute:
+In React, you specify a CSS class with `className`. It works the same way as the HTML [`class`](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/class) attribute:
 
 ```python linenums="0"
-{% include "../../examples/python/quick_start/adding_styles.py" start="# start" %}
+{% include "../../examples/quick_start/adding_styles.py" start="# start" %}
 ```
 
 Then you write the CSS rules for it in a separate CSS file:
 
 ```css linenums="0"
-{% include "../../examples/css/quick_start/adding_styles.css" %}
+{% include "../../examples/quick_start/adding_styles.css" %}
 ```
 
 React does not prescribe how you add CSS files. In the simplest case, you'll add a [`<link>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link) tag to your HTML. If you use a build tool or web framework, consult its documentation to learn how to add a CSS file to your project.
@@ -105,13 +105,13 @@ You can fetch data from a variety of sources and directly embed it into your com
 === "app.py"
 
     ```python
-    {% include "../../examples/python/quick_start/displaying_data.py" end="# end" %}
+    {% include "../../examples/quick_start/displaying_data.py" %}
     ```
 
 === "styles.css"
 
     ```css
-    {% include "../../examples/css/quick_start/displaying_data.css" %}
+    {% include "../../examples/quick_start/displaying_data.css" %}
     ```
 
 === ":material-play: Run"
@@ -125,19 +125,19 @@ You can fetch data from a variety of sources and directly embed it into your com
 In React, there is no special syntax for writing conditions. Instead, you'll use the same techniques as you use when writing regular Python code. For example, you can use an `if` statement to conditionally include components:
 
 ```python linenums="0"
-{% include "../../examples/python/quick_start/conditional_rendering.py" start="# start"%}
+{% include "../../examples/quick_start/conditional_rendering.py" start="# start"%}
 ```
 
 If you prefer more compact code, you can use the [ternary operator.](https://www.geeksforgeeks.org/ternary-operator-in-python/):
 
 ```python linenums="0"
-{% include "../../examples/python/quick_start/conditional_rendering_ternary.py" start="# start"%}
+{% include "../../examples/quick_start/conditional_rendering_ternary.py" start="# start"%}
 ```
 
 When you don't need the `else` branch, you can also use a shorter [logical `and` syntax](https://www.geeksforgeeks.org/short-circuiting-techniques-python/):
 
 ```python linenums="0"
-{% include "../../examples/python/quick_start/conditional_rendering_logical_and.py" start="# start" %}
+{% include "../../examples/quick_start/conditional_rendering_logical_and.py" start="# start" %}
 ```
 
 All of these approaches also work for conditionally specifying attributes. If you're unfamiliar with some of this Python syntax, you can start by always using `if...else`.
@@ -149,21 +149,21 @@ You will rely on Python features like [`for` loop](https://www.w3schools.com/pyt
 For example, let's say you have an array of products:
 
 ```python linenums="0"
-{% include "../../examples/python/quick_start/rendering_lists_products.py" %}
+{% include "../../examples/quick_start/rendering_lists_products.py" %}
 ```
 
-Inside your component, use list comprehension to transform an array of products into an array of `<li>` items:
+Inside your component, use list comprehension to transform an array of products into an array of `#!html <li>` items:
 
 ```python linenums="0"
-{% include "../../examples/python/quick_start/rendering_lists_list_items.py" start="# start" %}
+{% include "../../examples/quick_start/rendering_lists_list_items.py" start="# start" %}
 ```
 
-Notice how `<li>` has a `key` attribute. For each item in a list, you should pass a string or a number that uniquely identifies that item among its siblings. Usually, a key should be coming from your data, such as a database ID. React uses your keys to know what happened if you later insert, delete, or reorder the items.
+Notice how `#!html <li>` has a `key` attribute. For each item in a list, you should pass a string or a number that uniquely identifies that item among its siblings. Usually, a key should be coming from your data, such as a database ID. React uses your keys to know what happened if you later insert, delete, or reorder the items.
 
 === "app.py"
 
     ```python
-    {% include "../../examples/python/quick_start/rendering_lists.py" end="# end" %}
+    {% include "../../examples/quick_start/rendering_lists.py" %}
     ```
 
 === ":material-play: Run"
@@ -177,10 +177,10 @@ Notice how `<li>` has a `key` attribute. For each item in a list, you should pas
 You can respond to events by declaring _event handler_ functions inside your components:
 
 ```python linenums="0"  hl_lines="3-4 7"
-{% include "../../examples/python/quick_start/responding_to_events.py" start="# start" %}
+{% include "../../examples/quick_start/responding_to_events.py" start="# start" %}
 ```
 
-Notice how `"on_click": handle_click` has no parentheses at the end! Do not _call_ the event handler function: you only need to _pass it down_. React will call your event handler when the user clicks the button.
+Notice how `"onClick": handle_click` has no parentheses at the end! Do not _call_ the event handler function: you only need to _pass it down_. React will call your event handler when the user clicks the button.
 
 ## Updating the screen
 
@@ -189,13 +189,13 @@ Often, you'll want your component to "remember" some information and display it.
 First, import [`use_state`](../reference/use-state.md) from React:
 
 ```python linenums="0"
-{% include "../../examples/python/quick_start/updating_the_screen_use_state.py" end="# end" %}
+{% include "../../examples/quick_start/updating_the_screen_use_state.py" end="# end" %}
 ```
 
 Now you can declare a _state variable_ inside your component:
 
 ```python linenums="0"
-{% include "../../examples/python/quick_start/updating_the_screen_use_state_button.py" start="# start" %}
+{% include "../../examples/quick_start/updating_the_screen_use_state_button.py" start="# start" %}
 ```
 
 You’ll get two things from `use_state`: the current state (`count`), and the function that lets you update it (`set_count`). You can give them any names, but the convention is to write `something, set_something = ...`.
@@ -203,7 +203,7 @@ You’ll get two things from `use_state`: the current state (`count`), and the f
 The first time the button is displayed, `count` will be `0` because you passed `0` to `use_state()`. When you want to change state, call `set_count()` and pass the new value to it. Clicking this button will increment the counter:
 
 ```python linenums="0" hl_lines="6"
-{% include "../../examples/python/quick_start/updating_the_screen_event.py" start="# start" %}
+{% include "../../examples/quick_start/updating_the_screen_event.py" start="# start" %}
 ```
 
 React will call your component function again. This time, `count` will be `1`. Then it will be `2`. And so on.
@@ -213,13 +213,13 @@ If you render the same component multiple times, each will get its own state. Cl
 === "app.py"
 
     ```python
-    {% include "../../examples/python/quick_start/updating_the_screen.py"  end="# end" %}
+    {% include "../../examples/quick_start/updating_the_screen.py" %}
     ```
 
 === "styles.css"
 
     ```css
-    {% include "../../examples/css/quick_start/updating_the_screen.css" %}
+    {% include "../../examples/quick_start/updating_the_screen.css" %}
     ```
 
 === ":material-play: Run"
@@ -255,13 +255,13 @@ Now when you click either button, the `count` in `my_app` will change, which wil
 First, _move the state up_ from `my_button` into `my_app`:
 
 ```python linenums="0" hl_lines="3-6 17"
-{% include "../../examples/python/quick_start/sharing_data_between_components_move_state.py" start="# start" %}
+{% include "../../examples/quick_start/sharing_data_between_components_move_state.py" start="# start" %}
 ```
 
 Then, _pass the state down_ from `my_app` to each `my_button`, together with the shared click handler. You can pass information to `my_button` using props:
 
 ```python linenums="0" hl_lines="10-11"
-{% include "../../examples/python/quick_start/sharing_data_between_components_props.py" start="# start" end="# end" %}
+{% include "../../examples/quick_start/sharing_data_between_components_props.py" start="# start" end="# end" %}
 ```
 
 The information you pass down like this is called _props_. Now the `my_app` component contains the `count` state and the `handle_click` event handler, and _passes both of them down as props_ to each of the buttons.
@@ -269,7 +269,7 @@ The information you pass down like this is called _props_. Now the `my_app` comp
 Finally, change `my_button` to _read_ the props you have passed from its parent component:
 
 ```python linenums="0"
-{% include "../../examples/python/quick_start/sharing_data_between_components_button.py" start="# start" %}
+{% include "../../examples/quick_start/sharing_data_between_components_button.py" start="# start" %}
 ```
 
 When you click the button, the `on_click` handler fires. Each button's `on_click` prop was set to the `handle_click` function inside `my_app`, so the code inside of it runs. That code calls `set_count(count + 1)`, incrementing the `count` state variable. The new `count` value is passed as a prop to each button, so they all show the new value. This is called "lifting state up". By moving state up, you've shared it between components.
@@ -277,13 +277,13 @@ When you click the button, the `on_click` handler fires. Each button's `on_click
 === "app.py"
 
     ```python
-    {% include "../../examples/python/quick_start/sharing_data_between_components.py" end="# end" %}
+    {% include "../../examples/quick_start/sharing_data_between_components.py" %}
     ```
 
 === "styles.css"
 
     ```css
-    {% include "../../examples/css/quick_start/sharing_data_between_components.css" %}
+    {% include "../../examples/quick_start/sharing_data_between_components.css" %}
     ```
 
 === ":material-play: Run"

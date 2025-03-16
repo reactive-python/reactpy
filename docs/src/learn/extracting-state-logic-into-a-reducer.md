@@ -6,7 +6,7 @@ Components with many state updates spread across many event handlers can get ove
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   What a reducer function is
     -   How to refactor `useState` to `useReducer`

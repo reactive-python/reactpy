@@ -1,9 +1,10 @@
-!!! warning "In Progress"
+!!! warning "Planned / Undeveloped"
 
     This feature is planned, but not yet developed.
 
     See [this issue](https://github.com/reactive-python/reactpy/issues/1072) for more details.
 
+<!--
 ## Overview
 
 <p class="intro" markdown>
@@ -12,11 +13,11 @@ Use React Developer Tools to inspect React [components](../learn/your-first-comp
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to install ReactPy Developer Tools
 
-<!--
+
 ## Browser extension
 
 The easiest way to debug websites built with React is to install the React Developer Tools browser extension. It is available for several popular browsers:

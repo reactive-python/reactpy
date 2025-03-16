@@ -1,0 +1,111 @@
+:root {
+	--code-max-height: 17.25rem;
+	--md-code-backdrop: rgba(0, 0, 0, 0) 0px 0px 0px 0px,
+		rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.03) 0px 0.8px 2px 0px,
+		rgba(0, 0, 0, 0.047) 0px 2.7px 6.7px 0px,
+		rgba(0, 0, 0, 0.08) 0px 12px 30px 0px;
+}
+[data-md-color-scheme="slate"] {
+	--md-code-hl-color: #ffffcf1c;
+	--md-code-bg-color: #16181d;
+	--md-code-hl-comment-color: hsla(var(--md-hue), 75%, 90%, 0.43);
+	--code-tab-color: rgb(52, 58, 70);
+	--md-code-hl-name-color: #aadafc;
+	--md-code-hl-string-color: hsl(21 49% 63% / 1);
+	--md-code-hl-keyword-color: hsl(289.67deg 35% 60%);
+	--md-code-hl-constant-color: hsl(213.91deg 68% 61%);
+	--md-code-hl-number-color: #bfd9ab;
+	--func-and-decorator-color: #dcdcae;
+	--module-import-color: #60c4ac;
+}
+[data-md-color-scheme="default"] {
+	--md-code-hl-color: #ffffcf1c;
+	--md-code-bg-color: rgba(208, 211, 220, 0.4);
+	--md-code-fg-color: rgb(64, 71, 86);
+	--code-tab-color: #fff;
+	--func-and-decorator-color: var(--md-code-hl-function-color);
+	--module-import-color: #e153e5;
+}
+[data-md-color-scheme="default"] .md-typeset .highlight > pre > code,
+[data-md-color-scheme="default"] .md-typeset .highlight > table.highlighttable {
+	--md-code-bg-color: #fff;
+}
+
+/* All code blocks */
+.md-typeset pre > code {
+	max-height: var(--code-max-height);
+}
+
+/* Code blocks with no line number */
+.md-typeset .highlight > pre > code {
+	border-radius: 16px;
+	max-height: var(--code-max-height);
+	box-shadow: var(--md-code-backdrop);
+}
+
+/* Code blocks with line numbers */
+.md-typeset .highlighttable .linenos {
+	max-height: var(--code-max-height);
+	overflow: hidden;
+}
+.md-typeset .highlighttable {
+	box-shadow: var(--md-code-backdrop);
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+/* Tabbed code blocks */
+.md-typeset .tabbed-set {
+	box-shadow: var(--md-code-backdrop);
+	border-radius: 8px;
+	overflow: hidden;
+	border: 1px solid var(--md-default-fg-color--lightest);
+}
+.md-typeset .tabbed-set .tabbed-block {
+	overflow: hidden;
+}
+.js .md-typeset .tabbed-set .tabbed-labels {
+	background: var(--code-tab-color);
+	margin: 0;
+	padding-left: 0.8rem;
+}
+.md-typeset .tabbed-set .tabbed-labels > label {
+	font-weight: 400;
+	font-size: 0.7rem;
+	padding-top: 0.55em;
+	padding-bottom: 0.35em;
+}
+.md-typeset .tabbed-set .highlighttable {
+	border-radius: 0;
+}
+
+/* Code hightlighting colors */
+
+/* Module imports */
+.highlight .nc,
+.highlight .ne,
+.highlight .nn,
+.highlight .nv {
+	color: var(--module-import-color);
+}
+
+/* Function def name and decorator */
+.highlight .nd,
+.highlight .nf {
+	color: var(--func-and-decorator-color);
+}
+
+/* None type */
+.highlight .kc {
+	color: var(--md-code-hl-constant-color);
+}
+
+/* Keywords such as def and return */
+.highlight .k {
+	color: var(--md-code-hl-constant-color);
+}
+
+/* HTML tags */
+.highlight .nt {
+	color: var(--md-code-hl-constant-color);
+}

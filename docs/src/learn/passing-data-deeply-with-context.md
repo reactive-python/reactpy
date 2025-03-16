@@ -6,7 +6,7 @@ Usually, you will pass information from a parent component to a child component 
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   What "prop drilling" is
     -   How to replace repetitive prop passing with context

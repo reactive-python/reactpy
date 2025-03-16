@@ -6,7 +6,7 @@ React components use _props_ to communicate with each other. Every parent compon
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to pass props to a component
     -   How to read props from a component

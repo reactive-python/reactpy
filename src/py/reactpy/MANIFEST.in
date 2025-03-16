@@ -1,3 +1,0 @@
-recursive-include src/reactpy/_client *
-recursive-include src/reactpy/web/templates *
-include src/reactpy/py.typed

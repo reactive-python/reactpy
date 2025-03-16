@@ -6,7 +6,7 @@ _Components_ are one of the core concepts of React. They are the foundation upon
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   What a component is
     -   What role components play in a React application

@@ -6,7 +6,7 @@ React automatically updates the [DOM](https://developer.mozilla.org/docs/Web/API
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to access a DOM node managed by React with the `ref` attribute
     -   How the `ref` JSX attribute relates to the `useRef` Hook

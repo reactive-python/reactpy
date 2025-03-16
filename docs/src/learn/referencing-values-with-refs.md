@@ -6,7 +6,7 @@ When you want a component to "remember" some information, but you don't want tha
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to add a ref to your component
     -   How to update a ref's value

@@ -1,9 +1,9 @@
-!!! warning "In Progress"
+!!! warning "Planned / Undeveloped"
 
     This feature is planned, but not yet developed.
 
     See [this issue](https://github.com/reactive-python/reactpy/issues/985) for more details.
-
+<!-- 
 ## Overview
 
 <p class="intro" markdown>
@@ -285,4 +285,4 @@ root2.render(<App />);
 input {
 	margin: 5px;
 }
-```
+``` -->

@@ -6,7 +6,7 @@ Your components will often need to display different things depending on differe
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   How to return different JSX depending on a condition
     -   How to conditionally include or exclude a piece of JSX

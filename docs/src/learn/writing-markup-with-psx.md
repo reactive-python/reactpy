@@ -1,10 +1,10 @@
-!!! warning "In Progress"
+!!! warning "Planned / Undeveloped"
 
     This feature is planned, but not yet developed.
 
     See [this issue](https://github.com/reactive-python/reactpy/issues/918) for more details.
 
-## Overview
+<!-- ## Overview
 
 <p class="intro" markdown>
 
@@ -12,7 +12,7 @@ _PSX_ is a syntax extension for JavaScript that lets you write HTML-like markup 
 
 </p>
 
-!!! summary "You Will Learn"
+!!! summary "You will learn"
 
     -   Why React mixes markup with rendering logic
     -   How PSX is different from HTML
@@ -20,23 +20,24 @@ _PSX_ is a syntax extension for JavaScript that lets you write HTML-like markup 
 
 ## PSX: Putting markup into Python
 
-The Web has been built on HTML, CSS, and JavaScript. For many years, web developers kept content in HTML, design in CSS, and logic in JavaScript—often in separate files! Content was marked up inside HTML while the page's logic lived separately in JavaScript:
+The Web has been built on HTML, CSS, and JavaScript. For many years, web developers kept content in HTML, design in CSS, and logic in JavaScript—often in separate files! Content was marked up inside HTML while the page's logic lived separately in JavaScript: -->
 
 <!-- TODO: Diagram -->
 
-But as the Web became more interactive, logic increasingly determined content. Scripting languages are now in charge of the HTML! This is why **in React, rendering logic and markup live together in the same place—components.**
+<!-- But as the Web became more interactive, logic increasingly determined content. Scripting languages are now in charge of the HTML! This is why **in React, rendering logic and markup live together in the same place—components.** -->
 
 <!-- TODO: Diagram -->
 
+<!--
 Keeping a button's rendering logic and markup together ensures that they stay in sync with each other on every edit. Conversely, details that are unrelated, such as the button's markup and a sidebar's markup, are isolated from each other, making it safer to change either of them on their own.
 
 Each React component is a JavaScript function that may contain some markup that React renders into the browser. React components use a syntax extension called PSX to represent that markup. PSX looks a lot like HTML, but it is a bit stricter and can display dynamic information. The best way to understand this is to convert some HTML markup to PSX markup.
 
-!!! note
+!!! abstract "Note"
 
     PSX and ReactPy are two separate things. They're often used together, but you _can_ use them independently of each other. PSX is a syntax extension, while ReactPy is a Python library.
 
-<!-- ## Converting HTML to PSX
+ ## Converting HTML to PSX
 
 Suppose that you have some (perfectly valid) HTML:
 
