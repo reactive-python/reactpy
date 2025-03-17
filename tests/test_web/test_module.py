@@ -268,6 +268,20 @@ async def test_keys_properly_propagated(display: DisplayFixture):
     assert len(children) == 3
 
 
+async def test_subcomponent_notation(display: DisplayFixture):
+    module = reactpy.web.module_from_file(
+        "subcomponent-notation", JS_FIXTURES_DIR / "subcomponent-notation.js",
+    )
+    BootstrapFormLabel = reactpy.web.export(module, "Form.Label")
+
+    await display.show(
+        lambda: BootstrapFormLabel({"htmlFor": "test-123"}, "Test 123")
+    )
+
+    await display.page.wait_for_selector(".form-label", state="attached")
+    # The above will fail due to timeout if it does not work as expected
+
+
 def test_module_from_string():
     reactpy.web.module_from_string("temp", "old")
     with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):

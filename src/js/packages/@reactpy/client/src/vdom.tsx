@@ -68,6 +68,7 @@ function createImportSourceElement(props: {
 }): any {
   let type: any;
   if (props.model.importSource) {
+    let rootType = props.model.tagName.split(".")[0];
     if (
       !isImportSourceEqual(props.currentImportSource, props.model.importSource)
     ) {
@@ -78,15 +79,16 @@ function createImportSourceElement(props: {
           stringifyImportSource(props.model.importSource),
       );
       return null;
-    } else if (!props.module[props.model.tagName]) {
+    } else if (!props.module[rootType]) {
       log.error(
         "Module from source " +
           stringifyImportSource(props.currentImportSource) +
-          ` does not export ${props.model.tagName}`,
+          ` does not export ${rootType}`,
       );
       return null;
     } else {
-      type = props.module[props.model.tagName];
+      type = tryGetSubType(props.module, props.model.tagName);
+      if (!type) return null;
     }
   } else {
     type = props.model.tagName;
@@ -101,6 +103,30 @@ function createImportSourceElement(props: {
       }),
     ),
   );
+}
+
+function tryGetSubType(
+  module: ReactPyModule,
+  component: string
+) {
+  let subComponents: string[] = component.split(".");
+  let rootComponent: string = subComponents[0];
+  let subComponentAccessor: string = rootComponent;
+  let type: any = module[rootComponent];
+  
+  subComponents = subComponents.slice(1);
+  for (let i = 0; i < subComponents.length; i++) {
+    let subComponent = subComponents[i];
+    subComponentAccessor += "." + subComponent;
+    type = type[subComponent];
+    if (!type) {
+      console.error(
+        `Component ${rootComponent} does not have subcomponent ${subComponentAccessor}`
+      );
+      break
+    }
+  }
+  return type;
 }
 
 function isImportSourceEqual(
