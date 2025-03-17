@@ -12,7 +12,7 @@ async def submit_form(*args):
 def error_msg(error):
     if error:
         return html.p(
-            {"class_name": "error"}, "Good guess but a wrong answer. Try again!"
+            {"className": "error"}, "Good guess but a wrong answer. Try again!"
         )
     else:
         return ""
@@ -41,18 +41,17 @@ def form(status="empty"):
     if status == "success":
         return html.h1("That's right!")
     else:
-        return html._(
+        return html.fragment(
             html.h2("City quiz"),
             html.p(
-                "In which city is there a billboard \
-                    that turns air into drinkable water?"
+                "In which city is there a billboard that turns air into drinkable water?"
             ),
             html.form(
-                {"on_submit": handle_submit},
+                {"onSubmit": handle_submit},
                 html.textarea(
                     {
                         "value": answer,
-                        "on_change": handle_textarea_change,
+                        "onChange": handle_textarea_change,
                         "disabled": (True if status == "submitting" else "False"),
                     }
                 ),

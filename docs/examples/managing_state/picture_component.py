@@ -5,10 +5,10 @@ from reactpy import component, html
 @component
 def picture():
     return html.div(
-        {"class_name": "background background--active"},
+        {"className": "background background--active"},
         html.img(
             {
-                "class_name": "picture",
+                "className": "picture",
                 "alt": "Rainbow houses in Kampung Pelangi, Indonesia",
                 "src": "https://i.imgur.com/5qwVYb1.jpeg",
             }

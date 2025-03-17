@@ -9,13 +9,13 @@ def picture():
     if is_active:
         return html.div(
             {
-                "class_name": "background",
-                "on_click": lambda event: set_is_active(False),
+                "className": "background",
+                "onClick": lambda event: set_is_active(False),
             },
             html.img(
                 {
-                    "on_click": event(stop_propagation=True),
-                    "class_name": "picture picture--active",
+                    "onClick": event(stop_propagation=True),
+                    "className": "picture picture--active",
                     "alt": "Rainbow houses in Kampung Pelangi, Indonesia",
                     "src": "https://i.imgur.com/5qwVYb1.jpeg",
                 }
@@ -23,13 +23,13 @@ def picture():
         )
     else:
         return html.div(
-            {"class_name": "background background--active"},
+            {"className": "background background--active"},
             html.img(
                 {
-                    "on_click": event(
+                    "onClick": event(
                         lambda event: set_is_active(True), stop_propagation=True
                     ),
-                    "class_name": "picture",
+                    "className": "picture",
                     "alt": "Rainbow houses in Kampung Pelangi, Indonesia",
                     "src": "https://i.imgur.com/5qwVYb1.jpeg",
                 }

@@ -29,103 +29,107 @@ They don't know where you want to go, they just follow your commands. (And if yo
 
 In this example of imperative UI programming, the form is built _without_ React. It only uses the browser [DOM](https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model):
 
-```js
-async function handleFormSubmit(e) {
-	e.preventDefault();
-	disable(textarea);
-	disable(button);
-	show(loadingMessage);
-	hide(errorMessage);
-	try {
-		await submitForm(textarea.value);
-		show(successMessage);
-		hide(form);
-	} catch (err) {
-		show(errorMessage);
-		errorMessage.textContent = err.message;
-	} finally {
-		hide(loadingMessage);
-		enable(textarea);
-		enable(button);
-	}
-}
+=== "index.js"
 
-function handleTextareaChange() {
-	if (textarea.value.length === 0) {
-		disable(button);
-	} else {
-		enable(button);
-	}
-}
+    ```js
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        disable(textarea);
+        disable(button);
+        show(loadingMessage);
+        hide(errorMessage);
+        try {
+            await submitForm(textarea.value);
+            show(successMessage);
+            hide(form);
+        } catch (err) {
+            show(errorMessage);
+            errorMessage.textContent = err.message;
+        } finally {
+            hide(loadingMessage);
+            enable(textarea);
+            enable(button);
+        }
+    }
 
-function hide(el) {
-	el.style.display = "none";
-}
+    function handleTextareaChange() {
+        if (textarea.value.length === 0) {
+            disable(button);
+        } else {
+            enable(button);
+        }
+    }
 
-function show(el) {
-	el.style.display = "";
-}
+    function hide(el) {
+        el.style.display = "none";
+    }
 
-function enable(el) {
-	el.disabled = false;
-}
+    function show(el) {
+        el.style.display = "";
+    }
 
-function disable(el) {
-	el.disabled = true;
-}
+    function enable(el) {
+        el.disabled = false;
+    }
 
-function submitForm(answer) {
-	// Pretend it's hitting the network.
-	return new Promise((resolve, reject) => {
-		setTimeout(() => {
-			if (answer.toLowerCase() == "istanbul") {
-				resolve();
-			} else {
-				reject(new Error("Good guess but a wrong answer. Try again!"));
-			}
-		}, 1500);
-	});
-}
+    function disable(el) {
+        el.disabled = true;
+    }
 
-let form = document.getElementById("form");
-let textarea = document.getElementById("textarea");
-let button = document.getElementById("button");
-let loadingMessage = document.getElementById("loading");
-let errorMessage = document.getElementById("error");
-let successMessage = document.getElementById("success");
-form.onsubmit = handleFormSubmit;
-textarea.oninput = handleTextareaChange;
-```
+    function submitForm(answer) {
+        // Pretend it's hitting the network.
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                if (answer.toLowerCase() == "istanbul") {
+                    resolve();
+                } else {
+                    reject(new Error("Good guess but a wrong answer. Try again!"));
+                }
+            }, 1500);
+        });
+    }
 
-```js
-{
-  "hardReloadOnChange": true
-}
-```
+    let form = document.getElementById("form");
+    let textarea = document.getElementById("textarea");
+    let button = document.getElementById("button");
+    let loadingMessage = document.getElementById("loading");
+    let errorMessage = document.getElementById("error");
+    let successMessage = document.getElementById("success");
+    form.onsubmit = handleFormSubmit;
+    textarea.oninput = handleTextareaChange;
+    ```
 
-```html
-<form id="form">
-	<h2>City quiz</h2>
-	<p>What city is located on two continents?</p>
-	<textarea id="textarea"></textarea>
-	<br />
-	<button id="button" disabled>Submit</button>
-	<p id="loading" style="display: none">Loading...</p>
-	<p id="error" style="display: none; color: red;"></p>
-</form>
-<h1 id="success" style="display: none">That's right!</h1>
+=== "index.html"
 
-<style>
-	* {
-		box-sizing: border-box;
-	}
-	body {
-		font-family: sans-serif;
-		margin: 20px;
-		padding: 0;
-	}
-</style>
-```
+    ```html
+    <form id="form">
+        <h2>City quiz</h2>
+        <p>What city is located on two continents?</p>
+        <textarea id="textarea"></textarea>
+        <br />
+        <button id="button" disabled>Submit</button>
+        <p id="loading" style="display: none">Loading...</p>
+        <p id="error" style="display: none; color: red;"></p>
+    </form>
+    <h1 id="success" style="display: none">That's right!</h1>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            padding: 0;
+        }
+    </style>
+    ```
+
+=== ":material-play: Run"
+
+    ```html
+    # TODO
+    ```
 
 Manipulating the UI imperatively works well enough for isolated examples, but it gets exponentially more difficult to manage in more complex systems. Imagine updating a page full of different forms like this one. Adding a new UI element or a new interaction would require carefully checking all existing code to make sure you haven't introduced a bug (for example, forgetting to show or hide something).
 
@@ -160,12 +164,14 @@ First, you need to visualize all the different "states" of the UI the user might
 Just like a designer, you'll want to "mock up" or create "mocks" for the different states before you add logic. For example, here is a mock for just the visual part of the form. This mock is controlled by a prop called `status` with a default value of `'empty'`:
 
 === "app.py"
-	```python
-    {% include "../../examples/python/managing_state/basic_form_component.py" start="# start" %}
+
+    ```python
+    {% include "../../examples/managing_state/basic_form_component.py" start="# start" %}
     ```
 
 === ":material-play: Run"
-	```python
+
+    ```python
     # TODO
     ```
 
@@ -173,56 +179,55 @@ You could call that prop anything you like, the naming is not important. Try edi
 
 === "app.py"
 
-	```python
-    {% include "../../examples/python/managing_state/conditional_form_component.py" start="# start" %}
+    ```python
+    {% include "../../examples/managing_state/conditional_form_component.py" start="# start" %}
     ```
 
 === "styles.css"
 
     ```css
-    {% include "../../examples/css/managing_state/conditional_form_component.css" %}
+    {% include "../../examples/managing_state/conditional_form_component.css" %}
     ```
 
 === ":material-play: Run"
 
-	```python
+    ```python
     # TODO
     ```
 
-<DeepDive>
+!!! info "Deep Dive"
 
-#### Displaying many visual states at once
+    <font size="4">**Displaying many visual states at once**</font>
 
-If a component has a lot of visual states, it can be convenient to show them all on one page:
+    ??? "Show Details"
 
-=== "app.py"
-	
-	```python
-    {% include "../../examples/python/managing_state/multiple_form_components.py" start="# start" %}
-    ```
+        If a component has a lot of visual states, it can be convenient to show them all on one page:
 
-=== "form.py"
-	
-	```python
-    {% include "../../examples/python/managing_state/conditional_form_component.py" start="# start" %}
-    ```
+        === "app.py"
 
-=== "styles.css"
+            ```python
+            {% include "../../examples/managing_state/multiple_form_components.py" start="# start" %}
+            ```
 
-    ```css
-    {% include "../../examples/css/managing_state/multiple_form_components.css" %}
-    ```
+        === "form.py"
 
+            ```python
+            {% include "../../examples/managing_state/conditional_form_component.py" start="# start" %}
+            ```
 
-=== ":material-play: Run"
-	
-	```python
-    # TODO
-    ```
+        === "styles.css"
 
-Pages like this are often called "living styleguides" or "storybooks".
+            ```css
+            {% include "../../examples/managing_state/multiple_form_components.css" %}
+            ```
 
-</DeepDive>
+        === ":material-play: Run"
+
+            ```python
+            # TODO
+            ```
+
+        Pages like this are often called "living styleguides" or "storybooks".
 
 ### Step 2: Determine what triggers those state changes
 
@@ -231,23 +236,18 @@ You can trigger state updates in response to two kinds of inputs:
 -   **Human inputs,** like clicking a button, typing in a field, navigating a link.
 -   **Computer inputs,** like a network response arriving, a timeout completing, an image loading.
 
-<IllustrationBlock>
-  <Illustration caption="Human inputs" alt="A finger." src="/images/docs/illustrations/i_inputs1.png" />
-  <Illustration caption="Computer inputs" alt="Ones and zeroes." src="/images/docs/illustrations/i_inputs2.png" />
-</IllustrationBlock>
+<!-- TODO: Diagram -->
 
-In both cases, **you must set [state variables](/learn/state-a-components-memory#anatomy-of-usestate) to update the UI.** For the form you're developing, you will need to change state in response to a few different inputs:
+In both cases, **you must set [state variables](./state-a-components-memory.md#anatomy-of-usestate) to update the UI.** For the form you're developing, you will need to change state in response to a few different inputs:
 
 -   **Changing the text input** (human) should switch it from the _Empty_ state to the _Typing_ state or back, depending on whether the text box is empty or not.
 -   **Clicking the Submit button** (human) should switch it to the _Submitting_ state.
 -   **Successful network response** (computer) should switch it to the _Success_ state.
 -   **Failed network response** (computer) should switch it to the _Error_ state with the matching error message.
 
-<Note>
+!!! abstract "Note"
 
-Notice that human inputs often require [event handlers](/learn/responding-to-events)!
-
-</Note>
+    Notice that human inputs often require [event handlers](./responding-to-events.md)!
 
 To help visualize this flow, try drawing each state on paper as a labeled circle, and each change between two states as an arrow. You can sketch out many flows this way and sort out bugs long before implementation.
 
@@ -255,37 +255,21 @@ To help visualize this flow, try drawing each state on paper as a labeled circle
 
 ### Step 3: Represent the state in memory with `useState`
 
-Next you'll need to represent the visual states of your component in memory with [`use_state`.](/reference/react/useState) Simplicity is key: each piece of state is a "moving piece", and **you want as few "moving pieces" as possible.** More complexity leads to more bugs!
+Next you'll need to represent the visual states of your component in memory with [`use_state`.](../reference/use-state.md) Simplicity is key: each piece of state is a "moving piece", and **you want as few "moving pieces" as possible.** More complexity leads to more bugs!
 
 Start with the state that _absolutely must_ be there. For example, you'll need to store the `answer` for the input, and the `error` (if it exists) to store the last error:
 
-=== "app.py"
-
-	```python
-    {% include "../../examples/python/managing_state/necessary_states.py" start="# start" %}
-    ```
-
-=== ":material-play: Run"
-
-	```python
-    # TODO
-    ```
+```python linenums="0"
+{% include "../../examples/managing_state/necessary_states.py" start="# start" %}
+```
 
 Then, you'll need a state variable representing which one of the visual states that you want to display. There's usually more than a single way to represent that in memory, so you'll need to experiment with it.
 
 If you struggle to think of the best way immediately, start by adding enough state that you're _definitely_ sure that all the possible visual states are covered:
 
-=== "app.py"
-
-	```python
-    {% include "../../examples/python/managing_state/all_possible_states.py" start="# start" %}
-    ```
-
-=== ":material-play: Run"
-
-	```python
-    # TODO
-    ```
+```python linenums="0"
+{% include "../../examples/managing_state/all_possible_states.py" start="# start" %}
+```
 
 Your first idea likely won't be the best, but that's ok--refactoring state is a part of the process!
 
@@ -301,27 +285,17 @@ Here are some questions you can ask about your state variables:
 
 After this clean-up, you're left with 3 (down from 7!) _essential_ state variables:
 
-=== "app.py"
-
-	```python
-    {% include "../../examples/python/managing_state/refactored_states.py" start="# start" %}
-    ```
-
-=== ":material-play: Run"
-
-	```python
-    # TODO
-    ```
+```python linenums="0"
+{% include "../../examples/managing_state/refactored_states.py" start="# start" %}
+```
 
 You know they are essential, because you can't remove any of them without breaking the functionality.
 
-<DeepDive>
+!!! info "Deep Dive"
 
-#### Eliminating “impossible” states with a reducer
+    <font size="4">**Eliminating “impossible” states with a reducer**</font>
 
-These three variables are a good enough representation of this form's state. However, there are still some intermediate states that don't fully make sense. For example, a non-null `error` doesn't make sense when `status` is `'success'`. To model the state more precisely, you can [extract it into a reducer.](/learn/extracting-state-logic-into-a-reducer) Reducers let you unify multiple state variables into a single object and consolidate all the related logic!
-
-</DeepDive>
+    These three variables are a good enough representation of this form's state. However, there are still some intermediate states that don't fully make sense. For example, a non-null `error` doesn't make sense when `status` is `'success'`. To model the state more precisely, you can [extract it into a reducer.](./extracting-state-logic-into-a-reducer.md) Reducers let you unify multiple state variables into a single object and consolidate all the related logic!
 
 ### Step 5: Connect the event handlers to set state
 
@@ -329,25 +303,25 @@ Lastly, create event handlers that update the state. Below is the final form, wi
 
 === "app.py"
 
-	```python
-    {% include "../../examples/python/managing_state/stateful_form_component.py" start="# start" %}
+    ```python
+    {% include "../../examples/managing_state/stateful_form_component.py" start="# start" %}
     ```
 
 === "styles.css"
 
-	```css
-    {% include "../../examples/css/managing_state/conditional_form_component.css" %}
+    ```css
+    {% include "../../examples/managing_state/conditional_form_component.css" %}
     ```
 
 === ":material-play: Run"
 
-	```python
+    ```python
     # TODO
     ```
 
 Although this code is longer than the original imperative example, it is much less fragile. Expressing all interactions as state changes lets you later introduce new visual states without breaking existing ones. It also lets you change what should be displayed in each state without changing the logic of the interaction itself.
 
-<Recap>
+### Recap
 
 -   Declarative programming means describing the UI for each visual state rather than micromanaging the UI (imperative).
 -   When developing a component:
@@ -357,596 +331,610 @@ Although this code is longer than the original imperative example, it is much le
     4. Remove non-essential state to avoid bugs and paradoxes.
     5. Connect the event handlers to set state.
 
-</Recap>
+### Challenges
 
-<Challenges>
+=== "1. Add and remove a CSS class"
 
-#### Add and remove a CSS class
+    <div class="challenge">
 
-Make it so that clicking on the picture _removes_ the `background--active` CSS class from the outer `<div>`, but _adds_ the `picture--active` class to the `<img>`. Clicking the background again should restore the original CSS classes.
+    <font size="4">**Challenge 1 of 3: Add and remove a CSS class**</font>
 
-Visually, you should expect that clicking on the picture removes the purple background and highlights the picture border. Clicking outside the picture highlights the background, but removes the picture border highlight.
+    Make it so that clicking on the picture _removes_ the `background--active` CSS class from the outer `<div>`, but _adds_ the `picture--active` class to the `<img>`. Clicking the background again should restore the original CSS classes.
 
-=== "picture.py"
+    Visually, you should expect that clicking on the picture removes the purple background and highlights the picture border. Clicking outside the picture highlights the background, but removes the picture border highlight.
 
-	```python
-    {% include "../../examples/python/managing_state/picture_component.py" start="# start" %}
-    ```
+    === "picture.py"
 
-=== "styles.css"
+        ```python
+        {% include "../../examples/managing_state/picture_component.py" start="# start" %}
+        ```
 
-	```css
-    {% include "../../examples/css/managing_state/picture_component.css" %}
-    ```
+    === "styles.css"
 
-=== ":material-play: Run"
+        ```css
+        {% include "../../examples/managing_state/picture_component.css" %}
+        ```
 
-	```python
-    # TODO
-    ```
+    ??? "Show Solution"
 
-<Solution>
+        This component has two visual states: when the image is active, and when the image is inactive:
 
-This component has two visual states: when the image is active, and when the image is inactive:
+        -   When the image is active, the CSS classes are `background` and `picture picture--active`.
+        -   When the image is inactive, the CSS classes are `background background--active` and `picture`.
 
--   When the image is active, the CSS classes are `background` and `picture picture--active`.
--   When the image is inactive, the CSS classes are `background background--active` and `picture`.
+        A single boolean state variable is enough to remember whether the image is active. The original task was to remove or add CSS classes. However, in React you need to _describe_ what you want to see rather than _manipulate_ the UI elements. So you need to calculate both CSS classes based on the current state. You also need to [stop the propagation](./responding-to-events.md#stopping-propagation) so that clicking the image doesn't register as a click on the background.
 
-A single boolean state variable is enough to remember whether the image is active. The original task was to remove or add CSS classes. However, in React you need to _describe_ what you want to see rather than _manipulate_ the UI elements. So you need to calculate both CSS classes based on the current state. You also need to [stop the propagation](/learn/responding-to-events#stopping-propagation) so that clicking the image doesn't register as a click on the background.
+        Verify that this version works by clicking the image and then outside of it:
 
-Verify that this version works by clicking the image and then outside of it:
+        === "app.py"
 
-=== "app.py"
+            ```python
+            {% include "../../examples/managing_state/stateful_picture_component.py" start="# start" %}
+            ```
 
-	```python
-    {% include "../../examples/python/managing_state/stateful_picture_component.py" start="# start" %}
-    ```
+        === "styles.css"
 
-=== "styles.css"
+            ```css
+            {% include "../../examples/managing_state/picture_component.css" %}
+            ```
 
-	```css
-    {% include "../../examples/css/managing_state/picture_component.css" %}
-    ```
+        === ":material-play: Run"
 
-=== ":material-play: Run"
+            ```python
+            # TODO
+            ```
 
-	```python
-    # TODO
-    ```
+        Alternatively, you could return two separate chunks of HTML:
 
-Alternatively, you could return two separate chunks of PSX:
+        === "app.py"
 
-=== "app.py"
+            ```python
+            {% include "../../examples/managing_state/stateful_picture_component.py" start="# start" %}
+            ```
 
-	```python
-    {% include "../../examples/python/managing_state/stateful_picture_component.py" start="# start" %}
-    ```
+        === "styles.css"
 
-=== "styles.css"
-
-	```css
-    {% include "../../examples/css/managing_state/picture_component.css" %}
-    ```
-
-=== ":material-play: Run"
-
-	```python
-    # TODO
-    ```
-
-Keep in mind that if two different PSX chunks describe the same tree, their nesting (first `html.div` → first `html.img`) has to line up. Otherwise, toggling `is_active` would recreate the whole tree below and [reset its state.](/learn/preserving-and-resetting-state) This is why, if a similar PSX tree gets returned in both cases, it is better to write them as a single piece of PSX.
-
-</Solution>
+            ```css
+            {% include "../../examples/managing_state/picture_component.css" %}
+            ```
 
-#### Profile editor
-
-Here is a small form implemented with plain JavaScript and DOM. Play with it to understand its behavior:
-
-```js
-function handleFormSubmit(e) {
-	e.preventDefault();
-	if (editButton.textContent === "Edit Profile") {
-		editButton.textContent = "Save Profile";
-		hide(firstNameText);
-		hide(lastNameText);
-		show(firstNameInput);
-		show(lastNameInput);
-	} else {
-		editButton.textContent = "Edit Profile";
-		hide(firstNameInput);
-		hide(lastNameInput);
-		show(firstNameText);
-		show(lastNameText);
-	}
-}
-
-function handleFirstNameChange() {
-	firstNameText.textContent = firstNameInput.value;
-	helloText.textContent =
-		"Hello " + firstNameInput.value + " " + lastNameInput.value + "!";
-}
-
-function handleLastNameChange() {
-	lastNameText.textContent = lastNameInput.value;
-	helloText.textContent =
-		"Hello " + firstNameInput.value + " " + lastNameInput.value + "!";
-}
-
-function hide(el) {
-	el.style.display = "none";
-}
-
-function show(el) {
-	el.style.display = "";
-}
-
-let form = document.getElementById("form");
-let editButton = document.getElementById("editButton");
-let firstNameInput = document.getElementById("firstNameInput");
-let firstNameText = document.getElementById("firstNameText");
-let lastNameInput = document.getElementById("lastNameInput");
-let lastNameText = document.getElementById("lastNameText");
-let helloText = document.getElementById("helloText");
-form.onsubmit = handleFormSubmit;
-firstNameInput.oninput = handleFirstNameChange;
-lastNameInput.oninput = handleLastNameChange;
-```
-
-```js
-{
-  "hardReloadOnChange": true
-}
-```
-
-```html
-<form id="form">
-	<label>
-		First name:
-		<b id="firstNameText">Jane</b>
-		<input id="firstNameInput" value="Jane" style="display: none" />
-	</label>
-	<label>
-		Last name:
-		<b id="lastNameText">Jacobs</b>
-		<input id="lastNameInput" value="Jacobs" style="display: none" />
-	</label>
-	<button type="submit" id="editButton">Edit Profile</button>
-	<p><i id="helloText">Hello, Jane Jacobs!</i></p>
-</form>
-
-<style>
-	* {
-		box-sizing: border-box;
-	}
-	body {
-		font-family: sans-serif;
-		margin: 20px;
-		padding: 0;
-	}
-	label {
-		display: block;
-		margin-bottom: 20px;
-	}
-</style>
-```
-
-This form switches between two modes: in the editing mode, you see the inputs, and in the viewing mode, you only see the result. The button label changes between "Edit" and "Save" depending on the mode you're in. When you change the inputs, the welcome message at the bottom updates in real time.
-
-Your task is to reimplement it in React in the sandbox below. For your convenience, the markup was already converted to JSX, but you'll need to make it show and hide the inputs like the original does.
-
-Make sure that it updates the text at the bottom, too!
-
-```js
-export default function EditProfile() {
-	return (
-		<form>
-			<label>
-				First name: <b>Jane</b>
-				<input />
-			</label>
-			<label>
-				Last name: <b>Jacobs</b>
-				<input />
-			</label>
-			<button type="submit">Edit Profile</button>
-			<p>
-				<i>Hello, Jane Jacobs!</i>
-			</p>
-		</form>
-	);
-}
-```
-
-```css
-label {
-	display: block;
-	margin-bottom: 20px;
-}
-```
-
-<Solution>
-
-You will need two state variables to hold the input values: `firstName` and `lastName`. You're also going to need an `isEditing` state variable that holds whether to display the inputs or not. You should _not_ need a `fullName` variable because the full name can always be calculated from the `firstName` and the `lastName`.
-
-Finally, you should use [conditional rendering](/learn/conditional-rendering) to show or hide the inputs depending on `isEditing`.
-
-```js
-import { useState } from "react";
-
-export default function EditProfile() {
-	const [isEditing, setIsEditing] = useState(false);
-	const [firstName, setFirstName] = useState("Jane");
-	const [lastName, setLastName] = useState("Jacobs");
-
-	return (
-		<form
-			onSubmit={(e) => {
-				e.preventDefault();
-				setIsEditing(!isEditing);
-			}}
-		>
-			<label>
-				First name:{" "}
-				{isEditing ? (
-					<input
-						value={firstName}
-						onChange={(e) => {
-							setFirstName(e.target.value);
-						}}
-					/>
-				) : (
-					<b>{firstName}</b>
-				)}
-			</label>
-			<label>
-				Last name:{" "}
-				{isEditing ? (
-					<input
-						value={lastName}
-						onChange={(e) => {
-							setLastName(e.target.value);
-						}}
-					/>
-				) : (
-					<b>{lastName}</b>
-				)}
-			</label>
-			<button type="submit">{isEditing ? "Save" : "Edit"} Profile</button>
-			<p>
-				<i>
-					Hello, {firstName} {lastName}!
-				</i>
-			</p>
-		</form>
-	);
-}
-```
-
-```css
-label {
-	display: block;
-	margin-bottom: 20px;
-}
-```
-
-Compare this solution to the original imperative code. How are they different?
-
-</Solution>
-
-#### Refactor the imperative solution without React
-
-Here is the original sandbox from the previous challenge, written imperatively without React:
-
-```js
-function handleFormSubmit(e) {
-	e.preventDefault();
-	if (editButton.textContent === "Edit Profile") {
-		editButton.textContent = "Save Profile";
-		hide(firstNameText);
-		hide(lastNameText);
-		show(firstNameInput);
-		show(lastNameInput);
-	} else {
-		editButton.textContent = "Edit Profile";
-		hide(firstNameInput);
-		hide(lastNameInput);
-		show(firstNameText);
-		show(lastNameText);
-	}
-}
-
-function handleFirstNameChange() {
-	firstNameText.textContent = firstNameInput.value;
-	helloText.textContent =
-		"Hello " + firstNameInput.value + " " + lastNameInput.value + "!";
-}
-
-function handleLastNameChange() {
-	lastNameText.textContent = lastNameInput.value;
-	helloText.textContent =
-		"Hello " + firstNameInput.value + " " + lastNameInput.value + "!";
-}
-
-function hide(el) {
-	el.style.display = "none";
-}
-
-function show(el) {
-	el.style.display = "";
-}
-
-let form = document.getElementById("form");
-let editButton = document.getElementById("editButton");
-let firstNameInput = document.getElementById("firstNameInput");
-let firstNameText = document.getElementById("firstNameText");
-let lastNameInput = document.getElementById("lastNameInput");
-let lastNameText = document.getElementById("lastNameText");
-let helloText = document.getElementById("helloText");
-form.onsubmit = handleFormSubmit;
-firstNameInput.oninput = handleFirstNameChange;
-lastNameInput.oninput = handleLastNameChange;
-```
-
-```js
-{
-  "hardReloadOnChange": true
-}
-```
-
-```html
-<form id="form">
-	<label>
-		First name:
-		<b id="firstNameText">Jane</b>
-		<input id="firstNameInput" value="Jane" style="display: none" />
-	</label>
-	<label>
-		Last name:
-		<b id="lastNameText">Jacobs</b>
-		<input id="lastNameInput" value="Jacobs" style="display: none" />
-	</label>
-	<button type="submit" id="editButton">Edit Profile</button>
-	<p><i id="helloText">Hello, Jane Jacobs!</i></p>
-</form>
-
-<style>
-	* {
-		box-sizing: border-box;
-	}
-	body {
-		font-family: sans-serif;
-		margin: 20px;
-		padding: 0;
-	}
-	label {
-		display: block;
-		margin-bottom: 20px;
-	}
-</style>
-```
-
-Imagine React didn't exist. Can you refactor this code in a way that makes the logic less fragile and more similar to the React version? What would it look like if the state was explicit, like in React?
-
-If you're struggling to think where to start, the stub below already has most of the structure in place. If you start here, fill in the missing logic in the `updateDOM` function. (Refer to the original code where needed.)
-
-```js
-let firstName = "Jane";
-let lastName = "Jacobs";
-let isEditing = false;
-
-function handleFormSubmit(e) {
-	e.preventDefault();
-	setIsEditing(!isEditing);
-}
-
-function handleFirstNameChange(e) {
-	setFirstName(e.target.value);
-}
-
-function handleLastNameChange(e) {
-	setLastName(e.target.value);
-}
-
-function setFirstName(value) {
-	firstName = value;
-	updateDOM();
-}
-
-function setLastName(value) {
-	lastName = value;
-	updateDOM();
-}
-
-function setIsEditing(value) {
-	isEditing = value;
-	updateDOM();
-}
-
-function updateDOM() {
-	if (isEditing) {
-		editButton.textContent = "Save Profile";
-		// TODO: show inputs, hide content
-	} else {
-		editButton.textContent = "Edit Profile";
-		// TODO: hide inputs, show content
-	}
-	// TODO: update text labels
-}
-
-function hide(el) {
-	el.style.display = "none";
-}
-
-function show(el) {
-	el.style.display = "";
-}
-
-let form = document.getElementById("form");
-let editButton = document.getElementById("editButton");
-let firstNameInput = document.getElementById("firstNameInput");
-let firstNameText = document.getElementById("firstNameText");
-let lastNameInput = document.getElementById("lastNameInput");
-let lastNameText = document.getElementById("lastNameText");
-let helloText = document.getElementById("helloText");
-form.onsubmit = handleFormSubmit;
-firstNameInput.oninput = handleFirstNameChange;
-lastNameInput.oninput = handleLastNameChange;
-```
-
-```js
-{
-  "hardReloadOnChange": true
-}
-```
-
-```html
-<form id="form">
-	<label>
-		First name:
-		<b id="firstNameText">Jane</b>
-		<input id="firstNameInput" value="Jane" style="display: none" />
-	</label>
-	<label>
-		Last name:
-		<b id="lastNameText">Jacobs</b>
-		<input id="lastNameInput" value="Jacobs" style="display: none" />
-	</label>
-	<button type="submit" id="editButton">Edit Profile</button>
-	<p><i id="helloText">Hello, Jane Jacobs!</i></p>
-</form>
-
-<style>
-	* {
-		box-sizing: border-box;
-	}
-	body {
-		font-family: sans-serif;
-		margin: 20px;
-		padding: 0;
-	}
-	label {
-		display: block;
-		margin-bottom: 20px;
-	}
-</style>
-```
-
-<Solution>
-
-The missing logic included toggling the display of inputs and content, and updating the labels:
-
-```js
-let firstName = "Jane";
-let lastName = "Jacobs";
-let isEditing = false;
-
-function handleFormSubmit(e) {
-	e.preventDefault();
-	setIsEditing(!isEditing);
-}
-
-function handleFirstNameChange(e) {
-	setFirstName(e.target.value);
-}
-
-function handleLastNameChange(e) {
-	setLastName(e.target.value);
-}
-
-function setFirstName(value) {
-	firstName = value;
-	updateDOM();
-}
-
-function setLastName(value) {
-	lastName = value;
-	updateDOM();
-}
-
-function setIsEditing(value) {
-	isEditing = value;
-	updateDOM();
-}
-
-function updateDOM() {
-	if (isEditing) {
-		editButton.textContent = "Save Profile";
-		hide(firstNameText);
-		hide(lastNameText);
-		show(firstNameInput);
-		show(lastNameInput);
-	} else {
-		editButton.textContent = "Edit Profile";
-		hide(firstNameInput);
-		hide(lastNameInput);
-		show(firstNameText);
-		show(lastNameText);
-	}
-	firstNameText.textContent = firstName;
-	lastNameText.textContent = lastName;
-	helloText.textContent = "Hello " + firstName + " " + lastName + "!";
-}
-
-function hide(el) {
-	el.style.display = "none";
-}
-
-function show(el) {
-	el.style.display = "";
-}
-
-let form = document.getElementById("form");
-let editButton = document.getElementById("editButton");
-let firstNameInput = document.getElementById("firstNameInput");
-let firstNameText = document.getElementById("firstNameText");
-let lastNameInput = document.getElementById("lastNameInput");
-let lastNameText = document.getElementById("lastNameText");
-let helloText = document.getElementById("helloText");
-form.onsubmit = handleFormSubmit;
-firstNameInput.oninput = handleFirstNameChange;
-lastNameInput.oninput = handleLastNameChange;
-```
-
-```js
-{
-  "hardReloadOnChange": true
-}
-```
-
-```html
-<form id="form">
-	<label>
-		First name:
-		<b id="firstNameText">Jane</b>
-		<input id="firstNameInput" value="Jane" style="display: none" />
-	</label>
-	<label>
-		Last name:
-		<b id="lastNameText">Jacobs</b>
-		<input id="lastNameInput" value="Jacobs" style="display: none" />
-	</label>
-	<button type="submit" id="editButton">Edit Profile</button>
-	<p><i id="helloText">Hello, Jane Jacobs!</i></p>
-</form>
-
-<style>
-	* {
-		box-sizing: border-box;
-	}
-	body {
-		font-family: sans-serif;
-		margin: 20px;
-		padding: 0;
-	}
-	label {
-		display: block;
-		margin-bottom: 20px;
-	}
-</style>
-```
-
-The `updateDOM` function you wrote shows what React does under the hood when you set the state. (However, React also avoids touching the DOM for properties that have not changed since the last time they were set.)
-
-</Solution>
-
-</Challenges>
+        === ":material-play: Run"
+
+            ```python
+            # TODO
+            ```
+
+        Keep in mind that if two different HTML chunks describe the same tree, their nesting (first `html.div` → first `html.img`) has to line up. Otherwise, toggling `is_active` would recreate the whole tree below and [reset its state.](./preserving-and-resetting-state.md) This is why, if a similar HTML tree gets returned in both cases, it is better to write them as a single piece of HTML.
+
+    </div>
+
+=== "2. Profile editor"
+
+    <div class="challenge">
+
+    <font size="4">**Challenge 2 of 3: Profile editor**</font>
+
+    Here is a small form implemented with plain JavaScript and DOM. Play with it to understand its behavior:
+
+    === "index.js"
+
+        ```js
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            if (editButton.textContent === "Edit Profile") {
+                editButton.textContent = "Save Profile";
+                hide(firstNameText);
+                hide(lastNameText);
+                show(firstNameInput);
+                show(lastNameInput);
+            } else {
+                editButton.textContent = "Edit Profile";
+                hide(firstNameInput);
+                hide(lastNameInput);
+                show(firstNameText);
+                show(lastNameText);
+            }
+        }
+
+        function handleFirstNameChange() {
+            firstNameText.textContent = firstNameInput.value;
+            helloText.textContent =
+                "Hello " + firstNameInput.value + " " + lastNameInput.value + "!";
+        }
+
+        function handleLastNameChange() {
+            lastNameText.textContent = lastNameInput.value;
+            helloText.textContent =
+                "Hello " + firstNameInput.value + " " + lastNameInput.value + "!";
+        }
+
+        function hide(el) {
+            el.style.display = "none";
+        }
+
+        function show(el) {
+            el.style.display = "";
+        }
+
+        let form = document.getElementById("form");
+        let editButton = document.getElementById("editButton");
+        let firstNameInput = document.getElementById("firstNameInput");
+        let firstNameText = document.getElementById("firstNameText");
+        let lastNameInput = document.getElementById("lastNameInput");
+        let lastNameText = document.getElementById("lastNameText");
+        let helloText = document.getElementById("helloText");
+        form.onsubmit = handleFormSubmit;
+        firstNameInput.oninput = handleFirstNameChange;
+        lastNameInput.oninput = handleLastNameChange;
+        ```
+
+    === "index.html"
+
+        ```html
+        <form id="form">
+            <label>
+                First name:
+                <b id="firstNameText">Jane</b>
+                <input id="firstNameInput" value="Jane" style="display: none" />
+            </label>
+            <label>
+                Last name:
+                <b id="lastNameText">Jacobs</b>
+                <input id="lastNameInput" value="Jacobs" style="display: none" />
+            </label>
+            <button type="submit" id="editButton">Edit Profile</button>
+            <p><i id="helloText">Hello, Jane Jacobs!</i></p>
+        </form>
+
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                font-family: sans-serif;
+                margin: 20px;
+                padding: 0;
+            }
+            label {
+                display: block;
+                margin-bottom: 20px;
+            }
+        </style>
+        ```
+
+    This form switches between two modes: in the editing mode, you see the inputs, and in the viewing mode, you only see the result. The button label changes between "Edit" and "Save" depending on the mode you're in. When you change the inputs, the welcome message at the bottom updates in real time.
+
+    Your task is to reimplement it in React in the sandbox below. For your convenience, the markup was already converted to JSX, but you'll need to make it show and hide the inputs like the original does.
+
+    Make sure that it updates the text at the bottom, too!
+
+    === "app.py"
+
+        ```js
+        export default function EditProfile() {
+            return (
+                <form>
+                    <label>
+                        First name: <b>Jane</b>
+                        <input />
+                    </label>
+                    <label>
+                        Last name: <b>Jacobs</b>
+                        <input />
+                    </label>
+                    <button type="submit">Edit Profile</button>
+                    <p>
+                        <i>Hello, Jane Jacobs!</i>
+                    </p>
+                </form>
+            );
+        }
+        ```
+
+    === "styles.css"
+
+        ```css
+        label {
+            display: block;
+            margin-bottom: 20px;
+        }
+        ```
+
+    ??? note "Show Solution"
+
+        You will need two state variables to hold the input values: `firstName` and `lastName`. You're also going to need an `isEditing` state variable that holds whether to display the inputs or not. You should _not_ need a `fullName` variable because the full name can always be calculated from the `firstName` and the `lastName`.
+
+        Finally, you should use [conditional rendering](./conditional-rendering.md) to show or hide the inputs depending on `isEditing`.
+
+        === "app.py"
+
+            ```js
+            import { useState } from "react";
+
+            export default function EditProfile() {
+                const [isEditing, setIsEditing] = useState(false);
+                const [firstName, setFirstName] = useState("Jane");
+                const [lastName, setLastName] = useState("Jacobs");
+
+                return (
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            setIsEditing(!isEditing);
+                        }}
+                    >
+                        <label>
+                            First name:{" "}
+                            {isEditing ? (
+                                <input
+                                    value={firstName}
+                                    onChange={(e) => {
+                                        setFirstName(e.target.value);
+                                    }}
+                                />
+                            ) : (
+                                <b>{firstName}</b>
+                            )}
+                        </label>
+                        <label>
+                            Last name:{" "}
+                            {isEditing ? (
+                                <input
+                                    value={lastName}
+                                    onChange={(e) => {
+                                        setLastName(e.target.value);
+                                    }}
+                                />
+                            ) : (
+                                <b>{lastName}</b>
+                            )}
+                        </label>
+                        <button type="submit">{isEditing ? "Save" : "Edit"} Profile</button>
+                        <p>
+                            <i>
+                                Hello, {firstName} {lastName}!
+                            </i>
+                        </p>
+                    </form>
+                );
+            }
+            ```
+
+        === "styles.css"
+
+            ```css
+            label {
+                display: block;
+                margin-bottom: 20px;
+            }
+            ```
+
+        === ":material-play: Run"
+
+            ```html
+            # TODO
+            ```
+
+    Compare this solution to the original imperative code. How are they different?
+
+    </div>
+
+=== "3. Refactor the imperative solution without React"
+
+    <div class="challenge">
+
+    <font size="4">**Challenge 3 of 3: Refactor the imperative solution without React**</font>
+
+    Here is the original sandbox from the previous challenge, written imperatively without React:
+
+    === "app.py"
+
+        ```js
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            if (editButton.textContent === "Edit Profile") {
+                editButton.textContent = "Save Profile";
+                hide(firstNameText);
+                hide(lastNameText);
+                show(firstNameInput);
+                show(lastNameInput);
+            } else {
+                editButton.textContent = "Edit Profile";
+                hide(firstNameInput);
+                hide(lastNameInput);
+                show(firstNameText);
+                show(lastNameText);
+            }
+        }
+
+        function handleFirstNameChange() {
+            firstNameText.textContent = firstNameInput.value;
+            helloText.textContent =
+                "Hello " + firstNameInput.value + " " + lastNameInput.value + "!";
+        }
+
+        function handleLastNameChange() {
+            lastNameText.textContent = lastNameInput.value;
+            helloText.textContent =
+                "Hello " + firstNameInput.value + " " + lastNameInput.value + "!";
+        }
+
+        function hide(el) {
+            el.style.display = "none";
+        }
+
+        function show(el) {
+            el.style.display = "";
+        }
+
+        let form = document.getElementById("form");
+        let editButton = document.getElementById("editButton");
+        let firstNameInput = document.getElementById("firstNameInput");
+        let firstNameText = document.getElementById("firstNameText");
+        let lastNameInput = document.getElementById("lastNameInput");
+        let lastNameText = document.getElementById("lastNameText");
+        let helloText = document.getElementById("helloText");
+        form.onsubmit = handleFormSubmit;
+        firstNameInput.oninput = handleFirstNameChange;
+        lastNameInput.oninput = handleLastNameChange;
+        ```
+
+    === "index.html"
+
+        ```html
+        <form id="form">
+            <label>
+                First name:
+                <b id="firstNameText">Jane</b>
+                <input id="firstNameInput" value="Jane" style="display: none" />
+            </label>
+            <label>
+                Last name:
+                <b id="lastNameText">Jacobs</b>
+                <input id="lastNameInput" value="Jacobs" style="display: none" />
+            </label>
+            <button type="submit" id="editButton">Edit Profile</button>
+            <p><i id="helloText">Hello, Jane Jacobs!</i></p>
+        </form>
+
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                font-family: sans-serif;
+                margin: 20px;
+                padding: 0;
+            }
+            label {
+                display: block;
+                margin-bottom: 20px;
+            }
+        </style>
+        ```
+
+    Imagine React didn't exist. Can you refactor this code in a way that makes the logic less fragile and more similar to the React version? What would it look like if the state was explicit, like in React?
+
+    If you're struggling to think where to start, the stub below already has most of the structure in place. If you start here, fill in the missing logic in the `updateDOM` function. (Refer to the original code where needed.)
+
+    === "app.py"
+
+        ```js
+        let firstName = "Jane";
+        let lastName = "Jacobs";
+        let isEditing = false;
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            setIsEditing(!isEditing);
+        }
+
+        function handleFirstNameChange(e) {
+            setFirstName(e.target.value);
+        }
+
+        function handleLastNameChange(e) {
+            setLastName(e.target.value);
+        }
+
+        function setFirstName(value) {
+            firstName = value;
+            updateDOM();
+        }
+
+        function setLastName(value) {
+            lastName = value;
+            updateDOM();
+        }
+
+        function setIsEditing(value) {
+            isEditing = value;
+            updateDOM();
+        }
+
+        function updateDOM() {
+            if (isEditing) {
+                editButton.textContent = "Save Profile";
+                // TODO: show inputs, hide content
+            } else {
+                editButton.textContent = "Edit Profile";
+                // TODO: hide inputs, show content
+            }
+            // TODO: update text labels
+        }
+
+        function hide(el) {
+            el.style.display = "none";
+        }
+
+        function show(el) {
+            el.style.display = "";
+        }
+
+        let form = document.getElementById("form");
+        let editButton = document.getElementById("editButton");
+        let firstNameInput = document.getElementById("firstNameInput");
+        let firstNameText = document.getElementById("firstNameText");
+        let lastNameInput = document.getElementById("lastNameInput");
+        let lastNameText = document.getElementById("lastNameText");
+        let helloText = document.getElementById("helloText");
+        form.onsubmit = handleFormSubmit;
+        firstNameInput.oninput = handleFirstNameChange;
+        lastNameInput.oninput = handleLastNameChange;
+        ```
+
+    === "index.html"
+
+        ```html
+        <form id="form">
+            <label>
+                First name:
+                <b id="firstNameText">Jane</b>
+                <input id="firstNameInput" value="Jane" style="display: none" />
+            </label>
+            <label>
+                Last name:
+                <b id="lastNameText">Jacobs</b>
+                <input id="lastNameInput" value="Jacobs" style="display: none" />
+            </label>
+            <button type="submit" id="editButton">Edit Profile</button>
+            <p><i id="helloText">Hello, Jane Jacobs!</i></p>
+        </form>
+
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                font-family: sans-serif;
+                margin: 20px;
+                padding: 0;
+            }
+            label {
+                display: block;
+                margin-bottom: 20px;
+            }
+        </style>
+        ```
+
+    ??? "Show solution"
+
+        The missing logic included toggling the display of inputs and content, and updating the labels:
+
+        === "app.py"
+
+            ```js
+            let firstName = "Jane";
+            let lastName = "Jacobs";
+            let isEditing = false;
+
+            function handleFormSubmit(e) {
+                e.preventDefault();
+                setIsEditing(!isEditing);
+            }
+
+            function handleFirstNameChange(e) {
+                setFirstName(e.target.value);
+            }
+
+            function handleLastNameChange(e) {
+                setLastName(e.target.value);
+            }
+
+            function setFirstName(value) {
+                firstName = value;
+                updateDOM();
+            }
+
+            function setLastName(value) {
+                lastName = value;
+                updateDOM();
+            }
+
+            function setIsEditing(value) {
+                isEditing = value;
+                updateDOM();
+            }
+
+            function updateDOM() {
+                if (isEditing) {
+                    editButton.textContent = "Save Profile";
+                    hide(firstNameText);
+                    hide(lastNameText);
+                    show(firstNameInput);
+                    show(lastNameInput);
+                } else {
+                    editButton.textContent = "Edit Profile";
+                    hide(firstNameInput);
+                    hide(lastNameInput);
+                    show(firstNameText);
+                    show(lastNameText);
+                }
+                firstNameText.textContent = firstName;
+                lastNameText.textContent = lastName;
+                helloText.textContent = "Hello " + firstName + " " + lastName + "!";
+            }
+
+            function hide(el) {
+                el.style.display = "none";
+            }
+
+            function show(el) {
+                el.style.display = "";
+            }
+
+            let form = document.getElementById("form");
+            let editButton = document.getElementById("editButton");
+            let firstNameInput = document.getElementById("firstNameInput");
+            let firstNameText = document.getElementById("firstNameText");
+            let lastNameInput = document.getElementById("lastNameInput");
+            let lastNameText = document.getElementById("lastNameText");
+            let helloText = document.getElementById("helloText");
+            form.onsubmit = handleFormSubmit;
+            firstNameInput.oninput = handleFirstNameChange;
+            lastNameInput.oninput = handleLastNameChange;
+            ```
+
+        === "index.html"
+
+            ```html
+            <form id="form">
+                <label>
+                    First name:
+                    <b id="firstNameText">Jane</b>
+                    <input id="firstNameInput" value="Jane" style="display: none" />
+                </label>
+                <label>
+                    Last name:
+                    <b id="lastNameText">Jacobs</b>
+                    <input id="lastNameInput" value="Jacobs" style="display: none" />
+                </label>
+                <button type="submit" id="editButton">Edit Profile</button>
+                <p><i id="helloText">Hello, Jane Jacobs!</i></p>
+            </form>
+
+            <style>
+                * {
+                    box-sizing: border-box;
+                }
+                body {
+                    font-family: sans-serif;
+                    margin: 20px;
+                    padding: 0;
+                }
+                label {
+                    display: block;
+                    margin-bottom: 20px;
+                }
+            </style>
+            ```
+
+        === ":material-play: Run"
+
+            ```html
+            # TODO
+            ```
+
+        The `updateDOM` function you wrote shows what React does under the hood when you set the state. (However, React also avoids touching the DOM for properties that have not changed since the last time they were set.)
+
+    </div>
