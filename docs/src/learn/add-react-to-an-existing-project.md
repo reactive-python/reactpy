@@ -46,15 +46,15 @@ First, install ReactPy, Starlette, and your preferred ASGI webserver.
 
 Next, configure your ASGI framework to use ReactPy's Jinja2 template tag. The method for doing this will vary depending on the ASGI framework you are using. Below is an example that follow's [Starlette's documentation](https://www.starlette.io/templates/):
 
+!!! abstract "Note"
+
+    The `ReactPyJinja` extension enables a handful of [template tags](../reference/jinja.md) that allow you to render ReactPy components in your templates. The `component` tag is used to render a ReactPy SSR component, while the `pyscript_setup` and `pyscript_component` tags can be used together to render CSR components.
+
 ```python linenums="0" hl_lines="6 11 17"
 {% include "../../examples/add_react_to_an_existing_project/asgi_configure_jinja.py" %}
 ```
 
 Now you will need to wrap your existing ASGI application with ReactPy's middleware, define the dotted path to your root components, and render your components in your existing HTML templates.
-
-!!! abstract "Note"
-
-    The `ReactPyJinja` extension enables a handful of [template tags](/reference/templatetags/) that allow you to render ReactPy components in your templates. The `component` tag is used to render a ReactPy SSR component, while the `pyscript_setup` and `pyscript_component` tags can be used together to render CSR components.
 
 === "main.py"
 

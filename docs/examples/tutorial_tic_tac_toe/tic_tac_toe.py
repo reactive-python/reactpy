@@ -34,7 +34,7 @@ def board(x_is_next, squares, on_play):
         f"Winner: {winner}" if winner else "Next player: " + ("X" if x_is_next else "O")
     )
 
-    return html._(
+    return html.fragment(
         html.div({"className": "status"}, status),
         html.div(
             {"className": "board-row"},
