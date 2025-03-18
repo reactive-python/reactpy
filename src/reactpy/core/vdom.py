@@ -134,14 +134,14 @@ class Vdom:
         if module_name:
             self.__module__ = module_name
             self.__qualname__ = f"{module_name}.{tag_name}"
-    
+
     def __getattr__(self, attr: str) -> Vdom:
         return Vdom(
             f"{self.__name__}.{attr}",
             allow_children=self.allow_children,
             import_source=self.import_source
         )
-    
+
     @overload
     def __call__(
         self, attributes: VdomAttributes, /, *children: VdomChildren
