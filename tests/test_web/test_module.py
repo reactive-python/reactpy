@@ -214,8 +214,8 @@ async def test_keys_properly_propagated(display: DisplayFixture):
 
     The `key` property was being lost in its propagation from the server-side ReactPy
     definition to the front-end JavaScript.
-    
-    This property is required for certain JS components, such as the GridLayout from 
+
+    This property is required for certain JS components, such as the GridLayout from
     react-grid-layout.
     """
     module = reactpy.web.module_from_file(
@@ -273,7 +273,7 @@ async def test_subcomponent_notation_as_str_attrs(display: DisplayFixture):
         "subcomponent-notation", JS_FIXTURES_DIR / "subcomponent-notation.js",
     )
     InputGroup, InputGroupText, FormControl, FormLabel = reactpy.web.export(
-        module, 
+        module,
         ["InputGroup", "InputGroup.Text", "Form.Control", "Form.Label"]
     )
 
@@ -309,7 +309,7 @@ async def test_subcomponent_notation_as_str_attrs(display: DisplayFixture):
             FormControl({"aria-label": "Amount (to the nearest dollar)"}),
             InputGroupText(".00"),
         ),
-        
+
         InputGroup(
             InputGroupText("With textarea"),
             FormControl({"as": "textarea", "aria-label": "With textarea"}),
@@ -368,7 +368,7 @@ async def test_subcomponent_notation_as_obj_attrs(display: DisplayFixture):
             Form.Control({"aria-label": "Amount (to the nearest dollar)"}),
             InputGroup.Text(".00"),
         ),
-        
+
         InputGroup(
             InputGroup.Text("With textarea"),
             Form.Control({"as": "textarea", "aria-label": "With textarea"}),
