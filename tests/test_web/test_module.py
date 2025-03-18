@@ -268,18 +268,125 @@ async def test_keys_properly_propagated(display: DisplayFixture):
     assert len(children) == 3
 
 
-async def test_subcomponent_notation(display: DisplayFixture):
+async def test_subcomponent_notation_as_str_attrs(display: DisplayFixture):
     module = reactpy.web.module_from_file(
         "subcomponent-notation", JS_FIXTURES_DIR / "subcomponent-notation.js",
     )
-    BootstrapFormLabel = reactpy.web.export(module, "Form.Label")
-
-    await display.show(
-        lambda: BootstrapFormLabel({"htmlFor": "test-123"}, "Test 123")
+    InputGroup, InputGroupText, FormControl, FormLabel = reactpy.web.export(
+        module, 
+        ["InputGroup", "InputGroup.Text", "Form.Control", "Form.Label"]
     )
 
-    await display.page.wait_for_selector(".form-label", state="attached")
-    # The above will fail due to timeout if it does not work as expected
+    content = reactpy.html.div({"id": "the-parent"},
+        InputGroup(
+            InputGroupText({"id": "basic-addon1"}, "@"),
+            FormControl({
+                "placeholder": "Username",
+                "aria-label": "Username",
+                "aria-describedby": "basic-addon1",
+            }),
+        ),
+
+        InputGroup(
+            FormControl({
+                "placeholder": "Recipient's username",
+                "aria-label": "Recipient's username",
+                "aria-describedby": "basic-addon2",
+            }),
+            InputGroupText({"id": "basic-addon2"}, "@example.com"),
+        ),
+
+        FormLabel({"htmlFor": "basic-url"}, "Your vanity URL"),
+        InputGroup(
+            InputGroupText({"id": "basic-addon3"},
+                "https://example.com/users/"
+            ),
+            FormControl({"id": "basic-url", "aria-describedby": "basic-addon3"}),
+        ),
+
+        InputGroup(
+            InputGroupText("$"),
+            FormControl({"aria-label": "Amount (to the nearest dollar)"}),
+            InputGroupText(".00"),
+        ),
+        
+        InputGroup(
+            InputGroupText("With textarea"),
+            FormControl({"as": "textarea", "aria-label": "With textarea"}),
+        )
+    )
+
+    await display.show(
+        lambda: content
+    )
+
+    parent = await display.page.wait_for_selector("#the-parent", state="visible")
+    input_group_text = await parent.query_selector_all(".input-group-text")
+    form_control = await parent.query_selector_all(".form-control")
+    form_label = await parent.query_selector_all(".form-label")
+
+    assert len(input_group_text) == 6
+    assert len(form_control) == 5
+    assert len(form_label) == 1
+
+
+async def test_subcomponent_notation_as_obj_attrs(display: DisplayFixture):
+    module = reactpy.web.module_from_file(
+        "subcomponent-notation", JS_FIXTURES_DIR / "subcomponent-notation.js",
+    )
+    InputGroup, Form = reactpy.web.export(module, ["InputGroup", "Form"])
+
+    content = reactpy.html.div({"id": "the-parent"},
+        InputGroup(
+            InputGroup.Text({"id": "basic-addon1"}, "@"),
+            Form.Control({
+                "placeholder": "Username",
+                "aria-label": "Username",
+                "aria-describedby": "basic-addon1",
+            }),
+        ),
+
+        InputGroup(
+            Form.Control({
+                "placeholder": "Recipient's username",
+                "aria-label": "Recipient's username",
+                "aria-describedby": "basic-addon2",
+            }),
+            InputGroup.Text({"id": "basic-addon2"}, "@example.com"),
+        ),
+
+        Form.Label({"htmlFor": "basic-url"}, "Your vanity URL"),
+        InputGroup(
+            InputGroup.Text({"id": "basic-addon3"},
+                "https://example.com/users/"
+            ),
+            Form.Control({"id": "basic-url", "aria-describedby": "basic-addon3"}),
+        ),
+
+        InputGroup(
+            InputGroup.Text("$"),
+            Form.Control({"aria-label": "Amount (to the nearest dollar)"}),
+            InputGroup.Text(".00"),
+        ),
+        
+        InputGroup(
+            InputGroup.Text("With textarea"),
+            Form.Control({"as": "textarea", "aria-label": "With textarea"}),
+        )
+    )
+
+    await display.show(
+        lambda: content
+    )
+
+    parent = await display.page.wait_for_selector("#the-parent", state="visible")
+    input_group_text = await parent.query_selector_all(".input-group-text")
+    form_control = await parent.query_selector_all(".form-control")
+    form_label = await parent.query_selector_all(".form-label")
+
+    assert len(input_group_text) == 6
+    assert len(form_control) == 5
+    assert len(form_label) == 1
 
 
 def test_module_from_string():
