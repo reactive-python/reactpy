@@ -68,7 +68,7 @@ function createImportSourceElement(props: {
 }): any {
   let type: any;
   if (props.model.importSource) {
-    let rootType = props.model.tagName.split(".")[0];
+    const rootType = props.model.tagName.split(".")[0];
     if (
       !isImportSourceEqual(props.currentImportSource, props.model.importSource)
     ) {
@@ -107,13 +107,13 @@ function createImportSourceElement(props: {
 
 function tryGetSubType(module: ReactPyModule, component: string) {
   let subComponents: string[] = component.split(".");
-  let rootComponent: string = subComponents[0];
+  const rootComponent: string = subComponents[0];
   let subComponentAccessor: string = rootComponent;
   let type: any = module[rootComponent];
 
   subComponents = subComponents.slice(1);
   for (let i = 0; i < subComponents.length; i++) {
-    let subComponent = subComponents[i];
+    const subComponent = subComponents[i];
     subComponentAccessor += "." + subComponent;
     type = type[subComponent];
     if (!type) {
