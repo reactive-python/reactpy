@@ -267,7 +267,11 @@ def export(
         return _make_export(web_module, export_names, fallback, allow_children)
     else:
         if web_module.export_names is not None:
-            missing = sorted({e.split(".")[0] for e in export_names}.difference(web_module.export_names))
+            missing = sorted(
+                {e.split(".")[0] for e in export_names}.difference(
+                    web_module.export_names
+                )
+            )
             if missing:
                 msg = f"{web_module.source!r} does not export {missing!r}"
                 raise ValueError(msg)

@@ -105,15 +105,12 @@ function createImportSourceElement(props: {
   );
 }
 
-function tryGetSubType(
-  module: ReactPyModule,
-  component: string
-) {
+function tryGetSubType(module: ReactPyModule, component: string) {
   let subComponents: string[] = component.split(".");
   let rootComponent: string = subComponents[0];
   let subComponentAccessor: string = rootComponent;
   let type: any = module[rootComponent];
-  
+
   subComponents = subComponents.slice(1);
   for (let i = 0; i < subComponents.length; i++) {
     let subComponent = subComponents[i];
@@ -121,9 +118,9 @@ function tryGetSubType(
     type = type[subComponent];
     if (!type) {
       console.error(
-        `Component ${rootComponent} does not have subcomponent ${subComponentAccessor}`
+        `Component ${rootComponent} does not have subcomponent ${subComponentAccessor}`,
       );
-      break
+      break;
     }
   }
   return type;

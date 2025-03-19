@@ -139,7 +139,7 @@ class Vdom:
         return Vdom(
             f"{self.__name__}.{attr}",
             allow_children=self.allow_children,
-            import_source=self.import_source
+            import_source=self.import_source,
         )
 
     @overload

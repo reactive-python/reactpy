@@ -224,44 +224,47 @@ async def test_keys_properly_propagated(display: DisplayFixture):
     GridLayout = reactpy.web.export(module, "GridLayout")
 
     await display.show(
-        lambda: GridLayout({
-            "layout": [
-                {
-                    "i": "a",
-                    "x": 0,
-                    "y": 0,
-                    "w": 1,
-                    "h": 2,
-                    "static": True,
-                },
-                {
-                    "i": "b",
-                    "x": 1,
-                    "y": 0,
-                    "w": 3,
-                    "h": 2,
-                    "minW": 2,
-                    "maxW": 4,
-                },
-                {
-                    "i": "c",
-                    "x": 4,
-                    "y": 0,
-                    "w": 1,
-                    "h": 2,
-                }
-            ],
-            "cols": 12,
-            "rowHeight": 30,
-            "width": 1200,
-        },
+        lambda: GridLayout(
+            {
+                "layout": [
+                    {
+                        "i": "a",
+                        "x": 0,
+                        "y": 0,
+                        "w": 1,
+                        "h": 2,
+                        "static": True,
+                    },
+                    {
+                        "i": "b",
+                        "x": 1,
+                        "y": 0,
+                        "w": 3,
+                        "h": 2,
+                        "minW": 2,
+                        "maxW": 4,
+                    },
+                    {
+                        "i": "c",
+                        "x": 4,
+                        "y": 0,
+                        "w": 1,
+                        "h": 2,
+                    },
+                ],
+                "cols": 12,
+                "rowHeight": 30,
+                "width": 1200,
+            },
             reactpy.html.div({"key": "a"}, "a"),
             reactpy.html.div({"key": "b"}, "b"),
             reactpy.html.div({"key": "c"}, "c"),
         )
     )
 
-    parent = await display.page.wait_for_selector(".react-grid-layout", state="attached")
+    parent = await display.page.wait_for_selector(
+        ".react-grid-layout", state="attached"
+    )
     children = await parent.query_selector_all("div")
 
     # The children simply will not render unless they receive the key prop
@@ -270,55 +273,52 @@ async def test_keys_properly_propagated(display: DisplayFixture):
 
 async def test_subcomponent_notation_as_str_attrs(display: DisplayFixture):
     module = reactpy.web.module_from_file(
-        "subcomponent-notation", JS_FIXTURES_DIR / "subcomponent-notation.js",
+        "subcomponent-notation",
+        JS_FIXTURES_DIR / "subcomponent-notation.js",
     )
     InputGroup, InputGroupText, FormControl, FormLabel = reactpy.web.export(
-        module,
-        ["InputGroup", "InputGroup.Text", "Form.Control", "Form.Label"]
+        module, ["InputGroup", "InputGroup.Text", "Form.Control", "Form.Label"]
     )
 
-    content = reactpy.html.div({"id": "the-parent"},
+    content = reactpy.html.div(
+        {"id": "the-parent"},
         InputGroup(
             InputGroupText({"id": "basic-addon1"}, "@"),
-            FormControl({
-                "placeholder": "Username",
-                "aria-label": "Username",
-                "aria-describedby": "basic-addon1",
-            }),
+            FormControl(
+                {
+                    "placeholder": "Username",
+                    "aria-label": "Username",
+                    "aria-describedby": "basic-addon1",
+                }
+            ),
         ),
-
         InputGroup(
-            FormControl({
-                "placeholder": "Recipient's username",
-                "aria-label": "Recipient's username",
-                "aria-describedby": "basic-addon2",
-            }),
+            FormControl(
+                {
+                    "placeholder": "Recipient's username",
+                    "aria-label": "Recipient's username",
+                    "aria-describedby": "basic-addon2",
+                }
+            ),
             InputGroupText({"id": "basic-addon2"}, "@example.com"),
         ),
-
         FormLabel({"htmlFor": "basic-url"}, "Your vanity URL"),
         InputGroup(
-            InputGroupText({"id": "basic-addon3"},
-                "https://example.com/users/"
-            ),
+            InputGroupText({"id": "basic-addon3"}, "https://example.com/users/"),
             FormControl({"id": "basic-url", "aria-describedby": "basic-addon3"}),
         ),
-
         InputGroup(
             InputGroupText("$"),
             FormControl({"aria-label": "Amount (to the nearest dollar)"}),
             InputGroupText(".00"),
         ),
-
         InputGroup(
             InputGroupText("With textarea"),
             FormControl({"as": "textarea", "aria-label": "With textarea"}),
-        )
+        ),
     )
 
-    await display.show(
-        lambda: content
-    )
+    await display.show(lambda: content)
 
     parent = await display.page.wait_for_selector("#the-parent", state="visible")
     input_group_text = await parent.query_selector_all(".input-group-text")
@@ -332,52 +332,50 @@ async def test_subcomponent_notation_as_str_attrs(display: DisplayFixture):
 
 async def test_subcomponent_notation_as_obj_attrs(display: DisplayFixture):
     module = reactpy.web.module_from_file(
-        "subcomponent-notation", JS_FIXTURES_DIR / "subcomponent-notation.js",
+        "subcomponent-notation",
+        JS_FIXTURES_DIR / "subcomponent-notation.js",
     )
     InputGroup, Form = reactpy.web.export(module, ["InputGroup", "Form"])
 
-    content = reactpy.html.div({"id": "the-parent"},
+    content = reactpy.html.div(
+        {"id": "the-parent"},
         InputGroup(
             InputGroup.Text({"id": "basic-addon1"}, "@"),
-            Form.Control({
-                "placeholder": "Username",
-                "aria-label": "Username",
-                "aria-describedby": "basic-addon1",
-            }),
+            Form.Control(
+                {
+                    "placeholder": "Username",
+                    "aria-label": "Username",
+                    "aria-describedby": "basic-addon1",
+                }
+            ),
         ),
-
         InputGroup(
-            Form.Control({
-                "placeholder": "Recipient's username",
-                "aria-label": "Recipient's username",
-                "aria-describedby": "basic-addon2",
-            }),
+            Form.Control(
+                {
+                    "placeholder": "Recipient's username",
+                    "aria-label": "Recipient's username",
+                    "aria-describedby": "basic-addon2",
+                }
+            ),
             InputGroup.Text({"id": "basic-addon2"}, "@example.com"),
         ),
-
         Form.Label({"htmlFor": "basic-url"}, "Your vanity URL"),
         InputGroup(
-            InputGroup.Text({"id": "basic-addon3"},
-                "https://example.com/users/"
-            ),
+            InputGroup.Text({"id": "basic-addon3"}, "https://example.com/users/"),
             Form.Control({"id": "basic-url", "aria-describedby": "basic-addon3"}),
         ),
-
         InputGroup(
             InputGroup.Text("$"),
             Form.Control({"aria-label": "Amount (to the nearest dollar)"}),
             InputGroup.Text(".00"),
         ),
-
         InputGroup(
             InputGroup.Text("With textarea"),
             Form.Control({"as": "textarea", "aria-label": "With textarea"}),
-        )
+        ),
     )
 
-    await display.show(
-        lambda: content
-    )
+    await display.show(lambda: content)
 
     parent = await display.page.wait_for_selector("#the-parent", state="visible")
     input_group_text = await parent.query_selector_all(".input-group-text")

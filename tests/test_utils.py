@@ -188,7 +188,11 @@ def test_string_to_reactpy(case):
         # 8: Infer ReactJS `key` from the `key` attribute
         {
             "source": '<div key="my-key"></div>',
-            "model": {"tagName": "div", "attributes": {"key": "my-key"}, "key": "my-key"},
+            "model": {
+                "tagName": "div",
+                "attributes": {"key": "my-key"},
+                "key": "my-key",
+            },
         },
     ],
 )
