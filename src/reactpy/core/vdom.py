@@ -136,6 +136,10 @@ class Vdom:
             self.__qualname__ = f"{module_name}.{tag_name}"
 
     def __getattr__(self, attr: str) -> Vdom:
+        """Supports accessing nested web module components"""
+        if not self.import_source:
+            msg = "Nested comopnents can only be accessed on web module components."
+            raise AttributeError(msg)
         return Vdom(
             f"{self.__name__}.{attr}",
             allow_children=self.allow_children,

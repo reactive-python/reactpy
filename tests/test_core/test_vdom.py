@@ -123,6 +123,15 @@ def test_make_vdom_constructor():
     assert no_children() == {"tagName": "no-children"}
 
 
+def test_nested_html_access_raises_error():
+    elmt = Vdom("div")
+
+    with pytest.raises(
+        AttributeError, match="can only be accessed on web module components"
+    ):
+        elmt.fails()
+
+
 @pytest.mark.parametrize(
     "value",
     [

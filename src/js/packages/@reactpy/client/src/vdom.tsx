@@ -68,7 +68,6 @@ function createImportSourceElement(props: {
 }): any {
   let type: any;
   if (props.model.importSource) {
-    const rootType = props.model.tagName.split(".")[0];
     if (
       !isImportSourceEqual(props.currentImportSource, props.model.importSource)
     ) {
@@ -79,16 +78,16 @@ function createImportSourceElement(props: {
           stringifyImportSource(props.model.importSource),
       );
       return null;
-    } else if (!props.module[rootType]) {
-      log.error(
-        "Module from source " +
-          stringifyImportSource(props.currentImportSource) +
-          ` does not export ${rootType}`,
-      );
-      return null;
     } else {
-      type = tryGetSubType(props.module, props.model.tagName);
-      if (!type) return null;
+      type = getComponentFromModule(
+        props.module,
+        props.model.tagName,
+        props.model.importSource,
+      );
+      if (!type) {
+        // Error message logged within getComponentFromModule
+        return null;
+      }
     }
   } else {
     type = props.model.tagName;
@@ -105,25 +104,40 @@ function createImportSourceElement(props: {
   );
 }
 
-function tryGetSubType(module: ReactPyModule, component: string) {
-  let subComponents: string[] = component.split(".");
-  const rootComponent: string = subComponents[0];
-  let subComponentAccessor: string = rootComponent;
-  let type: any = module[rootComponent];
+function getComponentFromModule(
+  module: ReactPyModule,
+  componentName: string,
+  importSource: ReactPyVdomImportSource,
+): any {
+  /*  Gets the component with the provided name from the provided module.
 
-  subComponents = subComponents.slice(1);
-  for (let i = 0; i < subComponents.length; i++) {
-    const subComponent = subComponents[i];
-    subComponentAccessor += "." + subComponent;
-    type = type[subComponent];
-    if (!type) {
-      console.error(
-        `Component ${rootComponent} does not have subcomponent ${subComponentAccessor}`,
-      );
+  Built specifically to work on inifinitely deep nested components.
+  For example, component "My.Nested.Component" is accessed from 
+  ModuleA like so: ModuleA["My"]["Nested"]["Component"].
+  */
+  const componentParts: string[] = componentName.split(".");
+  let Component: any = null;
+  for (let i = 0; i < componentParts.length; i++) {
+    const iterAttr = componentParts[i];
+    Component = i == 0 ? module[iterAttr] : Component[iterAttr];
+    if (!Component) {
+      if (i == 0) {
+        log.error(
+          "Module from source " +
+            stringifyImportSource(importSource) +
+            ` does not export ${iterAttr}`,
+        );
+      } else {
+        console.error(
+          `Component ${componentParts.slice(0, i).join(".")} from source ` +
+            stringifyImportSource(importSource) +
+            ` does not have subcomponent ${iterAttr}`,
+        );
+      }
       break;
     }
   }
-  return type;
+  return Component;
 }
 
 function isImportSourceEqual(
