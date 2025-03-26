@@ -320,6 +320,7 @@ async def test_subcomponent_notation_as_str_attrs(display: DisplayFixture):
 
     await display.show(lambda: content)
 
+    await display.page.wait_for_selector("#basic-addon3", state="attached")
     parent = await display.page.wait_for_selector("#the-parent", state="attached")
     input_group_text = await parent.query_selector_all(".input-group-text")
     form_control = await parent.query_selector_all(".form-control")
@@ -377,6 +378,7 @@ async def test_subcomponent_notation_as_obj_attrs(display: DisplayFixture):
 
     await display.show(lambda: content)
 
+    await display.page.wait_for_selector("#basic-addon3", state="attached")
     parent = await display.page.wait_for_selector("#the-parent", state="attached")
     input_group_text = await parent.query_selector_all(".input-group-text")
     form_control = await parent.query_selector_all(".form-control")
