@@ -78,15 +78,16 @@ function createImportSourceElement(props: {
           stringifyImportSource(props.model.importSource),
       );
       return null;
-    } else if (!props.module[props.model.tagName]) {
-      log.error(
-        "Module from source " +
-          stringifyImportSource(props.currentImportSource) +
-          ` does not export ${props.model.tagName}`,
-      );
-      return null;
     } else {
-      type = props.module[props.model.tagName];
+      type = getComponentFromModule(
+        props.module,
+        props.model.tagName,
+        props.model.importSource,
+      );
+      if (!type) {
+        // Error message logged within getComponentFromModule
+        return null;
+      }
     }
   } else {
     type = props.model.tagName;
@@ -101,6 +102,42 @@ function createImportSourceElement(props: {
       }),
     ),
   );
+}
+
+function getComponentFromModule(
+  module: ReactPyModule,
+  componentName: string,
+  importSource: ReactPyVdomImportSource,
+): any {
+  /*  Gets the component with the provided name from the provided module.
+
+  Built specifically to work on inifinitely deep nested components.
+  For example, component "My.Nested.Component" is accessed from 
+  ModuleA like so: ModuleA["My"]["Nested"]["Component"].
+  */
+  const componentParts: string[] = componentName.split(".");
+  let Component: any = null;
+  for (let i = 0; i < componentParts.length; i++) {
+    const iterAttr = componentParts[i];
+    Component = i == 0 ? module[iterAttr] : Component[iterAttr];
+    if (!Component) {
+      if (i == 0) {
+        log.error(
+          "Module from source " +
+            stringifyImportSource(importSource) +
+            ` does not export ${iterAttr}`,
+        );
+      } else {
+        console.error(
+          `Component ${componentParts.slice(0, i).join(".")} from source ` +
+            stringifyImportSource(importSource) +
+            ` does not have subcomponent ${iterAttr}`,
+        );
+      }
+      break;
+    }
+  }
+  return Component;
 }
 
 function isImportSourceEqual(
