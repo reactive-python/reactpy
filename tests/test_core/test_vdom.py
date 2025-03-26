@@ -71,11 +71,11 @@ def test_is_vdom(result, value):
             {"tagName": "div", "attributes": {"tagName": "div"}},
         ),
         (
-            reactpy.Vdom("div")((i for i in range(3))),
+            reactpy.Vdom("div")(i for i in range(3)),
             {"tagName": "div", "children": [0, 1, 2]},
         ),
         (
-            reactpy.Vdom("div")((x**2 for x in [1, 2, 3])),
+            reactpy.Vdom("div")(x**2 for x in [1, 2, 3]),
             {"tagName": "div", "children": [1, 4, 9]},
         ),
         (
@@ -121,6 +121,15 @@ def test_make_vdom_constructor():
         no_children([1, 2, 3])
 
     assert no_children() == {"tagName": "no-children"}
+
+
+def test_nested_html_access_raises_error():
+    elmt = Vdom("div")
+
+    with pytest.raises(
+        AttributeError, match="can only be accessed on web module components"
+    ):
+        elmt.fails()
 
 
 @pytest.mark.parametrize(
@@ -293,7 +302,7 @@ def test_invalid_vdom(value, error_message_pattern):
 @pytest.mark.skipif(not REACTPY_DEBUG.current, reason="Only warns in debug mode")
 def test_warn_cannot_verify_keypath_for_genereators():
     with pytest.warns(UserWarning) as record:
-        reactpy.Vdom("div")((1 for i in range(10)))
+        reactpy.Vdom("div")(1 for i in range(10))
         assert len(record) == 1
         assert (
             record[0]

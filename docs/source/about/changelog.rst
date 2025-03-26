@@ -29,6 +29,7 @@ Unreleased
 - :pull:`1281` - ``reactpy.html`` will now automatically flatten lists recursively (ex. ``reactpy.html(["child1", ["child2"]])``)
 - :pull:`1281` - Added ``reactpy.Vdom`` primitive interface for creating VDOM dictionaries.
 - :pull:`1281` - Added type hints to ``reactpy.html`` attributes.
+- :pull:`1285` - Added support for nested components in web modules
 
 **Changed**
 

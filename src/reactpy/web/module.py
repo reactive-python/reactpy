@@ -260,14 +260,18 @@ def export(
     if isinstance(export_names, str):
         if (
             web_module.export_names is not None
-            and export_names not in web_module.export_names
+            and export_names.split(".")[0] not in web_module.export_names
         ):
             msg = f"{web_module.source!r} does not export {export_names!r}"
             raise ValueError(msg)
         return _make_export(web_module, export_names, fallback, allow_children)
     else:
         if web_module.export_names is not None:
-            missing = sorted(set(export_names).difference(web_module.export_names))
+            missing = sorted(
+                {e.split(".")[0] for e in export_names}.difference(
+                    web_module.export_names
+                )
+            )
             if missing:
                 msg = f"{web_module.source!r} does not export {missing!r}"
                 raise ValueError(msg)
