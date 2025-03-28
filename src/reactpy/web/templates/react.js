@@ -30,7 +30,11 @@ function wrapEventHandlers(props) {
   const newProps = Object.assign({}, props);
   for (const [key, value] of Object.entries(props)) {
     if (typeof value === "function") {
-      newProps[key] = makeJsonSafeEventHandler(value);
+      if (value.toString().includes(".sendMessage")) {
+          newProps[key] = makeJsonSafeEventHandler(value);
+      } else {
+          newProps[key] = value;
+      }
     }
   }
   return newProps;
