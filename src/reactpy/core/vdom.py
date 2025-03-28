@@ -223,6 +223,8 @@ def separate_attributes_and_event_handlers(
 
         if callable(v):
             handler = EventHandler(to_event_handler_function(v))
+        elif isinstance(v, str) and v.startswith("javascript:"):
+            handler = v
         elif isinstance(v, EventHandler):
             handler = v
         else:
