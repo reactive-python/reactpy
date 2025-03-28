@@ -199,7 +199,7 @@ function createEventHandler(
   { target, preventDefault, stopPropagation }: ReactPyVdomEventHandler,
 ): [string, () => void] {
   if (target.indexOf("javascript:") == 0) {
-    return [name, eval(target.replace("javascript:", "")];
+    return [name, eval(target.replace("javascript:", ""))];
   }
   return [
     name,
