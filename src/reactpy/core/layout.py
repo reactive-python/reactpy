@@ -292,8 +292,8 @@ class Layout:
             self._event_handlers[target] = handler
             model_event_handlers[event] = {
                 "target": target,
-                "preventDefault": handler.prevent_default,
-                "stopPropagation": handler.stop_propagation,
+                "preventDefault": prevent_default,
+                "stopPropagation": stop_propagation,
             }
 
         return None
@@ -320,8 +320,8 @@ class Layout:
             self._event_handlers[target] = handler
             model_event_handlers[event] = {
                 "target": target,
-                "preventDefault": handler.prevent_default,
-                "stopPropagation": handler.stop_propagation,
+                "preventDefault": prevent_default,
+                "stopPropagation": stop_propagation,
             }
 
         return None
