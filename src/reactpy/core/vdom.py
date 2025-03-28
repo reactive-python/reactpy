@@ -216,7 +216,7 @@ def separate_attributes_and_event_handlers(
     attributes: Mapping[str, Any],
 ) -> tuple[VdomAttributes, EventHandlerDict]:
     _attributes: VdomAttributes = {}
-    _event_handlers: dict[str, EventHandlerType] = {}
+    _event_handlers: dict[str, EventHandlerType | str] = {}
 
     for k, v in attributes.items():
         handler: EventHandlerType
