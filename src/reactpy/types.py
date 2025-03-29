@@ -919,7 +919,7 @@ class EventHandlerType(Protocol):
 EventHandlerMapping = Mapping[str, EventHandlerType]
 """A generic mapping between event names to their handlers"""
 
-EventHandlerDict: TypeAlias = dict[str, EventHandlerType]
+EventHandlerDict: TypeAlias = dict[str, EventHandlerType | str]
 """A dict mapping between event names to their handlers"""
 
 
