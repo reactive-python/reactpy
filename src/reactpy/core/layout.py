@@ -118,7 +118,7 @@ class Layout:
         # we just ignore the event.
         handler = self._event_handlers.get(event["target"])
 
-        if handler is not None:
+        if handler is not None and not isinstance(handler, str):
             try:
                 await handler.function(event["data"])
             except Exception:

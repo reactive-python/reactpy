@@ -219,7 +219,7 @@ def separate_attributes_and_event_handlers(
     _event_handlers: dict[str, EventHandlerType | str] = {}
 
     for k, v in attributes.items():
-        handler: EventHandlerType
+        handler: EventHandlerType | str
 
         if callable(v):
             handler = EventHandler(to_event_handler_function(v))
