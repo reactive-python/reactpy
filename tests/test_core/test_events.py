@@ -221,3 +221,36 @@ async def test_can_stop_event_propagation(display: DisplayFixture):
     await inner.click()
 
     await poll(lambda: clicked.current).until_is(True)
+
+
+async def test_javascript_event(display: DisplayFixture):
+    @reactpy.component
+    def App():
+        return reactpy.html.div(
+            reactpy.html.div(
+                reactpy.html.button(
+                    {
+                        "id": "the-button",
+                        "onClick": """javascript: () => {
+                        let parent = document.getElementById("the-parent");
+                        parent.appendChild(document.createElement("div"));
+                    }""",
+                    },
+                    "Click Me",
+                ),
+                reactpy.html.div({"id": "the-parent"}),
+            )
+        )
+
+    await display.show(lambda: App())
+
+    button = await display.page.wait_for_selector("#the-button", state="attached")
+    await button.click()
+    await button.click()
+    await button.click()
+    parent = await display.page.wait_for_selector(
+        "#the-parent", state="attached", timeout=0
+    )
+    generated_divs = await parent.query_selector_all("div")
+
+    assert len(generated_divs) == 3
