@@ -12,8 +12,8 @@ from reactpy.testing import (
     assert_reactpy_did_not_log,
     poll,
 )
-from reactpy.web.module import NAME_SOURCE, WebModule
 from reactpy.types import JavaScript
+from reactpy.web.module import NAME_SOURCE, WebModule
 
 JS_FIXTURES_DIR = Path(__file__).parent / "js_fixtures"
 
@@ -390,53 +390,25 @@ async def test_subcomponent_notation_as_obj_attrs(display: DisplayFixture):
     assert len(form_label) == 1
 
 
-async def test_ag_grid_table(display: DisplayFixture):
+async def test_callable_prop_with_javacript(display: DisplayFixture):
     module = reactpy.web.module_from_file(
-        "ag-grid-react", JS_FIXTURES_DIR / "ag-grid-react.js"
+        "callable-prop", JS_FIXTURES_DIR / "callable-prop.js"
     )
-    AgGridReact = reactpy.web.export(module, "AgGridReact")
+    Component = reactpy.web.export(module, "Component")
 
     @reactpy.component
     def App():
-        dummy_bool, set_dummy_bool = reactpy.hooks.use_state(False)
-        row_data, set_row_data = reactpy.hooks.use_state([
-            { "make": "Tesla", "model": "Model Y", "price": 64950, "electric": True },
-            { "make": "Ford", "model": "F-Series", "price": 33850, "electric": False },
-            { "make": "Toyota", "model": "Corolla", "price": 29600, "electric": False },
-        ])
-        col_defs, set_col_defs = reactpy.hooks.use_state([
-            { "field": "make" },
-            { "field": "model" },
-            { "field": "price" },
-            { "field": "electric" },
-        ])
-        default_col_def = {"flex": 1}
-        row_selection = reactpy.hooks.use_memo(lambda: {"mode": "singleRow"})
-        
-        return reactpy.html.div(
-            {"id": "the-parent", "style": {"height": "100vh", "width": "100vw"}, "class": "ag-theme-quartz"},
-            AgGridReact({
-                "style": {"height": "500px"},
-                "rowData": row_data,
-                "columnDefs": col_defs,
-                "defaultColDef": default_col_def,
-                "selection": row_selection,
-                "onRowSelected": lambda x: set_dummy_bool(not dummy_bool),
-                "getRowId": JavaScript("(params) => String(params.data.model);")
-            })
+        return Component(
+            {
+                "id": "my-div",
+                "setText": JavaScript('(prefixText) => prefixText + "TEST 123"'),
+            }
         )
 
-    await display.show(
-        lambda: App()
-    )
+    await display.show(lambda: App())
 
-    table_body = await display.page.wait_for_selector(".ag-body-viewport", state="attached")
-    checkboxes = await table_body.query_selector_all(".ag-checkbox-input")
-    await checkboxes[0].click()
-    # Regrab checkboxes, since they should rerender
-    checkboxes = await table_body.query_selector_all(".ag-checkbox-input")
-    checked = await checkboxes[0].is_checked()
-    assert checked is True
+    my_div = await display.page.wait_for_selector("#my-div", state="attached")
+    assert await my_div.inner_text() == "PREFIX TEXT: TEST 123"
 
 
 def test_module_from_string():
