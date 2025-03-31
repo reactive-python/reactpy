@@ -41,6 +41,7 @@ from reactpy.types import (
     ComponentType,
     Context,
     EventHandlerDict,
+    JavaScript,
     Key,
     LayoutEventMessage,
     LayoutUpdateMessage,
@@ -118,7 +119,7 @@ class Layout:
         # we just ignore the event.
         handler = self._event_handlers.get(event["target"])
 
-        if handler is not None and not isinstance(handler, str):
+        if handler is not None and not isinstance(handler, JavaScript):
             try:
                 await handler.function(event["data"])
             except Exception:
@@ -277,8 +278,8 @@ class Layout:
 
         model_event_handlers = new_state.model.current["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
-            if isinstance(handler, str):
-                target = handler
+            if isinstance(handler, JavaScript):
+                target = "__javascript__: " + handler
                 prevent_default = False
                 stop_propagation = False
             else:
@@ -308,8 +309,8 @@ class Layout:
 
         model_event_handlers = new_state.model.current["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
-            if isinstance(handler, str):
-                target = handler
+            if isinstance(handler, JavaScript):
+                target = "__javascript__: " + handler
                 prevent_default = False
                 stop_propagation = False
             else:

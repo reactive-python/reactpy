@@ -29,12 +29,8 @@ export function bind(node, config) {
 function wrapEventHandlers(props) {
   const newProps = Object.assign({}, props);
   for (const [key, value] of Object.entries(props)) {
-    if (typeof value === "function") {
-      if (value.toString().includes(".sendMessage")) {
-          newProps[key] = makeJsonSafeEventHandler(value);
-      } else {
-          newProps[key] = value;
-      }
+    if (typeof value === "function" && value.toString().includes(".sendMessage")) {
+      newProps[key] = makeJsonSafeEventHandler(value);
     }
   }
   return newProps;

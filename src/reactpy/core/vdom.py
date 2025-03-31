@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Mapping, Sequence
 from typing import (
     Any,
@@ -23,11 +24,14 @@ from reactpy.types import (
     EventHandlerDict,
     EventHandlerType,
     ImportSourceDict,
+    JavaScript,
     VdomAttributes,
     VdomChildren,
     VdomDict,
     VdomJson,
 )
+
+EVENT_ATTRIBUTE_PATTERN = re.compile(r"^on[A-Z]")
 
 VDOM_JSON_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema",
@@ -216,16 +220,16 @@ def separate_attributes_and_event_handlers(
     attributes: Mapping[str, Any],
 ) -> tuple[VdomAttributes, EventHandlerDict]:
     _attributes: VdomAttributes = {}
-    _event_handlers: dict[str, EventHandlerType | str] = {}
+    _event_handlers: dict[str, EventHandlerType | JavaScript] = {}
 
     for k, v in attributes.items():
-        handler: EventHandlerType | str
+        handler: EventHandlerType | JavaScript
 
         if callable(v):
             handler = EventHandler(to_event_handler_function(v))
-        elif isinstance(v, str) and v.startswith("javascript:"):
-            handler = v
-        elif isinstance(v, EventHandler):
+        elif EVENT_ATTRIBUTE_PATTERN.match(k) and isinstance(v, str):
+            handler = JavaScript(v)
+        elif isinstance(v, (EventHandler, JavaScript)):
             handler = v
         else:
             _attributes[k] = v

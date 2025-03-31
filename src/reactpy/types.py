@@ -885,6 +885,10 @@ class JsonImportSource(TypedDict):
     fallback: Any
 
 
+class JavaScript(str):
+    pass
+
+
 class EventHandlerFunc(Protocol):
     """A coroutine which can handle event data"""
 
@@ -919,7 +923,7 @@ class EventHandlerType(Protocol):
 EventHandlerMapping = Mapping[str, EventHandlerType]
 """A generic mapping between event names to their handlers"""
 
-EventHandlerDict: TypeAlias = dict[str, EventHandlerType | str]
+EventHandlerDict: TypeAlias = dict[str, EventHandlerType | JavaScript]
 """A dict mapping between event names to their handlers"""
 
 
