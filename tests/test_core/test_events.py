@@ -242,15 +242,9 @@ async def test_javascript_event_as_arrow_function(display: DisplayFixture):
     await display.show(lambda: App())
 
     button = await display.page.wait_for_selector("#the-button", state="attached")
+    assert await button.inner_text() == "Click Me"
     await button.click()
-    await button.click()
-    await button.click()
-    parent = await display.page.wait_for_selector(
-        "#the-parent", state="attached", timeout=0
-    )
-    generated_divs = await parent.query_selector_all("div")
-
-    assert len(generated_divs) == 3
+    assert await button.inner_text() == "Thank you!"
 
 
 async def test_javascript_event_as_this_statement(display: DisplayFixture):
