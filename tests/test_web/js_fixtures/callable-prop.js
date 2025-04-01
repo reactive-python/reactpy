@@ -11,8 +11,6 @@ export function bind(node, config) {
   };
 }
 
-// The intention here is that Child components are passed in here so we check that the
-// children of "the-parent" are "child-1" through "child-N"
 export function Component(props) {
   var text = "DEFAULT";
   if (props.setText && typeof props.setText === "function") {
