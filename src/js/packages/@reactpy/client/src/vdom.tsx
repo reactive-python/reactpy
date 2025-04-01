@@ -189,6 +189,11 @@ export function createAttributes(
           createEventHandler(client, name, handler),
         ),
       ),
+      ...Object.fromEntries(
+        Object.entries(model.jsExecutables || {}).map(([name, executable]) =>
+          createJSExecutable(name, executable),
+        ),
+      ),
     }),
   );
 }
@@ -198,41 +203,43 @@ function createEventHandler(
   name: string,
   { target, preventDefault, stopPropagation }: ReactPyVdomEventHandler,
 ): [string, () => void] {
-  if (target.indexOf("__javascript__: ") == 0) {
-    return [
-      name,
-      function (...args: any[]) {
-        function handleEvent(...args: any[]) {
-          const evalResult = eval(target.replace("__javascript__: ", ""));
-          if (typeof evalResult == "function") {
-            return evalResult(...args);
-          }
-        }
-        if (args.length > 0 && args[0] instanceof Event) {
-          return handleEvent.call(args[0].target, ...args);
-        } else {
-          return handleEvent(...args);
-        }
-      },
-    ];
-  }
-  return [
-    name,
-    function (...args: any[]) {
-      const data = Array.from(args).map((value) => {
-        if (!(typeof value === "object" && value.nativeEvent)) {
-          return value;
-        }
-        const event = value as React.SyntheticEvent<any>;
-        if (preventDefault) {
-          event.preventDefault();
-        }
-        if (stopPropagation) {
-          event.stopPropagation();
-        }
-        return serializeEvent(event.nativeEvent);
-      });
-      client.sendMessage({ type: "layout-event", data, target });
-    },
-  ];
+  const eventHandler = function (...args: any[]) {
+    const data = Array.from(args).map((value) => {
+      if (!(typeof value === "object" && value.nativeEvent)) {
+        return value;
+      }
+      const event = value as React.SyntheticEvent<any>;
+      if (preventDefault) {
+        event.preventDefault();
+      }
+      if (stopPropagation) {
+        event.stopPropagation();
+      }
+      return serializeEvent(event.nativeEvent);
+    });
+    client.sendMessage({ type: "layout-event", data, target });
+  };
+  eventHandler.isHandler = true;
+  return [name, eventHandler];
+}
+
+function createJSExecutable(
+  name: string,
+  executable: string,
+): [string, () => void] {
+  const wrappedExecutable = function (...args: any[]) {
+    function handleExecution(...args: any[]) {
+      const evalResult = eval(executable);
+      if (typeof evalResult == "function") {
+        return evalResult(...args);
+      }
+    }
+    if (args.length > 0 && args[0] instanceof Event) {
+      return handleExecution.call(args[0].currentTarget, ...args);
+    } else {
+      return handleExecution(...args);
+    }
+  };
+  wrappedExecutable.isHandler = false;
+  return [name, wrappedExecutable];
 }

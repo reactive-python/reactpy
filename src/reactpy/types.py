@@ -768,6 +768,7 @@ VdomDictKeys = Literal[
     "children",
     "attributes",
     "eventHandlers",
+    "jsExecutables",
     "importSource",
 ]
 ALLOWED_VDOM_KEYS = {
@@ -776,6 +777,7 @@ ALLOWED_VDOM_KEYS = {
     "children",
     "attributes",
     "eventHandlers",
+    "jsExecutables",
     "importSource",
 }
 
@@ -788,6 +790,7 @@ class VdomTypeDict(TypedDict):
     children: NotRequired[Sequence[ComponentType | VdomChild]]
     attributes: NotRequired[VdomAttributes]
     eventHandlers: NotRequired[EventHandlerDict]
+    jsExecutables: NotRequired[JavaScript]
     importSource: NotRequired[ImportSourceDict]
 
 
@@ -818,6 +821,8 @@ class VdomDict(dict):
     @overload
     def __getitem__(self, key: Literal["eventHandlers"]) -> EventHandlerDict: ...
     @overload
+    def __getitem__(self, key: Literal["jsExecutables"]) -> JSExecutableDict: ...
+    @overload
     def __getitem__(self, key: Literal["importSource"]) -> ImportSourceDict: ...
     def __getitem__(self, key: VdomDictKeys) -> Any:
         return super().__getitem__(key)
@@ -837,6 +842,10 @@ class VdomDict(dict):
     @overload
     def __setitem__(
         self, key: Literal["eventHandlers"], value: EventHandlerDict
+    ) -> None: ...
+    @overload
+    def __setitem__(
+        self, key: Literal["jsExecutables"], value: JSExecutableDict
     ) -> None: ...
     @overload
     def __setitem__(
@@ -871,6 +880,7 @@ class VdomJson(TypedDict):
     children: NotRequired[list[Any]]
     attributes: NotRequired[VdomAttributes]
     eventHandlers: NotRequired[dict[str, JsonEventTarget]]
+    jsExecutables: NotRequired[dict[str, JavaScript]]
     importSource: NotRequired[JsonImportSource]
 
 
@@ -923,8 +933,14 @@ class EventHandlerType(Protocol):
 EventHandlerMapping = Mapping[str, EventHandlerType]
 """A generic mapping between event names to their handlers"""
 
-EventHandlerDict: TypeAlias = dict[str, EventHandlerType | JavaScript]
+EventHandlerDict: TypeAlias = dict[str, EventHandlerType]
 """A dict mapping between event names to their handlers"""
+
+JSExecutableMapping = Mapping[str, JavaScript]
+"""A generic mapping between event names to their javascript"""
+
+JSExecutableDict: TypeAlias = dict[str, JavaScript]
+"""A dict mapping between attribute names to their javascript"""
 
 
 class VdomConstructor(Protocol):
