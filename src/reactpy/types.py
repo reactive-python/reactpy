@@ -897,6 +897,7 @@ class JsonImportSource(TypedDict):
 
 class JavaScript(str):
     """A simple way of marking JavaScript code to be executed client-side"""
+
     pass
 
 
