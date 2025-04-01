@@ -41,7 +41,6 @@ from reactpy.types import (
     ComponentType,
     Context,
     EventHandlerDict,
-    JavaScript,
     Key,
     LayoutEventMessage,
     LayoutUpdateMessage,
@@ -119,7 +118,7 @@ class Layout:
         # we just ignore the event.
         handler = self._event_handlers.get(event["target"])
 
-        if handler is not None and not isinstance(handler, JavaScript):
+        if handler is not None:
             try:
                 await handler.function(event["data"])
             except Exception:
@@ -282,23 +281,16 @@ class Layout:
 
         model_event_handlers = new_state.model.current["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
-            if isinstance(handler, JavaScript):
-                target = "__javascript__: " + handler
-                prevent_default = False
-                stop_propagation = False
+            if event in old_state.targets_by_event:
+                target = old_state.targets_by_event[event]
             else:
-                prevent_default = handler.prevent_default
-                stop_propagation = handler.stop_propagation
-                if event in old_state.targets_by_event:
-                    target = old_state.targets_by_event[event]
-                else:
-                    target = uuid4().hex if handler.target is None else handler.target
+                target = uuid4().hex if handler.target is None else handler.target
             new_state.targets_by_event[event] = target
             self._event_handlers[target] = handler
             model_event_handlers[event] = {
                 "target": target,
-                "preventDefault": prevent_default,
-                "stopPropagation": stop_propagation,
+                "preventDefault": handler.prevent_default,
+                "stopPropagation": handler.stop_propagation,
             }
 
         return None
@@ -313,20 +305,13 @@ class Layout:
 
         model_event_handlers = new_state.model.current["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
-            if isinstance(handler, JavaScript):
-                target = "__javascript__: " + handler
-                prevent_default = False
-                stop_propagation = False
-            else:
-                target = uuid4().hex if handler.target is None else handler.target
-                prevent_default = handler.prevent_default
-                stop_propagation = handler.stop_propagation
+            target = uuid4().hex if handler.target is None else handler.target
             new_state.targets_by_event[event] = target
             self._event_handlers[target] = handler
             model_event_handlers[event] = {
                 "target": target,
-                "preventDefault": prevent_default,
-                "stopPropagation": stop_propagation,
+                "preventDefault": handler.prevent_default,
+                "stopPropagation": handler.stop_propagation,
             }
 
         return None
