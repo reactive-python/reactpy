@@ -32,7 +32,7 @@ from reactpy.types import (
     VdomJson,
 )
 
-EVENT_ATTRIBUTE_PATTERN = re.compile(r"^on[A-Z]")
+EVENT_ATTRIBUTE_PATTERN = re.compile(r"^on\w+")
 
 VDOM_JSON_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema",

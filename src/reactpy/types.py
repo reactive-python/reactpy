@@ -790,7 +790,7 @@ class VdomTypeDict(TypedDict):
     children: NotRequired[Sequence[ComponentType | VdomChild]]
     attributes: NotRequired[VdomAttributes]
     eventHandlers: NotRequired[EventHandlerDict]
-    jsExecutables: NotRequired[JavaScript]
+    jsExecutables: NotRequired[JSExecutableDict]
     importSource: NotRequired[ImportSourceDict]
 
 
@@ -896,6 +896,7 @@ class JsonImportSource(TypedDict):
 
 
 class JavaScript(str):
+    """A simple way of marking JavaScript code to be executed client-side"""
     pass
 
 
@@ -937,7 +938,7 @@ EventHandlerDict: TypeAlias = dict[str, EventHandlerType]
 """A dict mapping between event names to their handlers"""
 
 JSExecutableMapping = Mapping[str, JavaScript]
-"""A generic mapping between event names to their javascript"""
+"""A generic mapping between attribute names to their javascript"""
 
 JSExecutableDict: TypeAlias = dict[str, JavaScript]
 """A dict mapping between attribute names to their javascript"""

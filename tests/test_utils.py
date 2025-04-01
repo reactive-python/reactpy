@@ -194,6 +194,15 @@ def test_string_to_reactpy(case):
                 "key": "my-key",
             },
         },
+        # 9: Includes `jsExecutables` attribue
+        {
+            "source": '''<button onclick="this.innerText = 'CLICKED'">Click Me</button>''',
+            "model": {
+                "tagName": "button",
+                "jsExecutables": {"onclick": "this.innerText = 'CLICKED'"},
+                "children": ["Click Me"],
+            }
+        },
     ],
 )
 def test_string_to_reactpy_default_transforms(case):
