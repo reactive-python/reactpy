@@ -190,8 +190,9 @@ export function createAttributes(
         ),
       ),
       ...Object.fromEntries(
-        Object.entries(model.inlineJavascript || {}).map(([name, inlineJavaScript]) =>
-          createInlineJavascript(name, inlineJavaScript),
+        Object.entries(model.inlineJavascript || {}).map(
+          ([name, inlineJavaScript]) =>
+            createInlineJavascript(name, inlineJavaScript),
         ),
       ),
     }),

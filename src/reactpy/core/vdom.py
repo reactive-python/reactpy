@@ -24,8 +24,8 @@ from reactpy.types import (
     EventHandlerDict,
     EventHandlerType,
     ImportSourceDict,
-    JavaScript,
     InlineJavascriptDict,
+    JavaScript,
     VdomAttributes,
     VdomChildren,
     VdomDict,
@@ -194,7 +194,9 @@ class Vdom:
                 **({"children": children} if children else {}),
                 **({"attributes": attributes} if attributes else {}),
                 **({"eventHandlers": event_handlers} if event_handlers else {}),
-                **({"inlineJavascript": inline_javascript} if inline_javascript else {}),
+                **(
+                    {"inlineJavascript": inline_javascript} if inline_javascript else {}
+                ),
                 **({"importSource": self.import_source} if self.import_source else {}),
             }
 

@@ -35,12 +35,12 @@ class RequiredTransforms:
                     if ":" in part
                 )
             }
-    
+
     @staticmethod
     def _attributes_to_reactjs(attributes: VdomAttributes):
         """Convert HTML attribute names to their ReactJS equivalents.
-        
-        This method is private because it is called prior to instantiating a 
+
+        This method is private because it is called prior to instantiating a
         Vdom class from a parsed html string, so it does not need to be called
         as part of this class's instantiation (see comments in __init__ above).
         """
