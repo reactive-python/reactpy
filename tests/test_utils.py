@@ -194,12 +194,12 @@ def test_string_to_reactpy(case):
                 "key": "my-key",
             },
         },
-        # 9: Includes `jsExecutables` attribue
+        # 9: Includes `inlineJavascript` attribue
         {
             "source": """<button onclick="this.innerText = 'CLICKED'">Click Me</button>""",
             "model": {
                 "tagName": "button",
-                "jsExecutables": {"onclick": "this.innerText = 'CLICKED'"},
+                "inlineJavascript": {"onClick": "this.innerText = 'CLICKED'"},
                 "children": ["Click Me"],
             },
         },

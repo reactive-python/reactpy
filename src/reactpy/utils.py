@@ -147,10 +147,11 @@ def _etree_to_vdom(
 
     # Recursively call _etree_to_vdom() on all children
     children = _generate_vdom_children(node, transforms, intercept_links)
+    attributes = RequiredTransforms._attributes_to_reactjs(dict(node.items()))
 
     # Convert the lxml node to a VDOM dict
     constructor = getattr(html, str(node.tag))
-    el = constructor(dict(node.items()), children)
+    el = constructor(attributes, children)
 
     # Perform necessary transformations on the VDOM attributes to meet VDOM spec
     RequiredTransforms(el, intercept_links)

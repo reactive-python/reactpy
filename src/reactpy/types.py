@@ -768,7 +768,7 @@ VdomDictKeys = Literal[
     "children",
     "attributes",
     "eventHandlers",
-    "jsExecutables",
+    "inlineJavascript",
     "importSource",
 ]
 ALLOWED_VDOM_KEYS = {
@@ -777,7 +777,7 @@ ALLOWED_VDOM_KEYS = {
     "children",
     "attributes",
     "eventHandlers",
-    "jsExecutables",
+    "inlineJavascript",
     "importSource",
 }
 
@@ -790,7 +790,7 @@ class VdomTypeDict(TypedDict):
     children: NotRequired[Sequence[ComponentType | VdomChild]]
     attributes: NotRequired[VdomAttributes]
     eventHandlers: NotRequired[EventHandlerDict]
-    jsExecutables: NotRequired[JSExecutableDict]
+    inlineJavascript: NotRequired[InlineJavascriptDict]
     importSource: NotRequired[ImportSourceDict]
 
 
@@ -821,7 +821,7 @@ class VdomDict(dict):
     @overload
     def __getitem__(self, key: Literal["eventHandlers"]) -> EventHandlerDict: ...
     @overload
-    def __getitem__(self, key: Literal["jsExecutables"]) -> JSExecutableDict: ...
+    def __getitem__(self, key: Literal["inlineJavascript"]) -> InlineJavascriptDict: ...
     @overload
     def __getitem__(self, key: Literal["importSource"]) -> ImportSourceDict: ...
     def __getitem__(self, key: VdomDictKeys) -> Any:
@@ -845,7 +845,7 @@ class VdomDict(dict):
     ) -> None: ...
     @overload
     def __setitem__(
-        self, key: Literal["jsExecutables"], value: JSExecutableDict
+        self, key: Literal["inlineJavascript"], value: InlineJavascriptDict
     ) -> None: ...
     @overload
     def __setitem__(
@@ -880,7 +880,7 @@ class VdomJson(TypedDict):
     children: NotRequired[list[Any]]
     attributes: NotRequired[VdomAttributes]
     eventHandlers: NotRequired[dict[str, JsonEventTarget]]
-    jsExecutables: NotRequired[dict[str, JavaScript]]
+    inlineJavascript: NotRequired[dict[str, JavaScript]]
     importSource: NotRequired[JsonImportSource]
 
 
@@ -938,11 +938,11 @@ EventHandlerMapping = Mapping[str, EventHandlerType]
 EventHandlerDict: TypeAlias = dict[str, EventHandlerType]
 """A dict mapping between event names to their handlers"""
 
-JSExecutableMapping = Mapping[str, JavaScript]
-"""A generic mapping between attribute names to their javascript"""
+InlineJavascriptMapping = Mapping[str, JavaScript]
+"""A generic mapping between attribute names to their inline javascript"""
 
-JSExecutableDict: TypeAlias = dict[str, JavaScript]
-"""A dict mapping between attribute names to their javascript"""
+InlineJavascriptDict: TypeAlias = dict[str, JavaScript]
+"""A dict mapping between attribute names to their inline javascript"""
 
 
 class VdomConstructor(Protocol):

@@ -262,9 +262,9 @@ class Layout:
             attrs = raw_model["attributes"].copy()
             new_state.model.current["attributes"] = attrs
 
-        if "jsExecutables" in raw_model:
-            executables = raw_model["jsExecutables"].copy()
-            new_state.model.current["jsExecutables"] = executables
+        if "inlineJavascript" in raw_model:
+            inline_javascript = raw_model["inlineJavascript"].copy()
+            new_state.model.current["inlineJavascript"] = inline_javascript
 
         if old_state is None:
             self._render_model_event_handlers_without_old_state(

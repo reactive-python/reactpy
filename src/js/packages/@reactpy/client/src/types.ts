@@ -53,7 +53,7 @@ export type ReactPyVdom = {
   children?: (ReactPyVdom | string)[];
   error?: string;
   eventHandlers?: { [key: string]: ReactPyVdomEventHandler };
-  jsExecutables?: { [key: string]: string };
+  inlineJavascript?: { [key: string]: string };
   importSource?: ReactPyVdomImportSource;
 };
 

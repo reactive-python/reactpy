@@ -35,16 +35,21 @@ class RequiredTransforms:
                     if ":" in part
                 )
             }
-
+    
     @staticmethod
-    def html_props_to_reactjs(vdom: VdomDict) -> None:
-        """Convert HTML prop names to their ReactJS equivalents."""
-        if "attributes" in vdom:
-            items = cast(VdomAttributes, vdom["attributes"].items())
-            vdom["attributes"] = cast(
-                VdomAttributes,
-                {REACT_PROP_SUBSTITUTIONS.get(k, k): v for k, v in items},
-            )
+    def _attributes_to_reactjs(attributes: VdomAttributes):
+        """Convert HTML attribute names to their ReactJS equivalents.
+        
+        This method is private because it is called prior to instantiating a 
+        Vdom class from a parsed html string, so it does not need to be called
+        as part of this class's instantiation (see comments in __init__ above).
+        """
+        attrs = cast(VdomAttributes, attributes.items())
+        attrs = cast(
+            VdomAttributes,
+            {REACT_PROP_SUBSTITUTIONS.get(k, k): v for k, v in attrs},
+        )
+        return attrs
 
     @staticmethod
     def textarea_children_to_prop(vdom: VdomDict) -> None:

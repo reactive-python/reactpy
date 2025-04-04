@@ -190,8 +190,8 @@ export function createAttributes(
         ),
       ),
       ...Object.fromEntries(
-        Object.entries(model.jsExecutables || {}).map(([name, executable]) =>
-          createJSExecutable(name, executable),
+        Object.entries(model.inlineJavascript || {}).map(([name, inlineJavaScript]) =>
+          createInlineJavascript(name, inlineJavaScript),
         ),
       ),
     }),
@@ -223,13 +223,13 @@ function createEventHandler(
   return [name, eventHandler];
 }
 
-function createJSExecutable(
+function createInlineJavascript(
   name: string,
-  executable: string,
+  inlineJavaScript: string,
 ): [string, () => void] {
   const wrappedExecutable = function (...args: any[]) {
     function handleExecution(...args: any[]) {
-      const evalResult = eval(executable);
+      const evalResult = eval(inlineJavaScript);
       if (typeof evalResult == "function") {
         return evalResult(...args);
       }
