@@ -24,8 +24,8 @@ from reactpy.types import (
     EventHandlerDict,
     EventHandlerType,
     ImportSourceDict,
-    InlineJavascriptDict,
-    JavaScript,
+    InlineJavaScript,
+    InlineJavaScriptDict,
     VdomAttributes,
     VdomChildren,
     VdomDict,
@@ -47,7 +47,7 @@ VDOM_JSON_SCHEMA = {
                 "children": {"$ref": "#/definitions/elementChildren"},
                 "attributes": {"type": "object"},
                 "eventHandlers": {"$ref": "#/definitions/elementEventHandlers"},
-                "inlineJavascript": {"$ref": "#/definitions/elementInlineJavascripts"},
+                "inlineJavaScript": {"$ref": "#/definitions/elementInlineJavaScripts"},
                 "importSource": {"$ref": "#/definitions/importSource"},
             },
             # The 'tagName' is required because its presence is a useful indicator of
@@ -77,7 +77,7 @@ VDOM_JSON_SCHEMA = {
             },
             "required": ["target"],
         },
-        "elementInlineJavascripts": {
+        "elementInlineJavaScripts": {
             "type": "object",
             "patternProperties": {
                 ".*": "str",
@@ -195,7 +195,7 @@ class Vdom:
                 **({"attributes": attributes} if attributes else {}),
                 **({"eventHandlers": event_handlers} if event_handlers else {}),
                 **(
-                    {"inlineJavascript": inline_javascript} if inline_javascript else {}
+                    {"inlineJavaScript": inline_javascript} if inline_javascript else {}
                 ),
                 **({"importSource": self.import_source} if self.import_source else {}),
             }
@@ -231,10 +231,10 @@ def separate_attributes_and_children(
 
 def separate_attributes_handlers_and_inline_javascript(
     attributes: Mapping[str, Any],
-) -> tuple[VdomAttributes, EventHandlerDict, InlineJavascriptDict]:
+) -> tuple[VdomAttributes, EventHandlerDict, InlineJavaScriptDict]:
     _attributes: VdomAttributes = {}
     _event_handlers: dict[str, EventHandlerType] = {}
-    _inline_javascript: dict[str, JavaScript] = {}
+    _inline_javascript: dict[str, InlineJavaScript] = {}
 
     for k, v in attributes.items():
         if callable(v):
@@ -242,8 +242,8 @@ def separate_attributes_handlers_and_inline_javascript(
         elif isinstance(v, EventHandler):
             _event_handlers[k] = v
         elif EVENT_ATTRIBUTE_PATTERN.match(k) and isinstance(v, str):
-            _inline_javascript[k] = JavaScript(v)
-        elif isinstance(v, JavaScript):
+            _inline_javascript[k] = InlineJavaScript(v)
+        elif isinstance(v, InlineJavaScript):
             _inline_javascript[k] = v
         else:
             _attributes[k] = v

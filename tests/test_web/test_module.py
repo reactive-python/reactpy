@@ -12,7 +12,7 @@ from reactpy.testing import (
     assert_reactpy_did_not_log,
     poll,
 )
-from reactpy.types import JavaScript
+from reactpy.types import InlineJavaScript
 from reactpy.web.module import NAME_SOURCE, WebModule
 
 JS_FIXTURES_DIR = Path(__file__).parent / "js_fixtures"
@@ -401,7 +401,7 @@ async def test_callable_prop_with_javacript(display: DisplayFixture):
         return Component(
             {
                 "id": "my-div",
-                "setText": JavaScript('(prefixText) => prefixText + "TEST 123"'),
+                "setText": InlineJavaScript('(prefixText) => prefixText + "TEST 123"'),
             }
         )
 

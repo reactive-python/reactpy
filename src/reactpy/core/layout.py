@@ -262,9 +262,9 @@ class Layout:
             attrs = raw_model["attributes"].copy()
             new_state.model.current["attributes"] = attrs
 
-        if "inlineJavascript" in raw_model:
-            inline_javascript = raw_model["inlineJavascript"].copy()
-            new_state.model.current["inlineJavascript"] = inline_javascript
+        if "inlineJavaScript" in raw_model:
+            inline_javascript = raw_model["inlineJavaScript"].copy()
+            new_state.model.current["inlineJavaScript"] = inline_javascript
 
         if old_state is None:
             self._render_model_event_handlers_without_old_state(

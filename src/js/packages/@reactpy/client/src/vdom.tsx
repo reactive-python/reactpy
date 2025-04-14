@@ -190,9 +190,9 @@ export function createAttributes(
         ),
       ),
       ...Object.fromEntries(
-        Object.entries(model.inlineJavascript || {}).map(
+        Object.entries(model.inlineJavaScript || {}).map(
           ([name, inlineJavaScript]) =>
-            createInlineJavascript(name, inlineJavaScript),
+            createInlineJavaScript(name, inlineJavaScript),
         ),
       ),
     }),
@@ -224,10 +224,12 @@ function createEventHandler(
   return [name, eventHandler];
 }
 
-function createInlineJavascript(
+function createInlineJavaScript(
   name: string,
   inlineJavaScript: string,
 ): [string, () => void] {
+  /* Function that will execute the string-like InlineJavaScript 
+  via eval in the most appropriate way */
   const wrappedExecutable = function (...args: any[]) {
     function handleExecution(...args: any[]) {
       const evalResult = eval(inlineJavaScript);
@@ -236,8 +238,14 @@ function createInlineJavascript(
       }
     }
     if (args.length > 0 && args[0] instanceof Event) {
+      /* If being triggered by an event, set the event's current
+      target to "this". This ensures that inline
+      javascript statements such as the following work:
+      html.button({"onclick": 'this.value = "Clicked!"'}, "Click Me")*/
       return handleExecution.call(args[0].currentTarget, ...args);
     } else {
+      /* If not being triggered by an event, do not set "this" and
+      just call normally */
       return handleExecution(...args);
     }
   };
