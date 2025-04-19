@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Mapping, Sequence
 from typing import (
     Any,
@@ -23,11 +24,15 @@ from reactpy.types import (
     EventHandlerDict,
     EventHandlerType,
     ImportSourceDict,
+    InlineJavaScript,
+    InlineJavaScriptDict,
     VdomAttributes,
     VdomChildren,
     VdomDict,
     VdomJson,
 )
+
+EVENT_ATTRIBUTE_PATTERN = re.compile(r"^on[A-Z]\w+")
 
 VDOM_JSON_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema",
@@ -42,6 +47,7 @@ VDOM_JSON_SCHEMA = {
                 "children": {"$ref": "#/definitions/elementChildren"},
                 "attributes": {"type": "object"},
                 "eventHandlers": {"$ref": "#/definitions/elementEventHandlers"},
+                "inlineJavaScript": {"$ref": "#/definitions/elementInlineJavaScripts"},
                 "importSource": {"$ref": "#/definitions/importSource"},
             },
             # The 'tagName' is required because its presence is a useful indicator of
@@ -70,6 +76,12 @@ VDOM_JSON_SCHEMA = {
                 "stopPropagation": {"type": "boolean"},
             },
             "required": ["target"],
+        },
+        "elementInlineJavaScripts": {
+            "type": "object",
+            "patternProperties": {
+                ".*": "str",
+            },
         },
         "importSource": {
             "type": "object",
@@ -160,7 +172,9 @@ class Vdom:
         """The entry point for the VDOM API, for example reactpy.html(<WE_ARE_HERE>)."""
         attributes, children = separate_attributes_and_children(attributes_and_children)
         key = attributes.get("key", None)
-        attributes, event_handlers = separate_attributes_and_event_handlers(attributes)
+        attributes, event_handlers, inline_javascript = (
+            separate_attributes_handlers_and_inline_javascript(attributes)
+        )
         if REACTPY_CHECK_JSON_ATTRS.current:
             json.dumps(attributes)
 
@@ -180,6 +194,9 @@ class Vdom:
                 **({"children": children} if children else {}),
                 **({"attributes": attributes} if attributes else {}),
                 **({"eventHandlers": event_handlers} if event_handlers else {}),
+                **(
+                    {"inlineJavaScript": inline_javascript} if inline_javascript else {}
+                ),
                 **({"importSource": self.import_source} if self.import_source else {}),
             }
 
@@ -212,26 +229,26 @@ def separate_attributes_and_children(
     return _attributes, _children
 
 
-def separate_attributes_and_event_handlers(
+def separate_attributes_handlers_and_inline_javascript(
     attributes: Mapping[str, Any],
-) -> tuple[VdomAttributes, EventHandlerDict]:
+) -> tuple[VdomAttributes, EventHandlerDict, InlineJavaScriptDict]:
     _attributes: VdomAttributes = {}
     _event_handlers: dict[str, EventHandlerType] = {}
+    _inline_javascript: dict[str, InlineJavaScript] = {}
 
     for k, v in attributes.items():
-        handler: EventHandlerType
-
         if callable(v):
-            handler = EventHandler(to_event_handler_function(v))
+            _event_handlers[k] = EventHandler(to_event_handler_function(v))
         elif isinstance(v, EventHandler):
-            handler = v
+            _event_handlers[k] = v
+        elif EVENT_ATTRIBUTE_PATTERN.match(k) and isinstance(v, str):
+            _inline_javascript[k] = InlineJavaScript(v)
+        elif isinstance(v, InlineJavaScript):
+            _inline_javascript[k] = v
         else:
             _attributes[k] = v
-            continue
 
-        _event_handlers[k] = handler
-
-    return _attributes, _event_handlers
+    return _attributes, _event_handlers, _inline_javascript
 
 
 def _flatten_children(children: Sequence[Any]) -> list[Any]:

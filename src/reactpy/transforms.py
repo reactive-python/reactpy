@@ -6,6 +6,16 @@ from reactpy.core.events import EventHandler, to_event_handler_function
 from reactpy.types import VdomAttributes, VdomDict
 
 
+def attributes_to_reactjs(attributes: VdomAttributes):
+    """Convert HTML attribute names to their ReactJS equivalents."""
+    attrs = cast(VdomAttributes, attributes.items())
+    attrs = cast(
+        VdomAttributes,
+        {REACT_PROP_SUBSTITUTIONS.get(k, k): v for k, v in attrs},
+    )
+    return attrs
+
+
 class RequiredTransforms:
     """Performs any necessary transformations related to `string_to_reactpy` to automatically prevent
     issues with React's rendering engine.
@@ -35,16 +45,6 @@ class RequiredTransforms:
                     if ":" in part
                 )
             }
-
-    @staticmethod
-    def html_props_to_reactjs(vdom: VdomDict) -> None:
-        """Convert HTML prop names to their ReactJS equivalents."""
-        if "attributes" in vdom:
-            items = cast(VdomAttributes, vdom["attributes"].items())
-            vdom["attributes"] = cast(
-                VdomAttributes,
-                {REACT_PROP_SUBSTITUTIONS.get(k, k): v for k, v in items},
-            )
 
     @staticmethod
     def textarea_children_to_prop(vdom: VdomDict) -> None:

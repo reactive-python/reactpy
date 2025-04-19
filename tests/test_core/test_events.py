@@ -221,3 +221,97 @@ async def test_can_stop_event_propagation(display: DisplayFixture):
     await inner.click()
 
     await poll(lambda: clicked.current).until_is(True)
+
+
+async def test_javascript_event_as_arrow_function(display: DisplayFixture):
+    @reactpy.component
+    def App():
+        return reactpy.html.div(
+            reactpy.html.div(
+                reactpy.html.button(
+                    {
+                        "id": "the-button",
+                        "onClick": '(e) => e.target.innerText = "Thank you!"',
+                    },
+                    "Click Me",
+                ),
+                reactpy.html.div({"id": "the-parent"}),
+            )
+        )
+
+    await display.show(lambda: App())
+
+    button = await display.page.wait_for_selector("#the-button", state="attached")
+    assert await button.inner_text() == "Click Me"
+    await button.click()
+    assert await button.inner_text() == "Thank you!"
+
+
+async def test_javascript_event_as_this_statement(display: DisplayFixture):
+    @reactpy.component
+    def App():
+        return reactpy.html.div(
+            reactpy.html.div(
+                reactpy.html.button(
+                    {
+                        "id": "the-button",
+                        "onClick": 'this.innerText = "Thank you!"',
+                    },
+                    "Click Me",
+                ),
+                reactpy.html.div({"id": "the-parent"}),
+            )
+        )
+
+    await display.show(lambda: App())
+
+    button = await display.page.wait_for_selector("#the-button", state="attached")
+    assert await button.inner_text() == "Click Me"
+    await button.click()
+    assert await button.inner_text() == "Thank you!"
+
+
+async def test_javascript_event_after_state_update(display: DisplayFixture):
+    @reactpy.component
+    def App():
+        click_count, set_click_count = reactpy.hooks.use_state(0)
+        return reactpy.html.div(
+            {"id": "the-parent"},
+            reactpy.html.button(
+                {
+                    "id": "button-with-reactpy-event",
+                    "onClick": lambda _: set_click_count(click_count + 1),
+                },
+                "Click Me",
+            ),
+            reactpy.html.button(
+                {
+                    "id": "button-with-javascript-event",
+                    "onClick": """javascript: () => {
+                    let parent = document.getElementById("the-parent");
+                    parent.appendChild(document.createElement("div"));
+                }""",
+                },
+                "No, Click Me",
+            ),
+            *[reactpy.html.div("Clicked") for _ in range(click_count)],
+        )
+
+    await display.show(lambda: App())
+
+    button1 = await display.page.wait_for_selector(
+        "#button-with-reactpy-event", state="attached"
+    )
+    await button1.click()
+    await button1.click()
+    await button1.click()
+    button2 = await display.page.wait_for_selector(
+        "#button-with-javascript-event", state="attached"
+    )
+    await button2.click()
+    await button2.click()
+    await button2.click()
+    parent = await display.page.wait_for_selector("#the-parent", state="attached")
+    generated_divs = await parent.query_selector_all("div")
+
+    assert len(generated_divs) == 6

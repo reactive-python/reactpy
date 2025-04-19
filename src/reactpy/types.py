@@ -768,6 +768,7 @@ VdomDictKeys = Literal[
     "children",
     "attributes",
     "eventHandlers",
+    "inlineJavaScript",
     "importSource",
 ]
 ALLOWED_VDOM_KEYS = {
@@ -776,6 +777,7 @@ ALLOWED_VDOM_KEYS = {
     "children",
     "attributes",
     "eventHandlers",
+    "inlineJavaScript",
     "importSource",
 }
 
@@ -788,6 +790,7 @@ class VdomTypeDict(TypedDict):
     children: NotRequired[Sequence[ComponentType | VdomChild]]
     attributes: NotRequired[VdomAttributes]
     eventHandlers: NotRequired[EventHandlerDict]
+    inlineJavaScript: NotRequired[InlineJavaScriptDict]
     importSource: NotRequired[ImportSourceDict]
 
 
@@ -818,6 +821,8 @@ class VdomDict(dict):
     @overload
     def __getitem__(self, key: Literal["eventHandlers"]) -> EventHandlerDict: ...
     @overload
+    def __getitem__(self, key: Literal["inlineJavaScript"]) -> InlineJavaScriptDict: ...
+    @overload
     def __getitem__(self, key: Literal["importSource"]) -> ImportSourceDict: ...
     def __getitem__(self, key: VdomDictKeys) -> Any:
         return super().__getitem__(key)
@@ -837,6 +842,10 @@ class VdomDict(dict):
     @overload
     def __setitem__(
         self, key: Literal["eventHandlers"], value: EventHandlerDict
+    ) -> None: ...
+    @overload
+    def __setitem__(
+        self, key: Literal["inlineJavaScript"], value: InlineJavaScriptDict
     ) -> None: ...
     @overload
     def __setitem__(
@@ -871,6 +880,7 @@ class VdomJson(TypedDict):
     children: NotRequired[list[Any]]
     attributes: NotRequired[VdomAttributes]
     eventHandlers: NotRequired[dict[str, JsonEventTarget]]
+    inlineJavaScript: NotRequired[dict[str, InlineJavaScript]]
     importSource: NotRequired[JsonImportSource]
 
 
@@ -883,6 +893,12 @@ class JsonEventTarget(TypedDict):
 class JsonImportSource(TypedDict):
     source: str
     fallback: Any
+
+
+class InlineJavaScript(str):
+    """Simple subclass that flags a user's string in ReactPy VDOM attributes as executable JavaScript."""
+
+    pass
 
 
 class EventHandlerFunc(Protocol):
@@ -921,6 +937,12 @@ EventHandlerMapping = Mapping[str, EventHandlerType]
 
 EventHandlerDict: TypeAlias = dict[str, EventHandlerType]
 """A dict mapping between event names to their handlers"""
+
+InlineJavaScriptMapping = Mapping[str, InlineJavaScript]
+"""A generic mapping between attribute names to their inline javascript"""
+
+InlineJavaScriptDict: TypeAlias = dict[str, InlineJavaScript]
+"""A dict mapping between attribute names to their inline javascript"""
 
 
 class VdomConstructor(Protocol):
