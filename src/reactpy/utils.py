@@ -10,7 +10,7 @@ from lxml import etree
 from lxml.html import fromstring
 
 from reactpy import html
-from reactpy.transforms import RequiredTransforms
+from reactpy.transforms import RequiredTransforms, attributes_to_reactjs
 from reactpy.types import ComponentType, VdomDict
 
 _RefValue = TypeVar("_RefValue")
@@ -147,7 +147,10 @@ def _etree_to_vdom(
 
     # Recursively call _etree_to_vdom() on all children
     children = _generate_vdom_children(node, transforms, intercept_links)
-    attributes = RequiredTransforms._attributes_to_reactjs(dict(node.items()))
+
+    # This transform is required prior to initializing the Vdom so InlineJavaScript
+    # gets properly parsed (ex. <button onClick="this.innerText = 'Clicked';")
+    attributes = attributes_to_reactjs(dict(node.items()))
 
     # Convert the lxml node to a VDOM dict
     constructor = getattr(html, str(node.tag))
