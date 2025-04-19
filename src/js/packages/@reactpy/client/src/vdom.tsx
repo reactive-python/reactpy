@@ -189,6 +189,12 @@ export function createAttributes(
           createEventHandler(client, name, handler),
         ),
       ),
+      ...Object.fromEntries(
+        Object.entries(model.inlineJavaScript || {}).map(
+          ([name, inlineJavaScript]) =>
+            createInlineJavaScript(name, inlineJavaScript),
+        ),
+      ),
     }),
   );
 }
@@ -198,23 +204,51 @@ function createEventHandler(
   name: string,
   { target, preventDefault, stopPropagation }: ReactPyVdomEventHandler,
 ): [string, () => void] {
-  return [
-    name,
-    function (...args: any[]) {
-      const data = Array.from(args).map((value) => {
-        if (!(typeof value === "object" && value.nativeEvent)) {
-          return value;
-        }
-        const event = value as React.SyntheticEvent<any>;
-        if (preventDefault) {
-          event.preventDefault();
-        }
-        if (stopPropagation) {
-          event.stopPropagation();
-        }
-        return serializeEvent(event.nativeEvent);
-      });
-      client.sendMessage({ type: "layout-event", data, target });
-    },
-  ];
+  const eventHandler = function (...args: any[]) {
+    const data = Array.from(args).map((value) => {
+      if (!(typeof value === "object" && value.nativeEvent)) {
+        return value;
+      }
+      const event = value as React.SyntheticEvent<any>;
+      if (preventDefault) {
+        event.preventDefault();
+      }
+      if (stopPropagation) {
+        event.stopPropagation();
+      }
+      return serializeEvent(event.nativeEvent);
+    });
+    client.sendMessage({ type: "layout-event", data, target });
+  };
+  eventHandler.isHandler = true;
+  return [name, eventHandler];
+}
+
+function createInlineJavaScript(
+  name: string,
+  inlineJavaScript: string,
+): [string, () => void] {
+  /* Function that will execute the string-like InlineJavaScript 
+  via eval in the most appropriate way */
+  const wrappedExecutable = function (...args: any[]) {
+    function handleExecution(...args: any[]) {
+      const evalResult = eval(inlineJavaScript);
+      if (typeof evalResult == "function") {
+        return evalResult(...args);
+      }
+    }
+    if (args.length > 0 && args[0] instanceof Event) {
+      /* If being triggered by an event, set the event's current
+      target to "this". This ensures that inline
+      javascript statements such as the following work:
+      html.button({"onclick": 'this.value = "Clicked!"'}, "Click Me")*/
+      return handleExecution.call(args[0].currentTarget, ...args);
+    } else {
+      /* If not being triggered by an event, do not set "this" and
+      just call normally */
+      return handleExecution(...args);
+    }
+  };
+  wrappedExecutable.isHandler = false;
+  return [name, wrappedExecutable];
 }

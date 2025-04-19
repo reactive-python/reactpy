@@ -12,6 +12,7 @@ from reactpy.testing import (
     assert_reactpy_did_not_log,
     poll,
 )
+from reactpy.types import InlineJavaScript
 from reactpy.web.module import NAME_SOURCE, WebModule
 
 JS_FIXTURES_DIR = Path(__file__).parent / "js_fixtures"
@@ -387,6 +388,27 @@ async def test_subcomponent_notation_as_obj_attrs(display: DisplayFixture):
     assert len(input_group_text) == 6
     assert len(form_control) == 5
     assert len(form_label) == 1
+
+
+async def test_callable_prop_with_javacript(display: DisplayFixture):
+    module = reactpy.web.module_from_file(
+        "callable-prop", JS_FIXTURES_DIR / "callable-prop.js"
+    )
+    Component = reactpy.web.export(module, "Component")
+
+    @reactpy.component
+    def App():
+        return Component(
+            {
+                "id": "my-div",
+                "setText": InlineJavaScript('(prefixText) => prefixText + "TEST 123"'),
+            }
+        )
+
+    await display.show(lambda: App())
+
+    my_div = await display.page.wait_for_selector("#my-div", state="attached")
+    assert await my_div.inner_text() == "PREFIX TEXT: TEST 123"
 
 
 def test_module_from_string():
