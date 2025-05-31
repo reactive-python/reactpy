@@ -24,7 +24,7 @@ from reactpy.pyscript.components import pyscript_component
 from reactpy.utils import Ref, reactpy_to_string, string_to_reactpy
 
 __author__ = "The Reactive Python Team"
-__version__ = "2.0.0a1"
+__version__ = "2.0.0b2"
 
 __all__ = [
     "Layout",

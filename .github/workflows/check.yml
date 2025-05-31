@@ -29,7 +29,8 @@ jobs:
             runs-on: '["ubuntu-latest", "macos-latest", "windows-latest"]'
             python-version: '["3.10", "3.11", "3.12", "3.13"]'
     test-documentation:
-        # Temporarily disabled
+        # Temporarily disabled while we transition from Sphinx to MkDocs
+        # https://github.com/reactive-python/reactpy/pull/1052
         if: 0
         uses: ./.github/workflows/.hatch-run.yml
         with:
@@ -37,7 +38,7 @@ jobs:
             run-cmd: "hatch run docs:check"
             python-version: '["3.11"]'
     test-javascript:
-        # Temporarily disabled, tests are broken but a rewrite is intended
+        # Temporarily disabled while we rewrite the "event_to_object" package
         # https://github.com/reactive-python/reactpy/issues/1196
         if: 0
         uses: ./.github/workflows/.hatch-run.yml
