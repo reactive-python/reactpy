@@ -2,346 +2,350 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://reactive-python.github.io/reactpy/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/about/changelog/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/about/code/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/about/community/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/about/docs/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/about/licenses/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/about/running-tests/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/add-react-to-an-existing-project/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/choosing-the-state-structure/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/communicate-data-between-server-and-client/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/conditional-rendering/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/convert-between-vdom-and-html/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/creating-a-react-app/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/creating-backends/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/creating-html-tags/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/creating-vdom-event-handlers/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/editor-setup/</loc>
-         <lastmod>2025-03-15</lastmod>
-    </url>
-    <url>
-         <loc>https://reactive-python.github.io/reactpy/learn/extra-tools-and-packages/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/extracting-state-logic-into-a-reducer/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/importing-and-exporting-components/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/installation/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/keeping-components-pure/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/lifecycle-of-reactive-effects/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/manipulating-the-dom-with-refs/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/manually-register-a-client/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/passing-data-deeply-with-context/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/passing-props-to-a-component/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/preserving-and-resetting-state/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/python-in-psx-with-curly-braces/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/queueing-a-series-of-state-updates/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/quick-start/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/react-developer-tools/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/reacting-to-input-with-state/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/referencing-values-with-refs/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/removing-effect-dependencies/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/render-and-commit/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/rendering-lists/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/responding-to-events/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/reusing-logic-with-custom-hooks/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/scaling-up-with-reducer-and-context/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/separating-events-from-effects/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/sharing-state-between-components/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/state-a-components-memory/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/state-as-a-snapshot/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/synchronizing-with-effects/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/thinking-in-react/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
+    </url>
+    <url>
+         <loc>https://reactive-python.github.io/reactpy/learn/tools-and-packages/</loc>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/tutorial-material-ui/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/tutorial-react-bootstrap/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/tutorial-tic-tac-toe/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/updating-arrays-in-state/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/updating-objects-in-state/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/vdom-mutations/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/writing-markup-with-psx/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/you-might-not-need-an-effect/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/learn/your-first-component/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/client-api/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/common-props/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/components-and-hooks-must-be-pure/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
+    </url>
+    <url>
+         <loc>https://reactive-python.github.io/reactpy/reference/jinja/</loc>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/overview/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/protocol-structure/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/react-calls-components-and-hooks/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/reactpy-csr/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/reactpy-middleware/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/reactpy/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/rules-of-hooks/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/rules-of-react/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/usage/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-async-effect/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-callback/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-connection/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-context/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-debug-value/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-deferred-value/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-effect/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-id/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-imperative-handle/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-insertion-effect/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-layout-effect/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-location/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-memo/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-reducer/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-ref/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-scope/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-state/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-sync-external-store/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
     <url>
          <loc>https://reactive-python.github.io/reactpy/reference/use-transition/</loc>
-         <lastmod>2025-03-15</lastmod>
+         <lastmod>2025-06-15</lastmod>
     </url>
 </urlset>
