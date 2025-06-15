@@ -22,7 +22,7 @@ async def display(page):
     templates = Jinja2Templates(
         env=JinjaEnvironment(
             loader=JinjaFileSystemLoader("tests/templates"),
-            extensions=["reactpy.templatetags.Jinja"],
+            extensions=["reactpy.templatetags.ReactPyJinja"],
         )
     )
 
@@ -60,7 +60,7 @@ async def test_unregistered_root_component():
     templates = Jinja2Templates(
         env=JinjaEnvironment(
             loader=JinjaFileSystemLoader("tests/templates"),
-            extensions=["reactpy.templatetags.Jinja"],
+            extensions=["reactpy.templatetags.ReactPyJinja"],
         )
     )
 
@@ -124,7 +124,7 @@ async def test_templatetag_bad_kwargs(page, caplog):
     templates = Jinja2Templates(
         env=JinjaEnvironment(
             loader=JinjaFileSystemLoader("tests/templates"),
-            extensions=["reactpy.templatetags.Jinja"],
+            extensions=["reactpy.templatetags.ReactPyJinja"],
         )
     )
 

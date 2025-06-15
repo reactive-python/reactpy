@@ -1,3 +1,3 @@
-from reactpy.templatetags.jinja import Jinja
+from reactpy.templatetags.jinja import ReactPyJinja
 
-__all__ = ["Jinja"]
+__all__ = ["ReactPyJinja"]

@@ -1,11 +1,8 @@
-# ruff: noqa: TC004, N802, N816, RUF006
+# ruff: noqa: N802, N816, RUF006
 # type: ignore
-from typing import TYPE_CHECKING
+import asyncio
 
-if TYPE_CHECKING:
-    import asyncio
-
-    from reactpy.pyscript.layout_handler import ReactPyLayoutHandler
+from reactpy.pyscript.layout_handler import ReactPyLayoutHandler
 
 
 # User component is inserted below by regex replacement
