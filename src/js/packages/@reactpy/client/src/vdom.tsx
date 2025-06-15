@@ -1,7 +1,6 @@
-import React from "react";
-import { ReactPyClientInterface } from "./types";
+import type { ReactPyClientInterface } from "./types";
 import serializeEvent from "event-to-object";
-import {
+import type {
   ReactPyVdom,
   ReactPyVdomImportSource,
   ReactPyVdomEventHandler,
@@ -112,7 +111,7 @@ function getComponentFromModule(
   /*  Gets the component with the provided name from the provided module.
 
   Built specifically to work on inifinitely deep nested components.
-  For example, component "My.Nested.Component" is accessed from 
+  For example, component "My.Nested.Component" is accessed from
   ModuleA like so: ModuleA["My"]["Nested"]["Component"].
   */
   const componentParts: string[] = componentName.split(".");
@@ -206,17 +205,14 @@ function createEventHandler(
 ): [string, () => void] {
   const eventHandler = function (...args: any[]) {
     const data = Array.from(args).map((value) => {
-      if (!(typeof value === "object" && value.nativeEvent)) {
-        return value;
-      }
-      const event = value as React.SyntheticEvent<any>;
+      const event = value as Event;
       if (preventDefault) {
         event.preventDefault();
       }
       if (stopPropagation) {
         event.stopPropagation();
       }
-      return serializeEvent(event.nativeEvent);
+      return serializeEvent(event);
     });
     client.sendMessage({ type: "layout-event", data, target });
   };
@@ -228,7 +224,7 @@ function createInlineJavaScript(
   name: string,
   inlineJavaScript: string,
 ): [string, () => void] {
-  /* Function that will execute the string-like InlineJavaScript 
+  /* Function that will execute the string-like InlineJavaScript
   via eval in the most appropriate way */
   const wrappedExecutable = function (...args: any[]) {
     function handleExecution(...args: any[]) {

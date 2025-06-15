@@ -1,7 +1,7 @@
-import { default as React, default as ReactDOM } from "preact/compat";
+import { render } from "preact";
 import { ReactPyClient } from "./client";
 import { Layout } from "./components";
-import { MountProps } from "./types";
+import type { MountProps } from "./types";
 
 export function mountReactPy(props: MountProps) {
   // WebSocket route for component rendering
@@ -36,6 +36,5 @@ export function mountReactPy(props: MountProps) {
   });
 
   // Start rendering the component
-  // eslint-disable-next-line react/no-deprecated
-  ReactDOM.render(<Layout client={client} />, props.mountElement);
+  render(<Layout client={client} />, props.mountElement);
 }

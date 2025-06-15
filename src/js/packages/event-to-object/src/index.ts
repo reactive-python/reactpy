@@ -11,6 +11,7 @@ export default function convert<E extends Event>(
         ? P
         : never;
     }[keyof e.EventToObjectMap]
+  | e.EventObject
   | null {
   return event.type in eventConverters
     ? eventConverters[event.type](event)
