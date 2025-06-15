@@ -5,7 +5,7 @@ from reactpy.executors import utils
 
 
 def test_invalid_vdom_head():
-    with pytest.raises(ValueError, match="Invalid head element!*"):
+    with pytest.raises(ValueError):
         utils.vdom_head_to_html({"tagName": "invalid"})
 
 

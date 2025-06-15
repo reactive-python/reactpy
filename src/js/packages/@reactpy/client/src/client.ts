@@ -1,5 +1,5 @@
 import logger from "./logger";
-import {
+import type {
   ReactPyClientInterface,
   ReactPyModule,
   GenericReactPyClientProps,

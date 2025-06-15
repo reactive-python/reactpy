@@ -18,7 +18,7 @@
   "main": "dist/index.js",
   "dependencies": {
     "json-pointer": "^0.6.2",
-    "preact": "^10.25.4"
+    "preact": "^10.26.9"
   },
   "devDependencies": {
     "@types/json-pointer": "^1.0.34",

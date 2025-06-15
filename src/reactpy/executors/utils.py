@@ -43,9 +43,7 @@ def vdom_head_to_html(head: VdomDict) -> str:
     if isinstance(head, dict) and head.get("tagName") == "head":
         return reactpy_to_string(head)
 
-    raise ValueError(
-        "Invalid head element! Element must be either `html.head` or a string."
-    )
+    raise ValueError("Head element must be constructed with `html.head`.")
 
 
 def process_settings(settings: ReactPyConfig) -> None:

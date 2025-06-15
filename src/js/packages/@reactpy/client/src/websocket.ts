@@ -1,4 +1,4 @@
-import { CreateReconnectingWebSocketProps } from "./types";
+import type { CreateReconnectingWebSocketProps } from "./types";
 import log from "./logger";
 
 export function createReconnectingWebSocket(
