@@ -1,16 +1,8 @@
 import { set as setJsonPointer } from "json-pointer";
-import React, {
-  ChangeEvent,
-  createContext,
-  createElement,
-  Fragment,
-  MutableRefObject,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "preact/compat";
-import {
+import type { ChangeEvent, MutableRefObject } from "preact/compat";
+import { createContext, createElement, Fragment, type JSX } from "preact";
+import { useContext, useEffect, useRef, useState } from "preact/hooks";
+import type {
   ImportSourceBinding,
   ReactPyComponent,
   ReactPyVdom,
@@ -67,7 +59,7 @@ export function Element({ model }: { model: ReactPyVdom }): JSX.Element | null {
 }
 
 function StandardElement({ model }: { model: ReactPyVdom }) {
-  const client = React.useContext(ClientContext);
+  const client = useContext(ClientContext);
   // Use createElement here to avoid warning about variable numbers of children not
   // having keys. Warning about this must now be the responsibility of the client
   // providing the models instead of the client rendering them.
@@ -83,10 +75,10 @@ function StandardElement({ model }: { model: ReactPyVdom }) {
 function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
   const client = useContext(ClientContext);
   const props = createAttributes(model, client);
-  const [value, setValue] = React.useState(props.value);
+  const [value, setValue] = useState(props.value);
 
   // honor changes to value from the client via props
-  React.useEffect(() => setValue(props.value), [props.value]);
+  useEffect(() => setValue(props.value), [props.value]);
 
   const givenOnChange = props.onChange;
   if (typeof givenOnChange === "function") {
@@ -116,7 +108,7 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
 function ScriptElement({ model }: { model: ReactPyVdom }) {
   const ref = useRef<HTMLDivElement | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Don't run if the parent element is missing
     if (!ref.current) {
       return;
@@ -181,10 +173,10 @@ function useImportSource(model: ReactPyVdom): MutableRefObject<any> {
   const vdomImportSource = model.importSource;
   const vdomImportSourceJsonString = JSON.stringify(vdomImportSource);
   const mountPoint = useRef<HTMLElement>(null);
-  const client = React.useContext(ClientContext);
+  const client = useContext(ClientContext);
   const [binding, setBinding] = useState<ImportSourceBinding | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     let unmounted = false;
 
     if (vdomImportSource) {
