@@ -86,6 +86,7 @@ artifacts = []
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
   "reactpy[all]",
+  "uvicorn",
   "pytest-sugar",
   "pytest-asyncio",
   "responses",
