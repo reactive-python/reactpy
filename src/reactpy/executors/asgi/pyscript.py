@@ -64,7 +64,7 @@ class ReactPyCsr(ReactPy):
                 are not applicable to CSR and will have no effect.
         """
         ReactPyMiddleware.__init__(
-            self, app=ReactpyPyscriptApp(self), root_components=[], **settings
+            self, app=ReactPyPyscriptApp(self), root_components=[], **settings
         )
         if not file_paths:
             raise ValueError("At least one component file path must be provided.")
@@ -85,7 +85,7 @@ class ReactPyCsr(ReactPy):
 
 
 @dataclass
-class ReactpyPyscriptApp(ReactPyApp):
+class ReactPyPyscriptApp(ReactPyApp):
     """ReactPy's standalone ASGI application for Client-Side Rendering (CSR) via PyScript."""
 
     parent: ReactPyCsr

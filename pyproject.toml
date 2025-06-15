@@ -43,7 +43,7 @@ urls.Source = "https://github.com/reactive-python/reactpy"
 all = ["reactpy[asgi,jinja,testing]"]
 asgi = ["asgiref", "asgi-tools", "servestatic", "orjson", "pip"]
 jinja = ["jinja2-simple-tags", "jinja2 >=3"]
-testing = ["playwright"]
+testing = ["playwright, uvicorn[standard]"]
 
 [tool.hatch.version]
 path = "src/reactpy/__init__.py"
@@ -86,7 +86,6 @@ artifacts = []
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
   "reactpy[all]",
-  "uvicorn",
   "pytest-sugar",
   "pytest-asyncio",
   "responses",
