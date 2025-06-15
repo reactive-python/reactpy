@@ -1,17 +1,19 @@
 {
   "devDependencies": {
-    "@eslint/eslintrc": "^3.2.0",
-    "@eslint/js": "^9.18.0",
-    "@typescript-eslint/eslint-plugin": "^8.21.0",
-    "@typescript-eslint/parser": "^8.21.0",
+    "@eslint/js": "^9.29.0",
+    "bun-types": "^1.2.16",
     "eslint": "^9.18.0",
-    "eslint-plugin-react": "^7.37.4",
+    "eslint-config-preact": "^1.5.0",
     "globals": "^15.14.0",
-    "prettier": "^3.4.2"
+    "prettier": "^3.4.2",
+    "typescript-eslint": "^8.34.0"
+  },
+  "eslintConfig": {
+    "extends": "preact"
   },
   "license": "MIT",
   "scripts": {
-    "lint": "prettier --check . && eslint",
-    "format": "prettier --write . && eslint --fix"
+    "format": "prettier --write . && eslint --fix",
+    "lint": "prettier --check . && eslint"
   }
 }

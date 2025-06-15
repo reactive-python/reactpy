@@ -1,6 +1,6 @@
 import { set as setJsonPointer } from "json-pointer";
 import type { ChangeEvent, MutableRefObject } from "preact/compat";
-import { createContext, createElement, Fragment } from "preact";
+import { createContext, createElement, Fragment, type JSX } from "preact";
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
 import type {
   ImportSourceBinding,
