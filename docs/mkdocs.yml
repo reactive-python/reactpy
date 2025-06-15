@@ -34,7 +34,7 @@ nav:
                 - Updating Objects in State 🚧: learn/updating-objects-in-state.md
                 - Updating Arrays in State 🚧: learn/updating-arrays-in-state.md
           - Managing State:
-                - Reacting to Input with State 🚧: learn/reacting-to-input-with-state.md
+                - Reacting to Input with State: learn/reacting-to-input-with-state.md
                 - Choosing the State Structure 🚧: learn/choosing-the-state-structure.md
                 - Sharing State Between Components 🚧: learn/sharing-state-between-components.md
                 - Preserving and Resetting State 🚧: learn/preserving-and-resetting-state.md
