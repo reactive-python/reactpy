@@ -7,7 +7,7 @@ from reactpy.executors.utils import server_side_component_html
 from reactpy.pyscript.utils import pyscript_component_html, pyscript_setup_html
 
 
-class Jinja(StandaloneTag):  # type: ignore
+class ReactPyJinja(StandaloneTag):  # type: ignore
     safe_output = True
     tags: ClassVar[set[str]] = {"component", "pyscript_component", "pyscript_setup"}
 

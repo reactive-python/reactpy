@@ -18,11 +18,11 @@ Unreleased
 **Added**
 
 - :pull:`1113` - Added ``reactpy.executors.asgi.ReactPy`` that can be used to run ReactPy in standalone mode via ASGI.
-- :pull:`1269` - Added ``reactpy.executors.asgi.ReactPyPyodide`` that can be used to run ReactPy in standalone mode via ASGI, but rendered entirely client-sided.
+- :pull:`1269` - Added ``reactpy.executors.asgi.ReactPyCsr`` that can be used to run ReactPy in standalone mode via ASGI, but rendered entirely client-sided.
 - :pull:`1113` - Added ``reactpy.executors.asgi.ReactPyMiddleware`` that can be used to utilize ReactPy within any ASGI compatible framework.
-- :pull:`1269` - Added ``reactpy.templatetags.Jinja`` that can be used alongside ``ReactPyMiddleware`` to embed several ReactPy components into your existing application. This includes the following template tags: ``{% component %}``, ``{% pyscript_component %}``, and ``{% pyscript_setup %}``.
+- :pull:`1269` - Added ``reactpy.templatetags.ReactPyJinja`` that can be used alongside ``ReactPyMiddleware`` to embed several ReactPy components into your existing application. This includes the following template tags: ``{% component %}``, ``{% pyscript_component %}``, and ``{% pyscript_setup %}``.
 - :pull:`1269` - Added ``reactpy.pyscript_component`` that can be used to embed ReactPy components into your existing application.
-- :pull:`1113` - Added ``uvicorn`` and ``jinja`` installation extras (for example ``pip install reactpy[jinja]``).
+- :pull:`1113` - Added ``asgi`` and ``jinja`` installation extras (for example ``pip install reactpy[asgi, jinja]``).
 - :pull:`1113` - Added support for Python 3.12 and 3.13.
 - :pull:`1264` - Added ``reactpy.use_async_effect`` hook.
 - :pull:`1267` - Added ``shutdown_timeout`` parameter to the ``reactpy.use_async_effect`` hook.
@@ -72,8 +72,8 @@ Unreleased
 **Fixed**
 
 - :pull:`1239` - Fixed a bug where script elements would not render to the DOM as plain text.
-- :pull:`1271` - Fixed a bug where the ``key`` property provided via server-side ReactPy code was failing to propagate to the front-end JavaScript component.
-- :pull:`1254` - Fixed a bug where ``RuntimeError("Hook stack is in an invalid state")`` errors would be provided when using a webserver that reuses threads.
+- :pull:`1271` - Fixed a bug where the ``key`` property provided within server-side ReactPy code was failing to propagate to the front-end JavaScript components.
+- :pull:`1254` - Fixed a bug where ``RuntimeError("Hook stack is in an invalid state")`` errors could be generated when using a webserver that reuses threads.
 
 v1.1.0
 ------
