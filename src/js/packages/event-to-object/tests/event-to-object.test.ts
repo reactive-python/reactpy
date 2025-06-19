@@ -1,14 +1,10 @@
 // @ts-ignore
 import { window } from "./tooling/setup";
-import { test } from "uvu";
+import { test, expect } from "bun:test";
 import { Event } from "happy-dom";
+import convert from "../src/index";
 import { checkEventConversion } from "./tooling/check";
-import {
-  mockElementObject,
-  mockGamepad,
-  mockTouch,
-  mockTouchObject,
-} from "./tooling/mock";
+import { mockGamepad, mockTouch, mockTouchObject } from "./tooling/mock";
 
 type SimpleTestCase<E extends Event> = {
   types: string[];
@@ -255,8 +251,8 @@ const simpleTestCases: SimpleTestCase<any>[] = [
       pressure: 0,
       tiltX: 0,
       tiltY: 0,
-      width: 0,
-      height: 0,
+      width: 1,
+      height: 1,
       isPrimary: false,
       twist: 0,
       tangentialPressure: 0,
@@ -360,14 +356,14 @@ test("adds text of current selection", () => {
   `;
   const start = document.getElementById("start");
   const end = document.getElementById("end");
-  window.getSelection()!.setBaseAndExtent(start!, 0, end!, 0);
+  window.getSelection()!.setBaseAndExtent(start! as any, 0, end! as any, 0);
   checkEventConversion(new window.Event("fake"), {
     type: "fake",
     selection: {
       type: "Range",
-      anchorNode: { ...mockElementObject, tagName: "P" },
+      anchorNode: {},
       anchorOffset: 0,
-      focusNode: { ...mockElementObject, tagName: "P" },
+      focusNode: {},
       focusOffset: 0,
       isCollapsed: false,
       rangeCount: 1,
@@ -378,4 +374,299 @@ test("adds text of current selection", () => {
   });
 });
 
-test.run();
+test("includes data-* attributes in dataset", () => {
+  const div = document.createElement("div");
+  div.setAttribute("data-test-value", "123");
+  div.setAttribute("data-other", "foo");
+
+  const event = new window.Event("click");
+  Object.defineProperty(event, "target", {
+    value: div,
+    enumerable: true,
+    writable: true,
+  });
+  Object.defineProperty(event, "currentTarget", {
+    value: div,
+    enumerable: true,
+    writable: true,
+  });
+
+  checkEventConversion(event, {
+    target: {
+      dataset: {
+        testValue: "123",
+        other: "foo",
+      },
+    },
+    currentTarget: {
+      dataset: {
+        testValue: "123",
+        other: "foo",
+      },
+    },
+  });
+});
+
+test("includes value and checked for radio and checkbox inputs", () => {
+  const radio = document.createElement("input");
+  radio.type = "radio";
+  radio.checked = true;
+
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = true;
+
+  const radioEvent = new window.Event("change");
+  Object.defineProperty(radioEvent, "target", {
+    value: radio,
+    enumerable: true,
+    writable: true,
+  });
+
+  checkEventConversion(radioEvent, {
+    target: {
+      value: "on",
+      checked: true,
+      type: "radio",
+    },
+  });
+
+  const checkboxEvent = new window.Event("change");
+  Object.defineProperty(checkboxEvent, "target", {
+    value: checkbox,
+    enumerable: true,
+    writable: true,
+  });
+
+  checkEventConversion(checkboxEvent, {
+    target: {
+      value: "on",
+      checked: true,
+      type: "checkbox",
+    },
+  });
+});
+
+test("excludes 'on' properties when missing", () => {
+  const div = document.createElement("div");
+  div.onclick = () => {};
+  // @ts-ignore
+  div.oncustom = null;
+
+  const event = new window.Event("click");
+  Object.defineProperty(event, "target", {
+    value: div,
+    enumerable: true,
+    writable: true,
+  });
+
+  const converted: any = convert(event);
+  expect(converted.target.onclick).toBeUndefined();
+  expect(converted.target.oncustom).toBeUndefined();
+});
+
+test("includes name property for inputs", () => {
+  const input = document.createElement("input");
+  input.name = "test-input";
+  input.value = "test-value";
+
+  const event = new window.Event("change");
+  Object.defineProperty(event, "target", {
+    value: input,
+    enumerable: true,
+    writable: true,
+  });
+
+  checkEventConversion(event, {
+    target: {
+      name: "test-input",
+      value: "test-value",
+    },
+  });
+});
+
+test("includes checked property for checkboxes", () => {
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+
+  // Test checked = true
+  checkbox.checked = true;
+  let event = new window.Event("change");
+  Object.defineProperty(event, "target", {
+    value: checkbox,
+    enumerable: true,
+    writable: true,
+  });
+
+  checkEventConversion(event, {
+    target: {
+      checked: true,
+      type: "checkbox",
+    },
+  });
+
+  // Test checked = false
+  checkbox.checked = false;
+  event = new window.Event("change");
+  Object.defineProperty(event, "target", {
+    value: checkbox,
+    enumerable: true,
+    writable: true,
+  });
+
+  checkEventConversion(event, {
+    target: {
+      checked: false,
+      type: "checkbox",
+    },
+  });
+});
+
+test("converts file input with files", () => {
+  const input = window.document.createElement("input");
+  input.type = "file";
+
+  // Create a mock file
+  const file = new window.File(["content"], "test.txt", {
+    type: "text/plain",
+    lastModified: 1234567890,
+  });
+
+  // Mock the files property
+  const mockFileList = {
+    0: file,
+    length: 1,
+    item: (index: number) => (index === 0 ? file : null),
+    [Symbol.iterator]: function* () {
+      yield file;
+    },
+  };
+
+  Object.defineProperty(input, "files", {
+    value: mockFileList,
+    writable: true,
+  });
+
+  const event = new window.Event("change");
+  Object.defineProperty(event, "target", {
+    value: input,
+    enumerable: true,
+    writable: true,
+  });
+
+  const converted: any = convert(event);
+
+  expect(converted.target.files).toBeDefined();
+  expect(converted.target.files.length).toBe(1);
+  expect(converted.target.files[0].name).toBe("test.txt");
+});
+
+test("converts form submission with file input", () => {
+  const form = window.document.createElement("form");
+  const input = window.document.createElement("input");
+  input.type = "file";
+  input.name = "myFile";
+
+  // Create a mock file
+  const file = new window.File(["content"], "test.txt", {
+    type: "text/plain",
+    lastModified: 1234567890,
+  });
+
+  // Mock the files property
+  const mockFileList = {
+    0: file,
+    length: 1,
+    item: (index: number) => (index === 0 ? file : null),
+    [Symbol.iterator]: function* () {
+      yield file;
+    },
+  };
+
+  Object.defineProperty(input, "files", {
+    value: mockFileList,
+    writable: true,
+  });
+
+  form.appendChild(input);
+
+  const event = new window.Event("submit");
+  Object.defineProperty(event, "target", {
+    value: form,
+    enumerable: true,
+    writable: true,
+  });
+
+  const converted: any = convert(event);
+
+  expect(converted.target.myFile).toBeDefined();
+  expect(converted.target.myFile.files).toBeDefined();
+  expect(converted.target.myFile.files.length).toBe(1);
+  expect(converted.target.myFile.files[0].name).toBe("test.txt");
+});
+
+test("handles recursive structures", () => {
+  // Direct recursion
+  const recursive: any = { a: 1 };
+  recursive.self = recursive;
+
+  const converted: any = convert(recursive);
+  expect(converted.a).toBe(1);
+  expect(converted.self).toBeUndefined();
+
+  // Indirect recursion
+  const indirect: any = { name: "root" };
+  const child: any = { name: "child" };
+  indirect.child = child;
+  child.parent = indirect;
+
+  const convertedIndirect: any = convert(indirect);
+  expect(convertedIndirect.name).toBe("root");
+  expect(convertedIndirect.child.name).toBe("child");
+  expect(convertedIndirect.child.parent).toBeUndefined();
+});
+
+test("handles shared references without stopping", () => {
+  const shared = { name: "shared" };
+  const root = {
+    left: { item: shared },
+    right: { item: shared },
+  };
+
+  const converted: any = convert(root);
+  expect(converted.left.item.name).toBe("shared");
+  expect(converted.right.item.name).toBe("shared");
+  expect(converted.left.item).not.toEqual({ __stop__: true });
+  expect(converted.right.item).not.toEqual({ __stop__: true });
+});
+
+test("handles recursive HTML node structures", () => {
+  const parent = window.document.createElement("div");
+  const child = window.document.createElement("span");
+  parent.appendChild(child);
+
+  // Add explicit circular references to ensure we test recursion
+  // even if standard DOM properties are not enumerable in this environment.
+  (parent as any).circular = parent;
+  (child as any).parentLink = parent;
+  (parent as any).childLink = child;
+
+  const converted: any = convert(parent);
+
+  // Verify explicit cycle is handled
+  expect(converted.circular).toBeUndefined();
+
+  // Verify child link is handled
+  if (converted.childLink) {
+    expect(converted.childLink.parentLink).toBeUndefined();
+  }
+
+  // If the DOM implementation enumerates parentNode, it should be handled gracefully
+  if (
+    converted.children &&
+    converted.children.length > 0 &&
+    converted.children[0].parentNode
+  ) {
+    expect(converted.children[0].parentNode).toBeUndefined();
+  }
+});

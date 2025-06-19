@@ -1,5 +1,8 @@
 {
-  "author": "Ryan Morshead",
+  "author": "Mark Bakhit",
+  "contributors": [
+    "Ryan Morshead"
+  ],
   "dependencies": {
     "json-pointer": "catalog:",
     "preact": "catalog:",

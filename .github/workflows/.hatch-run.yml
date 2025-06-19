@@ -43,7 +43,7 @@ jobs:
               with:
                   python-version: ${{ matrix.python-version }}
             - name: Install Python Dependencies
-              run: pip install --upgrade hatch uv
+              run: pip install hatch
             - name: Run Scripts
               env:
                   NPM_CONFIG_TOKEN: ${{ secrets.node-auth-token }}

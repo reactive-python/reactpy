@@ -49,6 +49,7 @@ Unreleased
 - :pull:`1281` - ``reactpy.core.vdom._CustomVdomDictConstructor`` has been moved to ``reactpy.types.CustomVdomConstructor``.
 - :pull:`1281` - ``reactpy.core.vdom._EllipsisRepr`` has been moved to ``reactpy.types.EllipsisRepr``.
 - :pull:`1281` - ``reactpy.types.VdomDictConstructor`` has been renamed to ``reactpy.types.VdomConstructor``.
+- :pull:`1196` - Rewrite the ``event-to-object`` package to be more robust at handling properties on events.
 
 **Removed**
 
