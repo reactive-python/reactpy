@@ -260,10 +260,10 @@ def test_string_to_reactpy_custom_transform():
 
 
 def test_non_html_tag_behavior():
-    source = "<my-tag data-x=something><my-other-tag key=a-key /></my-tag>"
+    source = "<mytag data-x=something><my-other-tag key=a-key /></mytag>"
 
     expected = {
-        "tagName": "my-tag",
+        "tagName": "mytag",
         "attributes": {"data-x": "something"},
         "children": [
             {"tagName": "my-other-tag", "attributes": {"key": "a-key"}, "key": "a-key"},
