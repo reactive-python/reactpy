@@ -118,7 +118,6 @@ def string_to_reactpy(
                 recover=not strict,
             ),
         )
-        return _etree_to_vdom(root_node, transforms, intercept_links)
     except etree.XMLSyntaxError as e:
         if strict:
             msg = (
@@ -129,6 +128,8 @@ def string_to_reactpy(
                 "Otherwise, repair your broken HTML and try again."
             )
             raise HTMLParseError(msg) from e
+    else:
+        return _etree_to_vdom(root_node, transforms, intercept_links)
 
 
 class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
