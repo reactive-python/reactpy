@@ -1,4 +1,4 @@
-# ruff: noqa: TC004, N802, N816, RUF006
+# ruff: noqa: N816, RUF006
 # type: ignore
 from typing import TYPE_CHECKING
 

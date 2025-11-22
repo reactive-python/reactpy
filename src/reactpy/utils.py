@@ -111,7 +111,7 @@ def string_to_reactpy(
     try:
         root_node: etree._Element = fromstring(
             html.strip(),
-            parser=etree.HTMLParser(
+            parser=etree.HTMLParser(  # type: ignore
                 remove_comments=True,
                 remove_pis=True,
                 remove_blank_text=True,
