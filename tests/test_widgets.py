@@ -125,7 +125,7 @@ async def test_use_linked_inputs_ignore_empty(display: DisplayFixture):
     input_1 = await display.page.wait_for_selector("#i_1")
     input_2 = await display.page.wait_for_selector("#i_2")
 
-    await input_1.type("1")
+    await input_1.type("1", delay=DEFAULT_TYPE_DELAY)
 
     poll_value = poll(lambda: value.current)
 
@@ -136,6 +136,6 @@ async def test_use_linked_inputs_ignore_empty(display: DisplayFixture):
 
     await poll_value.until_equals("1")
 
-    await input_2.type("2")
+    await input_2.type("2", delay=DEFAULT_TYPE_DELAY)
 
     await poll_value.until_equals("2")
