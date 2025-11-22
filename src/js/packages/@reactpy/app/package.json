@@ -1,14 +1,14 @@
 {
   "dependencies": {
-    "@reactpy/client": "file:../client",
-    "event-to-object": "file:../../event-to-object",
-    "preact": "^10.25.4"
+    "@reactpy/client": "catalog:",
+    "event-to-object": "catalog:",
+    "preact": "catalog:"
   },
   "description": "ReactPy's client-side entry point. This is strictly for internal use and is not designed to be distributed.",
   "devDependencies": {
-    "@pyscript/core": "^0.6",
-    "morphdom": "^2",
-    "typescript": "^5.8.3"
+    "@pyscript/core": "catalog:",
+    "morphdom": "catalog:",
+    "typescript": "catalog:"
   },
   "license": "MIT",
   "name": "@reactpy/app",
