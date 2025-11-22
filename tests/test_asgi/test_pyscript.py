@@ -9,14 +9,14 @@ from starlette.routing import Route
 from starlette.templating import Jinja2Templates
 
 from reactpy import html
-from reactpy.executors.asgi.pyscript import ReactPyPyscript
+from reactpy.executors.asgi.pyscript import ReactPyCsr
 from reactpy.testing import BackendFixture, DisplayFixture
 
 
 @pytest.fixture()
 async def display(page):
     """Override for the display fixture that uses ReactPyMiddleware."""
-    app = ReactPyPyscript(
+    app = ReactPyCsr(
         Path(__file__).parent / "pyscript_components" / "root.py",
         initial=html.div({"id": "loading"}, "Loading..."),
     )
@@ -29,7 +29,7 @@ async def display(page):
 @pytest.fixture()
 async def multi_file_display(page):
     """Override for the display fixture that uses ReactPyMiddleware."""
-    app = ReactPyPyscript(
+    app = ReactPyCsr(
         Path(__file__).parent / "pyscript_components" / "load_first.py",
         Path(__file__).parent / "pyscript_components" / "load_second.py",
         initial=html.div({"id": "loading"}, "Loading..."),
@@ -46,7 +46,7 @@ async def jinja_display(page):
     templates = Jinja2Templates(
         env=JinjaEnvironment(
             loader=JinjaFileSystemLoader("tests/templates"),
-            extensions=["reactpy.templatetags.Jinja"],
+            extensions=["reactpy.templatetags.ReactPyJinja"],
         )
     )
 
@@ -93,7 +93,7 @@ async def test_multi_file_components(multi_file_display: DisplayFixture):
 
 def test_bad_file_path():
     with pytest.raises(ValueError):
-        ReactPyPyscript()
+        ReactPyCsr()
 
 
 async def test_jinja_template_tag(jinja_display: DisplayFixture):

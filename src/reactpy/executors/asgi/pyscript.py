@@ -20,7 +20,7 @@ from reactpy.pyscript.utils import pyscript_component_html, pyscript_setup_html
 from reactpy.types import ReactPyConfig, VdomDict
 
 
-class ReactPyPyscript(ReactPy):
+class ReactPyCsr(ReactPy):
     def __init__(
         self,
         *file_paths: str | Path,
@@ -88,7 +88,7 @@ class ReactPyPyscript(ReactPy):
 class ReactPyPyscriptApp(ReactPyApp):
     """ReactPy's standalone ASGI application for Client-Side Rendering (CSR) via PyScript."""
 
-    parent: ReactPyPyscript
+    parent: ReactPyCsr
     _index_html = ""
     _etag = ""
     _last_modified = ""
