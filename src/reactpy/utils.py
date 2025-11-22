@@ -118,19 +118,17 @@ def string_to_reactpy(
                 recover=not strict,
             ),
         )
+        return _etree_to_vdom(root_node, transforms, intercept_links)
     except etree.XMLSyntaxError as e:
-        if not strict:
-            raise e  # nocov
-        msg = (
-            "An error has occurred while parsing the HTML.\n\n"
-            "This HTML may be malformatted, or may not perfectly adhere to HTML5.\n"
-            "If you believe the exception above was due to something intentional, you "
-            "can disable the strict parameter on string_to_reactpy().\n"
-            "Otherwise, repair your broken HTML and try again."
-        )
-        raise HTMLParseError(msg) from e
-
-    return _etree_to_vdom(root_node, transforms, intercept_links)
+        if strict:
+            msg = (
+                "An error has occurred while parsing the HTML.\n\n"
+                "This HTML may be malformatted, or may not perfectly adhere to HTML5.\n"
+                "If you believe the exception above was due to something intentional, you "
+                "can disable the strict parameter on string_to_reactpy().\n"
+                "Otherwise, repair your broken HTML and try again."
+            )
+            raise HTMLParseError(msg) from e
 
 
 class HTMLParseError(etree.LxmlSyntaxError):  # type: ignore[misc]
