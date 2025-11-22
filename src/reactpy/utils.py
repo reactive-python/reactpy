@@ -118,10 +118,10 @@ def string_to_reactpy(
                 recover=not strict,
             ),
         )
-    except etree.XMLSyntaxError as e:
+    except Exception as e:
         msg = (
             "An error has occurred while parsing the HTML.\n\n"
-            "This HTML may be malformatted, or may not perfectly adhere to HTML5.\n"
+            "This HTML may be malformatted, or may not adhere to the HTML5 spec.\n"
             "If you believe the exception above was due to something intentional, you "
             "can disable the strict parameter on string_to_reactpy().\n"
             "Otherwise, repair your broken HTML and try again."
