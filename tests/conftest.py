@@ -37,6 +37,7 @@ def pytest_addoption(parser: Parser) -> None:
 @pytest.fixture(autouse=True, scope="session")
 def install_playwright():
     subprocess.run(["playwright", "install", "chromium"], check=True)  # noqa: S607, S603
+    subprocess.run(["playwright", "install-deps"], check=True)  # noqa: S607, S603
 
 
 @pytest.fixture(autouse=True, scope="session")
