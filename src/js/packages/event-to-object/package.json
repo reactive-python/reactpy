@@ -1,7 +1,7 @@
 {
   "author": "Ryan Morshead",
   "dependencies": {
-    "json-pointer": "^0.6.2"
+    "json-pointer": "catalog:"
   },
   "description": "Converts a JavaScript events to JSON serializable objects.",
   "devDependencies": {
