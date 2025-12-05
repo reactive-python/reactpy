@@ -157,7 +157,7 @@ function classToObject(x: any, maxDepth: number): object {
   }
 
   // Explicitly include common input properties if they exist
-  const extraProps = ["value", "checked", "files", "type"];
+  const extraProps = ["value", "checked", "files", "type", "name"];
   for (const prop of extraProps) {
     if (
       x &&

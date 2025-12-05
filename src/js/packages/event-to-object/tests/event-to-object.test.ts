@@ -464,3 +464,23 @@ test("excludes 'on' properties when missing", () => {
   expect(converted.target.onclick).toBeUndefined();
   expect(converted.target.oncustom).toBeUndefined();
 });
+
+test("includes name property for inputs", () => {
+  const input = document.createElement("input");
+  input.name = "test-input";
+  input.value = "test-value";
+
+  const event = new window.Event("change");
+  Object.defineProperty(event, "target", {
+    value: input,
+    enumerable: true,
+    writable: true,
+  });
+
+  checkEventConversion(event, {
+    target: {
+      name: "test-input",
+      value: "test-value",
+    },
+  });
+});
