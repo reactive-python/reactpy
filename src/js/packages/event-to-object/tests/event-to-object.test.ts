@@ -484,3 +484,40 @@ test("includes name property for inputs", () => {
     },
   });
 });
+
+test("includes checked property for checkboxes", () => {
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+
+  // Test checked = true
+  checkbox.checked = true;
+  let event = new window.Event("change");
+  Object.defineProperty(event, "target", {
+    value: checkbox,
+    enumerable: true,
+    writable: true,
+  });
+
+  checkEventConversion(event, {
+    target: {
+      checked: true,
+      type: "checkbox",
+    },
+  });
+
+  // Test checked = false
+  checkbox.checked = false;
+  event = new window.Event("change");
+  Object.defineProperty(event, "target", {
+    value: checkbox,
+    enumerable: true,
+    writable: true,
+  });
+
+  checkEventConversion(event, {
+    target: {
+      checked: false,
+      type: "checkbox",
+    },
+  });
+});
