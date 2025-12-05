@@ -39,7 +39,9 @@ export function checkEventConversion(
           writable: true,
           configurable: true,
         });
-      } catch (e) {}
+      } catch {
+        // ignore
+      }
     }
   }
 
@@ -51,7 +53,9 @@ export function checkEventConversion(
       writable: true,
       configurable: true,
     });
-  } catch (e) {}
+  } catch {
+    // ignore
+  }
 
   // Patch undefined properties that are expected to be 0 or null
   const defaults: any = {
@@ -81,7 +85,9 @@ export function checkEventConversion(
           writable: true,
           configurable: true,
         });
-      } catch (e) {}
+      } catch {
+        // ignore
+      }
     }
   }
 

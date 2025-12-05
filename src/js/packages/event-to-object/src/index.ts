@@ -3,7 +3,7 @@ const maxDepthSignal = { __stop__: true };
 /**
  * Convert any class object (such as `Event`) to a plain object.
  */
-export function convert(
+export default function convert(
   classObject: { [key: string]: any },
   maxDepth: number = 3,
 ): object {
