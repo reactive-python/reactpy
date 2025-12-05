@@ -1,422 +1,167 @@
-import * as e from "./events";
+const maxDepthSignal = { __stop__: true };
 
-export default function convert<E extends Event>(
-  event: E,
-):
-  | {
-      [K in keyof e.EventToObjectMap]: e.EventToObjectMap[K] extends [
-        E,
-        infer P,
-      ]
-        ? P
-        : never;
-    }[keyof e.EventToObjectMap]
-  | e.EventObject
-  | null {
-  return event.type in eventConverters
-    ? eventConverters[event.type](event)
-    : convertEvent(event);
-}
-
-const convertEvent = (event: Event): e.EventObject => ({
-  /** Returns true or false depending on how event was initialized. True if event goes
-   * through its target's ancestors in reverse tree order, and false otherwise. */
-  bubbles: event.bubbles,
-  composed: event.composed,
-  currentTarget: convertElement(event.currentTarget),
-  defaultPrevented: event.defaultPrevented,
-  eventPhase: event.eventPhase,
-  isTrusted: event.isTrusted,
-  target: convertElement(event.target),
-  timeStamp: event.timeStamp,
-  type: event.type,
-  selection: convertSelection(window.getSelection()),
-});
-
-const convertClipboardEvent = (
-  event: ClipboardEvent,
-): e.ClipboardEventObject => ({
-  ...convertEvent(event),
-  clipboardData: convertDataTransferObject(event.clipboardData),
-});
-
-const convertCompositionEvent = (
-  event: CompositionEvent,
-): e.CompositionEventObject => ({
-  ...convertUiEvent(event),
-  data: event.data,
-});
-
-const convertInputEvent = (event: InputEvent): e.InputEventObject => ({
-  ...convertUiEvent(event),
-  data: event.data,
-  inputType: event.inputType,
-  dataTransfer: convertDataTransferObject(event.dataTransfer),
-  isComposing: event.isComposing,
-});
-
-const convertKeyboardEvent = (event: KeyboardEvent): e.KeyboardEventObject => ({
-  ...convertUiEvent(event),
-  code: event.code,
-  isComposing: event.isComposing,
-  altKey: event.altKey,
-  ctrlKey: event.ctrlKey,
-  key: event.key,
-  location: event.location,
-  metaKey: event.metaKey,
-  repeat: event.repeat,
-  shiftKey: event.shiftKey,
-});
-
-const convertMouseEvent = (event: MouseEvent): e.MouseEventObject => ({
-  ...convertEvent(event),
-  altKey: event.altKey,
-  button: event.button,
-  buttons: event.buttons,
-  clientX: event.clientX,
-  clientY: event.clientY,
-  ctrlKey: event.ctrlKey,
-  metaKey: event.metaKey,
-  pageX: event.pageX,
-  pageY: event.pageY,
-  screenX: event.screenX,
-  screenY: event.screenY,
-  shiftKey: event.shiftKey,
-  movementX: event.movementX,
-  movementY: event.movementY,
-  offsetX: event.offsetX,
-  offsetY: event.offsetY,
-  x: event.x,
-  y: event.y,
-  relatedTarget: convertElement(event.relatedTarget),
-});
-
-const convertTouchEvent = (event: TouchEvent): e.TouchEventObject => ({
-  ...convertUiEvent(event),
-  altKey: event.altKey,
-  ctrlKey: event.ctrlKey,
-  metaKey: event.metaKey,
-  shiftKey: event.shiftKey,
-  touches: Array.from(event.touches).map(convertTouch),
-  changedTouches: Array.from(event.changedTouches).map(convertTouch),
-  targetTouches: Array.from(event.targetTouches).map(convertTouch),
-});
-
-const convertUiEvent = (event: UIEvent): e.UIEventObject => ({
-  ...convertEvent(event),
-  detail: event.detail,
-});
-
-const convertAnimationEvent = (
-  event: AnimationEvent,
-): e.AnimationEventObject => ({
-  ...convertEvent(event),
-  animationName: event.animationName,
-  pseudoElement: event.pseudoElement,
-  elapsedTime: event.elapsedTime,
-});
-
-const convertTransitionEvent = (
-  event: TransitionEvent,
-): e.TransitionEventObject => ({
-  ...convertEvent(event),
-  propertyName: event.propertyName,
-  pseudoElement: event.pseudoElement,
-  elapsedTime: event.elapsedTime,
-});
-
-const convertFocusEvent = (event: FocusEvent): e.FocusEventObject => ({
-  ...convertUiEvent(event),
-  relatedTarget: convertElement(event.relatedTarget),
-});
-
-const convertDeviceOrientationEvent = (
-  event: DeviceOrientationEvent,
-): e.DeviceOrientationEventObject => ({
-  ...convertEvent(event),
-  absolute: event.absolute,
-  alpha: event.alpha,
-  beta: event.beta,
-  gamma: event.gamma,
-});
-
-const convertDragEvent = (event: DragEvent): e.DragEventObject => ({
-  ...convertMouseEvent(event),
-  dataTransfer: convertDataTransferObject(event.dataTransfer),
-});
-
-const convertGamepadEvent = (event: GamepadEvent): e.GamepadEventObject => ({
-  ...convertEvent(event),
-  gamepad: convertGamepad(event.gamepad),
-});
-
-const convertPointerEvent = (event: PointerEvent): e.PointerEventObject => ({
-  ...convertMouseEvent(event),
-  pointerId: event.pointerId,
-  width: event.width,
-  height: event.height,
-  pressure: event.pressure,
-  tiltX: event.tiltX,
-  tiltY: event.tiltY,
-  pointerType: event.pointerType,
-  isPrimary: event.isPrimary,
-  tangentialPressure: event.tangentialPressure,
-  twist: event.twist,
-});
-
-const convertWheelEvent = (event: WheelEvent): e.WheelEventObject => ({
-  ...convertMouseEvent(event),
-  deltaMode: event.deltaMode,
-  deltaX: event.deltaX,
-  deltaY: event.deltaY,
-  deltaZ: event.deltaZ,
-});
-
-const convertSubmitEvent = (event: SubmitEvent): e.SubmitEventObject => ({
-  ...convertEvent(event),
-  submitter: convertElement(event.submitter),
-});
-
-const eventConverters: { [key: string]: (event: any) => any } = {
-  // animation events
-  animationcancel: convertAnimationEvent,
-  animationend: convertAnimationEvent,
-  animationiteration: convertAnimationEvent,
-  animationstart: convertAnimationEvent,
-  // input events
-  beforeinput: convertInputEvent,
-  // composition events
-  compositionend: convertCompositionEvent,
-  compositionstart: convertCompositionEvent,
-  compositionupdate: convertCompositionEvent,
-  // clipboard events
-  copy: convertClipboardEvent,
-  cut: convertClipboardEvent,
-  paste: convertClipboardEvent,
-  // device orientation events
-  deviceorientation: convertDeviceOrientationEvent,
-  // drag events
-  drag: convertDragEvent,
-  dragend: convertDragEvent,
-  dragenter: convertDragEvent,
-  dragleave: convertDragEvent,
-  dragover: convertDragEvent,
-  dragstart: convertDragEvent,
-  drop: convertDragEvent,
-  // ui events
-  error: convertUiEvent,
-  // focus events
-  blur: convertFocusEvent,
-  focus: convertFocusEvent,
-  focusin: convertFocusEvent,
-  focusout: convertFocusEvent,
-  // gamepad events
-  gamepadconnected: convertGamepadEvent,
-  gamepaddisconnected: convertGamepadEvent,
-  // keyboard events
-  keydown: convertKeyboardEvent,
-  keypress: convertKeyboardEvent,
-  keyup: convertKeyboardEvent,
-  // mouse events
-  auxclick: convertMouseEvent,
-  click: convertMouseEvent,
-  dblclick: convertMouseEvent,
-  contextmenu: convertMouseEvent,
-  mousedown: convertMouseEvent,
-  mouseenter: convertMouseEvent,
-  mouseleave: convertMouseEvent,
-  mousemove: convertMouseEvent,
-  mouseout: convertMouseEvent,
-  mouseover: convertMouseEvent,
-  mouseup: convertMouseEvent,
-  scroll: convertMouseEvent,
-  // pointer events
-  gotpointercapture: convertPointerEvent,
-  lostpointercapture: convertPointerEvent,
-  pointercancel: convertPointerEvent,
-  pointerdown: convertPointerEvent,
-  pointerenter: convertPointerEvent,
-  pointerleave: convertPointerEvent,
-  pointerlockchange: convertPointerEvent,
-  pointerlockerror: convertPointerEvent,
-  pointermove: convertPointerEvent,
-  pointerout: convertPointerEvent,
-  pointerover: convertPointerEvent,
-  pointerup: convertPointerEvent,
-  // submit events
-  submit: convertSubmitEvent,
-  // touch events
-  touchcancel: convertTouchEvent,
-  touchend: convertTouchEvent,
-  touchmove: convertTouchEvent,
-  touchstart: convertTouchEvent,
-  // transition events
-  transitioncancel: convertTransitionEvent,
-  transitionend: convertTransitionEvent,
-  transitionrun: convertTransitionEvent,
-  transitionstart: convertTransitionEvent,
-  // wheel events
-  wheel: convertWheelEvent,
-};
-
-function convertElement(element: EventTarget | HTMLElement | null): any {
-  if (!element || !("tagName" in element)) {
-    return null;
+/**
+ * Convert any class object (such as `Event`) to a plain object.
+ */
+export function convert(
+  classObject: { [key: string]: any },
+  maxDepth: number = 3,
+): object {
+  // Begin conversion
+  const convertedObj: { [key: string]: any } = {};
+  for (const key in classObject) {
+    // Skip keys that cannot be converted
+    if (shouldIgnoreValue(classObject[key], key)) {
+      continue;
+    }
+    // Handle objects (potentially cyclical)
+    else if (typeof classObject[key] === "object") {
+      const result = deepCloneClass(classObject[key], maxDepth);
+      convertedObj[key] = result;
+    }
+    // Handle simple types (non-cyclical)
+    else {
+      convertedObj[key] = classObject[key];
+    }
   }
 
-  const htmlElement = element as HTMLElement;
+  // Special case: Event selection
+  if (
+    typeof window !== "undefined" &&
+    window.Event &&
+    classObject instanceof window.Event
+  ) {
+    convertedObj["selection"] = serializeSelection(maxDepth);
+  }
 
-  return {
-    ...convertGenericElement(htmlElement),
-    ...(htmlElement.tagName in elementConverters
-      ? elementConverters[htmlElement.tagName](htmlElement)
-      : {}),
-  };
+  return convertedObj;
 }
 
-const convertGenericElement = (element: HTMLElement) => ({
-  tagName: element.tagName,
-  boundingClientRect: { ...element.getBoundingClientRect() },
-});
-
-const convertMediaElement = (element: HTMLMediaElement) => ({
-  currentTime: element.currentTime,
-  duration: element.duration,
-  ended: element.ended,
-  error: element.error,
-  seeking: element.seeking,
-  volume: element.volume,
-});
-
-const elementConverters: { [key: string]: (element: any) => any } = {
-  AUDIO: convertMediaElement,
-  BUTTON: (element: HTMLButtonElement) => ({ value: element.value }),
-  DATA: (element: HTMLDataElement) => ({ value: element.value }),
-  DATALIST: (element: HTMLDataListElement) => ({
-    options: Array.from(element.options).map(elementConverters["OPTION"]),
-  }),
-  DIALOG: (element: HTMLDialogElement) => ({
-    returnValue: element.returnValue,
-  }),
-  FIELDSET: (element: HTMLFieldSetElement) => ({
-    elements: Array.from(element.elements).map(convertElement),
-  }),
-  FORM: (element: HTMLFormElement) => ({
-    elements: Array.from(element.elements).map(convertElement),
-  }),
-  INPUT: (element: HTMLInputElement) => ({
-    value: element.value,
-    checked: element.checked,
-  }),
-  METER: (element: HTMLMeterElement) => ({ value: element.value }),
-  OPTION: (element: HTMLOptionElement) => ({ value: element.value }),
-  OUTPUT: (element: HTMLOutputElement) => ({ value: element.value }),
-  PROGRESS: (element: HTMLProgressElement) => ({ value: element.value }),
-  SELECT: (element: HTMLSelectElement) => ({ value: element.value }),
-  TEXTAREA: (element: HTMLTextAreaElement) => ({ value: element.value }),
-  VIDEO: convertMediaElement,
-};
-
-const convertGamepad = (gamepad: Gamepad): e.GamepadObject => ({
-  axes: Array.from(gamepad.axes),
-  buttons: Array.from(gamepad.buttons).map(convertGamepadButton),
-  connected: gamepad.connected,
-  id: gamepad.id,
-  index: gamepad.index,
-  mapping: gamepad.mapping,
-  timestamp: gamepad.timestamp,
-});
-
-const convertGamepadButton = (
-  button: GamepadButton,
-): e.GamepadButtonObject => ({
-  pressed: button.pressed,
-  touched: button.touched,
-  value: button.value,
-});
-
-const convertFile = (file: File) => ({
-  lastModified: file.lastModified,
-  name: file.name,
-  size: file.size,
-  type: file.type,
-});
-
-function convertDataTransferObject(
-  dataTransfer: DataTransfer | null,
-): e.DataTransferObject | null {
-  if (!dataTransfer) {
+/**
+ * Serialize the current window selection.
+ */
+function serializeSelection(maxDepth: number): object | null {
+  if (typeof window === "undefined" || !window.getSelection) {
     return null;
   }
-  const { dropEffect, effectAllowed, files, items, types } = dataTransfer;
-  return {
-    dropEffect,
-    effectAllowed,
-    files: Array.from(files).map(convertFile),
-    items: Array.from(items).map((item) => ({
-      kind: item.kind,
-      type: item.type,
-    })),
-    types: Array.from(types),
-  };
-}
-
-function convertSelection(
-  selection: Selection | null,
-): e.SelectionObject | null {
+  const selection = window.getSelection();
   if (!selection) {
     return null;
   }
-  const {
-    type,
-    anchorNode,
-    anchorOffset,
-    focusNode,
-    focusOffset,
-    isCollapsed,
-    rangeCount,
-  } = selection;
-  if (type === "None") {
-    return null;
-  }
   return {
-    type,
-    anchorNode: convertElement(anchorNode),
-    anchorOffset,
-    focusNode: convertElement(focusNode),
-    focusOffset,
-    isCollapsed,
-    rangeCount,
+    type: selection.type,
+    anchorNode: selection.anchorNode
+      ? deepCloneClass(selection.anchorNode, maxDepth)
+      : null,
+    anchorOffset: selection.anchorOffset,
+    focusNode: selection.focusNode
+      ? deepCloneClass(selection.focusNode, maxDepth)
+      : null,
+    focusOffset: selection.focusOffset,
+    isCollapsed: selection.isCollapsed,
+    rangeCount: selection.rangeCount,
     selectedText: selection.toString(),
   };
 }
 
-function convertTouch({
-  identifier,
-  pageX,
-  pageY,
-  screenX,
-  screenY,
-  clientX,
-  clientY,
-  force,
-  radiusX,
-  radiusY,
-  rotationAngle,
-  target,
-}: Touch): e.TouchObject {
-  return {
-    identifier,
-    pageX,
-    pageY,
-    screenX,
-    screenY,
-    clientX,
-    clientY,
-    force,
-    radiusX,
-    radiusY,
-    rotationAngle,
-    target: convertElement(target),
-  };
+/**
+ * Recursively convert a class-based object to a plain object.
+ */
+function deepCloneClass(x: any, _maxDepth: number): object {
+  const maxDepth = _maxDepth - 1;
+
+  // Return an indicator if maxDepth is reached
+  if (maxDepth <= 0 && typeof x === "object") {
+    return maxDepthSignal;
+  }
+
+  // Convert array-like class (e.g., NodeList, ClassList, HTMLCollection)
+  if (
+    Array.isArray(x) ||
+    (typeof x?.length === "number" &&
+      typeof x[Symbol.iterator] === "function" &&
+      !Object.prototype.toString.call(x).includes("Map") &&
+      !(x instanceof CSSStyleDeclaration))
+  ) {
+    return classToArray(x, maxDepth);
+  }
+
+  // Convert mapping-like class (e.g., Node, Map, Set)
+  return classToObject(x, maxDepth);
+}
+
+/**
+ * Convert an array-like class to a plain array.
+ */
+function classToArray(x: any, maxDepth: number): Array<any> {
+  const result: Array<any> = [];
+  for (let i = 0; i < x.length; i++) {
+    // Skip anything that should not be converted
+    if (shouldIgnoreValue(x[i])) {
+      continue;
+    }
+    // Only push objects as if we haven't reached max depth
+    else if (typeof x[i] === "object") {
+      const converted = deepCloneClass(x[i], maxDepth);
+      if (converted !== maxDepthSignal) {
+        result.push(converted);
+      }
+    }
+    // Add plain values if not skippable
+    else {
+      result.push(x[i]);
+    }
+  }
+  return result;
+}
+
+/**
+ * Convert a mapping-like class to a plain JSON object.
+ * We must iterate through it with a for-loop in order to gain
+ * access to properties from all parent classes.
+ */
+function classToObject(x: any, maxDepth: number): object {
+  const result: { [key: string]: any } = {};
+  for (const key in x) {
+    // Skip anything that should not be converted
+    if (shouldIgnoreValue(x[key], key, x)) {
+      continue;
+    }
+    // Add objects as a property if we haven't reached max depth
+    else if (typeof x[key] === "object") {
+      const converted = deepCloneClass(x[key], maxDepth);
+      if (converted !== maxDepthSignal) {
+        result[key] = converted;
+      }
+    }
+    // Add plain values if not skippable
+    else {
+      result[key] = x[key];
+    }
+  }
+  return result;
+}
+
+/**
+ * Check if a value is non-convertible or holds minimal value.
+ */
+function shouldIgnoreValue(
+  value: any,
+  keyName: string = "",
+  parent: any = undefined,
+): boolean {
+  return (
+    value === null ||
+    value === undefined ||
+    typeof value === "function" ||
+    value instanceof CSSStyleSheet ||
+    value instanceof Window ||
+    value instanceof Document ||
+    keyName === "view" ||
+    keyName === "size" ||
+    keyName === "length" ||
+    (keyName.length > 0 && keyName.toUpperCase() === keyName) ||
+    keyName.startsWith("__") ||
+    (parent instanceof CSSStyleDeclaration && value === "")
+  );
 }
