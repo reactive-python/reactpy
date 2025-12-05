@@ -305,6 +305,8 @@ lint.ignore = [
   "PLR0912",
   "PLR0913",
   "PLR0915",
+  # Allow imports anywhere
+  "PLC0415",
 ]
 lint.unfixable = [
   # Don't touch unused imports

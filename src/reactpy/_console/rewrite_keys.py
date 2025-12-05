@@ -100,9 +100,7 @@ def log_could_not_rewrite(file: Path, tree: ast.AST) -> None:
         else:
             continue
 
-        if (
-            name == "vdom"
-            or (hasattr(html, name)
-            and any(kw.arg == "key" for kw in node.keywords))
+        if name == "vdom" or (
+            hasattr(html, name) and any(kw.arg == "key" for kw in node.keywords)
         ):
             click.echo(f"Unable to rewrite usage at {file}:{node.lineno}")

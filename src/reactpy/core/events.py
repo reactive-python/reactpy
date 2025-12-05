@@ -69,10 +69,7 @@ def event(
             prevent_default,
         )
 
-    if function is not None:
-        return setup(function)
-    else:
-        return setup
+    return setup(function) if function is not None else setup
 
 
 class EventHandler:
@@ -109,18 +106,20 @@ class EventHandler:
         self.stop_propagation = stop_propagation
         self.target = target
 
+    __hash__ = None  # type: ignore
+
     def __eq__(self, other: object) -> bool:
         undefined = object()
-        for attr in (
-            "function",
-            "prevent_default",
-            "stop_propagation",
-            "target",
-        ):
-            if not attr.startswith("_"):
-                if not getattr(other, attr, undefined) == getattr(self, attr):
-                    return False
-        return True
+        return not any(
+            not attr.startswith("_")
+            and not getattr(other, attr, undefined) == getattr(self, attr)
+            for attr in (
+                "function",
+                "prevent_default",
+                "stop_propagation",
+                "target",
+            )
+        )
 
     def __repr__(self) -> str:
         public_names = [name for name in self.__slots__ if not name.startswith("_")]
