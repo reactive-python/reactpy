@@ -1,7 +1,8 @@
 // @ts-ignore
 import { window } from "./tooling/setup";
-import { test } from "bun:test";
+import { test, expect } from "bun:test";
 import { Event } from "happy-dom";
+import convert from "../src/index";
 import { checkEventConversion } from "./tooling/check";
 import { mockGamepad, mockTouch, mockTouchObject } from "./tooling/mock";
 
@@ -404,4 +405,62 @@ test("includes data-* attributes in dataset", () => {
       },
     },
   });
+});
+
+test("includes value and checked for radio and checkbox inputs", () => {
+  const radio = document.createElement("input");
+  radio.type = "radio";
+  radio.checked = true;
+
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = true;
+
+  const radioEvent = new window.Event("change");
+  Object.defineProperty(radioEvent, "target", {
+    value: radio,
+    enumerable: true,
+    writable: true,
+  });
+
+  checkEventConversion(radioEvent, {
+    target: {
+      value: "on",
+      checked: true,
+      type: "radio",
+    },
+  });
+
+  const checkboxEvent = new window.Event("change");
+  Object.defineProperty(checkboxEvent, "target", {
+    value: checkbox,
+    enumerable: true,
+    writable: true,
+  });
+
+  checkEventConversion(checkboxEvent, {
+    target: {
+      value: "on",
+      checked: true,
+      type: "checkbox",
+    },
+  });
+});
+
+test("excludes 'on' properties when missing", () => {
+  const div = document.createElement("div");
+  div.onclick = () => {};
+  // @ts-ignore
+  div.oncustom = null;
+
+  const event = new window.Event("click");
+  Object.defineProperty(event, "target", {
+    value: div,
+    enumerable: true,
+    writable: true,
+  });
+
+  const converted: any = convert(event);
+  expect(converted.target.onclick).toBeUndefined();
+  expect(converted.target.oncustom).toBeUndefined();
 });

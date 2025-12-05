@@ -156,6 +156,29 @@ function classToObject(x: any, maxDepth: number): object {
     }
   }
 
+  // Explicitly include common input properties if they exist
+  const extraProps = ["value", "checked", "files", "type"];
+  for (const prop of extraProps) {
+    if (
+      x &&
+      typeof x === "object" &&
+      prop in x &&
+      !Object.prototype.hasOwnProperty.call(result, prop)
+    ) {
+      const val = x[prop];
+      if (!shouldIgnoreValue(val, prop, x)) {
+        if (typeof val === "object") {
+          const converted = deepCloneClass(val, maxDepth);
+          if (converted !== maxDepthSignal) {
+            result[prop] = converted;
+          }
+        } else {
+          result[prop] = val;
+        }
+      }
+    }
+  }
+
   return result;
 }
 
