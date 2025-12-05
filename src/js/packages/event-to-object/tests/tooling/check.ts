@@ -2,7 +2,7 @@ import { expect } from "bun:test";
 import { Event } from "happy-dom";
 // @ts-ignore
 import lodash from "lodash";
-import { convert } from "../../src/index";
+import convert from "../../src/index";
 
 export function checkEventConversion(
   givenEvent: Event,

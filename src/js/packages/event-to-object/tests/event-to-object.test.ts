@@ -372,3 +372,36 @@ test("adds text of current selection", () => {
     isTrusted: undefined,
   });
 });
+
+test("includes data-* attributes in dataset", () => {
+  const div = document.createElement("div");
+  div.setAttribute("data-test-value", "123");
+  div.setAttribute("data-other", "foo");
+
+  const event = new window.Event("click");
+  Object.defineProperty(event, "target", {
+    value: div,
+    enumerable: true,
+    writable: true,
+  });
+  Object.defineProperty(event, "currentTarget", {
+    value: div,
+    enumerable: true,
+    writable: true,
+  });
+
+  checkEventConversion(event, {
+    target: {
+      dataset: {
+        testValue: "123",
+        other: "foo",
+      },
+    },
+    currentTarget: {
+      dataset: {
+        testValue: "123",
+        other: "foo",
+      },
+    },
+  });
+});

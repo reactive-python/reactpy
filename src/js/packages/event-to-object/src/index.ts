@@ -139,6 +139,23 @@ function classToObject(x: any, maxDepth: number): object {
       result[key] = x[key];
     }
   }
+
+  // Explicitly include dataset if it exists (it might not be enumerable)
+  if (
+    x &&
+    typeof x === "object" &&
+    "dataset" in x &&
+    !Object.prototype.hasOwnProperty.call(result, "dataset")
+  ) {
+    const dataset = x["dataset"];
+    if (!shouldIgnoreValue(dataset, "dataset", x)) {
+      const converted = deepCloneClass(dataset, maxDepth);
+      if (converted !== maxDepthSignal) {
+        result["dataset"] = converted;
+      }
+    }
+  }
+
   return result;
 }
 
