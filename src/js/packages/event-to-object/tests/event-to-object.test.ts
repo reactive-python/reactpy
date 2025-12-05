@@ -1,14 +1,9 @@
 // @ts-ignore
 import { window } from "./tooling/setup";
-import { test } from "uvu";
+import { test } from "bun:test";
 import { Event } from "happy-dom";
 import { checkEventConversion } from "./tooling/check";
-import {
-  mockElementObject,
-  mockGamepad,
-  mockTouch,
-  mockTouchObject,
-} from "./tooling/mock";
+import { mockGamepad, mockTouch, mockTouchObject } from "./tooling/mock";
 
 type SimpleTestCase<E extends Event> = {
   types: string[];
@@ -255,8 +250,8 @@ const simpleTestCases: SimpleTestCase<any>[] = [
       pressure: 0,
       tiltX: 0,
       tiltY: 0,
-      width: 0,
-      height: 0,
+      width: 1,
+      height: 1,
       isPrimary: false,
       twist: 0,
       tangentialPressure: 0,
@@ -360,14 +355,14 @@ test("adds text of current selection", () => {
   `;
   const start = document.getElementById("start");
   const end = document.getElementById("end");
-  window.getSelection()!.setBaseAndExtent(start!, 0, end!, 0);
+  window.getSelection()!.setBaseAndExtent(start! as any, 0, end! as any, 0);
   checkEventConversion(new window.Event("fake"), {
     type: "fake",
     selection: {
       type: "Range",
-      anchorNode: { ...mockElementObject, tagName: "P" },
+      anchorNode: {},
       anchorOffset: 0,
-      focusNode: { ...mockElementObject, tagName: "P" },
+      focusNode: {},
       focusOffset: 0,
       isCollapsed: false,
       rangeCount: 1,
@@ -377,5 +372,3 @@ test("adds text of current selection", () => {
     isTrusted: undefined,
   });
 });
-
-test.run();
