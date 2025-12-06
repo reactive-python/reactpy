@@ -7,6 +7,9 @@ export default function convert(
   classObject: { [key: string]: any },
   maxDepth: number = 10,
 ): object {
+  const visited = new WeakSet<any>();
+  visited.add(classObject);
+
   // Begin conversion
   const convertedObj: { [key: string]: any } = {};
   for (const key in classObject) {
@@ -16,8 +19,10 @@ export default function convert(
     }
     // Handle objects (potentially cyclical)
     else if (typeof classObject[key] === "object") {
-      const result = deepCloneClass(classObject[key], maxDepth);
-      convertedObj[key] = result;
+      const result = deepCloneClass(classObject[key], maxDepth, visited);
+      if (result !== maxDepthSignal) {
+        convertedObj[key] = result;
+      }
     }
     // Handle simple types (non-cyclical)
     else {
@@ -31,7 +36,7 @@ export default function convert(
     window.Event &&
     classObject instanceof window.Event
   ) {
-    convertedObj["selection"] = serializeSelection(maxDepth);
+    convertedObj["selection"] = serializeSelection(maxDepth, visited);
   }
 
   return convertedObj;
@@ -40,7 +45,10 @@ export default function convert(
 /**
  * Serialize the current window selection.
  */
-function serializeSelection(maxDepth: number): object | null {
+function serializeSelection(
+  maxDepth: number,
+  visited: WeakSet<any>,
+): object | null {
   if (typeof window === "undefined" || !window.getSelection) {
     return null;
   }
@@ -51,11 +59,11 @@ function serializeSelection(maxDepth: number): object | null {
   return {
     type: selection.type,
     anchorNode: selection.anchorNode
-      ? deepCloneClass(selection.anchorNode, maxDepth)
+      ? deepCloneClass(selection.anchorNode, maxDepth, visited)
       : null,
     anchorOffset: selection.anchorOffset,
     focusNode: selection.focusNode
-      ? deepCloneClass(selection.focusNode, maxDepth)
+      ? deepCloneClass(selection.focusNode, maxDepth, visited)
       : null,
     focusOffset: selection.focusOffset,
     isCollapsed: selection.isCollapsed,
@@ -67,7 +75,11 @@ function serializeSelection(maxDepth: number): object | null {
 /**
  * Recursively convert a class-based object to a plain object.
  */
-function deepCloneClass(x: any, _maxDepth: number): object {
+function deepCloneClass(
+  x: any,
+  _maxDepth: number,
+  visited: WeakSet<any>,
+): object {
   const maxDepth = _maxDepth - 1;
 
   // Return an indicator if maxDepth is reached
@@ -75,25 +87,38 @@ function deepCloneClass(x: any, _maxDepth: number): object {
     return maxDepthSignal;
   }
 
-  // Convert array-like class (e.g., NodeList, ClassList, HTMLCollection)
-  if (
-    Array.isArray(x) ||
-    (typeof x?.length === "number" &&
-      typeof x[Symbol.iterator] === "function" &&
-      !Object.prototype.toString.call(x).includes("Map") &&
-      !(x instanceof CSSStyleDeclaration))
-  ) {
-    return classToArray(x, maxDepth);
+  if (visited.has(x)) {
+    return maxDepthSignal;
   }
+  visited.add(x);
 
-  // Convert mapping-like class (e.g., Node, Map, Set)
-  return classToObject(x, maxDepth);
+  try {
+    // Convert array-like class (e.g., NodeList, ClassList, HTMLCollection)
+    if (
+      Array.isArray(x) ||
+      (typeof x?.length === "number" &&
+        typeof x[Symbol.iterator] === "function" &&
+        !Object.prototype.toString.call(x).includes("Map") &&
+        !(x instanceof CSSStyleDeclaration))
+    ) {
+      return classToArray(x, maxDepth, visited);
+    }
+
+    // Convert mapping-like class (e.g., Node, Map, Set)
+    return classToObject(x, maxDepth, visited);
+  } finally {
+    visited.delete(x);
+  }
 }
 
 /**
  * Convert an array-like class to a plain array.
  */
-function classToArray(x: any, maxDepth: number): Array<any> {
+function classToArray(
+  x: any,
+  maxDepth: number,
+  visited: WeakSet<any>,
+): Array<any> {
   const result: Array<any> = [];
   for (let i = 0; i < x.length; i++) {
     // Skip anything that should not be converted
@@ -102,7 +127,7 @@ function classToArray(x: any, maxDepth: number): Array<any> {
     }
     // Only push objects as if we haven't reached max depth
     else if (typeof x[i] === "object") {
-      const converted = deepCloneClass(x[i], maxDepth);
+      const converted = deepCloneClass(x[i], maxDepth, visited);
       if (converted !== maxDepthSignal) {
         result.push(converted);
       }
@@ -120,7 +145,11 @@ function classToArray(x: any, maxDepth: number): Array<any> {
  * We must iterate through it with a for-loop in order to gain
  * access to properties from all parent classes.
  */
-function classToObject(x: any, maxDepth: number): object {
+function classToObject(
+  x: any,
+  maxDepth: number,
+  visited: WeakSet<any>,
+): object {
   const result: { [key: string]: any } = {};
   for (const key in x) {
     // Skip anything that should not be converted
@@ -129,7 +158,7 @@ function classToObject(x: any, maxDepth: number): object {
     }
     // Add objects as a property if we haven't reached max depth
     else if (typeof x[key] === "object") {
-      const converted = deepCloneClass(x[key], maxDepth);
+      const converted = deepCloneClass(x[key], maxDepth, visited);
       if (converted !== maxDepthSignal) {
         result[key] = converted;
       }
@@ -149,7 +178,7 @@ function classToObject(x: any, maxDepth: number): object {
   ) {
     const dataset = x["dataset"];
     if (!shouldIgnoreValue(dataset, "dataset", x)) {
-      const converted = deepCloneClass(dataset, maxDepth);
+      const converted = deepCloneClass(dataset, maxDepth, visited);
       if (converted !== maxDepthSignal) {
         result["dataset"] = converted;
       }
@@ -170,7 +199,7 @@ function classToObject(x: any, maxDepth: number): object {
         if (typeof val === "object") {
           // Ensure files have enough depth to be serialized
           const propDepth = prop === "files" ? Math.max(maxDepth, 3) : maxDepth;
-          const converted = deepCloneClass(val, propDepth);
+          const converted = deepCloneClass(val, propDepth, visited);
           if (converted !== maxDepthSignal) {
             result[prop] = converted;
           }
@@ -199,7 +228,7 @@ function classToObject(x: any, maxDepth: number): object {
         !shouldIgnoreValue(element, element.name, x)
       ) {
         if (typeof element === "object") {
-          const converted = deepCloneClass(element, maxDepth);
+          const converted = deepCloneClass(element, maxDepth, visited);
           if (converted !== maxDepthSignal) {
             result[element.name] = converted;
           }

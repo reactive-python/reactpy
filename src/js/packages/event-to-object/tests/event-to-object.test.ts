@@ -604,3 +604,69 @@ test("converts form submission with file input", () => {
   expect(converted.target.myFile.files.length).toBe(1);
   expect(converted.target.myFile.files[0].name).toBe("test.txt");
 });
+
+test("handles recursive structures", () => {
+  // Direct recursion
+  const recursive: any = { a: 1 };
+  recursive.self = recursive;
+
+  const converted: any = convert(recursive);
+  expect(converted.a).toBe(1);
+  expect(converted.self).toBeUndefined();
+
+  // Indirect recursion
+  const indirect: any = { name: "root" };
+  const child: any = { name: "child" };
+  indirect.child = child;
+  child.parent = indirect;
+
+  const convertedIndirect: any = convert(indirect);
+  expect(convertedIndirect.name).toBe("root");
+  expect(convertedIndirect.child.name).toBe("child");
+  expect(convertedIndirect.child.parent).toBeUndefined();
+});
+
+test("handles shared references without stopping", () => {
+  const shared = { name: "shared" };
+  const root = {
+    left: { item: shared },
+    right: { item: shared },
+  };
+
+  const converted: any = convert(root);
+  expect(converted.left.item.name).toBe("shared");
+  expect(converted.right.item.name).toBe("shared");
+  expect(converted.left.item).not.toEqual({ __stop__: true });
+  expect(converted.right.item).not.toEqual({ __stop__: true });
+});
+
+test("handles recursive HTML node structures", () => {
+  const parent = window.document.createElement("div");
+  const child = window.document.createElement("span");
+  parent.appendChild(child);
+
+  // Add explicit circular references to ensure we test recursion
+  // even if standard DOM properties are not enumerable in this environment.
+  (parent as any).circular = parent;
+  (child as any).parentLink = parent;
+  (parent as any).childLink = child;
+
+  const converted: any = convert(parent);
+
+  // Verify explicit cycle is handled
+  expect(converted.circular).toBeUndefined();
+
+  // Verify child link is handled
+  if (converted.childLink) {
+    expect(converted.childLink.parentLink).toBeUndefined();
+  }
+
+  // If the DOM implementation enumerates parentNode, it should be handled gracefully
+  if (
+    converted.children &&
+    converted.children.length > 0 &&
+    converted.children[0].parentNode
+  ) {
+    expect(converted.children[0].parentNode).toBeUndefined();
+  }
+});
