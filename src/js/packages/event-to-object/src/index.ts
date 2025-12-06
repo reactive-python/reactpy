@@ -5,7 +5,7 @@ const maxDepthSignal = { __stop__: true };
  */
 export default function convert(
   classObject: { [key: string]: any },
-  maxDepth: number = 3,
+  maxDepth: number = 10,
 ): object {
   // Begin conversion
   const convertedObj: { [key: string]: any } = {};
