@@ -217,7 +217,7 @@ def separate_attributes_and_children(
 
     _attributes: VdomAttributes
     children_or_iterables: Sequence[Any]
-    if type(values[0]) is dict:
+    if type(values[0]) is dict:  # noqa: E721
         _attributes, *children_or_iterables = values
     else:
         _attributes = {}
