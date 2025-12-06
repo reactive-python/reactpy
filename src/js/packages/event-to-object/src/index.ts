@@ -29,7 +29,7 @@ export default function convert(
       else {
         convertedObj[key] = classObject[key];
       }
-    } catch (e) {
+    } catch {
       continue;
     }
   }
@@ -177,7 +177,7 @@ function classToObject(
       else {
         result[key] = x[key];
       }
-    } catch (e) {
+    } catch {
       continue;
     }
   }
