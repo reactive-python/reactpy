@@ -5,7 +5,7 @@ const maxDepthSignal = { __stop__: true };
  */
 export default function convert(
   classObject: { [key: string]: any },
-  maxDepth: number = 5,
+  maxDepth: number = 10,
 ): object {
   const visited = new WeakSet<any>();
   visited.add(classObject);
@@ -264,8 +264,12 @@ function shouldIgnoreValue(
   parent: any = undefined,
 ): boolean {
   return (
+    // Useless data
     value === null ||
     value === undefined ||
+    keyName.startsWith("__") ||
+    (keyName.length > 0 && keyName.toUpperCase() === keyName) ||
+    // Non-convertible types
     typeof value === "function" ||
     value instanceof CSSStyleSheet ||
     value instanceof Window ||
@@ -273,8 +277,39 @@ function shouldIgnoreValue(
     keyName === "view" ||
     keyName === "size" ||
     keyName === "length" ||
-    (keyName.length > 0 && keyName.toUpperCase() === keyName) ||
-    keyName.startsWith("__") ||
-    (parent instanceof CSSStyleDeclaration && value === "")
+    (parent instanceof CSSStyleDeclaration && value === "") ||
+    // DOM Node Blacklist
+    (typeof Node !== "undefined" &&
+      parent instanceof Node &&
+      // Recursive properties
+      (keyName === "parentNode" ||
+        keyName === "parentElement" ||
+        keyName === "ownerDocument" ||
+        keyName === "getRootNode" ||
+        keyName === "childNodes" ||
+        keyName === "children" ||
+        keyName === "firstChild" ||
+        keyName === "lastChild" ||
+        keyName === "previousSibling" ||
+        keyName === "nextSibling" ||
+        keyName === "previousElementSibling" ||
+        keyName === "nextElementSibling" ||
+        // Potentially large data
+        keyName === "innerHTML" ||
+        keyName === "outerHTML" ||
+        // Reflow triggers
+        keyName === "offsetParent" ||
+        keyName === "offsetWidth" ||
+        keyName === "offsetHeight" ||
+        keyName === "offsetLeft" ||
+        keyName === "offsetTop" ||
+        keyName === "clientTop" ||
+        keyName === "clientLeft" ||
+        keyName === "clientWidth" ||
+        keyName === "clientHeight" ||
+        keyName === "scrollWidth" ||
+        keyName === "scrollHeight" ||
+        keyName === "scrollTop" ||
+        keyName === "scrollLeft"))
   );
 }
