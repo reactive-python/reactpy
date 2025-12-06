@@ -168,12 +168,43 @@ function classToObject(x: any, maxDepth: number): object {
       const val = x[prop];
       if (!shouldIgnoreValue(val, prop, x)) {
         if (typeof val === "object") {
-          const converted = deepCloneClass(val, maxDepth);
+          // Ensure files have enough depth to be serialized
+          const propDepth = prop === "files" ? Math.max(maxDepth, 3) : maxDepth;
+          const converted = deepCloneClass(val, propDepth);
           if (converted !== maxDepthSignal) {
             result[prop] = converted;
           }
         } else {
           result[prop] = val;
+        }
+      }
+    }
+  }
+
+  // Explicitly include form elements if they exist and are not enumerable
+  const win = typeof window !== "undefined" ? window : undefined;
+  // @ts-ignore
+  const FormClass = win
+    ? win.HTMLFormElement
+    : typeof HTMLFormElement !== "undefined"
+      ? HTMLFormElement
+      : undefined;
+
+  if (FormClass && x instanceof FormClass && x.elements) {
+    for (let i = 0; i < x.elements.length; i++) {
+      const element = x.elements[i] as any;
+      if (
+        element.name &&
+        !Object.prototype.hasOwnProperty.call(result, element.name) &&
+        !shouldIgnoreValue(element, element.name, x)
+      ) {
+        if (typeof element === "object") {
+          const converted = deepCloneClass(element, maxDepth);
+          if (converted !== maxDepthSignal) {
+            result[element.name] = converted;
+          }
+        } else {
+          result[element.name] = element;
         }
       }
     }

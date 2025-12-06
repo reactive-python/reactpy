@@ -521,3 +521,86 @@ test("includes checked property for checkboxes", () => {
     },
   });
 });
+
+test("converts file input with files", () => {
+  const input = window.document.createElement("input");
+  input.type = "file";
+
+  // Create a mock file
+  const file = new window.File(["content"], "test.txt", {
+    type: "text/plain",
+    lastModified: 1234567890,
+  });
+
+  // Mock the files property
+  const mockFileList = {
+    0: file,
+    length: 1,
+    item: (index: number) => (index === 0 ? file : null),
+    [Symbol.iterator]: function* () {
+      yield file;
+    },
+  };
+
+  Object.defineProperty(input, "files", {
+    value: mockFileList,
+    writable: true,
+  });
+
+  const event = new window.Event("change");
+  Object.defineProperty(event, "target", {
+    value: input,
+    enumerable: true,
+    writable: true,
+  });
+
+  const converted: any = convert(event);
+
+  expect(converted.target.files).toBeDefined();
+  expect(converted.target.files.length).toBe(1);
+  expect(converted.target.files[0].name).toBe("test.txt");
+});
+
+test("converts form submission with file input", () => {
+  const form = window.document.createElement("form");
+  const input = window.document.createElement("input");
+  input.type = "file";
+  input.name = "myFile";
+
+  // Create a mock file
+  const file = new window.File(["content"], "test.txt", {
+    type: "text/plain",
+    lastModified: 1234567890,
+  });
+
+  // Mock the files property
+  const mockFileList = {
+    0: file,
+    length: 1,
+    item: (index: number) => (index === 0 ? file : null),
+    [Symbol.iterator]: function* () {
+      yield file;
+    },
+  };
+
+  Object.defineProperty(input, "files", {
+    value: mockFileList,
+    writable: true,
+  });
+
+  form.appendChild(input);
+
+  const event = new window.Event("submit");
+  Object.defineProperty(event, "target", {
+    value: form,
+    enumerable: true,
+    writable: true,
+  });
+
+  const converted: any = convert(event);
+
+  expect(converted.target.myFile).toBeDefined();
+  expect(converted.target.myFile.files).toBeDefined();
+  expect(converted.target.myFile.files.length).toBe(1);
+  expect(converted.target.myFile.files[0].name).toBe("test.txt");
+});
