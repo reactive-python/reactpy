@@ -5,7 +5,7 @@ const maxDepthSignal = { __stop__: true };
  */
 export default function convert(
   classObject: { [key: string]: any },
-  maxDepth: number = 10,
+  maxDepth: number = 5,
 ): object {
   const visited = new WeakSet<any>();
   visited.add(classObject);
@@ -14,19 +14,23 @@ export default function convert(
   const convertedObj: { [key: string]: any } = {};
   for (const key in classObject) {
     // Skip keys that cannot be converted
-    if (shouldIgnoreValue(classObject[key], key)) {
-      continue;
-    }
-    // Handle objects (potentially cyclical)
-    else if (typeof classObject[key] === "object") {
-      const result = deepCloneClass(classObject[key], maxDepth, visited);
-      if (result !== maxDepthSignal) {
-        convertedObj[key] = result;
+    try {
+      if (shouldIgnoreValue(classObject[key], key)) {
+        continue;
       }
-    }
-    // Handle simple types (non-cyclical)
-    else {
-      convertedObj[key] = classObject[key];
+      // Handle objects (potentially cyclical)
+      else if (typeof classObject[key] === "object") {
+        const result = deepCloneClass(classObject[key], maxDepth, visited);
+        if (result !== maxDepthSignal) {
+          convertedObj[key] = result;
+        }
+      }
+      // Handle simple types (non-cyclical)
+      else {
+        convertedObj[key] = classObject[key];
+      }
+    } catch (e) {
+      continue;
     }
   }
 
@@ -85,6 +89,11 @@ function deepCloneClass(
   // Return an indicator if maxDepth is reached
   if (maxDepth <= 0 && typeof x === "object") {
     return maxDepthSignal;
+  }
+
+  // Safety check: WeakSet only accepts objects (and not null)
+  if (!x || typeof x !== "object") {
+    return x;
   }
 
   if (visited.has(x)) {
@@ -152,20 +161,24 @@ function classToObject(
 ): object {
   const result: { [key: string]: any } = {};
   for (const key in x) {
-    // Skip anything that should not be converted
-    if (shouldIgnoreValue(x[key], key, x)) {
-      continue;
-    }
-    // Add objects as a property if we haven't reached max depth
-    else if (typeof x[key] === "object") {
-      const converted = deepCloneClass(x[key], maxDepth, visited);
-      if (converted !== maxDepthSignal) {
-        result[key] = converted;
+    try {
+      // Skip anything that should not be converted
+      if (shouldIgnoreValue(x[key], key, x)) {
+        continue;
       }
-    }
-    // Add plain values if not skippable
-    else {
-      result[key] = x[key];
+      // Add objects as a property if we haven't reached max depth
+      else if (typeof x[key] === "object") {
+        const converted = deepCloneClass(x[key], maxDepth, visited);
+        if (converted !== maxDepthSignal) {
+          result[key] = converted;
+        }
+      }
+      // Add plain values if not skippable
+      else {
+        result[key] = x[key];
+      }
+    } catch (e) {
+      continue;
     }
   }
 

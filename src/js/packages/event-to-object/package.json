@@ -1,5 +1,5 @@
 {
-  "author": "Ryan Morshead",
+  "author": "Mark Bakhit",
   "dependencies": {
     "json-pointer": "catalog:"
   },
@@ -28,5 +28,5 @@
     "checkTypes": "tsc --noEmit"
   },
   "type": "module",
-  "version": "0.1.2"
+  "version": "1.0.0"
 }
