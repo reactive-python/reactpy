@@ -45,6 +45,8 @@ class Ref(Generic[_RefValue]):
         self.current = new
         return old
 
+    __hash__ = None  # type: ignore
+
     def __eq__(self, other: object) -> bool:
         try:
             return isinstance(other, Ref) and (other.current == self.current)

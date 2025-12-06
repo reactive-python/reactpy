@@ -1,5 +1,5 @@
-import { test } from "uvu";
 import { Window } from "happy-dom";
+import { beforeAll, beforeEach } from "bun:test";
 
 export const window = new Window();
 
@@ -9,6 +9,13 @@ export function setup() {
   global.navigator = window.navigator;
   global.getComputedStyle = window.getComputedStyle;
   global.requestAnimationFrame = null;
+  global.CSSStyleSheet = window.CSSStyleSheet;
+  global.CSSStyleDeclaration = window.CSSStyleDeclaration;
+  global.Window = window.constructor;
+  global.Document = window.document.constructor;
+  global.Node = window.Node;
+  global.Element = window.Element;
+  global.HTMLElement = window.HTMLElement;
 }
 
 export function reset() {
@@ -18,5 +25,5 @@ export function reset() {
   window.getSelection().removeAllRanges();
 }
 
-test.before(setup);
-test.before.each(reset);
+beforeAll(setup);
+beforeEach(reset);

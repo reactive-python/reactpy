@@ -9,11 +9,6 @@ export const mockBoundingRect = {
   width: 0,
 };
 
-export const mockElementObject = {
-  tagName: null,
-  boundingClientRect: mockBoundingRect,
-};
-
 export const mockElement = {
   tagName: null,
   getBoundingClientRect: () => mockBoundingRect,
@@ -32,7 +27,6 @@ export const mockGamepad = {
       value: 0,
     },
   ],
-  timestamp: undefined,
 };
 
 export const mockTouch = {
@@ -52,5 +46,5 @@ export const mockTouch = {
 
 export const mockTouchObject = {
   ...mockTouch,
-  target: mockElementObject,
+  target: {},
 };

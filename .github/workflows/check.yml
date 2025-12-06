@@ -38,9 +38,6 @@ jobs:
             run-cmd: "hatch run docs:check"
             python-version: '["3.11"]'
     test-javascript:
-        # Temporarily disabled while we rewrite the "event_to_object" package
-        # https://github.com/reactive-python/reactpy/issues/1196
-        if: 0
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "{1}"
