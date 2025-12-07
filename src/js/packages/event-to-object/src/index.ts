@@ -268,7 +268,7 @@ function shouldIgnoreValue(
     value === null ||
     value === undefined ||
     keyName.startsWith("__") ||
-    (keyName.length > 0 && keyName.toUpperCase() === keyName) ||
+    (keyName.length > 0 && /^[A-Z_]+$/.test(keyName)) ||
     // Non-convertible types
     typeof value === "function" ||
     value instanceof CSSStyleSheet ||
