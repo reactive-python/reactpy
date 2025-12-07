@@ -4,7 +4,7 @@ import asyncio
 import contextlib
 import inspect
 from collections.abc import Sequence
-from typing import Any, Callable, Literal, overload
+from typing import Any, Callable, Literal, cast, overload
 
 from anyio import create_task_group
 
@@ -119,7 +119,7 @@ class EventHandler:
 
         if not (stop_propagation and prevent_default):
             with contextlib.suppress(Exception):
-                func_to_inspect = function
+                func_to_inspect = cast(Any, function)
                 while hasattr(func_to_inspect, "__wrapped__"):
                     func_to_inspect = func_to_inspect.__wrapped__
 
@@ -172,21 +172,21 @@ def to_event_handler_function(
             async def wrapper(data: Sequence[Any]) -> None:
                 await function(*data)
 
-            wrapper.__wrapped__ = function
+            cast(Any, wrapper).__wrapped__ = function
 
         else:
 
             async def wrapper(data: Sequence[Any]) -> None:
                 function(*data)
 
-        wrapper.__wrapped__ = function
+        cast(Any, wrapper).__wrapped__ = function
         return wrapper
     elif not asyncio.iscoroutinefunction(function):
 
         async def wrapper(data: Sequence[Any]) -> None:
             function(data)
 
-        wrapper.__wrapped__ = function
+        cast(Any, wrapper).__wrapped__ = function
         return wrapper
     else:
         return function
