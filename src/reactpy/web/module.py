@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, NewType, overload
 
+from reactpy._warnings import warn
 from reactpy.config import REACTPY_DEBUG, REACTPY_WEB_MODULES_DIR
 from reactpy.core.vdom import Vdom
 from reactpy.types import ImportSourceDict, VdomConstructor
@@ -27,45 +28,180 @@ URL_SOURCE = SourceType("URL")
 """A source loaded from a URL, usually a CDN"""
 
 
+_URL_WEB_MODULE_CACHE: dict[str, WebModule] = {}
+_FILE_WEB_MODULE_CACHE: dict[str, WebModule] = {}
+_STRING_WEB_MODULE_CACHE: dict[str, WebModule] = {}
+
+
+def reactjs_component_from_url(
+    url: str,
+    import_names: str | list[str] | tuple[str, ...],
+    fallback: Any | None = None,
+    resolve_imports: bool | None = None,
+    resolve_imports_depth: int = 5,
+    unmount_before_update: bool = False,
+    allow_children: bool = True,
+) -> VdomConstructor | list[VdomConstructor]:
+    """Import a component from a URL.
+
+    Parameters:
+        url:
+            The URL to import the component from.
+        import_names:
+            One or more component names to import. If given as a string, a single component
+            will be returned. If a list is given, then a list of components will be
+            returned.
+        fallback:
+            What to temporarily display while the module is being loaded.
+        resolve_imports:
+            Whether to try and find all the named imports of this module.
+        resolve_imports_depth:
+            How deeply to search for those imports.
+        unmount_before_update:
+            Cause the component to be unmounted before each update. This option should
+            only be used if the imported package fails to re-render when props change.
+            Using this option has negative performance consequences since all DOM
+            elements must be changed on each render. See :issue:`461` for more info.
+        allow_children:
+            Whether or not these components can have children.
+    """
+    key = f"{url}{resolve_imports}{resolve_imports_depth}{unmount_before_update}"
+    if key in _URL_WEB_MODULE_CACHE:
+        module = _URL_WEB_MODULE_CACHE[key]
+    else:
+        module = _module_from_url(
+            url,
+            fallback=fallback,
+            resolve_imports=resolve_imports,
+            resolve_imports_depth=resolve_imports_depth,
+            unmount_before_update=unmount_before_update,
+        )
+        _URL_WEB_MODULE_CACHE[key] = module
+    return _vdom_from_web_module(module, import_names, fallback, allow_children)
+
+
+def reactjs_component_from_file(
+    name: str,
+    file: str | Path,
+    import_names: str | list[str] | tuple[str, ...],
+    fallback: Any | None = None,
+    resolve_imports: bool | None = None,
+    resolve_imports_depth: int = 5,
+    unmount_before_update: bool = False,
+    symlink: bool = False,
+    allow_children: bool = True,
+) -> VdomConstructor | list[VdomConstructor]:
+    """Import a component from a file.
+
+    Parameters:
+        name:
+            The name of the package
+        file:
+            The file from which the content of the web module will be created.
+        import_names:
+            One or more component names to import. If given as a string, a single component
+            will be returned. If a list is given, then a list of components will be
+            returned.
+        fallback:
+            What to temporarily display while the module is being loaded.
+        resolve_imports:
+            Whether to try and find all the named imports of this module.
+        resolve_imports_depth:
+            How deeply to search for those imports.
+        unmount_before_update:
+            Cause the component to be unmounted before each update. This option should
+            only be used if the imported package fails to re-render when props change.
+            Using this option has negative performance consequences since all DOM
+            elements must be changed on each render. See :issue:`461` for more info.
+        symlink:
+            Whether the web module should be saved as a symlink to the given ``file``.
+        allow_children:
+            Whether or not these components can have children.
+    """
+    key = f"{name}{resolve_imports}{resolve_imports_depth}{unmount_before_update}"
+    if key in _FILE_WEB_MODULE_CACHE:
+        module = _FILE_WEB_MODULE_CACHE[key]
+    else:
+        module = _module_from_file(
+            name,
+            file,
+            fallback=fallback,
+            resolve_imports=resolve_imports,
+            resolve_imports_depth=resolve_imports_depth,
+            unmount_before_update=unmount_before_update,
+            symlink=symlink,
+        )
+        _FILE_WEB_MODULE_CACHE[key] = module
+    return _vdom_from_web_module(module, import_names, fallback, allow_children)
+
+
+def reactjs_component_from_string(
+    name: str,
+    content: str,
+    import_names: str | list[str] | tuple[str, ...],
+    fallback: Any | None = None,
+    resolve_imports: bool | None = None,
+    resolve_imports_depth: int = 5,
+    unmount_before_update: bool = False,
+    allow_children: bool = True,
+) -> VdomConstructor | list[VdomConstructor]:
+    """Import a component from a string.
+
+    Parameters:
+        name:
+            The name of the package
+        content:
+            The contents of the web module
+        import_names:
+            One or more component names to import. If given as a string, a single component
+            will be returned. If a list is given, then a list of components will be
+            returned.
+        fallback:
+            What to temporarily display while the module is being loaded.
+        resolve_imports:
+            Whether to try and find all the named imports of this module.
+        resolve_imports_depth:
+            How deeply to search for those imports.
+        unmount_before_update:
+            Cause the component to be unmounted before each update. This option should
+            only be used if the imported package fails to re-render when props change.
+            Using this option has negative performance consequences since all DOM
+            elements must be changed on each render. See :issue:`461` for more info.
+        allow_children:
+            Whether or not these components can have children.
+    """
+    key = f"{name}{resolve_imports}{resolve_imports_depth}{unmount_before_update}"
+    if key in _STRING_WEB_MODULE_CACHE:
+        module = _STRING_WEB_MODULE_CACHE[key]
+    else:
+        module = _module_from_string(
+            name,
+            content,
+            fallback=fallback,
+            resolve_imports=resolve_imports,
+            resolve_imports_depth=resolve_imports_depth,
+            unmount_before_update=unmount_before_update,
+        )
+        _STRING_WEB_MODULE_CACHE[key] = module
+    return _vdom_from_web_module(module, import_names, fallback, allow_children)
+
+
 def module_from_url(
     url: str,
     fallback: Any | None = None,
     resolve_exports: bool | None = None,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
-) -> WebModule:
-    """Load a :class:`WebModule` from a :data:`URL_SOURCE`
-
-    Parameters:
-        url:
-            Where the javascript module will be loaded from which conforms to the
-            interface for :ref:`Custom Javascript Components`
-        fallback:
-            What to temporarily display while the module is being loaded.
-        resolve_imports:
-            Whether to try and find all the named exports of this module.
-        resolve_exports_depth:
-            How deeply to search for those exports.
-        unmount_before_update:
-            Cause the component to be unmounted before each update. This option should
-            only be used if the imported package fails to re-render when props change.
-            Using this option has negative performance consequences since all DOM
-            elements must be changed on each render. See :issue:`461` for more info.
-    """
-    return WebModule(
-        source=url,
-        source_type=URL_SOURCE,
-        default_fallback=fallback,
-        file=None,
-        export_names=(
-            resolve_module_exports_from_url(url, resolve_exports_depth)
-            if (
-                resolve_exports
-                if resolve_exports is not None
-                else REACTPY_DEBUG.current
-            )
-            else None
-        ),
+) -> WebModule:  # pragma: no cover
+    warn(
+        "module_from_url is deprecated, use reactjs_component_from_url instead",
+        DeprecationWarning,
+    )
+    return _module_from_url(
+        url,
+        fallback=fallback,
+        resolve_imports=resolve_exports,
+        resolve_imports_depth=resolve_exports_depth,
         unmount_before_update=unmount_before_update,
     )
 
@@ -78,28 +214,78 @@ def module_from_file(
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
     symlink: bool = False,
-) -> WebModule:
-    """Load a :class:`WebModule` from a given ``file``
+) -> WebModule:  # pragma: no cover
+    warn(
+        "module_from_file is deprecated, use reactjs_component_from_file instead",
+        DeprecationWarning,
+    )
+    return _module_from_file(
+        name,
+        file,
+        fallback=fallback,
+        resolve_imports=resolve_exports,
+        resolve_imports_depth=resolve_exports_depth,
+        unmount_before_update=unmount_before_update,
+        symlink=symlink,
+    )
 
-    Parameters:
-        name:
-            The name of the package
-        file:
-            The file from which the content of the web module will be created.
-        fallback:
-            What to temporarily display while the module is being loaded.
-        resolve_imports:
-            Whether to try and find all the named exports of this module.
-        resolve_exports_depth:
-            How deeply to search for those exports.
-        unmount_before_update:
-            Cause the component to be unmounted before each update. This option should
-            only be used if the imported package fails to re-render when props change.
-            Using this option has negative performance consequences since all DOM
-            elements must be changed on each render. See :issue:`461` for more info.
-        symlink:
-            Whether the web module should be saved as a symlink to the given ``file``.
-    """
+
+def module_from_string(
+    name: str,
+    content: str,
+    fallback: Any | None = None,
+    resolve_exports: bool | None = None,
+    resolve_exports_depth: int = 5,
+    unmount_before_update: bool = False,
+) -> WebModule:  # pragma: no cover
+    warn(
+        "module_from_string is deprecated, use reactjs_component_from_string instead",
+        DeprecationWarning,
+    )
+    return _module_from_string(
+        name,
+        content,
+        fallback=fallback,
+        resolve_imports=resolve_exports,
+        resolve_imports_depth=resolve_exports_depth,
+        unmount_before_update=unmount_before_update,
+    )
+
+
+def _module_from_url(
+    url: str,
+    fallback: Any | None = None,
+    resolve_imports: bool | None = None,
+    resolve_imports_depth: int = 5,
+    unmount_before_update: bool = False,
+) -> WebModule:
+    return WebModule(
+        source=url,
+        source_type=URL_SOURCE,
+        default_fallback=fallback,
+        file=None,
+        export_names=(
+            resolve_module_exports_from_url(url, resolve_imports_depth)
+            if (
+                resolve_imports
+                if resolve_imports is not None
+                else REACTPY_DEBUG.current
+            )
+            else None
+        ),
+        unmount_before_update=unmount_before_update,
+    )
+
+
+def _module_from_file(
+    name: str,
+    file: str | Path,
+    fallback: Any | None = None,
+    resolve_imports: bool | None = None,
+    resolve_imports_depth: int = 5,
+    unmount_before_update: bool = False,
+    symlink: bool = False,
+) -> WebModule:
     name += module_name_suffix(name)
 
     source_file = Path(file).resolve()
@@ -124,10 +310,10 @@ def module_from_file(
         default_fallback=fallback,
         file=target_file,
         export_names=(
-            resolve_module_exports_from_file(source_file, resolve_exports_depth)
+            resolve_module_exports_from_file(source_file, resolve_imports_depth)
             if (
-                resolve_exports
-                if resolve_exports is not None
+                resolve_imports
+                if resolve_imports is not None
                 else REACTPY_DEBUG.current
             )
             else None
@@ -152,33 +338,14 @@ def _copy_file(target: Path, source: Path, symlink: bool) -> None:
         shutil.copy(source, target)
 
 
-def module_from_string(
+def _module_from_string(
     name: str,
     content: str,
     fallback: Any | None = None,
-    resolve_exports: bool | None = None,
-    resolve_exports_depth: int = 5,
+    resolve_imports: bool | None = None,
+    resolve_imports_depth: int = 5,
     unmount_before_update: bool = False,
 ) -> WebModule:
-    """Load a :class:`WebModule` whose ``content`` comes from a string.
-
-    Parameters:
-        name:
-            The name of the package
-        content:
-            The contents of the web module
-        fallback:
-            What to temporarily display while the module is being loaded.
-        resolve_imports:
-            Whether to try and find all the named exports of this module.
-        resolve_exports_depth:
-            How deeply to search for those exports.
-        unmount_before_update:
-            Cause the component to be unmounted before each update. This option should
-            only be used if the imported package fails to re-render when props change.
-            Using this option has negative performance consequences since all DOM
-            elements must be changed on each render. See :issue:`461` for more info.
-    """
     name += module_name_suffix(name)
 
     target_file = _web_module_path(name)
@@ -199,10 +366,10 @@ def module_from_string(
         default_fallback=fallback,
         file=target_file,
         export_names=(
-            resolve_module_exports_from_file(target_file, resolve_exports_depth)
+            resolve_module_exports_from_file(target_file, resolve_imports_depth)
             if (
-                resolve_exports
-                if resolve_exports is not None
+                resolve_imports
+                if resolve_imports is not None
                 else REACTPY_DEBUG.current
             )
             else None
@@ -240,6 +407,19 @@ def export(
 
 
 def export(
+    web_module: WebModule,
+    export_names: str | list[str] | tuple[str, ...],
+    fallback: Any | None = None,
+    allow_children: bool = True,
+) -> VdomConstructor | list[VdomConstructor]:  # pragma: no cover
+    warn(
+        "export is deprecated, use reactjs_component_from_* functions instead",
+        DeprecationWarning,
+    )
+    return _vdom_from_web_module(web_module, export_names, fallback, allow_children)
+
+
+def _vdom_from_web_module(
     web_module: WebModule,
     export_names: str | list[str] | tuple[str, ...],
     fallback: Any | None = None,
