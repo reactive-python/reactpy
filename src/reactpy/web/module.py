@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, NewType, overload
 
+from reactpy._warnings import warn
 from reactpy.config import REACTPY_DEBUG, REACTPY_WEB_MODULES_DIR
 from reactpy.core.vdom import Vdom
 from reactpy.types import ImportSourceDict, VdomConstructor
@@ -27,7 +28,228 @@ URL_SOURCE = SourceType("URL")
 """A source loaded from a URL, usually a CDN"""
 
 
+_URL_WEB_MODULE_CACHE: dict[str, WebModule] = {}
+_FILE_WEB_MODULE_CACHE: dict[str, WebModule] = {}
+_STRING_WEB_MODULE_CACHE: dict[str, WebModule] = {}
+
+
+def import_js_from_url(
+    url: str,
+    export_names: str | list[str] | tuple[str, ...],
+    fallback: Any | None = None,
+    resolve_exports: bool | None = None,
+    resolve_exports_depth: int = 5,
+    unmount_before_update: bool = False,
+    allow_children: bool = True,
+) -> VdomConstructor | list[VdomConstructor]:
+    """Import a component from a URL.
+
+    Parameters:
+        url:
+            The URL to import the component from.
+        export_names:
+            One or more names to export. If given as a string, a single component
+            will be returned. If a list is given, then a list of components will be
+            returned.
+        fallback:
+            What to temporarily display while the module is being loaded.
+        resolve_exports:
+            Whether to try and find all the named exports of this module.
+        resolve_exports_depth:
+            How deeply to search for those exports.
+        unmount_before_update:
+            Cause the component to be unmounted before each update. This option should
+            only be used if the imported package fails to re-render when props change.
+            Using this option has negative performance consequences since all DOM
+            elements must be changed on each render. See :issue:`461` for more info.
+        allow_children:
+            Whether or not these components can have children.
+    """
+    if url in _URL_WEB_MODULE_CACHE:
+        module = _URL_WEB_MODULE_CACHE[url]
+    else:
+        module = _module_from_url(
+            url,
+            fallback=fallback,
+            resolve_exports=resolve_exports,
+            resolve_exports_depth=resolve_exports_depth,
+            unmount_before_update=unmount_before_update,
+        )
+        _URL_WEB_MODULE_CACHE[url] = module
+    return _vdom_from_web_module(module, export_names, fallback, allow_children)
+
+
+def import_js_from_file(
+    name: str,
+    file: str | Path,
+    export_names: str | list[str] | tuple[str, ...],
+    fallback: Any | None = None,
+    resolve_exports: bool | None = None,
+    resolve_exports_depth: int = 5,
+    unmount_before_update: bool = False,
+    symlink: bool = False,
+    allow_children: bool = True,
+) -> VdomConstructor | list[VdomConstructor]:
+    """Import a component from a file.
+
+    Parameters:
+        name:
+            The name of the package
+        file:
+            The file from which the content of the web module will be created.
+        export_names:
+            One or more names to export. If given as a string, a single component
+            will be returned. If a list is given, then a list of components will be
+            returned.
+        fallback:
+            What to temporarily display while the module is being loaded.
+        resolve_exports:
+            Whether to try and find all the named exports of this module.
+        resolve_exports_depth:
+            How deeply to search for those exports.
+        unmount_before_update:
+            Cause the component to be unmounted before each update. This option should
+            only be used if the imported package fails to re-render when props change.
+            Using this option has negative performance consequences since all DOM
+            elements must be changed on each render. See :issue:`461` for more info.
+        symlink:
+            Whether the web module should be saved as a symlink to the given ``file``.
+        allow_children:
+            Whether or not these components can have children.
+    """
+    if name in _FILE_WEB_MODULE_CACHE:
+        module = _FILE_WEB_MODULE_CACHE[name]
+    else:
+        module = _module_from_file(
+            name,
+            file,
+            fallback=fallback,
+            resolve_exports=resolve_exports,
+            resolve_exports_depth=resolve_exports_depth,
+            unmount_before_update=unmount_before_update,
+            symlink=symlink,
+        )
+        _FILE_WEB_MODULE_CACHE[name] = module
+    return _vdom_from_web_module(module, export_names, fallback, allow_children)
+
+
+def import_js_from_string(
+    name: str,
+    content: str,
+    export_names: str | list[str] | tuple[str, ...],
+    fallback: Any | None = None,
+    resolve_exports: bool | None = None,
+    resolve_exports_depth: int = 5,
+    unmount_before_update: bool = False,
+    allow_children: bool = True,
+) -> VdomConstructor | list[VdomConstructor]:
+    """Import a component from a string.
+
+    Parameters:
+        name:
+            The name of the package
+        content:
+            The contents of the web module
+        export_names:
+            One or more names to export. If given as a string, a single component
+            will be returned. If a list is given, then a list of components will be
+            returned.
+        fallback:
+            What to temporarily display while the module is being loaded.
+        resolve_exports:
+            Whether to try and find all the named exports of this module.
+        resolve_exports_depth:
+            How deeply to search for those exports.
+        unmount_before_update:
+            Cause the component to be unmounted before each update. This option should
+            only be used if the imported package fails to re-render when props change.
+            Using this option has negative performance consequences since all DOM
+            elements must be changed on each render. See :issue:`461` for more info.
+        allow_children:
+            Whether or not these components can have children.
+    """
+    if name in _STRING_WEB_MODULE_CACHE:
+        module = _STRING_WEB_MODULE_CACHE[name]
+    else:
+        module = _module_from_string(
+            name,
+            content,
+            fallback=fallback,
+            resolve_exports=resolve_exports,
+            resolve_exports_depth=resolve_exports_depth,
+            unmount_before_update=unmount_before_update,
+        )
+        _STRING_WEB_MODULE_CACHE[name] = module
+    return _vdom_from_web_module(module, export_names, fallback, allow_children)
+
+
 def module_from_url(
+    url: str,
+    fallback: Any | None = None,
+    resolve_exports: bool | None = None,
+    resolve_exports_depth: int = 5,
+    unmount_before_update: bool = False,
+) -> WebModule:
+    warn(
+        "module_from_url is deprecated, use import_js_from_url instead",
+        DeprecationWarning,
+    )
+    return _module_from_url(
+        url,
+        fallback=fallback,
+        resolve_exports=resolve_exports,
+        resolve_exports_depth=resolve_exports_depth,
+        unmount_before_update=unmount_before_update,
+    )
+
+
+def module_from_file(
+    name: str,
+    file: str | Path,
+    fallback: Any | None = None,
+    resolve_exports: bool | None = None,
+    resolve_exports_depth: int = 5,
+    unmount_before_update: bool = False,
+    symlink: bool = False,
+) -> WebModule:
+    warn(
+        "module_from_file is deprecated, use import_js_from_file instead",
+        DeprecationWarning,
+    )
+    return _module_from_file(
+        name,
+        file,
+        fallback=fallback,
+        resolve_exports=resolve_exports,
+        resolve_exports_depth=resolve_exports_depth,
+        unmount_before_update=unmount_before_update,
+        symlink=symlink,
+    )
+
+
+def module_from_string(
+    name: str,
+    content: str,
+    fallback: Any | None = None,
+    resolve_exports: bool | None = None,
+    resolve_exports_depth: int = 5,
+    unmount_before_update: bool = False,
+) -> WebModule:
+    warn(
+        "module_from_string is deprecated, use import_js_from_string instead",
+        DeprecationWarning,
+    )
+    return _module_from_string(
+        name,
+        content,
+        fallback=fallback,
+        resolve_exports=resolve_exports,
+        resolve_exports_depth=resolve_exports_depth,
+        unmount_before_update=unmount_before_update,
+    )
+
+
+def _module_from_url(
     url: str,
     fallback: Any | None = None,
     resolve_exports: bool | None = None,
@@ -70,7 +292,7 @@ def module_from_url(
     )
 
 
-def module_from_file(
+def _module_from_file(
     name: str,
     file: str | Path,
     fallback: Any | None = None,
@@ -152,7 +374,7 @@ def _copy_file(target: Path, source: Path, symlink: bool) -> None:
         shutil.copy(source, target)
 
 
-def module_from_string(
+def _module_from_string(
     name: str,
     content: str,
     fallback: Any | None = None,
@@ -240,6 +462,19 @@ def export(
 
 
 def export(
+    web_module: WebModule,
+    export_names: str | list[str] | tuple[str, ...],
+    fallback: Any | None = None,
+    allow_children: bool = True,
+) -> VdomConstructor | list[VdomConstructor]:
+    warn(
+        "export is deprecated, use import_js_from_* functions instead",
+        DeprecationWarning,
+    )
+    return _vdom_from_web_module(web_module, export_names, fallback, allow_children)
+
+
+def _vdom_from_web_module(
     web_module: WebModule,
     export_names: str | list[str] | tuple[str, ...],
     fallback: Any | None = None,
