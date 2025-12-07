@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, NewType, overload
 
-from reactpy._warnings import warn
 from reactpy.config import REACTPY_DEBUG, REACTPY_WEB_MODULES_DIR
 from reactpy.core.vdom import Vdom
 from reactpy.types import ImportSourceDict, VdomConstructor
@@ -223,7 +222,7 @@ class WebModule:
 
 
 @overload
-def import_components(
+def export(
     web_module: WebModule,
     export_names: str,
     fallback: Any | None = ...,
@@ -232,7 +231,7 @@ def import_components(
 
 
 @overload
-def import_components(
+def export(
     web_module: WebModule,
     export_names: list[str] | tuple[str, ...],
     fallback: Any | None = ...,
@@ -240,7 +239,7 @@ def import_components(
 ) -> list[VdomConstructor]: ...
 
 
-def import_components(
+def export(
     web_module: WebModule,
     export_names: str | list[str] | tuple[str, ...],
     fallback: Any | None = None,
@@ -280,38 +279,6 @@ def import_components(
             _make_export(web_module, name, fallback, allow_children)
             for name in export_names
         ]
-
-
-@overload
-def export(
-    web_module: WebModule,
-    export_names: str,
-    fallback: Any | None = ...,
-    allow_children: bool = ...,
-) -> VdomConstructor: ...
-
-
-@overload
-def export(
-    web_module: WebModule,
-    export_names: list[str] | tuple[str, ...],
-    fallback: Any | None = ...,
-    allow_children: bool = ...,
-) -> list[VdomConstructor]: ...
-
-
-def export(
-    web_module: WebModule,
-    export_names: str | list[str] | tuple[str, ...],
-    fallback: Any | None = None,
-    allow_children: bool = True,
-) -> VdomConstructor | list[VdomConstructor]:
-    warn(
-        "The 'export' function is deprecated and will be removed in a future release. "
-        "Use 'import_components' instead.",
-        DeprecationWarning,
-    )
-    return import_components(web_module, export_names, fallback, allow_children)
 
 
 def _make_export(

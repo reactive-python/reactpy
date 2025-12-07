@@ -3,6 +3,7 @@
 # dependencies = []
 # ///
 
+# ruff: noqa: INP001
 import logging
 import shutil
 import sys
