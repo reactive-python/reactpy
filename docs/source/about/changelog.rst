@@ -31,9 +31,9 @@ Unreleased
 - :pull:`1281` - Added type hints to ``reactpy.html`` attributes.
 - :pull:`1285` - Added support for nested components in web modules
 - :pull:`1289` - Added support for inline JavaScript as event handlers or other attributes that expect a callable via ``reactpy.types.InlineJavaScript``
--:pull:`1307` - Added ``reactpy.web.import_js_from_file`` to import ReactJS components from a file.
--:pull:`1307` - Added ``reactpy.web.import_js_from_url`` to import ReactJS components from a URL.
--:pull:`1307` - Added ``reactpy.web.import_js_from_string`` to import ReactJS components from a string.
+-:pull:`1307` - Added ``reactpy.web.reactjs_component_from_file`` to import ReactJS components from a file.
+-:pull:`1307` - Added ``reactpy.web.reactjs_component_from_url`` to import ReactJS components from a URL.
+-:pull:`1307` - Added ``reactpy.web.reactjs_component_from_string`` to import ReactJS components from a string.
 
 **Changed**
 
@@ -55,10 +55,10 @@ Unreleased
 - :pull:`1196` - Rewrite the ``event-to-object`` package to be more robust at handling properties on events.
 
 **Deprecated**
--:pull:`1307` - ``reactpy.web.export`` is deprecated. Use ``reactpy.web.import_js_from_*`` instead.
--:pull:`1307` - ``reactpy.web.module_from_file`` is deprecated. Use ``reactpy.web.import_js_from_file`` instead.
--:pull:`1307` - ``reactpy.web.module_from_url`` is deprecated. Use ``reactpy.web.import_js_from_url`` instead.
--:pull:`1307` - ``reactpy.web.module_from_string`` is deprecated. Use ``reactpy.web.import_js_from_string`` instead.
+-:pull:`1307` - ``reactpy.web.export`` is deprecated. Use ``reactpy.web.reactjs_component_from_*`` instead.
+-:pull:`1307` - ``reactpy.web.module_from_file`` is deprecated. Use ``reactpy.web.reactjs_component_from_file`` instead.
+-:pull:`1307` - ``reactpy.web.module_from_url`` is deprecated. Use ``reactpy.web.reactjs_component_from_url`` instead.
+-:pull:`1307` - ``reactpy.web.module_from_string`` is deprecated. Use ``reactpy.web.reactjs_component_from_string`` instead.
 
 
 **Removed**

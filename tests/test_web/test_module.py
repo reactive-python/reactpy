@@ -55,7 +55,7 @@ async def test_that_js_module_unmount_is_called(display: DisplayFixture):
 async def test_module_from_url(browser):
     SimpleButton = reactpy.web.module._vdom_from_web_module(
         reactpy.web.module._module_from_url(
-            "/static/simple-button.js", resolve_exports=False
+            "/static/simple-button.js", resolve_imports=False
         ),
         "SimpleButton",
     )
@@ -420,18 +420,20 @@ async def test_callable_prop_with_javacript(display: DisplayFixture):
     assert await my_div.inner_text() == "PREFIX TEXT: TEST 123"
 
 
-def test_import_js_from_string():
-    reactpy.web.import_js_from_string("temp", "old", "Component", resolve_exports=False)
+def test_reactjs_component_from_string():
+    reactpy.web.reactjs_component_from_string(
+        "temp", "old", "Component", resolve_imports=False
+    )
     reactpy.web.module._STRING_WEB_MODULE_CACHE.clear()
     with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
-        reactpy.web.import_js_from_string(
-            "temp", "new", "Component", resolve_exports=False
+        reactpy.web.reactjs_component_from_string(
+            "temp", "new", "Component", resolve_imports=False
         )
 
 
-async def test_import_js_from_url(browser):
-    SimpleButton = reactpy.web.import_js_from_url(
-        "/static/simple-button.js", "SimpleButton", resolve_exports=False
+async def test_reactjs_component_from_url(browser):
+    SimpleButton = reactpy.web.reactjs_component_from_url(
+        "/static/simple-button.js", "SimpleButton", resolve_imports=False
     )
 
     @reactpy.component
@@ -448,8 +450,8 @@ async def test_import_js_from_url(browser):
             await display.page.wait_for_selector("#my-button")
 
 
-async def test_import_js_from_file(display: DisplayFixture):
-    SimpleButton = reactpy.web.import_js_from_file(
+async def test_reactjs_component_from_file(display: DisplayFixture):
+    SimpleButton = reactpy.web.reactjs_component_from_file(
         "simple-button", JS_FIXTURES_DIR / "simple-button.js", "SimpleButton"
     )
 
@@ -468,12 +470,12 @@ async def test_import_js_from_file(display: DisplayFixture):
     await poll(lambda: is_clicked.current).until_is(True)
 
 
-def test_import_js_from_url_caching():
+def test_reactjs_component_from_url_caching():
     url = "https://example.com/module.js"
     reactpy.web.module._URL_WEB_MODULE_CACHE.clear()
 
     # First import
-    reactpy.web.import_js_from_url(url, "Component", resolve_exports=False)
+    reactpy.web.reactjs_component_from_url(url, "Component", resolve_imports=False)
     # Find the key that contains the 'url' substring
     key = next(x for x in reactpy.web.module._URL_WEB_MODULE_CACHE.keys() if url in x)
     module1 = reactpy.web.module._URL_WEB_MODULE_CACHE[key]
@@ -481,32 +483,32 @@ def test_import_js_from_url_caching():
     initial_length = len(reactpy.web.module._URL_WEB_MODULE_CACHE)
 
     # Second import
-    reactpy.web.import_js_from_url(url, "Component", resolve_exports=False)
+    reactpy.web.reactjs_component_from_url(url, "Component", resolve_imports=False)
     assert len(reactpy.web.module._URL_WEB_MODULE_CACHE) == initial_length
 
 
-def test_import_js_from_file_caching(tmp_path):
+def test_reactjs_component_from_file_caching(tmp_path):
     file = tmp_path / "test.js"
     file.write_text("export function Component() {}")
     name = "test-file-module"
     reactpy.web.module._FILE_WEB_MODULE_CACHE.clear()
 
-    reactpy.web.import_js_from_file(name, file, "Component")
+    reactpy.web.reactjs_component_from_file(name, file, "Component")
     key = next(x for x in reactpy.web.module._FILE_WEB_MODULE_CACHE.keys() if name in x)
     module1 = reactpy.web.module._FILE_WEB_MODULE_CACHE[key]
     assert module1
     initial_length = len(reactpy.web.module._FILE_WEB_MODULE_CACHE)
 
-    reactpy.web.import_js_from_file(name, file, "Component")
+    reactpy.web.reactjs_component_from_file(name, file, "Component")
     assert len(reactpy.web.module._FILE_WEB_MODULE_CACHE) == initial_length
 
 
-def test_import_js_from_string_caching():
+def test_reactjs_component_from_string_caching():
     name = "test-string-module"
     content = "export function Component() {}"
     reactpy.web.module._STRING_WEB_MODULE_CACHE.clear()
 
-    reactpy.web.import_js_from_string(name, content, "Component")
+    reactpy.web.reactjs_component_from_string(name, content, "Component")
     key = next(
         x for x in reactpy.web.module._STRING_WEB_MODULE_CACHE.keys() if name in x
     )
@@ -514,5 +516,5 @@ def test_import_js_from_string_caching():
     assert module1
     initial_length = len(reactpy.web.module._STRING_WEB_MODULE_CACHE)
 
-    reactpy.web.import_js_from_string(name, content, "Component")
+    reactpy.web.reactjs_component_from_string(name, content, "Component")
     assert len(reactpy.web.module._STRING_WEB_MODULE_CACHE) == initial_length
