@@ -19,7 +19,7 @@ JS_FIXTURES_DIR = Path(__file__).parent / "js_fixtures"
 
 
 async def test_that_js_module_unmount_is_called(display: DisplayFixture):
-    SomeComponent = reactpy.web.export(
+    SomeComponent = reactpy.web.import_components(
         reactpy.web.module_from_file(
             "set-flag-when-unmount-is-called",
             JS_FIXTURES_DIR / "set-flag-when-unmount-is-called.js",
@@ -52,7 +52,7 @@ async def test_that_js_module_unmount_is_called(display: DisplayFixture):
 
 
 async def test_module_from_url(browser):
-    SimpleButton = reactpy.web.export(
+    SimpleButton = reactpy.web.import_components(
         reactpy.web.module_from_url("/static/simple-button.js", resolve_exports=False),
         "SimpleButton",
     )
@@ -72,7 +72,7 @@ async def test_module_from_url(browser):
 
 
 async def test_module_from_file(display: DisplayFixture):
-    SimpleButton = reactpy.web.export(
+    SimpleButton = reactpy.web.import_components(
         reactpy.web.module_from_file(
             "simple-button", JS_FIXTURES_DIR / "simple-button.js"
         ),
@@ -163,14 +163,14 @@ def test_module_missing_exports():
     module = WebModule("test", NAME_SOURCE, None, {"a", "b", "c"}, None, False)
 
     with pytest.raises(ValueError, match="does not export 'x'"):
-        reactpy.web.export(module, "x")
+        reactpy.web.import_components(module, "x")
 
     with pytest.raises(ValueError, match=r"does not export \['x', 'y'\]"):
-        reactpy.web.export(module, ["x", "y"])
+        reactpy.web.import_components(module, ["x", "y"])
 
 
 async def test_module_exports_multiple_components(display: DisplayFixture):
-    Header1, Header2 = reactpy.web.export(
+    Header1, Header2 = reactpy.web.import_components(
         reactpy.web.module_from_file(
             "exports-two-components", JS_FIXTURES_DIR / "exports-two-components.js"
         ),
@@ -190,7 +190,7 @@ async def test_imported_components_can_render_children(display: DisplayFixture):
     module = reactpy.web.module_from_file(
         "component-can-have-child", JS_FIXTURES_DIR / "component-can-have-child.js"
     )
-    Parent, Child = reactpy.web.export(module, ["Parent", "Child"])
+    Parent, Child = reactpy.web.import_components(module, ["Parent", "Child"])
 
     await display.show(
         lambda: Parent(
@@ -222,7 +222,7 @@ async def test_keys_properly_propagated(display: DisplayFixture):
     module = reactpy.web.module_from_file(
         "keys-properly-propagated", JS_FIXTURES_DIR / "keys-properly-propagated.js"
     )
-    GridLayout = reactpy.web.export(module, "GridLayout")
+    GridLayout = reactpy.web.import_components(module, "GridLayout")
 
     await display.show(
         lambda: GridLayout(
@@ -277,7 +277,7 @@ async def test_subcomponent_notation_as_str_attrs(display: DisplayFixture):
         "subcomponent-notation",
         JS_FIXTURES_DIR / "subcomponent-notation.js",
     )
-    InputGroup, InputGroupText, FormControl, FormLabel = reactpy.web.export(
+    InputGroup, InputGroupText, FormControl, FormLabel = reactpy.web.import_components(
         module, ["InputGroup", "InputGroup.Text", "Form.Control", "Form.Label"]
     )
 
@@ -337,7 +337,7 @@ async def test_subcomponent_notation_as_obj_attrs(display: DisplayFixture):
         "subcomponent-notation",
         JS_FIXTURES_DIR / "subcomponent-notation.js",
     )
-    InputGroup, Form = reactpy.web.export(module, ["InputGroup", "Form"])
+    InputGroup, Form = reactpy.web.import_components(module, ["InputGroup", "Form"])
 
     content = reactpy.html.div(
         {"id": "the-parent"},
@@ -394,7 +394,7 @@ async def test_callable_prop_with_javacript(display: DisplayFixture):
     module = reactpy.web.module_from_file(
         "callable-prop", JS_FIXTURES_DIR / "callable-prop.js"
     )
-    Component = reactpy.web.export(module, "Component")
+    Component = reactpy.web.import_components(module, "Component")
 
     @reactpy.component
     def App():
@@ -415,3 +415,11 @@ def test_module_from_string():
     reactpy.web.module_from_string("temp", "old")
     with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
         reactpy.web.module_from_string("temp", "new")
+
+
+def test_deprecated_export():
+    module = reactpy.web.module_from_string(
+        "temp", "export function Component() { return 'hello' }"
+    )
+    with pytest.warns(DeprecationWarning, match="The 'export' function is deprecated"):
+        reactpy.web.export(module, "Component")
