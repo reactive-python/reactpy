@@ -189,7 +189,7 @@ def module_from_url(
     resolve_exports: bool | None = None,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
-) -> WebModule:
+) -> WebModule:  # pragma: no cover
     warn(
         "module_from_url is deprecated, use import_js_from_url instead",
         DeprecationWarning,
@@ -211,7 +211,7 @@ def module_from_file(
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
     symlink: bool = False,
-) -> WebModule:
+) -> WebModule:  # pragma: no cover
     warn(
         "module_from_file is deprecated, use import_js_from_file instead",
         DeprecationWarning,
@@ -234,7 +234,7 @@ def module_from_string(
     resolve_exports: bool | None = None,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
-) -> WebModule:
+) -> WebModule:  # pragma: no cover
     warn(
         "module_from_string is deprecated, use import_js_from_string instead",
         DeprecationWarning,
@@ -466,7 +466,7 @@ def export(
     export_names: str | list[str] | tuple[str, ...],
     fallback: Any | None = None,
     allow_children: bool = True,
-) -> VdomConstructor | list[VdomConstructor]:
+) -> VdomConstructor | list[VdomConstructor]:  # pragma: no cover
     warn(
         "export is deprecated, use import_js_from_* functions instead",
         DeprecationWarning,
