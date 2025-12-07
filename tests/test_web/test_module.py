@@ -474,12 +474,15 @@ def test_import_js_from_url_caching():
 
     # First import
     reactpy.web.import_js_from_url(url, "Component", resolve_exports=False)
-    assert url in reactpy.web.module._URL_WEB_MODULE_CACHE
-    module1 = reactpy.web.module._URL_WEB_MODULE_CACHE[url]
+    # Find the key that contains the 'url' substring
+    key = next(x for x in reactpy.web.module._URL_WEB_MODULE_CACHE.keys() if url in x)
+    module1 = reactpy.web.module._URL_WEB_MODULE_CACHE[key]
+    assert module1
+    initial_length = len(reactpy.web.module._URL_WEB_MODULE_CACHE)
 
     # Second import
     reactpy.web.import_js_from_url(url, "Component", resolve_exports=False)
-    assert reactpy.web.module._URL_WEB_MODULE_CACHE[url] is module1
+    assert len(reactpy.web.module._URL_WEB_MODULE_CACHE) == initial_length
 
 
 def test_import_js_from_file_caching(tmp_path):
@@ -489,11 +492,13 @@ def test_import_js_from_file_caching(tmp_path):
     reactpy.web.module._FILE_WEB_MODULE_CACHE.clear()
 
     reactpy.web.import_js_from_file(name, file, "Component")
-    assert name in reactpy.web.module._FILE_WEB_MODULE_CACHE
-    module1 = reactpy.web.module._FILE_WEB_MODULE_CACHE[name]
+    key = next(x for x in reactpy.web.module._FILE_WEB_MODULE_CACHE.keys() if name in x)
+    module1 = reactpy.web.module._FILE_WEB_MODULE_CACHE[key]
+    assert module1
+    initial_length = len(reactpy.web.module._FILE_WEB_MODULE_CACHE)
 
     reactpy.web.import_js_from_file(name, file, "Component")
-    assert reactpy.web.module._FILE_WEB_MODULE_CACHE[name] is module1
+    assert len(reactpy.web.module._FILE_WEB_MODULE_CACHE) == initial_length
 
 
 def test_import_js_from_string_caching():
@@ -502,8 +507,12 @@ def test_import_js_from_string_caching():
     reactpy.web.module._STRING_WEB_MODULE_CACHE.clear()
 
     reactpy.web.import_js_from_string(name, content, "Component")
-    assert name in reactpy.web.module._STRING_WEB_MODULE_CACHE
-    module1 = reactpy.web.module._STRING_WEB_MODULE_CACHE[name]
+    key = next(
+        x for x in reactpy.web.module._STRING_WEB_MODULE_CACHE.keys() if name in x
+    )
+    module1 = reactpy.web.module._STRING_WEB_MODULE_CACHE[key]
+    assert module1
+    initial_length = len(reactpy.web.module._STRING_WEB_MODULE_CACHE)
 
     reactpy.web.import_js_from_string(name, content, "Component")
-    assert reactpy.web.module._STRING_WEB_MODULE_CACHE[name] is module1
+    assert len(reactpy.web.module._STRING_WEB_MODULE_CACHE) == initial_length

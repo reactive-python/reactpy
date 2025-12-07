@@ -65,8 +65,9 @@ def import_js_from_url(
         allow_children:
             Whether or not these components can have children.
     """
-    if url in _URL_WEB_MODULE_CACHE:
-        module = _URL_WEB_MODULE_CACHE[url]
+    key = f"{url}{resolve_exports}{resolve_exports_depth}{unmount_before_update}"
+    if key in _URL_WEB_MODULE_CACHE:
+        module = _URL_WEB_MODULE_CACHE[key]
     else:
         module = _module_from_url(
             url,
@@ -75,7 +76,7 @@ def import_js_from_url(
             resolve_exports_depth=resolve_exports_depth,
             unmount_before_update=unmount_before_update,
         )
-        _URL_WEB_MODULE_CACHE[url] = module
+        _URL_WEB_MODULE_CACHE[key] = module
     return _vdom_from_web_module(module, export_names, fallback, allow_children)
 
 
@@ -117,8 +118,9 @@ def import_js_from_file(
         allow_children:
             Whether or not these components can have children.
     """
-    if name in _FILE_WEB_MODULE_CACHE:
-        module = _FILE_WEB_MODULE_CACHE[name]
+    key = f"{name}{resolve_exports}{resolve_exports_depth}{unmount_before_update}"
+    if key in _FILE_WEB_MODULE_CACHE:
+        module = _FILE_WEB_MODULE_CACHE[key]
     else:
         module = _module_from_file(
             name,
@@ -129,7 +131,7 @@ def import_js_from_file(
             unmount_before_update=unmount_before_update,
             symlink=symlink,
         )
-        _FILE_WEB_MODULE_CACHE[name] = module
+        _FILE_WEB_MODULE_CACHE[key] = module
     return _vdom_from_web_module(module, export_names, fallback, allow_children)
 
 
@@ -168,8 +170,9 @@ def import_js_from_string(
         allow_children:
             Whether or not these components can have children.
     """
-    if name in _STRING_WEB_MODULE_CACHE:
-        module = _STRING_WEB_MODULE_CACHE[name]
+    key = f"{name}{resolve_exports}{resolve_exports_depth}{unmount_before_update}"
+    if key in _STRING_WEB_MODULE_CACHE:
+        module = _STRING_WEB_MODULE_CACHE[key]
     else:
         module = _module_from_string(
             name,
@@ -179,7 +182,7 @@ def import_js_from_string(
             resolve_exports_depth=resolve_exports_depth,
             unmount_before_update=unmount_before_update,
         )
-        _STRING_WEB_MODULE_CACHE[name] = module
+        _STRING_WEB_MODULE_CACHE[key] = module
     return _vdom_from_web_module(module, export_names, fallback, allow_children)
 
 
