@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import inspect
 from collections.abc import Sequence
 from typing import Any, Callable, Literal, overload
 
@@ -72,6 +74,18 @@ def event(
     return setup(function) if function is not None else setup
 
 
+class Event(dict):
+    def __getattr__(self, name: str) -> Any:
+        value = self.get(name)
+        return Event(value) if isinstance(value, dict) else value
+
+    def preventDefault(self) -> None:
+        """Prevent the default action of the event."""
+
+    def stopPropagation(self) -> None:
+        """Stop the event from propagating."""
+
+
 class EventHandler:
     """Turn a function or coroutine into an event handler
 
@@ -102,6 +116,19 @@ class EventHandler:
         target: str | None = None,
     ) -> None:
         self.function = to_event_handler_function(function, positional_args=False)
+
+        if not (stop_propagation and prevent_default):
+            with contextlib.suppress(Exception):
+                func_to_inspect = function
+                while hasattr(func_to_inspect, "__wrapped__"):
+                    func_to_inspect = func_to_inspect.__wrapped__
+
+                source = inspect.getsource(func_to_inspect)
+                if not stop_propagation and ".stopPropagation()" in source:
+                    stop_propagation = True
+                if not prevent_default and ".preventDefault()" in source:
+                    prevent_default = True
+
         self.prevent_default = prevent_default
         self.stop_propagation = stop_propagation
         self.target = target
@@ -145,17 +172,21 @@ def to_event_handler_function(
             async def wrapper(data: Sequence[Any]) -> None:
                 await function(*data)
 
+            wrapper.__wrapped__ = function
+
         else:
 
             async def wrapper(data: Sequence[Any]) -> None:
                 function(*data)
 
+        wrapper.__wrapped__ = function
         return wrapper
     elif not asyncio.iscoroutinefunction(function):
 
         async def wrapper(data: Sequence[Any]) -> None:
             function(data)
 
+        wrapper.__wrapped__ = function
         return wrapper
     else:
         return function
