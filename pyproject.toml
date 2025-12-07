@@ -86,7 +86,6 @@ artifacts = []
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
-  "reactpy[all]",
   "pytest-sugar",
   "pytest-asyncio",
   "responses",
@@ -94,6 +93,7 @@ extra-dependencies = [
   "jsonpointer",
   "starlette",
 ]
+features = ["all"]
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.10", "3.11", "3.12", "3.13"]
