@@ -74,7 +74,7 @@ Unreleased
 - :pull:`1113` - Removed ``reactpy.core.types`` module. Use ``reactpy.types`` instead.
 - :pull:`1278` - Removed ``reactpy.utils.html_to_vdom``. Use ``reactpy.utils.string_to_reactpy`` instead.
 - :pull:`1278` - Removed ``reactpy.utils.vdom_to_html``. Use ``reactpy.utils.reactpy_to_string`` instead.
-- :pull:`1113` - Removed all backend related installation extras (such as ``pip install reactpy[starlette]``).
+- :pull:`1113` - Removed backend specific installation extras (such as ``pip install reactpy[starlette]``).
 - :pull:`1113` - Removed deprecated function ``module_from_template``.
 - :pull:`1113` - Removed support for Python 3.9.
 - :pull:`1264` - Removed support for async functions within ``reactpy.use_effect`` hook. Use ``reactpy.use_async_effect`` instead.
