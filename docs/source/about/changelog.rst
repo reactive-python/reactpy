@@ -31,9 +31,11 @@ Unreleased
 - :pull:`1281` - Added type hints to ``reactpy.html`` attributes.
 - :pull:`1285` - Added support for nested components in web modules
 - :pull:`1289` - Added support for inline JavaScript as event handlers or other attributes that expect a callable via ``reactpy.types.InlineJavaScript``
--:pull:`1307` - Added ``reactpy.web.reactjs_component_from_file`` to import ReactJS components from a file.
--:pull:`1307` - Added ``reactpy.web.reactjs_component_from_url`` to import ReactJS components from a URL.
--:pull:`1307` - Added ``reactpy.web.reactjs_component_from_string`` to import ReactJS components from a string.
+- :pull:`1307` - Added ``reactpy.web.reactjs_component_from_file`` to import ReactJS components from a file.
+- :pull:`1307` - Added ``reactpy.web.reactjs_component_from_url`` to import ReactJS components from a URL.
+- :pull:`1307` - Added ``reactpy.web.reactjs_component_from_string`` to import ReactJS components from a string.
+- :pull:`1308` - Event functions can now call ``event.preventDefault()`` and ``event.stopPropagation()`` methods directly on the event data object, rather than using the ``@event`` decorator.
+- :pull:`1308` - Event data now supports accessing properties via dot notation (ex. ``event.target.value``).
 
 **Changed**
 

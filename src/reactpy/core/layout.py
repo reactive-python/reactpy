@@ -36,6 +36,7 @@ from reactpy.config import (
     REACTPY_DEBUG,
 )
 from reactpy.core._life_cycle_hook import LifeCycleHook
+from reactpy.core.events import Event
 from reactpy.core.vdom import validate_vdom_json
 from reactpy.types import (
     ComponentType,
@@ -120,7 +121,8 @@ class Layout:
 
         if handler is not None:
             try:
-                await handler.function(event["data"])
+                data = [Event(d) if isinstance(d, dict) else d for d in event["data"]]
+                await handler.function(data)
             except Exception:
                 logger.exception(f"Failed to execute event handler {handler}")
         else:

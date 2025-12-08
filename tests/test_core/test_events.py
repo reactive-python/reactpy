@@ -1,12 +1,15 @@
 import pytest
 
 import reactpy
+from reactpy import component, html
 from reactpy.core.events import (
+    Event,
     EventHandler,
     merge_event_handler_funcs,
     merge_event_handlers,
     to_event_handler_function,
 )
+from reactpy.core.layout import Layout
 from reactpy.testing import DisplayFixture, poll
 from tests.tooling.common import DEFAULT_TYPE_DELAY
 
@@ -315,3 +318,91 @@ async def test_javascript_event_after_state_update(display: DisplayFixture):
     generated_divs = await parent.query_selector_all("div")
 
     assert len(generated_divs) == 6
+
+
+def test_detect_prevent_default():
+    def handler(event: Event):
+        event.preventDefault()
+
+    eh = EventHandler(handler)
+    assert eh.prevent_default is True
+
+
+def test_detect_stop_propagation():
+    def handler(event: Event):
+        event.stopPropagation()
+
+    eh = EventHandler(handler)
+    assert eh.stop_propagation is True
+
+
+def test_detect_both():
+    def handler(event: Event):
+        event.preventDefault()
+        event.stopPropagation()
+
+    eh = EventHandler(handler)
+    assert eh.prevent_default is True
+    assert eh.stop_propagation is True
+
+
+def test_no_detect():
+    def handler(event: Event):
+        pass
+
+    eh = EventHandler(handler)
+    assert eh.prevent_default is False
+    assert eh.stop_propagation is False
+
+
+def test_event_wrapper():
+    data = {"a": 1, "b": {"c": 2}}
+    event = Event(data)
+    assert event.a == 1
+    assert event.b.c == 2
+    assert event["a"] == 1
+    assert event["b"]["c"] == 2
+
+
+async def test_vdom_has_prevent_default():
+    @component
+    def MyComponent():
+        def handler(event: Event):
+            event.preventDefault()
+
+        return html.button({"onClick": handler})
+
+    async with Layout(MyComponent()) as layout:
+        await layout.render()
+        # Check layout._event_handlers
+        # Find the handler
+        handler = next(iter(layout._event_handlers.values()))
+        assert handler.prevent_default is True
+
+
+def test_event_export():
+    from reactpy import Event
+
+    assert Event is not None
+
+
+def test_detect_false_positive():
+    def handler(event: Event):
+        # This should not trigger detection
+        other = Event()
+        other.preventDefault()
+        other.stopPropagation()
+
+    eh = EventHandler(handler)
+    assert eh.prevent_default is False
+    assert eh.stop_propagation is False
+
+
+def test_detect_renamed_argument():
+    def handler(e: Event):
+        e.preventDefault()
+        e.stopPropagation()
+
+    eh = EventHandler(handler)
+    assert eh.prevent_default is True
+    assert eh.stop_propagation is True
