@@ -37,11 +37,19 @@ def pytest_addoption(parser: Parser) -> None:
 @pytest.fixture(autouse=True, scope="session")
 def install_playwright():
     subprocess.run(["playwright", "install", "chromium"], check=True)  # noqa: S607, S603
+    subprocess.run(["playwright", "install-deps"], check=True)  # noqa: S607, S603
 
 
 @pytest.fixture(autouse=True, scope="session")
 def rebuild():
-    subprocess.run(["hatch", "build", "-t", "wheel"], check=True)  # noqa: S607, S603
+    # When running inside `hatch test`, the `HATCH_ENV_ACTIVE` environment variable
+    # is set. If we try to run `hatch build` with this variable set, Hatch will
+    # complain that the current environment is not a builder environment.
+    # To fix this, we remove `HATCH_ENV_ACTIVE` from the environment variables
+    # passed to the subprocess.
+    env = os.environ.copy()
+    env.pop("HATCH_ENV_ACTIVE", None)
+    subprocess.run(["hatch", "build", "-t", "wheel"], check=True, env=env)  # noqa: S607, S603
 
 
 @pytest.fixture(autouse=True, scope="function")

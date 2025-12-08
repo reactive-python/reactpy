@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import dis
 from collections.abc import Sequence
-from typing import Any, Callable, Literal, overload
+from typing import Any, Callable, Literal, cast, overload
 
 from anyio import create_task_group
 
@@ -69,10 +70,19 @@ def event(
             prevent_default,
         )
 
-    if function is not None:
-        return setup(function)
-    else:
-        return setup
+    return setup(function) if function is not None else setup
+
+
+class Event(dict):
+    def __getattr__(self, name: str) -> Any:
+        value = self.get(name)
+        return Event(value) if isinstance(value, dict) else value
+
+    def preventDefault(self) -> None:
+        """Prevent the default action of the event."""
+
+    def stopPropagation(self) -> None:
+        """Stop the event from propagating."""
 
 
 class EventHandler:
@@ -109,18 +119,47 @@ class EventHandler:
         self.stop_propagation = stop_propagation
         self.target = target
 
+        # Check if our `preventDefault` or `stopPropagation` methods were called
+        # by inspecting the function's bytecode
+        func_to_inspect = cast(Any, function)
+        while hasattr(func_to_inspect, "__wrapped__"):
+            func_to_inspect = func_to_inspect.__wrapped__
+
+        code = func_to_inspect.__code__
+        if code.co_argcount > 0:
+            event_arg_name = code.co_varnames[0]
+            last_was_event = False
+
+            for instr in dis.get_instructions(func_to_inspect):
+                if instr.opname == "LOAD_FAST" and instr.argval == event_arg_name:
+                    last_was_event = True
+                    continue
+
+                if last_was_event and instr.opname in (
+                    "LOAD_METHOD",
+                    "LOAD_ATTR",
+                ):
+                    if instr.argval == "preventDefault":
+                        self.prevent_default = True
+                    elif instr.argval == "stopPropagation":
+                        self.stop_propagation = True
+
+                last_was_event = False
+
+    __hash__ = None  # type: ignore
+
     def __eq__(self, other: object) -> bool:
         undefined = object()
-        for attr in (
-            "function",
-            "prevent_default",
-            "stop_propagation",
-            "target",
-        ):
-            if not attr.startswith("_"):
-                if not getattr(other, attr, undefined) == getattr(self, attr):
-                    return False
-        return True
+        return not any(
+            not attr.startswith("_")
+            and not getattr(other, attr, undefined) == getattr(self, attr)
+            for attr in (
+                "function",
+                "prevent_default",
+                "stop_propagation",
+                "target",
+            )
+        )
 
     def __repr__(self) -> str:
         public_names = [name for name in self.__slots__ if not name.startswith("_")]
@@ -146,17 +185,21 @@ def to_event_handler_function(
             async def wrapper(data: Sequence[Any]) -> None:
                 await function(*data)
 
+            cast(Any, wrapper).__wrapped__ = function
+
         else:
 
             async def wrapper(data: Sequence[Any]) -> None:
                 function(*data)
 
+        cast(Any, wrapper).__wrapped__ = function
         return wrapper
     elif not asyncio.iscoroutinefunction(function):
 
         async def wrapper(data: Sequence[Any]) -> None:
             function(data)
 
+        cast(Any, wrapper).__wrapped__ = function
         return wrapper
     else:
         return function

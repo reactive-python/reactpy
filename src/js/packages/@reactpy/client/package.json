@@ -1,13 +1,17 @@
 {
-  "author": "Ryan Morshead",
+  "author": "Mark Bakhit",
+  "contributors": [
+    "Ryan Morshead"
+  ],
   "dependencies": {
-    "json-pointer": "^0.6.2",
-    "preact": "^10.26.9"
+    "json-pointer": "catalog:",
+    "preact": "catalog:",
+    "event-to-object": "catalog:"
   },
   "description": "A client for ReactPy implemented in React",
   "devDependencies": {
-    "@types/json-pointer": "^1.0.34",
-    "typescript": "^5.8.3"
+    "@types/json-pointer": "catalog:",
+    "typescript": "catalog:"
   },
   "keywords": [
     "react",
@@ -18,8 +22,9 @@
   "license": "MIT",
   "main": "dist/index.js",
   "name": "@reactpy/client",
-  "peerDependencies": {
-    "event-to-object": "<1.0.0"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/reactive-python/reactpy"
   },
   "repository": {
     "type": "git",

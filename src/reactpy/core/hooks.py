@@ -79,7 +79,7 @@ def use_state(initial_value: _Type | Callable[[], _Type]) -> State[_Type]:
 
 
 class _CurrentState(Generic[_Type]):
-    __slots__ = "value", "dispatch"
+    __slots__ = "dispatch", "value"
 
     def __init__(
         self,
@@ -534,7 +534,7 @@ def use_memo(
 class _Memo(Generic[_Type]):
     """Simple object for storing memoization data"""
 
-    __slots__ = "value", "deps"
+    __slots__ = "deps", "value"
 
     value: _Type
     deps: Sequence[Any]

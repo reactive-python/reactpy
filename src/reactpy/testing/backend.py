@@ -119,7 +119,7 @@ class BackendFixture:
         self.log_records = self._exit_stack.enter_context(capture_reactpy_logs())
 
         # Wait for the server to start
-        self.webserver.config.setup_event_loop()
+        self.webserver.config.get_loop_factory()
         self.webserver_task = asyncio.create_task(self.webserver.serve())
         await asyncio.sleep(1)
 

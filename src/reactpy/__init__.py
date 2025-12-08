@@ -2,7 +2,7 @@ from reactpy import config, logging, types, web, widgets
 from reactpy._html import html
 from reactpy.core import hooks
 from reactpy.core.component import component
-from reactpy.core.events import event
+from reactpy.core.events import Event, event
 from reactpy.core.hooks import (
     create_context,
     use_async_effect,
@@ -24,9 +24,10 @@ from reactpy.pyscript.components import pyscript_component
 from reactpy.utils import Ref, reactpy_to_string, string_to_reactpy
 
 __author__ = "The Reactive Python Team"
-__version__ = "2.0.0b2"
+__version__ = "2.0.0b3"
 
 __all__ = [
+    "Event",
     "Layout",
     "Ref",
     "Vdom",

@@ -31,6 +31,11 @@ Unreleased
 - :pull:`1281` - Added type hints to ``reactpy.html`` attributes.
 - :pull:`1285` - Added support for nested components in web modules
 - :pull:`1289` - Added support for inline JavaScript as event handlers or other attributes that expect a callable via ``reactpy.types.InlineJavaScript``
+- :pull:`1307` - Added ``reactpy.web.reactjs_component_from_file`` to import ReactJS components from a file.
+- :pull:`1307` - Added ``reactpy.web.reactjs_component_from_url`` to import ReactJS components from a URL.
+- :pull:`1307` - Added ``reactpy.web.reactjs_component_from_string`` to import ReactJS components from a string.
+- :pull:`1308` - Event functions can now call ``event.preventDefault()`` and ``event.stopPropagation()`` methods directly on the event data object, rather than using the ``@event`` decorator.
+- :pull:`1308` - Event data now supports accessing properties via dot notation (ex. ``event.target.value``).
 
 **Changed**
 
@@ -49,6 +54,14 @@ Unreleased
 - :pull:`1281` - ``reactpy.core.vdom._CustomVdomDictConstructor`` has been moved to ``reactpy.types.CustomVdomConstructor``.
 - :pull:`1281` - ``reactpy.core.vdom._EllipsisRepr`` has been moved to ``reactpy.types.EllipsisRepr``.
 - :pull:`1281` - ``reactpy.types.VdomDictConstructor`` has been renamed to ``reactpy.types.VdomConstructor``.
+- :pull:`1196` - Rewrite the ``event-to-object`` package to be more robust at handling properties on events.
+
+**Deprecated**
+-:pull:`1307` - ``reactpy.web.export`` is deprecated. Use ``reactpy.web.reactjs_component_from_*`` instead.
+-:pull:`1307` - ``reactpy.web.module_from_file`` is deprecated. Use ``reactpy.web.reactjs_component_from_file`` instead.
+-:pull:`1307` - ``reactpy.web.module_from_url`` is deprecated. Use ``reactpy.web.reactjs_component_from_url`` instead.
+-:pull:`1307` - ``reactpy.web.module_from_string`` is deprecated. Use ``reactpy.web.reactjs_component_from_string`` instead.
+
 
 **Removed**
 

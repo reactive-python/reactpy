@@ -74,8 +74,8 @@ commands = [
   'bun run --cwd "src/js/packages/@reactpy/client" build',
   'bun install --cwd "src/js/packages/@reactpy/app"',
   'bun run --cwd "src/js/packages/@reactpy/app" build',
-  'python "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/node_modules/@pyscript/core/dist" "src/reactpy/static/pyscript"',
-  'python "src/build_scripts/copy_dir.py" "src/js/packages/@reactpy/app/node_modules/morphdom/dist" "src/reactpy/static/morphdom"',
+  'python "src/build_scripts/copy_dir.py" "src/js/node_modules/@pyscript/core/dist" "src/reactpy/static/pyscript"',
+  'python "src/build_scripts/copy_dir.py" "src/js/node_modules/morphdom/dist" "src/reactpy/static/morphdom"',
 ]
 artifacts = []
 
@@ -85,7 +85,6 @@ artifacts = []
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
-  "reactpy[all]",
   "pytest-sugar",
   "pytest-asyncio",
   "responses",
@@ -93,6 +92,7 @@ extra-dependencies = [
   "jsonpointer",
   "starlette",
 ]
+features = ["all"]
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.10", "3.11", "3.12", "3.13"]
@@ -181,10 +181,7 @@ check = [
   'bun run --cwd "src/js/packages/@reactpy/app" checkTypes',
 ]
 fix = ['bun install --cwd "src/js"', 'bun run --cwd "src/js" format']
-test = [
-  'hatch run javascript:build_event_to_object',
-  'bun run --cwd "src/js/packages/event-to-object" test',
-]
+test = ['hatch run javascript:build_event_to_object', 'bun test']
 build = [
   'hatch run "src/build_scripts/clean_js_dir.py"',
   'bun install --cwd "src/js"',
@@ -307,6 +304,8 @@ lint.ignore = [
   "PLR0912",
   "PLR0913",
   "PLR0915",
+  # Allow imports anywhere
+  "PLC0415",
 ]
 lint.unfixable = [
   # Don't touch unused imports
