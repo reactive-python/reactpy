@@ -40,11 +40,10 @@ urls.Documentation = "https://reactpy.dev/"
 urls.Source = "https://github.com/reactive-python/reactpy"
 
 [project.optional-dependencies]
-all = ["reactpy[asgi,jinja,uvicorn,testing]"]
+all = ["reactpy[asgi,jinja,testing]"]
 asgi = ["asgiref", "asgi-tools", "servestatic", "orjson", "pip"]
 jinja = ["jinja2-simple-tags", "jinja2 >=3"]
-uvicorn = ["uvicorn[standard]"]
-testing = ["playwright"]
+testing = ["playwright", "uvicorn[standard]"]
 
 [tool.hatch.version]
 path = "src/reactpy/__init__.py"
