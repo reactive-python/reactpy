@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
-import inspect
+import dis
 from collections.abc import Sequence
 from typing import Any, Callable, Literal, cast, overload
 
@@ -116,22 +115,36 @@ class EventHandler:
         target: str | None = None,
     ) -> None:
         self.function = to_event_handler_function(function, positional_args=False)
-
-        if not (stop_propagation and prevent_default):
-            with contextlib.suppress(Exception):
-                func_to_inspect = cast(Any, function)
-                while hasattr(func_to_inspect, "__wrapped__"):
-                    func_to_inspect = func_to_inspect.__wrapped__
-
-                source = inspect.getsource(func_to_inspect)
-                if not stop_propagation and ".stopPropagation()" in source:
-                    stop_propagation = True
-                if not prevent_default and ".preventDefault()" in source:
-                    prevent_default = True
-
         self.prevent_default = prevent_default
         self.stop_propagation = stop_propagation
         self.target = target
+
+        # Check if our `preventDefault` or `stopPropagation` methods were called
+        # by inspecting the function's bytecode
+        func_to_inspect = cast(Any, function)
+        while hasattr(func_to_inspect, "__wrapped__"):
+            func_to_inspect = func_to_inspect.__wrapped__
+
+        code = func_to_inspect.__code__
+        if code.co_argcount > 0:
+            event_arg_name = code.co_varnames[0]
+            last_was_event = False
+
+            for instr in dis.get_instructions(func_to_inspect):
+                if instr.opname == "LOAD_FAST" and instr.argval == event_arg_name:
+                    last_was_event = True
+                    continue
+
+                if last_was_event and instr.opname in (
+                    "LOAD_METHOD",
+                    "LOAD_ATTR",
+                ):
+                    if instr.argval == "preventDefault":
+                        self.prevent_default = True
+                    elif instr.argval == "stopPropagation":
+                        self.stop_propagation = True
+
+                last_was_event = False
 
     __hash__ = None  # type: ignore
 

@@ -384,3 +384,25 @@ def test_event_export():
     from reactpy import Event
 
     assert Event is not None
+
+
+def test_detect_false_positive():
+    def handler(event: Event):
+        # This should not trigger detection
+        other = Event()
+        other.preventDefault()
+        other.stopPropagation()
+
+    eh = EventHandler(handler)
+    assert eh.prevent_default is False
+    assert eh.stop_propagation is False
+
+
+def test_detect_renamed_argument():
+    def handler(e: Event):
+        e.preventDefault()
+        e.stopPropagation()
+
+    eh = EventHandler(handler)
+    assert eh.prevent_default is True
+    assert eh.stop_propagation is True
