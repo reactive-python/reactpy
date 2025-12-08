@@ -26,10 +26,6 @@
     "type": "git",
     "url": "https://github.com/reactive-python/reactpy"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/reactive-python/reactpy"
-  },
   "scripts": {
     "build": "tsc -b",
     "checkTypes": "tsc --noEmit"
