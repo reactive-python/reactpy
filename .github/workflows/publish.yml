@@ -20,7 +20,7 @@ jobs:
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "Publish to NPM"
-            run-cmd: "hatch run javascript:publish_reactpy_client"
+            run-cmd: "hatch run javascript:publish_client"
         secrets:
             node-auth-token: ${{ secrets.NODE_AUTH_TOKEN }}
 
