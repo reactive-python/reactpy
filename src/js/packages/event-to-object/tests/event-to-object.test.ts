@@ -670,3 +670,10 @@ test("handles recursive HTML node structures", () => {
     expect(converted.children[0].parentNode).toBeUndefined();
   }
 });
+
+test("pass-through on unexpected non-object inputs", () => {
+  expect(convert(null as any)).toEqual(null);
+  expect(convert(undefined as any)).toEqual(undefined);
+  expect(convert(42 as any)).toEqual(42);
+  expect(convert("test" as any)).toEqual("test");
+});
