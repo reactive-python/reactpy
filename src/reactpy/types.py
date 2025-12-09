@@ -1010,17 +1010,30 @@ class Context(Protocol[_Type]):
         *children: Any,
         value: _Type = ...,
         key: Key | None = ...,
-    ) -> ContextProviderType[_Type]: ...
+    ) -> ContextProvider[_Type]: ...
 
 
-class ContextProviderType(Component, Protocol[_Type]):
-    """A component which provides a context value to its children"""
+class ContextProvider(Generic[_Type]):
+    def __init__(
+        self,
+        *children: Any,
+        value: _Type,
+        key: Key | None,
+        type: Context[_Type],
+    ) -> None:
+        self.children = children
+        self.key = key
+        self.type = type
+        self.value = value
 
-    type: Context[_Type]
-    """The context type"""
+    def render(self) -> VdomDict:
+        from reactpy.core.hooks import HOOK_STACK
 
-    @property
-    def value(self) -> _Type: ...  # Current context value
+        HOOK_STACK.current_hook().set_context_provider(self)
+        return VdomDict(tagName="", children=self.children)
+
+    def __repr__(self) -> str:
+        return f"ContextProvider({self.type})"
 
 
 @dataclass

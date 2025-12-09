@@ -39,6 +39,7 @@ from reactpy.core.vdom import validate_vdom_json
 from reactpy.types import (
     Component,
     Context,
+    ContextProvider,
     Event,
     EventHandlerDict,
     Key,
@@ -69,7 +70,7 @@ class Layout:
     if not hasattr(abc.ABC, "__weakref__"):  # nocov
         __slots__ += ("__weakref__",)
 
-    def __init__(self, root: Component | Context[Any]) -> None:
+    def __init__(self, root: Component | Context[Any] | ContextProvider[Any]) -> None:
         super().__init__()
         if not isinstance(root, Component):
             msg = f"Expected a ComponentType, not {type(root)!r}."

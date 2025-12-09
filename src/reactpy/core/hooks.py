@@ -21,10 +21,10 @@ from reactpy.core._life_cycle_hook import HOOK_STACK
 from reactpy.types import (
     Connection,
     Context,
+    ContextProvider,
     Key,
     Location,
     State,
-    VdomDict,
 )
 from reactpy.utils import Ref
 
@@ -301,8 +301,8 @@ def create_context(default_value: _Type) -> Context[_Type]:
         *children: Any,
         value: _Type = default_value,
         key: Key | None = None,
-    ) -> _ContextProvider[_Type]:
-        return _ContextProvider(
+    ) -> ContextProvider[_Type]:
+        return ContextProvider(
             *children,
             value=value,
             key=key,
@@ -356,27 +356,6 @@ def use_scope() -> dict[str, Any] | asgi_types.HTTPScope | asgi_types.WebSocketS
 def use_location() -> Location:
     """Get the current :class:`~reactpy.types.Connection`'s location."""
     return use_connection().location
-
-
-class _ContextProvider(Generic[_Type]):
-    def __init__(
-        self,
-        *children: Any,
-        value: _Type,
-        key: Key | None,
-        type: Context[_Type],
-    ) -> None:
-        self.children = children
-        self.key = key
-        self.type = type
-        self.value = value
-
-    def render(self) -> VdomDict:
-        HOOK_STACK.current_hook().set_context_provider(self)
-        return VdomDict(tagName="", children=self.children)
-
-    def __repr__(self) -> str:
-        return f"ContextProvider({self.type})"
 
 
 _ActionType = TypeVar("_ActionType")
