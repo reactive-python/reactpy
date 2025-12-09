@@ -25,16 +25,6 @@ The event will then trigger an :class:`reactpy.core.proto.EventHandlerType` in a
 """
 
 
-class Stop(BaseException):
-    """Deprecated
-
-    Stop serving changes and events
-
-    Raising this error will tell dispatchers to gracefully exit. Typically this is
-    called by code running inside a layout to tell it to stop rendering.
-    """
-
-
 async def serve_layout(
     layout: LayoutType[
         LayoutUpdateMessage | dict[str, Any], LayoutEventMessage | dict[str, Any]
@@ -44,17 +34,9 @@ async def serve_layout(
 ) -> None:
     """Run a dispatch loop for a single view instance"""
     async with layout:
-        try:
-            async with create_task_group() as task_group:
-                task_group.start_soon(_single_outgoing_loop, layout, send)
-                task_group.start_soon(_single_incoming_loop, task_group, layout, recv)
-        except Stop:  # nocov
-            warn(
-                "The Stop exception is deprecated and will be removed in a future version",
-                UserWarning,
-                stacklevel=1,
-            )
-            logger.info(f"Stopped serving {layout}")
+        async with create_task_group() as task_group:
+            task_group.start_soon(_single_outgoing_loop, layout, send)
+            task_group.start_soon(_single_incoming_loop, task_group, layout, recv)
 
 
 async def _single_outgoing_loop(
