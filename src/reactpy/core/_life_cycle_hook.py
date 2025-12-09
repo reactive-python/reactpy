@@ -3,8 +3,9 @@ from __future__ import annotations
 import logging
 import sys
 from asyncio import Event, Task, create_task, gather
+from collections.abc import Callable
 from contextvars import ContextVar, Token
-from typing import Any, Callable, Protocol, TypeVar
+from typing import Any, Protocol, TypeVar
 
 from anyio import Semaphore
 

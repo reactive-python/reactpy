@@ -2,21 +2,19 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-from collections.abc import Coroutine, Sequence
+from collections.abc import Callable, Coroutine, Sequence
 from logging import getLogger
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Generic,
     Protocol,
+    TypeAlias,
     TypeVar,
     cast,
     overload,
 )
-
-from typing_extensions import TypeAlias
 
 from reactpy.config import REACTPY_DEBUG
 from reactpy.core._life_cycle_hook import HOOK_STACK
@@ -515,7 +513,7 @@ def use_memo(
         # if deps are same length check identity for each item
         or not all(
             strictly_equal(current, new)
-            for current, new in zip(memo.deps, dependencies)
+            for current, new in zip(memo.deps, dependencies, strict=False)
         )
     ):
         memo.deps = dependencies

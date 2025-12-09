@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from logging import getLogger
-from typing import Any, Callable
+from typing import Any
 
 from anyio import create_task_group
 from anyio.abc import TaskGroup

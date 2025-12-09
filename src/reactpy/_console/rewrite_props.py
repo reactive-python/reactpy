@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import ast
+from collections.abc import Callable
 from copy import copy
 from keyword import kwlist
 from pathlib import Path
-from typing import Callable
 
 import click
 
@@ -102,7 +102,7 @@ def _rewrite_props(
         keys: list[ast.expr | None] = []
         values: list[ast.expr] = []
         # Iterate over the keys and values in the dictionary
-        for k, v in zip(props_node.keys, props_node.values):
+        for k, v in zip(props_node.keys, props_node.values, strict=False):
             if isinstance(k, ast.Constant) and isinstance(k.value, str):
                 # Construct the new key and value
                 k_value, new_v = constructor(k.value, v)

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import dis
-from collections.abc import Sequence
-from typing import Any, Callable, Literal, cast, overload
+from collections.abc import Callable, Sequence
+from typing import Any, Literal, cast, overload
 
 from anyio import create_task_group
 

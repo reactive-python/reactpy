@@ -10,13 +10,25 @@ requires = ["hatchling", "hatch-build-scripts"]
 name = "reactpy"
 description = "It's React, but in Python."
 readme = "README.md"
-keywords = ["react", "javascript", "reactpy", "component"]
+keywords = [
+  "react",
+  "reactjs",
+  "reactpy",
+  "components",
+  "asgi",
+  "wsgi",
+  "website",
+  "interactive",
+  "reactive",
+  "javascript",
+  "server",
+]
 license = "MIT"
 authors = [
   { name = "Mark Bakhit", email = "archiethemonger@gmail.com" },
   { name = "Ryan Morshead", email = "ryan.morshead@gmail.com" },
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Programming Language :: Python",
@@ -24,6 +36,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
@@ -95,7 +108,7 @@ extra-dependencies = [
 features = ["all"]
 
 [[tool.hatch.envs.hatch-test.matrix]]
-python = ["3.10", "3.11", "3.12", "3.13"]
+python = ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
 [tool.pytest.ini_options]
 addopts = ["--strict-config", "--strict-markers"]

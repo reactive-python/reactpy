@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
 from typing import (
     Any,
-    Callable,
     Generic,
     Literal,
     Protocol,
+    TypeAlias,
     TypeVar,
     overload,
     runtime_checkable,
 )
 
-from typing_extensions import NamedTuple, NotRequired, TypeAlias, TypedDict, Unpack
+from typing_extensions import NamedTuple, NotRequired, TypedDict, Unpack
 
 CarrierType = TypeVar("CarrierType")
 _Type = TypeVar("_Type")

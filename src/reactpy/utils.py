@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from importlib import import_module
 from itertools import chain
-from typing import Any, Callable, Generic, TypeVar, cast
+from typing import Any, Generic, TypeVar, cast
 
 from lxml import etree
 from lxml.html import fromstring

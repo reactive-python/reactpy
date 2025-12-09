@@ -11,16 +11,16 @@ from asyncio import (
     wait,
 )
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from contextlib import AsyncExitStack
 from logging import getLogger
 from types import TracebackType
 from typing import (
     Any,
-    Callable,
     Generic,
     NamedTuple,
     NewType,
+    TypeAlias,
     TypeVar,
     cast,
 )
@@ -28,7 +28,6 @@ from uuid import uuid4
 from weakref import ref as weakref
 
 from anyio import Semaphore
-from typing_extensions import TypeAlias
 
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,

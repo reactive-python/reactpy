@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import hashlib
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import formatdate
 from logging import getLogger
-from typing import Callable, Literal, cast, overload
+from typing import Literal, cast, overload
 
 from asgi_tools import ResponseHTML
 from typing_extensions import Unpack

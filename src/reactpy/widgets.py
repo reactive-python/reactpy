@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from base64 import b64encode
-from collections.abc import Sequence
-from typing import Any, Callable, Protocol, TypeVar
+from collections.abc import Callable, Sequence
+from typing import Any, Protocol, TypeVar
 
 import reactpy
 from reactpy._html import html

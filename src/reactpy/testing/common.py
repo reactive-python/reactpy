@@ -5,9 +5,9 @@ import inspect
 import os
 import shutil
 import time
-from collections.abc import Awaitable, Coroutine
+from collections.abc import Awaitable, Callable, Coroutine
 from functools import wraps
-from typing import Any, Callable, Generic, TypeVar, cast
+from typing import Any, Generic, TypeVar, cast
 from uuid import uuid4
 from weakref import ref
 
