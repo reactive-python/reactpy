@@ -926,18 +926,25 @@ class EventHandlerFunc(Protocol):
     async def __call__(self, data: Sequence[Any]) -> None: ...
 
 
-@runtime_checkable
-class EventHandlerType(Protocol):
+class BaseEventHandler:
     """Defines a handler for some event"""
+
+    __slots__ = (
+        "__weakref__",
+        "function",
+        "prevent_default",
+        "stop_propagation",
+        "target",
+    )
+
+    function: EventHandlerFunc
+    """A coroutine which can respond to an event and its data"""
 
     prevent_default: bool
     """Whether to block the event from propagating further up the DOM"""
 
     stop_propagation: bool
     """Stops the default action associate with the event from taking place."""
-
-    function: EventHandlerFunc
-    """A coroutine which can respond to an event and its data"""
 
     target: str | None
     """Typically left as ``None`` except when a static target is useful.
@@ -951,10 +958,10 @@ class EventHandlerType(Protocol):
     """
 
 
-EventHandlerMapping = Mapping[str, EventHandlerType]
+EventHandlerMapping = Mapping[str, BaseEventHandler]
 """A generic mapping between event names to their handlers"""
 
-EventHandlerDict: TypeAlias = dict[str, EventHandlerType]
+EventHandlerDict: TypeAlias = dict[str, BaseEventHandler]
 """A dict mapping between event names to their handlers"""
 
 InlineJavaScriptMapping = Mapping[str, InlineJavaScript]

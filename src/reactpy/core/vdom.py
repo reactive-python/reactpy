@@ -17,11 +17,11 @@ from reactpy.config import REACTPY_CHECK_JSON_ATTRS, REACTPY_DEBUG
 from reactpy.core._f_back import f_module_name
 from reactpy.core.events import EventHandler, to_event_handler_function
 from reactpy.types import (
+    BaseEventHandler,
     Component,
     CustomVdomConstructor,
     EllipsisRepr,
     EventHandlerDict,
-    EventHandlerType,
     ImportSourceDict,
     InlineJavaScript,
     InlineJavaScriptDict,
@@ -231,13 +231,13 @@ def separate_attributes_handlers_and_inline_javascript(
     attributes: Mapping[str, Any],
 ) -> tuple[VdomAttributes, EventHandlerDict, InlineJavaScriptDict]:
     _attributes: VdomAttributes = {}
-    _event_handlers: dict[str, EventHandlerType] = {}
+    _event_handlers: dict[str, BaseEventHandler] = {}
     _inline_javascript: dict[str, InlineJavaScript] = {}
 
     for k, v in attributes.items():
         if callable(v):
             _event_handlers[k] = EventHandler(to_event_handler_function(v))
-        elif isinstance(v, EventHandler):
+        elif isinstance(v, BaseEventHandler):
             _event_handlers[k] = v
         elif EVENT_ATTRIBUTE_PATTERN.match(k) and isinstance(v, str):
             _inline_javascript[k] = InlineJavaScript(v)
