@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Awaitable
 from logging import getLogger
 from typing import Any, Callable
-from warnings import warn
 
 from anyio import create_task_group
 from anyio.abc import TaskGroup
