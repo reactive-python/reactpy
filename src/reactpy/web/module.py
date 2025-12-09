@@ -33,6 +33,30 @@ _FILE_WEB_MODULE_CACHE: dict[str, WebModule] = {}
 _STRING_WEB_MODULE_CACHE: dict[str, WebModule] = {}
 
 
+@overload
+def reactjs_component_from_url(
+    url: str,
+    import_names: str,
+    fallback: Any | None = ...,
+    resolve_imports: bool | None = ...,
+    resolve_imports_depth: int = ...,
+    unmount_before_update: bool = ...,
+    allow_children: bool = ...,
+) -> VdomConstructor: ...
+
+
+@overload
+def reactjs_component_from_url(
+    url: str,
+    import_names: list[str] | tuple[str, ...],
+    fallback: Any | None = ...,
+    resolve_imports: bool | None = ...,
+    resolve_imports_depth: int = ...,
+    unmount_before_update: bool = ...,
+    allow_children: bool = ...,
+) -> list[VdomConstructor]: ...
+
+
 def reactjs_component_from_url(
     url: str,
     import_names: str | list[str] | tuple[str, ...],
@@ -78,6 +102,34 @@ def reactjs_component_from_url(
         )
         _URL_WEB_MODULE_CACHE[key] = module
     return _vdom_from_web_module(module, import_names, fallback, allow_children)
+
+
+@overload
+def reactjs_component_from_file(
+    name: str,
+    file: str | Path,
+    import_names: str,
+    fallback: Any | None = ...,
+    resolve_imports: bool | None = ...,
+    resolve_imports_depth: int = ...,
+    unmount_before_update: bool = ...,
+    symlink: bool = ...,
+    allow_children: bool = ...,
+) -> VdomConstructor: ...
+
+
+@overload
+def reactjs_component_from_file(
+    name: str,
+    file: str | Path,
+    import_names: list[str] | tuple[str, ...],
+    fallback: Any | None = ...,
+    resolve_imports: bool | None = ...,
+    resolve_imports_depth: int = ...,
+    unmount_before_update: bool = ...,
+    symlink: bool = ...,
+    allow_children: bool = ...,
+) -> list[VdomConstructor]: ...
 
 
 def reactjs_component_from_file(
@@ -133,6 +185,32 @@ def reactjs_component_from_file(
         )
         _FILE_WEB_MODULE_CACHE[key] = module
     return _vdom_from_web_module(module, import_names, fallback, allow_children)
+
+
+@overload
+def reactjs_component_from_string(
+    name: str,
+    content: str,
+    import_names: str,
+    fallback: Any | None = ...,
+    resolve_imports: bool | None = ...,
+    resolve_imports_depth: int = ...,
+    unmount_before_update: bool = ...,
+    allow_children: bool = ...,
+) -> VdomConstructor: ...
+
+
+@overload
+def reactjs_component_from_string(
+    name: str,
+    content: str,
+    import_names: list[str] | tuple[str, ...],
+    fallback: Any | None = ...,
+    resolve_imports: bool | None = ...,
+    resolve_imports_depth: int = ...,
+    unmount_before_update: bool = ...,
+    allow_children: bool = ...,
+) -> list[VdomConstructor]: ...
 
 
 def reactjs_component_from_string(

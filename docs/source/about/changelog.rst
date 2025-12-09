@@ -57,6 +57,7 @@ Unreleased
 - :pull:`1196` - Rewrite the ``event-to-object`` package to be more robust at handling properties on events.
 
 **Deprecated**
+
 -:pull:`1307` - ``reactpy.web.export`` is deprecated. Use ``reactpy.web.reactjs_component_from_*`` instead.
 -:pull:`1307` - ``reactpy.web.module_from_file`` is deprecated. Use ``reactpy.web.reactjs_component_from_file`` instead.
 -:pull:`1307` - ``reactpy.web.module_from_url`` is deprecated. Use ``reactpy.web.reactjs_component_from_url`` instead.
