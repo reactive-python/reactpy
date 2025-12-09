@@ -69,7 +69,7 @@ export class ReactPyClient
       url: this.urls.componentUrl,
       readyPromise: this.ready,
       ...props.reconnectOptions,
-      onMessage: (event) => this.handleIncoming(JSON.parse(event.data)),
+      onMessage: async ({ data }) => this.handleIncoming(JSON.parse(data)),
     });
   }
 
