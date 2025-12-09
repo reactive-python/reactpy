@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import filecmp
+import hashlib
 import logging
 import shutil
 from dataclasses import dataclass
@@ -106,9 +107,9 @@ def reactjs_component_from_url(
 
 @overload
 def reactjs_component_from_file(
-    name: str,
     file: str | Path,
     import_names: str,
+    name: str = "",
     fallback: Any | None = ...,
     resolve_imports: bool | None = ...,
     resolve_imports_depth: int = ...,
@@ -120,9 +121,9 @@ def reactjs_component_from_file(
 
 @overload
 def reactjs_component_from_file(
-    name: str,
     file: str | Path,
     import_names: list[str] | tuple[str, ...],
+    name: str = "",
     fallback: Any | None = ...,
     resolve_imports: bool | None = ...,
     resolve_imports_depth: int = ...,
@@ -133,9 +134,9 @@ def reactjs_component_from_file(
 
 
 def reactjs_component_from_file(
-    name: str,
     file: str | Path,
     import_names: str | list[str] | tuple[str, ...],
+    name: str = "",
     fallback: Any | None = None,
     resolve_imports: bool | None = None,
     resolve_imports_depth: int = 5,
@@ -146,14 +147,14 @@ def reactjs_component_from_file(
     """Import a component from a file.
 
     Parameters:
-        name:
-            The name of the package
         file:
             The file from which the content of the web module will be created.
         import_names:
             One or more component names to import. If given as a string, a single component
             will be returned. If a list is given, then a list of components will be
             returned.
+        name:
+            The human-readable name of the ReactJS package
         fallback:
             What to temporarily display while the module is being loaded.
         resolve_imports:
@@ -170,6 +171,7 @@ def reactjs_component_from_file(
         allow_children:
             Whether or not these components can have children.
     """
+    name = name or hashlib.sha256(str(file).encode()).hexdigest()[:10]
     key = f"{name}{resolve_imports}{resolve_imports_depth}{unmount_before_update}"
     if key in _FILE_WEB_MODULE_CACHE:
         module = _FILE_WEB_MODULE_CACHE[key]
@@ -189,9 +191,9 @@ def reactjs_component_from_file(
 
 @overload
 def reactjs_component_from_string(
-    name: str,
     content: str,
     import_names: str,
+    name: str = "",
     fallback: Any | None = ...,
     resolve_imports: bool | None = ...,
     resolve_imports_depth: int = ...,
@@ -202,9 +204,9 @@ def reactjs_component_from_string(
 
 @overload
 def reactjs_component_from_string(
-    name: str,
     content: str,
     import_names: list[str] | tuple[str, ...],
+    name: str = "",
     fallback: Any | None = ...,
     resolve_imports: bool | None = ...,
     resolve_imports_depth: int = ...,
@@ -214,9 +216,9 @@ def reactjs_component_from_string(
 
 
 def reactjs_component_from_string(
-    name: str,
     content: str,
     import_names: str | list[str] | tuple[str, ...],
+    name: str = "",
     fallback: Any | None = None,
     resolve_imports: bool | None = None,
     resolve_imports_depth: int = 5,
@@ -226,14 +228,14 @@ def reactjs_component_from_string(
     """Import a component from a string.
 
     Parameters:
-        name:
-            The name of the package
         content:
             The contents of the web module
         import_names:
             One or more component names to import. If given as a string, a single component
             will be returned. If a list is given, then a list of components will be
             returned.
+        name:
+            The human-readable name of the ReactJS package
         fallback:
             What to temporarily display while the module is being loaded.
         resolve_imports:
@@ -248,6 +250,7 @@ def reactjs_component_from_string(
         allow_children:
             Whether or not these components can have children.
     """
+    name = name or hashlib.sha256(content.encode()).hexdigest()[:10]
     key = f"{name}{resolve_imports}{resolve_imports_depth}{unmount_before_update}"
     if key in _STRING_WEB_MODULE_CACHE:
         module = _STRING_WEB_MODULE_CACHE[key]
