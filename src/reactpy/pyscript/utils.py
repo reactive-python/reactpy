@@ -87,6 +87,7 @@ def pyscript_component_html(
     )
 
 
+@functools.cache
 def pyscript_setup_html(
     extra_py: Sequence[str],
     extra_js: dict[str, Any] | str,
@@ -105,13 +106,12 @@ def pyscript_setup_html(
     )
 
 
+@functools.cache
 def extend_pyscript_config(
     extra_py: Sequence[str],
     extra_js: dict[str, str] | str,
     config: dict[str, Any] | str,
 ) -> str:
-    import orjson
-
     # Extends ReactPy's default PyScript config with user provided values.
     pyscript_config: dict[str, Any] = {
         "packages": [reactpy_version_string(), "jsonpointer==3.*", "ssl"],
@@ -135,7 +135,7 @@ def extend_pyscript_config(
         pyscript_config.update(json.loads(config))
     elif config and isinstance(config, dict):
         pyscript_config.update(config)
-    return orjson.dumps(pyscript_config).decode("utf-8")
+    return json.dumps(pyscript_config)
 
 
 def reactpy_version_string() -> str:  # nocov
