@@ -87,7 +87,6 @@ def pyscript_component_html(
     )
 
 
-@functools.cache
 def pyscript_setup_html(
     extra_py: Sequence[str],
     extra_js: dict[str, Any] | str,
@@ -106,7 +105,6 @@ def pyscript_setup_html(
     )
 
 
-@functools.cache
 def extend_pyscript_config(
     extra_py: Sequence[str],
     extra_js: dict[str, str] | str,
