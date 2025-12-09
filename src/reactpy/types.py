@@ -1013,7 +1013,7 @@ class Context(Protocol[_Type]):
     ) -> ContextProvider[_Type]: ...
 
 
-class ContextProvider(Generic[_Type]):
+class ContextProvider(Component, Generic[_Type]):
     def __init__(
         self,
         *children: Any,

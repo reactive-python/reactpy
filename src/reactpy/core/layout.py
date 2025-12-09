@@ -12,7 +12,7 @@ from asyncio import (
 )
 from collections import Counter
 from collections.abc import Callable, Sequence
-from contextlib import AsyncExitStack
+from contextlib import AsyncExitStack, suppress
 from logging import getLogger
 from types import TracebackType
 from typing import (
@@ -73,7 +73,7 @@ class Layout:
     def __init__(self, root: Component | Context[Any] | ContextProvider[Any]) -> None:
         super().__init__()
         if not isinstance(root, Component):
-            msg = f"Expected a ComponentType, not {type(root)!r}."
+            msg = f"Expected a ReactPy component, not {type(root)!r}."
             raise TypeError(msg)
         self.root = root
 
@@ -98,11 +98,8 @@ class Layout:
 
         for t in self._render_tasks:
             t.cancel()
-            try:
+            with suppress(CancelledError):
                 await t
-            except CancelledError:
-                pass
-
         await self._unmount_model_states([root_model_state])
 
         # delete attributes here to avoid access after exiting context manager

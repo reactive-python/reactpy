@@ -56,9 +56,9 @@ def test_layout_repr():
 
 
 def test_layout_expects_abstract_component():
-    with pytest.raises(TypeError, match="Expected a ComponentType"):
+    with pytest.raises(TypeError, match="Expected a ReactPy component"):
         Layout(None)
-    with pytest.raises(TypeError, match="Expected a ComponentType"):
+    with pytest.raises(TypeError, match="Expected a ReactPy component"):
         Layout(reactpy.html.div())
 
 
