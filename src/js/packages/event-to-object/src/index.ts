@@ -7,10 +7,18 @@ export default function convert(
   classObject: { [key: string]: any },
   maxDepth: number = 10,
 ): object {
-  const visited = new WeakSet<any>();
-  visited.add(classObject);
+  // Immediately return `classObject` if given an unexpected (non-object) input
+  if (!classObject || typeof classObject !== "object") {
+    console.warn(
+      "eventToObject: Expected an object input, received:",
+      classObject,
+    );
+    return classObject;
+  }
 
   // Begin conversion
+  const visited = new WeakSet<any>();
+  visited.add(classObject);
   const convertedObj: { [key: string]: any } = {};
   for (const key in classObject) {
     // Skip keys that cannot be converted

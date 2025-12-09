@@ -36,11 +36,11 @@ from reactpy.config import (
     REACTPY_DEBUG,
 )
 from reactpy.core._life_cycle_hook import LifeCycleHook
-from reactpy.core.events import Event
 from reactpy.core.vdom import validate_vdom_json
 from reactpy.types import (
     ComponentType,
     Context,
+    Event,
     EventHandlerDict,
     Key,
     LayoutEventMessage,

@@ -135,7 +135,7 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
 
     task = asyncio.create_task(
         serve_layout(
-            reactpy.Layout(ComponentWithTwoEventHandlers()),
+            Layout(ComponentWithTwoEventHandlers()),
             send_queue.put,
             recv_queue.get,
         )

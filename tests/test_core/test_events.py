@@ -3,7 +3,6 @@ import pytest
 import reactpy
 from reactpy import component, html
 from reactpy.core.events import (
-    Event,
     EventHandler,
     merge_event_handler_funcs,
     merge_event_handlers,
@@ -11,6 +10,7 @@ from reactpy.core.events import (
 )
 from reactpy.core.layout import Layout
 from reactpy.testing import DisplayFixture, poll
+from reactpy.types import Event
 from tests.tooling.common import DEFAULT_TYPE_DELAY
 
 
@@ -381,7 +381,7 @@ async def test_vdom_has_prevent_default():
 
 
 def test_event_export():
-    from reactpy import Event
+    from reactpy.types import Event
 
     assert Event is not None
 

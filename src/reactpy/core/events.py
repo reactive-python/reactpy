@@ -73,18 +73,6 @@ def event(
     return setup(function) if function is not None else setup
 
 
-class Event(dict):
-    def __getattr__(self, name: str) -> Any:
-        value = self.get(name)
-        return Event(value) if isinstance(value, dict) else value
-
-    def preventDefault(self) -> None:
-        """Prevent the default action of the event."""
-
-    def stopPropagation(self) -> None:
-        """Stop the event from propagating."""
-
-
 class EventHandler:
     """Turn a function or coroutine into an event handler
 

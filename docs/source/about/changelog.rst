@@ -57,6 +57,7 @@ Unreleased
 - :pull:`1196` - Rewrite the ``event-to-object`` package to be more robust at handling properties on events.
 
 **Deprecated**
+
 -:pull:`1307` - ``reactpy.web.export`` is deprecated. Use ``reactpy.web.reactjs_component_from_*`` instead.
 -:pull:`1307` - ``reactpy.web.module_from_file`` is deprecated. Use ``reactpy.web.reactjs_component_from_file`` instead.
 -:pull:`1307` - ``reactpy.web.module_from_url`` is deprecated. Use ``reactpy.web.reactjs_component_from_url`` instead.
@@ -81,6 +82,10 @@ Unreleased
 - :pull:`1281` - Removed ``reactpy.vdom``. Use ``reactpy.Vdom`` instead.
 - :pull:`1281` - Removed ``reactpy.core.make_vdom_constructor``. Use ``reactpy.Vdom`` instead.
 - :pull:`1281` - Removed ``reactpy.core.custom_vdom_constructor``. Use ``reactpy.Vdom`` instead.
+- :pull:`1311` - Removed ``reactpy.core.serve.Stop`` type due to extended deprecation.
+- :pull:`1311` - Removed ``reactpy.Layout`` top-level export. Use ``reactpy.core.layout.Layout`` instead.
+- :pull:`1311` - Removed ``reactpy.widgets.hotswap`` due to extended deprecation.
+
 
 **Fixed**
 
@@ -288,7 +293,7 @@ v0.43.0
 
 **Deprecated**
 
-- :pull:`870` - ``ComponentType.should_render()``. This method was implemented based on
+- :pull:`870` - ``ComponentType.()``. This method was implemented based on
   reading the React/Preact source code. As it turns out though it seems like it's mostly
   a vestige from the fact that both these libraries still support class-based
   components. The ability for components to not render also caused several bugs.

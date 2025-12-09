@@ -1,5 +1,5 @@
 import type { ReactPyClientInterface } from "./types";
-import serializeEvent from "event-to-object";
+import eventToObject from "event-to-object";
 import type {
   ReactPyVdom,
   ReactPyVdomImportSource,
@@ -212,7 +212,13 @@ function createEventHandler(
       if (stopPropagation) {
         event.stopPropagation();
       }
-      return serializeEvent(event);
+
+      // Convert JavaScript objects to plain JSON, if needed
+      if (typeof event === "object") {
+        return eventToObject(event);
+      } else {
+        return event;
+      }
     });
     client.sendMessage({ type: "layout-event", data, target });
   };

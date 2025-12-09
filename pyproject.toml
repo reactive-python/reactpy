@@ -98,10 +98,7 @@ features = ["all"]
 python = ["3.10", "3.11", "3.12", "3.13"]
 
 [tool.pytest.ini_options]
-addopts = """\
-  --strict-config
-  --strict-markers
-"""
+addopts = ["--strict-config", "--strict-markers"]
 filterwarnings = """
   ignore::DeprecationWarning:uvicorn.*
   ignore::DeprecationWarning:websockets.*
