@@ -13,8 +13,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
-import jsonpointer
-
 import reactpy
 from reactpy.config import REACTPY_DEBUG, REACTPY_PATH_PREFIX, REACTPY_WEB_MODULES_DIR
 from reactpy.types import VdomDict
@@ -116,11 +114,7 @@ def extend_pyscript_config(
 
     # Extends ReactPy's default PyScript config with user provided values.
     pyscript_config: dict[str, Any] = {
-        "packages": [
-            reactpy_version_string(),
-            f"jsonpointer=={jsonpointer.__version__}",
-            "ssl",
-        ],
+        "packages": [reactpy_version_string(), "jsonpointer==3.*", "ssl"],
         "js_modules": {
             "main": {
                 f"{REACTPY_PATH_PREFIX.current}static/morphdom/morphdom-esm.js": "morphdom"
