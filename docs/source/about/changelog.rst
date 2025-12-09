@@ -82,6 +82,8 @@ Unreleased
 - :pull:`1281` - Removed ``reactpy.vdom``. Use ``reactpy.Vdom`` instead.
 - :pull:`1281` - Removed ``reactpy.core.make_vdom_constructor``. Use ``reactpy.Vdom`` instead.
 - :pull:`1281` - Removed ``reactpy.core.custom_vdom_constructor``. Use ``reactpy.Vdom`` instead.
+- :pull:`xxxx` - Removed ``reactpy.core.serve.Stop`` exception type.
+- :pull:`xxxx` - Removed ``reactpy.Layout`` top-levle export. Use ``reactpy.core.layout.Layout`` instead.
 
 **Fixed**
 

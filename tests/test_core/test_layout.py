@@ -51,15 +51,15 @@ def test_layout_repr():
     def MyComponent(): ...
 
     my_component = MyComponent()
-    layout = reactpy.Layout(my_component)
+    layout = Layout(my_component)
     assert str(layout) == f"Layout(MyComponent({id(my_component):02x}))"
 
 
 def test_layout_expects_abstract_component():
     with pytest.raises(TypeError, match="Expected a ComponentType"):
-        reactpy.Layout(None)
+        Layout(None)
     with pytest.raises(TypeError, match="Expected a ComponentType"):
-        reactpy.Layout(reactpy.html.div())
+        Layout(reactpy.html.div())
 
 
 async def test_layout_cannot_be_used_outside_context_manager(caplog):
@@ -67,7 +67,7 @@ async def test_layout_cannot_be_used_outside_context_manager(caplog):
     def Component(): ...
 
     component = Component()
-    layout = reactpy.Layout(component)
+    layout = Layout(component)
 
     with pytest.raises(AttributeError):
         await layout.deliver(event_message("something"))
@@ -84,7 +84,7 @@ async def test_simple_layout():
         tag, set_state_hook.current = reactpy.hooks.use_state("div")
         return reactpy.Vdom(tag)()
 
-    async with reactpy.Layout(SimpleComponent()) as layout:
+    async with Layout(SimpleComponent()) as layout:
         update_1 = await layout.render()
         assert update_1 == update_message(
             path="",
@@ -131,7 +131,7 @@ async def test_nested_component_layout():
             "children": [{"tagName": "div", "children": [str(state)]}],
         }
 
-    async with reactpy.Layout(Parent()) as layout:
+    async with Layout(Parent()) as layout:
         update_1 = await layout.render()
         assert update_1 == update_message(
             path="",
@@ -174,7 +174,7 @@ async def test_layout_render_error_has_partial_update_with_error_message():
         raise ValueError(msg)
 
     with assert_reactpy_did_log(match_error="error from bad child"):
-        async with reactpy.Layout(Main()) as layout:
+        async with Layout(Main()) as layout:
             assert (await layout.render()) == update_message(
                 path="",
                 model={
@@ -225,7 +225,7 @@ async def test_layout_render_error_has_partial_update_without_error_message():
         raise ValueError(msg)
 
     with assert_reactpy_did_log(match_error="error from bad child"):
-        async with reactpy.Layout(Main()) as layout:
+        async with Layout(Main()) as layout:
             assert (await layout.render()) == update_message(
                 path="",
                 model={
@@ -263,7 +263,7 @@ async def test_render_raw_vdom_dict_with_single_component_object_as_children():
     def Child():
         return {"tagName": "div", "children": {"tagName": "h1"}}
 
-    async with reactpy.Layout(Main()) as layout:
+    async with Layout(Main()) as layout:
         assert (await layout.render()) == update_message(
             path="",
             model={
@@ -313,7 +313,7 @@ async def test_components_are_garbage_collected():
     def Inner():
         return reactpy.html.div()
 
-    async with reactpy.Layout(Outer()) as layout:
+    async with Layout(Outer()) as layout:
         await layout.render()
 
         assert len(live_components) == 2
@@ -356,7 +356,7 @@ async def test_root_component_life_cycle_hook_is_garbage_collected():
     def Root():
         return reactpy.html.div()
 
-    async with reactpy.Layout(Root()) as layout:
+    async with Layout(Root()) as layout:
         await layout.render()
 
         assert len(live_hooks) == 1
@@ -397,7 +397,7 @@ async def test_life_cycle_hooks_are_garbage_collected():
     def Inner():
         return reactpy.html.div()
 
-    async with reactpy.Layout(Outer()) as layout:
+    async with Layout(Outer()) as layout:
         await layout.render()
 
         assert len(live_hooks) == 2
@@ -434,7 +434,7 @@ async def test_double_updated_component_is_not_double_rendered():
         run_count.current += 1
         return reactpy.html.div()
 
-    async with reactpy.Layout(AnyComponent()) as layout:
+    async with Layout(AnyComponent()) as layout:
         await layout.render()
 
         assert run_count.current == 1
@@ -466,7 +466,7 @@ async def test_update_path_to_component_that_is_not_direct_child_is_correct():
     def Child():
         return reactpy.html.div()
 
-    async with reactpy.Layout(Parent()) as layout:
+    async with Layout(Parent()) as layout:
         await layout.render()
 
         hook.latest.schedule_render()
@@ -480,7 +480,7 @@ async def test_log_on_dispatch_to_missing_event_handler(caplog):
     def SomeComponent():
         return reactpy.html.div()
 
-    async with reactpy.Layout(SomeComponent()) as layout:
+    async with Layout(SomeComponent()) as layout:
         await layout.deliver(event_message("missing"))
 
     assert re.match(
@@ -522,7 +522,7 @@ async def test_model_key_preserves_callback_identity_for_common_elements(caplog)
 
         return reactpy.html.div(children)
 
-    async with reactpy.Layout(MyComponent()) as layout:
+    async with Layout(MyComponent()) as layout:
         await layout.render()
         for _i in range(3):
             event = event_message(good_handler.target)
@@ -574,7 +574,7 @@ async def test_model_key_preserves_callback_identity_for_components():
 
         return reactpy.html.button({"onClick": callback, "id": "good"}, "good")
 
-    async with reactpy.Layout(RootComponent()) as layout:
+    async with Layout(RootComponent()) as layout:
         await layout.render()
         for _ in range(3):
             event = event_message(good_handler.target)
@@ -596,7 +596,7 @@ async def test_component_can_return_another_component_directly():
     def Inner():
         return reactpy.html.div("hello")
 
-    async with reactpy.Layout(Outer()) as layout:
+    async with Layout(Outer()) as layout:
         assert (await layout.render()) == update_message(
             path="",
             model={
@@ -630,7 +630,7 @@ async def test_hooks_for_keyed_components_get_garbage_collected():
             registered_finalizers.add(finalizer_id)
         return reactpy.html.div(finalizer_id)
 
-    async with reactpy.Layout(Outer()) as layout:
+    async with Layout(Outer()) as layout:
         await layout.render()
 
         pop_item.current()
@@ -658,7 +658,7 @@ async def test_event_handler_at_component_root_is_garbage_collected():
         event_handler.current = weakref(button["eventHandlers"]["onClick"].function)
         return button
 
-    async with reactpy.Layout(HasEventHandlerAtRoot()) as layout:
+    async with Layout(HasEventHandlerAtRoot()) as layout:
         await layout.render()
 
         for _i in range(3):
@@ -680,7 +680,7 @@ async def test_event_handler_deep_in_component_layout_is_garbage_collected():
         event_handler.current = weakref(button["eventHandlers"]["onClick"].function)
         return reactpy.html.div(reactpy.html.div(button))
 
-    async with reactpy.Layout(HasNestedEventHandler()) as layout:
+    async with Layout(HasNestedEventHandler()) as layout:
         await layout.render()
 
         for _i in range(3):
@@ -705,7 +705,7 @@ async def test_duplicate_sibling_keys_causes_error(caplog):
         else:
             return reactpy.html.div()
 
-    async with reactpy.Layout(ComponentReturnsDuplicateKeys()) as layout:
+    async with Layout(ComponentReturnsDuplicateKeys()) as layout:
         with assert_reactpy_did_log(
             error_type=ValueError,
             match_error=r"Duplicate keys \['duplicate'\] at '/children/0'",
@@ -740,7 +740,7 @@ async def test_keyed_components_preserve_hook_on_parent_update():
     def Inner():
         return reactpy.html.div()
 
-    async with reactpy.Layout(Outer()) as layout:
+    async with Layout(Outer()) as layout:
         await layout.render()
         old_inner_hook = inner_hook.latest
 
@@ -762,7 +762,7 @@ async def test_log_error_on_bad_event_handler():
         return reactpy.html.button({"onClick": raise_error})
 
     with assert_reactpy_did_log(match_error="bad event handler"):
-        async with reactpy.Layout(ComponentWithBadEventHandler()) as layout:
+        async with Layout(ComponentWithBadEventHandler()) as layout:
             await layout.render()
             event = event_message(bad_handler.target)
             await layout.deliver(event)
@@ -786,7 +786,7 @@ async def test_schedule_render_from_unmounted_hook():
     with assert_reactpy_did_log(
         r"Did not render component with model state ID .*? - component already unmounted",
     ):
-        async with reactpy.Layout(Parent()) as layout:
+        async with Layout(Parent()) as layout:
             await layout.render()
 
             old_hook = child_hook.latest
@@ -826,7 +826,7 @@ async def test_elements_and_components_with_the_same_key_can_be_interchanged():
 
         return reactpy.html.div(name)
 
-    async with reactpy.Layout(Root()) as layout:
+    async with Layout(Root()) as layout:
         await layout.render()
 
         await poll(lambda: effects).until_equals(["mount x"])
@@ -863,7 +863,7 @@ async def test_layout_does_not_copy_element_children_by_key():
             ]
         )
 
-    async with reactpy.Layout(SomeComponent()) as layout:
+    async with Layout(SomeComponent()) as layout:
         await layout.render()
 
         set_items.current([2, 3])
@@ -895,7 +895,7 @@ async def test_changing_key_of_parent_element_unmounts_children():
         state.current = reactpy.hooks.use_state(random.random)[0]
         return reactpy.html.div()
 
-    async with reactpy.Layout(Root()) as layout:
+    async with Layout(Root()) as layout:
         await layout.render()
 
         for _i in range(5):
@@ -924,7 +924,7 @@ async def test_switching_node_type_with_event_handlers():
         handler = component_static_handler.use(lambda: None)
         return html.button({"onAnotherEvent": handler})
 
-    async with reactpy.Layout(Root()) as layout:
+    async with Layout(Root()) as layout:
         await layout.render()
 
         assert element_static_handler.target in layout._event_handlers
@@ -970,7 +970,7 @@ async def test_switching_component_definition():
         use_effect(lambda: lambda: second_used_state.set_current(None))
         return html.div()
 
-    async with reactpy.Layout(Root()) as layout:
+    async with Layout(Root()) as layout:
         await layout.render()
 
         assert first_used_state.current == "first"
@@ -1026,7 +1026,7 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
 
         return html.div({"key": child_key}, child_key)
 
-    async with reactpy.Layout(Parent()) as layout:
+    async with Layout(Parent()) as layout:
         await layout.render()
         await did_call_effect.wait()
         assert effect_calls_without_state == {"some-key", "key-0"}
@@ -1137,7 +1137,7 @@ async def test_does_render_children_after_component():
     def Child():
         return html.p("second")
 
-    async with reactpy.Layout(Parent()) as layout:
+    async with Layout(Parent()) as layout:
         update = await layout.render()
         assert update["model"] == {
             "tagName": "",
@@ -1173,7 +1173,7 @@ async def test_render_removed_context_consumer():
         nonlocal schedule_removed_child_render
         schedule_removed_child_render = use_force_render()
 
-    async with reactpy.Layout(Parent()) as layout:
+    async with Layout(Parent()) as layout:
         await layout.render()
 
         # If the context provider does not render its children then internally tracked
@@ -1226,7 +1226,7 @@ async def test_ensure_model_path_udpates():
         items = use_state(["A", "B", "C"])
         return html.fragment([Item(item, items, key=item) for item in items.value])
 
-    async with layout_runner(reactpy.Layout(App())) as runner:
+    async with layout_runner(Layout(App())) as runner:
         tree = await runner.render()
 
         # Delete item B

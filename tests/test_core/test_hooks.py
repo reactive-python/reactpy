@@ -23,7 +23,7 @@ async def test_must_be_rendering_in_layout_to_use_hooks():
     with pytest.raises(RuntimeError, match="No life cycle hook is active"):
         await SimpleComponentWithHook().render()
 
-    async with reactpy.Layout(SimpleComponentWithHook()) as layout:
+    async with Layout(SimpleComponentWithHook()) as layout:
         await layout.render()
 
 
@@ -41,7 +41,7 @@ async def test_simple_stateful_component():
 
     sse = SimpleStatefulComponent()
 
-    async with reactpy.Layout(sse) as layout:
+    async with Layout(sse) as layout:
         update_1 = await layout.render()
         assert update_1 == update_message(
             path="",
@@ -84,7 +84,7 @@ async def test_set_state_callback_identity_is_preserved():
 
     sse = SimpleStatefulComponent()
 
-    async with reactpy.Layout(sse) as layout:
+    async with Layout(sse) as layout:
         await layout.render()
         await layout.render()
         await layout.render()
@@ -117,7 +117,7 @@ async def test_use_state_with_constructor():
         state, set_inner_state.current = reactpy.use_state(make_default)
         return reactpy.html.div(state)
 
-    async with reactpy.Layout(Outer()) as layout:
+    async with Layout(Outer()) as layout:
         await layout.render()
 
         assert constructor_call_count.current == 1
@@ -150,7 +150,7 @@ async def test_set_state_with_reducer_instead_of_value():
         count.current, set_count.current = reactpy.hooks.use_state(0)
         return reactpy.html.div(count.current)
 
-    async with reactpy.Layout(Counter()) as layout:
+    async with Layout(Counter()) as layout:
         await layout.render()
 
         for i in range(4):
@@ -319,7 +319,7 @@ async def test_use_effect_callback_occurs_after_full_render_is_complete():
         effect_triggers_after_final_render.current = not effect_triggered.current
         return reactpy.html.div()
 
-    async with reactpy.Layout(OuterComponent()) as layout:
+    async with Layout(OuterComponent()) as layout:
         await layout.render()
 
     assert effect_triggered.current
@@ -347,7 +347,7 @@ async def test_use_effect_cleanup_occurs_before_next_effect():
 
         return reactpy.html.div()
 
-    async with reactpy.Layout(ComponentWithEffect()) as layout:
+    async with Layout(ComponentWithEffect()) as layout:
         await layout.render()
 
         assert not cleanup_triggered.current
@@ -386,7 +386,7 @@ async def test_use_effect_cleanup_occurs_on_will_unmount():
 
         return reactpy.html.div()
 
-    async with reactpy.Layout(OuterComponent()) as layout:
+    async with Layout(OuterComponent()) as layout:
         await layout.render()
 
         assert not cleanup_triggered.current
@@ -417,7 +417,7 @@ async def test_memoized_effect_on_recreated_if_dependencies_change():
 
         return reactpy.html.div()
 
-    async with reactpy.Layout(ComponentWithMemoizedEffect()) as layout:
+    async with Layout(ComponentWithMemoizedEffect()) as layout:
         await layout.render()
 
         assert effect_run_count.current == 1
@@ -460,7 +460,7 @@ async def test_memoized_effect_cleanup_only_triggered_before_new_effect():
 
         return reactpy.html.div()
 
-    async with reactpy.Layout(ComponentWithEffect()) as layout:
+    async with Layout(ComponentWithEffect()) as layout:
         await layout.render()
 
         assert cleanup_trigger_count.current == 0
@@ -487,7 +487,7 @@ async def test_use_async_effect():
 
         return reactpy.html.div()
 
-    async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
+    async with Layout(ComponentWithAsyncEffect()) as layout:
         await layout.render()
         await asyncio.wait_for(effect_ran.wait(), 1)
 
@@ -508,7 +508,7 @@ async def test_use_async_effect_cleanup():
 
         return reactpy.html.div()
 
-    async with reactpy.Layout(ComponentWithAsyncEffect()) as layout:
+    async with Layout(ComponentWithAsyncEffect()) as layout:
         await layout.render()
 
         component_hook.latest.schedule_render()
@@ -540,7 +540,7 @@ async def test_use_async_effect_cancel(caplog):
 
         return reactpy.html.div()
 
-    async with reactpy.Layout(ComponentWithLongWaitingEffect()) as layout:
+    async with Layout(ComponentWithLongWaitingEffect()) as layout:
         await layout.render()
 
         await effect_ran.wait()
@@ -568,7 +568,7 @@ async def test_error_in_effect_is_gracefully_handled(caplog):
         return reactpy.html.div()
 
     with assert_reactpy_did_log(match_message=r"Error in effect"):
-        async with reactpy.Layout(ComponentWithEffect()) as layout:
+        async with Layout(ComponentWithEffect()) as layout:
             await layout.render()  # no error
 
 
@@ -596,7 +596,7 @@ async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled():
         match_message=r"Error in effect",
         error_type=ValueError,
     ):
-        async with reactpy.Layout(OuterComponent()) as layout:
+        async with Layout(OuterComponent()) as layout:
             await layout.render()
             set_key.current("second")
             await layout.render()  # no error
@@ -622,7 +622,7 @@ async def test_use_reducer():
         )
         return reactpy.html.div()
 
-    async with reactpy.Layout(Counter(0)) as layout:
+    async with Layout(Counter(0)) as layout:
         await layout.render()
 
         assert saved_count.current == 0
@@ -653,7 +653,7 @@ async def test_use_reducer_dispatch_callback_identity_is_preserved():
         saved_dispatchers.append(reactpy.hooks.use_reducer(reducer, 0)[1])
         return reactpy.html.div()
 
-    async with reactpy.Layout(ComponentWithUseReduce()) as layout:
+    async with Layout(ComponentWithUseReduce()) as layout:
         for _ in range(3):
             await layout.render()
             saved_dispatchers[-1]("increment")
@@ -673,7 +673,7 @@ async def test_use_callback_identity():
         used_callbacks.append(reactpy.hooks.use_callback(lambda: None))
         return reactpy.html.div()
 
-    async with reactpy.Layout(ComponentWithRef()) as layout:
+    async with Layout(ComponentWithRef()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
         await layout.render()
@@ -701,7 +701,7 @@ async def test_use_callback_memoization():
         used_callbacks.append(cb)
         return reactpy.html.div()
 
-    async with reactpy.Layout(ComponentWithRef()) as layout:
+    async with Layout(ComponentWithRef()) as layout:
         await layout.render()
         set_state_hook.current(1)
         await layout.render()
@@ -731,7 +731,7 @@ async def test_use_memo():
         used_values.append(value)
         return reactpy.html.div()
 
-    async with reactpy.Layout(ComponentWithMemo()) as layout:
+    async with Layout(ComponentWithMemo()) as layout:
         await layout.render()
         set_state_hook.current(1)
         await layout.render()
@@ -756,7 +756,7 @@ async def test_use_memo_always_runs_if_dependencies_are_none():
         used_values.append(value)
         return reactpy.html.div()
 
-    async with reactpy.Layout(ComponentWithMemo()) as layout:
+    async with Layout(ComponentWithMemo()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
         await layout.render()
@@ -783,7 +783,7 @@ async def test_use_memo_with_stored_deps_is_empty_tuple_after_deps_are_none():
         used_values.append(value)
         return reactpy.html.div()
 
-    async with reactpy.Layout(ComponentWithMemo()) as layout:
+    async with Layout(ComponentWithMemo()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
         deps_used_in_memo.current = None
@@ -808,7 +808,7 @@ async def test_use_memo_never_runs_if_deps_is_empty_list():
         used_values.append(value)
         return reactpy.html.div()
 
-    async with reactpy.Layout(ComponentWithMemo()) as layout:
+    async with Layout(ComponentWithMemo()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
         await layout.render()
@@ -828,7 +828,7 @@ async def test_use_ref():
         used_refs.append(reactpy.hooks.use_ref(1))
         return reactpy.html.div()
 
-    async with reactpy.Layout(ComponentWithRef()) as layout:
+    async with Layout(ComponentWithRef()) as layout:
         await layout.render()
         component_hook.latest.schedule_render()
         await layout.render()
@@ -864,7 +864,7 @@ async def test_use_effect_automatically_infers_closure_values():
 
         return reactpy.html.div()
 
-    async with reactpy.Layout(CounterWithEffect()) as layout:
+    async with Layout(CounterWithEffect()) as layout:
         await layout.render()
         await did_effect.wait()
         did_effect.clear()
@@ -892,7 +892,7 @@ async def test_use_memo_automatically_infers_closure_values():
 
         return reactpy.html.div()
 
-    async with reactpy.Layout(CounterWithEffect()) as layout:
+    async with Layout(CounterWithEffect()) as layout:
         await layout.render()
         await did_memo.wait()
         did_memo.clear()
@@ -917,7 +917,7 @@ async def test_use_context_default_value():
         value.current = reactpy.use_context(Context)
         return html.div()
 
-    async with reactpy.Layout(ComponentProvidesContext()) as layout:
+    async with Layout(ComponentProvidesContext()) as layout:
         await layout.render()
         assert value.current == "something"
 
@@ -926,7 +926,7 @@ async def test_use_context_default_value():
         value.current = reactpy.use_context(Context)
         return html.div()
 
-    async with reactpy.Layout(ComponentUsesContext2()) as layout:
+    async with Layout(ComponentUsesContext2()) as layout:
         await layout.render()
         assert value.current == "something"
 
@@ -958,7 +958,7 @@ async def test_use_context_updates_components_even_if_memoized():
         render_count.current += 1
         return html.div()
 
-    async with reactpy.Layout(ComponentProvidesContext()) as layout:
+    async with Layout(ComponentProvidesContext()) as layout:
         await layout.render()
         assert render_count.current == 1
         assert value.current == 0
@@ -1016,7 +1016,7 @@ async def test_error_in_layout_effect_cleanup_is_gracefully_handled():
         error_type=ValueError,
         match_error="The error message",
     ):
-        async with reactpy.Layout(ComponentWithEffect()) as layout:
+        async with Layout(ComponentWithEffect()) as layout:
             await layout.render()
             component_hook.latest.schedule_render()
             await layout.render()  # no error
@@ -1058,7 +1058,7 @@ async def test_use_debug_mode():
         reactpy.use_debug_value(f"message is {message!r}")
         return reactpy.html.div()
 
-    async with reactpy.Layout(SomeComponent()) as layout:
+    async with Layout(SomeComponent()) as layout:
         with assert_reactpy_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
             await layout.render()
 
@@ -1085,7 +1085,7 @@ async def test_use_debug_mode_with_factory():
         reactpy.use_debug_value(lambda: f"message is {message!r}")
         return reactpy.html.div()
 
-    async with reactpy.Layout(SomeComponent()) as layout:
+    async with Layout(SomeComponent()) as layout:
         with assert_reactpy_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
             await layout.render()
 
@@ -1110,7 +1110,7 @@ async def test_use_debug_mode_does_not_log_if_not_in_debug_mode():
         reactpy.use_debug_value(lambda: f"message is {message!r}")
         return reactpy.html.div()
 
-    async with reactpy.Layout(SomeComponent()) as layout:
+    async with Layout(SomeComponent()) as layout:
         with assert_reactpy_did_not_log(r"SomeComponent\(.*?\) message is 'hello'"):
             await layout.render()
 
@@ -1141,9 +1141,7 @@ async def test_conditionally_rendered_components_can_use_context():
     def SecondCondition():
         used_context_values.append(reactpy.use_context(some_context) + "-2")
 
-    async with reactpy.Layout(
-        some_context(SomeComponent(), value="the-value")
-    ) as layout:
+    async with Layout(some_context(SomeComponent(), value="the-value")) as layout:
         await layout.render()
         assert used_context_values == ["the-value-1"]
         set_state.current(False)
@@ -1217,7 +1215,7 @@ async def test_use_state_compares_with_strict_equality(get_value):
         _, set_state.current = reactpy.use_state(get_value())
         render_count.current += 1
 
-    async with reactpy.Layout(SomeComponent()) as layout:
+    async with Layout(SomeComponent()) as layout:
         await layout.render()
         assert render_count.current == 1
         set_state.current(get_value())
@@ -1238,7 +1236,7 @@ async def test_use_effect_compares_with_strict_equality(get_value):
         def incr_effect_count():
             effect_count.current += 1
 
-    async with reactpy.Layout(SomeComponent()) as layout:
+    async with Layout(SomeComponent()) as layout:
         await layout.render()
         assert effect_count.current == 1
         value.current = get_value()
@@ -1255,7 +1253,7 @@ async def test_use_state_named_tuple():
     def some_component():
         state.current = reactpy.use_state(1)
 
-    async with reactpy.Layout(some_component()) as layout:
+    async with Layout(some_component()) as layout:
         await layout.render()
         assert state.current.value == 1
         state.current.set_value(2)
@@ -1283,7 +1281,7 @@ async def test_error_in_component_effect_cleanup_is_gracefully_handled():
         error_type=ValueError,
         match_error="The error message",
     ):
-        async with reactpy.Layout(ComponentWithEffect()) as layout:
+        async with Layout(ComponentWithEffect()) as layout:
             await layout.render()
             component_hook.latest.schedule_render()
             await layout.render()  # no error
@@ -1304,7 +1302,7 @@ def test_use_effect_exception_on_async_function():
     ):
 
         async def run_test():
-            async with reactpy.Layout(ComponentWithBadEffect()) as layout:
+            async with Layout(ComponentWithBadEffect()) as layout:
                 await layout.render()
 
         asyncio.run(run_test())

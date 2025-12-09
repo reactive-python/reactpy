@@ -1071,3 +1071,19 @@ class CustomVdomConstructor(Protocol):
 class EllipsisRepr:
     def __repr__(self) -> str:
         return "..."
+
+
+class Event(dict):
+    """
+    A light `dict` wrapper for event data passed to event handler functions.
+    """
+
+    def __getattr__(self, name: str) -> Any:
+        value = self.get(name)
+        return Event(value) if isinstance(value, dict) else value
+
+    def preventDefault(self) -> None:
+        """Prevent the default action of the event."""
+
+    def stopPropagation(self) -> None:
+        """Stop the event from propagating."""
