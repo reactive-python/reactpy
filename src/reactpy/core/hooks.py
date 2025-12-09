@@ -146,6 +146,12 @@ def use_effect(
     Returns:
         If not function is provided, a decorator. Otherwise ``None``.
     """
+    if asyncio.iscoroutinefunction(function):
+        raise TypeError(
+            "`use_effect` does not support async functions. "
+            "Use `use_async_effect` instead."
+        )
+
     hook = HOOK_STACK.current_hook()
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)

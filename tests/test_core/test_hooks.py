@@ -1287,3 +1287,24 @@ async def test_error_in_component_effect_cleanup_is_gracefully_handled():
             await layout.render()
             component_hook.latest.schedule_render()
             await layout.render()  # no error
+
+
+def test_use_effect_exception_on_async_function():
+    @reactpy.component
+    def ComponentWithBadEffect():
+        @reactpy.hooks.use_effect
+        async def bad_effect():
+            pass
+
+        return reactpy.html.div()
+
+    with assert_reactpy_did_log(
+        match_error="does not support async functions",
+        error_type=TypeError,
+    ):
+
+        async def run_test():
+            async with reactpy.Layout(ComponentWithBadEffect()) as layout:
+                await layout.render()
+
+        asyncio.run(run_test())
