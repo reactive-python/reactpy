@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,31 +27,49 @@ class State(NamedTuple, Generic[_Type]):
     set_value: Callable[[_Type | Callable[[_Type], _Type]], None]
 
 
-ComponentConstructor = Callable[..., "ComponentType"]
+ComponentConstructor = Callable[..., "Component"]
 """Simple function returning a new component"""
 
-RootComponentConstructor = Callable[[], "ComponentType"]
+RootComponentConstructor = Callable[[], "Component"]
 """The root component should be constructed by a function accepting no arguments."""
 
 
 Key: TypeAlias = str | int
 
 
-@runtime_checkable
-class ComponentType(Protocol):
-    """The expected interface for all component-like objects"""
+class Component:
+    """An object for rending component models."""
 
-    key: Key | None
-    """An identifier which is unique amongst a component's immediate siblings"""
+    __slots__ = "__weakref__", "_args", "_func", "_kwargs", "_sig", "key", "type"
 
-    type: Any
-    """The function or class defining the behavior of this component
+    def __init__(
+        self,
+        function: Callable[..., Component | VdomDict | str | None],
+        key: Any | None,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+        sig: inspect.Signature,
+    ) -> None:
+        self.key = key
+        self.type = function
+        self._args = args
+        self._kwargs = kwargs
+        self._sig = sig
 
-    This is used to see if two component instances share the same definition.
-    """
+    def render(self) -> Component | VdomDict | str | None:
+        return self.type(*self._args, **self._kwargs)
 
-    def render(self) -> VdomDict | ComponentType | str | None:
-        """Render the component's view model."""
+    def __repr__(self) -> str:
+        try:
+            args = self._sig.bind(*self._args, **self._kwargs).arguments
+        except TypeError:
+            return f"{self.type.__name__}(...)"
+        else:
+            items = ", ".join(f"{k}={v!r}" for k, v in args.items())
+            if items:
+                return f"{self.type.__name__}({id(self):02x}, {items})"
+            else:
+                return f"{self.type.__name__}({id(self):02x})"
 
 
 _Render_co = TypeVar("_Render_co", covariant=True)
@@ -787,7 +806,7 @@ class VdomTypeDict(TypedDict):
 
     tagName: str
     key: NotRequired[Key | None]
-    children: NotRequired[Sequence[ComponentType | VdomChild]]
+    children: NotRequired[Sequence[Component | VdomChild]]
     attributes: NotRequired[VdomAttributes]
     eventHandlers: NotRequired[EventHandlerDict]
     inlineJavaScript: NotRequired[InlineJavaScriptDict]
@@ -815,7 +834,7 @@ class VdomDict(dict):
     @overload
     def __getitem__(
         self, key: Literal["children"]
-    ) -> Sequence[ComponentType | VdomChild]: ...
+    ) -> Sequence[Component | VdomChild]: ...
     @overload
     def __getitem__(self, key: Literal["attributes"]) -> VdomAttributes: ...
     @overload
@@ -833,7 +852,7 @@ class VdomDict(dict):
     def __setitem__(self, key: Literal["key"], value: Key | None) -> None: ...
     @overload
     def __setitem__(
-        self, key: Literal["children"], value: Sequence[ComponentType | VdomChild]
+        self, key: Literal["children"], value: Sequence[Component | VdomChild]
     ) -> None: ...
     @overload
     def __setitem__(
@@ -857,7 +876,7 @@ class VdomDict(dict):
         super().__setitem__(key, value)
 
 
-VdomChild: TypeAlias = ComponentType | VdomDict | str | None | Any
+VdomChild: TypeAlias = Component | VdomDict | str | None | Any
 """A single child element of a :class:`VdomDict`"""
 
 VdomChildren: TypeAlias = Sequence[VdomChild] | VdomChild
@@ -994,7 +1013,7 @@ class Context(Protocol[_Type]):
     ) -> ContextProviderType[_Type]: ...
 
 
-class ContextProviderType(ComponentType, Protocol[_Type]):
+class ContextProviderType(Component, Protocol[_Type]):
     """A component which provides a context value to its children"""
 
     type: Context[_Type]

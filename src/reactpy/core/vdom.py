@@ -17,7 +17,7 @@ from reactpy.config import REACTPY_CHECK_JSON_ATTRS, REACTPY_DEBUG
 from reactpy.core._f_back import f_module_name
 from reactpy.core.events import EventHandler, to_event_handler_function
 from reactpy.types import (
-    ComponentType,
+    Component,
     CustomVdomConstructor,
     EllipsisRepr,
     EventHandlerDict,
@@ -275,7 +275,7 @@ def _validate_child_key_integrity(value: Any) -> None:
         )
     else:
         for child in value:
-            if isinstance(child, ComponentType) and child.key is None:
+            if isinstance(child, Component) and child.key is None:
                 warn(f"Key not specified for child in list {child}", UserWarning)
             elif isinstance(child, Mapping) and "key" not in child:
                 # remove 'children' to reduce log spam

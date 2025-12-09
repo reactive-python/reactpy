@@ -10,7 +10,7 @@ from typing import Any, Protocol, TypeVar
 from anyio import Semaphore
 
 from reactpy.core._thread_local import ThreadLocal
-from reactpy.types import ComponentType, Context, ContextProviderType
+from reactpy.types import Component, Context, ContextProviderType
 from reactpy.utils import Singleton
 
 T = TypeVar("T")
@@ -146,7 +146,7 @@ class LifeCycleHook:
         "component",
     )
 
-    component: ComponentType
+    component: Component
 
     def __init__(
         self,
@@ -219,7 +219,7 @@ class LifeCycleHook:
         """
         return self._context_providers.get(context)
 
-    async def affect_component_will_render(self, component: ComponentType) -> None:
+    async def affect_component_will_render(self, component: Component) -> None:
         """The component is about to render"""
         await self._render_access.acquire()
         self._scheduled_render = False

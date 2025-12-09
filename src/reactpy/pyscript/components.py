@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from reactpy import component, hooks
 from reactpy.pyscript.utils import pyscript_component_html
-from reactpy.types import ComponentType, Key
+from reactpy.types import Component, Key
 from reactpy.utils import string_to_reactpy
 
 if TYPE_CHECKING:
@@ -39,10 +39,10 @@ def _pyscript_component(
 
 def pyscript_component(
     *file_paths: str | Path,
-    initial: str | VdomDict | ComponentType = "",
+    initial: str | VdomDict | Component = "",
     root: str = "root",
     key: Key | None = None,
-) -> ComponentType:
+) -> Component:
     """
     Args:
         file_paths: File path to your client-side ReactPy component. If multiple paths are \

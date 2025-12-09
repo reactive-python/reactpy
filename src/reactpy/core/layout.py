@@ -37,7 +37,7 @@ from reactpy.config import (
 from reactpy.core._life_cycle_hook import LifeCycleHook
 from reactpy.core.vdom import validate_vdom_json
 from reactpy.types import (
-    ComponentType,
+    Component,
     Context,
     Event,
     EventHandlerDict,
@@ -69,9 +69,9 @@ class Layout:
     if not hasattr(abc.ABC, "__weakref__"):  # nocov
         __slots__ += ("__weakref__",)
 
-    def __init__(self, root: ComponentType | Context[Any]) -> None:
+    def __init__(self, root: Component | Context[Any]) -> None:
         super().__init__()
-        if not isinstance(root, ComponentType):
+        if not isinstance(root, Component):
             msg = f"Expected a ComponentType, not {type(root)!r}."
             raise TypeError(msg)
         self.root = root
@@ -183,7 +183,7 @@ class Layout:
         exit_stack: AsyncExitStack,
         old_state: _ModelState | None,
         new_state: _ModelState,
-        component: ComponentType,
+        component: Component,
     ) -> None:
         life_cycle_state = new_state.life_cycle_state
         life_cycle_hook = life_cycle_state.hook
@@ -386,7 +386,7 @@ class Layout:
                 new_state.append_child(new_child_state.model.current)
                 new_state.children_by_key[key] = new_child_state
             elif child_type is _COMPONENT_TYPE:
-                child = cast(ComponentType, child)
+                child = cast(Component, child)
                 old_child_state = old_state.children_by_key.get(key)
                 if old_child_state is None:
                     new_child_state = _make_component_model_state(
@@ -490,7 +490,7 @@ class Layout:
 
 
 def _new_root_model_state(
-    component: ComponentType, schedule_render: Callable[[_LifeCycleStateId], None]
+    component: Component, schedule_render: Callable[[_LifeCycleStateId], None]
 ) -> _ModelState:
     return _ModelState(
         parent=None,
@@ -508,7 +508,7 @@ def _make_component_model_state(
     parent: _ModelState,
     index: int,
     key: Any,
-    component: ComponentType,
+    component: Component,
     schedule_render: Callable[[_LifeCycleStateId], None],
 ) -> _ModelState:
     return _ModelState(
@@ -546,7 +546,7 @@ def _update_component_model_state(
     old_model_state: _ModelState,
     new_parent: _ModelState,
     new_index: int,
-    new_component: ComponentType,
+    new_component: Component,
     schedule_render: Callable[[_LifeCycleStateId], None],
 ) -> _ModelState:
     return _ModelState(
@@ -672,7 +672,7 @@ class _ModelState:
 
 
 def _make_life_cycle_state(
-    component: ComponentType,
+    component: Component,
     schedule_render: Callable[[_LifeCycleStateId], None],
 ) -> _LifeCycleState:
     life_cycle_state_id = _LifeCycleStateId(uuid4().hex)
@@ -685,7 +685,7 @@ def _make_life_cycle_state(
 
 def _update_life_cycle_state(
     old_life_cycle_state: _LifeCycleState,
-    new_component: ComponentType,
+    new_component: Component,
 ) -> _LifeCycleState:
     return _LifeCycleState(
         old_life_cycle_state.id,
@@ -707,7 +707,7 @@ class _LifeCycleState(NamedTuple):
     hook: LifeCycleHook
     """The life cycle hook"""
 
-    component: ComponentType
+    component: Component
     """The current component instance"""
 
 
@@ -739,7 +739,7 @@ def _get_children_info(children: list[VdomChild]) -> Sequence[_ChildInfo]:
         elif isinstance(child, dict):
             child_type = _DICT_TYPE
             key = child.get("key")
-        elif isinstance(child, ComponentType):
+        elif isinstance(child, Component):
             child_type = _COMPONENT_TYPE
             key = child.key
         else:

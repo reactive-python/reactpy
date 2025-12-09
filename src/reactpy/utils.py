@@ -11,7 +11,7 @@ from lxml.html import fromstring
 
 from reactpy import html
 from reactpy.transforms import RequiredTransforms, attributes_to_reactjs
-from reactpy.types import ComponentType, VdomDict
+from reactpy.types import Component, VdomDict
 
 _RefValue = TypeVar("_RefValue")
 _ModelTransform = Callable[[VdomDict], Any]
@@ -63,7 +63,7 @@ class Ref(Generic[_RefValue]):
         return f"{type(self).__name__}({current})"
 
 
-def reactpy_to_string(root: VdomDict | ComponentType) -> str:
+def reactpy_to_string(root: VdomDict | Component) -> str:
     """Convert a ReactPy component or `reactpy.html` element into an HTML string.
 
     Parameters:
@@ -186,7 +186,7 @@ def _add_vdom_to_etree(parent: etree._Element, vdom: VdomDict | dict[str, Any]) 
 
     for c in vdom.get("children", []):
         if hasattr(c, "render"):
-            c = component_to_vdom(cast(ComponentType, c))
+            c = component_to_vdom(cast(Component, c))
         if isinstance(c, dict):
             _add_vdom_to_etree(element, c)
 
@@ -232,14 +232,14 @@ def _generate_vdom_children(
     )
 
 
-def component_to_vdom(component: ComponentType) -> VdomDict:
+def component_to_vdom(component: Component) -> VdomDict:
     """Convert the first render of a component into a VDOM dictionary"""
     result = component.render()
 
     if isinstance(result, dict):
         return result
     if hasattr(result, "render"):
-        return component_to_vdom(cast(ComponentType, result))
+        return component_to_vdom(cast(Component, result))
     elif isinstance(result, str):
         return html.div(result)
     return html.fragment()
