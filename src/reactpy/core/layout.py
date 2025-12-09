@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import abc
 from asyncio import (
     FIRST_COMPLETED,
     CancelledError,
@@ -37,6 +36,7 @@ from reactpy.config import (
 from reactpy.core._life_cycle_hook import LifeCycleHook
 from reactpy.core.vdom import validate_vdom_json
 from reactpy.types import (
+    BaseLayout,
     Component,
     Context,
     ContextProvider,
@@ -54,22 +54,7 @@ from reactpy.utils import Ref
 logger = getLogger(__name__)
 
 
-class Layout:
-    """Responsible for "rendering" components. That is, turning them into VDOM."""
-
-    __slots__: tuple[str, ...] = (
-        "_event_handlers",
-        "_model_states_by_life_cycle_state_id",
-        "_render_tasks",
-        "_render_tasks_ready",
-        "_rendering_queue",
-        "_root_life_cycle_state_id",
-        "root",
-    )
-
-    if not hasattr(abc.ABC, "__weakref__"):  # nocov
-        __slots__ += ("__weakref__",)
-
+class Layout(BaseLayout):
     def __init__(self, root: Component | Context[Any] | ContextProvider[Any]) -> None:
         super().__init__()
         if not isinstance(root, Component):

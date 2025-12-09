@@ -13,7 +13,6 @@ from typing import (
     TypeAlias,
     TypeVar,
     overload,
-    runtime_checkable,
 )
 
 from typing_extensions import NamedTuple, NotRequired, TypedDict, Unpack
@@ -76,23 +75,35 @@ _Render_co = TypeVar("_Render_co", covariant=True)
 _Event_contra = TypeVar("_Event_contra", contravariant=True)
 
 
-@runtime_checkable
-class LayoutType(Protocol[_Render_co, _Event_contra]):
-    """Renders and delivers, updates to views and events to handlers, respectively"""
+class BaseLayout(Protocol[_Render_co, _Event_contra]):
+    """Renders and delivers views, and submits events to handlers."""
+
+    __slots__: tuple[str, ...] = (
+        "__weakref__",
+        "_event_handlers",
+        "_model_states_by_life_cycle_state_id",
+        "_render_tasks",
+        "_render_tasks_ready",
+        "_rendering_queue",
+        "_root_life_cycle_state_id",
+        "root",
+    )
 
     async def render(
         self,
-    ) -> _Render_co: ...  # Render an update to a view
+    ) -> _Render_co:
+        """Render an update to a view"""
+        ...
 
-    async def deliver(
-        self, event: _Event_contra
-    ) -> None: ...  # Relay an event to its respective handler
+    async def deliver(self, event: _Event_contra) -> None:
+        """Relay an event to its respective handler"""
+        ...
 
     async def __aenter__(
         self,
-    ) -> LayoutType[
-        _Render_co, _Event_contra
-    ]: ...  # Prepare the layout for its first render
+    ) -> BaseLayout[_Render_co, _Event_contra]:
+        """Prepare the layout for its first render"""
+        ...
 
     async def __aexit__(
         self,
@@ -101,6 +112,7 @@ class LayoutType(Protocol[_Render_co, _Event_contra]):
         traceback: TracebackType,
     ) -> bool | None:
         """Clean up the view after its final render"""
+        ...
 
 
 class CssStyleTypeDict(TypedDict, total=False):

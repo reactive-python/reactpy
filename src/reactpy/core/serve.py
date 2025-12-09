@@ -9,7 +9,7 @@ from anyio.abc import TaskGroup
 
 from reactpy.config import REACTPY_DEBUG
 from reactpy.core._life_cycle_hook import HOOK_STACK
-from reactpy.types import LayoutEventMessage, LayoutType, LayoutUpdateMessage
+from reactpy.types import BaseLayout, LayoutEventMessage, LayoutUpdateMessage
 
 logger = getLogger(__name__)
 
@@ -25,7 +25,7 @@ The event will then trigger an :class:`reactpy.core.proto.EventHandlerType` in a
 
 
 async def serve_layout(
-    layout: LayoutType[
+    layout: BaseLayout[
         LayoutUpdateMessage | dict[str, Any], LayoutEventMessage | dict[str, Any]
     ],
     send: SendCoroutine,
@@ -39,7 +39,7 @@ async def serve_layout(
 
 
 async def _single_outgoing_loop(
-    layout: LayoutType[
+    layout: BaseLayout[
         LayoutUpdateMessage | dict[str, Any], LayoutEventMessage | dict[str, Any]
     ],
     send: SendCoroutine,
@@ -65,7 +65,7 @@ async def _single_outgoing_loop(
 
 async def _single_incoming_loop(
     task_group: TaskGroup,
-    layout: LayoutType[
+    layout: BaseLayout[
         LayoutUpdateMessage | dict[str, Any], LayoutEventMessage | dict[str, Any]
     ],
     recv: RecvCoroutine,
