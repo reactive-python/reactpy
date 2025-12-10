@@ -156,7 +156,7 @@ class Layout(BaseLayout):
 
             try:
                 return update_task.result()
-            except CancelledError:
+            except CancelledError:  # nocov
                 continue
 
     async def _create_layout_update(
