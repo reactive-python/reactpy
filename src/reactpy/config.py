@@ -89,7 +89,7 @@ REACTPY_ASYNC_RENDERING = Option(
     mutable=True,
     validator=boolean,
 )
-"""Whether to render components asynchronously. This is currently an experimental feature."""
+"""Whether to render components asynchronously."""
 
 REACTPY_RECONNECT_INTERVAL = Option(
     "REACTPY_RECONNECT_INTERVAL",

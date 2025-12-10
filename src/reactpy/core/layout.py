@@ -6,6 +6,7 @@ from asyncio import (
     Queue,
     Task,
     create_task,
+    current_task,
     get_running_loop,
     wait,
 )
@@ -65,6 +66,9 @@ class Layout(BaseLayout):
         # create attributes here to avoid access before entering context manager
         self._event_handlers: EventHandlerDict = {}
         self._render_tasks: set[Task[LayoutUpdateMessage]] = set()
+        self._render_tasks_by_id: dict[
+            _LifeCycleStateId, Task[LayoutUpdateMessage]
+        ] = {}
         self._render_tasks_ready: Semaphore = Semaphore(0)
         self._rendering_queue: _ThreadSafeQueue[_LifeCycleStateId] = _ThreadSafeQueue()
         root_model_state = _new_root_model_state(self.root, self._schedule_render_task)
@@ -89,6 +93,7 @@ class Layout(BaseLayout):
         # delete attributes here to avoid access after exiting context manager
         del self._event_handlers
         del self._rendering_queue
+        del self._render_tasks_by_id
         del self._root_life_cycle_state_id
         del self._model_states_by_life_cycle_state_id
 
@@ -136,11 +141,23 @@ class Layout(BaseLayout):
         """Await to fetch the first completed render within our asyncio task group.
         We use the `asyncio.tasks.wait` API in order to return the first completed task.
         """
-        await self._render_tasks_ready.acquire()
-        done, _ = await wait(self._render_tasks, return_when=FIRST_COMPLETED)
-        update_task: Task[LayoutUpdateMessage] = done.pop()
-        self._render_tasks.remove(update_task)
-        return update_task.result()
+        while True:
+            await self._render_tasks_ready.acquire()
+            if not self._render_tasks:
+                continue
+            done, _ = await wait(self._render_tasks, return_when=FIRST_COMPLETED)
+            update_task: Task[LayoutUpdateMessage] = done.pop()
+            self._render_tasks.discard(update_task)
+
+            for lcs_id, task in list(self._render_tasks_by_id.items()):
+                if task is update_task:
+                    del self._render_tasks_by_id[lcs_id]
+                    break
+
+            try:
+                return update_task.result()
+            except CancelledError:
+                continue
 
     async def _create_layout_update(
         self, old_state: _ModelState
@@ -225,6 +242,15 @@ class Layout(BaseLayout):
         life_cycle_hook = life_cycle_state.hook
 
         self._model_states_by_life_cycle_state_id[life_cycle_state.id] = new_state
+
+        # If this component is scheduled to render, we can cancel that task since we are
+        # rendering it now.
+        if life_cycle_state.id in self._render_tasks_by_id:
+            task = self._render_tasks_by_id[life_cycle_state.id]
+            if task is not current_task():
+                del self._render_tasks_by_id[life_cycle_state.id]
+                task.cancel()
+                self._render_tasks.discard(task)
 
         await life_cycle_hook.affect_component_will_render(component)
         exit_stack.push_async_callback(life_cycle_hook.affect_layout_did_render)
@@ -433,7 +459,9 @@ class Layout(BaseLayout):
                 f"{lcs_id!r} - component already unmounted"
             )
         else:
-            self._render_tasks.add(create_task(self._create_layout_update(model_state)))
+            task = create_task(self._create_layout_update(model_state))
+            self._render_tasks.add(task)
+            self._render_tasks_by_id[lcs_id] = task
             self._render_tasks_ready.release()
 
     def __repr__(self) -> str:
