@@ -529,3 +529,21 @@ def test_reactjs_component_from_string_with_no_name():
 
     reactpy.web.reactjs_component_from_string(content, "Component")
     assert len(reactpy.web.module._STRING_WEB_MODULE_CACHE) == initial_length
+
+
+async def test_module_without_bind(display: DisplayFixture):
+    GenericComponent = reactpy.web.module._vdom_from_web_module(
+        reactpy.web.module._module_from_file(
+            "generic-module", JS_FIXTURES_DIR / "generic-module.js"
+        ),
+        "GenericComponent",
+    )
+
+    await display.show(
+        lambda: GenericComponent({"id": "my-generic-component", "text": "Hello World"})
+    )
+
+    element = await display.page.wait_for_selector(
+        "#my-generic-component", state="attached"
+    )
+    assert await element.inner_text() == "Hello World"
