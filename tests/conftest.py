@@ -37,7 +37,13 @@ def pytest_addoption(parser: Parser) -> None:
 @pytest.fixture(autouse=True, scope="session")
 def install_playwright():
     subprocess.run(["playwright", "install", "chromium"], check=True)  # noqa: S607, S603
-    subprocess.run(["playwright", "install-deps"], check=True)  # noqa: S607, S603
+    # Try to install system deps, but don't fail if already installed or no root access
+    try:
+        subprocess.run(["playwright", "install-deps"], check=True)  # noqa: S607, S603
+    except subprocess.CalledProcessError:
+        # Deps may already be installed (e.g., via Dockerfile) or we may not have root access
+        # The actual browser launch will fail if deps are truly missing
+        pass
 
 
 @pytest.fixture(autouse=True, scope="session")
