@@ -101,14 +101,6 @@ async def browser(pytestconfig: Config):
         )
 
 
-@pytest.fixture(scope="session")
-def event_loop_policy():
-    if os.name == "nt":  # nocov
-        return asyncio.WindowsProactorEventLoopPolicy()
-    else:
-        return asyncio.DefaultEventLoopPolicy()
-
-
 @pytest.fixture(autouse=True)
 def clear_web_modules_dir_after_test():
     clear_reactpy_web_modules_dir()

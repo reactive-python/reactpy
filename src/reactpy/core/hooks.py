@@ -595,7 +595,18 @@ def strictly_equal(x: Any, y: Any) -> bool:
             getattr(x.__code__, attr) == getattr(y.__code__, attr)
             for attr in dir(x.__code__)
             if attr.startswith("co_")
-            and attr not in {"co_positions", "co_linetable", "co_lines", "co_lnotab"}
+            and attr
+            not in {
+                "co_positions",
+                "co_linetable",
+                "co_lines",
+                "co_lnotab",
+                "co_branches",
+                "co_firstlineno",
+                "co_end_lineno",
+                "co_col_offset",
+                "co_end_col_offset",
+            }
         )
 
     # Check via the `==` operator if possible
