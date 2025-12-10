@@ -50,6 +50,7 @@ Unreleased
 - :pull:`1263` - ReactPy no longer auto-converts ``snake_case`` props to ``camelCase``. It is now the responsibility of the user to ensure that props are in the correct format.
 - :pull:`1196` - Rewrite the ``event-to-object`` package to be more robust at handling properties on events.
 - :pull:`1312` - Custom JS components will now automatically assume you are using ReactJS in the absence of a ``bind`` function.
+- :pull:`1312` - Refactor layout rendering logic to improve readability and maintainability.
 - :pull:`1113` - ``@reactpy/client`` now exports ``React`` and ``ReactDOM``.
 - :pull:`1281` - ``reactpy.html`` will now automatically flatten lists recursively (ex. ``reactpy.html(["child1", ["child2"]])``)
 - :pull:`1278` - ``reactpy.utils.reactpy_to_string`` will now retain the user's original casing for ``data-*`` and ``aria-*`` attributes.
