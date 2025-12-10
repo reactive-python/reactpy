@@ -9,13 +9,15 @@ from typing import (
     Any,
     Generic,
     Literal,
+    NamedTuple,
+    NotRequired,
     Protocol,
     TypeAlias,
+    TypedDict,
     TypeVar,
+    Unpack,
     overload,
 )
-
-from typing_extensions import NamedTuple, NotRequired, TypedDict, Unpack
 
 CarrierType = TypeVar("CarrierType")
 _Type = TypeVar("_Type")

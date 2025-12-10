@@ -4,12 +4,10 @@ import hashlib
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import formatdate
 from pathlib import Path
-from typing import Any
-
-from typing_extensions import Unpack
+from typing import Any, Unpack
 
 from reactpy import html
 from reactpy.executors.asgi.middleware import ReactPyMiddleware
@@ -118,6 +116,4 @@ class ReactPyPyscriptApp(ReactPyApp):
             "</html>"
         )
         self._etag = f'"{hashlib.md5(self._index_html.encode(), usedforsecurity=False).hexdigest()}"'
-        self._last_modified = formatdate(
-            datetime.now(tz=timezone.utc).timestamp(), usegmt=True
-        )
+        self._last_modified = formatdate(datetime.now(tz=UTC).timestamp(), usegmt=True)

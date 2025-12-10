@@ -219,7 +219,7 @@ def get_reactpy_versions() -> dict[Any, Any]:
             response = request.urlopen("https://pypi.org/pypi/reactpy/json", timeout=5)
         except Exception:
             response = request.urlopen("http://pypi.org/pypi/reactpy/json", timeout=5)
-        if response.status == 200:
+        if response.status == 200:  # noqa: PLR2004
             data = json.load(response)
             versions = list(data.get("releases", {}).keys())
             latest = data.get("info", {}).get("version", "")

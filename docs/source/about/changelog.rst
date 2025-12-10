@@ -17,7 +17,7 @@ Unreleased
 
 **Added**
 
-- :pull:`1113` - Added support for Python 3.12 and 3.13.
+- :pull:`1113` - Added support for Python 3.12, 3.13, and 3.14.
 - :pull:`1281` - Added type hints to ``reactpy.html`` attributes.
 - :pull:`1285` - Added support for nested components in web modules
 - :pull:`1289` - Added support for inline JavaScript as event handlers or other attributes that expect a callable via ``reactpy.types.InlineJavaScript``
@@ -67,9 +67,9 @@ Unreleased
 
 **Removed**
 
+- :pull:`1113` - Removed support for Python 3.9 and 3.10.
 - :pull:`1255` - Removed the ability to import ``reactpy.html.*`` elements directly. You must now call ``html.*`` to access the elements.
 - :pull:`1113` - Removed backend specific installation extras (such as ``pip install reactpy[starlette]``).
-- :pull:`1113` - Removed support for Python 3.9.
 - :pull:`1264` - Removed support for async functions within ``reactpy.use_effect`` hook. Use ``reactpy.use_async_effect`` instead.
 - :pull:`1113` - Removed deprecated function ``module_from_template``.
 - :pull:`1311` - Removed deprecated exception type ``reactpy.core.serve.Stop``.

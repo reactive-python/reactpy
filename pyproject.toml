@@ -28,11 +28,10 @@ authors = [
   { name = "Mark Bakhit", email = "archiethemonger@gmail.com" },
   { name = "Ryan Morshead", email = "ryan.morshead@gmail.com" },
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -45,7 +44,6 @@ dependencies = [
   "requests >=2",
   "lxml >=4",
   "anyio >=3",
-  "typing-extensions >=3.10",
 ]
 dynamic = ["version"]
 urls.Changelog = "https://reactpy.dev/docs/about/changelog.html"
@@ -108,7 +106,7 @@ extra-dependencies = [
 features = ["all"]
 
 [[tool.hatch.envs.hatch-test.matrix]]
-python = ["3.10", "3.11", "3.12", "3.13", "3.14"]
+python = ["3.11", "3.12", "3.13", "3.14"]
 
 [tool.pytest.ini_options]
 addopts = ["--strict-config", "--strict-markers"]

@@ -7,11 +7,9 @@ import shutil
 import time
 from collections.abc import Awaitable, Callable, Coroutine
 from functools import wraps
-from typing import Any, Generic, TypeVar, cast
+from typing import Any, Generic, ParamSpec, TypeVar, cast
 from uuid import uuid4
 from weakref import ref
-
-from typing_extensions import ParamSpec
 
 from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT, REACTPY_WEB_MODULES_DIR
 from reactpy.core._life_cycle_hook import HOOK_STACK, LifeCycleHook
@@ -71,7 +69,7 @@ class poll(Generic[_R]):  # noqa: N801
                 break
             elif (time.time() - started_at) > timeout:  # nocov
                 msg = f"Expected {description} after {timeout} seconds - last value was {result!r}"
-                raise asyncio.TimeoutError(msg)
+                raise TimeoutError(msg)
 
     async def until_is(
         self,
