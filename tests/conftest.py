@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import asyncio
+import contextlib
 import os
 import subprocess
 
@@ -36,14 +36,10 @@ def pytest_addoption(parser: Parser) -> None:
 
 @pytest.fixture(autouse=True, scope="session")
 def install_playwright():
-    subprocess.run(["playwright", "install", "chromium"], check=True)  # noqa: S607, S603
+    subprocess.run(["playwright", "install", "chromium"], check=True)  # noqa: S607
     # Try to install system deps, but don't fail if already installed or no root access
-    try:
-        subprocess.run(["playwright", "install-deps"], check=True)  # noqa: S607, S603
-    except subprocess.CalledProcessError:
-        # Deps may already be installed (e.g., via Dockerfile) or we may not have root access
-        # The actual browser launch will fail if deps are truly missing
-        pass
+    with contextlib.suppress(subprocess.CalledProcessError):
+        subprocess.run(["playwright", "install-deps"], check=True)  # noqa: S607
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -55,7 +51,7 @@ def rebuild():
     # passed to the subprocess.
     env = os.environ.copy()
     env.pop("HATCH_ENV_ACTIVE", None)
-    subprocess.run(["hatch", "build", "-t", "wheel"], check=True, env=env)  # noqa: S607, S603
+    subprocess.run(["hatch", "build", "-t", "wheel"], check=True, env=env)  # noqa: S607
 
 
 @pytest.fixture(autouse=True, scope="function")
