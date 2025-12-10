@@ -111,7 +111,10 @@ class EventHandler(BaseEventHandler):
             last_was_event = False
 
             for instr in dis.get_instructions(func_to_inspect):
-                if instr.opname == "LOAD_FAST" and instr.argval == event_arg_name:
+                if (
+                    instr.opname in ("LOAD_FAST", "LOAD_FAST_BORROW")
+                    and instr.argval == event_arg_name
+                ):
                     last_was_event = True
                     continue
 
