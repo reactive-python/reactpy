@@ -3,6 +3,8 @@ from __future__ import annotations
 import dis
 import inspect
 from collections.abc import Callable, Sequence
+from functools import lru_cache
+from types import CodeType
 from typing import Any, Literal, cast, overload
 
 from anyio import create_task_group
@@ -105,29 +107,14 @@ class EventHandler(BaseEventHandler):
         while hasattr(func_to_inspect, "__wrapped__"):
             func_to_inspect = func_to_inspect.__wrapped__
 
-        code = func_to_inspect.__code__
-        if code.co_argcount > 0:
-            event_arg_name = code.co_varnames[0]
-            last_was_event = False
+        found_prevent_default, found_stop_propagation = _inspect_event_handler_code(
+            func_to_inspect.__code__
+        )
 
-            for instr in dis.get_instructions(func_to_inspect):
-                if (
-                    instr.opname in ("LOAD_FAST", "LOAD_FAST_BORROW")
-                    and instr.argval == event_arg_name
-                ):
-                    last_was_event = True
-                    continue
-
-                if last_was_event and instr.opname in (
-                    "LOAD_METHOD",
-                    "LOAD_ATTR",
-                ):
-                    if instr.argval == "preventDefault":
-                        self.prevent_default = True
-                    elif instr.argval == "stopPropagation":
-                        self.stop_propagation = True
-
-                last_was_event = False
+        if found_prevent_default:
+            self.prevent_default = True
+        if found_stop_propagation:
+            self.stop_propagation = True
 
     __hash__ = None  # type: ignore
 
@@ -242,3 +229,46 @@ def merge_event_handler_funcs(
                 group.start_soon(func, data)
 
     return await_all_event_handlers
+
+
+@lru_cache(maxsize=4096)
+def _inspect_event_handler_code(code: CodeType) -> tuple[bool, bool]:
+    prevent_default = False
+    stop_propagation = False
+
+    if code.co_argcount > 0:
+        names = code.co_names
+        check_prevent_default = "preventDefault" in names
+        check_stop_propagation = "stopPropagation" in names
+
+        if not (check_prevent_default or check_stop_propagation):
+            return False, False
+
+        event_arg_name = code.co_varnames[0]
+        last_was_event = False
+
+        for instr in dis.get_instructions(code):
+            if (
+                instr.opname in ("LOAD_FAST", "LOAD_FAST_BORROW")
+                and instr.argval == event_arg_name
+            ):
+                last_was_event = True
+                continue
+
+            if last_was_event and instr.opname in (
+                "LOAD_METHOD",
+                "LOAD_ATTR",
+            ):
+                if check_prevent_default and instr.argval == "preventDefault":
+                    prevent_default = True
+                    check_prevent_default = False
+                elif check_stop_propagation and instr.argval == "stopPropagation":
+                    stop_propagation = True
+                    check_stop_propagation = False
+
+                if not (check_prevent_default or check_stop_propagation):
+                    break
+
+            last_was_event = False
+
+    return prevent_default, stop_propagation
