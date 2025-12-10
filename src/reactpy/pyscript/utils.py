@@ -1,4 +1,4 @@
-# ruff: noqa: S603, S607
+# ruff: noqa: S607
 from __future__ import annotations
 
 import functools
@@ -11,6 +11,7 @@ from glob import glob
 from logging import getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from urllib import request
 from uuid import uuid4
 
 import reactpy
@@ -118,9 +119,12 @@ def extend_pyscript_config(
                 f"{REACTPY_PATH_PREFIX.current}static/morphdom/morphdom-esm.js": "morphdom"
             }
         },
-        "packages_cache": "never",
     }
     pyscript_config["packages"].extend(extra_py)
+
+    # FIXME: https://github.com/pyscript/pyscript/issues/2282
+    if any(pkg.endswith(".whl") for pkg in pyscript_config["packages"]):
+        pyscript_config["packages_cache"] = "never"
 
     # Extend the JavaScript dependency list
     if extra_js and isinstance(extra_js, str):
@@ -142,10 +146,10 @@ def reactpy_version_string() -> str:  # nocov
     local_version = reactpy.__version__
 
     # Get a list of all versions via `pip index versions`
-    result = cached_pip_index_versions("reactpy")
+    result = get_reactpy_versions()
 
     # Check if the command failed
-    if result.returncode != 0:
+    if not result:
         _logger.warning(
             "Failed to verify what versions of ReactPy exist on PyPi. "
             "PyScript functionality may not work as expected.",
@@ -153,16 +157,8 @@ def reactpy_version_string() -> str:  # nocov
         return f"reactpy=={local_version}"
 
     # Have `pip` tell us what versions are available
-    available_version_symbol = "Available versions: "
-    latest_version_symbol = "LATEST: "
-    known_versions: list[str] = []
-    latest_version: str = ""
-    for line in result.stdout.splitlines():
-        if line.startswith(available_version_symbol):
-            known_versions.extend(line[len(available_version_symbol) :].split(", "))
-        elif latest_version_symbol in line:
-            symbol_postion = line.index(latest_version_symbol)
-            latest_version = line[symbol_postion + len(latest_version_symbol) :].strip()
+    known_versions: list[str] = result.get("versions", [])
+    latest_version: str = result.get("latest", "")
 
     # Return early if the version is available on PyPi and we're not in a CI environment
     if local_version in known_versions and not GITHUB_ACTIONS:
@@ -171,8 +167,8 @@ def reactpy_version_string() -> str:  # nocov
     # We are now determining an alternative method of installing ReactPy for PyScript
     if not GITHUB_ACTIONS:
         _logger.warning(
-            "Your current version of ReactPy isn't available on PyPi. Since a packaged version "
-            "of ReactPy is required for PyScript, we are attempting to find an alternative method..."
+            "Your ReactPy version isn't available on PyPi. "
+            "Attempting to find an alternative installation method for PyScript...",
         )
 
     # Build a local wheel for ReactPy, if needed
@@ -187,42 +183,51 @@ def reactpy_version_string() -> str:  # nocov
             check=False,
             cwd=Path(reactpy.__file__).parent.parent.parent,
         )
-    wheel_glob = glob(str(dist_dir / f"reactpy-{local_version}-*.whl"))
+        wheel_glob = glob(str(dist_dir / f"reactpy-{local_version}-*.whl"))
 
-    # Building a local wheel failed, try our best to give the user any possible version.
-    if not wheel_glob:
-        if latest_version:
+    # Move the local wheel to the web modules directory, if it exists
+    if wheel_glob:
+        wheel_file = Path(wheel_glob[0])
+        new_path = REACTPY_WEB_MODULES_DIR.current / wheel_file.name
+        if not new_path.exists():
             _logger.warning(
-                "Failed to build a local wheel for ReactPy, likely due to missing build dependencies. "
-                "PyScript will default to using the latest ReactPy version on PyPi."
+                "PyScript will utilize local wheel '%s'.",
+                wheel_file.name,
             )
-            return f"reactpy=={latest_version}"
-        _logger.error(
-            "Failed to build a local wheel for ReactPy, and could not determine the latest version on PyPi. "
-            "PyScript functionality may not work as expected.",
-        )
-        return f"reactpy=={local_version}"
+            shutil.copy(wheel_file, new_path)
+        return f"{REACTPY_PATH_PREFIX.current}modules/{wheel_file.name}"
 
-    # Move the local wheel file to the web modules directory, if needed
-    wheel_file = Path(wheel_glob[0])
-    new_path = REACTPY_WEB_MODULES_DIR.current / wheel_file.name
-    if not new_path.exists():
+    # Building a local wheel failed, try our best to give the user any version.
+    if latest_version:
         _logger.warning(
-            "PyScript will utilize local wheel '%s'.",
-            wheel_file.name,
+            "Failed to build a local wheel for ReactPy, likely due to missing build dependencies. "
+            "PyScript will default to using the latest ReactPy version on PyPi."
         )
-        shutil.copy(wheel_file, new_path)
-    return f"{REACTPY_PATH_PREFIX.current}modules/{wheel_file.name}"
+        return f"reactpy=={latest_version}"
+    _logger.error(
+        "Failed to build a local wheel for ReactPy, and could not determine the latest version on PyPi. "
+        "PyScript functionality may not work as expected.",
+    )
+    return f"reactpy=={local_version}"
 
 
 @functools.cache
-def cached_pip_index_versions(package_name: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["pip", "index", "versions", package_name],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+def get_reactpy_versions() -> dict[Any, Any]:
+    """Fetches the available versions of a package from PyPI."""
+    try:
+        try:
+            response = request.urlopen("https://pypi.org/pypi/reactpy/json", timeout=5)
+        except Exception:
+            response = request.urlopen("http://pypi.org/pypi/reactpy/json", timeout=5)
+        if response.status == 200:
+            data = json.load(response)
+            versions = list(data.get("releases", {}).keys())
+            latest = data.get("info", {}).get("version", "")
+            if versions and latest:
+                return {"versions": versions, "latest": latest}
+    except Exception:
+        _logger.exception("Error fetching ReactPy package versions from PyPI!")
+    return {}
 
 
 @functools.cache

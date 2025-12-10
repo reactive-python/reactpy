@@ -54,7 +54,7 @@ urls.Source = "https://github.com/reactive-python/reactpy"
 
 [project.optional-dependencies]
 all = ["reactpy[asgi,jinja,testing]"]
-asgi = ["asgiref", "asgi-tools", "servestatic", "orjson", "pip"]
+asgi = ["asgiref", "asgi-tools", "servestatic", "orjson"]
 jinja = ["jinja2-simple-tags", "jinja2 >=3"]
 testing = ["playwright", "uvicorn[standard]"]
 
