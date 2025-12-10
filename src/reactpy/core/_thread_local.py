@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from threading import Thread, current_thread
-from typing import Callable, Generic, TypeVar
+from typing import Generic, TypeVar
 from weakref import WeakKeyDictionary
 
 _StateType = TypeVar("_StateType")

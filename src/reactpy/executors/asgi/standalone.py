@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import hashlib
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import formatdate
 from logging import getLogger
-from typing import Callable, Literal, cast, overload
+from typing import Literal, Unpack, cast, overload
 
 from asgi_tools import ResponseHTML
-from typing_extensions import Unpack
 
 from reactpy import html
 from reactpy.executors.asgi.middleware import ReactPyMiddleware
@@ -239,6 +239,4 @@ class ReactPyApp:
             "</html>"
         )
         self._etag = f'"{hashlib.md5(self._index_html.encode(), usedforsecurity=False).hexdigest()}"'
-        self._last_modified = formatdate(
-            datetime.now(tz=timezone.utc).timestamp(), usegmt=True
-        )
+        self._last_modified = formatdate(datetime.now(tz=UTC).timestamp(), usegmt=True)

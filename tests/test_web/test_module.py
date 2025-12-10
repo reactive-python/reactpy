@@ -422,12 +422,12 @@ async def test_callable_prop_with_javacript(display: DisplayFixture):
 
 def test_reactjs_component_from_string():
     reactpy.web.reactjs_component_from_string(
-        "temp", "old", "Component", resolve_imports=False
+        "old", "Component", resolve_imports=False, name="temp"
     )
     reactpy.web.module._STRING_WEB_MODULE_CACHE.clear()
     with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
         reactpy.web.reactjs_component_from_string(
-            "temp", "new", "Component", resolve_imports=False
+            "new", "Component", resolve_imports=False, name="temp"
         )
 
 
@@ -452,7 +452,7 @@ async def test_reactjs_component_from_url(browser):
 
 async def test_reactjs_component_from_file(display: DisplayFixture):
     SimpleButton = reactpy.web.reactjs_component_from_file(
-        "simple-button", JS_FIXTURES_DIR / "simple-button.js", "SimpleButton"
+        JS_FIXTURES_DIR / "simple-button.js", "SimpleButton", name="simple-button"
     )
 
     is_clicked = reactpy.Ref(False)
@@ -493,13 +493,13 @@ def test_reactjs_component_from_file_caching(tmp_path):
     name = "test-file-module"
     reactpy.web.module._FILE_WEB_MODULE_CACHE.clear()
 
-    reactpy.web.reactjs_component_from_file(name, file, "Component")
+    reactpy.web.reactjs_component_from_file(file, "Component", name=name)
     key = next(x for x in reactpy.web.module._FILE_WEB_MODULE_CACHE.keys() if name in x)
     module1 = reactpy.web.module._FILE_WEB_MODULE_CACHE[key]
     assert module1
     initial_length = len(reactpy.web.module._FILE_WEB_MODULE_CACHE)
 
-    reactpy.web.reactjs_component_from_file(name, file, "Component")
+    reactpy.web.reactjs_component_from_file(file, "Component", name=name)
     assert len(reactpy.web.module._FILE_WEB_MODULE_CACHE) == initial_length
 
 
@@ -508,7 +508,7 @@ def test_reactjs_component_from_string_caching():
     content = "export function Component() {}"
     reactpy.web.module._STRING_WEB_MODULE_CACHE.clear()
 
-    reactpy.web.reactjs_component_from_string(name, content, "Component")
+    reactpy.web.reactjs_component_from_string(content, "Component", name=name)
     key = next(
         x for x in reactpy.web.module._STRING_WEB_MODULE_CACHE.keys() if name in x
     )
@@ -516,5 +516,34 @@ def test_reactjs_component_from_string_caching():
     assert module1
     initial_length = len(reactpy.web.module._STRING_WEB_MODULE_CACHE)
 
-    reactpy.web.reactjs_component_from_string(name, content, "Component")
+    reactpy.web.reactjs_component_from_string(content, "Component", name=name)
     assert len(reactpy.web.module._STRING_WEB_MODULE_CACHE) == initial_length
+
+
+def test_reactjs_component_from_string_with_no_name():
+    content = "export function Component() {}"
+    reactpy.web.module._STRING_WEB_MODULE_CACHE.clear()
+
+    reactpy.web.reactjs_component_from_string(content, "Component")
+    initial_length = len(reactpy.web.module._STRING_WEB_MODULE_CACHE)
+
+    reactpy.web.reactjs_component_from_string(content, "Component")
+    assert len(reactpy.web.module._STRING_WEB_MODULE_CACHE) == initial_length
+
+
+async def test_module_without_bind(display: DisplayFixture):
+    GenericComponent = reactpy.web.module._vdom_from_web_module(
+        reactpy.web.module._module_from_file(
+            "generic-module", JS_FIXTURES_DIR / "generic-module.js"
+        ),
+        "GenericComponent",
+    )
+
+    await display.show(
+        lambda: GenericComponent({"id": "my-generic-component", "text": "Hello World"})
+    )
+
+    element = await display.page.wait_for_selector(
+        "#my-generic-component", state="attached"
+    )
+    assert await element.inner_text() == "Hello World"

@@ -17,44 +17,49 @@ Unreleased
 
 **Added**
 
+- :pull:`1113` - Added support for Python 3.12, 3.13, and 3.14.
+- :pull:`1281` - Added type hints to ``reactpy.html`` attributes.
+- :pull:`1285` - Added support for nested components in web modules
+- :pull:`1289` - Added support for inline JavaScript as event handlers or other attributes that expect a callable via ``reactpy.types.InlineJavaScript``
+- :pull:`1308` - Event functions can now call ``event.preventDefault()`` and ``event.stopPropagation()`` methods directly on the event data object, rather than using the ``@event`` decorator.
+- :pull:`1308` - Event data now supports accessing properties via dot notation (ex. ``event.target.value``).
+- :pull:`1308` - Added ``reactpy.types.Event`` to provide type hints for the standard ``data`` function argument (for example ``def on_click(event: Event): ...``).
+- :pull:`1113` - Added ``asgi`` and ``jinja`` installation extras (for example ``pip install reactpy[asgi, jinja]``).
+- :pull:`1267` - Added ``shutdown_timeout`` parameter to the ``reactpy.use_async_effect`` hook.
 - :pull:`1113` - Added ``reactpy.executors.asgi.ReactPy`` that can be used to run ReactPy in standalone mode via ASGI.
 - :pull:`1269` - Added ``reactpy.executors.asgi.ReactPyCsr`` that can be used to run ReactPy in standalone mode via ASGI, but rendered entirely client-sided.
 - :pull:`1113` - Added ``reactpy.executors.asgi.ReactPyMiddleware`` that can be used to utilize ReactPy within any ASGI compatible framework.
 - :pull:`1269` - Added ``reactpy.templatetags.ReactPyJinja`` that can be used alongside ``ReactPyMiddleware`` to embed several ReactPy components into your existing application. This includes the following template tags: ``{% component %}``, ``{% pyscript_component %}``, and ``{% pyscript_setup %}``.
 - :pull:`1269` - Added ``reactpy.pyscript_component`` that can be used to embed ReactPy components into your existing application.
-- :pull:`1113` - Added ``asgi`` and ``jinja`` installation extras (for example ``pip install reactpy[asgi, jinja]``).
-- :pull:`1113` - Added support for Python 3.12 and 3.13.
 - :pull:`1264` - Added ``reactpy.use_async_effect`` hook.
-- :pull:`1267` - Added ``shutdown_timeout`` parameter to the ``reactpy.use_async_effect`` hook.
-- :pull:`1281` - ``reactpy.html`` will now automatically flatten lists recursively (ex. ``reactpy.html(["child1", ["child2"]])``)
 - :pull:`1281` - Added ``reactpy.Vdom`` primitive interface for creating VDOM dictionaries.
-- :pull:`1281` - Added type hints to ``reactpy.html`` attributes.
-- :pull:`1285` - Added support for nested components in web modules
-- :pull:`1289` - Added support for inline JavaScript as event handlers or other attributes that expect a callable via ``reactpy.types.InlineJavaScript``
 - :pull:`1307` - Added ``reactpy.web.reactjs_component_from_file`` to import ReactJS components from a file.
 - :pull:`1307` - Added ``reactpy.web.reactjs_component_from_url`` to import ReactJS components from a URL.
 - :pull:`1307` - Added ``reactpy.web.reactjs_component_from_string`` to import ReactJS components from a string.
-- :pull:`1308` - Event functions can now call ``event.preventDefault()`` and ``event.stopPropagation()`` methods directly on the event data object, rather than using the ``@event`` decorator.
-- :pull:`1308` - Event data now supports accessing properties via dot notation (ex. ``event.target.value``).
 
 **Changed**
 
 - :pull:`1251` - Substitute client-side usage of ``react`` with ``preact``.
-- :pull:`1239` - Script elements no longer support behaving like effects. They now strictly behave like plain HTML script elements.
+- :pull:`1239` - Script elements no longer support behaving like effects. They now strictly behave like plain HTML scripts.
 - :pull:`1255` - The ``reactpy.html`` module has been modified to allow for auto-creation of any HTML nodes. For example, you can create a ``<data-table>`` element by calling ``html.data_table()``.
 - :pull:`1256` - Change ``set_state`` comparison method to check equality with ``==`` more consistently.
 - :pull:`1257` - Add support for rendering ``@component`` children within ``vdom_to_html``.
 - :pull:`1113` - Renamed the ``use_location`` hook's ``search`` attribute to ``query_string``.
 - :pull:`1113` - Renamed the ``use_location`` hook's ``pathname`` attribute to ``path``.
 - :pull:`1113` - Renamed ``reactpy.config.REACTPY_DEBUG_MODE`` to ``reactpy.config.REACTPY_DEBUG``.
-- :pull:`1113` - ``@reactpy/client`` now exports ``React`` and ``ReactDOM``.
 - :pull:`1263` - ReactPy no longer auto-converts ``snake_case`` props to ``camelCase``. It is now the responsibility of the user to ensure that props are in the correct format.
+- :pull:`1196` - Rewrite the ``event-to-object`` package to be more robust at handling properties on events.
+- :pull:`1312` - Custom JS components will now automatically assume you are using ReactJS in the absence of a ``bind`` function.
+- :pull:`1312` - Refactor layout rendering logic to improve readability and maintainability.
+- :pull:`1113` - ``@reactpy/client`` now exports ``React`` and ``ReactDOM``.
+- :pull:`1281` - ``reactpy.html`` will now automatically flatten lists recursively (ex. ``reactpy.html(["child1", ["child2"]])``)
 - :pull:`1278` - ``reactpy.utils.reactpy_to_string`` will now retain the user's original casing for ``data-*`` and ``aria-*`` attributes.
 - :pull:`1278` - ``reactpy.utils.string_to_reactpy`` has been upgraded to handle more complex scenarios without causing ReactJS rendering errors.
 - :pull:`1281` - ``reactpy.core.vdom._CustomVdomDictConstructor`` has been moved to ``reactpy.types.CustomVdomConstructor``.
 - :pull:`1281` - ``reactpy.core.vdom._EllipsisRepr`` has been moved to ``reactpy.types.EllipsisRepr``.
 - :pull:`1281` - ``reactpy.types.VdomDictConstructor`` has been renamed to ``reactpy.types.VdomConstructor``.
-- :pull:`1196` - Rewrite the ``event-to-object`` package to be more robust at handling properties on events.
+- :pull:`1312` - ``REACTPY_ASYNC_RENDERING`` can now de-duplicate and cascade renders where necessary.
+- :pull:`1312` - ``REACTPY_ASYNC_RENDERING`` is now defaulted to ``True`` for up to 40x performance improvements.
 
 **Deprecated**
 
@@ -63,10 +68,15 @@ Unreleased
 -:pull:`1307` - ``reactpy.web.module_from_url`` is deprecated. Use ``reactpy.web.reactjs_component_from_url`` instead.
 -:pull:`1307` - ``reactpy.web.module_from_string`` is deprecated. Use ``reactpy.web.reactjs_component_from_string`` instead.
 
-
 **Removed**
 
+- :pull:`1113` - Removed support for Python 3.9 and 3.10.
 - :pull:`1255` - Removed the ability to import ``reactpy.html.*`` elements directly. You must now call ``html.*`` to access the elements.
+- :pull:`1113` - Removed backend specific installation extras (such as ``pip install reactpy[starlette]``).
+- :pull:`1264` - Removed support for async functions within ``reactpy.use_effect`` hook. Use ``reactpy.use_async_effect`` instead.
+- :pull:`1113` - Removed deprecated function ``module_from_template``.
+- :pull:`1311` - Removed deprecated exception type ``reactpy.core.serve.Stop``.
+- :pull:`1311` - Removed deprecated component ``reactpy.widgets.hotswap``.
 - :pull:`1255` - Removed ``reactpy.sample`` module.
 - :pull:`1255` - Removed ``reactpy.svg`` module. Contents previously within ``reactpy.svg.*`` can now be accessed via ``html.svg.*``.
 - :pull:`1255` - Removed ``reactpy.html._`` function. Use ``html.fragment`` instead.
@@ -75,23 +85,20 @@ Unreleased
 - :pull:`1113` - Removed ``reactpy.core.types`` module. Use ``reactpy.types`` instead.
 - :pull:`1278` - Removed ``reactpy.utils.html_to_vdom``. Use ``reactpy.utils.string_to_reactpy`` instead.
 - :pull:`1278` - Removed ``reactpy.utils.vdom_to_html``. Use ``reactpy.utils.reactpy_to_string`` instead.
-- :pull:`1113` - Removed backend specific installation extras (such as ``pip install reactpy[starlette]``).
-- :pull:`1113` - Removed deprecated function ``module_from_template``.
-- :pull:`1113` - Removed support for Python 3.9.
-- :pull:`1264` - Removed support for async functions within ``reactpy.use_effect`` hook. Use ``reactpy.use_async_effect`` instead.
 - :pull:`1281` - Removed ``reactpy.vdom``. Use ``reactpy.Vdom`` instead.
 - :pull:`1281` - Removed ``reactpy.core.make_vdom_constructor``. Use ``reactpy.Vdom`` instead.
 - :pull:`1281` - Removed ``reactpy.core.custom_vdom_constructor``. Use ``reactpy.Vdom`` instead.
-- :pull:`1311` - Removed ``reactpy.core.serve.Stop`` type due to extended deprecation.
-- :pull:`1311` - Removed ``reactpy.Layout`` top-level export. Use ``reactpy.core.layout.Layout`` instead.
-- :pull:`1311` - Removed ``reactpy.widgets.hotswap`` due to extended deprecation.
-
+- :pull:`1311` - Removed ``reactpy.Layout`` top-level re-export. Use ``reactpy.core.layout.Layout`` instead.
+- :pull:`1312` - Removed ``reactpy.types.LayoutType``. Use ``reactpy.types.BaseLayout`` instead.
+- :pull:`1312` - Removed ``reactpy.types.ContextProviderType``. Use ``reactpy.types.ContextProvider`` instead.
+- :pull:`1312` - Removed ``reactpy.core.hooks._ContextProvider``. Use ``reactpy.types.ContextProvider`` instead.
 
 **Fixed**
 
 - :pull:`1239` - Fixed a bug where script elements would not render to the DOM as plain text.
 - :pull:`1271` - Fixed a bug where the ``key`` property provided within server-side ReactPy code was failing to propagate to the front-end JavaScript components.
 - :pull:`1254` - Fixed a bug where ``RuntimeError("Hook stack is in an invalid state")`` errors could be generated when using a webserver that reuses threads.
+
 
 v1.1.0
 ------
@@ -102,7 +109,7 @@ v1.1.0
 - :pull:`1118` - ``module_from_template`` is broken with a recent release of ``requests``
 - :pull:`1131` - ``module_from_template`` did not work when using Flask backend
 - :pull:`1200` - Fixed ``UnicodeDecodeError`` when using ``reactpy.web.export``
-- :pull:`1224` - Fixes needless unmounting of JavaScript components during each ReactPy render.
+- :pull:`1224` - Fixed needless unmounting of JavaScript components during each ReactPy render.
 - :pull:`1126` - Fixed missing ``event["target"]["checked"]`` on checkbox inputs
 - :pull:`1191` - Fixed missing static files on `sdist` Python distribution
 

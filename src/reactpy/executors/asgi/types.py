@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, MutableMapping
-from typing import Any, Callable, Protocol
+from collections.abc import Awaitable, Callable, MutableMapping
+from typing import Any, Protocol
 
 from asgiref import typing as asgi_types
 

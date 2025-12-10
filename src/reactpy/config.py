@@ -85,11 +85,11 @@ REACTPY_TESTS_DEFAULT_TIMEOUT = Option(
 
 REACTPY_ASYNC_RENDERING = Option(
     "REACTPY_ASYNC_RENDERING",
-    default=False,
+    default=True,
     mutable=True,
     validator=boolean,
 )
-"""Whether to render components asynchronously. This is currently an experimental feature."""
+"""Whether to render components asynchronously."""
 
 REACTPY_RECONNECT_INTERVAL = Option(
     "REACTPY_RECONNECT_INTERVAL",

@@ -1,5 +1,6 @@
 import type { ReactPyClientInterface } from "./types";
 import eventToObject from "event-to-object";
+import * as preact from "preact";
 import type {
   ReactPyVdom,
   ReactPyVdomImportSource,
@@ -20,14 +21,18 @@ export async function loadImportSource(
   } else {
     module = await client.loadModule(vdomImportSource.source);
   }
-  if (typeof module.bind !== "function") {
-    throw new Error(
-      `${vdomImportSource.source} did not export a function 'bind'`,
+
+  let { bind } = module;
+  if (typeof bind !== "function") {
+    console.debug(
+      "Using generic ReactJS binding for components in module",
+      module,
     );
+    bind = generic_reactjs_bind;
   }
 
   return (node: HTMLElement) => {
-    const binding = module.bind(node, {
+    const binding = bind(node, {
       sendMessage: client.sendMessage,
       onMessage: client.onMessage,
     });
@@ -253,4 +258,15 @@ function createInlineJavaScript(
   };
   wrappedExecutable.isHandler = false;
   return [name, wrappedExecutable];
+}
+
+function generic_reactjs_bind(node: HTMLElement) {
+  return {
+    create: (type: any, props: any, children?: any[]) =>
+      preact.createElement(type, props, ...(children || [])),
+    render: (element: any) => {
+      preact.render(element, node);
+    },
+    unmount: () => preact.render(null, node),
+  };
 }

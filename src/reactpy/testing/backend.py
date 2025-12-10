@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from contextlib import AsyncExitStack
 from types import TracebackType
-from typing import Any, Callable
+from typing import Any
 from urllib.parse import urlencode, urlunparse
 
 import uvicorn

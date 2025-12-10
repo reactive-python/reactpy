@@ -1,26 +1,26 @@
 from __future__ import annotations
 
-import abc
 from asyncio import (
     FIRST_COMPLETED,
     CancelledError,
     Queue,
     Task,
     create_task,
+    current_task,
     get_running_loop,
     wait,
 )
 from collections import Counter
-from collections.abc import Sequence
-from contextlib import AsyncExitStack
+from collections.abc import Callable
+from contextlib import AsyncExitStack, suppress
 from logging import getLogger
 from types import TracebackType
 from typing import (
     Any,
-    Callable,
     Generic,
     NamedTuple,
     NewType,
+    TypeAlias,
     TypeVar,
     cast,
 )
@@ -28,7 +28,6 @@ from uuid import uuid4
 from weakref import ref as weakref
 
 from anyio import Semaphore
-from typing_extensions import TypeAlias
 
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
@@ -38,15 +37,16 @@ from reactpy.config import (
 from reactpy.core._life_cycle_hook import LifeCycleHook
 from reactpy.core.vdom import validate_vdom_json
 from reactpy.types import (
-    ComponentType,
+    BaseLayout,
+    Component,
     Context,
+    ContextProvider,
     Event,
     EventHandlerDict,
     Key,
     LayoutEventMessage,
     LayoutUpdateMessage,
     VdomChild,
-    VdomDict,
     VdomJson,
 )
 from reactpy.utils import Ref
@@ -54,26 +54,11 @@ from reactpy.utils import Ref
 logger = getLogger(__name__)
 
 
-class Layout:
-    """Responsible for "rendering" components. That is, turning them into VDOM."""
-
-    __slots__: tuple[str, ...] = (
-        "_event_handlers",
-        "_model_states_by_life_cycle_state_id",
-        "_render_tasks",
-        "_render_tasks_ready",
-        "_rendering_queue",
-        "_root_life_cycle_state_id",
-        "root",
-    )
-
-    if not hasattr(abc.ABC, "__weakref__"):  # nocov
-        __slots__ += ("__weakref__",)
-
-    def __init__(self, root: ComponentType | Context[Any]) -> None:
+class Layout(BaseLayout):
+    def __init__(self, root: Component | Context[Any] | ContextProvider[Any]) -> None:
         super().__init__()
-        if not isinstance(root, ComponentType):
-            msg = f"Expected a ComponentType, not {type(root)!r}."
+        if not isinstance(root, Component):
+            msg = f"Expected a ReactPy component, not {type(root)!r}."
             raise TypeError(msg)
         self.root = root
 
@@ -81,6 +66,9 @@ class Layout:
         # create attributes here to avoid access before entering context manager
         self._event_handlers: EventHandlerDict = {}
         self._render_tasks: set[Task[LayoutUpdateMessage]] = set()
+        self._render_tasks_by_id: dict[
+            _LifeCycleStateId, Task[LayoutUpdateMessage]
+        ] = {}
         self._render_tasks_ready: Semaphore = Semaphore(0)
         self._rendering_queue: _ThreadSafeQueue[_LifeCycleStateId] = _ThreadSafeQueue()
         root_model_state = _new_root_model_state(self.root, self._schedule_render_task)
@@ -98,16 +86,14 @@ class Layout:
 
         for t in self._render_tasks:
             t.cancel()
-            try:
+            with suppress(CancelledError):
                 await t
-            except CancelledError:
-                pass
-
         await self._unmount_model_states([root_model_state])
 
         # delete attributes here to avoid access after exiting context manager
         del self._event_handlers
         del self._rendering_queue
+        del self._render_tasks_by_id
         del self._root_life_cycle_state_id
         del self._model_states_by_life_cycle_state_id
 
@@ -155,20 +141,55 @@ class Layout:
         """Await to fetch the first completed render within our asyncio task group.
         We use the `asyncio.tasks.wait` API in order to return the first completed task.
         """
-        await self._render_tasks_ready.acquire()
-        done, _ = await wait(self._render_tasks, return_when=FIRST_COMPLETED)
-        update_task: Task[LayoutUpdateMessage] = done.pop()
-        self._render_tasks.remove(update_task)
-        return update_task.result()
+        while True:
+            await self._render_tasks_ready.acquire()
+            if not self._render_tasks:  # nocov
+                continue
+            done, _ = await wait(self._render_tasks, return_when=FIRST_COMPLETED)
+            update_task: Task[LayoutUpdateMessage] = done.pop()
+            self._render_tasks.discard(update_task)
+
+            for lcs_id, task in list(self._render_tasks_by_id.items()):
+                if task is update_task:
+                    del self._render_tasks_by_id[lcs_id]
+                    break
+
+            try:
+                return update_task.result()
+            except CancelledError:  # nocov
+                continue
 
     async def _create_layout_update(
         self, old_state: _ModelState
     ) -> LayoutUpdateMessage:
-        new_state = _copy_component_model_state(old_state)
-        component = new_state.life_cycle_state.component
+        component = old_state.life_cycle_state.component
+        try:
+            parent: _ModelState | None = old_state.parent
+        except AttributeError:
+            parent = None
 
         async with AsyncExitStack() as exit_stack:
-            await self._render_component(exit_stack, old_state, new_state, component)
+            new_state = await self._render_component(
+                exit_stack,
+                old_state,
+                parent,
+                old_state.index,
+                old_state.key,
+                component,
+            )
+
+        if parent is not None:
+            parent.children_by_key[new_state.key] = new_state
+            old_parent_model = parent.model.current
+            old_parent_children = old_parent_model.setdefault("children", [])
+            parent.model.current = {
+                **old_parent_model,
+                "children": [
+                    *old_parent_children[: new_state.index],
+                    new_state.model.current,
+                    *old_parent_children[new_state.index + 1 :],
+                ],
+            }
 
         if REACTPY_CHECK_VDOM_SPEC.current:
             validate_vdom_json(new_state.model.current)
@@ -183,13 +204,53 @@ class Layout:
         self,
         exit_stack: AsyncExitStack,
         old_state: _ModelState | None,
-        new_state: _ModelState,
-        component: ComponentType,
-    ) -> None:
+        parent: _ModelState | None,
+        index: int,
+        key: Any,
+        component: Component,
+    ) -> _ModelState:
+        if old_state is None:
+            new_state = _make_component_model_state(
+                parent, index, key, component, self._schedule_render_task
+            )
+        elif (
+            old_state.is_component_state
+            and old_state.life_cycle_state.component.type != component.type
+        ):
+            await self._unmount_model_states([old_state])
+            new_state = _make_component_model_state(
+                parent, index, key, component, self._schedule_render_task
+            )
+            old_state = None
+        elif not old_state.is_component_state:
+            await self._unmount_model_states([old_state])
+            new_state = _make_component_model_state(
+                parent, index, key, component, self._schedule_render_task
+            )
+            old_state = None
+        elif parent is None:
+            new_state = _copy_component_model_state(old_state)
+            new_state.life_cycle_state = _update_life_cycle_state(
+                old_state.life_cycle_state, component
+            )
+        else:
+            new_state = _update_component_model_state(
+                old_state, parent, index, component, self._schedule_render_task
+            )
+
         life_cycle_state = new_state.life_cycle_state
         life_cycle_hook = life_cycle_state.hook
 
         self._model_states_by_life_cycle_state_id[life_cycle_state.id] = new_state
+
+        # If this component is scheduled to render, we can cancel that task since we are
+        # rendering it now.
+        if life_cycle_state.id in self._render_tasks_by_id:
+            task = self._render_tasks_by_id[life_cycle_state.id]
+            if task is not current_task():
+                del self._render_tasks_by_id[life_cycle_state.id]
+                task.cancel()
+                self._render_tasks.discard(task)
 
         await life_cycle_hook.affect_component_will_render(component)
         exit_stack.push_async_callback(life_cycle_hook.affect_layout_did_render)
@@ -198,8 +259,10 @@ class Layout:
             # wrap the model in a fragment (i.e. tagName="") to ensure components have
             # a separate node in the model state tree. This could be removed if this
             # components are given a node in the tree some other way
-            wrapper_model = VdomDict(tagName="", children=[raw_model])
-            await self._render_model(exit_stack, old_state, new_state, wrapper_model)
+            new_state.model.current = {"tagName": ""}
+            await self._render_model_children(
+                exit_stack, old_state, new_state, [raw_model]
+            )
         except Exception as error:
             logger.exception(f"Failed to render {component}")
             new_state.model.current = {
@@ -211,32 +274,26 @@ class Layout:
         finally:
             await life_cycle_hook.affect_component_did_render()
 
-        try:
-            parent = new_state.parent
-        except AttributeError:
-            pass  # only happens for root component
-        else:
-            key, index = new_state.key, new_state.index
-            parent.children_by_key[key] = new_state
-            # need to add this model to parent's children without mutating parent model
-            old_parent_model = parent.model.current
-            old_parent_children = old_parent_model.setdefault("children", [])
-            parent.model.current = {
-                **old_parent_model,
-                "children": [
-                    *old_parent_children[:index],
-                    new_state.model.current,
-                    *old_parent_children[index + 1 :],
-                ],
-            }
+        return new_state
 
     async def _render_model(
         self,
         exit_stack: AsyncExitStack,
         old_state: _ModelState | None,
-        new_state: _ModelState,
+        parent: _ModelState,
+        index: int,
+        key: Any,
         raw_model: Any,
-    ) -> None:
+    ) -> _ModelState:
+        if old_state is None:
+            new_state = _make_element_model_state(parent, index, key)
+        elif old_state.is_component_state:
+            await self._unmount_model_states([old_state])
+            new_state = _make_element_model_state(parent, index, key)
+            old_state = None
+        else:
+            new_state = _update_element_model_state(old_state, parent, index)
+
         try:
             new_state.model.current = {"tagName": raw_model["tagName"]}
         except Exception as e:  # nocov
@@ -250,6 +307,7 @@ class Layout:
         await self._render_model_children(
             exit_stack, old_state, new_state, raw_model.get("children", [])
         )
+        return new_state
 
     def _render_model_attributes(
         self,
@@ -331,130 +389,48 @@ class Layout:
             else:
                 raw_children = [raw_children]
 
-        if old_state is None:
-            if raw_children:
-                await self._render_model_children_without_old_state(
-                    exit_stack, new_state, raw_children
-                )
-            return None
-        elif not raw_children:
-            await self._unmount_model_states(list(old_state.children_by_key.values()))
-            return None
+        children_info, new_keys = _get_children_info(raw_children)
 
-        children_info = _get_children_info(raw_children)
-
-        new_keys = {k for _, _, k in children_info}
-        if len(new_keys) != len(children_info):
+        if new_keys is None:
             key_counter = Counter(item[2] for item in children_info)
             duplicate_keys = [key for key, count in key_counter.items() if count > 1]
             msg = f"Duplicate keys {duplicate_keys} at {new_state.patch_path or '/'!r}"
             raise ValueError(msg)
 
-        old_keys = set(old_state.children_by_key).difference(new_keys)
-        if old_keys:
-            await self._unmount_model_states(
-                [old_state.children_by_key[key] for key in old_keys]
-            )
-
-        new_state.model.current["children"] = []
-        for index, (child, child_type, key) in enumerate(children_info):
-            old_child_state = old_state.children_by_key.get(key)
-            if child_type is _DICT_TYPE:
-                old_child_state = old_state.children_by_key.get(key)
-                if old_child_state is None:
-                    new_child_state = _make_element_model_state(
-                        new_state,
-                        index,
-                        key,
-                    )
-                elif old_child_state.is_component_state:
-                    await self._unmount_model_states([old_child_state])
-                    new_child_state = _make_element_model_state(
-                        new_state,
-                        index,
-                        key,
-                    )
-                    old_child_state = None
-                else:
-                    new_child_state = _update_element_model_state(
-                        old_child_state,
-                        new_state,
-                        index,
-                    )
-                await self._render_model(
-                    exit_stack, old_child_state, new_child_state, child
+        if old_state is not None:
+            old_keys = set(old_state.children_by_key).difference(new_keys)
+            if old_keys:
+                await self._unmount_model_states(
+                    [old_state.children_by_key[key] for key in old_keys]
                 )
-                new_state.append_child(new_child_state.model.current)
-                new_state.children_by_key[key] = new_child_state
-            elif child_type is _COMPONENT_TYPE:
-                child = cast(ComponentType, child)
-                old_child_state = old_state.children_by_key.get(key)
-                if old_child_state is None:
-                    new_child_state = _make_component_model_state(
-                        new_state,
-                        index,
-                        key,
-                        child,
-                        self._schedule_render_task,
+
+        if raw_children:
+            new_state.model.current["children"] = []
+            for index, (child, child_type, key) in enumerate(children_info):
+                old_child_state = (
+                    old_state.children_by_key.get(key)
+                    if old_state is not None
+                    else None
+                )
+                if child_type is _DICT_TYPE:
+                    new_child_state = await self._render_model(
+                        exit_stack, old_child_state, new_state, index, key, child
                     )
-                elif old_child_state.is_component_state and (
-                    old_child_state.life_cycle_state.component.type != child.type
-                ):
-                    await self._unmount_model_states([old_child_state])
-                    old_child_state = None
-                    new_child_state = _make_component_model_state(
-                        new_state,
-                        index,
-                        key,
-                        child,
-                        self._schedule_render_task,
+                elif child_type is _COMPONENT_TYPE:
+                    child = cast(Component, child)
+                    new_child_state = await self._render_component(
+                        exit_stack, old_child_state, new_state, index, key, child
                     )
                 else:
-                    new_child_state = _update_component_model_state(
-                        old_child_state,
-                        new_state,
-                        index,
-                        child,
-                        self._schedule_render_task,
-                    )
-                await self._render_component(
-                    exit_stack, old_child_state, new_child_state, child
-                )
-            else:
-                old_child_state = old_state.children_by_key.get(key)
-                if old_child_state is not None:
-                    await self._unmount_model_states([old_child_state])
-                new_state.append_child(child)
+                    if old_child_state is not None:
+                        await self._unmount_model_states([old_child_state])
+                    new_child_state = child
 
-    async def _render_model_children_without_old_state(
-        self,
-        exit_stack: AsyncExitStack,
-        new_state: _ModelState,
-        raw_children: list[Any],
-    ) -> None:
-        children_info = _get_children_info(raw_children)
-
-        new_keys = {k for _, _, k in children_info}
-        if len(new_keys) != len(children_info):
-            key_counter = Counter(k for _, _, k in children_info)
-            duplicate_keys = [key for key, count in key_counter.items() if count > 1]
-            msg = f"Duplicate keys {duplicate_keys} at {new_state.patch_path or '/'!r}"
-            raise ValueError(msg)
-
-        new_state.model.current["children"] = []
-        for index, (child, child_type, key) in enumerate(children_info):
-            if child_type is _DICT_TYPE:
-                child_state = _make_element_model_state(new_state, index, key)
-                await self._render_model(exit_stack, None, child_state, child)
-                new_state.append_child(child_state.model.current)
-                new_state.children_by_key[key] = child_state
-            elif child_type is _COMPONENT_TYPE:
-                child_state = _make_component_model_state(
-                    new_state, index, key, child, self._schedule_render_task
-                )
-                await self._render_component(exit_stack, None, child_state, child)
-            else:
-                new_state.append_child(child)
+                if isinstance(new_child_state, _ModelState):
+                    new_state.append_child(new_child_state.model.current)
+                    new_state.children_by_key[key] = new_child_state
+                else:
+                    new_state.append_child(new_child_state)
 
     async def _unmount_model_states(self, old_states: list[_ModelState]) -> None:
         to_unmount = old_states[::-1]  # unmount in reversed order of rendering
@@ -483,7 +459,9 @@ class Layout:
                 f"{lcs_id!r} - component already unmounted"
             )
         else:
-            self._render_tasks.add(create_task(self._create_layout_update(model_state)))
+            task = create_task(self._create_layout_update(model_state))
+            self._render_tasks.add(task)
+            self._render_tasks_by_id[lcs_id] = task
             self._render_tasks_ready.release()
 
     def __repr__(self) -> str:
@@ -491,7 +469,7 @@ class Layout:
 
 
 def _new_root_model_state(
-    component: ComponentType, schedule_render: Callable[[_LifeCycleStateId], None]
+    component: Component, schedule_render: Callable[[_LifeCycleStateId], None]
 ) -> _ModelState:
     return _ModelState(
         parent=None,
@@ -506,10 +484,10 @@ def _new_root_model_state(
 
 
 def _make_component_model_state(
-    parent: _ModelState,
+    parent: _ModelState | None,
     index: int,
     key: Any,
-    component: ComponentType,
+    component: Component,
     schedule_render: Callable[[_LifeCycleStateId], None],
 ) -> _ModelState:
     return _ModelState(
@@ -517,7 +495,7 @@ def _make_component_model_state(
         index=index,
         key=key,
         model=Ref(),
-        patch_path=f"{parent.patch_path}/children/{index}",
+        patch_path=f"{parent.patch_path}/children/{index}" if parent else "",
         children_by_key={},
         targets_by_event={},
         life_cycle_state=_make_life_cycle_state(component, schedule_render),
@@ -547,7 +525,7 @@ def _update_component_model_state(
     old_model_state: _ModelState,
     new_parent: _ModelState,
     new_index: int,
-    new_component: ComponentType,
+    new_component: Component,
     schedule_render: Callable[[_LifeCycleStateId], None],
 ) -> _ModelState:
     return _ModelState(
@@ -673,7 +651,7 @@ class _ModelState:
 
 
 def _make_life_cycle_state(
-    component: ComponentType,
+    component: Component,
     schedule_render: Callable[[_LifeCycleStateId], None],
 ) -> _LifeCycleState:
     life_cycle_state_id = _LifeCycleStateId(uuid4().hex)
@@ -686,7 +664,7 @@ def _make_life_cycle_state(
 
 def _update_life_cycle_state(
     old_life_cycle_state: _LifeCycleState,
-    new_component: ComponentType,
+    new_component: Component,
 ) -> _LifeCycleState:
     return _LifeCycleState(
         old_life_cycle_state.id,
@@ -708,7 +686,7 @@ class _LifeCycleState(NamedTuple):
     hook: LifeCycleHook
     """The life cycle hook"""
 
-    component: ComponentType
+    component: Component
     """The current component instance"""
 
 
@@ -732,15 +710,20 @@ class _ThreadSafeQueue(Generic[_Type]):
         return value
 
 
-def _get_children_info(children: list[VdomChild]) -> Sequence[_ChildInfo]:
+def _get_children_info(
+    children: list[VdomChild],
+) -> tuple[list[_ChildInfo], set[Key] | None]:
     infos: list[_ChildInfo] = []
+    keys: set[Key] = set()
+    has_duplicates = False
+
     for index, child in enumerate(children):
         if child is None:
             continue
         elif isinstance(child, dict):
             child_type = _DICT_TYPE
             key = child.get("key")
-        elif isinstance(child, ComponentType):
+        elif isinstance(child, Component):
             child_type = _COMPONENT_TYPE
             key = child.key
         else:
@@ -751,9 +734,13 @@ def _get_children_info(children: list[VdomChild]) -> Sequence[_ChildInfo]:
         if key is None:
             key = index
 
+        if key in keys:
+            has_duplicates = True
+        keys.add(key)
+
         infos.append((child, child_type, key))
 
-    return infos
+    return infos, None if has_duplicates else keys
 
 
 _ChildInfo: TypeAlias = tuple[Any, "_ElementType", Key]

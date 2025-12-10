@@ -2,31 +2,30 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-from collections.abc import Coroutine, Sequence
+import inspect
+from collections.abc import Callable, Coroutine, Sequence
 from logging import getLogger
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Generic,
     Protocol,
+    TypeAlias,
     TypeVar,
     cast,
     overload,
 )
-
-from typing_extensions import TypeAlias
 
 from reactpy.config import REACTPY_DEBUG
 from reactpy.core._life_cycle_hook import HOOK_STACK
 from reactpy.types import (
     Connection,
     Context,
+    ContextProvider,
     Key,
     Location,
     State,
-    VdomDict,
 )
 from reactpy.utils import Ref
 
@@ -146,11 +145,6 @@ def use_effect(
     Returns:
         If not function is provided, a decorator. Otherwise ``None``.
     """
-    if asyncio.iscoroutinefunction(function):
-        raise TypeError(
-            "`use_effect` does not support async functions. "
-            "Use `use_async_effect` instead."
-        )
 
     hook = HOOK_STACK.current_hook()
     dependencies = _try_to_infer_closure_values(function, dependencies)
@@ -158,6 +152,12 @@ def use_effect(
     cleanup_func: Ref[_EffectCleanFunc | None] = use_ref(None)
 
     def decorator(func: _SyncEffectFunc) -> None:
+        if inspect.iscoroutinefunction(func):
+            raise TypeError(
+                "`use_effect` does not support async functions. "
+                "Use `use_async_effect` instead."
+            )
+
         async def effect(stop: asyncio.Event) -> None:
             # Since the effect is asynchronous, we need to make sure we
             # always clean up the previous effect's resources
@@ -303,8 +303,8 @@ def create_context(default_value: _Type) -> Context[_Type]:
         *children: Any,
         value: _Type = default_value,
         key: Key | None = None,
-    ) -> _ContextProvider[_Type]:
-        return _ContextProvider(
+    ) -> ContextProvider[_Type]:
+        return ContextProvider(
             *children,
             value=value,
             key=key,
@@ -358,27 +358,6 @@ def use_scope() -> dict[str, Any] | asgi_types.HTTPScope | asgi_types.WebSocketS
 def use_location() -> Location:
     """Get the current :class:`~reactpy.types.Connection`'s location."""
     return use_connection().location
-
-
-class _ContextProvider(Generic[_Type]):
-    def __init__(
-        self,
-        *children: Any,
-        value: _Type,
-        key: Key | None,
-        type: Context[_Type],
-    ) -> None:
-        self.children = children
-        self.key = key
-        self.type = type
-        self.value = value
-
-    def render(self) -> VdomDict:
-        HOOK_STACK.current_hook().set_context_provider(self)
-        return VdomDict(tagName="", children=self.children)
-
-    def __repr__(self) -> str:
-        return f"ContextProvider({self.type})"
 
 
 _ActionType = TypeVar("_ActionType")
@@ -515,7 +494,7 @@ def use_memo(
         # if deps are same length check identity for each item
         or not all(
             strictly_equal(current, new)
-            for current, new in zip(memo.deps, dependencies)
+            for current, new in zip(memo.deps, dependencies, strict=False)
         )
     ):
         memo.deps = dependencies
@@ -617,7 +596,18 @@ def strictly_equal(x: Any, y: Any) -> bool:
             getattr(x.__code__, attr) == getattr(y.__code__, attr)
             for attr in dir(x.__code__)
             if attr.startswith("co_")
-            and attr not in {"co_positions", "co_linetable", "co_lines", "co_lnotab"}
+            and attr
+            not in {
+                "co_positions",
+                "co_linetable",
+                "co_lines",
+                "co_lnotab",
+                "co_branches",
+                "co_firstlineno",
+                "co_end_lineno",
+                "co_col_offset",
+                "co_end_col_offset",
+            }
         )
 
     # Check via the `==` operator if possible

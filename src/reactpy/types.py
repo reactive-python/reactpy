@@ -1,21 +1,23 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable, Mapping, Sequence
+import inspect
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
 from typing import (
     Any,
-    Callable,
     Generic,
     Literal,
+    NamedTuple,
+    NotRequired,
     Protocol,
+    TypeAlias,
+    TypedDict,
     TypeVar,
+    Unpack,
     overload,
-    runtime_checkable,
 )
-
-from typing_extensions import NamedTuple, NotRequired, TypeAlias, TypedDict, Unpack
 
 CarrierType = TypeVar("CarrierType")
 _Type = TypeVar("_Type")
@@ -26,54 +28,84 @@ class State(NamedTuple, Generic[_Type]):
     set_value: Callable[[_Type | Callable[[_Type], _Type]], None]
 
 
-ComponentConstructor = Callable[..., "ComponentType"]
+ComponentConstructor = Callable[..., "Component"]
 """Simple function returning a new component"""
 
-RootComponentConstructor = Callable[[], "ComponentType"]
+RootComponentConstructor = Callable[[], "Component"]
 """The root component should be constructed by a function accepting no arguments."""
 
 
 Key: TypeAlias = str | int
 
 
-@runtime_checkable
-class ComponentType(Protocol):
-    """The expected interface for all component-like objects"""
+class Component:
+    """An object for rending component models."""
 
-    key: Key | None
-    """An identifier which is unique amongst a component's immediate siblings"""
+    __slots__ = "__weakref__", "_args", "_func", "_kwargs", "_sig", "key", "type"
 
-    type: Any
-    """The function or class defining the behavior of this component
+    def __init__(
+        self,
+        function: Callable[..., Component | VdomDict | str | None],
+        key: Any | None,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+        sig: inspect.Signature,
+    ) -> None:
+        self.key = key
+        self.type = function
+        self._args = args
+        self._kwargs = kwargs
+        self._sig = sig
 
-    This is used to see if two component instances share the same definition.
-    """
+    def render(self) -> Component | VdomDict | str | None:
+        return self.type(*self._args, **self._kwargs)
 
-    def render(self) -> VdomDict | ComponentType | str | None:
-        """Render the component's view model."""
+    def __repr__(self) -> str:
+        try:
+            args = self._sig.bind(*self._args, **self._kwargs).arguments
+        except TypeError:
+            return f"{self.type.__name__}(...)"
+        else:
+            items = ", ".join(f"{k}={v!r}" for k, v in args.items())
+            if items:
+                return f"{self.type.__name__}({id(self):02x}, {items})"
+            else:
+                return f"{self.type.__name__}({id(self):02x})"
 
 
 _Render_co = TypeVar("_Render_co", covariant=True)
 _Event_contra = TypeVar("_Event_contra", contravariant=True)
 
 
-@runtime_checkable
-class LayoutType(Protocol[_Render_co, _Event_contra]):
-    """Renders and delivers, updates to views and events to handlers, respectively"""
+class BaseLayout(Protocol[_Render_co, _Event_contra]):
+    """Renders and delivers views, and submits events to handlers."""
+
+    __slots__: tuple[str, ...] = (
+        "__weakref__",
+        "_event_handlers",
+        "_model_states_by_life_cycle_state_id",
+        "_render_tasks",
+        "_render_tasks_ready",
+        "_rendering_queue",
+        "_root_life_cycle_state_id",
+        "root",
+    )
 
     async def render(
         self,
-    ) -> _Render_co: ...  # Render an update to a view
+    ) -> _Render_co:
+        """Render an update to a view"""
+        ...
 
-    async def deliver(
-        self, event: _Event_contra
-    ) -> None: ...  # Relay an event to its respective handler
+    async def deliver(self, event: _Event_contra) -> None:
+        """Relay an event to its respective handler"""
+        ...
 
     async def __aenter__(
         self,
-    ) -> LayoutType[
-        _Render_co, _Event_contra
-    ]: ...  # Prepare the layout for its first render
+    ) -> BaseLayout[_Render_co, _Event_contra]:
+        """Prepare the layout for its first render"""
+        ...
 
     async def __aexit__(
         self,
@@ -82,6 +114,7 @@ class LayoutType(Protocol[_Render_co, _Event_contra]):
         traceback: TracebackType,
     ) -> bool | None:
         """Clean up the view after its final render"""
+        ...
 
 
 class CssStyleTypeDict(TypedDict, total=False):
@@ -787,7 +820,7 @@ class VdomTypeDict(TypedDict):
 
     tagName: str
     key: NotRequired[Key | None]
-    children: NotRequired[Sequence[ComponentType | VdomChild]]
+    children: NotRequired[Sequence[Component | VdomChild]]
     attributes: NotRequired[VdomAttributes]
     eventHandlers: NotRequired[EventHandlerDict]
     inlineJavaScript: NotRequired[InlineJavaScriptDict]
@@ -815,7 +848,7 @@ class VdomDict(dict):
     @overload
     def __getitem__(
         self, key: Literal["children"]
-    ) -> Sequence[ComponentType | VdomChild]: ...
+    ) -> Sequence[Component | VdomChild]: ...
     @overload
     def __getitem__(self, key: Literal["attributes"]) -> VdomAttributes: ...
     @overload
@@ -833,7 +866,7 @@ class VdomDict(dict):
     def __setitem__(self, key: Literal["key"], value: Key | None) -> None: ...
     @overload
     def __setitem__(
-        self, key: Literal["children"], value: Sequence[ComponentType | VdomChild]
+        self, key: Literal["children"], value: Sequence[Component | VdomChild]
     ) -> None: ...
     @overload
     def __setitem__(
@@ -857,7 +890,7 @@ class VdomDict(dict):
         super().__setitem__(key, value)
 
 
-VdomChild: TypeAlias = ComponentType | VdomDict | str | None | Any
+VdomChild: TypeAlias = Component | VdomDict | str | None | Any
 """A single child element of a :class:`VdomDict`"""
 
 VdomChildren: TypeAlias = Sequence[VdomChild] | VdomChild
@@ -907,18 +940,25 @@ class EventHandlerFunc(Protocol):
     async def __call__(self, data: Sequence[Any]) -> None: ...
 
 
-@runtime_checkable
-class EventHandlerType(Protocol):
+class BaseEventHandler:
     """Defines a handler for some event"""
+
+    __slots__ = (
+        "__weakref__",
+        "function",
+        "prevent_default",
+        "stop_propagation",
+        "target",
+    )
+
+    function: EventHandlerFunc
+    """A coroutine which can respond to an event and its data"""
 
     prevent_default: bool
     """Whether to block the event from propagating further up the DOM"""
 
     stop_propagation: bool
     """Stops the default action associate with the event from taking place."""
-
-    function: EventHandlerFunc
-    """A coroutine which can respond to an event and its data"""
 
     target: str | None
     """Typically left as ``None`` except when a static target is useful.
@@ -932,10 +972,10 @@ class EventHandlerType(Protocol):
     """
 
 
-EventHandlerMapping = Mapping[str, EventHandlerType]
+EventHandlerMapping = Mapping[str, BaseEventHandler]
 """A generic mapping between event names to their handlers"""
 
-EventHandlerDict: TypeAlias = dict[str, EventHandlerType]
+EventHandlerDict: TypeAlias = dict[str, BaseEventHandler]
 """A dict mapping between event names to their handlers"""
 
 InlineJavaScriptMapping = Mapping[str, InlineJavaScript]
@@ -991,17 +1031,30 @@ class Context(Protocol[_Type]):
         *children: Any,
         value: _Type = ...,
         key: Key | None = ...,
-    ) -> ContextProviderType[_Type]: ...
+    ) -> ContextProvider[_Type]: ...
 
 
-class ContextProviderType(ComponentType, Protocol[_Type]):
-    """A component which provides a context value to its children"""
+class ContextProvider(Component, Generic[_Type]):
+    def __init__(
+        self,
+        *children: Any,
+        value: _Type,
+        key: Key | None,
+        type: Context[_Type],
+    ) -> None:
+        self.children = children
+        self.key = key
+        self.type = type
+        self.value = value
 
-    type: Context[_Type]
-    """The context type"""
+    def render(self) -> VdomDict:
+        from reactpy.core.hooks import HOOK_STACK
 
-    @property
-    def value(self) -> _Type: ...  # Current context value
+        HOOK_STACK.current_hook().set_context_provider(self)
+        return VdomDict(tagName="", children=self.children)
+
+    def __repr__(self) -> str:
+        return f"ContextProvider({self.type})"
 
 
 @dataclass

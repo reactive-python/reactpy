@@ -3,13 +3,14 @@ from __future__ import annotations
 import logging
 import sys
 from asyncio import Event, Task, create_task, gather
+from collections.abc import Callable
 from contextvars import ContextVar, Token
-from typing import Any, Callable, Protocol, TypeVar
+from typing import Any, Protocol, TypeVar
 
 from anyio import Semaphore
 
 from reactpy.core._thread_local import ThreadLocal
-from reactpy.types import ComponentType, Context, ContextProviderType
+from reactpy.types import Component, Context, ContextProvider
 from reactpy.utils import Singleton
 
 T = TypeVar("T")
@@ -145,13 +146,13 @@ class LifeCycleHook:
         "component",
     )
 
-    component: ComponentType
+    component: Component
 
     def __init__(
         self,
         schedule_render: Callable[[], None],
     ) -> None:
-        self._context_providers: dict[Context[Any], ContextProviderType[Any]] = {}
+        self._context_providers: dict[Context[Any], ContextProvider[Any]] = {}
         self._schedule_render_callback = schedule_render
         self._scheduled_render = False
         self._rendered_atleast_once = False
@@ -200,7 +201,7 @@ class LifeCycleHook:
         """
         self._effect_funcs.append(effect_func)
 
-    def set_context_provider(self, provider: ContextProviderType[Any]) -> None:
+    def set_context_provider(self, provider: ContextProvider[Any]) -> None:
         """Set a context provider for this hook
 
         The context provider will be used to provide state to any child components
@@ -208,9 +209,7 @@ class LifeCycleHook:
         """
         self._context_providers[provider.type] = provider
 
-    def get_context_provider(
-        self, context: Context[T]
-    ) -> ContextProviderType[T] | None:
+    def get_context_provider(self, context: Context[T]) -> ContextProvider[T] | None:
         """Get a context provider for this hook of the given type
 
         The context provider will have been set by a parent component. If no provider
@@ -218,7 +217,7 @@ class LifeCycleHook:
         """
         return self._context_providers.get(context)
 
-    async def affect_component_will_render(self, component: ComponentType) -> None:
+    async def affect_component_will_render(self, component: Component) -> None:
         """The component is about to render"""
         await self._render_access.acquire()
         self._scheduled_render = False

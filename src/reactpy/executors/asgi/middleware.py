@@ -8,13 +8,12 @@ import urllib.parse
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Unpack
 
 import orjson
 from asgi_tools import ResponseText, ResponseWebSocket
 from asgiref.compatibility import guarantee_single_callable
 from servestatic import ServeStaticASGI
-from typing_extensions import Unpack
 
 from reactpy import config
 from reactpy.core.hooks import ConnectionContext
