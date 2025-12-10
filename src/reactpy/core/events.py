@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import asyncio
 import dis
+import inspect
 from collections.abc import Callable, Sequence
 from typing import Any, Literal, cast, overload
 
@@ -160,7 +160,7 @@ def to_event_handler_function(
             Whether to pass the event parameters a positional args or as a list.
     """
     if positional_args:
-        if asyncio.iscoroutinefunction(function):
+        if inspect.iscoroutinefunction(function):
 
             async def wrapper(data: Sequence[Any]) -> None:
                 await function(*data)
@@ -174,7 +174,7 @@ def to_event_handler_function(
 
         cast(Any, wrapper).__wrapped__ = function
         return wrapper
-    elif not asyncio.iscoroutinefunction(function):
+    elif not inspect.iscoroutinefunction(function):
 
         async def wrapper(data: Sequence[Any]) -> None:
             function(data)

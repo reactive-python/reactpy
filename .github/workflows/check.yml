@@ -27,7 +27,7 @@ jobs:
             job-name: "python-{0} {1}"
             run-cmd: "hatch test"
             runs-on: '["ubuntu-latest", "macos-latest", "windows-latest"]'
-            python-version: '["3.10", "3.11", "3.12", "3.13"]'
+            python-version: '["3.11", "3.12", "3.13", "3.14"]'
     test-documentation:
         # Temporarily disabled while we transition from Sphinx to MkDocs
         # https://github.com/reactive-python/reactpy/pull/1052

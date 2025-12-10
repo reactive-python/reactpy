@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import inspect
 from collections.abc import Callable, Coroutine, Sequence
 from logging import getLogger
 from types import FunctionType
@@ -144,7 +145,7 @@ def use_effect(
     Returns:
         If not function is provided, a decorator. Otherwise ``None``.
     """
-    if asyncio.iscoroutinefunction(function):
+    if inspect.iscoroutinefunction(function):
         raise TypeError(
             "`use_effect` does not support async functions. "
             "Use `use_async_effect` instead."
