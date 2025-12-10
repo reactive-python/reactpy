@@ -59,6 +59,7 @@ Unreleased
 - :pull:`1281` - ``reactpy.core.vdom._EllipsisRepr`` has been moved to ``reactpy.types.EllipsisRepr``.
 - :pull:`1281` - ``reactpy.types.VdomDictConstructor`` has been renamed to ``reactpy.types.VdomConstructor``.
 - :pull:`1312` - ``REACTPY_ASYNC_RENDERING`` can now de-duplicate and cascade renders where necessary.
+- :pull:`1312` - ``REACTPY_ASYNC_RENDERING`` is now defaulted to ``True`` for up to 40x performance improvements.
 
 **Deprecated**
 
