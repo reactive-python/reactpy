@@ -1,4 +1,6 @@
 from pathlib import Path
+from unittest import mock
+from urllib.error import URLError
 from uuid import uuid4
 
 import orjson
@@ -57,3 +59,51 @@ def test_extend_pyscript_config_string_values():
 
     # Check whether `packages_cache` has been overridden
     assert result["packages_cache"] == "always"
+
+
+def test_get_reactpy_versions_https_fail_http_success():
+    utils.get_reactpy_versions.cache_clear()
+
+    mock_response = mock.Mock()
+    mock_response.status = 200
+
+    # Mock json.load to return data when called with mock_response
+    with (
+        mock.patch("reactpy.pyscript.utils.request.urlopen") as mock_urlopen,
+        mock.patch("reactpy.pyscript.utils.json.load") as mock_json_load,
+    ):
+
+        def side_effect(url, timeout):
+            if url.startswith("https"):
+                raise URLError("Fail")
+            return mock_response
+
+        mock_urlopen.side_effect = side_effect
+        mock_json_load.return_value = {
+            "releases": {"1.0.0": []},
+            "info": {"version": "1.0.0"},
+        }
+
+        versions = utils.get_reactpy_versions()
+        assert versions == {"versions": ["1.0.0"], "latest": "1.0.0"}
+
+        # Verify both calls were made
+        assert mock_urlopen.call_count == 2
+        assert mock_urlopen.call_args_list[0][0][0].startswith("https")
+        assert mock_urlopen.call_args_list[1][0][0].startswith("http")
+
+
+def test_get_reactpy_versions_all_fail():
+    utils.get_reactpy_versions.cache_clear()
+
+    with (
+        mock.patch("reactpy.pyscript.utils.request.urlopen") as mock_urlopen,
+        mock.patch("reactpy.pyscript.utils._logger") as mock_logger,
+    ):
+        mock_urlopen.side_effect = URLError("Fail")
+
+        versions = utils.get_reactpy_versions()
+        assert versions == {}
+
+        # Verify exception was logged
+        assert mock_logger.exception.called
