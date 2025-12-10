@@ -145,11 +145,6 @@ def use_effect(
     Returns:
         If not function is provided, a decorator. Otherwise ``None``.
     """
-    if inspect.iscoroutinefunction(function):
-        raise TypeError(
-            "`use_effect` does not support async functions. "
-            "Use `use_async_effect` instead."
-        )
 
     hook = HOOK_STACK.current_hook()
     dependencies = _try_to_infer_closure_values(function, dependencies)
@@ -157,6 +152,12 @@ def use_effect(
     cleanup_func: Ref[_EffectCleanFunc | None] = use_ref(None)
 
     def decorator(func: _SyncEffectFunc) -> None:
+        if inspect.iscoroutinefunction(func):
+            raise TypeError(
+                "`use_effect` does not support async functions. "
+                "Use `use_async_effect` instead."
+            )
+
         async def effect(stop: asyncio.Event) -> None:
             # Since the effect is asynchronous, we need to make sure we
             # always clean up the previous effect's resources
