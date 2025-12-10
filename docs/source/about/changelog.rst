@@ -85,7 +85,10 @@ Unreleased
 - :pull:`1281` - Removed ``reactpy.vdom``. Use ``reactpy.Vdom`` instead.
 - :pull:`1281` - Removed ``reactpy.core.make_vdom_constructor``. Use ``reactpy.Vdom`` instead.
 - :pull:`1281` - Removed ``reactpy.core.custom_vdom_constructor``. Use ``reactpy.Vdom`` instead.
-- :pull:`1311` - Removed ``reactpy.Layout`` top-level export. Use ``reactpy.core.layout.Layout`` instead.
+- :pull:`1311` - Removed ``reactpy.Layout`` top-level re-export. Use ``reactpy.core.layout.Layout`` instead.
+- :pull:`1312` - Removed ``reactpy.types.LayoutType``. Use ``reactpy.types.BaseLayout`` instead.
+- :pull:`1312` - Removed ``reactpy.types.ContextProviderType``. Use ``reactpy.types.ContextProvider`` instead.
+- :pull:`1312` - Removed ``reactpy.core.hooks._ContextProvider``. Use ``reactpy.types.ContextProvider`` instead.
 
 **Fixed**
 
