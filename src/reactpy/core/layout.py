@@ -143,7 +143,7 @@ class Layout(BaseLayout):
         """
         while True:
             await self._render_tasks_ready.acquire()
-            if not self._render_tasks:
+            if not self._render_tasks:  # nocov
                 continue
             done, _ = await wait(self._render_tasks, return_when=FIRST_COMPLETED)
             update_task: Task[LayoutUpdateMessage] = done.pop()
