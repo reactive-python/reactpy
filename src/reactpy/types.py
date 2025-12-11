@@ -1143,6 +1143,6 @@ class JavaScriptModule:
     source: str
     source_type: SourceType
     default_fallback: Any | None
-    export_names: set[str] | None
+    import_names: set[str] | None
     file: Path | None
     unmount_before_update: bool

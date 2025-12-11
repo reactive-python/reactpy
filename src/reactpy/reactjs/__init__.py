@@ -59,7 +59,7 @@ def component_from_url(
 def component_from_url(
     url: str,
     import_names: str | list[str] | tuple[str, ...],
-    resolve_imports: bool = True,
+    resolve_imports: bool = False,
     resolve_imports_depth: int = 5,
     fallback: Any | None = None,
     unmount_before_update: bool = False,
@@ -134,7 +134,7 @@ def component_from_npm(
 def component_from_npm(
     package: str,
     import_names: str | list[str] | tuple[str, ...],
-    resolve_imports: bool = True,
+    resolve_imports: bool = False,
     resolve_imports_depth: int = 5,
     version: str = "latest",
     cdn: str = "https://esm.sh",
@@ -222,7 +222,7 @@ def component_from_file(
 def component_from_file(
     file: str | Path,
     import_names: str | list[str] | tuple[str, ...],
-    resolve_imports: bool = True,
+    resolve_imports: bool = False,
     resolve_imports_depth: int = 5,
     name: str = "",
     fallback: Any | None = None,
@@ -304,7 +304,7 @@ def component_from_string(
 def component_from_string(
     content: str,
     import_names: str | list[str] | tuple[str, ...],
-    resolve_imports: bool = True,
+    resolve_imports: bool = False,
     resolve_imports_depth: int = 5,
     name: str = "",
     fallback: Any | None = None,

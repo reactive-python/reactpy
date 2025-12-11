@@ -12,8 +12,8 @@ from reactpy.reactjs.utils import (
     are_files_identical,
     copy_file,
     module_name_suffix,
-    resolve_module_exports_from_file,
-    resolve_module_exports_from_url,
+    resolve_from_module_file,
+    resolve_from_module_url,
 )
 from reactpy.types import ImportSourceDict, JavaScriptModule, VdomConstructor
 
@@ -32,13 +32,9 @@ def url_to_module(
         source_type=URL_SOURCE,
         default_fallback=fallback,
         file=None,
-        export_names=(
-            resolve_module_exports_from_url(url, resolve_imports_depth)
-            if (
-                resolve_imports
-                if resolve_imports is not None
-                else config.REACTPY_DEBUG.current
-            )
+        import_names=(
+            resolve_from_module_url(url, resolve_imports_depth)
+            if resolve_imports
             else None
         ),
         unmount_before_update=unmount_before_update,
@@ -77,13 +73,9 @@ def file_to_module(
         source_type=NAME_SOURCE,
         default_fallback=fallback,
         file=target_file,
-        export_names=(
-            resolve_module_exports_from_file(source_file, resolve_imports_depth)
-            if (
-                resolve_imports
-                if resolve_imports is not None
-                else config.REACTPY_DEBUG.current
-            )
+        import_names=(
+            resolve_from_module_file(source_file, resolve_imports_depth)
+            if resolve_imports
             else None
         ),
         unmount_before_update=unmount_before_update,
@@ -117,13 +109,9 @@ def string_to_module(
         source_type=NAME_SOURCE,
         default_fallback=fallback,
         file=target_file,
-        export_names=(
-            resolve_module_exports_from_file(target_file, resolve_imports_depth)
-            if (
-                resolve_imports
-                if resolve_imports is not None
-                else config.REACTPY_DEBUG.current
-            )
+        import_names=(
+            resolve_from_module_file(target_file, resolve_imports_depth)
+            if resolve_imports
             else None
         ),
         unmount_before_update=unmount_before_update,
@@ -132,15 +120,15 @@ def string_to_module(
 
 def module_to_vdom(
     web_module: JavaScriptModule,
-    export_names: str | list[str] | tuple[str, ...],
+    import_names: str | list[str] | tuple[str, ...],
     fallback: Any | None = None,
     allow_children: bool = True,
 ) -> VdomConstructor | list[VdomConstructor]:
     """Return one or more VDOM constructors from a :class:`JavaScriptModule`
 
     Parameters:
-        export_names:
-            One or more names to export. If given as a string, a single component
+        import_names:
+            One or more names to import. If given as a string, a single component
             will be returned. If a list is given, then a list of components will be
             returned.
         fallback:
@@ -148,27 +136,27 @@ def module_to_vdom(
         allow_children:
             Whether or not these components can have children.
     """
-    if isinstance(export_names, str):
+    if isinstance(import_names, str):
         if (
-            web_module.export_names is not None
-            and export_names.split(".")[0] not in web_module.export_names
+            web_module.import_names is not None
+            and import_names.split(".")[0] not in web_module.import_names
         ):
-            msg = f"{web_module.source!r} does not export {export_names!r}"
+            msg = f"{web_module.source!r} does not contain {import_names!r}"
             raise ValueError(msg)
-        return make_module(web_module, export_names, fallback, allow_children)
+        return make_module(web_module, import_names, fallback, allow_children)
     else:
-        if web_module.export_names is not None:
+        if web_module.import_names is not None:
             missing = sorted(
-                {e.split(".")[0] for e in export_names}.difference(
-                    web_module.export_names
+                {e.split(".")[0] for e in import_names}.difference(
+                    web_module.import_names
                 )
             )
             if missing:
-                msg = f"{web_module.source!r} does not export {missing!r}"
+                msg = f"{web_module.source!r} does not contain {missing!r}"
                 raise ValueError(msg)
         return [
             make_module(web_module, name, fallback, allow_children)
-            for name in export_names
+            for name in import_names
         ]
 
 
@@ -197,7 +185,7 @@ def get_module_path(name: str) -> Path:
 
 
 def import_reactjs():
-    from reactpy import config, html
+    from reactpy import html
 
     base_url = config.REACTPY_PATH_PREFIX.current.strip("/")
     return html.script(
@@ -207,6 +195,7 @@ def import_reactjs():
             "imports": {{
                 "react": "/{base_url}/static/react.js",
                 "react-dom": "/{base_url}/static/react-dom.js",
+                "react-dom/client": "/{base_url}/static/react-dom.js",
                 "react/jsx-runtime": "/{base_url}/static/react-jsx-runtime.js"
             }}
         }}

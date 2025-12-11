@@ -18,119 +18,125 @@ def module_name_suffix(name: str) -> str:
     return PurePosixPath(tail or head).suffix or ".js"
 
 
-def resolve_module_exports_from_file(
+def resolve_from_module_file(
     file: Path,
     max_depth: int,
-    is_re_export: bool = False,
+    is_regex_import: bool = False,
 ) -> set[str]:
     if max_depth == 0:
-        logger.warning(f"Did not resolve all exports for {file} - max depth reached")
+        logger.warning(f"Did not resolve all imports for {file} - max depth reached")
         return set()
     elif not file.exists():
-        logger.warning(f"Did not resolve exports for unknown file {file}")
+        logger.warning(f"Did not resolve imports for unknown file {file}")
         return set()
 
-    export_names, references = resolve_module_exports_from_source(
-        file.read_text(encoding="utf-8"), exclude_default=is_re_export
+    names, references = resolve_from_module_source(
+        file.read_text(encoding="utf-8"), exclude_default=is_regex_import
     )
 
     for ref in references:
         if urlparse(ref).scheme:  # is an absolute URL
-            export_names.update(
-                resolve_module_exports_from_url(ref, max_depth - 1, is_re_export=True)
+            names.update(
+                resolve_from_module_url(ref, max_depth - 1, is_regex_import=True)
             )
         else:
             path = file.parent.joinpath(*ref.split("/"))
-            export_names.update(
-                resolve_module_exports_from_file(path, max_depth - 1, is_re_export=True)
+            names.update(
+                resolve_from_module_file(path, max_depth - 1, is_regex_import=True)
             )
 
-    return export_names
+    return names
 
 
-def resolve_module_exports_from_url(
+def resolve_from_module_url(
     url: str,
     max_depth: int,
-    is_re_export: bool = False,
+    is_regex_import: bool = False,
 ) -> set[str]:
     if max_depth == 0:
-        logger.warning(f"Did not resolve all exports for {url} - max depth reached")
+        logger.warning(f"Did not resolve all imports for {url} - max depth reached")
         return set()
 
     try:
         text = requests.get(url, timeout=5).text
     except requests.exceptions.ConnectionError as error:
         reason = "" if error is None else " - {error.errno}"
-        logger.warning(f"Did not resolve exports for url {url} {reason}")
+        logger.warning(f"Did not resolve imports for url {url} {reason}")
         return set()
 
-    export_names, references = resolve_module_exports_from_source(
-        text, exclude_default=is_re_export
+    names, references = resolve_from_module_source(
+        text, exclude_default=is_regex_import
     )
 
     for ref in references:
-        url = resolve_relative_url(url, ref)
-        export_names.update(
-            resolve_module_exports_from_url(url, max_depth - 1, is_re_export=True)
-        )
+        url = normalize_url_path(url, ref)
+        names.update(resolve_from_module_url(url, max_depth - 1, is_regex_import=True))
 
-    return export_names
+    return names
 
 
-def resolve_module_exports_from_source(
+def resolve_from_module_source(
     content: str, exclude_default: bool
 ) -> tuple[set[str], set[str]]:
-    names: set[str] = set()
+    """Find names exported by the given JavaScript module content to assist with ReactPy import resolution.
+
+    Parmeters:
+        content: The content of the JavaScript module.
+    Returns:
+        A tuple where the first item is a set of exported names and the second item is a set of
+        referenced module paths.
+    """
+    all_names: set[str] = set()
     references: set[str] = set()
 
     if _JS_DEFAULT_EXPORT_PATTERN.search(content):
-        names.add("default")
+        all_names.add("default")
 
     # Exporting functions and classes
-    names.update(_JS_FUNC_OR_CLS_EXPORT_PATTERN.findall(content))
+    all_names.update(_JS_FUNC_OR_CLS_EXPORT_PATTERN.findall(content))
 
-    for export in _JS_GENERAL_EXPORT_PATTERN.findall(content):
-        export = export.rstrip(";").strip()
+    for name in _JS_GENERAL_EXPORT_PATTERN.findall(content):
+        name = name.rstrip(";").strip()
         # Exporting individual features
-        if export.startswith("let "):
-            names.update(let.split("=", 1)[0] for let in export[4:].split(","))
+        if name.startswith("let "):
+            all_names.update(let.split("=", 1)[0] for let in name[4:].split(","))
         # Renaming exports and export list
-        elif export.startswith("{") and export.endswith("}"):
-            names.update(
-                item.split(" as ", 1)[-1] for item in export.strip("{}").split(",")
+        elif name.startswith("{") and name.endswith("}"):
+            all_names.update(
+                item.split(" as ", 1)[-1] for item in name.strip("{}").split(",")
             )
         # Exporting destructured assignments with renaming
-        elif export.startswith("const "):
-            names.update(
+        elif name.startswith("const "):
+            all_names.update(
                 item.split(":", 1)[0]
-                for item in export[6:].split("=", 1)[0].strip("{}").split(",")
+                for item in name[6:].split("=", 1)[0].strip("{}").split(",")
             )
         # Default exports
-        elif export.startswith("default "):
-            names.add("default")
+        elif name.startswith("default "):
+            all_names.add("default")
         # Aggregating modules
-        elif export.startswith("* as "):
-            names.add(export[5:].split(" from ", 1)[0])
-        elif export.startswith("* "):
-            references.add(export[2:].split("from ", 1)[-1].strip("'\""))
-        elif export.startswith("{") and " from " in export:
-            names.update(
+        elif name.startswith("* as "):
+            all_names.add(name[5:].split(" from ", 1)[0])
+        elif name.startswith("* "):
+            references.add(name[2:].split("from ", 1)[-1].strip("'\""))
+        elif name.startswith("{") and " from " in name:
+            all_names.update(
                 item.split(" as ", 1)[-1]
-                for item in export.split(" from ")[0].strip("{}").split(",")
+                for item in name.split(" from ")[0].strip("{}").split(",")
             )
-        elif not (export.startswith("function ") or export.startswith("class ")):
-            logger.warning(f"Unknown export type {export!r}")
+        elif not (name.startswith("function ") or name.startswith("class ")):
+            logger.warning(f"Found unknown export type {name!r}")
 
-    names = {n.strip() for n in names}
+    all_names = {n.strip() for n in all_names}
     references = {r.strip() for r in references}
 
-    if exclude_default and "default" in names:
-        names.remove("default")
+    if exclude_default and "default" in all_names:
+        all_names.remove("default")
 
-    return names, references
+    return all_names, references
 
 
-def resolve_relative_url(base_url: str, rel_url: str) -> str:
+def normalize_url_path(base_url: str, rel_url: str) -> str:
     if not rel_url.startswith("."):
         if rel_url.startswith("/"):
             # copy scheme and hostname from base_url
