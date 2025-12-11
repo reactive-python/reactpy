@@ -8,7 +8,6 @@ from anyio import create_task_group
 from anyio.abc import TaskGroup
 
 from reactpy.config import REACTPY_DEBUG
-from reactpy.core._life_cycle_hook import HOOK_STACK
 from reactpy.types import BaseLayout, LayoutEventMessage, LayoutUpdateMessage
 
 logger = getLogger(__name__)
