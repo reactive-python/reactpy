@@ -33,9 +33,10 @@ Unreleased
 - :pull:`1269` - Added ``reactpy.pyscript_component`` that can be used to embed ReactPy components into your existing application.
 - :pull:`1264` - Added ``reactpy.use_async_effect`` hook.
 - :pull:`1281` - Added ``reactpy.Vdom`` primitive interface for creating VDOM dictionaries.
-- :pull:`1307` - Added ``reactpy.web.reactjs_component_from_file`` to import ReactJS components from a file.
-- :pull:`1307` - Added ``reactpy.web.reactjs_component_from_url`` to import ReactJS components from a URL.
-- :pull:`1307` - Added ``reactpy.web.reactjs_component_from_string`` to import ReactJS components from a string.
+- :pull:`1307` - Added ``reactpy.reactjs.component_from_file`` to import ReactJS components from a file.
+- :pull:`1307` - Added ``reactpy.reactjs.component_from_url`` to import ReactJS components from a URL.
+- :pull:`1307` - Added ``reactpy.reactjs.component_from_string`` to import ReactJS components from a string.
+- :pull:`1314` - Added ``reactpy.reactjs.component_from_npm`` to import ReactJS components from NPM.
 - :pull:`1314` - Added ``reactpy.h`` as a shorthand alias for ``reactpy.html``.
 
 **Changed**
@@ -61,14 +62,15 @@ Unreleased
 - :pull:`1281` - ``reactpy.core.vdom._EllipsisRepr`` has been moved to ``reactpy.types.EllipsisRepr``.
 - :pull:`1281` - ``reactpy.types.VdomDictConstructor`` has been renamed to ``reactpy.types.VdomConstructor``.
 - :pull:`1312` - ``REACTPY_ASYNC_RENDERING`` can now de-duplicate and cascade renders where necessary.
-- :pull:`1312` - ``REACTPY_ASYNC_RENDERING`` is now defaulted to ``True`` for up to 40x performance improvements.
+- :pull:`1312` - ``REACTPY_ASYNC_RENDERING`` is now defaulted to ``True`` for up to 40x performance improvements in environments with high concurrency.
 
 **Deprecated**
 
--:pull:`1307` - ``reactpy.web.export`` is deprecated. Use ``reactpy.web.reactjs_component_from_*`` instead.
--:pull:`1307` - ``reactpy.web.module_from_file`` is deprecated. Use ``reactpy.web.reactjs_component_from_file`` instead.
--:pull:`1307` - ``reactpy.web.module_from_url`` is deprecated. Use ``reactpy.web.reactjs_component_from_url`` instead.
--:pull:`1307` - ``reactpy.web.module_from_string`` is deprecated. Use ``reactpy.web.reactjs_component_from_string`` instead.
+-:pull:`1307` - ``reactpy.web.export`` is deprecated. Use ``reactpy.reactjs.component_from_*`` instead.
+-:pull:`1307` - ``reactpy.web.module_from_file`` is deprecated. Use ``reactpy.reactjs.component_from_file`` instead.
+-:pull:`1307` - ``reactpy.web.module_from_url`` is deprecated. Use ``reactpy.reactjs.component_from_url`` instead.
+-:pull:`1307` - ``reactpy.web.module_from_string`` is deprecated. Use ``reactpy.reactjs.component_from_string`` instead.
+-:pull:`1314` - ``reactpy.web.*`` is deprecated. Use ``reactpy.reactjs.*`` instead.
 
 **Removed**
 
@@ -94,6 +96,7 @@ Unreleased
 - :pull:`1312` - Removed ``reactpy.types.LayoutType``. Use ``reactpy.types.BaseLayout`` instead.
 - :pull:`1312` - Removed ``reactpy.types.ContextProviderType``. Use ``reactpy.types.ContextProvider`` instead.
 - :pull:`1312` - Removed ``reactpy.core.hooks._ContextProvider``. Use ``reactpy.types.ContextProvider`` instead.
+- :pull:`1314` - Removed ``reactpy.web.utils``. Use ``reactpy.reactjs.utils`` instead.
 
 **Fixed**
 
