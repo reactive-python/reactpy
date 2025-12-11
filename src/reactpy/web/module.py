@@ -38,9 +38,9 @@ _STRING_WEB_MODULE_CACHE: dict[str, WebModule] = {}
 def reactjs_component_from_url(
     url: str,
     import_names: str,
-    fallback: Any | None = ...,
-    resolve_imports: bool | None = ...,
+    resolve_imports: bool = ...,
     resolve_imports_depth: int = ...,
+    fallback: Any | None = ...,
     unmount_before_update: bool = ...,
     allow_children: bool = ...,
 ) -> VdomConstructor: ...
@@ -50,9 +50,9 @@ def reactjs_component_from_url(
 def reactjs_component_from_url(
     url: str,
     import_names: list[str] | tuple[str, ...],
-    fallback: Any | None = ...,
-    resolve_imports: bool | None = ...,
+    resolve_imports: bool = ...,
     resolve_imports_depth: int = ...,
+    fallback: Any | None = ...,
     unmount_before_update: bool = ...,
     allow_children: bool = ...,
 ) -> list[VdomConstructor]: ...
@@ -61,9 +61,9 @@ def reactjs_component_from_url(
 def reactjs_component_from_url(
     url: str,
     import_names: str | list[str] | tuple[str, ...],
-    fallback: Any | None = None,
-    resolve_imports: bool | None = None,
+    resolve_imports: bool = True,
     resolve_imports_depth: int = 5,
+    fallback: Any | None = None,
     unmount_before_update: bool = False,
     allow_children: bool = True,
 ) -> VdomConstructor | list[VdomConstructor]:
@@ -76,12 +76,12 @@ def reactjs_component_from_url(
             One or more component names to import. If given as a string, a single component
             will be returned. If a list is given, then a list of components will be
             returned.
-        fallback:
-            What to temporarily display while the module is being loaded.
         resolve_imports:
             Whether to try and find all the named imports of this module.
         resolve_imports_depth:
             How deeply to search for those imports.
+        fallback:
+            What to temporarily display while the module is being loaded.
         unmount_before_update:
             Cause the component to be unmounted before each update. This option should
             only be used if the imported package fails to re-render when props change.
@@ -109,12 +109,11 @@ def reactjs_component_from_url(
 def reactjs_component_from_npm(
     package: str,
     import_names: str,
+    resolve_imports: bool = ...,
+    resolve_imports_depth: int = ...,
     version: str = "latest",
-    file: str = "",
     cdn: str = "https://esm.sh",
     fallback: Any | None = ...,
-    resolve_imports: bool | None = ...,
-    resolve_imports_depth: int = ...,
     unmount_before_update: bool = ...,
     allow_children: bool = ...,
 ) -> VdomConstructor: ...
@@ -124,12 +123,11 @@ def reactjs_component_from_npm(
 def reactjs_component_from_npm(
     package: str,
     import_names: list[str] | tuple[str, ...],
+    resolve_imports: bool = ...,
+    resolve_imports_depth: int = ...,
     version: str = "latest",
-    file: str = "",
     cdn: str = "https://esm.sh",
     fallback: Any | None = ...,
-    resolve_imports: bool | None = ...,
-    resolve_imports_depth: int = ...,
     unmount_before_update: bool = ...,
     allow_children: bool = ...,
 ) -> list[VdomConstructor]: ...
@@ -138,12 +136,11 @@ def reactjs_component_from_npm(
 def reactjs_component_from_npm(
     package: str,
     import_names: str | list[str] | tuple[str, ...],
+    resolve_imports: bool = True,
+    resolve_imports_depth: int = 5,
     version: str = "latest",
-    file: str = "",
     cdn: str = "https://esm.sh",
     fallback: Any | None = None,
-    resolve_imports: bool | None = None,
-    resolve_imports_depth: int = 5,
     unmount_before_update: bool = False,
     allow_children: bool = True,
 ) -> VdomConstructor | list[VdomConstructor]:
@@ -156,18 +153,16 @@ def reactjs_component_from_npm(
             One or more component names to import. If given as a string, a single component
             will be returned. If a list is given, then a list of components will be
             returned.
-        version:
-            The version of the package to use. Defaults to "latest".
-        file:
-            A specific file to import from the package.
-        cdn:
-            The CDN to use. Defaults to "https://esm.sh".
-        fallback:
-            What to temporarily display while the module is being loaded.
         resolve_imports:
             Whether to try and find all the named imports of this module.
         resolve_imports_depth:
             How deeply to search for those imports.
+        version:
+            The version of the package to use. Defaults to "latest".
+        cdn:
+            The CDN to use. Defaults to "https://esm.sh".
+        fallback:
+            What to temporarily display while the module is being loaded.
         unmount_before_update:
             Cause the component to be unmounted before each update. This option should
             only be used if the imported package fails to re-render when props change.
@@ -177,8 +172,6 @@ def reactjs_component_from_npm(
             Whether or not these components can have children.
     """
     url = f"{cdn}/{package}@{version}"
-    if file:
-        url += f"/{file}"
 
     if "esm.sh" in cdn:
         if "?" in url:
@@ -201,10 +194,10 @@ def reactjs_component_from_npm(
 def reactjs_component_from_file(
     file: str | Path,
     import_names: str,
+    resolve_imports: bool = ...,
+    resolve_imports_depth: int = ...,
     name: str = "",
     fallback: Any | None = ...,
-    resolve_imports: bool | None = ...,
-    resolve_imports_depth: int = ...,
     unmount_before_update: bool = ...,
     symlink: bool = ...,
     allow_children: bool = ...,
@@ -215,10 +208,10 @@ def reactjs_component_from_file(
 def reactjs_component_from_file(
     file: str | Path,
     import_names: list[str] | tuple[str, ...],
+    resolve_imports: bool = ...,
+    resolve_imports_depth: int = ...,
     name: str = "",
     fallback: Any | None = ...,
-    resolve_imports: bool | None = ...,
-    resolve_imports_depth: int = ...,
     unmount_before_update: bool = ...,
     symlink: bool = ...,
     allow_children: bool = ...,
@@ -228,10 +221,10 @@ def reactjs_component_from_file(
 def reactjs_component_from_file(
     file: str | Path,
     import_names: str | list[str] | tuple[str, ...],
+    resolve_imports: bool = True,
+    resolve_imports_depth: int = 5,
     name: str = "",
     fallback: Any | None = None,
-    resolve_imports: bool | None = None,
-    resolve_imports_depth: int = 5,
     unmount_before_update: bool = False,
     symlink: bool = False,
     allow_children: bool = True,
@@ -245,14 +238,14 @@ def reactjs_component_from_file(
             One or more component names to import. If given as a string, a single component
             will be returned. If a list is given, then a list of components will be
             returned.
-        name:
-            The human-readable name of the ReactJS package
-        fallback:
-            What to temporarily display while the module is being loaded.
         resolve_imports:
             Whether to try and find all the named imports of this module.
         resolve_imports_depth:
             How deeply to search for those imports.
+        name:
+            The human-readable name of the ReactJS package
+        fallback:
+            What to temporarily display while the module is being loaded.
         unmount_before_update:
             Cause the component to be unmounted before each update. This option should
             only be used if the imported package fails to re-render when props change.
@@ -285,10 +278,10 @@ def reactjs_component_from_file(
 def reactjs_component_from_string(
     content: str,
     import_names: str,
+    resolve_imports: bool = ...,
+    resolve_imports_depth: int = ...,
     name: str = "",
     fallback: Any | None = ...,
-    resolve_imports: bool | None = ...,
-    resolve_imports_depth: int = ...,
     unmount_before_update: bool = ...,
     allow_children: bool = ...,
 ) -> VdomConstructor: ...
@@ -298,10 +291,10 @@ def reactjs_component_from_string(
 def reactjs_component_from_string(
     content: str,
     import_names: list[str] | tuple[str, ...],
+    resolve_imports: bool = ...,
+    resolve_imports_depth: int = ...,
     name: str = "",
     fallback: Any | None = ...,
-    resolve_imports: bool | None = ...,
-    resolve_imports_depth: int = ...,
     unmount_before_update: bool = ...,
     allow_children: bool = ...,
 ) -> list[VdomConstructor]: ...
@@ -310,10 +303,10 @@ def reactjs_component_from_string(
 def reactjs_component_from_string(
     content: str,
     import_names: str | list[str] | tuple[str, ...],
+    resolve_imports: bool = True,
+    resolve_imports_depth: int = 5,
     name: str = "",
     fallback: Any | None = None,
-    resolve_imports: bool | None = None,
-    resolve_imports_depth: int = 5,
     unmount_before_update: bool = False,
     allow_children: bool = True,
 ) -> VdomConstructor | list[VdomConstructor]:
@@ -326,14 +319,14 @@ def reactjs_component_from_string(
             One or more component names to import. If given as a string, a single component
             will be returned. If a list is given, then a list of components will be
             returned.
-        name:
-            The human-readable name of the ReactJS package
-        fallback:
-            What to temporarily display while the module is being loaded.
         resolve_imports:
             Whether to try and find all the named imports of this module.
         resolve_imports_depth:
             How deeply to search for those imports.
+        name:
+            The human-readable name of the ReactJS package
+        fallback:
+            What to temporarily display while the module is being loaded.
         unmount_before_update:
             Cause the component to be unmounted before each update. This option should
             only be used if the imported package fails to re-render when props change.
@@ -362,7 +355,7 @@ def reactjs_component_from_string(
 def module_from_url(
     url: str,
     fallback: Any | None = None,
-    resolve_exports: bool | None = None,
+    resolve_exports: bool = False,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
 ) -> WebModule:  # pragma: no cover
@@ -383,7 +376,7 @@ def module_from_file(
     name: str,
     file: str | Path,
     fallback: Any | None = None,
-    resolve_exports: bool | None = None,
+    resolve_exports: bool = False,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
     symlink: bool = False,
@@ -407,7 +400,7 @@ def module_from_string(
     name: str,
     content: str,
     fallback: Any | None = None,
-    resolve_exports: bool | None = None,
+    resolve_exports: bool = False,
     resolve_exports_depth: int = 5,
     unmount_before_update: bool = False,
 ) -> WebModule:  # pragma: no cover
@@ -428,7 +421,7 @@ def module_from_string(
 def _module_from_url(
     url: str,
     fallback: Any | None = None,
-    resolve_imports: bool | None = None,
+    resolve_imports: bool = True,
     resolve_imports_depth: int = 5,
     unmount_before_update: bool = False,
 ) -> WebModule:
@@ -454,7 +447,7 @@ def _module_from_file(
     name: str,
     file: str | Path,
     fallback: Any | None = None,
-    resolve_imports: bool | None = None,
+    resolve_imports: bool = True,
     resolve_imports_depth: int = 5,
     unmount_before_update: bool = False,
     symlink: bool = False,
@@ -515,7 +508,7 @@ def _module_from_string(
     name: str,
     content: str,
     fallback: Any | None = None,
-    resolve_imports: bool | None = None,
+    resolve_imports: bool = True,
     resolve_imports_depth: int = 5,
     unmount_before_update: bool = False,
 ) -> WebModule:
