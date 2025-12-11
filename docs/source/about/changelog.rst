@@ -79,8 +79,8 @@ Unreleased
 - :pull:`1311` - Removed deprecated exception type ``reactpy.core.serve.Stop``.
 - :pull:`1311` - Removed deprecated component ``reactpy.widgets.hotswap``.
 - :pull:`1255` - Removed ``reactpy.sample`` module.
-- :pull:`1255` - Removed ``reactpy.svg`` module. Contents previously within ``reactpy.svg.*`` can now be accessed via ``html.svg.*``.
-- :pull:`1255` - Removed ``reactpy.html._`` function. Use ``html.fragment`` instead.
+- :pull:`1255` - Removed ``reactpy.svg`` module. Contents previously within ``reactpy.svg.*`` can now be accessed via ``reactpy.html.svg.*``.
+- :pull:`1255` - Removed ``reactpy.html._`` function. Use ``reactpy.html(...)`` or ``reactpy.html.fragment(...)`` instead.
 - :pull:`1113` - Removed ``reactpy.run``. See the documentation for the new method to run ReactPy applications.
 - :pull:`1113` - Removed ``reactpy.backend.*``. See the documentation for the new method to run ReactPy applications.
 - :pull:`1113` - Removed ``reactpy.core.types`` module. Use ``reactpy.types`` instead.

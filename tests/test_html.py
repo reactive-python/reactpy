@@ -104,13 +104,13 @@ def test_script_has_no_event_handlers():
 
 
 def test_simple_fragment():
-    assert html.fragment() == {"tagName": ""}
-    assert html.fragment(1, 2, 3) == {"tagName": "", "children": [1, 2, 3]}
-    assert html.fragment({"key": "something"}) == {
+    assert html() == {"tagName": ""}
+    assert html(1, 2, 3) == {"tagName": "", "children": [1, 2, 3]}
+    assert html({"key": "something"}) == {
         "tagName": "",
         "attributes": {"key": "something"},
     }
-    assert html.fragment({"key": "something"}, 1, 2, 3) == {
+    assert html({"key": "something"}, 1, 2, 3) == {
         "tagName": "",
         "attributes": {"key": "something"},
         "children": [1, 2, 3],
@@ -119,7 +119,7 @@ def test_simple_fragment():
 
 def test_fragment_can_have_no_attributes():
     with pytest.raises(TypeError, match=r"Fragments cannot have attributes"):
-        html.fragment({"someAttribute": 1})
+        html({"someAttribute": 1})
 
 
 async def test_svg(display: DisplayFixture):

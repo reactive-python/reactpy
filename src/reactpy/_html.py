@@ -287,6 +287,7 @@ class HtmlConstructor:
         "fragment": Vdom("", custom_constructor=_fragment),
         "svg": SvgConstructor(),
     }
+    __call__ = __cache__["fragment"].__call__
 
     def __getattr__(self, value: str) -> VdomConstructor:
         value = value.rstrip("_").replace("_", "-")

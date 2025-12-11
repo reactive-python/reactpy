@@ -1225,7 +1225,7 @@ async def test_ensure_model_path_udpates():
     @component
     def App():
         items = use_state(["A", "B", "C"])
-        return html.fragment([Item(item, items, key=item) for item in items.value])
+        return html([Item(item, items, key=item) for item in items.value])
 
     async with layout_runner(Layout(App())) as runner:
         tree = await runner.render()
@@ -1266,7 +1266,7 @@ async def test_async_renders(async_rendering):
 
     @component
     def outer():
-        return html.fragment(child_1(), child_2())
+        return html(child_1(), child_2())
 
     @component
     @child_1_hook.capture

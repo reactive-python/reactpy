@@ -325,11 +325,11 @@ def example_none_return():
             "<button></button>",
         ),
         (
-            html.fragment("hello ", html.fragment("world")),
+            html("hello ", html("world")),
             "hello world",
         ),
         (
-            html.fragment(html.div("hello"), html.fragment("world")),
+            html(html.div("hello"), html("world")),
             "<div>hello</div>world",
         ),
         (
@@ -341,7 +341,7 @@ def example_none_return():
             '<div style="background-color:blue;margin-left:10px"></div>',
         ),
         (
-            html.fragment(
+            html(
                 html.div("hello"),
                 html.a({"href": "https://example.com"}, "example"),
             ),
@@ -349,7 +349,7 @@ def example_none_return():
         ),
         (
             html.div(
-                html.fragment(
+                html(
                     html.div("hello"),
                     html.a({"href": "https://example.com"}, "example"),
                 ),
