@@ -15,7 +15,7 @@ def reset_options():
 
     yield
 
-    for opt, val in zip(options, original_values):
+    for opt, val in zip(options, original_values, strict=False):
         if val is should_unset:
             if opt.is_set():
                 opt.unset()

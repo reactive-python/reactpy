@@ -391,22 +391,22 @@ def test_reactpy_to_string(vdom_in, html_out):
 
 
 def test_reactpy_to_string_error():
-    with pytest.raises(TypeError, match="Expected a VDOM dict"):
+    with pytest.raises(TypeError, match=r"Expected a VDOM dict"):
         utils.reactpy_to_string({"notVdom": True})
 
 
 def test_invalid_dotted_path():
-    with pytest.raises(ValueError, match='"abc" is not a valid dotted path.'):
+    with pytest.raises(ValueError, match=r'"abc" is not a valid dotted path.'):
         utils.import_dotted_path("abc")
 
 
 def test_invalid_component():
     with pytest.raises(
-        AttributeError, match='ReactPy failed to import "foobar" from "reactpy"'
+        AttributeError, match=r'ReactPy failed to import "foobar" from "reactpy"'
     ):
         utils.import_dotted_path("reactpy.foobar")
 
 
 def test_invalid_module():
-    with pytest.raises(ImportError, match='ReactPy failed to import "foo"'):
+    with pytest.raises(ImportError, match=r'ReactPy failed to import "foo"'):
         utils.import_dotted_path("foo.bar")

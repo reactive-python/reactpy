@@ -117,7 +117,7 @@ def test_make_vdom_constructor():
 
     no_children = Vdom("no-children", allow_children=False)
 
-    with pytest.raises(TypeError, match="cannot have children"):
+    with pytest.raises(TypeError, match=r"cannot have children"):
         no_children([1, 2, 3])
 
     assert no_children() == {"tagName": "no-children"}
@@ -127,7 +127,7 @@ def test_nested_html_access_raises_error():
     elmt = Vdom("div")
 
     with pytest.raises(
-        AttributeError, match="can only be accessed on web module components"
+        AttributeError, match=r"can only be accessed on web module components"
     ):
         elmt.fails()
 
@@ -330,16 +330,16 @@ def test_warn_dynamic_children_must_have_keys():
 
 @pytest.mark.skipif(not REACTPY_DEBUG.current, reason="only checked in debug mode")
 def test_raise_for_non_json_attrs():
-    with pytest.raises(TypeError, match="JSON serializable"):
+    with pytest.raises(TypeError, match=r"JSON serializable"):
         reactpy.html.div({"nonJsonSerializableObject": object()})
 
 
 def test_invalid_vdom_keys():
-    with pytest.raises(ValueError, match="Invalid keys:*"):
+    with pytest.raises(ValueError, match=r"Invalid keys:*"):
         reactpy.types.VdomDict(tagName="test", foo="bar")
 
-    with pytest.raises(KeyError, match="Invalid key:*"):
+    with pytest.raises(KeyError, match=r"Invalid key:*"):
         reactpy.types.VdomDict(tagName="test")["foo"] = "bar"
 
-    with pytest.raises(ValueError, match="VdomDict requires a 'tagName' key."):
+    with pytest.raises(ValueError, match=r"VdomDict requires a 'tagName' key."):
         reactpy.types.VdomDict(foo="bar")

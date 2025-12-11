@@ -100,7 +100,7 @@ async def test_module_from_file(display: DisplayFixture):
 def test_module_from_file_source_conflict(tmp_path):
     first_file = tmp_path / "first.js"
 
-    with pytest.raises(FileNotFoundError, match="does not exist"):
+    with pytest.raises(FileNotFoundError, match=r"does not exist"):
         reactpy.web.module._module_from_file("temp", first_file)
 
     first_file.touch()
@@ -165,7 +165,7 @@ def test_web_module_from_file_replace_existing(tmp_path):
 def test_module_missing_exports():
     module = WebModule("test", NAME_SOURCE, None, {"a", "b", "c"}, None, False)
 
-    with pytest.raises(ValueError, match="does not export 'x'"):
+    with pytest.raises(ValueError, match=r"does not export 'x'"):
         reactpy.web.module._vdom_from_web_module(module, "x")
 
     with pytest.raises(ValueError, match=r"does not export \['x', 'y'\]"):

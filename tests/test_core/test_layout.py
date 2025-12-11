@@ -57,9 +57,9 @@ def test_layout_repr():
 
 
 def test_layout_expects_abstract_component():
-    with pytest.raises(TypeError, match="Expected a ReactPy component"):
+    with pytest.raises(TypeError, match=r"Expected a ReactPy component"):
         Layout(None)
-    with pytest.raises(TypeError, match="Expected a ReactPy component"):
+    with pytest.raises(TypeError, match=r"Expected a ReactPy component"):
         Layout(reactpy.html.div())
 
 
@@ -449,7 +449,7 @@ async def test_double_updated_component_is_not_double_rendered():
                 layout.render(),
                 timeout=0.1,  # this should have been plenty of time
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             pass  # the render should still be rendering since we only update once
 
         assert run_count.current == 2

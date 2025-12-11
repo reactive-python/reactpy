@@ -111,7 +111,7 @@ async def test_slow_server_response_on_input_change(display: DisplayFixture):
 
     @reactpy.component
     def SomeComponent():
-        value, set_value = reactpy.hooks.use_state("")
+        _value, set_value = reactpy.hooks.use_state("")
 
         async def handle_change(event):
             await asyncio.sleep(delay)

@@ -20,7 +20,7 @@ async def test_must_be_rendering_in_layout_to_use_hooks():
         reactpy.hooks.use_state(None)
         return reactpy.html.div()
 
-    with pytest.raises(RuntimeError, match="No life cycle hook is active"):
+    with pytest.raises(RuntimeError, match=r"No life cycle hook is active"):
         await SimpleComponentWithHook().render()
 
     async with Layout(SimpleComponentWithHook()) as layout:

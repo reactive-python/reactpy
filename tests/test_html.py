@@ -87,17 +87,19 @@ async def test_script_from_src(display: DisplayFixture):
 
 
 def test_script_may_only_have_one_child():
-    with pytest.raises(ValueError, match="'script' nodes may have, at most, one child"):
+    with pytest.raises(
+        ValueError, match=r"'script' nodes may have, at most, one child"
+    ):
         html.script("one child", "two child")
 
 
 def test_child_of_script_must_be_string():
-    with pytest.raises(ValueError, match="The child of a 'script' must be a string"):
+    with pytest.raises(ValueError, match=r"The child of a 'script' must be a string"):
         html.script(1)
 
 
 def test_script_has_no_event_handlers():
-    with pytest.raises(ValueError, match="do not support event handlers"):
+    with pytest.raises(ValueError, match=r"do not support event handlers"):
         html.script({"onEvent": lambda: None})
 
 
@@ -113,7 +115,7 @@ def test_simple_fragment():
 
 
 def test_fragment_can_have_no_attributes():
-    with pytest.raises(TypeError, match="Fragments cannot have attributes"):
+    with pytest.raises(TypeError, match=r"Fragments cannot have attributes"):
         html.fragment({"someAttribute": 1})
 
 

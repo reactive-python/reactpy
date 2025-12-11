@@ -33,16 +33,16 @@ def test_option_validator():
     opt.current = "0"
     assert opt.current is False
 
-    with pytest.raises(ValueError, match="Invalid value"):
+    with pytest.raises(ValueError, match=r"Invalid value"):
         opt.current = "not-an-int"
 
 
 def test_immutable_option():
     opt = Option("A_FAKE_OPTION", "default-value", mutable=False)
     assert not opt.mutable
-    with pytest.raises(TypeError, match="cannot be modified after initial load"):
+    with pytest.raises(TypeError, match=r"cannot be modified after initial load"):
         opt.current = "a-new-value"
-    with pytest.raises(TypeError, match="cannot be modified after initial load"):
+    with pytest.raises(TypeError, match=r"cannot be modified after initial load"):
         opt.unset()
 
 
@@ -78,7 +78,7 @@ def test_option_set_default():
 
 def test_cannot_subscribe_immutable_option():
     opt = Option("A_FAKE_OPTION", "default", mutable=False)
-    with pytest.raises(TypeError, match="Immutable options cannot be subscribed to"):
+    with pytest.raises(TypeError, match=r"Immutable options cannot be subscribed to"):
         opt.subscribe(lambda value: None)
 
 
@@ -104,10 +104,10 @@ def test_option_subscribe():
 def test_deprecated_option():
     opt = DeprecatedOption("A_FAKE_OPTION", None, message="is deprecated!")
 
-    with pytest.warns(DeprecationWarning, match="is deprecated!"):
+    with pytest.warns(DeprecationWarning, match=r"is deprecated!"):
         assert opt.current is None
 
-    with pytest.warns(DeprecationWarning, match="is deprecated!"):
+    with pytest.warns(DeprecationWarning, match=r"is deprecated!"):
         opt.current = "something"
 
 
@@ -124,14 +124,14 @@ def test_option_parent():
 def test_option_parent_child_must_be_mutable():
     mut_parent_opt = Option("A_FAKE_OPTION", "default-value", mutable=True)
     immu_parent_opt = Option("A_FAKE_OPTION", "default-value", mutable=False)
-    with pytest.raises(TypeError, match="must be mutable"):
+    with pytest.raises(TypeError, match=r"must be mutable"):
         Option("A_FAKE_OPTION", parent=mut_parent_opt, mutable=False)
-    with pytest.raises(TypeError, match="must be mutable"):
+    with pytest.raises(TypeError, match=r"must be mutable"):
         Option("A_FAKE_OPTION", parent=immu_parent_opt, mutable=None)
 
 
 def test_no_default_or_parent():
     with pytest.raises(
-        TypeError, match="Must specify either a default or a parent option"
+        TypeError, match=r"Must specify either a default or a parent option"
     ):
         Option("A_FAKE_OPTION")
