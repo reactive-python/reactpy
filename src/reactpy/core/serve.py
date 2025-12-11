@@ -45,22 +45,18 @@ async def _single_outgoing_loop(
     send: SendCoroutine,
 ) -> None:
     while True:
-        token = HOOK_STACK.initialize()
+        update = await layout.render()
         try:
-            update = await layout.render()
-            try:
-                await send(update)
-            except Exception:  # nocov
-                if not REACTPY_DEBUG.current:
-                    msg = (
-                        "Failed to send update. More info may be available "
-                        "if you enabling debug mode by setting "
-                        "`reactpy.config.REACTPY_DEBUG.current = True`."
-                    )
-                    logger.error(msg)
-                raise
-        finally:
-            HOOK_STACK.reset(token)
+            await send(update)
+        except Exception:  # nocov
+            if not REACTPY_DEBUG.current:
+                msg = (
+                    "Failed to send update. More info may be available "
+                    "if you enabling debug mode by setting "
+                    "`reactpy.config.REACTPY_DEBUG.current = True`."
+                )
+                logger.error(msg)
+            raise
 
 
 async def _single_incoming_loop(

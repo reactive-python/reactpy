@@ -54,23 +54,6 @@ def rebuild():
     subprocess.run(["hatch", "build", "-t", "wheel"], check=True, env=env)  # noqa: S607
 
 
-@pytest.fixture(autouse=True, scope="function")
-def create_hook_state():
-    """This fixture is a bug fix related to `pytest_asyncio`.
-
-    Usually the hook stack is created automatically within the display fixture, but context
-    variables aren't retained within `pytest_asyncio` async fixtures. As a workaround,
-    this fixture ensures that the hook stack is created before each test is run.
-
-    Ref: https://github.com/pytest-dev/pytest-asyncio/issues/127
-    """
-    from reactpy.core._life_cycle_hook import HOOK_STACK
-
-    token = HOOK_STACK.initialize()
-    yield token
-    HOOK_STACK.reset(token)
-
-
 @pytest.fixture
 async def display(server, page):
     async with DisplayFixture(server, page) as display:

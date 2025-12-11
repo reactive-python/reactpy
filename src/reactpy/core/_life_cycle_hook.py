@@ -33,7 +33,10 @@ class _HookStack(Singleton):  # nocov
     )
 
     def get(self) -> list[LifeCycleHook]:
-        return self._state.get()
+        try:
+            return self._state.get()
+        except LookupError:
+            return []
 
     def initialize(self) -> Token[list[LifeCycleHook]] | None:
         return None if isinstance(self._state, ThreadLocal) else self._state.set([])

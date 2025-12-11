@@ -34,7 +34,7 @@ from reactpy.config import (
     REACTPY_CHECK_VDOM_SPEC,
     REACTPY_DEBUG,
 )
-from reactpy.core._life_cycle_hook import LifeCycleHook
+from reactpy.core._life_cycle_hook import HOOK_STACK, LifeCycleHook
 from reactpy.core.vdom import validate_vdom_json
 from reactpy.types import (
     BaseLayout,
@@ -162,43 +162,47 @@ class Layout(BaseLayout):
     async def _create_layout_update(
         self, old_state: _ModelState
     ) -> LayoutUpdateMessage:
-        component = old_state.life_cycle_state.component
+        token = HOOK_STACK.initialize()
         try:
-            parent: _ModelState | None = old_state.parent
-        except AttributeError:
-            parent = None
+            component = old_state.life_cycle_state.component
+            try:
+                parent: _ModelState | None = old_state.parent
+            except AttributeError:
+                parent = None
 
-        async with AsyncExitStack() as exit_stack:
-            new_state = await self._render_component(
-                exit_stack,
-                old_state,
-                parent,
-                old_state.index,
-                old_state.key,
-                component,
-            )
+            async with AsyncExitStack() as exit_stack:
+                new_state = await self._render_component(
+                    exit_stack,
+                    old_state,
+                    parent,
+                    old_state.index,
+                    old_state.key,
+                    component,
+                )
 
-        if parent is not None:
-            parent.children_by_key[new_state.key] = new_state
-            old_parent_model = parent.model.current
-            old_parent_children = old_parent_model.setdefault("children", [])
-            parent.model.current = {
-                **old_parent_model,
-                "children": [
-                    *old_parent_children[: new_state.index],
-                    new_state.model.current,
-                    *old_parent_children[new_state.index + 1 :],
-                ],
+            if parent is not None:
+                parent.children_by_key[new_state.key] = new_state
+                old_parent_model = parent.model.current
+                old_parent_children = old_parent_model.setdefault("children", [])
+                parent.model.current = {
+                    **old_parent_model,
+                    "children": [
+                        *old_parent_children[: new_state.index],
+                        new_state.model.current,
+                        *old_parent_children[new_state.index + 1 :],
+                    ],
+                }
+
+            if REACTPY_CHECK_VDOM_SPEC.current:
+                validate_vdom_json(new_state.model.current)
+
+            return {
+                "type": "layout-update",
+                "path": new_state.patch_path,
+                "model": new_state.model.current,
             }
-
-        if REACTPY_CHECK_VDOM_SPEC.current:
-            validate_vdom_json(new_state.model.current)
-
-        return {
-            "type": "layout-update",
-            "path": new_state.patch_path,
-            "model": new_state.model.current,
-        }
+        finally:
+            HOOK_STACK.reset(token)
 
     async def _render_component(
         self,
