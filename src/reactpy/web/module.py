@@ -146,6 +146,9 @@ def reactjs_component_from_npm(
 ) -> VdomConstructor | list[VdomConstructor]:
     """Import a component from an NPM package.
 
+    Is is mandatory to load `reactpy.web.reactjs_import_map()` on your page before using this
+    function. It is recommended to put this within your HTML <head> content.
+
     Parameters:
         package:
             The name of the NPM package.

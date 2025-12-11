@@ -128,6 +128,24 @@ def resolve_module_exports_from_source(
     return names, references
 
 
+def reactjs_import_map():
+    from reactpy import config, html
+
+    base_url = config.REACTPY_PATH_PREFIX.current.strip("/")
+    return html.script(
+        {"type": "importmap"},
+        f"""
+        {{
+            "imports": {{
+                "react": "/{base_url}/static/react.js",
+                "react-dom": "/{base_url}/static/react-dom.js",
+                "react/jsx-runtime": "/{base_url}/static/react-jsx-runtime.js"
+            }}
+        }}
+        """,
+    )
+
+
 def _resolve_relative_url(base_url: str, rel_url: str) -> str:
     if not rel_url.startswith("."):
         if rel_url.startswith("/"):

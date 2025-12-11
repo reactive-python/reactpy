@@ -8,6 +8,9 @@ from reactpy.web.module import (
     reactjs_component_from_string,
     reactjs_component_from_url,
 )
+from reactpy.web.utils import (
+    reactjs_import_map,
+)
 
 __all__ = [
     "export",
@@ -18,4 +21,5 @@ __all__ = [
     "reactjs_component_from_npm",
     "reactjs_component_from_string",
     "reactjs_component_from_url",
+    "reactjs_import_map",
 ]
