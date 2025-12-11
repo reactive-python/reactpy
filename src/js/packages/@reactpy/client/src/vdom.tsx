@@ -8,6 +8,7 @@ import type {
   ReactPyModule,
   BindImportSource,
   ReactPyModuleBinding,
+  ImportSourceBinding,
 } from "./types";
 import log from "./logger";
 
@@ -75,13 +76,15 @@ function createImportSourceElement(props: {
     if (
       !isImportSourceEqual(props.currentImportSource, props.model.importSource)
     ) {
-      log.error(
-        "Parent element import source " +
-          stringifyImportSource(props.currentImportSource) +
-          " does not match child's import source " +
-          stringifyImportSource(props.model.importSource),
-      );
-      return null;
+      return props.binding.create("reactpy-child", {
+        ref: (node: ReactPyChild | null) => {
+          if (node) {
+            node.client = props.client;
+            node.model = props.model;
+            node.requestUpdate();
+          }
+        },
+      });
     } else {
       type = getComponentFromModule(
         props.module,
@@ -269,4 +272,86 @@ function generic_reactjs_bind(node: HTMLElement) {
     },
     unmount: () => preact.render(null, node),
   };
+}
+
+class ReactPyChild extends HTMLElement {
+  mountPoint: HTMLDivElement;
+  binding: ImportSourceBinding | null = null;
+  _client: ReactPyClientInterface | null = null;
+  _model: ReactPyVdom | null = null;
+  currentImportSource: ReactPyVdomImportSource | null = null;
+
+  constructor() {
+    super();
+    this.mountPoint = document.createElement("div");
+    this.mountPoint.style.display = "contents";
+  }
+
+  connectedCallback() {
+    this.appendChild(this.mountPoint);
+  }
+
+  set client(value: ReactPyClientInterface) {
+    this._client = value;
+  }
+
+  set model(value: ReactPyVdom) {
+    this._model = value;
+  }
+
+  requestUpdate() {
+    this.update();
+  }
+
+  async update() {
+    if (!this._client || !this._model || !this._model.importSource) {
+      return;
+    }
+
+    const newImportSource = this._model.importSource;
+
+    if (
+      !this.binding ||
+      !this.currentImportSource ||
+      !isImportSourceEqual(this.currentImportSource, newImportSource)
+    ) {
+      if (this.binding) {
+        this.binding.unmount();
+        this.binding = null;
+      }
+
+      this.currentImportSource = newImportSource;
+
+      try {
+        const bind = await loadImportSource(newImportSource, this._client);
+        if (this.isConnected) {
+          this.binding = bind(this.mountPoint);
+          if (this.binding) {
+            this.binding.render(this._model);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load import source", error);
+      }
+    } else {
+      if (this.binding) {
+        this.binding.render(this._model);
+      }
+    }
+  }
+
+  disconnectedCallback() {
+    if (this.binding) {
+      this.binding.unmount();
+      this.binding = null;
+      this.currentImportSource = null;
+    }
+  }
+}
+
+if (
+  typeof customElements !== "undefined" &&
+  !customElements.get("reactpy-child")
+) {
+  customElements.define("reactpy-child", ReactPyChild);
 }
