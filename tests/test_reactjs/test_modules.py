@@ -2,17 +2,15 @@ import pytest
 
 import reactpy
 from reactpy import html
+from reactpy.reactjs import component_from_npm, import_reactjs
 from reactpy.testing import BackendFixture, DisplayFixture
-from reactpy.web import reactjs_component_from_npm, reactjs_import_map
 
 
 @pytest.mark.anyio
-async def test_reactjs_component_from_npm_react_bootstrap():
-    async with BackendFixture(html_head=html.head(reactjs_import_map())) as backend:
+async def test_component_from_npm_react_bootstrap():
+    async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
         async with DisplayFixture(backend=backend) as display:
-            Button = reactjs_component_from_npm(
-                "react-bootstrap", "Button", version="2.10.2"
-            )
+            Button = component_from_npm("react-bootstrap", "Button", version="2.10.2")
 
             @reactpy.component
             def App():

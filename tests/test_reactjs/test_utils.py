@@ -3,14 +3,14 @@ from pathlib import Path
 import pytest
 import responses
 
-from reactpy.testing import assert_reactpy_did_log
-from reactpy.web.utils import (
-    _resolve_relative_url,
+from reactpy.reactjs.utils import (
     module_name_suffix,
     resolve_module_exports_from_file,
     resolve_module_exports_from_source,
     resolve_module_exports_from_url,
+    resolve_relative_url,
 )
+from reactpy.testing import assert_reactpy_did_log
 
 JS_FIXTURES_DIR = Path(__file__).parent / "js_fixtures"
 
@@ -155,11 +155,11 @@ def test_log_on_unknown_export_type():
 
 def test_resolve_relative_url():
     assert (
-        _resolve_relative_url("https://some.url", "path/to/another.js")
+        resolve_relative_url("https://some.url", "path/to/another.js")
         == "path/to/another.js"
     )
     assert (
-        _resolve_relative_url("https://some.url", "/path/to/another.js")
+        resolve_relative_url("https://some.url", "/path/to/another.js")
         == "https://some.url/path/to/another.js"
     )
-    assert _resolve_relative_url("/some/path", "to/another.js") == "to/another.js"
+    assert resolve_relative_url("/some/path", "to/another.js") == "to/another.js"

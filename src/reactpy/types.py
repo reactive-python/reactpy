@@ -10,6 +10,7 @@ from typing import (
     Generic,
     Literal,
     NamedTuple,
+    NewType,
     NotRequired,
     Protocol,
     TypeAlias,
@@ -1132,3 +1133,16 @@ class Event(dict):
 
     def stopPropagation(self) -> None:
         """Stop the event from propagating."""
+
+
+SourceType = NewType("SourceType", str)
+
+
+@dataclass(frozen=True)
+class JavaScriptModule:
+    source: str
+    source_type: SourceType
+    default_fallback: Any | None
+    export_names: set[str] | None
+    file: Path | None
+    unmount_before_update: bool
