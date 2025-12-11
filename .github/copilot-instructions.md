@@ -8,8 +8,6 @@ Always reference these instructions first and fallback to search or bash command
 
 **BUG INVESTIGATION**: When investigating whether a bug was already resolved in a previous version, always prioritize searching through `docs/source/about/changelog.rst` first before using Git history. Only search through Git history when no relevant changelog entries are found.
 
-**CODE RETRIEVAL**: Always prioritize using Serena tools (e.g., `mcp_oraios_serena_find_symbol`, `mcp_oraios_serena_search_for_pattern`) for code retrieval and analysis over standard file reading or searching tools.
-
 ## Working Effectively
 
 ### Bootstrap, Build, and Test the Repository
