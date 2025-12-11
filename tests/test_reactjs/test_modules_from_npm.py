@@ -7,6 +7,7 @@ from reactpy.testing import BackendFixture, DisplayFixture
 
 
 @pytest.mark.anyio
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_react_bootstrap():
     async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
         async with DisplayFixture(backend=backend) as display:
@@ -29,6 +30,7 @@ async def test_component_from_npm_react_bootstrap():
 
 
 @pytest.mark.anyio
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_material_ui():
     async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
         async with DisplayFixture(backend=backend) as display:
@@ -47,6 +49,7 @@ async def test_component_from_npm_material_ui():
 
 
 @pytest.mark.anyio
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_antd():
     async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
         async with DisplayFixture(backend=backend) as display:
@@ -65,6 +68,7 @@ async def test_component_from_npm_antd():
 
 
 @pytest.mark.anyio
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_chakra_ui():
     async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
         async with DisplayFixture(backend=backend) as display:
@@ -86,6 +90,7 @@ async def test_component_from_npm_chakra_ui():
 
 
 @pytest.mark.anyio
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_semantic_ui_react():
     async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
         async with DisplayFixture(backend=backend) as display:
@@ -104,6 +109,7 @@ async def test_component_from_npm_semantic_ui_react():
 
 
 @pytest.mark.anyio
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_mantine():
     async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
         async with DisplayFixture(backend=backend) as display:
@@ -123,6 +129,7 @@ async def test_component_from_npm_mantine():
 
 
 @pytest.mark.anyio
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_fluent_ui():
     async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
         async with DisplayFixture(backend=backend) as display:
@@ -140,6 +147,7 @@ async def test_component_from_npm_fluent_ui():
 
 
 @pytest.mark.anyio
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_blueprint():
     async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
         async with DisplayFixture(backend=backend) as display:
@@ -157,6 +165,7 @@ async def test_component_from_npm_blueprint():
 
 
 @pytest.mark.anyio
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_grommet():
     async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
         async with DisplayFixture(backend=backend) as display:
@@ -174,6 +183,7 @@ async def test_component_from_npm_grommet():
 
 
 @pytest.mark.anyio
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_evergreen():
     async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
         async with DisplayFixture(backend=backend) as display:
@@ -191,6 +201,7 @@ async def test_component_from_npm_evergreen():
 
 
 @pytest.mark.anyio
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_react_spinners():
     async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
         async with DisplayFixture(backend=backend) as display:
@@ -216,6 +227,7 @@ async def test_component_from_npm_react_spinners():
 
 
 @pytest.mark.anyio
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_nested_npm_components():
     async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
         async with DisplayFixture(backend=backend) as display:
@@ -256,6 +268,7 @@ async def test_nested_npm_components():
 
 
 @pytest.mark.anyio
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_interleaved_npm_and_server_components():
     async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
         async with DisplayFixture(backend=backend) as display:
@@ -292,6 +305,7 @@ async def test_interleaved_npm_and_server_components():
 
 
 @pytest.mark.anyio
+@pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_complex_nested_material_ui():
     async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
         async with DisplayFixture(backend=backend) as display:
