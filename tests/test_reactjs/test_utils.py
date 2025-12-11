@@ -69,7 +69,7 @@ def test_resolve_module_exports_from_file_log_on_unknown_file_location(
     resolve_from_module_file(file, 2)
     assert len(caplog.records) == 1
     assert caplog.records[0].message.startswith(
-        "Did not resolve exports for unknown file"
+        "Did not resolve imports for unknown file"
     )
 
 
@@ -113,7 +113,7 @@ def test_resolve_module_exports_from_url_log_on_max_depth(caplog):
 def test_resolve_module_exports_from_url_log_on_bad_response(caplog):
     assert resolve_from_module_url("https://some.url", 1) == set()
     assert len(caplog.records) == 1
-    assert caplog.records[0].message.startswith("Did not resolve exports for url")
+    assert caplog.records[0].message.startswith("Did not resolve imports for url")
 
 
 @pytest.mark.parametrize(
@@ -147,7 +147,7 @@ def test_resolve_module_exports_from_source():
 
 
 def test_log_on_unknown_export_type():
-    with assert_reactpy_did_log(match_message="Unknown export type "):
+    with assert_reactpy_did_log(match_message="Found unknown export "):
         assert resolve_from_module_source(
             "export something unknown;", exclude_default=False
         ) == (set(), set())

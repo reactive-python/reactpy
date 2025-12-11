@@ -165,10 +165,10 @@ def test_web_module_from_file_replace_existing(tmp_path):
 def test_module_missing_exports():
     module = JavaScriptModule("test", NAME_SOURCE, None, {"a", "b", "c"}, None, False)
 
-    with pytest.raises(ValueError, match=r"does not export 'x'"):
+    with pytest.raises(ValueError, match=r"does not contain 'x'"):
         reactpy.reactjs.module_to_vdom(module, "x")
 
-    with pytest.raises(ValueError, match=r"does not export \['x', 'y'\]"):
+    with pytest.raises(ValueError, match=r"does not contain \['x', 'y'\]"):
         reactpy.reactjs.module_to_vdom(module, ["x", "y"])
 
 
