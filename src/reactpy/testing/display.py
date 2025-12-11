@@ -57,7 +57,8 @@ class DisplayFixture:
             self.page = await browser.new_page()
 
         self.page.set_default_timeout(REACTPY_TESTS_DEFAULT_TIMEOUT.current * 1000)
-
+        self.page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))  # noqa: T201
+        self.page.on("pageerror", lambda exc: print(f"BROWSER ERROR: {exc}"))  # noqa: T201
         if not hasattr(self, "backend"):  # nocov
             self.backend = BackendFixture()
             await es.enter_async_context(self.backend)

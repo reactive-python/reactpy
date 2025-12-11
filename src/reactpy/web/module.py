@@ -106,6 +106,98 @@ def reactjs_component_from_url(
 
 
 @overload
+def reactjs_component_from_npm(
+    package: str,
+    import_names: str,
+    version: str = "latest",
+    file: str = "",
+    cdn: str = "https://esm.sh",
+    fallback: Any | None = ...,
+    resolve_imports: bool | None = ...,
+    resolve_imports_depth: int = ...,
+    unmount_before_update: bool = ...,
+    allow_children: bool = ...,
+) -> VdomConstructor: ...
+
+
+@overload
+def reactjs_component_from_npm(
+    package: str,
+    import_names: list[str] | tuple[str, ...],
+    version: str = "latest",
+    file: str = "",
+    cdn: str = "https://esm.sh",
+    fallback: Any | None = ...,
+    resolve_imports: bool | None = ...,
+    resolve_imports_depth: int = ...,
+    unmount_before_update: bool = ...,
+    allow_children: bool = ...,
+) -> list[VdomConstructor]: ...
+
+
+def reactjs_component_from_npm(
+    package: str,
+    import_names: str | list[str] | tuple[str, ...],
+    version: str = "latest",
+    file: str = "",
+    cdn: str = "https://esm.sh",
+    fallback: Any | None = None,
+    resolve_imports: bool | None = None,
+    resolve_imports_depth: int = 5,
+    unmount_before_update: bool = False,
+    allow_children: bool = True,
+) -> VdomConstructor | list[VdomConstructor]:
+    """Import a component from an NPM package.
+
+    Parameters:
+        package:
+            The name of the NPM package.
+        import_names:
+            One or more component names to import. If given as a string, a single component
+            will be returned. If a list is given, then a list of components will be
+            returned.
+        version:
+            The version of the package to use. Defaults to "latest".
+        file:
+            A specific file to import from the package.
+        cdn:
+            The CDN to use. Defaults to "https://esm.sh".
+        fallback:
+            What to temporarily display while the module is being loaded.
+        resolve_imports:
+            Whether to try and find all the named imports of this module.
+        resolve_imports_depth:
+            How deeply to search for those imports.
+        unmount_before_update:
+            Cause the component to be unmounted before each update. This option should
+            only be used if the imported package fails to re-render when props change.
+            Using this option has negative performance consequences since all DOM
+            elements must be changed on each render. See :issue:`461` for more info.
+        allow_children:
+            Whether or not these components can have children.
+    """
+    url = f"{cdn}/{package}@{version}"
+    if file:
+        url += f"/{file}"
+
+    if "esm.sh" in cdn:
+        if "?" in url:
+            url += "&external=react,react-dom"
+        else:
+            url += "?external=react,react-dom"
+
+    return reactjs_component_from_url(
+        url,
+        import_names,
+        fallback=fallback,
+        resolve_imports=resolve_imports,
+        resolve_imports_depth=resolve_imports_depth,
+        unmount_before_update=unmount_before_update,
+        allow_children=allow_children,
+    )
+
+
+@overload
 def reactjs_component_from_file(
     file: str | Path,
     import_names: str,

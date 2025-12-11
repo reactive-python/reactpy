@@ -1,1 +1,8 @@
-export { mountReactPy } from "@reactpy/client";
+export {
+  mountReactPy,
+  React,
+  ReactDOM,
+  jsx,
+  jsxs,
+  Fragment,
+} from "@reactpy/client";
