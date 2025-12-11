@@ -41,7 +41,6 @@ VDOM_JSON_SCHEMA = {
             "type": "object",
             "properties": {
                 "tagName": {"type": "string"},
-                "key": {"type": ["string", "number", "null"]},
                 "error": {"type": "string"},
                 "children": {"$ref": "#/definitions/elementChildren"},
                 "attributes": {"type": "object"},
@@ -170,7 +169,6 @@ class Vdom:
     ) -> VdomDict:
         """The entry point for the VDOM API, for example reactpy.html(<WE_ARE_HERE>)."""
         attributes, children = separate_attributes_and_children(attributes_and_children)
-        key = attributes.get("key", None)
         attributes, event_handlers, inline_javascript = (
             separate_attributes_handlers_and_inline_javascript(attributes)
         )
@@ -180,7 +178,6 @@ class Vdom:
         # Run custom constructor, if defined
         if self.custom_constructor:
             result = self.custom_constructor(
-                key=key,
                 children=children,
                 attributes=attributes,
                 event_handlers=event_handlers,
@@ -189,7 +186,6 @@ class Vdom:
         # Otherwise, use the default constructor
         else:
             result = {
-                **({"key": key} if key is not None else {}),
                 **({"children": children} if children else {}),
                 **({"attributes": attributes} if attributes else {}),
                 **({"eventHandlers": event_handlers} if event_handlers else {}),
@@ -277,7 +273,9 @@ def _validate_child_key_integrity(value: Any) -> None:
         for child in value:
             if isinstance(child, Component) and child.key is None:
                 warn(f"Key not specified for child in list {child}", UserWarning)
-            elif isinstance(child, Mapping) and "key" not in child:
+            elif isinstance(child, Mapping) and "key" not in child.get(
+                "attributes", {}
+            ):
                 # remove 'children' to reduce log spam
                 child_copy = {**child, "children": EllipsisRepr()}
                 warn(f"Key not specified for child in list {child_copy}", UserWarning)

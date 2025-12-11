@@ -303,8 +303,9 @@ class Layout(BaseLayout):
         except Exception as e:  # nocov
             msg = f"Expected a VDOM element dict, not {raw_model}"
             raise ValueError(msg) from e
-        if "key" in raw_model:
-            new_state.key = new_state.model.current["key"] = raw_model["key"]
+        key = raw_model.get("attributes", {}).get("key")
+        if key is not None:
+            new_state.key = key
         if "importSource" in raw_model:
             new_state.model.current["importSource"] = raw_model["importSource"]
         self._render_model_attributes(old_state, new_state, raw_model)
@@ -726,7 +727,7 @@ def _get_children_info(
             continue
         elif isinstance(child, dict):
             child_type = _DICT_TYPE
-            key = child.get("key")
+            key = child.get("attributes", {}).get("key")
         elif isinstance(child, Component):
             child_type = _COMPONENT_TYPE
             key = child.key

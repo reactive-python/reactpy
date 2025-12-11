@@ -172,8 +172,7 @@ def test_string_to_reactpy(case):
             "source": '<div id="my-key"></div>',
             "model": {
                 "tagName": "div",
-                "key": "my-key",
-                "attributes": {"id": "my-key"},
+                "attributes": {"id": "my-key", "key": "my-key"},
             },
         },
         # 7: Infer ReactJS `key` from the `name` attribute
@@ -181,8 +180,7 @@ def test_string_to_reactpy(case):
             "source": '<input type="text" name="my-input">',
             "model": {
                 "tagName": "input",
-                "key": "my-input",
-                "attributes": {"type": "text", "name": "my-input"},
+                "attributes": {"type": "text", "name": "my-input", "key": "my-input"},
             },
         },
         # 8: Infer ReactJS `key` from the `key` attribute
@@ -191,7 +189,6 @@ def test_string_to_reactpy(case):
             "model": {
                 "tagName": "div",
                 "attributes": {"key": "my-key"},
-                "key": "my-key",
             },
         },
         # 9: Includes `inlineJavaScript` attribue
@@ -268,7 +265,7 @@ def test_non_html_tag_behavior():
         "tagName": "my-tag",
         "attributes": {"data-x": "something"},
         "children": [
-            {"tagName": "my-other-tag", "attributes": {"key": "a-key"}, "key": "a-key"},
+            {"tagName": "my-other-tag", "attributes": {"key": "a-key"}},
         ],
     }
 

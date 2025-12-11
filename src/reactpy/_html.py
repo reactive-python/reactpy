@@ -6,7 +6,6 @@ from typing import ClassVar, overload
 from reactpy.core.vdom import Vdom
 from reactpy.types import (
     EventHandlerDict,
-    Key,
     VdomAttributes,
     VdomChild,
     VdomChildren,
@@ -100,12 +99,10 @@ NO_CHILDREN_ALLOWED_SVG = {
 def _fragment(
     attributes: VdomAttributes,
     children: Sequence[VdomChild],
-    key: Key | None,
     event_handlers: EventHandlerDict,
 ) -> VdomDict:
     """An HTML fragment - this element will not appear in the DOM"""
-    attributes.pop("key", None)
-    if attributes or event_handlers:
+    if any(k != "key" for k in attributes) or event_handlers:
         msg = "Fragments cannot have attributes besides 'key'"
         raise TypeError(msg)
     model = VdomDict(tagName="")
@@ -113,8 +110,8 @@ def _fragment(
     if children:
         model["children"] = children
 
-    if key is not None:
-        model["key"] = key
+    if attributes:
+        model["attributes"] = attributes
 
     return model
 
@@ -122,7 +119,6 @@ def _fragment(
 def _script(
     attributes: VdomAttributes,
     children: Sequence[VdomChild],
-    key: Key | None,
     event_handlers: EventHandlerDict,
 ) -> VdomDict:
     """Create a new `<script> <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script>`__ element.
@@ -148,6 +144,8 @@ def _script(
         msg = "'script' elements do not support event handlers"
         raise ValueError(msg)
 
+    key = attributes.get("key")
+
     if children:
         if len(children) > 1:
             msg = "'script' nodes may have, at most, one child."
@@ -165,7 +163,9 @@ def _script(
             key = attributes["src"]
 
     if key is not None:
-        model["key"] = key
+        if "attributes" not in model:
+            model["attributes"] = {}
+        model["attributes"]["key"] = key
 
     return model
 

@@ -67,7 +67,7 @@ function StandardElement({ model }: { model: ReactPyVdom }) {
     model.tagName === "" ? Fragment : model.tagName,
     createAttributes(model, client),
     ...createChildren(model, (child) => {
-      return <Element model={child} key={child.key} />;
+      return <Element model={child} key={child.attributes?.key} />;
     }),
   );
 }
@@ -100,7 +100,7 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
     // overwrite
     { ...props, value },
     ...createChildren(model, (child) => (
-      <Element model={child} key={child.key} />
+      <Element model={child} key={child.attributes?.key} />
     )),
   );
 }
@@ -135,7 +135,7 @@ function ScriptElement({ model }: { model: ReactPyVdom }) {
     return () => {
       ref.current?.removeChild(scriptElement);
     };
-  }, [model.key]);
+  }, [model.attributes?.key]);
 
   return <div ref={ref} />;
 }

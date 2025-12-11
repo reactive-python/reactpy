@@ -39,6 +39,7 @@ Unreleased
 
 **Changed**
 
+- :pull:`1284` - The ``key`` attribute is now stored within ``attributes`` in the VDOM spec.
 - :pull:`1251` - Substitute client-side usage of ``react`` with ``preact``.
 - :pull:`1239` - Script elements no longer support behaving like effects. They now strictly behave like plain HTML scripts.
 - :pull:`1255` - The ``reactpy.html`` module has been modified to allow for auto-creation of any HTML nodes. For example, you can create a ``<data-table>`` element by calling ``html.data_table()``.

@@ -533,7 +533,7 @@ class CssStyleTypeDict(TypedDict, total=False):
     zIndex: str | int
 
 
-# TODO: Enable `extra_items` on `CssStyleDict` when PEP 728 is merged, likely in Python 3.14. Ref: https://peps.python.org/pep-0728/
+# TODO: Enable `extra_items` on `CssStyleDict` when PEP 728 is merged, likely in Python 3.15. Ref: https://peps.python.org/pep-0728/
 CssStyleDict = CssStyleTypeDict | dict[str, Any]
 
 EventFunc = Callable[[dict[str, Any]], Awaitable[None] | None]
@@ -797,7 +797,6 @@ VdomAttributes = VdomAttributesTypeDict | dict[str, Any]
 
 VdomDictKeys = Literal[
     "tagName",
-    "key",
     "children",
     "attributes",
     "eventHandlers",
@@ -806,7 +805,6 @@ VdomDictKeys = Literal[
 ]
 ALLOWED_VDOM_KEYS = {
     "tagName",
-    "key",
     "children",
     "attributes",
     "eventHandlers",
@@ -819,7 +817,6 @@ class VdomTypeDict(TypedDict):
     """TypedDict representation of what the `VdomDict` should look like."""
 
     tagName: str
-    key: NotRequired[Key | None]
     children: NotRequired[Sequence[Component | VdomChild]]
     attributes: NotRequired[VdomAttributes]
     eventHandlers: NotRequired[EventHandlerDict]
@@ -844,8 +841,6 @@ class VdomDict(dict):
     @overload
     def __getitem__(self, key: Literal["tagName"]) -> str: ...
     @overload
-    def __getitem__(self, key: Literal["key"]) -> Key | None: ...
-    @overload
     def __getitem__(
         self, key: Literal["children"]
     ) -> Sequence[Component | VdomChild]: ...
@@ -862,8 +857,6 @@ class VdomDict(dict):
 
     @overload
     def __setitem__(self, key: Literal["tagName"], value: str) -> None: ...
-    @overload
-    def __setitem__(self, key: Literal["key"], value: Key | None) -> None: ...
     @overload
     def __setitem__(
         self, key: Literal["children"], value: Sequence[Component | VdomChild]
@@ -1116,7 +1109,6 @@ class CustomVdomConstructor(Protocol):
         self,
         attributes: VdomAttributes,
         children: Sequence[VdomChildren],
-        key: Key | None,
         event_handlers: EventHandlerDict,
     ) -> VdomDict: ...
 

@@ -106,10 +106,13 @@ def test_script_has_no_event_handlers():
 def test_simple_fragment():
     assert html.fragment() == {"tagName": ""}
     assert html.fragment(1, 2, 3) == {"tagName": "", "children": [1, 2, 3]}
-    assert html.fragment({"key": "something"}) == {"tagName": "", "key": "something"}
+    assert html.fragment({"key": "something"}) == {
+        "tagName": "",
+        "attributes": {"key": "something"},
+    }
     assert html.fragment({"key": "something"}, 1, 2, 3) == {
         "tagName": "",
-        "key": "something",
+        "attributes": {"key": "something"},
         "children": [1, 2, 3],
     }
 
