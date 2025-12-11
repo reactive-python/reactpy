@@ -36,10 +36,11 @@ Unreleased
 - :pull:`1307` - Added ``reactpy.web.reactjs_component_from_file`` to import ReactJS components from a file.
 - :pull:`1307` - Added ``reactpy.web.reactjs_component_from_url`` to import ReactJS components from a URL.
 - :pull:`1307` - Added ``reactpy.web.reactjs_component_from_string`` to import ReactJS components from a string.
+- :pull:`1314` - Added ``reactpy.h`` as a shorthand alias for ``reactpy.html``.
 
 **Changed**
 
-- :pull:`1284` - The ``key`` attribute is now stored within ``attributes`` in the VDOM spec.
+- :pull:`1314` - The ``key`` attribute is now stored within ``attributes`` in the VDOM spec.
 - :pull:`1251` - Substitute client-side usage of ``react`` with ``preact``.
 - :pull:`1239` - Script elements no longer support behaving like effects. They now strictly behave like plain HTML scripts.
 - :pull:`1255` - The ``reactpy.html`` module has been modified to allow for auto-creation of any HTML nodes. For example, you can create a ``<data-table>`` element by calling ``html.data_table()``.

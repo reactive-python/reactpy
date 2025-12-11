@@ -13,7 +13,7 @@ from reactpy.types import (
     VdomDict,
 )
 
-__all__ = ["html"]
+__all__ = ["h", "html"]
 
 NO_CHILDREN_ALLOWED_HTML_BODY = {
     "area",
@@ -424,3 +424,4 @@ class HtmlConstructor:
 
 
 html = HtmlConstructor()
+h = html  # shorthand alias for html
