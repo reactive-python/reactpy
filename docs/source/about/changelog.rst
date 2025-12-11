@@ -103,6 +103,7 @@ Unreleased
 - :pull:`1239` - Fixed a bug where script elements would not render to the DOM as plain text.
 - :pull:`1271` - Fixed a bug where the ``key`` property provided within server-side ReactPy code was failing to propagate to the front-end JavaScript components.
 - :pull:`1254` - Fixed a bug where ``RuntimeError("Hook stack is in an invalid state")`` errors could be generated when using a webserver that reuses threads.
+- :pull:`1314` - Allow for ReactPy and ReactJS components to be arbitrarily inserted onto the page with any possible hierarchy.
 
 
 v1.1.0
