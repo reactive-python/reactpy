@@ -23,7 +23,7 @@ from reactpy.pyscript.components import pyscript_component
 from reactpy.utils import Ref, reactpy_to_string, string_to_reactpy
 
 __author__ = "The Reactive Python Team"
-__version__ = "2.0.0b5"
+__version__ = "2.0.0b6"
 
 __all__ = [
     "Ref",
