@@ -44,12 +44,25 @@ def headless_environ(pytestconfig: pytest.Config):
     return False
 
 
+def get_lock_dir(tmp_path_factory, worker_id):
+    if worker_id == "master":
+        return tmp_path_factory.getbasetemp()
+    return tmp_path_factory.getbasetemp().parent
+
+
 @pytest.fixture(autouse=True, scope="session")
-def install_playwright():
-    subprocess.run(["playwright", "install", "chromium"], check=True)  # noqa: S607
-    # Try to install system deps, but don't fail if already installed or no root access
-    with contextlib.suppress(subprocess.CalledProcessError):
-        subprocess.run(["playwright", "install-deps"], check=True)  # noqa: S607
+def install_playwright(tmp_path_factory, worker_id):
+    root_tmp_dir = get_lock_dir(tmp_path_factory, worker_id)
+    fn = root_tmp_dir / "playwright_install.lock"
+    flag = root_tmp_dir / "playwright_install.done"
+
+    with FileLock(str(fn)):
+        if not flag.exists():
+            subprocess.run(["playwright", "install", "chromium"], check=True)  # noqa: S607
+            # Try to install system deps, but don't fail if already installed or no root access
+            with contextlib.suppress(subprocess.CalledProcessError):
+                subprocess.run(["playwright", "install-deps"], check=True)  # noqa: S607
+            flag.touch()
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -62,7 +75,7 @@ def rebuild(tmp_path_factory, worker_id):
     env = os.environ.copy()
     env.pop("HATCH_ENV_ACTIVE", None)
 
-    root_tmp_dir = tmp_path_factory.getbasetemp().parent
+    root_tmp_dir = get_lock_dir(tmp_path_factory, worker_id)
     fn = root_tmp_dir / "build.lock"
     flag = root_tmp_dir / "build.done"
 
