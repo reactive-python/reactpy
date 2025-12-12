@@ -67,7 +67,6 @@ class DisplayFixture:
         return self
 
     async def configure_page(self) -> None:
-        """Hook for configuring the page before use."""
         if getattr(self, "page", None) is None:
             self.page = await self.browser.new_page()
             self.page.set_default_timeout(REACTPY_TESTS_DEFAULT_TIMEOUT.current * 1000)

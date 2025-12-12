@@ -204,7 +204,7 @@ _JS_GENERAL_EXPORT_PATTERN = re.compile(
 
 
 @contextmanager
-def simple_file_lock(lock_file: Path, timeout: float = 10.0):
+def file_lock(lock_file: Path, timeout: float = 10.0):
     start_time = time.time()
     while True:
         try:

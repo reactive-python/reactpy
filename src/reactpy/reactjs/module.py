@@ -11,10 +11,10 @@ from reactpy.reactjs.types import NAME_SOURCE, URL_SOURCE
 from reactpy.reactjs.utils import (
     are_files_identical,
     copy_file,
+    file_lock,
     module_name_suffix,
     resolve_from_module_file,
     resolve_from_module_url,
-    simple_file_lock,
 )
 from reactpy.types import ImportSourceDict, JavaScriptModule, VdomConstructor
 
@@ -56,7 +56,7 @@ def file_to_module(
     source_file = Path(file).resolve()
     target_file = get_module_path(name)
 
-    with simple_file_lock(target_file.with_name(target_file.name + ".lock")):
+    with file_lock(target_file.with_name(f"{target_file.name}.lock")):
         if not source_file.exists():
             msg = f"Source file does not exist: {source_file}"
             raise FileNotFoundError(msg)

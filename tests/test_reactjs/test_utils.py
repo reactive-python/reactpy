@@ -6,12 +6,12 @@ import responses
 
 from reactpy.reactjs.utils import (
     copy_file,
+    file_lock,
     module_name_suffix,
     normalize_url_path,
     resolve_from_module_file,
     resolve_from_module_source,
     resolve_from_module_url,
-    simple_file_lock,
 )
 from reactpy.testing import assert_reactpy_did_log
 
@@ -196,5 +196,5 @@ def test_simple_file_lock_timeout(tmp_path):
     with patch("os.open", side_effect=OSError):
         with patch("time.sleep"):  # Speed up test
             with pytest.raises(TimeoutError, match="Could not acquire lock"):
-                with simple_file_lock(lock_file, timeout=0.1):
+                with file_lock(lock_file, timeout=0.1):
                     pass
