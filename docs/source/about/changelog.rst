@@ -100,6 +100,7 @@ Unreleased
 
 **Fixed**
 
+- Fixed a flaky test issue in ``test_subcomponent_notation`` where react-bootstrap components would fail to initialize due to a race condition in ESM module loading from esm.sh. The fix pins esm.sh to v135 and explicitly imports react-is to ensure proper dependency resolution order.
 - :pull:`1239` - Fixed a bug where script elements would not render to the DOM as plain text.
 - :pull:`1271` - Fixed a bug where the ``key`` property provided within server-side ReactPy code was failing to propagate to the front-end JavaScript components.
 - :pull:`1254` - Fixed a bug where ``RuntimeError("Hook stack is in an invalid state")`` errors could be generated when using a webserver that reuses threads.
