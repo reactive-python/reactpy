@@ -88,6 +88,13 @@ artifacts = []
 #############################
 # >>> Hatch Test Runner <<< #
 #############################
+[tool.hatch.envs.hatch-test.scripts]
+run = [
+  "hatch --env default build -t wheel",
+  "playwright install chromium",
+  "playwright install-deps",
+  "pytest{env:HATCH_TEST_ARGS:} {args}",
+]
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
@@ -98,7 +105,6 @@ extra-dependencies = [
   "exceptiongroup",
   "jsonpointer",
   "starlette",
-  "filelock",
 ]
 features = ["all"]
 
