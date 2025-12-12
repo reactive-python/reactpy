@@ -14,6 +14,7 @@ from reactpy.reactjs.utils import (
     module_name_suffix,
     resolve_from_module_file,
     resolve_from_module_url,
+    simple_file_lock,
 )
 from reactpy.types import ImportSourceDict, JavaScriptModule, VdomConstructor
 
@@ -54,19 +55,20 @@ def file_to_module(
 
     source_file = Path(file).resolve()
     target_file = get_module_path(name)
-    if not source_file.exists():
-        msg = f"Source file does not exist: {source_file}"
-        raise FileNotFoundError(msg)
 
-    if not target_file.exists():
-        copy_file(target_file, source_file, symlink)
-    elif not are_files_identical(source_file, target_file):
-        logger.info(
-            f"Existing web module {name!r} will "
-            f"be replaced with {target_file.resolve()}"
-        )
-        target_file.unlink()
-        copy_file(target_file, source_file, symlink)
+    with simple_file_lock(target_file.with_name(target_file.name + ".lock")):
+        if not source_file.exists():
+            msg = f"Source file does not exist: {source_file}"
+            raise FileNotFoundError(msg)
+
+        if not target_file.exists():
+            copy_file(target_file, source_file, symlink)
+        elif not are_files_identical(source_file, target_file):
+            logger.info(
+                f"Existing web module {name!r} will "
+                f"be replaced with {target_file.resolve()}"
+            )
+            copy_file(target_file, source_file, symlink)
 
     return JavaScriptModule(
         source=name,

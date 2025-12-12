@@ -136,14 +136,12 @@ def test_assert_reactpy_did_not_log():
 
 
 async def test_simple_display_fixture(browser):
-    if os.name == "nt":
-        pytest.skip("Browser tests not supported on Windows")
     async with testing.DisplayFixture(browser=browser) as display:
         await display.show(SampleApp)
         await display.page.wait_for_selector("#sample")
 
 
-def test_list_logged_excptions():
+def test_list_logged_exceptions():
     the_error = None
     with testing.capture_reactpy_logs() as records:
         ROOT_LOGGER.info("A non-error log message")

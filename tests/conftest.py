@@ -3,9 +3,12 @@ from __future__ import annotations
 import contextlib
 import os
 import subprocess
+import sys
+from time import sleep
 
 import pytest
 from _pytest.config.argparsing import Parser
+from filelock import FileLock
 
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
@@ -32,6 +35,17 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
+def headless_environ(pytestconfig: pytest.Config):
+    if (
+        pytestconfig.getoption("headless")
+        or os.environ.get("PLAYWRIGHT_HEADLESS") == "1"
+        or GITHUB_ACTIONS
+    ):
+        os.environ["PLAYWRIGHT_HEADLESS"] = "1"
+        return True
+    return False
+
+
 @pytest.fixture(autouse=True, scope="session")
 def install_playwright():
     subprocess.run(["playwright", "install", "chromium"], check=True)  # noqa: S607
@@ -41,7 +55,7 @@ def install_playwright():
 
 
 @pytest.fixture(autouse=True, scope="session")
-def rebuild():
+def rebuild(tmp_path_factory, worker_id):
     # When running inside `hatch test`, the `HATCH_ENV_ACTIVE` environment variable
     # is set. If we try to run `hatch build` with this variable set, Hatch will
     # complain that the current environment is not a builder environment.
@@ -49,7 +63,16 @@ def rebuild():
     # passed to the subprocess.
     env = os.environ.copy()
     env.pop("HATCH_ENV_ACTIVE", None)
-    subprocess.run(["hatch", "build", "-t", "wheel"], check=True, env=env)  # noqa: S607
+
+    root_tmp_dir = tmp_path_factory.getbasetemp().parent
+    fn = root_tmp_dir / "build.lock"
+    flag = root_tmp_dir / "build.done"
+
+    # Whoever gets the lock first performs the build.
+    with FileLock(str(fn)):
+        if not flag.exists():
+            subprocess.run(["hatch", "build", "-t", "wheel"], check=True, env=env)  # noqa: S607
+            flag.touch()
 
 
 @pytest.fixture(scope="session")
@@ -69,9 +92,7 @@ async def browser(pytestconfig: pytest.Config):
     from playwright.async_api import async_playwright
 
     async with async_playwright() as pw:
-        yield await pw.chromium.launch(
-            headless=bool(pytestconfig.option.headless) or GITHUB_ACTIONS
-        )
+        yield await pw.chromium.launch(headless=headless_environ(pytestconfig))
 
 
 @pytest.fixture(autouse=True)

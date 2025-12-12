@@ -1,7 +1,10 @@
 import filecmp
 import logging
+import os
 import re
 import shutil
+import time
+from contextlib import contextmanager, suppress
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse, urlunparse
 
@@ -167,9 +170,26 @@ def are_files_identical(f1: Path, f2: Path) -> bool:
 def copy_file(target: Path, source: Path, symlink: bool) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     if symlink:
+        if target.exists():
+            target.unlink()
         target.symlink_to(source)
     else:
-        shutil.copy(source, target)
+        temp_target = target.with_suffix(target.suffix + ".tmp")
+        shutil.copy(source, temp_target)
+        try:
+            temp_target.replace(target)
+        except OSError:
+            # On Windows, replace might fail if the file is open
+            # Retry once after a short delay
+            time.sleep(0.1)
+            try:
+                temp_target.replace(target)
+            except OSError:
+                # If it still fails, try to unlink and rename
+                # This is not atomic, but it's a fallback
+                if target.exists():
+                    target.unlink()
+                temp_target.rename(target)
 
 
 _JS_DEFAULT_EXPORT_PATTERN = re.compile(
@@ -181,3 +201,22 @@ _JS_FUNC_OR_CLS_EXPORT_PATTERN = re.compile(
 _JS_GENERAL_EXPORT_PATTERN = re.compile(
     r"(?:^|;|})\s*export(?=\s+|{)(.*?)(?=;|$)", re.MULTILINE
 )
+
+
+@contextmanager
+def simple_file_lock(lock_file: Path, timeout: float = 10.0):
+    start_time = time.time()
+    while True:
+        try:
+            fd = os.open(lock_file, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+            os.close(fd)
+            break
+        except OSError as e:
+            if time.time() - start_time > timeout:
+                raise TimeoutError(f"Could not acquire lock {lock_file}") from e
+            time.sleep(0.1)
+    try:
+        yield
+    finally:
+        with suppress(OSError):
+            os.unlink(lock_file)

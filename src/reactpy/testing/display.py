@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from contextlib import AsyncExitStack
 from types import TracebackType
 from typing import Any
@@ -23,6 +24,7 @@ class DisplayFixture:
         self,
         backend: BackendFixture | None = None,
         browser: Browser | None = None,
+        headless: bool = False,
     ) -> None:
         if backend:
             self.backend_is_external = True
@@ -31,6 +33,8 @@ class DisplayFixture:
         if browser:
             self.browser_is_external = True
             self.browser = browser
+
+        self.headless = headless
 
     async def show(
         self,
@@ -49,7 +53,11 @@ class DisplayFixture:
 
         if not hasattr(self, "browser"):
             pw = await self.browser_exit_stack.enter_async_context(async_playwright())
-            self.browser = await pw.chromium.launch(headless=GITHUB_ACTIONS)
+            self.browser = await pw.chromium.launch(
+                headless=self.headless
+                or os.environ.get("PLAYWRIGHT_HEADLESS") == "1"
+                or GITHUB_ACTIONS
+            )
         await self.configure_page()
 
         if not hasattr(self, "backend"):  # nocov

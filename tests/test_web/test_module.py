@@ -8,7 +8,7 @@ from servestatic import ServeStaticASGI
 import reactpy
 import reactpy.reactjs
 from reactpy.executors.asgi.standalone import ReactPy
-from reactpy.reactjs import NAME_SOURCE, JavaScriptModule
+from reactpy.reactjs import NAME_SOURCE, JavaScriptModule, import_reactjs
 from reactpy.testing import (
     BackendFixture,
     DisplayFixture,
@@ -19,6 +19,14 @@ from reactpy.testing import (
 from reactpy.types import InlineJavaScript
 
 JS_FIXTURES_DIR = Path(__file__).parent / "js_fixtures"
+
+
+@pytest.fixture(scope="module")
+async def display(browser):
+    """Override for the display fixture that includes ReactJS."""
+    async with BackendFixture(html_head=reactpy.html.head(import_reactjs())) as backend:
+        async with DisplayFixture(backend=backend, browser=browser) as new_display:
+            yield new_display
 
 
 async def test_that_js_module_unmount_is_called(display: DisplayFixture):
@@ -325,7 +333,6 @@ async def test_subcomponent_notation_as_str_attrs(display: DisplayFixture):
     )
 
     await display.show(lambda: content)
-
     await display.page.wait_for_selector("#basic-addon3", state="attached")
     parent = await display.page.wait_for_selector("#the-parent", state="attached")
     input_group_text = await parent.query_selector_all(".input-group-text")
