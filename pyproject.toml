@@ -39,12 +39,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = [
-  "fastjsonschema >=2.14.5",
-  "requests >=2",
-  "lxml >=4",
-  "anyio >=3",
-]
+dependencies = ["fastjsonschema>=2.14.5", "requests>=2", "lxml>=4", "anyio>=3"]
 dynamic = ["version"]
 urls.Changelog = "https://reactpy.dev/docs/about/changelog.html"
 urls.Documentation = "https://reactpy.dev/"
@@ -53,7 +48,7 @@ urls.Source = "https://github.com/reactive-python/reactpy"
 [project.optional-dependencies]
 all = ["reactpy[asgi,jinja,testing]"]
 asgi = ["asgiref", "asgi-tools", "servestatic", "orjson"]
-jinja = ["jinja2-simple-tags", "jinja2 >=3"]
+jinja = ["jinja2-simple-tags", "jinja2>=3"]
 testing = ["playwright", "uvicorn[standard]"]
 
 [tool.hatch.version]
