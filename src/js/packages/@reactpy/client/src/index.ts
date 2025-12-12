@@ -6,4 +6,5 @@ export * from "./vdom";
 export * from "./websocket";
 export { default as React } from "preact/compat";
 export { default as ReactDOM } from "preact/compat";
+export { jsx, jsxs, Fragment } from "preact/jsx-runtime";
 export * as preact from "preact";

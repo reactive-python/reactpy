@@ -15,7 +15,7 @@ def test_asgi_import_error():
             ModuleNotFoundError,
             match=r"ASGI executors require the 'reactpy\[asgi\]' extra to be installed",
         ):
-            import reactpy.executors.asgi
+            import reactpy.executors.asgi  # noqa: F401
 
     # Clean up
     if "reactpy.executors.asgi" in sys.modules:

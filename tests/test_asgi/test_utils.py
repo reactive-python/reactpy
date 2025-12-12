@@ -17,5 +17,5 @@ def test_process_settings():
 
 
 def test_invalid_setting():
-    with pytest.raises(ValueError, match='Unknown ReactPy setting "foobar".'):
+    with pytest.raises(ValueError, match=r'Unknown ReactPy setting "foobar".'):
         utils.process_settings({"foobar": True})

@@ -113,8 +113,8 @@ class RequiredTransforms:
         if key is None and vdom["tagName"] in {"input", "select", "textarea"}:
             key = attributes.get("name")
 
-        if key:
-            vdom["key"] = key
+        if key and "key" not in attributes:
+            attributes["key"] = key
 
     def intercept_link_clicks(self, vdom: VdomDict) -> None:
         """Intercepts anchor link clicks and prevents the default behavior.

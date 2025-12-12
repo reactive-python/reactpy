@@ -242,7 +242,7 @@ def component_to_vdom(component: Component) -> VdomDict:
         return component_to_vdom(cast(Component, result))
     elif isinstance(result, str):
         return html.div(result)
-    return html.fragment()
+    return html()
 
 
 def _react_attribute_to_html(key: str, value: Any) -> tuple[str, str]:

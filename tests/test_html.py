@@ -87,34 +87,39 @@ async def test_script_from_src(display: DisplayFixture):
 
 
 def test_script_may_only_have_one_child():
-    with pytest.raises(ValueError, match="'script' nodes may have, at most, one child"):
+    with pytest.raises(
+        ValueError, match=r"'script' nodes may have, at most, one child"
+    ):
         html.script("one child", "two child")
 
 
 def test_child_of_script_must_be_string():
-    with pytest.raises(ValueError, match="The child of a 'script' must be a string"):
+    with pytest.raises(ValueError, match=r"The child of a 'script' must be a string"):
         html.script(1)
 
 
 def test_script_has_no_event_handlers():
-    with pytest.raises(ValueError, match="do not support event handlers"):
+    with pytest.raises(ValueError, match=r"do not support event handlers"):
         html.script({"onEvent": lambda: None})
 
 
 def test_simple_fragment():
-    assert html.fragment() == {"tagName": ""}
-    assert html.fragment(1, 2, 3) == {"tagName": "", "children": [1, 2, 3]}
-    assert html.fragment({"key": "something"}) == {"tagName": "", "key": "something"}
-    assert html.fragment({"key": "something"}, 1, 2, 3) == {
+    assert html() == {"tagName": ""}
+    assert html(1, 2, 3) == {"tagName": "", "children": [1, 2, 3]}
+    assert html({"key": "something"}) == {
         "tagName": "",
-        "key": "something",
+        "attributes": {"key": "something"},
+    }
+    assert html({"key": "something"}, 1, 2, 3) == {
+        "tagName": "",
+        "attributes": {"key": "something"},
         "children": [1, 2, 3],
     }
 
 
 def test_fragment_can_have_no_attributes():
-    with pytest.raises(TypeError, match="Fragments cannot have attributes"):
-        html.fragment({"someAttribute": 1})
+    with pytest.raises(TypeError, match=r"Fragments cannot have attributes"):
+        html({"someAttribute": 1})
 
 
 async def test_svg(display: DisplayFixture):

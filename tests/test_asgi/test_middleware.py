@@ -37,7 +37,7 @@ async def display(page):
 
 
 def test_invalid_path_prefix():
-    with pytest.raises(ValueError, match="Invalid `path_prefix`*"):
+    with pytest.raises(ValueError, match=r"Invalid `path_prefix`*"):
 
         async def app(scope, receive, send):
             pass
@@ -47,7 +47,7 @@ def test_invalid_path_prefix():
 
 def test_invalid_web_modules_dir():
     with pytest.raises(
-        ValueError, match='Web modules directory "invalid" does not exist.'
+        ValueError, match=r'Web modules directory "invalid" does not exist.'
     ):
 
         async def app(scope, receive, send):

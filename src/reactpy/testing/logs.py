@@ -175,4 +175,4 @@ def _raise_log_message_error(
         conditions.append(f"exception type {error_type}")
     if match_error:
         conditions.append(f"error message pattern {match_error!r}")
-    raise LogAssertionError(prefix + " " + " and ".join(conditions))
+    raise LogAssertionError(f"{prefix} " + " and ".join(conditions))

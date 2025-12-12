@@ -123,7 +123,7 @@ def extend_pyscript_config(
     pyscript_config["packages"].extend(extra_py)
 
     # FIXME: https://github.com/pyscript/pyscript/issues/2282
-    if any(pkg.endswith(".whl") for pkg in pyscript_config["packages"]):
+    if any(pkg.endswith(".whl") for pkg in pyscript_config["packages"]):  # nocov
         pyscript_config["packages_cache"] = "never"
 
     # Extend the JavaScript dependency list

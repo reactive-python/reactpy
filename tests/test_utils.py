@@ -172,8 +172,7 @@ def test_string_to_reactpy(case):
             "source": '<div id="my-key"></div>',
             "model": {
                 "tagName": "div",
-                "key": "my-key",
-                "attributes": {"id": "my-key"},
+                "attributes": {"id": "my-key", "key": "my-key"},
             },
         },
         # 7: Infer ReactJS `key` from the `name` attribute
@@ -181,8 +180,7 @@ def test_string_to_reactpy(case):
             "source": '<input type="text" name="my-input">',
             "model": {
                 "tagName": "input",
-                "key": "my-input",
-                "attributes": {"type": "text", "name": "my-input"},
+                "attributes": {"type": "text", "name": "my-input", "key": "my-input"},
             },
         },
         # 8: Infer ReactJS `key` from the `key` attribute
@@ -191,7 +189,6 @@ def test_string_to_reactpy(case):
             "model": {
                 "tagName": "div",
                 "attributes": {"key": "my-key"},
-                "key": "my-key",
             },
         },
         # 9: Includes `inlineJavaScript` attribue
@@ -268,7 +265,7 @@ def test_non_html_tag_behavior():
         "tagName": "my-tag",
         "attributes": {"data-x": "something"},
         "children": [
-            {"tagName": "my-other-tag", "attributes": {"key": "a-key"}, "key": "a-key"},
+            {"tagName": "my-other-tag", "attributes": {"key": "a-key"}},
         ],
     }
 
@@ -328,11 +325,11 @@ def example_none_return():
             "<button></button>",
         ),
         (
-            html.fragment("hello ", html.fragment("world")),
+            html("hello ", html("world")),
             "hello world",
         ),
         (
-            html.fragment(html.div("hello"), html.fragment("world")),
+            html(html.div("hello"), html("world")),
             "<div>hello</div>world",
         ),
         (
@@ -344,7 +341,7 @@ def example_none_return():
             '<div style="background-color:blue;margin-left:10px"></div>',
         ),
         (
-            html.fragment(
+            html(
                 html.div("hello"),
                 html.a({"href": "https://example.com"}, "example"),
             ),
@@ -352,7 +349,7 @@ def example_none_return():
         ),
         (
             html.div(
-                html.fragment(
+                html(
                     html.div("hello"),
                     html.a({"href": "https://example.com"}, "example"),
                 ),
@@ -391,22 +388,22 @@ def test_reactpy_to_string(vdom_in, html_out):
 
 
 def test_reactpy_to_string_error():
-    with pytest.raises(TypeError, match="Expected a VDOM dict"):
+    with pytest.raises(TypeError, match=r"Expected a VDOM dict"):
         utils.reactpy_to_string({"notVdom": True})
 
 
 def test_invalid_dotted_path():
-    with pytest.raises(ValueError, match='"abc" is not a valid dotted path.'):
+    with pytest.raises(ValueError, match=r'"abc" is not a valid dotted path.'):
         utils.import_dotted_path("abc")
 
 
 def test_invalid_component():
     with pytest.raises(
-        AttributeError, match='ReactPy failed to import "foobar" from "reactpy"'
+        AttributeError, match=r'ReactPy failed to import "foobar" from "reactpy"'
     ):
         utils.import_dotted_path("reactpy.foobar")
 
 
 def test_invalid_module():
-    with pytest.raises(ImportError, match='ReactPy failed to import "foo"'):
+    with pytest.raises(ImportError, match=r'ReactPy failed to import "foo"'):
         utils.import_dotted_path("foo.bar")

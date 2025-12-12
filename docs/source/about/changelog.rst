@@ -33,12 +33,15 @@ Unreleased
 - :pull:`1269` - Added ``reactpy.pyscript_component`` that can be used to embed ReactPy components into your existing application.
 - :pull:`1264` - Added ``reactpy.use_async_effect`` hook.
 - :pull:`1281` - Added ``reactpy.Vdom`` primitive interface for creating VDOM dictionaries.
-- :pull:`1307` - Added ``reactpy.web.reactjs_component_from_file`` to import ReactJS components from a file.
-- :pull:`1307` - Added ``reactpy.web.reactjs_component_from_url`` to import ReactJS components from a URL.
-- :pull:`1307` - Added ``reactpy.web.reactjs_component_from_string`` to import ReactJS components from a string.
+- :pull:`1307` - Added ``reactpy.reactjs.component_from_file`` to import ReactJS components from a file.
+- :pull:`1307` - Added ``reactpy.reactjs.component_from_url`` to import ReactJS components from a URL.
+- :pull:`1307` - Added ``reactpy.reactjs.component_from_string`` to import ReactJS components from a string.
+- :pull:`1314` - Added ``reactpy.reactjs.component_from_npm`` to import ReactJS components from NPM.
+- :pull:`1314` - Added ``reactpy.h`` as a shorthand alias for ``reactpy.html``.
 
 **Changed**
 
+- :pull:`1314` - The ``key`` attribute is now stored within ``attributes`` in the VDOM spec.
 - :pull:`1251` - Substitute client-side usage of ``react`` with ``preact``.
 - :pull:`1239` - Script elements no longer support behaving like effects. They now strictly behave like plain HTML scripts.
 - :pull:`1255` - The ``reactpy.html`` module has been modified to allow for auto-creation of any HTML nodes. For example, you can create a ``<data-table>`` element by calling ``html.data_table()``.
@@ -59,14 +62,15 @@ Unreleased
 - :pull:`1281` - ``reactpy.core.vdom._EllipsisRepr`` has been moved to ``reactpy.types.EllipsisRepr``.
 - :pull:`1281` - ``reactpy.types.VdomDictConstructor`` has been renamed to ``reactpy.types.VdomConstructor``.
 - :pull:`1312` - ``REACTPY_ASYNC_RENDERING`` can now de-duplicate and cascade renders where necessary.
-- :pull:`1312` - ``REACTPY_ASYNC_RENDERING`` is now defaulted to ``True`` for up to 40x performance improvements.
+- :pull:`1312` - ``REACTPY_ASYNC_RENDERING`` is now defaulted to ``True`` for up to 40x performance improvements in environments with high concurrency.
 
 **Deprecated**
 
--:pull:`1307` - ``reactpy.web.export`` is deprecated. Use ``reactpy.web.reactjs_component_from_*`` instead.
--:pull:`1307` - ``reactpy.web.module_from_file`` is deprecated. Use ``reactpy.web.reactjs_component_from_file`` instead.
--:pull:`1307` - ``reactpy.web.module_from_url`` is deprecated. Use ``reactpy.web.reactjs_component_from_url`` instead.
--:pull:`1307` - ``reactpy.web.module_from_string`` is deprecated. Use ``reactpy.web.reactjs_component_from_string`` instead.
+-:pull:`1307` - ``reactpy.web.export`` is deprecated. Use ``reactpy.reactjs.component_from_*`` instead.
+-:pull:`1307` - ``reactpy.web.module_from_file`` is deprecated. Use ``reactpy.reactjs.component_from_file`` instead.
+-:pull:`1307` - ``reactpy.web.module_from_url`` is deprecated. Use ``reactpy.reactjs.component_from_url`` instead.
+-:pull:`1307` - ``reactpy.web.module_from_string`` is deprecated. Use ``reactpy.reactjs.component_from_string`` instead.
+-:pull:`1314` - ``reactpy.web.*`` is deprecated. Use ``reactpy.reactjs.*`` instead.
 
 **Removed**
 
@@ -78,8 +82,8 @@ Unreleased
 - :pull:`1311` - Removed deprecated exception type ``reactpy.core.serve.Stop``.
 - :pull:`1311` - Removed deprecated component ``reactpy.widgets.hotswap``.
 - :pull:`1255` - Removed ``reactpy.sample`` module.
-- :pull:`1255` - Removed ``reactpy.svg`` module. Contents previously within ``reactpy.svg.*`` can now be accessed via ``html.svg.*``.
-- :pull:`1255` - Removed ``reactpy.html._`` function. Use ``html.fragment`` instead.
+- :pull:`1255` - Removed ``reactpy.svg`` module. Contents previously within ``reactpy.svg.*`` can now be accessed via ``reactpy.html.svg.*``.
+- :pull:`1255` - Removed ``reactpy.html._`` function. Use ``reactpy.html(...)`` or ``reactpy.html.fragment(...)`` instead.
 - :pull:`1113` - Removed ``reactpy.run``. See the documentation for the new method to run ReactPy applications.
 - :pull:`1113` - Removed ``reactpy.backend.*``. See the documentation for the new method to run ReactPy applications.
 - :pull:`1113` - Removed ``reactpy.core.types`` module. Use ``reactpy.types`` instead.
@@ -92,12 +96,14 @@ Unreleased
 - :pull:`1312` - Removed ``reactpy.types.LayoutType``. Use ``reactpy.types.BaseLayout`` instead.
 - :pull:`1312` - Removed ``reactpy.types.ContextProviderType``. Use ``reactpy.types.ContextProvider`` instead.
 - :pull:`1312` - Removed ``reactpy.core.hooks._ContextProvider``. Use ``reactpy.types.ContextProvider`` instead.
+- :pull:`1314` - Removed ``reactpy.web.utils``. Use ``reactpy.reactjs.utils`` instead.
 
 **Fixed**
 
 - :pull:`1239` - Fixed a bug where script elements would not render to the DOM as plain text.
 - :pull:`1271` - Fixed a bug where the ``key`` property provided within server-side ReactPy code was failing to propagate to the front-end JavaScript components.
 - :pull:`1254` - Fixed a bug where ``RuntimeError("Hook stack is in an invalid state")`` errors could be generated when using a webserver that reuses threads.
+- :pull:`1314` - Allow for ReactPy and ReactJS components to be arbitrarily inserted onto the page with any possible hierarchy.
 
 
 v1.1.0

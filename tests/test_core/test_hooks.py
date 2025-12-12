@@ -20,7 +20,7 @@ async def test_must_be_rendering_in_layout_to_use_hooks():
         reactpy.hooks.use_state(None)
         return reactpy.html.div()
 
-    with pytest.raises(RuntimeError, match="No life cycle hook is active"):
+    with pytest.raises(RuntimeError, match=r"No life cycle hook is active"):
         await SimpleComponentWithHook().render()
 
     async with Layout(SimpleComponentWithHook()) as layout:
@@ -981,7 +981,7 @@ async def test_context_values_are_scoped():
 
     @reactpy.component
     def Parent():
-        return html.fragment(
+        return html(
             Context(Context(Child1(), value=1), value="something-else"),
             Context(Child2(), value=2),
         )

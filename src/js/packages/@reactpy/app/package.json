@@ -13,7 +13,7 @@
   "license": "MIT",
   "name": "@reactpy/app",
   "scripts": {
-    "build": "bun build \"src/index.ts\" --outdir=\"../../../../reactpy/static/\" --minify --sourcemap=\"linked\"",
+    "build": "bun build \"src/index.ts\" \"src/react.ts\" \"src/react-dom.ts\" \"src/react-jsx-runtime.ts\" --outdir=\"../../../../reactpy/static/\" --minify --sourcemap=\"linked\" --splitting",
     "checkTypes": "tsc --noEmit"
   }
 }

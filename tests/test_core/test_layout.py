@@ -57,9 +57,9 @@ def test_layout_repr():
 
 
 def test_layout_expects_abstract_component():
-    with pytest.raises(TypeError, match="Expected a ReactPy component"):
+    with pytest.raises(TypeError, match=r"Expected a ReactPy component"):
         Layout(None)
-    with pytest.raises(TypeError, match="Expected a ReactPy component"):
+    with pytest.raises(TypeError, match=r"Expected a ReactPy component"):
         Layout(reactpy.html.div())
 
 
@@ -449,7 +449,7 @@ async def test_double_updated_component_is_not_double_rendered():
                 layout.render(),
                 timeout=0.1,  # this should have been plenty of time
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             pass  # the render should still be rendering since we only update once
 
         assert run_count.current == 2
@@ -1225,7 +1225,7 @@ async def test_ensure_model_path_udpates():
     @component
     def App():
         items = use_state(["A", "B", "C"])
-        return html.fragment([Item(item, items, key=item) for item in items.value])
+        return html([Item(item, items, key=item) for item in items.value])
 
     async with layout_runner(Layout(App())) as runner:
         tree = await runner.render()
@@ -1266,7 +1266,7 @@ async def test_async_renders(async_rendering):
 
     @component
     def outer():
-        return html.fragment(child_1(), child_2())
+        return html(child_1(), child_2())
 
     @component
     @child_1_hook.capture

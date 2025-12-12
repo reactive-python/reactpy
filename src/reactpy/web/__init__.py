@@ -3,9 +3,6 @@ from reactpy.web.module import (
     module_from_file,
     module_from_string,
     module_from_url,
-    reactjs_component_from_file,
-    reactjs_component_from_string,
-    reactjs_component_from_url,
 )
 
 __all__ = [
@@ -13,7 +10,4 @@ __all__ = [
     "module_from_file",
     "module_from_string",
     "module_from_url",
-    "reactjs_component_from_file",
-    "reactjs_component_from_string",
-    "reactjs_component_from_url",
 ]

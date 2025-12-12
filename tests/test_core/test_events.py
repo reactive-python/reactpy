@@ -86,7 +86,7 @@ async def test_to_event_handler_function():
 
 
 async def test_merge_event_handler_empty_list():
-    with pytest.raises(ValueError, match="No event handlers to merge"):
+    with pytest.raises(ValueError, match=r"No event handlers to merge"):
         merge_event_handlers([])
 
 
@@ -102,7 +102,7 @@ async def test_merge_event_handlers_raises_on_mismatch(kwargs_1, kwargs_2):
     def func(data):
         return None
 
-    with pytest.raises(ValueError, match="Cannot merge handlers"):
+    with pytest.raises(ValueError, match=r"Cannot merge handlers"):
         merge_event_handlers(
             [
                 EventHandler(func, **kwargs_1),
@@ -127,7 +127,7 @@ async def test_merge_event_handlers():
 
 
 def test_merge_event_handler_funcs_empty_list():
-    with pytest.raises(ValueError, match="No event handler functions to merge"):
+    with pytest.raises(ValueError, match=r"No event handler functions to merge"):
         merge_event_handler_funcs([])
 
 

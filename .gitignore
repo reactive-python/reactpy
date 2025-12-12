@@ -1,5 +1,5 @@
 # --- Build Artifacts ---
-src/reactpy/static/index.js*
+src/reactpy/static/*.js*
 src/reactpy/static/morphdom/
 src/reactpy/static/pyscript/
 

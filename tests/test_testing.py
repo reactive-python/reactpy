@@ -11,7 +11,7 @@ from tests.sample import SampleApp
 
 
 def test_assert_reactpy_logged_does_not_suppress_errors():
-    with pytest.raises(RuntimeError, match="expected error"):
+    with pytest.raises(RuntimeError, match=r"expected error"):
         with testing.assert_reactpy_did_log():
             msg = "expected error"
             raise RuntimeError(msg)

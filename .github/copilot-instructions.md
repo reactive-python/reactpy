@@ -8,8 +8,6 @@ Always reference these instructions first and fallback to search or bash command
 
 **BUG INVESTIGATION**: When investigating whether a bug was already resolved in a previous version, always prioritize searching through `docs/source/about/changelog.rst` first before using Git history. Only search through Git history when no relevant changelog entries are found.
 
-**CODE RETRIEVAL**: Always prioritize using Serena tools (e.g., `mcp_oraios_serena_find_symbol`, `mcp_oraios_serena_search_for_pattern`) for code retrieval and analysis over standard file reading or searching tools.
-
 ## Working Effectively
 
 ### Bootstrap, Build, and Test the Repository
@@ -56,7 +54,6 @@ pip install flask sanic tornado
 -   `hatch test --cover` -- run tests with coverage reporting (used in CI)
 -   `hatch test -k test_name` -- run specific tests
 -   `hatch test tests/test_config.py` -- run specific test files
--   Note: Some tests require Playwright browser automation and may fail in headless environments
 
 **Run Python Linting and Formatting:**
 
@@ -70,7 +67,7 @@ pip install flask sanic tornado
 
 -   `hatch run javascript:check` -- Lint and type-check JavaScript (10 seconds). NEVER CANCEL. Set timeout to 30+ minutes.
 -   `hatch run javascript:fix` -- Format JavaScript code
--   `hatch run javascript:test` -- Run JavaScript tests (note: may fail in headless environments due to DOM dependencies)
+-   `hatch run javascript:test` -- Run JavaScript tests
 
 **Interactive Development Shell:**
 
@@ -325,13 +322,6 @@ Follow this step-by-step process for effective development:
 -   Network timeouts during pip install are common in CI environments
 -   Missing dependencies error: Install ASGI dependencies with `pip install orjson asgiref asgi-tools servestatic`
 
-### Test Issues:
-
--   Playwright tests may fail in headless environments -- this is expected
--   Tests requiring browser DOM should be marked appropriately
--   Use `hatch test -k "not playwright"` to skip browser-dependent tests
--   JavaScript tests may fail with "window is not defined" in Node.js environment -- this is expected
-
 ### Import Issues:
 
 -   ReactPy must be installed or src/ must be in Python path
@@ -397,7 +387,6 @@ Always ensure your changes pass local validation before pushing, as the CI pipel
 -   **All builds and tests run quickly** - if something takes more than 60 seconds, investigate the issue
 -   **Hatch environments provide full isolation** - no need to manage virtual environments manually
 -   **JavaScript packages are bundled into Python** - the build process combines JS and Python into a single distribution
--   **Browser automation tests may fail in headless environments** - this is expected behavior for Playwright tests
 -   **Documentation updates are required** when making changes to Python source code
 -   **Always update this file** when making changes to the development workflow, build process, or repository structure
 -   **All tests must always pass** - failures are never expected or allowed in a healthy development environment

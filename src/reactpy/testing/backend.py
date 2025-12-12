@@ -22,7 +22,7 @@ from reactpy.testing.logs import (
     list_logged_exceptions,
 )
 from reactpy.testing.utils import find_available_port
-from reactpy.types import ComponentConstructor, ReactPyConfig
+from reactpy.types import ComponentConstructor
 from reactpy.utils import Ref
 
 
@@ -48,7 +48,7 @@ class BackendFixture:
         host: str = "127.0.0.1",
         port: int | None = None,
         timeout: float | None = None,
-        reactpy_config: ReactPyConfig | None = None,
+        **reactpy_config: Any,
     ) -> None:
         self.host = host
         self.port = port or find_available_port(host)
@@ -62,12 +62,12 @@ class BackendFixture:
             self._app = ReactPyMiddleware(
                 app,
                 root_components=["reactpy.testing.backend.root_hotswap_component"],
-                **(reactpy_config or {}),
+                **reactpy_config,
             )
         else:
             self._app = ReactPy(
                 root_hotswap_component,
-                **(reactpy_config or {}),
+                **reactpy_config,
             )
         self.webserver = uvicorn.Server(
             uvicorn.Config(

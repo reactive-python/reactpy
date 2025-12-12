@@ -1,11 +1,14 @@
+# THESE ARE TESTS FOR THE LEGACY API. SEE tests/test_reactjs/* FOR THE NEW API TESTS.
+# THIS MODULE WILL BE MIGRATED OR DELETED ONCE THE LEGACY API IS REMOVED.
 from pathlib import Path
 
 import pytest
 from servestatic import ServeStaticASGI
 
 import reactpy
-import reactpy.web.module
+import reactpy.reactjs
 from reactpy.executors.asgi.standalone import ReactPy
+from reactpy.reactjs import NAME_SOURCE, JavaScriptModule
 from reactpy.testing import (
     BackendFixture,
     DisplayFixture,
@@ -14,14 +17,13 @@ from reactpy.testing import (
     poll,
 )
 from reactpy.types import InlineJavaScript
-from reactpy.web.module import NAME_SOURCE, WebModule
 
 JS_FIXTURES_DIR = Path(__file__).parent / "js_fixtures"
 
 
 async def test_that_js_module_unmount_is_called(display: DisplayFixture):
-    SomeComponent = reactpy.web.module._vdom_from_web_module(
-        reactpy.web.module._module_from_file(
+    SomeComponent = reactpy.reactjs.module_to_vdom(
+        reactpy.reactjs.file_to_module(
             "set-flag-when-unmount-is-called",
             JS_FIXTURES_DIR / "set-flag-when-unmount-is-called.js",
         ),
@@ -53,8 +55,8 @@ async def test_that_js_module_unmount_is_called(display: DisplayFixture):
 
 
 async def test_module_from_url(browser):
-    SimpleButton = reactpy.web.module._vdom_from_web_module(
-        reactpy.web.module._module_from_url(
+    SimpleButton = reactpy.reactjs.module_to_vdom(
+        reactpy.reactjs.url_to_module(
             "/static/simple-button.js", resolve_imports=False
         ),
         "SimpleButton",
@@ -75,8 +77,8 @@ async def test_module_from_url(browser):
 
 
 async def test_module_from_file(display: DisplayFixture):
-    SimpleButton = reactpy.web.module._vdom_from_web_module(
-        reactpy.web.module._module_from_file(
+    SimpleButton = reactpy.reactjs.module_to_vdom(
+        reactpy.reactjs.file_to_module(
             "simple-button", JS_FIXTURES_DIR / "simple-button.js"
         ),
         "SimpleButton",
@@ -100,31 +102,31 @@ async def test_module_from_file(display: DisplayFixture):
 def test_module_from_file_source_conflict(tmp_path):
     first_file = tmp_path / "first.js"
 
-    with pytest.raises(FileNotFoundError, match="does not exist"):
-        reactpy.web.module._module_from_file("temp", first_file)
+    with pytest.raises(FileNotFoundError, match=r"does not exist"):
+        reactpy.reactjs.file_to_module("temp", first_file)
 
     first_file.touch()
 
-    reactpy.web.module._module_from_file("temp", first_file)
+    reactpy.reactjs.file_to_module("temp", first_file)
 
     second_file = tmp_path / "second.js"
     second_file.touch()
 
     # ok, same content
-    reactpy.web.module._module_from_file("temp", second_file)
+    reactpy.reactjs.file_to_module("temp", second_file)
 
     third_file = tmp_path / "third.js"
     third_file.write_text("something-different")
 
     with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
-        reactpy.web.module._module_from_file("temp", third_file)
+        reactpy.reactjs.file_to_module("temp", third_file)
 
 
 def test_web_module_from_file_symlink(tmp_path):
     file = tmp_path / "temp.js"
     file.touch()
 
-    module = reactpy.web.module._module_from_file("temp", file, symlink=True)
+    module = reactpy.reactjs.file_to_module("temp", file, symlink=True)
 
     assert module.file.resolve().read_text() == ""
 
@@ -137,44 +139,44 @@ def test_web_module_from_file_symlink_twice(tmp_path):
     file_1 = tmp_path / "temp_1.js"
     file_1.touch()
 
-    reactpy.web.module._module_from_file("temp", file_1, symlink=True)
+    reactpy.reactjs.file_to_module("temp", file_1, symlink=True)
 
     with assert_reactpy_did_not_log(r"Existing web module .* will be replaced with"):
-        reactpy.web.module._module_from_file("temp", file_1, symlink=True)
+        reactpy.reactjs.file_to_module("temp", file_1, symlink=True)
 
     file_2 = tmp_path / "temp_2.js"
     file_2.write_text("something")
 
     with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
-        reactpy.web.module._module_from_file("temp", file_2, symlink=True)
+        reactpy.reactjs.file_to_module("temp", file_2, symlink=True)
 
 
 def test_web_module_from_file_replace_existing(tmp_path):
     file1 = tmp_path / "temp1.js"
     file1.touch()
 
-    reactpy.web.module._module_from_file("temp", file1)
+    reactpy.reactjs.file_to_module("temp", file1)
 
     file2 = tmp_path / "temp2.js"
     file2.write_text("something")
 
     with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
-        reactpy.web.module._module_from_file("temp", file2)
+        reactpy.reactjs.file_to_module("temp", file2)
 
 
 def test_module_missing_exports():
-    module = WebModule("test", NAME_SOURCE, None, {"a", "b", "c"}, None, False)
+    module = JavaScriptModule("test", NAME_SOURCE, None, {"a", "b", "c"}, None, False)
 
-    with pytest.raises(ValueError, match="does not export 'x'"):
-        reactpy.web.module._vdom_from_web_module(module, "x")
+    with pytest.raises(ValueError, match=r"does not contain 'x'"):
+        reactpy.reactjs.module_to_vdom(module, "x")
 
-    with pytest.raises(ValueError, match=r"does not export \['x', 'y'\]"):
-        reactpy.web.module._vdom_from_web_module(module, ["x", "y"])
+    with pytest.raises(ValueError, match=r"does not contain \['x', 'y'\]"):
+        reactpy.reactjs.module_to_vdom(module, ["x", "y"])
 
 
 async def test_module_exports_multiple_components(display: DisplayFixture):
-    Header1, Header2 = reactpy.web.module._vdom_from_web_module(
-        reactpy.web.module._module_from_file(
+    Header1, Header2 = reactpy.reactjs.module_to_vdom(
+        reactpy.reactjs.file_to_module(
             "exports-two-components", JS_FIXTURES_DIR / "exports-two-components.js"
         ),
         ["Header1", "Header2"],
@@ -190,12 +192,10 @@ async def test_module_exports_multiple_components(display: DisplayFixture):
 
 
 async def test_imported_components_can_render_children(display: DisplayFixture):
-    module = reactpy.web.module._module_from_file(
+    module = reactpy.reactjs.file_to_module(
         "component-can-have-child", JS_FIXTURES_DIR / "component-can-have-child.js"
     )
-    Parent, Child = reactpy.web.module._vdom_from_web_module(
-        module, ["Parent", "Child"]
-    )
+    Parent, Child = reactpy.reactjs.module_to_vdom(module, ["Parent", "Child"])
 
     await display.show(
         lambda: Parent(
@@ -224,10 +224,10 @@ async def test_keys_properly_propagated(display: DisplayFixture):
     This property is required for certain JS components, such as the GridLayout from
     react-grid-layout.
     """
-    module = reactpy.web.module._module_from_file(
+    module = reactpy.reactjs.file_to_module(
         "keys-properly-propagated", JS_FIXTURES_DIR / "keys-properly-propagated.js"
     )
-    GridLayout = reactpy.web.module._vdom_from_web_module(module, "GridLayout")
+    GridLayout = reactpy.reactjs.module_to_vdom(module, "GridLayout")
 
     await display.show(
         lambda: GridLayout(
@@ -278,14 +278,12 @@ async def test_keys_properly_propagated(display: DisplayFixture):
 
 
 async def test_subcomponent_notation_as_str_attrs(display: DisplayFixture):
-    module = reactpy.web.module._module_from_file(
+    module = reactpy.reactjs.file_to_module(
         "subcomponent-notation",
         JS_FIXTURES_DIR / "subcomponent-notation.js",
     )
-    InputGroup, InputGroupText, FormControl, FormLabel = (
-        reactpy.web.module._vdom_from_web_module(
-            module, ["InputGroup", "InputGroup.Text", "Form.Control", "Form.Label"]
-        )
+    InputGroup, InputGroupText, FormControl, FormLabel = reactpy.reactjs.module_to_vdom(
+        module, ["InputGroup", "InputGroup.Text", "Form.Control", "Form.Label"]
     )
 
     content = reactpy.html.div(
@@ -340,13 +338,11 @@ async def test_subcomponent_notation_as_str_attrs(display: DisplayFixture):
 
 
 async def test_subcomponent_notation_as_obj_attrs(display: DisplayFixture):
-    module = reactpy.web.module._module_from_file(
+    module = reactpy.reactjs.file_to_module(
         "subcomponent-notation",
         JS_FIXTURES_DIR / "subcomponent-notation.js",
     )
-    InputGroup, Form = reactpy.web.module._vdom_from_web_module(
-        module, ["InputGroup", "Form"]
-    )
+    InputGroup, Form = reactpy.reactjs.module_to_vdom(module, ["InputGroup", "Form"])
 
     content = reactpy.html.div(
         {"id": "the-parent"},
@@ -400,10 +396,10 @@ async def test_subcomponent_notation_as_obj_attrs(display: DisplayFixture):
 
 
 async def test_callable_prop_with_javacript(display: DisplayFixture):
-    module = reactpy.web.module._module_from_file(
+    module = reactpy.reactjs.file_to_module(
         "callable-prop", JS_FIXTURES_DIR / "callable-prop.js"
     )
-    Component = reactpy.web.module._vdom_from_web_module(module, "Component")
+    Component = reactpy.reactjs.module_to_vdom(module, "Component")
 
     @reactpy.component
     def App():
@@ -420,19 +416,19 @@ async def test_callable_prop_with_javacript(display: DisplayFixture):
     assert await my_div.inner_text() == "PREFIX TEXT: TEST 123"
 
 
-def test_reactjs_component_from_string():
-    reactpy.web.reactjs_component_from_string(
+def test_component_from_string():
+    reactpy.reactjs.component_from_string(
         "old", "Component", resolve_imports=False, name="temp"
     )
-    reactpy.web.module._STRING_WEB_MODULE_CACHE.clear()
+    reactpy.reactjs._STRING_JS_MODULE_CACHE.clear()
     with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
-        reactpy.web.reactjs_component_from_string(
+        reactpy.reactjs.component_from_string(
             "new", "Component", resolve_imports=False, name="temp"
         )
 
 
-async def test_reactjs_component_from_url(browser):
-    SimpleButton = reactpy.web.reactjs_component_from_url(
+async def test_component_from_url(browser):
+    SimpleButton = reactpy.reactjs.component_from_url(
         "/static/simple-button.js", "SimpleButton", resolve_imports=False
     )
 
@@ -450,8 +446,8 @@ async def test_reactjs_component_from_url(browser):
             await display.page.wait_for_selector("#my-button")
 
 
-async def test_reactjs_component_from_file(display: DisplayFixture):
-    SimpleButton = reactpy.web.reactjs_component_from_file(
+async def test_component_from_file(display: DisplayFixture):
+    SimpleButton = reactpy.reactjs.component_from_file(
         JS_FIXTURES_DIR / "simple-button.js", "SimpleButton", name="simple-button"
     )
 
@@ -470,70 +466,68 @@ async def test_reactjs_component_from_file(display: DisplayFixture):
     await poll(lambda: is_clicked.current).until_is(True)
 
 
-def test_reactjs_component_from_url_caching():
+def test_component_from_url_caching():
     url = "https://example.com/module.js"
-    reactpy.web.module._URL_WEB_MODULE_CACHE.clear()
+    reactpy.reactjs._URL_JS_MODULE_CACHE.clear()
 
     # First import
-    reactpy.web.reactjs_component_from_url(url, "Component", resolve_imports=False)
+    reactpy.reactjs.component_from_url(url, "Component", resolve_imports=False)
     # Find the key that contains the 'url' substring
-    key = next(x for x in reactpy.web.module._URL_WEB_MODULE_CACHE.keys() if url in x)
-    module1 = reactpy.web.module._URL_WEB_MODULE_CACHE[key]
+    key = next(x for x in reactpy.reactjs._URL_JS_MODULE_CACHE.keys() if url in x)
+    module1 = reactpy.reactjs._URL_JS_MODULE_CACHE[key]
     assert module1
-    initial_length = len(reactpy.web.module._URL_WEB_MODULE_CACHE)
+    initial_length = len(reactpy.reactjs._URL_JS_MODULE_CACHE)
 
     # Second import
-    reactpy.web.reactjs_component_from_url(url, "Component", resolve_imports=False)
-    assert len(reactpy.web.module._URL_WEB_MODULE_CACHE) == initial_length
+    reactpy.reactjs.component_from_url(url, "Component", resolve_imports=False)
+    assert len(reactpy.reactjs._URL_JS_MODULE_CACHE) == initial_length
 
 
-def test_reactjs_component_from_file_caching(tmp_path):
+def test_component_from_file_caching(tmp_path):
     file = tmp_path / "test.js"
     file.write_text("export function Component() {}")
     name = "test-file-module"
-    reactpy.web.module._FILE_WEB_MODULE_CACHE.clear()
+    reactpy.reactjs._FILE_JS_MODULE_CACHE.clear()
 
-    reactpy.web.reactjs_component_from_file(file, "Component", name=name)
-    key = next(x for x in reactpy.web.module._FILE_WEB_MODULE_CACHE.keys() if name in x)
-    module1 = reactpy.web.module._FILE_WEB_MODULE_CACHE[key]
+    reactpy.reactjs.component_from_file(file, "Component", name=name)
+    key = next(x for x in reactpy.reactjs._FILE_JS_MODULE_CACHE.keys() if name in x)
+    module1 = reactpy.reactjs._FILE_JS_MODULE_CACHE[key]
     assert module1
-    initial_length = len(reactpy.web.module._FILE_WEB_MODULE_CACHE)
+    initial_length = len(reactpy.reactjs._FILE_JS_MODULE_CACHE)
 
-    reactpy.web.reactjs_component_from_file(file, "Component", name=name)
-    assert len(reactpy.web.module._FILE_WEB_MODULE_CACHE) == initial_length
+    reactpy.reactjs.component_from_file(file, "Component", name=name)
+    assert len(reactpy.reactjs._FILE_JS_MODULE_CACHE) == initial_length
 
 
-def test_reactjs_component_from_string_caching():
+def test_component_from_string_caching():
     name = "test-string-module"
     content = "export function Component() {}"
-    reactpy.web.module._STRING_WEB_MODULE_CACHE.clear()
+    reactpy.reactjs._STRING_JS_MODULE_CACHE.clear()
 
-    reactpy.web.reactjs_component_from_string(content, "Component", name=name)
-    key = next(
-        x for x in reactpy.web.module._STRING_WEB_MODULE_CACHE.keys() if name in x
-    )
-    module1 = reactpy.web.module._STRING_WEB_MODULE_CACHE[key]
+    reactpy.reactjs.component_from_string(content, "Component", name=name)
+    key = next(x for x in reactpy.reactjs._STRING_JS_MODULE_CACHE.keys() if name in x)
+    module1 = reactpy.reactjs._STRING_JS_MODULE_CACHE[key]
     assert module1
-    initial_length = len(reactpy.web.module._STRING_WEB_MODULE_CACHE)
+    initial_length = len(reactpy.reactjs._STRING_JS_MODULE_CACHE)
 
-    reactpy.web.reactjs_component_from_string(content, "Component", name=name)
-    assert len(reactpy.web.module._STRING_WEB_MODULE_CACHE) == initial_length
+    reactpy.reactjs.component_from_string(content, "Component", name=name)
+    assert len(reactpy.reactjs._STRING_JS_MODULE_CACHE) == initial_length
 
 
-def test_reactjs_component_from_string_with_no_name():
+def test_component_from_string_with_no_name():
     content = "export function Component() {}"
-    reactpy.web.module._STRING_WEB_MODULE_CACHE.clear()
+    reactpy.reactjs._STRING_JS_MODULE_CACHE.clear()
 
-    reactpy.web.reactjs_component_from_string(content, "Component")
-    initial_length = len(reactpy.web.module._STRING_WEB_MODULE_CACHE)
+    reactpy.reactjs.component_from_string(content, "Component")
+    initial_length = len(reactpy.reactjs._STRING_JS_MODULE_CACHE)
 
-    reactpy.web.reactjs_component_from_string(content, "Component")
-    assert len(reactpy.web.module._STRING_WEB_MODULE_CACHE) == initial_length
+    reactpy.reactjs.component_from_string(content, "Component")
+    assert len(reactpy.reactjs._STRING_JS_MODULE_CACHE) == initial_length
 
 
 async def test_module_without_bind(display: DisplayFixture):
-    GenericComponent = reactpy.web.module._vdom_from_web_module(
-        reactpy.web.module._module_from_file(
+    GenericComponent = reactpy.reactjs.module_to_vdom(
+        reactpy.reactjs.file_to_module(
             "generic-module", JS_FIXTURES_DIR / "generic-module.js"
         ),
         "GenericComponent",

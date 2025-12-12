@@ -17,7 +17,7 @@ async def test_automatic_reconnect(
     @reactpy.component
     def SomeComponent():
         count, incr_count = use_counter(0)
-        return reactpy.html.fragment(
+        return reactpy.html(
             reactpy.html.p({"data-count": count, "id": "count"}, "count", count),
             reactpy.html.button(
                 {"onClick": lambda e: incr_count(), "id": "incr"}, "incr"
@@ -111,7 +111,7 @@ async def test_slow_server_response_on_input_change(display: DisplayFixture):
 
     @reactpy.component
     def SomeComponent():
-        value, set_value = reactpy.hooks.use_state("")
+        _value, set_value = reactpy.hooks.use_state("")
 
         async def handle_change(event):
             await asyncio.sleep(delay)

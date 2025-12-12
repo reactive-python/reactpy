@@ -1,4 +1,4 @@
-from reactpy import config, logging, types, web, widgets
+from reactpy import config, logging, reactjs, types, web, widgets
 from reactpy._html import html
 from reactpy.core import hooks
 from reactpy.core.component import component
@@ -36,6 +36,7 @@ __all__ = [
     "html",
     "logging",
     "pyscript_component",
+    "reactjs",
     "reactpy_to_string",
     "string_to_reactpy",
     "types",
