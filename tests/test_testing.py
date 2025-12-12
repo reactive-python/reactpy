@@ -1,11 +1,12 @@
 import logging
 import os
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from reactpy import Ref, component, html, testing
 from reactpy.logging import ROOT_LOGGER
-from reactpy.testing.backend import _hotswap
+from reactpy.testing.backend import BackendFixture, _hotswap
 from reactpy.testing.display import DisplayFixture
 from tests.sample import SampleApp
 
@@ -205,3 +206,80 @@ async def test_hotswap_update_on_change(display: DisplayFixture):
     await display.page.wait_for_selector("#hotswap-2")
     await client_incr_button.click()
     await display.page.wait_for_selector("#hotswap-3")
+
+
+@pytest.mark.asyncio
+async def test_backend_server_failure():
+    # We need to mock uvicorn.Server to fail starting
+    with patch("uvicorn.Server") as mock_server_cls:
+        mock_server = mock_server_cls.return_value
+        mock_server.started = False
+        mock_server.servers = []
+        mock_server.config.get_loop_factory = MagicMock()
+
+        # Mock serve to just return (or sleep briefly then return)
+        mock_server.serve = AsyncMock(return_value=None)
+
+        backend = BackendFixture()
+
+        # We need to speed up the loop
+        with patch("asyncio.sleep", new_callable=AsyncMock):
+            with pytest.raises(RuntimeError, match="Server failed to start"):
+                await backend.__aenter__()
+
+
+@pytest.mark.asyncio
+async def test_display_fixture_headless_logic():
+    # Mock async_playwright to avoid launching real browser
+    with patch("reactpy.testing.display.async_playwright") as mock_pw:
+        mock_context_manager = mock_pw.return_value
+        mock_playwright_instance = AsyncMock()
+        mock_context_manager.__aenter__.return_value = mock_playwright_instance
+
+        mock_browser = AsyncMock()
+        mock_playwright_instance.chromium.launch.return_value = mock_browser
+
+        mock_page = AsyncMock()
+        # Configure synchronous methods on page
+        mock_page.set_default_timeout = MagicMock()
+        mock_page.on = MagicMock()
+
+        mock_browser.new_page.return_value = mock_page
+
+        # Case: headless=False, PLAYWRIGHT_HEADLESS='1'
+        with patch.dict(os.environ, {"PLAYWRIGHT_HEADLESS": "1"}):
+            async with DisplayFixture(headless=False):
+                pass
+            # Check that launch was called with headless=True
+            mock_playwright_instance.chromium.launch.assert_called_with(headless=True)
+
+
+@pytest.mark.asyncio
+async def test_display_fixture_internal_backend():
+    # This covers line 87: await self.backend_exit_stack.aclose()
+    # when backend is internal (default)
+
+    with patch("reactpy.testing.display.async_playwright") as mock_pw:
+        mock_context_manager = mock_pw.return_value
+        mock_playwright_instance = AsyncMock()
+        mock_context_manager.__aenter__.return_value = mock_playwright_instance
+
+        mock_browser = AsyncMock()
+        mock_playwright_instance.chromium.launch.return_value = mock_browser
+
+        mock_page = AsyncMock()
+        mock_page.set_default_timeout = MagicMock()
+        mock_page.on = MagicMock()
+        mock_browser.new_page.return_value = mock_page
+
+        # We also need to mock BackendFixture to avoid starting real server
+        with patch("reactpy.testing.display.BackendFixture") as mock_backend_cls:
+            mock_backend = AsyncMock()
+            mock_backend.mount = MagicMock()  # mount is synchronous
+            mock_backend_cls.return_value = mock_backend
+
+            async with DisplayFixture() as display:
+                assert not display.backend_is_external
+
+            # Verify backend exit stack closed (implied if no error and backend.__aexit__ called)
+            mock_backend.__aexit__.assert_called()

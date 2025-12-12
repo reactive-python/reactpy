@@ -3,8 +3,6 @@ from __future__ import annotations
 import contextlib
 import os
 import subprocess
-import sys
-from time import sleep
 
 import pytest
 from _pytest.config.argparsing import Parser

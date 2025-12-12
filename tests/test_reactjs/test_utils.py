@@ -1,14 +1,17 @@
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 import responses
 
 from reactpy.reactjs.utils import (
+    copy_file,
     module_name_suffix,
     normalize_url_path,
     resolve_from_module_file,
     resolve_from_module_source,
     resolve_from_module_url,
+    simple_file_lock,
 )
 from reactpy.testing import assert_reactpy_did_log
 
@@ -163,3 +166,35 @@ def test_resolve_relative_url():
         == "https://some.url/path/to/another.js"
     )
     assert normalize_url_path("/some/path", "to/another.js") == "to/another.js"
+
+
+def test_copy_file_fallback(tmp_path):
+    source = tmp_path / "source.txt"
+    source.write_text("content")
+    target = tmp_path / "target.txt"
+
+    path_cls = type(target)
+
+    with patch("shutil.copy"):
+        with patch.object(
+            path_cls, "replace", side_effect=[OSError, OSError]
+        ) as mock_replace:
+            with patch.object(path_cls, "rename") as mock_rename:
+                with patch.object(path_cls, "exists", return_value=True):
+                    with patch.object(path_cls, "unlink") as mock_unlink:
+                        with patch("time.sleep"):  # Speed up test
+                            copy_file(target, source, symlink=False)
+
+                        assert mock_replace.call_count == 2
+                        mock_unlink.assert_called_once()
+                        mock_rename.assert_called_once()
+
+
+def test_simple_file_lock_timeout(tmp_path):
+    lock_file = tmp_path / "lock"
+
+    with patch("os.open", side_effect=OSError):
+        with patch("time.sleep"):  # Speed up test
+            with pytest.raises(TimeoutError, match="Could not acquire lock"):
+                with simple_file_lock(lock_file, timeout=0.1):
+                    pass
