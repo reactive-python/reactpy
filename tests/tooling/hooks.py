@@ -10,7 +10,6 @@ def use_toggle(init=False):
     return state, lambda: set_state(lambda old: not old)
 
 
-# TODO: Remove this
 def use_counter(initial_value):
     state, set_state = use_state(initial_value)
     return state, lambda: set_state(lambda old: old + 1)
