@@ -5,13 +5,11 @@ import os
 import subprocess
 
 import pytest
-from _pytest.config import Config
 from _pytest.config.argparsing import Parser
 
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
     REACTPY_DEBUG,
-    REACTPY_TESTS_DEFAULT_TIMEOUT,
 )
 from reactpy.testing import (
     BackendFixture,
@@ -54,30 +52,20 @@ def rebuild():
     subprocess.run(["hatch", "build", "-t", "wheel"], check=True, env=env)  # noqa: S607
 
 
-@pytest.fixture
-async def display(server, page):
-    async with DisplayFixture(server, page) as display:
+@pytest.fixture(scope="session")
+async def display(server, browser):
+    async with DisplayFixture(backend=server, browser=browser) as display:
         yield display
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 async def server():
     async with BackendFixture() as server:
         yield server
 
 
-@pytest.fixture
-async def page(browser):
-    pg = await browser.new_page()
-    pg.set_default_timeout(REACTPY_TESTS_DEFAULT_TIMEOUT.current * 1000)
-    try:
-        yield pg
-    finally:
-        await pg.close()
-
-
-@pytest.fixture
-async def browser(pytestconfig: Config):
+@pytest.fixture(scope="session")
+async def browser(pytestconfig: pytest.Config):
     from playwright.async_api import async_playwright
 
     async with async_playwright() as pw:

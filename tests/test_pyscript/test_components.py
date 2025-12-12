@@ -9,13 +9,13 @@ from reactpy.testing import BackendFixture, DisplayFixture
 from reactpy.testing.backend import root_hotswap_component
 
 
-@pytest.fixture()
-async def display(page):
+@pytest.fixture(scope="module")
+async def display(browser):
     """Override for the display fixture that uses ReactPyMiddleware."""
     app = ReactPy(root_hotswap_component, pyscript_setup=True)
 
     async with BackendFixture(app) as server:
-        async with DisplayFixture(backend=server, driver=page) as new_display:
+        async with DisplayFixture(backend=server, browser=browser) as new_display:
             yield new_display
 
 

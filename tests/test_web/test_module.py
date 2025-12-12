@@ -70,7 +70,7 @@ async def test_module_from_url(browser):
     app = ServeStaticASGI(app, JS_FIXTURES_DIR, "/static/")
 
     async with BackendFixture(app) as server:
-        async with DisplayFixture(server, browser) as display:
+        async with DisplayFixture(server, browser=browser) as display:
             await display.show(ShowSimpleButton)
 
             await display.page.wait_for_selector("#my-button")
@@ -440,7 +440,7 @@ async def test_component_from_url(browser):
     app = ServeStaticASGI(app, JS_FIXTURES_DIR, "/static/")
 
     async with BackendFixture(app) as server:
-        async with DisplayFixture(server, browser) as display:
+        async with DisplayFixture(server, browser=browser) as display:
             await display.show(ShowSimpleButton)
 
             await display.page.wait_for_selector("#my-button")
