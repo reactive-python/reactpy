@@ -1,6 +1,9 @@
-import React from "https://esm.sh/react@19.0"
-import ReactDOM from "https://esm.sh/react-dom@19.0/client"
-import {InputGroup, Form} from "https://esm.sh/react-bootstrap@2.10.2?deps=react@19.0,react-dom@19.0,react-is@19.0&exports=InputGroup,Form";
+import React from "https://esm.sh/v135/react@19.0"
+import ReactDOM from "https://esm.sh/v135/react-dom@19.0/client"
+// Explicitly import react-is to ensure it's loaded before react-bootstrap
+// This prevents race conditions where react-bootstrap tries to use React context before deps are ready
+import * as ReactIs from "https://esm.sh/v135/react-is@19.0"
+import {InputGroup, Form} from "https://esm.sh/v135/react-bootstrap@2.10.2?deps=react@19.0,react-dom@19.0,react-is@19.0&exports=InputGroup,Form";
 export {InputGroup, Form};
 
 export function bind(node, config) {
