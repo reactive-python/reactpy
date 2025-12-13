@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "hatchling.build"
-requires = ["hatchling", "hatch-build-scripts"]
+requires = ["hatchling", "hatch-build-scripts", "hatch"]
 
 ##############################
 # >>> Hatch Build Config <<< #
