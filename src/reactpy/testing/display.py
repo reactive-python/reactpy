@@ -25,6 +25,7 @@ class DisplayFixture:
         backend: BackendFixture | None = None,
         browser: Browser | None = None,
         headless: bool = False,
+        timeout: float | None = None,
     ) -> None:
         if backend:
             self.backend_is_external = True
@@ -34,6 +35,9 @@ class DisplayFixture:
             self.browser_is_external = True
             self.browser = browser
 
+        self.timeout = (
+            timeout if timeout is not None else REACTPY_TESTS_DEFAULT_TIMEOUT.current
+        )
         self.headless = headless
 
     async def show(
@@ -69,7 +73,7 @@ class DisplayFixture:
     async def configure_page(self) -> None:
         if getattr(self, "page", None) is None:
             self.page = await self.browser.new_page()
-            self.page.set_default_timeout(REACTPY_TESTS_DEFAULT_TIMEOUT.current * 1000)
+            self.page.set_default_timeout(self.timeout * 1000)
             self.page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))  # noqa: T201
             self.page.on("pageerror", lambda exc: print(f"BROWSER ERROR: {exc}"))  # noqa: T201
 

@@ -11,7 +11,6 @@ from urllib.parse import urlencode, urlunparse
 
 import uvicorn
 
-from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.core.component import component
 from reactpy.core.hooks import use_callback, use_effect, use_state
 from reactpy.executors.asgi.middleware import ReactPyMiddleware
@@ -47,15 +46,11 @@ class BackendFixture:
         app: AsgiApp | None = None,
         host: str = "127.0.0.1",
         port: int | None = None,
-        timeout: float | None = None,
         **reactpy_config: Any,
     ) -> None:
         self.host = host
         self.port = port or 0
         self.mount = mount_to_hotswap
-        self.timeout = (
-            REACTPY_TESTS_DEFAULT_TIMEOUT.current if timeout is None else timeout
-        )
         if isinstance(app, (ReactPyMiddleware, ReactPy)):
             self._app = app
         elif app:
