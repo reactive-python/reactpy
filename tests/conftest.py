@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 import pytest
 from _pytest.config.argparsing import Parser
 
@@ -14,7 +12,7 @@ from reactpy.testing import (
     DisplayFixture,
     capture_reactpy_logs,
 )
-from reactpy.testing.common import GITHUB_ACTIONS
+from reactpy.testing.display import _playwright_visible
 
 REACTPY_ASYNC_RENDERING.set_current(True)
 REACTPY_DEBUG.set_current(True)
@@ -22,10 +20,10 @@ REACTPY_DEBUG.set_current(True)
 
 def pytest_addoption(parser: Parser) -> None:
     parser.addoption(
-        "--headless",
-        dest="headless",
+        "--visible",
+        dest="visible",
         action="store_true",
-        help="Don't open a browser window when running web-based tests",
+        help="Open a browser window when running web-based tests",
     )
 
 
@@ -46,7 +44,10 @@ async def browser(pytestconfig: pytest.Config):
     from playwright.async_api import async_playwright
 
     async with async_playwright() as pw:
-        yield await pw.chromium.launch(headless=_headless_environ(pytestconfig))
+        async with await pw.chromium.launch(
+            headless=not _playwright_visible(pytestconfig)
+        ) as browser:
+            yield browser
 
 
 @pytest.fixture(autouse=True)
@@ -59,14 +60,3 @@ def assert_no_logged_exceptions():
                     raise r.exc_info[1]
         finally:
             records.clear()
-
-
-def _headless_environ(pytestconfig: pytest.Config):
-    if (
-        pytestconfig.getoption("headless")
-        or os.environ.get("PLAYWRIGHT_HEADLESS") == "1"
-        or GITHUB_ACTIONS
-    ):
-        os.environ["PLAYWRIGHT_HEADLESS"] = "1"
-        return True
-    return False

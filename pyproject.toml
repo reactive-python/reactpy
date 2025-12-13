@@ -171,6 +171,7 @@ extra-dependencies = [
   "types-requests",
   "types-lxml",
   "jsonpointer",
+  "pytest",
 ]
 
 [tool.hatch.envs.python.scripts]

@@ -237,20 +237,28 @@ async def test_display_fixture_headless_logic():
         mock_context_manager.__aenter__.return_value = mock_playwright_instance
 
         mock_browser = AsyncMock()
+        mock_browser.__aenter__ = AsyncMock(return_value=mock_browser)
         mock_playwright_instance.chromium.launch.return_value = mock_browser
 
         mock_page = AsyncMock()
         # Configure synchronous methods on page
         mock_page.set_default_timeout = MagicMock()
+        mock_page.set_default_navigation_timeout = MagicMock()
         mock_page.on = MagicMock()
+        mock_page.__aenter__ = AsyncMock(return_value=mock_page)
 
         mock_browser.new_page.return_value = mock_page
 
-        # Case: headless=False, PLAYWRIGHT_HEADLESS='1'
-        with patch.dict(os.environ, {"PLAYWRIGHT_HEADLESS": "1"}):
-            async with DisplayFixture(headless=False):
+        # Case: headless=False, PLAYWRIGHT_VISIBLE='1'
+        with patch.dict(os.environ, {"PLAYWRIGHT_VISIBLE": "1"}):
+            async with DisplayFixture():
                 pass
-            # Check that launch was called with headless=True
+            mock_playwright_instance.chromium.launch.assert_called_with(headless=False)
+
+        # Case: headless=True, PLAYWRIGHT_VISIBLE='0'
+        with patch.dict(os.environ, {"PLAYWRIGHT_VISIBLE": "0"}):
+            async with DisplayFixture():
+                pass
             mock_playwright_instance.chromium.launch.assert_called_with(headless=True)
 
 
@@ -265,11 +273,14 @@ async def test_display_fixture_internal_backend():
         mock_context_manager.__aenter__.return_value = mock_playwright_instance
 
         mock_browser = AsyncMock()
+        mock_browser.__aenter__ = AsyncMock(return_value=mock_browser)
         mock_playwright_instance.chromium.launch.return_value = mock_browser
 
         mock_page = AsyncMock()
         mock_page.set_default_timeout = MagicMock()
+        mock_page.set_default_navigation_timeout = MagicMock()
         mock_page.on = MagicMock()
+        mock_page.__aenter__ = AsyncMock(return_value=mock_page)
         mock_browser.new_page.return_value = mock_page
 
         # We also need to mock BackendFixture to avoid starting real server
