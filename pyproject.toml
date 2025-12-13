@@ -71,15 +71,8 @@ installer = "uv"
 reactpy = "reactpy._console.cli:entry_point"
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
-# Note: `hatch` can't be called within `build-scripts` when installing packages in editable mode, so we have to write the commands long-form
 commands = [
-  'python "src/build_scripts/clean_js_dir.py"',
-  'bun install --cwd "src/js/packages/event-to-object"',
-  'bun run --cwd "src/js/packages/event-to-object" build',
-  'bun install --cwd "src/js/packages/@reactpy/client"',
-  'bun run --cwd "src/js/packages/@reactpy/client" build',
-  'bun install --cwd "src/js/packages/@reactpy/app"',
-  'bun run --cwd "src/js/packages/@reactpy/app" build',
+  "hatch --env default run javascript:build",
   'python "src/build_scripts/copy_dir.py" "src/js/node_modules/@pyscript/core/dist" "src/reactpy/static/pyscript"',
   'python "src/build_scripts/copy_dir.py" "src/js/node_modules/morphdom/dist" "src/reactpy/static/morphdom"',
 ]
@@ -90,15 +83,13 @@ artifacts = []
 #############################
 [tool.hatch.envs.hatch-test.scripts]
 run = [
+  'hatch --env default run "src/build_scripts/install_playwright.py"',
   "hatch --env default build -t wheel",
-  "playwright install chromium",
-  "playwright install-deps",
   "pytest{env:HATCH_TEST_ARGS:} {args}",
 ]
 run-cov = [
+  'hatch --env default run "src/build_scripts/install_playwright.py"',
   "hatch --env default build -t wheel",
-  "playwright install chromium",
-  "playwright install-deps",
   "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}",
 ]
 cov-combine = "coverage combine"
@@ -195,7 +186,6 @@ detached = true
 [tool.hatch.envs.javascript.scripts]
 check = [
   'hatch run javascript:build',
-  'bun install --cwd "src/js"',
   'bun run --cwd "src/js" lint',
   'bun run --cwd "src/js/packages/event-to-object" checkTypes',
   'bun run --cwd "src/js/packages/@reactpy/client" checkTypes',
