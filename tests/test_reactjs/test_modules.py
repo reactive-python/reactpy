@@ -14,7 +14,6 @@ async def display(browser):
             yield new_display
 
 
-@pytest.mark.anyio
 async def test_nested_client_side_components(display: DisplayFixture):
     # Module A
     ComponentA = component_from_string(
@@ -54,7 +53,6 @@ async def test_nested_client_side_components(display: DisplayFixture):
     await display.page.wait_for_selector("#server-side")
 
 
-@pytest.mark.anyio
 async def test_interleaved_client_server_components(display: DisplayFixture):
     # Module C
     ComponentC = component_from_string(

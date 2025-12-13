@@ -34,7 +34,6 @@ async def test_component_from_npm_react_bootstrap(display: DisplayFixture):
     assert "btn-primary" in classes
 
 
-@pytest.mark.anyio
 @pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_material_ui(display: DisplayFixture):
     Button = component_from_npm("@mui/material", "Button")
@@ -51,7 +50,6 @@ async def test_component_from_npm_material_ui(display: DisplayFixture):
     assert "MuiButton-root" in classes
 
 
-@pytest.mark.anyio
 @pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_antd(display: DisplayFixture):
     # Try antd v4 which might be more stable with esm.sh
@@ -68,7 +66,6 @@ async def test_component_from_npm_antd(display: DisplayFixture):
     assert "ant-btn" in classes
 
 
-@pytest.mark.anyio
 @pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_chakra_ui(display: DisplayFixture):
     ChakraProvider, Button = component_from_npm(
@@ -88,7 +85,6 @@ async def test_component_from_npm_chakra_ui(display: DisplayFixture):
     assert "chakra-button" in classes
 
 
-@pytest.mark.anyio
 @pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_semantic_ui_react(display: DisplayFixture):
     Button = component_from_npm("semantic-ui-react", "Button")
@@ -105,7 +101,6 @@ async def test_component_from_npm_semantic_ui_react(display: DisplayFixture):
     assert "button" in classes
 
 
-@pytest.mark.anyio
 @pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_mantine(display: DisplayFixture):
     MantineProvider, Button = component_from_npm(
@@ -123,7 +118,6 @@ async def test_component_from_npm_mantine(display: DisplayFixture):
     assert "mantine-Button-root" in classes
 
 
-@pytest.mark.anyio
 @pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_fluent_ui(display: DisplayFixture):
     PrimaryButton = component_from_npm("@fluentui/react", "PrimaryButton")
@@ -139,7 +133,6 @@ async def test_component_from_npm_fluent_ui(display: DisplayFixture):
     assert "ms-Button" in classes
 
 
-@pytest.mark.anyio
 @pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_blueprint(display: DisplayFixture):
     Button = component_from_npm("@blueprintjs/core", "Button")
@@ -155,7 +148,6 @@ async def test_component_from_npm_blueprint(display: DisplayFixture):
     assert any(c.startswith("bp") and "button" in c for c in classes.split())
 
 
-@pytest.mark.anyio
 @pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_grommet(display: DisplayFixture):
     Grommet, Button = component_from_npm("grommet", ["Grommet", "Button"])
@@ -171,7 +163,6 @@ async def test_component_from_npm_grommet(display: DisplayFixture):
     assert await button.inner_text() == "Click me"
 
 
-@pytest.mark.anyio
 @pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_evergreen(display: DisplayFixture):
     Button = component_from_npm("evergreen-ui", "Button")
@@ -185,7 +176,6 @@ async def test_component_from_npm_evergreen(display: DisplayFixture):
     assert await button.inner_text() == "Click me"
 
 
-@pytest.mark.anyio
 @pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_component_from_npm_react_spinners(display: DisplayFixture):
     ClipLoader = component_from_npm("react-spinners", "ClipLoader")
@@ -209,7 +199,6 @@ async def test_component_from_npm_react_spinners(display: DisplayFixture):
     assert await loader.is_visible()
 
 
-@pytest.mark.anyio
 @pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_nested_npm_components(display: DisplayFixture):
     # Use Chakra UI Provider and Box, and nest a React Bootstrap Button inside
@@ -246,7 +235,6 @@ async def test_nested_npm_components(display: DisplayFixture):
     assert "btn" in classes
 
 
-@pytest.mark.anyio
 @pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_interleaved_npm_and_server_components(display: DisplayFixture):
     Card = component_from_npm("antd", "Card", version="4.24.15")
@@ -279,7 +267,6 @@ async def test_interleaved_npm_and_server_components(display: DisplayFixture):
     assert "MUI BUTTON" in await button.inner_text()  # MUI capitalizes
 
 
-@pytest.mark.anyio
 @pytest.mark.flaky(reruns=5, reruns_delay=2)
 async def test_complex_nested_material_ui(display: DisplayFixture):
     # Import multiple components from @mui/material
