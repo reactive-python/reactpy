@@ -176,9 +176,9 @@ def component_from_npm(
 
     if "esm.sh" in cdn:
         if "?" in url:
-            url += "&external=react,react-dom"
+            url += "&external=react,react-dom&bundle"
         else:
-            url += "?external=react,react-dom"
+            url += "?external=react,react-dom&bundle"
 
     return component_from_url(
         url,
