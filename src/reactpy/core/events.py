@@ -3,7 +3,7 @@ from __future__ import annotations
 import dis
 import inspect
 from collections.abc import Callable, Sequence
-from functools import lru_cache
+from functools import lru_cache, partial
 from types import CodeType
 from typing import Any, Literal, cast, overload
 
@@ -106,6 +106,9 @@ class EventHandler(BaseEventHandler):
         func_to_inspect = cast(Any, function)
         while hasattr(func_to_inspect, "__wrapped__"):
             func_to_inspect = func_to_inspect.__wrapped__
+
+        if isinstance(func_to_inspect, partial):
+            func_to_inspect = func_to_inspect.func
 
         found_prevent_default, found_stop_propagation = _inspect_event_handler_code(
             func_to_inspect.__code__
