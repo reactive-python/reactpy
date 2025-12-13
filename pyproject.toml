@@ -88,6 +88,7 @@ run = [
   "pytest{env:HATCH_TEST_ARGS:} {args}",
 ]
 run-cov = [
+  'hatch --env default run "src/build_scripts/delete_old_coverage.py"',
   'hatch --env default run "src/build_scripts/install_playwright.py"',
   "hatch --env default build -t wheel",
   "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}",
