@@ -174,7 +174,7 @@ def copy_file(target: Path, source: Path, symlink: bool) -> None:
             target.unlink()
         target.symlink_to(source)
     else:
-        temp_target = target.with_suffix(target.suffix + ".tmp")
+        temp_target = target.with_suffix(f"{target.suffix}.tmp")
         shutil.copy(source, temp_target)
         try:
             temp_target.replace(target)
