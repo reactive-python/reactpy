@@ -6,6 +6,7 @@ from _pytest.config.argparsing import Parser
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
     REACTPY_DEBUG,
+    REACTPY_TESTS_DEFAULT_TIMEOUT,
 )
 from reactpy.testing import (
     BackendFixture,
@@ -45,7 +46,8 @@ async def browser(pytestconfig: pytest.Config):
 
     async with async_playwright() as pw:
         async with await pw.chromium.launch(
-            headless=not _playwright_visible(pytestconfig)
+            headless=not _playwright_visible(pytestconfig),
+            timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current * 1000,
         ) as browser:
             yield browser
 
