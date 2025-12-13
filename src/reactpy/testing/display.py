@@ -5,7 +5,7 @@ from contextlib import AsyncExitStack
 from types import TracebackType
 from typing import Any
 
-from playwright.async_api import Browser, Page, async_playwright
+from playwright.async_api import Browser, Page, async_playwright, expect
 
 from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.testing.backend import BackendFixture
@@ -62,6 +62,8 @@ class DisplayFixture:
                 or os.environ.get("PLAYWRIGHT_HEADLESS") == "1"
                 or GITHUB_ACTIONS
             )
+
+        expect.set_options(timeout=self.timeout * 1000)
         await self.configure_page()
 
         if not hasattr(self, "backend"):  # nocov
@@ -75,8 +77,6 @@ class DisplayFixture:
             self.page = await self.browser.new_page()
             self.page.set_default_navigation_timeout(self.timeout * 1000)
             self.page.set_default_timeout(self.timeout * 1000)
-            self.page.context.set_default_navigation_timeout(self.timeout * 1000)
-            self.page.context.set_default_timeout(self.timeout * 1000)
             self.page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))  # noqa: T201
             self.page.on("pageerror", lambda exc: print(f"BROWSER ERROR: {exc}"))  # noqa: T201
 
