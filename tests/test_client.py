@@ -1,8 +1,6 @@
 import asyncio
 from pathlib import Path
 
-from playwright.async_api import Page
-
 import reactpy
 from reactpy.testing import BackendFixture, DisplayFixture, poll
 from tests.tooling.common import DEFAULT_TYPE_DELAY
@@ -11,9 +9,7 @@ from tests.tooling.hooks import use_counter
 JS_DIR = Path(__file__).parent / "js"
 
 
-async def test_automatic_reconnect(
-    display: DisplayFixture, page: Page, server: BackendFixture
-):
+async def test_automatic_reconnect(display: DisplayFixture, server: BackendFixture):
     @reactpy.component
     def SomeComponent():
         count, incr_count = use_counter(0)
@@ -26,35 +22,35 @@ async def test_automatic_reconnect(
 
     async def get_count():
         # need to refetch element because may unmount on reconnect
-        count = await page.wait_for_selector("#count")
+        count = await display.page.wait_for_selector("#count")
         return await count.get_attribute("data-count")
 
     await display.show(SomeComponent)
 
     await poll(get_count).until_equals("0")
-    incr = await page.wait_for_selector("#incr")
+    incr = await display.page.wait_for_selector("#incr")
     await incr.click()
 
     await poll(get_count).until_equals("1")
-    incr = await page.wait_for_selector("#incr")
+    incr = await display.page.wait_for_selector("#incr")
     await incr.click()
 
     await poll(get_count).until_equals("2")
-    incr = await page.wait_for_selector("#incr")
+    incr = await display.page.wait_for_selector("#incr")
     await incr.click()
 
     await server.restart()
 
     await poll(get_count).until_equals("0")
-    incr = await page.wait_for_selector("#incr")
+    incr = await display.page.wait_for_selector("#incr")
     await incr.click()
 
     await poll(get_count).until_equals("1")
-    incr = await page.wait_for_selector("#incr")
+    incr = await display.page.wait_for_selector("#incr")
     await incr.click()
 
     await poll(get_count).until_equals("2")
-    incr = await page.wait_for_selector("#incr")
+    incr = await display.page.wait_for_selector("#incr")
     await incr.click()
 
 

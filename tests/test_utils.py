@@ -275,7 +275,12 @@ def test_non_html_tag_behavior():
         utils.string_to_reactpy(source, strict=True)
 
 
-SOME_OBJECT = object()
+class StableReprObject:
+    def __repr__(self):
+        return "StableReprObject"
+
+
+SOME_OBJECT = StableReprObject()
 
 
 @component

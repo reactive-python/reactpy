@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import inspect
 import os
-import shutil
 import time
 from collections.abc import Awaitable, Callable, Coroutine
 from functools import wraps
@@ -11,17 +10,10 @@ from typing import Any, Generic, ParamSpec, TypeVar, cast
 from uuid import uuid4
 from weakref import ref
 
-from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT, REACTPY_WEB_MODULES_DIR
+from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.core._life_cycle_hook import HOOK_STACK, LifeCycleHook
 from reactpy.core.events import EventHandler, to_event_handler_function
 from reactpy.utils import str_to_bool
-
-
-def clear_reactpy_web_modules_dir() -> None:
-    """Clear the directory where ReactPy stores registered web modules"""
-    for path in REACTPY_WEB_MODULES_DIR.current.iterdir():
-        shutil.rmtree(path) if path.is_dir() else path.unlink()
-
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")

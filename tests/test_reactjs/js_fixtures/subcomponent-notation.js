@@ -1,17 +1,11 @@
-import React from "https://esm.sh/v135/react@19.0"
-import ReactDOM from "https://esm.sh/v135/react-dom@19.0/client"
-// Explicitly import react-is to ensure it's loaded before react-bootstrap
-// This prevents race conditions where react-bootstrap tries to use React context before deps are ready
-import * as ReactIs from "https://esm.sh/v135/react-is@19.0"
-import {InputGroup, Form} from "https://esm.sh/v135/react-bootstrap@2.10.2?deps=react@19.0,react-dom@19.0,react-is@19.0&exports=InputGroup,Form";
-export {InputGroup, Form};
+import React from "react";
+import ReactDOM from "react-dom";
 
-export function bind(node, config) {
-  const root = ReactDOM.createRoot(node);
-  return {
-    create: (type, props, children) => 
-      React.createElement(type, props, ...children),
-    render: (element) => root.render(element),
-    unmount: () => root.unmount()
-  };
-}
+const InputGroup = ({ children }) => React.createElement("div", { className: "input-group" }, children);
+InputGroup.Text = ({ children, ...props }) => React.createElement("span", { className: "input-group-text", ...props }, children);
+
+const Form = ({ children }) => React.createElement("form", {}, children);
+Form.Control = ({ children, ...props }) => React.createElement("input", { className: "form-control", ...props }, children);
+Form.Label = ({ children, ...props }) => React.createElement("label", { className: "form-label", ...props }, children);
+
+export { InputGroup, Form };

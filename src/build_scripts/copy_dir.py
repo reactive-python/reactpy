@@ -31,6 +31,7 @@ if __name__ == "__main__":
     root_dir = Path(__file__).parent.parent.parent
     src = Path(root_dir / sys.argv[1])
     dest = Path(root_dir / sys.argv[2])
+    print(f"Copying files from '{sys.argv[1]}' to '{sys.argv[2]}'...")  # noqa: T201
 
     if not src.exists():
         logging.error("Source directory %s does not exist", src)

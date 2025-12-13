@@ -1,11 +1,6 @@
 from __future__ import annotations
 
-import contextlib
-import os
-import subprocess
-
 import pytest
-from _pytest.config import Config
 from _pytest.config.argparsing import Parser
 
 from reactpy.config import (
@@ -17,9 +12,8 @@ from reactpy.testing import (
     BackendFixture,
     DisplayFixture,
     capture_reactpy_logs,
-    clear_reactpy_web_modules_dir,
 )
-from reactpy.testing.common import GITHUB_ACTIONS
+from reactpy.testing.display import _playwright_visible
 
 REACTPY_ASYNC_RENDERING.set_current(True)
 REACTPY_DEBUG.set_current(True)
@@ -27,68 +21,35 @@ REACTPY_DEBUG.set_current(True)
 
 def pytest_addoption(parser: Parser) -> None:
     parser.addoption(
-        "--headless",
-        dest="headless",
+        "--visible",
+        dest="visible",
         action="store_true",
-        help="Don't open a browser window when running web-based tests",
+        help="Open a browser window when running web-based tests",
     )
 
 
-@pytest.fixture(autouse=True, scope="session")
-def install_playwright():
-    subprocess.run(["playwright", "install", "chromium"], check=True)  # noqa: S607
-    # Try to install system deps, but don't fail if already installed or no root access
-    with contextlib.suppress(subprocess.CalledProcessError):
-        subprocess.run(["playwright", "install-deps"], check=True)  # noqa: S607
-
-
-@pytest.fixture(autouse=True, scope="session")
-def rebuild():
-    # When running inside `hatch test`, the `HATCH_ENV_ACTIVE` environment variable
-    # is set. If we try to run `hatch build` with this variable set, Hatch will
-    # complain that the current environment is not a builder environment.
-    # To fix this, we remove `HATCH_ENV_ACTIVE` from the environment variables
-    # passed to the subprocess.
-    env = os.environ.copy()
-    env.pop("HATCH_ENV_ACTIVE", None)
-    subprocess.run(["hatch", "build", "-t", "wheel"], check=True, env=env)  # noqa: S607
-
-
-@pytest.fixture
-async def display(server, page):
-    async with DisplayFixture(server, page) as display:
+@pytest.fixture(scope="session")
+async def display(server, browser):
+    async with DisplayFixture(backend=server, browser=browser) as display:
         yield display
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 async def server():
     async with BackendFixture() as server:
         yield server
 
 
-@pytest.fixture
-async def page(browser):
-    pg = await browser.new_page()
-    pg.set_default_timeout(REACTPY_TESTS_DEFAULT_TIMEOUT.current * 1000)
-    try:
-        yield pg
-    finally:
-        await pg.close()
-
-
-@pytest.fixture
-async def browser(pytestconfig: Config):
+@pytest.fixture(scope="session")
+async def browser(pytestconfig: pytest.Config):
     from playwright.async_api import async_playwright
 
     async with async_playwright() as pw:
-        yield await pw.chromium.launch(
-            headless=bool(pytestconfig.option.headless) or GITHUB_ACTIONS
-        )
-
-
-@pytest.fixture(autouse=True)
-def clear_web_modules_dir_after_test():
-    clear_reactpy_web_modules_dir()
+        async with await pw.chromium.launch(
+            headless=not _playwright_visible(pytestconfig),
+            timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current * 1000,
+        ) as browser:
+            yield browser
 
 
 @pytest.fixture(autouse=True)

@@ -13,8 +13,8 @@ from reactpy.executors.asgi.pyscript import ReactPyCsr
 from reactpy.testing import BackendFixture, DisplayFixture
 
 
-@pytest.fixture()
-async def display(page):
+@pytest.fixture(scope="module")
+async def display(browser):
     """Override for the display fixture that uses ReactPyMiddleware."""
     app = ReactPyCsr(
         Path(__file__).parent / "pyscript_components" / "root.py",
@@ -22,12 +22,14 @@ async def display(page):
     )
 
     async with BackendFixture(app) as server:
-        async with DisplayFixture(backend=server, driver=page) as new_display:
+        async with DisplayFixture(
+            backend=server, browser=browser, timeout=20
+        ) as new_display:
             yield new_display
 
 
-@pytest.fixture()
-async def multi_file_display(page):
+@pytest.fixture(scope="module")
+async def multi_file_display(browser):
     """Override for the display fixture that uses ReactPyMiddleware."""
     app = ReactPyCsr(
         Path(__file__).parent / "pyscript_components" / "load_first.py",
@@ -36,12 +38,12 @@ async def multi_file_display(page):
     )
 
     async with BackendFixture(app) as server:
-        async with DisplayFixture(backend=server, driver=page) as new_display:
+        async with DisplayFixture(backend=server, browser=browser) as new_display:
             yield new_display
 
 
-@pytest.fixture()
-async def jinja_display(page):
+@pytest.fixture(scope="module")
+async def jinja_display(browser):
     """Override for the display fixture that uses ReactPyMiddleware."""
     templates = Jinja2Templates(
         env=JinjaEnvironment(
@@ -56,7 +58,7 @@ async def jinja_display(page):
     app = Starlette(routes=[Route("/", homepage)])
 
     async with BackendFixture(app) as server:
-        async with DisplayFixture(backend=server, driver=page) as new_display:
+        async with DisplayFixture(backend=server, browser=browser) as new_display:
             yield new_display
 
 

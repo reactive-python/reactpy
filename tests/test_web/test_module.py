@@ -8,7 +8,7 @@ from servestatic import ServeStaticASGI
 import reactpy
 import reactpy.reactjs
 from reactpy.executors.asgi.standalone import ReactPy
-from reactpy.reactjs import NAME_SOURCE, JavaScriptModule
+from reactpy.reactjs import NAME_SOURCE, JavaScriptModule, import_reactjs
 from reactpy.testing import (
     BackendFixture,
     DisplayFixture,
@@ -19,6 +19,14 @@ from reactpy.testing import (
 from reactpy.types import InlineJavaScript
 
 JS_FIXTURES_DIR = Path(__file__).parent / "js_fixtures"
+
+
+@pytest.fixture(scope="module")
+async def display(browser):
+    """Override for the display fixture that includes ReactJS."""
+    async with BackendFixture(html_head=reactpy.html.head(import_reactjs())) as backend:
+        async with DisplayFixture(backend=backend, browser=browser) as new_display:
+            yield new_display
 
 
 async def test_that_js_module_unmount_is_called(display: DisplayFixture):
@@ -70,7 +78,7 @@ async def test_module_from_url(browser):
     app = ServeStaticASGI(app, JS_FIXTURES_DIR, "/static/")
 
     async with BackendFixture(app) as server:
-        async with DisplayFixture(server, browser) as display:
+        async with DisplayFixture(server, browser=browser) as display:
             await display.show(ShowSimpleButton)
 
             await display.page.wait_for_selector("#my-button")
@@ -103,30 +111,36 @@ def test_module_from_file_source_conflict(tmp_path):
     first_file = tmp_path / "first.js"
 
     with pytest.raises(FileNotFoundError, match=r"does not exist"):
-        reactpy.reactjs.file_to_module("temp", first_file)
+        reactpy.reactjs.file_to_module(
+            "test-module-from-file-source-conflict", first_file
+        )
 
     first_file.touch()
 
-    reactpy.reactjs.file_to_module("temp", first_file)
+    reactpy.reactjs.file_to_module("test-module-from-file-source-conflict", first_file)
 
     second_file = tmp_path / "second.js"
     second_file.touch()
 
     # ok, same content
-    reactpy.reactjs.file_to_module("temp", second_file)
+    reactpy.reactjs.file_to_module("test-module-from-file-source-conflict", second_file)
 
     third_file = tmp_path / "third.js"
     third_file.write_text("something-different")
 
     with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
-        reactpy.reactjs.file_to_module("temp", third_file)
+        reactpy.reactjs.file_to_module(
+            "test-module-from-file-source-conflict", third_file
+        )
 
 
 def test_web_module_from_file_symlink(tmp_path):
     file = tmp_path / "temp.js"
     file.touch()
 
-    module = reactpy.reactjs.file_to_module("temp", file, symlink=True)
+    module = reactpy.reactjs.file_to_module(
+        "test-web-module-from-file-symlink", file, symlink=True
+    )
 
     assert module.file.resolve().read_text() == ""
 
@@ -139,29 +153,38 @@ def test_web_module_from_file_symlink_twice(tmp_path):
     file_1 = tmp_path / "temp_1.js"
     file_1.touch()
 
-    reactpy.reactjs.file_to_module("temp", file_1, symlink=True)
-
-    with assert_reactpy_did_not_log(r"Existing web module .* will be replaced with"):
-        reactpy.reactjs.file_to_module("temp", file_1, symlink=True)
-
+    reactpy.reactjs.file_to_module(
+        "test-web-module-from-file-symlink-twice", file_1, symlink=True
+    )
+    with assert_reactpy_did_not_log(
+        r"Existing web module 'test-web-module-from-file-symlink-twice.js' will be replaced with"
+    ):
+        reactpy.reactjs.file_to_module(
+            "test-web-module-from-file-symlink-twice", file_1, symlink=True
+        )
     file_2 = tmp_path / "temp_2.js"
     file_2.write_text("something")
-
-    with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
-        reactpy.reactjs.file_to_module("temp", file_2, symlink=True)
+    with assert_reactpy_did_log(
+        r"Existing web module 'test-web-module-from-file-symlink-twice.js' will be replaced with"
+    ):
+        reactpy.reactjs.file_to_module(
+            "test-web-module-from-file-symlink-twice", file_2, symlink=True
+        )
 
 
 def test_web_module_from_file_replace_existing(tmp_path):
     file1 = tmp_path / "temp1.js"
     file1.touch()
 
-    reactpy.reactjs.file_to_module("temp", file1)
+    reactpy.reactjs.file_to_module("test-web-module-from-file-replace-existing", file1)
 
     file2 = tmp_path / "temp2.js"
     file2.write_text("something")
 
     with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
-        reactpy.reactjs.file_to_module("temp", file2)
+        reactpy.reactjs.file_to_module(
+            "test-web-module-from-file-replace-existing", file2
+        )
 
 
 def test_module_missing_exports():
@@ -325,7 +348,6 @@ async def test_subcomponent_notation_as_str_attrs(display: DisplayFixture):
     )
 
     await display.show(lambda: content)
-
     await display.page.wait_for_selector("#basic-addon3", state="attached")
     parent = await display.page.wait_for_selector("#the-parent", state="attached")
     input_group_text = await parent.query_selector_all(".input-group-text")
@@ -418,12 +440,12 @@ async def test_callable_prop_with_javacript(display: DisplayFixture):
 
 def test_component_from_string():
     reactpy.reactjs.component_from_string(
-        "old", "Component", resolve_imports=False, name="temp"
+        "old", "Component", resolve_imports=False, name="test-component-from-string"
     )
     reactpy.reactjs._STRING_JS_MODULE_CACHE.clear()
     with assert_reactpy_did_log(r"Existing web module .* will be replaced with"):
         reactpy.reactjs.component_from_string(
-            "new", "Component", resolve_imports=False, name="temp"
+            "new", "Component", resolve_imports=False, name="test-component-from-string"
         )
 
 
@@ -440,7 +462,7 @@ async def test_component_from_url(browser):
     app = ServeStaticASGI(app, JS_FIXTURES_DIR, "/static/")
 
     async with BackendFixture(app) as server:
-        async with DisplayFixture(server, browser) as display:
+        async with DisplayFixture(server, browser=browser) as display:
             await display.show(ShowSimpleButton)
 
             await display.page.wait_for_selector("#my-button")
