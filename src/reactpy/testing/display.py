@@ -73,7 +73,10 @@ class DisplayFixture:
     async def configure_page(self) -> None:
         if getattr(self, "page", None) is None:
             self.page = await self.browser.new_page()
+            self.page.set_default_navigation_timeout(self.timeout * 1000)
             self.page.set_default_timeout(self.timeout * 1000)
+            self.page.context.set_default_navigation_timeout(self.timeout * 1000)
+            self.page.context.set_default_timeout(self.timeout * 1000)
             self.page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))  # noqa: T201
             self.page.on("pageerror", lambda exc: print(f"BROWSER ERROR: {exc}"))  # noqa: T201
 
