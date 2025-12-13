@@ -95,6 +95,9 @@ run = [
   "playwright install-deps",
   "pytest{env:HATCH_TEST_ARGS:} {args}",
 ]
+run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
+cov-combine = "coverage combine"
+cov-report = "coverage report"
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
