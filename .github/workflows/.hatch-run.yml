@@ -35,6 +35,14 @@ jobs:
         runs-on: ${{ matrix.runs-on }}
         steps:
             - uses: actions/checkout@v4
+            - name: Setup RAM Disk
+              if: runner.os == 'Windows'
+              uses: chad-golden/setup-ramdisk@main
+              with:
+                  copy-workspace: true
+            - name: Changing working directory to RAM disk
+              if: runner.os == 'Windows'
+              run: cd R:\workspace
             - uses: oven-sh/setup-bun@v2
               with:
                   bun-version: latest
