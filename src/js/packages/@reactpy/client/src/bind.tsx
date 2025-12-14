@@ -38,12 +38,7 @@ function reactjs_bind(node: HTMLElement, React: any, ReactDOM: any) {
     create: (type: any, props: any, children?: any[]) =>
       React.createElement(type, props, ...(children || [])),
     render: (element: any) => {
-      if (!root) {
-        const existingRoot = roots.get(node);
-        if (existingRoot) {
-          existingRoot.unmount();
-          roots.delete(node);
-        }
+      if (!root && !roots.get(node)) {
         root = ReactDOM.createRoot(node);
         roots.set(node, root);
       }
