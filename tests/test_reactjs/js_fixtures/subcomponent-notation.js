@@ -1,5 +1,4 @@
 import React from "react";
-import ReactDOM from "react-dom";
 
 const InputGroup = ({ children }) => React.createElement("div", { className: "input-group" }, children);
 InputGroup.Text = ({ children, ...props }) => React.createElement("span", { className: "input-group-text", ...props }, children);
