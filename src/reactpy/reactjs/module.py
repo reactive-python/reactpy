@@ -188,7 +188,9 @@ def import_reactjs(
     Return an import map script tag for ReactJS or Preact.
     Parameters:
         framework:
-            The framework to use, either "preact" or "react". Defaults to "preact".
+            The framework to use, either "preact" or "react". Defaults to "preact" for
+            performance reasons. Set this to `react` if you are experiencing compatibility
+            issues with your component library.
         version:
             The version of the framework to use. Example values include "18", "10.2.4",
             or "latest". If left as `None`, a default version will be used depending on the
