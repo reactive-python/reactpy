@@ -11,7 +11,7 @@ export async function infer_bind_from_environment() {
       "ReactPy detected 'ReactJS' to bind your JavaScript components.",
     );
     return (node: HTMLElement) => reactjs_bind(node, React, ReactDOM);
-  } catch (e) {
+  } catch {
     console.debug(
       "ReactPy did not detect a component binding function or a suitable 'importmap'. Using ReactPy's internal framework (Preact) to bind your JavaScript components.",
     );
