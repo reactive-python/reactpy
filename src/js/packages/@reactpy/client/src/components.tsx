@@ -178,11 +178,13 @@ function useImportSource(model: ReactPyVdom): MutableRefObject<any> {
 
   useEffect(() => {
     let unmounted = false;
+    let currentBinding: ImportSourceBinding | null = null;
 
     if (vdomImportSource) {
       loadImportSource(vdomImportSource, client).then((bind) => {
         if (!unmounted && mountPoint.current) {
-          setBinding(bind(mountPoint.current));
+          currentBinding = bind(mountPoint.current);
+          setBinding(currentBinding);
         }
       });
     }
@@ -190,11 +192,11 @@ function useImportSource(model: ReactPyVdom): MutableRefObject<any> {
     return () => {
       unmounted = true;
       if (
-        binding &&
+        currentBinding &&
         vdomImportSource &&
         !vdomImportSource.unmountBeforeUpdate
       ) {
-        binding.unmount();
+        currentBinding.unmount();
       }
     };
   }, [client, vdomImportSourceJsonString, setBinding, mountPoint.current]);
