@@ -30,6 +30,8 @@ function local_preact_bind(node: HTMLElement) {
   };
 }
 
+const roots = new WeakMap<HTMLElement, any>();
+
 function reactjs_bind(node: HTMLElement, React: any, ReactDOM: any) {
   let root: any = null;
   return {
@@ -37,24 +39,21 @@ function reactjs_bind(node: HTMLElement, React: any, ReactDOM: any) {
       React.createElement(type, props, ...(children || [])),
     render: (element: any) => {
       if (!root) {
-        // @ts-ignore
-        if (node._reactPyRoot) {
-          // @ts-ignore
-          node._reactPyRoot.unmount();
+        const existingRoot = roots.get(node);
+        if (existingRoot) {
+          existingRoot.unmount();
+          roots.delete(node);
         }
         root = ReactDOM.createRoot(node);
-        // @ts-ignore
-        node._reactPyRoot = root;
+        roots.set(node, root);
       }
       root.render(element);
     },
     unmount: () => {
       if (root) {
         root.unmount();
-        // @ts-ignore
-        if (node._reactPyRoot === root) {
-          // @ts-ignore
-          node._reactPyRoot = null;
+        if (roots.get(node) === root) {
+          roots.delete(node);
         }
         root = null;
       }
