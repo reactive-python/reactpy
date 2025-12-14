@@ -42,7 +42,7 @@ jobs:
               name: Configure RAM Disk paths
               run: |
                   mkdir R:\playwright
-                  New-Item -ItemType Junction -Path C:\Users\runneradmin\AppData\Local\ms-playwright -Value R:\playwright
+                  New-Item -ItemType Junction -Path C:\Users\runneradmin\AppData\Local\ms-playwright\ -Value R:\playwright\
             - uses: oven-sh/setup-bun@v2
               with:
                   bun-version: latest
