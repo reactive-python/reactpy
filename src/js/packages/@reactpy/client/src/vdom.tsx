@@ -309,7 +309,15 @@ class ReactPyChild extends HTMLElement {
 
       try {
         const bind = await loadImportSource(newImportSource, this._client);
-        if (this.isConnected) {
+        if (
+          this.isConnected &&
+          this.currentImportSource &&
+          isImportSourceEqual(this.currentImportSource, newImportSource)
+        ) {
+          const oldBinding = this.binding as ImportSourceBinding | null;
+          if (oldBinding) {
+            oldBinding.unmount();
+          }
           this.binding = bind(this.mountPoint);
           if (this.binding) {
             this.binding.render(this._model);
