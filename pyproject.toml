@@ -71,10 +71,7 @@ installer = "uv"
 reactpy = "reactpy._console.cli:entry_point"
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
-commands = [
-  'hatch --env default run "src/build_scripts/copy_dir.py" "src/js/node_modules/@pyscript/core/dist" "src/reactpy/static/pyscript"',
-  'hatch --env default run "src/build_scripts/copy_dir.py" "src/js/node_modules/morphdom/dist" "src/reactpy/static/morphdom"',
-]
+commands = []
 artifacts = []
 
 #############################
@@ -202,6 +199,9 @@ build = [
   'hatch run javascript:build_event_to_object {args}',
   'hatch run javascript:build_client {args}',
   'hatch run javascript:build_app {args}',
+  'hatch --env default run "src/build_scripts/copy_dir.py" "src/js/node_modules/@pyscript/core/dist" "src/reactpy/static/pyscript"',
+  'hatch --env default run "src/build_scripts/copy_dir.py" "src/js/node_modules/morphdom/dist" "src/reactpy/static/morphdom"',
+
 ]
 build_event_to_object = [
   'hatch run "src/build_scripts/build_js_event_to_object.py" {args}',
