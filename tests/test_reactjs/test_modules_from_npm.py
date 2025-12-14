@@ -4,7 +4,7 @@ from playwright.async_api import expect
 import reactpy
 from reactpy import html
 from reactpy.reactjs import component_from_npm, import_reactjs
-from reactpy.testing import BackendFixture, DisplayFixture
+from reactpy.testing import GITHUB_ACTIONS, BackendFixture, DisplayFixture
 
 
 @pytest.fixture(scope="module")
@@ -15,7 +15,7 @@ async def display(browser):
             yield new_display
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_component_from_npm_react_bootstrap(display: DisplayFixture):
     Button = component_from_npm("react-bootstrap", "Button", version="2")
 
@@ -34,7 +34,7 @@ async def test_component_from_npm_react_bootstrap(display: DisplayFixture):
     await expect(button).to_contain_class("btn-primary")
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_component_from_npm_react_bootstrap_with_local_framework(browser):
     Button = component_from_npm("react-bootstrap", "Button", version="2")
 
@@ -57,7 +57,7 @@ async def test_component_from_npm_react_bootstrap_with_local_framework(browser):
             await expect(button).to_contain_class("btn-primary")
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_component_from_npm_material_ui(display: DisplayFixture):
     Button = component_from_npm("@mui/material", "Button", version="7")
 
@@ -73,7 +73,7 @@ async def test_component_from_npm_material_ui(display: DisplayFixture):
     await expect(button).to_contain_class("MuiButton-root")
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_component_from_npm_antd(display: DisplayFixture):
     Button = component_from_npm("antd", "Button", version="6")
 
@@ -87,7 +87,7 @@ async def test_component_from_npm_antd(display: DisplayFixture):
     await expect(button).to_contain_class("ant-btn")
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_component_from_npm_chakra_ui(display: DisplayFixture):
     ChakraProvider, _, Button = _get_chakra_components()
 
@@ -103,7 +103,7 @@ async def test_component_from_npm_chakra_ui(display: DisplayFixture):
     await expect(button).to_contain_class("chakra-button")
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_component_from_npm_semantic_ui_react(browser):
     # Semantic UI is deprecated and doesn't get updates. Thus, it is incompatible with the
     # latest React versions. We use this as an opportunity to test Preact here.
@@ -124,7 +124,7 @@ async def test_component_from_npm_semantic_ui_react(browser):
             await expect(button).to_contain_class("button")
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_component_from_npm_mantine(display: DisplayFixture):
     MantineProvider, Button = component_from_npm(
         "@mantine/core", ["MantineProvider", "Button"], version="8"
@@ -140,7 +140,7 @@ async def test_component_from_npm_mantine(display: DisplayFixture):
     await expect(button).to_contain_class("mantine-Button-root")
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_component_from_npm_fluent_ui(display: DisplayFixture):
     PrimaryButton = component_from_npm("@fluentui/react", "PrimaryButton", version="8")
 
@@ -154,7 +154,7 @@ async def test_component_from_npm_fluent_ui(display: DisplayFixture):
     await expect(button).to_contain_class("ms-Button")
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_component_from_npm_blueprint(display: DisplayFixture):
     Button = component_from_npm("@blueprintjs/core", "Button", version="6")
 
@@ -168,7 +168,7 @@ async def test_component_from_npm_blueprint(display: DisplayFixture):
     await expect(button).to_contain_class("bp6-button")
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_component_from_npm_grommet(display: DisplayFixture):
     Grommet, Button = component_from_npm("grommet", ["Grommet", "Button"], version="2")
 
@@ -183,7 +183,7 @@ async def test_component_from_npm_grommet(display: DisplayFixture):
     await expect(button).to_have_text("Click me")
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_component_from_npm_evergreen(display: DisplayFixture):
     Button = component_from_npm("evergreen-ui", "Button", version="7")
 
@@ -196,7 +196,7 @@ async def test_component_from_npm_evergreen(display: DisplayFixture):
     await expect(button).to_have_text("Click me")
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_component_from_npm_react_spinners(display: DisplayFixture):
     ClipLoader = component_from_npm("react-spinners", "ClipLoader", version="0.17.0")
 
@@ -219,7 +219,7 @@ async def test_component_from_npm_react_spinners(display: DisplayFixture):
     await expect(loader).to_be_visible()
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_nested_npm_components(display: DisplayFixture):
     ChakraProvider, Box, _ = _get_chakra_components()
     BootstrapButton = component_from_npm("react-bootstrap", "Button", version="2")
@@ -251,7 +251,7 @@ async def test_nested_npm_components(display: DisplayFixture):
     await expect(button).to_contain_class("btn")
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_interleaved_npm_and_server_components(display: DisplayFixture):
     Card = component_from_npm("antd", "Card", version="6")
     Button = component_from_npm("@mui/material", "Button", version="7")
@@ -284,7 +284,7 @@ async def test_interleaved_npm_and_server_components(display: DisplayFixture):
     await expect(button).to_have_css("text-transform", "uppercase")
 
 
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_complex_nested_material_ui(display: DisplayFixture):
     mui_components = component_from_npm(
         "@mui/material",
