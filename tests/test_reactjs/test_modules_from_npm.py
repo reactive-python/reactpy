@@ -9,14 +9,14 @@ from reactpy.testing import BackendFixture, DisplayFixture
 @pytest.fixture(scope="module")
 async def display(browser):
     """Override for the display fixture that includes ReactJS imports."""
-    async with BackendFixture(html_head=html.head(import_reactjs())) as backend:
+    async with BackendFixture(html_head=html.head(import_reactjs("react"))) as backend:
         async with DisplayFixture(backend=backend, browser=browser) as new_display:
             yield new_display
 
 
-@pytest.mark.flaky(reruns=5, reruns_delay=2)
+@pytest.mark.flaky(reruns=3)
 async def test_component_from_npm_react_bootstrap(display: DisplayFixture):
-    Button = component_from_npm("react-bootstrap", "Button", version="2.10.2")
+    Button = component_from_npm("react-bootstrap", "Button", version="2")
 
     @reactpy.component
     def App():
@@ -34,9 +34,33 @@ async def test_component_from_npm_react_bootstrap(display: DisplayFixture):
     assert "btn-primary" in classes
 
 
-@pytest.mark.flaky(reruns=5, reruns_delay=2)
+@pytest.mark.flaky(reruns=3)
+async def test_component_from_npm_react_bootstrap_with_local_framework(browser):
+    Button = component_from_npm("react-bootstrap", "Button", version="2")
+
+    @reactpy.component
+    def App():
+        return Button({"variant": "primary", "id": "test-button"}, "Click me")
+
+    async with BackendFixture(
+        html_head=html.head(import_reactjs(use_local=True))
+    ) as backend:
+        async with DisplayFixture(backend=backend, browser=browser) as display:
+            await display.show(App)
+
+            button = await display.page.wait_for_selector("#test-button")
+            assert await button.inner_text() == "Click me"
+
+            # Check if it has the correct class for primary variant
+            # React Bootstrap buttons usually have 'btn' and 'btn-primary' classes
+            classes = await button.get_attribute("class")
+            assert "btn" in classes
+            assert "btn-primary" in classes
+
+
+@pytest.mark.flaky(reruns=3)
 async def test_component_from_npm_material_ui(display: DisplayFixture):
-    Button = component_from_npm("@mui/material", "Button")
+    Button = component_from_npm("@mui/material", "Button", version="7")
 
     @reactpy.component
     def App():
@@ -50,10 +74,9 @@ async def test_component_from_npm_material_ui(display: DisplayFixture):
     assert "MuiButton-root" in classes
 
 
-@pytest.mark.flaky(reruns=5, reruns_delay=2)
+@pytest.mark.flaky(reruns=3)
 async def test_component_from_npm_antd(display: DisplayFixture):
-    # Try antd v4 which might be more stable with esm.sh
-    Button = component_from_npm("antd", "Button", version="4.24.15")
+    Button = component_from_npm("antd", "Button", version="6")
 
     @reactpy.component
     def App():
@@ -66,11 +89,9 @@ async def test_component_from_npm_antd(display: DisplayFixture):
     assert "ant-btn" in classes
 
 
-@pytest.mark.flaky(reruns=5, reruns_delay=2)
+@pytest.mark.flaky(reruns=3)
 async def test_component_from_npm_chakra_ui(display: DisplayFixture):
-    ChakraProvider, Button = component_from_npm(
-        "@chakra-ui/react", ["ChakraProvider", "Button"], version="2.8.2"
-    )
+    ChakraProvider, _, Button = _get_chakra_components()
 
     @reactpy.component
     def App():
@@ -85,26 +106,32 @@ async def test_component_from_npm_chakra_ui(display: DisplayFixture):
     assert "chakra-button" in classes
 
 
-@pytest.mark.flaky(reruns=5, reruns_delay=2)
-async def test_component_from_npm_semantic_ui_react(display: DisplayFixture):
-    Button = component_from_npm("semantic-ui-react", "Button")
+@pytest.mark.flaky(reruns=3)
+async def test_component_from_npm_semantic_ui_react(browser):
+    # Semantic UI is deprecated and doesn't get updates. Thus, it is incompatible with the
+    # latest React versions. We use this as an opportunity to test Preact here.
+    Button = component_from_npm("semantic-ui-react", "Button", version="2")
 
     @reactpy.component
     def App():
-        return Button({"primary": True, "id": "test-button"}, "Click me")
+        return html._(
+            Button({"primary": True, "id": "test-button"}, "Click me"),
+        )
 
-    await display.show(App)
-    button = await display.page.wait_for_selector("#test-button")
-    assert await button.inner_text() == "Click me"
-    classes = await button.get_attribute("class")
-    assert "ui" in classes
-    assert "button" in classes
+    async with BackendFixture(html_head=html.head(import_reactjs("preact"))) as backend:
+        async with DisplayFixture(backend=backend, browser=browser) as display:
+            await display.show(App)
+            button = await display.page.wait_for_selector("#test-button")
+            assert await button.inner_text() == "Click me"
+            classes = await button.get_attribute("class")
+            assert "ui" in classes
+            assert "button" in classes
 
 
-@pytest.mark.flaky(reruns=5, reruns_delay=2)
+@pytest.mark.flaky(reruns=3)
 async def test_component_from_npm_mantine(display: DisplayFixture):
     MantineProvider, Button = component_from_npm(
-        "@mantine/core", ["MantineProvider", "Button"], version="7.3.0"
+        "@mantine/core", ["MantineProvider", "Button"], version="8"
     )
 
     @reactpy.component
@@ -118,9 +145,9 @@ async def test_component_from_npm_mantine(display: DisplayFixture):
     assert "mantine-Button-root" in classes
 
 
-@pytest.mark.flaky(reruns=5, reruns_delay=2)
+@pytest.mark.flaky(reruns=3)
 async def test_component_from_npm_fluent_ui(display: DisplayFixture):
-    PrimaryButton = component_from_npm("@fluentui/react", "PrimaryButton")
+    PrimaryButton = component_from_npm("@fluentui/react", "PrimaryButton", version="8")
 
     @reactpy.component
     def App():
@@ -133,9 +160,9 @@ async def test_component_from_npm_fluent_ui(display: DisplayFixture):
     assert "ms-Button" in classes
 
 
-@pytest.mark.flaky(reruns=5, reruns_delay=2)
+@pytest.mark.flaky(reruns=3)
 async def test_component_from_npm_blueprint(display: DisplayFixture):
-    Button = component_from_npm("@blueprintjs/core", "Button")
+    Button = component_from_npm("@blueprintjs/core", "Button", version="6")
 
     @reactpy.component
     def App():
@@ -148,9 +175,9 @@ async def test_component_from_npm_blueprint(display: DisplayFixture):
     assert any(c.startswith("bp") and "button" in c for c in classes.split())
 
 
-@pytest.mark.flaky(reruns=5, reruns_delay=2)
+@pytest.mark.flaky(reruns=3)
 async def test_component_from_npm_grommet(display: DisplayFixture):
-    Grommet, Button = component_from_npm("grommet", ["Grommet", "Button"])
+    Grommet, Button = component_from_npm("grommet", ["Grommet", "Button"], version="2")
 
     @reactpy.component
     def App():
@@ -163,9 +190,9 @@ async def test_component_from_npm_grommet(display: DisplayFixture):
     assert await button.inner_text() == "Click me"
 
 
-@pytest.mark.flaky(reruns=5, reruns_delay=2)
+@pytest.mark.flaky(reruns=3)
 async def test_component_from_npm_evergreen(display: DisplayFixture):
-    Button = component_from_npm("evergreen-ui", "Button")
+    Button = component_from_npm("evergreen-ui", "Button", version="7")
 
     @reactpy.component
     def App():
@@ -176,9 +203,9 @@ async def test_component_from_npm_evergreen(display: DisplayFixture):
     assert await button.inner_text() == "Click me"
 
 
-@pytest.mark.flaky(reruns=5, reruns_delay=2)
+@pytest.mark.flaky(reruns=3)
 async def test_component_from_npm_react_spinners(display: DisplayFixture):
-    ClipLoader = component_from_npm("react-spinners", "ClipLoader")
+    ClipLoader = component_from_npm("react-spinners", "ClipLoader", version="0.17.0")
 
     @reactpy.component
     def App():
@@ -199,13 +226,10 @@ async def test_component_from_npm_react_spinners(display: DisplayFixture):
     assert await loader.is_visible()
 
 
-@pytest.mark.flaky(reruns=5, reruns_delay=2)
+@pytest.mark.flaky(reruns=3)
 async def test_nested_npm_components(display: DisplayFixture):
-    # Use Chakra UI Provider and Box, and nest a React Bootstrap Button inside
-    ChakraProvider, Box = component_from_npm(
-        "@chakra-ui/react", ["ChakraProvider", "Box"], version="2.8.2"
-    )
-    BootstrapButton = component_from_npm("react-bootstrap", "Button", version="2.10.2")
+    ChakraProvider, Box, _ = _get_chakra_components()
+    BootstrapButton = component_from_npm("react-bootstrap", "Button", version="2")
 
     @reactpy.component
     def App():
@@ -235,10 +259,10 @@ async def test_nested_npm_components(display: DisplayFixture):
     assert "btn" in classes
 
 
-@pytest.mark.flaky(reruns=5, reruns_delay=2)
+@pytest.mark.flaky(reruns=3)
 async def test_interleaved_npm_and_server_components(display: DisplayFixture):
-    Card = component_from_npm("antd", "Card", version="4.24.15")
-    Button = component_from_npm("@mui/material", "Button")
+    Card = component_from_npm("antd", "Card", version="6")
+    Button = component_from_npm("@mui/material", "Button", version="7")
 
     @reactpy.component
     def App():
@@ -267,13 +291,12 @@ async def test_interleaved_npm_and_server_components(display: DisplayFixture):
     assert "MUI BUTTON" in await button.inner_text()  # MUI capitalizes
 
 
-@pytest.mark.flaky(reruns=5, reruns_delay=2)
+@pytest.mark.flaky(reruns=3)
 async def test_complex_nested_material_ui(display: DisplayFixture):
-    # Import multiple components from @mui/material
-    # Note: component_from_npm can take a list of names
     mui_components = component_from_npm(
         "@mui/material",
         ["Button", "Card", "CardContent", "Typography", "Box", "Stack"],
+        version="7",
     )
     Button, Card, CardContent, Typography, Box, Stack = mui_components
 
@@ -348,3 +371,23 @@ async def test_complex_nested_material_ui(display: DisplayFixture):
     # But let's just check if the text "be-nev-o-lent" is visible
     text = await display.page.wait_for_selector("text=be-nev-o-lent")
     assert await text.is_visible()
+
+
+def _get_chakra_components():
+    # FIXME: Chakra UI requires `defaultSystem` to be passed in to the provider. We need
+    # to figure out how to do this better in the long term, perhaps by enhancing
+    # `component_from_npm` to support such cases.
+    from reactpy.reactjs import component_from_string
+
+    wrapper_js = """
+    import { ChakraProvider as _ChakraProvider, defaultSystem, Box as _Box, Button as _Button } from "https://esm.sh/@chakra-ui/react@3?external=react,react-dom,react/jsx-runtime&bundle&target=es2020";
+    import * as React from "react";
+
+    export function ChakraProvider(props) {
+        return React.createElement(_ChakraProvider, { value: defaultSystem, ...props });
+    }
+
+    export const Box = _Box;
+    export const Button = _Button;
+    """
+    return component_from_string(wrapper_js, ["ChakraProvider", "Box", "Button"])

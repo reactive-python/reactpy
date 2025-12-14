@@ -175,10 +175,8 @@ def component_from_npm(
     url = f"{cdn}/{package}@{version}"
 
     if "esm.sh" in cdn:
-        if "?" in url:
-            url += "&external=react,react-dom&bundle"
-        else:
-            url += "?external=react,react-dom&bundle"
+        url += "&" if "?" in url else "?"
+        url += "external=react,react-dom,react/jsx-runtime&bundle&target=es2020"
 
     return component_from_url(
         url,

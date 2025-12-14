@@ -13,7 +13,8 @@
   "license": "MIT",
   "name": "@reactpy/app",
   "scripts": {
-    "build": "bun build \"src/index.ts\" \"src/react.ts\" \"src/react-dom.ts\" \"src/react-jsx-runtime.ts\" --outdir=\"../../../../reactpy/static/\" --minify --sourcemap=\"linked\" --splitting",
+    "build": "bun build \"src/index.ts\" \"src/preact.ts\" \"src/preact-dom.ts\" \"src/preact-jsx-runtime.ts\"  --outdir=\"../../../../reactpy/static/\" --minify --production --sourcemap=\"linked\" --splitting",
+    "buildDev": "bun build \"src/index.ts\" \"src/preact.ts\" \"src/preact-dom.ts\" \"src/preact-jsx-runtime.ts\" --outdir=\"../../../../reactpy/static/\" --sourcemap=\"linked\" --splitting",
     "checkTypes": "tsc --noEmit"
   }
 }

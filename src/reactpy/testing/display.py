@@ -76,7 +76,10 @@ class DisplayFixture:
             self.page.set_default_navigation_timeout(self.timeout * 1000)
             self.page.set_default_timeout(self.timeout * 1000)
             self.page.on("console", lambda x: print(f"BROWSER CONSOLE: {x.text}"))  # noqa: T201
-            self.page.on("pageerror", lambda x: print(f"BROWSER ERROR: {x}"))  # noqa: T201
+            self.page.on(
+                "pageerror",
+                lambda x: print(f"BROWSER ERROR: {x.name} - {x.message}\n{x.stack}"),  # noqa: T201
+            )
 
     async def __aexit__(
         self,

@@ -5,7 +5,7 @@ import re
 import shutil
 import time
 from contextlib import contextmanager, suppress
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
 import requests
@@ -13,15 +13,7 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-def module_name_suffix(name: str) -> str:
-    if name.startswith("@"):
-        name = name[1:]
-    head, _, tail = name.partition("@")  # handle version identifier
-    _, _, tail = tail.partition("/")  # get section after version
-    return PurePosixPath(tail or head).suffix or ".js"
-
-
-def resolve_from_module_file(
+def resolve_names_from_file(
     file: Path,
     max_depth: int,
     is_regex_import: bool = False,
@@ -33,25 +25,25 @@ def resolve_from_module_file(
         logger.warning(f"Did not resolve imports for unknown file {file}")
         return set()
 
-    names, references = resolve_from_module_source(
+    names, references = resolve_names_from_source(
         file.read_text(encoding="utf-8"), exclude_default=is_regex_import
     )
 
     for ref in references:
         if urlparse(ref).scheme:  # is an absolute URL
             names.update(
-                resolve_from_module_url(ref, max_depth - 1, is_regex_import=True)
+                resolve_names_from_url(ref, max_depth - 1, is_regex_import=True)
             )
         else:
             path = file.parent.joinpath(*ref.split("/"))
             names.update(
-                resolve_from_module_file(path, max_depth - 1, is_regex_import=True)
+                resolve_names_from_file(path, max_depth - 1, is_regex_import=True)
             )
 
     return names
 
 
-def resolve_from_module_url(
+def resolve_names_from_url(
     url: str,
     max_depth: int,
     is_regex_import: bool = False,
@@ -67,18 +59,16 @@ def resolve_from_module_url(
         logger.warning(f"Did not resolve imports for url {url} {reason}")
         return set()
 
-    names, references = resolve_from_module_source(
-        text, exclude_default=is_regex_import
-    )
+    names, references = resolve_names_from_source(text, exclude_default=is_regex_import)
 
     for ref in references:
         url = normalize_url_path(url, ref)
-        names.update(resolve_from_module_url(url, max_depth - 1, is_regex_import=True))
+        names.update(resolve_names_from_url(url, max_depth - 1, is_regex_import=True))
 
     return names
 
 
-def resolve_from_module_source(
+def resolve_names_from_source(
     content: str, exclude_default: bool
 ) -> tuple[set[str], set[str]]:
     """Find names exported by the given JavaScript module content to assist with ReactPy import resolution.

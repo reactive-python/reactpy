@@ -72,9 +72,8 @@ reactpy = "reactpy._console.cli:entry_point"
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
 commands = [
-  "hatch --env default run javascript:build",
-  'python "src/build_scripts/copy_dir.py" "src/js/node_modules/@pyscript/core/dist" "src/reactpy/static/pyscript"',
-  'python "src/build_scripts/copy_dir.py" "src/js/node_modules/morphdom/dist" "src/reactpy/static/morphdom"',
+  'hatch --env default run "src/build_scripts/copy_dir.py" "src/js/node_modules/@pyscript/core/dist" "src/reactpy/static/pyscript"',
+  'hatch --env default run "src/build_scripts/copy_dir.py" "src/js/node_modules/morphdom/dist" "src/reactpy/static/morphdom"',
 ]
 artifacts = []
 
@@ -84,13 +83,15 @@ artifacts = []
 [tool.hatch.envs.hatch-test.scripts]
 run = [
   'hatch --env default run "src/build_scripts/install_playwright.py"',
+  "hatch --env default run javascript:build --dev",
   "hatch --env default build -t wheel",
   "pytest{env:HATCH_TEST_ARGS:} {args}",
 ]
 run-cov = [
-  'hatch --env default run "src/build_scripts/delete_old_coverage.py"',
   'hatch --env default run "src/build_scripts/install_playwright.py"',
+  "hatch --env default run javascript:build --dev",
   "hatch --env default build -t wheel",
+  'hatch --env default run "src/build_scripts/delete_old_coverage.py"',
   "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}",
 ]
 cov-combine = "coverage combine"
@@ -198,22 +199,15 @@ test = ['hatch run javascript:build_event_to_object', 'bun test']
 build = [
   'hatch run "src/build_scripts/clean_js_dir.py"',
   'bun install --cwd "src/js"',
-  'hatch run javascript:build_event_to_object',
-  'hatch run javascript:build_client',
-  'hatch run javascript:build_app',
+  'hatch run javascript:build_event_to_object {args}',
+  'hatch run javascript:build_client {args}',
+  'hatch run javascript:build_app {args}',
 ]
 build_event_to_object = [
-  'bun install --cwd "src/js/packages/event-to-object"',
-  'bun run --cwd "src/js/packages/event-to-object" build',
+  'hatch run "src/build_scripts/build_js_event_to_object.py" {args}',
 ]
-build_client = [
-  'bun install --cwd "src/js/packages/@reactpy/client"',
-  'bun run --cwd "src/js/packages/@reactpy/client" build',
-]
-build_app = [
-  'bun install --cwd "src/js/packages/@reactpy/app"',
-  'bun run --cwd "src/js/packages/@reactpy/app" build',
-]
+build_client = ['hatch run "src/build_scripts/build_js_client.py" {args}']
+build_app = ['hatch run "src/build_scripts/build_js_app.py" {args}']
 publish_event_to_object = [
   'hatch run javascript:build_event_to_object',
   'cd "src/js/packages/event-to-object" && bun publish --access public',

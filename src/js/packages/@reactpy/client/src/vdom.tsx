@@ -1,6 +1,5 @@
 import type { ReactPyClientInterface } from "./types";
 import eventToObject from "event-to-object";
-import * as preact from "preact";
 import type {
   ReactPyVdom,
   ReactPyVdomImportSource,
@@ -10,6 +9,7 @@ import type {
   ReactPyModuleBinding,
   ImportSourceBinding,
 } from "./types";
+import { infer_bind_from_environment } from "./bind";
 import log from "./logger";
 
 export async function loadImportSource(
@@ -25,11 +25,7 @@ export async function loadImportSource(
 
   let { bind } = module;
   if (typeof bind !== "function") {
-    console.debug(
-      "Using generic ReactJS binding for components in module",
-      module,
-    );
-    bind = generic_reactjs_bind;
+    bind = await infer_bind_from_environment();
   }
 
   return (node: HTMLElement) => {
@@ -261,17 +257,6 @@ function createInlineJavaScript(
   };
   wrappedExecutable.isHandler = false;
   return [name, wrappedExecutable];
-}
-
-function generic_reactjs_bind(node: HTMLElement) {
-  return {
-    create: (type: any, props: any, children?: any[]) =>
-      preact.createElement(type, props, ...(children || [])),
-    render: (element: any) => {
-      preact.render(element, node);
-    },
-    unmount: () => preact.render(null, node),
-  };
 }
 
 class ReactPyChild extends HTMLElement {

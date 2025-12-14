@@ -1,7 +1,8 @@
 {
   "workspaces": [
-    "packages/*",
-    "packages/@reactpy/*"
+    "packages/event-to-object",
+    "packages/@reactpy/app",
+    "packages/@reactpy/client"
   ],
   "catalog": {
     "preact": "^10.27.2",

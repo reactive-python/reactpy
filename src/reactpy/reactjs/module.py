@@ -1,20 +1,19 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
-from typing import Any
+from pathlib import Path, PurePosixPath
+from typing import Any, Literal
 
 from reactpy import config
-from reactpy.config import REACTPY_WEB_MODULES_DIR
+from reactpy.config import REACTPY_DEBUG, REACTPY_WEB_MODULES_DIR
 from reactpy.core.vdom import Vdom
 from reactpy.reactjs.types import NAME_SOURCE, URL_SOURCE
 from reactpy.reactjs.utils import (
     are_files_identical,
     copy_file,
     file_lock,
-    module_name_suffix,
-    resolve_from_module_file,
-    resolve_from_module_url,
+    resolve_names_from_file,
+    resolve_names_from_url,
 )
 from reactpy.types import ImportSourceDict, JavaScriptModule, VdomConstructor
 
@@ -34,7 +33,7 @@ def url_to_module(
         default_fallback=fallback,
         file=None,
         import_names=(
-            resolve_from_module_url(url, resolve_imports_depth)
+            resolve_names_from_url(url, resolve_imports_depth)
             if resolve_imports
             else None
         ),
@@ -76,7 +75,7 @@ def file_to_module(
         default_fallback=fallback,
         file=target_file,
         import_names=(
-            resolve_from_module_file(source_file, resolve_imports_depth)
+            resolve_names_from_file(source_file, resolve_imports_depth)
             if resolve_imports
             else None
         ),
@@ -112,7 +111,7 @@ def string_to_module(
         default_fallback=fallback,
         file=target_file,
         import_names=(
-            resolve_from_module_file(target_file, resolve_imports_depth)
+            resolve_names_from_file(target_file, resolve_imports_depth)
             if resolve_imports
             else None
         ),
@@ -180,26 +179,101 @@ def make_module(
     )
 
 
+def import_reactjs(
+    framework: Literal["preact", "react"] | None = None,
+    version: str | None = None,
+    use_local: bool = False,
+):
+    """
+    Return an import map script tag for ReactJS or Preact.
+    Parameters:
+        framework:
+            The framework to use, either "preact" or "react". Defaults to "preact".
+        version:
+            The version of the framework to use. Example values include "18", "10.2.4",
+            or "latest". If left as `None`, a default version will be used depending on the
+            selected framework.
+        use_local:
+            Whether to use the local framework ReactPy is bundled with (Preact).
+    Raises:
+        ValueError:
+            If both `framework` and `react_url_prefix` are provided, or if
+            `framework` is not one of "preact" or "react".
+    Returns:
+        A VDOM script tag containing the import map.
+    """
+    from reactpy import html
+
+    if use_local and (framework or version):
+        raise ValueError("use_local cannot be used with framework or version")
+
+    framework = framework or "preact"
+    if framework and framework not in {"preact", "react"}:
+        raise ValueError("framework must be 'preact' or 'react'")
+
+    # Import map for ReactPy's local framework (re-exported/bundled/minified version of Preact)
+    if use_local:
+        prefix = f"/{config.REACTPY_PATH_PREFIX.current.strip('/')}/static/{framework}"
+        return html.script(
+            {"type": "importmap"},
+            f"""
+            {{
+                "imports": {{
+                    "react": "{prefix}.js",
+                    "react-dom": "{prefix}-dom.js",
+                    "react-dom/client": "{prefix}-dom.js",
+                    "react/jsx-runtime": "{prefix}-jsx-runtime.js"
+                }}
+            }}
+            """,
+        )
+
+    # Import map for ReactJS from esm.sh
+    if framework == "react":
+        version = version or "19"
+        postfix = "?dev" if REACTPY_DEBUG.current else ""
+        return html.script(
+            {"type": "importmap"},
+            f"""
+            {{
+                "imports": {{
+                    "react": "https://esm.sh/react@{version}{postfix}",
+                    "react-dom": "https://esm.sh/react-dom@{version}{postfix}",
+                    "react-dom/client": "https://esm.sh/react-dom@{version}/client{postfix}",
+                    "react/jsx-runtime": "https://esm.sh/react@{version}/jsx-runtime{postfix}"
+                }}
+            }}
+            """,
+        )
+
+    # Import map for Preact from esm.sh
+    if framework == "preact":
+        version = version or "10"
+        postfix = "?dev" if REACTPY_DEBUG.current else ""
+        return html.script(
+            {"type": "importmap"},
+            f"""
+            {{
+                "imports": {{
+                    "react": "https://esm.sh/preact@{version}/compat{postfix}",
+                    "react-dom": "https://esm.sh/preact@{version}/compat{postfix}",
+                    "react-dom/client": "https://esm.sh/preact@{version}/compat/client{postfix}",
+                    "react/jsx-runtime": "https://esm.sh/preact@{version}/compat/jsx-runtime{postfix}"
+                }}
+            }}
+            """,
+        )
+
+
+def module_name_suffix(name: str) -> str:
+    if name.startswith("@"):
+        name = name[1:]
+    head, _, tail = name.partition("@")  # handle version identifier
+    _, _, tail = tail.partition("/")  # get section after version
+    return PurePosixPath(tail or head).suffix or ".js"
+
+
 def get_module_path(name: str) -> Path:
     directory = REACTPY_WEB_MODULES_DIR.current
     path = directory.joinpath(*name.split("/"))
     return path.with_suffix(path.suffix)
-
-
-def import_reactjs():
-    from reactpy import html
-
-    base_url = config.REACTPY_PATH_PREFIX.current.strip("/")
-    return html.script(
-        {"type": "importmap"},
-        f"""
-        {{
-            "imports": {{
-                "react": "/{base_url}/static/react.js",
-                "react-dom": "/{base_url}/static/react-dom.js",
-                "react-dom/client": "/{base_url}/static/react-dom.js",
-                "react/jsx-runtime": "/{base_url}/static/react-jsx-runtime.js"
-            }}
-        }}
-        """,
-    )

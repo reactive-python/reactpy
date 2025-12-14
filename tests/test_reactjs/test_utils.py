@@ -4,14 +4,14 @@ from unittest.mock import patch
 import pytest
 import responses
 
+from reactpy.reactjs.module import module_name_suffix
 from reactpy.reactjs.utils import (
     copy_file,
     file_lock,
-    module_name_suffix,
     normalize_url_path,
-    resolve_from_module_file,
-    resolve_from_module_source,
-    resolve_from_module_url,
+    resolve_names_from_file,
+    resolve_names_from_source,
+    resolve_names_from_url,
 )
 from reactpy.testing import assert_reactpy_did_log
 
@@ -43,7 +43,7 @@ def test_resolve_module_exports_from_file(caplog):
         body="export {something as ExternalUrl}",
     )
     path = JS_FIXTURES_DIR / "export-resolution" / "index.js"
-    assert resolve_from_module_file(path, 4) == {
+    assert resolve_names_from_file(path, 4) == {
         "Index",
         "One",
         "Two",
@@ -53,13 +53,13 @@ def test_resolve_module_exports_from_file(caplog):
 
 def test_resolve_module_exports_from_file_log_on_max_depth(caplog):
     path = JS_FIXTURES_DIR / "export-resolution" / "index.js"
-    assert resolve_from_module_file(path, 0) == set()
+    assert resolve_names_from_file(path, 0) == set()
     assert len(caplog.records) == 1
     assert caplog.records[0].message.endswith("max depth reached")
 
     caplog.records.clear()
 
-    assert resolve_from_module_file(path, 2) == {"Index", "One"}
+    assert resolve_names_from_file(path, 2) == {"Index", "One"}
     assert len(caplog.records) == 1
     assert caplog.records[0].message.endswith("max depth reached")
 
@@ -69,7 +69,7 @@ def test_resolve_module_exports_from_file_log_on_unknown_file_location(
 ):
     file = tmp_path / "some.js"
     file.write_text("export * from './does-not-exist.js';")
-    resolve_from_module_file(file, 2)
+    resolve_names_from_file(file, 2)
     assert len(caplog.records) == 1
     assert caplog.records[0].message.startswith(
         "Did not resolve imports for unknown file"
@@ -99,7 +99,7 @@ def test_resolve_module_exports_from_url():
         body="export const Fourth = 4;",
     )
 
-    assert resolve_from_module_url("https://some.url/first.js", 4) == {
+    assert resolve_names_from_url("https://some.url/first.js", 4) == {
         "First",
         "Second",
         "Third",
@@ -108,13 +108,13 @@ def test_resolve_module_exports_from_url():
 
 
 def test_resolve_module_exports_from_url_log_on_max_depth(caplog):
-    assert resolve_from_module_url("https://some.url", 0) == set()
+    assert resolve_names_from_url("https://some.url", 0) == set()
     assert len(caplog.records) == 1
     assert caplog.records[0].message.endswith("max depth reached")
 
 
 def test_resolve_module_exports_from_url_log_on_bad_response(caplog):
-    assert resolve_from_module_url("https://some.url", 1) == set()
+    assert resolve_names_from_url("https://some.url", 1) == set()
     assert len(caplog.records) == 1
     assert caplog.records[0].message.startswith("Did not resolve imports for url")
 
@@ -131,13 +131,13 @@ def test_resolve_module_exports_from_url_log_on_bad_response(caplog):
     ],
 )
 def test_resolve_module_default_exports_from_source(text):
-    names, references = resolve_from_module_source(text, exclude_default=False)
+    names, references = resolve_names_from_source(text, exclude_default=False)
     assert names == {"default"} and not references
 
 
 def test_resolve_module_exports_from_source():
     fixture_file = JS_FIXTURES_DIR / "exports-syntax.js"
-    names, references = resolve_from_module_source(
+    names, references = resolve_names_from_source(
         fixture_file.read_text(), exclude_default=False
     )
     assert names == (
@@ -151,7 +151,7 @@ def test_resolve_module_exports_from_source():
 
 def test_log_on_unknown_export_type():
     with assert_reactpy_did_log(match_message="Found unknown export "):
-        assert resolve_from_module_source(
+        assert resolve_names_from_source(
             "export something unknown;", exclude_default=False
         ) == (set(), set())
 
