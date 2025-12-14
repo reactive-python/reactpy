@@ -38,9 +38,11 @@ jobs:
             - if: runner.os == 'Windows'
               name: Setup RAM Disk
               uses: chad-golden/setup-ramdisk@main
-              env:
-                  HATCH_DATA_DIR: "R:\\hatch"
-                  HATCH_CACHE_DIR: "R:\\hatch_cache"
+            - if: runner.os == 'Windows'
+              name: Configure RAM Disk paths
+              run: |
+                  mkdir R:\playwright
+                  mklink /J C:\Users\runneradmin\AppData\Local\ms-playwright R:\playwright
             - uses: oven-sh/setup-bun@v2
               with:
                   bun-version: latest
