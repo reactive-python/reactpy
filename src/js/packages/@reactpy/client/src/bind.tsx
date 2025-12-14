@@ -38,10 +38,15 @@ function reactjs_bind(node: HTMLElement, React: any, ReactDOM: any) {
     create: (type: any, props: any, children?: any[]) =>
       React.createElement(type, props, ...(children || [])),
     render: (element: any) => {
-      if (!root && !roots.get(node)) {
-        root = ReactDOM.createRoot(node);
-        roots.set(node, root);
+      if (!root) {
+        if (!roots.get(node)) {
+          root = ReactDOM.createRoot(node);
+          roots.set(node, root);
+        } else {
+          root = roots.get(node);
+        }
       }
+
       root.render(element);
     },
     unmount: () => {
