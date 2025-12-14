@@ -1,4 +1,5 @@
 import pytest
+from playwright.async_api import expect
 
 import reactpy
 from reactpy import html
@@ -24,14 +25,13 @@ async def test_component_from_npm_react_bootstrap(display: DisplayFixture):
 
     await display.show(App)
 
-    button = await display.page.wait_for_selector("#test-button")
-    assert await button.inner_text() == "Click me"
+    button = display.page.locator("#test-button")
+    await expect(button).to_have_text("Click me")
 
     # Check if it has the correct class for primary variant
     # React Bootstrap buttons usually have 'btn' and 'btn-primary' classes
-    classes = await button.get_attribute("class")
-    assert "btn" in classes
-    assert "btn-primary" in classes
+    await expect(button).to_contain_class("btn")
+    await expect(button).to_contain_class("btn-primary")
 
 
 @pytest.mark.flaky(reruns=3)
@@ -48,14 +48,13 @@ async def test_component_from_npm_react_bootstrap_with_local_framework(browser):
         async with DisplayFixture(backend=backend, browser=browser) as display:
             await display.show(App)
 
-            button = await display.page.wait_for_selector("#test-button")
-            assert await button.inner_text() == "Click me"
+            button = display.page.locator("#test-button")
+            await expect(button).to_have_text("Click me")
 
             # Check if it has the correct class for primary variant
             # React Bootstrap buttons usually have 'btn' and 'btn-primary' classes
-            classes = await button.get_attribute("class")
-            assert "btn" in classes
-            assert "btn-primary" in classes
+            await expect(button).to_contain_class("btn")
+            await expect(button).to_contain_class("btn-primary")
 
 
 @pytest.mark.flaky(reruns=3)
@@ -67,11 +66,11 @@ async def test_component_from_npm_material_ui(display: DisplayFixture):
         return Button({"variant": "contained", "id": "test-button"}, "Click me")
 
     await display.show(App)
-    button = await display.page.wait_for_selector("#test-button")
+    button = display.page.locator("#test-button")
     # Material UI transforms text to uppercase by default
-    assert await button.inner_text() == "CLICK ME"
-    classes = await button.get_attribute("class")
-    assert "MuiButton-root" in classes
+    await expect(button).to_have_text("Click me")
+    await expect(button).to_have_css("text-transform", "uppercase")
+    await expect(button).to_contain_class("MuiButton-root")
 
 
 @pytest.mark.flaky(reruns=3)
@@ -83,10 +82,9 @@ async def test_component_from_npm_antd(display: DisplayFixture):
         return Button({"type": "primary", "id": "test-button"}, "Click me")
 
     await display.show(App)
-    button = await display.page.wait_for_selector("#test-button")
-    assert "Click me" in await button.inner_text()
-    classes = await button.get_attribute("class")
-    assert "ant-btn" in classes
+    button = display.page.locator("#test-button")
+    await expect(button).to_have_text("Click me")
+    await expect(button).to_contain_class("ant-btn")
 
 
 @pytest.mark.flaky(reruns=3)
@@ -100,10 +98,9 @@ async def test_component_from_npm_chakra_ui(display: DisplayFixture):
         )
 
     await display.show(App)
-    button = await display.page.wait_for_selector("#test-button")
-    assert await button.inner_text() == "Click me"
-    classes = await button.get_attribute("class")
-    assert "chakra-button" in classes
+    button = display.page.locator("#test-button")
+    await expect(button).to_have_text("Click me")
+    await expect(button).to_contain_class("chakra-button")
 
 
 @pytest.mark.flaky(reruns=3)
@@ -121,11 +118,10 @@ async def test_component_from_npm_semantic_ui_react(browser):
     async with BackendFixture(html_head=html.head(import_reactjs("preact"))) as backend:
         async with DisplayFixture(backend=backend, browser=browser) as display:
             await display.show(App)
-            button = await display.page.wait_for_selector("#test-button")
-            assert await button.inner_text() == "Click me"
-            classes = await button.get_attribute("class")
-            assert "ui" in classes
-            assert "button" in classes
+            button = display.page.locator("#test-button")
+            await expect(button).to_have_text("Click me")
+            await expect(button).to_contain_class("ui")
+            await expect(button).to_contain_class("button")
 
 
 @pytest.mark.flaky(reruns=3)
@@ -139,10 +135,9 @@ async def test_component_from_npm_mantine(display: DisplayFixture):
         return MantineProvider(Button({"id": "test-button"}, "Click me"))
 
     await display.show(App)
-    button = await display.page.wait_for_selector("#test-button")
-    assert await button.inner_text() == "Click me"
-    classes = await button.get_attribute("class")
-    assert "mantine-Button-root" in classes
+    button = display.page.locator("#test-button")
+    await expect(button).to_have_text("Click me")
+    await expect(button).to_contain_class("mantine-Button-root")
 
 
 @pytest.mark.flaky(reruns=3)
@@ -154,10 +149,9 @@ async def test_component_from_npm_fluent_ui(display: DisplayFixture):
         return PrimaryButton({"id": "test-button"}, "Click me")
 
     await display.show(App)
-    button = await display.page.wait_for_selector("#test-button")
-    assert await button.inner_text() == "Click me"
-    classes = await button.get_attribute("class")
-    assert "ms-Button" in classes
+    button = display.page.locator("#test-button")
+    await expect(button).to_have_text("Click me")
+    await expect(button).to_contain_class("ms-Button")
 
 
 @pytest.mark.flaky(reruns=3)
@@ -169,10 +163,9 @@ async def test_component_from_npm_blueprint(display: DisplayFixture):
         return Button({"intent": "primary", "id": "test-button"}, "Click me")
 
     await display.show(App)
-    button = await display.page.wait_for_selector("#test-button")
-    assert await button.inner_text() == "Click me"
-    classes = await button.get_attribute("class")
-    assert any(c.startswith("bp") and "button" in c for c in classes.split())
+    button = display.page.locator("#test-button")
+    await expect(button).to_have_text("Click me")
+    await expect(button).to_contain_class("bp6-button")
 
 
 @pytest.mark.flaky(reruns=3)
@@ -186,8 +179,8 @@ async def test_component_from_npm_grommet(display: DisplayFixture):
         )
 
     await display.show(App)
-    button = await display.page.wait_for_selector("#test-button")
-    assert await button.inner_text() == "Click me"
+    button = display.page.locator("#test-button")
+    await expect(button).to_have_text("Click me")
 
 
 @pytest.mark.flaky(reruns=3)
@@ -199,8 +192,8 @@ async def test_component_from_npm_evergreen(display: DisplayFixture):
         return Button({"appearance": "primary", "id": "test-button"}, "Click me")
 
     await display.show(App)
-    button = await display.page.wait_for_selector("#test-button")
-    assert await button.inner_text() == "Click me"
+    button = display.page.locator("#test-button")
+    await expect(button).to_have_text("Click me")
 
 
 @pytest.mark.flaky(reruns=3)
@@ -222,8 +215,8 @@ async def test_component_from_npm_react_spinners(display: DisplayFixture):
     # react-spinners renders a span with the loader
     # We can check if it exists. It might not have an ID we can easily set on the root if it doesn't forward props well,
     # but let's try wrapping it.
-    loader = await display.page.wait_for_selector("span[data-testid='loader']")
-    assert await loader.is_visible()
+    loader = display.page.locator("span[data-testid='loader']")
+    await expect(loader).to_be_visible()
 
 
 @pytest.mark.flaky(reruns=3)
@@ -250,13 +243,12 @@ async def test_nested_npm_components(display: DisplayFixture):
 
     await display.show(App)
 
-    box = await display.page.wait_for_selector("#chakra-box")
-    assert await box.is_visible()
+    box = display.page.locator("#chakra-box")
+    await expect(box).to_be_visible()
 
-    button = await display.page.wait_for_selector("#bootstrap-button")
-    assert await button.inner_text() == "Nested Button"
-    classes = await button.get_attribute("class")
-    assert "btn" in classes
+    button = display.page.locator("#bootstrap-button")
+    await expect(button).to_have_text("Nested Button")
+    await expect(button).to_contain_class("btn")
 
 
 @pytest.mark.flaky(reruns=3)
@@ -280,15 +272,16 @@ async def test_interleaved_npm_and_server_components(display: DisplayFixture):
 
     await display.show(App)
 
-    card = await display.page.wait_for_selector("#antd-card")
-    assert await card.is_visible()
+    card = display.page.locator("#antd-card")
+    await expect(card).to_be_visible()
 
-    server_div = await display.page.wait_for_selector("#server-div")
-    assert await server_div.is_visible()
-    assert "Server Side Div" in await server_div.inner_text()
+    server_div = display.page.locator("#server-div")
+    await expect(server_div).to_be_visible()
+    await expect(server_div).to_contain_text("Server Side Div")
 
-    button = await display.page.wait_for_selector("#mui-button")
-    assert "MUI BUTTON" in await button.inner_text()  # MUI capitalizes
+    button = display.page.locator("#mui-button")
+    await expect(button).to_contain_text("MUI Button")  # MUI capitalizes
+    await expect(button).to_have_css("text-transform", "uppercase")
 
 
 @pytest.mark.flaky(reruns=3)
@@ -361,16 +354,17 @@ async def test_complex_nested_material_ui(display: DisplayFixture):
     await display.show(App)
 
     # Check if the button is visible and has correct text
-    btn = await display.page.wait_for_selector("#learn-more-btn")
-    assert await btn.is_visible()
+    btn = display.page.locator("#learn-more-btn")
+    await expect(btn).to_be_visible()
     # Material UI transforms text to uppercase by default
-    assert "LEARN MORE" in await btn.inner_text()
+    await expect(btn).to_contain_text("Learn More")
+    await expect(btn).to_have_css("text-transform", "uppercase")
 
     # Check if Card is rendered (it usually has MuiCard-root class)
     # We can't easily select by ID as we didn't put one on Card, but we can check structure if needed.
     # But let's just check if the text "be-nev-o-lent" is visible
-    text = await display.page.wait_for_selector("text=be-nev-o-lent")
-    assert await text.is_visible()
+    text = display.page.locator("text=be-nev-o-lent")
+    await expect(text).to_be_visible()
 
 
 def _get_chakra_components():
