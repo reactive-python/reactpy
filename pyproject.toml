@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "hatchling.build"
-requires = ["hatchling", "hatch-build-scripts"]
+requires = ["hatchling", "hatch-build-scripts", "hatch"]
 
 ##############################
 # >>> Hatch Build Config <<< #
@@ -71,28 +71,34 @@ installer = "uv"
 reactpy = "reactpy._console.cli:entry_point"
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
-# Note: `hatch` can't be called within `build-scripts` when installing packages in editable mode, so we have to write the commands long-form
-commands = [
-  'python "src/build_scripts/clean_js_dir.py"',
-  'bun install --cwd "src/js/packages/event-to-object"',
-  'bun run --cwd "src/js/packages/event-to-object" build',
-  'bun install --cwd "src/js/packages/@reactpy/client"',
-  'bun run --cwd "src/js/packages/@reactpy/client" build',
-  'bun install --cwd "src/js/packages/@reactpy/app"',
-  'bun run --cwd "src/js/packages/@reactpy/app" build',
-  'python "src/build_scripts/copy_dir.py" "src/js/node_modules/@pyscript/core/dist" "src/reactpy/static/pyscript"',
-  'python "src/build_scripts/copy_dir.py" "src/js/node_modules/morphdom/dist" "src/reactpy/static/morphdom"',
-]
+commands = []
 artifacts = []
 
 #############################
 # >>> Hatch Test Runner <<< #
 #############################
+[tool.hatch.envs.hatch-test.scripts]
+run = [
+  'hatch --env default run "src/build_scripts/install_playwright.py"',
+  "hatch --env default run javascript:build --dev",
+  "hatch --env default build -t wheel",
+  "pytest{env:HATCH_TEST_ARGS:} {args} --max-worker-restart 10",
+]
+run-cov = [
+  'hatch --env default run "src/build_scripts/install_playwright.py"',
+  "hatch --env default run javascript:build --dev",
+  "hatch --env default build -t wheel",
+  'hatch --env default run "src/build_scripts/delete_old_coverage.py"',
+  "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args} --max-worker-restart 10",
+]
+cov-combine = "coverage combine"
+cov-report = "coverage report"
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
   "pytest-sugar",
   "pytest-asyncio",
+  "pytest-timeout",
   "responses",
   "exceptiongroup",
   "jsonpointer",
@@ -115,8 +121,10 @@ filterwarnings = """
 testpaths = "tests"
 xfail_strict = true
 asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "function"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 log_cli_level = "INFO"
+timeout = 120
 
 #######################################
 # >>> Hatch Documentation Scripts <<< #
@@ -162,6 +170,7 @@ extra-dependencies = [
   "types-requests",
   "types-lxml",
   "jsonpointer",
+  "pytest",
 ]
 
 [tool.hatch.envs.python.scripts]
@@ -177,33 +186,28 @@ detached = true
 [tool.hatch.envs.javascript.scripts]
 check = [
   'hatch run javascript:build',
-  'bun install --cwd "src/js"',
   'bun run --cwd "src/js" lint',
   'bun run --cwd "src/js/packages/event-to-object" checkTypes',
   'bun run --cwd "src/js/packages/@reactpy/client" checkTypes',
   'bun run --cwd "src/js/packages/@reactpy/app" checkTypes',
 ]
 fix = ['bun install --cwd "src/js"', 'bun run --cwd "src/js" format']
-test = ['hatch run javascript:build_event_to_object', 'bun test']
+test = ['hatch run javascript:build_event_to_object --dev', 'bun test']
 build = [
   'hatch run "src/build_scripts/clean_js_dir.py"',
   'bun install --cwd "src/js"',
-  'hatch run javascript:build_event_to_object',
-  'hatch run javascript:build_client',
-  'hatch run javascript:build_app',
+  'hatch run javascript:build_event_to_object {args}',
+  'hatch run javascript:build_client {args}',
+  'hatch run javascript:build_app {args}',
+  'hatch --env default run "src/build_scripts/copy_dir.py" "src/js/node_modules/@pyscript/core/dist" "src/reactpy/static/pyscript"',
+  'hatch --env default run "src/build_scripts/copy_dir.py" "src/js/node_modules/morphdom/dist" "src/reactpy/static/morphdom"',
+
 ]
 build_event_to_object = [
-  'bun install --cwd "src/js/packages/event-to-object"',
-  'bun run --cwd "src/js/packages/event-to-object" build',
+  'hatch run "src/build_scripts/build_js_event_to_object.py" {args}',
 ]
-build_client = [
-  'bun install --cwd "src/js/packages/@reactpy/client"',
-  'bun run --cwd "src/js/packages/@reactpy/client" build',
-]
-build_app = [
-  'bun install --cwd "src/js/packages/@reactpy/app"',
-  'bun run --cwd "src/js/packages/@reactpy/app" build',
-]
+build_client = ['hatch run "src/build_scripts/build_js_client.py" {args}']
+build_app = ['hatch run "src/build_scripts/build_js_app.py" {args}']
 publish_event_to_object = [
   'hatch run javascript:build_event_to_object',
   'cd "src/js/packages/event-to-object" && bun publish --access public',

@@ -1,8 +1,11 @@
 import filecmp
 import logging
+import os
 import re
 import shutil
-from pathlib import Path, PurePosixPath
+import time
+from contextlib import contextmanager, suppress
+from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
 import requests
@@ -10,15 +13,7 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-def module_name_suffix(name: str) -> str:
-    if name.startswith("@"):
-        name = name[1:]
-    head, _, tail = name.partition("@")  # handle version identifier
-    _, _, tail = tail.partition("/")  # get section after version
-    return PurePosixPath(tail or head).suffix or ".js"
-
-
-def resolve_from_module_file(
+def resolve_names_from_file(
     file: Path,
     max_depth: int,
     is_regex_import: bool = False,
@@ -30,25 +25,25 @@ def resolve_from_module_file(
         logger.warning(f"Did not resolve imports for unknown file {file}")
         return set()
 
-    names, references = resolve_from_module_source(
+    names, references = resolve_names_from_source(
         file.read_text(encoding="utf-8"), exclude_default=is_regex_import
     )
 
     for ref in references:
         if urlparse(ref).scheme:  # is an absolute URL
             names.update(
-                resolve_from_module_url(ref, max_depth - 1, is_regex_import=True)
+                resolve_names_from_url(ref, max_depth - 1, is_regex_import=True)
             )
         else:
             path = file.parent.joinpath(*ref.split("/"))
             names.update(
-                resolve_from_module_file(path, max_depth - 1, is_regex_import=True)
+                resolve_names_from_file(path, max_depth - 1, is_regex_import=True)
             )
 
     return names
 
 
-def resolve_from_module_url(
+def resolve_names_from_url(
     url: str,
     max_depth: int,
     is_regex_import: bool = False,
@@ -64,18 +59,16 @@ def resolve_from_module_url(
         logger.warning(f"Did not resolve imports for url {url} {reason}")
         return set()
 
-    names, references = resolve_from_module_source(
-        text, exclude_default=is_regex_import
-    )
+    names, references = resolve_names_from_source(text, exclude_default=is_regex_import)
 
     for ref in references:
         url = normalize_url_path(url, ref)
-        names.update(resolve_from_module_url(url, max_depth - 1, is_regex_import=True))
+        names.update(resolve_names_from_url(url, max_depth - 1, is_regex_import=True))
 
     return names
 
 
-def resolve_from_module_source(
+def resolve_names_from_source(
     content: str, exclude_default: bool
 ) -> tuple[set[str], set[str]]:
     """Find names exported by the given JavaScript module content to assist with ReactPy import resolution.
@@ -167,9 +160,26 @@ def are_files_identical(f1: Path, f2: Path) -> bool:
 def copy_file(target: Path, source: Path, symlink: bool) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     if symlink:
+        if target.exists():
+            target.unlink()
         target.symlink_to(source)
     else:
-        shutil.copy(source, target)
+        temp_target = target.with_suffix(f"{target.suffix}.tmp")
+        shutil.copy(source, temp_target)
+        try:
+            temp_target.replace(target)
+        except OSError:
+            # On Windows, replace might fail if the file is open
+            # Retry once after a short delay
+            time.sleep(0.1)
+            try:
+                temp_target.replace(target)
+            except OSError:
+                # If it still fails, try to unlink and rename
+                # This is not atomic, but it's a fallback
+                if target.exists():
+                    target.unlink()
+                temp_target.rename(target)
 
 
 _JS_DEFAULT_EXPORT_PATTERN = re.compile(
@@ -181,3 +191,22 @@ _JS_FUNC_OR_CLS_EXPORT_PATTERN = re.compile(
 _JS_GENERAL_EXPORT_PATTERN = re.compile(
     r"(?:^|;|})\s*export(?=\s+|{)(.*?)(?=;|$)", re.MULTILINE
 )
+
+
+@contextmanager
+def file_lock(lock_file: Path, timeout: float = 10.0):
+    start_time = time.time()
+    while True:
+        try:
+            fd = os.open(lock_file, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+            os.close(fd)
+            break
+        except OSError as e:
+            if time.time() - start_time > timeout:
+                raise TimeoutError(f"Could not acquire lock {lock_file}") from e
+            time.sleep(0.1)
+    try:
+        yield
+    finally:
+        with suppress(OSError):
+            os.unlink(lock_file)

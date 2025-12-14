@@ -10,7 +10,7 @@ jobs:
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "Publish to PyPI"
-            run-cmd: "hatch build --clean && hatch publish --yes"
+            run-cmd: "hatch run javascript:build && hatch build --clean && hatch publish --yes"
         secrets:
             pypi-username: ${{ secrets.PYPI_USERNAME }}
             pypi-password: ${{ secrets.PYPI_PASSWORD }}

@@ -123,7 +123,7 @@ async def test_carrier(display: DisplayFixture):
     assert hook_val.current is not None
 
 
-async def test_customized_head(page):
+async def test_customized_head(browser):
     custom_title = "Custom Title for ReactPy"
 
     @reactpy.component
@@ -133,12 +133,12 @@ async def test_customized_head(page):
     app = ReactPy(sample, html_head=html.head(html.title(custom_title)))
 
     async with BackendFixture(app) as server:
-        async with DisplayFixture(backend=server, driver=page) as new_display:
+        async with DisplayFixture(backend=server, browser=browser) as new_display:
             await new_display.show(sample)
             assert (await new_display.page.title()) == custom_title
 
 
-async def test_head_request(page):
+async def test_head_request():
     @reactpy.component
     def sample():
         return html.h1("Hello World")

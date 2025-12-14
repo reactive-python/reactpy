@@ -175,14 +175,18 @@ function useImportSource(model: ReactPyVdom): MutableRefObject<any> {
   const mountPoint = useRef<HTMLElement>(null);
   const client = useContext(ClientContext);
   const [binding, setBinding] = useState<ImportSourceBinding | null>(null);
+  const bindingSource = useRef<string | null>(null);
 
   useEffect(() => {
     let unmounted = false;
+    let currentBinding: ImportSourceBinding | null = null;
 
     if (vdomImportSource) {
       loadImportSource(vdomImportSource, client).then((bind) => {
         if (!unmounted && mountPoint.current) {
-          setBinding(bind(mountPoint.current));
+          currentBinding = bind(mountPoint.current);
+          bindingSource.current = vdomImportSourceJsonString;
+          setBinding(currentBinding);
         }
       });
     }
@@ -190,11 +194,11 @@ function useImportSource(model: ReactPyVdom): MutableRefObject<any> {
     return () => {
       unmounted = true;
       if (
-        binding &&
+        currentBinding &&
         vdomImportSource &&
         !vdomImportSource.unmountBeforeUpdate
       ) {
-        binding.unmount();
+        currentBinding.unmount();
       }
     };
   }, [client, vdomImportSourceJsonString, setBinding, mountPoint.current]);
@@ -202,6 +206,9 @@ function useImportSource(model: ReactPyVdom): MutableRefObject<any> {
   // this effect must run every time in case the model has changed
   useEffect(() => {
     if (!(binding && vdomImportSource)) {
+      return;
+    }
+    if (bindingSource.current !== vdomImportSourceJsonString) {
       return;
     }
     binding.render(model);

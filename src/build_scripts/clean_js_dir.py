@@ -11,6 +11,8 @@ import os
 import pathlib
 import shutil
 
+print("Cleaning JS source directory...")  # noqa: T201
+
 # Get the path to the JS source directory
 js_src_dir = pathlib.Path(__file__).parent.parent / "js"
 static_output_dir = pathlib.Path(__file__).parent.parent / "reactpy" / "static"

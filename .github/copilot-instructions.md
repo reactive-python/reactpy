@@ -50,10 +50,10 @@ pip install flask sanic tornado
 
 **Run Python Tests:**
 
--   `hatch test` -- takes 10-30 seconds for basic tests. NEVER CANCEL. Set timeout to 60+ minutes for full test suite. **All tests must always pass - failures are never expected or allowed.**
--   `hatch test --cover` -- run tests with coverage reporting (used in CI)
--   `hatch test -k test_name` -- run specific tests
--   `hatch test tests/test_config.py` -- run specific test files
+-   `hatch test --parallel` -- takes 10-30 seconds for basic tests. NEVER CANCEL. Set timeout to 2 minutes for full test suite. **All tests must always pass - failures are never expected or allowed.**
+-   `hatch test --parallel --cover` -- run tests with coverage reporting (used in CI)
+-   `hatch test --parallel -k test_name` -- run specific tests
+-   `hatch test --parallel tests/test_config.py` -- run specific test files
 
 **Run Python Linting and Formatting:**
 
@@ -152,7 +152,7 @@ print(f"✓ Hook-based component: {type(counter)}")
 -   `hatch run javascript:check` -- Ensure JavaScript passes linting (never expected to fail)
 -   Test basic component creation and rendering as shown above
 -   Test server creation if working on server-related features
--   Run relevant tests with `hatch test` -- **All tests must always pass - failures are never expected or allowed**
+-   Run relevant tests with `hatch test --parallel` -- **All tests must always pass - failures are never expected or allowed**
 
 **Integration Testing:**
 
@@ -263,9 +263,9 @@ The following are key commands for daily development:
 ### Development Commands
 
 ```bash
-hatch test                          # Run all tests (**All tests must always pass**)
-hatch test --cover                  # Run tests with coverage (used in CI)
-hatch test -k test_name             # Run specific tests
+hatch test --parallel                          # Run all tests (**All tests must always pass**)
+hatch test --parallel --cover                  # Run tests with coverage (used in CI)
+hatch test --parallel -k test_name             # Run specific tests
 hatch fmt                           # Format code with all formatters
 hatch fmt --check                   # Check formatting without changes
 hatch run python:type_check         # Run Python type checker
@@ -303,7 +303,7 @@ Follow this step-by-step process for effective development:
 3. **Run formatting**: `hatch fmt` to format code (~1 second)
 4. **Run type checking**: `hatch run python:type_check` for type checking (~10 seconds)
 5. **Run JavaScript linting** (if JavaScript was modified): `hatch run javascript:check` (~10 seconds)
-6. **Run relevant tests**: `hatch test` with specific test selection if needed. **All tests must always pass - failures are never expected or allowed.**
+6. **Run relevant tests**: `hatch test --parallel` with specific test selection if needed. **All tests must always pass - failures are never expected or allowed.**
 7. **Validate component functionality** manually using validation tests above
 8. **Build JavaScript** (if modified): `hatch run javascript:build` (~15 seconds)
 9. **Update documentation** when making changes to Python source code (required)
@@ -365,7 +365,7 @@ Modern dependency management via pyproject.toml:
 
 The repository uses GitHub Actions with these key jobs:
 
--   `test-python-coverage` -- Python test coverage with `hatch test --cover`
+-   `test-python-coverage` -- Python test coverage with `hatch test --parallel --cover`
 -   `lint-python` -- Python linting and type checking via `hatch fmt --check` and `hatch run python:type_check`
 -   `test-python` -- Cross-platform Python testing across Python 3.10-3.13 and Ubuntu/macOS/Windows
 -   `lint-javascript` -- JavaScript linting and type checking

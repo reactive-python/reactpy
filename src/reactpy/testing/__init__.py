@@ -1,10 +1,5 @@
 from reactpy.testing.backend import BackendFixture
-from reactpy.testing.common import (
-    HookCatcher,
-    StaticEventHandler,
-    clear_reactpy_web_modules_dir,
-    poll,
-)
+from reactpy.testing.common import GITHUB_ACTIONS, HookCatcher, StaticEventHandler, poll
 from reactpy.testing.display import DisplayFixture
 from reactpy.testing.logs import (
     LogAssertionError,
@@ -14,6 +9,7 @@ from reactpy.testing.logs import (
 )
 
 __all__ = [
+    "GITHUB_ACTIONS",
     "BackendFixture",
     "DisplayFixture",
     "HookCatcher",
@@ -22,6 +18,5 @@ __all__ = [
     "assert_reactpy_did_log",
     "assert_reactpy_did_not_log",
     "capture_reactpy_logs",
-    "clear_reactpy_web_modules_dir",
     "poll",
 ]

@@ -1,38 +1,44 @@
 from __future__ import annotations
 
+import os
 from contextlib import AsyncExitStack
 from types import TracebackType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from playwright.async_api import (
-    Browser,
-    BrowserContext,
-    Page,
-    async_playwright,
-)
+from playwright.async_api import Browser, Page, async_playwright, expect
 
-from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
+from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT as DEFAULT_TIMEOUT
 from reactpy.testing.backend import BackendFixture
 from reactpy.types import RootComponentConstructor
+
+if TYPE_CHECKING:
+    import pytest
 
 
 class DisplayFixture:
     """A fixture for running web-based tests using ``playwright``"""
 
-    _exit_stack: AsyncExitStack
+    page: Page
+    browser_is_external: bool = False
+    backend_is_external: bool = False
 
     def __init__(
         self,
         backend: BackendFixture | None = None,
-        driver: Browser | BrowserContext | Page | None = None,
+        browser: Browser | None = None,
+        headless: bool = False,
+        timeout: float | None = None,
     ) -> None:
-        if backend is not None:
+        if backend:
+            self.backend_is_external = True
             self.backend = backend
-        if driver is not None:
-            if isinstance(driver, Page):
-                self.page = driver
-            else:
-                self._browser = driver
+
+        if browser:
+            self.browser_is_external = True
+            self.browser = browser
+
+        self.timeout = DEFAULT_TIMEOUT.current if timeout is None else timeout
+        self.headless = headless
 
     async def show(
         self,
@@ -42,28 +48,42 @@ class DisplayFixture:
         await self.goto("/")
 
     async def goto(self, path: str, query: Any | None = None) -> None:
+        await self.configure_page()
         await self.page.goto(self.backend.url(path, query))
 
     async def __aenter__(self) -> DisplayFixture:
-        es = self._exit_stack = AsyncExitStack()
+        self.exit_stack = AsyncExitStack()
 
-        browser: Browser | BrowserContext
-        if not hasattr(self, "page"):
-            if not hasattr(self, "_browser"):
-                pw = await es.enter_async_context(async_playwright())
-                browser = await pw.chromium.launch()
-            else:
-                browser = self._browser
-            self.page = await browser.new_page()
+        if not hasattr(self, "browser"):
+            pw = await self.exit_stack.enter_async_context(async_playwright())
+            self.browser = await self.exit_stack.enter_async_context(
+                await pw.chromium.launch(headless=not _playwright_visible())
+            )
 
-        self.page.set_default_timeout(REACTPY_TESTS_DEFAULT_TIMEOUT.current * 1000)
-        self.page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))  # noqa: T201
-        self.page.on("pageerror", lambda exc: print(f"BROWSER ERROR: {exc}"))  # noqa: T201
+        expect.set_options(timeout=self.timeout * 1000)
+        await self.configure_page()
+
         if not hasattr(self, "backend"):  # nocov
             self.backend = BackendFixture()
-            await es.enter_async_context(self.backend)
+            await self.exit_stack.enter_async_context(self.backend)
 
         return self
+
+    async def configure_page(self) -> None:
+        if getattr(self, "page", None) is None:
+            self.page = await self.browser.new_page()
+            self.page = await self.exit_stack.enter_async_context(self.page)
+            self.page.set_default_navigation_timeout(self.timeout * 1000)
+            self.page.set_default_timeout(self.timeout * 1000)
+            self.page.on(
+                "requestfailed",
+                lambda x: print(f"BROWSER LOAD ERROR: {x.url}\n{x.failure}"),  # noqa: T201
+            )
+            self.page.on("console", lambda x: print(f"BROWSER CONSOLE: {x.text}"))  # noqa: T201
+            self.page.on(
+                "pageerror",
+                lambda x: print(f"BROWSER ERROR: {x.name} - {x.message}\n{x.stack}"),  # noqa: T201
+            )
 
     async def __aexit__(
         self,
@@ -72,4 +92,13 @@ class DisplayFixture:
         traceback: TracebackType | None,
     ) -> None:
         self.backend.mount(None)
-        await self._exit_stack.aclose()
+        await self.exit_stack.aclose()
+
+
+def _playwright_visible(pytestconfig: pytest.Config | None = None) -> bool:
+    if (pytestconfig and pytestconfig.getoption("visible")) or os.environ.get(
+        "PLAYWRIGHT_VISIBLE"
+    ) == "1":
+        os.environ.setdefault("PLAYWRIGHT_VISIBLE", "1")
+        return True
+    return False

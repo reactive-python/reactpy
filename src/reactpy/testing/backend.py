@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import socket
 from collections.abc import Callable
 from contextlib import AsyncExitStack
 from types import TracebackType
@@ -10,7 +11,6 @@ from urllib.parse import urlencode, urlunparse
 
 import uvicorn
 
-from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.core.component import component
 from reactpy.core.hooks import use_callback, use_effect, use_state
 from reactpy.executors.asgi.middleware import ReactPyMiddleware
@@ -21,7 +21,6 @@ from reactpy.testing.logs import (
     capture_reactpy_logs,
     list_logged_exceptions,
 )
-from reactpy.testing.utils import find_available_port
 from reactpy.types import ComponentConstructor
 from reactpy.utils import Ref
 
@@ -47,15 +46,11 @@ class BackendFixture:
         app: AsgiApp | None = None,
         host: str = "127.0.0.1",
         port: int | None = None,
-        timeout: float | None = None,
         **reactpy_config: Any,
     ) -> None:
         self.host = host
-        self.port = port or find_available_port(host)
+        self.port = port or 0
         self.mount = mount_to_hotswap
-        self.timeout = (
-            REACTPY_TESTS_DEFAULT_TIMEOUT.current if timeout is None else timeout
-        )
         if isinstance(app, (ReactPyMiddleware, ReactPy)):
             self._app = app
         elif app:
@@ -122,7 +117,24 @@ class BackendFixture:
         # Wait for the server to start
         self.webserver.config.get_loop_factory()
         self.webserver_task = asyncio.create_task(self.webserver.serve())
-        await asyncio.sleep(1)
+        for _ in range(100):
+            if self.webserver.started and self.webserver.servers:
+                break
+            await asyncio.sleep(0.1)
+        else:
+            msg = "Server failed to start"
+            raise RuntimeError(msg)
+
+        # Determine the port if it was set to 0 (auto-select port)
+        if self.port == 0:
+            for server in self.webserver.servers:
+                for sock in server.sockets:
+                    if sock.family == socket.AF_INET:
+                        self.port = sock.getsockname()[1]
+                        self.webserver.config.port = self.port
+                        break
+                if self.port != 0:
+                    break
 
         return self
 

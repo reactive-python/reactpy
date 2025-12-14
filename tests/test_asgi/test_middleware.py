@@ -16,8 +16,8 @@ from reactpy.executors.asgi.middleware import ReactPyMiddleware
 from reactpy.testing import BackendFixture, DisplayFixture
 
 
-@pytest.fixture()
-async def display(page):
+@pytest.fixture(scope="module")
+async def display(browser):
     """Override for the display fixture that uses ReactPyMiddleware."""
     templates = Jinja2Templates(
         env=JinjaEnvironment(
@@ -32,7 +32,7 @@ async def display(page):
     app = Starlette(routes=[Route("/", homepage)])
 
     async with BackendFixture(app) as server:
-        async with DisplayFixture(backend=server, driver=page) as new_display:
+        async with DisplayFixture(backend=server, browser=browser) as new_display:
             yield new_display
 
 
@@ -56,7 +56,7 @@ def test_invalid_web_modules_dir():
         ReactPyMiddleware(app, root_components=["abc"], web_modules_dir=Path("invalid"))
 
 
-async def test_unregistered_root_component():
+async def test_unregistered_root_component(browser):
     templates = Jinja2Templates(
         env=JinjaEnvironment(
             loader=JinjaFileSystemLoader("tests/templates"),
@@ -75,7 +75,7 @@ async def test_unregistered_root_component():
     app = ReactPyMiddleware(app, root_components=["tests.sample.SampleApp"])
 
     async with BackendFixture(app) as server:
-        async with DisplayFixture(backend=server) as new_display:
+        async with DisplayFixture(backend=server, browser=browser) as new_display:
             await new_display.show(Stub)
 
             # Wait for the log record to be populated
@@ -106,7 +106,7 @@ async def test_display_simple_hello_world(display: DisplayFixture):
     await display.page.wait_for_selector("#hello")
 
 
-async def test_static_file_not_found(page):
+async def test_static_file_not_found():
     async def app(scope, receive, send): ...
 
     app = ReactPyMiddleware(app, [])
@@ -119,7 +119,7 @@ async def test_static_file_not_found(page):
         assert response.status_code == 404
 
 
-async def test_templatetag_bad_kwargs(page, caplog):
+async def test_templatetag_bad_kwargs(caplog, browser):
     """Override for the display fixture that uses ReactPyMiddleware."""
     templates = Jinja2Templates(
         env=JinjaEnvironment(
@@ -134,7 +134,7 @@ async def test_templatetag_bad_kwargs(page, caplog):
     app = Starlette(routes=[Route("/", homepage)])
 
     async with BackendFixture(app) as server:
-        async with DisplayFixture(backend=server, driver=page) as new_display:
+        async with DisplayFixture(backend=server, browser=browser) as new_display:
             await new_display.goto("/")
 
             # This test could be improved by actually checking if `bad kwargs` error message is shown in
