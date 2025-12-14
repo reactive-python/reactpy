@@ -37,13 +37,25 @@ function reactjs_bind(node: HTMLElement, React: any, ReactDOM: any) {
       React.createElement(type, props, ...(children || [])),
     render: (element: any) => {
       if (!root) {
+        // @ts-ignore
+        if (node._reactPyRoot) {
+          // @ts-ignore
+          node._reactPyRoot.unmount();
+        }
         root = ReactDOM.createRoot(node);
+        // @ts-ignore
+        node._reactPyRoot = root;
       }
       root.render(element);
     },
     unmount: () => {
       if (root) {
         root.unmount();
+        // @ts-ignore
+        if (node._reactPyRoot === root) {
+          // @ts-ignore
+          node._reactPyRoot = null;
+        }
         root = null;
       }
     },

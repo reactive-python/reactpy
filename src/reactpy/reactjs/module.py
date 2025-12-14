@@ -204,11 +204,11 @@ def import_reactjs(
     """
     from reactpy import html
 
-    if use_local and (framework or version):
+    if use_local and (framework or version):  # nocov
         raise ValueError("use_local cannot be used with framework or version")
 
     framework = framework or "preact"
-    if framework and framework not in {"preact", "react"}:
+    if framework and framework not in {"preact", "react"}:  # nocov
         raise ValueError("framework must be 'preact' or 'react'")
 
     # Import map for ReactPy's local framework (re-exported/bundled/minified version of Preact)
