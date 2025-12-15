@@ -6,7 +6,7 @@ from reactpy import html
 from reactpy.reactjs import component_from_npm, import_reactjs
 from reactpy.testing import GITHUB_ACTIONS, BackendFixture, DisplayFixture
 
-MISSING_IMPORT_MAP_MSG = "ReactPy did not detect a suitable import map on your page."
+MISSING_IMPORT_MAP_MSG = "ReactPy did not detect a suitable JavaScript import map"
 
 
 @pytest.fixture(scope="module")
