@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from contextlib import AsyncExitStack
+from logging import getLogger
 from types import TracebackType
 from typing import TYPE_CHECKING, Any
 
@@ -13,6 +14,8 @@ from reactpy.types import RootComponentConstructor
 
 if TYPE_CHECKING:
     import pytest
+
+_logger = getLogger(__name__)
 
 
 class DisplayFixture:
@@ -77,12 +80,16 @@ class DisplayFixture:
             self.page.set_default_timeout(self.timeout * 1000)
             self.page.on(
                 "requestfailed",
-                lambda x: print(f"BROWSER LOAD ERROR: {x.url}\n{x.failure}"),  # noqa: T201
+                lambda x: _logger.error(f"BROWSER LOAD ERROR: {x.url}\n{x.failure}"),
             )
-            self.page.on("console", lambda x: print(f"BROWSER CONSOLE: {x.text}"))  # noqa: T201
+            self.page.on(
+                "console", lambda x: _logger.info(f"BROWSER CONSOLE: {x.text}")
+            )
             self.page.on(
                 "pageerror",
-                lambda x: print(f"BROWSER ERROR: {x.name} - {x.message}\n{x.stack}"),  # noqa: T201
+                lambda x: _logger.error(
+                    f"BROWSER ERROR: {x.name} - {x.message}\n{x.stack}"
+                ),
             )
 
     async def __aexit__(
