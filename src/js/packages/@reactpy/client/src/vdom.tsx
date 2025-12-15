@@ -1,4 +1,3 @@
-import type { ReactPyClientInterface } from "./types";
 import eventToObject from "event-to-object";
 import type {
   ReactPyVdom,
@@ -11,10 +10,11 @@ import type {
 } from "./types";
 import { infer_bind_from_environment } from "./bind";
 import log from "./logger";
+import type { ReactPyClient } from "./client";
 
 export async function loadImportSource(
   vdomImportSource: ReactPyVdomImportSource,
-  client: ReactPyClientInterface,
+  client: ReactPyClient,
 ): Promise<BindImportSource> {
   let module: ReactPyModule;
   if (vdomImportSource.sourceType === "URL") {
@@ -61,7 +61,7 @@ export async function loadImportSource(
 }
 
 function createImportSourceElement(props: {
-  client: ReactPyClientInterface;
+  client: ReactPyClient;
   module: ReactPyModule;
   binding: ReactPyModuleBinding;
   model: ReactPyVdom;
@@ -180,7 +180,7 @@ export function createChildren<Child>(
 
 export function createAttributes(
   model: ReactPyVdom,
-  client: ReactPyClientInterface,
+  client: ReactPyClient,
 ): { [key: string]: any } {
   return Object.fromEntries(
     Object.entries({
@@ -203,7 +203,7 @@ export function createAttributes(
 }
 
 function createEventHandler(
-  client: ReactPyClientInterface,
+  client: ReactPyClient,
   name: string,
   { target, preventDefault, stopPropagation }: ReactPyVdomEventHandler,
 ): [string, () => void] {
@@ -262,7 +262,7 @@ function createInlineJavaScript(
 class ReactPyChild extends HTMLElement {
   mountPoint: HTMLDivElement;
   binding: ImportSourceBinding | null = null;
-  _client: ReactPyClientInterface | null = null;
+  _client: ReactPyClient | null = null;
   _model: ReactPyVdom | null = null;
   currentImportSource: ReactPyVdomImportSource | null = null;
 
@@ -276,7 +276,7 @@ class ReactPyChild extends HTMLElement {
     this.appendChild(this.mountPoint);
   }
 
-  set client(value: ReactPyClientInterface) {
+  set client(value: ReactPyClient) {
     this._client = value;
   }
 
