@@ -13,8 +13,11 @@ from reactpy import html
 from reactpy.executors.asgi.middleware import ReactPyMiddleware
 from reactpy.executors.asgi.standalone import ReactPy, ReactPyApp
 from reactpy.executors.asgi.types import AsgiWebsocketScope
+from reactpy.executors.pyscript.utils import (
+    pyscript_component_html,
+    pyscript_setup_html,
+)
 from reactpy.executors.utils import vdom_head_to_html
-from reactpy.pyscript.utils import pyscript_component_html, pyscript_setup_html
 from reactpy.types import ReactPyConfig, VdomDict
 
 

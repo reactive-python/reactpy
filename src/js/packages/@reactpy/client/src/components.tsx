@@ -6,13 +6,13 @@ import type {
   ImportSourceBinding,
   ReactPyComponent,
   ReactPyVdom,
-  ReactPyClientInterface,
 } from "./types";
 import { createAttributes, createChildren, loadImportSource } from "./vdom";
+import type { ReactPyClient } from "./client";
 
-const ClientContext = createContext<ReactPyClientInterface>(null as any);
+const ClientContext = createContext<ReactPyClient>(null as any);
 
-export function Layout(props: { client: ReactPyClientInterface }): JSX.Element {
+export function Layout(props: { client: ReactPyClient }): JSX.Element {
   const currentModel: ReactPyVdom = useState({ tagName: "" })[0];
   const forceUpdate = useForceUpdate();
 

@@ -80,14 +80,15 @@ async def test_unregistered_root_component(browser):
 
             # Wait for the log record to be populated
             for _ in range(10):
-                if len(server.log_records) > 0:
+                if "Attempting to use an unregistered root component" in " ".join(
+                    x.message for x in server.log_records
+                ):
                     break
                 await asyncio.sleep(0.25)
 
             # Check that the log record was populated with the "unregistered component" message
-            assert (
-                "Attempting to use an unregistered root component"
-                in server.log_records[-1].message
+            assert "Attempting to use an unregistered root component" in " ".join(
+                x.message for x in server.log_records
             )
 
 
@@ -119,7 +120,7 @@ async def test_static_file_not_found():
         assert response.status_code == 404
 
 
-async def test_templatetag_bad_kwargs(caplog, browser):
+async def test_templatetag_bad_kwargs(browser):
     """Override for the display fixture that uses ReactPyMiddleware."""
     templates = Jinja2Templates(
         env=JinjaEnvironment(

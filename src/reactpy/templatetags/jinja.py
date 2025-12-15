@@ -3,8 +3,11 @@ from uuid import uuid4
 
 from jinja2_simple_tags import StandaloneTag
 
+from reactpy.executors.pyscript.utils import (
+    pyscript_component_html,
+    pyscript_setup_html,
+)
 from reactpy.executors.utils import server_side_component_html
-from reactpy.pyscript.utils import pyscript_component_html, pyscript_setup_html
 
 
 class ReactPyJinja(StandaloneTag):  # type: ignore

@@ -2,7 +2,7 @@
 # type: ignore
 import asyncio
 
-from reactpy.pyscript.layout_handler import ReactPyLayoutHandler
+from reactpy.executors.pyscript.layout_handler import ReactPyLayoutHandler
 
 
 # User component is inserted below by regex replacement

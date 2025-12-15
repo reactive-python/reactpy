@@ -84,11 +84,7 @@ class _CurrentState(Generic[_Type]):
         self,
         initial_value: _Type | Callable[[], _Type],
     ) -> None:
-        if callable(initial_value):
-            self.value = initial_value()
-        else:
-            self.value = initial_value
-
+        self.value = initial_value() if callable(initial_value) else initial_value
         hook = HOOK_STACK.current_hook()
 
         def dispatch(new: _Type | Callable[[_Type], _Type]) -> None:
@@ -434,10 +430,7 @@ def use_callback(
     def setup(function: _CallbackFunc) -> _CallbackFunc:
         return memoize(lambda: function)
 
-    if function is not None:
-        return setup(function)
-    else:
-        return setup
+    return setup(function) if function is not None else setup
 
 
 class _LambdaCaller(Protocol):
@@ -553,17 +546,16 @@ def _try_to_infer_closure_values(
     func: Callable[..., Any] | None,
     values: Sequence[Any] | ellipsis | None,
 ) -> Sequence[Any] | None:
-    if values is ...:
-        if isinstance(func, FunctionType):
-            return (
-                [cell.cell_contents for cell in func.__closure__]
-                if func.__closure__
-                else []
-            )
-        else:
-            return None
-    else:
+    if values is not ...:
         return values
+    if isinstance(func, FunctionType):
+        return (
+            [cell.cell_contents for cell in func.__closure__]
+            if func.__closure__
+            else []
+        )
+    else:
+        return None
 
 
 def strictly_equal(x: Any, y: Any) -> bool:

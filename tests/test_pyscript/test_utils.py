@@ -6,7 +6,7 @@ from uuid import uuid4
 import orjson
 import pytest
 
-from reactpy.pyscript import utils
+from reactpy.executors.pyscript import utils
 
 
 def test_bad_root_name():
@@ -69,8 +69,8 @@ def test_get_reactpy_versions_https_fail_http_success():
 
     # Mock json.load to return data when called with mock_response
     with (
-        mock.patch("reactpy.pyscript.utils.request.urlopen") as mock_urlopen,
-        mock.patch("reactpy.pyscript.utils.json.load") as mock_json_load,
+        mock.patch("reactpy.executors.pyscript.utils.request.urlopen") as mock_urlopen,
+        mock.patch("reactpy.executors.pyscript.utils.json.load") as mock_json_load,
     ):
 
         def side_effect(url, timeout):
@@ -97,8 +97,8 @@ def test_get_reactpy_versions_all_fail():
     utils.get_reactpy_versions.cache_clear()
 
     with (
-        mock.patch("reactpy.pyscript.utils.request.urlopen") as mock_urlopen,
-        mock.patch("reactpy.pyscript.utils._logger") as mock_logger,
+        mock.patch("reactpy.executors.pyscript.utils.request.urlopen") as mock_urlopen,
+        mock.patch("reactpy.executors.pyscript.utils._logger") as mock_logger,
     ):
         mock_urlopen.side_effect = URLError("Fail")
 

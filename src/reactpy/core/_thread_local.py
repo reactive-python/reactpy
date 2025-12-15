@@ -8,7 +8,7 @@ _StateType = TypeVar("_StateType")
 
 class ThreadLocal(Generic[_StateType]):  # nocov
     """Utility for managing per-thread state information. This is only used in
-    environments where ContextVars are not available, such as the `pyodide`
+    environments where ContextVars are not available, such as the `pyscript`
     executor."""
 
     def __init__(self, default: Callable[[], _StateType]):

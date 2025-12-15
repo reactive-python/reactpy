@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from reactpy import component, hooks
-from reactpy.pyscript.utils import pyscript_component_html
+from reactpy.executors.pyscript.utils import pyscript_component_html
 from reactpy.types import Component, Key
 from reactpy.utils import string_to_reactpy
 
