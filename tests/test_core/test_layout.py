@@ -63,7 +63,7 @@ def test_layout_expects_abstract_component():
         Layout(reactpy.html.div())
 
 
-async def test_layout_cannot_be_used_outside_context_manager(caplog):
+async def test_layout_cannot_be_used_outside_context_manager():
     @reactpy.component
     def Component(): ...
 
@@ -691,7 +691,7 @@ async def test_event_handler_deep_in_component_layout_is_garbage_collected():
             assert last_event_handler() is None
 
 
-async def test_duplicate_sibling_keys_causes_error(caplog):
+async def test_duplicate_sibling_keys_causes_error():
     hook = HookCatcher()
     should_error = True
 

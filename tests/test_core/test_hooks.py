@@ -518,7 +518,7 @@ async def test_use_async_effect_cleanup():
     await asyncio.wait_for(cleanup_ran.wait(), 1)
 
 
-async def test_use_async_effect_cancel(caplog):
+async def test_use_async_effect_cancel():
     component_hook = HookCatcher()
     effect_ran = asyncio.Event()
     effect_was_cancelled = asyncio.Event()
@@ -557,7 +557,7 @@ async def test_use_async_effect_cancel(caplog):
     event_that_never_occurs.set()
 
 
-async def test_error_in_effect_is_gracefully_handled(caplog):
+async def test_error_in_effect_is_gracefully_handled():
     @reactpy.component
     def ComponentWithEffect():
         @reactpy.hooks.use_effect

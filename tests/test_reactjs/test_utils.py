@@ -36,7 +36,7 @@ def test_module_name_suffix(name, suffix):
 
 
 @responses.activate
-def test_resolve_module_exports_from_file(caplog):
+def test_resolve_module_exports_from_file():
     responses.add(
         responses.GET,
         "https://some.external.url",

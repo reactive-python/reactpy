@@ -119,7 +119,7 @@ async def test_static_file_not_found():
         assert response.status_code == 404
 
 
-async def test_templatetag_bad_kwargs(caplog, browser):
+async def test_templatetag_bad_kwargs(browser):
     """Override for the display fixture that uses ReactPyMiddleware."""
     templates = Jinja2Templates(
         env=JinjaEnvironment(
