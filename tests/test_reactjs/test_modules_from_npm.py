@@ -6,6 +6,8 @@ from reactpy import html
 from reactpy.reactjs import component_from_npm, import_reactjs
 from reactpy.testing import GITHUB_ACTIONS, BackendFixture, DisplayFixture
 
+MISSING_IMPORT_MAP_MSG = "ReactPy did not detect a suitable import map on your page."
+
 
 @pytest.fixture(scope="module")
 async def display(browser):
@@ -16,7 +18,7 @@ async def display(browser):
 
 
 @pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
-async def test_component_from_npm_react_bootstrap(display: DisplayFixture):
+async def test_component_from_npm_react_bootstrap(display: DisplayFixture, caplog):
     Button = component_from_npm("react-bootstrap", "Button", version="2")
 
     @reactpy.component
@@ -33,9 +35,12 @@ async def test_component_from_npm_react_bootstrap(display: DisplayFixture):
     await expect(button).to_contain_class("btn")
     await expect(button).to_contain_class("btn-primary")
 
+    # Ensure missing import map was NOT logged
+    assert MISSING_IMPORT_MAP_MSG not in " ".join(x.msg for x in caplog.records)
+
 
 @pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
-async def test_component_from_npm_react_bootstrap_with_local_framework(browser):
+async def test_component_from_npm_react_bootstrap_with_local_framework(browser, caplog):
     Button = component_from_npm("react-bootstrap", "Button", version="2")
 
     @reactpy.component
@@ -55,6 +60,33 @@ async def test_component_from_npm_react_bootstrap_with_local_framework(browser):
             # React Bootstrap buttons usually have 'btn' and 'btn-primary' classes
             await expect(button).to_contain_class("btn")
             await expect(button).to_contain_class("btn-primary")
+
+            # Ensure missing import map was NOT logged
+            assert MISSING_IMPORT_MAP_MSG not in " ".join(x.msg for x in caplog.records)
+
+
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
+async def test_component_from_npm_without_explicit_reactjs_import(browser, caplog):
+    Button = component_from_npm("react-bootstrap", "Button", version="2")
+
+    @reactpy.component
+    def App():
+        return Button({"variant": "primary", "id": "test-button"}, "Click me")
+
+    async with BackendFixture() as backend:
+        async with DisplayFixture(backend=backend, browser=browser) as display:
+            await display.show(App)
+
+            button = display.page.locator("#test-button")
+            await expect(button).to_have_text("Click me")
+
+            # Check if it has the correct class for primary variant
+            # React Bootstrap buttons usually have 'btn' and 'btn-primary' classes
+            await expect(button).to_contain_class("btn")
+            await expect(button).to_contain_class("btn-primary")
+
+            # Check if missing import map was logged
+            assert MISSING_IMPORT_MAP_MSG in " ".join(x.msg for x in caplog.records)
 
 
 @pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)

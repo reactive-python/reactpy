@@ -4,7 +4,6 @@ import logging
 from pathlib import Path, PurePosixPath
 from typing import Any, Literal
 
-from reactpy import config
 from reactpy.config import REACTPY_DEBUG, REACTPY_WEB_MODULES_DIR
 from reactpy.core.vdom import Vdom
 from reactpy.reactjs.types import NAME_SOURCE, URL_SOURCE
@@ -15,7 +14,7 @@ from reactpy.reactjs.utils import (
     resolve_names_from_file,
     resolve_names_from_url,
 )
-from reactpy.types import ImportSourceDict, JavaScriptModule, VdomConstructor
+from reactpy.types import ImportSourceDict, JavaScriptModule, VdomConstructor, VdomDict
 
 logger = logging.getLogger(__name__)
 
@@ -183,7 +182,7 @@ def import_reactjs(
     framework: Literal["preact", "react"] | None = None,
     version: str | None = None,
     use_local: bool = False,
-):
+) -> VdomDict:
     """
     Return an import map script tag for ReactJS or Preact.
     Parameters:
@@ -205,6 +204,7 @@ def import_reactjs(
         A VDOM script tag containing the import map.
     """
     from reactpy import html
+    from reactpy.executors.utils import default_import_map
 
     if use_local and (framework or version):  # nocov
         raise ValueError("use_local cannot be used with framework or version")
@@ -215,19 +215,9 @@ def import_reactjs(
 
     # Import map for ReactPy's local framework (re-exported/bundled/minified version of Preact)
     if use_local:
-        prefix = f"/{config.REACTPY_PATH_PREFIX.current.strip('/')}/static/{framework}"
         return html.script(
-            {"type": "importmap"},
-            f"""
-            {{
-                "imports": {{
-                    "react": "{prefix}.js",
-                    "react-dom": "{prefix}-dom.js",
-                    "react-dom/client": "{prefix}-dom.js",
-                    "react/jsx-runtime": "{prefix}-jsx-runtime.js"
-                }}
-            }}
-            """,
+            {"type": "importmap", "id": "reactpy-importmap"},
+            default_import_map(),
         )
 
     # Import map for ReactJS from esm.sh
@@ -235,17 +225,15 @@ def import_reactjs(
         version = version or "19"
         postfix = "?dev" if REACTPY_DEBUG.current else ""
         return html.script(
-            {"type": "importmap"},
-            f"""
-            {{
+            {"type": "importmap", "id": "reactpy-importmap"},
+            f"""{{
                 "imports": {{
                     "react": "https://esm.sh/react@{version}{postfix}",
                     "react-dom": "https://esm.sh/react-dom@{version}{postfix}",
                     "react-dom/client": "https://esm.sh/react-dom@{version}/client{postfix}",
                     "react/jsx-runtime": "https://esm.sh/react@{version}/jsx-runtime{postfix}"
                 }}
-            }}
-            """,
+            }}""".replace("\n", "").replace(" ", ""),
         )
 
     # Import map for Preact from esm.sh
@@ -253,17 +241,15 @@ def import_reactjs(
         version = version or "10"
         postfix = "?dev" if REACTPY_DEBUG.current else ""
         return html.script(
-            {"type": "importmap"},
-            f"""
-            {{
+            {"type": "importmap", "id": "reactpy-importmap"},
+            f"""{{
                 "imports": {{
                     "react": "https://esm.sh/preact@{version}/compat{postfix}",
                     "react-dom": "https://esm.sh/preact@{version}/compat{postfix}",
                     "react-dom/client": "https://esm.sh/preact@{version}/compat/client{postfix}",
                     "react/jsx-runtime": "https://esm.sh/preact@{version}/compat/jsx-runtime{postfix}"
                 }}
-            }}
-            """,
+            }}""".replace("\n", "").replace(" ", ""),
         )
 
 

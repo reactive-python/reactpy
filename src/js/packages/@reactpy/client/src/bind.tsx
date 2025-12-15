@@ -6,14 +6,11 @@ export async function infer_bind_from_environment() {
     const React = await import("react");
     // @ts-ignore
     const ReactDOM = await import("react-dom/client");
-
-    console.log(
-      "ReactPy detected 'ReactJS' to bind your JavaScript components.",
-    );
     return (node: HTMLElement) => reactjs_bind(node, React, ReactDOM);
   } catch {
-    console.debug(
-      "ReactPy did not detect a component binding function or a suitable 'importmap'. Using ReactPy's internal framework (Preact) to bind your JavaScript components.",
+    console.error(
+      "Unknown error occurred: 'react' is missing within this ReactPy environment! \
+      Your JavaScript components may not work as expected!",
     );
     return (node: HTMLElement) => local_preact_bind(node);
   }

@@ -64,16 +64,41 @@ def server_side_component_html(
 ) -> str:
     return (
         f'<div id="{element_id}" class="{class_}"></div>'
+        "<script>"
+        'if (!document.querySelector("#reactpy-importmap")) {'
+        "   console.debug("
+        '     "ReactPy did not detect a suitable JavaScript import map. Falling back to ReactPy\'s internal framework (Preact)."'
+        "   );"
+        '   const im = document.createElement("script");'
+        '   im.type = "importmap";'
+        f"  im.textContent = '{default_import_map()}';"
+        '   im.id = "reactpy-importmap";'
+        "   document.head.appendChild(im);"
+        "   delete im;"
+        "}"
+        "</script>"
         '<script type="module" crossorigin="anonymous">'
         f'import {{ mountReactPy }} from "{REACTPY_PATH_PREFIX.current}static/index.js";'
         "mountReactPy({"
-        f' mountElement: document.getElementById("{element_id}"),'
-        f' pathPrefix: "{REACTPY_PATH_PREFIX.current}",'
-        f' componentPath: "{component_path}",'
-        f" reconnectInterval: {REACTPY_RECONNECT_INTERVAL.current},"
-        f" reconnectMaxInterval: {REACTPY_RECONNECT_MAX_INTERVAL.current},"
-        f" reconnectMaxRetries: {REACTPY_RECONNECT_MAX_RETRIES.current},"
-        f" reconnectBackoffMultiplier: {REACTPY_RECONNECT_BACKOFF_MULTIPLIER.current},"
+        f'  mountElement: document.getElementById("{element_id}"),'
+        f'  pathPrefix: "{REACTPY_PATH_PREFIX.current}",'
+        f'  componentPath: "{component_path}",'
+        f"  reconnectInterval: {REACTPY_RECONNECT_INTERVAL.current},"
+        f"  reconnectMaxInterval: {REACTPY_RECONNECT_MAX_INTERVAL.current},"
+        f"  reconnectMaxRetries: {REACTPY_RECONNECT_MAX_RETRIES.current},"
+        f"  reconnectBackoffMultiplier: {REACTPY_RECONNECT_BACKOFF_MULTIPLIER.current},"
         "});"
         "</script>"
     )
+
+
+def default_import_map() -> str:
+    path_prefix = REACTPY_PATH_PREFIX.current.strip("/")
+    return f"""{{
+                "imports": {{
+                    "react": "/{path_prefix}/static/preact.js",
+                    "react-dom": "/{path_prefix}/static/preact-dom.js",
+                    "react-dom/client": "/{path_prefix}/static/preact-dom.js",
+                    "react/jsx-runtime": "/{path_prefix}/static/preact-jsx-runtime.js"
+                }}
+            }}""".replace("\n", "").replace(" ", "")
