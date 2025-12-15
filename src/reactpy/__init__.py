@@ -19,7 +19,7 @@ from reactpy.core.hooks import (
     use_state,
 )
 from reactpy.core.vdom import Vdom
-from reactpy.pyscript.components import pyscript_component
+from reactpy.executors.pyscript.components import pyscript_component
 from reactpy.utils import Ref, reactpy_to_string, string_to_reactpy
 
 __author__ = "The Reactive Python Team"

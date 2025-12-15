@@ -23,8 +23,8 @@ from reactpy.executors.asgi.types import (
     AsgiV3WebsocketApp,
     AsgiWebsocketScope,
 )
+from reactpy.executors.pyscript.utils import pyscript_setup_html
 from reactpy.executors.utils import server_side_component_html, vdom_head_to_html
-from reactpy.pyscript.utils import pyscript_setup_html
 from reactpy.types import (
     PyScriptOptions,
     ReactPyConfig,
