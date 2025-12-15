@@ -14,4 +14,4 @@ subprocess.run(["playwright", "install", "chromium"], check=True)  # noqa: S607
 # as *nix systems (such as WSL) return a failure code if there are *any* dependencies
 # that could be cleaned up via `sudo apt autoremove`. This occurs even if we weren't
 # the ones to install those dependencies in the first place.
-subprocess.run(["playwright", "install-deps"], check=False)  # noqa: S607
+subprocess.run(["playwright", "install-deps", "chromium"], check=False)  # noqa: S607
