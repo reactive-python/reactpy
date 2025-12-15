@@ -232,8 +232,8 @@ omit = [
   "src/reactpy/__init__.py",
   "src/reactpy/_console/*",
   "src/reactpy/__main__.py",
-  "src/reactpy/pyscript/layout_handler.py",
-  "src/reactpy/pyscript/component_template.py",
+  "src/reactpy/executors/pyscript/layout_handler.py",
+  "src/reactpy/executors/pyscript/component_template.py",
 ]
 
 [tool.coverage.report]
