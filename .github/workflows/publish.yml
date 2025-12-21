@@ -21,8 +21,6 @@ jobs:
         with:
             job-name: "Publish to NPM"
             run-cmd: "hatch run javascript:publish_client"
-        secrets:
-            node-auth-token: ${{ secrets.NODE_AUTH_TOKEN }}
 
     publish-event-to-object:
         if: startsWith(github.event.release.name, 'event-to-object ')
@@ -30,5 +28,3 @@ jobs:
         with:
             job-name: "Publish to NPM"
             run-cmd: "hatch run javascript:publish_event_to_object"
-        secrets:
-            node-auth-token: ${{ secrets.NODE_AUTH_TOKEN }}
