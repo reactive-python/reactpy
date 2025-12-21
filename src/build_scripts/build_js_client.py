@@ -14,7 +14,6 @@ build_commands = [
         "install",
         "--cwd",
         "src/js/packages/@reactpy/client",
-        *([] if dev_mode else ["--production"]),
     ],
     [
         "bun",
