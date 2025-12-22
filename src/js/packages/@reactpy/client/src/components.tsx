@@ -1,6 +1,12 @@
 import { set as setJsonPointer } from "json-pointer";
-import type { ChangeEvent, MutableRefObject } from "preact/compat";
-import { createContext, createElement, Fragment, type JSX } from "preact";
+import type { MutableRefObject } from "preact/compat";
+import {
+  createContext,
+  createElement,
+  Fragment,
+  type JSX,
+  type TargetedEvent,
+} from "preact";
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
 import type {
   ImportSourceBinding,
@@ -82,7 +88,7 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
 
   const givenOnChange = props.onChange;
   if (typeof givenOnChange === "function") {
-    props.onChange = (event: ChangeEvent<any>) => {
+    props.onChange = (event: TargetedEvent<any>) => {
       // immediately update the value to give the user feedback
       if (event.target) {
         setValue((event.target as HTMLInputElement).value);
