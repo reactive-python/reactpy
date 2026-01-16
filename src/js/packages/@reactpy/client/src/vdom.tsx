@@ -93,7 +93,7 @@ function createImportSourceElement(props: {
       }
     }
   } else {
-    type = props.model.tagName;
+    type = props.model.tagName === "" ? Fragment : props.model.tagName;
   }
   return props.binding.create(
     type,
