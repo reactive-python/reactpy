@@ -1,4 +1,5 @@
 import eventToObject from "event-to-object";
+import { Fragment } from "preact";
 import type {
   ReactPyVdom,
   ReactPyVdomImportSource,

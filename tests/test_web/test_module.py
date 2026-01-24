@@ -1,5 +1,7 @@
-# THESE ARE TESTS FOR THE LEGACY API. SEE tests/test_reactjs/* FOR THE NEW API TESTS.
-# THIS MODULE WILL BE MIGRATED OR DELETED ONCE THE LEGACY API IS REMOVED.
+"""
+THESE ARE TESTS FOR THE LEGACY API. SEE tests/test_reactjs/* FOR THE NEW API TESTS.
+THE CONTENTS OF THIS MODULE WILL BE MIGRATED OR DELETED ONCE THE LEGACY API IS REMOVED.
+"""
 from pathlib import Path
 
 import pytest
@@ -563,32 +565,3 @@ async def test_module_without_bind(display: DisplayFixture):
         "#my-generic-component", state="attached"
     )
     assert await element.inner_text() == "Hello World"
-
-async def test_nest_custom_component_under_web_component(display: DisplayFixture):
-    """
-    Fix https://github.com/reactive-python/reactpy/discussions/1323
-
-    Custom components (i.e those wrapped in the component decorator) were not able to
-    be nested under web components.
-    
-    """
-    module = reactpy.reactjs.file_to_module(
-        "nest-custom-under-web", JS_FIXTURES_DIR / "nest-custom-under-web.js"
-    )
-    Container = reactpy.reactjs.module_to_vdom(module, "Container")
-    
-    @reactpy.component
-    def CustomComponent():
-        return reactpy.html.div(
-            reactpy.html.h1({"id": "my-header"}, "Header 1")
-        )
-    await display.show(
-        lambda: Container(
-            CustomComponent()
-        )
-    )
-
-    element = await display.page.wait_for_selector(
-        "#my-header", state="attached"
-    )
-    assert await element.inner_text() == "Header 1"
