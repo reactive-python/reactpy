@@ -476,6 +476,49 @@ async def test_memoized_effect_cleanup_only_triggered_before_new_effect():
         assert cleanup_trigger_count.current == 1
 
 
+async def test_memoized_async_effect_cleanup_only_triggered_before_new_effect():
+    """Test that use_async_effect cleanup is triggered when dependencies change.
+
+    This is the async version of test_memoized_effect_cleanup_only_triggered_before_new_effect.
+    Regression test for https://github.com/reactive-python/reactpy/issues/1327
+    """
+    component_hook = HookCatcher()
+    set_state_callback = reactpy.Ref(None)
+    cleanup_trigger_count = reactpy.Ref(0)
+
+    first_value = 1
+    second_value = 2
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithEffect():
+        state, set_state_callback.current = reactpy.hooks.use_state(first_value)
+
+        @reactpy.hooks.use_async_effect(dependencies=[state])
+        async def effect():
+            def cleanup():
+                cleanup_trigger_count.current += 1
+
+            return cleanup
+
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithEffect()) as layout:
+        await layout.render()
+
+        assert cleanup_trigger_count.current == 0
+
+        component_hook.latest.schedule_render()
+        await layout.render()
+
+        assert cleanup_trigger_count.current == 0
+
+        set_state_callback.current(second_value)
+        await layout.render()
+
+        assert cleanup_trigger_count.current == 1
+
+
 async def test_use_async_effect():
     effect_ran = asyncio.Event()
 
