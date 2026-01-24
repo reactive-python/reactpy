@@ -1,9 +1,13 @@
+from pathlib import Path
+
 import pytest
 
 import reactpy
 from reactpy import html
 from reactpy.reactjs import component_from_string, import_reactjs
 from reactpy.testing import BackendFixture, DisplayFixture
+
+JS_FIXTURES_DIR = Path(__file__).parent / "js_fixtures"
 
 
 @pytest.fixture(scope="module")
@@ -89,3 +93,24 @@ async def test_interleaved_client_server_components(display: DisplayFixture):
     elements = await display.page.query_selector_all(".component-c")
     assert len(elements) == 2
     await display.page.wait_for_selector("#deep-server")
+
+
+async def test_nest_custom_component_under_web_component(display: DisplayFixture):
+    """
+    Fix https://github.com/reactive-python/reactpy/discussions/1323
+
+    Custom components (i.e those wrapped in the component decorator) were not able to
+    be nested under web components.
+    """
+    Container = reactpy.reactjs.component_from_file(
+        JS_FIXTURES_DIR / "nest-custom-under-web.js", "Container", name="nest-custom-under-web"
+    )
+
+    @reactpy.component
+    def CustomComponent():
+        return reactpy.html.div(reactpy.html.h1({"id": "my-header"}, "Header 1"))
+
+    await display.show(lambda: Container(CustomComponent()))
+
+    element = await display.page.wait_for_selector("#my-header", state="attached")
+    assert await element.inner_text() == "Header 1"

@@ -1,4 +1,5 @@
 import eventToObject from "event-to-object";
+import { Fragment } from "preact";
 import type {
   ReactPyVdom,
   ReactPyVdomImportSource,
@@ -93,7 +94,7 @@ function createImportSourceElement(props: {
       }
     }
   } else {
-    type = props.model.tagName;
+    type = props.model.tagName === "" ? Fragment : props.model.tagName;
   }
   return props.binding.create(
     type,
