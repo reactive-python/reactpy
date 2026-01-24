@@ -25,7 +25,6 @@ Unreleased
 - :pull:`1308` - Event data now supports accessing properties via dot notation (ex. ``event.target.value``).
 - :pull:`1308` - Added ``reactpy.types.Event`` to provide type hints for the standard ``data`` function argument (for example ``def on_click(event: Event): ...``).
 - :pull:`1113` - Added ``asgi`` and ``jinja`` installation extras (for example ``pip install reactpy[asgi, jinja]``).
-- :pull:`1267` - Added ``shutdown_timeout`` parameter to the ``reactpy.use_async_effect`` hook.
 - :pull:`1113` - Added ``reactpy.executors.asgi.ReactPy`` that can be used to run ReactPy in standalone mode via ASGI.
 - :pull:`1269` - Added ``reactpy.executors.asgi.ReactPyCsr`` that can be used to run ReactPy in standalone mode via ASGI, but rendered entirely client-sided.
 - :pull:`1113` - Added ``reactpy.executors.asgi.ReactPyMiddleware`` that can be used to utilize ReactPy within any ASGI compatible framework.

@@ -182,7 +182,6 @@ def use_effect(
 def use_async_effect(
     function: None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-    shutdown_timeout: float = 0.1,
 ) -> Callable[[_EffectApplyFunc], None]: ...
 
 
@@ -190,14 +189,12 @@ def use_async_effect(
 def use_async_effect(
     function: _AsyncEffectFunc,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-    shutdown_timeout: float = 0.1,
 ) -> None: ...
 
 
 def use_async_effect(
     function: _AsyncEffectFunc | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
-    shutdown_timeout: float = 0.1,
 ) -> Callable[[_AsyncEffectFunc], None] | None:
     """
     A hook that manages an asynchronous side effect in a React-like component.
@@ -214,9 +211,6 @@ def use_async_effect(
             of any value in the given sequence changes (i.e. their :func:`id` is
             different). By default these are inferred based on local variables that are
             referenced by the given function.
-        shutdown_timeout:
-            The amount of time (in seconds) to wait for the effect to complete before
-            forcing a shutdown.
 
     Returns:
         If not function is provided, a decorator. Otherwise ``None``.
@@ -232,25 +226,36 @@ def use_async_effect(
             # always clean up the previous effect's resources
             run_effect_cleanup(cleanup_func)
 
-            # Execute the effect in a background task
+            # Execute the effect and store the clean-up function.
+            # We run this in a task so it can be cancelled if the stop signal
+            # is set before the effect completes.
             task = asyncio.create_task(func())
 
-            # Wait until we get the signal to stop this effect
-            await stop.wait()
+            # Wait for either the effect to complete or the stop signal
+            stop_task = asyncio.create_task(stop.wait())
+            done, _ = await asyncio.wait(
+                [task, stop_task],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
 
-            # If renders are queued back-to-back, the effect might not have
-            # completed. So, we give the task a small amount of time to finish.
-            # If it manages to finish, we can obtain a clean-up function.
-            results, _ = await asyncio.wait([task], timeout=shutdown_timeout)
-            if results:
-                cleanup_func.current = results.pop().result()
+            # If the effect completed first, store the cleanup function
+            if task in done:
+                cleanup_func.current = task.result()
+                # Cancel the stop task since we don't need it anymore
+                stop_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await stop_task
+                # Now wait for the stop signal to run cleanup
+                await stop.wait()
+            else:
+                # Stop signal came first - cancel the effect task
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
 
             # Run the clean-up function when the effect is stopped,
             # if it hasn't been run already by a new effect
             run_effect_cleanup(cleanup_func)
-
-            # Cancel the task if it's still running
-            task.cancel()
 
         return memoize(lambda: hook.add_effect(effect))
 
