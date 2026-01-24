@@ -210,11 +210,11 @@ build_client = ['hatch run "src/build_scripts/build_js_client.py" {args}']
 build_app = ['hatch run "src/build_scripts/build_js_app.py" {args}']
 publish_event_to_object = [
   'hatch run javascript:build_event_to_object',
-  'cd "src/js/packages/event-to-object" && bun publish --access public',
+  'cd "src/js/packages/event-to-object" && bunx npm publish --provenance --access public',
 ]
 publish_client = [
   'hatch run javascript:build_client',
-  'cd "src/js/packages/@reactpy/client" && bun publish --access public',
+  'cd "src/js/packages/@reactpy/client" && bunx npm publish --provenance --access public',
 ]
 
 #########################
