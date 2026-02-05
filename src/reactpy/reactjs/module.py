@@ -228,10 +228,10 @@ def import_reactjs(
             {"type": "importmap", "id": "reactpy-importmap"},
             f"""{{
                 "imports": {{
-                    "react": "https://esm.sh/react@{version}{postfix}",
-                    "react-dom": "https://esm.sh/react-dom@{version}{postfix}",
-                    "react-dom/client": "https://esm.sh/react-dom@{version}/client{postfix}",
-                    "react/jsx-runtime": "https://esm.sh/react@{version}/jsx-runtime{postfix}"
+                    "react": "https://esm.sh/v135/react@{version}{postfix}",
+                    "react-dom": "https://esm.sh/v135/react-dom@{version}{postfix}",
+                    "react-dom/client": "https://esm.sh/v135/react-dom@{version}/client{postfix}",
+                    "react/jsx-runtime": "https://esm.sh/v135/react@{version}/jsx-runtime{postfix}"
                 }}
             }}""".replace("\n", "").replace(" ", ""),
         )
@@ -244,10 +244,10 @@ def import_reactjs(
             {"type": "importmap", "id": "reactpy-importmap"},
             f"""{{
                 "imports": {{
-                    "react": "https://esm.sh/preact@{version}/compat{postfix}",
-                    "react-dom": "https://esm.sh/preact@{version}/compat{postfix}",
-                    "react-dom/client": "https://esm.sh/preact@{version}/compat/client{postfix}",
-                    "react/jsx-runtime": "https://esm.sh/preact@{version}/compat/jsx-runtime{postfix}"
+                    "react": "https://esm.sh/v135/preact@{version}/compat{postfix}",
+                    "react-dom": "https://esm.sh/v135/preact@{version}/compat{postfix}",
+                    "react-dom/client": "https://esm.sh/v135/preact@{version}/compat/client{postfix}",
+                    "react/jsx-runtime": "https://esm.sh/v135/preact@{version}/compat/jsx-runtime{postfix}"
                 }}
             }}""".replace("\n", "").replace(" ", ""),
         )
