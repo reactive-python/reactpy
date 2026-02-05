@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from io import StringIO
 from pathlib import Path
 from traceback import format_exc
-from typing import Callable
 
 import reactpy
 from reactpy.types import ComponentType
@@ -154,7 +153,7 @@ class _PrintBuffer:
 
     def write(self, text: str) -> None:
         if len(self._lines) == self._max_lines:
-            self._lines = self._lines[1:] + (text,)
+            self._lines = (*self._lines[1:], text)
         else:
             self._lines += (text,)
         if self._callback is not None:

@@ -68,7 +68,7 @@ def GameLoop(grid_size, block_scale, set_game_state):
         if hasattr(Direction, event["key"]):
             maybe_new_direction = Direction[event["key"]].value
             direction_vector_sum = tuple(
-                map(sum, zip(last_direction, maybe_new_direction))
+                map(sum, zip(last_direction, maybe_new_direction, strict=False))
             )
             if direction_vector_sum != (0, 0):
                 direction.current = maybe_new_direction
@@ -109,7 +109,7 @@ def GameLoop(grid_size, block_scale, set_game_state):
             set_food()
             new_snake = [*snake, new_snake_head]
         else:
-            new_snake = snake[1:] + [new_snake_head]
+            new_snake = [*snake[1:], new_snake_head]
 
         set_snake(new_snake)
 
