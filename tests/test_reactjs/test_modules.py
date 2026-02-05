@@ -103,7 +103,7 @@ async def test_nest_custom_component_under_web_component(display: DisplayFixture
     be nested under web components.
     """
     Container = reactpy.reactjs.component_from_file(
-        JS_FIXTURES_DIR / "nest-custom-under-web.js", "Container", name="nest-custom-under-web"
+        JS_FIXTURES_DIR / "nest-custom-under-web.js", "Container"
     )
 
     @reactpy.component

@@ -41,6 +41,12 @@ jobs:
               with:
                   path: C:\Users\runneradmin\AppData\Local\ms-playwright\
                   key: ${{ runner.os }}-playwright
+            # FIXME: Temporarily added setup-node to fix lack of "Trusted Publishing" in Bun
+            # Ref: https://github.com/oven-sh/bun/issues/15601
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  registry-url: https://registry.npmjs.org/
             - uses: oven-sh/setup-bun@v2
               with:
                   bun-version: latest

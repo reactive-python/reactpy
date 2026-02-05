@@ -8,7 +8,7 @@ def CounterList():
     def make_increment_click_handler(index):
         def handle_click(event):
             new_value = counters[index] + 1
-            set_counters(counters[:index] + [new_value] + counters[index + 1 :])
+            set_counters([*counters[:index], new_value, *counters[index + 1 :]])
 
         return handle_click
 

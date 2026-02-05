@@ -57,7 +57,7 @@ def RandomWalkGraph(mu, sigma):
             "x": last_data_point["x"] + 1,
             "y": last_data_point["y"] + random.gauss(mu.current, sigma.current),
         }
-        set_data(data[1:] + [next_data_point])
+        set_data([*data[1:], next_data_point])
 
     return VictoryLine(
         {

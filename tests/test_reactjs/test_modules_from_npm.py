@@ -406,7 +406,7 @@ def _get_chakra_components():
     from reactpy.reactjs import component_from_string
 
     wrapper_js = """
-    import { ChakraProvider as _ChakraProvider, defaultSystem, Box as _Box, Button as _Button } from "https://esm.sh/@chakra-ui/react@3?external=react,react-dom,react/jsx-runtime&bundle&target=es2020";
+    import { ChakraProvider as _ChakraProvider, defaultSystem, Box as _Box, Button as _Button } from "https://esm.sh/v135/@chakra-ui/react@3?external=react,react-dom,react/jsx-runtime&bundle&target=es2020";
     import * as React from "react";
 
     export function ChakraProvider(props) {
