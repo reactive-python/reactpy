@@ -65,10 +65,10 @@ Unreleased
 
 **Deprecated**
 
--:pull:`1307` - ``reactpy.web.export`` is deprecated. Use ``reactpy.reactjs.component_from_*`` instead.
 -:pull:`1307` - ``reactpy.web.module_from_file`` is deprecated. Use ``reactpy.reactjs.component_from_file`` instead.
 -:pull:`1307` - ``reactpy.web.module_from_url`` is deprecated. Use ``reactpy.reactjs.component_from_url`` instead.
 -:pull:`1307` - ``reactpy.web.module_from_string`` is deprecated. Use ``reactpy.reactjs.component_from_string`` instead.
+-:pull:`1307` - ``reactpy.web.export`` is deprecated. Use ``reactpy.reactjs.component_from_*`` instead.
 -:pull:`1314` - ``reactpy.web.*`` is deprecated. Use ``reactpy.reactjs.*`` instead.
 
 **Removed**

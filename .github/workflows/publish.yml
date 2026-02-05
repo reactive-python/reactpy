@@ -4,9 +4,13 @@ on:
     release:
         types: [published]
 
+permissions:
+    contents: read    # Required to checkout the code
+    id-token: write   # Required to sign the NPM publishing statements
+
 jobs:
     publish-reactpy:
-        if: startsWith(github.event.release.name, 'reactpy ')
+        if: startsWith(github.event.release.name, 'reactpy ') || startsWith(github.event.release.tag_name, 'reactpy-')
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "Publish to PyPI"
@@ -16,14 +20,14 @@ jobs:
             pypi-password: ${{ secrets.PYPI_PASSWORD }}
 
     publish-reactpy-client:
-        if: startsWith(github.event.release.name, '@reactpy/client ')
+        if: startsWith(github.event.release.name, '@reactpy/client ') || startsWith(github.event.release.tag_name, '@reactpy/client-')
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "Publish to NPM"
             run-cmd: "hatch run javascript:publish_client"
 
     publish-event-to-object:
-        if: startsWith(github.event.release.name, 'event-to-object ')
+        if: startsWith(github.event.release.name, 'event-to-object ') || startsWith(github.event.release.tag_name, 'event-to-object-')
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "Publish to NPM"
