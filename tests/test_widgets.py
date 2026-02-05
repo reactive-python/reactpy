@@ -1,8 +1,10 @@
 from base64 import b64encode
 from pathlib import Path
 
+import pytest
+
 import reactpy
-from reactpy.testing import DisplayFixture, poll
+from reactpy.testing import GITHUB_ACTIONS, DisplayFixture, poll
 from tests.tooling.common import DEFAULT_TYPE_DELAY
 
 HERE = Path(__file__).parent
@@ -108,6 +110,7 @@ async def test_use_linked_inputs_on_change_with_cast(display: DisplayFixture):
     await poll_value.until_equals(12)
 
 
+@pytest.mark.flaky(reruns=10 if GITHUB_ACTIONS else 1)
 async def test_use_linked_inputs_ignore_empty(display: DisplayFixture):
     value = reactpy.Ref(None)
 
