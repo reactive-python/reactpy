@@ -12,6 +12,8 @@ from reactpy import html
 from reactpy.executors.asgi.pyscript import ReactPyCsr
 from reactpy.testing import BackendFixture, DisplayFixture
 
+from .. import pytestmark  # noqa: F401
+
 
 @pytest.fixture(scope="module")
 async def display(browser):
