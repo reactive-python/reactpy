@@ -36,5 +36,5 @@
     "checkTypes": "tsc --noEmit"
   },
   "type": "module",
-  "version": "1.0.1"
+  "version": "2.0.0"
 }
