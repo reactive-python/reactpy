@@ -9,6 +9,11 @@
     "event-to-object": "catalog:"
   },
   "description": "A client for ReactPy implemented in React",
+  "files": [
+    "dist",
+    "src",
+    "LICENSE"
+  ],
   "devDependencies": {
     "@types/json-pointer": "catalog:",
     "typescript": "catalog:"

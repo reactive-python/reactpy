@@ -3,11 +3,18 @@
 # dependencies = []
 # ///
 import pathlib
+import shutil
 import subprocess
 import sys
 
 dev_mode = "--dev" in sys.argv
 root_dir = pathlib.Path(__file__).parent.parent.parent
+
+# Copy LICENSE file
+shutil.copyfile(
+    root_dir / "LICENSE", root_dir / "src/js/packages/@reactpy/client/LICENSE"
+)
+
 build_commands = [
     [
         "bun",

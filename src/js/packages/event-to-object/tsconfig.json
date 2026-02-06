@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
-    "composite": true,
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "composite": true,
+    "noEmit": false
   },
   "extends": "../../tsconfig.json",
   "include": ["src"]
