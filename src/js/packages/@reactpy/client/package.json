@@ -9,6 +9,11 @@
     "event-to-object": "catalog:"
   },
   "description": "A client for ReactPy implemented in React",
+  "files": [
+    "dist",
+    "src",
+    "LICENSE"
+  ],
   "devDependencies": {
     "@types/json-pointer": "catalog:",
     "typescript": "catalog:"
@@ -31,5 +36,5 @@
     "checkTypes": "tsc --noEmit"
   },
   "type": "module",
-  "version": "1.0.2"
+  "version": "1.0.3"
 }

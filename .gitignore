@@ -2,6 +2,8 @@
 src/reactpy/static/*.js*
 src/reactpy/static/morphdom/
 src/reactpy/static/pyscript/
+src/js/**/*.tgz
+src/js/**/LICENSE
 
 # --- Jupyter ---
 *.ipynb_checkpoints

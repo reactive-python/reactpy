@@ -23,6 +23,12 @@ for dist_dir in dist_dirs:
     with contextlib.suppress(FileNotFoundError):
         shutil.rmtree(dist_dir)
 
+# Delete all `*.tgz` files in `packages/**`
+dist_tgz_files = glob.glob(str(js_src_dir / "**/*.tgz"), recursive=True)
+for dist_tgz_file in dist_tgz_files:
+    with contextlib.suppress(FileNotFoundError):
+        os.remove(dist_tgz_file)
+
 # Delete all `node_modules` folders
 node_modules_dirs = glob.glob(str(js_src_dir / "**/node_modules"), recursive=True)
 for node_modules_dir in node_modules_dirs:

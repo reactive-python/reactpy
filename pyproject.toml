@@ -210,15 +210,15 @@ build_client = ['hatch run "src/build_scripts/build_js_client.py" {args}']
 build_app = ['hatch run "src/build_scripts/build_js_app.py" {args}']
 publish_event_to_object = [
   'hatch run javascript:build_event_to_object',
-  # FIXME: using npm publish to fix lack of "Trusted Publishing" in Bun
-  # Ref: https://github.com/oven-sh/bun/issues/15601
-  'cd "src/js/packages/event-to-object" && bunx npm@11.8.0 publish --provenance --access public',
+  # FIXME: This is a temporary workaround. We are using `bun pm pack`->`npm publish` to fix missing "Trusted Publishing" support in `bun publish`
+  # See the following ticket https://github.com/oven-sh/bun/issues/15601
+  'cd "src/js/packages/event-to-object" && bun pm pack --filename "packages/event-to-object/dist.tgz" && bunx npm@11.8.0 publish dist.tgz --provenance --access public',
 ]
 publish_client = [
   'hatch run javascript:build_client',
-  # FIXME: using npm publish to fix lack of "Trusted Publishing" in Bun
-  # Ref: https://github.com/oven-sh/bun/issues/15601
-  'cd "src/js/packages/@reactpy/client" && bunx npm@11.8.0 publish --provenance --access public',
+  # FIXME: This is a temporary workaround. We are using `bun pm pack`->`npm publish` to fix missing "Trusted Publishing" support in `bun publish`
+  # See the following ticket https://github.com/oven-sh/bun/issues/15601
+  'cd "src/js/packages/@reactpy/client" && bun pm pack --filename "packages/@reactpy/client/dist.tgz" && bunx npm@11.8.0 publish dist.tgz --provenance --access public',
 ]
 
 #########################

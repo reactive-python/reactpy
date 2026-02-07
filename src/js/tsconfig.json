@@ -13,7 +13,7 @@
     "module": "Preserve",
     "moduleDetection": "force",
     "moduleResolution": "bundler",
-    "noEmitOnError": true,
+    "noEmit": true,
     "noUnusedLocals": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
