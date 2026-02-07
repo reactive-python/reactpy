@@ -12,7 +12,7 @@
     "json-pointer": "^0.6.2",
     "@types/json-pointer": "^1.0.34",
     "@reactpy/client": "file:./packages/@reactpy/client",
-    "event-to-object": "^1.0.1"
+    "event-to-object": "2.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
