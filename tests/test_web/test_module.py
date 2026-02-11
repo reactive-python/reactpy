@@ -21,6 +21,8 @@ from reactpy.testing import (
 )
 from reactpy.types import InlineJavaScript
 
+from .. import pytestmark  # noqa: F401
+
 JS_FIXTURES_DIR = Path(__file__).parent / "js_fixtures"
 
 

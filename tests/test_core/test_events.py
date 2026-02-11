@@ -13,6 +13,8 @@ from reactpy.testing import DisplayFixture, poll
 from reactpy.types import Event
 from tests.tooling.common import DEFAULT_TYPE_DELAY
 
+from .. import pytestmark  # noqa: F401
+
 
 def test_event_handler_repr():
     handler = EventHandler(lambda: None)
