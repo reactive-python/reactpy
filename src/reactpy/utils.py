@@ -9,7 +9,7 @@ from typing import Any, Generic, TypeVar, cast
 from lxml import etree
 from lxml.html import fromstring
 
-from reactpy import html
+from reactpy import html as _html
 from reactpy.transforms import RequiredTransforms, attributes_to_reactjs
 from reactpy.types import Component, VdomDict
 
@@ -105,9 +105,14 @@ def string_to_reactpy(
             event handler that prevents the browser from navigating to the link. This is
             useful if you would rather have `reactpy-router` handle your URL navigation.
     """
-    if not isinstance(html, str):  # nocov
+    if not html.strip():
+        return _html.div()
+    if not isinstance(html, str):
         msg = f"Expected html to be a string, not {type(html).__name__}"
         raise TypeError(msg)
+    if "<" not in html or ">" not in html:
+        msg = "Expected html string to contain HTML tags, but no tags were found."
+        raise ValueError(msg)
 
     # If the user provided a string, convert it to a list of lxml.etree nodes
     try:
@@ -153,7 +158,7 @@ def _etree_to_vdom(
     attributes = attributes_to_reactjs(dict(node.items()))
 
     # Convert the lxml node to a VDOM dict
-    constructor = getattr(html, str(node.tag))
+    constructor = getattr(_html, str(node.tag))
     el = constructor(attributes, children)
 
     # Perform necessary transformations on the VDOM attributes to meet VDOM spec
@@ -241,8 +246,8 @@ def component_to_vdom(component: Component) -> VdomDict:
     if hasattr(result, "render"):
         return component_to_vdom(cast(Component, result))
     elif isinstance(result, str):
-        return html.div(result)
-    return html()
+        return _html.div(result)
+    return _html.div()
 
 
 def _react_attribute_to_html(key: str, value: Any) -> tuple[str, str]:
