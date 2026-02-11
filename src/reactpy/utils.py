@@ -109,7 +109,7 @@ def string_to_reactpy(
         msg = f"Expected html to be a string, not {type(html).__name__}"
         raise TypeError(msg)
     if not html.strip():
-        return h.div()
+        return h.fragment()
     if "<" not in html or ">" not in html:
         msg = "Expected html string to contain HTML tags, but no tags were found."
         raise ValueError(msg)

@@ -94,7 +94,7 @@ def test_string_to_reactpy(case):
 
 @pytest.mark.parametrize("source", ["", "   ", "\n\t  "])
 def test_string_to_reactpy_empty_source(source):
-    assert utils.string_to_reactpy(source) == html.div()
+    assert utils.string_to_reactpy(source) == html.fragment()
 
 
 @pytest.mark.parametrize("source", [123, None, object()])
