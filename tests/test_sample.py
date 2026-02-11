@@ -1,6 +1,8 @@
 from reactpy.testing import DisplayFixture
 from tests.sample import SampleApp
 
+from . import pytestmark  # noqa: F401
+
 
 async def test_sample_app(display: DisplayFixture):
     await display.show(SampleApp)

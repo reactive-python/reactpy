@@ -6,6 +6,8 @@ from reactpy.testing import BackendFixture, DisplayFixture, poll
 from tests.tooling.common import DEFAULT_TYPE_DELAY
 from tests.tooling.hooks import use_counter
 
+from . import pytestmark  # noqa: F401
+
 JS_DIR = Path(__file__).parent / "js"
 
 

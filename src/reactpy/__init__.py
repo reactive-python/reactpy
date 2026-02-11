@@ -1,5 +1,5 @@
 from reactpy import config, logging, reactjs, types, web, widgets
-from reactpy._html import html
+from reactpy._html import h, html
 from reactpy.core import hooks
 from reactpy.core.component import component
 from reactpy.core.events import event
@@ -23,7 +23,7 @@ from reactpy.executors.pyscript.components import pyscript_component
 from reactpy.utils import Ref, reactpy_to_string, string_to_reactpy
 
 __author__ = "The Reactive Python Team"
-__version__ = "2.0.0b9"
+__version__ = "2.0.0b10"
 
 __all__ = [
     "Ref",
@@ -32,6 +32,7 @@ __all__ = [
     "config",
     "create_context",
     "event",
+    "h",
     "hooks",
     "html",
     "logging",
