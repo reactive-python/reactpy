@@ -92,6 +92,23 @@ def test_string_to_reactpy(case):
     assert utils.string_to_reactpy(case["source"]) == case["model"]
 
 
+@pytest.mark.parametrize("source", ["", "   ", "\n\t  "])
+def test_string_to_reactpy_empty_source(source):
+    assert utils.string_to_reactpy(source) == html.div()
+
+
+@pytest.mark.parametrize("source", [123, None, object()])
+def test_string_to_reactpy_non_string_source(source):
+    with pytest.raises(TypeError):
+        utils.string_to_reactpy(source)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("source", ["no tags", "plain text", "just words"])
+def test_string_to_reactpy_missing_tags(source):
+    with pytest.raises(ValueError):
+        utils.string_to_reactpy(source)
+
+
 @pytest.mark.parametrize(
     "case",
     [

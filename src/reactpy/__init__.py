@@ -1,5 +1,5 @@
 from reactpy import config, logging, reactjs, types, web, widgets
-from reactpy._html import html
+from reactpy._html import h, html
 from reactpy.core import hooks
 from reactpy.core.component import component
 from reactpy.core.events import event
@@ -32,6 +32,7 @@ __all__ = [
     "config",
     "create_context",
     "event",
+    "h",
     "hooks",
     "html",
     "logging",
