@@ -1,6 +1,7 @@
 import pytest
 
 import reactpy
+from functools import partial
 from reactpy import component, html
 from reactpy.core.events import (
     EventHandler,
@@ -344,6 +345,16 @@ def test_detect_both():
         event.stopPropagation()
 
     eh = EventHandler(handler)
+    assert eh.prevent_default is True
+    assert eh.stop_propagation is True
+
+
+def test_detect_both_when_handler_is_partial():
+    def handler(event: Event, *, extra_param):
+        event.preventDefault()
+        event.stopPropagation()
+
+    eh = EventHandler(partial(handler, extra_param="extra_value"))
     assert eh.prevent_default is True
     assert eh.stop_propagation is True
 

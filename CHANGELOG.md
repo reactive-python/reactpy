@@ -21,6 +21,7 @@ Don't forget to remove deprecated code on each major release!
 - Added support for inline JavaScript as event handlers or other attributes that expect a callable via `reactpy.types.InlineJavaScript`
 - Event functions can now call `event.preventDefault()` and `event.stopPropagation()` methods directly on the event data object, rather than using the `@event` decorator.
 - Event data now supports accessing properties via dot notation (ex. `event.target.value`).
+- Added support for partial functions in EventHandler
 - Added `reactpy.types.Event` to provide type hints for the standard `data` function argument (for example `def on_click(event: Event): ...`).
 - Added `asgi` and `jinja` installation extras (for example `pip install reactpy[asgi, jinja]`).
 - Added `reactpy.executors.asgi.ReactPy` that can be used to run ReactPy in standalone mode via ASGI.
