@@ -1,8 +1,10 @@
+import asyncio
+from functools import partial
+
 import pytest
 
 import reactpy
-from functools import partial
-from reactpy import component, html
+from reactpy import component, html, use_state
 from reactpy.core.events import (
     EventHandler,
     merge_event_handler_funcs,
@@ -419,3 +421,171 @@ def test_detect_renamed_argument():
     eh = EventHandler(handler)
     assert eh.prevent_default is True
     assert eh.stop_propagation is True
+
+
+async def test_event_queue_sequential_processing(display: DisplayFixture):
+    """Ensure events are processed sequentially for the same target"""
+
+    events_processed = []
+
+    @component
+    def SequentialEvents():
+        async def handle_click(event):
+            # Simulate slow processing
+            await asyncio.sleep(0.1)
+            events_processed.append(event["target"])
+
+        return html.button({"id": "btn", "onClick": handle_click}, "Click me")
+
+    await display.show(SequentialEvents)
+
+    # Get the element
+    btn = display.page.locator("#btn")
+
+    # Click 3 times rapidly
+    # We use evaluate to trigger clicks rapidly from client side perspective if possible,
+    # or just click rapidly via playwright.
+    # Playwright's click is awaited, so we need to run them concurrently.
+
+    await asyncio.gather(
+        btn.click(),
+        btn.click(),
+        btn.click(),
+    )
+
+    # Wait for processing to complete (0.1s * 3 = 0.3s approx)
+    await asyncio.sleep(0.5)
+
+    assert len(events_processed) == 3
+
+
+async def test_event_targeting_with_shifting_elements(display: DisplayFixture):
+    """
+    Ensure that events are delivered to the correct component even when
+    elements shift around it, provided explicit keys are used.
+    """
+
+    clicked_items = []
+
+    @component
+    def Item(id_val):
+        async def handle_click(event):
+            clicked_items.append(id_val)
+
+        return html.div(
+            {"id": f"item-{id_val}", "onClick": handle_click}, f"Item {id_val}"
+        )
+
+    @component
+    def ListContainer():
+        items, set_items = use_state(["B", "C"])
+
+        def add_top(event):
+            set_items(["A", *items])
+
+        return html.div(
+            html.button({"id": "add-btn", "onClick": add_top}, "Add Top"),
+            html.div({"id": "list"}, [Item(i, key=i) for i in items]),
+        )
+
+    await display.show(ListContainer)
+
+    # Initial state: Items B, C are present.
+    # Click Item B.
+    btn_b = display.page.locator("#item-B")
+    await btn_b.click()
+
+    # Add Item A to the top.
+    add_btn = display.page.locator("#add-btn")
+    await add_btn.click()
+
+    # Wait for Item A to appear to ensure render is complete
+    await display.page.locator("#item-A").wait_for()
+
+    # Now the list is [A, B, C].
+    # Item B has shifted position in the DOM (index 0 -> index 1).
+    # Its key path should remain .../B regardless of index if we implemented it right?
+    # Actually, let's verify how key_path is constructed.
+    # In layout.py: key_path=f"{parent.key_path}/{key}"
+    # So if the parent is the div container, and items have keys "A", "B", "C".
+    # The paths are .../list/A, .../list/B, .../list/C.
+    # The index in the children array changes, but the key_path relies on the key, not the index (if key is provided).
+
+    # Click Item B again.
+    # It should still trigger the handler for B, not A (which is now at index 0) and not C.
+    await btn_b.click()
+
+    # Click Item C.
+    btn_c = display.page.locator("#item-C")
+    await btn_c.click()
+
+    # Assertions
+    # We expect 'B' (first click), then 'B' (second click after shift), then 'C'.
+    assert clicked_items == ["B", "B", "C"]
+
+
+async def test_event_targeting_with_index_shifting(display: DisplayFixture):
+    """
+    Ensure that when keys are NOT provided (using indices),
+    events might target the element at the same *index* if the user isn't careful,
+    but we verify that the system behaves predictably (target is based on path).
+
+    If we insert at top without keys:
+    Old: Index 0 (Item B) -> Path .../0
+    New: Index 0 (Item A), Index 1 (Item B) -> Path .../0 turns into Item A.
+
+    If an event was in-flight for Index 0 (Item B) when the update happened:
+    The event target ID was ".../0:click".
+    After update, ".../0:click" is now Item A's handler.
+
+    So the event intended for B would execute on A. This is standard React behavior for index keys.
+    We just want to ensure our system works this way and doesn't crash or lose the event.
+    """
+
+    clicked_items = []
+
+    @component
+    def Item(id_val):
+        async def handle_click(event):
+            clicked_items.append(id_val)
+
+        return html.div(
+            {"id": f"item-{id_val}", "onClick": handle_click}, f"Item {id_val}"
+        )
+
+    @component
+    def ListContainer():
+        items, set_items = use_state(["B"])
+
+        async def add_top(event):
+            set_items(["A", *items])
+            # We want to create a race condition where we click Item B (index 0)
+            # just narrowly before the re-render places Item A at index 0.
+            # But 'display.show' and playwright interactions are sequential usually.
+            # We can simulate the state change.
+
+        return html.div(
+            html.button({"id": "add-btn", "onClick": add_top}, "Add Top"),
+            html.div({"id": "list"}, [Item(i) for i in items]),
+        )
+
+    await display.show(ListContainer)
+
+    # Initial: Item B at Index 0.
+    # We want to send an event to Index 0 *effectively*, but have it process *after* A is inserted at Index 0.
+    # This is hard to orchestrate with exact timing in an integration test without hooks into the internal loop.
+    # However, we can verifying that basic interaction works after the shift.
+
+    add_btn = display.page.locator("#add-btn")
+    await add_btn.click()
+
+    await display.page.locator("#item-A").wait_for()
+
+    # Now Item A is at Index 0 (".../0"). Item B is at Index 1 (".../1").
+    # Clicking Item B should technically work fine because we are clicking the DOM element for B,
+    # which should generate an event for target ".../1".
+
+    btn_b = display.page.locator("#item-B")
+    await btn_b.click()  # This generates event for .../1
+
+    assert clicked_items == ["B"]

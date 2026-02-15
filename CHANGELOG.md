@@ -52,7 +52,7 @@ Don't forget to remove deprecated code on each major release!
 - Rewrite the `event-to-object` package to be more robust at handling properties on events.
 - Custom JS components will now automatically assume you are using ReactJS in the absence of a `bind` function.
 - Refactor layout rendering logic to improve readability and maintainability.
-- `@reactpy/client` now exports `React` and `ReactDOM`.
+- The JavaScript package `@reactpy/client` now exports `React` and `ReactDOM`, which allows third-party components to re-use the same React instance as ReactPy.
 - `reactpy.html` will now automatically flatten lists recursively (ex. `reactpy.html(["child1", ["child2"]])`)
 - `reactpy.utils.reactpy_to_string` will now retain the user's original casing for `data-*` and `aria-*` attributes.
 - `reactpy.utils.string_to_reactpy` has been upgraded to handle more complex scenarios without causing ReactJS rendering errors.

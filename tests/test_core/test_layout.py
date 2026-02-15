@@ -444,14 +444,12 @@ async def test_double_updated_component_is_not_double_rendered():
         hook.latest.schedule_render()
 
         await layout.render()
-        try:
+        with contextlib.suppress(TimeoutError):
+            # the render should still be rendering since we only update once
             await asyncio.wait_for(
                 layout.render(),
                 timeout=0.1,  # this should have been plenty of time
             )
-        except TimeoutError:
-            pass  # the render should still be rendering since we only update once
-
         assert run_count.current == 2
 
 
@@ -483,6 +481,8 @@ async def test_log_on_dispatch_to_missing_event_handler(caplog):
 
     async with Layout(SomeComponent()) as layout:
         await layout.deliver(event_message("missing"))
+        # Allow time for event queue processing logic (including retries for missing handlers)
+        await asyncio.sleep(0.1)
 
     assert re.match(
         "Ignored event - handler 'missing' does not exist or its component unmounted",

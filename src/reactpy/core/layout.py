@@ -8,6 +8,7 @@ from asyncio import (
     create_task,
     current_task,
     get_running_loop,
+    sleep,
     wait,
 )
 from collections import Counter
@@ -65,6 +66,8 @@ class Layout(BaseLayout):
     async def __aenter__(self) -> Layout:
         # create attributes here to avoid access before entering context manager
         self._event_handlers: EventHandlerDict = {}
+        self._event_queues: dict[str, Queue[LayoutEventMessage | dict[str, Any]]] = {}
+        self._event_processing_tasks: dict[str, Task[None]] = {}
         self._render_tasks: set[Task[LayoutUpdateMessage]] = set()
         self._render_tasks_by_id: dict[
             _LifeCycleStateId, Task[LayoutUpdateMessage]
@@ -88,10 +91,18 @@ class Layout(BaseLayout):
             t.cancel()
             with suppress(CancelledError):
                 await t
+
+        for t in self._event_processing_tasks.values():
+            t.cancel()
+            with suppress(CancelledError):
+                await t
+
         await self._unmount_model_states([root_model_state])
 
         # delete attributes here to avoid access after exiting context manager
         del self._event_handlers
+        del self._event_queues
+        del self._event_processing_tasks
         del self._rendering_queue
         del self._render_tasks_by_id
         del self._root_life_cycle_state_id
@@ -103,19 +114,50 @@ class Layout(BaseLayout):
         # associated with a backend model that has been deleted. We only handle
         # events if the element and the handler exist in the backend. Otherwise
         # we just ignore the event.
-        handler = self._event_handlers.get(event["target"])
-
-        if handler is not None:
-            try:
-                data = [Event(d) if isinstance(d, dict) else d for d in event["data"]]
-                await handler.function(data)
-            except Exception:
-                logger.exception(f"Failed to execute event handler {handler}")
-        else:
-            logger.info(
-                f"Ignored event - handler {event['target']!r} "
-                "does not exist or its component unmounted"
+        target = event["target"]
+        if target not in self._event_queues:
+            self._event_queues[target] = cast(
+                "Queue[LayoutEventMessage | dict[str, Any]]", Queue()
             )
+            self._event_processing_tasks[target] = create_task(
+                self._process_event_queue(target, self._event_queues[target])
+            )
+
+        await self._event_queues[target].put(event)
+
+        # In test environments, we yield to the event loop to let the processing tasks run.
+        if REACTPY_DEBUG.current:
+            await sleep(0)
+
+    async def _process_event_queue(
+        self, target: str, queue: Queue[LayoutEventMessage | dict[str, Any]]
+    ) -> None:
+        while True:
+            event = await queue.get()
+
+            # Retry a few times to handle potential re-render race conditions where
+            # the handler is temporarily removed and then re-added.
+            handler = self._event_handlers.get(target)
+            if handler is None:
+                for _ in range(3):
+                    await sleep(0.01)
+                    handler = self._event_handlers.get(target)
+                    if handler is not None:
+                        break
+
+            if handler is not None:
+                try:
+                    data = [
+                        Event(d) if isinstance(d, dict) else d for d in event["data"]
+                    ]
+                    await handler.function(data)
+                except Exception:
+                    logger.exception(f"Failed to execute event handler {handler}")
+            else:
+                logger.info(
+                    f"Ignored event - handler {event['target']!r} "
+                    "does not exist or its component unmounted"
+                )
 
     async def render(self) -> LayoutUpdateMessage:
         if REACTPY_ASYNC_RENDERING.current:
@@ -346,10 +388,11 @@ class Layout(BaseLayout):
 
         model_event_handlers = new_state.model.current["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
-            if event in old_state.targets_by_event:
-                target = old_state.targets_by_event[event]
+            if handler.target is not None:
+                target = handler.target
             else:
-                target = uuid4().hex if handler.target is None else handler.target
+                target = f"{new_state.key_path}:{event}"
+
             new_state.targets_by_event[event] = target
             self._event_handlers[target] = handler
             model_event_handlers[event] = {
@@ -370,7 +413,11 @@ class Layout(BaseLayout):
 
         model_event_handlers = new_state.model.current["eventHandlers"] = {}
         for event, handler in handlers_by_event.items():
-            target = uuid4().hex if handler.target is None else handler.target
+            if handler.target is not None:
+                target = handler.target
+            else:
+                target = f"{new_state.key_path}:{event}"
+
             new_state.targets_by_event[event] = target
             self._event_handlers[target] = handler
             model_event_handlers[event] = {
@@ -485,6 +532,7 @@ def _new_root_model_state(
         children_by_key={},
         targets_by_event={},
         life_cycle_state=_make_life_cycle_state(component, schedule_render),
+        key_path="",
     )
 
 
@@ -504,6 +552,7 @@ def _make_component_model_state(
         children_by_key={},
         targets_by_event={},
         life_cycle_state=_make_life_cycle_state(component, schedule_render),
+        key_path=f"{parent.key_path}/{key}" if parent else "",
     )
 
 
@@ -523,6 +572,7 @@ def _copy_component_model_state(old_model_state: _ModelState) -> _ModelState:
         children_by_key={},
         targets_by_event={},
         life_cycle_state=old_model_state.life_cycle_state,
+        key_path=old_model_state.key_path,
     )
 
 
@@ -546,6 +596,7 @@ def _update_component_model_state(
             if old_model_state.is_component_state
             else _make_life_cycle_state(new_component, schedule_render)
         ),
+        key_path=f"{new_parent.key_path}/{old_model_state.key}",
     )
 
 
@@ -562,6 +613,7 @@ def _make_element_model_state(
         patch_path=f"{parent.patch_path}/children/{index}",
         children_by_key={},
         targets_by_event={},
+        key_path=f"{parent.key_path}/{key}",
     )
 
 
@@ -575,9 +627,10 @@ def _update_element_model_state(
         index=new_index,
         key=old_model_state.key,
         model=Ref(),  # does not copy the model
-        patch_path=old_model_state.patch_path,
+        patch_path=f"{new_parent.patch_path}/children/{new_index}",
         children_by_key={},
         targets_by_event={},
+        key_path=f"{new_parent.key_path}/{old_model_state.key}",
     )
 
 
@@ -591,6 +644,7 @@ class _ModelState:
         "children_by_key",
         "index",
         "key",
+        "key_path",
         "life_cycle_state",
         "model",
         "patch_path",
@@ -607,6 +661,7 @@ class _ModelState:
         children_by_key: dict[Key, _ModelState],
         targets_by_event: dict[str, str],
         life_cycle_state: _LifeCycleState | None = None,
+        key_path: str = "",
     ):
         self.index = index
         """The index of the element amongst its siblings"""
@@ -625,6 +680,9 @@ class _ModelState:
 
         self.targets_by_event = targets_by_event
         """The element's event handler target strings indexed by their event name"""
+
+        self.key_path = key_path
+        """A slash-delimited path using element keys"""
 
         # === Conditionally Available Attributes ===
         # It's easier to conditionally assign than to force a null check on every usage
