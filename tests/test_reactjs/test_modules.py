@@ -7,8 +7,6 @@ from reactpy import html
 from reactpy.reactjs import component_from_string, import_reactjs
 from reactpy.testing import BackendFixture, DisplayFixture
 
-from .. import pytestmark  # noqa: F401
-
 JS_FIXTURES_DIR = Path(__file__).parent / "js_fixtures"
 
 

@@ -5,8 +5,6 @@ import reactpy
 from reactpy.testing import DisplayFixture, poll
 from tests.tooling.common import DEFAULT_TYPE_DELAY
 
-from . import pytestmark  # noqa: F401
-
 HERE = Path(__file__).parent
 
 

@@ -15,8 +15,6 @@ from reactpy.testing import (
 )
 from reactpy.testing.display import _playwright_visible
 
-from . import pytestmark  # noqa: F401
-
 REACTPY_ASYNC_RENDERING.set_current(True)
 REACTPY_DEBUG.set_current(True)
 
