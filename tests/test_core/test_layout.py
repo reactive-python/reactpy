@@ -13,6 +13,7 @@ import reactpy
 from reactpy import html
 from reactpy.config import REACTPY_ASYNC_RENDERING, REACTPY_DEBUG
 from reactpy.core.component import component
+from reactpy.core.events import EventHandler
 from reactpy.core.hooks import use_async_effect, use_effect, use_state
 from reactpy.core.layout import Layout
 from reactpy.testing import (
@@ -1517,3 +1518,45 @@ async def test_deduplicate_async_renders_rapid():
             # Should not be 1 + 10 = 11.
             # Likely 1 + 1 (or maybe 1 + 2 if timing is loose).
             assert render_count.current < 5
+
+
+async def test_event_handler_retry_logic():
+    # Setup
+    @component
+    def MyComponent():
+        return html.div()
+
+    layout = Layout(MyComponent())
+
+    async with layout:
+        # Define a target and a handler
+        target_id = "test-target"
+
+        event_handled = asyncio.Event()
+
+        async def handler_func(data):
+            event_handled.set()
+
+        handler = EventHandler(handler_func, target=target_id)
+
+        # We deliver an event to a target that doesn't exist yet
+        event_message = {"target": target_id, "data": []}
+
+        # Send event
+        await layout.deliver(event_message)
+
+        # The processing task should pick this up and fail to find the handler immediately.
+        # It will enter the retry loop.
+        # We wait a very short time (e.g. 10ms) to ensure it's entered the loop/sleeping
+        # The loop sleeps for 10ms (0.01s) each time, 3 times.
+        # We assume the layout's loop has started processing.
+        await asyncio.sleep(0.015)
+
+        # Now we register the handler manually, simulating a late render update
+        layout._event_handlers[target_id] = handler
+
+        # Wait for the handler to be called
+        try:
+            await asyncio.wait_for(event_handled.wait(), timeout=1.0)
+        except TimeoutError:
+            pytest.fail("Event handler was not called after retry")
