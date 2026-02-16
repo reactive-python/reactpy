@@ -155,8 +155,6 @@ def use_effect(
             )
 
         async def effect(stop: asyncio.Event) -> None:
-            # Since the effect is asynchronous, we need to make sure we
-            # always clean up the previous effect's resources
             run_effect_cleanup(cleanup_func)
 
             # Execute the effect and store the clean-up function
@@ -219,17 +217,23 @@ def use_async_effect(
     dependencies = _try_to_infer_closure_values(function, dependencies)
     memoize = use_memo(dependencies=dependencies)
     cleanup_func: Ref[_EffectCleanFunc | None] = use_ref(None)
+    pending_task: Ref[asyncio.Task[_EffectCleanFunc | None] | None] = use_ref(None)
 
     def decorator(func: _AsyncEffectFunc) -> None:
         async def effect(stop: asyncio.Event) -> None:
-            # Since the effect is asynchronous, we need to make sure we
-            # always clean up the previous effect's resources
+            # Make sure we always clean up the previous effect's resources
+            if pending_task.current:
+                pending_task.current.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await pending_task.current
+
             run_effect_cleanup(cleanup_func)
 
             # Execute the effect and store the clean-up function.
             # We run this in a task so it can be cancelled if the stop signal
             # is set before the effect completes.
             task = asyncio.create_task(func())
+            pending_task.current = task
 
             # Wait for either the effect to complete or the stop signal
             stop_task = asyncio.create_task(stop.wait())
@@ -240,15 +244,17 @@ def use_async_effect(
 
             # If the effect completed first, store the cleanup function
             if task in done:
-                cleanup_func.current = task.result()
+                pending_task.current = None
+                with contextlib.suppress(asyncio.CancelledError):
+                    cleanup_func.current = task.result()
                 # Cancel the stop task since we don't need it anymore
                 stop_task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
                     await stop_task
                 # Now wait for the stop signal to run cleanup
                 await stop.wait()
+            # Stop signal came first - cancel the effect task
             else:
-                # Stop signal came first - cancel the effect task
                 task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
                     await task

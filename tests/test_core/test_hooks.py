@@ -600,6 +600,41 @@ async def test_use_async_effect_cancel():
     event_that_never_occurs.set()
 
 
+async def test_async_effect_sleep_is_cancelled_on_re_render():
+    """Test that async effects waiting on asyncio.sleep are properly cancelled."""
+    component_hook = HookCatcher()
+    effect_ran = asyncio.Event()
+    effect_was_cancelled = asyncio.Event()
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithSleepEffect():
+        @reactpy.hooks.use_async_effect(dependencies=None)
+        async def effect():
+            effect_ran.set()
+            try:
+                await asyncio.sleep(1000)
+            except asyncio.CancelledError:
+                effect_was_cancelled.set()
+                raise
+
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithSleepEffect()) as layout:
+        await layout.render()
+
+        # Wait for the effect to start
+        await effect_ran.wait()
+
+        # Trigger a re-render which should cancel the previous effect
+        component_hook.latest.schedule_render()
+        await layout.render()
+
+        # Verify the previous effect was cancelled
+        await asyncio.wait_for(effect_was_cancelled.wait(), 1)
+
+
+
 async def test_error_in_effect_is_gracefully_handled():
     @reactpy.component
     def ComponentWithEffect():
@@ -1349,3 +1384,40 @@ def test_use_effect_exception_on_async_function():
                 await layout.render()
 
         asyncio.run(run_test())
+
+
+async def test_async_effect_cancelled_on_dependency_change():
+    """Test that async effects are cancelled when dependencies change."""
+    set_state = reactpy.Ref()
+    effect_ran = asyncio.Event()
+    effect_was_cancelled = asyncio.Event()
+
+    @reactpy.component
+    def ComponentWithDependentEffect():
+        state, set_state.current = reactpy.hooks.use_state(0)
+
+        @reactpy.hooks.use_async_effect(dependencies=[state])
+        async def effect():
+            effect_ran.set()
+            try:
+                await asyncio.sleep(1000)
+            except asyncio.CancelledError:
+                effect_was_cancelled.set()
+                raise
+
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithDependentEffect()) as layout:
+        await layout.render()
+
+        # Wait for the effect to start
+        await effect_ran.wait()
+        effect_ran.clear()
+
+        # Change state to trigger effect cleanup/re-run
+        set_state.current(1)
+        await layout.render()
+
+        # Verify the previous effect was cancelled
+        await asyncio.wait_for(effect_was_cancelled.wait(), 1)
+
