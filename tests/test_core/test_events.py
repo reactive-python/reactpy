@@ -566,7 +566,7 @@ async def test_event_targeting_with_index_shifting(display: DisplayFixture):
 
         return html.div(
             html.button({"id": "add-btn", "onClick": add_top}, "Add Top"),
-            html.div({"id": "list"}, [Item(i) for i in items]),
+            html.div({"id": "list"}, [Item(i, key=i) for i in items]),
         )
 
     await display.show(ListContainer)
