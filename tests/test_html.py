@@ -7,8 +7,6 @@ from reactpy.utils import Ref
 from tests.tooling.common import DEFAULT_TYPE_DELAY
 from tests.tooling.hooks import use_counter
 
-from . import pytestmark  # noqa: F401
-
 
 async def test_script_re_run_on_content_change(display: DisplayFixture):
     @component

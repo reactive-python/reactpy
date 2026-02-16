@@ -13,8 +13,6 @@ from reactpy.testing.logs import assert_reactpy_did_not_log
 from reactpy.utils import Ref
 from tests.tooling.common import DEFAULT_TYPE_DELAY, update_message
 
-from .. import pytestmark  # noqa: F401
-
 
 async def test_must_be_rendering_in_layout_to_use_hooks():
     @reactpy.component

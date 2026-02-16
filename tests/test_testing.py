@@ -10,8 +10,6 @@ from reactpy.testing.backend import BackendFixture, _hotswap
 from reactpy.testing.display import DisplayFixture
 from tests.sample import SampleApp
 
-from . import pytestmark  # noqa: F401
-
 
 def test_assert_reactpy_logged_does_not_suppress_errors():
     with pytest.raises(RuntimeError, match=r"expected error"):

@@ -6,8 +6,6 @@ from reactpy import html
 from reactpy.reactjs import component_from_npm, import_reactjs
 from reactpy.testing import BackendFixture, DisplayFixture
 
-from .. import pytestmark  # noqa: F401
-
 MISSING_IMPORT_MAP_MSG = "ReactPy did not detect a suitable JavaScript import map"
 
 

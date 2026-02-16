@@ -8,8 +8,6 @@ from reactpy.executors.asgi import ReactPy
 from reactpy.testing import BackendFixture, DisplayFixture
 from reactpy.testing.backend import root_hotswap_component
 
-from .. import pytestmark  # noqa: F401
-
 
 @pytest.fixture(scope="module")
 async def display(browser):

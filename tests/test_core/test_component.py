@@ -1,8 +1,6 @@
 import reactpy
 from reactpy.testing import DisplayFixture
 
-from .. import pytestmark  # noqa: F401
-
 
 def test_component_repr():
     @reactpy.component

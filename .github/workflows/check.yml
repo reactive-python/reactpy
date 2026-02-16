@@ -15,7 +15,8 @@ jobs:
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "python-{0}"
-            run-cmd: "hatch test --parallel --cover"
+            # Retries needed because GitHub workers sometimes lag enough to crash parallel workers
+            run-cmd: "hatch test --parallel --cover --retries 10"
     lint-python:
         uses: ./.github/workflows/.hatch-run.yml
         with:
@@ -25,7 +26,7 @@ jobs:
         uses: ./.github/workflows/.hatch-run.yml
         with:
             job-name: "python-{0} {1}"
-            run-cmd: "hatch test --parallel"
+            run-cmd: "hatch test --parallel --retries 10"
             runs-on: '["ubuntu-latest", "macos-latest", "windows-latest"]'
             python-version: '["3.11", "3.12", "3.13", "3.14"]'
     test-documentation:

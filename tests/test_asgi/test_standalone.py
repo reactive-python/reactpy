@@ -13,8 +13,6 @@ from reactpy.testing import BackendFixture, DisplayFixture, poll
 from reactpy.testing.common import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.types import Connection, Location
 
-from .. import pytestmark  # noqa: F401
-
 
 async def test_display_simple_hello_world(display: DisplayFixture):
     @reactpy.component
