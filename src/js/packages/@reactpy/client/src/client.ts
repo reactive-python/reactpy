@@ -59,6 +59,7 @@ export class ReactPyClient
   urls: ReactPyUrls;
   socket: { current?: WebSocket };
   mountElement: HTMLElement;
+  private readonly messageQueue: any[] = [];
 
   constructor(props: GenericReactPyClientProps) {
     super();
@@ -69,12 +70,24 @@ export class ReactPyClient
       url: this.urls.componentUrl,
       readyPromise: this.ready,
       ...props.reconnectOptions,
+      onOpen: () => {
+        while (this.messageQueue.length > 0) {
+          this.sendMessage(this.messageQueue.shift());
+        }
+      },
       onMessage: async ({ data }) => this.handleIncoming(JSON.parse(data)),
     });
   }
 
   sendMessage(message: any): void {
-    this.socket.current?.send(JSON.stringify(message));
+    if (
+      this.socket.current &&
+      this.socket.current.readyState === WebSocket.OPEN
+    ) {
+      this.socket.current.send(JSON.stringify(message));
+    } else {
+      this.messageQueue.push(message);
+    }
   }
 
   loadModule(moduleName: string): Promise<ReactPyModule> {
