@@ -101,6 +101,7 @@ Don't forget to remove deprecated code on each major release!
 - Fixed a bug where script elements would not render to the DOM as plain text.
 - Fixed a bug where the `key` property provided within server-side ReactPy code was failing to propagate to the front-end JavaScript components.
 - Fixed a bug where `RuntimeError("Hook stack is in an invalid state")` errors could be generated when using a webserver that reuses threads.
+- Fixed a bug where events (server to client, and client to server) could be lost during rapid actions.
 - Allow for ReactPy and ReactJS components to be arbitrarily inserted onto the page with any possible hierarchy.
 
 ## [1.1.0] - 2024-11-24
