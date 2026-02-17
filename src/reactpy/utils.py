@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 from collections.abc import Callable, Iterable
 from importlib import import_module
@@ -16,6 +17,14 @@ from reactpy.types import Component, VdomDict
 _RefValue = TypeVar("_RefValue")
 _ModelTransform = Callable[[VdomDict], Any]
 _UNDEFINED: Any = object()
+GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "").lower() in {
+    "y",
+    "yes",
+    "t",
+    "true",
+    "on",
+    "1",
+}
 
 
 class Ref(Generic[_RefValue]):
@@ -309,8 +318,3 @@ class Singleton:
             orig = super()
             cls._instance = orig.__new__(cls, *args, **kw)
         return cls._instance
-
-
-def str_to_bool(s: str) -> bool:
-    """Convert a string to a boolean value."""
-    return s.lower() in {"y", "yes", "t", "true", "on", "1"}

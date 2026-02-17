@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import inspect
-import os
 import time
 from collections.abc import Awaitable, Callable, Coroutine
 from functools import wraps
@@ -13,14 +12,12 @@ from weakref import ref
 from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.core._life_cycle_hook import HOOK_STACK, LifeCycleHook
 from reactpy.core.events import EventHandler, to_event_handler_function
-from reactpy.utils import str_to_bool
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
 
 _DEFAULT_POLL_DELAY = 0.1
-GITHUB_ACTIONS = str_to_bool(os.getenv("GITHUB_ACTIONS", ""))
 
 
 class poll(Generic[_R]):  # noqa: N801
