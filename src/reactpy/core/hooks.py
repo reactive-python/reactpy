@@ -266,7 +266,8 @@ def use_async_effect(
                 # Prevent task cancellation if the user enabled shielding
                 if not shield:
                     task.cancel()
-                await asyncio.shield(task)
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
 
             # Run the clean-up function when the effect is stopped,
             # if it hasn't been run already by a new effect

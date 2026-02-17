@@ -12,9 +12,8 @@ from reactpy.core.events import (
     to_event_handler_function,
 )
 from reactpy.core.layout import Layout
-from reactpy.testing import DisplayFixture, poll
+from reactpy.testing import DEFAULT_TYPE_DELAY, DisplayFixture, poll
 from reactpy.types import Event
-from tests.tooling.common import DEFAULT_TYPE_DELAY
 
 
 def test_event_handler_repr():

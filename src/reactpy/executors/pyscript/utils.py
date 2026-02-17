@@ -49,7 +49,10 @@ PYSCRIPT_LAYOUT_HANDLER = minify_python(
 
 
 def pyscript_executor_html(
-    file_paths: Sequence[str], uuid: str, root: str, cache_handler: Callable
+    file_paths: Sequence[str],
+    uuid: str,
+    root: str,
+    cache_handler: Callable | None = None,
 ) -> str:
     """Inserts the user's code into the PyScript template using pattern matching."""
     # Create a valid PyScript executor by replacing the template values

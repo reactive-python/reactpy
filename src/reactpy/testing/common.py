@@ -12,12 +12,14 @@ from weakref import ref
 from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.core._life_cycle_hook import HOOK_STACK, LifeCycleHook
 from reactpy.core.events import EventHandler, to_event_handler_function
+from reactpy.utils import GITHUB_ACTIONS
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
 
 _DEFAULT_POLL_DELAY = 0.1
+DEFAULT_TYPE_DELAY = 250 if GITHUB_ACTIONS else 25
 
 
 class poll(Generic[_R]):  # noqa: N801
