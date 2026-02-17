@@ -186,7 +186,9 @@ class ReactPyWebsocket(ResponseWebSocket):
         super().__init__(scope=scope, receive=receive, send=send)  # type: ignore
         self.scope = scope
         self.parent = parent
-        self.rendering_queue: asyncio.Queue[dict[str, str]] = asyncio.Queue()
+        self.rendering_queue: asyncio.Queue[dict[str, str]] = asyncio.Queue(
+            config.REACTPY_MAX_QUEUE_SIZE.current
+        )
         self.dispatcher: asyncio.Task[Any] | None = None
 
     async def __aenter__(self) -> ReactPyWebsocket:

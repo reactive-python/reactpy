@@ -7,6 +7,7 @@ import pytest
 from jsonpointer import set_pointer
 
 import reactpy
+from reactpy.config import REACTPY_MAX_QUEUE_SIZE
 from reactpy.core.hooks import use_effect
 from reactpy.core.layout import Layout
 from reactpy.core.serve import serve_layout
@@ -130,8 +131,8 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
             reactpy.html.button({"onClick": handle_event}),
         )
 
-    send_queue = asyncio.Queue()
-    recv_queue = asyncio.Queue()
+    send_queue = asyncio.Queue(REACTPY_MAX_QUEUE_SIZE.current)
+    recv_queue = asyncio.Queue(REACTPY_MAX_QUEUE_SIZE.current)
 
     task = asyncio.create_task(
         serve_layout(

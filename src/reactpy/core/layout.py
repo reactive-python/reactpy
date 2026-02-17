@@ -34,6 +34,7 @@ from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
     REACTPY_CHECK_VDOM_SPEC,
     REACTPY_DEBUG,
+    REACTPY_MAX_QUEUE_SIZE,
 )
 from reactpy.core._life_cycle_hook import HOOK_STACK, LifeCycleHook
 from reactpy.core.vdom import validate_vdom_json
@@ -117,7 +118,8 @@ class Layout(BaseLayout):
         target = event["target"]
         if target not in self._event_queues:
             self._event_queues[target] = cast(
-                "Queue[LayoutEventMessage | dict[str, Any]]", Queue()
+                "Queue[LayoutEventMessage | dict[str, Any]]",
+                Queue(REACTPY_MAX_QUEUE_SIZE.current),
             )
             self._event_processing_tasks[target] = create_task(
                 self._process_event_queue(target, self._event_queues[target])
@@ -759,7 +761,7 @@ _Type = TypeVar("_Type")
 class _ThreadSafeQueue(Generic[_Type]):
     def __init__(self) -> None:
         self._loop = get_running_loop()
-        self._queue: Queue[_Type] = Queue()
+        self._queue: Queue[_Type] = Queue(REACTPY_MAX_QUEUE_SIZE.current)
         self._pending: set[_Type] = set()
 
     def put(self, value: _Type) -> None:
