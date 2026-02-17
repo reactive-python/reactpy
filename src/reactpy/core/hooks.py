@@ -597,9 +597,12 @@ def strictly_equal(x: Any, y: Any) -> bool:
 
     # Compare the source code of lambda and local functions
     if (
-        hasattr(x, "__qualname__")
+        getattr(x, "__qualname__", "")
+        and getattr(y, "__qualname__", "")
         and ("<lambda>" in x.__qualname__ or "<locals>" in x.__qualname__)
+        and ("<lambda>" in y.__qualname__ or "<locals>" in y.__qualname__)
         and hasattr(x, "__code__")
+        and hasattr(y, "__code__")
     ):
         if x.__qualname__ != y.__qualname__:
             return False
