@@ -180,6 +180,7 @@ def use_effect(
 def use_async_effect(
     function: None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
+    shield: bool = False,
 ) -> Callable[[_EffectApplyFunc], None]: ...
 
 
@@ -187,12 +188,14 @@ def use_async_effect(
 def use_async_effect(
     function: _AsyncEffectFunc,
     dependencies: Sequence[Any] | ellipsis | None = ...,
+    shield: bool = False,
 ) -> None: ...
 
 
 def use_async_effect(
     function: _AsyncEffectFunc | None = None,
     dependencies: Sequence[Any] | ellipsis | None = ...,
+    shield: bool = False,
 ) -> Callable[[_AsyncEffectFunc], None] | None:
     """
     A hook that manages an asynchronous side effect in a React-like component.
@@ -209,6 +212,11 @@ def use_async_effect(
             of any value in the given sequence changes (i.e. their :func:`id` is
             different). By default these are inferred based on local variables that are
             referenced by the given function.
+        shield:
+            If ``True``, the effect will not be cancelled when the hook is running clean-up.
+            This can be useful if you want to ensure that the effect runs to completion even if the
+            component is unmounted while the effect is still running (e.g. a database query).
+            However, use this option with caution as it can lead to memory leaks.
 
     Returns:
         If not function is provided, a decorator. Otherwise ``None``.
@@ -255,9 +263,10 @@ def use_async_effect(
                 await stop.wait()
             # Stop signal came first - cancel the effect task
             else:
-                task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await task
+                # Prevent task cancellation if the user enabled shielding
+                if not shield:
+                    task.cancel()
+                await asyncio.shield(task)
 
             # Run the clean-up function when the effect is stopped,
             # if it hasn't been run already by a new effect
