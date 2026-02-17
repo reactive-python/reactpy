@@ -634,7 +634,6 @@ async def test_async_effect_sleep_is_cancelled_on_re_render():
         await asyncio.wait_for(effect_was_cancelled.wait(), 1)
 
 
-
 async def test_error_in_effect_is_gracefully_handled():
     @reactpy.component
     def ComponentWithEffect():
@@ -1420,4 +1419,3 @@ async def test_async_effect_cancelled_on_dependency_change():
 
         # Verify the previous effect was cancelled
         await asyncio.wait_for(effect_was_cancelled.wait(), 1)
-
