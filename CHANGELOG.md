@@ -86,6 +86,7 @@ Don't forget to remove deprecated code on each major release!
 - Removed `reactpy.run`. See the documentation for the new method to run ReactPy applications.
 - Removed `reactpy.backend.*`. See the documentation for the new method to run ReactPy applications.
 - Removed `reactpy.core.types` module. Use `reactpy.types` instead.
+- Removed `reactpy.utils.str_to_bool`.
 - Removed `reactpy.utils.html_to_vdom`. Use `reactpy.utils.string_to_reactpy` instead.
 - Removed `reactpy.utils.vdom_to_html`. Use `reactpy.utils.reactpy_to_string` instead.
 - Removed `reactpy.vdom`. Use `reactpy.Vdom` instead.
