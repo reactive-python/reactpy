@@ -36,6 +36,7 @@ Don't forget to remove deprecated code on each major release!
 - Added `reactpy.reactjs.component_from_string` to import ReactJS components from a string.
 - Added `reactpy.reactjs.component_from_npm` to import ReactJS components from NPM.
 - Added `reactpy.h` as a shorthand alias for `reactpy.html`.
+- Added `reactpy.config.REACTPY_MAX_QUEUE_SIZE` to configure the maximum size of all ReactPy asyncio queues (e.g. receive buffer, send buffer, event buffer) before ReactPy begins waiting until a slot frees up. This can be used to constraint memory usage.
 
 ### Changed
 
