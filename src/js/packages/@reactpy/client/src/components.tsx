@@ -82,16 +82,32 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
   const client = useContext(ClientContext);
   const props = createAttributes(model, client);
   const [value, setValue] = useState(props.value);
+  const lastUserValue = useRef(props.value);
+  const lastChangeTime = useRef(0);
 
   // honor changes to value from the client via props
-  useEffect(() => setValue(props.value), [props.value]);
+  useEffect(() => {
+    // If the new prop value matches what we last sent, we are in sync.
+    // If it differs, we only update if sufficient time has passed since user input,
+    // effectively debouncing server overrides during rapid typing.
+    const now = Date.now();
+    if (
+      props.value === lastUserValue.current ||
+      now - lastChangeTime.current > 200
+    ) {
+      setValue(props.value);
+    }
+  }, [props.value]);
 
   const givenOnChange = props.onChange;
   if (typeof givenOnChange === "function") {
     props.onChange = (event: TargetedEvent<any>) => {
       // immediately update the value to give the user feedback
       if (event.target) {
-        setValue((event.target as HTMLInputElement).value);
+        const newValue = (event.target as HTMLInputElement).value;
+        setValue(newValue);
+        lastUserValue.current = newValue;
+        lastChangeTime.current = Date.now();
       }
       // allow the client to respond (and possibly change the value)
       givenOnChange(event);
