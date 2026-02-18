@@ -8,10 +8,16 @@ from reactpy.config import REACTPY_DEBUG
 from reactpy.core._life_cycle_hook import LifeCycleHook
 from reactpy.core.hooks import strictly_equal, use_effect
 from reactpy.core.layout import Layout
-from reactpy.testing import DisplayFixture, HookCatcher, assert_reactpy_did_log, poll
+from reactpy.testing import (
+    DEFAULT_TYPE_DELAY,
+    DisplayFixture,
+    HookCatcher,
+    assert_reactpy_did_log,
+    poll,
+)
 from reactpy.testing.logs import assert_reactpy_did_not_log
 from reactpy.utils import Ref
-from tests.tooling.common import DEFAULT_TYPE_DELAY, update_message
+from tests.tooling.common import update_message
 
 
 async def test_must_be_rendering_in_layout_to_use_hooks():
@@ -600,6 +606,46 @@ async def test_use_async_effect_cancel():
     event_that_never_occurs.set()
 
 
+async def test_use_async_effect_shield():
+    component_hook = HookCatcher()
+    effect_ran = asyncio.Event()
+    effect_finished = asyncio.Event()
+    stop_waiting = asyncio.Event()
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithShieldedEffect():
+        @reactpy.hooks.use_async_effect(dependencies=None, shield=True)
+        async def effect():
+            effect_ran.set()
+            await stop_waiting.wait()
+            effect_finished.set()
+
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithShieldedEffect()) as layout:
+        await layout.render()
+
+        await effect_ran.wait()
+
+        # Trigger re-render which would normally cancel the effect
+        component_hook.latest.schedule_render()
+
+        # Give the loop a chance to process the render logic and potentially cancel
+        await asyncio.sleep(0.1)
+
+        # Verify effect hasn't finished yet but also wasn't cancelled
+        assert not effect_finished.is_set()
+
+        # Now allow the effect to finish
+        stop_waiting.set()
+
+        # The re-render should complete now that the shielded effect is done
+        await layout.render()
+
+    await asyncio.wait_for(effect_finished.wait(), 1)
+
+
 async def test_async_effect_sleep_is_cancelled_on_re_render():
     """Test that async effects waiting on asyncio.sleep are properly cancelled."""
     component_hook = HookCatcher()
@@ -632,7 +678,6 @@ async def test_async_effect_sleep_is_cancelled_on_re_render():
 
         # Verify the previous effect was cancelled
         await asyncio.wait_for(effect_was_cancelled.wait(), 1)
-
 
 
 async def test_error_in_effect_is_gracefully_handled():
@@ -1420,4 +1465,3 @@ async def test_async_effect_cancelled_on_dependency_change():
 
         # Verify the previous effect was cancelled
         await asyncio.wait_for(effect_was_cancelled.wait(), 1)
-

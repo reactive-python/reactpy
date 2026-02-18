@@ -12,9 +12,8 @@ from reactpy.core.events import (
     to_event_handler_function,
 )
 from reactpy.core.layout import Layout
-from reactpy.testing import DisplayFixture, poll
+from reactpy.testing import DEFAULT_TYPE_DELAY, DisplayFixture, poll
 from reactpy.types import Event
-from tests.tooling.common import DEFAULT_TYPE_DELAY
 
 
 def test_event_handler_repr():
@@ -587,3 +586,39 @@ async def test_event_targeting_with_index_shifting(display: DisplayFixture):
     await btn_b.click()  # This generates event for .../1
 
     assert clicked_items == ["B"]
+
+
+async def test_controlled_input_typing(display: DisplayFixture):
+    """
+    Test that a controlled input updates correctly even with rapid typing.
+    This validates that event queueing/processing order is maintained.
+    """
+
+    @reactpy.component
+    def ControlledInput():
+        value, set_value = use_state("")
+
+        def on_change(event):
+            set_value(event["target"]["value"])
+
+        return reactpy.html.input(
+            {
+                "value": value,
+                "onChange": on_change,
+                "id": "controlled-input",
+            }
+        )
+
+    await display.show(ControlledInput)
+
+    inp = await display.page.wait_for_selector("#controlled-input")
+
+    # Type a long string rapidly
+    target_text = "hello world this is a test"
+    await inp.type(target_text, delay=0)
+
+    # Wait a bit for all events to settle
+    await asyncio.sleep(0.5)
+
+    # Check the final value
+    assert (await inp.evaluate("node => node.value")) == target_text

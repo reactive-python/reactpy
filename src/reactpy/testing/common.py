@@ -6,21 +6,28 @@ import os
 import time
 from collections.abc import Awaitable, Callable, Coroutine
 from functools import wraps
-from typing import Any, Generic, ParamSpec, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar, cast
 from uuid import uuid4
 from weakref import ref
 
-from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
-from reactpy.core._life_cycle_hook import HOOK_STACK, LifeCycleHook
-from reactpy.core.events import EventHandler, to_event_handler_function
-from reactpy.utils import str_to_bool
+if TYPE_CHECKING:
+    from reactpy.core._life_cycle_hook import LifeCycleHook
+    from reactpy.core.events import EventHandler
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
 
 _DEFAULT_POLL_DELAY = 0.1
-GITHUB_ACTIONS = str_to_bool(os.getenv("GITHUB_ACTIONS", ""))
+GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "").lower() in {
+    "y",
+    "yes",
+    "t",
+    "true",
+    "on",
+    "1",
+}
+DEFAULT_TYPE_DELAY = 250 if GITHUB_ACTIONS else 25
 
 
 class poll(Generic[_R]):  # noqa: N801
@@ -48,11 +55,16 @@ class poll(Generic[_R]):  # noqa: N801
     async def until(
         self,
         condition: Callable[[_R], bool],
-        timeout: float = REACTPY_TESTS_DEFAULT_TIMEOUT.current,
+        timeout: float | None = None,
         delay: float = _DEFAULT_POLL_DELAY,
         description: str = "condition to be true",
     ) -> None:
         """Check that the coroutines result meets a condition within the timeout"""
+        if timeout is None:
+            from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
+
+            timeout = REACTPY_TESTS_DEFAULT_TIMEOUT.current
+
         started_at = time.time()
         while True:
             await asyncio.sleep(delay)
@@ -66,7 +78,7 @@ class poll(Generic[_R]):  # noqa: N801
     async def until_is(
         self,
         right: _R,
-        timeout: float = REACTPY_TESTS_DEFAULT_TIMEOUT.current,
+        timeout: float | None = None,
         delay: float = _DEFAULT_POLL_DELAY,
     ) -> None:
         """Wait until the result is identical to the given value"""
@@ -80,7 +92,7 @@ class poll(Generic[_R]):  # noqa: N801
     async def until_equals(
         self,
         right: _R,
-        timeout: float = REACTPY_TESTS_DEFAULT_TIMEOUT.current,
+        timeout: float | None = None,
         delay: float = _DEFAULT_POLL_DELAY,
     ) -> None:
         """Wait until the result is equal to the given value"""
@@ -133,6 +145,8 @@ class HookCatcher:
 
         @wraps(render_function)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            from reactpy.core._life_cycle_hook import HOOK_STACK
+
             self = self_ref()
             if self is None:
                 raise RuntimeError("Hook catcher has been garbage collected")
@@ -197,6 +211,8 @@ class StaticEventHandler:
         stop_propagation: bool = False,
         prevent_default: bool = False,
     ) -> EventHandler:
+        from reactpy.core.events import EventHandler, to_event_handler_function
+
         return EventHandler(
             to_event_handler_function(function),
             stop_propagation,

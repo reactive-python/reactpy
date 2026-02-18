@@ -2,9 +2,8 @@ import pytest
 from playwright.async_api import expect
 
 from reactpy import component, config, hooks, html
-from reactpy.testing import DisplayFixture, poll
+from reactpy.testing import DEFAULT_TYPE_DELAY, DisplayFixture, poll
 from reactpy.utils import Ref
-from tests.tooling.common import DEFAULT_TYPE_DELAY
 from tests.tooling.hooks import use_counter
 
 

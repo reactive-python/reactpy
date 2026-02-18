@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 import textwrap
+from collections.abc import Callable
 from glob import glob
 from logging import getLogger
 from pathlib import Path
@@ -47,15 +48,21 @@ PYSCRIPT_LAYOUT_HANDLER = minify_python(
 )
 
 
-def pyscript_executor_html(file_paths: Sequence[str], uuid: str, root: str) -> str:
+def pyscript_executor_html(
+    file_paths: Sequence[str],
+    uuid: str,
+    root: str,
+    cache_handler: Callable | None = None,
+) -> str:
     """Inserts the user's code into the PyScript template using pattern matching."""
     # Create a valid PyScript executor by replacing the template values
     executor = PYSCRIPT_COMPONENT_TEMPLATE.replace("UUID", uuid)
     executor = executor.replace("return root()", f"return {root}()")
 
     # Fetch the user's PyScript code
+    cache_handler = cache_handler or fetch_cached_python_file
     all_file_contents: list[str] = []
-    all_file_contents.extend(cached_file_read(file_path) for file_path in file_paths)
+    all_file_contents.extend(cache_handler(file_path) for file_path in file_paths)
 
     # Prepare the PyScript code block
     user_code = "\n".join(all_file_contents)  # Combine all user code
@@ -110,12 +117,14 @@ def extend_pyscript_config(
     extra_py: Sequence[str],
     extra_js: dict[str, str] | str,
     config: dict[str, Any] | str,
+    modules: dict[str, str] | str | None = None,
 ) -> str:
     # Extends ReactPy's default PyScript config with user provided values.
     pyscript_config: dict[str, Any] = {
         "packages": [reactpy_version_string(), "jsonpointer==3.*", "ssl"],
         "js_modules": {
-            "main": {
+            "main": modules
+            or {
                 f"{REACTPY_PATH_PREFIX.current}static/morphdom/morphdom-esm.js": "morphdom"
             }
         },
@@ -143,10 +152,9 @@ def extend_pyscript_config(
 def reactpy_version_string() -> str:  # nocov
     from reactpy.testing.common import GITHUB_ACTIONS
 
-    local_version = reactpy.__version__
-
     # Get a list of all versions via `pip index versions`
     result = get_reactpy_versions()
+    local_version = reactpy.__version__
 
     # Check if the command failed
     if not result:
@@ -231,6 +239,6 @@ def get_reactpy_versions() -> dict[Any, Any]:
 
 
 @functools.cache
-def cached_file_read(file_path: str, minifiy: bool = True) -> str:
+def fetch_cached_python_file(file_path: str, minifiy: bool = True) -> str:
     content = Path(file_path).read_text(encoding="utf-8").strip()
     return minify_python(content) if minifiy else content

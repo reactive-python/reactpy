@@ -36,6 +36,7 @@ Don't forget to remove deprecated code on each major release!
 - Added `reactpy.reactjs.component_from_string` to import ReactJS components from a string.
 - Added `reactpy.reactjs.component_from_npm` to import ReactJS components from NPM.
 - Added `reactpy.h` as a shorthand alias for `reactpy.html`.
+- Added `reactpy.config.REACTPY_MAX_QUEUE_SIZE` to configure the maximum size of all ReactPy asyncio queues (e.g. receive buffer, send buffer, event buffer) before ReactPy begins waiting until a slot frees up. This can be used to constraint memory usage.
 
 ### Changed
 
@@ -85,6 +86,7 @@ Don't forget to remove deprecated code on each major release!
 - Removed `reactpy.run`. See the documentation for the new method to run ReactPy applications.
 - Removed `reactpy.backend.*`. See the documentation for the new method to run ReactPy applications.
 - Removed `reactpy.core.types` module. Use `reactpy.types` instead.
+- Removed `reactpy.utils.str_to_bool`.
 - Removed `reactpy.utils.html_to_vdom`. Use `reactpy.utils.string_to_reactpy` instead.
 - Removed `reactpy.utils.vdom_to_html`. Use `reactpy.utils.reactpy_to_string` instead.
 - Removed `reactpy.vdom`. Use `reactpy.Vdom` instead.
@@ -101,6 +103,7 @@ Don't forget to remove deprecated code on each major release!
 - Fixed a bug where script elements would not render to the DOM as plain text.
 - Fixed a bug where the `key` property provided within server-side ReactPy code was failing to propagate to the front-end JavaScript components.
 - Fixed a bug where `RuntimeError("Hook stack is in an invalid state")` errors could be generated when using a webserver that reuses threads.
+- Fixed a bug where events (server to client, and client to server) could be lost during rapid actions.
 - Allow for ReactPy and ReactJS components to be arbitrarily inserted onto the page with any possible hierarchy.
 
 ## [1.1.0] - 2024-11-24

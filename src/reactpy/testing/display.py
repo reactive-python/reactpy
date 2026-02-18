@@ -8,12 +8,12 @@ from typing import TYPE_CHECKING, Any
 
 from playwright.async_api import Browser, Page, async_playwright, expect
 
-from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT as DEFAULT_TIMEOUT
 from reactpy.testing.backend import BackendFixture
-from reactpy.types import RootComponentConstructor
 
 if TYPE_CHECKING:
     import pytest
+
+    from reactpy.types import RootComponentConstructor
 
 _logger = getLogger(__name__)
 
@@ -32,6 +32,8 @@ class DisplayFixture:
         headless: bool = False,
         timeout: float | None = None,
     ) -> None:
+        from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT as DEFAULT_TIMEOUT
+
         if backend:
             self.backend_is_external = True
             self.backend = backend
