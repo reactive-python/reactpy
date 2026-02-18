@@ -6,23 +6,21 @@ import socket
 from collections.abc import Callable
 from contextlib import AsyncExitStack
 from types import TracebackType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlencode, urlunparse
 
 import uvicorn
 
-from reactpy.core.component import component
-from reactpy.core.hooks import use_callback, use_effect, use_state
-from reactpy.executors.asgi.middleware import ReactPyMiddleware
-from reactpy.executors.asgi.standalone import ReactPy
-from reactpy.executors.asgi.types import AsgiApp
 from reactpy.testing.logs import (
     LogAssertionError,
     capture_reactpy_logs,
     list_logged_exceptions,
 )
-from reactpy.types import ComponentConstructor
-from reactpy.utils import Ref
+
+if TYPE_CHECKING:
+    from reactpy.executors.asgi.types import AsgiApp
+    from reactpy.types import ComponentConstructor
+    from reactpy.utils import Ref
 
 
 class BackendFixture:
@@ -48,6 +46,9 @@ class BackendFixture:
         port: int | None = None,
         **reactpy_config: Any,
     ) -> None:
+        from reactpy.executors.asgi.middleware import ReactPyMiddleware
+        from reactpy.executors.asgi.standalone import ReactPy
+
         self.host = host
         self.port = port or 0
         self.mount = mount_to_hotswap
@@ -201,6 +202,10 @@ def _hotswap(update_on_change: bool = False) -> tuple[_MountFunc, ComponentConst
 
             # displaying the output now will show DivTwo
     """
+    from reactpy.core.component import component
+    from reactpy.core.hooks import use_callback, use_effect, use_state
+    from reactpy.utils import Ref
+
     constructor_ref: Ref[Callable[[], Any]] = Ref(lambda: None)
 
     if update_on_change:

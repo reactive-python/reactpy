@@ -17,8 +17,9 @@ from uuid import uuid4
 
 import reactpy
 from reactpy.config import REACTPY_DEBUG, REACTPY_PATH_PREFIX, REACTPY_WEB_MODULES_DIR
+from reactpy.testing.common import GITHUB_ACTIONS
 from reactpy.types import VdomDict
-from reactpy.utils import GITHUB_ACTIONS, reactpy_to_string
+from reactpy.utils import reactpy_to_string
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
