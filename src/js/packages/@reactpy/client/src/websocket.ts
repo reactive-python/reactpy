@@ -15,6 +15,8 @@ export function createReconnectingWebSocket(
     if (closed) {
       return;
     }
+    props.url.searchParams.set("path", window.location.pathname);
+    props.url.searchParams.set("qs", window.location.search);
     socket.current = new WebSocket(props.url);
     socket.current.onopen = () => {
       everConnected = true;
