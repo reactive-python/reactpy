@@ -17,7 +17,6 @@ from uuid import uuid4
 
 import reactpy
 from reactpy.config import REACTPY_DEBUG, REACTPY_PATH_PREFIX, REACTPY_WEB_MODULES_DIR
-from reactpy.testing.common import GITHUB_ACTIONS
 from reactpy.types import VdomDict
 from reactpy.utils import reactpy_to_string
 
@@ -151,6 +150,8 @@ def extend_pyscript_config(
 
 
 def reactpy_version_string() -> str:  # nocov
+    from reactpy.testing.common import GITHUB_ACTIONS
+
     # Get a list of all versions via `pip index versions`
     result = get_reactpy_versions()
     local_version = reactpy.__version__
