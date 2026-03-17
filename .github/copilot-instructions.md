@@ -14,7 +14,7 @@ Always reference these instructions first and fallback to search or bash command
 
 **Prerequisites:**
 
--   Install Python 3.9+ from https://www.python.org/downloads/
+-   Install Python 3.11+ from https://www.python.org/downloads/
 -   Install Hatch: `pip install hatch`
 -   Install Bun JavaScript runtime: `curl -fsSL https://bun.sh/install | bash && source ~/.bashrc`
 -   Install Git

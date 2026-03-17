@@ -2,6 +2,18 @@
 
 set -euo pipefail
 
+# Workaround for hatch/virtualenv incompatibility
+python3 -m pip install --upgrade "virtualenv==20.25.1"
+
+# Install core ReactPy dependencies
+pip install fastjsonschema requests lxml anyio typing-extensions
+
+# Install ASGI dependencies for server functionality
+pip install orjson asgiref asgi-tools servestatic uvicorn fastapi
+
+# Optional: Install additional servers
+pip install flask sanic tornado
+
 export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
@@ -27,6 +39,8 @@ hatch run javascript:build --dev
 
 echo "Building Python package..."
 hatch build --clean
+
+python3 -m pip install .[all]
 
 echo "Running ReactPy smoke test..."
 hatch run python - <<'PY'

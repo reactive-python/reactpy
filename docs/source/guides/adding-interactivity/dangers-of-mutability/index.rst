@@ -138,7 +138,7 @@ Below are some ways to update dictionaries without mutating them:
 
         {**d, "key": value}
 
-        # Python >= 3.9
+        # Python >= 3.11
         d | {"key": value}
 
         # Equivalent to dict.setdefault()
@@ -192,7 +192,7 @@ Updating Dictionary Items
 
             {**d, key: value}
 
-            # Python >= 3.9
+            # Python >= 3.11
             d | {key: value}
 
             # Equivalent to setdefault()
