@@ -101,11 +101,7 @@ class ReactPyPyscriptApp(ReactPyApp):
     def render_index_html(self) -> None:
         """Process the index.html and store the results in this class."""
         head_content = vdom_head_to_html(self.parent.html_head)
-        noscript = (
-            html_noscript_path_to_html(self.parent.html_noscript_path)
-            if self.parent.html_noscript_path
-            else ""
-        )
+        noscript = html_noscript_path_to_html(self.parent.html_noscript_path or "")
         pyscript_setup = pyscript_setup_html(
             extra_py=self.parent.extra_py,
             extra_js=self.parent.extra_js,

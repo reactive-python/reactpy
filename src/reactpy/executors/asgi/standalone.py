@@ -238,11 +238,7 @@ class ReactPyApp:
 
     def render_index_html(self) -> None:
         """Process the index.html and store the results in this class."""
-        noscript = (
-            html_noscript_path_to_html(self.parent.html_noscript_path)
-            if self.parent.html_noscript_path
-            else ""
-        )
+        noscript = html_noscript_path_to_html(self.parent.html_noscript_path)
         self._index_html = (
             "<!doctype html>"
             f'<html lang="{self.parent.html_lang}">'
