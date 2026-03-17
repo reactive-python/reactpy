@@ -1,7 +1,9 @@
 # ruff: noqa: S701
+import asyncio
 from pathlib import Path
 
 import pytest
+from requests import request
 from jinja2 import Environment as JinjaEnvironment
 from jinja2 import FileSystemLoader as JinjaFileSystemLoader
 from starlette.applications import Starlette
@@ -11,6 +13,7 @@ from starlette.templating import Jinja2Templates
 from reactpy import html
 from reactpy.executors.asgi.pyscript import ReactPyCsr
 from reactpy.testing import BackendFixture, DisplayFixture
+from reactpy.testing.common import REACTPY_TESTS_DEFAULT_TIMEOUT
 
 
 @pytest.fixture(scope="module")
@@ -96,6 +99,30 @@ async def test_multi_file_components(multi_file_display: DisplayFixture):
 def test_bad_file_path():
     with pytest.raises(ValueError):
         ReactPyCsr()
+
+
+async def test_customized_noscript(tmp_path: Path):
+    noscript_file = tmp_path / "noscript.html"
+    noscript_file.write_text(
+        '<p id="noscript-message">Please enable JavaScript.</p>',
+        encoding="utf-8",
+    )
+
+    app = ReactPyCsr(
+        Path(__file__).parent / "pyscript_components" / "root.py",
+        html_noscript_path=noscript_file,
+    )
+
+    async with BackendFixture(app) as server:
+        url = f"http://{server.host}:{server.port}"
+        response = await asyncio.to_thread(
+            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+        )
+        assert response.status_code == 200
+        assert (
+            '<noscript><p id="noscript-message">Please enable JavaScript.</p></noscript>'
+            in response.text
+        )
 
 
 async def test_jinja_template_tag(jinja_display: DisplayFixture):

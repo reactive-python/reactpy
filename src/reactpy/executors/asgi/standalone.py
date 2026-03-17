@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from email.utils import formatdate
 from logging import getLogger
+from pathlib import Path
 from typing import Literal, Unpack, cast, overload
 
 from asgi_tools import ResponseHTML
@@ -24,7 +25,11 @@ from reactpy.executors.asgi.types import (
     AsgiWebsocketScope,
 )
 from reactpy.executors.pyscript.utils import pyscript_setup_html
-from reactpy.executors.utils import server_side_component_html, vdom_head_to_html
+from reactpy.executors.utils import (
+    html_noscript_path_to_html,
+    server_side_component_html,
+    vdom_head_to_html,
+)
 from reactpy.types import (
     PyScriptOptions,
     ReactPyConfig,
@@ -45,6 +50,7 @@ class ReactPy(ReactPyMiddleware):
         *,
         http_headers: dict[str, str] | None = None,
         html_head: VdomDict | None = None,
+        html_noscript_path: str | Path | None = None,
         html_lang: str = "en",
         pyscript_setup: bool = False,
         pyscript_options: PyScriptOptions | None = None,
@@ -56,6 +62,8 @@ class ReactPy(ReactPyMiddleware):
             root_component: The root component to render. This app is typically a single page application.
             http_headers: Additional headers to include in the HTTP response for the base HTML document.
             html_head: Additional head elements to include in the HTML response.
+            html_noscript_path: Path to an HTML file whose contents are rendered within a
+                `<noscript>` tag in the HTML body.
             html_lang: The language of the HTML document.
             pyscript_setup: Whether to automatically load PyScript within your HTML head.
             pyscript_options: Options to configure PyScript behavior.
@@ -66,6 +74,7 @@ class ReactPy(ReactPyMiddleware):
         self.extra_headers = http_headers or {}
         self.dispatcher_pattern = re.compile(f"^{self.dispatcher_path}?")
         self.html_head = html_head or html.head()
+        self.html_noscript_path = html_noscript_path
         self.html_lang = html_lang
 
         if pyscript_setup:
@@ -229,11 +238,17 @@ class ReactPyApp:
 
     def render_index_html(self) -> None:
         """Process the index.html and store the results in this class."""
+        noscript = (
+            html_noscript_path_to_html(self.parent.html_noscript_path)
+            if self.parent.html_noscript_path
+            else ""
+        )
         self._index_html = (
             "<!doctype html>"
             f'<html lang="{self.parent.html_lang}">'
             f"{vdom_head_to_html(self.parent.html_head)}"
             "<body>"
+            f"{noscript}"
             f"{server_side_component_html(element_id='app', class_='', component_path='')}"
             "</body>"
             "</html>"
