@@ -40,8 +40,6 @@ hatch run javascript:build --dev
 echo "Building Python package..."
 hatch build --clean
 
-python3 -m pip install .[all]
-
 echo "Running ReactPy smoke test..."
 hatch run python - <<'PY'
 from reactpy import component, html
