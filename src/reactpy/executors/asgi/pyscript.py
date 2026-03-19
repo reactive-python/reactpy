@@ -32,7 +32,9 @@ class ReactPyCsr(ReactPy):
         initial: str | VdomDict = "",
         http_headers: dict[str, str] | None = None,
         html_head: VdomDict | None = None,
-        html_noscript_str_or_path: str | Path | None = "Enable JavaScript to view this site.",
+        html_noscript_str_or_path: str
+        | Path
+        | None = "Enable JavaScript to view this site.",
         html_lang: str = "en",
         **settings: Unpack[ReactPyConfig],
     ) -> None:

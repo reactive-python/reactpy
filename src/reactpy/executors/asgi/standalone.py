@@ -50,7 +50,9 @@ class ReactPy(ReactPyMiddleware):
         *,
         http_headers: dict[str, str] | None = None,
         html_head: VdomDict | None = None,
-        html_noscript_str_or_path: str | Path | None = "Enable JavaScript to view this site.",
+        html_noscript_str_or_path: str
+        | Path
+        | None = "Enable JavaScript to view this site.",
         html_lang: str = "en",
         pyscript_setup: bool = False,
         pyscript_options: PyScriptOptions | None = None,
