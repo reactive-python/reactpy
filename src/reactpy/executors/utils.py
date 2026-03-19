@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Iterable
+from pathlib import Path
 from typing import Any
 
 from reactpy._option import Option
@@ -44,6 +45,14 @@ def vdom_head_to_html(head: VdomDict) -> str:
         return reactpy_to_string(head)
 
     raise ValueError("Head element must be constructed with `html.head`.")
+
+
+def html_noscript_path_to_html(path_or_body: str | Path | None) -> str:
+    if path_or_body is None:
+        return ""
+    if isinstance(path_or_body, Path):
+        return f"<noscript>{path_or_body.read_text()}</noscript>"
+    return f"<noscript>{path_or_body}</noscript>"
 
 
 def process_settings(settings: ReactPyConfig) -> None:
