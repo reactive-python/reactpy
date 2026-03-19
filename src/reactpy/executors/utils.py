@@ -47,10 +47,12 @@ def vdom_head_to_html(head: VdomDict) -> str:
     raise ValueError("Head element must be constructed with `html.head`.")
 
 
-def html_noscript_path_to_html(path: str | Path | None = "", default_text="Please enable JavaScript to view this site.") -> str:
-    if path:
-        return f"<noscript>{Path(path).read_text(encoding='utf-8')}</noscript>"
-    return f"<noscript>{default_text}</noscript>"
+def html_noscript_path_to_html(path_or_body: str | Path | None) -> str:
+    if path_or_body is None:
+        return ""
+    if isinstance(path_or_body, Path):
+        return f"<noscript>{path_or_body.read_text()}</noscript>"
+    return f"<noscript>{path_or_body}</noscript>"
 
 
 def process_settings(settings: ReactPyConfig) -> None:

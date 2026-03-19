@@ -21,6 +21,18 @@ def test_html_noscript_path_to_html(tmp_path: Path):
     )
 
 
+
+def test_html_noscript_string_to_html():
+    assert (
+        utils.html_noscript_path_to_html("<p>Please enable JavaScript.</p>")
+        == "<noscript><p>Please enable JavaScript.</p></noscript>"
+    )
+
+
+def test_html_noscript_none_to_html():
+    assert utils.html_noscript_path_to_html(None) == ""
+
+
 def test_process_settings():
     utils.process_settings({"async_rendering": False})
     assert config.REACTPY_ASYNC_RENDERING.current is False

@@ -50,7 +50,7 @@ class ReactPy(ReactPyMiddleware):
         *,
         http_headers: dict[str, str] | None = None,
         html_head: VdomDict | None = None,
-        html_noscript_path: str | Path | None = None,
+        html_noscript_str_or_path: str | Path | None = "Enable JavaScript to view this site.",
         html_lang: str = "en",
         pyscript_setup: bool = False,
         pyscript_options: PyScriptOptions | None = None,
@@ -62,7 +62,7 @@ class ReactPy(ReactPyMiddleware):
             root_component: The root component to render. This app is typically a single page application.
             http_headers: Additional headers to include in the HTTP response for the base HTML document.
             html_head: Additional head elements to include in the HTML response.
-            html_noscript_path: Path to an HTML file whose contents are rendered within a
+            html_noscript_str_or_path: String or Path to an HTML file whose contents are rendered within a
                 `<noscript>` tag in the HTML body.
             html_lang: The language of the HTML document.
             pyscript_setup: Whether to automatically load PyScript within your HTML head.
@@ -74,7 +74,7 @@ class ReactPy(ReactPyMiddleware):
         self.extra_headers = http_headers or {}
         self.dispatcher_pattern = re.compile(f"^{self.dispatcher_path}?")
         self.html_head = html_head or html.head()
-        self.html_noscript_path = html_noscript_path
+        self.html_noscript_str_or_path = html_noscript_str_or_path
         self.html_lang = html_lang
 
         if pyscript_setup:
@@ -238,7 +238,7 @@ class ReactPyApp:
 
     def render_index_html(self) -> None:
         """Process the index.html and store the results in this class."""
-        noscript = html_noscript_path_to_html(self.parent.html_noscript_path)
+        noscript = html_noscript_path_to_html(self.parent.html_noscript_str_or_path)
         self._index_html = (
             "<!doctype html>"
             f'<html lang="{self.parent.html_lang}">'

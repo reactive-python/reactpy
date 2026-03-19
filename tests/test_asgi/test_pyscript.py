@@ -3,13 +3,14 @@ import asyncio
 from pathlib import Path
 
 import pytest
-from requests import request
 from jinja2 import Environment as JinjaEnvironment
 from jinja2 import FileSystemLoader as JinjaFileSystemLoader
+from requests import request
 from starlette.applications import Starlette
 from starlette.routing import Route
 from starlette.templating import Jinja2Templates
 
+import reactpy
 from reactpy import html
 from reactpy.executors.asgi.pyscript import ReactPyCsr
 from reactpy.testing import BackendFixture, DisplayFixture
@@ -110,7 +111,7 @@ async def test_customized_noscript(tmp_path: Path):
 
     app = ReactPyCsr(
         Path(__file__).parent / "pyscript_components" / "root.py",
-        html_noscript_path=noscript_file,
+        html_noscript_str_or_path=noscript_file,
     )
 
     async with BackendFixture(app) as server:
@@ -123,6 +124,107 @@ async def test_customized_noscript(tmp_path: Path):
             '<noscript><p id="noscript-message">Please enable JavaScript.</p></noscript>'
             in response.text
         )
+
+
+
+async def test_customized_noscript_string():
+    app = ReactPyCsr(
+        Path(__file__).parent / "pyscript_components" / "root.py",
+        html_noscript_str_or_path='<p id="noscript-message">Please enable JavaScript.</p>',
+    )
+
+    async with BackendFixture(app) as server:
+        url = f"http://{server.host}:{server.port}"
+        response = await asyncio.to_thread(
+            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+        )
+        assert response.status_code == 200
+        assert (
+            '<noscript><p id="noscript-message">Please enable JavaScript.</p></noscript>'
+            in response.text
+        )
+
+
+async def test_customized_noscript_from_file(tmp_path: Path):
+    noscript_file = tmp_path / "noscript.html"
+    noscript_file.write_text(
+        '<p id="noscript-message">Please enable JavaScript.</p>',
+        encoding="utf-8",
+    )
+
+    app = ReactPyCsr(
+        Path(__file__).parent / "pyscript_components" / "root.py",
+        html_noscript_str_or_path=noscript_file,
+    )
+
+    async with BackendFixture(app) as server:
+        url = f"http://{server.host}:{server.port}"
+        response = await asyncio.to_thread(
+            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+        )
+        assert response.status_code == 200
+        assert (
+            '<noscript><p id="noscript-message">Please enable JavaScript.</p></noscript>'
+            in response.text
+        )
+
+
+async def test_customized_noscript_from_string():
+    app = ReactPyCsr(
+        Path(__file__).parent / "pyscript_components" / "root.py",
+        html_noscript_str_or_path='<p id="noscript-message">Please enable JavaScript.</p>',
+    )
+
+    async with BackendFixture(app) as server:
+        url = f"http://{server.host}:{server.port}"
+        response = await asyncio.to_thread(
+            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+        )
+        assert response.status_code == 200
+        assert (
+            '<noscript><p id="noscript-message">Please enable JavaScript.</p></noscript>'
+            in response.text
+        )
+
+
+async def test_default_noscript_rendered():
+    app = ReactPyCsr(Path(__file__).parent / "pyscript_components" / "root.py")
+
+    async with BackendFixture(app) as server:
+        url = f"http://{server.host}:{server.port}"
+        response = await asyncio.to_thread(
+            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+        )
+        assert response.status_code == 200
+        assert "<noscript>Enable JavaScript to view this site.</noscript>" in response.text
+
+
+
+async def test_noscript_omitted():
+    app = ReactPyCsr(Path(__file__).parent / "pyscript_components" / "root.py")
+
+    async with BackendFixture(app) as server:
+        url = f"http://{server.host}:{server.port}"
+        response = await asyncio.to_thread(
+            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+        )
+        assert response.status_code == 200
+        assert (
+            '<noscript><p id="noscript-message">Enable JavaScript to view this site.</p></noscript>'
+            in response.text
+        )
+
+
+async def test_noscript_disabled():
+    app = ReactPyCsr(Path(__file__).parent / "pyscript_components" / "root.py", html_noscript_str_or_path=None)
+
+    async with BackendFixture(app) as server:
+        url = f"http://{server.host}:{server.port}"
+        response = await asyncio.to_thread(
+            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+        )
+        assert response.status_code == 200
+        assert "<noscript>" not in response.text
 
 
 async def test_jinja_template_tag(jinja_display: DisplayFixture):
