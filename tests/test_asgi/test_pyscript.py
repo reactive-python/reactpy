@@ -210,7 +210,7 @@ async def test_noscript_omitted():
         )
         assert response.status_code == 200
         assert (
-            '<noscript><p id="noscript-message">Enable JavaScript to view this site.</p></noscript>'
+            "<noscript>Enable JavaScript to view this site.</noscript>"
             in response.text
         )
 
