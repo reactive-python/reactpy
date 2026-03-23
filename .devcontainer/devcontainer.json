@@ -24,7 +24,8 @@
         "ms-python.python",
         "ms-python.vscode-pylance",
         "charliermarsh.ruff",
-        "ms-playwright.playwright"
+        "ms-playwright.playwright",
+        "oven.bun-vscode"
       ]
     }
   }
