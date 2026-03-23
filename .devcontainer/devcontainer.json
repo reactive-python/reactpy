@@ -8,15 +8,16 @@
   // "containerEnv": {
   //   "BUN_INSTALL": "/home/vscode/.bun"
   // },
-  // "remoteEnv": {
-  //   "BUN_INSTALL": "/home/vscode/.bun",
-  //   "PATH": "/home/vscode/.bun/bin:${containerEnv:PATH}"
-  // },
+  "remoteEnv": {
+    "BUN_INSTALL": "/home/vscode/.bun",
+    "PATH": "/home/vscode/.local/share/reactpy-devcontainer/python/bin:/home/vscode/.bun/bin:${containerEnv:PATH}",
+    "PYTHONPATH": "/workspaces/reactpy/src:${containerEnv:PYTHONPATH}"
+  },
   "postCreateCommand": "bash .devcontainer/post-create.sh",
   "customizations": {
     "vscode": {
       "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.defaultInterpreterPath": "/home/vscode/.local/share/reactpy-devcontainer/python/bin/python",
         "python.terminal.activateEnvironment": false
       },
       "extensions": [

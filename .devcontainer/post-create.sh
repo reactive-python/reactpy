@@ -2,20 +2,17 @@
 
 set -euo pipefail
 
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SYSTEM_PYTHON="$(command -v python3)"
+USER_BASE_BIN="$("$SYSTEM_PYTHON" -m site --user-base)/bin"
+export PATH="$USER_BASE_BIN:$PATH"
+
 # Workaround for hatch/virtualenv incompatibility
-python3 -m pip install --upgrade "virtualenv==20.25.1"
-
-# Install core ReactPy dependencies
-pip install fastjsonschema requests lxml anyio typing-extensions
-
-# Install ASGI dependencies for server functionality
-pip install orjson asgiref asgi-tools servestatic uvicorn fastapi
-
-# Optional: Install additional servers
-pip install flask sanic tornado
+"$SYSTEM_PYTHON" -m pip install --upgrade "virtualenv==20.25.1"
 
 export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
 export PATH="$BUN_INSTALL/bin:$PATH"
+DEVCONTAINER_PYTHON_DIR="${HOME}/.local/share/reactpy-devcontainer/python"
 
 if [[ -f /etc/apt/sources.list.d/yarn.list ]]; then
   echo "Refreshing Yarn APT keyring..."
@@ -26,8 +23,18 @@ fi
 
 if ! command -v hatch >/dev/null 2>&1; then
   echo "Installing Hatch..."
-  python3 -m pip install --user hatch
+  "$SYSTEM_PYTHON" -m pip install --user hatch
 fi
+
+HATCH_CMD=("$SYSTEM_PYTHON" -m hatch)
+
+echo "Creating Hatch devcontainer environment..."
+"${HATCH_CMD[@]}" env create devcontainer
+DEVCONTAINER_ENV_DIR="$("${HATCH_CMD[@]}" env find devcontainer)"
+mkdir -p "$(dirname "$DEVCONTAINER_PYTHON_DIR")"
+ln -sfn "$DEVCONTAINER_ENV_DIR" "$DEVCONTAINER_PYTHON_DIR"
+export PATH="$DEVCONTAINER_PYTHON_DIR/bin:$PATH"
+export PYTHONPATH="$REPO_ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
 
 if ! command -v bun >/dev/null 2>&1; then
   echo "Installing Bun..."
@@ -35,13 +42,13 @@ if ! command -v bun >/dev/null 2>&1; then
 fi
 
 echo "Building JavaScript packages..."
-hatch run javascript:build --dev
+"${HATCH_CMD[@]}" run javascript:build --dev
 
 echo "Building Python package..."
-hatch build --clean
+"${HATCH_CMD[@]}" build --clean
 
 echo "Running ReactPy smoke test..."
-hatch run python - <<'PY'
+"$DEVCONTAINER_PYTHON_DIR/bin/python" - <<'PY'
 from reactpy import component, html
 
 
