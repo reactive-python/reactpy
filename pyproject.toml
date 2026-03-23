@@ -212,6 +212,7 @@ extra-dependencies = [
 ]
 
 [tool.hatch.envs.devcontainer.scripts]
+install_playwright = ['python "src/build_scripts/install_playwright.py"']
 type_check = ["pyright src/reactpy"]
 
 ############################

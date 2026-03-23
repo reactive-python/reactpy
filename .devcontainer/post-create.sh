@@ -36,6 +36,9 @@ ln -sfn "$DEVCONTAINER_ENV_DIR" "$DEVCONTAINER_PYTHON_DIR"
 export PATH="$DEVCONTAINER_PYTHON_DIR/bin:$PATH"
 export PYTHONPATH="$REPO_ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
 
+echo "Installing Playwright browsers..."
+"${HATCH_CMD[@]}" run devcontainer:install_playwright
+
 if ! command -v bun >/dev/null 2>&1; then
   echo "Installing Bun..."
   curl -fsSL https://bun.sh/install | bash
