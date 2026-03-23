@@ -2,7 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from reactpy import config
+import reactpy
+from reactpy import config, html
 from reactpy.executors import utils
 
 
@@ -16,7 +17,7 @@ def test_html_noscript_path_to_html(tmp_path: Path):
     noscript_file.write_text("<p>Please enable JavaScript.</p>", encoding="utf-8")
 
     assert (
-        utils.html_noscript_path_to_html(noscript_file)
+        utils.html_noscript_to_html(noscript_file)
         == "<noscript><p>Please enable JavaScript.</p></noscript>"
     )
 
@@ -24,13 +25,24 @@ def test_html_noscript_path_to_html(tmp_path: Path):
 
 def test_html_noscript_string_to_html():
     assert (
-        utils.html_noscript_path_to_html("<p>Please enable JavaScript.</p>")
+        utils.html_noscript_to_html("<p>Please enable JavaScript.</p>")
         == "<noscript><p>Please enable JavaScript.</p></noscript>"
     )
 
 
+def test_html_noscript_component_to_html():
+    @reactpy.component
+    def message():
+        return html.p({"id": "noscript-message"}, "Please enable JavaScript.")
+
+    assert (
+        utils.html_noscript_to_html(message)
+        == '<noscript><p id="noscript-message">Please enable JavaScript.</p></noscript>'
+    )
+
+
 def test_html_noscript_none_to_html():
-    assert utils.html_noscript_path_to_html(None) == ""
+    assert utils.html_noscript_to_html(None) == ""
 
 
 def test_process_settings():

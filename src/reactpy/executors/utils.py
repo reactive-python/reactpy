@@ -13,7 +13,7 @@ from reactpy.config import (
     REACTPY_RECONNECT_MAX_INTERVAL,
     REACTPY_RECONNECT_MAX_RETRIES,
 )
-from reactpy.types import ReactPyConfig, VdomDict
+from reactpy.types import ReactPyConfig, RootComponentConstructor, VdomDict
 from reactpy.utils import import_dotted_path, reactpy_to_string
 
 logger = logging.getLogger(__name__)
@@ -47,12 +47,16 @@ def vdom_head_to_html(head: VdomDict) -> str:
     raise ValueError("Head element must be constructed with `html.head`.")
 
 
-def html_noscript_path_to_html(path_or_body: str | Path | None) -> str:
-    if path_or_body is None:
+def html_noscript_to_html(
+    html_noscript: str | Path | RootComponentConstructor | None,
+) -> str:
+    if html_noscript is None:
         return ""
-    if isinstance(path_or_body, Path):
-        return f"<noscript>{path_or_body.read_text()}</noscript>"
-    return f"<noscript>{path_or_body}</noscript>"
+    if isinstance(html_noscript, Path):
+        html_noscript = html_noscript.read_text()
+    elif callable(html_noscript):
+        html_noscript = reactpy_to_string(html_noscript())
+    return f"<noscript>{html_noscript}</noscript>"
 
 
 def process_settings(settings: ReactPyConfig) -> None:

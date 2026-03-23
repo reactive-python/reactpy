@@ -152,7 +152,7 @@ async def test_customized_noscript_from_file(tmp_path: Path):
 
     app = ReactPy(
         sample,
-        html_noscript_str_or_path=noscript_file,
+        html_noscript=noscript_file,
     )
 
     async with BackendFixture(app) as server:
@@ -174,8 +174,31 @@ async def test_customized_noscript_from_string():
 
     app = ReactPy(
         sample,
-        html_noscript_str_or_path='<p id="noscript-message">Please enable JavaScript.</p>',
+        html_noscript='<p id="noscript-message">Please enable JavaScript.</p>',
     )
+
+    async with BackendFixture(app) as server:
+        url = f"http://{server.host}:{server.port}"
+        response = await asyncio.to_thread(
+            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+        )
+        assert response.status_code == 200
+        assert (
+            '<noscript><p id="noscript-message">Please enable JavaScript.</p></noscript>'
+            in response.text
+        )
+
+
+async def test_customized_noscript_from_component():
+    @reactpy.component
+    def sample():
+        return html.h1("Hello World")
+
+    @reactpy.component
+    def noscript_message():
+        return html.p({"id": "noscript-message"}, "Please enable JavaScript.")
+
+    app = ReactPy(sample, html_noscript=noscript_message)
 
     async with BackendFixture(app) as server:
         url = f"http://{server.host}:{server.port}"
@@ -213,7 +236,7 @@ async def test_noscript_disabled():
     def sample():
         return html.h1("Hello World")
 
-    app = ReactPy(sample, html_noscript_str_or_path=None)
+    app = ReactPy(sample, html_noscript=None)
 
     async with BackendFixture(app) as server:
         url = f"http://{server.host}:{server.port}"

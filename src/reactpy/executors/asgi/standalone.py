@@ -26,7 +26,7 @@ from reactpy.executors.asgi.types import (
 )
 from reactpy.executors.pyscript.utils import pyscript_setup_html
 from reactpy.executors.utils import (
-    html_noscript_path_to_html,
+    html_noscript_to_html,
     server_side_component_html,
     vdom_head_to_html,
 )
@@ -50,8 +50,9 @@ class ReactPy(ReactPyMiddleware):
         *,
         http_headers: dict[str, str] | None = None,
         html_head: VdomDict | None = None,
-        html_noscript_str_or_path: str
+        html_noscript: str
         | Path
+        | RootComponentConstructor
         | None = "Enable JavaScript to view this site.",
         html_lang: str = "en",
         pyscript_setup: bool = False,
@@ -64,8 +65,8 @@ class ReactPy(ReactPyMiddleware):
             root_component: The root component to render. This app is typically a single page application.
             http_headers: Additional headers to include in the HTTP response for the base HTML document.
             html_head: Additional head elements to include in the HTML response.
-            html_noscript_str_or_path: String or Path to an HTML file whose contents are rendered within a
-                `<noscript>` tag in the HTML body.
+            html_noscript: String, Path to an HTML file, or component rendered to HTML
+                inside a `<noscript>` tag in the HTML body.
             html_lang: The language of the HTML document.
             pyscript_setup: Whether to automatically load PyScript within your HTML head.
             pyscript_options: Options to configure PyScript behavior.
@@ -76,7 +77,7 @@ class ReactPy(ReactPyMiddleware):
         self.extra_headers = http_headers or {}
         self.dispatcher_pattern = re.compile(f"^{self.dispatcher_path}?")
         self.html_head = html_head or html.head()
-        self.html_noscript_str_or_path = html_noscript_str_or_path
+        self.html_noscript = html_noscript
         self.html_lang = html_lang
 
         if pyscript_setup:
@@ -240,7 +241,7 @@ class ReactPyApp:
 
     def render_index_html(self) -> None:
         """Process the index.html and store the results in this class."""
-        noscript = html_noscript_path_to_html(self.parent.html_noscript_str_or_path)
+        noscript = html_noscript_to_html(self.parent.html_noscript)
         self._index_html = (
             "<!doctype html>"
             f'<html lang="{self.parent.html_lang}">'
