@@ -31,6 +31,7 @@ from reactpy.executors.utils import (
     vdom_head_to_html,
 )
 from reactpy.types import (
+    Component,
     PyScriptOptions,
     ReactPyConfig,
     RootComponentConstructor,
@@ -52,6 +53,7 @@ class ReactPy(ReactPyMiddleware):
         html_head: VdomDict | None = None,
         html_noscript: str
         | Path
+        | Component
         | RootComponentConstructor
         | None = "Enable JavaScript to view this site.",
         html_lang: str = "en",

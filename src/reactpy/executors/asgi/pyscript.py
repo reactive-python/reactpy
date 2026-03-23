@@ -18,7 +18,7 @@ from reactpy.executors.pyscript.utils import (
     pyscript_setup_html,
 )
 from reactpy.executors.utils import html_noscript_to_html, vdom_head_to_html
-from reactpy.types import ReactPyConfig, RootComponentConstructor, VdomDict
+from reactpy.types import Component, ReactPyConfig, RootComponentConstructor, VdomDict
 
 
 class ReactPyCsr(ReactPy):
@@ -34,6 +34,7 @@ class ReactPyCsr(ReactPy):
         html_head: VdomDict | None = None,
         html_noscript: str
         | Path
+        | Component
         | RootComponentConstructor
         | None = "Enable JavaScript to view this site.",
         html_lang: str = "en",
