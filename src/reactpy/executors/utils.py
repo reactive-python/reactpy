@@ -48,16 +48,16 @@ def vdom_head_to_html(head: VdomDict) -> str:
 
 
 def html_noscript_to_html(
-    html_noscript: str | Path | Component | RootComponentConstructor | None,
+    html_noscript: str | Path | VdomDict | Component | RootComponentConstructor | None,
 ) -> str:
     if html_noscript is None:
         return ""
     if isinstance(html_noscript, Path):
         html_noscript = html_noscript.read_text()
-    elif isinstance(html_noscript, Component):
-        html_noscript = reactpy_to_string(html_noscript)
     elif callable(html_noscript):
         html_noscript = reactpy_to_string(html_noscript())
+    elif isinstance(html_noscript, dict):
+        html_noscript = reactpy_to_string(html_noscript)
     return f"<noscript>{html_noscript}</noscript>"
 
 

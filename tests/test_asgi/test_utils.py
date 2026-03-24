@@ -5,6 +5,7 @@ import pytest
 import reactpy
 from reactpy import config, html
 from reactpy.executors import utils
+from reactpy.types import VdomDict
 
 
 def test_invalid_vdom_head():
@@ -30,7 +31,7 @@ def test_html_noscript_string_to_html():
     )
 
 
-def test_html_noscript_component_to_html():
+def test_html_noscript_as_uncalled_component():
     @reactpy.component
     def message():
         return html.p({"id": "noscript-message"}, "Please enable JavaScript.")
@@ -38,6 +39,23 @@ def test_html_noscript_component_to_html():
     assert (
         utils.html_noscript_to_html(message)
         == '<noscript><p id="noscript-message">Please enable JavaScript.</p></noscript>'
+    )
+
+
+def test_html_noscript_as_function():
+    def message():
+        return html.p({"id": "noscript-message"}, "Please enable JavaScript.")
+
+    assert (
+        utils.html_noscript_to_html(message())
+        == '<noscript><p id="noscript-message">Please enable JavaScript.</p></noscript>'
+    )
+
+
+def test_html_noscript_as_vdom_dict():
+    assert (
+        utils.html_noscript_to_html(VdomDict(tagName="div", children=[html.p({"id": "noscript-message"}, "Please enable JavaScript.")] ))
+        == '<noscript><div><p id="noscript-message">Please enable JavaScript.</p></div></noscript>'
     )
 
 
