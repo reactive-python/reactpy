@@ -1101,6 +1101,7 @@ class ReactPyConfig(TypedDict, total=False):
     reconnect_backoff_multiplier: float
     async_rendering: bool
     debug: bool
+    max_queue_size: int
     tests_default_timeout: int
 
 
