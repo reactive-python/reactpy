@@ -42,6 +42,14 @@ from reactpy.types import Connection, Location, ReactPyConfig, RootComponentCons
 _logger = logging.getLogger(__name__)
 
 
+def _location_from_websocket_query_string(query_string: str) -> Location:
+    ws_query_string = urllib.parse.parse_qs(query_string, strict_parsing=True)
+    return Location(
+        path=ws_query_string.get("path", [""])[0],
+        query_string=ws_query_string.get("qs", [""])[0],
+    )
+
+
 class ReactPyMiddleware:
     root_component: RootComponentConstructor | None = None
     root_components: dict[str, RootComponentConstructor]
@@ -221,14 +229,10 @@ class ReactPyWebsocket(ResponseWebSocket):
                 raise RuntimeError("No root component provided.")
 
             # Create a connection object by analyzing the websocket's query string.
-            ws_query_string = urllib.parse.parse_qs(
-                self.scope["query_string"].decode(), strict_parsing=True
-            )
             connection = Connection(
                 scope=self.scope,  # type: ignore
-                location=Location(
-                    path=ws_query_string.get("http_pathname", [""])[0],
-                    query_string=ws_query_string.get("http_query_string", [""])[0],
+                location=_location_from_websocket_query_string(
+                    self.scope["query_string"].decode()
                 ),
                 carrier=self,
             )
