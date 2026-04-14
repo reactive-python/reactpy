@@ -215,8 +215,11 @@ def use_async_effect(
         shield:
             If ``True``, the effect will not be cancelled when the hook is running clean-up.
             This can be useful if you want to ensure that the effect runs to completion even if the
-            component is unmounted while the effect is still running (e.g. a database query).
-            However, use this option with caution as it can lead to memory leaks.
+            component is unmounted while the effect is still running (e.g. a multi-step database query).
+
+            Use this option with caution as it can lead to memory leaks if a faulty effect
+            stays alive indefinitely. If using this option, it is highly suggested to implement
+            your own timeout within the effect to mitigate this risk.
 
     Returns:
         If not function is provided, a decorator. Otherwise ``None``.

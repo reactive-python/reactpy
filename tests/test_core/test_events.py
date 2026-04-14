@@ -714,6 +714,7 @@ async def test_controlled_input_default_debounce_prefers_latest_client_value(
     display: DisplayFixture,
 ):
     """Prefer the latest client value for a controlled input when using debounce, even if the server is still processing an older event."""
+
     @reactpy.component
     def ControlledInput():
         value, set_value = use_state("")
