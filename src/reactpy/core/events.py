@@ -147,7 +147,13 @@ class EventHandler(BaseEventHandler):
         )
 
     def __repr__(self) -> str:
-        public_names = [name for name in self.__slots__ if not name.startswith("_")]
+        public_names = (
+            "function",
+            "prevent_default",
+            "stop_propagation",
+            "debounce",
+            "target",
+        )
         items = ", ".join([f"{n}={getattr(self, n)!r}" for n in public_names])
         return f"{type(self).__name__}({items})"
 
