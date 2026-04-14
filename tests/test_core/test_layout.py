@@ -11,11 +11,15 @@ import pytest
 
 import reactpy
 from reactpy import html
-from reactpy.config import REACTPY_ASYNC_RENDERING, REACTPY_DEBUG
+from reactpy.config import (
+    REACTPY_ASYNC_RENDERING,
+    REACTPY_DEBUG,
+    REACTPY_MAX_QUEUE_SIZE,
+)
 from reactpy.core.component import component
 from reactpy.core.events import EventHandler
 from reactpy.core.hooks import use_async_effect, use_effect, use_state
-from reactpy.core.layout import Layout
+from reactpy.core.layout import Layout, _ThreadSafeQueue
 from reactpy.testing import (
     HookCatcher,
     StaticEventHandler,
@@ -100,6 +104,22 @@ async def test_simple_layout():
             path="",
             model={"tagName": "", "children": [{"tagName": "table"}]},
         )
+
+
+async def test_thread_safe_queue_applies_backpressure():
+    with patch.object(REACTPY_MAX_QUEUE_SIZE, "current", 1):
+        queue = _ThreadSafeQueue[int]()
+
+        queue.put(1)
+        queue.put(2)
+
+        await asyncio.sleep(0)
+        assert await asyncio.wait_for(queue.get(), 1) == 1
+
+        await asyncio.sleep(0)
+        assert await asyncio.wait_for(queue.get(), 1) == 2
+
+        await queue.close()
 
 
 async def test_nested_component_layout():
