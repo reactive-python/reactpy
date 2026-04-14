@@ -708,3 +708,31 @@ async def test_controlled_input_respects_custom_debounce(display: DisplayFixture
         "() => document.getElementById('controlled-input')?.value === 'A'"
     )
     assert (await inp.evaluate("node => node.value")) == "A"
+
+
+async def test_controlled_input_default_debounce_prefers_latest_client_value(
+    display: DisplayFixture,
+):
+    """Prefer the latest client value for a controlled input when using debounce, even if the server is still processing an older event."""
+    @reactpy.component
+    def ControlledInput():
+        value, set_value = use_state("")
+
+        def on_change(event: Event):
+            set_value(event.target.value.upper())
+
+        return reactpy.html.input(
+            {
+                "value": value,
+                "onChange": on_change,
+                "id": "controlled-input",
+            }
+        )
+
+    await display.show(ControlledInput)
+
+    inp = await display.page.wait_for_selector("#controlled-input")
+    await inp.type("a", delay=0)
+
+    await asyncio.sleep(0.5)
+    assert (await inp.evaluate("node => node.value")) == "a"
