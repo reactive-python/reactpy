@@ -122,6 +122,23 @@ async def test_thread_safe_queue_applies_backpressure():
         await queue.close()
 
 
+async def test_thread_safe_queue_close_cancels_pending_puts():
+    with patch.object(REACTPY_MAX_QUEUE_SIZE, "current", 1):
+        queue = _ThreadSafeQueue[int]()
+
+        await queue._queue.put(1)
+        queue._pending.add(2)
+        task = asyncio.create_task(queue._put_with_backpressure(2))
+        queue._put_tasks[2] = task
+
+        await asyncio.sleep(0)
+        await queue.close()
+
+        assert task.cancelled()
+        assert queue._put_tasks == {}
+        assert queue._pending == set()
+
+
 async def test_nested_component_layout():
     parent_set_state = reactpy.Ref(None)
     child_set_state = reactpy.Ref(None)
