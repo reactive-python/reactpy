@@ -609,6 +609,7 @@ async def test_use_async_effect_cancel():
 async def test_use_async_effect_shield():
     component_hook = HookCatcher()
     effect_ran = asyncio.Event()
+    effect_was_cancelled = asyncio.Event()
     effect_finished = asyncio.Event()
     stop_waiting = asyncio.Event()
 
@@ -618,7 +619,11 @@ async def test_use_async_effect_shield():
         @reactpy.hooks.use_async_effect(dependencies=None, shield=True)
         async def effect():
             effect_ran.set()
-            await stop_waiting.wait()
+            try:
+                await stop_waiting.wait()
+            except asyncio.CancelledError:
+                effect_was_cancelled.set()
+                raise
             effect_finished.set()
 
         return reactpy.html.div()
@@ -636,6 +641,7 @@ async def test_use_async_effect_shield():
 
         # Verify effect hasn't finished yet but also wasn't cancelled
         assert not effect_finished.is_set()
+        assert not effect_was_cancelled.is_set()
 
         # Now allow the effect to finish
         stop_waiting.set()
@@ -644,6 +650,7 @@ async def test_use_async_effect_shield():
         await layout.render()
 
     await asyncio.wait_for(effect_finished.wait(), 1)
+    assert not effect_was_cancelled.is_set()
 
 
 async def test_async_effect_sleep_is_cancelled_on_re_render():

@@ -231,9 +231,13 @@ def use_async_effect(
         async def effect(stop: asyncio.Event) -> None:
             # Make sure we always clean up the previous effect's resources
             if pending_task.current:
-                pending_task.current.cancel()
+                previous_task = pending_task.current
+                if not shield:
+                    previous_task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
-                    await pending_task.current
+                    await previous_task
+                if pending_task.current is previous_task:
+                    pending_task.current = None
 
             run_effect_cleanup(cleanup_func)
 
@@ -267,7 +271,9 @@ def use_async_effect(
                 if not shield:
                     task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
-                    await task
+                    cleanup_func.current = await task
+                if pending_task.current is task:
+                    pending_task.current = None
 
             # Run the clean-up function when the effect is stopped,
             # if it hasn't been run already by a new effect
