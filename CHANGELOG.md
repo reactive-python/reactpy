@@ -62,6 +62,7 @@ Don't forget to remove deprecated code on each major release!
 - `reactpy.types.VdomDictConstructor` has been renamed to `reactpy.types.VdomConstructor`.
 - `REACTPY_ASYNC_RENDERING` can now de-duplicate and cascade renders where necessary.
 - `REACTPY_ASYNC_RENDERING` is now defaulted to `True` for up to 40x performance improvements in environments with high concurrency.
+- Events now support debounce, which can now be configured per event with `event.debounce = <milliseconds>`. Note that `input`, `select`, and `textarea` elements default to 200ms debounce.
 
 ### Deprecated
 

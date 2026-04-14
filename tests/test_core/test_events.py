@@ -20,7 +20,7 @@ def test_event_handler_repr():
     handler = EventHandler(lambda: None)
     assert repr(handler) == (
         f"EventHandler(function={handler.function}, prevent_default=False, "
-        f"stop_propagation=False, target={handler.target!r})"
+        f"stop_propagation=False, debounce=None, target={handler.target!r})"
     )
 
 
@@ -28,22 +28,32 @@ def test_event_handler_props():
     handler_0 = EventHandler(lambda data: None)
     assert handler_0.stop_propagation is False
     assert handler_0.prevent_default is False
+    assert handler_0.debounce is None
     assert handler_0.target is None
 
     handler_1 = EventHandler(lambda data: None, prevent_default=True)
     assert handler_1.stop_propagation is False
     assert handler_1.prevent_default is True
+    assert handler_1.debounce is None
     assert handler_1.target is None
 
     handler_2 = EventHandler(lambda data: None, stop_propagation=True)
     assert handler_2.stop_propagation is True
     assert handler_2.prevent_default is False
+    assert handler_2.debounce is None
     assert handler_2.target is None
 
     handler_3 = EventHandler(lambda data: None, target="123")
     assert handler_3.stop_propagation is False
     assert handler_3.prevent_default is False
+    assert handler_3.debounce is None
     assert handler_3.target == "123"
+
+    handler_4 = EventHandler(lambda data: None, debounce=250)
+    assert handler_4.stop_propagation is False
+    assert handler_4.prevent_default is False
+    assert handler_4.debounce == 250
+    assert handler_4.target is None
 
 
 def test_event_handler_equivalence():
@@ -61,6 +71,8 @@ def test_event_handler_equivalence():
     assert EventHandler(func, prevent_default=True) != EventHandler(
         func, prevent_default=False
     )
+
+    assert EventHandler(func, debounce=200) != EventHandler(func, debounce=100)
 
     assert EventHandler(func, target="123") != EventHandler(func, target="456")
 
@@ -97,6 +109,7 @@ async def test_merge_event_handler_empty_list():
     [
         ({"stop_propagation": True}, {"stop_propagation": False}),
         ({"prevent_default": True}, {"prevent_default": False}),
+        ({"debounce": 200}, {"debounce": 100}),
         ({"target": "this"}, {"target": "that"}),
     ],
 )
@@ -338,6 +351,24 @@ def test_detect_stop_propagation():
     assert eh.stop_propagation is True
 
 
+def test_detect_debounce():
+    def handler(event: Event):
+        event.debounce = 200
+
+    eh = EventHandler(handler)
+    assert eh.debounce == 200
+
+
+def test_computed_debounce_value_is_not_detected():
+    computed_debounce = 200
+
+    def handler(event: Event):
+        event.debounce = computed_debounce
+
+    eh = EventHandler(handler)
+    assert eh.debounce is None
+
+
 def test_detect_both():
     def handler(event: Event):
         event.preventDefault()
@@ -358,6 +389,14 @@ def test_detect_both_when_handler_is_partial():
     assert eh.stop_propagation is True
 
 
+def test_detect_debounce_when_handler_is_partial():
+    def handler(event: Event, *, extra_param):
+        event.debounce = 125
+
+    eh = EventHandler(partial(handler, extra_param=125))
+    assert eh.debounce == 125
+
+
 def test_no_detect():
     def handler(event: Event):
         pass
@@ -365,6 +404,7 @@ def test_no_detect():
     eh = EventHandler(handler)
     assert eh.prevent_default is False
     assert eh.stop_propagation is False
+    assert eh.debounce is None
 
 
 def test_event_wrapper():
@@ -392,6 +432,20 @@ async def test_vdom_has_prevent_default():
         assert handler.prevent_default is True
 
 
+async def test_vdom_has_debounce():
+    @component
+    def MyComponent():
+        def handler(event: Event):
+            event.debounce = 200
+
+        return html.input({"onChange": handler})
+
+    async with Layout(MyComponent()) as layout:
+        await layout.render()
+        handler = next(iter(layout._event_handlers.values()))
+        assert handler.debounce == 200
+
+
 def test_event_export():
     from reactpy.types import Event
 
@@ -404,20 +458,24 @@ def test_detect_false_positive():
         other = Event()
         other.preventDefault()
         other.stopPropagation()
+        other.debounce = 200
 
     eh = EventHandler(handler)
     assert eh.prevent_default is False
     assert eh.stop_propagation is False
+    assert eh.debounce is None
 
 
 def test_detect_renamed_argument():
     def handler(e: Event):
         e.preventDefault()
         e.stopPropagation()
+        e.debounce = 200
 
     eh = EventHandler(handler)
     assert eh.prevent_default is True
     assert eh.stop_propagation is True
+    assert eh.debounce == 200
 
 
 async def test_event_queue_sequential_processing(display: DisplayFixture):
@@ -622,3 +680,31 @@ async def test_controlled_input_typing(display: DisplayFixture):
 
     # Check the final value
     assert (await inp.evaluate("node => node.value")) == target_text
+
+
+async def test_controlled_input_respects_custom_debounce(display: DisplayFixture):
+    @reactpy.component
+    def ControlledInput():
+        value, set_value = use_state("")
+
+        def on_change(event: Event):
+            event.debounce = 0
+            set_value(event.target.value.upper())
+
+        return reactpy.html.input(
+            {
+                "value": value,
+                "onChange": on_change,
+                "id": "controlled-input",
+            }
+        )
+
+    await display.show(ControlledInput)
+
+    inp = await display.page.wait_for_selector("#controlled-input")
+    await inp.type("a", delay=0)
+
+    await display.page.wait_for_function(
+        "() => document.getElementById('controlled-input')?.value === 'A'"
+    )
+    assert (await inp.evaluate("node => node.value")) == "A"

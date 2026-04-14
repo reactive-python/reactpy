@@ -18,6 +18,34 @@ import type { ReactPyClient } from "./client";
 
 const ClientContext = createContext<ReactPyClient>(null as any);
 
+const DEFAULT_INPUT_DEBOUNCE = 200;
+
+type ReactPyInputHandler = ((event: TargetedEvent<any>) => void) & {
+  debounce?: number;
+  isHandler?: boolean;
+};
+
+type UserInputTarget = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+
+function trackUserInput(
+  event: TargetedEvent<any>,
+  setValue: (value: any) => void,
+  lastUserValue: MutableRefObject<any>,
+  lastChangeTime: MutableRefObject<number>,
+  lastInputDebounce: MutableRefObject<number>,
+  debounce: number,
+): void {
+  if (!event.target) {
+    return;
+  }
+
+  const newValue = (event.target as UserInputTarget).value;
+  setValue(newValue);
+  lastUserValue.current = newValue;
+  lastChangeTime.current = Date.now();
+  lastInputDebounce.current = debounce;
+}
+
 export function Layout(props: { client: ReactPyClient }): JSX.Element {
   const currentModel: ReactPyVdom = useState({ tagName: "" })[0];
   const forceUpdate = useForceUpdate();
@@ -84,6 +112,7 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
   const [value, setValue] = useState(props.value);
   const lastUserValue = useRef(props.value);
   const lastChangeTime = useRef(0);
+  const lastInputDebounce = useRef(DEFAULT_INPUT_DEBOUNCE);
 
   // honor changes to value from the client via props
   useEffect(() => {
@@ -93,24 +122,34 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
     const now = Date.now();
     if (
       props.value === lastUserValue.current ||
-      now - lastChangeTime.current > 200
+      now - lastChangeTime.current >= lastInputDebounce.current
     ) {
       setValue(props.value);
     }
   }, [props.value]);
 
-  const givenOnChange = props.onChange;
-  if (typeof givenOnChange === "function") {
-    props.onChange = (event: TargetedEvent<any>) => {
-      // immediately update the value to give the user feedback
-      if (event.target) {
-        const newValue = (event.target as HTMLInputElement).value;
-        setValue(newValue);
-        lastUserValue.current = newValue;
-        lastChangeTime.current = Date.now();
-      }
-      // allow the client to respond (and possibly change the value)
-      givenOnChange(event);
+  for (const [name, prop] of Object.entries(props)) {
+    if (typeof prop !== "function") {
+      continue;
+    }
+
+    const givenHandler = prop as ReactPyInputHandler;
+    if (!givenHandler.isHandler) {
+      continue;
+    }
+
+    props[name] = (event: TargetedEvent<any>) => {
+      trackUserInput(
+        event,
+        setValue,
+        lastUserValue,
+        lastChangeTime,
+        lastInputDebounce,
+        typeof givenHandler.debounce === "number"
+          ? givenHandler.debounce
+          : DEFAULT_INPUT_DEBOUNCE,
+      );
+      givenHandler(event);
     };
   }
 

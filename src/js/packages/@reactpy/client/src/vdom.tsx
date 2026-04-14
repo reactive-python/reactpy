@@ -206,7 +206,7 @@ export function createAttributes(
 function createEventHandler(
   client: ReactPyClient,
   name: string,
-  { target, preventDefault, stopPropagation }: ReactPyVdomEventHandler,
+  { target, preventDefault, stopPropagation, debounce }: ReactPyVdomEventHandler,
 ): [string, () => void] {
   const eventHandler = function (...args: any[]) {
     const data = Array.from(args).map((value) => {
@@ -227,7 +227,19 @@ function createEventHandler(
     });
     client.sendMessage({ type: "layout-event", data, target });
   };
-  eventHandler.isHandler = true;
+  (
+    eventHandler as typeof eventHandler & {
+      debounce?: number;
+      isHandler: boolean;
+    }
+  ).isHandler = true;
+  if (typeof debounce === "number") {
+    (
+      eventHandler as typeof eventHandler & {
+        debounce?: number;
+      }
+    ).debounce = debounce;
+  }
   return [name, eventHandler];
 }
 

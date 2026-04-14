@@ -18,6 +18,7 @@ def event(
     *,
     stop_propagation: bool = ...,
     prevent_default: bool = ...,
+    debounce: int | None = ...,
 ) -> EventHandler: ...
 
 
@@ -27,6 +28,7 @@ def event(
     *,
     stop_propagation: bool = ...,
     prevent_default: bool = ...,
+    debounce: int | None = ...,
 ) -> Callable[[Callable[..., Any]], EventHandler]: ...
 
 
@@ -35,6 +37,7 @@ def event(
     *,
     stop_propagation: bool = False,
     prevent_default: bool = False,
+    debounce: int | None = None,
 ) -> EventHandler | Callable[[Callable[..., Any]], EventHandler]:
     """A decorator for constructing an :class:`EventHandler`.
 
@@ -63,6 +66,9 @@ def event(
             Block the event from propagating further up the DOM.
         prevent_default:
             Stops the default actional associate with the event from taking place.
+        debounce:
+            Preserve client-side user input state for the given number of milliseconds
+            before applying conflicting server updates.
     """
 
     def setup(function: Callable[..., Any]) -> EventHandler:
@@ -70,6 +76,7 @@ def event(
             to_event_handler_function(function, positional_args=True),
             stop_propagation,
             prevent_default,
+            debounce=debounce,
         )
 
     return setup(function) if function is not None else setup
@@ -95,10 +102,12 @@ class EventHandler(BaseEventHandler):
         stop_propagation: bool = False,
         prevent_default: bool = False,
         target: str | None = None,
+        debounce: int | None = None,
     ) -> None:
         self.function = to_event_handler_function(function, positional_args=False)
         self.prevent_default = prevent_default
         self.stop_propagation = stop_propagation
+        self.debounce = debounce
         self.target = target
 
         # Check if our `preventDefault` or `stopPropagation` methods were called
@@ -110,14 +119,16 @@ class EventHandler(BaseEventHandler):
         if isinstance(func_to_inspect, partial):
             func_to_inspect = func_to_inspect.func
 
-        found_prevent_default, found_stop_propagation = _inspect_event_handler_code(
-            func_to_inspect.__code__
+        found_prevent_default, found_stop_propagation, found_debounce = (
+            _inspect_event_handler_code(func_to_inspect.__code__)
         )
 
         if found_prevent_default:
             self.prevent_default = True
         if found_stop_propagation:
             self.stop_propagation = True
+        if found_debounce is not None:
+            self.debounce = found_debounce
 
     __hash__ = None  # type: ignore
 
@@ -130,6 +141,7 @@ class EventHandler(BaseEventHandler):
                 "function",
                 "prevent_default",
                 "stop_propagation",
+                "debounce",
                 "target",
             )
         )
@@ -184,8 +196,9 @@ def merge_event_handlers(
     """Merge multiple event handlers into one
 
     Raises a ValueError if any handlers have conflicting
-    :attr:`~reactpy.core.proto.EventHandlerType.stop_propagation` or
-    :attr:`~reactpy.core.proto.EventHandlerType.prevent_default` attributes.
+    :attr:`~reactpy.core.proto.EventHandlerType.stop_propagation`,
+    :attr:`~reactpy.core.proto.EventHandlerType.prevent_default`, or
+    :attr:`~reactpy.core.proto.EventHandlerType.debounce` attributes.
     """
     if not event_handlers:
         msg = "No event handlers to merge"
@@ -197,15 +210,20 @@ def merge_event_handlers(
 
     stop_propagation = first_handler.stop_propagation
     prevent_default = first_handler.prevent_default
+    debounce = first_handler.debounce
     target = first_handler.target
 
     for handler in event_handlers:
         if (
             handler.stop_propagation != stop_propagation
             or handler.prevent_default != prevent_default
+            or handler.debounce != debounce
             or handler.target != target
         ):
-            msg = "Cannot merge handlers - 'stop_propagation', 'prevent_default' or 'target' mismatch."
+            msg = (
+                "Cannot merge handlers - 'stop_propagation', 'prevent_default', "
+                "'debounce' or 'target' mismatch."
+            )
             raise ValueError(msg)
 
     return EventHandler(
@@ -213,6 +231,7 @@ def merge_event_handlers(
         stop_propagation,
         prevent_default,
         target,
+        debounce,
     )
 
 
@@ -235,22 +254,25 @@ def merge_event_handler_funcs(
 
 
 @lru_cache(maxsize=4096)
-def _inspect_event_handler_code(code: CodeType) -> tuple[bool, bool]:
+def _inspect_event_handler_code(code: CodeType) -> tuple[bool, bool, int | None]:
     prevent_default = False
     stop_propagation = False
+    debounce = None
 
     if code.co_argcount > 0:
         names = code.co_names
         check_prevent_default = "preventDefault" in names
         check_stop_propagation = "stopPropagation" in names
+        check_debounce = "debounce" in names
 
-        if not (check_prevent_default or check_stop_propagation):
-            return False, False
+        if not (check_prevent_default or check_stop_propagation or check_debounce):
+            return False, False, None
 
         event_arg_name = code.co_varnames[0]
         last_was_event = False
+        instructions = list(dis.get_instructions(code))
 
-        for instr in dis.get_instructions(code):
+        for index, instr in enumerate(instructions):
             if (
                 instr.opname in ("LOAD_FAST", "LOAD_FAST_BORROW")
                 and instr.argval == event_arg_name
@@ -258,20 +280,28 @@ def _inspect_event_handler_code(code: CodeType) -> tuple[bool, bool]:
                 last_was_event = True
                 continue
 
-            if last_was_event and instr.opname in (
-                "LOAD_METHOD",
-                "LOAD_ATTR",
-            ):
-                if check_prevent_default and instr.argval == "preventDefault":
-                    prevent_default = True
-                    check_prevent_default = False
-                elif check_stop_propagation and instr.argval == "stopPropagation":
-                    stop_propagation = True
-                    check_stop_propagation = False
+            if last_was_event:
+                if instr.opname in ("LOAD_METHOD", "LOAD_ATTR"):
+                    if check_prevent_default and instr.argval == "preventDefault":
+                        prevent_default = True
+                        check_prevent_default = False
+                    elif check_stop_propagation and instr.argval == "stopPropagation":
+                        stop_propagation = True
+                        check_stop_propagation = False
+                elif check_debounce and instr.opname == "STORE_ATTR":
+                    if instr.argval == "debounce" and index > 1:
+                        candidate = instructions[index - 2].argval
+                        if isinstance(candidate, int) and not isinstance(
+                            candidate, bool
+                        ):
+                            debounce = candidate
+                            check_debounce = False
 
-                if not (check_prevent_default or check_stop_propagation):
+                if not (
+                    check_prevent_default or check_stop_propagation or check_debounce
+                ):
                     break
 
             last_was_event = False
 
-    return prevent_default, stop_propagation
+    return prevent_default, stop_propagation, debounce

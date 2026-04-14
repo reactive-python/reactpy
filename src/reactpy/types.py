@@ -915,6 +915,7 @@ class JsonEventTarget(TypedDict):
     target: str
     preventDefault: bool
     stopPropagation: bool
+    debounce: NotRequired[int]
 
 
 class JsonImportSource(TypedDict):
@@ -939,6 +940,7 @@ class BaseEventHandler:
 
     __slots__ = (
         "__weakref__",
+        "debounce",
         "function",
         "prevent_default",
         "stop_propagation",
@@ -953,6 +955,9 @@ class BaseEventHandler:
 
     stop_propagation: bool
     """Stops the default action associate with the event from taking place."""
+
+    debounce: int | None
+    """How long, in milliseconds, client-side user input state should be preserved."""
 
     target: str | None
     """Typically left as ``None`` except when a static target is useful.
@@ -1123,6 +1128,8 @@ class Event(dict):
     """
     A light `dict` wrapper for event data passed to event handler functions.
     """
+
+    debounce: int | None
 
     def __getattr__(self, name: str) -> Any:
         value = self.get(name)

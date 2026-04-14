@@ -401,6 +401,11 @@ class Layout(BaseLayout):
                 "target": target,
                 "preventDefault": handler.prevent_default,
                 "stopPropagation": handler.stop_propagation,
+                **(
+                    {"debounce": handler.debounce}
+                    if handler.debounce is not None
+                    else {}
+                ),
             }
 
         return None
@@ -426,6 +431,11 @@ class Layout(BaseLayout):
                 "target": target,
                 "preventDefault": handler.prevent_default,
                 "stopPropagation": handler.stop_propagation,
+                **(
+                    {"debounce": handler.debounce}
+                    if handler.debounce is not None
+                    else {}
+                ),
             }
 
         return None

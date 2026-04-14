@@ -72,6 +72,7 @@ VDOM_JSON_SCHEMA = {
                 "target": {"type": "string"},
                 "preventDefault": {"type": "boolean"},
                 "stopPropagation": {"type": "boolean"},
+                "debounce": {"type": "integer", "minimum": 0},
             },
             "required": ["target"],
         },
