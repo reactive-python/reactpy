@@ -206,7 +206,12 @@ export function createAttributes(
 function createEventHandler(
   client: ReactPyClient,
   name: string,
-  { target, preventDefault, stopPropagation, debounce }: ReactPyVdomEventHandler,
+  {
+    target,
+    preventDefault,
+    stopPropagation,
+    debounce,
+  }: ReactPyVdomEventHandler,
 ): [string, () => void] {
   const eventHandler = function (...args: any[]) {
     const data = Array.from(args).map((value) => {

@@ -25,7 +25,10 @@ type ReactPyInputHandler = ((event: TargetedEvent<any>) => void) & {
   isHandler?: boolean;
 };
 
-type UserInputTarget = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+type UserInputTarget =
+  | HTMLInputElement
+  | HTMLSelectElement
+  | HTMLTextAreaElement;
 
 function trackUserInput(
   event: TargetedEvent<any>,

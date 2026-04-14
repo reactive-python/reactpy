@@ -8,10 +8,11 @@ import urllib.parse
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Unpack
+from typing import Any, Unpack, cast
 
 import orjson
 from asgi_tools import ResponseText, ResponseWebSocket
+from asgiref import typing as asgi_types
 from asgiref.compatibility import guarantee_single_callable
 from servestatic import ServeStaticASGI
 
@@ -265,7 +266,11 @@ class StaticFileApp:
                 prefix=self.parent.static_path,
             )
 
-        await self._static_file_server(scope, receive, send)
+        await self._static_file_server(
+            cast(asgi_types.Scope, scope),
+            cast(asgi_types.ASGIReceiveCallable, receive),
+            cast(asgi_types.ASGISendCallable, send),
+        )
 
 
 @dataclass
@@ -285,7 +290,11 @@ class WebModuleApp:
                 autorefresh=True,
             )
 
-        await self._static_file_server(scope, receive, send)
+        await self._static_file_server(
+            cast(asgi_types.Scope, scope),
+            cast(asgi_types.ASGIReceiveCallable, receive),
+            cast(asgi_types.ASGISendCallable, send),
+        )
 
 
 class Error404App:
