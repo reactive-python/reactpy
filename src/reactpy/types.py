@@ -915,7 +915,7 @@ class JsonEventTarget(TypedDict):
     target: str
     preventDefault: bool
     stopPropagation: bool
-    debounce: NotRequired[int]
+    debounce: int
 
 
 class JsonImportSource(TypedDict):

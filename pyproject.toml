@@ -71,8 +71,8 @@ installer = "uv"
 reactpy = "reactpy._console.cli:entry_point"
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
-commands = []
-artifacts = []
+commands = ['python "src/build_scripts/build_local_wheel.py"']
+artifacts = ["src/reactpy/static/wheels/*.whl"]
 
 #############################
 # >>> Hatch Test Runner <<< #

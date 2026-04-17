@@ -268,6 +268,7 @@ class StaticFileApp:
                 Error404App(),
                 root=self.parent.static_dir,
                 prefix=self.parent.static_path,
+                autorefresh=True,
             )
 
         await self._static_file_server(

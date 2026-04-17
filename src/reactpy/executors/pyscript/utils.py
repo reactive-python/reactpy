@@ -1,22 +1,29 @@
-# ruff: noqa: S607
+# ruff: noqa: S603
 from __future__ import annotations
 
+import base64
+import csv
 import functools
+import hashlib
+import importlib.util
 import json
+import os
 import re
 import shutil
 import subprocess
+import sys
 import textwrap
 from collections.abc import Callable
-from glob import glob
+from importlib import metadata
+from io import StringIO
 from logging import getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-from urllib import request
 from uuid import uuid4
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import reactpy
-from reactpy.config import REACTPY_DEBUG, REACTPY_PATH_PREFIX, REACTPY_WEB_MODULES_DIR
+from reactpy.config import REACTPY_DEBUG, REACTPY_PATH_PREFIX
 from reactpy.types import VdomDict
 from reactpy.utils import reactpy_to_string
 
@@ -24,6 +31,9 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 _logger = getLogger(__name__)
+
+_PYSCRIPT_WHEELS_DIR = "wheels"
+_WHEEL_FILENAME_PART_COUNT = 5
 
 
 def minify_python(source: str) -> str:
@@ -149,93 +159,297 @@ def extend_pyscript_config(
     return json.dumps(pyscript_config)
 
 
-def reactpy_version_string() -> str:  # nocov
-    from reactpy.testing.common import GITHUB_ACTIONS
+def reactpy_version_string() -> str:
+    wheel_file = _ensure_local_reactpy_wheel()
+    return (
+        f"{REACTPY_PATH_PREFIX.current}static/{_PYSCRIPT_WHEELS_DIR}/{wheel_file.name}"
+    )
 
-    # Get a list of all versions via `pip index versions`
-    result = get_reactpy_versions()
-    local_version = reactpy.__version__
 
-    # Check if the command failed
-    if not result:
-        _logger.warning(
-            "Failed to verify what versions of ReactPy exist on PyPi. "
-            "PyScript functionality may not work as expected.",
-        )
-        return f"reactpy=={local_version}"
+def _ensure_local_reactpy_wheel() -> Path:
+    packaged_wheel = _find_current_reactpy_wheel(_packaged_reactpy_wheels_dir())
 
-    # Have `pip` tell us what versions are available
-    known_versions: list[str] = result.get("versions", [])
-    latest_version: str = result.get("latest", "")
+    if _source_checkout_exists():
+        if packaged_wheel and not _wheel_is_stale_for_source(packaged_wheel):
+            return packaged_wheel
 
-    # Return early if the version is available on PyPi and we're not in a CI environment
-    if local_version in known_versions and not GITHUB_ACTIONS:
-        return f"reactpy=={local_version}"
+        if built_wheel := _build_reactpy_wheel_from_source():
+            return _copy_reactpy_wheel_to_static_dir(built_wheel)
 
-    # We are now determining an alternative method of installing ReactPy for PyScript
-    if not GITHUB_ACTIONS:
-        _logger.warning(
-            "Your ReactPy version isn't available on PyPi. "
-            "Attempting to find an alternative installation method for PyScript...",
+        raise RuntimeError(
+            "ReactPy could not build a local wheel for PyScript. "
+            "Ensure Hatch is installed and `hatch build -t wheel` succeeds."
         )
 
-    # Build a local wheel for ReactPy, if needed
-    dist_dir = Path(reactpy.__file__).parent.parent.parent / "dist"
-    wheel_glob = glob(str(dist_dir / f"reactpy-{local_version}-*.whl"))
-    if not wheel_glob:
-        _logger.warning("Attempting to build a local wheel for ReactPy...")
-        subprocess.run(
-            ["hatch", "build", "-t", "wheel"],
+    if packaged_wheel:
+        return packaged_wheel
+
+    if rebuilt_wheel := _rebuild_installed_reactpy_wheel():
+        return rebuilt_wheel
+
+    raise RuntimeError(
+        "ReactPy could not locate or reconstruct a local wheel for PyScript."
+    )
+
+
+def _source_checkout_exists() -> bool:
+    return (_reactpy_repo_root() / "pyproject.toml").exists()
+
+
+def _reactpy_repo_root() -> Path:
+    return Path(reactpy.__file__).resolve().parent.parent.parent
+
+
+def _packaged_reactpy_wheels_dir() -> Path:
+    return Path(reactpy.__file__).resolve().parent / "static" / _PYSCRIPT_WHEELS_DIR
+
+
+def _find_current_reactpy_wheel(directory: Path) -> Path | None:
+    if not directory.exists():
+        return None
+
+    matches = sorted(
+        path
+        for path in directory.glob("reactpy-*.whl")
+        if _wheel_matches_local_version(path)
+    )
+    return matches[0] if matches else None
+
+
+def _wheel_matches_local_version(path: Path) -> bool:
+    name_parts = path.name.removesuffix(".whl").split("-")
+    return (
+        len(name_parts) >= _WHEEL_FILENAME_PART_COUNT
+        and name_parts[0].replace("_", "-").lower() == "reactpy"
+        and _normalize_wheel_part(name_parts[1])
+        == _normalize_wheel_part(reactpy.__version__)
+    )
+
+
+def _normalize_wheel_part(value: str) -> str:
+    return re.sub(r"[-_.]+", "-", value).lower()
+
+
+def _wheel_is_stale_for_source(wheel_file: Path) -> bool:
+    wheel_mtime = wheel_file.stat().st_mtime
+    repo_root = _reactpy_repo_root()
+    watched_paths = [repo_root / "pyproject.toml", repo_root / "src" / "reactpy"]
+
+    for path in watched_paths:
+        if path.is_file() and path.stat().st_mtime > wheel_mtime:
+            return True
+        if path.is_dir():
+            for child in path.rglob("*"):
+                if not child.is_file():
+                    continue
+                if child.suffix == ".pyc" or "__pycache__" in child.parts:
+                    continue
+                if _packaged_reactpy_wheels_dir() in child.parents:
+                    continue
+                if child.stat().st_mtime > wheel_mtime:
+                    return True
+
+    return False
+
+
+def _build_reactpy_wheel_from_source() -> Path | None:
+    repo_root = _reactpy_repo_root()
+    hatch_build_command = _hatch_build_command(repo_root)
+
+    if not hatch_build_command:
+        _logger.error("Could not locate Hatch while building a local ReactPy wheel.")
+        return None
+
+    _logger.warning("Attempting to build a local wheel for ReactPy...")
+
+    env = os.environ.copy()
+    for key in tuple(env):
+        if key.startswith("HATCH_ENV_"):
+            env.pop(key)
+
+    try:
+        result = subprocess.run(
+            hatch_build_command,
             capture_output=True,
             text=True,
             check=False,
-            cwd=Path(reactpy.__file__).parent.parent.parent,
+            cwd=repo_root,
+            env=env,
         )
-        wheel_glob = glob(str(dist_dir / f"reactpy-{local_version}-*.whl"))
-
-    # Move the local wheel to the web modules directory, if it exists
-    if wheel_glob:
-        wheel_file = Path(wheel_glob[0])
-        new_path = REACTPY_WEB_MODULES_DIR.current / wheel_file.name
-        if not new_path.exists():
-            _logger.warning(
-                "PyScript will utilize local wheel '%s'.",
-                wheel_file.name,
-            )
-            shutil.copy(wheel_file, new_path)
-        return f"{REACTPY_PATH_PREFIX.current}modules/{wheel_file.name}"
-
-    # Building a local wheel failed, try our best to give the user any version.
-    if latest_version:
-        _logger.warning(
-            "Failed to build a local wheel for ReactPy, likely due to missing build dependencies. "
-            "PyScript will default to using the latest ReactPy version on PyPi."
+    except OSError:
+        _logger.exception(
+            "Failed to invoke Hatch while building a local ReactPy wheel."
         )
-        return f"reactpy=={latest_version}"
-    _logger.error(
-        "Failed to build a local wheel for ReactPy, and could not determine the latest version on PyPi. "
-        "PyScript functionality may not work as expected.",
-    )
-    return f"reactpy=={local_version}"
+        return None
+
+    if result.returncode != 0:
+        _logger.error(
+            "Failed to build a local ReactPy wheel.\nstdout:\n%s\nstderr:\n%s",
+            result.stdout,
+            result.stderr,
+        )
+        return None
+
+    dist_dir = repo_root / "dist"
+    return _find_current_reactpy_wheel(dist_dir)
 
 
-@functools.cache
-def get_reactpy_versions() -> dict[Any, Any]:
-    """Fetches the available versions of a package from PyPI."""
+def _hatch_build_command(repo_root: Path) -> list[str] | None:
+    for candidate in (
+        repo_root / ".venv" / "Scripts" / "hatch.exe",
+        repo_root / ".venv" / "bin" / "hatch",
+    ):
+        if candidate.exists():
+            return [str(candidate), "build", "-t", "wheel"]
+
+    if hatch_command := shutil.which("hatch"):
+        return [hatch_command, "build", "-t", "wheel"]
+
+    if importlib.util.find_spec("hatch") is not None:
+        return [sys.executable, "-m", "hatch", "build", "-t", "wheel"]
+
+    return None
+
+
+def _copy_reactpy_wheel_to_static_dir(wheel_file: Path) -> Path:
+    static_wheels_dir = _packaged_reactpy_wheels_dir()
+    static_wheels_dir.mkdir(parents=True, exist_ok=True)
+    static_wheel = static_wheels_dir / wheel_file.name
+
+    for existing in static_wheels_dir.glob("reactpy-*.whl"):
+        if existing != static_wheel:
+            existing.unlink()
+
+    if wheel_file.resolve() == static_wheel.resolve():
+        return static_wheel
+
+    temp_wheel = static_wheel.with_suffix(f"{static_wheel.suffix}.tmp")
+    shutil.copy2(wheel_file, temp_wheel)
+    temp_wheel.replace(static_wheel)
+    return static_wheel
+
+
+def _wheel_archive_name(file_path: Path) -> str | None:
+    if file_path.is_absolute() or ".." in file_path.parts:
+        return None
+
+    return file_path.as_posix()
+
+
+def _rebuild_installed_reactpy_wheel() -> Path | None:
     try:
-        try:
-            response = request.urlopen("https://pypi.org/pypi/reactpy/json", timeout=5)
-        except Exception:
-            response = request.urlopen("http://pypi.org/pypi/reactpy/json", timeout=5)
-        if response.status == 200:  # noqa: PLR2004
-            data = json.load(response)
-            versions = list(data.get("releases", {}).keys())
-            latest = data.get("info", {}).get("version", "")
-            if versions and latest:
-                return {"versions": versions, "latest": latest}
-    except Exception:
-        _logger.exception("Error fetching ReactPy package versions from PyPI!")
-    return {}
+        distribution = metadata.distribution("reactpy")
+    except metadata.PackageNotFoundError:
+        _logger.exception("Could not inspect the installed ReactPy distribution.")
+        return None
+
+    files = distribution.files or []
+    if not files:
+        _logger.error("The installed ReactPy distribution did not expose any files.")
+        return None
+
+    static_wheels_dir = _packaged_reactpy_wheels_dir()
+    static_wheels_dir.mkdir(parents=True, exist_ok=True)
+
+    wheel_path = static_wheels_dir / _installed_wheel_name(files, distribution)
+    temp_wheel_path = wheel_path.with_suffix(".tmp")
+
+    record_rows: list[tuple[str, str, str]] = []
+    record_name = _installed_wheel_record_name(files)
+
+    with ZipFile(temp_wheel_path, "w", compression=ZIP_DEFLATED) as wheel_zip:
+        for file in files:
+            file_path = Path(str(file))
+            archive_name = _wheel_archive_name(file_path)
+            if archive_name is None:
+                _logger.warning(
+                    "Skipping installed path '%s' while reconstructing local ReactPy wheel.",
+                    file_path.as_posix(),
+                )
+                continue
+
+            if archive_name == record_name:
+                continue
+
+            absolute_path = Path(str(distribution.locate_file(file)))
+            if not absolute_path.is_file():
+                continue
+
+            file_data = absolute_path.read_bytes()
+            wheel_zip.writestr(archive_name, file_data)
+            record_rows.append(_record_row(archive_name, file_data))
+
+        record_rows.append((record_name, "", ""))
+        wheel_zip.writestr(record_name, _record_text(record_rows))
+
+    temp_wheel_path.replace(wheel_path)
+    _logger.warning(
+        "PyScript will utilize reconstructed local wheel '%s'.", wheel_path.name
+    )
+    return wheel_path
+
+
+def _installed_wheel_name(
+    files: Sequence[metadata.PackagePath],
+    distribution: metadata.Distribution,
+) -> str:
+    return (
+        f"reactpy-{reactpy.__version__}-{_installed_wheel_tag(files, distribution)}.whl"
+    )
+
+
+def _installed_wheel_tag(
+    files: Sequence[metadata.PackagePath],
+    distribution: metadata.Distribution,
+) -> str:
+    wheel_file = next(
+        (file for file in files if Path(str(file)).name == "WHEEL"),
+        None,
+    )
+    if not wheel_file:
+        return "py3-none-any"
+
+    wheel_text = Path(str(distribution.locate_file(wheel_file))).read_text(
+        encoding="utf-8"
+    )
+    return next(
+        (
+            line.removeprefix("Tag: ").strip()
+            for line in wheel_text.splitlines()
+            if line.startswith("Tag: ")
+        ),
+        "py3-none-any",
+    )
+
+
+def _installed_wheel_record_name(files: Sequence[metadata.PackagePath]) -> str:
+    if record_file := next(
+        (file for file in files if Path(str(file)).name == "RECORD"),
+        None,
+    ):
+        return Path(str(record_file)).as_posix()
+
+    dist_info_dir = next(
+        (
+            Path(str(file)).parent.as_posix()
+            for file in files
+            if Path(str(file)).name == "WHEEL"
+        ),
+        f"reactpy-{reactpy.__version__}.dist-info",
+    )
+    return f"{dist_info_dir}/RECORD"
+
+
+def _record_row(path: str, data: bytes) -> tuple[str, str, str]:
+    digest = base64.urlsafe_b64encode(hashlib.sha256(data).digest()).rstrip(b"=")
+    return (path, f"sha256={digest.decode()}", str(len(data)))
+
+
+def _record_text(rows: Sequence[tuple[str, str, str]]) -> str:
+    output = StringIO()
+    writer = csv.writer(output, lineterminator="\n")
+    writer.writerows(rows)
+    return output.getvalue()
 
 
 @functools.cache
