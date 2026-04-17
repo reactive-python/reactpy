@@ -128,10 +128,15 @@ def extend_pyscript_config(
     extra_js: dict[str, str] | str,
     config: dict[str, Any] | str,
     modules: dict[str, str] | str | None = None,
+    reactpy_pkg_string: str | None = None,
 ) -> str:
     # Extends ReactPy's default PyScript config with user provided values.
     pyscript_config: dict[str, Any] = {
-        "packages": [reactpy_version_string(), "jsonpointer==3.*", "ssl"],
+        "packages": [
+            reactpy_pkg_string or _reactpy_pkg_string(),
+            "jsonpointer==3.*",
+            "ssl",
+        ],
         "js_modules": {
             "main": modules
             or {
@@ -159,7 +164,7 @@ def extend_pyscript_config(
     return json.dumps(pyscript_config)
 
 
-def reactpy_version_string() -> str:
+def _reactpy_pkg_string() -> str:
     wheel_file = _ensure_local_reactpy_wheel()
     return (
         f"{REACTPY_PATH_PREFIX.current}static/{_PYSCRIPT_WHEELS_DIR}/{wheel_file.name}"

@@ -112,7 +112,7 @@ def test_extend_pyscript_config():
     config = {"packages_cache": "always"}
 
     with mock.patch(
-        "reactpy.executors.pyscript.utils.reactpy_version_string",
+        "reactpy.executors.pyscript.utils._reactpy_pkg_string",
         return_value="/reactpy/static/wheels/reactpy-test.whl",
     ):
         result = utils.extend_pyscript_config(extra_py, extra_js, config)
@@ -140,7 +140,7 @@ def test_extend_pyscript_config_string_values():
     extra_js_string = orjson.dumps(extra_js).decode()
     config_string = orjson.dumps(config).decode()
     with mock.patch(
-        "reactpy.executors.pyscript.utils.reactpy_version_string",
+        "reactpy.executors.pyscript.utils._reactpy_pkg_string",
         return_value="/reactpy/static/wheels/reactpy-test.whl",
     ):
         result = utils.extend_pyscript_config(extra_py, extra_js_string, config_string)
@@ -157,7 +157,7 @@ def test_extend_pyscript_config_string_values():
     assert result["packages_cache"] == "always"
 
 
-def test_reactpy_version_string_prefers_packaged_wheel():
+def test_reactpy_pkg_string_prefers_packaged_wheel():
     wheel_file = _current_wheel_path()
 
     with (
@@ -173,13 +173,13 @@ def test_reactpy_version_string_prefers_packaged_wheel():
             "reactpy.executors.pyscript.utils._rebuild_installed_reactpy_wheel"
         ) as rebuild_wheel,
     ):
-        assert utils.reactpy_version_string() == (
+        assert utils._reactpy_pkg_string() == (
             f"{REACTPY_PATH_PREFIX.current}static/wheels/{wheel_file.name}"
         )
         rebuild_wheel.assert_not_called()
 
 
-def test_reactpy_version_string_rebuilds_source_checkout_when_wheel_is_stale():
+def test_reactpy_pkg_string_rebuilds_source_checkout_when_wheel_is_stale():
     built_wheel = _current_wheel_path("dist")
     copied_wheel = _current_wheel_path("static", "wheels")
 
@@ -205,14 +205,14 @@ def test_reactpy_version_string_rebuilds_source_checkout_when_wheel_is_stale():
             return_value=copied_wheel,
         ) as copy_wheel,
     ):
-        assert utils.reactpy_version_string() == (
+        assert utils._reactpy_pkg_string() == (
             f"{REACTPY_PATH_PREFIX.current}static/wheels/{copied_wheel.name}"
         )
         build_wheel.assert_called_once_with()
         copy_wheel.assert_called_once_with(built_wheel)
 
 
-def test_reactpy_version_string_reconstructs_installed_wheel_when_needed():
+def test_reactpy_pkg_string_reconstructs_installed_wheel_when_needed():
     wheel_file = _current_wheel_path()
 
     with (
@@ -229,7 +229,7 @@ def test_reactpy_version_string_reconstructs_installed_wheel_when_needed():
             return_value=wheel_file,
         ) as rebuild_wheel,
     ):
-        assert utils.reactpy_version_string() == (
+        assert utils._reactpy_pkg_string() == (
             f"{REACTPY_PATH_PREFIX.current}static/wheels/{wheel_file.name}"
         )
         rebuild_wheel.assert_called_once_with()
@@ -667,6 +667,36 @@ def test_copy_reactpy_wheel_to_static_dir_replaces_same_name_wheel(tmp_path):
 
     assert static_wheel == static_wheels_dir / source_wheel.name
     assert static_wheel.read_text(encoding="utf-8") == "new wheel"
+
+
+def test_copy_reactpy_wheel_to_static_dir_returns_existing_static_wheel(tmp_path):
+    static_wheels_dir = tmp_path / "static" / "wheels"
+    source_wheel = _write_file(
+        static_wheels_dir / _current_wheel_name(),
+        "existing wheel",
+    )
+
+    with (
+        mock.patch(
+            "reactpy.executors.pyscript.utils._packaged_reactpy_wheels_dir",
+            return_value=static_wheels_dir,
+        ),
+        mock.patch("reactpy.executors.pyscript.utils.shutil.copy2") as copy_wheel,
+    ):
+        static_wheel = utils._copy_reactpy_wheel_to_static_dir(source_wheel)
+
+    assert static_wheel == source_wheel
+    assert static_wheel.read_text(encoding="utf-8") == "existing wheel"
+    copy_wheel.assert_not_called()
+    assert not static_wheel.with_suffix(f"{static_wheel.suffix}.tmp").exists()
+
+
+def test_wheel_archive_name_rejects_unsafe_paths_and_normalizes_relative_paths():
+    assert utils._wheel_archive_name(Path("reactpy") / "module.py") == (
+        "reactpy/module.py"
+    )
+    assert utils._wheel_archive_name(Path("..") / "bin" / "reactpy") is None
+    assert utils._wheel_archive_name(Path.cwd() / "reactpy" / "module.py") is None
 
 
 def test_rebuild_installed_reactpy_wheel_returns_none_when_distribution_missing():
