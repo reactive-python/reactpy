@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 _logger = logging.getLogger(__name__)
-_SKIP_ENV_VAR = "REACTPY_SKIP_LOCAL_WHEEL_BUILD"
+_SKIP_ENV_VAR = "REACTPY_SKIP_PY_WHEEL_BUILD"
 
 
 def _reactpy_version(root_dir: Path) -> str:
@@ -38,21 +38,68 @@ def _matching_reactpy_wheel(dist_dir: Path, version: str) -> Path | None:
     return matching_wheels[0] if matching_wheels else None
 
 
-def _hatch_build_command(root_dir: Path) -> list[str] | None:
+def _hatch_command(root_dir: Path, *args: str) -> list[str] | None:
     for candidate in (
         root_dir / ".venv" / "Scripts" / "hatch.exe",
         root_dir / ".venv" / "bin" / "hatch",
     ):
         if candidate.exists():
-            return [str(candidate), "build", "-t", "wheel"]
+            return [str(candidate), *args]
 
     if hatch_command := shutil.which("hatch"):
-        return [hatch_command, "build", "-t", "wheel"]
+        return [hatch_command, *args]
 
     if importlib.util.find_spec("hatch") is not None:
-        return [sys.executable, "-m", "hatch", "build", "-t", "wheel"]
+        return [sys.executable, "-m", "hatch", *args]
 
     return None
+
+
+def _hatch_build_command(root_dir: Path) -> list[str] | None:
+    return _hatch_command(root_dir, "build", "-t", "wheel")
+
+
+def _without_hatch_env_vars(env: dict[str, str]) -> dict[str, str]:
+    cleaned_env = env.copy()
+    for key in tuple(cleaned_env):
+        if key.startswith("HATCH_ENV_"):
+            cleaned_env.pop(key)
+    return cleaned_env
+
+
+def _run_hatch_command(root_dir: Path, command: list[str], failure_message: str) -> int:
+    result = subprocess.run(  # noqa: S603
+        command,
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=root_dir,
+        env=_without_hatch_env_vars(os.environ.copy()),
+    )
+
+    if result.returncode != 0:
+        _logger.error(
+            "%s\nstdout:\n%s\nstderr:\n%s",
+            failure_message,
+            result.stdout,
+            result.stderr,
+        )
+        return result.returncode
+
+    return 0
+
+
+def _build_packaged_static_assets(root_dir: Path) -> int:
+    hatch_command = _hatch_command(root_dir, "run", "javascript:build")
+    if not hatch_command:
+        _logger.error("Could not locate Hatch while building packaged static assets.")
+        return 1
+
+    return _run_hatch_command(
+        root_dir,
+        hatch_command,
+        "Failed to build packaged static assets.",
+    )
 
 
 def main() -> int:
@@ -61,6 +108,10 @@ def main() -> int:
         return 0
 
     root_dir = Path(__file__).parent.parent.parent
+
+    if static_assets_result := _build_packaged_static_assets(root_dir):
+        return static_assets_result
+
     version = _reactpy_version(root_dir)
     static_wheels_dir = root_dir / "src" / "reactpy" / "static" / "wheels"
     dist_dir = root_dir / "dist"
@@ -74,28 +125,16 @@ def main() -> int:
     for wheel_file in static_wheels_dir.glob("reactpy-*.whl"):
         wheel_file.unlink()
 
-    env = os.environ.copy()
-    env[_SKIP_ENV_VAR] = "1"
-    for key in tuple(env):
-        if key.startswith("HATCH_ENV_"):
-            env.pop(key)
-
-    result = subprocess.run(  # noqa: S603
-        hatch_build_command,
-        capture_output=True,
-        text=True,
-        check=False,
-        cwd=root_dir,
-        env=env,
-    )
-
-    if result.returncode != 0:
-        _logger.error(
-            "Failed to build the embedded ReactPy wheel.\nstdout:\n%s\nstderr:\n%s",
-            result.stdout,
-            result.stderr,
-        )
-        return result.returncode
+    os.environ[_SKIP_ENV_VAR] = "1"
+    try:
+        if wheel_build_result := _run_hatch_command(
+            root_dir,
+            hatch_build_command,
+            "Failed to build the embedded ReactPy wheel.",
+        ):
+            return wheel_build_result
+    finally:
+        os.environ.pop(_SKIP_ENV_VAR, None)
 
     built_wheel = _matching_reactpy_wheel(dist_dir, version)
     if not built_wheel:
