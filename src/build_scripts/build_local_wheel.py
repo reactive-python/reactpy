@@ -5,11 +5,13 @@
 
 from __future__ import annotations
 
+import importlib.util
 import logging
 import os
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 _logger = logging.getLogger(__name__)
@@ -46,6 +48,9 @@ def _hatch_build_command(root_dir: Path) -> list[str] | None:
 
     if hatch_command := shutil.which("hatch"):
         return [hatch_command, "build", "-t", "wheel"]
+
+    if importlib.util.find_spec("hatch") is not None:
+        return [sys.executable, "-m", "hatch", "build", "-t", "wheel"]
 
     return None
 

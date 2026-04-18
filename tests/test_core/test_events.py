@@ -649,7 +649,9 @@ async def test_event_targeting_with_index_shifting(display: DisplayFixture):
 async def test_controlled_input_typing(display: DisplayFixture):
     """
     Test that a controlled input updates correctly even with rapid typing.
-    This validates that event queueing/processing order is maintained.
+    This validates that user inputs are processed in the correct order and that the
+    event queueing/processing order is consistent with user expectations, even if the
+    server is still processing previous events.
     """
 
     @reactpy.component
@@ -659,12 +661,15 @@ async def test_controlled_input_typing(display: DisplayFixture):
         def on_change(event):
             set_value(event["target"]["value"])
 
-        return reactpy.html.input(
-            {
-                "value": value,
-                "onChange": on_change,
-                "id": "controlled-input",
-            }
+        return reactpy.html.div(
+            reactpy.html.input(
+                {
+                    "value": value,
+                    "onChange": on_change,
+                    "id": "controlled-input",
+                },
+            ),
+            reactpy.html.pre({"id": "server-value"}, value),
         )
 
     await display.show(ControlledInput)
@@ -678,8 +683,12 @@ async def test_controlled_input_typing(display: DisplayFixture):
     # Wait a bit for all events to settle
     await asyncio.sleep(0.5)
 
-    # Check the final value
+    # Ensure all characters stayed within the client, even if server updates were in-flight
     assert (await inp.evaluate("node => node.value")) == target_text
+
+    # Ensure the server and client are in sync
+    server_value = await display.page.locator("#server-value").text_content()
+    assert server_value == target_text
 
 
 async def test_controlled_input_respects_custom_debounce(display: DisplayFixture):
@@ -710,10 +719,12 @@ async def test_controlled_input_respects_custom_debounce(display: DisplayFixture
     assert (await inp.evaluate("node => node.value")) == "A"
 
 
-async def test_controlled_input_default_debounce_prefers_latest_client_value(
+async def test_controlled_input_default_debounce_reconciles_server_value(
     display: DisplayFixture,
 ):
-    """Prefer the latest client value for a controlled input when using debounce, even if the server is still processing an older event."""
+    """Verifies if the client keeps the latest user-provided input value even
+    if it received a conflicting server update within the debounce period, then
+    ultimately reconciles once debounce expires."""
 
     @reactpy.component
     def ControlledInput():
@@ -722,12 +733,15 @@ async def test_controlled_input_default_debounce_prefers_latest_client_value(
         def on_change(event: Event):
             set_value(event.target.value.upper())
 
-        return reactpy.html.input(
-            {
-                "value": value,
-                "onChange": on_change,
-                "id": "controlled-input",
-            }
+        return reactpy.html.div(
+            reactpy.html.input(
+                {
+                    "value": value,
+                    "onChange": on_change,
+                    "id": "controlled-input",
+                }
+            ),
+            reactpy.html.pre({"id": "server-value"}, value),
         )
 
     await display.show(ControlledInput)
@@ -735,5 +749,19 @@ async def test_controlled_input_default_debounce_prefers_latest_client_value(
     inp = await display.page.wait_for_selector("#controlled-input")
     await inp.type("a", delay=0)
 
-    await asyncio.sleep(0.5)
+    await display.page.wait_for_function(
+        """
+        () => {
+            const input = document.getElementById('controlled-input');
+            const serverValue = document.getElementById('server-value');
+            return input?.value === 'a' && serverValue?.textContent === 'A';
+        }
+        """
+    )
     assert (await inp.evaluate("node => node.value")) == "a"
+    assert await display.page.locator("#server-value").text_content() == "A"
+
+    await display.page.wait_for_function(
+        "() => document.getElementById('controlled-input')?.value === 'A'"
+    )
+    assert (await inp.evaluate("node => node.value")) == "A"

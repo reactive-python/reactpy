@@ -116,19 +116,37 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
   const lastUserValue = useRef(props.value);
   const lastChangeTime = useRef(0);
   const lastInputDebounce = useRef(DEFAULT_INPUT_DEBOUNCE);
+  const reconcileTimeout = useRef<number | null>(null);
 
   // honor changes to value from the client via props
   useEffect(() => {
-    // If the new prop value matches what we last sent, we are in sync.
-    // If it differs, we only update if sufficient time has passed since user input,
-    // effectively debouncing server overrides during rapid typing.
-    const now = Date.now();
-    if (
-      props.value === lastUserValue.current ||
-      now - lastChangeTime.current >= lastInputDebounce.current
-    ) {
-      setValue(props.value);
-    }
+    const reconcileValue = () => {
+      // If the new prop value matches what we last sent, we are in sync.
+      // If it differs, wait until the debounce window expires before applying it.
+      const elapsed = Date.now() - lastChangeTime.current;
+      if (
+        props.value === lastUserValue.current ||
+        elapsed >= lastInputDebounce.current
+      ) {
+        reconcileTimeout.current = null;
+        setValue(props.value);
+        return;
+      }
+
+      reconcileTimeout.current = window.setTimeout(
+        reconcileValue,
+        Math.max(0, lastInputDebounce.current - elapsed),
+      );
+    };
+
+    reconcileValue();
+
+    return () => {
+      if (reconcileTimeout.current !== null) {
+        window.clearTimeout(reconcileTimeout.current);
+        reconcileTimeout.current = null;
+      }
+    };
   }, [props.value]);
 
   for (const [name, prop] of Object.entries(props)) {
