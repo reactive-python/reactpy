@@ -25,7 +25,7 @@ def _reactpy_version(root_dir: Path) -> str:
         init_file.read_text(encoding="utf-8"),
         re.MULTILINE,
     ):
-        return match.group(1)
+        return match[1]
     raise RuntimeError("Could not determine the current ReactPy version.")
 
 
