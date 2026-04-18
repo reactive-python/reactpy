@@ -71,24 +71,24 @@ installer = "uv"
 reactpy = "reactpy._console.cli:entry_point"
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
-commands = ['python "src/build_scripts/build_local_wheel.py"']
-artifacts = ["src/reactpy/static/wheels/*.whl"]
+commands = ['python "{root}/src/build_scripts/build_local_wheel.py"']
+artifacts = ["{root}/src/reactpy/static/wheels/*.whl"]
 
 #############################
 # >>> Hatch Test Runner <<< #
 #############################
 [tool.hatch.envs.hatch-test.scripts]
 run = [
-  'hatch --env default run "src/build_scripts/install_playwright.py"',
+  'hatch --env default run "{root}/src/build_scripts/install_playwright.py"',
   "hatch --env default run javascript:build --dev",
   "hatch --env default build -t wheel",
   "pytest{env:HATCH_TEST_ARGS:} {args} --max-worker-restart 10",
 ]
 run-cov = [
-  'hatch --env default run "src/build_scripts/install_playwright.py"',
+  'hatch --env default run "{root}/src/build_scripts/install_playwright.py"',
   "hatch --env default run javascript:build --dev",
   "hatch --env default build -t wheel",
-  'hatch --env default run "src/build_scripts/delete_old_coverage.py"',
+  'hatch --env default run "{root}/src/build_scripts/delete_old_coverage.py"',
   "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args} --max-worker-restart 10",
 ]
 cov-combine = "coverage combine"
@@ -136,25 +136,25 @@ detached = true
 
 [tool.hatch.envs.docs.scripts]
 build = [
-  "cd docs && poetry install",
-  "cd docs && poetry run sphinx-build -a -T -W --keep-going -b doctest source build",
+  'cd "{root}/docs" && poetry install',
+  'cd "{root}/docs" && poetry run sphinx-build -a -T -W --keep-going -b doctest "{root}/docs/source" "{root}/docs/build"',
 ]
 docker_build = [
   "hatch run docs:build",
-  "docker build . --file ./docs/Dockerfile --tag reactpy-docs:latest",
+  'docker build --file "{root}/docs/Dockerfile" --tag reactpy-docs:latest "{root}"',
 ]
 docker_serve = [
   "hatch run docs:docker_build",
   "docker run --rm -p 5000:5000 reactpy-docs:latest",
 ]
 check = [
-  "cd docs && poetry install",
-  "cd docs && poetry run sphinx-build -a -T -W --keep-going -b doctest source build",
-  "docker build . --file ./docs/Dockerfile",
+  'cd "{root}/docs" && poetry install',
+  'cd "{root}/docs" && poetry run sphinx-build -a -T -W --keep-going -b doctest "{root}/docs/source" "{root}/docs/build"',
+  'docker build --file "{root}/docs/Dockerfile" "{root}"',
 ]
 serve = [
-  "cd docs && poetry install",
-  "cd docs && poetry run python main.py --watch=../src/ --ignore=**/_auto/* --ignore=**/custom.js --ignore=**/node_modules/* --ignore=**/package-lock.json -a -E -b html source build",
+  'cd "{root}/docs" && poetry install',
+  'cd "{root}/docs" && poetry run python "{root}/docs/main.py" --watch="{root}/src" --ignore=**/_auto/* --ignore=**/custom.js --ignore=**/node_modules/* --ignore=**/package-lock.json -a -E -b html "{root}/docs/source" "{root}/docs/build"',
 ]
 
 ################################
@@ -174,7 +174,7 @@ extra-dependencies = [
 ]
 
 [tool.hatch.envs.python.scripts]
-type_check = ["pyright src/reactpy"]
+type_check = ['pyright "{root}/src/reactpy"']
 
 ############################
 # >>> Hatch JS Scripts <<< #
@@ -186,39 +186,39 @@ detached = true
 [tool.hatch.envs.javascript.scripts]
 check = [
   'hatch run javascript:build',
-  'bun run --cwd "src/js" lint',
-  'bun run --cwd "src/js/packages/event-to-object" checkTypes',
-  'bun run --cwd "src/js/packages/@reactpy/client" checkTypes',
-  'bun run --cwd "src/js/packages/@reactpy/app" checkTypes',
+  'bun run --cwd "{root}/src/js" lint',
+  'bun run --cwd "{root}/src/js/packages/event-to-object" checkTypes',
+  'bun run --cwd "{root}/src/js/packages/@reactpy/client" checkTypes',
+  'bun run --cwd "{root}/src/js/packages/@reactpy/app" checkTypes',
 ]
-fix = ['bun install --cwd "src/js"', 'bun run --cwd "src/js" format']
+fix = ['bun install --cwd "{root}/src/js"', 'bun run --cwd "{root}/src/js" format']
 test = ['hatch run javascript:build_event_to_object --dev', 'bun test']
 build = [
-  'hatch run "src/build_scripts/clean_js_dir.py"',
-  'bun install --cwd "src/js"',
+  'hatch run "{root}/src/build_scripts/clean_js_dir.py"',
+  'bun install --cwd "{root}/src/js"',
   'hatch run javascript:build_event_to_object {args}',
   'hatch run javascript:build_client {args}',
   'hatch run javascript:build_app {args}',
-  'hatch --env default run "src/build_scripts/copy_dir.py" "src/js/node_modules/@pyscript/core/dist" "src/reactpy/static/pyscript"',
-  'hatch --env default run "src/build_scripts/copy_dir.py" "src/js/node_modules/morphdom/dist" "src/reactpy/static/morphdom"',
+  'hatch --env default run "{root}/src/build_scripts/copy_dir.py" "{root}/src/js/node_modules/@pyscript/core/dist" "{root}/src/reactpy/static/pyscript"',
+  'hatch --env default run "{root}/src/build_scripts/copy_dir.py" "{root}/src/js/node_modules/morphdom/dist" "{root}/src/reactpy/static/morphdom"',
 
 ]
 build_event_to_object = [
-  'hatch run "src/build_scripts/build_js_event_to_object.py" {args}',
+  'hatch run "{root}/src/build_scripts/build_js_event_to_object.py" {args}',
 ]
-build_client = ['hatch run "src/build_scripts/build_js_client.py" {args}']
-build_app = ['hatch run "src/build_scripts/build_js_app.py" {args}']
+build_client = ['hatch run "{root}/src/build_scripts/build_js_client.py" {args}']
+build_app = ['hatch run "{root}/src/build_scripts/build_js_app.py" {args}']
 publish_event_to_object = [
   'hatch run javascript:build_event_to_object',
   # FIXME: This is a temporary workaround. We are using `bun pm pack`->`npm publish` to fix missing "Trusted Publishing" support in `bun publish`
   # See the following ticket https://github.com/oven-sh/bun/issues/15601
-  'cd "src/js/packages/event-to-object" && bun pm pack --filename "packages/event-to-object/dist.tgz" && bunx npm@11.8.0 publish dist.tgz --provenance --access public',
+  'cd "{root}/src/js/packages/event-to-object" && bun pm pack --filename "{root}/src/js/packages/event-to-object/dist.tgz" && bunx npm@11.8.0 publish "{root}/src/js/packages/event-to-object/dist.tgz" --provenance --access public',
 ]
 publish_client = [
   'hatch run javascript:build_client',
   # FIXME: This is a temporary workaround. We are using `bun pm pack`->`npm publish` to fix missing "Trusted Publishing" support in `bun publish`
   # See the following ticket https://github.com/oven-sh/bun/issues/15601
-  'cd "src/js/packages/@reactpy/client" && bun pm pack --filename "packages/@reactpy/client/dist.tgz" && bunx npm@11.8.0 publish dist.tgz --provenance --access public',
+  'cd "{root}/src/js/packages/@reactpy/client" && bun pm pack --filename "{root}/src/js/packages/@reactpy/client/dist.tgz" && bunx npm@11.8.0 publish "{root}/src/js/packages/@reactpy/client/dist.tgz" --provenance --access public',
 ]
 
 #########################
