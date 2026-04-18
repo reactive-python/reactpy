@@ -14,6 +14,8 @@ def test_process_settings():
     assert config.REACTPY_ASYNC_RENDERING.current is False
     utils.process_settings({"async_rendering": True})
     assert config.REACTPY_ASYNC_RENDERING.current is True
+    utils.process_settings({"max_queue_size": 10})
+    assert config.REACTPY_MAX_QUEUE_SIZE.current == 10
 
 
 def test_invalid_setting():

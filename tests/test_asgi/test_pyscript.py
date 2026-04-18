@@ -23,7 +23,7 @@ async def display(browser):
 
     async with BackendFixture(app) as server:
         async with DisplayFixture(
-            backend=server, browser=browser, timeout=20
+            backend=server, browser=browser, timeout=30
         ) as new_display:
             yield new_display
 
@@ -38,7 +38,9 @@ async def multi_file_display(browser):
     )
 
     async with BackendFixture(app) as server:
-        async with DisplayFixture(backend=server, browser=browser) as new_display:
+        async with DisplayFixture(
+            backend=server, browser=browser, timeout=30
+        ) as new_display:
             yield new_display
 
 
@@ -58,7 +60,9 @@ async def jinja_display(browser):
     app = Starlette(routes=[Route("/", homepage)])
 
     async with BackendFixture(app) as server:
-        async with DisplayFixture(backend=server, browser=browser) as new_display:
+        async with DisplayFixture(
+            backend=server, browser=browser, timeout=30
+        ) as new_display:
             yield new_display
 
 

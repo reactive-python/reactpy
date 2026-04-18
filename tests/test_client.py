@@ -2,8 +2,7 @@ import asyncio
 from pathlib import Path
 
 import reactpy
-from reactpy.testing import BackendFixture, DisplayFixture, poll
-from tests.tooling.common import DEFAULT_TYPE_DELAY
+from reactpy.testing import DEFAULT_TYPE_DELAY, BackendFixture, DisplayFixture, poll
 from tests.tooling.hooks import use_counter
 
 JS_DIR = Path(__file__).parent / "js"

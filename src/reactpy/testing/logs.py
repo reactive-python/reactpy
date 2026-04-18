@@ -7,8 +7,6 @@ from contextlib import contextmanager
 from traceback import format_exception
 from typing import Any, NoReturn
 
-from reactpy.logging import ROOT_LOGGER
-
 
 class LogAssertionError(AssertionError):
     """An assertion error raised in relation to log messages."""
@@ -127,6 +125,8 @@ def capture_reactpy_logs() -> Iterator[list[logging.LogRecord]]:
 
     Any logs produced in this context are cleared afterwards
     """
+    from reactpy.logging import ROOT_LOGGER
+
     original_level = ROOT_LOGGER.level
     ROOT_LOGGER.setLevel(logging.DEBUG)
     try:

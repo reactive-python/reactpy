@@ -34,6 +34,7 @@ from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
     REACTPY_CHECK_VDOM_SPEC,
     REACTPY_DEBUG,
+    REACTPY_MAX_QUEUE_SIZE,
 )
 from reactpy.core._life_cycle_hook import HOOK_STACK, LifeCycleHook
 from reactpy.core.vdom import validate_vdom_json
@@ -98,6 +99,7 @@ class Layout(BaseLayout):
                 await t
 
         await self._unmount_model_states([root_model_state])
+        await self._rendering_queue.close()
 
         # delete attributes here to avoid access after exiting context manager
         del self._event_handlers
@@ -117,7 +119,8 @@ class Layout(BaseLayout):
         target = event["target"]
         if target not in self._event_queues:
             self._event_queues[target] = cast(
-                "Queue[LayoutEventMessage | dict[str, Any]]", Queue()
+                "Queue[LayoutEventMessage | dict[str, Any]]",
+                Queue(REACTPY_MAX_QUEUE_SIZE.current),
             )
             self._event_processing_tasks[target] = create_task(
                 self._process_event_queue(target, self._event_queues[target])
@@ -399,6 +402,11 @@ class Layout(BaseLayout):
                 "target": target,
                 "preventDefault": handler.prevent_default,
                 "stopPropagation": handler.stop_propagation,
+                **(
+                    {"debounce": handler.debounce}
+                    if handler.debounce is not None
+                    else {}
+                ),
             }
 
         return None
@@ -424,6 +432,11 @@ class Layout(BaseLayout):
                 "target": target,
                 "preventDefault": handler.prevent_default,
                 "stopPropagation": handler.stop_propagation,
+                **(
+                    {"debounce": handler.debounce}
+                    if handler.debounce is not None
+                    else {}
+                ),
             }
 
         return None
@@ -759,18 +772,40 @@ _Type = TypeVar("_Type")
 class _ThreadSafeQueue(Generic[_Type]):
     def __init__(self) -> None:
         self._loop = get_running_loop()
-        self._queue: Queue[_Type] = Queue()
+        self._queue: Queue[_Type] = Queue(REACTPY_MAX_QUEUE_SIZE.current)
         self._pending: set[_Type] = set()
+        self._put_tasks: dict[_Type, Task[None]] = {}
 
     def put(self, value: _Type) -> None:
         if value not in self._pending:
             self._pending.add(value)
-            self._loop.call_soon_threadsafe(self._queue.put_nowait, value)
+            self._loop.call_soon_threadsafe(self._schedule_put, value)
+
+    def _schedule_put(self, value: _Type) -> None:
+        self._put_tasks[value] = create_task(self._put_with_backpressure(value))
+
+    async def _put_with_backpressure(self, value: _Type) -> None:
+        try:
+            await self._queue.put(value)
+        except BaseException:
+            self._pending.discard(value)
+            raise
+        finally:
+            self._put_tasks.pop(value, None)
 
     async def get(self) -> _Type:
         value = await self._queue.get()
         self._pending.remove(value)
         return value
+
+    async def close(self) -> None:
+        for task in list(self._put_tasks.values()):
+            task.cancel()
+        for task in list(self._put_tasks.values()):
+            with suppress(CancelledError):
+                await task
+        self._put_tasks.clear()
+        self._pending.clear()
 
 
 def _get_children_info(

@@ -8,9 +8,10 @@ from requests import request
 
 import reactpy
 from reactpy import html
+from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
+from reactpy.executors.asgi.middleware import _location_from_websocket_query_string
 from reactpy.executors.asgi.standalone import ReactPy
 from reactpy.testing import BackendFixture, DisplayFixture, poll
-from reactpy.testing.common import REACTPY_TESTS_DEFAULT_TIMEOUT
 from reactpy.types import Connection, Location
 
 
@@ -105,6 +106,60 @@ async def test_use_location(display: DisplayFixture):
     ]:
         await display.goto(loc.path + loc.query_string)
         await poll_location.until_equals(loc)
+
+
+async def test_use_location_after_reconnect_from_client_navigation(
+    display: DisplayFixture,
+):
+    location = reactpy.Ref()
+
+    @poll
+    async def poll_location():
+        return getattr(location, "current", None)
+
+    @reactpy.component
+    def ShowRoute():
+        location.current = reactpy.use_location()
+        return html.pre(str(location.current))
+
+    await display.page.add_init_script(
+        """
+                (() => {
+                    window.__reactpySockets = [];
+                    const NativeWebSocket = window.WebSocket;
+                    window.WebSocket = class extends NativeWebSocket {
+                        constructor(url, protocols) {
+                            super(url, protocols);
+                            window.__reactpySockets.push(this);
+                        }
+                    };
+                })();
+                """
+    )
+
+    await display.show(ShowRoute)
+    await poll_location.until_equals(Location("/", ""))
+
+    await display.page.evaluate(
+        """
+                () => {
+                    history.pushState({}, "", "/client-route?view=next");
+                    const socket = window.__reactpySockets.at(-1);
+                    if (!socket) {
+                        throw new Error("Missing ReactPy websocket");
+                    }
+                    socket.close();
+                }
+                """
+    )
+
+    await poll_location.until_equals(Location("/client-route", "?view=next"))
+
+
+def test_location_from_websocket_query_string_uses_path_and_qs():
+    assert _location_from_websocket_query_string(
+        "path=%2Fcurrent&qs=%3Fview%3Dnext"
+    ) == Location("/current", "?view=next")
 
 
 async def test_carrier(display: DisplayFixture):

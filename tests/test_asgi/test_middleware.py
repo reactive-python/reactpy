@@ -120,6 +120,39 @@ async def test_static_file_not_found():
         assert response.status_code == 404
 
 
+async def test_static_wheel_file_served_after_server_start():
+    async def app(scope, receive, send): ...
+
+    app = ReactPyMiddleware(app, [])
+    wheel_file = app.static_dir / "wheels" / "reactpy-autorefresh-test.whl"
+    if wheel_file.exists():
+        wheel_file.unlink()
+
+    try:
+        async with BackendFixture(app) as server:
+            url = (
+                f"http://{server.host}:{server.port}"
+                f"{REACTPY_PATH_PREFIX.current}static/wheels/{wheel_file.name}"
+            )
+
+            response = await asyncio.to_thread(
+                request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+            )
+            assert response.status_code == 404
+
+            wheel_file.parent.mkdir(parents=True, exist_ok=True)
+            wheel_file.write_bytes(b"local wheel")
+
+            response = await asyncio.to_thread(
+                request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+            )
+            assert response.status_code == 200
+            assert response.content == b"local wheel"
+    finally:
+        if wheel_file.exists():
+            wheel_file.unlink()
+
+
 async def test_templatetag_bad_kwargs(browser):
     """Override for the display fixture that uses ReactPyMiddleware."""
     templates = Jinja2Templates(
