@@ -1,0 +1,32 @@
+{
+  "name": "ReactPy",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  // "remoteUser": "vscode",
+  // "containerEnv": {
+  //   "BUN_INSTALL": "/home/vscode/.bun"
+  // },
+  "remoteEnv": {
+    "BUN_INSTALL": "/home/vscode/.bun",
+    "PATH": "/home/vscode/.local/share/reactpy-devcontainer/python/bin:/home/vscode/.bun/bin:${containerEnv:PATH}",
+    "PYTHONPATH": "/workspaces/reactpy/src:${containerEnv:PYTHONPATH}"
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/home/vscode/.local/share/reactpy-devcontainer/python/bin/python",
+        "python.terminal.activateEnvironment": false
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "ms-playwright.playwright",
+        "oven.bun-vscode"
+      ]
+    }
+  }
+}
