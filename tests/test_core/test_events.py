@@ -646,12 +646,10 @@ async def test_event_targeting_with_index_shifting(display: DisplayFixture):
     assert clicked_items == ["B"]
 
 
-async def test_controlled_input_typing(display: DisplayFixture):
+async def test_controlled_input_rapid_typing(display: DisplayFixture):
     """
     Test that a controlled input updates correctly even with rapid typing.
-    This validates that user inputs are processed in the correct order and that the
-    event queueing/processing order is consistent with user expectations, even if the
-    server is still processing previous events.
+    This validates that user inputs are properly debounced by the client.
     """
 
     @reactpy.component
