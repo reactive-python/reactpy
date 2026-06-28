@@ -3,6 +3,7 @@ import contextlib
 import gc
 import random
 import re
+import warnings
 from unittest.mock import patch
 from weakref import finalize
 from weakref import ref as weakref
@@ -1129,6 +1130,85 @@ async def test_changing_event_handlers_in_the_next_render():
         await layout.deliver(event_message(event_handler.target))
         assert did_trigger.current
         did_trigger.current = False
+
+
+async def test_no_warn_when_debounce_on_non_input_element():
+    """``debounce`` is forwarded unconditionally to the client. The client
+    only applies it where it has an effect; the layout does not warn."""
+    static = StaticEventHandler()
+    debounced_handler = EventHandler(
+        lambda data: None, target=static.target, debounce=150
+    )
+
+    @component
+    def Root():
+        return html.button({"onClick": debounced_handler})
+
+    async with Layout(Root()) as layout:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            await layout.render()
+
+
+async def test_no_warn_when_debounce_on_input_element():
+    static = StaticEventHandler()
+    debounced_handler = EventHandler(
+        lambda data: None, target=static.target, debounce=150
+    )
+
+    @component
+    def Root():
+        return html.input({"onChange": debounced_handler})
+
+    async with Layout(Root()) as layout:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            await layout.render()
+
+
+async def test_throttle_is_stored_on_handler():
+    """``throttle`` should be preserved on the EventHandler after render."""
+    static = StaticEventHandler()
+    throttled_handler = EventHandler(
+        lambda data: None, target=static.target, throttle=120
+    )
+
+    @component
+    def Root():
+        return html.button({"onClick": throttled_handler})
+
+    async with Layout(Root()) as layout:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            await layout.render()
+        # The layout stores handlers keyed by target. Reading them back
+        # confirms both fields survive the layout pass.
+        stored = layout._event_handlers[static.target]
+        assert stored.throttle == 120
+        assert stored.debounce is None
+
+
+async def test_debounce_and_throttle_both_stored():
+    """Both ``debounce`` and ``throttle`` are preserved on the handler."""
+    static = StaticEventHandler()
+    handler = EventHandler(
+        lambda data: None,
+        target=static.target,
+        debounce=250,
+        throttle=120,
+    )
+
+    @component
+    def Root():
+        return html.input({"onChange": handler})
+
+    async with Layout(Root()) as layout:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            await layout.render()
+        stored = layout._event_handlers[static.target]
+        assert stored.debounce == 250
+        assert stored.throttle == 120
 
 
 async def test_change_element_to_string_causes_unmount():
