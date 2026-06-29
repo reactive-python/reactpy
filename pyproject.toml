@@ -191,7 +191,10 @@ check = [
   'bun run --cwd "{root}/src/js/packages/@reactpy/client" checkTypes',
   'bun run --cwd "{root}/src/js/packages/@reactpy/app" checkTypes',
 ]
-fix = ['bun install --cwd "{root}/src/js"', 'bun run --cwd "{root}/src/js" format']
+fix = [
+  'bun install --cwd "{root}/src/js"',
+  'bun run --cwd "{root}/src/js" format',
+]
 test = ['hatch run javascript:build_event_to_object --dev', 'bun test']
 build = [
   'hatch run "{root}/src/build_scripts/clean_js_dir.py"',
@@ -206,7 +209,9 @@ build = [
 build_event_to_object = [
   'hatch run "{root}/src/build_scripts/build_js_event_to_object.py" {args}',
 ]
-build_client = ['hatch run "{root}/src/build_scripts/build_js_client.py" {args}']
+build_client = [
+  'hatch run "{root}/src/build_scripts/build_js_client.py" {args}',
+]
 build_app = ['hatch run "{root}/src/build_scripts/build_js_app.py" {args}']
 publish_event_to_object = [
   'hatch run javascript:build_event_to_object',

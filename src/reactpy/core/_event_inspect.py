@@ -1,3 +1,8 @@
+"""
+In order to retain a JavaScript-like event handler API, ReactPy allows users to configure event handlers with `event.debounce = <milliseconds>`.
+Implementing this syntax necessitates inspecting the bytecode of event handler functions.
+"""
+
 from __future__ import annotations
 
 import dis
@@ -76,11 +81,13 @@ def inspect_event_handler(func: Callable) -> tuple[bool, bool, int | None]:
             continue
 
         # CPython 3.11+ may fuse ``LOAD_FAST value; LOAD_FAST target`` into
-        # the superinstruction ``LOAD_FAST_BORROW_LOAD_FAST_BORROW`` whose
-        # argval is ``(value_name, target_name)``. Treat it like a normal
-        # event load when the target matches.
+        # a superinstruction whose argval is ``(value_name, target_name)``.
+        # Two variants may appear depending on the interpreter:
+        #   * ``LOAD_FAST_LOAD_FAST`` (CPython 3.13+)
+        #   * ``LOAD_FAST_BORROW_LOAD_FAST_BORROW`` (CPython 3.14+)
+        # Treat either as a normal event load when the target matches.
         if (
-            instr.opname == "LOAD_FAST_BORROW_LOAD_FAST_BORROW"
+            instr.opname in ("LOAD_FAST_LOAD_FAST", "LOAD_FAST_BORROW_LOAD_FAST_BORROW")
             and isinstance(instr.argval, (list, tuple))
             and len(instr.argval) == _LOAD_FAST_BORROW_PAIR_SIZE
             and instr.argval[1] == event_arg_name
@@ -209,8 +216,11 @@ def _resolve_debounce_value(
     prev = instructions[store_index - 1]
 
     # CPython 3.11+ superinstruction: argval is ``(value_name, target_name)``.
-    # The value comes from a function argument default.
-    if prev.opname == "LOAD_FAST_BORROW_LOAD_FAST_BORROW":
+    # The value comes from a function argument default. Two superinstructions
+    # may appear here depending on the interpreter version:
+    #   * ``LOAD_FAST_LOAD_FAST`` (CPython 3.13+)
+    #   * ``LOAD_FAST_BORROW_LOAD_FAST_BORROW`` (CPython 3.14+)
+    if prev.opname in ("LOAD_FAST_LOAD_FAST", "LOAD_FAST_BORROW_LOAD_FAST_BORROW"):
         names = prev.argval
         if isinstance(names, Iterable) and not isinstance(names, str):
             names = list(names)
@@ -226,7 +236,16 @@ def _resolve_debounce_value(
     val_instr = instructions[store_index - 2]
     target_instr = prev
 
-    if target_instr.opname not in ("LOAD_FAST", "LOAD_FAST_BORROW"):
+    if target_instr.opname not in (
+        "LOAD_FAST",
+        "LOAD_FAST_BORROW",
+        # CPython 3.13+ may fuse two ``LOAD_FAST`` instructions into
+        # ``LOAD_FAST_LOAD_FAST`` whose argval is ``(value_name, target_name)``.
+        # The detector above already covers this case for debounce values,
+        # but the standalone form can also appear if the value isn't a
+        # default and the event is loaded separately.
+        "LOAD_FAST_LOAD_FAST",
+    ):
         return None
     if target_instr.argval != event_arg_name:
         return None

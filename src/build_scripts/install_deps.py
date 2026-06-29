@@ -37,7 +37,7 @@ def install_deps():
     DEPENDENCIES.discard(
         "ruff"
     )  # ruff only exists in dev dependencies for CI purposes.
-    subprocess.run(["uv", "pip", "install", "-U", *DEPENDENCIES], check=False)  # noqa: S607
+    subprocess.run(["uv", "pip", "install", "-U", *DEPENDENCIES], check=False)  # noqa: S607,S603
 
 
 if __name__ == "__main__":
