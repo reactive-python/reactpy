@@ -398,16 +398,7 @@ class Layout(BaseLayout):
 
             new_state.targets_by_event[event] = target
             self._event_handlers[target] = handler
-            model_event_handlers[event] = {
-                "target": target,
-                "preventDefault": handler.prevent_default,
-                "stopPropagation": handler.stop_propagation,
-                **(
-                    {"debounce": handler.debounce}
-                    if handler.debounce is not None
-                    else {}
-                ),
-            }
+            model_event_handlers[event] = self._serialize_event_handler(handler, target)
 
         return None
 
@@ -428,18 +419,29 @@ class Layout(BaseLayout):
 
             new_state.targets_by_event[event] = target
             self._event_handlers[target] = handler
-            model_event_handlers[event] = {
-                "target": target,
-                "preventDefault": handler.prevent_default,
-                "stopPropagation": handler.stop_propagation,
-                **(
-                    {"debounce": handler.debounce}
-                    if handler.debounce is not None
-                    else {}
-                ),
-            }
+            model_event_handlers[event] = self._serialize_event_handler(handler, target)
 
         return None
+
+    @staticmethod
+    def _serialize_event_handler(handler: Any, target: str) -> dict[str, Any]:
+        """Build the on-the-wire event handler entry.
+
+        ``debounce`` is forwarded unconditionally; the client applies it only
+        where it has an effect (user-input elements). ``throttle`` is
+        forwarded when set and applies to every element. Both are omitted
+        from the payload when ``None`` so the wire format stays minimal.
+        """
+        entry: dict[str, Any] = {
+            "target": target,
+            "preventDefault": handler.prevent_default,
+            "stopPropagation": handler.stop_propagation,
+        }
+        if handler.debounce is not None:
+            entry["debounce"] = handler.debounce
+        if handler.throttle is not None:
+            entry["throttle"] = handler.throttle
+        return entry
 
     async def _render_model_children(
         self,

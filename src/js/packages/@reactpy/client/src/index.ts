@@ -1,5 +1,6 @@
 export * from "./client";
 export * from "./components";
+export * from "./handler";
 export * from "./mount";
 export * from "./types";
 export * from "./vdom";

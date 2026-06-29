@@ -61,6 +61,7 @@ export type ReactPyVdomEventHandler = {
   preventDefault?: boolean;
   stopPropagation?: boolean;
   debounce?: number;
+  throttle?: number;
 };
 
 export type ReactPyVdomImportSource = {

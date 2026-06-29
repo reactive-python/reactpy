@@ -37,6 +37,9 @@ Don't forget to remove deprecated code on each major release!
 - Added `reactpy.reactjs.component_from_npm` to import ReactJS components from NPM.
 - Added `reactpy.h` as a shorthand alias for `reactpy.html`.
 - Added `reactpy.config.REACTPY_MAX_QUEUE_SIZE` to configure the maximum size of all ReactPy asyncio queues (e.g. receive buffer, send buffer, event buffer) before ReactPy begins waiting until a slot frees up. This can be used to constraint memory usage.
+- Events now support `debounce` and `throttle`, configurable per event via `event.debounce = <milliseconds>` and `EventHandler(fn, throttle=<milliseconds>)` respectively.
+    - `debounce` waits until activity stops, then fires once. Default is 200 ms on `input`/`select`/`textarea`, 0 ms elsewhere.
+    - `throttle` caps the rate how often an event is allowed to execute. No default; opt in per event.
 
 ### Changed
 
@@ -60,9 +63,8 @@ Don't forget to remove deprecated code on each major release!
 - `reactpy.core.vdom._CustomVdomDictConstructor` has been moved to `reactpy.types.CustomVdomConstructor`.
 - `reactpy.core.vdom._EllipsisRepr` has been moved to `reactpy.types.EllipsisRepr`.
 - `reactpy.types.VdomDictConstructor` has been renamed to `reactpy.types.VdomConstructor`.
-- `REACTPY_ASYNC_RENDERING` can now de-duplicate and cascade renders where necessary.
+- `REACTPY_ASYNC_RENDERING` can now de-duplicate renders where necessary.
 - `REACTPY_ASYNC_RENDERING` is now defaulted to `True` for up to 40x performance improvements in environments with high concurrency.
-- Events now support debounce, which can now be configured per event with `event.debounce = <milliseconds>`. Note that `input`, `select`, and `textarea` elements default to 200ms debounce.
 
 ### Deprecated
 

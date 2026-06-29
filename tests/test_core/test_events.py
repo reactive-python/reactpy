@@ -7,6 +7,7 @@ import reactpy
 from reactpy import component, html, use_state
 from reactpy.core.events import (
     EventHandler,
+    event,
     merge_event_handler_funcs,
     merge_event_handlers,
     to_event_handler_function,
@@ -20,7 +21,8 @@ def test_event_handler_repr():
     handler = EventHandler(lambda: None)
     assert repr(handler) == (
         f"EventHandler(function={handler.function}, prevent_default=False, "
-        f"stop_propagation=False, debounce=None, target={handler.target!r})"
+        f"stop_propagation=False, debounce=None, target={handler.target!r}, "
+        f"throttle=None)"
     )
 
 
@@ -29,31 +31,43 @@ def test_event_handler_props():
     assert handler_0.stop_propagation is False
     assert handler_0.prevent_default is False
     assert handler_0.debounce is None
+    assert handler_0.throttle is None
     assert handler_0.target is None
 
     handler_1 = EventHandler(lambda data: None, prevent_default=True)
     assert handler_1.stop_propagation is False
     assert handler_1.prevent_default is True
     assert handler_1.debounce is None
+    assert handler_1.throttle is None
     assert handler_1.target is None
 
     handler_2 = EventHandler(lambda data: None, stop_propagation=True)
     assert handler_2.stop_propagation is True
     assert handler_2.prevent_default is False
     assert handler_2.debounce is None
+    assert handler_2.throttle is None
     assert handler_2.target is None
 
     handler_3 = EventHandler(lambda data: None, target="123")
     assert handler_3.stop_propagation is False
     assert handler_3.prevent_default is False
     assert handler_3.debounce is None
+    assert handler_3.throttle is None
     assert handler_3.target == "123"
 
     handler_4 = EventHandler(lambda data: None, debounce=250)
     assert handler_4.stop_propagation is False
     assert handler_4.prevent_default is False
     assert handler_4.debounce == 250
+    assert handler_4.throttle is None
     assert handler_4.target is None
+
+    handler_5 = EventHandler(lambda data: None, throttle=150)
+    assert handler_5.stop_propagation is False
+    assert handler_5.prevent_default is False
+    assert handler_5.debounce is None
+    assert handler_5.throttle == 150
+    assert handler_5.target is None
 
 
 def test_event_handler_equivalence():
@@ -73,6 +87,8 @@ def test_event_handler_equivalence():
     )
 
     assert EventHandler(func, debounce=200) != EventHandler(func, debounce=100)
+
+    assert EventHandler(func, throttle=200) != EventHandler(func, throttle=100)
 
     assert EventHandler(func, target="123") != EventHandler(func, target="456")
 
@@ -110,6 +126,7 @@ async def test_merge_event_handler_empty_list():
         ({"stop_propagation": True}, {"stop_propagation": False}),
         ({"prevent_default": True}, {"prevent_default": False}),
         ({"debounce": 200}, {"debounce": 100}),
+        ({"throttle": 200}, {"throttle": 100}),
         ({"target": "this"}, {"target": "that"}),
     ],
 )
@@ -360,13 +377,34 @@ def test_detect_debounce():
 
 
 def test_computed_debounce_value_is_not_detected():
-    computed_debounce = 200
+    # A pure runtime computation (no closure capture, no constant) cannot be
+    # resolved statically; the detection returns ``None`` so users are not
+    # silently misled. Capture the closure form separately to assert that
+    # resolution from enclosing scope *does* work.
+    def make_handler():
+        computed_debounce = 200
+
+        def handler(event: Event):
+            event.debounce = computed_debounce
+
+        return handler
+
+    eh = EventHandler(make_handler())
+    # Closure capture is now detected (see
+    # ``test_detect_debounce_from_closure``).
+    assert eh.debounce == 200
+
+    # A value computed at call time without a resolvable binding is not
+    # detected. This protects users from being told the wrong number when
+    # the runtime value may differ.
+    def get_debounce():
+        return 200
 
     def handler(event: Event):
-        event.debounce = computed_debounce
+        event.debounce = get_debounce()
 
-    eh = EventHandler(handler)
-    assert eh.debounce is None
+    eh2 = EventHandler(handler)
+    assert eh2.debounce is None
 
 
 def test_detect_both():
@@ -397,6 +435,83 @@ def test_detect_debounce_when_handler_is_partial():
     assert eh.debounce == 125
 
 
+def test_detect_debounce_from_positional_default():
+    def handler(event: Event, ms=375):
+        event.debounce = ms
+
+    eh = EventHandler(handler)
+    assert eh.debounce == 375
+
+
+def test_detect_debounce_from_keyword_only_default():
+    def handler(event: Event, *, ms=400):
+        event.debounce = ms
+
+    eh = EventHandler(handler)
+    assert eh.debounce == 400
+
+
+def test_detect_debounce_from_closure():
+    def make(ms):
+        def handler(event: Event):
+            event.debounce = ms
+
+        return handler
+
+    eh = EventHandler(make(450))
+    assert eh.debounce == 450
+
+
+def test_detect_debounce_from_closure_among_multiple():
+    def make(unused, used):
+        def handler(event: Event):
+            event.debounce = used
+
+        return handler
+
+    eh = EventHandler(make(100, 250))
+    assert eh.debounce == 250
+
+
+def test_no_detect_debounce_when_local_var_used():
+    def handler(event: Event):
+        ms = 500
+        event.debounce = ms
+
+    eh = EventHandler(handler)
+    assert eh.debounce is None
+
+
+def test_no_detect_debounce_when_fallback_literal_used():
+    # Branch uses a local var (unresolvable) plus a literal fallback; we
+    # refuse to pick either because runtime behaviour is ambiguous.
+    def handler(event: Event):
+        val = 50
+        if val:
+            event.debounce = val
+        else:
+            event.debounce = 999
+
+    eh = EventHandler(handler)
+    assert eh.debounce is None
+
+
+def test_detect_debounce_from_nested_default():
+    def handler(event: Event, a=100, b=200):
+        event.debounce = b
+
+    eh = EventHandler(handler)
+    assert eh.debounce == 200
+
+
+def test_detect_debounce_zero_literal():
+    def handler(event: Event):
+        event.debounce = 0
+
+    eh = EventHandler(handler)
+    assert eh.debounce == 0
+
+
 def test_no_detect():
     def handler(event: Event):
         pass
@@ -405,6 +520,29 @@ def test_no_detect():
     assert eh.prevent_default is False
     assert eh.stop_propagation is False
     assert eh.debounce is None
+
+
+def test_event_decorator_accepts_throttle():
+    @event(throttle=200)
+    def handler(event: Event):
+        pass
+
+    assert handler.throttle == 200
+    assert handler.debounce is None
+
+
+def test_event_decorator_accepts_debounce_and_throttle():
+    @event(debounce=300, throttle=100)
+    def handler(event: Event):
+        pass
+
+    assert handler.debounce == 300
+    assert handler.throttle == 100
+
+
+def test_event_handler_throttle_default_is_none():
+    eh = EventHandler(lambda data: None)
+    assert eh.throttle is None
 
 
 def test_event_wrapper():
@@ -646,12 +784,10 @@ async def test_event_targeting_with_index_shifting(display: DisplayFixture):
     assert clicked_items == ["B"]
 
 
-async def test_controlled_input_typing(display: DisplayFixture):
+async def test_controlled_input_rapid_typing(display: DisplayFixture):
     """
     Test that a controlled input updates correctly even with rapid typing.
-    This validates that user inputs are processed in the correct order and that the
-    event queueing/processing order is consistent with user expectations, even if the
-    server is still processing previous events.
+    This validates that user inputs are properly debounced by the client.
     """
 
     @reactpy.component
