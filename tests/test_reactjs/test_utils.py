@@ -190,6 +190,38 @@ def test_copy_file_fallback(tmp_path):
                         mock_rename.assert_called_once()
 
 
+def test_copy_file_symlink_falls_back_to_hard_link(tmp_path):
+    source = tmp_path / "source.txt"
+    source.write_text("content")
+    target = tmp_path / "target.txt"
+
+    path_cls = type(target)
+
+    with patch.object(path_cls, "symlink_to", side_effect=OSError):
+        with patch("os.link") as mock_link:
+            copy_file(target, source, symlink=True)
+
+    mock_link.assert_called_once_with(source, target)
+
+
+def test_copy_file_symlink_fallback_reraises_original_error(tmp_path):
+    source = tmp_path / "source.txt"
+    source.write_text("content")
+    target = tmp_path / "target.txt"
+
+    path_cls = type(target)
+    symlink_error = OSError("symlink failed")
+    hard_link_error = OSError("hard link failed")
+
+    with patch.object(path_cls, "symlink_to", side_effect=symlink_error):
+        with patch("os.link", side_effect=hard_link_error):
+            with pytest.raises(OSError) as exc_info:
+                copy_file(target, source, symlink=True)
+
+    assert exc_info.value is symlink_error
+    assert exc_info.value.__cause__ is hard_link_error
+
+
 def test_simple_file_lock_timeout(tmp_path):
     lock_file = tmp_path / "lock"
 

@@ -309,8 +309,3 @@ class Singleton:
             orig = super()
             cls._instance = orig.__new__(cls, *args, **kw)
         return cls._instance
-
-
-def str_to_bool(s: str) -> bool:
-    """Convert a string to a boolean value."""
-    return s.lower() in {"y", "yes", "t", "true", "on", "1"}

@@ -87,7 +87,10 @@ async def test_component_from_npm_without_explicit_reactjs_import(browser, caplo
 
 
 async def test_component_from_npm_material_ui(display: DisplayFixture):
-    Button = component_from_npm("@mui/material", "Button", version="7")
+    # MUI v7 ships sub-paths (e.g. `@mui/styled-engine/esm/GlobalStyles/index`) that
+    # esm.sh's ``bundle`` mode fails to rewrite into a working URL. Disabling the
+    # bundle forces per-module resolution, which esm.sh handles correctly for MUI v7.
+    Button = component_from_npm("@mui/material", "Button", version="7", bundle=False)
 
     @reactpy.component
     def App():
@@ -271,7 +274,10 @@ async def test_nested_npm_components(display: DisplayFixture):
 
 async def test_interleaved_npm_and_server_components(display: DisplayFixture):
     Card = component_from_npm("antd", "Card", version="6")
-    Button = component_from_npm("@mui/material", "Button", version="7")
+    # MUI v7 ships sub-paths that esm.sh's ``bundle`` mode fails to rewrite into a
+    # working URL. Disabling the bundle forces per-module resolution, which esm.sh
+    # handles correctly for MUI v7.
+    Button = component_from_npm("@mui/material", "Button", version="7", bundle=False)
 
     @reactpy.component
     def App():
@@ -302,10 +308,14 @@ async def test_interleaved_npm_and_server_components(display: DisplayFixture):
 
 
 async def test_complex_nested_material_ui(display: DisplayFixture):
+    # MUI v7 ships sub-paths that esm.sh's ``bundle`` mode fails to rewrite into a
+    # working URL. Disabling the bundle forces per-module resolution, which esm.sh
+    # handles correctly for MUI v7.
     mui_components = component_from_npm(
         "@mui/material",
         ["Button", "Card", "CardContent", "Typography", "Box", "Stack"],
         version="7",
+        bundle=False,
     )
     Button, Card, CardContent, Typography, Box, Stack = mui_components
 

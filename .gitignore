@@ -2,6 +2,7 @@
 src/reactpy/static/*.js*
 src/reactpy/static/morphdom/
 src/reactpy/static/pyscript/
+src/reactpy/static/wheels/
 src/js/**/*.tgz
 src/js/**/LICENSE
 

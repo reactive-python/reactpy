@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import sys
 from asyncio import Event, Task, create_task, gather
 from collections.abc import Callable
 from contextvars import ContextVar, Token
@@ -28,9 +27,7 @@ class _HookStack(Singleton):  # nocov
     Life cycle hooks can be stored in a thread local or context variable depending
     on the platform."""
 
-    _state: ThreadLocal[list[LifeCycleHook]] | ContextVar[list[LifeCycleHook]] = (
-        ThreadLocal(list) if sys.platform == "emscripten" else ContextVar("hook_state")
-    )
+    _state: ContextVar[list[LifeCycleHook]] = ContextVar("hook_state")
 
     def get(self) -> list[LifeCycleHook]:
         try:
@@ -268,5 +265,14 @@ class LifeCycleHook:
 
     def unset_current(self) -> None:
         """Unset this hook as the active hook in this thread"""
-        if HOOK_STACK.get().pop() is not self:
-            raise RuntimeError("Hook stack is in an invalid state")  # nocov
+        hook_stack = HOOK_STACK.get()
+        if not hook_stack:
+            raise RuntimeError(  # nocov
+                "Attempting to unset current life cycle hook but it no longer exists!\n"
+                "A separate process or thread may have deleted this component's hook stack!"
+            )
+        if hook_stack and hook_stack.pop() is not self:
+            raise RuntimeError(  # nocov
+                "Hook stack is in an invalid state\n"
+                "A separate process or thread may have modified this component's hook stack!"
+            )

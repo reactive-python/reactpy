@@ -1,5 +1,11 @@
 from reactpy.testing.backend import BackendFixture
-from reactpy.testing.common import GITHUB_ACTIONS, HookCatcher, StaticEventHandler, poll
+from reactpy.testing.common import (
+    DEFAULT_TYPE_DELAY,
+    GITHUB_ACTIONS,
+    HookCatcher,
+    StaticEventHandler,
+    poll,
+)
 from reactpy.testing.display import DisplayFixture
 from reactpy.testing.logs import (
     LogAssertionError,
@@ -9,6 +15,7 @@ from reactpy.testing.logs import (
 )
 
 __all__ = [
+    "DEFAULT_TYPE_DELAY",
     "GITHUB_ACTIONS",
     "BackendFixture",
     "DisplayFixture",

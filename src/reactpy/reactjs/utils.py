@@ -162,7 +162,13 @@ def copy_file(target: Path, source: Path, symlink: bool) -> None:
     if symlink:
         if target.exists():
             target.unlink()
-        target.symlink_to(source)
+        try:
+            target.symlink_to(source)
+        except OSError as error:
+            try:
+                os.link(source, target)
+            except OSError as e:
+                raise error from e
     else:
         temp_target = target.with_suffix(f"{target.suffix}.tmp")
         shutil.copy(source, temp_target)

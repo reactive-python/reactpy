@@ -2,8 +2,7 @@ from base64 import b64encode
 from pathlib import Path
 
 import reactpy
-from reactpy.testing import DisplayFixture, poll
-from tests.tooling.common import DEFAULT_TYPE_DELAY
+from reactpy.testing import DEFAULT_TYPE_DELAY, DisplayFixture, poll
 
 HERE = Path(__file__).parent
 

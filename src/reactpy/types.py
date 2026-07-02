@@ -915,6 +915,8 @@ class JsonEventTarget(TypedDict):
     target: str
     preventDefault: bool
     stopPropagation: bool
+    debounce: NotRequired[int]
+    throttle: NotRequired[int]
 
 
 class JsonImportSource(TypedDict):
@@ -939,10 +941,12 @@ class BaseEventHandler:
 
     __slots__ = (
         "__weakref__",
+        "debounce",
         "function",
         "prevent_default",
         "stop_propagation",
         "target",
+        "throttle",
     )
 
     function: EventHandlerFunc
@@ -953,6 +957,36 @@ class BaseEventHandler:
 
     stop_propagation: bool
     """Stops the default action associate with the event from taking place."""
+
+    debounce: int | None
+    """Server-→client debounce window in milliseconds.
+
+    The client waits this many milliseconds after the user's last activity
+    before applying a conflicting server-driven update. Once the window
+    expires the server value **does** take effect (eventual consistency).
+
+    On user-input elements (``<input>``, ``<select>``, ``<textarea>``)
+    the debounce window applies to ``value`` updates: it keeps rapid
+    typing coherent against server-driven value echoes while still
+    letting the server value through once activity stops. On other
+    elements the value is forwarded to the client for completeness but
+    has no effect on rendering.
+
+    Defaults: 200 ms on user-input elements, 0 ms (no debounce)
+    elsewhere. Override per-event via ``debounce=...``."""
+
+    throttle: int | None
+    """Client-→server rate limit in milliseconds for outgoing events.
+
+    When set, the client forwards at most one event of this kind per
+    ``throttle`` milliseconds. Applied to the handler's outgoing
+    ``client.sendMessage`` call regardless of element type, so it is the
+    right tool for high-frequency event streams such as ``onMouseMove``,
+    ``onScroll``, ``onResize``, or search-as-you-type on ``<input>``.
+
+    Distinct from :attr:`debounce`, which limits server-→client value
+    updates on input elements. ``throttle`` defaults to ``None`` (no
+    throttling)."""
 
     target: str | None
     """Typically left as ``None`` except when a static target is useful.
@@ -1096,6 +1130,7 @@ class ReactPyConfig(TypedDict, total=False):
     reconnect_backoff_multiplier: float
     async_rendering: bool
     debug: bool
+    max_queue_size: int
     tests_default_timeout: int
 
 
@@ -1123,6 +1158,8 @@ class Event(dict):
     """
     A light `dict` wrapper for event data passed to event handler functions.
     """
+
+    debounce: int | None
 
     def __getattr__(self, name: str) -> Any:
         value = self.get(name)

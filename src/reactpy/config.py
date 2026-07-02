@@ -130,3 +130,11 @@ REACTPY_PATH_PREFIX = Option(
     validator=str,
 )
 """The prefix for all ReactPy routes"""
+
+REACTPY_MAX_QUEUE_SIZE = Option(
+    "REACTPY_MAX_QUEUE_SIZE",
+    default=1000,
+    mutable=True,
+    validator=int,
+)
+"""The maximum size for internal queues used by ReactPy"""

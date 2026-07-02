@@ -160,6 +160,15 @@ def test_nested_html_access_raises_error():
         },
         {
             "tagName": "div",
+            "eventHandlers": {
+                "onEvent": {
+                    "target": "something",
+                    "debounce": 200,
+                }
+            },
+        },
+        {
+            "tagName": "div",
             "importSource": {"source": "something"},
         },
         {
@@ -269,6 +278,18 @@ def test_valid_vdom(value):
                 },
             },
             r"data\.eventHandlers\.onEvent\.stopPropagation must be boolean",
+        ),
+        (
+            {
+                "tagName": "tag",
+                "eventHandlers": {
+                    "onEvent": {
+                        "target": "something",
+                        "debounce": None,
+                    }
+                },
+            },
+            r"data\.eventHandlers\.onEvent\.debounce must be integer",
         ),
         (
             {"tagName": "tag", "importSource": None},

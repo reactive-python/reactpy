@@ -1,17 +1,25 @@
 import eventToObject from "event-to-object";
 import { Fragment } from "preact";
-import type {
-  ReactPyVdom,
-  ReactPyVdomImportSource,
-  ReactPyVdomEventHandler,
-  ReactPyModule,
-  BindImportSource,
-  ReactPyModuleBinding,
-  ImportSourceBinding,
-} from "./types";
+import {
+  HANDLER_DEBOUNCE,
+  HANDLER_MARKER,
+  HANDLER_THROTTLE,
+  isValidDebounce,
+  isValidThrottle,
+  type TaggedEventHandler,
+} from "./handler";
 import { infer_bind_from_environment } from "./bind";
 import log from "./logger";
 import type { ReactPyClient } from "./client";
+import type {
+  BindImportSource,
+  ImportSourceBinding,
+  ReactPyModule,
+  ReactPyModuleBinding,
+  ReactPyVdom,
+  ReactPyVdomEventHandler,
+  ReactPyVdomImportSource,
+} from "./types";
 
 export async function loadImportSource(
   vdomImportSource: ReactPyVdomImportSource,
@@ -206,8 +214,14 @@ export function createAttributes(
 function createEventHandler(
   client: ReactPyClient,
   name: string,
-  { target, preventDefault, stopPropagation }: ReactPyVdomEventHandler,
-): [string, () => void] {
+  {
+    target,
+    preventDefault,
+    stopPropagation,
+    debounce,
+    throttle,
+  }: ReactPyVdomEventHandler,
+): [string, TaggedEventHandler] {
   const eventHandler = function (...args: any[]) {
     const data = Array.from(args).map((value) => {
       const event = value as Event;
@@ -226,8 +240,28 @@ function createEventHandler(
       }
     });
     client.sendMessage({ type: "layout-event", data, target });
-  };
-  eventHandler.isHandler = true;
+  } as TaggedEventHandler;
+  eventHandler[HANDLER_MARKER] = true;
+  if (debounce !== undefined) {
+    if (!isValidDebounce(debounce)) {
+      log.warn(
+        `Ignoring invalid debounce value ${JSON.stringify(debounce)} ` +
+          `on event handler "${name}": expected a non-negative integer.`,
+      );
+    } else {
+      eventHandler[HANDLER_DEBOUNCE] = debounce;
+    }
+  }
+  if (throttle !== undefined) {
+    if (!isValidThrottle(throttle)) {
+      log.warn(
+        `Ignoring invalid throttle value ${JSON.stringify(throttle)} ` +
+          `on event handler "${name}": expected a non-negative integer.`,
+      );
+    } else {
+      eventHandler[HANDLER_THROTTLE] = throttle;
+    }
+  }
   return [name, eventHandler];
 }
 

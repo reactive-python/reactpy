@@ -1,6 +1,19 @@
 import type { CreateReconnectingWebSocketProps } from "./types";
 import log from "./logger";
 
+function syncBrowserLocation(url: URL): void {
+  // The window will always have a HTTP path, so ReactPy should always be aware of it.
+  url.searchParams.set("path", window.location.pathname);
+
+  if (window.location.search) {
+    // Set the query string parameter if the HTTP location has a query string.
+    url.searchParams.set("qs", window.location.search);
+  } else {
+    // Remove any existing (potentially stale) query string parameter if the current location doesn't have one
+    url.searchParams.delete("qs");
+  }
+}
+
 export function createReconnectingWebSocket(
   props: CreateReconnectingWebSocketProps,
 ) {
@@ -15,6 +28,7 @@ export function createReconnectingWebSocket(
     if (closed) {
       return;
     }
+    syncBrowserLocation(props.url);
     socket.current = new WebSocket(props.url);
     socket.current.onopen = () => {
       everConnected = true;

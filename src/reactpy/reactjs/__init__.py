@@ -111,6 +111,7 @@ def component_from_npm(
     resolve_imports_depth: int = ...,
     version: str = "latest",
     cdn: str = "https://esm.sh/v135",
+    bundle: bool = ...,
     fallback: Any | None = ...,
     unmount_before_update: bool = ...,
     allow_children: bool = ...,
@@ -125,6 +126,7 @@ def component_from_npm(
     resolve_imports_depth: int = ...,
     version: str = "latest",
     cdn: str = "https://esm.sh/v135",
+    bundle: bool = ...,
     fallback: Any | None = ...,
     unmount_before_update: bool = ...,
     allow_children: bool = ...,
@@ -138,6 +140,7 @@ def component_from_npm(
     resolve_imports_depth: int = 5,
     version: str = "latest",
     cdn: str = "https://esm.sh/v135",
+    bundle: bool = True,
     fallback: Any | None = None,
     unmount_before_update: bool = False,
     allow_children: bool = True,
@@ -162,6 +165,13 @@ def component_from_npm(
             The version of the package to use. Defaults to "latest".
         cdn:
             The CDN to use. Defaults to "https://esm.sh".
+        bundle:
+            Whether to ask the CDN (e.g. esm.sh) to bundle the package's dependencies
+            into a single module. Defaults to ``True`` for faster loads in the common
+            case, but some packages (e.g. MUI v7) ship sub-paths that esm.sh's bundle
+            mode fails to rewrite correctly. Set this to ``False`` to fall back to
+            esm.sh's per-module resolution, which is slower but more robust to
+            package-specific bundling quirks.
         fallback:
             What to temporarily display while the module is being loaded.
         unmount_before_update:
@@ -176,7 +186,10 @@ def component_from_npm(
 
     if "esm.sh" in cdn:
         url += "&" if "?" in url else "?"
-        url += "external=react,react-dom,react/jsx-runtime&bundle&target=es2020"
+        url += "external=react,react-dom,react/jsx-runtime"
+        if bundle:
+            url += "&bundle"
+        url += "&target=es2020"
 
     return component_from_url(
         url,

@@ -8,10 +8,11 @@ import urllib.parse
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Unpack
+from typing import Any, Unpack, cast
 
 import orjson
 from asgi_tools import ResponseText, ResponseWebSocket
+from asgiref import typing as asgi_types
 from asgiref.compatibility import guarantee_single_callable
 from servestatic import ServeStaticASGI
 
@@ -39,6 +40,14 @@ from reactpy.executors.utils import check_path, import_components, process_setti
 from reactpy.types import Connection, Location, ReactPyConfig, RootComponentConstructor
 
 _logger = logging.getLogger(__name__)
+
+
+def _location_from_websocket_query_string(query_string: str) -> Location:
+    ws_query_string = urllib.parse.parse_qs(query_string, strict_parsing=True)
+    return Location(
+        path=ws_query_string.get("path", [""])[0],
+        query_string=ws_query_string.get("qs", [""])[0],
+    )
 
 
 class ReactPyMiddleware:
@@ -186,7 +195,9 @@ class ReactPyWebsocket(ResponseWebSocket):
         super().__init__(scope=scope, receive=receive, send=send)  # type: ignore
         self.scope = scope
         self.parent = parent
-        self.rendering_queue: asyncio.Queue[dict[str, str]] = asyncio.Queue()
+        self.rendering_queue: asyncio.Queue[dict[str, str]] = asyncio.Queue(
+            config.REACTPY_MAX_QUEUE_SIZE.current
+        )
         self.dispatcher: asyncio.Task[Any] | None = None
 
     async def __aenter__(self) -> ReactPyWebsocket:
@@ -218,14 +229,10 @@ class ReactPyWebsocket(ResponseWebSocket):
                 raise RuntimeError("No root component provided.")
 
             # Create a connection object by analyzing the websocket's query string.
-            ws_query_string = urllib.parse.parse_qs(
-                self.scope["query_string"].decode(), strict_parsing=True
-            )
             connection = Connection(
                 scope=self.scope,  # type: ignore
-                location=Location(
-                    path=ws_query_string.get("http_pathname", [""])[0],
-                    query_string=ws_query_string.get("http_query_string", [""])[0],
+                location=_location_from_websocket_query_string(
+                    self.scope["query_string"].decode()
                 ),
                 carrier=self,
             )
@@ -261,9 +268,14 @@ class StaticFileApp:
                 Error404App(),
                 root=self.parent.static_dir,
                 prefix=self.parent.static_path,
+                autorefresh=True,
             )
 
-        await self._static_file_server(scope, receive, send)
+        await self._static_file_server(
+            cast(asgi_types.Scope, scope),
+            cast(asgi_types.ASGIReceiveCallable, receive),
+            cast(asgi_types.ASGISendCallable, send),
+        )
 
 
 @dataclass
@@ -283,7 +295,11 @@ class WebModuleApp:
                 autorefresh=True,
             )
 
-        await self._static_file_server(scope, receive, send)
+        await self._static_file_server(
+            cast(asgi_types.Scope, scope),
+            cast(asgi_types.ASGIReceiveCallable, receive),
+            cast(asgi_types.ASGISendCallable, send),
+        )
 
 
 class Error404App:

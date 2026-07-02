@@ -12,12 +12,9 @@ export function mountReactPy(props: MountProps) {
   );
 
   // Embed the initial HTTP path into the WebSocket URL
-  componentUrl.searchParams.append("http_pathname", window.location.pathname);
+  componentUrl.searchParams.append("path", window.location.pathname);
   if (window.location.search) {
-    componentUrl.searchParams.append(
-      "http_query_string",
-      window.location.search,
-    );
+    componentUrl.searchParams.append("qs", window.location.search);
   }
 
   // Configure a new ReactPy client
