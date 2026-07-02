@@ -28,6 +28,8 @@ class ReactPyLayoutHandler:
         if update["path"]:
             set_pointer(root_model, update["path"], update["model"])
         else:
+            # clear old keys first, dict.update() alone would keep stale "children" around when the new model doesn't have any
+            root_model.clear()
             root_model.update(update["model"])
 
     def render_html(self, layout, model):
