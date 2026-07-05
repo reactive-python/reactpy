@@ -10,11 +10,12 @@ from starlette.applications import Starlette
 from starlette.routing import Route
 from starlette.templating import Jinja2Templates
 
-import reactpy
+from reactpy import config as _config
 from reactpy import html
 from reactpy.executors.asgi.pyscript import ReactPyCsr
 from reactpy.testing import BackendFixture, DisplayFixture
-from reactpy.testing.common import REACTPY_TESTS_DEFAULT_TIMEOUT
+
+REACTPY_TESTS_DEFAULT_TIMEOUT = _config.REACTPY_TESTS_DEFAULT_TIMEOUT
 
 
 @pytest.fixture(scope="module")
@@ -106,16 +107,12 @@ def test_bad_file_path():
         ReactPyCsr()
 
 
-async def test_customized_noscript(tmp_path: Path):
-    noscript_file = tmp_path / "noscript.html"
-    noscript_file.write_text(
-        '<p id="noscript-message">Please enable JavaScript.</p>',
-        encoding="utf-8",
-    )
-
+async def test_customized_noscript_vdom():
     app = ReactPyCsr(
         Path(__file__).parent / "pyscript_components" / "root.py",
-        html_noscript=noscript_file,
+        prepend_body=html.noscript(
+            html.p({"id": "noscript-message"}, "Please enable JavaScript.")
+        ),
     )
 
     async with BackendFixture(app) as server:
@@ -129,14 +126,6 @@ async def test_customized_noscript(tmp_path: Path):
             in response.text
         )
 
-
-
-async def test_customized_noscript_string():
-    app = ReactPyCsr(
-        Path(__file__).parent / "pyscript_components" / "root.py",
-        html_noscript='<p id="noscript-message">Please enable JavaScript.</p>',
-    )
-
     async with BackendFixture(app) as server:
         url = f"http://{server.host}:{server.port}"
         response = await asyncio.to_thread(
@@ -149,84 +138,7 @@ async def test_customized_noscript_string():
         )
 
 
-async def test_customized_noscript_from_file(tmp_path: Path):
-    noscript_file = tmp_path / "noscript.html"
-    noscript_file.write_text(
-        '<p id="noscript-message">Please enable JavaScript.</p>',
-        encoding="utf-8",
-    )
-
-    app = ReactPyCsr(
-        Path(__file__).parent / "pyscript_components" / "root.py",
-        html_noscript=noscript_file,
-    )
-
-    async with BackendFixture(app) as server:
-        url = f"http://{server.host}:{server.port}"
-        response = await asyncio.to_thread(
-            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
-        )
-        assert response.status_code == 200
-        assert (
-            '<noscript><p id="noscript-message">Please enable JavaScript.</p></noscript>'
-            in response.text
-        )
-
-
-async def test_customized_noscript_from_string():
-    app = ReactPyCsr(
-        Path(__file__).parent / "pyscript_components" / "root.py",
-        html_noscript='<p id="noscript-message">Please enable JavaScript.</p>',
-    )
-
-    async with BackendFixture(app) as server:
-        url = f"http://{server.host}:{server.port}"
-        response = await asyncio.to_thread(
-            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
-        )
-        assert response.status_code == 200
-        assert (
-            '<noscript><p id="noscript-message">Please enable JavaScript.</p></noscript>'
-            in response.text
-        )
-
-
-async def test_customized_noscript_from_component():
-    @reactpy.component
-    def noscript_message():
-        return html.p({"id": "noscript-message"}, "Please enable JavaScript.")
-
-    app = ReactPyCsr(
-        Path(__file__).parent / "pyscript_components" / "root.py",
-        html_noscript=noscript_message,
-    )
-
-    async with BackendFixture(app) as server:
-        url = f"http://{server.host}:{server.port}"
-        response = await asyncio.to_thread(
-            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
-        )
-        assert response.status_code == 200
-        assert (
-            '<noscript><p id="noscript-message">Please enable JavaScript.</p></noscript>'
-            in response.text
-        )
-
-
-async def test_default_noscript_rendered():
-    app = ReactPyCsr(Path(__file__).parent / "pyscript_components" / "root.py")
-
-    async with BackendFixture(app) as server:
-        url = f"http://{server.host}:{server.port}"
-        response = await asyncio.to_thread(
-            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
-        )
-        assert response.status_code == 200
-        assert "<noscript>Enable JavaScript to view this site.</noscript>" in response.text
-
-
-
-async def test_noscript_omitted():
+async def test_prepend_body_default_is_noscript():
     app = ReactPyCsr(Path(__file__).parent / "pyscript_components" / "root.py")
 
     async with BackendFixture(app) as server:
@@ -236,15 +148,14 @@ async def test_noscript_omitted():
         )
         assert response.status_code == 200
         assert (
-            "<noscript>Enable JavaScript to view this site.</noscript>"
-            in response.text
+            "<noscript>Enable JavaScript to view this site.</noscript>" in response.text
         )
 
 
-async def test_noscript_disabled():
+async def test_prepend_body_disabled():
     app = ReactPyCsr(
         Path(__file__).parent / "pyscript_components" / "root.py",
-        html_noscript=None,
+        prepend_body=None,
     )
 
     async with BackendFixture(app) as server:

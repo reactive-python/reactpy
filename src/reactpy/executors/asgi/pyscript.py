@@ -17,8 +17,9 @@ from reactpy.executors.pyscript.utils import (
     pyscript_component_html,
     pyscript_setup_html,
 )
-from reactpy.executors.utils import html_noscript_to_html, vdom_head_to_html
-from reactpy.types import Component, ReactPyConfig, RootComponentConstructor, VdomDict
+from reactpy.executors.utils import vdom_head_to_html
+from reactpy.types import ReactPyConfig, VdomDict
+from reactpy.utils import reactpy_to_string
 
 
 class ReactPyCsr(ReactPy):
@@ -32,11 +33,7 @@ class ReactPyCsr(ReactPy):
         initial: str | VdomDict = "",
         http_headers: dict[str, str] | None = None,
         html_head: VdomDict | None = None,
-        html_noscript: str
-        | Path
-        | Component
-        | RootComponentConstructor
-        | None = "Enable JavaScript to view this site.",
+        prepend_body: VdomDict | None = ...,  # type: ignore[assignment]
         html_lang: str = "en",
         **settings: Unpack[ReactPyConfig],
     ) -> None:
@@ -64,9 +61,9 @@ class ReactPyCsr(ReactPy):
                 commonly used to render a loading animation.
             http_headers: Additional headers to include in the HTTP response for the base HTML document.
             html_head: Additional head elements to include in the HTML response.
-            html_noscript: String, Path to an HTML file, or component rendered to HTML
-                inside a `<noscript>` tag in the HTML body.
-                If None, then noscript is not rendered.
+            prepend_body: Content rendered at the start of the ``<body>`` element.
+                A ``VdomDict`` constructed via ``html.*`` functions, or ``None`` to omit.
+                Defaults to ``html.noscript("Enable JavaScript to view this site.")``.
             html_lang: The language of the HTML document.
             settings:
                 Global ReactPy configuration settings that affect behavior and performance. Most settings
@@ -86,7 +83,10 @@ class ReactPyCsr(ReactPy):
         self.extra_headers = http_headers or {}
         self.dispatcher_pattern = re.compile(f"^{self.dispatcher_path}?")
         self.html_head = html_head or html.head()
-        self.html_noscript = html_noscript
+        if prepend_body is not ...:
+            self.prepend_body = prepend_body
+        else:
+            self.prepend_body = html.noscript("Enable JavaScript to view this site.")
         self.html_lang = html_lang
 
     def match_dispatch_path(self, scope: AsgiWebsocketScope) -> bool:  # nocov
@@ -106,7 +106,11 @@ class ReactPyPyscriptApp(ReactPyApp):
     def render_index_html(self) -> None:
         """Process the index.html and store the results in this class."""
         head_content = vdom_head_to_html(self.parent.html_head)
-        noscript = html_noscript_to_html(self.parent.html_noscript)
+        body_content = (
+            ""
+            if self.parent.prepend_body is None
+            else reactpy_to_string(self.parent.prepend_body)
+        )
         pyscript_setup = pyscript_setup_html(
             extra_py=self.parent.extra_py,
             extra_js=self.parent.extra_js,
@@ -124,7 +128,7 @@ class ReactPyPyscriptApp(ReactPyApp):
             f'<html lang="{self.parent.html_lang}">'
             f"{head_content}"
             "<body>"
-            f"{noscript}"
+            f"{body_content}"
             f"{pyscript_component}"
             "</body>"
             "</html>"

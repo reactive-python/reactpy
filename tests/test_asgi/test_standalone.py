@@ -1,6 +1,5 @@
 import asyncio
 from collections.abc import MutableMapping
-from pathlib import Path
 
 import pytest
 from asgi_tools import ResponseText
@@ -194,42 +193,16 @@ async def test_customized_head(browser):
             assert (await new_display.page.title()) == custom_title
 
 
-async def test_customized_noscript_from_file(tmp_path: Path):
-    @reactpy.component
-    def sample():
-        return html.h1("Hello World")
-
-    noscript_file = tmp_path / "noscript.html"
-    noscript_file.write_text(
-        '<p id="noscript-message">Please enable JavaScript.</p>',
-        encoding="utf-8",
-    )
-
-    app = ReactPy(
-        sample,
-        html_noscript=noscript_file,
-    )
-
-    async with BackendFixture(app) as server:
-        url = f"http://{server.host}:{server.port}"
-        response = await asyncio.to_thread(
-            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
-        )
-        assert response.status_code == 200
-        assert (
-            '<noscript><p id="noscript-message">Please enable JavaScript.</p></noscript>'
-            in response.text
-        )
-
-
-async def test_customized_noscript_from_string():
+async def test_prepend_body_vdom():
     @reactpy.component
     def sample():
         return html.h1("Hello World")
 
     app = ReactPy(
         sample,
-        html_noscript='<p id="noscript-message">Please enable JavaScript.</p>',
+        prepend_body=html.noscript(
+            html.p({"id": "noscript-message"}, "Please enable JavaScript.")
+        ),
     )
 
     async with BackendFixture(app) as server:
@@ -244,30 +217,7 @@ async def test_customized_noscript_from_string():
         )
 
 
-async def test_customized_noscript_from_component():
-    @reactpy.component
-    def sample():
-        return html.h1("Hello World")
-
-    @reactpy.component
-    def noscript_message():
-        return html.p({"id": "noscript-message"}, "Please enable JavaScript.")
-
-    app = ReactPy(sample, html_noscript=noscript_message)
-
-    async with BackendFixture(app) as server:
-        url = f"http://{server.host}:{server.port}"
-        response = await asyncio.to_thread(
-            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
-        )
-        assert response.status_code == 200
-        assert (
-            '<noscript><p id="noscript-message">Please enable JavaScript.</p></noscript>'
-            in response.text
-        )
-
-
-async def test_noscript_omitted():
+async def test_prepend_body_default_is_noscript():
     @reactpy.component
     def sample():
         return html.h1("Hello World")
@@ -281,17 +231,16 @@ async def test_noscript_omitted():
         )
         assert response.status_code == 200
         assert (
-            "<noscript>Enable JavaScript to view this site.</noscript>"
-            in response.text
+            "<noscript>Enable JavaScript to view this site.</noscript>" in response.text
         )
 
 
-async def test_noscript_disabled():
+async def test_prepend_body_disabled():
     @reactpy.component
     def sample():
         return html.h1("Hello World")
 
-    app = ReactPy(sample, html_noscript=None)
+    app = ReactPy(sample, prepend_body=None)
 
     async with BackendFixture(app) as server:
         url = f"http://{server.host}:{server.port}"

@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from email.utils import formatdate
 from logging import getLogger
-from pathlib import Path
 from typing import Literal, Unpack, cast, overload
 
 from asgi_tools import ResponseHTML
@@ -26,18 +25,16 @@ from reactpy.executors.asgi.types import (
 )
 from reactpy.executors.pyscript.utils import pyscript_setup_html
 from reactpy.executors.utils import (
-    html_noscript_to_html,
     server_side_component_html,
     vdom_head_to_html,
 )
 from reactpy.types import (
-    Component,
     PyScriptOptions,
     ReactPyConfig,
     RootComponentConstructor,
     VdomDict,
 )
-from reactpy.utils import import_dotted_path, string_to_reactpy
+from reactpy.utils import import_dotted_path, reactpy_to_string, string_to_reactpy
 
 _logger = getLogger(__name__)
 
@@ -51,11 +48,7 @@ class ReactPy(ReactPyMiddleware):
         *,
         http_headers: dict[str, str] | None = None,
         html_head: VdomDict | None = None,
-        html_noscript: str
-        | Path
-        | Component
-        | RootComponentConstructor
-        | None = "Enable JavaScript to view this site.",
+        prepend_body: VdomDict | None = ...,  # type: ignore[assignment]
         html_lang: str = "en",
         pyscript_setup: bool = False,
         pyscript_options: PyScriptOptions | None = None,
@@ -67,8 +60,9 @@ class ReactPy(ReactPyMiddleware):
             root_component: The root component to render. This app is typically a single page application.
             http_headers: Additional headers to include in the HTTP response for the base HTML document.
             html_head: Additional head elements to include in the HTML response.
-            html_noscript: String, Path to an HTML file, or component rendered to HTML
-                inside a `<noscript>` tag in the HTML body.
+            prepend_body: Content rendered at the start of the ``<body>`` element.
+                A ``VdomDict`` constructed via ``html.*`` functions, or ``None`` to omit.
+                Defaults to ``html.noscript("Enable JavaScript to view this site.")``.
             html_lang: The language of the HTML document.
             pyscript_setup: Whether to automatically load PyScript within your HTML head.
             pyscript_options: Options to configure PyScript behavior.
@@ -79,7 +73,10 @@ class ReactPy(ReactPyMiddleware):
         self.extra_headers = http_headers or {}
         self.dispatcher_pattern = re.compile(f"^{self.dispatcher_path}?")
         self.html_head = html_head or html.head()
-        self.html_noscript = html_noscript
+        if prepend_body is not ...:
+            self.prepend_body = prepend_body
+        else:
+            self.prepend_body = html.noscript("Enable JavaScript to view this site.")
         self.html_lang = html_lang
 
         if pyscript_setup:
@@ -243,13 +240,17 @@ class ReactPyApp:
 
     def render_index_html(self) -> None:
         """Process the index.html and store the results in this class."""
-        noscript = html_noscript_to_html(self.parent.html_noscript)
+        body_content = (
+            ""
+            if self.parent.prepend_body is None
+            else reactpy_to_string(self.parent.prepend_body)
+        )
         self._index_html = (
             "<!doctype html>"
             f'<html lang="{self.parent.html_lang}">'
             f"{vdom_head_to_html(self.parent.html_head)}"
             "<body>"
-            f"{noscript}"
+            f"{body_content}"
             f"{server_side_component_html(element_id='app', class_='', component_path='')}"
             "</body>"
             "</html>"
