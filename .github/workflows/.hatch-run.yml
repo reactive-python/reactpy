@@ -20,10 +20,6 @@ on:
         secrets:
             node-auth-token:
                 required: false
-            pypi-username:
-                required: false
-            pypi-password:
-                required: false
 
 jobs:
     hatch:
@@ -60,6 +56,4 @@ jobs:
             - name: Run Scripts
               env:
                   NPM_CONFIG_TOKEN: ${{ secrets.node-auth-token }}
-                  HATCH_INDEX_USER: ${{ secrets.pypi-username }}
-                  HATCH_INDEX_AUTH: ${{ secrets.pypi-password }}
               run: ${{ inputs.run-cmd }}
