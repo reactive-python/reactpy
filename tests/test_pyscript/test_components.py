@@ -68,6 +68,33 @@ async def test_custom_root_name(display: DisplayFixture):
     await display.page.wait_for_selector("#incr[data-count='3']")
 
 
+async def test_root_component_error_hides_component(display: DisplayFixture):
+    """A crash in the root render should hide it, not leave stale content stuck
+    on the page."""
+
+    @reactpy.component
+    def Counter():
+        return pyscript_component(
+            Path(__file__).parent / "pyscript_components" / "root_error.py",
+            initial=html.div({"id": "loading"}, "Loading..."),
+        )
+
+    await display.show(Counter)
+
+    await display.page.wait_for_selector("#loading")
+    await display.page.wait_for_selector("#incr")
+
+    await display.page.click("#incr")
+    await display.page.wait_for_selector("#incr[data-count='1']")
+
+    await display.page.click("#incr")
+    await display.page.wait_for_selector("#incr[data-count='2']")
+
+    # this click flips count to 3 -> root component raises -> button should vanish
+    await display.page.click("#incr")
+    await display.page.wait_for_selector("#incr", state="detached")
+
+
 def test_bad_file_path():
     with pytest.raises(ValueError):
         pyscript_component(initial=html.div({"id": "loading"}, "Loading...")).render()
