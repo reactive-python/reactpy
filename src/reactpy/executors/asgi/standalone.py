@@ -240,17 +240,16 @@ class ReactPyApp:
 
     def render_index_html(self) -> None:
         """Process the index.html and store the results in this class."""
-        body_content = (
-            ""
-            if self.parent.prepend_body is None
-            else reactpy_to_string(self.parent.prepend_body)
-        )
+        if not self.parent.prepend_body or self.parent.prepend_body == ...:
+            prepend_body = ""
+        else:
+            prepend_body = reactpy_to_string(self.parent.prepend_body)
         self._index_html = (
             "<!doctype html>"
             f'<html lang="{self.parent.html_lang}">'
             f"{vdom_head_to_html(self.parent.html_head)}"
             "<body>"
-            f"{body_content}"
+            f"{prepend_body}"
             f"{server_side_component_html(element_id='app', class_='', component_path='')}"
             "</body>"
             "</html>"

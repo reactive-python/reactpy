@@ -106,11 +106,10 @@ class ReactPyPyscriptApp(ReactPyApp):
     def render_index_html(self) -> None:
         """Process the index.html and store the results in this class."""
         head_content = vdom_head_to_html(self.parent.html_head)
-        body_content = (
-            ""
-            if self.parent.prepend_body is None
-            else reactpy_to_string(self.parent.prepend_body)
-        )
+        if not self.parent.prepend_body or self.parent.prepend_body == ...:
+            prepend_body = ""
+        else:
+            prepend_body = reactpy_to_string(self.parent.prepend_body)
         pyscript_setup = pyscript_setup_html(
             extra_py=self.parent.extra_py,
             extra_js=self.parent.extra_js,
@@ -128,7 +127,7 @@ class ReactPyPyscriptApp(ReactPyApp):
             f'<html lang="{self.parent.html_lang}">'
             f"{head_content}"
             "<body>"
-            f"{body_content}"
+            f"{prepend_body}"
             f"{pyscript_component}"
             "</body>"
             "</html>"
