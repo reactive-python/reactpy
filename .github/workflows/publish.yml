@@ -5,19 +5,32 @@ on:
         types: [published]
 
 permissions:
-    contents: read    # Required to checkout the code
-    id-token: write   # Required to sign the NPM publishing statements
+    contents: read # Required to checkout the code
+    id-token: write # Required to sign the NPM publishing statements
 
 jobs:
     publish-reactpy:
         if: startsWith(github.event.release.name, 'reactpy ') || startsWith(github.event.release.tag_name, 'reactpy-')
-        uses: ./.github/workflows/.hatch-run.yml
-        with:
-            job-name: "Publish to PyPI"
-            run-cmd: "hatch build --clean && hatch publish --yes"
-        secrets:
-            pypi-username: ${{ secrets.PYPI_USERNAME }}
-            pypi-password: ${{ secrets.PYPI_PASSWORD }}
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  registry-url: https://registry.npmjs.org/
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: "3.13"
+                  cache: "pip"
+            - name: Install Python Dependencies
+              run: pip install hatch
+            - name: Build Python Package
+              run: hatch build --clean
+            - name: Publish to PyPI (Trusted Publishing)
+              uses: pypa/gh-action-pypi-publish@release/v1
 
     publish-reactpy-client:
         if: startsWith(github.event.release.name, '@reactpy/client ') || startsWith(github.event.release.tag_name, '@reactpy/client-')
