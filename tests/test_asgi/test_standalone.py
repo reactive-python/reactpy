@@ -193,6 +193,64 @@ async def test_customized_head(browser):
             assert (await new_display.page.title()) == custom_title
 
 
+async def test_prepend_body_vdom():
+    @reactpy.component
+    def sample():
+        return html.h1("Hello World")
+
+    app = ReactPy(
+        sample,
+        prepend_body=html.noscript(
+            html.p({"id": "noscript-message"}, "Please enable JavaScript.")
+        ),
+    )
+
+    async with BackendFixture(app) as server:
+        url = f"http://{server.host}:{server.port}"
+        response = await asyncio.to_thread(
+            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+        )
+        assert response.status_code == 200
+        assert (
+            '<noscript><p id="noscript-message">Please enable JavaScript.</p></noscript>'
+            in response.text
+        )
+
+
+async def test_prepend_body_default_is_noscript():
+    @reactpy.component
+    def sample():
+        return html.h1("Hello World")
+
+    app = ReactPy(sample)
+
+    async with BackendFixture(app) as server:
+        url = f"http://{server.host}:{server.port}"
+        response = await asyncio.to_thread(
+            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+        )
+        assert response.status_code == 200
+        assert (
+            "<noscript>Enable JavaScript to view this site.</noscript>" in response.text
+        )
+
+
+async def test_prepend_body_disabled():
+    @reactpy.component
+    def sample():
+        return html.h1("Hello World")
+
+    app = ReactPy(sample, prepend_body=None)
+
+    async with BackendFixture(app) as server:
+        url = f"http://{server.host}:{server.port}"
+        response = await asyncio.to_thread(
+            request, "GET", url, timeout=REACTPY_TESTS_DEFAULT_TIMEOUT.current
+        )
+        assert response.status_code == 200
+        assert "<noscript>" not in response.text
+
+
 async def test_head_request():
     @reactpy.component
     def sample():
