@@ -30,7 +30,7 @@ def find_deps(data):
 
 
 def install_deps():
-    pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
+    pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
     with open(pyproject_path, "rb") as f:
         pyproject_data = toml.load(f)
     find_deps(pyproject_data)

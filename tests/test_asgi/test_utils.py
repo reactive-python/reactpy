@@ -1,12 +1,32 @@
 import pytest
 
-from reactpy import config
+from reactpy import config, html
 from reactpy.executors import utils
 
 
 def test_invalid_vdom_head():
     with pytest.raises(ValueError):
         utils.vdom_head_to_html({"tagName": "invalid"})
+
+
+def test_prepend_body_content_as_vdom_dict():
+    from reactpy.utils import reactpy_to_string
+
+    assert (
+        reactpy_to_string(
+            html.div(html.p({"id": "noscript-message"}, "Please enable JavaScript."))
+        )
+        == '<div><p id="noscript-message">Please enable JavaScript.</p></div>'
+    )
+
+
+def test_prepend_body_content_as_noscript():
+    from reactpy.utils import reactpy_to_string
+
+    assert (
+        reactpy_to_string(html.noscript(html.p("Enable JavaScript to view this site.")))
+        == "<noscript><p>Enable JavaScript to view this site.</p></noscript>"
+    )
 
 
 def test_process_settings():
