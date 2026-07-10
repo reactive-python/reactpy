@@ -48,7 +48,7 @@ export type ReactPyComponent = ComponentType<{ model: ReactPyVdom }>;
 
 export type ReactPyVdom = {
   tagName: string;
-  attributes?: { [key: string]: string };
+  attributes?: { [key: string]: any };
   children?: (ReactPyVdom | string)[];
   error?: string;
   eventHandlers?: { [key: string]: ReactPyVdomEventHandler };

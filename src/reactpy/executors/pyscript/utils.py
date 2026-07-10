@@ -132,11 +132,7 @@ def extend_pyscript_config(
 ) -> str:
     # Extends ReactPy's default PyScript config with user provided values.
     pyscript_config: dict[str, Any] = {
-        "packages": [
-            reactpy_pkg_string or _reactpy_pkg_string(),
-            "jsonpointer==3.*",
-            "ssl",
-        ],
+        "packages": [reactpy_pkg_string or _reactpy_pkg_string(), "jsonpointer==3.*"],
         "js_modules": {
             "main": modules
             or {

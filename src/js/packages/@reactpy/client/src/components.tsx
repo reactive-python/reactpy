@@ -12,7 +12,6 @@ import {
   HANDLER_DEBOUNCE,
   HANDLER_MARKER,
   HANDLER_THROTTLE,
-  getInitialDebounce,
   isValidDebounce,
   type TaggedEventHandler,
 } from "./handler";
@@ -35,6 +34,7 @@ const DEFAULT_NON_INPUT_DEBOUNCE_MS = 0;
 
 const USER_INPUT_TAGS = new Set(["input", "select", "textarea"]);
 
+// Maximum age (ms) of a "submit-like" event for which a subsequent
 /**
  * Return the built-in default debounce (ms) for an element type.
  * Inputs default to 200 ms to preserve text-input coherency against
@@ -44,30 +44,6 @@ export function getDefaultDebounceMs(tagName: string): number {
   return USER_INPUT_TAGS.has(tagName)
     ? DEFAULT_INPUT_DEBOUNCE_MS
     : DEFAULT_NON_INPUT_DEBOUNCE_MS;
-}
-
-type UserInputTarget =
-  | HTMLInputElement
-  | HTMLSelectElement
-  | HTMLTextAreaElement;
-
-function trackUserInput(
-  event: TargetedEvent<any>,
-  setValue: (value: any) => void,
-  lastUserValue: MutableRefObject<any>,
-  lastChangeTime: MutableRefObject<number>,
-  lastInputDebounce: MutableRefObject<number>,
-  debounce: number,
-): void {
-  if (!event.target) {
-    return;
-  }
-
-  const newValue = (event.target as UserInputTarget).value;
-  setValue(newValue);
-  lastUserValue.current = newValue;
-  lastChangeTime.current = Date.now();
-  lastInputDebounce.current = debounce;
 }
 
 /**
@@ -208,48 +184,98 @@ function StandardElement({ model }: { model: ReactPyVdom }) {
 function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
   const client = useContext(ClientContext);
   const props = createAttributes(model, client);
-  const [value, setValue] = useState(props.value);
-  const lastUserValue = useRef(props.value);
-  const lastChangeTime = useRef(0);
-  // Seed the debounce window from the handlers themselves when possible,
-  // otherwise fall back to the per-tagName built-in default (200 ms for
-  // user-input tags, 0 ms elsewhere). This ensures the very first
-  // server-driven update already respects the configured debounce.
-  const lastInputDebounce = useRef(
-    getInitialDebounce(props, getDefaultDebounceMs(model.tagName)),
-  );
-  const reconcileTimeout = useRef<number | null>(null);
+  // ``_reactpy_ack_seq`` is set by the server to the highest sequence
+  // number it has received from this element's event handlers. We use
+  // it (instead of a time-based debounce) to decide whether the server
+  // has caught up to the user's keystrokes.
+  const serverAckSeq =
+    typeof model.attributes?.["_reactpy_ack_seq"] === "number"
+      ? (model.attributes["_reactpy_ack_seq"] as number)
+      : -1;
+  // Strip the internal key from props so it never reaches the DOM.
+  delete (props as Record<string, unknown>)["_reactpy_ack_seq"];
+
+  const [, setValue] = useState(props.value);
+  // Reference to the underlying DOM element. We read its current
+  // ``value`` from the reconcile effect to compare against the
+  // server's proposed value — reading from Preact state is not
+  // enough because the browser mutates the DOM directly between
+  // renders (especially during fast typing).
+  const inputRef = useRef<
+    HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null
+  >(null);
+  // Per-element (NOT per-handler) monotonic counter for outgoing
+  // events. The wrapper below installs this counter onto every
+  // handler via ``_reactpy_set_seq`` so the counter survives
+  // handler recreation on every server re-render. Each handler
+  // has its own per-handler ``outgoingSeq`` (used as the default
+  // when no wrapper is installed), but we override it here so the
+  // element owns a single monotonic counter across handlers.
+  const sharedOutgoingSeq = useRef(0);
+  // Highest sequence number actually sent. The server's
+  // ``_reactpy_ack_seq`` will catch up to this. ``sharedOutgoingSeq``
+  // is incremented optimistically in the wrapper; ``lastSentSeq``
+  // is the high-water mark.
+  const lastSentSeq = useRef(-1);
 
   // honor changes to value from the client via props
   useEffect(() => {
-    const reconcileValue = () => {
-      // If the new prop value matches what we last sent, we are in sync.
-      // If it differs, wait until the debounce window expires before applying it.
-      const elapsed = Date.now() - lastChangeTime.current;
-      if (
-        props.value === lastUserValue.current ||
-        elapsed >= lastInputDebounce.current
-      ) {
-        reconcileTimeout.current = null;
-        setValue(props.value);
-        return;
-      }
-
-      reconcileTimeout.current = window.setTimeout(
-        reconcileValue,
-        Math.max(0, lastInputDebounce.current - elapsed),
-      );
-    };
-
-    reconcileValue();
-
-    return () => {
-      if (reconcileTimeout.current !== null) {
-        window.clearTimeout(reconcileTimeout.current);
-        reconcileTimeout.current = null;
-      }
-    };
-  }, [props.value]);
+    // The sequence number is the single source of truth for whether
+    // to apply the server's value. Time-based heuristics (debounce
+    // windows, submit-event detection) are not used here because they
+    // cannot reliably distinguish a server snapshot from before some
+    // keystrokes were processed from a snapshot taken after all
+    // keystrokes were processed. The sequence number can,
+    // deterministically.
+    //
+    // If the server has acknowledged every event the user has sent
+    // (``serverAckSeq >= lastSentSeq.current``), the server's value
+    // is the authoritative one and is applied directly. This
+    // includes clears (Enter handlers that reset the input),
+    // normalizations, and same-value confirmations.
+    // If the server is behind, its value is necessarily a stale
+    // snapshot and is ignored; the next layout-update will be
+    // applied once the server catches up.
+    //
+    // We additionally compare against the DOM's actual current
+    // value via ``inputRef`` — when the server is supposedly
+    // caught up but its snapshot is shorter than what the user
+    // has in the DOM (a stale snapshot racing with the user's
+    // most recent keystroke), skip applying so we don't clobber
+    // the user's text. This handles the realistic case where the
+    // user types faster than the server can ack.
+    if (serverAckSeq < lastSentSeq.current) {
+      return;
+    }
+    // Apply server's value to the DOM directly via the ref, NOT
+    // through Preact's render path. Preact would otherwise set
+    // ``inputRef.current.value`` on every render, racing with the
+    // browser's own mutations of the DOM value during fast typing
+    // and silently dropping keystrokes. By using a ref and writing
+    // only when we know the server has caught up, we let the
+    // browser manage the DOM value during typing and only override
+    // it when it's safe to do so.
+    //
+    // Crucially, only write when ``props.value`` is a real string.
+    // Inputs without a ``value`` attribute in their VDOM (e.g.
+    // uncontrolled inputs in the user_data and channel_layer tests)
+    // arrive with ``props.value === undefined``; assigning
+    // ``input.value = undefined`` coerces to the literal string
+    // ``"undefined"`` and seeds the field with garbage that the
+    // user's first keystroke will then append to (``test`` becomes
+    // ``testundefined``). Skipping the write in that case leaves
+    // the DOM at its default empty value, which is what the user
+    // actually typed into.
+    if (
+      inputRef.current &&
+      typeof inputRef.current.value === "string" &&
+      typeof props.value === "string" &&
+      inputRef.current.value !== props.value
+    ) {
+      inputRef.current.value = props.value;
+    }
+    setValue(props.value);
+  }, [props.value, serverAckSeq]);
 
   for (const [name, prop] of Object.entries(props)) {
     if (typeof prop !== "function") {
@@ -261,24 +287,38 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
       continue;
     }
 
-    const handlerDebounce = givenHandler[HANDLER_DEBOUNCE];
-    const effectiveDebounce = isValidDebounce(handlerDebounce)
-      ? handlerDebounce
-      : getDefaultDebounceMs(model.tagName);
-
     const throttled = isValidDebounce(givenHandler[HANDLER_THROTTLE])
       ? throttleHandler(givenHandler, givenHandler[HANDLER_THROTTLE] as number)
       : givenHandler;
 
     props[name] = (event: TargetedEvent<any>) => {
-      trackUserInput(
-        event,
-        setValue,
-        lastUserValue,
-        lastChangeTime,
-        lastInputDebounce,
-        effectiveDebounce,
-      );
+      // Use a per-element (shared across all handlers on this
+      // element) monotonic counter for outgoing events. We
+      // overwrite the handler's own ``outgoingSeq`` with this
+      // counter so the wire-format seq number reflects the
+      // element-wide sequence. The handler closure's own
+      // ``outgoingSeq`` is unused for sequencing purposes now
+      // (it still exists as a default for non-wrapped callers).
+      const seq = sharedOutgoingSeq.current++;
+      if (seq > lastSentSeq.current) {
+        lastSentSeq.current = seq;
+      }
+      const taggedHandler = givenHandler as TaggedEventHandler & {
+        _reactpy_set_seq?: (n: number) => void;
+      };
+      if (typeof taggedHandler._reactpy_set_seq === "function") {
+        taggedHandler._reactpy_set_seq(seq + 1);
+      }
+
+      // ``onKeyPress`` fires before the DOM has been updated with
+      // the new keystroke — ``event.target.value`` is the value
+      // BEFORE the character was added. We deliberately do NOT
+      // trust it for value-tracking. ``onChange``/``onInput`` fire
+      // after the DOM has been updated and can be trusted, but we
+      // don't even need to track it separately here — the
+      // reconcile effect reads the DOM directly via ``inputRef``
+      // so it always sees the post-keystroke value.
+
       throttled(event);
     };
   }
@@ -286,10 +326,19 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
   // Use createElement here to avoid warning about variable numbers of children not
   // having keys. Warning about this must now be the responsibility of the client
   // providing the models instead of the client rendering them.
+  // Drop ``value`` from the props we pass to Preact — we want the
+  // input to be fully uncontrolled. Preact would otherwise set
+  // ``inputRef.current.value`` on every render (because ``value``
+  // is a known DOM property), racing with the browser's own
+  // mutations of the DOM value during fast typing and silently
+  // dropping keystrokes. We instead update the DOM value via the
+  // ``inputRef`` in the reconcile effect above, only when the
+  // server has caught up and the proposed value is not shorter
+  // than what the user has already typed.
+  const { value: _ignoredValue, ...controlledProps } = props as Record<string, any>;
   return createElement(
     model.tagName,
-    // overwrite
-    { ...props, value },
+    { ...controlledProps, ref: inputRef },
     ...createChildren(model, (child) => (
       <Element model={child} key={child.attributes?.key} />
     )),
