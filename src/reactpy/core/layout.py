@@ -74,6 +74,13 @@ class Layout(BaseLayout):
             _LifeCycleStateId, Task[LayoutUpdateMessage]
         ] = {}
         self._render_tasks_ready: Semaphore = Semaphore(0)
+        # Maps a running render task back to the component it belongs to.
+        # Used by the stale-render detection in `_parallel_render` to drop
+        # out-of-order completions when async rendering is enabled and a
+        # newer render for the same component has already been scheduled.
+        self._render_task_to_lcs_id: dict[
+            Task[LayoutUpdateMessage], _LifeCycleStateId
+        ] = {}
         self._rendering_queue: _ThreadSafeQueue[_LifeCycleStateId] = _ThreadSafeQueue()
         # Per-target event sequence tracking. Each incoming layout-event
         # may carry an optional ``seq`` field (assigned by the client)
@@ -213,10 +220,20 @@ class Layout(BaseLayout):
             update_task: Task[LayoutUpdateMessage] = done.pop()
             self._render_tasks.discard(update_task)
 
-            for lcs_id, task in list(self._render_tasks_by_id.items()):
-                if task is update_task:
-                    del self._render_tasks_by_id[lcs_id]
-                    break
+            lcs_id = self._render_task_to_lcs_id.pop(update_task, None)
+            if (
+                lcs_id is not None
+                and self._render_tasks_by_id.get(lcs_id) is not update_task
+            ):
+                # A newer render has been scheduled for this component
+                # while we were in-flight. Drop this stale result so the
+                # client only receives the latest render per component.
+                continue
+            if (
+                lcs_id is not None
+                and self._render_tasks_by_id.get(lcs_id) is update_task
+            ):
+                del self._render_tasks_by_id[lcs_id]
 
             try:
                 return update_task.result()
@@ -456,7 +473,7 @@ class Layout(BaseLayout):
         # Never let ackSeq leak into the user's attributes (it's not a
         # real DOM attribute). Store it in a dedicated key the client
         # recognizes.
-        attrs.setdefault("_reactpy_ack_seq", max_ack)
+        attrs.setdefault("_reactpy_ack_seq", max_ack)  # type: ignore[reportArgumentType]
 
     def _render_model_event_handlers_without_old_state(
         self,
@@ -583,6 +600,7 @@ class Layout(BaseLayout):
             )
         else:
             task = create_task(self._create_layout_update(model_state))
+            self._render_task_to_lcs_id[task] = lcs_id
             self._render_tasks.add(task)
             self._render_tasks_by_id[lcs_id] = task
             self._render_tasks_ready.release()
