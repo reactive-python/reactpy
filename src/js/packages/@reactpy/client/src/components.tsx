@@ -25,27 +25,6 @@ import type { ReactPyClient } from "./client";
 
 const ClientContext = createContext<ReactPyClient>(null as any);
 
-// Built-in default debounce (ms) used by user-input elements (``<input>``,
-// ``<select>``, ``<textarea>``) when no per-handler ``debounce`` is set.
-// Non-input elements default to 0 ms (no debounce) — set ``debounce`` or
-// ``throttle`` explicitly on the handler if you need either behavior.
-const DEFAULT_INPUT_DEBOUNCE_MS = 200;
-const DEFAULT_NON_INPUT_DEBOUNCE_MS = 0;
-
-const USER_INPUT_TAGS = new Set(["input", "select", "textarea"]);
-
-// Maximum age (ms) of a "submit-like" event for which a subsequent
-/**
- * Return the built-in default debounce (ms) for an element type.
- * Inputs default to 200 ms to preserve text-input coherency against
- * server-driven ``value`` updates; all other elements default to 0 ms.
- */
-export function getDefaultDebounceMs(tagName: string): number {
-  return USER_INPUT_TAGS.has(tagName)
-    ? DEFAULT_INPUT_DEBOUNCE_MS
-    : DEFAULT_NON_INPUT_DEBOUNCE_MS;
-}
-
 /**
  * Wrap ``handler`` so its outgoing call is throttled to at most once per
  * ``intervalMs`` milliseconds. Subsequent calls inside the window are
@@ -104,6 +83,59 @@ function throttleHandler(
   return wrapped;
 }
 
+/**
+ * Wrap ``handler`` so its outgoing call is debounced by
+ * ``delayMs`` milliseconds. The first call schedules a fire after
+ * the delay; subsequent calls inside the window reset the timer and
+ * pass their arguments to the trailing call. Only one call lands
+ * on the wrapped handler per debounce window.
+ *
+ * Returns the original handler unchanged when ``delayMs`` is missing
+ * or invalid, so callers can pass a 0 / negative value to opt out.
+ *
+ * Unlike ``throttleHandler`` (which fires on the leading edge),
+ * this strictly trailing-edge debounce is the right semantics for
+ * text inputs: the server only sees the final state after the user
+ * pauses typing, which is exactly when the reconcile can safely apply
+ * a server-side transformation (normalisation, validation, etc.).
+ */
+function debounceHandler(
+  handler: TaggedEventHandler,
+  delayMs: number,
+): TaggedEventHandler {
+  if (!isValidDebounce(delayMs) || delayMs === 0) {
+    return handler;
+  }
+  let timer: number | null = null;
+  let pendingArgs: any[] | null = null;
+
+  const wrapped = function (...args: any[]) {
+    pendingArgs = args;
+    if (timer !== null) {
+      window.clearTimeout(timer);
+    }
+    timer = window.setTimeout(() => {
+      timer = null;
+      if (pendingArgs !== null) {
+        const callArgs = pendingArgs;
+        pendingArgs = null;
+        (handler as (...a: any[]) => void)(...callArgs);
+      }
+    }, delayMs);
+  } as TaggedEventHandler;
+
+  // Preserve the tag markers so downstream code can still introspect
+  // the wrapped function.
+  wrapped[HANDLER_MARKER] = true;
+  if (typeof handler[HANDLER_THROTTLE] === "number") {
+    wrapped[HANDLER_THROTTLE] = handler[HANDLER_THROTTLE];
+  }
+  if (typeof handler[HANDLER_DEBOUNCE] === "number") {
+    wrapped[HANDLER_DEBOUNCE] = handler[HANDLER_DEBOUNCE];
+  }
+  return wrapped;
+}
+
 export function Layout(props: { client: ReactPyClient }): JSX.Element {
   const currentModel: ReactPyVdom = useState({ tagName: "" })[0];
   const forceUpdate = useForceUpdate();
@@ -153,9 +185,12 @@ export function Element({ model }: { model: ReactPyVdom }): JSX.Element | null {
 function StandardElement({ model }: { model: ReactPyVdom }) {
   const client = useContext(ClientContext);
   const attrs = createAttributes(model, client);
-  // Apply the throttle wrapper to tagged handlers. ``debounce`` (server-→
-  // client value reconciliation) only applies to user-input elements, so
-  // it's intentionally ignored here; ``throttle`` works everywhere.
+  // Apply the throttle wrapper to tagged handlers. ``throttle`` works on
+  // every element; ``debounce`` is intentionally only applied by
+  // ``UserInputElement`` (the only place where coalescing keystrokes
+  // is meaningful — click handlers don't benefit from trailing-edge
+  // coalescing, and applying debounce here would just delay
+  // non-input events for no reason).
   for (const [name, prop] of Object.entries(attrs)) {
     if (typeof prop !== "function") {
       continue;
@@ -287,9 +322,24 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
       continue;
     }
 
-    const throttled = isValidDebounce(givenHandler[HANDLER_THROTTLE])
-      ? throttleHandler(givenHandler, givenHandler[HANDLER_THROTTLE] as number)
-      : givenHandler;
+    // Apply ``throttle`` and/or ``debounce`` wrappers when the
+    // handler opts into them. Throttle fires on the leading edge
+    // (good for click-style events); debounce fires on the
+    // trailing edge (good for typing, where you want the server
+    // to see only the final state after the user pauses). Both
+    // are no-ops when the corresponding keyword is absent, which
+    // is the common case — the per-element seq reconcile is
+    // already responsible for input coherency, so we don't apply
+    // a debounce by default.
+    const handlerDebounce = givenHandler[HANDLER_DEBOUNCE];
+    const handlerThrottle = givenHandler[HANDLER_THROTTLE];
+    let wrapped: TaggedEventHandler = givenHandler;
+    if (isValidDebounce(handlerThrottle)) {
+      wrapped = throttleHandler(wrapped, handlerThrottle as number);
+    }
+    if (isValidDebounce(handlerDebounce)) {
+      wrapped = debounceHandler(wrapped, handlerDebounce as number);
+    }
 
     props[name] = (event: TargetedEvent<any>) => {
       // Use a per-element (shared across all handlers on this
@@ -299,6 +349,15 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
       // element-wide sequence. The handler closure's own
       // ``outgoingSeq`` is unused for sequencing purposes now
       // (it still exists as a default for non-wrapped callers).
+      //
+      // Critically, we increment the seq counter and update
+      // ``lastSentSeq`` on every *user* event, not on every
+      // server dispatch. If the handler is wrapped in a
+      // debounce that coalesces several events into one server
+      // dispatch, ``lastSentSeq`` will be higher than the seq
+      // actually sent to the server, which is fine — the seq
+      // we sent is the LATEST user-typed value, which is the
+      // one the server actually processed.
       const seq = sharedOutgoingSeq.current++;
       if (seq > lastSentSeq.current) {
         lastSentSeq.current = seq;
@@ -307,6 +366,11 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
         _reactpy_set_seq?: (n: number) => void;
       };
       if (typeof taggedHandler._reactpy_set_seq === "function") {
+        // Push the handler's internal counter past our seq so
+        // the next (possibly debounced) dispatch uses a seq
+        // number that matches what the user just typed, not
+        // whatever stale value the handler closure happened
+        // to have left over.
         taggedHandler._reactpy_set_seq(seq + 1);
       }
 
@@ -319,7 +383,7 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
       // reconcile effect reads the DOM directly via ``inputRef``
       // so it always sees the post-keystroke value.
 
-      throttled(event);
+      wrapped(event);
     };
   }
 
