@@ -122,6 +122,7 @@ class Layout(BaseLayout):
         del self._event_processing_tasks
         del self._rendering_queue
         del self._render_tasks_by_id
+        del self._render_task_to_lcs_id
         del self._root_life_cycle_state_id
         del self._model_states_by_life_cycle_state_id
         del self._last_event_seq_by_target
