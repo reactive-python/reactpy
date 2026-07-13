@@ -314,18 +314,18 @@ class Layout(BaseLayout):
 
         self._model_states_by_life_cycle_state_id[life_cycle_state.id] = new_state
 
-        # If this component is scheduled to render, we can cancel that task since we are
-        # rendering it now.  Drain the orphaned ``_render_tasks_ready`` semaphore token
-        # (which was already released by ``_schedule_render_task`` for this task) via a
-        # fire-and-forget acquire so ``_parallel_render`` does not deadlock.
+        # If this component is scheduled to render, we can cancel that task since we
+        # are rendering it now.  We keep the cancelled task in ``_render_tasks`` so
+        # the semaphore token that ``_schedule_render_task`` released is still
+        # paired with an entry the consumer can pick up.  ``asyncio.wait`` returns
+        # cancelled tasks in the done set, and the ``CancelledError`` catch in
+        # ``_parallel_render`` drains the token naturally.
         if life_cycle_state.id in self._render_tasks_by_id:
             task = self._render_tasks_by_id[life_cycle_state.id]
             if task is not current_task():
                 del self._render_tasks_by_id[life_cycle_state.id]
                 self._render_task_to_lcs_id.pop(task, None)
                 task.cancel()
-                self._render_tasks.discard(task)
-                create_task(self._render_tasks_ready.acquire())
 
         await life_cycle_hook.affect_component_will_render(component)
         exit_stack.push_async_callback(life_cycle_hook.affect_layout_did_render)

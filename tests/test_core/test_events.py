@@ -2,6 +2,7 @@ import asyncio
 from functools import partial
 
 import pytest
+
 import reactpy
 from reactpy import component, html, use_state
 from reactpy.core.events import (
