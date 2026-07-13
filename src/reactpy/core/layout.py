@@ -210,31 +210,16 @@ class Layout(BaseLayout):
                 return await self._create_layout_update(model_state)
 
     async def _parallel_render(self) -> LayoutUpdateMessage:
-        """Await to fetch the first completed render within our asyncio task group.
-        We use the `asyncio.tasks.wait` API in order to return the first completed task.
-        """
+        """Await to fetch the first completed render within our asyncio task group."""
         while True:
             await self._render_tasks_ready.acquire()
+
             if not self._render_tasks:  # nocov
                 continue
+
             done, _ = await wait(self._render_tasks, return_when=FIRST_COMPLETED)
             update_task: Task[LayoutUpdateMessage] = done.pop()
             self._render_tasks.discard(update_task)
-
-            lcs_id = self._render_task_to_lcs_id.pop(update_task, None)
-            if (
-                lcs_id is not None
-                and self._render_tasks_by_id.get(lcs_id) is not update_task
-            ):
-                # A newer render has been scheduled for this component
-                # while we were in-flight. Drop this stale result so the
-                # client only receives the latest render per component.
-                continue
-            if (
-                lcs_id is not None
-                and self._render_tasks_by_id.get(lcs_id) is update_task
-            ):
-                del self._render_tasks_by_id[lcs_id]
 
             try:
                 return update_task.result()
@@ -330,13 +315,17 @@ class Layout(BaseLayout):
         self._model_states_by_life_cycle_state_id[life_cycle_state.id] = new_state
 
         # If this component is scheduled to render, we can cancel that task since we are
-        # rendering it now.
+        # rendering it now.  Drain the orphaned ``_render_tasks_ready`` semaphore token
+        # (which was already released by ``_schedule_render_task`` for this task) via a
+        # fire-and-forget acquire so ``_parallel_render`` does not deadlock.
         if life_cycle_state.id in self._render_tasks_by_id:
             task = self._render_tasks_by_id[life_cycle_state.id]
             if task is not current_task():
                 del self._render_tasks_by_id[life_cycle_state.id]
+                self._render_task_to_lcs_id.pop(task, None)
                 task.cancel()
                 self._render_tasks.discard(task)
+                create_task(self._render_tasks_ready.acquire())
 
         await life_cycle_hook.affect_component_will_render(component)
         exit_stack.push_async_callback(life_cycle_hook.affect_layout_did_render)
