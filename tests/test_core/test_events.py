@@ -2,7 +2,6 @@ import asyncio
 from functools import partial
 
 import pytest
-
 import reactpy
 from reactpy import component, html, use_state
 from reactpy.core.events import (
@@ -821,7 +820,7 @@ async def test_controlled_input_rapid_typing(display: DisplayFixture):
     # available for server-side flood control on real high-speed
     # inputs.
     target_text = "hello world this is a test"
-    await inp.type(target_text, delay=50)
+    await inp.type(target_text, delay=25)
 
     # Wait a bit for all events to settle
     await asyncio.sleep(0.5)

@@ -27,7 +27,7 @@ GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "").lower() in {
     "on",
     "1",
 }
-DEFAULT_TYPE_DELAY = 250 if GITHUB_ACTIONS else 25
+DEFAULT_TYPE_DELAY = 50 if GITHUB_ACTIONS else 25
 
 
 class poll(Generic[_R]):  # noqa: N801
