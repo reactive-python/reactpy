@@ -7,7 +7,7 @@ Creating a development environment
 If you plan to make code changes to this repository, you will need to install the following dependencies first:
 
 - `Git <https://www.python.org/downloads/>`__
-- `Python 3.9+ <https://www.python.org/downloads/>`__
+- `Python 3.11+ <https://www.python.org/downloads/>`__
 - `Hatch <https://hatch.pypa.io/latest/>`__
 - `Bun <https://bun.sh/>`__
 - `Docker <https://docs.docker.com/get-docker/>`__ (optional)

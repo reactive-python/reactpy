@@ -6,7 +6,7 @@ authors = ["rmorshea <ryan.morshead@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.11"
 furo = "2022.04.07"
 reactpy = { path = "..", extras = ["all"], develop = false }
 sphinx = "*"
