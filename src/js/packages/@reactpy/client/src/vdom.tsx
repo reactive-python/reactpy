@@ -222,6 +222,14 @@ function createEventHandler(
     throttle,
   }: ReactPyVdomEventHandler,
 ): [string, TaggedEventHandler] {
+  // Sequence number for the next outgoing event on this handler.
+  // The wrapper in ``UserInputElement`` may overwrite this before
+  // the event is actually sent (so that the wrapper, not this
+  // closure, owns the per-element monotonic counter and survives
+  // handler recreation on every server re-render). The default
+  // behavior (no wrapper) is to use a per-handler counter starting
+  // at 0.
+  let outgoingSeq = 0;
   const eventHandler = function (...args: any[]) {
     const data = Array.from(args).map((value) => {
       const event = value as Event;
@@ -239,9 +247,17 @@ function createEventHandler(
         return event;
       }
     });
-    client.sendMessage({ type: "layout-event", data, target });
-  } as TaggedEventHandler;
+    const seq = outgoingSeq++;
+    client.sendMessage({ type: "layout-event", data, target, seq });
+  } as TaggedEventHandler & {
+    _reactpy_peek_seq?: () => number;
+    _reactpy_set_seq?: (n: number) => void;
+  };
   eventHandler[HANDLER_MARKER] = true;
+  eventHandler._reactpy_peek_seq = (): number => outgoingSeq;
+  eventHandler._reactpy_set_seq = (n: number): void => {
+    outgoingSeq = n;
+  };
   if (debounce !== undefined) {
     if (!isValidDebounce(debounce)) {
       log.warn(

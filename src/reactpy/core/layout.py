@@ -74,7 +74,22 @@ class Layout(BaseLayout):
             _LifeCycleStateId, Task[LayoutUpdateMessage]
         ] = {}
         self._render_tasks_ready: Semaphore = Semaphore(0)
+        # Maps a running render task back to the component it belongs to.
+        # Used by the stale-render detection in `_parallel_render` to drop
+        # out-of-order completions when async rendering is enabled and a
+        # newer render for the same component has already been scheduled.
+        self._render_task_to_lcs_id: dict[
+            Task[LayoutUpdateMessage], _LifeCycleStateId
+        ] = {}
         self._rendering_queue: _ThreadSafeQueue[_LifeCycleStateId] = _ThreadSafeQueue()
+        # Per-target event sequence tracking. Each incoming layout-event
+        # may carry an optional ``seq`` field (assigned by the client)
+        # which the server records here so it can be echoed back to the
+        # client as ``ackSeq`` on the originating element. This lets the
+        # client determine deterministically whether the server has
+        # processed all keystrokes without relying on a time-based
+        # debounce window.
+        self._last_event_seq_by_target: dict[str, int] = {}
         root_model_state = _new_root_model_state(self.root, self._schedule_render_task)
         self._root_life_cycle_state_id = root_id = root_model_state.life_cycle_state.id
         self._model_states_by_life_cycle_state_id = {root_id: root_model_state}
@@ -107,8 +122,10 @@ class Layout(BaseLayout):
         del self._event_processing_tasks
         del self._rendering_queue
         del self._render_tasks_by_id
+        del self._render_task_to_lcs_id
         del self._root_life_cycle_state_id
         del self._model_states_by_life_cycle_state_id
+        del self._last_event_seq_by_target
 
     async def deliver(self, event: LayoutEventMessage | dict[str, Any]) -> None:
         """Dispatch an event to the targeted handler"""
@@ -137,6 +154,16 @@ class Layout(BaseLayout):
     ) -> None:
         while True:
             event = await queue.get()
+
+            # Record the client-assigned event sequence number (if any)
+            # so we can echo it back as ``ackSeq`` on the originating
+            # element. The client uses this to decide whether the
+            # server has caught up to the latest keystrokes.
+            seq = event.get("seq")
+            if isinstance(seq, int) and seq >= 0:
+                prev = self._last_event_seq_by_target.get(target, -1)
+                if seq > prev:
+                    self._last_event_seq_by_target[target] = seq
 
             # Retry a few times to handle potential re-render race conditions where
             # the handler is temporarily removed and then re-added.
@@ -183,21 +210,16 @@ class Layout(BaseLayout):
                 return await self._create_layout_update(model_state)
 
     async def _parallel_render(self) -> LayoutUpdateMessage:
-        """Await to fetch the first completed render within our asyncio task group.
-        We use the `asyncio.tasks.wait` API in order to return the first completed task.
-        """
+        """Await to fetch the first completed render within our asyncio task group."""
         while True:
             await self._render_tasks_ready.acquire()
+
             if not self._render_tasks:  # nocov
                 continue
+
             done, _ = await wait(self._render_tasks, return_when=FIRST_COMPLETED)
             update_task: Task[LayoutUpdateMessage] = done.pop()
             self._render_tasks.discard(update_task)
-
-            for lcs_id, task in list(self._render_tasks_by_id.items()):
-                if task is update_task:
-                    del self._render_tasks_by_id[lcs_id]
-                    break
 
             try:
                 return update_task.result()
@@ -292,14 +314,18 @@ class Layout(BaseLayout):
 
         self._model_states_by_life_cycle_state_id[life_cycle_state.id] = new_state
 
-        # If this component is scheduled to render, we can cancel that task since we are
-        # rendering it now.
+        # If this component is scheduled to render, we can cancel that task since we
+        # are rendering it now.  We keep the cancelled task in ``_render_tasks`` so
+        # the semaphore token that ``_schedule_render_task`` released is still
+        # paired with an entry the consumer can pick up.  ``asyncio.wait`` returns
+        # cancelled tasks in the done set, and the ``CancelledError`` catch in
+        # ``_parallel_render`` drains the token naturally.
         if life_cycle_state.id in self._render_tasks_by_id:
             task = self._render_tasks_by_id[life_cycle_state.id]
             if task is not current_task():
                 del self._render_tasks_by_id[life_cycle_state.id]
+                self._render_task_to_lcs_id.pop(task, None)
                 task.cancel()
-                self._render_tasks.discard(task)
 
         await life_cycle_hook.affect_component_will_render(component)
         exit_stack.push_async_callback(life_cycle_hook.affect_layout_did_render)
@@ -380,6 +406,7 @@ class Layout(BaseLayout):
             self._render_model_event_handlers_without_old_state(
                 new_state, handlers_by_event
             )
+            self._inject_event_ack_seq(new_state, raw_model.get("tagName"))
             return None
 
         for old_event in set(old_state.targets_by_event).difference(handlers_by_event):
@@ -387,6 +414,7 @@ class Layout(BaseLayout):
             del self._event_handlers[old_target]
 
         if not handlers_by_event:
+            self._inject_event_ack_seq(new_state, raw_model.get("tagName"))
             return None
 
         model_event_handlers = new_state.model.current["eventHandlers"] = {}
@@ -400,7 +428,42 @@ class Layout(BaseLayout):
             self._event_handlers[target] = handler
             model_event_handlers[event] = self._serialize_event_handler(handler, target)
 
+        self._inject_event_ack_seq(new_state, raw_model.get("tagName"))
         return None
+
+    def _inject_event_ack_seq(
+        self, new_state: _ModelState, tag_name: str | None
+    ) -> None:
+        """Attach ``ackSeq`` to user-input element attributes so the client
+        can determine deterministically whether the server has processed
+        the latest keystrokes.
+
+        For each event handler bound to this element, we look up the
+        highest client-assigned sequence number the server has received
+        for that target and, if any was recorded, attach the maximum
+        across handlers as the element's ``ackSeq``.
+        """
+        if tag_name not in {"input", "select", "textarea"}:
+            return
+        targets = list(new_state.targets_by_event.values())
+        if not targets:
+            return
+        max_ack: int | None = None
+        for target in targets:
+            ack = self._last_event_seq_by_target.get(target)
+            if ack is None:
+                continue
+            if max_ack is None or ack > max_ack:
+                max_ack = ack
+        if max_ack is None:
+            return
+        attrs = new_state.model.current.get("attributes")
+        if not isinstance(attrs, dict):
+            return
+        # Never let ackSeq leak into the user's attributes (it's not a
+        # real DOM attribute). Store it in a dedicated key the client
+        # recognizes.
+        attrs.setdefault("_reactpy_ack_seq", max_ack)  # type: ignore[reportArgumentType]
 
     def _render_model_event_handlers_without_old_state(
         self,
@@ -527,6 +590,7 @@ class Layout(BaseLayout):
             )
         else:
             task = create_task(self._create_layout_update(model_state))
+            self._render_task_to_lcs_id[task] = lcs_id
             self._render_tasks.add(task)
             self._render_tasks_by_id[lcs_id] = task
             self._render_tasks_ready.release()

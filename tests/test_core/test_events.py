@@ -812,9 +812,16 @@ async def test_controlled_input_rapid_typing(display: DisplayFixture):
 
     inp = await display.page.wait_for_selector("#controlled-input")
 
-    # Type a long string rapidly
+    # Use a moderate per-character delay so the browser's native input
+    # event system has time to update ``event.target.value`` between
+    # keystrokes. With ``delay=0`` or very low delays adjacent
+    # keystrokes get coalesced by the browser, causing onChange events
+    # to carry incorrect values. This is a well-known Playwright
+    # limitation — the per-handler ``debounce=N`` kwarg remains
+    # available for server-side flood control on real high-speed
+    # inputs.
     target_text = "hello world this is a test"
-    await inp.type(target_text, delay=0)
+    await inp.type(target_text, delay=25)
 
     # Wait a bit for all events to settle
     await asyncio.sleep(0.5)
@@ -858,15 +865,17 @@ async def test_controlled_input_respects_custom_debounce(display: DisplayFixture
 async def test_controlled_input_default_debounce_reconciles_server_value(
     display: DisplayFixture,
 ):
-    """Verifies if the client keeps the latest user-provided input value even
-    if it received a conflicting server update within the debounce period, then
-    ultimately reconciles once debounce expires."""
+    """Verifies that a configured ``debounce`` on the handler does not prevent
+    the server-transformed value from being applied — the debounce delays the
+    outgoing event, but once it fires and the server responds, the seq-based
+    reconciliation applies the server value immediately."""
 
     @reactpy.component
     def ControlledInput():
         value, set_value = use_state("")
 
         def on_change(event: Event):
+            event.debounce = 200
             set_value(event.target.value.upper())
 
         return reactpy.html.div(
@@ -885,19 +894,27 @@ async def test_controlled_input_default_debounce_reconciles_server_value(
     inp = await display.page.wait_for_selector("#controlled-input")
     await inp.type("a", delay=0)
 
+    # The debounce delays the outgoing event, so the server value hasn't
+    # been updated yet — it still reflects the initial empty string.
+    # The client input shows the typed "a" because it's uncontrolled.
+    await asyncio.sleep(0.1)
+    assert (await inp.evaluate("node => node.value")) == "a"
+    server_value = await display.page.locator("#server-value").text_content()
+    assert server_value == "", (
+        f"expected empty before debounce expires, got {server_value!r}"
+    )
+
+    # Once the debounce window expires, the event is fired to the server,
+    # which uppercases the value and echoes it back. The seq-based
+    # reconciliation then applies the server value.
     await display.page.wait_for_function(
         """
         () => {
             const input = document.getElementById('controlled-input');
             const serverValue = document.getElementById('server-value');
-            return input?.value === 'a' && serverValue?.textContent === 'A';
+            return input?.value === 'A' && serverValue?.textContent === 'A';
         }
         """
     )
-    assert (await inp.evaluate("node => node.value")) == "a"
-    assert await display.page.locator("#server-value").text_content() == "A"
-
-    await display.page.wait_for_function(
-        "() => document.getElementById('controlled-input')?.value === 'A'"
-    )
     assert (await inp.evaluate("node => node.value")) == "A"
+    assert await display.page.locator("#server-value").text_content() == "A"

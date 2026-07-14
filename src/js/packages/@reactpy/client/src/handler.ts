@@ -17,29 +17,6 @@ export type TaggedEventHandler = ((event: Event) => void) & {
 };
 
 /**
- * Returns the debounce value (in milliseconds) to use as the default for a user
- * input element when no user input has been recorded yet. Uses the maximum
- * debounce among the element's tagged handlers, falling back to the global
- * default if none of the handlers specify one.
- */
-export function getInitialDebounce(
-  props: Record<string, unknown>,
-  fallback: number,
-): number {
-  let max = 0;
-  for (const value of Object.values(props)) {
-    if (typeof value !== "function") {
-      continue;
-    }
-    const candidate = (value as TaggedEventHandler)[HANDLER_DEBOUNCE];
-    if (typeof candidate === "number" && candidate > max) {
-      max = candidate;
-    }
-  }
-  return max > 0 ? max : fallback;
-}
-
-/**
  * Returns true when the given value is a finite, non-negative integer.
  * Used to validate debounce/throttle values arriving over the wire from the
  * Python layout.
