@@ -399,10 +399,12 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
   // ``inputRef`` in the reconcile effect above, only when the
   // server has caught up and the proposed value is not shorter
   // than what the user has already typed.
-  const { value: _ignoredValue, ...controlledProps } = props as Record<
-    string,
-    any
-  >;
+  const controlledProps: Record<string, any> = {};
+  for (const key of Object.keys(props as Record<string, any>)) {
+    if (key !== "value") {
+      controlledProps[key] = (props as Record<string, any>)[key];
+    }
+  }
   return createElement(
     model.tagName,
     { ...controlledProps, ref: inputRef },
