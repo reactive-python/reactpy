@@ -1636,6 +1636,62 @@ async def test_deduplicate_async_renders_rapid():
             assert render_count.current < 5
 
 
+async def test_inject_ack_seq_on_input_without_handlers():
+    """An ``<input>`` with no event handlers should not error when injecting
+    the event ack sequence (the ``targets_by_event`` dict will be empty)."""
+    set_state = Ref()
+
+    @component
+    def Root():
+        state, set_state.current = use_state(0)
+        return html.input({"value": str(state)})
+
+    async with Layout(Root()) as layout:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            await layout.render()
+
+        # Trigger a re-render to go through the ack injection path again
+        set_state.current(1)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            await layout.render()
+
+
+async def test_inject_ack_seq_on_input_without_attributes():
+    """An ``<input>`` with event handlers and a recorded ack seq but no
+    ``"attributes"`` key should not error when injecting the ack sequence."""
+    static = StaticEventHandler()
+    handler = EventHandler(lambda e: None, target=static.target)
+    set_state = Ref()
+
+    @component
+    def Root():
+        state, set_state.current = use_state(0)
+        # Use state only to trigger re-renders (the value is not in attrs).
+        _ = state  # read state so the component re-renders on set_state
+        # ``onChange`` is an event handler, so it goes into eventHandlers.
+        # There are no other attributes, so ``"attributes"`` key is omitted.
+        return html.input({"onChange": handler})
+
+    async with Layout(Root()) as layout:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            await layout.render()
+
+        # Populate ``_last_event_seq_by_target`` so that ``max_ack`` is
+        # not ``None`` when the ack seq is injected on the next render.
+        layout._last_event_seq_by_target[static.target] = 42
+
+        # Trigger re-render to hit the ack injection path with a recorded seq
+        set_state.current(1)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            await layout.render()
+
+
 async def test_event_handler_retry_logic():
     # Setup
     @component
