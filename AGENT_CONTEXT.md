@@ -530,3 +530,41 @@ All settable by env var (`reactpy/config.py`).
     several `await asyncio.sleep(0)` calls after each render before asserting. Also note a second
     `await layout.render()` with nothing pending blocks until timeout — wrap it in
     `asyncio.wait_for`.
+34. **`use_context` consumes no hook slot.** `core/hooks.py`, `use_context` calls only
+    `HOOK_STACK.current_hook().get_context_provider(...)` — never `use_state`/`_use_const` — so it
+    can be called conditionally or on only some renders without shifting other hooks' slots.
+    Verified: a component calling `use_connection()` (which delegates to `use_context`) only on
+    even renders re-renders cleanly through `n=4`. It still needs an active hook stack, so it
+    cannot be called outside a render at all.
+35. **The connection trio are context accessors, and both failure modes differ.**
+    `use_connection`/`use_scope`/`use_location` (`core/hooks.py`) all read the module-level
+    `ConnectionContext` created by `create_context(None)`. Called outside any render:
+    `RuntimeError: No life cycle hook is active. Are you rendering in a layout?` (the hook-stack
+    error every hook gives). Called inside a plain `Layout` with no provider:
+    `RuntimeError: No backend established a connection.` Only `executors/asgi/middleware.py` ever
+    sets the provider (`Layout(ConnectionContext(component(), value=connection))` inside
+    `ReactPyWebsocket.run_dispatcher`), so a bare `Layout` render — and therefore any unit test —
+    raises. Wrap in `try/except RuntimeError` to write components that work both ways.
+36. **`Connection`/`Location` are plain mutable dataclasses in `reactpy/types.py`, not exported
+    from the `reactpy` namespace** — import from `reactpy.types`. `Connection` fields: `scope`
+    (dict), `location` (`Location`), `carrier` (any; a `ReactPyWebsocket` under the ASGI
+    executors). `Location` fields: `path`, `query_string` — both required. Neither has `deliver`,
+    `id`, `close`, `send`, or `accept`; there is no API to push to the client from here. Both are
+    unhashable (`__hash__` from `eq=True`) and compare by value.
+37. **`use_location` is NOT the websocket scope's path.** `middleware.py`,
+    `_location_from_websocket_query_string` parses the websocket's own query string with
+    `parse_qs(..., strict_parsing=True)` and reads synthetic `path`/`qs` params, which
+    `static/index.js` builds from `window.location.pathname`/`.search`. The scope's own `path`
+    stays `/reactpy/`. Browser-verified: visiting `/some/deep/page?tab=2&user=ada` yields
+    `Location(path='/some/deep/page', query_string='?tab=2&user=ada')`. The `?` is **kept**, so
+    `parse_qs(location.query_string)` mangles the first key into `'?tab'` — `.lstrip("?")` first.
+    A malformed websocket query string raises `ValueError: bad query field` inside
+    `run_dispatcher`, is swallowed into a server-side `_logger.error`, and the connection accepts
+    but never renders.
+38. **`reactpy_to_string` cannot render any hook-using component.** `utils.py`, `reactpy_to_string`
+    calls `component_to_vdom` → `component.render()` directly with no `Layout`, so there is no hook
+    stack: `use_state`, `use_ref`, `use_effect`, `use_location` etc. all raise `RuntimeError: No
+    life cycle hook is active. Are you rendering in a layout?`. Only plain `html.*` elements and
+    hook-free components convert. This constrains `ReactPy(prepend_body=...)`, which is rendered
+    through exactly this path (`standalone.py`). Passing an uncalled component raises
+    `AttributeError: 'function' object has no attribute 'render'`.

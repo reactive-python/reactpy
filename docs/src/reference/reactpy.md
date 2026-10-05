@@ -162,7 +162,7 @@ What *is* server-rendered into the first response:
 
 Practical consequences:
 
--   **Search engines and `curl` see an empty app.** For content that must exist without JavaScript, render it yourself — `#!python reactpy_to_string` from `reactpy.utils` turns a component into an HTML string, which you can place in `#!python prepend_body` or emit from your own route.
+-   **Search engines and `curl` see an empty app.** For content that must exist without JavaScript, render it yourself — `#!python reactpy_to_string` turns a component into an HTML string, which you can place in `#!python prepend_body` or emit from your own route. It renders the component's *first* render directly, without a layout, so the component **cannot use any hook**: `use_state`, `use_ref`, `use_effect`, `use_location` and the rest all raise `RuntimeError: No life cycle hook is active. Are you rendering in a layout?`. Pass plain `#!python html.*` elements, or a component that calls none of them.
 -   **There is no first-paint flash to optimise away**, because there is no first paint to replace.
 -   A component that fails on the server fails *after* the page loads, leaving a blank `#!html <div id="app">`. When the page loads but shows nothing, check the server log before the browser console.
 
