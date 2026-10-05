@@ -2,7 +2,7 @@
 
 <p class="intro" markdown>
 
-React lets you add _event handlers_ to your PSX. Event handlers are your own functions that will be triggered in response to interactions like clicking, hovering, focusing form inputs, and so on.
+ReactPy lets you add _event handlers_ to your VDOM. Event handlers are your own functions that will be triggered in response to interactions like clicking, hovering, focusing form inputs, and so on.
 
 </p>
 
@@ -11,10 +11,11 @@ React lets you add _event handlers_ to your PSX. Event handlers are your own fun
     -   Different ways to write an event handler
     -   How to pass event handling logic from a parent component
     -   How events propagate and how to stop them
+    -   What the event object actually contains
 
 ## Adding event handlers
 
-To add an event handler, you will first define a function and then [pass it as a prop](../learn/passing-props-to-a-component.md) to the appropriate PSX tag. For example, here is a button that doesn't do anything yet:
+To add an event handler, you first define a function and then [pass it as a prop](./passing-props-to-a-component.md) to the appropriate tag. For example, here is a button that doesn't do anything yet:
 
 === "app.py"
 
@@ -30,9 +31,9 @@ To add an event handler, you will first define a function and then [pass it as a
 
 You can make it show a message when a user clicks by following these three steps:
 
-1. Declare a function called `handle_click` _inside_ your `#!python def button():` component.
-2. Implement the logic inside that function (use `print` to show the message).
-3. Add `on_click=handle_click` to the `html.button` PSX.
+1. Declare a function called `#!python handle_click` _inside_ your `#!python def button()` component.
+2. Implement the logic inside that function (use `#!python print` to show the message).
+3. Add `#!python "onClick": handle_click` to the `#!python html.button` attributes dictionary.
 
 === "app.py"
 
@@ -52,601 +53,292 @@ You can make it show a message when a user clicks by following these three steps
     # TODO
     ```
 
-You defined the `handleClick` function and then [passed it as a prop](/learn/passing-props-to-a-component) to `<button>`. `handleClick` is an **event handler.** Event handler functions:
+You defined the `#!python handle_click` function and then [passed it as a prop](./passing-props-to-a-component.md) to `#!python html.button`. `#!python handle_click` is an **event handler.** Event handler functions:
 
 -   Are usually defined _inside_ your components.
--   Have names that start with `handle`, followed by the name of the event.
+-   Have names that start with `#!python handle`, followed by the name of the event.
 
-By convention, it is common to name event handlers as `handle` followed by the event name. You'll often see `on_click={handleClick}`, `onMouseEnter={handleMouseEnter}`, and so on.
+By convention, it is common to name event handlers as `#!python handle` followed by the event name. You'll often see `#!python "onKeyDown": handle_key_down`, `#!python "onMouseEnter": handle_mouse_enter`, and so on.
 
-Alternatively, you can define an event handler inline in the JSX:
+!!! warning "The handler key is camelCase, and it lives in the attributes dict"
 
-```jsx
-<button on_click={function handleClick() {
-  alert('You clicked me!');
-}}>
+    This is the single most common mistake when moving from ReactJS examples. The key is the **DOM event name in camelCase** — `#!python "onClick"`, `#!python "onChange"`, `#!python "onSubmit"` — and it goes **inside the attributes dictionary**, not as a keyword argument:
+
+    ```python linenums="0"
+    html.button({"onClick": handle_click}, "Click me")   # correct
+    ```
+
+    Writing `#!python html.button({"on_click": handle_click}, ...)` does **not** raise. ReactPy accepts any `#!python on*` key as a handler and ships it to the browser verbatim — but no browser event is named `#!python on_click`, so the button looks fine and simply never fires. Only the names *you* define (variables, components, component props) are `#!python snake_case`.
+
+    ReactPy recognises a key as an event handler when it matches `#!python ^on[A-Z]\w+` (`core/vdom.py`, `EVENT_ATTRIBUTE_PATTERN`).
+
+Alternatively, you can define an event handler inline with a `#!python lambda`:
+
+```python linenums="0"
+html.button(
+    {"onClick": lambda event: print("You clicked me!")},
+    "Click me",
+)
 ```
 
-Or, more concisely, using an arrow function:
+Inline event handlers are convenient for short functions.
 
-```jsx
-<button on_click={() => {
-  alert('You clicked me!');
-}}>
-```
+!!! warning "A string is not a handler — it is JavaScript"
 
-All of these styles are equivalent. Inline event handlers are convenient for short functions.
+    ReactPy has a second, easy-to-miss form. If the value of an `#!python on*` key is a **string**, ReactPy treats it as JavaScript to run in the browser instead of calling your Python code:
 
-<Pitfall>
+    ```python linenums="0"
+    html.button({"onClick": "alert('You clicked me!')"}, "Click me")
+    ```
 
-Functions passed to event handlers must be passed, not called. For example:
+    That renders into an `#!python inlineJavaScript` field on the VDOM node rather than an `#!python eventHandlers` field, and nothing on the server ever runs. It is a real escape hatch for things only the browser can do, but it is never what you want when you meant to write a Python function. If your handler silently does nothing, check whether you passed a string.
 
-| passing a function (correct)      | calling a function (incorrect)      |
-| --------------------------------- | ----------------------------------- |
-| `<button on_click={handleClick}>` | `<button on_click={handleClick()}>` |
+!!! warning "Pass the function, don't call it"
 
-The difference is subtle. In the first example, the `handleClick` function is passed as an `on_click` event handler. This tells React to remember it and only call your function when the user clicks the button.
+    Functions passed to event handlers must be passed, not called:
 
-In the second example, the `()` at the end of `handleClick()` fires the function _immediately_ during [rendering](/learn/render-and-commit), without any clicks. This is because JavaScript inside the [JSX `{` and `}`](/learn/javascript-in-jsx-with-curly-braces) executes right away.
+    ```python linenums="0"
+    html.button({"onClick": handle_click}, "...")    # correct: fires on click
+    html.button({"onClick": handle_click()}, "...")  # wrong: fires during render
+    ```
 
-When you write code inline, the same pitfall presents itself in a different way:
+    In the second case the `#!python ()` calls `#!python handle_click` _immediately_ during [rendering](./render-and-commit.md), without any clicks — because the Python inside the call is evaluated right away, exactly like an expression inside JSX braces. Whatever it returns is then stored as the handler, which is usually `#!python None`. ReactPy does not reject that: `#!python None` is serialised as a handler that never runs, so the button renders and does nothing, forever.
 
-| passing a function (correct)             | calling a function (incorrect)     |
-| ---------------------------------------- | ---------------------------------- |
-| `<button on_click={() => alert('...')}>` | `<button on_click={alert('...')}>` |
+    The same trap appears with inline code:
 
-Passing inline code like this won't fire on click—it fires every time the component renders:
+    ```python linenums="0"
+    # This prints when the component renders, not when clicked!
+    html.button({"onClick": print("You clicked me!")}, "Click me")
 
-```jsx
-// This alert fires when the component renders, not when clicked!
-<button on_click={alert('You clicked me!')}>
-```
+    # Wrap it in a lambda so it becomes a function to call later.
+    html.button({"onClick": lambda event: print("You clicked me!")}, "Click me")
+    ```
 
-If you want to define your event handler inline, wrap it in an anonymous function like so:
-
-```jsx
-<button on_click={() => alert('You clicked me!')}>
-```
-
-Rather than executing the code inside with every render, this creates a function to be called later.
-
-In both cases, what you want to pass is a function:
-
--   `<button on_click={handleClick}>` passes the `handleClick` function.
--   `<button on_click={() => alert('...')}>` passes the `() => alert('...')` function.
-
-[Read more about arrow functions.](https://javascript.info/arrow-functions-basics)
-
-</Pitfall>
+    In both working cases, what you pass is a function.
 
 ### Reading props in event handlers
 
-Because event handlers are declared inside of a component, they have access to the component's props. Here is a button that, when clicked, shows an alert with its `message` prop:
+Because event handlers are declared inside a component, they have access to the component's props. Here is a button that, when clicked, displays its `#!python message` prop:
 
-```js
-function AlertButton({ message, children }) {
-    return <button on_click={() => alert(message)}>{children}</button>;
-}
+=== "app.py"
 
-export default function Toolbar() {
-    return (
-        <div>
-            <AlertButton message="Playing!">Play Movie</AlertButton>
-            <AlertButton message="Uploading!">Upload Image</AlertButton>
-        </div>
-    );
-}
-```
+    ```python
+    {% include "../../examples/responding_to_events/reading_props/app.py" start="# start" %}
+    ```
 
-```css
-button {
-    margin-right: 10px;
-}
-```
+=== ":material-play: Run"
 
-This lets these two buttons show different messages. Try changing the messages passed to them.
+    ```python
+    # TODO
+    ```
+
+This lets the two buttons show different messages. Try changing the messages passed to them.
+
+Note the `#!python set_shown(message)` line: the handler closes over the `#!python message` **prop**, which is a plain function parameter, so this behaves like any other Python closure.
 
 ### Passing event handlers as props
 
-Often you'll want the parent component to specify a child's event handler. Consider buttons: depending on where you're using a `Button` component, you might want to execute a different function—perhaps one plays a movie and another uploads an image.
+Often you'll want the parent component to specify a child's event handler. Consider buttons: depending on where you're using a `#!python button()` component, you might want to execute a different function—perhaps one plays a movie and another uploads an image.
 
-To do this, pass a prop the component receives from its parent as the event handler like so:
+To do this, pass a prop the component receives from its parent as the event handler:
 
-```js
-function Button({ on_click, children }) {
-    return <button on_click={on_click}>{children}</button>;
-}
+=== "app.py"
 
-function PlayButton({ movieName }) {
-    function handlePlayClick() {
-        alert(`Playing ${movieName}!`);
-    }
+    ```python
+    {% include "../../examples/responding_to_events/handler_props/app.py" start="# start" %}
+    ```
 
-    return <Button on_click={handlePlayClick}>Play "{movieName}"</Button>;
-}
+=== ":material-play: Run"
 
-function UploadButton() {
-    return <Button on_click={() => alert("Uploading!")}>Upload Image</Button>;
-}
+    ```python
+    # TODO
+    ```
 
-export default function Toolbar() {
-    return (
-        <div>
-            <PlayButton movieName="Kiki's Delivery Service" />
-            <UploadButton />
-        </div>
-    );
-}
-```
+Here, `#!python toolbar()` renders a `#!python play_button()` and an `#!python upload_button()`:
 
-```css
-button {
-    margin-right: 10px;
-}
-```
+-   `#!python play_button()` passes `#!python handle_play_click` as the `#!python on_click` prop to the `#!python button()` inside.
+-   `#!python upload_button()` passes `#!python handle_upload_click` as the `#!python on_click` prop.
 
-Here, the `Toolbar` component renders a `PlayButton` and an `UploadButton`:
+Finally, the `#!python button()` component accepts a prop called `#!python on_click` and passes it straight to the built-in browser button with `#!python {"onClick": on_click}`. This tells ReactPy to call the passed function on click.
 
--   `PlayButton` passes `handlePlayClick` as the `on_click` prop to the `Button` inside.
--   `UploadButton` passes `() => alert('Uploading!')` as the `on_click` prop to the `Button` inside.
-
-Finally, your `Button` component accepts a prop called `on_click`. It passes that prop directly to the built-in browser `<button>` with `on_click={on_click}`. This tells React to call the passed function on click.
-
-If you use a [design system](https://uxdesign.cc/everything-you-need-to-know-about-design-systems-54b109851969), it's common for components like buttons to contain styling but not specify behavior. Instead, components like `PlayButton` and `UploadButton` will pass event handlers down.
+Notice the two levels of naming: the prop your own component accepts is an ordinary Python parameter (`#!python on_click`, snake_case), while the key handed to the browser tag is `#!python "onClick"`. A [design system](https://uxdesign.cc/everything-you-need-to-know-about-design-systems-54b109851969) commonly puts styling in components like buttons but leaves the behavior to callers, so `#!python play_button()` and `#!python upload_button()` pass handlers down.
 
 ### Naming event handler props
 
-Built-in components like `<button>` and `<div>` only support [browser event names](/reference/react-dom/components/common#common-props) like `on_click`. However, when you're building your own components, you can name their event handler props any way that you like.
+Built-in tags like `#!python html.button` and `#!python html.div` only support [DOM event names](https://developer.mozilla.org/en-US/docs/Web/Events) as handler keys — `#!python "onClick"`, `#!python "onChange"`, and so on. When you build your own components, however, you can name their handler props anything you like, because they are just Python parameters.
 
-By convention, event handler props should start with `on`, followed by a capital letter.
+By convention, name them `#!python on_` followed by the interaction:
 
-For example, the `Button` component's `on_click` prop could have been called `onSmash`:
+=== "app.py"
 
-```js
-function Button({ onSmash, children }) {
-    return <button on_click={onSmash}>{children}</button>;
-}
+    ```python
+    {% include "../../examples/responding_to_events/naming_props/app.py" start="# start" %}
+    ```
 
-export default function App() {
-    return (
-        <div>
-            <Button onSmash={() => alert("Playing!")}>Play Movie</Button>
-            <Button onSmash={() => alert("Uploading!")}>Upload Image</Button>
-        </div>
-    );
-}
+=== ":material-play: Run"
+
+    ```python
+    # TODO
+    ```
+
+In this example `#!python {"onClick": on_smash}` shows that the browser button still needs the key `#!python "onClick"`, but the prop name received by your own `#!python button()` component is up to you.
+
+When a component supports multiple interactions, name handler props after app-specific concepts. A `#!python toolbar()` could receive `#!python on_play_movie` and `#!python on_upload_image`. The calling `#!python app()` does not need to know _what_ `#!python toolbar()` will do with them — that's an implementation detail. It could wire them to a click today and a keyboard shortcut tomorrow. Naming props after app-specific interactions gives you that flexibility.
+
+!!! info "Use the right tag"
+
+    Use the semantically correct HTML tag for the interaction. To handle clicks, use `#!python html.button({"onClick": handle_click})` rather than `#!python html.div({"onClick": handle_click})`. A real browser `#!python <button>` gives you built-in behavior such as keyboard navigation and focus handling. If you dislike the default styling, restyle it with CSS rather than downgrading it to a `#!html <div>`. [Learn more about writing accessible markup.](https://developer.mozilla.org/en-US/docs/Learn/Accessibility/HTML)
+
+## The event object
+
+Handlers receive the event data as their **single positional argument**. By convention it's called `#!python event`.
+
+It is **not** React's `SyntheticEvent`. There is no `#!python nativeEvent`, no `#!python persist()`, no event pooling. It is JSON that the browser sent over the websocket, wrapped in `#!python reactpy.types.Event` — a `#!python dict` subclass that adds attribute access into nested dictionaries:
+
+```python linenums="0"
+def handle_change(event):
+    event["target"]["value"]   # dictionary style
+    event.target.value         # identical, attribute style
 ```
 
-```css
-button {
-    margin-right: 10px;
-}
-```
+Both forms are equivalent, and each step down re-wraps the nested dictionary so chaining works. But a missing key reads as `#!python None` instead of raising, so a typo such as `#!python event.target.vallue` fails silently. Reach for `#!python event.get("target", {})` when a missing value should be a real error.
 
-In this example, `<button on_click={onSmash}>` shows that the browser `<button>` (lowercase) still needs a prop called `on_click`, but the prop name received by your custom `Button` component is up to you!
+The properties that reliably arrive are those the client deliberately keeps:
 
-When your component supports multiple interactions, you might name event handler props for app-specific concepts. For example, this `Toolbar` component receives `onPlayMovie` and `onUploadImage` event handlers:
+| Read | Meaning |
+| --- | --- |
+| `#!python event["target"]["value"]` | Text of an `#!html <input>`, `#!html <textarea>`, or selected `#!html <option>` |
+| `#!python event["target"]["checked"]` | Whether a checkbox or radio is on (use `#!python "onChange"`, which the client maps to `#!python input` for checkboxes) |
+| `#!python event["target"]["files"]` | Files from an `#!html <input type="file">` |
+| `#!python event["key"]` | Which key, on `#!python onKeyDown` / `#!python onKeyUp` |
+| `#!python event["type"]` | The event name, e.g. `#!python "click"` |
+| `#!python event["target"]["dataset"]` | The element's `#!python data-*` attributes |
+| `#!python event["target"][name]` | On `#!python onSubmit`, each named control of the form |
 
-```js
-export default function App() {
-    return (
-        <Toolbar
-            onPlayMovie={() => alert("Playing!")}
-            onUploadImage={() => alert("Uploading!")}
-        />
-    );
-}
+ReactPy's client serializes the DOM event's own enumerable properties, plus the five highlighted ones (`#!python value`, `#!python checked`, `#!python files`, `#!python type`, `#!python name`) which it re-reads directly from the element so they survive even when the element hides them, and the current text selection.
 
-function Toolbar({ onPlayMovie, onUploadImage }) {
-    return (
-        <div>
-            <Button on_click={onPlayMovie}>Play Movie</Button>
-            <Button on_click={onUploadImage}>Upload Image</Button>
-        </div>
-    );
-}
+It **drops** methods, anything `#!python __`-prefixed or all-caps, and — to avoid enormous payloads and layout thrash — a long denylist of element properties including `#!python innerHTML`, `#!python outerHTML`, `#!python childNodes`, `#!python parentNode`, `#!python offsetWidth`, and `#!python scrollTop`. So `#!python event.target.parentNode` is simply not there, and neither is anything that would need the real DOM node.
 
-function Button({ on_click, children }) {
-    return <button on_click={on_click}>{children}</button>;
-}
-```
+!!! info "Form submits hand you the named fields"
 
-```css
-button {
-    margin-right: 10px;
-}
-```
-
-Notice how the `App` component does not need to know _what_ `Toolbar` will do with `onPlayMovie` or `onUploadImage`. That's an implementation detail of the `Toolbar`. Here, `Toolbar` passes them down as `on_click` handlers to its `Button`s, but it could later also trigger them on a keyboard shortcut. Naming props after app-specific interactions like `onPlayMovie` gives you the flexibility to change how they're used later.
-
-<Note>
-
-Make sure that you use the appropriate HTML tags for your event handlers. For example, to handle clicks, use [`<button on_click={handleClick}>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button) instead of `<div on_click={handleClick}>`. Using a real browser `<button>` enables built-in browser behaviors like keyboard navigation. If you don't like the default browser styling of a button and want to make it look more like a link or a different UI element, you can achieve it with CSS. [Learn more about writing accessible markup.](https://developer.mozilla.org/en-US/docs/Learn/Accessibility/HTML)
-
-</Note>
+    For `#!python onSubmit` the target is the `#!html <form>` itself, and each control that has a `#!python name` is flattened onto it. That makes it easy to read a whole form without a `#!python use_state` per field.
 
 ## Event propagation
 
-Event handlers will also catch events from any children your component might have. We say that an event "bubbles" or "propagates" up the tree: it starts with where the event happened, and then goes up the tree.
+Event handlers also catch events from any children a component has. We say that an event "bubbles" or "propagates" up the tree: it starts where the event happened, and then goes up.
 
-This `<div>` contains two buttons. Both the `<div>` _and_ each button have their own `on_click` handlers. Which handlers do you think will fire when you click a button?
+ReactPy attaches an ordinary DOM listener to each element, so bubbling is the **browser's** native behavior rather than something ReactPy implements. That has one consequence worth knowing: unlike React, which delegates every event to the document root and then replays it down your component tree, ReactPy's handlers follow the real DOM tree. A parent handler fires for events from anything nested inside it, including elements you did not render yourself.
 
-```js
-export default function Toolbar() {
-    return (
-        <div
-            className="Toolbar"
-            on_click={() => {
-                alert("You clicked on the toolbar!");
-            }}
-        >
-            <button on_click={() => alert("Playing!")}>Play Movie</button>
-            <button on_click={() => alert("Uploading!")}>Upload Image</button>
-        </div>
-    );
-}
-```
+This `#!html <div>` contains a button. Both the `#!html <div>` _and_ the button have their own `#!python "onClick"` handlers. Which do you think fire when you click the button?
 
-```css
-.Toolbar {
-    background: #aaa;
-    padding: 5px;
-}
-button {
-    margin: 5px;
-}
-```
+=== "app.py"
 
-If you click on either button, its `on_click` will run first, followed by the parent `<div>`'s `on_click`. So two messages will appear. If you click the toolbar itself, only the parent `<div>`'s `on_click` will run.
+    ```python
+    {% include "../../examples/responding_to_events/propagation/app.py" start="# start" %}
+    ```
 
-<Pitfall>
+=== "styles.css"
 
-All events propagate in React except `onScroll`, which only works on the JSX tag you attach it to.
+    ```css
+    {% include "../../examples/responding_to_events/propagation/styles.css" %}
+    ```
 
-</Pitfall>
+=== ":material-play: Run"
+
+    ```python
+    # TODO
+    ```
+
+If you click the button, its `#!python "onClick"` runs first, followed by the parent `#!html <div>`'s. Two messages appear. If you click the toolbar itself, only the parent's handler runs.
+
+!!! warning "Scroll does not bubble"
+
+    Because propagation is the browser's own, the browser's exceptions apply. `#!python "onScroll"` does not bubble: attaching it to an ancestor will not catch scrolls from descendants. Attach it to the element that actually scrolls.
 
 ### Stopping propagation
 
-Event handlers receive an **event object** as their only argument. By convention, it's usually called `e`, which stands for "event". You can use this object to read information about the event.
+To prevent an event from reaching parent components, call `#!python event.stopPropagation()`:
 
-That event object also lets you stop the propagation. If you want to prevent an event from reaching parent components, you need to call `e.stopPropagation()` like this `Button` component does:
+=== "app.py"
 
-```js
-function Button({ on_click, children }) {
-    return (
-        <button
-            on_click={(e) => {
-                e.stopPropagation();
-                on_click();
-            }}
-        >
-            {children}
-        </button>
-    );
-}
+    ```python
+    {% include "../../examples/responding_to_events/stop_propagation/app.py" start="# start" %}
+    ```
 
-export default function Toolbar() {
-    return (
-        <div
-            className="Toolbar"
-            on_click={() => {
-                alert("You clicked on the toolbar!");
-            }}
-        >
-            <Button on_click={() => alert("Playing!")}>Play Movie</Button>
-            <Button on_click={() => alert("Uploading!")}>Upload Image</Button>
-        </div>
-    );
-}
-```
+=== "styles.css"
 
-```css
-.Toolbar {
-    background: #aaa;
-    padding: 5px;
-}
-button {
-    margin: 5px;
-}
-```
+    ```css
+    {% include "../../examples/responding_to_events/stop_propagation/styles.css" %}
+    ```
 
-When you click on a button:
+=== ":material-play: Run"
 
-1. React calls the `on_click` handler passed to `<button>`.
-2. That handler, defined in `Button`, does the following:
-    - Calls `e.stopPropagation()`, preventing the event from bubbling further.
-    - Calls the `on_click` function, which is a prop passed from the `Toolbar` component.
-3. That function, defined in the `Toolbar` component, displays the button's own alert.
-4. Since the propagation was stopped, the parent `<div>`'s `on_click` handler does _not_ run.
+    ```python
+    # TODO
+    ```
 
-As a result of `e.stopPropagation()`, clicking on the buttons now only shows a single alert (from the `<button>`) rather than the two of them (from the `<button>` and the parent toolbar `<div>`). Clicking a button is not the same thing as clicking the surrounding toolbar, so stopping the propagation makes sense for this UI.
+Now clicking the button produces only `"Playing!"`.
 
-<DeepDive>
+!!! warning "ReactPy detects this call by reading your bytecode"
 
-#### Capture phase events
+    `#!python event.stopPropagation()` is a no-op on the server — by the time your handler runs, the browser event is long gone. What actually stops propagation is a flag sent to the browser _in advance_, and ReactPy derives it by **inspecting the bytecode of your handler** (`core/_event_inspect.py`, `inspect_event_handler`).
 
-In rare cases, you might need to catch all events on child elements, _even if they stopped propagation_. For example, maybe you want to log every click to analytics, regardless of the propagation logic. You can do this by adding `Capture` at the end of the event name:
+    It looks for `#!python .stopPropagation` (and `#!python .preventDefault`) accessed directly on the **first parameter**. That produces some sharp edges, all of them observable:
 
-```js
-<div
-    on_clickCapture={() => {
-        /* this runs first */
-    }}
->
-    <button on_click={(e) => e.stopPropagation()} />
-    <button on_click={(e) => e.stopPropagation()} />
-</div>
-```
+    - The handler must take a parameter at all. `#!python def handler():` can never be detected.
+    - It must be the **first positional parameter**. Renaming it is fine; the position is what matters.
+    - Rebinding defeats it. `#!python e = event` followed by `#!python e.stopPropagation()` is **not** detected, and propagation silently continues.
+    - Passing the event into a helper that calls it is likewise not detected.
 
-Each event propagates in three phases:
+    When in doubt, skip detection and declare the intent explicitly:
 
-1. It travels down, calling all `on_clickCapture` handlers.
-2. It runs the clicked element's `on_click` handler.
-3. It travels upwards, calling all `on_click` handlers.
+    ```python linenums="0"
+    from reactpy import event
 
-Capture events are useful for code like routers or analytics, but you probably won't use them in app code.
-
-</DeepDive>
-
-### Passing handlers as alternative to propagation
-
-Notice how this click handler runs a line of code _and then_ calls the `on_click` prop passed by the parent:
-
-```js
-function Button({ on_click, children }) {
-    return (
-        <button
-            on_click={(e) => {
-                e.stopPropagation();
-                on_click();
-            }}
-        >
-            {children}
-        </button>
-    );
-}
-```
-
-You could add more code to this handler before calling the parent `on_click` event handler, too. This pattern provides an _alternative_ to propagation. It lets the child component handle the event, while also letting the parent component specify some additional behavior. Unlike propagation, it's not automatic. But the benefit of this pattern is that you can clearly follow the whole chain of code that executes as a result of some event.
-
-If you rely on propagation and it's difficult to trace which handlers execute and why, try this approach instead.
+    @event(stop_propagation=True, prevent_default=True)
+    async def handle_click(event): ...
+    ```
 
 ### Preventing default behavior
 
-Some browser events have default behavior associated with them. For example, a `<form>` submit event, which happens when a button inside of it is clicked, will reload the whole page by default:
+Call `#!python event.preventDefault()` the same way to stop the browser's built-in action. The classic case is a form submit, which would otherwise navigate away from the page:
 
-```js
-export default function Signup() {
-    return (
-        <form onSubmit={() => alert("Submitting!")}>
-            <input />
-            <button>Send</button>
-        </form>
-    );
-}
-```
+=== "app.py"
 
-```css
-button {
-    margin-left: 5px;
-}
-```
+    ```python
+    {% include "../../examples/responding_to_events/prevent_default/app.py" start="# start" %}
+    ```
 
-You can call `e.preventDefault()` on the event object to stop this from happening:
+=== ":material-play: Run"
 
-```js
-export default function Signup() {
-    return (
-        <form
-            onSubmit={(e) => {
-                e.preventDefault();
-                alert("Submitting!");
-            }}
-        >
-            <input />
-            <button>Send</button>
-        </form>
-    );
-}
-```
+    ```python
+    # TODO
+    ```
 
-```css
-button {
-    margin-left: 5px;
-}
-```
+The same detection rules — and the same `#!python @event(prevent_default=True)` escape hatch — apply.
 
-Don't confuse `e.stopPropagation()` and `e.preventDefault()`. They are both useful, but are unrelated:
+!!! info "Capture-phase handlers"
 
--   [`e.stopPropagation()`](https://developer.mozilla.org/docs/Web/API/Event/stopPropagation) stops the event handlers attached to the tags above from firing.
--   [`e.preventDefault()` ](https://developer.mozilla.org/docs/Web/API/Event/preventDefault) prevents the default browser behavior for the few events that have it.
+    To see an event on the way _down_, before your children handle it, append `#!python Capture` to the event name:
+
+    ```python linenums="0"
+    html.div(
+        {"onClickCapture": handle_toolbar_click},
+        html.button({"onClick": handle_play_click}, "Play Movie"),
+    )
+    ```
+
+    ReactPy forwards the key untouched, and the client registers it with `#!python addEventListener("click", handler, True)`, so `#!python "onClickCapture"` fires before the button's own `#!python "onClick"`. This works because it maps onto a real DOM capability rather than a React invention — which also means the ordering is the browser's, not ReactPy's.
 
 ## Can event handlers have side effects?
 
-Absolutely! Event handlers are the best place for side effects.
+Yes. Unlike component bodies, which must stay pure, event handlers run in response to an action rather than during rendering, so they are the correct place to change things. See [Where you _can_ cause side effects](./keeping-components-pure.md#where-you-can-cause-side-effects) for where side effects belong and why.
 
-Unlike rendering functions, event handlers don't need to be [pure](/learn/keeping-components-pure), so it's a great place to _change_ something—for example, change an input's value in response to typing, or change a list in response to a button press. However, in order to change some information, you first need some way to store it. In React, this is done by using [state, a component's memory.](/learn/state-a-components-memory) You will learn all about it on the next page.
+## Recap
 
-<Recap>
-
--   You can handle events by passing a function as a prop to an element like `<button>`.
--   Event handlers must be passed, **not called!** `on_click={handleClick}`, not `on_click={handleClick()}`.
--   You can define an event handler function separately or inline.
--   Event handlers are defined inside a component, so they can access props.
--   You can declare an event handler in a parent and pass it as a prop to a child.
--   You can define your own event handler props with application-specific names.
--   Events propagate upwards. Call `e.stopPropagation()` on the first argument to prevent that.
--   Events may have unwanted default browser behavior. Call `e.preventDefault()` to prevent that.
--   Explicitly calling an event handler prop from a child handler is a good alternative to propagation.
-
-</Recap>
-
-<Challenges>
-
-#### Fix an event handler
-
-Clicking this button is supposed to switch the page background between white and black. However, nothing happens when you click it. Fix the problem. (Don't worry about the logic inside `handleClick`—that part is fine.)
-
-```js
-export default function LightSwitch() {
-    function handleClick() {
-        let bodyStyle = document.body.style;
-        if (bodyStyle.backgroundColor === "black") {
-            bodyStyle.backgroundColor = "white";
-        } else {
-            bodyStyle.backgroundColor = "black";
-        }
-    }
-
-    return <button on_click={handleClick()}>Toggle the lights</button>;
-}
-```
-
-<Solution>
-
-The problem is that `<button on_click={handleClick()}>` _calls_ the `handleClick` function while rendering instead of _passing_ it. Removing the `()` call so that it's `<button on_click={handleClick}>` fixes the issue:
-
-```js
-export default function LightSwitch() {
-    function handleClick() {
-        let bodyStyle = document.body.style;
-        if (bodyStyle.backgroundColor === "black") {
-            bodyStyle.backgroundColor = "white";
-        } else {
-            bodyStyle.backgroundColor = "black";
-        }
-    }
-
-    return <button on_click={handleClick}>Toggle the lights</button>;
-}
-```
-
-Alternatively, you could wrap the call into another function, like `<button on_click={() => handleClick()}>`:
-
-```js
-export default function LightSwitch() {
-    function handleClick() {
-        let bodyStyle = document.body.style;
-        if (bodyStyle.backgroundColor === "black") {
-            bodyStyle.backgroundColor = "white";
-        } else {
-            bodyStyle.backgroundColor = "black";
-        }
-    }
-
-    return <button on_click={() => handleClick()}>Toggle the lights</button>;
-}
-```
-
-</Solution>
-
-#### Wire up the events
-
-This `ColorSwitch` component renders a button. It's supposed to change the page color. Wire it up to the `onChangeColor` event handler prop it receives from the parent so that clicking the button changes the color.
-
-After you do this, notice that clicking the button also increments the page click counter. Your colleague who wrote the parent component insists that `onChangeColor` does not increment any counters. What else might be happening? Fix it so that clicking the button _only_ changes the color, and does _not_ increment the counter.
-
-```js
-export default function ColorSwitch({ onChangeColor }) {
-    return <button>Change color</button>;
-}
-```
-
-```js
-import { useState } from "react";
-import ColorSwitch from "./ColorSwitch.js";
-
-export default function App() {
-    const [clicks, setClicks] = useState(0);
-
-    function handleClickOutside() {
-        setClicks((c) => c + 1);
-    }
-
-    function getRandomLightColor() {
-        let r = 150 + Math.round(100 * Math.random());
-        let g = 150 + Math.round(100 * Math.random());
-        let b = 150 + Math.round(100 * Math.random());
-        return `rgb(${r}, ${g}, ${b})`;
-    }
-
-    function handleChangeColor() {
-        let bodyStyle = document.body.style;
-        bodyStyle.backgroundColor = getRandomLightColor();
-    }
-
-    return (
-        <div
-            style={{ width: "100%", height: "100%" }}
-            on_click={handleClickOutside}
-        >
-            <ColorSwitch onChangeColor={handleChangeColor} />
-            <br />
-            <br />
-            <h2>Clicks on the page: {clicks}</h2>
-        </div>
-    );
-}
-```
-
-<Solution>
-
-First, you need to add the event handler, like `<button on_click={onChangeColor}>`.
-
-However, this introduces the problem of the incrementing counter. If `onChangeColor` does not do this, as your colleague insists, then the problem is that this event propagates up, and some handler above does it. To solve this problem, you need to stop the propagation. But don't forget that you should still call `onChangeColor`.
-
-```js
-export default function ColorSwitch({ onChangeColor }) {
-    return (
-        <button
-            on_click={(e) => {
-                e.stopPropagation();
-                onChangeColor();
-            }}
-        >
-            Change color
-        </button>
-    );
-}
-```
-
-```js
-import { useState } from "react";
-import ColorSwitch from "./ColorSwitch.js";
-
-export default function App() {
-    const [clicks, setClicks] = useState(0);
-
-    function handleClickOutside() {
-        setClicks((c) => c + 1);
-    }
-
-    function getRandomLightColor() {
-        let r = 150 + Math.round(100 * Math.random());
-        let g = 150 + Math.round(100 * Math.random());
-        let b = 150 + Math.round(100 * Math.random());
-        return `rgb(${r}, ${g}, ${b})`;
-    }
-
-    function handleChangeColor() {
-        let bodyStyle = document.body.style;
-        bodyStyle.backgroundColor = getRandomLightColor();
-    }
-
-    return (
-        <div
-            style={{ width: "100%", height: "100%" }}
-            on_click={handleClickOutside}
-        >
-            <ColorSwitch onChangeColor={handleChangeColor} />
-            <br />
-            <br />
-            <h2>Clicks on the page: {clicks}</h2>
-        </div>
-    );
-}
-```
-
-</Solution>
-
-</Challenges>
+-   Add a handler by putting the **DOM event name in camelCase** into the attributes dictionary: `#!python {"onClick": handle_click}`.
+-   Only names you define are `#!python snake_case`; `#!python "on_click"` renders but never fires.
+-   Pass a function, never the result of calling one; a string value means client-side JavaScript, not Python.
+-   Handlers may read props, call setters, and have side effects.
+-   The event object is a `#!python dict`-subclass snapshot of browser data, not a `SyntheticEvent`; read `#!python event["target"]["value"]`, `#!python event["key"]`, and friends, and don't expect DOM-node properties.
+-   Events bubble natively, with the browser's own exceptions such as `#!python "onScroll"`. Stop them with `#!python event.stopPropagation()`, which is detected from your bytecode — or declare it with `#!python @event(stop_propagation=True)`.

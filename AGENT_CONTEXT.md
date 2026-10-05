@@ -75,8 +75,12 @@ html.button({"onClick": on_click, "id": "click"}, "Click Me!")  # dict first, th
   (`docs/examples/quick_start/adding_styles.py:4`). Attribute keys are passed through
   verbatim to the client; there is no snake_case→camelCase conversion for attributes.
 - `style` is a dict of camelCase CSS properties: `{"style": {"color": "red"}}`.
-- `key` goes in the attribute dict for elements: `html.li({"key": product["id"]}, ...)`
-  (`docs/examples/quick_start/rendering_lists_list_items.py:6`).
+- **`key` is spelled two different ways depending on what you are creating**, and mixing
+  them up is a hard error. For an *element* it goes in the attribute dict
+  (`html.li({"key": 1}, ...)`); passing it as a keyword raises
+  `TypeError: Vdom.__call__() got an unexpected keyword argument 'key'`. For a *component*
+  it is the keyword (`my_row(item, key=1)`); putting it in a dict is meaningless there.
+  Verified in a real browser round-trip, not just by reading source.
 - Dashed/illegal Python names: trailing `_` is stripped, `_` becomes `-`.
   `html.del_` → `<del>`, `html.data_table` → `<data-table>` (`_html.py`, `HtmlConstructor.__getattr__`).
 - Fragments: `html()` or `html.fragment(...)`. Accepts **only** a `key` attribute;
@@ -121,12 +125,26 @@ html.button({"onClick": handle_click}, "Click me")   # docs/examples/responding_
   event["target"]["value"]      # dict style
   event.target.value            # identical, attribute style
   ```
-- Supported payload reads proven by tests: `event.target.value`
-  (`test_events.py: test_controlled_input_rapid_typing`,
-  `test_controlled_input_respects_custom_debounce`).
-  `event["target"]["checked"]` is **not** proven by any test — `thinking-in-react.md:223`
-  carries `FIXME: Click event on the checkbox is broken. event["target"]["checked"] doesn't
-  exist`. Do not document `checked` as working.
+- Supported payload reads, **verified in a real headless Chrome round-trip** (not just by
+  reading the serializer): `event["target"]["value"]`, `event["target"]["checked"]`,
+  `event["key"]`, `event["type"]`, `event["target"]["dataset"]`.
+  `checked` **works** — a checkbox `onChange` handler receives `checked=True`. The
+  `FIXME: ... event["target"]["checked"] doesn't exist` comment in
+  `docs/src/learn/thinking-in-react.md` is **wrong** and should be removed when that page is
+  touched: the client serializer deliberately re-reads `["value","checked","files","type",
+  "name"]` off the element via `prop in x` (`static/index.js`, the `classToObject` helper),
+  which bypasses enumerability entirely. Do not repeat the FIXME's claim.
+- **Capture-phase handlers work.** Append `Capture` to the key (`{"onClickCapture": h}`);
+  ReactPy forwards it untouched and the client strips the suffix and registers with
+  `addEventListener(type, handler, true)`. Verified order: capture parent → child → bubble
+  parent. Do not write that ReactPy lacks capture support.
+- `onScroll` does **not** bubble (native DOM behavior): a parent `onScroll` does not fire for
+  a descendant's scroll. Since ReactPy attaches real DOM listeners rather than delegating at
+  the document root like React, the browser's own exceptions apply — verify before claiming
+  any propagation behavior.
+- A handler key that is not a real DOM event (`{"on_click": h}`) and a handler that is `None`
+  (from accidentally calling the function) both **render without error and never fire**.
+  Confirmed in-browser: neither produced a single server-side invocation.
 - `event.preventDefault()`, `event.stopPropagation()`, and assigning
   `event.debounce = <ms>` are detected by **bytecode inspection** of the handler:
   `prevent_default` / `stop_propagation` / `debounce` get set automatically

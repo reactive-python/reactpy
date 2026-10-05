@@ -26,7 +26,7 @@ nav:
                 - Rendering Lists: learn/rendering-lists.md
                 - Keeping Components Pure: learn/keeping-components-pure.md
           - Adding Interactivity:
-                - Responding to Events 🚧: learn/responding-to-events.md
+                - Responding to Events: learn/responding-to-events.md
                 - "State: A Component's Memory 🚧": learn/state-a-components-memory.md
                 - Render and Commit 🚧: learn/render-and-commit.md
                 - State as a Snapshot 🚧: learn/state-as-a-snapshot.md
