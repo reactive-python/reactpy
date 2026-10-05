@@ -201,6 +201,11 @@ use_debug_value(message, dependencies=...)
   unmount (`core/hooks.py`, `use_effect`). With `use_async_effect` the effect body runs as an
   `asyncio.Task` that is **cancelled** when deps change or on unmount unless
   `shield=True` (`core/hooks.py`, `use_async_effect`).
+- `use_async_effect` takes a **zero-argument** coroutine: it calls `func()` with no `stop`
+  event (`core/hooks.py`, `use_async_effect.decorator` -> `asyncio.create_task(func())`).
+  The `async def effect(stop)` signature carried over from ReactPy 1.x raises
+  `TypeError: ... missing 1 required positional argument: 'stop'`. Loop on `while True:` and
+  let cancellation end it, or return a cleanup function.
 - Effects run **after the layout renders** (`affect_layout_did_render`,
   `core/_life_cycle_hook.py`, `affect_layout_did_render`) — same ordering guarantee as ReactJS.
 - Hooks are positional-indexed per component (`_life_cycle_hook.py: LifeCycleHook.use_state`):
