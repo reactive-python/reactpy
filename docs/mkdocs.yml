@@ -77,8 +77,8 @@ nav:
                 - Usage 🚧: reference/usage.md
           - Executors:
                 - ReactPy: reference/reactpy.md
-                - ReactPyCsr 🚧: reference/reactpy-csr.md
-                - ReactPyMiddleware 🚧: reference/reactpy-middleware.md
+                - ReactPyCsr: reference/reactpy-csr.md
+                - ReactPyMiddleware: reference/reactpy-middleware.md
           - Rules of React:
                 - Overview 🚧: reference/rules-of-react.md
                 - Components and Hooks must be pure 🚧: reference/components-and-hooks-must-be-pure.md
