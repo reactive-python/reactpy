@@ -263,6 +263,12 @@ use_debug_value(message, dependencies=...)
   (`layout.py: _process_child_type_and_key`) — ints/floats render as text; so do `True`
   and `None`→skipped. `component_to_vdom` coerces a bare `str` return into
   `html.div(text)` (`utils.py: component_to_vdom`).
+- **Booleans are NOT React-like.** Verified through `Layout.render()`: `False` renders as the
+  literal text `"False"` and `True` as `"True"` (React renders both as nothing). Only `None`
+  and an *empty list* are skipped. So the React idiom `{cond && <X/>}` becomes
+  `*([] if not cond else [X])` — never `cond and X`. Likewise `count and html.p(...)`
+  renders `"0"` when `count == 0`, reproducing the classic JS bug with no fix-up operator
+  available. Do not port any `&&`-rendering example as if it worked.
 
 ## 8. Config
 
