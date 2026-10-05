@@ -80,10 +80,10 @@ nav:
                 - ReactPyCsr: reference/reactpy-csr.md
                 - ReactPyMiddleware: reference/reactpy-middleware.md
           - Rules of React:
-                - Overview 🚧: reference/rules-of-react.md
-                - Components and Hooks must be pure 🚧: reference/components-and-hooks-must-be-pure.md
-                - React calls Components and Hooks 🚧: reference/react-calls-components-and-hooks.md
-                - Rules of Hooks 🚧: reference/rules-of-hooks.md
+                - Overview: reference/rules-of-react.md
+                - Components and Hooks must be pure: reference/components-and-hooks-must-be-pure.md
+                - React calls Components and Hooks: reference/react-calls-components-and-hooks.md
+                - Rules of Hooks: reference/rules-of-hooks.md
           - Template Tags:
                 - Jinja 🚧: reference/jinja.md
           - Protocol Structure 🚧: reference/protocol-structure.md

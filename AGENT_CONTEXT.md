@@ -669,3 +669,32 @@ All settable by env var (`reactpy/config.py`).
     constructor; `html.svg` is a separate `SvgConstructor` whose children may share HTML names.
     `_script` raises `ValueError: 'script' elements do not support event handlers` and injects an
     inferred `key` from its content or `src`.
+52. **Hooks are positional slots, and ReactPy tolerates a *shrinking* slot list in silence.**
+    `core/_life_cycle_hook.py`, `LifeCycleHook.use_state`: before the first completed render it
+    appends to `self._state`; afterwards it reads `self._state[self._current_state_index]` and
+    increments. Nothing records the hook's identity, so call order is identity. Measured
+    consequences: (a) a hook call that *appears* after mount (`if n >= 1: use_state(...)`) dies
+    with `IndexError: list index out of range` -- surfaced in the model as
+    `{"tagName": "", "error": "IndexError: ..."}` with debug on, and as `error: ""` (blank
+    region) with debug off, because `core/layout.py`, `_render_component` only formats the
+    exception when `REACTPY_DEBUG` is on; (b) a hook call that *disappears* (a hook behind a
+    condition that can flip) shifts every later hook up one slot with **no error at all** --
+    measured `n=HIDDEN`, i.e. a counter reading its neighbour's value; the corruption typically
+    explodes one click later inside the event handler (`TypeError: can only concatenate str
+    (not "int") to str`) so the traceback blames the handler, not the hook; (c) a hook in a
+    `for` loop freezes initial values and truncates quietly as the loop shrinks (3->2->1->0 all
+    "worked"), raising the IndexError only when the loop grows. React raises in cases (b) and
+    (c). Docs must state the rules as absolute and call out that tolerance is not safety.
+53. **Hooks are unusable anywhere but a render, and the failure is server-only.** Calling a hook
+    at module level, from `await component().render()`, from inside an event handler, or from an
+    `use_effect` callback body all raise `RuntimeError: No life cycle hook is active. Are you
+    rendering in a layout?`. In the handler and effect cases the layout swallows it into a
+    server-side `Failed to execute event handler ...` / effect log line -- the UI just stops
+    responding, with nothing in the browser console.
+54. **`@component` makes a constructor, and `key` is a reserved parameter.**
+    `core/component.py`, `component`: it inspects the signature and raises
+    `TypeError: Component render function <...> uses reserved parameter 'key'` at *decorate* time
+    if `key` is a positional-or-keyword/keyword-only parameter; the returned constructor takes
+    `key` as a keyword-only argument and returns a `Component` (repr `name(12hex, arg=...)`).
+    Passing the undecorated *function* as a child is accepted and stringified into the page as
+    `<function name at 0x...>` -- a hex address on the page means a missing call.
