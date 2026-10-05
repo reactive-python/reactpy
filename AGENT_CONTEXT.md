@@ -417,16 +417,32 @@ All settable by env var (`reactpy/config.py`).
     `use_state` update. Do not claim React's "skip rendering unchanged inputs" optimization.
     `reactpy_to_string` (in `reactpy.utils`) does exist and is the server-render story, but it
     leaks module-level state across calls, which is a purity argument, not a feature.
-15. **Batching is sync-only.** A plain `def` handler making several setter calls produces
+15. **`set_state` replaces; it never merges.** `dispatch` does `self.value = next_value`
+    (`hooks.py`, `_CurrentState.dispatch`) with no dict merge — verified: setting
+    `{"a": 9}` over `{"a": 1, "b": 2}` yields `{'a': 9}`, so `b` is gone. Same as React's
+    `useState` (unlike class `setState`), so ReactJS prose saying "React merges the object
+    into your current state" is wrong for ReactPy and must not be ported. Partial updates
+    require `set_x({**x, "k": v})`.
+16. **Mutating in place then setting the same object is silently dropped.** Identity
+    comparison in `dispatch` means `x.append(i); set_x(x)` schedules **no render** at all —
+    verified. No error, no console output, no warning; the handler runs and the UI never
+    changes. Also covers mutating without calling the setter.
+17. **Handlers receive exactly one positional argument.** The event is `data[0]` unpacked
+    onto the signature; a handler declaring two required parameters raises
+    `TypeError: ... missing 1 required positional argument: 'event'` — verified. There is
+    no `e.target.name`: the client does not send DOM attributes, so extra context must be
+    bound in Python (usually a `lambda`). Pointer events DO carry `clientX`/`clientY`
+    (browser-verified), so drag/pointer demos are portable.
+18. **Batching is sync-only.** A plain `def` handler making several setter calls produces
     **one** render; an `async def` handler that `await`s between them produces **one render
     per flush** (measured in Chrome: `0→3` vs `0→1→2→3`), because `dispatch` assigns state
     immediately and only flags a re-render. React 18+ batches both. Never claim React-style
     batching across `await`.
-16. **A raising updater is swallowed.** If an updater raises, state is left unassigned, no
+19. **A raising updater is swallowed.** If an updater raises, state is left unassigned, no
     render is scheduled, and `Layout._process_event_queue` logs `Failed to execute event
     handler` server-side while the browser stays silent. Check the server log when a control
     "stops working" with no client error.
-17. **Equal state does not re-render.** `dispatch` compares with `strictly_equal` (identity,
+20. **Equal state does not re-render.** `dispatch` compares with `strictly_equal` (identity,
     except int/float/complex/str/bytes/bytearray/memoryview by value) and skips
     `schedule_render()` when equal — verified. But this is *not* component memoization: see
     item 14.

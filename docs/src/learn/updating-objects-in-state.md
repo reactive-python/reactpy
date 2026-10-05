@@ -2,1564 +2,213 @@
 
 <p class="intro" markdown>
 
-State can hold any kind of JavaScript value, including objects. But you shouldn't change objects that you hold in the React state directly. Instead, when you want to update an object, you need to create a new one (or make a copy of an existing one), and then set the state to use that copy.
+State can hold any kind of value, including dicts and lists. But you shouldn't change objects that you hold in ReactPy state directly. Instead, when you want to update an object, you need to create a new one (or make a copy of an existing one), and then set the state to use that copy.
 
 </p>
 
 !!! summary "You will learn"
 
-    -   How to correctly update an object in React state
+    -   How to correctly update an object in ReactPy state
     -   How to update a nested object without mutating it
     -   What immutability is, and how not to break it
-    -   How to make object copying less repetitive with Immer
+    -   Why a mutating update can be dropped without any error
 
 ## What's a mutation?
 
-You can store any kind of JavaScript value in state.
+To _mutate_ something means to change it after it was created.
 
-```js
-const [x, setX] = useState(0);
-```
+Objects and lists in Python are _mutable_: you can change their contents in place. The mutating operations are usually visible in the code you write — `#!python obj["key"] = value`, `#!python list.append(x)`, `#!python list.pop()`, `#!python del list[i]`, `#!python d.update(other)` — but there are more hiding behind method names that don't announce themselves (`#!python list.sort()`, `#!python list.extend()`, `#!python list.reverse()`, `#!python dict.setdefault()`).
 
-So far you've been working with numbers, strings, and booleans. These kinds of JavaScript values are "immutable", meaning unchangeable or "read-only". You can trigger a re-render to _replace_ a value:
+In ReactPy, treat state as **read-only**. Every time your code renders, you work with the state that already exists, and you want to _cause changes_ over time based on user input. Leaving all mutation to the setter keeps your code easy to understand. This applies to state in general, not just object state.
 
-```js
-setX(5);
-```
+!!! warning "Mutating state doesn't just risk a bug — it can silently do nothing"
 
-The `x` state changed from `0` to `5`, but the _number `0` itself_ did not change. It's not possible to make any changes to the built-in primitive values like numbers, strings, and booleans in JavaScript.
+    In React, mutating state is a "may render stale UI" hazard. In ReactPy it is sharper, because the setter compares the new value against the old one **by identity** before scheduling anything (`core/hooks.py`, `strictly_equal`).
 
-Now consider an object in state:
+    Measured behaviour, each case dispatched through `reactpy.core.layout.Layout`:
 
-```js
-const [position, setPosition] = useState({ x: 0, y: 0 });
-```
+    | What the handler does | Result |
+    | --- | --- |
+    | Mutates a list in place, then `set_x(same_list)` | **no render at all** |
+    | Mutates in place, calls no setter | no render |
+    | `set_x([*old, item])` — a new object | renders |
 
-Technically, it is possible to change the contents of _the object itself_. **This is called a mutation:**
-
-```js
-position.x = 5;
-```
-
-However, although objects in React state are technically mutable, you should treat them **as if** they were immutable--like numbers, booleans, and strings. Instead of mutating them, you should always replace them.
+    The failure is completely silent: no error, no warning, nothing in the browser console. Your handler ran, ReactPy agreed that nothing changed, and the UI never updates. This is why the read-only rule is not a style preference here.
 
 ## Treat state as read-only
 
-In other words, you should **treat any JavaScript object that you put into state as read-only.**
+Consider a form that lets the user change their profile. This handler reaches into the state object and assigns a field directly:
 
-This example holds an object in state to represent the current pointer position. The red dot is supposed to move when you touch or move the cursor over the preview area. But the dot stays in the initial position:
-
-```js
-import { useState } from "react";
-export default function MovingDot() {
-	const [position, setPosition] = useState({
-		x: 0,
-		y: 0,
-	});
-	return (
-		<div
-			onPointerMove={(e) => {
-				position.x = e.clientX;
-				position.y = e.clientY;
-			}}
-			style={{
-				position: "relative",
-				width: "100vw",
-				height: "100vh",
-			}}
-		>
-			<div
-				style={{
-					position: "absolute",
-					backgroundColor: "red",
-					borderRadius: "50%",
-					transform: `translate(${position.x}px, ${position.y}px)`,
-					left: -10,
-					top: -10,
-					width: 20,
-					height: 20,
-				}}
-			/>
-		</div>
-	);
-}
+```python linenums="0"
+def handle_first_name(event):
+    person["firstName"] = event["target"]["value"]   # 🚩 Mutate!
+    set_person(person)                                # same object -> ignored
 ```
 
-```css
-body {
-	margin: 0;
-	padding: 0;
-	height: 250px;
-}
+`#!python person` is the very object ReactPy already holds, so the assignment changes it in place and then hands the same object back. ReactPy's identity check sees no change and skips the render — the field appears frozen while your dict quietly holds the new value.
+
+The fix is to always create a **new** object for the next state:
+
+```python linenums="0"
+def handle_first_name(event):
+    set_person({**person, "firstName": event["target"]["value"]})
 ```
 
-The problem is with this bit of code.
+That is the pattern for every state update in ReactPy: build a new value, pass it to the setter.
 
-```js
-onPointerMove={e => {
-  position.x = e.clientX;
-  position.y = e.clientY;
-}}
-```
+A pointer-tracking dot shows the same rule with no form in sight. The handler builds a brand-new position dict on every move:
 
-This code modifies the object assigned to `position` from [the previous render.](/learn/state-as-a-snapshot#rendering-takes-a-snapshot-in-time) But without using the state setting function, React has no idea that object has changed. So React does not do anything in response. It's like trying to change the order after you've already eaten the meal. While mutating state can work in some cases, we don't recommend it. You should treat the state value you have access to in a render as read-only.
+=== "app.py"
 
-To actually [trigger a re-render](/learn/state-as-a-snapshot#setting-state-triggers-renders) in this case, **create a _new_ object and pass it to the state setting function:**
+    ```python
+    {% include "../../examples/updating_objects_in_state/moving_dot/app.py" start="# start" %}
+    ```
 
-```js
-onPointerMove={e => {
-  setPosition({
-    x: e.clientX,
-    y: e.clientY
-  });
-}}
-```
+=== ":material-play: Run"
 
-With `setPosition`, you're telling React:
+    ```python
+    # TODO
+    ```
 
--   Replace `position` with this new object
--   And render this component again
+The `#!python "onPointerMove"` handler is on the grey container, and the dot is positioned from the coordinates it receives. Move the pointer anywhere inside the box and the dot follows. `#!python event["clientX"]` and `#!python event["clientY"]` are part of what the client sends for pointer events — verified against a real browser, which reported `clientX`/`clientY` matching the synthesized pointer position — so React's pointer and drag demos port across unchanged.
 
-Notice how the red dot now follows your pointer when you touch or hover over the preview area:
+!!! warning "There is no automatic merge"
 
-```js
-import { useState } from "react";
-export default function MovingDot() {
-	const [position, setPosition] = useState({
-		x: 0,
-		y: 0,
-	});
-	return (
-		<div
-			onPointerMove={(e) => {
-				setPosition({
-					x: e.clientX,
-					y: e.clientY,
-				});
-			}}
-			style={{
-				position: "relative",
-				width: "100vw",
-				height: "100vh",
-			}}
-		>
-			<div
-				style={{
-					position: "absolute",
-					backgroundColor: "red",
-					borderRadius: "50%",
-					transform: `translate(${position.x}px, ${position.y}px)`,
-					left: -10,
-					top: -10,
-					width: 20,
-					height: 20,
-				}}
-			/>
-		</div>
-	);
-}
-```
+    `#!python set_x(...)` **replaces** the state. It does not merge a partial object into what was there. Verified: setting `#!python {"a": 9}` over `#!python {"a": 1, "b": 2}` leaves `#!python {'a': 9}` — `#!python "b"` is simply gone.
 
-```css
-body {
-	margin: 0;
-	padding: 0;
-	height: 250px;
-}
-```
+    If you have read React tutorials, you may remember `setState` merging objects. That was the **class** API. React's own `useState` replaces, and so does ReactPy (`core/hooks.py`, `_CurrentState.dispatch` assigns `self.value = new`). Any ReactJS text saying "React merges the object into your current state" is describing an API that no longer applies — port those examples with an explicit `#!python {**old, ...}`.
 
-<DeepDive>
+!!! info "Local mutation is fine"
 
-#### Local mutation is fine
+    Mutating a value you _just created_ inside the current render is safe, because nothing else has ever seen it. The same applies to the `#!python rows = []` plus `#!python rows.append(...)` loop you will write constantly when building children:
 
-Code like this is a problem because it modifies an _existing_ object in state:
+    ```python linenums="0"
+    @component
+    def list_of_parts(parts):
+        # Built during this render, never handed out before.
+        sorted_parts = sorted(parts, key=lambda p: p["importance"])
+        return html.ul(
+            [html.li({"key": p["id"]}, p["title"]) for p in sorted_parts]
+        )
+    ```
 
-```js
-position.x = e.clientX;
-position.y = e.clientY;
-```
-
-But code like this is **absolutely fine** because you're mutating a fresh object you have _just created_:
-
-```js
-const nextPosition = {};
-nextPosition.x = e.clientX;
-nextPosition.y = e.clientY;
-setPosition(nextPosition);
-```
-
-In fact, it is completely equivalent to writing this:
-
-```js
-setPosition({
-	x: e.clientX,
-	y: e.clientY,
-});
-```
-
-Mutation is only a problem when you change _existing_ objects that are already in state. Mutating an object you've just created is okay because _no other code references it yet._ Changing it isn't going to accidentally impact something that depends on it. This is called a "local mutation". You can even do local mutation [while rendering.](/learn/keeping-components-pure#local-mutation-your-components-little-secret) Very convenient and completely okay!
-
-</DeepDive>
+    What must not be mutated is state ReactPy gave you, and props you received. See [Local mutation: Your component's little secret](./keeping-components-pure.md#local-mutation-your-components-little-secret) for the rendering-side version of this rule.
 
 ## Copying objects with the spread syntax
 
-In the previous example, the `position` object is always created fresh from the current cursor position. But often, you will want to include _existing_ data as a part of the new object you're creating. For example, you may want to update _only one_ field in a form, but keep the previous values for all other fields.
+To update an object, create a **new** one from the old one so you can change any of its properties. Python has no `#!js ...` spread operator, but `#!python {**obj, "key": value}` is the same operation on dicts, and `#!python [*items, x]` is its twin for lists.
 
-These input fields don't work because the `onChange` handlers mutate the state:
+Here the form keeps the other fields intact while replacing one:
 
-```js
-import { useState } from "react";
+=== "app.py"
 
-export default function Form() {
-	const [person, setPerson] = useState({
-		firstName: "Barbara",
-		lastName: "Hepworth",
-		email: "bhepworth@sculpture.com",
-	});
+    ```python
+    {% include "../../examples/updating_objects_in_state/form_spread/app.py" start="# start" %}
+    ```
 
-	function handleFirstNameChange(e) {
-		person.firstName = e.target.value;
-	}
+=== ":material-play: Run"
 
-	function handleLastNameChange(e) {
-		person.lastName = e.target.value;
-	}
+    ```python
+    # TODO
+    ```
 
-	function handleEmailChange(e) {
-		person.email = e.target.value;
-	}
+Type in any field and watch the heading update. Each handler spreads the current `#!python person` into a fresh dict and overrides exactly one key.
 
-	return (
-		<>
-			<label>
-				First name:
-				<input
-					value={person.firstName}
-					onChange={handleFirstNameChange}
-				/>
-			</label>
-			<label>
-				Last name:
-				<input
-					value={person.lastName}
-					onChange={handleLastNameChange}
-				/>
-			</label>
-			<label>
-				Email:
-				<input value={person.email} onChange={handleEmailChange} />
-			</label>
-			<p>
-				{person.firstName} {person.lastName} ({person.email})
-			</p>
-		</>
-	);
-}
-```
+!!! warning "An unpacked dict is a shallow copy"
 
-```css
-label {
-	display: block;
-}
-input {
-	margin-left: 5px;
-	margin-bottom: 5px;
-}
-```
+    `#!python {**person}` copies the top level only. Any nested dict or list inside it is still **shared** with the previous state — see [Updating a nested object](#updating-a-nested-object).
 
-For example, this line mutates the state from a past render:
+!!! info "The destructuring equivalents"
 
-```js
-person.firstName = e.target.value;
-```
+    Where React's docs reach for `#!js const { a, ...rest } = obj`, Python reads with indexing and writes with unpacking. For the "everything but one key" shape, the direct translation is a comprehension:
 
-The reliable way to get the behavior you're looking for is to create a new object and pass it to `setPerson`. But here, you want to also **copy the existing data into it** because only one of the fields has changed:
+    ```python linenums="0"
+    rest = {k: v for k, v in obj.items() if k != "drop"}
+    ```
 
-```js
-setPerson({
-	firstName: e.target.value, // New first name from the input
-	lastName: person.lastName,
-	email: person.email,
-});
-```
+### Using a single event handler for multiple fields
 
-You can use the `...` [object spread](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax#spread_in_object_literals) syntax so that you don't need to copy every property separately.
+Repeating a near-identical handler per field gets tedious. One handler can take the field name:
 
-```js
-setPerson({
-	...person, // Copy the old fields
-	firstName: e.target.value, // But override this one
-});
-```
+=== "app.py"
 
-Now the form works!
+    ```python
+    {% include "../../examples/updating_objects_in_state/form_single_handler/app.py" start="# start" %}
+    ```
 
-Notice how you didn't declare a separate state variable for each input field. For large forms, keeping all data grouped in an object is very convenient--as long as you update it correctly!
+=== ":material-play: Run"
 
-```js
-import { useState } from "react";
+    ```python
+    # TODO
+    ```
 
-export default function Form() {
-	const [person, setPerson] = useState({
-		firstName: "Barbara",
-		lastName: "Hepworth",
-		email: "bhepworth@sculpture.com",
-	});
+Note how the field name is supplied by the `#!python lambda`. ReactPy invokes every event handler with the event as its **single** positional argument — verified, a handler declaring two required parameters fails with `TypeError: ... missing 1 required positional argument: 'event'`. There is no `#!js e.target.name` to read either, because the client does not send DOM attributes; any extra context has to be bound on the Python side.
 
-	function handleFirstNameChange(e) {
-		setPerson({
-			...person,
-			firstName: e.target.value,
-		});
-	}
+!!! tip "Reach for `use_reducer` when handlers multiply"
 
-	function handleLastNameChange(e) {
-		setPerson({
-			...person,
-			lastName: e.target.value,
-		});
-	}
-
-	function handleEmailChange(e) {
-		setPerson({
-			...person,
-			email: e.target.value,
-		});
-	}
-
-	return (
-		<>
-			<label>
-				First name:
-				<input
-					value={person.firstName}
-					onChange={handleFirstNameChange}
-				/>
-			</label>
-			<label>
-				Last name:
-				<input
-					value={person.lastName}
-					onChange={handleLastNameChange}
-				/>
-			</label>
-			<label>
-				Email:
-				<input value={person.email} onChange={handleEmailChange} />
-			</label>
-			<p>
-				{person.firstName} {person.lastName} ({person.email})
-			</p>
-		</>
-	);
-}
-```
-
-```css
-label {
-	display: block;
-}
-input {
-	margin-left: 5px;
-	margin-bottom: 5px;
-}
-```
-
-Note that the `...` spread syntax is "shallow"--it only copies things one level deep. This makes it fast, but it also means that if you want to update a nested property, you'll have to use it more than once.
-
-<DeepDive>
-
-#### Using a single event handler for multiple fields
-
-You can also use the `[` and `]` braces inside your object definition to specify a property with dynamic name. Here is the same example, but with a single event handler instead of three different ones:
-
-```js
-import { useState } from "react";
-
-export default function Form() {
-	const [person, setPerson] = useState({
-		firstName: "Barbara",
-		lastName: "Hepworth",
-		email: "bhepworth@sculpture.com",
-	});
-
-	function handleChange(e) {
-		setPerson({
-			...person,
-			[e.target.name]: e.target.value,
-		});
-	}
-
-	return (
-		<>
-			<label>
-				First name:
-				<input
-					name="firstName"
-					value={person.firstName}
-					onChange={handleChange}
-				/>
-			</label>
-			<label>
-				Last name:
-				<input
-					name="lastName"
-					value={person.lastName}
-					onChange={handleChange}
-				/>
-			</label>
-			<label>
-				Email:
-				<input
-					name="email"
-					value={person.email}
-					onChange={handleChange}
-				/>
-			</label>
-			<p>
-				{person.firstName} {person.lastName} ({person.email})
-			</p>
-		</>
-	);
-}
-```
-
-```css
-label {
-	display: block;
-}
-input {
-	margin-left: 5px;
-	margin-bottom: 5px;
-}
-```
-
-Here, `e.target.name` refers to the `name` property given to the `<input>` DOM element.
-
-</DeepDive>
+    Several handlers that all edit one object is a sign the update logic wants its own home. See [Extracting State Logic into a Reducer](./extracting-state-logic-into-a-reducer.md).
 
 ## Updating a nested object
 
-Consider a nested object structure like this:
+State often contains nested objects. To update a deeply nested value, copy the object all the way up from where the change happens.
 
-```js
-const [person, setPerson] = useState({
-	name: "Niki de Saint Phalle",
-	artwork: {
-		title: "Blue Nana",
-		city: "Hamburg",
-		image: "https://i.imgur.com/Sd1AgUOm.jpg",
-	},
-});
-```
+=== "app.py"
 
-If you wanted to update `person.artwork.city`, it's clear how to do it with mutation:
+    ```python
+    {% include "../../examples/updating_objects_in_state/nested_object/app.py" start="# start" %}
+    ```
 
-```js
-person.artwork.city = "New Delhi";
-```
+=== ":material-play: Run"
 
-But in React, you treat state as immutable! In order to change `city`, you would first need to produce the new `artwork` object (pre-populated with data from the previous one), and then produce the new `person` object which points at the new `artwork`:
+    ```python
+    # TODO
+    ```
 
-```js
-const nextArtwork = { ...person.artwork, city: "New Delhi" };
-const nextPerson = { ...person, artwork: nextArtwork };
-setPerson(nextPerson);
-```
+Two copies are required:
 
-Or, written as a single function call:
+1. Copy `#!python person["shippingAddress"]` with the new `#!python "city"`.
+2. Copy `#!python person`, replacing `#!python "shippingAddress"` with that new dict.
 
-```js
-setPerson({
-	...person, // Copy other fields
-	artwork: {
-		// but replace the artwork
-		...person.artwork, // with the same one
-		city: "New Delhi", // but in New Delhi!
-	},
-});
-```
+Writing `#!python person["shippingAddress"]["city"] = ...` would mutate the nested dict in place. Because that nested dict is the *same object* the previous state still refers to, the change is invisible to ReactPy's comparison and the update is dropped.
 
-This gets a bit wordy, but it works fine for many cases:
+!!! info "Objects are not really nested"
 
-```js
-import { useState } from "react";
+    Python makes this point sharper than JavaScript does. Given:
 
-export default function Form() {
-	const [person, setPerson] = useState({
-		name: "Niki de Saint Phalle",
-		artwork: {
-			title: "Blue Nana",
-			city: "Hamburg",
-			image: "https://i.imgur.com/Sd1AgUOm.jpg",
-		},
-	});
+    ```python linenums="0"
+    person = {"name": "Jane", "theme": {"background": "white"}}
+    copy = {**person}
+    ```
 
-	function handleNameChange(e) {
-		setPerson({
-			...person,
-			name: e.target.value,
-		});
-	}
+    `#!python copy["theme"]` and `#!python person["theme"]` are the **same dict**. Python never deep-copies on assignment or on unpacking — copying is shallow for dicts, lists, and everything else. To get a genuinely independent copy you either copy each level explicitly, as the example does, or use `#!python copy.deepcopy`:
 
-	function handleTitleChange(e) {
-		setPerson({
-			...person,
-			artwork: {
-				...person.artwork,
-				title: e.target.value,
-			},
-		});
-	}
+    ```python linenums="0"
+    import copy
 
-	function handleCityChange(e) {
-		setPerson({
-			...person,
-			artwork: {
-				...person.artwork,
-				city: e.target.value,
-			},
-		});
-	}
+    set_people(copy.deepcopy(people))
+    ```
 
-	function handleImageChange(e) {
-		setPerson({
-			...person,
-			artwork: {
-				...person.artwork,
-				image: e.target.value,
-			},
-		});
-	}
+    `#!python deepcopy` is the blunt instrument: correct, but slower, and it copies everything reachable, including objects you did not mean to duplicate. Prefer explicit copies for the paths you actually change, and keep state to plain dicts, lists, and primitives so `#!python deepcopy` remains a safe fallback.
 
-	return (
-		<>
-			<label>
-				Name:
-				<input value={person.name} onChange={handleNameChange} />
-			</label>
-			<label>
-				Title:
-				<input
-					value={person.artwork.title}
-					onChange={handleTitleChange}
-				/>
-			</label>
-			<label>
-				City:
-				<input
-					value={person.artwork.city}
-					onChange={handleCityChange}
-				/>
-			</label>
-			<label>
-				Image:
-				<input
-					value={person.artwork.image}
-					onChange={handleImageChange}
-				/>
-			</label>
-			<p>
-				<i>{person.artwork.title}</i>
-				{" by "}
-				{person.name}
-				<br />
-				(located in {person.artwork.city})
-			</p>
-			<img src={person.artwork.image} alt={person.artwork.title} />
-		</>
-	);
-}
-```
+    Shallow sharing is also why two components seeded from the same module-level fixture end up aliasing each other's data — see [Updating Arrays in State](./updating-arrays-in-state.md) for the list version of that bug.
 
-```css
-label {
-	display: block;
-}
-input {
-	margin-left: 5px;
-	margin-bottom: 5px;
-}
-img {
-	width: 200px;
-	height: 200px;
-}
-```
+### Writing concise update logic
 
-<DeepDive>
+React's docs reach for Immer here, which records your mutations through a proxy and turns them into copies. **ReactPy has no Immer and no equivalent.** There is no proxy layer, so nothing could observe your mutations, and there is no `#!python use_immer` to import.
 
-#### Objects are not really nested
+What you have instead:
 
-An object like this appears "nested" in code:
+-   **Dict and list unpacking** — `#!python {**obj, "k": v}`, `#!python [*items, x]`. This covers the overwhelming majority of updates and is what every example above uses.
+-   **`#!python copy.deepcopy`** — for the rare shape too deep to copy by hand.
+-   **`use_reducer`** — does not shorten updates, but moves them out of the component so their verbosity costs you less. See [Extracting State Logic into a Reducer](./extracting-state-logic-into-a-reducer.md).
 
-```js
-let obj = {
-	name: "Niki de Saint Phalle",
-	artwork: {
-		title: "Blue Nana",
-		city: "Hamburg",
-		image: "https://i.imgur.com/Sd1AgUOm.jpg",
-	},
-};
-```
+Resist building your own Immer. A proxy that logs mutations would have to run on the server, after a websocket round trip, which is not the problem Immer solves in the browser. If update logic feels genuinely painful, that usually means the state shape is wrong — see [Choosing the State Structure](./choosing-the-state-structure.md).
 
-However, "nesting" is an inaccurate way to think about how objects behave. When the code executes, there is no such thing as a "nested" object. You are really looking at two different objects:
+## Recap
 
-```js
-let obj1 = {
-	title: "Blue Nana",
-	city: "Hamburg",
-	image: "https://i.imgur.com/Sd1AgUOm.jpg",
-};
-
-let obj2 = {
-	name: "Niki de Saint Phalle",
-	artwork: obj1,
-};
-```
-
-The `obj1` object is not "inside" `obj2`. For example, `obj3` could "point" at `obj1` too:
-
-```js
-let obj1 = {
-	title: "Blue Nana",
-	city: "Hamburg",
-	image: "https://i.imgur.com/Sd1AgUOm.jpg",
-};
-
-let obj2 = {
-	name: "Niki de Saint Phalle",
-	artwork: obj1,
-};
-
-let obj3 = {
-	name: "Copycat",
-	artwork: obj1,
-};
-```
-
-If you were to mutate `obj3.artwork.city`, it would affect both `obj2.artwork.city` and `obj1.city`. This is because `obj3.artwork`, `obj2.artwork`, and `obj1` are the same object. This is difficult to see when you think of objects as "nested". Instead, they are separate objects "pointing" at each other with properties.
-
-</DeepDive>
-
-### Write concise update logic with Immer
-
-If your state is deeply nested, you might want to consider [flattening it.](/learn/choosing-the-state-structure#avoid-deeply-nested-state) But, if you don't want to change your state structure, you might prefer a shortcut to nested spreads. [Immer](https://github.com/immerjs/use-immer) is a popular library that lets you write using the convenient but mutating syntax and takes care of producing the copies for you. With Immer, the code you write looks like you are "breaking the rules" and mutating an object:
-
-```js
-updatePerson((draft) => {
-	draft.artwork.city = "Lagos";
-});
-```
-
-But unlike a regular mutation, it doesn't overwrite the past state!
-
-<DeepDive>
-
-#### How does Immer work?
-
-The `draft` provided by Immer is a special type of object, called a [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy), that "records" what you do with it. This is why you can mutate it freely as much as you like! Under the hood, Immer figures out which parts of the `draft` have been changed, and produces a completely new object that contains your edits.
-
-</DeepDive>
-
-To try Immer:
-
-1. Run `npm install use-immer` to add Immer as a dependency
-2. Then replace `import { useState } from 'react'` with `import { useImmer } from 'use-immer'`
-
-Here is the above example converted to Immer:
-
-```js
-import { useImmer } from "use-immer";
-
-export default function Form() {
-	const [person, updatePerson] = useImmer({
-		name: "Niki de Saint Phalle",
-		artwork: {
-			title: "Blue Nana",
-			city: "Hamburg",
-			image: "https://i.imgur.com/Sd1AgUOm.jpg",
-		},
-	});
-
-	function handleNameChange(e) {
-		updatePerson((draft) => {
-			draft.name = e.target.value;
-		});
-	}
-
-	function handleTitleChange(e) {
-		updatePerson((draft) => {
-			draft.artwork.title = e.target.value;
-		});
-	}
-
-	function handleCityChange(e) {
-		updatePerson((draft) => {
-			draft.artwork.city = e.target.value;
-		});
-	}
-
-	function handleImageChange(e) {
-		updatePerson((draft) => {
-			draft.artwork.image = e.target.value;
-		});
-	}
-
-	return (
-		<>
-			<label>
-				Name:
-				<input value={person.name} onChange={handleNameChange} />
-			</label>
-			<label>
-				Title:
-				<input
-					value={person.artwork.title}
-					onChange={handleTitleChange}
-				/>
-			</label>
-			<label>
-				City:
-				<input
-					value={person.artwork.city}
-					onChange={handleCityChange}
-				/>
-			</label>
-			<label>
-				Image:
-				<input
-					value={person.artwork.image}
-					onChange={handleImageChange}
-				/>
-			</label>
-			<p>
-				<i>{person.artwork.title}</i>
-				{" by "}
-				{person.name}
-				<br />
-				(located in {person.artwork.city})
-			</p>
-			<img src={person.artwork.image} alt={person.artwork.title} />
-		</>
-	);
-}
-```
-
-```json
-{
-	"dependencies": {
-		"immer": "1.7.3",
-		"react": "latest",
-		"react-dom": "latest",
-		"react-scripts": "latest",
-		"use-immer": "0.5.1"
-	},
-	"scripts": {
-		"start": "react-scripts start",
-		"build": "react-scripts build",
-		"test": "react-scripts test --env=jsdom",
-		"eject": "react-scripts eject"
-	}
-}
-```
-
-```css
-label {
-	display: block;
-}
-input {
-	margin-left: 5px;
-	margin-bottom: 5px;
-}
-img {
-	width: 200px;
-	height: 200px;
-}
-```
-
-Notice how much more concise the event handlers have become. You can mix and match `useState` and `useImmer` in a single component as much as you like. Immer is a great way to keep the update handlers concise, especially if there's nesting in your state, and copying objects leads to repetitive code.
-
-<DeepDive>
-
-#### Why is mutating state not recommended in React?
-
-There are a few reasons:
-
--   **Debugging:** If you use `console.log` and don't mutate state, your past logs won't get clobbered by the more recent state changes. So you can clearly see how state has changed between renders.
--   **Optimizations:** Common React [optimization strategies](/reference/react/memo) rely on skipping work if previous props or state are the same as the next ones. If you never mutate state, it is very fast to check whether there were any changes. If `prevObj === obj`, you can be sure that nothing could have changed inside of it.
--   **New Features:** The new React features we're building rely on state being [treated like a snapshot.](/learn/state-as-a-snapshot) If you're mutating past versions of state, that may prevent you from using the new features.
--   **Requirement Changes:** Some application features, like implementing Undo/Redo, showing a history of changes, or letting the user reset a form to earlier values, are easier to do when nothing is mutated. This is because you can keep past copies of state in memory, and reuse them when appropriate. If you start with a mutative approach, features like this can be difficult to add later on.
--   **Simpler Implementation:** Because React does not rely on mutation, it does not need to do anything special with your objects. It does not need to hijack their properties, always wrap them into Proxies, or do other work at initialization as many "reactive" solutions do. This is also why React lets you put any object into state--no matter how large--without additional performance or correctness pitfalls.
-
-In practice, you can often "get away" with mutating state in React, but we strongly advise you not to do that so that you can use new React features developed with this approach in mind. Future contributors and perhaps even your future self will thank you!
-
-</DeepDive>
-
-<Recap>
-
--   Treat all state in React as immutable.
--   When you store objects in state, mutating them will not trigger renders and will change the state in previous render "snapshots".
--   Instead of mutating an object, create a _new_ version of it, and trigger a re-render by setting state to it.
--   You can use the `{...obj, something: 'newValue'}` object spread syntax to create copies of objects.
--   Spread syntax is shallow: it only copies one level deep.
--   To update a nested object, you need to create copies all the way up from the place you're updating.
--   To reduce repetitive copying code, use Immer.
-
-</Recap>
-
-<Challenges>
-
-#### Fix incorrect state updates
-
-This form has a few bugs. Click the button that increases the score a few times. Notice that it does not increase. Then edit the first name, and notice that the score has suddenly "caught up" with your changes. Finally, edit the last name, and notice that the score has disappeared completely.
-
-Your task is to fix all of these bugs. As you fix them, explain why each of them happens.
-
-```js
-import { useState } from "react";
-
-export default function Scoreboard() {
-	const [player, setPlayer] = useState({
-		firstName: "Ranjani",
-		lastName: "Shettar",
-		score: 10,
-	});
-
-	function handlePlusClick() {
-		player.score++;
-	}
-
-	function handleFirstNameChange(e) {
-		setPlayer({
-			...player,
-			firstName: e.target.value,
-		});
-	}
-
-	function handleLastNameChange(e) {
-		setPlayer({
-			lastName: e.target.value,
-		});
-	}
-
-	return (
-		<>
-			<label>
-				Score: <b>{player.score}</b>{" "}
-				<button on_click={handlePlusClick}>+1</button>
-			</label>
-			<label>
-				First name:
-				<input
-					value={player.firstName}
-					onChange={handleFirstNameChange}
-				/>
-			</label>
-			<label>
-				Last name:
-				<input
-					value={player.lastName}
-					onChange={handleLastNameChange}
-				/>
-			</label>
-		</>
-	);
-}
-```
-
-```css
-label {
-	display: block;
-	margin-bottom: 10px;
-}
-input {
-	margin-left: 5px;
-	margin-bottom: 5px;
-}
-```
-
-<Solution>
-
-Here is a version with both bugs fixed:
-
-```js
-import { useState } from "react";
-
-export default function Scoreboard() {
-	const [player, setPlayer] = useState({
-		firstName: "Ranjani",
-		lastName: "Shettar",
-		score: 10,
-	});
-
-	function handlePlusClick() {
-		setPlayer({
-			...player,
-			score: player.score + 1,
-		});
-	}
-
-	function handleFirstNameChange(e) {
-		setPlayer({
-			...player,
-			firstName: e.target.value,
-		});
-	}
-
-	function handleLastNameChange(e) {
-		setPlayer({
-			...player,
-			lastName: e.target.value,
-		});
-	}
-
-	return (
-		<>
-			<label>
-				Score: <b>{player.score}</b>{" "}
-				<button on_click={handlePlusClick}>+1</button>
-			</label>
-			<label>
-				First name:
-				<input
-					value={player.firstName}
-					onChange={handleFirstNameChange}
-				/>
-			</label>
-			<label>
-				Last name:
-				<input
-					value={player.lastName}
-					onChange={handleLastNameChange}
-				/>
-			</label>
-		</>
-	);
-}
-```
-
-```css
-label {
-	display: block;
-}
-input {
-	margin-left: 5px;
-	margin-bottom: 5px;
-}
-```
-
-The problem with `handlePlusClick` was that it mutated the `player` object. As a result, React did not know that there's a reason to re-render, and did not update the score on the screen. This is why, when you edited the first name, the state got updated, triggering a re-render which _also_ updated the score on the screen.
-
-The problem with `handleLastNameChange` was that it did not copy the existing `...player` fields into the new object. This is why the score got lost after you edited the last name.
-
-</Solution>
-
-#### Find and fix the mutation
-
-There is a draggable box on a static background. You can change the box's color using the select input.
-
-But there is a bug. If you move the box first, and then change its color, the background (which isn't supposed to move!) will "jump" to the box position. But this should not happen: the `Background`'s `position` prop is set to `initialPosition`, which is `{ x: 0, y: 0 }`. Why is the background moving after the color change?
-
-Find the bug and fix it.
-
-<Hint>
-
-If something unexpected changes, there is a mutation. Find the mutation in `App.js` and fix it.
-
-</Hint>
-
-```js
-import { useState } from "react";
-import Background from "./Background.js";
-import Box from "./Box.js";
-
-const initialPosition = {
-	x: 0,
-	y: 0,
-};
-
-export default function Canvas() {
-	const [shape, setShape] = useState({
-		color: "orange",
-		position: initialPosition,
-	});
-
-	function handleMove(dx, dy) {
-		shape.position.x += dx;
-		shape.position.y += dy;
-	}
-
-	function handleColorChange(e) {
-		setShape({
-			...shape,
-			color: e.target.value,
-		});
-	}
-
-	return (
-		<>
-			<select value={shape.color} onChange={handleColorChange}>
-				<option value="orange">orange</option>
-				<option value="lightpink">lightpink</option>
-				<option value="aliceblue">aliceblue</option>
-			</select>
-			<Background position={initialPosition} />
-			<Box
-				color={shape.color}
-				position={shape.position}
-				onMove={handleMove}
-			>
-				Drag me!
-			</Box>
-		</>
-	);
-}
-```
-
-```js
-import { useState } from "react";
-
-export default function Box({ children, color, position, onMove }) {
-	const [lastCoordinates, setLastCoordinates] = useState(null);
-
-	function handlePointerDown(e) {
-		e.target.setPointerCapture(e.pointerId);
-		setLastCoordinates({
-			x: e.clientX,
-			y: e.clientY,
-		});
-	}
-
-	function handlePointerMove(e) {
-		if (lastCoordinates) {
-			setLastCoordinates({
-				x: e.clientX,
-				y: e.clientY,
-			});
-			const dx = e.clientX - lastCoordinates.x;
-			const dy = e.clientY - lastCoordinates.y;
-			onMove(dx, dy);
-		}
-	}
-
-	function handlePointerUp(e) {
-		setLastCoordinates(null);
-	}
-
-	return (
-		<div
-			onPointerDown={handlePointerDown}
-			onPointerMove={handlePointerMove}
-			onPointerUp={handlePointerUp}
-			style={{
-				width: 100,
-				height: 100,
-				cursor: "grab",
-				backgroundColor: color,
-				position: "absolute",
-				border: "1px solid black",
-				display: "flex",
-				justifyContent: "center",
-				alignItems: "center",
-				transform: `translate(
-          ${position.x}px,
-          ${position.y}px
-        )`,
-			}}
-		>
-			{children}
-		</div>
-	);
-}
-```
-
-```js
-export default function Background({ position }) {
-	return (
-		<div
-			style={{
-				position: "absolute",
-				transform: `translate(
-        ${position.x}px,
-        ${position.y}px
-      )`,
-				width: 250,
-				height: 250,
-				backgroundColor: "rgba(200, 200, 0, 0.2)",
-			}}
-		/>
-	);
-}
-```
-
-```css
-body {
-	height: 280px;
-}
-select {
-	margin-bottom: 10px;
-}
-```
-
-<Solution>
-
-The problem was in the mutation inside `handleMove`. It mutated `shape.position`, but that's the same object that `initialPosition` points at. This is why both the shape and the background move. (It's a mutation, so the change doesn't reflect on the screen until an unrelated update--the color change--triggers a re-render.)
-
-The fix is to remove the mutation from `handleMove`, and use the spread syntax to copy the shape. Note that `+=` is a mutation, so you need to rewrite it to use a regular `+` operation.
-
-```js
-import { useState } from "react";
-import Background from "./Background.js";
-import Box from "./Box.js";
-
-const initialPosition = {
-	x: 0,
-	y: 0,
-};
-
-export default function Canvas() {
-	const [shape, setShape] = useState({
-		color: "orange",
-		position: initialPosition,
-	});
-
-	function handleMove(dx, dy) {
-		setShape({
-			...shape,
-			position: {
-				x: shape.position.x + dx,
-				y: shape.position.y + dy,
-			},
-		});
-	}
-
-	function handleColorChange(e) {
-		setShape({
-			...shape,
-			color: e.target.value,
-		});
-	}
-
-	return (
-		<>
-			<select value={shape.color} onChange={handleColorChange}>
-				<option value="orange">orange</option>
-				<option value="lightpink">lightpink</option>
-				<option value="aliceblue">aliceblue</option>
-			</select>
-			<Background position={initialPosition} />
-			<Box
-				color={shape.color}
-				position={shape.position}
-				onMove={handleMove}
-			>
-				Drag me!
-			</Box>
-		</>
-	);
-}
-```
-
-```js
-import { useState } from "react";
-
-export default function Box({ children, color, position, onMove }) {
-	const [lastCoordinates, setLastCoordinates] = useState(null);
-
-	function handlePointerDown(e) {
-		e.target.setPointerCapture(e.pointerId);
-		setLastCoordinates({
-			x: e.clientX,
-			y: e.clientY,
-		});
-	}
-
-	function handlePointerMove(e) {
-		if (lastCoordinates) {
-			setLastCoordinates({
-				x: e.clientX,
-				y: e.clientY,
-			});
-			const dx = e.clientX - lastCoordinates.x;
-			const dy = e.clientY - lastCoordinates.y;
-			onMove(dx, dy);
-		}
-	}
-
-	function handlePointerUp(e) {
-		setLastCoordinates(null);
-	}
-
-	return (
-		<div
-			onPointerDown={handlePointerDown}
-			onPointerMove={handlePointerMove}
-			onPointerUp={handlePointerUp}
-			style={{
-				width: 100,
-				height: 100,
-				cursor: "grab",
-				backgroundColor: color,
-				position: "absolute",
-				border: "1px solid black",
-				display: "flex",
-				justifyContent: "center",
-				alignItems: "center",
-				transform: `translate(
-          ${position.x}px,
-          ${position.y}px
-        )`,
-			}}
-		>
-			{children}
-		</div>
-	);
-}
-```
-
-```js
-export default function Background({ position }) {
-	return (
-		<div
-			style={{
-				position: "absolute",
-				transform: `translate(
-        ${position.x}px,
-        ${position.y}px
-      )`,
-				width: 250,
-				height: 250,
-				backgroundColor: "rgba(200, 200, 0, 0.2)",
-			}}
-		/>
-	);
-}
-```
-
-```css
-body {
-	height: 280px;
-}
-select {
-	margin-bottom: 10px;
-}
-```
-
-</Solution>
-
-#### Update an object with Immer
-
-This is the same buggy example as in the previous challenge. This time, fix the mutation by using Immer. For your convenience, `useImmer` is already imported, so you need to change the `shape` state variable to use it.
-
-```js
-import { useState } from "react";
-import { useImmer } from "use-immer";
-import Background from "./Background.js";
-import Box from "./Box.js";
-
-const initialPosition = {
-	x: 0,
-	y: 0,
-};
-
-export default function Canvas() {
-	const [shape, setShape] = useState({
-		color: "orange",
-		position: initialPosition,
-	});
-
-	function handleMove(dx, dy) {
-		shape.position.x += dx;
-		shape.position.y += dy;
-	}
-
-	function handleColorChange(e) {
-		setShape({
-			...shape,
-			color: e.target.value,
-		});
-	}
-
-	return (
-		<>
-			<select value={shape.color} onChange={handleColorChange}>
-				<option value="orange">orange</option>
-				<option value="lightpink">lightpink</option>
-				<option value="aliceblue">aliceblue</option>
-			</select>
-			<Background position={initialPosition} />
-			<Box
-				color={shape.color}
-				position={shape.position}
-				onMove={handleMove}
-			>
-				Drag me!
-			</Box>
-		</>
-	);
-}
-```
-
-```js
-import { useState } from "react";
-
-export default function Box({ children, color, position, onMove }) {
-	const [lastCoordinates, setLastCoordinates] = useState(null);
-
-	function handlePointerDown(e) {
-		e.target.setPointerCapture(e.pointerId);
-		setLastCoordinates({
-			x: e.clientX,
-			y: e.clientY,
-		});
-	}
-
-	function handlePointerMove(e) {
-		if (lastCoordinates) {
-			setLastCoordinates({
-				x: e.clientX,
-				y: e.clientY,
-			});
-			const dx = e.clientX - lastCoordinates.x;
-			const dy = e.clientY - lastCoordinates.y;
-			onMove(dx, dy);
-		}
-	}
-
-	function handlePointerUp(e) {
-		setLastCoordinates(null);
-	}
-
-	return (
-		<div
-			onPointerDown={handlePointerDown}
-			onPointerMove={handlePointerMove}
-			onPointerUp={handlePointerUp}
-			style={{
-				width: 100,
-				height: 100,
-				cursor: "grab",
-				backgroundColor: color,
-				position: "absolute",
-				border: "1px solid black",
-				display: "flex",
-				justifyContent: "center",
-				alignItems: "center",
-				transform: `translate(
-          ${position.x}px,
-          ${position.y}px
-        )`,
-			}}
-		>
-			{children}
-		</div>
-	);
-}
-```
-
-```js
-export default function Background({ position }) {
-	return (
-		<div
-			style={{
-				position: "absolute",
-				transform: `translate(
-        ${position.x}px,
-        ${position.y}px
-      )`,
-				width: 250,
-				height: 250,
-				backgroundColor: "rgba(200, 200, 0, 0.2)",
-			}}
-		/>
-	);
-}
-```
-
-```css
-body {
-	height: 280px;
-}
-select {
-	margin-bottom: 10px;
-}
-```
-
-```json
-{
-	"dependencies": {
-		"immer": "1.7.3",
-		"react": "latest",
-		"react-dom": "latest",
-		"react-scripts": "latest",
-		"use-immer": "0.5.1"
-	},
-	"scripts": {
-		"start": "react-scripts start",
-		"build": "react-scripts build",
-		"test": "react-scripts test --env=jsdom",
-		"eject": "react-scripts eject"
-	}
-}
-```
-
-<Solution>
-
-This is the solution rewritten with Immer. Notice how the event handlers are written in a mutating fashion, but the bug does not occur. This is because under the hood, Immer never mutates the existing objects.
-
-```js
-import { useImmer } from "use-immer";
-import Background from "./Background.js";
-import Box from "./Box.js";
-
-const initialPosition = {
-	x: 0,
-	y: 0,
-};
-
-export default function Canvas() {
-	const [shape, updateShape] = useImmer({
-		color: "orange",
-		position: initialPosition,
-	});
-
-	function handleMove(dx, dy) {
-		updateShape((draft) => {
-			draft.position.x += dx;
-			draft.position.y += dy;
-		});
-	}
-
-	function handleColorChange(e) {
-		updateShape((draft) => {
-			draft.color = e.target.value;
-		});
-	}
-
-	return (
-		<>
-			<select value={shape.color} onChange={handleColorChange}>
-				<option value="orange">orange</option>
-				<option value="lightpink">lightpink</option>
-				<option value="aliceblue">aliceblue</option>
-			</select>
-			<Background position={initialPosition} />
-			<Box
-				color={shape.color}
-				position={shape.position}
-				onMove={handleMove}
-			>
-				Drag me!
-			</Box>
-		</>
-	);
-}
-```
-
-```js
-import { useState } from "react";
-
-export default function Box({ children, color, position, onMove }) {
-	const [lastCoordinates, setLastCoordinates] = useState(null);
-
-	function handlePointerDown(e) {
-		e.target.setPointerCapture(e.pointerId);
-		setLastCoordinates({
-			x: e.clientX,
-			y: e.clientY,
-		});
-	}
-
-	function handlePointerMove(e) {
-		if (lastCoordinates) {
-			setLastCoordinates({
-				x: e.clientX,
-				y: e.clientY,
-			});
-			const dx = e.clientX - lastCoordinates.x;
-			const dy = e.clientY - lastCoordinates.y;
-			onMove(dx, dy);
-		}
-	}
-
-	function handlePointerUp(e) {
-		setLastCoordinates(null);
-	}
-
-	return (
-		<div
-			onPointerDown={handlePointerDown}
-			onPointerMove={handlePointerMove}
-			onPointerUp={handlePointerUp}
-			style={{
-				width: 100,
-				height: 100,
-				cursor: "grab",
-				backgroundColor: color,
-				position: "absolute",
-				border: "1px solid black",
-				display: "flex",
-				justifyContent: "center",
-				alignItems: "center",
-				transform: `translate(
-          ${position.x}px,
-          ${position.y}px
-        )`,
-			}}
-		>
-			{children}
-		</div>
-	);
-}
-```
-
-```js
-export default function Background({ position }) {
-	return (
-		<div
-			style={{
-				position: "absolute",
-				transform: `translate(
-        ${position.x}px,
-        ${position.y}px
-      )`,
-				width: 250,
-				height: 250,
-				backgroundColor: "rgba(200, 200, 0, 0.2)",
-			}}
-		/>
-	);
-}
-```
-
-```css
-body {
-	height: 280px;
-}
-select {
-	margin-bottom: 10px;
-}
-```
-
-```json
-{
-	"dependencies": {
-		"immer": "1.7.3",
-		"react": "latest",
-		"react-dom": "latest",
-		"react-scripts": "latest",
-		"use-immer": "0.5.1"
-	},
-	"scripts": {
-		"start": "react-scripts start",
-		"build": "react-scripts build",
-		"test": "react-scripts test --env=jsdom",
-		"eject": "react-scripts eject"
-	}
-}
-```
-
-</Solution>
-
-</Challenges>
+-   Treat everything ReactPy hands you as state or props as read-only: never assign into it, never call a mutating method on it.
+-   Build a **new** object with `#!python {**old, ...}` and pass that to the setter.
+-   Mutating in place and passing the same object back is silently dropped — ReactPy compares by identity and schedules no render. Nothing in the browser will tell you.
+-   Copying is shallow at every level; copy all the way up from the field that changed, or use `#!python copy.deepcopy`.
+-   Mutating a value you created during this render is fine.
+-   There is no Immer in ReactPy; use dict and list unpacking, or restructure the state.
