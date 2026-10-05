@@ -18,5 +18,4 @@ def my_app():
 
 
 @component
-def my_button(count, on_click):
-    ...
+def my_button(count, on_click): ...

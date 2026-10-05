@@ -9,6 +9,7 @@ jinja_templates = Jinja2Templates(
     env=Environment(
         loader=FileSystemLoader("path/to/my_templates"),
         extensions=[ReactPyJinja],
+        autoescape=True,
     )
 )
 

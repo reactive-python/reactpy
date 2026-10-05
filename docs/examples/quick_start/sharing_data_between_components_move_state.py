@@ -1,5 +1,6 @@
 from reactpy import component, html, use_state
 
+
 # start
 @component
 def my_app():
@@ -16,5 +17,4 @@ def my_app():
 
 
 @component
-def my_button():
-    # ... we're moving code from here ...
+def my_button(): ...  # this code is being moved up into `my_app`

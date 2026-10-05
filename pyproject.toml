@@ -127,6 +127,14 @@ ban-relative-imports = "all"
   "S102",
   # Allow print
   "T201",
+  # Docs render these files as teaching snippets, not importable modules.
+  # Relative imports (`from .my_button import my_button`) are what the docs
+  # deliberately teach, snippets unpack both halves of `use_state()` to show
+  # the full signature even when one half is unused, and each snippet file is
+  # standalone rather than part of a package.
+  "TID252",
+  "RUF059",
+  "INP001",
 ]
 "scripts/**/*.py" = [
   # Allow print
