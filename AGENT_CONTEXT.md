@@ -484,3 +484,42 @@ All settable by env var (`reactpy/config.py`).
 27. **`use_effect` rejects `async def` loudly** — the `TypeError: use_effect does not support
     async functions. Use use_async_effect instead.` lands in the model's `error` field. An
     effect body that raises at runtime is logged server-side only, with nothing in the model.
+28. **Dependency comparison is *not* identity-based** — `reactpy.core.hooks.strictly_equal`
+    backs every dependency array (`use_effect`, `use_memo`, `use_callback`). It is *not* the
+    `id()` comparison the docstrings claim. For two callables whose `__qualname__` contains
+    `<lambda>` or `<locals>`, it compares all `co_*` code attributes (ignoring line/column
+    metadata), so a structurally identical nested function or lambda is treated as **unchanged**
+    across renders. For everything else it tries `==` first and only falls back to `is` when
+    `__eq__` is missing or raises. Consequences, all measured: a dependency that is a fresh
+    `list`/`dict` with equal contents does **not** re-trigger the effect; a fresh object of a
+    plain class (default identity `__eq__`) **does**; a structurally identical local `def`
+    handler does **not** — so an effect listing it as a dependency keeps the closure it first
+    captured and reads stale state. Do not teach React's identity semantics here.
+29. **There is no render bailout at all.** A child component's body re-runs whenever its parent
+    re-renders, even with unchanged props, and even when the element is cached in `use_memo`
+    (`use_memo(lambda: child(x), dependencies=[x])` still re-executes `child`). ReactPy's layout
+    has no `should_render`/bailout path, and there is no `memo`. Docs must not promise that
+    `use_memo`/`use_callback` "prevent the child from re-rendering"; they only avoid *recomputing*
+    a value or *re-registering* an effect.
+30. **`use_ref` is server-side only — there is no DOM ref.** `reactpy.utils.Ref` is a one-field
+    mutable box (`current`, plus `set_current()` which returns the old value, handy in a
+    `lambda`). It survives renders as the *same object*. There is no `ref_current`, no
+    `ref_current_callback`, and no attribute that hands a browser DOM node to Python: neither the
+    package nor `static/index*.js` references them, and a rendered `{"ref_current": ...}` is an
+    inert unknown attribute (verified in Chrome — the element is not found by that id). Never
+    port React's `useRef` DOM examples (focus, scroll-into-view, video play/pause); port
+    `use_ref` as a value box, and say so.
+31. **`use_memo`/`use_callback` infer dependencies like `use_effect`** — all three default to
+    `dependencies=...` and call `_try_to_infer_closure_values`. With inference active, a compute
+    function that reads only `a` is not recomputed when unrelated state changes; `dependencies=[]`
+    pins the value forever (and pins a callback's identity forever, so a callback closed over
+    state goes stale); `dependencies=None` recomputes every render.
+32. **Mutate-then-set-the-same-object also defeats `use_memo`.** `rows.append(x)` followed by
+    `set_rows(rows)` changes nothing observable: no re-render *and* no `use_memo` recompute,
+    because the dependency compares equal to itself. Same root cause as the `use_state`
+    drop-the-update rule; state must be replaced with a new object.
+33. **Probing hook behaviour needs an event-loop yield.** Effects run in their own task, so a
+    `Layout` probe that reads a log right after `await layout.render()` sees nothing. Insert
+    several `await asyncio.sleep(0)` calls after each render before asserting. Also note a second
+    `await layout.render()` with nothing pending blocks until timeout — wrap it in
+    `asyncio.wait_for`.
