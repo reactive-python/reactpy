@@ -402,7 +402,12 @@ All settable by env var (`reactpy/config.py`).
    yields `checked=True`). The stale "open bug / FIXME" claim in
    `docs/src/learn/thinking-in-react.md` is wrong; the client re-reads
    `value/checked/files/type/name` off the element with `in`, bypassing enumerability. See §4.
-9. Generators as children skip key checking; use list comprehensions.
+9. Generators as children skip key checking; use list comprehensions. Storing an
+   **iterator in state is a severe bug**: `filter()`/`map()` return single-use iterators, so
+   the first render shows the right items and every later render shows **nothing** (verified:
+   state `["a","b","c"]` -> `filter(...)` rendered `a,c`, then an unrelated state change
+   rendered `''`). Always wrap in `list(...)` or use a comprehension. React's docs cannot warn
+   about this because JS `filter()` returns an array.
 10. Never reference `reactpy.backend.*`, `use_id`, or 1.x-era `vdom()`/`Html()` APIs; they
     are not in v2.0.0b13's public surface.
 11. Keep `@component` definitions at module level. A nested definition is a new function
