@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <title>Accounts</title>
+</head>
+
+<body>
+  <h1>Welcome</h1>
+
+  {# One tag per component; ReactPy gives each mount element its own id. #}
+  {% component "pages.counter" %}
+
+  {# `class` must follow a comma -- the tag parses its arguments as Python. #}
+  {% component "pages.badge", class="badge" %}
+</body>
+
+</html>

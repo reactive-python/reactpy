@@ -85,7 +85,7 @@ nav:
                 - React calls Components and Hooks: reference/react-calls-components-and-hooks.md
                 - Rules of Hooks: reference/rules-of-hooks.md
           - Template Tags:
-                - Jinja 🚧: reference/jinja.md
+                - Jinja: reference/jinja.md
           - Protocol Structure 🚧: reference/protocol-structure.md
           - Client API 🚧: reference/client-api.md
     - About:
