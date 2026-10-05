@@ -465,3 +465,22 @@ All settable by env var (`reactpy/config.py`).
     except int/float/complex/str/bytes/bytearray/memoryview by value) and skips
     `schedule_render()` when equal — verified. But this is *not* component memoization: see
     item 14.
+24. **Effects infer their dependencies by default — this is NOT React.** With no
+    `dependencies` argument, `use_effect` calls `_try_to_infer_closure_values`, so deps come
+    from the closure's *free variables* (`core/hooks.py`). Verified: a closure referencing no
+    local variables runs **once**; one referencing `n` re-runs when `n` changes; one
+    referencing only the stable setter runs once. `dependencies=[]` runs once,
+    `dependencies=[n]` re-runs on change, `dependencies=...` means "infer". Never port React's
+    "omit the array to run after every render" — it is wrong here.
+25. **`use_async_effect` takes a ZERO-argument coroutine.** It does `create_task(func())`
+    (`core/hooks.py`), so the 1.x `async def effect(stop)` shape is *silently* broken: the
+    `TypeError` is logged as `Error in effect` while the component still renders. Long-running
+    work is `while True:` + `except asyncio.CancelledError`, never a `stop` event.
+    `shield=True` lets an in-flight effect finish after unmount; the default `shield=False`
+    cancels it — both verified.
+26. **Effect ordering: children before parent, siblings in REVERSE order.** Verified output
+    `['child effect b', 'child effect a', 'parent effect']`. Two effects in one component run
+    in declaration order. Do not promise React's parent-first or source-order semantics.
+27. **`use_effect` rejects `async def` loudly** — the `TypeError: use_effect does not support
+    async functions. Use use_async_effect instead.` lands in the model's `error` field. An
+    effect body that raises at runtime is logged server-side only, with nothing in the model.
