@@ -1,38 +1,67 @@
 <p class="intro" markdown>
 
-This section provides detailed reference documentation for working with React. For an introduction to React, please visit the [Learn](/learn) section.
+This section is the detailed reference for ReactPy. For an introduction, start with the [Learn](../learn/quick-start.md) section.
 
 </p>
 
-The React reference documentation is broken down into functional subsections:
+The reference is split into functional subsections:
 
-## React
+## Hooks
 
-Programmatic React features:
+Call these at the top level of a component. ReactPy provides twelve:
 
--   [Hooks](/reference/react/hooks) - Use different React features from your components.
--   [Components](/reference/react/components) - Built-in components that you can use in your JSX.
--   [APIs](/reference/react/apis) - APIs that are useful for defining components.
--   [Directives](/reference/rsc/directives) - Provide instructions to bundlers compatible with React Server Components.
+-   [`use_state`](./use-state.md) — declare a state variable.
+-   [`use_effect`](./use-effect.md) — run a synchronous side effect.
+-   [`use_async_effect`](./use-async-effect.md) — run an `#!python async def` effect, or one that keeps running across renders.
+-   [`use_reducer`](./use-reducer.md) — hold state behind a reducer.
+-   [`use_context`](./use-context.md) — read a value provided higher in the tree.
+-   [`use_ref`](./use-ref.md) — hold a mutable box that survives renders.
+-   [`use_memo`](./use-memo.md) — cache a computed value.
+-   [`use_callback`](./use-callback.md) — cache a function.
+-   [`use_debug_value`](./use-debug-value.md) — attach a debug label to a component.
+-   [`use_connection`](./use-connection.md) — inspect the current websocket connection.
+-   [`use_scope`](./use-scope.md) — read the ASGI connection scope.
+-   [`use_location`](./use-location.md) — read the browser's current URL.
 
-## React DOM
+There is no `use_id`, `use_transition`, `use_deferred_value`, `use_layout_effect`, `use_insertion_effect`, `use_imperative_handle`, or `use_sync_external_store`. Texts ported from React that rely on them have no ReactPy equivalent.
 
-React-dom contains features that are only supported for web applications (which run in the browser DOM environment). This section is broken into the following:
+## HTML
 
--   [Hooks](/reference/react-dom/hooks) - Hooks for web applications which run in the browser DOM environment.
--   [Components](/reference/react-dom/components) - React supports all of the browser built-in HTML and SVG components.
--   [APIs](/reference/react-dom) - The `react-dom` package contains methods supported only in web applications.
--   [Client APIs](/reference/react-dom/client) - The `react-dom/client` APIs let you render React components on the client (in the browser).
--   [Server APIs](/reference/react-dom/server) - The `react-dom/server` APIs let you render React components to HTML on the server.
+How to describe markup. ReactPy has no JSX; you call functions.
+
+-   [Common Props](./common-props.md) — attributes shared by every tag.
+-   [Usage](./usage.md) — the `#!python html.*` functions and the shape of a VDOM dictionary.
+
+## Executors
+
+The ASGI applications that serve your components:
+
+-   [ReactPy](./reactpy.md) — standalone single-page app; components render on the server.
+-   [ReactPyMiddleware](./reactpy-middleware.md) — add ReactPy routes to an ASGI app you already have.
+-   [ReactPyCsr](./reactpy-csr.md) — run component code in the browser via PyScript.
+
+## Template integration
+
+-   [Jinja](./jinja.md) — render components from Jinja templates.
 
 ## Rules of React
 
-React has idioms — or rules — for how to express patterns in a way that is easy to understand and yields high-quality applications:
+Idioms for expressing React patterns so they stay understandable and correct:
 
--   [Components and Hooks must be pure](/reference/rules/components-and-hooks-must-be-pure) – Purity makes your code easier to understand, debug, and allows React to automatically optimize your components and hooks correctly.
--   [React calls Components and Hooks](/reference/rules/react-calls-components-and-hooks) – React is responsible for rendering components and hooks when necessary to optimize the user experience.
--   [Rules of Hooks](/reference/rules/rules-of-hooks) – Hooks are defined using JavaScript functions, but they represent a special type of reusable UI logic with restrictions on where they can be called.
+-   [Components and Hooks must be pure](./components-and-hooks-must-be-pure.md)
+-   [React calls Components and Hooks](./react-calls-components-and-hooks.md)
+-   [Rules of Hooks](./rules-of-hooks.md)
 
-## Legacy APIs
+## Internals
 
--   [Legacy APIs](/reference/react/legacy) - Exported from the `react` package, but not recommended for use in newly written code.
+-   [Protocol Structure](./protocol-structure.md) — the messages exchanged between server and client.
+-   [Client API](./client-api.md) — the browser-side entry point.
+
+## Where React differs
+
+ReactPy models React's function-component API, but it is not React. Effects infer
+their dependencies instead of requiring an array, state updates are replaced rather
+than merged, an update that mutates in place is dropped without any error, and several
+React hooks do not exist at all. Each page calls out the differences that matter to it,
+so when porting code or prose from a React tutorial, read the ReactPy page rather than
+assume parity.
