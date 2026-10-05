@@ -73,8 +73,8 @@ nav:
                 - Use Scope: reference/use-scope.md
                 - Use Location: reference/use-location.md
           - HTML Tags:
-                - Common Props 🚧: reference/common-props.md
-                - Usage 🚧: reference/usage.md
+                - Common Props: reference/common-props.md
+                - Usage: reference/usage.md
           - Executors:
                 - ReactPy: reference/reactpy.md
                 - ReactPyCsr: reference/reactpy-csr.md

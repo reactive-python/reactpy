@@ -2,7 +2,7 @@
 
 Compact reference for writing/reviewing ReactPy v2 docs. Every claim verified against
 `reactive-python/reactpy@main` (`aafabc2965`, `reactpy==2.0.0b13`) or this repo's
-`docs/examples/`. Cites are `file:line` on `main`.
+`docs/examples/`. Cites are file + symbol name, never line numbers.
 
 Rules for docs work: snake_case everywhere, never invent an API, keep Python runnable,
 verify a claim in source/tests before writing it.
@@ -606,3 +606,66 @@ All settable by env var (`reactpy/config.py`).
     raising reducer is swallowed into a server-side "Failed to execute event handler" like any
     other handler error. Multiple dispatches in one handler batch correctly and see each other's
     results (3 dispatches -> n=3), because each goes through the updater path.
+44. **`VdomDict` accepts exactly six keys.** `types.py`, `ALLOWED_VDOM_KEYS`: `tagName`
+    (required), `children`, `attributes`, `eventHandlers`, `inlineJavaScript`,
+    `importSource`. There is no `key`, `ref`, `properties` or `exports` key: `VdomDict(key=1)`
+    raises `ValueError: Invalid keys: {'key'}.` and `d["bogus"] = 1` raises
+    `KeyError: 'Invalid key: bogus'`. A child `dict` with no `tagName` does *not* raise -- the
+    layout sends an error model instead: `{"tagName": "", "error": "ValueError: Expected a VDOM
+    element dict, not ..."}` plus a server-side traceback.
+45. **Attribute values are forwarded verbatim -- no React-style renaming.** Verified in real
+    Chrome against all three executors: `class` and `className` both yield `class="..."`;
+    `for` and `htmlFor` both yield `for="..."`; unknown names (`data-*`, `aria-*`,
+    `totallyBogus`) pass through untouched. Nothing validates names against an allow-list, so a
+    typo'd attribute is a silent no-op.
+46. **A bare numeric `style` value is portable only by accident.** `{"fontSize": 30}` applies
+    (`font-size: 30px`) under `ReactPy` and `ReactPyMiddleware`, and is **silently dropped**
+    under `ReactPyCsr` -- no warning, and the server-side model shows the value untouched.
+    Strings with units and unitless properties (`zIndex`, `opacity`) are fine everywhere. Docs
+    rule: always put units in strings.
+47. **Only `None` renders nothing among children.** `core/vdom.py`, `_flatten_children` /
+    `_is_single_child`: `str` verbatim, `int`/`float` via `str()`, `True`/`False` as the literal
+    words `"True"`/`"False"`, `bytes` exploded into per-byte digit strings (`b"raw"` ->
+    `"114","97","119"`), lists/tuples/generators/sets flattened, `None` dropped. React-style
+    `x and <el>` shortcuts therefore leak the word `False` into the page.
+48. **`key` is read from `attributes["key"]`, and the two clients disagree about emitting it.**
+    `core/layout.py`, `_render_model_children` reads `child.get("attributes", {}).get("key")`;
+    missing keys fall back to the child's *index*, and `_render_model_children` returns
+    `None` for the key set when any key is duplicated, which switches the diff off (source-read,
+    not measured end-to-end). In the DOM, `ReactPy`/`ReactPyMiddleware` consume `key` (never emitted) while
+    `ReactPyCsr` leaks it as a literal `key="1"` attribute. Warning texts, debug mode only, and
+    only for children inside a *list*: `Key not specified for child in list {...}` and, for a
+    generator, `Did not verify key-path integrity of children in generator ... - pass a sequence
+    (i.e. list of finite length) in order to verify`.
+49. **Handlers are detected by `callable`, not by name; a `dict` is never a handler.**
+    `core/vdom.py`, `separate_attributes_handlers_and_inline_javascript`: `callable(v)` ->
+    `eventHandlers` (under *any* key, so `{"notAnHandler": fn}` is registered too); a
+    `BaseEventHandler` -> `eventHandlers`; a `str` matching `EVENT_ATTRIBUTE_PATTERN`
+    (`^on[A-Z]\w+`) -> `inlineJavaScript` (client `eval`s it). The React-shaped
+    `{"function": fn, "preventDefault": True}` is a plain `dict`, so it becomes an ordinary
+    attribute and no listener is attached -- with debug on it fails loudly
+    (`TypeError: Object of type function is not JSON serializable`). Options come from
+    `core/events.py`, `EventHandler(function, stop_propagation, prevent_default, target,
+    debounce, throttle)` -- there is no `prevent_default_and_stop_propagation` parameter. Bad
+    `debounce`/`throttle` values are ignored client-side with
+    `[ReactPy] Ignoring invalid debounce value "fast" on event handler "onInput": expected a
+    non-negative integer.`
+50. **JSON-serializability of attributes is only enforced in debug mode.**
+    `core/vdom.py`, `Vdom.__call__` runs `json.dumps(attributes)` under `REACTPY_CHECK_JSON_ATTRS`
+    (which has `REACTPY_DEBUG` as its *parent* option, so env/config on `REACTPY_DEBUG` turns it
+    on). Debug on: failure at the tag call (`TypeError: Object of type object is not JSON
+    serializable`). Debug off: the bad value is accepted and blows up later inside the websocket
+    send (`orjson.dumps` -> `TypeError: Type is not JSON serializable: object`).
+51. **Tag-name translation and the plain-`dict` first-argument rule.** `core/vdom.py`,
+    `separate_attributes_and_children` tests `type(values[0]) is dict` -- exact type, so a
+    `VdomDict` (a `dict` *subclass*) as the first argument is a **child**, and a plain `dict`
+    meant as an element becomes attributes instead (`html.div({"children": ["x"]})` -> an
+    attribute literally named `children`). `_html.py`, `HtmlConstructor.__getattr__` does
+    `value.rstrip("_").replace("_", "-")`, so `html.del_` -> `<del>`, `html.data_table` ->
+    `<data-table>`, `html.my_widget` -> `<my-widget>`; constructors are cached (`html.foo is
+    html.foo`). Void elements come from `NO_CHILDREN_ALLOWED_HTML_BODY` ->
+    `TypeError: 'br' nodes cannot have children.`; fragments from `_fragment` ->
+    `TypeError: Fragments cannot have attributes besides 'key'`; `html()` is the fragment
+    constructor; `html.svg` is a separate `SvgConstructor` whose children may share HTML names.
+    `_script` raises `ValueError: 'script' elements do not support event handlers` and injects an
+    inferred `key` from its content or `src`.
