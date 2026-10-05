@@ -46,3 +46,6 @@ pip-wheel-metadata
 # --- JS ---
 node_modules
 *.tsbuildinfo
+
+# --- Docs build output ---
+docs/site/

@@ -17,7 +17,7 @@ nav:
           #       - "Tutorial: Material UI 🚫": learn/tutorial-material-ui.md
     - Learn:
           - Describing the UI:
-                - Your First Component 🚧: learn/your-first-component.md
+                - Your First Component: learn/your-first-component.md
                 - Importing and Exporting Components 🚧: learn/importing-and-exporting-components.md
                 # - Writing Markup with PSX 🚫: learn/writing-markup-with-psx.md
                 # - Python in PSX with Curly Braces 🚫: learn/python-in-psx-with-curly-braces.md
