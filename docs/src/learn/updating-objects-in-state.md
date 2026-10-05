@@ -23,7 +23,7 @@ In ReactPy, treat state as **read-only**. Every time your code renders, you work
 
 !!! warning "Mutating state doesn't just risk a bug — it can silently do nothing"
 
-    In React, mutating state is a "may render stale UI" hazard. In ReactPy it is sharper, because the setter compares the new value against the old one **by identity** before scheduling anything (`core/hooks.py`, `strictly_equal`).
+    In React, mutating state is a "may render stale UI" hazard. In ReactPy it is sharper, because the setter compares the new value against the old one before scheduling anything — and that comparison accepts *equality*, not just identity (`core/hooks.py`, `strictly_equal`). Anything that compares equal, including a brand-new object, schedules no render.
 
     Measured behaviour, each case dispatched through `reactpy.core.layout.Layout`:
 
@@ -45,7 +45,7 @@ def handle_first_name(event):
     set_person(person)                                # same object -> ignored
 ```
 
-`#!python person` is the very object ReactPy already holds, so the assignment changes it in place and then hands the same object back. ReactPy's identity check sees no change and skips the render — the field appears frozen while your dict quietly holds the new value.
+`#!python person` is the very object ReactPy already holds, so the assignment changes it in place and then hands the same object back. ReactPy compares it against what it already has, finds nothing changed, and skips the render — the field appears frozen while your dict quietly holds the new value.
 
 The fix is to always create a **new** object for the next state:
 
@@ -208,7 +208,7 @@ Resist building your own Immer. A proxy that logs mutations would have to run on
 
 -   Treat everything ReactPy hands you as state or props as read-only: never assign into it, never call a mutating method on it.
 -   Build a **new** object with `#!python {**old, ...}` and pass that to the setter.
--   Mutating in place and passing the same object back is silently dropped — ReactPy compares by identity and schedules no render. Nothing in the browser will tell you.
+-   Mutating in place and passing the same object back is silently dropped — ReactPy compares the new value with the old and schedules no render when they are equal. Nothing in the browser will tell you.
 -   Copying is shallow at every level; copy all the way up from the field that changed, or use `#!python copy.deepcopy`.
 -   Mutating a value you created during this render is fine.
 -   There is no Immer in ReactPy; use dict and list unpacking, or restructure the state.

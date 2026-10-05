@@ -22,7 +22,7 @@ def handle_add(event):
     set_items(items)                              # same object -> ignored
 ```
 
-Nothing happens. ReactPy compares the new value against the old **by identity** (`core/hooks.py`, `strictly_equal`), sees the same list object, and schedules no render. There is no error, no warning, and nothing in the browser console. Verified directly: mutating then setting the same list produces no render at all.
+Nothing happens. ReactPy compares the new value against the old one with `==` (`core/hooks.py`, `strictly_equal`), sees nothing changed, and schedules no render. There is no error, no warning, and nothing in the browser console. Verified directly: mutating then setting the same list produces no render at all. Nor does setting a *new* list that happens to compare equal — which is why `#!python set_rows([*rows, 4])` works while mutating `#!python rows` and passing it back does not.
 
 So whenever you want to update a list, pass a **new** list to the setter. Python gives you two tools for that:
 
@@ -214,7 +214,7 @@ What you have instead is what this page already used:
 -   **`#!python copy.deepcopy`** — for a structure too nested to copy by hand.
 -   **`use_reducer`** — moves the update logic out of the component, which is where the verbosity actually starts to hurt. See [Extracting State Logic into a Reducer](./extracting-state-logic-into-a-reducer.md).
 
-A homegrown Immer is worth avoiding specifically because it would paper over the failure mode this page is about: mutations are more dangerous here than in the browser, because ReactPy decides whether to render by comparing object identity on the server.
+A homegrown Immer is worth avoiding specifically because it would paper over the failure mode this page is about: mutations are more dangerous here than in the browser, because ReactPy decides whether to render by comparing the old and new values on the server — so a mutation that hands back the same object, or an equal one, is dropped without a trace.
 
 ## Recap
 

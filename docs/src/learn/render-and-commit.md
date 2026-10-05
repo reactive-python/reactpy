@@ -69,7 +69,7 @@ Note the difference from a browser-only React app: the state lives on the server
 
 !!! info "Setting the same value does not re-render"
 
-    Calling a setter with a value equal to the current one renders nothing — verified: `#!python set_n(0)` when `#!python n` is already `#!python 0` produces no further render at all, while `#!python set_n(n + 1)` does. Comparison is by identity, except that numbers, strings, and bytes compare by value (`core/hooks.py`, `strictly_equal`). Note this is a *state-update* bailout only; it is not component memoization — see step 2.
+    Calling a setter with a value equal to the current one renders nothing — verified: `#!python set_n(0)` when `#!python n` is already `#!python 0` produces no further render at all, while `#!python set_n(n + 1)` does. The comparison is not an identity check: it accepts anything that compares equal, so even a freshly built list or dict schedules nothing when its contents match. Note this is a *state-update* bailout only; it is not component memoization — see step 2.
 
 ## Step 2: ReactPy renders your components
 

@@ -208,10 +208,11 @@ use_debug_value(message, dependencies=...)
 - **The setter DOES accept an updater function**: `set_count(lambda prev: prev + 1)`
   (`core/hooks.py`, `_CurrentState.dispatch`). A new value that is *strictly equal*
   to the current one **skips the re-render**.
-- Deps use **identity**, not ReactJS `Object.is` on arrays: `strictly_equal()` compares by
-  `id()` except for `int/float/complex/str/bytes/bytearray/memoryview`, which compare by
-  `==` (`hooks.py: strictly_equal`). Lambdas/local functions are compared by **bytecode
-  source**, so an identical inline lambda across renders does not retrigger an effect.
+- Deps (and state updates) use `strictly_equal()`, which is **not** an `id()` comparison despite
+  the docstrings: same-type gate first, then bytecode comparison for lambdas/local functions,
+  then `==`, then `is` only if `__eq__` is missing or raises (`hooks.py: strictly_equal`). So a
+  fresh equal list/dict does not retrigger, an identical inline lambda does not retrigger, and a
+  type change (`1` -> `1.0`) always does. See item 28.
 - `use_effect` **rejects `async def`**:
   `TypeError: use_effect does not support async functions. Use use_async_effect instead.`
   (`core/hooks.py`, `use_effect.decorator`).
@@ -461,10 +462,13 @@ All settable by env var (`reactpy/config.py`).
     render is scheduled, and `Layout._process_event_queue` logs `Failed to execute event
     handler` server-side while the browser stays silent. Check the server log when a control
     "stops working" with no client error.
-23. **Equal state does not re-render.** `dispatch` compares with `strictly_equal` (identity,
-    except int/float/complex/str/bytes/bytearray/memoryview by value) and skips
-    `schedule_render()` when equal — verified. But this is *not* component memoization: see
-    item 14.
+23. **Equal state does not re-render — and "equal" means `==`, not identity.** `dispatch`
+    calls `strictly_equal` (item 28) and skips `schedule_render()` when it says equal. So
+    setting a *brand-new* object that merely compares equal is also dropped: `set_rows([1, 2, 3])`
+    while `rows` is an equal list does not render, and neither does a custom class whose
+    `__eq__` matches. Only objects with identity-based `__eq__` (plain classes, no override)
+    re-render when replaced. Verified for lists, nested dicts, and a custom `__eq__`. This is
+    still *not* component memoization: see item 14.
 24. **Effects infer their dependencies by default — this is NOT React.** With no
     `dependencies` argument, `use_effect` calls `_try_to_infer_closure_values`, so deps come
     from the closure's *free variables* (`core/hooks.py`). Verified: a closure referencing no
@@ -489,12 +493,15 @@ All settable by env var (`reactpy/config.py`).
     `id()` comparison the docstrings claim. For two callables whose `__qualname__` contains
     `<lambda>` or `<locals>`, it compares all `co_*` code attributes (ignoring line/column
     metadata), so a structurally identical nested function or lambda is treated as **unchanged**
-    across renders. For everything else it tries `==` first and only falls back to `is` when
-    `__eq__` is missing or raises. Consequences, all measured: a dependency that is a fresh
-    `list`/`dict` with equal contents does **not** re-trigger the effect; a fresh object of a
-    plain class (default identity `__eq__`) **does**; a structurally identical local `def`
-    handler does **not** — so an effect listing it as a dependency keeps the closure it first
-    captured and reads stale state. Do not teach React's identity semantics here.
+    across renders. It gates on `type(x) is type(y)` *first*, so a value whose type changes
+    between renders (`1` then `1.0`, `0` then `False`) always counts as changed even where `==`
+    would say otherwise. Everything else is compared with `==`, falling back to `is` only when
+    `__eq__` is absent or raises — and there is **no identity short-circuit**, so an object whose
+    `__eq__` returns `False` is unequal even to itself. Consequences, all measured: a dependency
+    that is a fresh `list`/`dict` with equal contents does **not** re-trigger the effect; a fresh
+    object of a plain class (default identity `__eq__`) **does**; a structurally identical local
+    `def` handler does **not** — so an effect listing it as a dependency keeps the closure it
+    first captured and reads stale state. Do not teach React's identity semantics here.
 29. **There is no render bailout at all.** A child component's body re-runs whenever its parent
     re-renders, even with unchanged props, and even when the element is cached in `use_memo`
     (`use_memo(lambda: child(x), dependencies=[x])` still re-executes `child`). ReactPy's layout
