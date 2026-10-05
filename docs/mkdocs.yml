@@ -68,7 +68,7 @@ nav:
                 - Use Callback: reference/use-callback.md
                 - Use Memo: reference/use-memo.md
                 - Use Ref: reference/use-ref.md
-                - Use Debug Value 🚧: reference/use-debug-value.md
+                - Use Debug Value: reference/use-debug-value.md
                 - Use Connection 🚧: reference/use-connection.md
                 - Use Scope 🚧: reference/use-scope.md
                 - Use Location 🚧: reference/use-location.md
