@@ -568,3 +568,20 @@ All settable by env var (`reactpy/config.py`).
     hook-free components convert. This constrains `ReactPy(prepend_body=...)`, which is rendered
     through exactly this path (`standalone.py`). Passing an uncalled component raises
     `AttributeError: 'function' object has no attribute 'render'`.
+39. **`use_reducer` pins the reducer from the first render.** `core/hooks.py`, `use_reducer` is
+    literally `use_state(initial_value)` plus `_use_const(lambda: _create_dispatcher(reducer,
+    set_state))`. `_use_const` reserves a slot and builds the dispatcher once, so the closure over
+    `reducer` is captured on the first render and reused forever -- a reducer defined *inside* the
+    component keeps its first-render closure and reads stale state permanently. Measured: passing
+    4 distinct reducer objects across 4 renders, the state produced by the first one kept
+    `seen_n=0` throughout. React re-reads the reducer each render, so ported code breaks silently
+    here. Dispatchers are stable (1 distinct object over 4 renders). Consequence: reducers belong
+    at module level, taking everything from `(state, action)`.
+40. **`use_reducer` inherits every `use_state` quirk, because it *is* `use_state`.**
+    `_create_dispatcher` calls `set_state(lambda last_state: reducer(last_state, action))`, so the
+    comparison is `strictly_equal`: a reducer that mutates `state` and returns it is dropped with
+    no error (verified: three dispatches, zero renders). Returning an equal-but-new object is also
+    dropped. Reducers run eagerly *inside* `dispatch` (verified by ordering around the call), so a
+    raising reducer is swallowed into a server-side "Failed to execute event handler" like any
+    other handler error. Multiple dispatches in one handler batch correctly and see each other's
+    results (3 dispatches -> n=3), because each goes through the updater path.
