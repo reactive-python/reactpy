@@ -60,7 +60,7 @@ nav:
     - Reference:
           - Overview: reference/overview.md
           - Hooks:
-                - Use State 🚧: reference/use-state.md
+                - Use State: reference/use-state.md
                 - Use Effect 🚧: reference/use-effect.md
                 - Use Async Effect 🚧: reference/use-async-effect.md
                 - Use Context 🚧: reference/use-context.md

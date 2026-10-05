@@ -432,22 +432,36 @@ All settable by env var (`reactpy/config.py`).
     comparison in `dispatch` means `x.append(i); set_x(x)` schedules **no render** at all —
     verified. No error, no console output, no warning; the handler runs and the UI never
     changes. Also covers mutating without calling the setter.
-17. **Handlers receive exactly one positional argument.** The event is `data[0]` unpacked
+17. **`use_state` facts to state plainly.** The setter is a stable object (verified: 4
+    renders, 1 distinct setter) so it is safe in dependency arrays and as a prop. `State` is
+    a `NamedTuple` `(value, set_value)`, so unpacking works. The initial value may be a
+    zero-arg callable and runs **once** (verified: 1 call across 4 renders) — but that means a
+    *function you want to store* is treated as an initializer: `use_state(lambda x: x * 2)`
+    raises rather than storing the lambda. Store functions in `use_ref` instead.
+18. **A conditional/reordered hook is silent corruption, not an error.** Adding an extra hook
+    on some renders produces `IndexError: list index out of range` captured into the model's
+    `error` field (verified); ReactPy has no "Rendered fewer hooks than expected" guard, so
+    never port React's hook-order warnings as if the check exists.
+19. **Resetting state via `key` works and is the documented idiom.** Verified in a real
+    browser: a child rendered with `key="a"` bumped to `a:2` then re-rendered with
+    `key="b"` came back at `b:0`, while the same child rendered *without* a key kept its
+    count (`b:2`).
+20. **Handlers receive exactly one positional argument.** The event is `data[0]` unpacked
     onto the signature; a handler declaring two required parameters raises
     `TypeError: ... missing 1 required positional argument: 'event'` — verified. There is
     no `e.target.name`: the client does not send DOM attributes, so extra context must be
     bound in Python (usually a `lambda`). Pointer events DO carry `clientX`/`clientY`
     (browser-verified), so drag/pointer demos are portable.
-18. **Batching is sync-only.** A plain `def` handler making several setter calls produces
+21. **Batching is sync-only.** A plain `def` handler making several setter calls produces
     **one** render; an `async def` handler that `await`s between them produces **one render
     per flush** (measured in Chrome: `0→3` vs `0→1→2→3`), because `dispatch` assigns state
     immediately and only flags a re-render. React 18+ batches both. Never claim React-style
     batching across `await`.
-19. **A raising updater is swallowed.** If an updater raises, state is left unassigned, no
+22. **A raising updater is swallowed.** If an updater raises, state is left unassigned, no
     render is scheduled, and `Layout._process_event_queue` logs `Failed to execute event
     handler` server-side while the browser stays silent. Check the server log when a control
     "stops working" with no client error.
-20. **Equal state does not re-render.** `dispatch` compares with `strictly_equal` (identity,
+23. **Equal state does not re-render.** `dispatch` compares with `strictly_equal` (identity,
     except int/float/complex/str/bytes/bytearray/memoryview by value) and skips
     `schedule_render()` when equal — verified. But this is *not* component memoization: see
     item 14.
