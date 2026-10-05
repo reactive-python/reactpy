@@ -8,371 +8,140 @@ The magic of components lies in their reusability: you can create components tha
 
 !!! summary "You will learn"
 
-    -   What a root component file is
-    -   How to import and export a component
-    -   When to use default and named imports and exports
+    -   What a root component module is
+    -   How to import a component from another file
+    -   How ReactPy expresses "private" and "public" components
     -   How to import and export multiple components from one file
     -   How to split components into multiple files
 
-## The root component file
+## The root component module
 
-In [Your First Component](/learn/your-first-component), you made a `Profile` component and a `Gallery` component that renders it:
+In [Your First Component](./your-first-component.md), you made a `#!python profile` component and a `#!python gallery` component that renders it:
 
-```js
-function Profile() {
-	return (
-		<img src="https://i.imgur.com/MK3eW3As.jpg" alt="Katherine Johnson" />
-	);
-}
+=== "app.py"
 
-export default function Gallery() {
-	return (
-		<section>
-			<h1>Amazing scientists</h1>
-			<Profile />
-			<Profile />
-			<Profile />
-		</section>
-	);
-}
+    ```python
+    {% include "../../examples/importing_and_exporting_components/one_file/app.py" %}
+    ```
+
+=== "styles.css"
+
+    ```css
+    {% include "../../examples/importing_and_exporting_components/styles.css" %}
+    ```
+
+These currently live in a single module. Whichever module holds the component you hand to an executor is your **root component module** — the ASGI executor in [Creating a Standalone React App](./creating-a-react-app.md) takes that component directly:
+
+```python linenums="0"
+from reactpy.executors.asgi import ReactPy
+
+from app import gallery
+
+my_app = ReactPy(gallery)
 ```
 
-```css
-img {
-	margin: 0 10px 10px 0;
-	height: 90px;
-}
-```
-
-These currently live in a **root component file,** named `App.js` in this example. In [Create React App](https://create-react-app.dev/), your app lives in `src/App.js`. Depending on your setup, your root component could be in another file, though. If you use a framework with file-based routing, such as Next.js, your root component will be different for every page.
+Which module plays this role depends on your executor. The middleware executor takes dotted paths instead, e.g. `#!python ["my_components.hello_world"]`, and the CSR executor takes a path to a file whose `#!python root` component it mounts.
 
 ## Exporting and importing a component
 
-What if you want to change the landing screen in the future and put a list of science books there? Or place all the profiles somewhere else? It makes sense to move `Gallery` and `Profile` out of the root component file. This will make them more modular and reusable in other files. You can move a component in three steps:
+What if you want to change the landing screen in the future and put a list of science books there? Or place all the profiles somewhere else? It makes sense to move `#!python gallery` and `#!python profile` into their own module. This makes them more modular and reusable in other files. You can move a component in three steps:
 
-1. **Make** a new JS file to put the components in.
-2. **Export** your function component from that file (using either [default](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/export#using_the_default_export) or [named](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/export#using_named_exports) exports).
-3. **Import** it in the file where you’ll use the component (using the corresponding technique for importing [default](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/import#importing_defaults) or [named](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/import#import_a_single_export_from_a_module) exports).
+1.  **Make** a new Python file to put the components in.
+2.  **Define** your component functions in that file. Unlike JavaScript, Python has no `export` keyword — every name defined at module level is importable.
+3.  **Import** it in the module where you'll use the component.
 
-Here both `Profile` and `Gallery` have been moved out of `App.js` into a new file called `Gallery.js`. Now you can change `App.js` to import `Gallery` from `Gallery.js`:
+Here both `#!python profile` and `#!python gallery` have moved into a new file called `#!python gallery.py`. Now `#!python app.py` imports `#!python gallery` from it:
 
-```js
-import Gallery from "./Gallery.js";
+=== "app.py"
 
-export default function App() {
-	return <Gallery />;
-}
-```
+    ```python
+    {% include "../../examples/importing_and_exporting_components/private/app.py" %}
+    ```
 
-```js
-function Profile() {
-	return <img src="https://i.imgur.com/QIrZWGIs.jpg" alt="Alan L. Hart" />;
-}
+=== "gallery.py"
 
-export default function Gallery() {
-	return (
-		<section>
-			<h1>Amazing scientists</h1>
-			<Profile />
-			<Profile />
-			<Profile />
-		</section>
-	);
-}
-```
-
-```css
-img {
-	margin: 0 10px 10px 0;
-	height: 90px;
-}
-```
+    ```python
+    {% include "../../examples/importing_and_exporting_components/private/gallery.py" %}
+    ```
 
 Notice how this example is broken down into two component files now:
 
-1. `Gallery.js`:
-    - Defines the `Profile` component which is only used within the same file and is not exported.
-    - Exports the `Gallery` component as a **default export.**
-2. `App.js`:
-    - Imports `Gallery` as a **default import** from `Gallery.js`.
-    - Exports the root `App` component as a **default export.**
+1.  `#!python gallery.py`:
+    -   Defines the `#!python _profile` component, which is only used within the same file and is kept private.
+    -   Makes `#!python gallery` the public component of the module.
+2.  `#!python app.py`:
+    -   Imports `#!python gallery` from `#!python gallery.py`.
+    -   Defines the root `#!python app` component.
 
-<Note>
+!!! abstract "Note"
 
-You may encounter files that leave off the `.js` file extension like so:
+    ReactPy does not care which module a component is defined in, so unlike ReactJS there is no distinction between "default" and "named" exports. `#!python from gallery import gallery, profile` and two separate import statements mean the same thing.
 
-```js
-import Gallery from "./Gallery";
+## Public and private components
+
+ReactJS lets you keep a component unexported so that only its own file can use it. Python has no equivalent enforcement, but it has two widely respected conventions that express the same intent.
+
+A leading underscore marks a name as private to its module:
+
+```python linenums="0"
+@component
+def _profile():
+    ...
 ```
 
-Either `'./Gallery.js'` or `'./Gallery'` will work with React, though the former is closer to how [native ES Modules](https://developer.mozilla.org/docs/Web/JavaScript/Guide/Modules) work.
+And `#!python __all__` lists the names a module publishes. It is what a star import exports, and what linters and type checkers read to decide what is public API:
 
-</Note>
+```python linenums="0"
+__all__ = ["gallery"]
+```
 
-<DeepDive>
+This is why `#!python _profile` is both underscore-prefixed and absent from `#!python __all__` in the example above.
 
-#### Default vs named exports
+!!! warning "Pitfall"
 
-There are two primary ways to export values with JavaScript: default exports and named exports. So far, our examples have only used default exports. But you can use one or both of them in the same file. **A file can have no more than one _default_ export, but it can have as many _named_ exports as you like.**
+    These conventions are advisory, not enforced. `#!python from gallery import _profile` still works, because Python has no `private` keyword. Do not reach for underscore-prefixed names from another module, and do not rely on them being unavailable — treat a broken convention as a bug in the importing code, not as protection.
 
-![Default and named exports](/images/docs/illustrations/i_import-export.svg)
+!!! info "Deep Dive"
 
-How you export your component dictates how you must import it. You will get an error if you try to import a default export the same way you would a named export! This chart can help you keep track:
+    #### Naming modules and components
 
-| Syntax | Export statement | Import statement |
-| --- | --- | --- |
-| Default | `export default function Button() {}` | `import Button from './Button.js';` |
-| Named | `export function Button() {}` | `import { Button } from './Button.js';` |
+    Because imports name modules rather than files, give both meaningful names. `#!python scientists.py` defining `#!python gallery` and `#!python _profile` reads better than `#!python utils.py` defining `#!python Gallery`, and it also keeps you consistent with the rest of the docs, which write components in `#!python snake_case`.
 
-When you write a _default_ import, you can put any name you want after `import`. For example, you could write `import Banana from './Button.js'` instead and it would still provide you with the same default export. In contrast, with named imports, the name has to match on both sides. That's why they are called _named_ imports!
-
-**People often use default exports if the file exports only one component, and use named exports if it exports multiple components and values.** Regardless of which coding style you prefer, always give meaningful names to your component functions and the files that contain them. Components without names, like `export default () => {}`, are discouraged because they make debugging harder.
-
-</DeepDive>
+    Components should still be *called* everywhere they are used, so a component used by two modules must be imported in both of them. There is no global component registry to fall back on.
 
 ## Exporting and importing multiple components from the same file
 
-What if you want to show just one `Profile` instead of a gallery? You can export the `Profile` component, too. But `Gallery.js` already has a _default_ export, and you can't have _two_ default exports. You could create a new file with a default export, or you could add a _named_ export for `Profile`. **A file can only have one default export, but it can have numerous named exports!**
+What if you want to show just one `#!python profile` instead of a gallery? Then `#!python app.py` needs `#!python profile` too. Add it to the module's `#!python __all__` and import it by name:
 
-<Note>
+=== "app.py"
 
-To reduce the potential confusion between default and named exports, some teams choose to only stick to one style (default or named), or avoid mixing them in a single file. Do what works best for you!
+    ```python
+    {% include "../../examples/importing_and_exporting_components/public/app.py" %}
+    ```
 
-</Note>
+=== "gallery.py"
 
-First, **export** `Profile` from `Gallery.js` using a named export (no `default` keyword):
+    ```python
+    {% include "../../examples/importing_and_exporting_components/public/gallery.py" %}
+    ```
 
-```js
-export function Profile() {
-	// ...
-}
-```
+Now `#!python gallery.py` publishes both components:
 
-Then, **import** `Profile` from `Gallery.js` to `App.js` using a named import (with the curly braces):
+-   `#!python gallery.py`:
+    -   Lists `#!python gallery` and `#!python profile` in `#!python __all__`.
+-   `#!python app.py`:
+    -   Imports both `#!python gallery` and `#!python profile` from `#!python gallery.py`.
+    -   Renders each of them.
 
-```js
-import { Profile } from "./Gallery.js";
-```
+## Recap
 
-Finally, **render** `<Profile />` from the `App` component:
+You've learned:
 
-```js
-export default function App() {
-	return <Profile />;
-}
-```
-
-Now `Gallery.js` contains two exports: a default `Gallery` export, and a named `Profile` export. `App.js` imports both of them. Try editing `<Profile />` to `<Gallery />` and back in this example:
-
-```js
-import Gallery from "./Gallery.js";
-import { Profile } from "./Gallery.js";
-
-export default function App() {
-	return <Profile />;
-}
-```
-
-```js
-export function Profile() {
-	return <img src="https://i.imgur.com/QIrZWGIs.jpg" alt="Alan L. Hart" />;
-}
-
-export default function Gallery() {
-	return (
-		<section>
-			<h1>Amazing scientists</h1>
-			<Profile />
-			<Profile />
-			<Profile />
-		</section>
-	);
-}
-```
-
-```css
-img {
-	margin: 0 10px 10px 0;
-	height: 90px;
-}
-```
-
-Now you're using a mix of default and named exports:
-
--   `Gallery.js`:
-    -   Exports the `Profile` component as a **named export called `Profile`.**
-    -   Exports the `Gallery` component as a **default export.**
--   `App.js`:
-    -   Imports `Profile` as a **named import called `Profile`** from `Gallery.js`.
-    -   Imports `Gallery` as a **default import** from `Gallery.js`.
-    -   Exports the root `App` component as a **default export.**
-
-<Recap>
-
-On this page you learned:
-
--   What a root component file is
--   How to import and export a component
--   When and how to use default and named imports and exports
+-   What a root component module is, and that it depends on your executor
+-   How to import a component from another file
+-   How ReactPy expresses public and private components with `#!python __all__` and a leading underscore
 -   How to export multiple components from the same file
 
-</Recap>
+## Next Steps
 
-<Challenges>
-
-#### Split the components further
-
-Currently, `Gallery.js` exports both `Profile` and `Gallery`, which is a bit confusing.
-
-Move the `Profile` component to its own `Profile.js`, and then change the `App` component to render both `<Profile />` and `<Gallery />` one after another.
-
-You may use either a default or a named export for `Profile`, but make sure that you use the corresponding import syntax in both `App.js` and `Gallery.js`! You can refer to the table from the deep dive above:
-
-| Syntax | Export statement | Import statement |
-| --- | --- | --- |
-| Default | `export default function Button() {}` | `import Button from './Button.js';` |
-| Named | `export function Button() {}` | `import { Button } from './Button.js';` |
-
-<Hint>
-
-Don't forget to import your components where they are called. Doesn't `Gallery` use `Profile`, too?
-
-</Hint>
-
-```js
-import Gallery from "./Gallery.js";
-import { Profile } from "./Gallery.js";
-
-export default function App() {
-	return (
-		<div>
-			<Profile />
-		</div>
-	);
-}
-```
-
-```js
-// Move me to Profile.js!
-export function Profile() {
-	return <img src="https://i.imgur.com/QIrZWGIs.jpg" alt="Alan L. Hart" />;
-}
-
-export default function Gallery() {
-	return (
-		<section>
-			<h1>Amazing scientists</h1>
-			<Profile />
-			<Profile />
-			<Profile />
-		</section>
-	);
-}
-```
-
-```js
-
-```
-
-```css
-img {
-	margin: 0 10px 10px 0;
-	height: 90px;
-}
-```
-
-After you get it working with one kind of exports, make it work with the other kind.
-
-<Solution>
-
-This is the solution with named exports:
-
-```js
-import Gallery from "./Gallery.js";
-import { Profile } from "./Profile.js";
-
-export default function App() {
-	return (
-		<div>
-			<Profile />
-			<Gallery />
-		</div>
-	);
-}
-```
-
-```js
-import { Profile } from "./Profile.js";
-
-export default function Gallery() {
-	return (
-		<section>
-			<h1>Amazing scientists</h1>
-			<Profile />
-			<Profile />
-			<Profile />
-		</section>
-	);
-}
-```
-
-```js
-export function Profile() {
-	return <img src="https://i.imgur.com/QIrZWGIs.jpg" alt="Alan L. Hart" />;
-}
-```
-
-```css
-img {
-	margin: 0 10px 10px 0;
-	height: 90px;
-}
-```
-
-This is the solution with default exports:
-
-```js
-import Gallery from "./Gallery.js";
-import Profile from "./Profile.js";
-
-export default function App() {
-	return (
-		<div>
-			<Profile />
-			<Gallery />
-		</div>
-	);
-}
-```
-
-```js
-import Profile from "./Profile.js";
-
-export default function Gallery() {
-	return (
-		<section>
-			<h1>Amazing scientists</h1>
-			<Profile />
-			<Profile />
-			<Profile />
-		</section>
-	);
-}
-```
-
-```js
-export default function Profile() {
-	return <img src="https://i.imgur.com/QIrZWGIs.jpg" alt="Alan L. Hart" />;
-}
-```
-
-```css
-img {
-	margin: 0 10px 10px 0;
-	height: 90px;
-}
-```
-
-</Solution>
-
-</Challenges>
+Now that your components can live in separate files, continue to [Passing Props to a Component](./passing-props-to-a-component.md) to make them configurable.
