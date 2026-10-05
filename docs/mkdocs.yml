@@ -22,7 +22,7 @@ nav:
                 # - Writing Markup with PSX 🚫: learn/writing-markup-with-psx.md
                 # - Python in PSX with Curly Braces 🚫: learn/python-in-psx-with-curly-braces.md
                 - Passing Props to a Component: learn/passing-props-to-a-component.md
-                - Conditional Rendering 🚧: learn/conditional-rendering.md
+                - Conditional Rendering: learn/conditional-rendering.md
                 - Rendering Lists 🚧: learn/rendering-lists.md
                 - Keeping Components Pure 🚧: learn/keeping-components-pure.md
           - Adding Interactivity:
