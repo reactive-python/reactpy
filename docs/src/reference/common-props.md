@@ -285,13 +285,31 @@ Any callable under any attribute name becomes an event handler:
 
 ```python linenums="0"
 async def save(event):
-    await store.save(event["data"])
+    await store.save(event["target"]["value"])
 
 
 html.button({"onClick": save}, "Save")
 ```
 
-The name is forwarded as the DOM event to listen for, so the names that work are the DOM event names in camelCase — `#!python onClick`, `#!python onInput`, `#!python onKeyDown`. The handler receives one argument: a JSON-serializable `#!python dict` describing the event. Make it `#!python async` when the work is slow, because a plain function blocks the client while it runs — see [Responding to Events](../learn/responding-to-events.md).
+The name is forwarded as the DOM event to listen for, so the names that work are the DOM event names in camelCase — `#!python onClick`, `#!python onInput`, `#!python onKeyDown`. The handler receives one argument: the event data as a JSON-serializable `#!python dict`, wrapped in `#!python reactpy.types.Event` so nested keys are also readable as attributes. There is no `#!python "data"` key to unwrap — the browser sends a *list* of arguments, and ReactPy hands you its single element. Make the handler `#!python async` when the work is slow, because a plain function blocks the client while it runs — see [Responding to Events](../learn/responding-to-events.md).
+
+!!! warning "A handler wrapped in `EventHandler` receives the raw list"
+    A plain callable is called with the browser's argument list **unpacked**, so `def f(event)` gets the event dict. An `EventHandler` does the opposite: it is called with the **list itself**, so `def f(data)` must index into it. The difference stays invisible until a handler is converted, and then `event["target"]` becomes `TypeError: list indices must be integers or slices, not str`:
+
+    ```python linenums="0"
+    from reactpy.core.events import EventHandler
+
+    def save(event):      # plain callable: receives the event dict
+        store.save(event["target"]["value"])
+
+
+    def save_all(data):   # EventHandler: receives the list of arguments
+        store.save(data[0]["target"]["value"])
+
+
+    html.button({"onClick": save}, "Save")
+    html.button({"onClick": EventHandler(save_all, prevent_default=True)}, "Save")
+    ```
 
 ### ReactPy's own options
 
