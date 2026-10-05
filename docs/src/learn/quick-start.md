@@ -25,7 +25,7 @@ React components are Python functions that return markup:
 {% include "../../examples/quick_start/my_button.py" start="# start" %}
 ```
 
-Now that you've declared `my_button`, you can nest it into another component:
+Now that you've declared `#!python my_button`, you can nest it into another component:
 
 ```python linenums="0" hl_lines="5"
 {% include "../../examples/quick_start/my_app.py" start="# start" %}
@@ -70,7 +70,7 @@ If you have a lot of HTML to port to JSX, you can use an [online converter.](htt
 
 ## Adding styles
 
-In React, you specify a CSS class with `className`. It works the same way as the HTML [`class`](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/class) attribute:
+In React, you specify a CSS class with `#!python className`. It works the same way as the HTML [`class`](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/class) attribute:
 
 ```python linenums="0"
 {% include "../../examples/quick_start/adding_styles.py" start="# start" %}
@@ -82,7 +82,7 @@ Then you write the CSS rules for it in a separate CSS file:
 {% include "../../examples/quick_start/adding_styles.css" %}
 ```
 
-React does not prescribe how you add CSS files. In the simplest case, you'll add a [`<link>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link) tag to your HTML. If you use a build tool or web framework, consult its documentation to learn how to add a CSS file to your project.
+React does not prescribe how you add CSS files. In the simplest case, you'll add a [`#!html <link>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link) tag to your HTML. If you use a build tool or web framework, consult its documentation to learn how to add a CSS file to your project.
 
 ## Displaying data
 
@@ -100,7 +100,7 @@ return <img className="avatar" src={user.imageUrl} />;
 
 You can put more complex expressions inside the JSX curly braces too, for example, [string concatenation](https://javascript.info/operators#string-concatenation-with-binary): -->
 
-You can fetch data from a variety of sources and directly embed it into your components. You can also use the `style` attribute when your styles depend on JavaScript variables.
+You can fetch data from a variety of sources and directly embed it into your components. You can also use the `#!python style` attribute when your styles depend on JavaScript variables.
 
 === "app.py"
 
@@ -122,7 +122,7 @@ You can fetch data from a variety of sources and directly embed it into your com
 
 ## Conditional rendering
 
-In React, there is no special syntax for writing conditions. Instead, you'll use the same techniques as you use when writing regular Python code. For example, you can use an `if` statement to conditionally include components:
+In React, there is no special syntax for writing conditions. Instead, you'll use the same techniques as you use when writing regular Python code. For example, you can use an `#!python if` statement to conditionally include components:
 
 ```python linenums="0"
 {% include "../../examples/quick_start/conditional_rendering.py" start="# start"%}
@@ -134,7 +134,7 @@ If you prefer more compact code, you can use the [ternary operator.](https://www
 {% include "../../examples/quick_start/conditional_rendering_ternary.py" start="# start"%}
 ```
 
-When you don't need the `else` branch, you can also use a shorter [logical `and` syntax](https://www.geeksforgeeks.org/short-circuiting-techniques-python/):
+When you don't need the `#!python else` branch, you can also use a shorter [logical `#!python and` syntax](https://www.geeksforgeeks.org/short-circuiting-techniques-python/):
 
 ```python linenums="0"
 {% include "../../examples/quick_start/conditional_rendering_logical_and.py" start="# start" %}
@@ -144,7 +144,7 @@ All of these approaches also work for conditionally specifying attributes. If yo
 
 ## Rendering lists
 
-You will rely on Python features like [`for` loop](https://www.w3schools.com/python/quick_start/python_for_loops.asp) and [list comprehension](https://www.w3schools.com/python/quick_start/python_lists_comprehension.asp) to render lists of components.
+You will rely on Python features like [`#!python for` loop](https://www.w3schools.com/python/quick_start/python_for_loops.asp) and [list comprehension](https://www.w3schools.com/python/quick_start/python_lists_comprehension.asp) to render lists of components.
 
 For example, let's say you have an array of products:
 
@@ -158,7 +158,7 @@ Inside your component, use list comprehension to transform an array of products 
 {% include "../../examples/quick_start/rendering_lists_list_items.py" start="# start" %}
 ```
 
-Notice how `#!html <li>` has a `key` attribute. For each item in a list, you should pass a string or a number that uniquely identifies that item among its siblings. Usually, a key should be coming from your data, such as a database ID. React uses your keys to know what happened if you later insert, delete, or reorder the items.
+Notice how `#!html <li>` has a `#!python key` attribute. For each item in a list, you should pass a string or a number that uniquely identifies that item among its siblings. Usually, a key should be coming from your data, such as a database ID. React uses your keys to know what happened if you later insert, delete, or reorder the items.
 
 === "app.py"
 
@@ -186,7 +186,7 @@ Notice how `"onClick": handle_click` has no parentheses at the end! Do not _call
 
 Often, you'll want your component to "remember" some information and display it. For example, maybe you want to count the number of times a button is clicked. To do this, add _state_ to your component.
 
-First, import [`use_state`](../reference/use-state.md) from React:
+First, import [`#!python use_state`](../reference/use-state.md) from React:
 
 ```python linenums="0"
 {% include "../../examples/quick_start/updating_the_screen_use_state.py" end="# end" %}
@@ -198,15 +198,15 @@ Now you can declare a _state variable_ inside your component:
 {% include "../../examples/quick_start/updating_the_screen_use_state_button.py" start="# start" %}
 ```
 
-You’ll get two things from `use_state`: the current state (`count`), and the function that lets you update it (`set_count`). You can give them any names, but the convention is to write `something, set_something = ...`.
+You’ll get two things from `#!python use_state`: the current state (`#!python count`), and the function that lets you update it (`#!python set_count`). You can give them any names, but the convention is to write `#!python something, set_something = ...`.
 
-The first time the button is displayed, `count` will be `0` because you passed `0` to `use_state()`. When you want to change state, call `set_count()` and pass the new value to it. Clicking this button will increment the counter:
+The first time the button is displayed, `#!python count` will be `0` because you passed `0` to `#!python use_state()`. When you want to change state, call `#!python set_count()` and pass the new value to it. Clicking this button will increment the counter:
 
 ```python linenums="0" hl_lines="6"
 {% include "../../examples/quick_start/updating_the_screen_event.py" start="# start" %}
 ```
 
-React will call your component function again. This time, `count` will be `1`. Then it will be `2`. And so on.
+React will call your component function again. This time, `#!python count` will be `1`. Then it will be `2`. And so on.
 
 If you render the same component multiple times, each will get its own state. Click each button separately:
 
@@ -228,51 +228,51 @@ If you render the same component multiple times, each will get its own state. Cl
     # TODO
     ```
 
-Notice how each button "remembers" its own `count` state and doesn't affect other buttons.
+Notice how each button "remembers" its own `#!python count` state and doesn't affect other buttons.
 
 ## Using Hooks
 
-Functions starting with `use` are called _Hooks_. `use_state` is a built-in Hook provided by React. You can find other built-in Hooks in the [API reference.](../reference/use-state.md) You can also write your own Hooks by combining the existing ones.
+Functions starting with `use` are called _Hooks_. `#!python use_state` is a built-in Hook provided by React. You can find other built-in Hooks in the [API reference.](../reference/use-state.md) You can also write your own Hooks by combining the existing ones.
 
-Hooks are more restrictive than other functions. You can only call Hooks _at the top_ of your components (or other Hooks). If you want to use `use_state` in a condition or a loop, extract a new component and put it there.
+Hooks are more restrictive than other functions. You can only call Hooks _at the top_ of your components (or other Hooks). If you want to use `#!python use_state` in a condition or a loop, extract a new component and put it there.
 
 ## Sharing data between components
 
-In the previous example, each `my_button` had its own independent `count`, and when each button was clicked, only the `count` for the button clicked changed:
+In the previous example, each `#!python my_button` had its own independent `#!python count`, and when each button was clicked, only the `#!python count` for the button clicked changed:
 
 <!-- TODO: Diagram -->
 
 However, often you'll need components to _share data and always update together_.
 
-To make both `my_button` components display the same `count` and update together, you need to move the state from the individual buttons "upwards" to the closest component containing all of them.
+To make both `#!python my_button` components display the same `#!python count` and update together, you need to move the state from the individual buttons "upwards" to the closest component containing all of them.
 
-In this example, it is `my_app`.
+In this example, it is `#!python my_app`.
 
 <!-- TODO: Diagram -->
 
-Now when you click either button, the `count` in `my_app` will change, which will change both of the counts in `my_button`. Here's how you can express this in code.
+Now when you click either button, the `#!python count` in `#!python my_app` will change, which will change both of the counts in `#!python my_button`. Here's how you can express this in code.
 
-First, _move the state up_ from `my_button` into `my_app`:
+First, _move the state up_ from `#!python my_button` into `#!python my_app`:
 
 ```python linenums="0" hl_lines="3-6 17"
 {% include "../../examples/quick_start/sharing_data_between_components_move_state.py" start="# start" %}
 ```
 
-Then, _pass the state down_ from `my_app` to each `my_button`, together with the shared click handler. You can pass information to `my_button` using props:
+Then, _pass the state down_ from `#!python my_app` to each `#!python my_button`, together with the shared click handler. You can pass information to `#!python my_button` using props:
 
 ```python linenums="0" hl_lines="10-11"
 {% include "../../examples/quick_start/sharing_data_between_components_props.py" start="# start" end="# end" %}
 ```
 
-The information you pass down like this is called _props_. Now the `my_app` component contains the `count` state and the `handle_click` event handler, and _passes both of them down as props_ to each of the buttons.
+The information you pass down like this is called _props_. Now the `#!python my_app` component contains the `#!python count` state and the `#!python handle_click` event handler, and _passes both of them down as props_ to each of the buttons.
 
-Finally, change `my_button` to _read_ the props you have passed from its parent component:
+Finally, change `#!python my_button` to _read_ the props you have passed from its parent component:
 
 ```python linenums="0"
 {% include "../../examples/quick_start/sharing_data_between_components_button.py" start="# start" %}
 ```
 
-When you click the button, the `on_click` handler fires. Each button's `on_click` prop was set to the `handle_click` function inside `my_app`, so the code inside of it runs. That code calls `set_count(count + 1)`, incrementing the `count` state variable. The new `count` value is passed as a prop to each button, so they all show the new value. This is called "lifting state up". By moving state up, you've shared it between components.
+When you click the button, the `#!python on_click` handler fires. Each button's `#!python on_click` prop was set to the `#!python handle_click` function inside `#!python my_app`, so the code inside of it runs. That code calls `#!python set_count(count + 1)`, incrementing the `#!python count` state variable. The new `#!python count` value is passed as a prop to each button, so they all show the new value. This is called "lifting state up". By moving state up, you've shared it between components.
 
 === "app.py"
 

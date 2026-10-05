@@ -8,7 +8,7 @@ React has been designed from the start for gradual adoption. You can use as litt
 
 !!! summary "You will learn"
 
-    * [How to start a new React project](../learn/start-a-new-react-project.md)
+    * [How to start a new React project](./creating-a-react-app.md)
     * [How to add React to an existing project](../learn/add-react-to-an-existing-project.md)
     * [How to set up your editor](../learn/editor-setup.md)
     * [How to install React Developer Tools](../learn/react-developer-tools.md)
@@ -19,7 +19,7 @@ You don't need to install anything to play with React. [Try ReactPy within Jupyt
 
 ## Start a new React project
 
-If you want to build an app or a website fully with React, [start a new React project.](../learn/start-a-new-react-project.md)
+If you want to build an app or a website fully with React, [start a new React project.](./creating-a-react-app.md)
 
 ## Add React to an existing project
 
