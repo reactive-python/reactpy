@@ -2,555 +2,172 @@
 
 <p class="intro" markdown>
 
-Setting a state variable will queue another render. But sometimes you might want to perform multiple operations on the value before queueing the next render. To do this, it helps to understand how React batches state updates.
+Setting a state variable will queue another render. But sometimes you might want to perform multiple operations on the value before queueing the next render. To do this, it helps to understand how ReactPy batches state updates.
 
 </p>
 
 !!! summary "You will learn"
 
-    -   What "batching" is and how React uses it to process multiple state updates
-    -   How to apply several updates to the same state variable in a row
+    -   How ReactPy batches state updates
+    -   Updating the same state multiple times before the next render
+    -   What happens when you mix values and updater functions
 
-## React batches state updates
+## ReactPy batches state updates
 
-You might expect that clicking the "+3" button will increment the counter three times because it calls `setNumber(number + 1)` three times:
+You might expect that clicking the "+3" button will increment the counter three times, because it calls `#!python set_number(number + 1)` three times:
 
-```js
-import { useState } from "react";
+=== "app.py"
 
-export default function Counter() {
-	const [number, setNumber] = useState(0);
+    ```python
+    {% include "../../examples/queueing_a_series_of_state_updates/batched/app.py" start="# start" %}
+    ```
 
-	return (
-		<>
-			<h1>{number}</h1>
-			<button
-				on_click={() => {
-					setNumber(number + 1);
-					setNumber(number + 1);
-					setNumber(number + 1);
-				}}
-			>
-				+3
-			</button>
-		</>
-	);
-}
+=== "styles.css"
+
+    ```css
+    {% include "../../examples/queueing_a_series_of_state_updates/batched/styles.css" %}
+    ```
+
+=== ":material-play: Run"
+
+    ```python
+    # TODO
+    ```
+
+It lands on `#!python 1`, not `#!python 3`. Two things combine to produce that.
+
+First, as you may recall from [State as a Snapshot](./state-as-a-snapshot.md#rendering-takes-a-snapshot-in-time), each render's state values are fixed. Inside this render's event handler `#!python number` is always `#!python 0`, no matter how many times you call the setter, so all three lines evaluate to the same call:
+
+```python linenums="0"
+set_number(0 + 1)
+set_number(0 + 1)
+set_number(0 + 1)
 ```
 
-```css
-button {
-	display: inline-block;
-	margin: 10px;
-	font-size: 20px;
-}
-h1 {
-	display: inline-block;
-	margin: 10px;
-	width: 30px;
-	text-align: center;
-}
-```
+Second, **ReactPy waits until _all_ code in a synchronous event handler has run before rendering.** The re-render happens only _after_ the handler returns, so the three assignments collapse into one render showing `#!python 1`.
 
-However, as you might recall from the previous section, [each render's state values are fixed](/learn/state-as-a-snapshot#rendering-takes-a-snapshot-in-time), so the value of `number` inside the first render's event handler is always `0`, no matter how many times you call `setNumber(1)`:
+This lets you update several state variables — even across several components — without triggering a render for each. It also avoids "half-finished" renders in which only some variables have been updated.
 
-```js
-setNumber(0 + 1);
-setNumber(0 + 1);
-setNumber(0 + 1);
-```
+!!! warning "Batching stops at an `await`"
 
-But there is one other factor at play here. **React waits until _all_ code in the event handlers has run before processing your state updates.** This is why the re-render only happens _after_ all these `setNumber()` calls.
+    The batching above is a side effect of a *synchronous* handler, and it is narrower than React's. ReactPy's setter applies its value to the hook's state immediately and merely flags the component for re-render (`core/hooks.py`, `_CurrentState.dispatch`), so an `#!python await` gives the scheduler a chance to render what has been set *so far*.
 
-This might remind you of a waiter taking an order at the restaurant. A waiter doesn't run to the kitchen at the mention of your first dish! Instead, they let you finish your order, let you make changes to it, and even take orders from other people at the table.
+    Measured in a real browser, watching every value the counter takes after a single click:
 
-<Illustration src="/images/docs/illustrations/i_react-batching.png"  alt="An elegant cursor at a restaurant places and order multiple times with React, playing the part of the waiter. After she calls setState() multiple times, the waiter writes down the last one she requested as her final order." />
+    | Handler | Observed sequence |
+    | --- | --- |
+    | three `set_number(n => n + 1)` in a `def` | `0 → 3` (one render) |
+    | the same, with `await asyncio.sleep(0.3)` between the calls | `0 → 1 → 2 → 3` (three renders) |
 
-This lets you update multiple state variables--even from multiple components--without triggering too many [re-renders.](/learn/render-and-commit#re-renders-when-state-updates) But this also means that the UI won't be updated until _after_ your event handler, and any code in it, completes. This behavior, also known as **batching,** makes your React app run much faster. It also avoids dealing with confusing "half-finished" renders where only some of the variables have been updated.
+    React 18+ would batch both into a single render. In ReactPy, an `#!python async def` handler that awaits between updates renders — and repaints — in between. If that flicker matters, do the awaits first and set state once at the end, or collect the results and make a single setter call.
 
-**React does not batch across _multiple_ intentional events like clicks**--each click is handled separately. Rest assured that React only does batching when it's generally safe to do. This ensures that, for example, if the first button click disables a form, the second click would not submit it again.
+**ReactPy does not batch across _multiple_ intentional events like clicks** — each click is handled separately. This ensures that, for example, if the first click disables a form, the second click cannot submit it again.
 
 ## Updating the same state multiple times before the next render
 
-It is an uncommon use case, but if you would like to update the same state variable multiple times before the next render, instead of passing the _next state value_ like `setNumber(number + 1)`, you can pass a _function_ that calculates the next state based on the previous one in the queue, like `setNumber(n => n + 1)`. It is a way to tell React to "do something with the state value" instead of just replacing it.
+It is an uncommon use case, but if you would like to update the same state variable multiple times before the next render, pass a _function_ that computes the next value from the previous one instead of the value itself: `#!python set_number(lambda n: n + 1)`. This is a way of saying "do something with the current state" rather than "replace the state".
 
-Try incrementing the counter now:
+=== "app.py"
 
-```js
-import { useState } from "react";
+    ```python
+    {% include "../../examples/queueing_a_series_of_state_updates/updaters/app.py" start="# start" %}
+    ```
 
-export default function Counter() {
-	const [number, setNumber] = useState(0);
+=== "styles.css"
 
-	return (
-		<>
-			<h1>{number}</h1>
-			<button
-				on_click={() => {
-					setNumber((n) => n + 1);
-					setNumber((n) => n + 1);
-					setNumber((n) => n + 1);
-				}}
-			>
-				+3
-			</button>
-		</>
-	);
-}
-```
+    ```css
+    {% include "../../examples/queueing_a_series_of_state_updates/updaters/styles.css" %}
+    ```
 
-```css
-button {
-	display: inline-block;
-	margin: 10px;
-	font-size: 20px;
-}
-h1 {
-	display: inline-block;
-	margin: 10px;
-	width: 30px;
-	text-align: center;
-}
-```
+=== ":material-play: Run"
 
-Here, `n => n + 1` is called an **updater function.** When you pass it to a state setter:
+    ```python
+    # TODO
+    ```
 
-1. React queues this function to be processed after all the other code in the event handler has run.
-2. During the next render, React goes through the queue and gives you the final updated state.
-
-```js
-setNumber((n) => n + 1);
-setNumber((n) => n + 1);
-setNumber((n) => n + 1);
-```
-
-Here's how React works through these lines of code while executing the event handler:
-
-1. `setNumber(n => n + 1)`: `n => n + 1` is a function. React adds it to a queue.
-1. `setNumber(n => n + 1)`: `n => n + 1` is a function. React adds it to a queue.
-1. `setNumber(n => n + 1)`: `n => n + 1` is a function. React adds it to a queue.
-
-When you call `useState` during the next render, React goes through the queue. The previous `number` state was `0`, so that's what React passes to the first updater function as the `n` argument. Then React takes the return value of your previous updater function and passes it to the next updater as `n`, and so on:
-
-| queued update | `n` | returns     |
-| ------------- | --- | ----------- |
-| `n => n + 1`  | `0` | `0 + 1 = 1` |
-| `n => n + 1`  | `1` | `1 + 1 = 2` |
-| `n => n + 1`  | `2` | `2 + 1 = 3` |
-
-React stores `3` as the final result and returns it from `useState`.
-
-This is why clicking "+3" in the above example correctly increments the value by 3.
+This time the counter reaches `#!python 3`, because each updater receives whatever the previous one produced.
 
 ### What happens if you update state after replacing it
 
-What about this event handler? What do you think `number` will be in the next render?
+What does this handler produce?
 
-```js
-<button on_click={() => {
-  setNumber(number + 5);
-  setNumber(n => n + 1);
-}}>
-```
+=== "app.py"
 
-```js
-import { useState } from "react";
+    ```python
+    {% include "../../examples/queueing_a_series_of_state_updates/replace_then_update/app.py" start="# start" %}
+    ```
 
-export default function Counter() {
-	const [number, setNumber] = useState(0);
+=== ":material-play: Run"
 
-	return (
-		<>
-			<h1>{number}</h1>
-			<button
-				on_click={() => {
-					setNumber(number + 5);
-					setNumber((n) => n + 1);
-				}}
-			>
-				Increase the number
-			</button>
-		</>
-	);
-}
-```
+    ```python
+    # TODO
+    ```
 
-```css
-button {
-	display: inline-block;
-	margin: 10px;
-	font-size: 20px;
-}
-h1 {
-	display: inline-block;
-	margin: 10px;
-	width: 30px;
-	text-align: center;
-}
-```
+Step by step, starting from `#!python number == 0`:
 
-Here's what this event handler tells React to do:
+1. `#!python set_number(number + 5)` — `#!python number` is `#!python 0`, so this is `#!python set_number(5)`. The state becomes `#!python 5`.
+2. `#!python set_number(lambda n: n + 1)` — an updater, so it runs against the current value: `#!python 5 + 1`.
 
-1. `setNumber(number + 5)`: `number` is `0`, so `setNumber(0 + 5)`. React adds _"replace with `5`"_ to its queue.
-2. `setNumber(n => n + 1)`: `n => n + 1` is an updater function. React adds _that function_ to its queue.
+The next render shows `#!python 6`, confirmed by rendering the example.
 
-During the next render, React goes through the state queue:
+!!! info "`set_number(5)` behaves like `set_number(lambda n: 5)`"
 
-| queued update      | `n`          | returns     |
-| ------------------ | ------------ | ----------- |
-| "replace with `5`" | `0` (unused) | `5`         |
-| `n => n + 1`       | `5`          | `5 + 1 = 6` |
-
-React stores `6` as the final result and returns it from `useState`.
-
-<Note>
-
-You may have noticed that `setState(5)` actually works like `setState(n => 5)`, but `n` is unused!
-
-</Note>
+    A plain value ignores the argument entirely — it just replaces. That equivalence is what makes the next case surprising.
 
 ### What happens if you replace state after updating it
 
-Let's try one more example. What do you think `number` will be in the next render?
+One more:
 
-```js
-<button on_click={() => {
-  setNumber(number + 5);
-  setNumber(n => n + 1);
-  setNumber(42);
-}}>
-```
+=== "app.py"
 
-```js
-import { useState } from "react";
+    ```python
+    {% include "../../examples/queueing_a_series_of_state_updates/update_then_replace/app.py" start="# start" %}
+    ```
 
-export default function Counter() {
-	const [number, setNumber] = useState(0);
+=== ":material-play: Run"
 
-	return (
-		<>
-			<h1>{number}</h1>
-			<button
-				on_click={() => {
-					setNumber(number + 5);
-					setNumber((n) => n + 1);
-					setNumber(42);
-				}}
-			>
-				Increase the number
-			</button>
-		</>
-	);
-}
-```
+    ```python
+    # TODO
+    ```
 
-```css
-button {
-	display: inline-block;
-	margin: 10px;
-	font-size: 20px;
-}
-h1 {
-	display: inline-block;
-	margin: 10px;
-	width: 30px;
-	text-align: center;
-}
-```
+1. `#!python set_number(number + 5)` — `#!python number` is `#!python 0`, so state becomes `#!python 5`.
+2. `#!python set_number(lambda n: n + 1)` — updater, so `#!python 5 + 1 = 6`.
+3. `#!python set_number(42)` — a plain value, so state becomes `#!python 42`.
 
-Here's how React works through these lines of code while executing this event handler:
+The result is `#!python 42`. The two updaters still ran, and their work was then overwritten — which is the same answer React's queue produces, arrived at by a different route.
 
-1. `setNumber(number + 5)`: `number` is `0`, so `setNumber(0 + 5)`. React adds _"replace with `5`"_ to its queue.
-2. `setNumber(n => n + 1)`: `n => n + 1` is an updater function. React adds _that function_ to its queue.
-3. `setNumber(42)`: React adds _"replace with `42`"_ to its queue.
+To summarize what you can pass to a state setter:
 
-During the next render, React goes through the state queue:
+-   **An updater function** (e.g. `#!python lambda n: n + 1`) is applied to the current value.
+-   **Any other value** (e.g. `#!python 5`) replaces the state outright, discarding whatever the updaters produced.
 
-| queued update       | `n`          | returns     |
-| ------------------- | ------------ | ----------- |
-| "replace with `5`"  | `0` (unused) | `5`         |
-| `n => n + 1`        | `5`          | `5 + 1 = 6` |
-| "replace with `42`" | `6` (unused) | `42`        |
+Updater functions run while your handler runs, so — like components — they must be **pure**. Don't set state from inside one or perform side effects there. Because they can run at any point, an updater that reads a variable from the enclosing render may see a stale value; take everything you need from the `#!python n` argument.
 
-Then React stores `42` as the final result and returns it from `useState`.
+!!! warning "An updater that raises fails silently"
 
-To summarize, here's how you can think of what you're passing to the `setNumber` state setter:
+    Updaters run *eagerly*, inside the setter call itself (`core/hooks.py`, `_CurrentState.dispatch` calls `new(self.value)` before scheduling anything) — not later during rendering. Verified: an updater's side effect lands before the line after its `set_number(...)`.
 
--   **An updater function** (e.g. `n => n + 1`) gets added to the queue.
--   **Any other value** (e.g. number `5`) adds "replace with `5`" to the queue, ignoring what's already queued.
+    That has a nasty consequence. If an updater raises, the state is never assigned and no render is scheduled; ReactPy logs `Failed to execute event handler` on the server and **swallows** the error. The browser shows nothing, the console stays quiet, and the component simply stops responding to that button. Reproduced: a `lambda x: 1 / 0` updater produced a server-side traceback and then an indefinite absence of any render.
 
-After the event handler completes, React will trigger a re-render. During the re-render, React will process the queue. Updater functions run during rendering, so **updater functions must be [pure](/learn/keeping-components-pure)** and only _return_ the result. Don't try to set state from inside of them or run other side effects. In Strict Mode, React will run each updater function twice (but discard the second result) to help you find mistakes.
+    Two habits follow: keep updaters to one pure expression, and when a counter "stops working" with no error in the browser, check the *server* log for `Failed to execute event handler`.
 
 ### Naming conventions
 
-It's common to name the updater function argument by the first letters of the corresponding state variable:
+Name the updater's argument after the state variable it updates. Python has no single-letter convention as strong as JavaScript's, but the intent is the same — the argument is the *previous* value:
 
-```js
-setEnabled((e) => !e);
-setLastName((ln) => ln.reverse());
-setFriendCount((fc) => fc * 2);
+```python linenums="0"
+set_enabled(lambda enabled: not enabled)
+set_last_name(lambda last_name: last_name[::-1])
+set_friend_count(lambda friend_count: friend_count * 2)
 ```
 
-If you prefer more verbose code, another common convention is to repeat the full state variable name, like `setEnabled(enabled => !enabled)`, or to use a prefix like `setEnabled(prevEnabled => !prevEnabled)`.
+For clarity, prefer a descriptive name over `#!python n`: `#!python lambda previous: previous + 1` reads better in a handler that also does other work.
 
-<Recap>
+## Recap
 
--   Setting state does not change the variable in the existing render, but it requests a new render.
--   React processes state updates after event handlers have finished running. This is called batching.
--   To update some state multiple times in one event, you can use `setNumber(n => n + 1)` updater function.
-
-</Recap>
-
-<Challenges>
-
-#### Fix a request counter
-
-You're working on an art marketplace app that lets the user submit multiple orders for an art item at the same time. Each time the user presses the "Buy" button, the "Pending" counter should increase by one. After three seconds, the "Pending" counter should decrease, and the "Completed" counter should increase.
-
-However, the "Pending" counter does not behave as intended. When you press "Buy", it decreases to `-1` (which should not be possible!). And if you click fast twice, both counters seem to behave unpredictably.
-
-Why does this happen? Fix both counters.
-
-```js
-import { useState } from "react";
-
-export default function RequestTracker() {
-	const [pending, setPending] = useState(0);
-	const [completed, setCompleted] = useState(0);
-
-	async function handleClick() {
-		setPending(pending + 1);
-		await delay(3000);
-		setPending(pending - 1);
-		setCompleted(completed + 1);
-	}
-
-	return (
-		<>
-			<h3>Pending: {pending}</h3>
-			<h3>Completed: {completed}</h3>
-			<button on_click={handleClick}>Buy</button>
-		</>
-	);
-}
-
-function delay(ms) {
-	return new Promise((resolve) => {
-		setTimeout(resolve, ms);
-	});
-}
-```
-
-<Solution>
-
-Inside the `handleClick` event handler, the values of `pending` and `completed` correspond to what they were at the time of the click event. For the first render, `pending` was `0`, so `setPending(pending - 1)` becomes `setPending(-1)`, which is wrong. Since you want to _increment_ or _decrement_ the counters, rather than set them to a concrete value determined during the click, you can instead pass the updater functions:
-
-```js
-import { useState } from "react";
-
-export default function RequestTracker() {
-	const [pending, setPending] = useState(0);
-	const [completed, setCompleted] = useState(0);
-
-	async function handleClick() {
-		setPending((p) => p + 1);
-		await delay(3000);
-		setPending((p) => p - 1);
-		setCompleted((c) => c + 1);
-	}
-
-	return (
-		<>
-			<h3>Pending: {pending}</h3>
-			<h3>Completed: {completed}</h3>
-			<button on_click={handleClick}>Buy</button>
-		</>
-	);
-}
-
-function delay(ms) {
-	return new Promise((resolve) => {
-		setTimeout(resolve, ms);
-	});
-}
-```
-
-This ensures that when you increment or decrement a counter, you do it in relation to its _latest_ state rather than what the state was at the time of the click.
-
-</Solution>
-
-#### Implement the state queue yourself
-
-In this challenge, you will reimplement a tiny part of React from scratch! It's not as hard as it sounds.
-
-Scroll through the sandbox preview. Notice that it shows **four test cases.** They correspond to the examples you've seen earlier on this page. Your task is to implement the `getFinalState` function so that it returns the correct result for each of those cases. If you implement it correctly, all four tests should pass.
-
-You will receive two arguments: `baseState` is the initial state (like `0`), and the `queue` is an array which contains a mix of numbers (like `5`) and updater functions (like `n => n + 1`) in the order they were added.
-
-Your task is to return the final state, just like the tables on this page show!
-
-<Hint>
-
-If you're feeling stuck, start with this code structure:
-
-```js
-export function getFinalState(baseState, queue) {
-	let finalState = baseState;
-
-	for (let update of queue) {
-		if (typeof update === "function") {
-			// TODO: apply the updater function
-		} else {
-			// TODO: replace the state
-		}
-	}
-
-	return finalState;
-}
-```
-
-Fill out the missing lines!
-
-</Hint>
-
-```js
-export function getFinalState(baseState, queue) {
-	let finalState = baseState;
-
-	// TODO: do something with the queue...
-
-	return finalState;
-}
-```
-
-```js
-import { getFinalState } from "./processQueue.js";
-
-function increment(n) {
-	return n + 1;
-}
-increment.toString = () => "n => n+1";
-
-export default function App() {
-	return (
-		<>
-			<TestCase baseState={0} queue={[1, 1, 1]} expected={1} />
-			<hr />
-			<TestCase
-				baseState={0}
-				queue={[increment, increment, increment]}
-				expected={3}
-			/>
-			<hr />
-			<TestCase baseState={0} queue={[5, increment]} expected={6} />
-			<hr />
-			<TestCase baseState={0} queue={[5, increment, 42]} expected={42} />
-		</>
-	);
-}
-
-function TestCase({ baseState, queue, expected }) {
-	const actual = getFinalState(baseState, queue);
-	return (
-		<>
-			<p>
-				Base state: <b>{baseState}</b>
-			</p>
-			<p>
-				Queue: <b>[{queue.join(", ")}]</b>
-			</p>
-			<p>
-				Expected result: <b>{expected}</b>
-			</p>
-			<p
-				style={{
-					color: actual === expected ? "green" : "red",
-				}}
-			>
-				Your result: <b>{actual}</b> (
-				{actual === expected ? "correct" : "wrong"})
-			</p>
-		</>
-	);
-}
-```
-
-<Solution>
-
-This is the exact algorithm described on this page that React uses to calculate the final state:
-
-```js
-export function getFinalState(baseState, queue) {
-	let finalState = baseState;
-
-	for (let update of queue) {
-		if (typeof update === "function") {
-			// Apply the updater function.
-			finalState = update(finalState);
-		} else {
-			// Replace the next state.
-			finalState = update;
-		}
-	}
-
-	return finalState;
-}
-```
-
-```js
-import { getFinalState } from "./processQueue.js";
-
-function increment(n) {
-	return n + 1;
-}
-increment.toString = () => "n => n+1";
-
-export default function App() {
-	return (
-		<>
-			<TestCase baseState={0} queue={[1, 1, 1]} expected={1} />
-			<hr />
-			<TestCase
-				baseState={0}
-				queue={[increment, increment, increment]}
-				expected={3}
-			/>
-			<hr />
-			<TestCase baseState={0} queue={[5, increment]} expected={6} />
-			<hr />
-			<TestCase baseState={0} queue={[5, increment, 42]} expected={42} />
-		</>
-	);
-}
-
-function TestCase({ baseState, queue, expected }) {
-	const actual = getFinalState(baseState, queue);
-	return (
-		<>
-			<p>
-				Base state: <b>{baseState}</b>
-			</p>
-			<p>
-				Queue: <b>[{queue.join(", ")}]</b>
-			</p>
-			<p>
-				Expected result: <b>{expected}</b>
-			</p>
-			<p
-				style={{
-					color: actual === expected ? "green" : "red",
-				}}
-			>
-				Your result: <b>{actual}</b> (
-				{actual === expected ? "correct" : "wrong"})
-			</p>
-		</>
-	);
-}
-```
-
-Now you know how this part of React works!
-
-</Solution>
-
-</Challenges>
+-   Setting state does not change the variable in the existing render; it requests a new render.
+-   ReactPy processes state updates after a synchronous event handler has finished. That is batching.
+-   Batching does **not** survive an `#!python await` inside an `#!python async def` handler — each await can flush a render with partial updates.
+-   To update the same state several times in one handler, use updater functions: `#!python set_number(lambda n: n + 1)`.
+-   A plain value replaces the state and discards earlier updater results; an updater is applied to the current value.
+-   Updater functions must be pure, and ReactPy will not check them for you.
