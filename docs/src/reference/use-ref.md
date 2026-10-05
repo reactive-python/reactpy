@@ -2,529 +2,170 @@
 
 <p class="intro" markdown>
 
-`useRef` is a React Hook that lets you reference a value that's not needed for rendering.
-
-```js
-const ref = useRef(initialValue);
-```
+`use_ref` is a ReactPy hook that gives you a mutable box which survives re-renders. Writing to it never causes a render.
 
 </p>
+
+```python linenums="0"
+value_box = use_ref(initial_value)
+```
+
+A ref is for values your component *uses* but never *renders*. It is a plain Python object holding one field, so reading and writing it is just attribute access — no setter, no scheduling, no re-render.
+
+!!! warning "There is no DOM ref in ReactPy"
+    React's `useRef` is often used to grab a DOM node — `inputRef.current.focus()`, `videoRef.current.play()`, `myDiv.current.scrollIntoView()`. That use **does not exist in ReactPy.** Your components run on the server, where there is no DOM, and ReactPy has no mechanism for handing a browser node to Python. There is no `ref_current` attribute, no callback ref, nothing to attach a node to. Anything you write as a `#!python "ref_..."` attribute is an unknown attribute the client silently ignores.
+
+    Express browser behavior through state and ordinary attributes instead: `#!python {"autoFocus": True}`, `#!python {"value": text}`, `#!python {"disabled": not ready}`. If you need genuinely imperative browser code, that belongs in a [client-side app](./reactpy-csr.md), where your Python runs in the browser.
 
 ---
 
 ## Reference
 
-### `useRef(initialValue)`
+### `use_ref(initial_value)` { #use-ref }
 
-Call `useRef` at the top level of your component to declare a [ref.](/learn/referencing-values-with-refs)
+Call `use_ref` at the top level of your component to declare a value box.
 
-```js
-import { useRef } from 'react';
-
-function MyComponent() {
-  const intervalRef = useRef(0);
-  const inputRef = useRef(null);
-  // ...
+```python linenums="0"
+from reactpy import use_ref
 ```
-
-[See more examples below.](#usage)
 
 #### Parameters
 
--   `initialValue`: The value you want the ref object's `current` property to be initially. It can be a value of any type. This argument is ignored after the initial render.
+-   **`initial_value`**: The value the box starts with. It can be any Python value, including a mutable one.
 
 #### Returns
 
-`useRef` returns an object with a single property:
+A `reactpy.utils.Ref` object — the **same object** on every render of that component. It has two members:
 
--   `current`: Initially, it's set to the `initialValue` you have passed. You can later set it to something else. If you pass the ref object to React as a `ref` attribute to a JSX node, React will set its `current` property.
-
-On the next renders, `useRef` will return the same object.
+-   **`current`**: The value. Read and write it directly: `#!python value_box.current = new_value`. Reading it does not schedule a render.
+-   **`set_current(new_value)`**: Assigns `#!python current` and *returns the value it replaced*. Because it is a call rather than an assignment, it fits where a statement cannot go — inside a `#!python lambda`, for example.
 
 #### Caveats
 
--   You can mutate the `ref.current` property. Unlike state, it is mutable. However, if it holds an object that is used for rendering (for example, a piece of your state), then you shouldn't mutate that object.
--   When you change the `ref.current` property, React does not re-render your component. React is not aware of when you change it because a ref is a plain JavaScript object.
--   Do not write _or read_ `ref.current` during rendering, except for [initialization.](#avoiding-recreating-the-ref-contents) This makes your component's behavior unpredictable.
--   In Strict Mode, React will **call your component function twice** in order to [help you find accidental impurities.](#my-initializer-or-updater-function-runs-twice) This is development-only behavior and does not affect production. Each ref object will be created twice, but one of the versions will be discarded. If your component function is pure (as it should be), this should not affect the behavior.
+-   **`initial_value` is evaluated on every render.** `#!python use_ref(build_something_expensive())` calls `build_something_expensive()` each time the component renders, then throws all but the first result away. Verified: four renders, four calls. To build something once, start empty and fill it in:
+
+    ```python linenums="0"
+    index = use_ref(None)
+    if index.current is None:
+        index.current = build_something_expensive()
+    ```
+
+-   **Writing to a ref never triggers a render.** That is the point, and also the trap: if the value is something the screen shows, it will not update. See [Ref versus state](#ref-versus-state).
+-   **Mutating a ref does not invalidate anything.** Dependency comparison treats the box as unchanged no matter what you write into it, because it compares equal to itself. Listing a ref in a `dependencies` list is therefore useless — the effect or memo will never re-run because of it. Verified: an effect with `#!python dependencies=[box]` ran once while its `#!python box.current` was written to three times.
+-   **A ref is unhashable.** `#!python hash(use_ref(0))` raises `TypeError`, so it cannot be a `#!python dict` key or a set member. Its `#!python ==` compares contents: two separate `#!python Ref(0)` boxes are equal.
+-   **Render `#!python value_box.current`, not the box.** `#!python html.p(my_ref)` does not raise; it renders the repr, so the reader sees `#!python Ref(0)` on the page. Passing a ref as an attribute value fails at serialization instead.
+-   Like every hook, call it **only at the top level** — never in a loop, a conditional, or after an early `#!python return`. ReactPy does not check: shuffling which hooks run between renders yields a scrambled component and a cryptic `IndexError`, not a helpful message.
+-   ReactPy has **no Strict Mode**, so nothing runs your component twice to catch impure code. A ref written to *during rendering* is exactly as unsafe here as in React, and nothing will warn you. See [Keeping Components Pure](../learn/keeping-components-pure.md).
 
 ---
 
 ## Usage
 
-### Referencing a value with a ref
+### Ref versus state
 
-Call `useRef` at the top level of your component to declare one or more [refs.](/learn/referencing-values-with-refs)
+The question is not "which is cheaper" but **who needs to know**. If changing the value must update the screen, it is state. If only the code needs it, it is a ref.
 
-```js
-import { useRef } from 'react';
+The two counters below start together and then drift apart, because only one of them causes a render. The ref counter's new value sits in the box unseen until something *else* renders the component.
 
-function Stopwatch() {
-  const intervalRef = useRef(0);
-  // ...
-```
+=== "app.py"
 
-`useRef` returns a <CodeStep step={1}>ref object</CodeStep> with a single <CodeStep step={2}>`current` property</CodeStep> initially set to the <CodeStep step={3}>initial value</CodeStep> you provided.
+    ```python
+    {% include "../../examples/reference_use_ref/no_rerender/app.py" start="# start" %}
+    ```
 
-On the next renders, `useRef` will return the same object. You can change its `current` property to store information and read it later. This might remind you of [state](/reference/react/useState), but there is an important difference.
+=== ":material-play: Run"
 
-**Changing a ref does not trigger a re-render.** This means refs are perfect for storing information that doesn't affect the visual output of your component. For example, if you need to store an [interval ID](https://developer.mozilla.org/en-US/docs/Web/API/setInterval) and retrieve it later, you can put it in a ref. To update the value inside the ref, you need to manually change its <CodeStep step={2}>`current` property</CodeStep>:
+    ```python
+    # TODO
+    ```
 
-```js
-function handleStartClick() {
-	const intervalId = setInterval(() => {
-		// ...
-	}, 1000);
-	intervalRef.current = intervalId;
-}
-```
+The usual split:
 
-Later, you can read that interval ID from the ref so that you can call [clear that interval](https://developer.mozilla.org/en-US/docs/Web/API/clearInterval):
+| You need...                                                | Use                                   |
+| ---------------------------------------------------------- | ------------------------------------- |
+| A value the UI renders                                     | `use_state`                           |
+| A value only handlers or effects read                       | `use_ref`                             |
+| A value that drives the UI *and* is written by a long-lived loop | Both: state for the UI, ref for the loop |
+| Something built once, then read-only                        | `use_ref`, with the guard             |
+| A mutable value the UI renders                              | `use_state` — replace the object instead of mutating it; see [Updating Objects in State](../learn/updating-objects-in-state.md) |
 
-```js
-function handleStopClick() {
-	const intervalId = intervalRef.current;
-	clearInterval(intervalId);
-}
-```
+### Remembering a value built once
 
-By using a ref, you ensure that:
+Because the box is the same object across renders, it is the natural place for something expensive to construct and cheap to read: a parsed file, an index, a client object. Start it empty so the expensive call is not repeated on every render.
 
--   You can **store information** between re-renders (unlike regular variables, which reset on every render).
--   Changing it **does not trigger a re-render** (unlike state variables, which trigger a re-render).
--   The **information is local** to each copy of your component (unlike the variables outside, which are shared).
+=== "app.py"
 
-Changing a ref does not trigger a re-render, so refs are not appropriate for storing information you want to display on the screen. Use state for that instead. Read more about [choosing between `useRef` and `useState`.](/learn/referencing-values-with-refs#differences-between-refs-and-state)
+    ```python
+    {% include "../../examples/reference_use_ref/expensive_object/app.py" start="# start" %}
+    ```
 
-<Recipes titleText="Examples of referencing a value with useRef" titleId="examples-value">
+=== ":material-play: Run"
 
-#### Click counter
+    ```python
+    # TODO
+    ```
 
-This component uses a ref to keep track of how many times the button was clicked. Note that it's okay to use a ref instead of state here because the click count is only read and written in an event handler.
+If the value should be rebuilt when some input changes, a ref is the wrong tool — that is what a `dependencies` list is for. See `use_memo`.
 
-```js
-import { useRef } from "react";
+### Sharing a value with a long-lived effect
 
-export default function Counter() {
-	let ref = useRef(0);
+An `use_async_effect` loop keeps running across renders, so it closes over the state values from the render that started it. A ref sidesteps this: it is the same object every render, so the loop reads whatever the handlers wrote *after* it started.
 
-	function handleClick() {
-		ref.current = ref.current + 1;
-		alert("You clicked " + ref.current + " times!");
-	}
+The stopwatch below keeps the start timestamp in a ref. The ticking effect reads it and the buttons write it, none of which needs a render of its own. The value the screen shows, `#!python elapsed`, is state.
 
-	return <button onClick={handleClick}>Click me!</button>;
-}
-```
+=== "app.py"
 
-If you show `{ref.current}` in the JSX, the number won't update on click. This is because setting `ref.current` does not trigger a re-render. Information that's used for rendering should be state instead.
+    ```python
+    {% include "../../examples/reference_use_ref/stopwatch/app.py" start="# start" %}
+    ```
 
-#### A stopwatch
+=== ":material-play: Run"
 
-This example uses a combination of state and refs. Both `startTime` and `now` are state variables because they are used for rendering. But we also need to hold an [interval ID](https://developer.mozilla.org/en-US/docs/Web/API/setInterval) so that we can stop the interval on button press. Since the interval ID is not used for rendering, it's appropriate to keep it in a ref, and manually update it.
+    ```python
+    # TODO
+    ```
 
-```js
-import { useState, useRef } from "react";
+### Writing from inside a lambda
 
-export default function Stopwatch() {
-	const [startTime, setStartTime] = useState(null);
-	const [now, setNow] = useState(null);
-	const intervalRef = useRef(null);
+`#!python box.current = value` is an assignment, which is a statement, so it cannot be the body of a `#!python lambda`. `set_current` exists for that case, and hands back what you replaced.
 
-	function handleStart() {
-		setStartTime(Date.now());
-		setNow(Date.now());
+=== "app.py"
 
-		clearInterval(intervalRef.current);
-		intervalRef.current = setInterval(() => {
-			setNow(Date.now());
-		}, 10);
-	}
+    ```python
+    {% include "../../examples/reference_use_ref/set_current/app.py" start="# start" %}
+    ```
 
-	function handleStop() {
-		clearInterval(intervalRef.current);
-	}
+=== ":material-play: Run"
 
-	let secondsPassed = 0;
-	if (startTime != null && now != null) {
-		secondsPassed = (now - startTime) / 1000;
-	}
+    ```python
+    # TODO
+    ```
 
-	return (
-		<>
-			<h1>Time passed: {secondsPassed.toFixed(3)}</h1>
-			<button onClick={handleStart}>Start</button>
-			<button onClick={handleStop}>Stop</button>
-		</>
-	);
-}
-```
-
-</Recipes>
-
-<Pitfall>
-
-**Do not write _or read_ `ref.current` during rendering.**
-
-React expects that the body of your component [behaves like a pure function](/learn/keeping-components-pure):
-
--   If the inputs ([props](/learn/passing-props-to-a-component), [state](/learn/state-a-components-memory), and [context](/learn/passing-data-deeply-with-context)) are the same, it should return exactly the same JSX.
--   Calling it in a different order or with different arguments should not affect the results of other calls.
-
-Reading or writing a ref **during rendering** breaks these expectations.
-
-```js
-function MyComponent() {
-	// ...
-	// 🚩 Don't write a ref during rendering
-	myRef.current = 123;
-	// ...
-	// 🚩 Don't read a ref during rendering
-	return <h1>{myOtherRef.current}</h1>;
-}
-```
-
-You can read or write refs **from event handlers or effects instead**.
-
-```js
-function MyComponent() {
-	// ...
-	useEffect(() => {
-		// ✅ You can read or write refs in effects
-		myRef.current = 123;
-	});
-	// ...
-	function handleClick() {
-		// ✅ You can read or write refs in event handlers
-		doSomething(myOtherRef.current);
-	}
-	// ...
-}
-```
-
-If you _have to_ read [or write](/reference/react/useState#storing-information-from-previous-renders) something during rendering, [use state](/reference/react/useState) instead.
-
-When you break these rules, your component might still work, but most of the newer features we're adding to React will rely on these expectations. Read more about [keeping your components pure.](/learn/keeping-components-pure#where-you-can-cause-side-effects)
-
-</Pitfall>
-
----
-
-### Manipulating the DOM with a ref
-
-It's particularly common to use a ref to manipulate the [DOM.](https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API) React has built-in support for this.
-
-First, declare a <CodeStep step={1}>ref object</CodeStep> with an <CodeStep step={3}>initial value</CodeStep> of `null`:
-
-```js
-import { useRef } from 'react';
-
-function MyComponent() {
-  const inputRef = useRef(null);
-  // ...
-```
-
-Then pass your ref object as the `ref` attribute to the JSX of the DOM node you want to manipulate:
-
-```js
-// ...
-return <input ref={inputRef} />;
-```
-
-After React creates the DOM node and puts it on the screen, React will set the <CodeStep step={2}>`current` property</CodeStep> of your ref object to that DOM node. Now you can access the `<input>`'s DOM node and call methods like [`focus()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus):
-
-```js
-function handleClick() {
-	inputRef.current.focus();
-}
-```
-
-React will set the `current` property back to `null` when the node is removed from the screen.
-
-Read more about [manipulating the DOM with refs.](/learn/manipulating-the-dom-with-refs)
-
-<Recipes titleText="Examples of manipulating the DOM with useRef" titleId="examples-dom">
-
-#### Focusing a text input
-
-In this example, clicking the button will focus the input:
-
-```js
-import { useRef } from "react";
-
-export default function Form() {
-	const inputRef = useRef(null);
-
-	function handleClick() {
-		inputRef.current.focus();
-	}
-
-	return (
-		<>
-			<input ref={inputRef} />
-			<button onClick={handleClick}>Focus the input</button>
-		</>
-	);
-}
-```
-
-#### Scrolling an image into view
-
-In this example, clicking the button will scroll an image into view. It uses a ref to the list DOM node, and then calls DOM [`querySelectorAll`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll) API to find the image we want to scroll to.
-
-```js
-import { useRef } from "react";
-
-export default function CatFriends() {
-	const listRef = useRef(null);
-
-	function scrollToIndex(index) {
-		const listNode = listRef.current;
-		// This line assumes a particular DOM structure:
-		const imgNode = listNode.querySelectorAll("li > img")[index];
-		imgNode.scrollIntoView({
-			behavior: "smooth",
-			block: "nearest",
-			inline: "center",
-		});
-	}
-
-	return (
-		<>
-			<nav>
-				<button onClick={() => scrollToIndex(0)}>Tom</button>
-				<button onClick={() => scrollToIndex(1)}>Maru</button>
-				<button onClick={() => scrollToIndex(2)}>Jellylorum</button>
-			</nav>
-			<div>
-				<ul ref={listRef}>
-					<li>
-						<img
-							src="https://placekitten.com/g/200/200"
-							alt="Tom"
-						/>
-					</li>
-					<li>
-						<img
-							src="https://placekitten.com/g/300/200"
-							alt="Maru"
-						/>
-					</li>
-					<li>
-						<img
-							src="https://placekitten.com/g/250/200"
-							alt="Jellylorum"
-						/>
-					</li>
-				</ul>
-			</div>
-		</>
-	);
-}
-```
-
-```css
-div {
-	width: 100%;
-	overflow: hidden;
-}
-
-nav {
-	text-align: center;
-}
-
-button {
-	margin: 0.25rem;
-}
-
-ul,
-li {
-	list-style: none;
-	white-space: nowrap;
-}
-
-li {
-	display: inline;
-	padding: 0.5rem;
-}
-```
-
-#### Playing and pausing a video
-
-This example uses a ref to call [`play()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play) and [`pause()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/pause) on a `<video>` DOM node.
-
-```js
-import { useState, useRef } from "react";
-
-export default function VideoPlayer() {
-	const [isPlaying, setIsPlaying] = useState(false);
-	const ref = useRef(null);
-
-	function handleClick() {
-		const nextIsPlaying = !isPlaying;
-		setIsPlaying(nextIsPlaying);
-
-		if (nextIsPlaying) {
-			ref.current.play();
-		} else {
-			ref.current.pause();
-		}
-	}
-
-	return (
-		<>
-			<button onClick={handleClick}>
-				{isPlaying ? "Pause" : "Play"}
-			</button>
-			<video
-				width="250"
-				ref={ref}
-				onPlay={() => setIsPlaying(true)}
-				onPause={() => setIsPlaying(false)}
-			>
-				<source
-					src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
-					type="video/mp4"
-				/>
-			</video>
-		</>
-	);
-}
-```
-
-```css
-button {
-	display: block;
-	margin-bottom: 20px;
-}
-```
-
-#### Exposing a ref to your own component
-
-Sometimes, you may want to let the parent component manipulate the DOM inside of your component. For example, maybe you're writing a `MyInput` component, but you want the parent to be able to focus the input (which the parent has no access to). You can use a combination of `useRef` to hold the input and [`forwardRef`](/reference/react/forwardRef) to expose it to the parent component. Read a [detailed walkthrough](/learn/manipulating-the-dom-with-refs#accessing-another-components-dom-nodes) here.
-
-```js
-import { forwardRef, useRef } from "react";
-
-const MyInput = forwardRef((props, ref) => {
-	return <input {...props} ref={ref} />;
-});
-
-export default function Form() {
-	const inputRef = useRef(null);
-
-	function handleClick() {
-		inputRef.current.focus();
-	}
-
-	return (
-		<>
-			<MyInput ref={inputRef} />
-			<button onClick={handleClick}>Focus the input</button>
-		</>
-	);
-}
-```
-
-</Recipes>
-
----
-
-### Avoiding recreating the ref contents
-
-React saves the initial ref value once and ignores it on the next renders.
-
-```js
-function Video() {
-  const playerRef = useRef(new VideoPlayer());
-  // ...
-```
-
-Although the result of `new VideoPlayer()` is only used for the initial render, you're still calling this function on every render. This can be wasteful if it's creating expensive objects.
-
-To solve it, you may initialize the ref like this instead:
-
-```js
-function Video() {
-  const playerRef = useRef(null);
-  if (playerRef.current === null) {
-    playerRef.current = new VideoPlayer();
-  }
-  // ...
-```
-
-Normally, writing or reading `ref.current` during render is not allowed. However, it's fine in this case because the result is always the same, and the condition only executes during initialization so it's fully predictable.
-
-<DeepDive>
-
-#### How to avoid null checks when initializing useRef later
-
-If you use a type checker and don't want to always check for `null`, you can try a pattern like this instead:
-
-```js
-function Video() {
-  const playerRef = useRef(null);
-
-  function getPlayer() {
-    if (playerRef.current !== null) {
-      return playerRef.current;
-    }
-    const player = new VideoPlayer();
-    playerRef.current = player;
-    return player;
-  }
-
-  // ...
-```
-
-Here, the `playerRef` itself is nullable. However, you should be able to convince your type checker that there is no case in which `getPlayer()` returns `null`. Then use `getPlayer()` in your event handlers.
-
-</DeepDive>
+`pick` returns a lambda precisely so each button gets its own handler, and `previous.set_current(theme)` is what makes the one-line body possible.
 
 ---
 
 ## Troubleshooting
 
-### I can't get a ref to a custom component
+### My ref value is stale
 
-If you try to pass a `ref` to your own component like this:
+Check which of these you did:
 
-```js
-const inputRef = useRef(null);
+-   **You rendered the box, not its contents.** `#!python html.p(my_ref)` prints `#!python Ref(...)`. Use `#!python my_ref.current`.
+-   **You expected the write to re-render.** A ref never schedules a render. If the screen must change, that value is state.
+-   **You listed the ref as a dependency.** Mutating `#!python current` does not invalidate effects or memos — the box always compares equal to itself. Put the *value* in the dependency list, or use state.
+-   **You read a ref through an old closure.** Inside a long-lived effect, re-read `#!python box.current` on each pass instead of binding it to a local once.
 
-return <MyInput ref={inputRef} />;
+### My expensive setup runs on every render
+
+You passed it as the argument: `#!python use_ref(build())` calls `build()` every render. Move it behind a guard:
+
+```python linenums="0"
+box = use_ref(None)
+if box.current is None:
+    box.current = build()
 ```
 
-You might get an error in the console:
+### I need to focus an input, or scroll to an element
 
-<ConsoleBlock level="error">
-
-Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?
-
-</ConsoleBlock>
-
-By default, your own components don't expose refs to the DOM nodes inside them.
-
-To fix this, find the component that you want to get a ref to:
-
-```js
-export default function MyInput({ value, onChange }) {
-	return <input value={value} onChange={onChange} />;
-}
-```
-
-And then wrap it in [`forwardRef`](/reference/react/forwardRef) like this:
-
-```js
-import { forwardRef } from "react";
-
-const MyInput = forwardRef(({ value, onChange }, ref) => {
-	return <input value={value} onChange={onChange} ref={ref} />;
-});
-
-export default MyInput;
-```
-
-Then the parent component can get a ref to it.
-
-Read more about [accessing another component's DOM nodes.](/learn/manipulating-the-dom-with-refs#accessing-another-components-dom-nodes)
+There is no way to do this from a ReactPy server component, and no `#!python "ref_current"` attribute will add one. Use the declarative attributes the browser already understands — `#!python "autoFocus"`, `#!python "checked"`, `#!python "value"`, `#!python "disabled"` — and reach for a [client-side app](./reactpy-csr.md) if you truly need imperative browser access.
