@@ -135,6 +135,9 @@ ban-relative-imports = "all"
   "TID252",
   "RUF059",
   "INP001",
+  # "Keeping Components Pure" has to mutate a module-level variable with
+  # `global` in order to demonstrate why that is wrong.
+  "PLW0603",
 ]
 "scripts/**/*.py" = [
   # Allow print

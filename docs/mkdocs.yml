@@ -24,7 +24,7 @@ nav:
                 - Passing Props to a Component: learn/passing-props-to-a-component.md
                 - Conditional Rendering: learn/conditional-rendering.md
                 - Rendering Lists: learn/rendering-lists.md
-                - Keeping Components Pure 🚧: learn/keeping-components-pure.md
+                - Keeping Components Pure: learn/keeping-components-pure.md
           - Adding Interactivity:
                 - Responding to Events 🚧: learn/responding-to-events.md
                 - "State: A Component's Memory 🚧": learn/state-a-components-memory.md
