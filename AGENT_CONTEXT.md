@@ -568,7 +568,28 @@ All settable by env var (`reactpy/config.py`).
     hook-free components convert. This constrains `ReactPy(prepend_body=...)`, which is rendered
     through exactly this path (`standalone.py`). Passing an uncalled component raises
     `AttributeError: 'function' object has no attribute 'render'`.
-39. **`use_reducer` pins the reducer from the first render.** `core/hooks.py`, `use_reducer` is
+39. **Context: a Context is a plain function; providers are copied down at render time.**
+    `core/hooks.py`, `create_context(default_value)` returns a closure over `*children, value=...,
+    key=...` returning a `ContextProvider`; there is no `.Provider` attribute (calling the context
+    is the only way). The default is recovered from `context.__kwdefaults__["value"]` — with no
+    provider, `use_context` returns exactly what you passed to `create_context` (never `None`
+    unless that was the default). `LifeCycleHook.set_current` does
+    `self._context_providers.update(parent._context_providers)` before pushing itself, so children
+    inherit a *copy-merge* of their parent's dict; a nearer provider overwrites the inherited
+    entry, giving nearest-wins, and sibling subtrees are isolated. Verified: nested providers
+    resolve nearest; two sibling providers give `a:A`/`b:B`; unmounting a provider returns the
+    child to the default.
+40. **`use_context` raises inside an effect body.** It calls `HOOK_STACK.current_hook()`, and
+    effects run in their own task with no hook on the stack: `RuntimeError: No life cycle hook is
+    active. Are you rendering in a layout?`. Read context during render and let the closure carry
+    the value into the effect. Note `use_context` reserves no state slot (unlike `use_state`), so
+    it is safe to call conditionally.
+41. **`create_context(None)` pins the value type to `None`.** The generic is inferred from the
+    default, so a type checker rejects `value=[...]` afterwards; annotate the module-level name
+    (`Cart: Context[list[str] | None] = create_context(None)`) to widen it. Passing a non-context
+    to `use_context` raises `TypeError: <x> is not a Context` for hashable objects, or
+    `TypeError: unhashable type: 'dict'` (from the provider dict lookup) for unhashable ones.
+42. **`use_reducer` pins the reducer from the first render.** `core/hooks.py`, `use_reducer` is
     literally `use_state(initial_value)` plus `_use_const(lambda: _create_dispatcher(reducer,
     set_state))`. `_use_const` reserves a slot and builds the dispatcher once, so the closure over
     `reducer` is captured on the first render and reused forever -- a reducer defined *inside* the
@@ -577,7 +598,7 @@ All settable by env var (`reactpy/config.py`).
     `seen_n=0` throughout. React re-reads the reducer each render, so ported code breaks silently
     here. Dispatchers are stable (1 distinct object over 4 renders). Consequence: reducers belong
     at module level, taking everything from `(state, action)`.
-40. **`use_reducer` inherits every `use_state` quirk, because it *is* `use_state`.**
+43. **`use_reducer` inherits every `use_state` quirk, because it *is* `use_state`.**
     `_create_dispatcher` calls `set_state(lambda last_state: reducer(last_state, action))`, so the
     comparison is `strictly_equal`: a reducer that mutates `state` and returns it is dropped with
     no error (verified: three dispatches, zero renders). Returning an equal-but-new object is also

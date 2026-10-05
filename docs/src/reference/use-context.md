@@ -2,1320 +2,175 @@
 
 <p class="intro" markdown>
 
-`useContext` is a React Hook that lets you read and subscribe to [context](/learn/passing-data-deeply-with-context) from your component.
-
-```js
-const value = useContext(SomeContext);
-```
+`use_context` is a ReactPy hook that reads a value provided by a component higher in the tree, without every component in between having to pass it along.
 
 </p>
+
+```python linenums="0"
+value = use_context(SomeContext)
+```
+
+Context is for values a whole subtree needs and the middle of the tree does not: a theme, the current user, the active locale, a store. If a component would only forward a prop to its children, context removes both the prop and the component's reason to exist.
 
 ---
 
 ## Reference
 
-### `useContext(SomeContext)`
+### `use_context(context)` { #use-context }
 
-Call `useContext` at the top level of your component to read and subscribe to [context.](/learn/passing-data-deeply-with-context)
+Call it at the top level of a component, passing the context object you created with `create_context`.
 
-```js
-import { useContext } from 'react';
-
-function MyComponent() {
-  const theme = useContext(ThemeContext);
-  // ...
+```python linenums="0"
+from reactpy import use_context
 ```
-
-[See more examples below.](#usage)
 
 #### Parameters
 
--   `SomeContext`: The context that you've previously created with [`createContext`](/reference/react/createContext). The context itself does not hold the information, it only represents the kind of information you can provide or read from components.
+-   **`context`**: The object returned by `create_context`. It is matched by identity, so the same object must be used on both the provider and the reader — import it from one place.
 
 #### Returns
 
-`useContext` returns the context value for the calling component. It is determined as the `value` passed to the closest `SomeContext.Provider` above the calling component in the tree. If there is no such provider, then the returned value will be the `defaultValue` you have passed to [`createContext`](/reference/react/createContext) for that context. The returned value is always up-to-date. React automatically re-renders components that read some context if it changes.
+The `#!python value` of the nearest `#!python context` provider above the component. With no provider anywhere above, it returns the default given to `create_context`.
 
 #### Caveats
 
--   `useContext()` call in a component is not affected by providers returned from the _same_ component. The corresponding `<Context.Provider>` **needs to be _above_** the component doing the `useContext()` call.
--   React **automatically re-renders** all the children that use a particular context starting from the provider that receives a different `value`. The previous and the next values are compared with the [`Object.is`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is) comparison. Skipping re-renders with [`memo`](/reference/react/memo) does not prevent the children receiving fresh context values.
--   If your build system produces duplicates modules in the output (which can happen with symlinks), this can break context. Passing something via context only works if `SomeContext` that you use to provide context and `SomeContext` that you use to read it are **_exactly_ the same object**, as determined by a `===` comparison.
+-   **Reading context is not a subscription that spares renders.** When a provider re-renders with a new value, its children re-render — which they would have anyway, since ReactPy re-renders children unconditionally. Context hands you the new value; it does not narrow the work. See [What context does not do](#what-context-does-not-do).
+-   **It returns the default, not `None`, when nothing provides it.** `create_context("light")` yields `#!python "light"` to an unprovided reader, so a component renders on its own without a wrapper. Pick a default that makes sense standalone, or `#!python None` plus an explicit fallback branch.
+-   **Call it during the render, not from an effect body.** An effect runs later, in its own task, where no hook is active; calling `use_context` there raises `#!python RuntimeError: No life cycle hook is active. Are you rendering in a layout?` Read it in the component and let the closure carry the value in — see [Reading context inside an effect](#reading-context-inside-an-effect).
+-   **The context object must be hashable and must be the same object.** Passing something else raises: `#!python TypeError: <x> is not a Context` for a class or string, `#!python TypeError: unhashable type: 'dict'` if you hand it a dict or list. Two `create_context` calls over the same default are two unrelated contexts.
+-   **A `#!python None` default narrows the type.** `create_context(None)` infers a value type of `#!python None`, so a type checker rejects `#!python value=[...]`. Annotate the name to widen it: `#!python Cart: Context[list[str] | None] = create_context(None)`.
+-   Like every hook, call it **only at the top level**. Unusually, context *is* safe to call conditionally — it reserves no hook slot, so unlike `#!python use_state` it cannot shift other hooks' state.
+
+---
+
+## Creating and providing a context
+
+A context is created once, at module level, with `create_context`:
+
+```python linenums="0"
+from reactpy import create_context
+
+Theme = create_context("light")
+```
+
+What comes back is an ordinary function, and calling it *is* the provider: pass the children positionally and the value as a keyword.
+
+```python linenums="0"
+Theme(child_a, child_b, value="dark")
+```
+
+There is no `#!python Theme.Provider` — calling the context is the only form. The provider renders a nameless fragment around its children, so it adds nothing to the output.
+
+The `#!python value=` keyword is optional; omit it and the default from `create_context` is used. A `#!python key=` keyword is also accepted, with the same meaning as on any other element.
 
 ---
 
 ## Usage
 
-### Passing data deeply into the tree
+### Passing data deeply
 
-Call `useContext` at the top level of your component to read and subscribe to [context.](/learn/passing-data-deeply-with-context)
+`#!python swatch` needs the theme. `#!python toolbar` does not — it renders `#!python swatch` and never mentions it. Without context, `#!python toolbar` would take a `#!python theme` argument purely to forward it, and every component added in between would inherit that obligation.
 
-```js
-import { useContext } from 'react';
+Press **Switch to dark**: the provider gets a new value, and the component far below reads it.
 
-function Button() {
-  const theme = useContext(ThemeContext);
-  // ...
+=== "app.py"
+
+    ```python
+    {% include "../../examples/reference_use_context/theme_provider/app.py" start="# start" %}
+    ```
+
+=== ":material-play: Run"
+
+    ```python
+    # TODO
+    ```
+
+### Choosing a default
+
+The default is what a component sees when no provider is above it, which is exactly the situation in a unit test or a standalone render. Make it something the component can handle.
+
+`#!python cart_badge` below copes with either — rendered bare it says the cart is unavailable, wrapped in the provider it counts the items.
+
+=== "app.py"
+
+    ```python
+    {% include "../../examples/reference_use_context/default_value/app.py" start="# start" %}
+    ```
+
+=== ":material-play: Run"
+
+    ```python
+    # TODO
+    ```
+
+Note the type annotation on `#!python Cart`. Because the default is `#!python None`, without the annotation a type checker infers the value type as `#!python None` and rejects `#!python Cart(shop(), value=["widget", ...])`.
+
+### Nesting providers
+
+The provider nearest above the reader wins, and sibling subtrees are independent:
+
+```python linenums="0"
+@component
+def page():
+    return Theme(
+        html.p(use_context(Theme)),          # "outer"
+        Theme(html.p(use_context(Theme)), value="inner"),  # "inner"
+        value="outer",
+    )
 ```
 
-`useContext` returns the <CodeStep step={2}>context value</CodeStep> for the <CodeStep step={1}>context</CodeStep> you passed. To determine the context value, React searches the component tree and finds **the closest context provider above** for that particular context.
+Verified: the first reads `#!python "outer"`, the second `#!python "inner"`; two sibling providers with different values each see their own. Removing a provider returns its descendants to the default — nothing stays pinned to the last value.
 
-To pass context to a `Button`, wrap it or one of its parent components into the corresponding context provider:
+### Reading context inside an effect
 
-```js
-function MyPage() {
-	return (
-		<ThemeContext.Provider value="dark">
-			<Form />
-		</ThemeContext.Provider>
-	);
-}
+Effects run in their own task, outside any component render, so no hook is active there and `use_context` will not work. Read it in the component and use the local:
 
-function Form() {
-	// ... renders buttons inside ...
-}
-```
+=== "app.py"
 
-It doesn't matter how many layers of components there are between the provider and the `Button`. When a `Button` _anywhere_ inside of `Form` calls `useContext(ThemeContext)`, it will receive `"dark"` as the value.
+    ```python
+    {% include "../../examples/reference_use_context/reading_in_an_effect/app.py" start="# start" %}
+    ```
 
-<Pitfall>
+=== ":material-play: Run"
 
-`useContext()` always looks for the closest provider _above_ the component that calls it. It searches upwards and **does not** consider providers in the component from which you're calling `useContext()`.
+    ```python
+    # TODO
+    ```
 
-</Pitfall>
-
-```js
-import { createContext, useContext } from "react";
-
-const ThemeContext = createContext(null);
-
-export default function MyApp() {
-	return (
-		<ThemeContext.Provider value="dark">
-			<Form />
-		</ThemeContext.Provider>
-	);
-}
-
-function Form() {
-	return (
-		<Panel title="Welcome">
-			<Button>Sign up</Button>
-			<Button>Log in</Button>
-		</Panel>
-	);
-}
-
-function Panel({ title, children }) {
-	const theme = useContext(ThemeContext);
-	const className = "panel-" + theme;
-	return (
-		<section className={className}>
-			<h1>{title}</h1>
-			{children}
-		</section>
-	);
-}
-
-function Button({ children }) {
-	const theme = useContext(ThemeContext);
-	const className = "button-" + theme;
-	return <button className={className}>{children}</button>;
-}
-```
-
-```css
-.panel-light,
-.panel-dark {
-	border: 1px solid black;
-	border-radius: 4px;
-	padding: 20px;
-}
-.panel-light {
-	color: #222;
-	background: #fff;
-}
-
-.panel-dark {
-	color: #fff;
-	background: rgb(23, 32, 42);
-}
-
-.button-light,
-.button-dark {
-	border: 1px solid #777;
-	padding: 5px;
-	margin-right: 10px;
-	margin-top: 10px;
-}
-
-.button-dark {
-	background: #222;
-	color: #fff;
-}
-
-.button-light {
-	background: #fff;
-	color: #222;
-}
-```
+Putting `use_context(Config)` inside `#!python on_mount` instead raises `RuntimeError: No life cycle hook is active. Are you rendering in a layout?` — and since an effect error is logged only on the server, it is easy to miss.
 
 ---
 
-### Updating data passed via context
+## What context does not do
 
-Often, you'll want the context to change over time. To update context, combine it with [state.](/reference/react/useState) Declare a state variable in the parent component, and pass the current state down as the <CodeStep step={2}>context value</CodeStep> to the provider.
+Context solves **plumbing**: it moves a value past components that do not care about it. It is not a performance feature.
 
-```js
-function MyPage() {
-	const [theme, setTheme] = useState("dark");
-	return (
-		<ThemeContext.Provider value={theme}>
-			<Form />
-			<Button
-				onClick={() => {
-					setTheme("light");
-				}}
-			>
-				Switch to light theme
-			</Button>
-		</ThemeContext.Provider>
-	);
-}
-```
+-   **It does not stop children from re-rendering.** ReactPy has no render bailout, so when the provider re-renders, everything below it re-renders too. A component reading a context whose value did not change still re-renders — verified: toggling a theme re-ran the bodies of both a context reader and an unrelated sibling.
+-   **It does not make a value reactive by itself.** The value changes because the component that renders the provider re-rendered with a new one. If nothing re-renders the provider, readers keep seeing the old value.
+-   **It does not replace state.** Context carries values *down*. To let a component change a shared value, put the state in a common ancestor and pass the setter down alongside it — or move to a reducer, see [`use_reducer`](./use-reducer.md).
 
-Now any `Button` inside of the provider will receive the current `theme` value. If you call `setTheme` to update the `theme` value that you pass to the provider, all `Button` components will re-render with the new `'light'` value.
-
-<Recipes titleText="Examples of updating context" titleId="examples-basic">
-
-#### Updating a value via context
-
-In this example, the `MyApp` component holds a state variable which is then passed to the `ThemeContext` provider. Checking the "Dark mode" checkbox updates the state. Changing the provided value re-renders all the components using that context.
-
-```js
-import { createContext, useContext, useState } from "react";
-
-const ThemeContext = createContext(null);
-
-export default function MyApp() {
-	const [theme, setTheme] = useState("light");
-	return (
-		<ThemeContext.Provider value={theme}>
-			<Form />
-			<label>
-				<input
-					type="checkbox"
-					checked={theme === "dark"}
-					onChange={(e) => {
-						setTheme(e.target.checked ? "dark" : "light");
-					}}
-				/>
-				Use dark mode
-			</label>
-		</ThemeContext.Provider>
-	);
-}
-
-function Form({ children }) {
-	return (
-		<Panel title="Welcome">
-			<Button>Sign up</Button>
-			<Button>Log in</Button>
-		</Panel>
-	);
-}
-
-function Panel({ title, children }) {
-	const theme = useContext(ThemeContext);
-	const className = "panel-" + theme;
-	return (
-		<section className={className}>
-			<h1>{title}</h1>
-			{children}
-		</section>
-	);
-}
-
-function Button({ children }) {
-	const theme = useContext(ThemeContext);
-	const className = "button-" + theme;
-	return <button className={className}>{children}</button>;
-}
-```
-
-```css
-.panel-light,
-.panel-dark {
-	border: 1px solid black;
-	border-radius: 4px;
-	padding: 20px;
-	margin-bottom: 10px;
-}
-.panel-light {
-	color: #222;
-	background: #fff;
-}
-
-.panel-dark {
-	color: #fff;
-	background: rgb(23, 32, 42);
-}
-
-.button-light,
-.button-dark {
-	border: 1px solid #777;
-	padding: 5px;
-	margin-right: 10px;
-	margin-top: 10px;
-}
-
-.button-dark {
-	background: #222;
-	color: #fff;
-}
-
-.button-light {
-	background: #fff;
-	color: #222;
-}
-```
-
-Note that `value="dark"` passes the `"dark"` string, but `value={theme}` passes the value of the JavaScript `theme` variable with [JSX curly braces.](/learn/javascript-in-jsx-with-curly-braces) Curly braces also let you pass context values that aren't strings.
-
-#### Updating an object via context
-
-In this example, there is a `currentUser` state variable which holds an object. You combine `{ currentUser, setCurrentUser }` into a single object and pass it down through the context inside the `value={}`. This lets any component below, such as `LoginButton`, read both `currentUser` and `setCurrentUser`, and then call `setCurrentUser` when needed.
-
-```js
-import { createContext, useContext, useState } from "react";
-
-const CurrentUserContext = createContext(null);
-
-export default function MyApp() {
-	const [currentUser, setCurrentUser] = useState(null);
-	return (
-		<CurrentUserContext.Provider
-			value={{
-				currentUser,
-				setCurrentUser,
-			}}
-		>
-			<Form />
-		</CurrentUserContext.Provider>
-	);
-}
-
-function Form({ children }) {
-	return (
-		<Panel title="Welcome">
-			<LoginButton />
-		</Panel>
-	);
-}
-
-function LoginButton() {
-	const { currentUser, setCurrentUser } = useContext(CurrentUserContext);
-
-	if (currentUser !== null) {
-		return <p>You logged in as {currentUser.name}.</p>;
-	}
-
-	return (
-		<Button
-			onClick={() => {
-				setCurrentUser({ name: "Advika" });
-			}}
-		>
-			Log in as Advika
-		</Button>
-	);
-}
-
-function Panel({ title, children }) {
-	return (
-		<section className="panel">
-			<h1>{title}</h1>
-			{children}
-		</section>
-	);
-}
-
-function Button({ children, onClick }) {
-	return (
-		<button className="button" onClick={onClick}>
-			{children}
-		</button>
-	);
-}
-```
-
-```css
-label {
-	display: block;
-}
-
-.panel {
-	border: 1px solid black;
-	border-radius: 4px;
-	padding: 20px;
-	margin-bottom: 10px;
-}
-
-.button {
-	border: 1px solid #777;
-	padding: 5px;
-	margin-right: 10px;
-	margin-top: 10px;
-}
-```
-
-#### Multiple contexts
-
-In this example, there are two independent contexts. `ThemeContext` provides the current theme, which is a string, while `CurrentUserContext` holds the object representing the current user.
-
-```js
-import { createContext, useContext, useState } from "react";
-
-const ThemeContext = createContext(null);
-const CurrentUserContext = createContext(null);
-
-export default function MyApp() {
-	const [theme, setTheme] = useState("light");
-	const [currentUser, setCurrentUser] = useState(null);
-	return (
-		<ThemeContext.Provider value={theme}>
-			<CurrentUserContext.Provider
-				value={{
-					currentUser,
-					setCurrentUser,
-				}}
-			>
-				<WelcomePanel />
-				<label>
-					<input
-						type="checkbox"
-						checked={theme === "dark"}
-						onChange={(e) => {
-							setTheme(e.target.checked ? "dark" : "light");
-						}}
-					/>
-					Use dark mode
-				</label>
-			</CurrentUserContext.Provider>
-		</ThemeContext.Provider>
-	);
-}
-
-function WelcomePanel({ children }) {
-	const { currentUser } = useContext(CurrentUserContext);
-	return (
-		<Panel title="Welcome">
-			{currentUser !== null ? <Greeting /> : <LoginForm />}
-		</Panel>
-	);
-}
-
-function Greeting() {
-	const { currentUser } = useContext(CurrentUserContext);
-	return <p>You logged in as {currentUser.name}.</p>;
-}
-
-function LoginForm() {
-	const { setCurrentUser } = useContext(CurrentUserContext);
-	const [firstName, setFirstName] = useState("");
-	const [lastName, setLastName] = useState("");
-	const canLogin = firstName !== "" && lastName !== "";
-	return (
-		<>
-			<label>
-				First name{": "}
-				<input
-					required
-					value={firstName}
-					onChange={(e) => setFirstName(e.target.value)}
-				/>
-			</label>
-			<label>
-				Last name{": "}
-				<input
-					required
-					value={lastName}
-					onChange={(e) => setLastName(e.target.value)}
-				/>
-			</label>
-			<Button
-				disabled={!canLogin}
-				onClick={() => {
-					setCurrentUser({
-						name: firstName + " " + lastName,
-					});
-				}}
-			>
-				Log in
-			</Button>
-			{!canLogin && <i>Fill in both fields.</i>}
-		</>
-	);
-}
-
-function Panel({ title, children }) {
-	const theme = useContext(ThemeContext);
-	const className = "panel-" + theme;
-	return (
-		<section className={className}>
-			<h1>{title}</h1>
-			{children}
-		</section>
-	);
-}
-
-function Button({ children, disabled, onClick }) {
-	const theme = useContext(ThemeContext);
-	const className = "button-" + theme;
-	return (
-		<button className={className} disabled={disabled} onClick={onClick}>
-			{children}
-		</button>
-	);
-}
-```
-
-```css
-label {
-	display: block;
-}
-
-.panel-light,
-.panel-dark {
-	border: 1px solid black;
-	border-radius: 4px;
-	padding: 20px;
-	margin-bottom: 10px;
-}
-.panel-light {
-	color: #222;
-	background: #fff;
-}
-
-.panel-dark {
-	color: #fff;
-	background: rgb(23, 32, 42);
-}
-
-.button-light,
-.button-dark {
-	border: 1px solid #777;
-	padding: 5px;
-	margin-right: 10px;
-	margin-top: 10px;
-}
-
-.button-dark {
-	background: #222;
-	color: #fff;
-}
-
-.button-light {
-	background: #fff;
-	color: #222;
-}
-```
-
-#### Extracting providers to a component
-
-As your app grows, it is expected that you'll have a "pyramid" of contexts closer to the root of your app. There is nothing wrong with that. However, if you dislike the nesting aesthetically, you can extract the providers into a single component. In this example, `MyProviders` hides the "plumbing" and renders the children passed to it inside the necessary providers. Note that the `theme` and `setTheme` state is needed in `MyApp` itself, so `MyApp` still owns that piece of the state.
-
-```js
-import { createContext, useContext, useState } from "react";
-
-const ThemeContext = createContext(null);
-const CurrentUserContext = createContext(null);
-
-export default function MyApp() {
-	const [theme, setTheme] = useState("light");
-	return (
-		<MyProviders theme={theme} setTheme={setTheme}>
-			<WelcomePanel />
-			<label>
-				<input
-					type="checkbox"
-					checked={theme === "dark"}
-					onChange={(e) => {
-						setTheme(e.target.checked ? "dark" : "light");
-					}}
-				/>
-				Use dark mode
-			</label>
-		</MyProviders>
-	);
-}
-
-function MyProviders({ children, theme, setTheme }) {
-	const [currentUser, setCurrentUser] = useState(null);
-	return (
-		<ThemeContext.Provider value={theme}>
-			<CurrentUserContext.Provider
-				value={{
-					currentUser,
-					setCurrentUser,
-				}}
-			>
-				{children}
-			</CurrentUserContext.Provider>
-		</ThemeContext.Provider>
-	);
-}
-
-function WelcomePanel({ children }) {
-	const { currentUser } = useContext(CurrentUserContext);
-	return (
-		<Panel title="Welcome">
-			{currentUser !== null ? <Greeting /> : <LoginForm />}
-		</Panel>
-	);
-}
-
-function Greeting() {
-	const { currentUser } = useContext(CurrentUserContext);
-	return <p>You logged in as {currentUser.name}.</p>;
-}
-
-function LoginForm() {
-	const { setCurrentUser } = useContext(CurrentUserContext);
-	const [firstName, setFirstName] = useState("");
-	const [lastName, setLastName] = useState("");
-	const canLogin = firstName !== "" && lastName !== "";
-	return (
-		<>
-			<label>
-				First name{": "}
-				<input
-					required
-					value={firstName}
-					onChange={(e) => setFirstName(e.target.value)}
-				/>
-			</label>
-			<label>
-				Last name{": "}
-				<input
-					required
-					value={lastName}
-					onChange={(e) => setLastName(e.target.value)}
-				/>
-			</label>
-			<Button
-				disabled={!canLogin}
-				onClick={() => {
-					setCurrentUser({
-						name: firstName + " " + lastName,
-					});
-				}}
-			>
-				Log in
-			</Button>
-			{!canLogin && <i>Fill in both fields.</i>}
-		</>
-	);
-}
-
-function Panel({ title, children }) {
-	const theme = useContext(ThemeContext);
-	const className = "panel-" + theme;
-	return (
-		<section className={className}>
-			<h1>{title}</h1>
-			{children}
-		</section>
-	);
-}
-
-function Button({ children, disabled, onClick }) {
-	const theme = useContext(ThemeContext);
-	const className = "button-" + theme;
-	return (
-		<button className={className} disabled={disabled} onClick={onClick}>
-			{children}
-		</button>
-	);
-}
-```
-
-```css
-label {
-	display: block;
-}
-
-.panel-light,
-.panel-dark {
-	border: 1px solid black;
-	border-radius: 4px;
-	padding: 20px;
-	margin-bottom: 10px;
-}
-.panel-light {
-	color: #222;
-	background: #fff;
-}
-
-.panel-dark {
-	color: #fff;
-	background: rgb(23, 32, 42);
-}
-
-.button-light,
-.button-dark {
-	border: 1px solid #777;
-	padding: 5px;
-	margin-right: 10px;
-	margin-top: 10px;
-}
-
-.button-dark {
-	background: #222;
-	color: #fff;
-}
-
-.button-light {
-	background: #fff;
-	color: #222;
-}
-```
-
-#### Scaling up with context and a reducer
-
-In larger apps, it is common to combine context with a [reducer](/reference/react/useReducer) to extract the logic related to some state out of components. In this example, all the "wiring" is hidden in the `TasksContext.js`, which contains a reducer and two separate contexts.
-
-Read a [full walkthrough](/learn/scaling-up-with-reducer-and-context) of this example.
-
-```js
-import AddTask from "./AddTask.js";
-import TaskList from "./TaskList.js";
-import { TasksProvider } from "./TasksContext.js";
-
-export default function TaskApp() {
-	return (
-		<TasksProvider>
-			<h1>Day off in Kyoto</h1>
-			<AddTask />
-			<TaskList />
-		</TasksProvider>
-	);
-}
-```
-
-```js
-import { createContext, useContext, useReducer } from "react";
-
-const TasksContext = createContext(null);
-
-const TasksDispatchContext = createContext(null);
-
-export function TasksProvider({ children }) {
-	const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
-
-	return (
-		<TasksContext.Provider value={tasks}>
-			<TasksDispatchContext.Provider value={dispatch}>
-				{children}
-			</TasksDispatchContext.Provider>
-		</TasksContext.Provider>
-	);
-}
-
-export function useTasks() {
-	return useContext(TasksContext);
-}
-
-export function useTasksDispatch() {
-	return useContext(TasksDispatchContext);
-}
-
-function tasksReducer(tasks, action) {
-	switch (action.type) {
-		case "added": {
-			return [
-				...tasks,
-				{
-					id: action.id,
-					text: action.text,
-					done: false,
-				},
-			];
-		}
-		case "changed": {
-			return tasks.map((t) => {
-				if (t.id === action.task.id) {
-					return action.task;
-				} else {
-					return t;
-				}
-			});
-		}
-		case "deleted": {
-			return tasks.filter((t) => t.id !== action.id);
-		}
-		default: {
-			throw Error("Unknown action: " + action.type);
-		}
-	}
-}
-
-const initialTasks = [
-	{ id: 0, text: "Philosopher’s Path", done: true },
-	{ id: 1, text: "Visit the temple", done: false },
-	{ id: 2, text: "Drink matcha", done: false },
-];
-```
-
-```js
-import { useState, useContext } from "react";
-import { useTasksDispatch } from "./TasksContext.js";
-
-export default function AddTask() {
-	const [text, setText] = useState("");
-	const dispatch = useTasksDispatch();
-	return (
-		<>
-			<input
-				placeholder="Add task"
-				value={text}
-				onChange={(e) => setText(e.target.value)}
-			/>
-			<button
-				onClick={() => {
-					setText("");
-					dispatch({
-						type: "added",
-						id: nextId++,
-						text: text,
-					});
-				}}
-			>
-				Add
-			</button>
-		</>
-	);
-}
-
-let nextId = 3;
-```
-
-```js
-import { useState, useContext } from "react";
-import { useTasks, useTasksDispatch } from "./TasksContext.js";
-
-export default function TaskList() {
-	const tasks = useTasks();
-	return (
-		<ul>
-			{tasks.map((task) => (
-				<li key={task.id}>
-					<Task task={task} />
-				</li>
-			))}
-		</ul>
-	);
-}
-
-function Task({ task }) {
-	const [isEditing, setIsEditing] = useState(false);
-	const dispatch = useTasksDispatch();
-	let taskContent;
-	if (isEditing) {
-		taskContent = (
-			<>
-				<input
-					value={task.text}
-					onChange={(e) => {
-						dispatch({
-							type: "changed",
-							task: {
-								...task,
-								text: e.target.value,
-							},
-						});
-					}}
-				/>
-				<button onClick={() => setIsEditing(false)}>Save</button>
-			</>
-		);
-	} else {
-		taskContent = (
-			<>
-				{task.text}
-				<button onClick={() => setIsEditing(true)}>Edit</button>
-			</>
-		);
-	}
-	return (
-		<label>
-			<input
-				type="checkbox"
-				checked={task.done}
-				onChange={(e) => {
-					dispatch({
-						type: "changed",
-						task: {
-							...task,
-							done: e.target.checked,
-						},
-					});
-				}}
-			/>
-			{taskContent}
-			<button
-				onClick={() => {
-					dispatch({
-						type: "deleted",
-						id: task.id,
-					});
-				}}
-			>
-				Delete
-			</button>
-		</label>
-	);
-}
-```
-
-```css
-button {
-	margin: 5px;
-}
-li {
-	list-style-type: none;
-}
-ul,
-li {
-	margin: 0;
-	padding: 0;
-}
-```
-
-</Recipes>
-
----
-
-### Specifying a fallback default value
-
-If React can't find any providers of that particular <CodeStep step={1}>context</CodeStep> in the parent tree, the context value returned by `useContext()` will be equal to the <CodeStep step={3}>default value</CodeStep> that you specified when you [created that context](/reference/react/createContext):
-
-```js
-const ThemeContext = createContext(null);
-```
-
-The default value **never changes**. If you want to update context, use it with state as [described above.](#updating-data-passed-via-context)
-
-Often, instead of `null`, there is some more meaningful value you can use as a default, for example:
-
-```js
-const ThemeContext = createContext("light");
-```
-
-This way, if you accidentally render some component without a corresponding provider, it won't break. This also helps your components work well in a test environment without setting up a lot of providers in the tests.
-
-In the example below, the "Toggle theme" button is always light because it's **outside any theme context provider** and the default context theme value is `'light'`. Try editing the default theme to be `'dark'`.
-
-```js
-import { createContext, useContext, useState } from "react";
-
-const ThemeContext = createContext("light");
-
-export default function MyApp() {
-	const [theme, setTheme] = useState("light");
-	return (
-		<>
-			<ThemeContext.Provider value={theme}>
-				<Form />
-			</ThemeContext.Provider>
-			<Button
-				onClick={() => {
-					setTheme(theme === "dark" ? "light" : "dark");
-				}}
-			>
-				Toggle theme
-			</Button>
-		</>
-	);
-}
-
-function Form({ children }) {
-	return (
-		<Panel title="Welcome">
-			<Button>Sign up</Button>
-			<Button>Log in</Button>
-		</Panel>
-	);
-}
-
-function Panel({ title, children }) {
-	const theme = useContext(ThemeContext);
-	const className = "panel-" + theme;
-	return (
-		<section className={className}>
-			<h1>{title}</h1>
-			{children}
-		</section>
-	);
-}
-
-function Button({ children, onClick }) {
-	const theme = useContext(ThemeContext);
-	const className = "button-" + theme;
-	return (
-		<button className={className} onClick={onClick}>
-			{children}
-		</button>
-	);
-}
-```
-
-```css
-.panel-light,
-.panel-dark {
-	border: 1px solid black;
-	border-radius: 4px;
-	padding: 20px;
-	margin-bottom: 10px;
-}
-.panel-light {
-	color: #222;
-	background: #fff;
-}
-
-.panel-dark {
-	color: #fff;
-	background: rgb(23, 32, 42);
-}
-
-.button-light,
-.button-dark {
-	border: 1px solid #777;
-	padding: 5px;
-	margin-right: 10px;
-	margin-top: 10px;
-}
-
-.button-dark {
-	background: #222;
-	color: #fff;
-}
-
-.button-light {
-	background: #fff;
-	color: #222;
-}
-```
-
----
-
-### Overriding context for a part of the tree
-
-You can override the context for a part of the tree by wrapping that part in a provider with a different value.
-
-```js
-<ThemeContext.Provider value="dark">
-	...
-	<ThemeContext.Provider value="light">
-		<Footer />
-	</ThemeContext.Provider>
-	...
-</ThemeContext.Provider>
-```
-
-You can nest and override providers as many times as you need.
-
-<Recipes title="Examples of overriding context">
-
-#### Overriding a theme
-
-Here, the button _inside_ the `Footer` receives a different context value (`"light"`) than the buttons outside (`"dark"`).
-
-```js
-import { createContext, useContext } from "react";
-
-const ThemeContext = createContext(null);
-
-export default function MyApp() {
-	return (
-		<ThemeContext.Provider value="dark">
-			<Form />
-		</ThemeContext.Provider>
-	);
-}
-
-function Form() {
-	return (
-		<Panel title="Welcome">
-			<Button>Sign up</Button>
-			<Button>Log in</Button>
-			<ThemeContext.Provider value="light">
-				<Footer />
-			</ThemeContext.Provider>
-		</Panel>
-	);
-}
-
-function Footer() {
-	return (
-		<footer>
-			<Button>Settings</Button>
-		</footer>
-	);
-}
-
-function Panel({ title, children }) {
-	const theme = useContext(ThemeContext);
-	const className = "panel-" + theme;
-	return (
-		<section className={className}>
-			{title && <h1>{title}</h1>}
-			{children}
-		</section>
-	);
-}
-
-function Button({ children }) {
-	const theme = useContext(ThemeContext);
-	const className = "button-" + theme;
-	return <button className={className}>{children}</button>;
-}
-```
-
-```css
-footer {
-	margin-top: 20px;
-	border-top: 1px solid #aaa;
-}
-
-.panel-light,
-.panel-dark {
-	border: 1px solid black;
-	border-radius: 4px;
-	padding: 20px;
-}
-.panel-light {
-	color: #222;
-	background: #fff;
-}
-
-.panel-dark {
-	color: #fff;
-	background: rgb(23, 32, 42);
-}
-
-.button-light,
-.button-dark {
-	border: 1px solid #777;
-	padding: 5px;
-	margin-right: 10px;
-	margin-top: 10px;
-}
-
-.button-dark {
-	background: #222;
-	color: #fff;
-}
-
-.button-light {
-	background: #fff;
-	color: #222;
-}
-```
-
-#### Automatically nested headings
-
-You can "accumulate" information when you nest context providers. In this example, the `Section` component keeps track of the `LevelContext` which specifies the depth of the section nesting. It reads the `LevelContext` from the parent section, and provides the `LevelContext` number increased by one to its children. As a result, the `Heading` component can automatically decide which of the `<h1>`, `<h2>`, `<h3>`, ..., tags to use based on how many `Section` components it is nested inside of.
-
-Read a [detailed walkthrough](/learn/passing-data-deeply-with-context) of this example.
-
-```js
-import Heading from "./Heading.js";
-import Section from "./Section.js";
-
-export default function Page() {
-	return (
-		<Section>
-			<Heading>Title</Heading>
-			<Section>
-				<Heading>Heading</Heading>
-				<Heading>Heading</Heading>
-				<Heading>Heading</Heading>
-				<Section>
-					<Heading>Sub-heading</Heading>
-					<Heading>Sub-heading</Heading>
-					<Heading>Sub-heading</Heading>
-					<Section>
-						<Heading>Sub-sub-heading</Heading>
-						<Heading>Sub-sub-heading</Heading>
-						<Heading>Sub-sub-heading</Heading>
-					</Section>
-				</Section>
-			</Section>
-		</Section>
-	);
-}
-```
-
-```js
-import { useContext } from "react";
-import { LevelContext } from "./LevelContext.js";
-
-export default function Section({ children }) {
-	const level = useContext(LevelContext);
-	return (
-		<section className="section">
-			<LevelContext.Provider value={level + 1}>
-				{children}
-			</LevelContext.Provider>
-		</section>
-	);
-}
-```
-
-```js
-import { useContext } from "react";
-import { LevelContext } from "./LevelContext.js";
-
-export default function Heading({ children }) {
-	const level = useContext(LevelContext);
-	switch (level) {
-		case 0:
-			throw Error("Heading must be inside a Section!");
-		case 1:
-			return <h1>{children}</h1>;
-		case 2:
-			return <h2>{children}</h2>;
-		case 3:
-			return <h3>{children}</h3>;
-		case 4:
-			return <h4>{children}</h4>;
-		case 5:
-			return <h5>{children}</h5>;
-		case 6:
-			return <h6>{children}</h6>;
-		default:
-			throw Error("Unknown level: " + level);
-	}
-}
-```
-
-```js
-import { createContext } from "react";
-
-export const LevelContext = createContext(0);
-```
-
-```css
-.section {
-	padding: 10px;
-	margin: 5px;
-	border-radius: 5px;
-	border: 1px solid #aaa;
-}
-```
-
-</Recipes>
-
----
-
-### Optimizing re-renders when passing objects and functions
-
-You can pass any values via context, including objects and functions.
-
-```js
-function MyApp() {
-	const [currentUser, setCurrentUser] = useState(null);
-
-	function login(response) {
-		storeCredentials(response.credentials);
-		setCurrentUser(response.user);
-	}
-
-	return (
-		<AuthContext.Provider value={{ currentUser, login }}>
-			<Page />
-		</AuthContext.Provider>
-	);
-}
-```
-
-Here, the <CodeStep step={2}>context value</CodeStep> is a JavaScript object with two properties, one of which is a function. Whenever `MyApp` re-renders (for example, on a route update), this will be a _different_ object pointing at a _different_ function, so React will also have to re-render all components deep in the tree that call `useContext(AuthContext)`.
-
-In smaller apps, this is not a problem. However, there is no need to re-render them if the underlying data, like `currentUser`, has not changed. To help React take advantage of that fact, you may wrap the `login` function with [`useCallback`](/reference/react/useCallback) and wrap the object creation into [`useMemo`](/reference/react/useMemo). This is a performance optimization:
-
-```js
-import { useCallback, useMemo } from "react";
-
-function MyApp() {
-	const [currentUser, setCurrentUser] = useState(null);
-
-	const login = useCallback((response) => {
-		storeCredentials(response.credentials);
-		setCurrentUser(response.user);
-	}, []);
-
-	const contextValue = useMemo(
-		() => ({
-			currentUser,
-			login,
-		}),
-		[currentUser, login]
-	);
-
-	return (
-		<AuthContext.Provider value={contextValue}>
-			<Page />
-		</AuthContext.Provider>
-	);
-}
-```
-
-As a result of this change, even if `MyApp` needs to re-render, the components calling `useContext(AuthContext)` won't need to re-render unless `currentUser` has changed.
-
-Read more about [`useMemo`](/reference/react/useMemo#skipping-re-rendering-of-components) and [`useCallback`.](/reference/react/useCallback#skipping-re-rendering-of-components)
+For a value that only one component's subtree uses, a prop is simpler and easier to trace. Reach for context when the value genuinely crosses several levels that have no use for it.
 
 ---
 
 ## Troubleshooting
 
-### My component doesn't see the value from my provider
+### Readers always get the default
 
-There are a few common ways that this can happen:
+Usually one of:
 
-1. You're rendering `<SomeContext.Provider>` in the same component (or below) as where you're calling `useContext()`. Move `<SomeContext.Provider>` _above and outside_ the component calling `useContext()`.
-2. You may have forgotten to wrap your component with `<SomeContext.Provider>`, or you might have put it in a different part of the tree than you thought. Check whether the hierarchy is right using [React DevTools.](/learn/react-developer-tools)
-3. You might be running into some build issue with your tooling that causes `SomeContext` as seen from the providing component and `SomeContext` as seen by the reading component to be two different objects. This can happen if you use symlinks, for example. You can verify this by assigning them to globals like `window.SomeContext1` and `window.SomeContext2` and then checking whether `window.SomeContext1 === window.SomeContext2` in the console. If they're not the same, fix that issue on the build tool level.
+-   The provider is not above the reader in the *tree*. `#!python Theme(child, value=...)` must be an ancestor — calling it and discarding the result provides nothing.
+-   The provider and the reader hold **different context objects**. Two `create_context` calls are different contexts even with the same default, so create it once and import it.
+-   The provider's `#!python value=` never changes, so readers keep seeing the value from the render that set it.
 
-### I am always getting `undefined` from my context although the default value is different
+### `RuntimeError: No life cycle hook is active. Are you rendering in a layout?`
 
-You might have a provider without a `value` in the tree:
+You called `use_context` outside a render — from an effect body, from a plain function called before the component runs, or directly in a test. Move the call into the component body.
 
-```js
-// 🚩 Doesn't work: no value prop
-<ThemeContext.Provider>
-	<Button />
-</ThemeContext.Provider>
-```
+### `TypeError: ... is not a Context`
 
-If you forget to specify `value`, it's like passing `value={undefined}`.
+You passed something other than the result of `create_context` — often the *provider* instead of the context (`use_context(Theme(child, value="x"))`), or the class of a value rather than a context.
 
-You may have also mistakingly used a different prop name by mistake:
+### My type checker rejects the provider's `value`
 
-```js
-// 🚩 Doesn't work: prop should be called "value"
-<ThemeContext.Provider theme={theme}>
-	<Button />
-</ThemeContext.Provider>
-```
-
-In both of these cases you should see a warning from React in the console. To fix them, call the prop `value`:
-
-```js
-// ✅ Passing the value prop
-<ThemeContext.Provider value={theme}>
-	<Button />
-</ThemeContext.Provider>
-```
-
-Note that the [default value from your `createContext(defaultValue)` call](#specifying-a-fallback-default-value) is only used **if there is no matching provider above at all.** If there is a `<SomeContext.Provider value={undefined}>` component somewhere in the parent tree, the component calling `useContext(SomeContext)` _will_ receive `undefined` as the context value.
+The default narrowed the type. Annotate the module-level name with `#!python Context[<your type> | None]`, as in the default-value example above.

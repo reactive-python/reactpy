@@ -63,7 +63,7 @@ nav:
                 - Use State: reference/use-state.md
                 - Use Effect: reference/use-effect.md
                 - Use Async Effect: reference/use-async-effect.md
-                - Use Context 🚧: reference/use-context.md
+                - Use Context: reference/use-context.md
                 - Use Reducer: reference/use-reducer.md
                 - Use Callback: reference/use-callback.md
                 - Use Memo: reference/use-memo.md
