@@ -385,3 +385,12 @@ All settable by env var (`reactpy/config.py`).
 11. Keep `@component` definitions at module level. A nested definition is a new function
     object per render, so ReactPy remounts that subtree and wipes its state (§7).
 12. `class App()` / class-based components do not exist in v2 — components are functions.
+13. **No `StrictMode`, and no double-invoke.** `StrictMode` is absent from the package and the
+    layout never calls a component twice, so React's "impure components render #2/#4/#6"
+    symptom cannot be reproduced. Port StrictMode sections as a warning that ReactPy will not
+    catch impurity for you, and suggest a render-twice test instead.
+14. **No component-level `memo`.** `reactpy.memo` does not exist (only `use_memo` for values),
+    so a child re-runs whenever its parent renders — verified by counting calls across a
+    `use_state` update. Do not claim React's "skip rendering unchanged inputs" optimization.
+    `reactpy_to_string` (in `reactpy.utils`) does exist and is the server-render story, but it
+    leaks module-level state across calls, which is a purity argument, not a feature.
