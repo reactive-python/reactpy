@@ -220,8 +220,6 @@ Now the application fully works!
 
 === "app.py"
 
-    <!-- FIXME: Click event on the checkbox is broken. `event["target"]["checked"]` doesn't exist -->
-
     ```python
     {% include "../../examples/thinking_in_react/add_inverse_data_flow.py" %}
     ```
