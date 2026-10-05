@@ -390,13 +390,18 @@ All settable by env var (`reactpy/config.py`).
 1. `className`, `onClick`, `key` stay **camelCase inside the attribute dict**. `class_name`
    is wrong. Only *Python identifiers we define* (functions, variables, components) are
    snake_case.
-2. `set_state` **does** take an updater callable — do not claim otherwise.
+2. `set_state` **does** take an updater callable — do not claim otherwise. It runs
+   **eagerly inside the setter** (`hooks.py`, `_CurrentState.dispatch` → `new(self.value)`),
+   not during render, so its result is visible on the very next line.
 3. `use_effect` + `async def` is a `TypeError`; async work needs `use_async_effect`.
 4. `use_ref` gives `Ref.current`, never a DOM node.
 5. No `useId`/`useTransition`/`useLayoutEffect`/etc. Do not port those pages as if real.
 6. Component names are lowercase snake_case; there is no capital-letter rule.
 7. Children never come from JSX nesting — they are positional args after the attr dict.
-8. Do not present `checked` on checkbox events as working (open bug, see §4).
+8. `event["target"]["checked"]` **works** — verified in a real browser (checkbox `onChange`
+   yields `checked=True`). The stale "open bug / FIXME" claim in
+   `docs/src/learn/thinking-in-react.md` is wrong; the client re-reads
+   `value/checked/files/type/name` off the element with `in`, bypassing enumerability. See §4.
 9. Generators as children skip key checking; use list comprehensions.
 10. Never reference `reactpy.backend.*`, `use_id`, or 1.x-era `vdom()`/`Html()` APIs; they
     are not in v2.0.0b13's public surface.
@@ -412,3 +417,16 @@ All settable by env var (`reactpy/config.py`).
     `use_state` update. Do not claim React's "skip rendering unchanged inputs" optimization.
     `reactpy_to_string` (in `reactpy.utils`) does exist and is the server-render story, but it
     leaks module-level state across calls, which is a purity argument, not a feature.
+15. **Batching is sync-only.** A plain `def` handler making several setter calls produces
+    **one** render; an `async def` handler that `await`s between them produces **one render
+    per flush** (measured in Chrome: `0→3` vs `0→1→2→3`), because `dispatch` assigns state
+    immediately and only flags a re-render. React 18+ batches both. Never claim React-style
+    batching across `await`.
+16. **A raising updater is swallowed.** If an updater raises, state is left unassigned, no
+    render is scheduled, and `Layout._process_event_queue` logs `Failed to execute event
+    handler` server-side while the browser stays silent. Check the server log when a control
+    "stops working" with no client error.
+17. **Equal state does not re-render.** `dispatch` compares with `strictly_equal` (identity,
+    except int/float/complex/str/bytes/bytearray/memoryview by value) and skips
+    `schedule_render()` when equal — verified. But this is *not* component memoization: see
+    item 14.
