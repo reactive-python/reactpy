@@ -1,0 +1,18 @@
+ul {
+    list-style-type: none;
+    padding: 0 10px;
+}
+
+li {
+    margin-bottom: 10px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 20px;
+    align-items: center;
+}
+
+img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+}
