@@ -1,4 +1,4 @@
-from reactpy import component, html
+from reactpy import component, html, use_state
 
 
 # start
@@ -9,7 +9,10 @@ def button(on_smash, *children):
 
 @component
 def app():
+    status, set_status = use_state("Nothing selected")
+
     return html.div(
-        button(lambda event: None, "Play Movie"),
-        button(lambda event: None, "Upload Image"),
+        html.p(status),
+        button(lambda event: set_status("Playing!"), "Play Movie"),
+        button(lambda event: set_status("Uploading!"), "Upload Image"),
     )
