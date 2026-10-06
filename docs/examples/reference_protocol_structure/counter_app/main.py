@@ -1,6 +1,5 @@
 # start
 
-import uvicorn
 from starlette.applications import Starlette
 from starlette.responses import HTMLResponse
 from starlette.routing import Route
@@ -32,9 +31,7 @@ async def home(request):
     )
 
 
-app = ReactPyMiddleware(
+my_app = ReactPyMiddleware(
     Starlette(routes=[Route("/", home)]),
     root_components=["main.counter"],
 )
-
-uvicorn.run(app, host="127.0.0.1", port=8765)

@@ -276,10 +276,10 @@ The value lives in a dedicated attribute rather than among your own so it cannot
 
 The protocol is plain JSON text frames, so an ordinary websocket client is a sufficient observer. Start this app:
 
-=== "app.py"
+=== "main.py"
 
     ```python
-    {% include "../../examples/reference_protocol_structure/counter_app/app.py" start="# start" %}
+    {% include "../../examples/reference_protocol_structure/counter_app/main.py" start="# start" %}
     ```
 
 === ":material-play: Run"

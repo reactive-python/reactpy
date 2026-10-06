@@ -40,10 +40,10 @@ An ASGI application.
 
 ### Wrapping an existing app
 
-=== "app.py"
+=== "main.py"
 
     ```python
-    {% include "../../examples/reference_reactpy_middleware/wrapper/app.py" start="# start" %}
+    {% include "../../examples/reference_reactpy_middleware/wrapper/main.py" start="# start" %}
     ```
 
 === ":material-play: Run"
@@ -74,10 +74,10 @@ The wrapped app is untouched. Verified with Starlette: a plain `#!python /health
 
 ### Serving a component from your own route
 
-=== "app.py"
+=== "main.py"
 
     ```python
-    {% include "../../examples/reference_reactpy_middleware/mount_snippet/app.py" start="# start" %}
+    {% include "../../examples/reference_reactpy_middleware/mount_snippet/main.py" start="# start" %}
     ```
 
 === ":material-play: Run"

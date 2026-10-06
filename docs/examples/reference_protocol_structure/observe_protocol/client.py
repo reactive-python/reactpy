@@ -7,7 +7,7 @@ import websockets
 
 
 async def main():
-    url = "ws://127.0.0.1:8765/reactpy/main.counter/?path=%2F"
+    url = "ws://127.0.0.1:8000/reactpy/main.counter/?path=%2F"
 
     async with websockets.connect(url) as socket:
         mount = json.loads(await socket.recv())

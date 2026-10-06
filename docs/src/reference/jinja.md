@@ -126,10 +126,10 @@ Both are raised at render time, so they surface as a 500 on the page — not as 
 
 ### A server-rendered component in an existing page
 
-=== "app.py"
+=== "main.py"
 
     ```python
-    {% include "../../examples/reference_jinja/component_tag/app.py" start="# start" %}
+    {% include "../../examples/reference_jinja/component_tag/main.py" start="# start" %}
     ```
 
 === "home.html"
