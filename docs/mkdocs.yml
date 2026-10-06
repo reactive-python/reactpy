@@ -87,7 +87,7 @@ nav:
           - Template Tags:
                 - Jinja: reference/jinja.md
           - Protocol Structure: reference/protocol-structure.md
-          - Client API 🚧: reference/client-api.md
+          - Client API: reference/client-api.md
     - About:
           - Changelog 🚧: about/changelog.md
           - Community 🚧: about/community.md
