@@ -1,0 +1,27 @@
+.carousel {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 10px 0;
+}
+
+.carousel li {
+    list-style: none;
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+}
+
+.carousel img {
+    width: 130px;
+    height: 130px;
+    border-radius: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
