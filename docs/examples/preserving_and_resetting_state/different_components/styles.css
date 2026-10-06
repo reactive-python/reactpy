@@ -1,0 +1,18 @@
+.counter {
+    width: 130px;
+    text-align: center;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    padding: 12px;
+    margin: 0 12px 12px 0;
+}
+
+.counter h1 {
+    font-size: 18px;
+    margin: 0 0 6px;
+}
+
+.fancy {
+    background: #ffffd8;
+    border-color: #e0b400;
+}
