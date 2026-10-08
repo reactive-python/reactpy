@@ -27,7 +27,7 @@ nav:
                 - Keeping Components Pure: learn/keeping-components-pure.md
           - Adding Interactivity:
                 - Responding to Events: learn/responding-to-events.md
-                - "State: A Component's Memory 🚧": learn/state-a-components-memory.md
+                - "State: A Component's Memory": learn/state-a-components-memory.md
                 - Render and Commit: learn/render-and-commit.md
                 - State as a Snapshot: learn/state-as-a-snapshot.md
                 - Queueing a Series of State Updates: learn/queueing-a-series-of-state-updates.md
