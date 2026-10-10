@@ -49,7 +49,7 @@ nav:
                 - Lifecycle of Reactive Effects: learn/lifecycle-of-reactive-effects.md
                 - Separating Events from Effects: learn/separating-events-from-effects.md
                 - Removing Effect Dependencies: learn/removing-effect-dependencies.md
-                - Reusing Logic with Custom Hooks 🚧: learn/reusing-logic-with-custom-hooks.md
+                - Reusing Logic with Custom Hooks: learn/reusing-logic-with-custom-hooks.md
                 - Communicating Data Between Server and Client 🚧: learn/communicate-data-between-server-and-client.md
                 - Convert Between VDOM and HTML 🚧: learn/convert-between-vdom-and-html.md
                 - VDOM Mutations 🚧: learn/vdom-mutations.md
