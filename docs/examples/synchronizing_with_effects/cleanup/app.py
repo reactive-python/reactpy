@@ -44,6 +44,3 @@ def app():
         ),
         *([] if not connected else [chat_room(room)]),
     )
-
-
-# end

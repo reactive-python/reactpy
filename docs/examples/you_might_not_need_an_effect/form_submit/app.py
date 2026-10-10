@@ -36,6 +36,3 @@ def signup():
             html.button({"type": "submit"}, "Sign up"),
         ),
     )
-
-
-# end

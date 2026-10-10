@@ -1,12 +1,11 @@
 """use_callback keeps a handler's identity stable while its dependencies are
 unchanged. A theme change reuses it; a count change does not.
-
-# start
 """
 
 from reactpy import component, html, use_callback, use_ref, use_state
 
 
+# start
 @component
 def toolbar():
     count, set_count = use_state(0)
@@ -30,9 +29,6 @@ def toolbar():
         ),
         html.p("handler reused on this render" if reused else "handler recreated"),
     )
-
-
-# end
 
 
 @component

@@ -29,6 +29,3 @@ def shipping_form():
             }
         ),
     )
-
-
-# end

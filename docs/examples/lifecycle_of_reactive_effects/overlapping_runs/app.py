@@ -40,6 +40,3 @@ def app():
         ),
         poller(topic),
     )
-
-
-# end

@@ -24,6 +24,3 @@ def dashboard():
         html.h1("Dashboard looks fine"),
         html.button({"onClick": lambda event: set_refreshes(refreshes + 1)}, "Refresh"),
     )
-
-
-# end

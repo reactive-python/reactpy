@@ -1,13 +1,12 @@
 """React says a rebuilt object is a new dependency and will loop. In ReactPy
 that is false: dependencies compare with `==`, so a rebuilt-but-equal dict
 never re-triggers the Effect. Only real content changes do.
-
-# start
 """
 
 from reactpy import component, html, use_effect, use_state
 
 
+# start
 @component
 def feed(topic):
     page, set_page = use_state(1)
@@ -26,9 +25,6 @@ def feed(topic):
         html.button({"onClick": lambda e: set_page(page + 1)}, f"Page {page}"),
         html.ul([html.li({"key": row}, row) for row in rows]),
     )
-
-
-# end
 
 
 @component

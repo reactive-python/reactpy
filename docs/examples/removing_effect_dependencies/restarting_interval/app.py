@@ -1,7 +1,5 @@
 """The delay is in the dependency list, so every adjustment tears the poll loop
 down and starts a new one — measured, four restarts where two were needed.
-
-# start
 """
 
 import asyncio
@@ -9,6 +7,7 @@ import asyncio
 from reactpy import component, html, use_async_effect, use_state
 
 
+# start
 @component
 def poller(topic):
     delay, set_delay = use_state(0.2)
@@ -35,9 +34,6 @@ def poller(topic):
             {"onClick": lambda e: set_delay(delay + 0.2)}, f"Delay {delay:.1f}s"
         ),
     )
-
-
-# end
 
 
 @component

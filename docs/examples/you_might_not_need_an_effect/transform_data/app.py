@@ -57,6 +57,3 @@ def app():
         # keeps the old report off the screen, so nothing has to be remounted.
         report_view(name),
     )
-
-
-# end

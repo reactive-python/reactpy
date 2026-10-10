@@ -44,6 +44,3 @@ def app():
         ),
         page_view(path),
     )
-
-
-# end

@@ -33,6 +33,3 @@ def app():
         html.h1("Watch the server console"),
         panel(),
     )
-
-
-# end

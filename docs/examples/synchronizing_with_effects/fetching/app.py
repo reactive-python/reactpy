@@ -38,6 +38,3 @@ def app():
         ),
         report_view(name),
     )
-
-
-# end

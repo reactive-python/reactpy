@@ -37,6 +37,3 @@ def app():
         ),
         *([] if not watching else [clock_view()]),
     )
-
-
-# end

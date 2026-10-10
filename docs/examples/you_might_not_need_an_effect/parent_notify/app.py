@@ -34,6 +34,3 @@ def app():
         set_results(f"searching for {query!r}..." if query else "empty query")
 
     return html.div(html.p(results), search_box(handle_search))
-
-
-# end

@@ -32,6 +32,3 @@ def counter():
         html.p("Effect reports:"),
         html.ul([html.li({"key": index}, line) for index, line in enumerate(reports)]),
     )
-
-
-# end

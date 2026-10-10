@@ -1,7 +1,5 @@
 """A user-adjustable delay must not restart the poll loop. Keep it in a ref
 that is updated during render, and leave it out of the dependency list.
-
-# start
 """
 
 import asyncio
@@ -9,6 +7,7 @@ import asyncio
 from reactpy import component, html, use_async_effect, use_ref, use_state
 
 
+# start
 @component
 def poller(topic):
     delay, set_delay = use_state(0.2)
@@ -38,9 +37,6 @@ def poller(topic):
             {"onClick": lambda e: set_delay(delay + 0.2)}, f"Delay {delay:.1f}s"
         ),
     )
-
-
-# end
 
 
 @component

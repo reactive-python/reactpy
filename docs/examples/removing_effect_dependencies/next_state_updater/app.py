@@ -1,13 +1,12 @@
 """Reading state only to calculate the next state does not make it a
 dependency: the functional updater removes it. Listing it instead would make
 this Effect re-run itself.
-
-# start
 """
 
 from reactpy import component, html, use_effect, use_state
 
 
+# start
 @component
 def log_viewer(topic):
     lines, set_lines = use_state([])
@@ -27,9 +26,6 @@ def log_viewer(topic):
         html.button({"onClick": lambda e: set_visible(visible + 1)}, f"Show {visible}"),
         html.ul([html.li({"key": i}, line) for i, line in enumerate(lines[-visible:])]),
     )
-
-
-# end
 
 
 @component

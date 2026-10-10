@@ -23,6 +23,3 @@ def status_page():
             "Re-check",
         ),
     )
-
-
-# end

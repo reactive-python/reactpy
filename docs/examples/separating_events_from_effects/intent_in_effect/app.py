@@ -1,12 +1,11 @@
 """Business logic parked in an Effect, driven by state that only exists to
 trigger it — which makes a second click silently do nothing.
-
-# start
 """
 
 from reactpy import component, html, use_effect, use_state
 
 
+# start
 def calculate_shipping(city, country):
     """Plain function: takes what it needs, returns the result."""
     if not city or not country:
@@ -57,9 +56,6 @@ def shipping_form():
         html.p(shipping_info or "—"),
         f"Clicks: {clicks}",
     )
-
-
-# end
 
 
 @component

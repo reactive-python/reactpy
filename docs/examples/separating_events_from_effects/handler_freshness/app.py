@@ -1,13 +1,12 @@
 """A handler reads the values of the render that produced it. Click faster than
 the server can re-render and every click sees the same snapshot — the safe
 updater form is the fix.
-
-# start
 """
 
 from reactpy import component, html, use_state
 
 
+# start
 @component
 def basket():
     items, set_items = use_state([])
@@ -34,9 +33,6 @@ def basket():
         ),
         html.p(", ".join(items) or "empty basket"),
     )
-
-
-# end
 
 
 @component

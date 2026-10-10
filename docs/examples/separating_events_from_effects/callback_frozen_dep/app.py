@@ -1,12 +1,11 @@
 """A locally defined function as a dependency never counts as changed, so the
 callback is frozen on its first closure and stops seeing new values.
-
-# start
 """
 
 from reactpy import component, html, use_callback, use_state
 
 
+# start
 @component
 def search():
     query, set_query = use_state("")
@@ -31,9 +30,6 @@ def search():
         html.button({"onClick": on_click}, f"Run ({runs})"),
         html.p(f"page shows query={query!r} — compare with the console"),
     )
-
-
-# end
 
 
 @component

@@ -39,6 +39,3 @@ def profile_page():
         # The key is what makes ReactPy treat this as a different profile.
         profile(user_id, key=user_id),
     )
-
-
-# end

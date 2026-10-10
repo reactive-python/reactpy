@@ -48,6 +48,3 @@ def app():
         html.button({"onClick": lambda event: ticker.publish(topic, "ping")}, "Ping"),
         *([] if not watching else [scroll_log(topic)]),
     )
-
-
-# end

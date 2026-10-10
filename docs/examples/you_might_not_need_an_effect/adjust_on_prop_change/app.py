@@ -39,6 +39,3 @@ def app():
         ),
         list_box(items),
     )
-
-
-# end

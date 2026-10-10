@@ -37,6 +37,3 @@ def app():
         html.p("(server log is printed on the server console)"),
         room_view(room),
     )
-
-
-# end

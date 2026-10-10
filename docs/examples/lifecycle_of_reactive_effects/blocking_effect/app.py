@@ -25,6 +25,3 @@ def preview():
         html.h1(f"width {width}"),
         html.button({"onClick": lambda event: set_width(width + 1)}, "Wider"),
     )
-
-
-# end

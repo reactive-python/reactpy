@@ -43,6 +43,3 @@ def report(name):
             "Toggle page size",
         ),
     )
-
-
-# end

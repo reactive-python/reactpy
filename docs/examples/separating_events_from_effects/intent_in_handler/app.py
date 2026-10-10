@@ -1,12 +1,11 @@
 """The same quote logic as an ordinary function called by the event handler:
 no trigger state, no Effect, one render per click.
-
-# start
 """
 
 from reactpy import component, html, use_state
 
 
+# start
 def calculate_shipping(city, country):
     """Plain function: takes what it needs, returns the result."""
     if not city or not country:
@@ -48,9 +47,6 @@ def shipping_form():
         html.p(shipping_info or "—"),
         f"Clicks: {clicks}",
     )
-
-
-# end
 
 
 @component

@@ -33,6 +33,3 @@ def counter():
         html.p("Effect runs:"),
         html.ul([html.li({"key": index}, line) for index, line in enumerate(runs)]),
     )
-
-
-# end

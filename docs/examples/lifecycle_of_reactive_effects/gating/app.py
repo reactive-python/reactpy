@@ -44,6 +44,3 @@ def app():
         ),
         feed(topic, enabled),
     )
-
-
-# end

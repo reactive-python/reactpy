@@ -1,13 +1,12 @@
 """Two synchronizations crammed into one Effect: changing the page tears the
 connection down, and changing the topic re-fetches the page. Split them and
 each owns its own dependencies and clean-up.
-
-# start
 """
 
 from reactpy import component, html, use_effect, use_state
 
 
+# start
 @component
 def feed(topic):
     page, set_page = use_state(1)
@@ -34,9 +33,6 @@ def feed(topic):
         html.button({"onClick": lambda e: set_online(not online)}, "Toggle online"),
         html.ul([html.li({"key": row}, row) for row in rows]),
     )
-
-
-# end
 
 
 @component

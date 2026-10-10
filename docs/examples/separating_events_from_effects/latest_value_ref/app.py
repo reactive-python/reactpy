@@ -1,12 +1,11 @@
 """When a callback really must stay stable *and* read the newest value, keep
 that value in a ref and read `.current` at call time.
-
-# start
 """
 
 from reactpy import component, html, use_callback, use_ref, use_state
 
 
+# start
 @component
 def checkout():
     coupon, set_coupon = use_state("")
@@ -32,9 +31,6 @@ def checkout():
         html.button({"onClick": lambda e: set_total(total + 10)}, f"Total {total}"),
         html.p(f"page shows coupon={coupon!r} — compare with the console"),
     )
-
-
-# end
 
 
 @component

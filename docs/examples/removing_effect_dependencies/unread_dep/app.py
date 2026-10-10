@@ -1,12 +1,11 @@
 """An Effect that writes a summary into state, but lists only one of the values
 it reads. The summary keeps describing an older render and nothing warns you.
-
-# start
 """
 
 from reactpy import component, html, use_effect, use_state
 
 
+# start
 @component
 def reporter(topic):
     count, set_count = use_state(0)
@@ -29,9 +28,6 @@ def reporter(topic):
         html.p(f"live: count={count} theme={theme}"),
         html.p(f"summary: {summary}"),
     )
-
-
-# end
 
 
 @component

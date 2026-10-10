@@ -47,6 +47,3 @@ def connection_monitor():
         ),
         html.p(f"alerts: {len(alerts)}"),
     )
-
-
-# end

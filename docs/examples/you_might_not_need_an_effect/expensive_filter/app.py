@@ -44,6 +44,3 @@ def todo_list():
             }
         ),
     )
-
-
-# end

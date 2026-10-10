@@ -35,6 +35,3 @@ def app():
         ),
         audit_log(room, message),
     )
-
-
-# end

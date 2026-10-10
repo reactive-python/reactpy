@@ -24,6 +24,3 @@ def counter():
         html.button({"onClick": lambda event: set_label(label + "!")}, "Rename"),
         html.ul([html.li({"key": index}, line) for index, line in enumerate(runs)]),
     )
-
-
-# end

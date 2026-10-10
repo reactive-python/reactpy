@@ -1,11 +1,10 @@
 """Values that cannot change across renders are not dependencies: hoist the
 constant and the imported helper out of the component.
-
-# start
 """
 
 from reactpy import component, html, use_effect, use_state
 
+# start
 PAGE_SIZE = 20
 HEADERS = {"Accept": "application/json"}
 
@@ -38,9 +37,6 @@ def directory(topic):
         html.p(f"query={query!r} rows={len(rows)}"),
         html.ul([html.li({"key": row}, row) for row in rows]),
     )
-
-
-# end
 
 
 @component
