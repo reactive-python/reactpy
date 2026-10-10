@@ -166,8 +166,8 @@ plugins:
           handlers:
               python:
                   paths: ["../"]
-                  import:
-                      - https://installer.readthedocs.io/en/stable/objects.inv
+                  inventories:
+                      ["https://installer.readthedocs.io/en/stable/objects.inv"]
                   options:
                       signature_crossrefs: true
                       scoped_crossrefs: true
