@@ -40,6 +40,9 @@ Don't forget to remove deprecated code on each major release!
 - Events now support `debounce` and `throttle`, configurable per event via `event.debounce = <milliseconds>` and `EventHandler(fn, throttle=<milliseconds>)` respectively.
     - `debounce` waits until activity stops, then fires once. Default is 200 ms on `input`/`select`/`textarea`, 0 ms elsewhere.
     - `throttle` caps the rate how often an event is allowed to execute. No default; opt in per event.
+- Added a live event proxy which lets event handlers read properties from, and call methods on, the browser objects which triggered them rather than being limited to the snapshot sent along with the event. Handlers can `await event.target.value` or `await event.target.focus()` when asynchronous, or simply use `event.target.value` and `event.target.focus()` when synchronous. The new `reactpy.types.AsyncEvent` and `reactpy.types.SyncEvent` types describe these objects for editors and type checkers.
+    - This can be disabled entirely via `reactpy.config.REACTPY_ENABLE_EVENT_PROXY`.
+    - Unanswered requests are bounded by `reactpy.config.REACTPY_EVENT_PROXY_TIMEOUT`, `reactpy.config.REACTPY_EVENT_PROXY_MAX_TIMEOUTS`, and `reactpy.config.REACTPY_EVENT_PROXY_MAX_DEPTH`.
 
 ### Changed
 

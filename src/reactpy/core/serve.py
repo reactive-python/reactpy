@@ -31,10 +31,27 @@ async def serve_layout(
     recv: RecvCoroutine,
 ) -> None:
     """Run a dispatch loop for a single view instance"""
+    # Let the layout reach back into the browser for the properties and methods of the
+    # events its handlers are working on. Older layouts simply do not have this hook.
+    set_event_proxy_sender = getattr(layout, "set_event_proxy_sender", None)
+    if callable(set_event_proxy_sender):
+        set_event_proxy_sender(_send_through(send))
+
     async with layout:
         async with create_task_group() as task_group:
             task_group.start_soon(_single_outgoing_loop, layout, send)
             task_group.start_soon(_single_incoming_loop, task_group, layout, recv)
+
+
+def _send_through(send: SendCoroutine) -> SendCoroutine:
+    """Adapt the layout's outgoing message sender for live event requests"""
+
+    async def send_event_proxy_request(
+        message: LayoutUpdateMessage | dict[str, Any],
+    ) -> None:
+        await send(message)
+
+    return send_event_proxy_request
 
 
 async def _single_outgoing_loop(

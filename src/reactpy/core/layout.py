@@ -12,7 +12,7 @@ from asyncio import (
     wait,
 )
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from contextlib import AsyncExitStack, suppress
 from logging import getLogger
 from types import TracebackType
@@ -30,10 +30,16 @@ from weakref import ref as weakref
 
 from anyio import Semaphore
 
+from reactpy._event_proxy import (
+    EVENT_PROXY_RESPONSE_TYPE,
+    EventArguments,
+    EventProxyBackend,
+)
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
     REACTPY_CHECK_VDOM_SPEC,
     REACTPY_DEBUG,
+    REACTPY_ENABLE_EVENT_PROXY,
     REACTPY_MAX_QUEUE_SIZE,
 )
 from reactpy.core._life_cycle_hook import HOOK_STACK, LifeCycleHook
@@ -43,7 +49,6 @@ from reactpy.types import (
     Component,
     Context,
     ContextProvider,
-    Event,
     EventHandlerDict,
     Key,
     LayoutEventMessage,
@@ -63,6 +68,10 @@ class Layout(BaseLayout):
             msg = f"Expected a ReactPy component, not {type(root)!r}."
             raise TypeError(msg)
         self.root = root
+        # Bound by reactpy.core.serve.serve_layout, possibly before we are entered.
+        self._event_proxy_sender: Callable[[dict[str, Any]], Awaitable[None]] | None = (
+            None
+        )
 
     async def __aenter__(self) -> Layout:
         # create attributes here to avoid access before entering context manager
@@ -90,6 +99,11 @@ class Layout(BaseLayout):
         # processed all keystrokes without relying on a time-based
         # debounce window.
         self._last_event_seq_by_target: dict[str, int] = {}
+        # Routes live ("event proxy") property reads and method calls made by event
+        # handlers back to the client which dispatched them.
+        self._event_proxy_backend = EventProxyBackend()
+        if self._event_proxy_sender is not None:
+            self._event_proxy_backend.set_sender(self._event_proxy_sender)
         root_model_state = _new_root_model_state(self.root, self._schedule_render_task)
         self._root_life_cycle_state_id = root_id = root_model_state.life_cycle_state.id
         self._model_states_by_life_cycle_state_id = {root_id: root_model_state}
@@ -115,9 +129,11 @@ class Layout(BaseLayout):
 
         await self._unmount_model_states([root_model_state])
         await self._rendering_queue.close()
+        self._event_proxy_backend.close()
 
         # delete attributes here to avoid access after exiting context manager
         del self._event_handlers
+        del self._event_proxy_backend
         del self._event_queues
         del self._event_processing_tasks
         del self._rendering_queue
@@ -129,6 +145,12 @@ class Layout(BaseLayout):
 
     async def deliver(self, event: LayoutEventMessage | dict[str, Any]) -> None:
         """Dispatch an event to the targeted handler"""
+        if event.get("type") == EVENT_PROXY_RESPONSE_TYPE:
+            # Not an event at all, but the answer to a live property read or method
+            # call made by a handler which is (or was) running.
+            self.handle_event_proxy_response(event)
+            return
+
         # It is possible for an element in the frontend to produce an event
         # associated with a backend model that has been deleted. We only handle
         # events if the element and the handler exist in the backend. Otherwise
@@ -148,6 +170,51 @@ class Layout(BaseLayout):
         # In test environments, we yield to the event loop to let the processing tasks run.
         if REACTPY_DEBUG.current:
             await sleep(0)
+
+    def set_event_proxy_sender(
+        self, send: Callable[[dict[str, Any]], Awaitable[None]]
+    ) -> EventProxyBackend | None:
+        """Tell the layout how to send live event requests to the client
+
+        Returns the :class:`~reactpy._event_proxy.EventProxyBackend` which answers the
+        reads and calls the layout's handlers make, so that callers can route replies
+        back to it. This is :data:`None` when the layout is not currently running, in
+        which case the sender is remembered and used once it starts.
+
+        This must be called from the event loop running the layout, and is what makes
+        it possible for event handlers to read properties from, and call methods on,
+        the browser objects which triggered them.
+        """
+        self._event_proxy_sender = send
+        backend = getattr(self, "_event_proxy_backend", None)
+        if backend is not None:
+            backend.set_sender(send)
+        return backend
+
+    def handle_event_proxy_response(self, message: Mapping[str, Any]) -> bool:
+        """Deliver the answer to a live event access request
+
+        Returns :data:`False` if the message was not meant for this layout.
+        """
+        return self._event_proxy_backend.handle_response(message)
+
+    def _make_event_arguments(
+        self, handler: Any, data: Sequence[Any]
+    ) -> EventArguments:
+        """Wrap raw event data for the given handler
+
+        Handlers which ask for it (or are given it by default) receive live,
+        client-backed event objects. Everything else gets the plain snapshot.
+        """
+        want_proxy = getattr(handler, "event_proxy", None)
+        if want_proxy is None:
+            want_proxy = REACTPY_ENABLE_EVENT_PROXY.current
+        if not want_proxy:
+            from reactpy._event_proxy import build_event_args
+
+            args, _ = build_event_args(data, None, prefer_async=True)
+            return EventArguments(args)
+        return EventArguments(data, self._event_proxy_backend)
 
     async def _process_event_queue(
         self, target: str, queue: Queue[LayoutEventMessage | dict[str, Any]]
@@ -177,10 +244,9 @@ class Layout(BaseLayout):
 
             if handler is not None:
                 try:
-                    data = [
-                        Event(d) if isinstance(d, dict) else d for d in event["data"]
-                    ]
-                    await handler.function(data)
+                    await handler.function(
+                        self._make_event_arguments(handler, event["data"])
+                    )
                 except Exception:
                     logger.exception(f"Failed to execute event handler {handler}")
             else:
@@ -494,16 +560,29 @@ class Layout(BaseLayout):
         where it has an effect (user-input elements). ``throttle`` is
         forwarded when set and applies to every element. Both are omitted
         from the payload when ``None`` so the wire format stays minimal.
+
+        ``eventProxy`` is only forwarded when live event access is wanted for this
+        handler: an absent key means "this server cannot do live access" which keeps
+        the client from holding on to events nobody will ask about.
         """
         entry: dict[str, Any] = {
             "target": target,
             "preventDefault": handler.prevent_default,
             "stopPropagation": handler.stop_propagation,
         }
+        if getattr(handler, "stop_immediate_propagation", False):
+            entry["stopImmediatePropagation"] = True
         if handler.debounce is not None:
             entry["debounce"] = handler.debounce
         if handler.throttle is not None:
             entry["throttle"] = handler.throttle
+
+        want_proxy = getattr(handler, "event_proxy", None)
+        if want_proxy is None:
+            want_proxy = REACTPY_ENABLE_EVENT_PROXY.current
+        if want_proxy:
+            entry["eventProxy"] = True
+
         return entry
 
     async def _render_model_children(

@@ -21,8 +21,8 @@ def test_event_handler_repr():
     handler = EventHandler(lambda: None)
     assert repr(handler) == (
         f"EventHandler(function={handler.function}, prevent_default=False, "
-        f"stop_propagation=False, debounce=None, target={handler.target!r}, "
-        f"throttle=None)"
+        f"stop_propagation=False, stop_immediate_propagation=False, debounce=None, "
+        f"target={handler.target!r}, throttle=None, event_proxy=None)"
     )
 
 

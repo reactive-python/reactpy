@@ -20,6 +20,14 @@ from typing import (
     overload,
 )
 
+from reactpy._event_proxy import (
+    AsyncEvent,
+    AsyncEventProxy,
+    EventProxy,
+    SyncEvent,
+    SyncEventProxy,
+)
+
 CarrierType = TypeVar("CarrierType")
 _Type = TypeVar("_Type")
 
@@ -84,6 +92,7 @@ class BaseLayout(Protocol[_Render_co, _Event_contra]):
     __slots__: tuple[str, ...] = (
         "__weakref__",
         "_event_handlers",
+        "_event_proxy_backend",
         "_model_states_by_life_cycle_state_id",
         "_render_tasks",
         "_render_tasks_ready",
@@ -915,6 +924,17 @@ class JsonEventTarget(TypedDict):
     target: str
     preventDefault: bool
     stopPropagation: bool
+    stopImmediatePropagation: NotRequired[bool]
+    eventProxy: NotRequired[bool]
+    """Whether the client should keep the event around for live access
+
+    When present and ``true`` the client registers the dispatched JavaScript ``Event``
+    with its live object registry and tags it with
+    :data:`~reactpy._event_proxy.EVENT_MARKER_KEY` in the ``layout-event`` message.
+    This lets the corresponding handler read properties from, and call methods on, the
+    real browser object. When absent ReactPy is talking to a client which cannot do
+    this and only the snapshot is sent.
+    """
     debounce: NotRequired[int]
     throttle: NotRequired[int]
 
@@ -942,8 +962,10 @@ class BaseEventHandler:
     __slots__ = (
         "__weakref__",
         "debounce",
+        "event_proxy",
         "function",
         "prevent_default",
+        "stop_immediate_propagation",
         "stop_propagation",
         "target",
         "throttle",
@@ -957,6 +979,22 @@ class BaseEventHandler:
 
     stop_propagation: bool
     """Stops the default action associate with the event from taking place."""
+
+    stop_immediate_propagation: bool
+    """Whether to also block other listeners of the same event in the browser
+
+    This is detected automatically from calls to
+    ``event.stopImmediatePropagation()`` inside the handler.
+    """
+
+    event_proxy: bool | None
+    """Whether this handler is handed a live client backed event object
+
+    :data:`None` (the default) defers to :data:`reactpy.config.REACTPY_ENABLE_EVENT_PROXY`.
+    Set this to ``False`` for handlers which only ever look at the data the client
+    already sent along, since live access requires a round trip to the browser for
+    anything the snapshot is missing.
+    """
 
     debounce: int | None
     """Server-→client debounce window in milliseconds.
@@ -1132,6 +1170,10 @@ class ReactPyConfig(TypedDict, total=False):
     debug: bool
     max_queue_size: int
     tests_default_timeout: int
+    enable_event_proxy: bool
+    event_proxy_timeout: float
+    event_proxy_max_depth: int
+    event_proxy_max_timeouts: int
 
 
 class PyScriptOptions(TypedDict, total=False):
@@ -1157,6 +1199,11 @@ class EllipsisRepr:
 class Event(dict):
     """
     A light `dict` wrapper for event data passed to event handler functions.
+
+    This is what handlers receive when the client cannot (or is not asked to) keep the
+    original JavaScript ``Event`` around. See :class:`SyncEvent` and
+    :class:`AsyncEvent` for the live, client backed variants which additionally allow
+    reading arbitrary properties from and calling methods on the browser object.
     """
 
     debounce: int | None
@@ -1166,13 +1213,40 @@ class Event(dict):
         return Event(value) if isinstance(value, dict) else value
 
     def preventDefault(self) -> None:
-        """Prevent the default action of the event."""
+        """Prevent the default action of the event.
+
+        This is a no-op on a plain snapshot - use :func:`reactpy.event`'s
+        ``prevent_default=True``, or a live event
+        (:data:`reactpy.config.REACTPY_ENABLE_EVENT_PROXY`) to actually call it.
+        """
 
     def stopPropagation(self) -> None:
-        """Stop the event from propagating."""
+        """Stop the event from propagating.
+
+        This is a no-op on a plain snapshot - use :func:`reactpy.event`'s
+        ``stop_propagation=True``, or a live event
+        (:data:`reactpy.config.REACTPY_ENABLE_EVENT_PROXY`) to actually call it.
+        """
 
 
 SourceType = NewType("SourceType", str)
+
+
+EventObject: TypeAlias = Event | EventProxy[Any]
+"""Anything which may be handed to an event handler as event data
+
+Either the plain :class:`Event` snapshot, or a live :class:`~reactpy._event_proxy.EventProxy`.
+"""
+
+LiveEvent: TypeAlias = SyncEvent[Any] | AsyncEvent[Any]
+"""The live event objects ReactPy hands to event handlers
+
+A :class:`~reactpy._event_proxy.SyncEvent` for synchronous handlers and an
+:class:`~reactpy._event_proxy.AsyncEvent` for asynchronous ones.
+"""
+
+LiveEventMember: TypeAlias = SyncEventProxy[Any] | AsyncEventProxy[Any]
+"""A lazily resolved member of a :data:`LiveEvent`"""
 
 
 @dataclass(frozen=True)

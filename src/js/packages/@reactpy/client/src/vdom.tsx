@@ -1,5 +1,6 @@
 import eventToObject from "event-to-object";
 import { Fragment } from "preact";
+import { EVENT_MARKER_KEY } from "./event-proxy";
 import {
   HANDLER_DEBOUNCE,
   HANDLER_MARKER,
@@ -218,8 +219,10 @@ function createEventHandler(
     target,
     preventDefault,
     stopPropagation,
+    stopImmediatePropagation,
     debounce,
     throttle,
+    eventProxy,
   }: ReactPyVdomEventHandler,
 ): [string, TaggedEventHandler] {
   // Sequence number for the next outgoing event on this handler.
@@ -239,10 +242,28 @@ function createEventHandler(
       if (stopPropagation) {
         event.stopPropagation();
       }
+      if (stopImmediatePropagation) {
+        event.stopImmediatePropagation();
+      }
 
       // Convert JavaScript objects to plain JSON, if needed
-      if (typeof event === "object") {
-        return eventToObject(event);
+      if (typeof event === "object" && event !== null) {
+        const snapshot = eventToObject(event);
+        if (
+          eventProxy &&
+          snapshot &&
+          typeof snapshot === "object" &&
+          !(EVENT_MARKER_KEY in snapshot)
+        ) {
+          // Hand the server a handle on the real object, not just on what could be
+          // squeezed into a snapshot, so it can read whatever it needs and call
+          // methods such as "focus()" on it.
+          return {
+            ...snapshot,
+            [EVENT_MARKER_KEY]: { id: client.eventProxy.register(event) },
+          };
+        }
+        return snapshot;
       } else {
         return event;
       }

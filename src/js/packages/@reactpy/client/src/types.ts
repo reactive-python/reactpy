@@ -1,4 +1,5 @@
 import type { ComponentType } from "preact";
+import type { EventProxyRequest, EventProxyResponse } from "./event-proxy";
 
 // #### CONNECTION TYPES ####
 
@@ -60,6 +61,13 @@ export type ReactPyVdomEventHandler = {
   target: string;
   preventDefault?: boolean;
   stopPropagation?: boolean;
+  stopImmediatePropagation?: boolean;
+  /**
+   * Keep the dispatched object around so the server can read properties from, and call
+   * methods on, whatever is actually in the page. Sent by the server when one of its
+   * handlers is able to make use of it.
+   */
+  eventProxy?: boolean;
   debounce?: number;
   throttle?: number;
 };
@@ -116,8 +124,8 @@ export type LayoutEventMessage = {
   data: any;
 };
 
-export type IncomingMessage = LayoutUpdateMessage;
-export type OutgoingMessage = LayoutEventMessage;
+export type IncomingMessage = LayoutUpdateMessage | EventProxyRequest;
+export type OutgoingMessage = LayoutEventMessage | EventProxyResponse;
 export type Message = IncomingMessage | OutgoingMessage;
 
 // #### INTERFACES ####

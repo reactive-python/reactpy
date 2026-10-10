@@ -5,8 +5,9 @@ from collections.abc import Callable, Sequence
 from functools import partial
 from typing import Any, Literal, cast, overload
 
-from anyio import create_task_group
+from anyio import create_task_group, to_thread
 
+from reactpy._event_proxy import uses_sync_event_proxy
 from reactpy.core._event_inspect import inspect_event_handler
 from reactpy.types import BaseEventHandler, EventHandlerFunc
 
@@ -16,9 +17,11 @@ def event(
     function: Callable[..., Any],
     *,
     stop_propagation: bool = ...,
+    stop_immediate_propagation: bool = ...,
     prevent_default: bool = ...,
     debounce: int | None = ...,
     throttle: int | None = ...,
+    event_proxy: bool | None = ...,
 ) -> EventHandler: ...
 
 
@@ -27,9 +30,11 @@ def event(
     function: Literal[None] = ...,
     *,
     stop_propagation: bool = ...,
+    stop_immediate_propagation: bool = ...,
     prevent_default: bool = ...,
     debounce: int | None = ...,
     throttle: int | None = ...,
+    event_proxy: bool | None = ...,
 ) -> Callable[[Callable[..., Any]], EventHandler]: ...
 
 
@@ -37,9 +42,11 @@ def event(
     function: Callable[..., Any] | None = None,
     *,
     stop_propagation: bool = False,
+    stop_immediate_propagation: bool = False,
     prevent_default: bool = False,
     debounce: int | None = None,
     throttle: int | None = None,
+    event_proxy: bool | None = None,
 ) -> EventHandler | Callable[[Callable[..., Any]], EventHandler]:
     """A decorator for constructing an :class:`EventHandler`.
 
@@ -74,6 +81,12 @@ def event(
         throttle:
             Rate-limit client-→server outgoing events for any element. See
             :attr:`BaseEventHandler.throttle`.
+        stop_immediate_propagation:
+            Also block any other listener of the same event in the browser.
+        event_proxy:
+            Whether this handler receives a live, client backed event object. Defaults
+            to :data:`reactpy.config.REACTPY_ENABLE_EVENT_PROXY`. Pass ``False`` for
+            handlers which never reach back into the browser.
     """
 
     def setup(function: Callable[..., Any]) -> EventHandler:
@@ -83,6 +96,8 @@ def event(
             prevent_default,
             debounce=debounce,
             throttle=throttle,
+            stop_immediate_propagation=stop_immediate_propagation,
+            event_proxy=event_proxy,
         )
 
     return setup(function) if function is not None else setup
@@ -106,6 +121,11 @@ class EventHandler(BaseEventHandler):
         throttle:
             Client-→server rate limit (ms) for outgoing events. See
             :attr:`BaseEventHandler.throttle`.
+        stop_immediate_propagation:
+            Also block any other listener of the same event in the browser.
+        event_proxy:
+            Whether this handler is handed a live, client backed event object. See
+            :attr:`BaseEventHandler.event_proxy`.
     """
 
     def __init__(
@@ -116,12 +136,16 @@ class EventHandler(BaseEventHandler):
         target: str | None = None,
         debounce: int | None = None,
         throttle: int | None = None,
+        stop_immediate_propagation: bool = False,
+        event_proxy: bool | None = None,
     ) -> None:
         self.function = to_event_handler_function(function, positional_args=False)
         self.prevent_default = prevent_default
         self.stop_propagation = stop_propagation
+        self.stop_immediate_propagation = stop_immediate_propagation
         self.debounce = debounce
         self.throttle = throttle
+        self.event_proxy = event_proxy
         self.target = target
 
         # Check if our `preventDefault` or `stopPropagation` methods were called
@@ -141,36 +165,34 @@ class EventHandler(BaseEventHandler):
             self.prevent_default = True
         if found_stop_propagation:
             self.stop_propagation = True
+            if found_stop_propagation == "immediate":
+                self.stop_immediate_propagation = True
         if found_debounce is not None:
             self.debounce = found_debounce
 
     __hash__ = None  # type: ignore
+
+    _PUBLIC_ATTRS = (
+        "function",
+        "prevent_default",
+        "stop_propagation",
+        "stop_immediate_propagation",
+        "debounce",
+        "target",
+        "throttle",
+        "event_proxy",
+    )
 
     def __eq__(self, other: object) -> bool:
         undefined = object()
         return not any(
             not attr.startswith("_")
             and not getattr(other, attr, undefined) == getattr(self, attr)
-            for attr in (
-                "function",
-                "prevent_default",
-                "stop_propagation",
-                "debounce",
-                "target",
-                "throttle",
-            )
+            for attr in self._PUBLIC_ATTRS
         )
 
     def __repr__(self) -> str:
-        public_names = (
-            "function",
-            "prevent_default",
-            "stop_propagation",
-            "debounce",
-            "target",
-            "throttle",
-        )
-        items = ", ".join([f"{n}={getattr(self, n)!r}" for n in public_names])
+        items = ", ".join([f"{n}={getattr(self, n)!r}" for n in self._PUBLIC_ATTRS])
         return f"{type(self).__name__}({items})"
 
 
@@ -185,28 +207,49 @@ def to_event_handler_function(
             A function or coroutine accepting a number of positional arguments.
         positional_args:
             Whether to pass the event parameters a positional args or as a list.
+
+    Synchronous handlers are handed :class:`~reactpy.types.SyncEvent` objects which
+    block while reading from the browser. To keep that from stalling the event loop,
+    such handlers are run in their own thread.
     """
+    is_async = inspect.iscoroutinefunction(function)
+
+    def prepare(data: Sequence[Any]) -> Any:
+        """Hand the function the flavour of event data it knows how to handle"""
+        rebuild = getattr(data, "rebuild", None)
+        return data if rebuild is None else rebuild(is_async)
+
     if positional_args:
-        if inspect.iscoroutinefunction(function):
+        if is_async:
 
             async def wrapper(data: Sequence[Any]) -> None:
-                await function(*data)
-
-            cast(Any, wrapper).__wrapped__ = function
+                await function(*prepare(data))
 
         else:
 
             async def wrapper(data: Sequence[Any]) -> None:
-                function(*data)
+                args = prepare(data)
+                if uses_sync_event_proxy(args):
+                    # Live event access blocks on a round trip to the client - run the
+                    # handler somewhere it is allowed to block.
+                    await to_thread.run_sync(partial(function, *args))
+                else:
+                    function(*args)
 
         cast(Any, wrapper).__wrapped__ = function
+        cast(Any, wrapper).__reactpy_is_async_handler__ = is_async
         return wrapper
-    elif not inspect.iscoroutinefunction(function):
+    elif not is_async:
 
         async def wrapper(data: Sequence[Any]) -> None:
-            function(data)
+            args = prepare(data)
+            if uses_sync_event_proxy(args):
+                await to_thread.run_sync(function, args)
+            else:
+                function(args)
 
         cast(Any, wrapper).__wrapped__ = function
+        cast(Any, wrapper).__reactpy_is_async_handler__ = False
         return wrapper
     else:
         return function
@@ -220,8 +263,9 @@ def merge_event_handlers(
     Raises a ValueError if any handlers have conflicting
     :attr:`~reactpy.core.proto.EventHandlerType.stop_propagation`,
     :attr:`~reactpy.core.proto.EventHandlerType.prevent_default`,
-    :attr:`~reactpy.core.proto.EventHandlerType.debounce`, or
-    :attr:`~reactpy.core.proto.EventHandlerType.throttle` attributes.
+    :attr:`~reactpy.core.proto.EventHandlerType.debounce`,
+    :attr:`~reactpy.core.proto.EventHandlerType.throttle`, or
+    :attr:`~reactpy.types.BaseEventHandler.event_proxy` attributes.
     """
     if not event_handlers:
         msg = "No event handlers to merge"
@@ -236,6 +280,10 @@ def merge_event_handlers(
     debounce = first_handler.debounce
     throttle = first_handler.throttle
     target = first_handler.target
+    stop_immediate_propagation = getattr(
+        first_handler, "stop_immediate_propagation", False
+    )
+    event_proxy = getattr(first_handler, "event_proxy", None)
 
     for handler in event_handlers:
         if (
@@ -244,10 +292,14 @@ def merge_event_handlers(
             or handler.debounce != debounce
             or handler.throttle != throttle
             or handler.target != target
+            or getattr(handler, "stop_immediate_propagation", False)
+            != stop_immediate_propagation
+            or getattr(handler, "event_proxy", None) != event_proxy
         ):
             msg = (
                 "Cannot merge handlers - 'stop_propagation', 'prevent_default', "
-                "'debounce', 'throttle' or 'target' mismatch."
+                "'debounce', 'throttle', 'target', 'stop_immediate_propagation' or "
+                "'event_proxy' mismatch."
             )
             raise ValueError(msg)
 
@@ -258,22 +310,39 @@ def merge_event_handlers(
         target,
         debounce,
         throttle,
+        stop_immediate_propagation=stop_immediate_propagation,
+        event_proxy=event_proxy,
     )
 
 
 def merge_event_handler_funcs(
     functions: Sequence[EventHandlerFunc],
 ) -> EventHandlerFunc:
-    """Make one event handler function from many"""
+    """Make one event handler function from many
+
+    Each of the given functions is handed event data of the flavour it expects, which
+    matters when synchronous (blocking) and asynchronous (awaitable) handlers are
+    merged together.
+    """
     if not functions:
         msg = "No event handler functions to merge"
         raise ValueError(msg)
     elif len(functions) == 1:
         return functions[0]
 
+    is_async_by_func = [
+        bool(
+            getattr(
+                func, "__reactpy_is_async_handler__", inspect.iscoroutinefunction(func)
+            )
+        )
+        for func in functions
+    ]
+
     async def await_all_event_handlers(data: Sequence[Any]) -> None:
         async with create_task_group() as group:
-            for func in functions:
-                group.start_soon(func, data)
+            for func, is_async in zip(functions, is_async_by_func, strict=True):
+                rebuild = getattr(data, "rebuild", None)
+                group.start_soon(func, data if rebuild is None else rebuild(is_async))
 
     return await_all_event_handlers

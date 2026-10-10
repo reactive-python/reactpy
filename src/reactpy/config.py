@@ -138,3 +138,48 @@ REACTPY_MAX_QUEUE_SIZE = Option(
     validator=int,
 )
 """The maximum size for internal queues used by ReactPy"""
+
+REACTPY_ENABLE_EVENT_PROXY = Option(
+    "REACTPY_ENABLE_EVENT_PROXY",
+    default=True,
+    mutable=True,
+    validator=boolean,
+)
+"""Whether event handlers receive live client-backed event objects.
+
+When enabled (the default) the client keeps a reference to the dispatched JavaScript
+``Event`` around and lets the server read properties from, and call methods on, that
+object. Event handlers then receive a :class:`reactpy.types.SyncEvent` or
+:class:`reactpy.types.AsyncEvent` (both are ``dict`` subclasses holding the usual
+snapshot). When disabled, or when the client does not support live access, handlers
+receive the plain :class:`reactpy.types.Event` snapshot as they always have.
+"""
+
+REACTPY_EVENT_PROXY_TIMEOUT = Option(
+    "REACTPY_EVENT_PROXY_TIMEOUT",
+    default=5.0,
+    mutable=True,
+    validator=float,
+)
+"""How long (in seconds) to wait for the client to answer a live event access"""
+
+REACTPY_EVENT_PROXY_MAX_DEPTH = Option(
+    "REACTPY_EVENT_PROXY_MAX_DEPTH",
+    default=10,
+    mutable=True,
+    validator=int,
+)
+"""How many nested object references a single live event resolution may contain"""
+
+REACTPY_EVENT_PROXY_MAX_TIMEOUTS = Option(
+    "REACTPY_EVENT_PROXY_MAX_TIMEOUTS",
+    default=3,
+    mutable=True,
+    validator=int,
+)
+"""How many consecutive live event timeouts are tolerated before access is disabled
+
+Live event access requires a round trip to the client. If a client stops answering
+(for example because it navigated away) ReactPy stops attempting live access after
+this many consecutive timeouts so that event handlers do not stall.
+"""

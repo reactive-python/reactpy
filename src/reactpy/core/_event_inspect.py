@@ -19,13 +19,14 @@ _LOAD_FAST_BORROW_PAIR_SIZE = 2
 _STORE_ATTR_VALUE_OFFSET = 2
 
 
-def inspect_event_handler(func: Callable) -> tuple[bool, bool, int | None]:
+def inspect_event_handler(func: Callable) -> tuple[bool, bool | str, int | None]:
     """Detect ``preventDefault``/``stopPropagation``/``debounce`` usage.
 
     Walks the bytecode of ``func`` looking for the patterns:
 
     - ``event.preventDefault()`` -> ``prevent_default = True``
     - ``event.stopPropagation()`` -> ``stop_propagation = True``
+    - ``event.stopImmediatePropagation()`` -> ``stop_propagation = "immediate"``
     - ``event.debounce = <int>``  -> ``debounce = <int>``
 
     The ``debounce`` value can come from any of the following:
@@ -40,12 +41,15 @@ def inspect_event_handler(func: Callable) -> tuple[bool, bool, int | None]:
     be resolved from the function alone, so users must pass
     ``debounce=...`` explicitly in that case.
 
-    Returns ``(prevent_default, stop_propagation, debounce)``.
+    Returns ``(prevent_default, stop_propagation, debounce)``, where
+    ``stop_propagation`` is the string ``"immediate"`` if the handler asked to stop
+    *other listeners* as well.
     """
     code = func.__code__
 
     prevent_default = False
     stop_propagation = False
+    stop_immediate_propagation = False
     debounce: int | None = None
 
     if code.co_argcount <= 0:
@@ -54,9 +58,15 @@ def inspect_event_handler(func: Callable) -> tuple[bool, bool, int | None]:
     names = code.co_names
     check_prevent_default = "preventDefault" in names
     check_stop_propagation = "stopPropagation" in names
+    check_stop_immediate_propagation = "stopImmediatePropagation" in names
     check_debounce = "debounce" in names
 
-    if not (check_prevent_default or check_stop_propagation or check_debounce):
+    if not (
+        check_prevent_default
+        or check_stop_propagation
+        or check_stop_immediate_propagation
+        or check_debounce
+    ):
         return prevent_default, stop_propagation, debounce
 
     event_arg_name = code.co_varnames[0]
@@ -105,6 +115,13 @@ def inspect_event_handler(func: Callable) -> tuple[bool, bool, int | None]:
             elif check_stop_propagation and instr.argval == "stopPropagation":
                 stop_propagation = True
                 check_stop_propagation = False
+            elif (
+                check_stop_immediate_propagation
+                and instr.argval == "stopImmediatePropagation"
+            ):
+                stop_immediate_propagation = True
+                stop_propagation = True
+                check_stop_immediate_propagation = False
         elif (
             check_debounce
             and instr.opname == "STORE_ATTR"
@@ -131,12 +148,21 @@ def inspect_event_handler(func: Callable) -> tuple[bool, bool, int | None]:
                 debounce = None
                 check_debounce = False
 
-        if not (check_prevent_default or check_stop_propagation or check_debounce):
+        if not (
+            check_prevent_default
+            or check_stop_propagation
+            or check_stop_immediate_propagation
+            or check_debounce
+        ):
             break
 
         last_was_event = False
 
-    return prevent_default, stop_propagation, debounce
+    return (
+        prevent_default,
+        "immediate" if stop_immediate_propagation else stop_propagation,
+        debounce,
+    )
 
 
 def _function_arg_defaults(func: Callable) -> dict[str, int]:

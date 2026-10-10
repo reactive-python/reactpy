@@ -338,6 +338,12 @@ known-third-party = ["js"]
 [tool.ruff.lint.per-file-ignores]
 # Tests can use magic values, assertions, and relative imports
 "**/tests/**/*" = ["PLR2004", "S101", "TID252"]
+"src/reactpy/_event_proxy.py" = [
+  # Live browser object members keep their original camelCase JavaScript names
+  "N815",
+  # These exception names describe the failure rather than ending in "Error"
+  "N818",
+]
 "docs/**/*.py" = [
   # Examples require some extra setup before import
   "E402",
