@@ -136,6 +136,8 @@ cd docs && mkdocs build --strict; echo "exit=$?"
 
 Then run the examples themselves and open the built page in a browser. `mkdocs build --strict` catches broken links, unresolvable includes, and pages missing from `nav:`; it cannot catch a snippet that renders nothing.
 
+You are the only gate. The single workflow on `new-docs` runs `mkdocs gh-deploy --force` on push, and `gh-deploy` does not pass `--strict` — a build with broken links exits 0 and publishes. A miss does not fail a pipeline; it goes live.
+
 !!! warning "Pitfall"
 
     Do not trust a component that renders without error. Set `REACTPY_DEBUG=1` when probing: with debug off, a component that raised produces `{"tagName": "", "error": ""}` — a blank region and a 200 response. See [Running Tests](./running-tests.md) for the harness traps that make a broken example look green.

@@ -100,7 +100,12 @@ Formatting is Ruff at a line length of 88. The rules that bite most in this repo
 
 ## Documentation checks
 
-These are the gates a documentation pull request must clear. Run them from the repository root.
+Run these from the repository root before you commit.
+
+!!! warning "Pitfall"
+
+    Nothing checks the documentation for you. The only workflow on `new-docs` installs the requirements and runs `mkdocs gh-deploy --force` on push — which does *not* pass `--strict`, so a broken internal link exits 0 and deploys anyway. The commands below are the gate only because you run them; there is no CI to catch a miss, and the live site is where an uncaught one appears.
+
 
 ```bash
 hatch fmt --check docs/             # formatting and lint
