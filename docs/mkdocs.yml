@@ -89,12 +89,12 @@ nav:
           - Protocol Structure: reference/protocol-structure.md
           - Client API: reference/client-api.md
     - About:
-          - Changelog 🚧: about/changelog.md
-          - Community 🚧: about/community.md
-          - Running Tests 🚧: about/running-tests.md
-          - Contributing Code 🚧: about/code.md
-          - Contributing Documentation 🚧: about/docs.md
-          - Licenses 🚧: about/licenses.md
+          - Changelog: about/changelog.md
+          - Community: about/community.md
+          - Running Tests: about/running-tests.md
+          - Contributing Code: about/code.md
+          - Contributing Documentation: about/docs.md
+          - Licenses: about/licenses.md
 
 theme:
     name: material
