@@ -2,1368 +2,156 @@
 
 <p class="intro" markdown>
 
-Reducers let you consolidate a component's state update logic. Context lets you pass information deep down to other components. You can combine reducers and context together to manage state of a complex screen.
+A reducer keeps a component's update logic in one pure function; context carries values past components that only forward them. Together they let a deep tree read and change shared state without any wiring through props. In ReactPy there is one extra fact that makes this work cleanly: `#!python dispatch` has a stable identity across renders, so it is safe to put in a context value.
 
 </p>
 
 !!! summary "You will learn"
 
-    -   How to combine a reducer with context
-    -   How to avoid passing state and dispatch through props
-    -   How to keep context and state logic in a separate file
+    -   How to combine a reducer with context, in three steps
+    -   Why `#!python dispatch` is safe to share through context in ReactPy
+    -   How to move all the wiring into a single module the UI never imports from directly
 
 ## Combining a reducer with context
 
-In this example from [the introduction to reducers](/learn/extracting-state-logic-into-a-reducer), the state is managed by a reducer. The reducer function contains all of the state update logic and is declared at the bottom of this file:
+Start with the version where state and dispatch travel as props. Only `#!python task_form` and `#!python task` want `#!python dispatch`, but it has to be handed to everyone in between:
 
-```js
-import { useReducer } from "react";
-import AddTask from "./AddTask.js";
-import TaskList from "./TaskList.js";
+=== "app.py"
 
-export default function TaskApp() {
-	const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
+    ```python
+    {% include "../../examples/scaling_up_with_reducer_and_context/task_state_props/app.py" start="# start" %}
+    ```
 
-	function handleAddTask(text) {
-		dispatch({
-			type: "added",
-			id: nextId++,
-			text: text,
-		});
-	}
+=== ":material-play: Run"
 
-	function handleChangeTask(task) {
-		dispatch({
-			type: "changed",
-			task: task,
-		});
-	}
+    ```python
+    # TODO
+    ```
 
-	function handleDeleteTask(taskId) {
-		dispatch({
-			type: "deleted",
-			id: taskId,
-		});
-	}
+Read the signatures: `#!python task_list(state, dispatch)` receives both and reads neither — it only builds children and passes both along. `#!python task` forwards `#!python state` untouched to `#!python task_form`, which uses only `#!python dispatch`. Every new layer in the middle copies the same two parameters.
 
-	return (
-		<>
-			<h1>Day off in Kyoto</h1>
-			<AddTask onAddTask={handleAddTask} />
-			<TaskList
-				tasks={tasks}
-				onChangeTask={handleChangeTask}
-				onDeleteTask={handleDeleteTask}
-			/>
-		</>
-	);
-}
-
-function tasksReducer(tasks, action) {
-	switch (action.type) {
-		case "added": {
-			return [
-				...tasks,
-				{
-					id: action.id,
-					text: action.text,
-					done: false,
-				},
-			];
-		}
-		case "changed": {
-			return tasks.map((t) => {
-				if (t.id === action.task.id) {
-					return action.task;
-				} else {
-					return t;
-				}
-			});
-		}
-		case "deleted": {
-			return tasks.filter((t) => t.id !== action.id);
-		}
-		default: {
-			throw Error("Unknown action: " + action.type);
-		}
-	}
-}
-
-let nextId = 3;
-const initialTasks = [
-	{ id: 0, text: "Philosopher’s Path", done: true },
-	{ id: 1, text: "Visit the temple", done: false },
-	{ id: 2, text: "Drink matcha", done: false },
-];
-```
-
-```js
-import { useState } from "react";
-
-export default function AddTask({ onAddTask }) {
-	const [text, setText] = useState("");
-	return (
-		<>
-			<input
-				placeholder="Add task"
-				value={text}
-				onChange={(e) => setText(e.target.value)}
-			/>
-			<button
-				on_click={() => {
-					setText("");
-					onAddTask(text);
-				}}
-			>
-				Add
-			</button>
-		</>
-	);
-}
-```
-
-```js
-import { useState } from "react";
-
-export default function TaskList({ tasks, onChangeTask, onDeleteTask }) {
-	return (
-		<ul>
-			{tasks.map((task) => (
-				<li key={task.id}>
-					<Task
-						task={task}
-						onChange={onChangeTask}
-						onDelete={onDeleteTask}
-					/>
-				</li>
-			))}
-		</ul>
-	);
-}
-
-function Task({ task, onChange, onDelete }) {
-	const [isEditing, setIsEditing] = useState(false);
-	let taskContent;
-	if (isEditing) {
-		taskContent = (
-			<>
-				<input
-					value={task.text}
-					onChange={(e) => {
-						onChange({
-							...task,
-							text: e.target.value,
-						});
-					}}
-				/>
-				<button on_click={() => setIsEditing(false)}>Save</button>
-			</>
-		);
-	} else {
-		taskContent = (
-			<>
-				{task.text}
-				<button on_click={() => setIsEditing(true)}>Edit</button>
-			</>
-		);
-	}
-	return (
-		<label>
-			<input
-				type="checkbox"
-				checked={task.done}
-				onChange={(e) => {
-					onChange({
-						...task,
-						done: e.target.checked,
-					});
-				}}
-			/>
-			{taskContent}
-			<button on_click={() => onDelete(task.id)}>Delete</button>
-		</label>
-	);
-}
-```
-
-```css
-button {
-	margin: 5px;
-}
-li {
-	list-style-type: none;
-}
-ul,
-li {
-	margin: 0;
-	padding: 0;
-}
-```
-
-A reducer helps keep the event handlers short and concise. However, as your app grows, you might run into another difficulty. **Currently, the `tasks` state and the `dispatch` function are only available in the top-level `TaskApp` component.** To let other components read the list of tasks or change it, you have to explicitly [pass down](/learn/passing-props-to-a-component) the current state and the event handlers that change it as props.
-
-For example, `TaskApp` passes a list of tasks and the event handlers to `TaskList`:
-
-```js
-<TaskList
-	tasks={tasks}
-	onChangeTask={handleChangeTask}
-	onDeleteTask={handleDeleteTask}
-/>
-```
-
-And `TaskList` passes the event handlers to `Task`:
-
-```js
-<Task task={task} onChange={onChangeTask} onDelete={onDeleteTask} />
-```
-
-In a small example like this, this works well, but if you have tens or hundreds of components in the middle, passing down all state and functions can be quite frustrating!
-
-This is why, as an alternative to passing them through props, you might want to put both the `tasks` state and the `dispatch` function [into context.](/learn/passing-data-deeply-with-context) **This way, any component below `TaskApp` in the tree can read the tasks and dispatch actions without the repetitive "prop drilling".**
-
-Here is how you can combine a reducer with context:
-
-1. **Create** the context.
-2. **Put** state and dispatch into context.
-3. **Use** context anywhere in the tree.
+The reducer is already correct for ReactPy: module-level, reading nothing but its two arguments, returning new objects, and raising on an unknown action type. See [Extracting State Logic into a Reducer](./extracting-state-logic-into-a-reducer.md) for why each of those matters here.
 
 ### Step 1: Create the context
 
-The `useReducer` Hook returns the current `tasks` and the `dispatch` function that lets you update them:
+One context carries both halves — the state to read and the dispatch to change it with. Keep it beside the reducer, in a module that does not import the UI:
 
-```js
-const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
-```
+=== "app.py"
 
-To pass them down the tree, you will [create](/learn/passing-data-deeply-with-context#step-2-use-the-context) two separate contexts:
+    ```python
+    {% include "../../examples/scaling_up_with_reducer_and_context/task_context/app.py" start="# start" %}
+    ```
 
--   `TasksContext` provides the current list of tasks.
--   `TasksDispatchContext` provides the function that lets components dispatch actions.
+=== "tasks.py"
 
-Export them from a separate file so that you can later import them from other files:
+    ```python
+    {% include "../../examples/scaling_up_with_reducer_and_context/task_context/tasks.py" %}
+    ```
 
-```js
-import { useReducer } from "react";
-import AddTask from "./AddTask.js";
-import TaskList from "./TaskList.js";
+=== ":material-play: Run"
 
-export default function TaskApp() {
-	const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
+    ```python
+    # TODO
+    ```
 
-	function handleAddTask(text) {
-		dispatch({
-			type: "added",
-			id: nextId++,
-			text: text,
-		});
-	}
+Two things to notice in `#!python tasks.py`.
 
-	function handleChangeTask(task) {
-		dispatch({
-			type: "changed",
-			task: task,
-		});
-	}
+The context object is matched by identity, so create it once and import it from here everywhere. The annotation is load-bearing: `#!python create_context` infers the value type from its default, so without `#!python Context[TaskValue]` a type checker fixes the value to the default's shape and rejects a real one. Write the default first, then annotate. See [Use Context](../reference/use-context.md#caveats).
 
-	function handleDeleteTask(taskId) {
-		dispatch({
-			type: "deleted",
-			id: taskId,
-		});
-	}
-
-	return (
-		<>
-			<h1>Day off in Kyoto</h1>
-			<AddTask onAddTask={handleAddTask} />
-			<TaskList
-				tasks={tasks}
-				onChangeTask={handleChangeTask}
-				onDeleteTask={handleDeleteTask}
-			/>
-		</>
-	);
-}
-
-function tasksReducer(tasks, action) {
-	switch (action.type) {
-		case "added": {
-			return [
-				...tasks,
-				{
-					id: action.id,
-					text: action.text,
-					done: false,
-				},
-			];
-		}
-		case "changed": {
-			return tasks.map((t) => {
-				if (t.id === action.task.id) {
-					return action.task;
-				} else {
-					return t;
-				}
-			});
-		}
-		case "deleted": {
-			return tasks.filter((t) => t.id !== action.id);
-		}
-		default: {
-			throw Error("Unknown action: " + action.type);
-		}
-	}
-}
-
-let nextId = 3;
-const initialTasks = [
-	{ id: 0, text: "Philosopher’s Path", done: true },
-	{ id: 1, text: "Visit the temple", done: false },
-	{ id: 2, text: "Drink matcha", done: false },
-];
-```
-
-```js
-import { createContext } from "react";
-
-export const TasksContext = createContext(null);
-export const TasksDispatchContext = createContext(null);
-```
-
-```js
-import { useState } from "react";
-
-export default function AddTask({ onAddTask }) {
-	const [text, setText] = useState("");
-	return (
-		<>
-			<input
-				placeholder="Add task"
-				value={text}
-				onChange={(e) => setText(e.target.value)}
-			/>
-			<button
-				on_click={() => {
-					setText("");
-					onAddTask(text);
-				}}
-			>
-				Add
-			</button>
-		</>
-	);
-}
-```
-
-```js
-import { useState } from "react";
-
-export default function TaskList({ tasks, onChangeTask, onDeleteTask }) {
-	return (
-		<ul>
-			{tasks.map((task) => (
-				<li key={task.id}>
-					<Task
-						task={task}
-						onChange={onChangeTask}
-						onDelete={onDeleteTask}
-					/>
-				</li>
-			))}
-		</ul>
-	);
-}
-
-function Task({ task, onChange, onDelete }) {
-	const [isEditing, setIsEditing] = useState(false);
-	let taskContent;
-	if (isEditing) {
-		taskContent = (
-			<>
-				<input
-					value={task.text}
-					onChange={(e) => {
-						onChange({
-							...task,
-							text: e.target.value,
-						});
-					}}
-				/>
-				<button on_click={() => setIsEditing(false)}>Save</button>
-			</>
-		);
-	} else {
-		taskContent = (
-			<>
-				{task.text}
-				<button on_click={() => setIsEditing(true)}>Edit</button>
-			</>
-		);
-	}
-	return (
-		<label>
-			<input
-				type="checkbox"
-				checked={task.done}
-				onChange={(e) => {
-					onChange({
-						...task,
-						done: e.target.checked,
-					});
-				}}
-			/>
-			{taskContent}
-			<button on_click={() => onDelete(task.id)}>Delete</button>
-		</label>
-	);
-}
-```
-
-```css
-button {
-	margin: 5px;
-}
-li {
-	list-style-type: none;
-}
-ul,
-li {
-	margin: 0;
-	padding: 0;
-}
-```
-
-Here, you're passing `null` as the default value to both contexts. The actual values will be provided by the `TaskApp` component.
+The default value is a *usable* value, not `#!python None`: an empty state and a dispatch that does nothing. A component rendered without a provider then renders an empty list instead of crashing when a handler fires.
 
 ### Step 2: Put state and dispatch into context
 
-Now you can import both contexts in your `TaskApp` component. Take the `tasks` and `dispatch` returned by `useReducer()` and [provide them](/learn/passing-data-deeply-with-context#step-3-provide-the-context) to the entire tree below:
+Call `#!python use_reducer` once, in the component that owns the state, and provide both halves:
 
-```js
-import { TasksContext, TasksDispatchContext } from "./TasksContext.js";
-
-export default function TaskApp() {
-	const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
-	// ...
-	return (
-		<TasksContext.Provider value={tasks}>
-			<TasksDispatchContext.Provider value={dispatch}>
-				...
-			</TasksDispatchContext.Provider>
-		</TasksContext.Provider>
-	);
-}
+```python linenums="0"
+state, dispatch = use_reducer(tasks_reducer, INITIAL_STATE)
+...
+TaskContext(task_list(), value=(state, dispatch))
 ```
 
-For now, you pass the information both via props and in context:
-
-```js
-import { useReducer } from "react";
-import AddTask from "./AddTask.js";
-import TaskList from "./TaskList.js";
-import { TasksContext, TasksDispatchContext } from "./TasksContext.js";
-
-export default function TaskApp() {
-	const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
-
-	function handleAddTask(text) {
-		dispatch({
-			type: "added",
-			id: nextId++,
-			text: text,
-		});
-	}
-
-	function handleChangeTask(task) {
-		dispatch({
-			type: "changed",
-			task: task,
-		});
-	}
-
-	function handleDeleteTask(taskId) {
-		dispatch({
-			type: "deleted",
-			id: taskId,
-		});
-	}
-
-	return (
-		<TasksContext.Provider value={tasks}>
-			<TasksDispatchContext.Provider value={dispatch}>
-				<h1>Day off in Kyoto</h1>
-				<AddTask onAddTask={handleAddTask} />
-				<TaskList
-					tasks={tasks}
-					onChangeTask={handleChangeTask}
-					onDeleteTask={handleDeleteTask}
-				/>
-			</TasksDispatchContext.Provider>
-		</TasksContext.Provider>
-	);
-}
-
-function tasksReducer(tasks, action) {
-	switch (action.type) {
-		case "added": {
-			return [
-				...tasks,
-				{
-					id: action.id,
-					text: action.text,
-					done: false,
-				},
-			];
-		}
-		case "changed": {
-			return tasks.map((t) => {
-				if (t.id === action.task.id) {
-					return action.task;
-				} else {
-					return t;
-				}
-			});
-		}
-		case "deleted": {
-			return tasks.filter((t) => t.id !== action.id);
-		}
-		default: {
-			throw Error("Unknown action: " + action.type);
-		}
-	}
-}
-
-let nextId = 3;
-const initialTasks = [
-	{ id: 0, text: "Philosopher’s Path", done: true },
-	{ id: 1, text: "Visit the temple", done: false },
-	{ id: 2, text: "Drink matcha", done: false },
-];
-```
-
-```js
-import { createContext } from "react";
-
-export const TasksContext = createContext(null);
-export const TasksDispatchContext = createContext(null);
-```
-
-```js
-import { useState } from "react";
-
-export default function AddTask({ onAddTask }) {
-	const [text, setText] = useState("");
-	return (
-		<>
-			<input
-				placeholder="Add task"
-				value={text}
-				onChange={(e) => setText(e.target.value)}
-			/>
-			<button
-				on_click={() => {
-					setText("");
-					onAddTask(text);
-				}}
-			>
-				Add
-			</button>
-		</>
-	);
-}
-```
-
-```js
-import { useState } from "react";
-
-export default function TaskList({ tasks, onChangeTask, onDeleteTask }) {
-	return (
-		<ul>
-			{tasks.map((task) => (
-				<li key={task.id}>
-					<Task
-						task={task}
-						onChange={onChangeTask}
-						onDelete={onDeleteTask}
-					/>
-				</li>
-			))}
-		</ul>
-	);
-}
-
-function Task({ task, onChange, onDelete }) {
-	const [isEditing, setIsEditing] = useState(false);
-	let taskContent;
-	if (isEditing) {
-		taskContent = (
-			<>
-				<input
-					value={task.text}
-					onChange={(e) => {
-						onChange({
-							...task,
-							text: e.target.value,
-						});
-					}}
-				/>
-				<button on_click={() => setIsEditing(false)}>Save</button>
-			</>
-		);
-	} else {
-		taskContent = (
-			<>
-				{task.text}
-				<button on_click={() => setIsEditing(true)}>Edit</button>
-			</>
-		);
-	}
-	return (
-		<label>
-			<input
-				type="checkbox"
-				checked={task.done}
-				onChange={(e) => {
-					onChange({
-						...task,
-						done: e.target.checked,
-					});
-				}}
-			/>
-			{taskContent}
-			<button on_click={() => onDelete(task.id)}>Delete</button>
-		</label>
-	);
-}
-```
-
-```css
-button {
-	margin: 5px;
-}
-li {
-	list-style-type: none;
-}
-ul,
-li {
-	margin: 0;
-	padding: 0;
-}
-```
-
-In the next step, you will remove prop passing.
+A tuple is the simplest value that carries both. If you prefer a dict or a dataclass, the same rules apply — but keep it a fresh object each render, since ReactPy compares the provided value with `==`, and an action that changes nothing should not re-render anything.
 
 ### Step 3: Use context anywhere in the tree
 
-Now you don't need to pass the list of tasks or the event handlers down the tree:
+Now the middle of the tree forgets both parameters:
 
-```js
-<TasksContext.Provider value={tasks}>
-	<TasksDispatchContext.Provider value={dispatch}>
-		<h1>Day off in Kyoto</h1>
-		<AddTask />
-		<TaskList />
-	</TasksDispatchContext.Provider>
-</TasksContext.Provider>
+```python linenums="0"
+@component
+def task_list():
+    state, _ = use_context(TaskContext)
+    return html.ul([task(item, key=item["id"]) for item in state["tasks"]])
 ```
 
-Instead, any component that needs the task list can read it from the `TaskContext`:
+`#!python task_list` no longer mentions `#!python dispatch` at all, and `#!python task` and `#!python task_form` each call `#!python use_context` themselves. Verified: this version and the prop version above are behaviourally identical — the same initial two tasks, the same row struck through by **Toggle**, the same count after **Add task**, the same rows after **Delete**. All three versions in this page pass the same user-journey comparison.
 
-```js
-export default function TaskList() {
-  const tasks = useContext(TasksContext);
-  // ...
-```
+!!! abstract "Note"
 
-To update the task list, any component can read the `dispatch` function from context and call it:
+    `#!python use_context` reserves no state slot, so unlike `#!python use_state` it is safe to call conditionally. That is not an invitation to hide it: read it at the top of the component, the way you would a prop, so it is obvious where the value comes from.
 
-```js
-export default function AddTask() {
-  const [text, setText] = useState('');
-  const dispatch = useContext(TasksDispatchContext);
-  // ...
-  return (
-    // ...
-    <button on_click={() => {
-      setText('');
-      dispatch({
-        type: 'added',
-        id: nextId++,
-        text: text,
-      });
-    }}>Add</button>
-    // ...
-```
+## Why dispatch is safe to share in ReactPy
 
-**The `TaskApp` component does not pass any event handlers down, and the `TaskList` does not pass any event handlers to the `Task` component either.** Each component reads the context that it needs:
+In React, sharing `#!python dispatch` through context is safe because React guarantees its identity. In ReactPy it is safe for a more concrete reason you can check in the source: `#!python use_reducer` builds the dispatcher once with `#!python _use_const` — a `#!python use_state` holding the function — and returns that same object on every render. Verified: across five renders and four dispatches, `#!python id(dispatch)` took exactly one value.
 
-```js
-import { useReducer } from "react";
-import AddTask from "./AddTask.js";
-import TaskList from "./TaskList.js";
-import { TasksContext, TasksDispatchContext } from "./TasksContext.js";
+That matters because the dispatcher closes over the *reducer*, which ReactPy also freezes at the first render. A stale dispatcher is not a hazard here as long as the reducer is module-level — which is exactly the rule [the reducer page](./extracting-state-logic-into-a-reducer.md#the-rule-reactpy-adds-the-first-reducer-wins) already imposes. Share `#!python dispatch` freely; do not share a value you expect to be re-read from a closure.
 
-export default function TaskApp() {
-	const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
-
-	return (
-		<TasksContext.Provider value={tasks}>
-			<TasksDispatchContext.Provider value={dispatch}>
-				<h1>Day off in Kyoto</h1>
-				<AddTask />
-				<TaskList />
-			</TasksDispatchContext.Provider>
-		</TasksContext.Provider>
-	);
-}
-
-function tasksReducer(tasks, action) {
-	switch (action.type) {
-		case "added": {
-			return [
-				...tasks,
-				{
-					id: action.id,
-					text: action.text,
-					done: false,
-				},
-			];
-		}
-		case "changed": {
-			return tasks.map((t) => {
-				if (t.id === action.task.id) {
-					return action.task;
-				} else {
-					return t;
-				}
-			});
-		}
-		case "deleted": {
-			return tasks.filter((t) => t.id !== action.id);
-		}
-		default: {
-			throw Error("Unknown action: " + action.type);
-		}
-	}
-}
-
-const initialTasks = [
-	{ id: 0, text: "Philosopher’s Path", done: true },
-	{ id: 1, text: "Visit the temple", done: false },
-	{ id: 2, text: "Drink matcha", done: false },
-];
-```
-
-```js
-import { createContext } from "react";
-
-export const TasksContext = createContext(null);
-export const TasksDispatchContext = createContext(null);
-```
-
-```js
-import { useState, useContext } from "react";
-import { TasksDispatchContext } from "./TasksContext.js";
-
-export default function AddTask() {
-	const [text, setText] = useState("");
-	const dispatch = useContext(TasksDispatchContext);
-	return (
-		<>
-			<input
-				placeholder="Add task"
-				value={text}
-				onChange={(e) => setText(e.target.value)}
-			/>
-			<button
-				on_click={() => {
-					setText("");
-					dispatch({
-						type: "added",
-						id: nextId++,
-						text: text,
-					});
-				}}
-			>
-				Add
-			</button>
-		</>
-	);
-}
-
-let nextId = 3;
-```
-
-```js
-import { useState, useContext } from "react";
-import { TasksContext, TasksDispatchContext } from "./TasksContext.js";
-
-export default function TaskList() {
-	const tasks = useContext(TasksContext);
-	return (
-		<ul>
-			{tasks.map((task) => (
-				<li key={task.id}>
-					<Task task={task} />
-				</li>
-			))}
-		</ul>
-	);
-}
-
-function Task({ task }) {
-	const [isEditing, setIsEditing] = useState(false);
-	const dispatch = useContext(TasksDispatchContext);
-	let taskContent;
-	if (isEditing) {
-		taskContent = (
-			<>
-				<input
-					value={task.text}
-					onChange={(e) => {
-						dispatch({
-							type: "changed",
-							task: {
-								...task,
-								text: e.target.value,
-							},
-						});
-					}}
-				/>
-				<button on_click={() => setIsEditing(false)}>Save</button>
-			</>
-		);
-	} else {
-		taskContent = (
-			<>
-				{task.text}
-				<button on_click={() => setIsEditing(true)}>Edit</button>
-			</>
-		);
-	}
-	return (
-		<label>
-			<input
-				type="checkbox"
-				checked={task.done}
-				onChange={(e) => {
-					dispatch({
-						type: "changed",
-						task: {
-							...task,
-							done: e.target.checked,
-						},
-					});
-				}}
-			/>
-			{taskContent}
-			<button
-				on_click={() => {
-					dispatch({
-						type: "deleted",
-						id: task.id,
-					});
-				}}
-			>
-				Delete
-			</button>
-		</label>
-	);
-}
-```
-
-```css
-button {
-	margin: 5px;
-}
-li {
-	list-style-type: none;
-}
-ul,
-li {
-	margin: 0;
-	padding: 0;
-}
-```
-
-**The state still "lives" in the top-level `TaskApp` component, managed with `useReducer`.** But its `tasks` and `dispatch` are now available to every component below in the tree by importing and using these contexts.
+What context does **not** do: it is not a render optimisation. ReactPy has no `#!python memo`, so when the provider re-renders with a new value, the whole subtree re-renders, including every component whose read value did not change. Context removes parameters, not work. See [What context does not do](../reference/use-context.md#what-context-does-not-do).
 
 ## Moving all wiring into a single file
 
-You don't have to do this, but you could further declutter the components by moving both reducer and context into a single file. Currently, `TasksContext.js` contains only two context declarations:
+Once the UI reads everything from context, the reducer, the context object, and even `#!python use_reducer` can disappear from it. Move the whole mechanism into `#!python tasks.py`, and expose exactly two names — a provider component and an accessor hook:
 
-```js
-import { createContext } from "react";
+=== "app.py"
 
-export const TasksContext = createContext(null);
-export const TasksDispatchContext = createContext(null);
-```
+    ```python
+    {% include "../../examples/scaling_up_with_reducer_and_context/task_wiring/app.py" start="# start" %}
+    ```
 
-This file is about to get crowded! You'll move the reducer into that same file. Then you'll declare a new `TasksProvider` component in the same file. This component will tie all the pieces together:
+=== "tasks.py"
 
-1. It will manage the state with a reducer.
-2. It will provide both contexts to components below.
-3. It will [take `children` as a prop](/learn/passing-props-to-a-component#passing-jsx-as-children) so you can pass JSX to it.
+    ```python
+    {% include "../../examples/scaling_up_with_reducer_and_context/task_wiring/tasks.py" %}
+    ```
 
-```js
-export function TasksProvider({ children }) {
-	const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
+=== ":material-play: Run"
 
-	return (
-		<TasksContext.Provider value={tasks}>
-			<TasksDispatchContext.Provider value={dispatch}>
-				{children}
-			</TasksDispatchContext.Provider>
-		</TasksContext.Provider>
-	);
-}
-```
+    ```python
+    # TODO
+    ```
 
-**This removes all the complexity and wiring from your `TaskApp` component:**
+The UI file now imports only `#!python task_store` and `#!python use_tasks`. It never mentions `#!python use_reducer`, `#!python create_context`, `#!python tasks_reducer`, or `#!python TaskContext`. Two consequences worth having:
 
-```js
-import AddTask from "./AddTask.js";
-import TaskList from "./TaskList.js";
-import { TasksProvider } from "./TasksContext.js";
+-   The UI cannot reach the reducer except through an action, so there is no way to bypass it.
+-   Changing how the state is stored — a different reducer, a different initial shape, even dropping context entirely — touches one file and no component.
 
-export default function TaskApp() {
-	return (
-		<TasksProvider>
-			<h1>Day off in Kyoto</h1>
-			<AddTask />
-			<TaskList />
-		</TasksProvider>
-	);
-}
-```
+`#!python task_store` is a component that calls `#!python use_reducer` and returns the provider. A component's render may return another component, so this composes without ceremony. Note that `#!python use_tasks` is a plain function that calls `#!python use_context`: it is a custom Hook, so name it `#!python use_*` — the linter's regex is `^_*use_\w+$`, and camelCase variants get a less accurate diagnostic. See [Reusing Logic with Custom Hooks](./reusing-logic-with-custom-hooks.md).
 
-```js
-import { createContext, useReducer } from "react";
+!!! warning "Pitfall"
 
-export const TasksContext = createContext(null);
-export const TasksDispatchContext = createContext(null);
+    Because the provider is now a component, **removing it from the tree unmounts everything below it** and throws their state away. Do not write `#!python task_store(page()) if logged_in else page()`. Keep the provider in the tree and vary only its value — verified: a conditional provider resets a leaf's state (its render counter returns to 1 and its draft text clears), while a stable `#!python key` on the child does not prevent it. See [Removing a provider resets the subtree below it](./passing-data-deeply-with-context.md#removing-a-provider-resets-the-subtree-below-it).
 
-export function TasksProvider({ children }) {
-	const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
+Two `#!python task_store` instances are two independent stores, not one shared store: verified, three presses on one side moved `#!python one=5` while the other stayed at its initial `#!python two=2`. Context propagates down from the provider that happens to be above you. To genuinely share state, there must be one provider above both consumers — usually near the root.
 
-	return (
-		<TasksContext.Provider value={tasks}>
-			<TasksDispatchContext.Provider value={dispatch}>
-				{children}
-			</TasksDispatchContext.Provider>
-		</TasksContext.Provider>
-	);
-}
+!!! info "Deep Dive"
 
-function tasksReducer(tasks, action) {
-	switch (action.type) {
-		case "added": {
-			return [
-				...tasks,
-				{
-					id: action.id,
-					text: action.text,
-					done: false,
-				},
-			];
-		}
-		case "changed": {
-			return tasks.map((t) => {
-				if (t.id === action.task.id) {
-					return action.task;
-				} else {
-					return t;
-				}
-			});
-		}
-		case "deleted": {
-			return tasks.filter((t) => t.id !== action.id);
-		}
-		default: {
-			throw Error("Unknown action: " + action.type);
-		}
-	}
-}
+    Should you also provide a *derived* value, such as a filtered list or a total? Compute it in the component that needs it. ReactPy re-renders the subtree whenever the provided state changes anyway, so a cached derivation saves nothing, and `#!python use_memo` around it adds a dependency list to keep correct. Reserve the context value for what is genuinely shared: the state object and `#!python dispatch`. For the caching rules, see [You Might Not Need an Effect](./you-might-not-need-an-effect.md#caching-expensive-calculations).
 
-const initialTasks = [
-	{ id: 0, text: "Philosopher’s Path", done: true },
-	{ id: 1, text: "Visit the temple", done: false },
-	{ id: 2, text: "Drink matcha", done: false },
-];
-```
+## Recap
 
-```js
-import { useState, useContext } from "react";
-import { TasksDispatchContext } from "./TasksContext.js";
+-   A reducer owns the transitions; context carries `#!python (state, dispatch)` past components that would only forward them. Both are needed together — context without a reducer leaves the update logic scattered, a reducer without context leaves the props.
+-   Create the context beside the reducer, at module level, with a usable default and a `#!python Context[...]` annotation so the value type is not narrowed by the default.
+-   Provide `#!python (state, dispatch)` from one component that owns `#!python use_reducer`; read it in each component that needs it.
+-   `#!python dispatch` is identity-stable across renders in ReactPy (verified: one `#!python id` over five renders), which is what makes sharing it through context sound.
+-   A module that exports a provider component and a `#!python use_*` accessor lets the UI import two names and never touch the reducer.
+-   Keep the provider in the tree. Removing it remounts the subtree and discards state; a `#!python key` does not save it (verified).
+-   One provider per shared store. Two providers are two stores (verified).
+-   Context removes parameters, not renders — ReactPy has no render bailout.
 
-export default function AddTask() {
-	const [text, setText] = useState("");
-	const dispatch = useContext(TasksDispatchContext);
-	return (
-		<>
-			<input
-				placeholder="Add task"
-				value={text}
-				onChange={(e) => setText(e.target.value)}
-			/>
-			<button
-				on_click={() => {
-					setText("");
-					dispatch({
-						type: "added",
-						id: nextId++,
-						text: text,
-					});
-				}}
-			>
-				Add
-			</button>
-		</>
-	);
-}
+## Related
 
-let nextId = 3;
-```
-
-```js
-import { useState, useContext } from "react";
-import { TasksContext, TasksDispatchContext } from "./TasksContext.js";
-
-export default function TaskList() {
-	const tasks = useContext(TasksContext);
-	return (
-		<ul>
-			{tasks.map((task) => (
-				<li key={task.id}>
-					<Task task={task} />
-				</li>
-			))}
-		</ul>
-	);
-}
-
-function Task({ task }) {
-	const [isEditing, setIsEditing] = useState(false);
-	const dispatch = useContext(TasksDispatchContext);
-	let taskContent;
-	if (isEditing) {
-		taskContent = (
-			<>
-				<input
-					value={task.text}
-					onChange={(e) => {
-						dispatch({
-							type: "changed",
-							task: {
-								...task,
-								text: e.target.value,
-							},
-						});
-					}}
-				/>
-				<button on_click={() => setIsEditing(false)}>Save</button>
-			</>
-		);
-	} else {
-		taskContent = (
-			<>
-				{task.text}
-				<button on_click={() => setIsEditing(true)}>Edit</button>
-			</>
-		);
-	}
-	return (
-		<label>
-			<input
-				type="checkbox"
-				checked={task.done}
-				onChange={(e) => {
-					dispatch({
-						type: "changed",
-						task: {
-							...task,
-							done: e.target.checked,
-						},
-					});
-				}}
-			/>
-			{taskContent}
-			<button
-				on_click={() => {
-					dispatch({
-						type: "deleted",
-						id: task.id,
-					});
-				}}
-			>
-				Delete
-			</button>
-		</label>
-	);
-}
-```
-
-```css
-button {
-	margin: 5px;
-}
-li {
-	list-style-type: none;
-}
-ul,
-li {
-	margin: 0;
-	padding: 0;
-}
-```
-
-You can also export functions that _use_ the context from `TasksContext.js`:
-
-```js
-export function useTasks() {
-	return useContext(TasksContext);
-}
-
-export function useTasksDispatch() {
-	return useContext(TasksDispatchContext);
-}
-```
-
-When a component needs to read context, it can do it through these functions:
-
-```js
-const tasks = useTasks();
-const dispatch = useTasksDispatch();
-```
-
-This doesn't change the behavior in any way, but it lets you later split these contexts further or add some logic to these functions. **Now all of the context and reducer wiring is in `TasksContext.js`. This keeps the components clean and uncluttered, focused on what they display rather than where they get the data:**
-
-```js
-import AddTask from "./AddTask.js";
-import TaskList from "./TaskList.js";
-import { TasksProvider } from "./TasksContext.js";
-
-export default function TaskApp() {
-	return (
-		<TasksProvider>
-			<h1>Day off in Kyoto</h1>
-			<AddTask />
-			<TaskList />
-		</TasksProvider>
-	);
-}
-```
-
-```js
-import { createContext, useContext, useReducer } from "react";
-
-const TasksContext = createContext(null);
-
-const TasksDispatchContext = createContext(null);
-
-export function TasksProvider({ children }) {
-	const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
-
-	return (
-		<TasksContext.Provider value={tasks}>
-			<TasksDispatchContext.Provider value={dispatch}>
-				{children}
-			</TasksDispatchContext.Provider>
-		</TasksContext.Provider>
-	);
-}
-
-export function useTasks() {
-	return useContext(TasksContext);
-}
-
-export function useTasksDispatch() {
-	return useContext(TasksDispatchContext);
-}
-
-function tasksReducer(tasks, action) {
-	switch (action.type) {
-		case "added": {
-			return [
-				...tasks,
-				{
-					id: action.id,
-					text: action.text,
-					done: false,
-				},
-			];
-		}
-		case "changed": {
-			return tasks.map((t) => {
-				if (t.id === action.task.id) {
-					return action.task;
-				} else {
-					return t;
-				}
-			});
-		}
-		case "deleted": {
-			return tasks.filter((t) => t.id !== action.id);
-		}
-		default: {
-			throw Error("Unknown action: " + action.type);
-		}
-	}
-}
-
-const initialTasks = [
-	{ id: 0, text: "Philosopher’s Path", done: true },
-	{ id: 1, text: "Visit the temple", done: false },
-	{ id: 2, text: "Drink matcha", done: false },
-];
-```
-
-```js
-import { useState } from "react";
-import { useTasksDispatch } from "./TasksContext.js";
-
-export default function AddTask() {
-	const [text, setText] = useState("");
-	const dispatch = useTasksDispatch();
-	return (
-		<>
-			<input
-				placeholder="Add task"
-				value={text}
-				onChange={(e) => setText(e.target.value)}
-			/>
-			<button
-				on_click={() => {
-					setText("");
-					dispatch({
-						type: "added",
-						id: nextId++,
-						text: text,
-					});
-				}}
-			>
-				Add
-			</button>
-		</>
-	);
-}
-
-let nextId = 3;
-```
-
-```js
-import { useState } from "react";
-import { useTasks, useTasksDispatch } from "./TasksContext.js";
-
-export default function TaskList() {
-	const tasks = useTasks();
-	return (
-		<ul>
-			{tasks.map((task) => (
-				<li key={task.id}>
-					<Task task={task} />
-				</li>
-			))}
-		</ul>
-	);
-}
-
-function Task({ task }) {
-	const [isEditing, setIsEditing] = useState(false);
-	const dispatch = useTasksDispatch();
-	let taskContent;
-	if (isEditing) {
-		taskContent = (
-			<>
-				<input
-					value={task.text}
-					onChange={(e) => {
-						dispatch({
-							type: "changed",
-							task: {
-								...task,
-								text: e.target.value,
-							},
-						});
-					}}
-				/>
-				<button on_click={() => setIsEditing(false)}>Save</button>
-			</>
-		);
-	} else {
-		taskContent = (
-			<>
-				{task.text}
-				<button on_click={() => setIsEditing(true)}>Edit</button>
-			</>
-		);
-	}
-	return (
-		<label>
-			<input
-				type="checkbox"
-				checked={task.done}
-				onChange={(e) => {
-					dispatch({
-						type: "changed",
-						task: {
-							...task,
-							done: e.target.checked,
-						},
-					});
-				}}
-			/>
-			{taskContent}
-			<button
-				on_click={() => {
-					dispatch({
-						type: "deleted",
-						id: task.id,
-					});
-				}}
-			>
-				Delete
-			</button>
-		</label>
-	);
-}
-```
-
-```css
-button {
-	margin: 5px;
-}
-li {
-	list-style-type: none;
-}
-ul,
-li {
-	margin: 0;
-	padding: 0;
-}
-```
-
-You can think of `TasksProvider` as a part of the screen that knows how to deal with tasks, `useTasks` as a way to read them, and `useTasksDispatch` as a way to update them from any component below in the tree.
-
-<Note>
-
-Functions like `useTasks` and `useTasksDispatch` are called _[Custom Hooks.](/learn/reusing-logic-with-custom-hooks)_ Your function is considered a custom Hook if its name starts with `use`. This lets you use other Hooks, like `useContext`, inside it.
-
-</Note>
-
-As your app grows, you may have many context-reducer pairs like this. This is a powerful way to scale your app and [lift state up](/learn/sharing-state-between-components) without too much work whenever you want to access the data deep in the tree.
-
-<Recap>
-
--   You can combine reducer with context to let any component read and update state above it.
--   To provide state and the dispatch function to components below:
-    1. Create two contexts (for state and for dispatch functions).
-    2. Provide both contexts from the component that uses the reducer.
-    3. Use either context from components that need to read them.
--   You can further declutter the components by moving all wiring into one file.
-    -   You can export a component like `TasksProvider` that provides context.
-    -   You can also export custom Hooks like `useTasks` and `useTasksDispatch` to read it.
--   You can have many context-reducer pairs like this in your app.
-
-</Recap>
+-   [Extracting State Logic into a Reducer](./extracting-state-logic-into-a-reducer.md) — the reducer rules this pattern depends on, including the frozen-first-reducer rule
+-   [Passing Data Deeply with Context](./passing-data-deeply-with-context.md) — the context mechanics, and the provider-removal trap
+-   [Use Context](../reference/use-context.md) — parameters, caveats, and error messages
+-   [Use Reducer](../reference/use-reducer.md) — parameter-level reference and troubleshooting
+-   [Reusing Logic with Custom Hooks](./reusing-logic-with-custom-hooks.md) — naming and rules for the `#!python use_tasks` accessor
+-   [Choosing the State Structure](./choosing-the-state-structure.md) — what belongs in state before you decide who provides it
