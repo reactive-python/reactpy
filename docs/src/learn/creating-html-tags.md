@@ -201,7 +201,7 @@ from reactpy import Vdom
 Vdom("text")("hello")  # {'tagName': 'text', 'children': ['hello']}
 ```
 
-ReactPy creates elements with `#!python createElement`, not `#!python createElementNS`, so nothing switches on the `#!html <svg>` ancestor. Attributes are passed through as you wrote them, which means `#!python viewBox` keeps its capital `#!python B` — write it that way, since `#!python viewbox` is a different attribute to the DOM.
+The bundled client creates every element with `#!python document.createElementNS(namespace, ...)` and picks the namespace from the tag name — `static/index-bz53xswt.js` sets `#!python Q = "http://www.w3.org/2000/svg"` when the type is `#!python "svg"` and the MathML URI for `#!python "math"`. Inside the SVG namespace attribute names are forwarded verbatim rather than lower-cased, so `#!python viewBox` keeps its capital `#!python B` — write it that way, since `#!python viewbox` is a different attribute to the DOM.
 
 ## Choosing children over attributes
 
@@ -212,7 +212,7 @@ html.div({"id": "list"}, html.li("one"), html.li("two"))   # correct
 html.ul({"children": [html.li("one")]})                     # an attribute named children
 ```
 
-Children are flattened one level for any iterable that is not a string or a mapping (`core/vdom.py`, `_flatten_children`), so a list or tuple comprehension works, and `#!python None` is skipped by the layout. Two rules from there are worth internalizing now, because both failures are quiet:
+Children are flattened fully, not one level at a time, for any iterable that is not a string or a mapping — `core/vdom.py`, `#!python _flatten_children` recurses, and verified `#!python html.div([[["a"], "b"]])` yields `#!python children: ['a', 'b']`. A list or tuple comprehension therefore works at any nesting depth, and `#!python None` is skipped by the layout. Two rules from there are worth internalizing now, because both failures are quiet:
 
 -   **Elements inside a list need keys**, in debug mode, or you get `#!python Key not specified for child in list ...`.
 -   **A generator in place of a list skips that check entirely**, with `#!python Did not verify key-path integrity of children in generator ...`. Pass a `#!python list`. The deeper hazard — storing an iterator in state — is covered in [Rendering Lists](./rendering-lists.md).

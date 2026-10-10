@@ -73,7 +73,9 @@ Sync functions, coroutine functions, and lambdas all work. Name the parameter wh
 
 `#!python EventHandler` is what the `#!python @event` decorator returns, and you can construct it directly. Two things change when you do.
 
-First, ReactPy stores an `#!python EventHandler` **as-is** rather than wrapping it, so it is shared across every element that uses it — one object, one `#!python target` id, reused.
+First, ReactPy stores an `#!python EventHandler` **as-is** rather than wrapping it, so the same object can serve every element that uses it. It does **not** follow that they share a `#!python target`. The target is derived per element: unless the handler carries an explicit `#!python target`, `core/layout.py` builds `#!python target = f"{key_path}:{event}"`, and `#!python @event` leaves `#!python target` as `#!python None`. Verified with one `#!python @event` handler on two buttons: the targets came out `#!python /0/0:onClick` and `#!python /0/1:onClick` — one function object, two targets.
+
+Do not try to force the sharing by setting `#!python target=` yourself. Two elements registered under the same explicit target overwrite each other in the layout's handler table, and the unmount path then tries to `#!python del` that one key twice — verified, the second deletion raises `#!python KeyError` from `Layout._unmount_model_states`.
 
 Second, and this is the trap: an `#!python EventHandler` receives the **list itself**, not the unpacked arguments.
 
@@ -139,7 +141,7 @@ This is a source-parsing hack, not a runtime mechanism, and it has limits you sh
 
 -   The call is written **literally in the handler's own body.** `#!python event.preventDefault()` inside a helper the handler calls is invisible to the inspector — it does not follow calls.
 -   The **first parameter** is the event. The inspector reads `#!python co_varnames[0]` and matches against it.
--   For `#!python debounce`, the assigned value must be resolvable at inspect time: an integer literal, a compile-time-folded expression like `#!python 100 * 5`, a numeric **default** on a parameter (`#!python def h(event, ms=350)`), or a numeric closure cell. It cannot resolve a parameter with no default, a module-level global, or an arbitrary expression — and if any assignment to `#!python event.debounce` is unresolvable, the detector gives up on all of them rather than guessing.
+-   For `#!python debounce`, the assigned value must be resolvable at inspect time: an integer literal, a compile-time-folded expression like `#!python 100 * 5`, a numeric **default** on a parameter (`#!python def h(event, ms=350)`), or a numeric closure cell. It cannot resolve a parameter with no default, a module-level global, or an arbitrary expression — all three inspect to `#!python None`. And it stops scanning at the **first** assignment it can settle — resolved or not — so with two assignments to `#!python event.debounce` the result depends on which one the bytecode reaches first. Verified: `#!python if event: event.debounce = 200 / else: event.debounce = len(x)` inspects to `#!python 200`, while the same branches written in the other order inspect to `#!python None`. Write one assignment and the question does not arise; with more than one, check the value you get.
 
 The second rule produces the sharpest bug, so it deserves its own call-out:
 
@@ -184,7 +186,7 @@ Note also that the pattern is `#!python ^on[A-Z]\w+` — a lowercase `#!python {
 
 ## Merging handlers
 
-`#!python reactpy.core.events.merge_event_handlers` combines several handlers into one that runs them concurrently in a task group. It is what ReactPy uses internally, and you will rarely call it — but its failure mode is worth knowing, because it is a `#!python ValueError` at build time:
+`#!python reactpy.core.events.merge_event_handlers` combines several handlers into one that runs them concurrently in a task group. It is public API but nothing in the installed package calls it — verified by grepping the whole `reactpy` package, which finds only its own definition — so you will rarely have a reason to call it. Its failure mode is still worth knowing, because it is a `#!python ValueError` at build time:
 
 ```python linenums="0"
 merge_event_handlers([a, b])

@@ -29,15 +29,16 @@ Nothing in ReactPy enforces this. There is no freeze, no copy-on-render, no warn
 `#!python VdomDict` is a light `#!python dict` subclass, and it is strict about its top-level keys — exactly `#!python tagName`, `#!python children`, `#!python attributes`, `#!python eventHandlers`, `#!python inlineJavaScript`, `#!python importSource`:
 
 ```python linenums="0"
-from reactpy.types import VdomDict
+d = html.div({"id": "pre"}, "x")
 
-d = html.div("x")
 d["tagName"] = "section"       # fine
-d["attributes"]["id"] = "a"    # fine
+d["attributes"]["id"] = "a"    # fine — but only because "attributes" exists
 d["children"].append("tail")   # fine
 d["key"] = 1                   # KeyError: 'Invalid key: key'
-d["ref"] = my_ref              # KeyError: 'Invalid key: ref'
+d["ref"] = object()            # KeyError: 'Invalid key: ref'
 ```
+
+Note the first line passes an attributes dict. `#!python html.div("x")` omits the `#!python attributes` key entirely when there are none — verified, it returns `#!python {'children': ['x'], 'tagName': 'div'}` — so `#!python d["attributes"]["id"] = "a"` on such an element raises `#!python KeyError: 'attributes'` before any guard is reached. Use `#!python d.setdefault("attributes", {})["id"] = "a"` when the element may not have had one.
 
 The guard only covers the six top-level names. `#!python d["attributes"]["anything"]` is unvalidated, and so is every nested value — the validation happens at serialization, and only in debug mode.
 

@@ -46,7 +46,7 @@ Three details are load-bearing, all verified in a real browser:
 -   **`#!js componentPath` carries a trailing slash** and must name a component the server knows. `#!js "main.counter/"`, not `#!js "main.counter"`.
 -   **The import must be `#!html <script type="module">`.** The bundle statically imports two sibling chunks; a classic script fails with `#!python SyntaxError: Cannot use import statement outside a module` before anything ReactPy-related runs.
 
-The component itself lives in a Python module the backend can import. Under `#!python ReactPyMiddleware`, `#!python componentPath` is the dotted path you listed in `#!python root_components` plus a slash; under `#!python ReactPy` there is one root and the path is just `#!js "/"`. See [The executors route differently](../reference/client-api.md#the-executors-route-differently).
+The component itself lives in a Python module the backend can import. Under `#!python ReactPyMiddleware`, `#!python componentPath` is the dotted path you listed in `#!python root_components` plus a slash — the middleware matches `#!python ^{path_prefix}(?P<dotted_path>[a-zA-Z0-9_.]+)/$`. Under `#!python ReactPy` there is one root and `#!python componentPath` must be **omitted**: the client builds the URL as `#!js pathPrefix + componentPath` (`static/index.js`) and `ReactPy.match_dispatch_path` compares the result against `#!python dispatcher_path` exactly, so a stray `#!js "/"` produces `#!python /reactpy//`, matches nothing, and is rejected with `#!python NotImplementedError: ReactPy app received unsupported request of type 'websocket'`. See [The executors route differently](../reference/client-api.md#the-executors-route-differently).
 
 !!! warning "Nothing stops you from mounting twice into the same element"
 
@@ -104,7 +104,7 @@ The executors inject a map **only when one with a specific id is absent**:
 if (!document.querySelector("#reactpy-importmap")) { /* inject ReactPy's map */ }
 ```
 
-The trigger is the **id, not the content**. Write your own map and give it that id, or ReactPy adds a second one alongside yours and the browser reports a conflict on the `#!js "react"` rule. See [Import maps](../reference/client-api.md#import-maps) for the three-case table.
+The trigger is the **id, not the content**. Write your own map and give it that id, or ReactPy adds a second one alongside yours and the browser reports a conflict on the `#!js "react"` rule. See [The import map](../reference/client-api.md#the-import-map) for the three-case table.
 
 ReactPy ships a helper that produces exactly that element, so you can decide the framework per page:
 
