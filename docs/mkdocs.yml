@@ -4,7 +4,7 @@ nav:
     - Get Started:
           - Quick Start:
                 - learn/quick-start.md
-                - "Tutorial: Tic-Tac-Toe 🚧": learn/tutorial-tic-tac-toe.md
+                - "Tutorial: Tic-Tac-Toe": learn/tutorial-tic-tac-toe.md
                 - Thinking in React: learn/thinking-in-react.md
           - Installation:
                 - Creating a Standalone React App: learn/creating-a-react-app.md
