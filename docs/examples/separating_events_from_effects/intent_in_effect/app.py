@@ -1,0 +1,67 @@
+"""Business logic parked in an Effect, driven by state that only exists to
+trigger it — which makes a second click silently do nothing.
+
+# start
+"""
+
+from reactpy import component, html, use_effect, use_state
+
+
+def calculate_shipping(city, country):
+    """Plain function: takes what it needs, returns the result."""
+    if not city or not country:
+        return ""
+    return f"{city}, {country} — ${15 + 5}"
+
+
+@component
+def shipping_form():
+    city, set_city = use_state("")
+    country, set_country = use_state("")
+    # state that exists purely to make the Effect run
+    quoted, set_quoted = use_state(False)
+    shipping_info, set_shipping_info = use_state("")
+    clicks, set_clicks = use_state(0)
+
+    def submit(event):
+        set_clicks(clicks + 1)
+        set_quoted(True)
+
+    # the "intent" is buried in an Effect watching a flag a click merely sets
+    def recalculate():
+        if quoted:
+            result = calculate_shipping(city, country)
+            set_shipping_info(result)
+            if result:
+                print(f"quoted {result}")
+
+    use_effect(recalculate, dependencies=[quoted])
+
+    return html.div(
+        html.label(
+            "City: ",
+            html.input(
+                {"value": city, "onChange": lambda e: set_city(e["target"]["value"])}
+            ),
+        ),
+        html.label(
+            "Country: ",
+            html.input(
+                {
+                    "value": country,
+                    "onChange": lambda e: set_country(e["target"]["value"]),
+                }
+            ),
+        ),
+        html.button({"onClick": submit}, "Get quote"),
+        html.p(shipping_info or "—"),
+        f"Clicks: {clicks}",
+    )
+
+
+# end
+
+
+@component
+def app():
+    return shipping_form()

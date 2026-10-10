@@ -2,1883 +2,251 @@
 
 <p class="intro" markdown>
 
-Event handlers only re-run when you perform the same interaction again. Unlike event handlers, Effects re-synchronize if some value they read, like a prop or a state variable, is different from what it was during the last render. Sometimes, you also want a mix of both behaviors: an Effect that re-runs in response to some values but not others. This page will teach you how to do that.
+Event handlers and Effects run at different times and for different reasons. Most Effect bugs are not Effect bugs — they are interaction logic that was put in the wrong place. Move it back and the Effect disappears.
 
 </p>
 
 !!! summary "You will learn"
 
-    -   How to choose between an event handler and an Effect
-    -   Why Effects are reactive, and event handlers are not
-    -   What to do when you want a part of your Effect's code to not be reactive
-    -   What Effect Events are, and how to extract them from your Effects
-    -   How to read the latest props and state from Effects using Effect Events
+    -   Why interaction logic belongs in a handler, not an Effect
+    -   Why handler logic is *not* reactive — and why that is a feature
+    -   How ReactPy picks which render's handler actually runs
+    -   What `#!python use_callback` does in ReactPy, and what it does not buy you
+    -   How to read the newest value from a callback you cannot re-create
 
 ## Choosing between event handlers and Effects
 
-First, let's recap the difference between event handlers and Effects.
+The question is never "which hook?" but **"when should this logic run?"**
 
-Imagine you're implementing a chat room component. Your requirements look like this:
+| | Event handler | Effect |
+| --- | --- | --- |
+| Runs | when the interaction happens | after a render, whenever a dependency changed |
+| Re-runs when | only if the user repeats the interaction | any dependency changes — including one you forgot to list |
+| Right for | submit, click, input, drag, "do this now" | subscribing, polling, syncing to a server |
 
-1. Your component should automatically connect to the selected chat room.
-1. When you click the "Send" button, it should send a message to the chat.
+Both cost one render per click in the examples below — the difference is not performance, it is *what triggers the work*. An Effect that sets state it also lists as a dependency re-triggers itself; measured, that loop reached **86 renders** before it was stopped. A handler has no such feedback path, which is most of why interaction logic belongs there.
 
-Let's say you've already implemented the code for them, but you're not sure where to put it. Should you use event handlers or Effects? Every time you need to answer this question, consider [_why_ the code needs to run.](/learn/synchronizing-with-effects#what-are-effects-and-how-are-they-different-from-events)
+If the logic should run *when the user does the thing*, it goes in the handler. If it should run *whenever a value is a certain way*, it goes in an Effect.
 
-### Event handlers run in response to specific interactions
+### Logic in an Effect, driven by click-only state
 
-From the user's perspective, sending a message should happen _because_ the particular "Send" button was clicked. The user will get rather upset if you send their message at any other time or for any other reason. This is why sending a message should be an event handler. Event handlers let you handle specific interactions:
+Here the shipping quote is computed by an Effect watching a flag that only a click sets:
 
-```js
-function ChatRoom({ roomId }) {
-	const [message, setMessage] = useState("");
-	// ...
-	function handleSendClick() {
-		sendMessage(message);
-	}
-	// ...
-	return (
-		<>
-			<input
-				value={message}
-				onChange={(e) => setMessage(e.target.value)}
-			/>
-			<button on_click={handleSendClick}>Send</button>;
-		</>
-	);
-}
-```
+=== "app.py"
 
-With an event handler, you can be sure that `sendMessage(message)` will _only_ run if the user presses the button.
+    ```python
+    {% include "../../examples/separating_events_from_effects/intent_in_effect/app.py" start="# start" %}
+    ```
 
-### Effects run whenever synchronization is needed
+=== ":material-play: Run"
 
-Recall that you also need to keep the component connected to the chat room. Where does that code go?
+    ```python
+    # TODO
+    ```
 
-The _reason_ to run this code is not some particular interaction. It doesn't matter why or how the user navigated to the chat room screen. Now that they're looking at it and could interact with it, the component needs to stay connected to the selected chat server. Even if the chat room component was the initial screen of your app, and the user has not performed any interactions at all, you would _still_ need to connect. This is why it's an Effect:
+This is where the ReactJS version of this example stops matching reality. Verified behaviour: type a city and country, then press **Get quote** three times.
 
-```js
-function ChatRoom({ roomId }) {
-	// ...
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.connect();
-		return () => {
-			connection.disconnect();
-		};
-	}, [roomId]);
-	// ...
-}
-```
+-   Click 1 logs `#!python quoted Portland, US — $20`.
+-   Clicks 2 and 3 increment the counter and log **nothing at all**.
 
-With this code, you can be sure that there is always an active connection to the currently selected chat server, _regardless_ of the specific interactions performed by the user. Whether the user has only opened your app, selected a different room, or navigated to another screen and back, your Effect ensures that the component will _remain synchronized_ with the currently selected room, and will [re-connect whenever it's necessary.](/learn/lifecycle-of-reactive-effects#why-synchronization-may-need-to-happen-more-than-once)
+`#!python set_quoted(True)` sets the same value every time, so ReactPy sees no change, and the dependency list says nothing re-synchronized. The user gets a button that works once. Nothing about this is obvious from the code — the Effect looks correct.
 
-```js
-import { useState, useEffect } from "react";
-import { createConnection, sendMessage } from "./chat.js";
+### The same logic in the handler
 
-const serverUrl = "https://localhost:1234";
+=== "app.py"
 
-function ChatRoom({ roomId }) {
-	const [message, setMessage] = useState("");
+    ```python
+    {% include "../../examples/separating_events_from_effects/intent_in_handler/app.py" start="# start" %}
+    ```
 
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.connect();
-		return () => connection.disconnect();
-	}, [roomId]);
+=== ":material-play: Run"
 
-	function handleSendClick() {
-		sendMessage(message);
-	}
+    ```python
+    # TODO
+    ```
 
-	return (
-		<>
-			<h1>Welcome to the {roomId} room!</h1>
-			<input
-				value={message}
-				onChange={(e) => setMessage(e.target.value)}
-			/>
-			<button on_click={handleSendClick}>Send</button>
-		</>
-	);
-}
+No trigger state, no Effect, no `#!python use_effect` import. Verified: every click logs `#!python quoted Portland, US — $20`, at the same one-render-per-click cost as a plain button.
 
-export default function App() {
-	const [roomId, setRoomId] = useState("general");
-	const [show, setShow] = useState(false);
-	return (
-		<>
-			<label>
-				Choose the chat room:{" "}
-				<select
-					value={roomId}
-					onChange={(e) => setRoomId(e.target.value)}
-				>
-					<option value="general">general</option>
-					<option value="travel">travel</option>
-					<option value="music">music</option>
-				</select>
-			</label>
-			<button on_click={() => setShow(!show)}>
-				{show ? "Close chat" : "Open chat"}
-			</button>
-			{show && <hr />}
-			{show && <ChatRoom roomId={roomId} />}
-		</>
-	);
-}
-```
+The general rule: **if the only thing that sets a piece of state is an event handler, and the only thing that reads it is an Effect, delete both** and call the function directly.
 
-```js
-export function sendMessage(message) {
-	console.log("🔵 You sent: " + message);
-}
+!!! info "When an Effect really is the right home"
 
-export function createConnection(serverUrl, roomId) {
-	// A real implementation would actually connect to the server
-	return {
-		connect() {
-			console.log(
-				'✅ Connecting to "' + roomId + '" room at ' + serverUrl + "..."
-			);
-		},
-		disconnect() {
-			console.log(
-				'❌ Disconnected from "' + roomId + '" room at ' + serverUrl
-			);
-		},
-	};
-}
-```
-
-```css
-input,
-select {
-	margin-right: 20px;
-}
-```
+    Keep the Effect when the logic must also run for reasons *other than* the interaction: the value changed while the user was idle, the component just mounted, another component changed something. "The user pressed Save" is a handler; "the document is dirty and should be persisted" is an Effect.
 
 ## Reactive values and reactive logic
 
-Intuitively, you could say that event handlers are always triggered "manually", for example by clicking a button. Effects, on the other hand, are "automatic": they run and re-run as often as it's needed to stay synchronized.
-
-There is a more precise way to think about this.
-
-Props, state, and variables declared inside your component's body are called <CodeStep step={2}>reactive values</CodeStep>. In this example, `serverUrl` is not a reactive value, but `roomId` and `message` are. They participate in the rendering data flow:
-
-```js
-const serverUrl = "https://localhost:1234";
-
-function ChatRoom({ roomId }) {
-	const [message, setMessage] = useState("");
-
-	// ...
-}
-```
-
-Reactive values like these can change due to a re-render. For example, the user may edit the `message` or choose a different `roomId` in a dropdown. Event handlers and Effects respond to changes differently:
-
--   **Logic inside event handlers is _not reactive._** It will not run again unless the user performs the same interaction (e.g. a click) again. Event handlers can read reactive values without "reacting" to their changes.
--   **Logic inside Effects is _reactive._** If your Effect reads a reactive value, [you have to specify it as a dependency.](/learn/lifecycle-of-reactive-effects#effects-react-to-reactive-values) Then, if a re-render causes that value to change, React will re-run your Effect's logic with the new value.
-
-Let's revisit the previous example to illustrate this difference.
+Every value in the component body belongs to one render. Logic placed in the component body or in an Effect re-runs when those values change. Logic inside a handler does not — it runs when called, on whatever render produced it.
 
 ### Logic inside event handlers is not reactive
 
-Take a look at this line of code. Should this logic be reactive or not?
-
-```js
-// ...
-sendMessage(message);
-// ...
+```python linenums="0"
+def submit(event):
+    print(f"submitting {city}, {country}")   # reads one render's values
+    send(city, country)
 ```
 
-From the user's perspective, **a change to the `message` does _not_ mean that they want to send a message.** It only means that the user is typing. In other words, the logic that sends a message should not be reactive. It should not run again only because the <CodeStep step={2}>reactive value</CodeStep> has changed. That's why it belongs in the event handler:
-
-```js
-function handleSendClick() {
-	sendMessage(message);
-}
-```
-
-Event handlers aren't reactive, so `sendMessage(message)` will only run when the user clicks the Send button.
+Nothing about this code will re-run when `#!python city` changes. That is not a defect: a click should do the thing once, using the values the user saw when they clicked. Making handler logic "reactive" is what produces double-submits and the click-once bug above.
 
 ### Logic inside Effects is reactive
 
-Now let's return to these lines:
+```python linenums="0"
+def reconnect():
+    open_socket(room)
 
-```js
-// ...
-const connection = createConnection(serverUrl, roomId);
-connection.connect();
-// ...
+use_effect(reconnect, dependencies=[room])
 ```
 
-From the user's perspective, **a change to the `roomId` _does_ mean that they want to connect to a different room.** In other words, the logic for connecting to the room should be reactive. You _want_ these lines of code to "keep up" with the <CodeStep step={2}>reactive value</CodeStep>, and to run again if that value is different. That's why it belongs in an Effect:
-
-```js
-useEffect(() => {
-	const connection = createConnection(serverUrl, roomId);
-	connection.connect();
-	return () => {
-		connection.disconnect();
-	};
-}, [roomId]);
-```
-
-Effects are reactive, so `createConnection(serverUrl, roomId)` and `connection.connect()` will run for every distinct value of `roomId`. Your Effect keeps the chat connection synchronized to the currently selected room.
+This one re-runs on its own whenever `#!python room` changes, including changes you did not expect. That is the whole point of an Effect — and the whole reason logic you *don't* want repeated does not belong there.
 
 ## Extracting non-reactive logic out of Effects
 
-Things get more tricky when you want to mix reactive logic with non-reactive logic.
+Once intent lives in the handler, the shared part is usually an ordinary function. Give it its inputs as parameters and both sides can use it:
 
-For example, imagine that you want to show a notification when the user connects to the chat. You read the current theme (dark or light) from the props so that you can show the notification in the correct color:
+```python linenums="0"
+def calculate_shipping(city, country):
+    if not city or not country:
+        return ""
+    return f"{city}, {country} — ${15 + 5}"
 
-```js
-function ChatRoom({ roomId, theme }) {
-  useEffect(() => {
-    const connection = createConnection(serverUrl, roomId);
-    connection.on('connected', () => {
-      showNotification('Connected!', theme);
-    });
-    connection.connect();
-    // ...
+
+@component
+def shipping_form():
+    ...
+
+    def submit(event):
+        set_shipping_info(calculate_shipping(city, country))
 ```
 
-However, `theme` is a reactive value (it can change as a result of re-rendering), and [every reactive value read by an Effect must be declared as its dependency.](/learn/lifecycle-of-reactive-effects#react-verifies-that-you-specified-every-reactive-value-as-a-dependency) Now you have to specify `theme` as a dependency of your Effect:
+No hook needed. A function that only *reads* values and *returns* something does not need to be a hook, and making it one costs a render.
 
-```js
-function ChatRoom({ roomId, theme }) {
-  useEffect(() => {
-    const connection = createConnection(serverUrl, roomId);
-    connection.on('connected', () => {
-      showNotification('Connected!', theme);
-    });
-    connection.connect();
-    return () => {
-      connection.disconnect()
-    };
-  }, [roomId, theme]); // ✅ All dependencies declared
-  // ...
+ReactPy has no `#!python useEffectEvent`, no `#!python useOptimistic`, and no `#!python useTransition` — verified against `reactpy` 2.0.0b13. That is not a gap to route around with an Effect: the handler-is-not-reactive property that Effect Events exist to give you in React is what you already have here for free.
+
+## Which handler actually runs
+
+ReactPy keeps **one handler per target**, registered when the component renders (`core/layout.py`, `_event_handlers`), and looks it up at dispatch time — when the event is processed, not when it arrived.
+
+Two things follow, both measured.
+
+**A normal click sees current values.** Click after click with the connection settling between them, and the handler always reads the latest state:
+
+```text linenums="0"
+added item, discount=0
+added item, discount=10
+added item, discount=20
 ```
 
-Play with this example and see if you can spot the problem with this user experience:
+**Events that arrive before the next render all see the same snapshot.** Deliver two clicks without a render in between and both run the *same* closure:
 
-```json
-{
-	"dependencies": {
-		"react": "latest",
-		"react-dom": "latest",
-		"react-scripts": "latest",
-		"toastify-js": "1.12.0"
-	},
-	"scripts": {
-		"start": "react-scripts start",
-		"build": "react-scripts build",
-		"test": "react-scripts test --env=jsdom",
-		"eject": "react-scripts eject"
-	}
-}
+=== "app.py"
+
+    ```python
+    {% include "../../examples/separating_events_from_effects/handler_freshness/app.py" start="# start" %}
+    ```
+
+=== ":material-play: Run"
+
+    ```python
+    # TODO
+    ```
+
+Verified with two clicks delivered back-to-back:
+
+| | Handler log | Final list |
+| --- | --- | --- |
+| **Add (naive)** | `#!python 0 items` twice | `#!python item-1@0` — the second click is gone |
+| **Add (safe)** | `#!python 0 items`, then `#!python 1 items` | `#!python item-1@0, item-2@0` |
+
+This is not a hypothetical. On a real connection, events are queued per target (`core/layout.py`, `_process_event_queue`) and a double-click, a fast key repeat, or any latency between the browser and a busy server produces exactly this. The naive `#!python set_items(items + [...])` reads a snapshot; the updater `#!python set_items(lambda current: ...)` is applied against the state at the moment it lands.
+
+So the handler-staleness story in ReactPy is narrower than in React, and it is worth being precise:
+
+-   You generally do **not** need `#!python use_callback` to "get fresh values" in a handler — the handler that runs is the current one.
+-   You **do** need the functional updater form whenever an update depends on the current state and two events can arrive in the same round trip.
+
+### Async handlers
+
+A handler may be `#!python async def`, and it may set state after an `#!python await`:
+
+```python linenums="0"
+async def submit(event):
+    set_status("saving")
+    result = await save(document)
+    set_status("saved")          # works — the render happens after the await
 ```
 
-```js
-import { useState, useEffect } from "react";
-import { createConnection, sendMessage } from "./chat.js";
-import { showNotification } from "./notifications.js";
+Verified: the page shows `#!python status=saving` immediately, then `#!python status=saved` once the await resolves — two renders, both after the click.
 
-const serverUrl = "https://localhost:1234";
+But if the component unmounts during the `#!python await`, the update is **discarded** and the only trace is a debug line — `#!python Did not render component with model state ID ... - component already unmounted`. Nothing errors, nothing warns, and the user who navigated away is unaffected. Do not treat "the setter did not raise" as evidence the write landed; if it matters, assert it in a test that keeps the component mounted.
 
-function ChatRoom({ roomId, theme }) {
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.on("connected", () => {
-			showNotification("Connected!", theme);
-		});
-		connection.connect();
-		return () => connection.disconnect();
-	}, [roomId, theme]);
+## Keeping a callback's identity stable
 
-	return <h1>Welcome to the {roomId} room!</h1>;
-}
+`#!python use_callback` exists and memoizes through `#!python use_memo`, so it shares the dependency semantics described on [Lifecycle of Reactive Effects](./lifecycle-of-reactive-effects.md) — `#!python strictly_equal`, not `#!python id`.
 
-export default function App() {
-	const [roomId, setRoomId] = useState("general");
-	const [isDark, setIsDark] = useState(false);
-	return (
-		<>
-			<label>
-				Choose the chat room:{" "}
-				<select
-					value={roomId}
-					onChange={(e) => setRoomId(e.target.value)}
-				>
-					<option value="general">general</option>
-					<option value="travel">travel</option>
-					<option value="music">music</option>
-				</select>
-			</label>
-			<label>
-				<input
-					type="checkbox"
-					checked={isDark}
-					onChange={(e) => setIsDark(e.target.checked)}
-				/>
-				Use dark theme
-			</label>
-			<hr />
-			<ChatRoom roomId={roomId} theme={isDark ? "dark" : "light"} />
-		</>
-	);
-}
-```
+=== "app.py"
 
-```js
-export function createConnection(serverUrl, roomId) {
-	// A real implementation would actually connect to the server
-	let connectedCallback;
-	let timeout;
-	return {
-		connect() {
-			timeout = setTimeout(() => {
-				if (connectedCallback) {
-					connectedCallback();
-				}
-			}, 100);
-		},
-		on(event, callback) {
-			if (connectedCallback) {
-				throw Error("Cannot add the handler twice.");
-			}
-			if (event !== "connected") {
-				throw Error('Only "connected" event is supported.');
-			}
-			connectedCallback = callback;
-		},
-		disconnect() {
-			clearTimeout(timeout);
-		},
-	};
-}
-```
+    ```python
+    {% include "../../examples/separating_events_from_effects/callback_identity/app.py" start="# start" %}
+    ```
 
-```js
-import Toastify from "toastify-js";
-import "toastify-js/src/toastify.css";
+=== ":material-play: Run"
 
-export function showNotification(message, theme) {
-	Toastify({
-		text: message,
-		duration: 2000,
-		gravity: "top",
-		position: "right",
-		style: {
-			background: theme === "dark" ? "black" : "white",
-			color: theme === "dark" ? "white" : "black",
-		},
-	}).showToast();
-}
-```
+    ```python
+    # TODO
+    ```
 
-```css
-label {
-	display: block;
-	margin-top: 10px;
-}
-```
+Verified: pressing **Theme** (not a dependency) reports `#!python handler reused on this render`; pressing **Count** (a dependency) reports `#!python handler recreated`.
 
-When the `roomId` changes, the chat re-connects as you would expect. But since `theme` is also a dependency, the chat _also_ re-connects every time you switch between the dark and the light theme. That's not great!
+Be clear about what that buys you. ReactPy has **no render bailout**: there is no `#!python memo` (absent from both `reactpy` and `reactpy.reactjs`), and a child re-renders whenever its parent does. Measured — a child whose props and handler never changed ran its body **4 times** across one mount and three parent re-renders. So a stable callback does not make anything re-render less. What it does is keep a value out of an Effect's or `#!python use_memo`'s dependency list without re-triggering it.
 
-In other words, you _don't_ want this line to be reactive, even though it is inside an Effect (which is reactive):
+There is no `#!python useEvent`, so the nearest equivalent to React's Effect Event — a stable callable that always reads the newest values — is a ref updated during render:
 
-```js
-// ...
-showNotification("Connected!", theme);
-// ...
-```
+=== "app.py"
 
-You need a way to separate this non-reactive logic from the reactive Effect around it.
+    ```python
+    {% include "../../examples/separating_events_from_effects/latest_value_ref/app.py" start="# start" %}
+    ```
 
-### Declaring an Effect Event
+=== ":material-play: Run"
 
-<Wip>
+    ```python
+    # TODO
+    ```
 
-This section describes an **experimental API that has not yet been released** in a stable version of React.
+Verified: **Apply coupon** logs the value currently in the box even though the callback is pinned to `#!python dependencies=[]` and is never re-created.
 
-</Wip>
+!!! warning "A callback pinned to a local function never updates"
 
-Use a special Hook called [`useEffectEvent`](/reference/react/experimental_useEffectEvent) to extract this non-reactive logic out of your Effect:
+    Same trap as Effects, and it is worse here because the callback is *supposed* to be stable. `#!python dependencies=[describe]`, where `#!python describe` is a local `#!python def`, compares code-equal forever:
 
-```js
-import { useEffect, useEffectEvent } from 'react';
+    === "app.py"
 
-function ChatRoom({ roomId, theme }) {
-  const onConnected = useEffectEvent(() => {
-    showNotification('Connected!', theme);
-  });
-  // ...
-```
+        ```python
+        {% include "../../examples/separating_events_from_effects/callback_frozen_dep/app.py" start="# start" %}
+        ```
 
-Here, `onConnected` is called an _Effect Event._ It's a part of your Effect logic, but it behaves a lot more like an event handler. The logic inside it is not reactive, and it always "sees" the latest values of your props and state.
+    === ":material-play: Run"
 
-Now you can call the `onConnected` Effect Event from inside your Effect:
+        ```python
+        # TODO
+        ```
 
-```js
-function ChatRoom({ roomId, theme }) {
-  const onConnected = useEffectEvent(() => {
-    showNotification('Connected!', theme);
-  });
+    Verified: type `#!python shoes`, press **Run**, type `#!python shoes2`, press **Run** again. The page shows the new query both times; the console says `#!python handler sees query=''` both times. The counter keeps counting (`#!python Run (2)`), which is what makes this so easy to miss — the callback looks alive while reading a snapshot from mount.
 
-  useEffect(() => {
-    const connection = createConnection(serverUrl, roomId);
-    connection.on('connected', () => {
-      onConnected();
-    });
-    connection.connect();
-    return () => connection.disconnect();
-  }, [roomId]); // ✅ All dependencies declared
-  // ...
-```
+    Depend on the scalar values the callback actually reads, and never on a function defined inside the component.
 
-This solves the problem. Note that you had to _remove_ `onConnected` from the list of your Effect's dependencies. **Effect Events are not reactive and must be omitted from dependencies.**
+## Recap
 
-Verify that the new behavior works as you would expect:
+-   Ask *when* the logic should run. Interaction → handler. Synchronization → Effect.
+-   State that only a handler sets and only an Effect reads is a smell: call the function from the handler and delete both. Verified symptom: the button works once.
+-   Handler logic is deliberately not reactive; that is why you do not need React's Effect Events here.
+-   ReactPy stores one handler per target and looks it up at dispatch, so a normal click sees current values — but events delivered before the next render share one snapshot. Use the functional updater for read-modify-write.
+-   An async handler may set state after `#!python await`; after unmount that update is silently dropped.
+-   `#!python use_callback` pins identity, not freshness, and identity buys you nothing for render cost in ReactPy. Reach for a render-updated ref when you need both.
+-   Never list a locally defined function as a dependency of a callback or Effect — it compares code-equal and freezes the closure.
 
-```json
-{
-	"dependencies": {
-		"react": "experimental",
-		"react-dom": "experimental",
-		"react-scripts": "latest",
-		"toastify-js": "1.12.0"
-	},
-	"scripts": {
-		"start": "react-scripts start",
-		"build": "react-scripts build",
-		"test": "react-scripts test --env=jsdom",
-		"eject": "react-scripts eject"
-	}
-}
-```
+## Related
 
-```js
-import { useState, useEffect } from "react";
-import { experimental_useEffectEvent as useEffectEvent } from "react";
-import { createConnection, sendMessage } from "./chat.js";
-import { showNotification } from "./notifications.js";
-
-const serverUrl = "https://localhost:1234";
-
-function ChatRoom({ roomId, theme }) {
-	const onConnected = useEffectEvent(() => {
-		showNotification("Connected!", theme);
-	});
-
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.on("connected", () => {
-			onConnected();
-		});
-		connection.connect();
-		return () => connection.disconnect();
-	}, [roomId]);
-
-	return <h1>Welcome to the {roomId} room!</h1>;
-}
-
-export default function App() {
-	const [roomId, setRoomId] = useState("general");
-	const [isDark, setIsDark] = useState(false);
-	return (
-		<>
-			<label>
-				Choose the chat room:{" "}
-				<select
-					value={roomId}
-					onChange={(e) => setRoomId(e.target.value)}
-				>
-					<option value="general">general</option>
-					<option value="travel">travel</option>
-					<option value="music">music</option>
-				</select>
-			</label>
-			<label>
-				<input
-					type="checkbox"
-					checked={isDark}
-					onChange={(e) => setIsDark(e.target.checked)}
-				/>
-				Use dark theme
-			</label>
-			<hr />
-			<ChatRoom roomId={roomId} theme={isDark ? "dark" : "light"} />
-		</>
-	);
-}
-```
-
-```js
-export function createConnection(serverUrl, roomId) {
-	// A real implementation would actually connect to the server
-	let connectedCallback;
-	let timeout;
-	return {
-		connect() {
-			timeout = setTimeout(() => {
-				if (connectedCallback) {
-					connectedCallback();
-				}
-			}, 100);
-		},
-		on(event, callback) {
-			if (connectedCallback) {
-				throw Error("Cannot add the handler twice.");
-			}
-			if (event !== "connected") {
-				throw Error('Only "connected" event is supported.');
-			}
-			connectedCallback = callback;
-		},
-		disconnect() {
-			clearTimeout(timeout);
-		},
-	};
-}
-```
-
-```js
-import Toastify from "toastify-js";
-import "toastify-js/src/toastify.css";
-
-export function showNotification(message, theme) {
-	Toastify({
-		text: message,
-		duration: 2000,
-		gravity: "top",
-		position: "right",
-		style: {
-			background: theme === "dark" ? "black" : "white",
-			color: theme === "dark" ? "white" : "black",
-		},
-	}).showToast();
-}
-```
-
-```css
-label {
-	display: block;
-	margin-top: 10px;
-}
-```
-
-You can think of Effect Events as being very similar to event handlers. The main difference is that event handlers run in response to a user interactions, whereas Effect Events are triggered by you from Effects. Effect Events let you "break the chain" between the reactivity of Effects and code that should not be reactive.
-
-### Reading latest props and state with Effect Events
-
-<Wip>
-
-This section describes an **experimental API that has not yet been released** in a stable version of React.
-
-</Wip>
-
-Effect Events let you fix many patterns where you might be tempted to suppress the dependency linter.
-
-For example, say you have an Effect to log the page visits:
-
-```js
-function Page() {
-	useEffect(() => {
-		logVisit();
-	}, []);
-	// ...
-}
-```
-
-Later, you add multiple routes to your site. Now your `Page` component receives a `url` prop with the current path. You want to pass the `url` as a part of your `logVisit` call, but the dependency linter complains:
-
-```js
-function Page({ url }) {
-	useEffect(() => {
-		logVisit(url);
-	}, []); // 🔴 React Hook useEffect has a missing dependency: 'url'
-	// ...
-}
-```
-
-Think about what you want the code to do. You _want_ to log a separate visit for different URLs since each URL represents a different page. In other words, this `logVisit` call _should_ be reactive with respect to the `url`. This is why, in this case, it makes sense to follow the dependency linter, and add `url` as a dependency:
-
-```js
-function Page({ url }) {
-	useEffect(() => {
-		logVisit(url);
-	}, [url]); // ✅ All dependencies declared
-	// ...
-}
-```
-
-Now let's say you want to include the number of items in the shopping cart together with every page visit:
-
-```js
-function Page({ url }) {
-	const { items } = useContext(ShoppingCartContext);
-	const numberOfItems = items.length;
-
-	useEffect(() => {
-		logVisit(url, numberOfItems);
-	}, [url]); // 🔴 React Hook useEffect has a missing dependency: 'numberOfItems'
-	// ...
-}
-```
-
-You used `numberOfItems` inside the Effect, so the linter asks you to add it as a dependency. However, you _don't_ want the `logVisit` call to be reactive with respect to `numberOfItems`. If the user puts something into the shopping cart, and the `numberOfItems` changes, this _does not mean_ that the user visited the page again. In other words, _visiting the page_ is, in some sense, an "event". It happens at a precise moment in time.
-
-Split the code in two parts:
-
-```js
-function Page({ url }) {
-	const { items } = useContext(ShoppingCartContext);
-	const numberOfItems = items.length;
-
-	const onVisit = useEffectEvent((visitedUrl) => {
-		logVisit(visitedUrl, numberOfItems);
-	});
-
-	useEffect(() => {
-		onVisit(url);
-	}, [url]); // ✅ All dependencies declared
-	// ...
-}
-```
-
-Here, `onVisit` is an Effect Event. The code inside it isn't reactive. This is why you can use `numberOfItems` (or any other reactive value!) without worrying that it will cause the surrounding code to re-execute on changes.
-
-On the other hand, the Effect itself remains reactive. Code inside the Effect uses the `url` prop, so the Effect will re-run after every re-render with a different `url`. This, in turn, will call the `onVisit` Effect Event.
-
-As a result, you will call `logVisit` for every change to the `url`, and always read the latest `numberOfItems`. However, if `numberOfItems` changes on its own, this will not cause any of the code to re-run.
-
-<Note>
-
-You might be wondering if you could call `onVisit()` with no arguments, and read the `url` inside it:
-
-```js
-const onVisit = useEffectEvent(() => {
-	logVisit(url, numberOfItems);
-});
-
-useEffect(() => {
-	onVisit();
-}, [url]);
-```
-
-This would work, but it's better to pass this `url` to the Effect Event explicitly. **By passing `url` as an argument to your Effect Event, you are saying that visiting a page with a different `url` constitutes a separate "event" from the user's perspective.** The `visitedUrl` is a _part_ of the "event" that happened:
-
-```js
-const onVisit = useEffectEvent((visitedUrl) => {
-	logVisit(visitedUrl, numberOfItems);
-});
-
-useEffect(() => {
-	onVisit(url);
-}, [url]);
-```
-
-Since your Effect Event explicitly "asks" for the `visitedUrl`, now you can't accidentally remove `url` from the Effect's dependencies. If you remove the `url` dependency (causing distinct page visits to be counted as one), the linter will warn you about it. You want `onVisit` to be reactive with regards to the `url`, so instead of reading the `url` inside (where it wouldn't be reactive), you pass it _from_ your Effect.
-
-This becomes especially important if there is some asynchronous logic inside the Effect:
-
-```js
-const onVisit = useEffectEvent((visitedUrl) => {
-	logVisit(visitedUrl, numberOfItems);
-});
-
-useEffect(() => {
-	setTimeout(() => {
-		onVisit(url);
-	}, 5000); // Delay logging visits
-}, [url]);
-```
-
-Here, `url` inside `onVisit` corresponds to the _latest_ `url` (which could have already changed), but `visitedUrl` corresponds to the `url` that originally caused this Effect (and this `onVisit` call) to run.
-
-</Note>
-
-<DeepDive>
-
-#### Is it okay to suppress the dependency linter instead?
-
-In the existing codebases, you may sometimes see the lint rule suppressed like this:
-
-```js
-function Page({ url }) {
-	const { items } = useContext(ShoppingCartContext);
-	const numberOfItems = items.length;
-
-	useEffect(() => {
-		logVisit(url, numberOfItems);
-		// 🔴 Avoid suppressing the linter like this:
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [url]);
-	// ...
-}
-```
-
-After `useEffectEvent` becomes a stable part of React, we recommend **never suppressing the linter**.
-
-The first downside of suppressing the rule is that React will no longer warn you when your Effect needs to "react" to a new reactive dependency you've introduced to your code. In the earlier example, you added `url` to the dependencies _because_ React reminded you to do it. You will no longer get such reminders for any future edits to that Effect if you disable the linter. This leads to bugs.
-
-Here is an example of a confusing bug caused by suppressing the linter. In this example, the `handleMove` function is supposed to read the current `canMove` state variable value in order to decide whether the dot should follow the cursor. However, `canMove` is always `true` inside `handleMove`.
-
-Can you see why?
-
-```js
-import { useState, useEffect } from "react";
-
-export default function App() {
-	const [position, setPosition] = useState({ x: 0, y: 0 });
-	const [canMove, setCanMove] = useState(true);
-
-	function handleMove(e) {
-		if (canMove) {
-			setPosition({ x: e.clientX, y: e.clientY });
-		}
-	}
-
-	useEffect(() => {
-		window.addEventListener("pointermove", handleMove);
-		return () => window.removeEventListener("pointermove", handleMove);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
-
-	return (
-		<>
-			<label>
-				<input
-					type="checkbox"
-					checked={canMove}
-					onChange={(e) => setCanMove(e.target.checked)}
-				/>
-				The dot is allowed to move
-			</label>
-			<hr />
-			<div
-				style={{
-					position: "absolute",
-					backgroundColor: "pink",
-					borderRadius: "50%",
-					opacity: 0.6,
-					transform: `translate(${position.x}px, ${position.y}px)`,
-					pointerEvents: "none",
-					left: -20,
-					top: -20,
-					width: 40,
-					height: 40,
-				}}
-			/>
-		</>
-	);
-}
-```
-
-```css
-body {
-	height: 200px;
-}
-```
-
-The problem with this code is in suppressing the dependency linter. If you remove the suppression, you'll see that this Effect should depend on the `handleMove` function. This makes sense: `handleMove` is declared inside the component body, which makes it a reactive value. Every reactive value must be specified as a dependency, or it can potentially get stale over time!
-
-The author of the original code has "lied" to React by saying that the Effect does not depend (`[]`) on any reactive values. This is why React did not re-synchronize the Effect after `canMove` has changed (and `handleMove` with it). Because React did not re-synchronize the Effect, the `handleMove` attached as a listener is the `handleMove` function created during the initial render. During the initial render, `canMove` was `true`, which is why `handleMove` from the initial render will forever see that value.
-
-**If you never suppress the linter, you will never see problems with stale values.**
-
-With `useEffectEvent`, there is no need to "lie" to the linter, and the code works as you would expect:
-
-```json
-{
-	"dependencies": {
-		"react": "experimental",
-		"react-dom": "experimental",
-		"react-scripts": "latest"
-	},
-	"scripts": {
-		"start": "react-scripts start",
-		"build": "react-scripts build",
-		"test": "react-scripts test --env=jsdom",
-		"eject": "react-scripts eject"
-	}
-}
-```
-
-```js
-import { useState, useEffect } from "react";
-import { experimental_useEffectEvent as useEffectEvent } from "react";
-
-export default function App() {
-	const [position, setPosition] = useState({ x: 0, y: 0 });
-	const [canMove, setCanMove] = useState(true);
-
-	const onMove = useEffectEvent((e) => {
-		if (canMove) {
-			setPosition({ x: e.clientX, y: e.clientY });
-		}
-	});
-
-	useEffect(() => {
-		window.addEventListener("pointermove", onMove);
-		return () => window.removeEventListener("pointermove", onMove);
-	}, []);
-
-	return (
-		<>
-			<label>
-				<input
-					type="checkbox"
-					checked={canMove}
-					onChange={(e) => setCanMove(e.target.checked)}
-				/>
-				The dot is allowed to move
-			</label>
-			<hr />
-			<div
-				style={{
-					position: "absolute",
-					backgroundColor: "pink",
-					borderRadius: "50%",
-					opacity: 0.6,
-					transform: `translate(${position.x}px, ${position.y}px)`,
-					pointerEvents: "none",
-					left: -20,
-					top: -20,
-					width: 40,
-					height: 40,
-				}}
-			/>
-		</>
-	);
-}
-```
-
-```css
-body {
-	height: 200px;
-}
-```
-
-This doesn't mean that `useEffectEvent` is _always_ the correct solution. You should only apply it to the lines of code that you don't want to be reactive. In the above sandbox, you didn't want the Effect's code to be reactive with regards to `canMove`. That's why it made sense to extract an Effect Event.
-
-Read [Removing Effect Dependencies](/learn/removing-effect-dependencies) for other correct alternatives to suppressing the linter.
-
-</DeepDive>
-
-### Limitations of Effect Events
-
-<Wip>
-
-This section describes an **experimental API that has not yet been released** in a stable version of React.
-
-</Wip>
-
-Effect Events are very limited in how you can use them:
-
--   **Only call them from inside Effects.**
--   **Never pass them to other components or Hooks.**
-
-For example, don't declare and pass an Effect Event like this:
-
-```js
-function Timer() {
-	const [count, setCount] = useState(0);
-
-	const onTick = useEffectEvent(() => {
-		setCount(count + 1);
-	});
-
-	useTimer(onTick, 1000); // 🔴 Avoid: Passing Effect Events
-
-	return <h1>{count}</h1>;
-}
-
-function useTimer(callback, delay) {
-	useEffect(() => {
-		const id = setInterval(() => {
-			callback();
-		}, delay);
-		return () => {
-			clearInterval(id);
-		};
-	}, [delay, callback]); // Need to specify "callback" in dependencies
-}
-```
-
-Instead, always declare Effect Events directly next to the Effects that use them:
-
-```js
-function Timer() {
-	const [count, setCount] = useState(0);
-	useTimer(() => {
-		setCount(count + 1);
-	}, 1000);
-	return <h1>{count}</h1>;
-}
-
-function useTimer(callback, delay) {
-	const onTick = useEffectEvent(() => {
-		callback();
-	});
-
-	useEffect(() => {
-		const id = setInterval(() => {
-			onTick(); // ✅ Good: Only called locally inside an Effect
-		}, delay);
-		return () => {
-			clearInterval(id);
-		};
-	}, [delay]); // No need to specify "onTick" (an Effect Event) as a dependency
-}
-```
-
-Effect Events are non-reactive "pieces" of your Effect code. They should be next to the Effect using them.
-
-<Recap>
-
--   Event handlers run in response to specific interactions.
--   Effects run whenever synchronization is needed.
--   Logic inside event handlers is not reactive.
--   Logic inside Effects is reactive.
--   You can move non-reactive logic from Effects into Effect Events.
--   Only call Effect Events from inside Effects.
--   Don't pass Effect Events to other components or Hooks.
-
-</Recap>
-
-<Challenges>
-
-#### Fix a variable that doesn't update
-
-This `Timer` component keeps a `count` state variable which increases every second. The value by which it's increasing is stored in the `increment` state variable. You can control the `increment` variable with the plus and minus buttons.
-
-However, no matter how many times you click the plus button, the counter is still incremented by one every second. What's wrong with this code? Why is `increment` always equal to `1` inside the Effect's code? Find the mistake and fix it.
-
-<Hint>
-
-To fix this code, it's enough to follow the rules.
-
-</Hint>
-
-```js
-import { useState, useEffect } from "react";
-
-export default function Timer() {
-	const [count, setCount] = useState(0);
-	const [increment, setIncrement] = useState(1);
-
-	useEffect(() => {
-		const id = setInterval(() => {
-			setCount((c) => c + increment);
-		}, 1000);
-		return () => {
-			clearInterval(id);
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
-
-	return (
-		<>
-			<h1>
-				Counter: {count}
-				<button on_click={() => setCount(0)}>Reset</button>
-			</h1>
-			<hr />
-			<p>
-				Every second, increment by:
-				<button
-					disabled={increment === 0}
-					on_click={() => {
-						setIncrement((i) => i - 1);
-					}}
-				>
-					–
-				</button>
-				<b>{increment}</b>
-				<button
-					on_click={() => {
-						setIncrement((i) => i + 1);
-					}}
-				>
-					+
-				</button>
-			</p>
-		</>
-	);
-}
-```
-
-```css
-button {
-	margin: 10px;
-}
-```
-
-<Solution>
-
-As usual, when you're looking for bugs in Effects, start by searching for linter suppressions.
-
-If you remove the suppression comment, React will tell you that this Effect's code depends on `increment`, but you "lied" to React by claiming that this Effect does not depend on any reactive values (`[]`). Add `increment` to the dependency array:
-
-```js
-import { useState, useEffect } from "react";
-
-export default function Timer() {
-	const [count, setCount] = useState(0);
-	const [increment, setIncrement] = useState(1);
-
-	useEffect(() => {
-		const id = setInterval(() => {
-			setCount((c) => c + increment);
-		}, 1000);
-		return () => {
-			clearInterval(id);
-		};
-	}, [increment]);
-
-	return (
-		<>
-			<h1>
-				Counter: {count}
-				<button on_click={() => setCount(0)}>Reset</button>
-			</h1>
-			<hr />
-			<p>
-				Every second, increment by:
-				<button
-					disabled={increment === 0}
-					on_click={() => {
-						setIncrement((i) => i - 1);
-					}}
-				>
-					–
-				</button>
-				<b>{increment}</b>
-				<button
-					on_click={() => {
-						setIncrement((i) => i + 1);
-					}}
-				>
-					+
-				</button>
-			</p>
-		</>
-	);
-}
-```
-
-```css
-button {
-	margin: 10px;
-}
-```
-
-Now, when `increment` changes, React will re-synchronize your Effect, which will restart the interval.
-
-</Solution>
-
-#### Fix a freezing counter
-
-This `Timer` component keeps a `count` state variable which increases every second. The value by which it's increasing is stored in the `increment` state variable, which you can control it with the plus and minus buttons. For example, try pressing the plus button nine times, and notice that the `count` now increases each second by ten rather than by one.
-
-There is a small issue with this user interface. You might notice that if you keep pressing the plus or minus buttons faster than once per second, the timer itself seems to pause. It only resumes after a second passes since the last time you've pressed either button. Find why this is happening, and fix the issue so that the timer ticks on _every_ second without interruptions.
-
-<Hint>
-
-It seems like the Effect which sets up the timer "reacts" to the `increment` value. Does the line that uses the current `increment` value in order to call `setCount` really need to be reactive?
-
-</Hint>
-
-```json
-{
-	"dependencies": {
-		"react": "experimental",
-		"react-dom": "experimental",
-		"react-scripts": "latest"
-	},
-	"scripts": {
-		"start": "react-scripts start",
-		"build": "react-scripts build",
-		"test": "react-scripts test --env=jsdom",
-		"eject": "react-scripts eject"
-	}
-}
-```
-
-```js
-import { useState, useEffect } from "react";
-import { experimental_useEffectEvent as useEffectEvent } from "react";
-
-export default function Timer() {
-	const [count, setCount] = useState(0);
-	const [increment, setIncrement] = useState(1);
-
-	useEffect(() => {
-		const id = setInterval(() => {
-			setCount((c) => c + increment);
-		}, 1000);
-		return () => {
-			clearInterval(id);
-		};
-	}, [increment]);
-
-	return (
-		<>
-			<h1>
-				Counter: {count}
-				<button on_click={() => setCount(0)}>Reset</button>
-			</h1>
-			<hr />
-			<p>
-				Every second, increment by:
-				<button
-					disabled={increment === 0}
-					on_click={() => {
-						setIncrement((i) => i - 1);
-					}}
-				>
-					–
-				</button>
-				<b>{increment}</b>
-				<button
-					on_click={() => {
-						setIncrement((i) => i + 1);
-					}}
-				>
-					+
-				</button>
-			</p>
-		</>
-	);
-}
-```
-
-```css
-button {
-	margin: 10px;
-}
-```
-
-<Solution>
-
-The issue is that the code inside the Effect uses the `increment` state variable. Since it's a dependency of your Effect, every change to `increment` causes the Effect to re-synchronize, which causes the interval to clear. If you keep clearing the interval every time before it has a chance to fire, it will appear as if the timer has stalled.
-
-To solve the issue, extract an `onTick` Effect Event from the Effect:
-
-```json
-{
-	"dependencies": {
-		"react": "experimental",
-		"react-dom": "experimental",
-		"react-scripts": "latest"
-	},
-	"scripts": {
-		"start": "react-scripts start",
-		"build": "react-scripts build",
-		"test": "react-scripts test --env=jsdom",
-		"eject": "react-scripts eject"
-	}
-}
-```
-
-```js
-import { useState, useEffect } from "react";
-import { experimental_useEffectEvent as useEffectEvent } from "react";
-
-export default function Timer() {
-	const [count, setCount] = useState(0);
-	const [increment, setIncrement] = useState(1);
-
-	const onTick = useEffectEvent(() => {
-		setCount((c) => c + increment);
-	});
-
-	useEffect(() => {
-		const id = setInterval(() => {
-			onTick();
-		}, 1000);
-		return () => {
-			clearInterval(id);
-		};
-	}, []);
-
-	return (
-		<>
-			<h1>
-				Counter: {count}
-				<button on_click={() => setCount(0)}>Reset</button>
-			</h1>
-			<hr />
-			<p>
-				Every second, increment by:
-				<button
-					disabled={increment === 0}
-					on_click={() => {
-						setIncrement((i) => i - 1);
-					}}
-				>
-					–
-				</button>
-				<b>{increment}</b>
-				<button
-					on_click={() => {
-						setIncrement((i) => i + 1);
-					}}
-				>
-					+
-				</button>
-			</p>
-		</>
-	);
-}
-```
-
-```css
-button {
-	margin: 10px;
-}
-```
-
-Since `onTick` is an Effect Event, the code inside it isn't reactive. The change to `increment` does not trigger any Effects.
-
-</Solution>
-
-#### Fix a non-adjustable delay
-
-In this example, you can customize the interval delay. It's stored in a `delay` state variable which is updated by two buttons. However, even if you press the "plus 100 ms" button until the `delay` is 1000 milliseconds (that is, a second), you'll notice that the timer still increments very fast (every 100 ms). It's as if your changes to the `delay` are ignored. Find and fix the bug.
-
-<Hint>
-
-Code inside Effect Events is not reactive. Are there cases in which you would _want_ the `setInterval` call to re-run?
-
-</Hint>
-
-```json
-{
-	"dependencies": {
-		"react": "experimental",
-		"react-dom": "experimental",
-		"react-scripts": "latest"
-	},
-	"scripts": {
-		"start": "react-scripts start",
-		"build": "react-scripts build",
-		"test": "react-scripts test --env=jsdom",
-		"eject": "react-scripts eject"
-	}
-}
-```
-
-```js
-import { useState, useEffect } from "react";
-import { experimental_useEffectEvent as useEffectEvent } from "react";
-
-export default function Timer() {
-	const [count, setCount] = useState(0);
-	const [increment, setIncrement] = useState(1);
-	const [delay, setDelay] = useState(100);
-
-	const onTick = useEffectEvent(() => {
-		setCount((c) => c + increment);
-	});
-
-	const onMount = useEffectEvent(() => {
-		return setInterval(() => {
-			onTick();
-		}, delay);
-	});
-
-	useEffect(() => {
-		const id = onMount();
-		return () => {
-			clearInterval(id);
-		};
-	}, []);
-
-	return (
-		<>
-			<h1>
-				Counter: {count}
-				<button on_click={() => setCount(0)}>Reset</button>
-			</h1>
-			<hr />
-			<p>
-				Increment by:
-				<button
-					disabled={increment === 0}
-					on_click={() => {
-						setIncrement((i) => i - 1);
-					}}
-				>
-					–
-				</button>
-				<b>{increment}</b>
-				<button
-					on_click={() => {
-						setIncrement((i) => i + 1);
-					}}
-				>
-					+
-				</button>
-			</p>
-			<p>
-				Increment delay:
-				<button
-					disabled={delay === 100}
-					on_click={() => {
-						setDelay((d) => d - 100);
-					}}
-				>
-					–100 ms
-				</button>
-				<b>{delay} ms</b>
-				<button
-					on_click={() => {
-						setDelay((d) => d + 100);
-					}}
-				>
-					+100 ms
-				</button>
-			</p>
-		</>
-	);
-}
-```
-
-```css
-button {
-	margin: 10px;
-}
-```
-
-<Solution>
-
-The problem with the above example is that it extracted an Effect Event called `onMount` without considering what the code should actually be doing. You should only extract Effect Events for a specific reason: when you want to make a part of your code non-reactive. However, the `setInterval` call _should_ be reactive with respect to the `delay` state variable. If the `delay` changes, you want to set up the interval from scratch! To fix this code, pull all the reactive code back inside the Effect:
-
-```json
-{
-	"dependencies": {
-		"react": "experimental",
-		"react-dom": "experimental",
-		"react-scripts": "latest"
-	},
-	"scripts": {
-		"start": "react-scripts start",
-		"build": "react-scripts build",
-		"test": "react-scripts test --env=jsdom",
-		"eject": "react-scripts eject"
-	}
-}
-```
-
-```js
-import { useState, useEffect } from "react";
-import { experimental_useEffectEvent as useEffectEvent } from "react";
-
-export default function Timer() {
-	const [count, setCount] = useState(0);
-	const [increment, setIncrement] = useState(1);
-	const [delay, setDelay] = useState(100);
-
-	const onTick = useEffectEvent(() => {
-		setCount((c) => c + increment);
-	});
-
-	useEffect(() => {
-		const id = setInterval(() => {
-			onTick();
-		}, delay);
-		return () => {
-			clearInterval(id);
-		};
-	}, [delay]);
-
-	return (
-		<>
-			<h1>
-				Counter: {count}
-				<button on_click={() => setCount(0)}>Reset</button>
-			</h1>
-			<hr />
-			<p>
-				Increment by:
-				<button
-					disabled={increment === 0}
-					on_click={() => {
-						setIncrement((i) => i - 1);
-					}}
-				>
-					–
-				</button>
-				<b>{increment}</b>
-				<button
-					on_click={() => {
-						setIncrement((i) => i + 1);
-					}}
-				>
-					+
-				</button>
-			</p>
-			<p>
-				Increment delay:
-				<button
-					disabled={delay === 100}
-					on_click={() => {
-						setDelay((d) => d - 100);
-					}}
-				>
-					–100 ms
-				</button>
-				<b>{delay} ms</b>
-				<button
-					on_click={() => {
-						setDelay((d) => d + 100);
-					}}
-				>
-					+100 ms
-				</button>
-			</p>
-		</>
-	);
-}
-```
-
-```css
-button {
-	margin: 10px;
-}
-```
-
-In general, you should be suspicious of functions like `onMount` that focus on the _timing_ rather than the _purpose_ of a piece of code. It may feel "more descriptive" at first but it obscures your intent. As a rule of thumb, Effect Events should correspond to something that happens from the _user's_ perspective. For example, `onMessage`, `onTick`, `onVisit`, or `onConnected` are good Effect Event names. Code inside them would likely not need to be reactive. On the other hand, `onMount`, `onUpdate`, `onUnmount`, or `onAfterRender` are so generic that it's easy to accidentally put code that _should_ be reactive into them. This is why you should name your Effect Events after _what the user thinks has happened,_ not when some code happened to run.
-
-</Solution>
-
-#### Fix a delayed notification
-
-When you join a chat room, this component shows a notification. However, it doesn't show the notification immediately. Instead, the notification is artificially delayed by two seconds so that the user has a chance to look around the UI.
-
-This almost works, but there is a bug. Try changing the dropdown from "general" to "travel" and then to "music" very quickly. If you do it fast enough, you will see two notifications (as expected!) but they will _both_ say "Welcome to music".
-
-Fix it so that when you switch from "general" to "travel" and then to "music" very quickly, you see two notifications, the first one being "Welcome to travel" and the second one being "Welcome to music". (For an additional challenge, assuming you've _already_ made the notifications show the correct rooms, change the code so that only the latter notification is displayed.)
-
-<Hint>
-
-Your Effect knows which room it connected to. Is there any information that you might want to pass to your Effect Event?
-
-</Hint>
-
-```json
-{
-	"dependencies": {
-		"react": "experimental",
-		"react-dom": "experimental",
-		"react-scripts": "latest",
-		"toastify-js": "1.12.0"
-	},
-	"scripts": {
-		"start": "react-scripts start",
-		"build": "react-scripts build",
-		"test": "react-scripts test --env=jsdom",
-		"eject": "react-scripts eject"
-	}
-}
-```
-
-```js
-import { useState, useEffect } from "react";
-import { experimental_useEffectEvent as useEffectEvent } from "react";
-import { createConnection, sendMessage } from "./chat.js";
-import { showNotification } from "./notifications.js";
-
-const serverUrl = "https://localhost:1234";
-
-function ChatRoom({ roomId, theme }) {
-	const onConnected = useEffectEvent(() => {
-		showNotification("Welcome to " + roomId, theme);
-	});
-
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.on("connected", () => {
-			setTimeout(() => {
-				onConnected();
-			}, 2000);
-		});
-		connection.connect();
-		return () => connection.disconnect();
-	}, [roomId]);
-
-	return <h1>Welcome to the {roomId} room!</h1>;
-}
-
-export default function App() {
-	const [roomId, setRoomId] = useState("general");
-	const [isDark, setIsDark] = useState(false);
-	return (
-		<>
-			<label>
-				Choose the chat room:{" "}
-				<select
-					value={roomId}
-					onChange={(e) => setRoomId(e.target.value)}
-				>
-					<option value="general">general</option>
-					<option value="travel">travel</option>
-					<option value="music">music</option>
-				</select>
-			</label>
-			<label>
-				<input
-					type="checkbox"
-					checked={isDark}
-					onChange={(e) => setIsDark(e.target.checked)}
-				/>
-				Use dark theme
-			</label>
-			<hr />
-			<ChatRoom roomId={roomId} theme={isDark ? "dark" : "light"} />
-		</>
-	);
-}
-```
-
-```js
-export function createConnection(serverUrl, roomId) {
-	// A real implementation would actually connect to the server
-	let connectedCallback;
-	let timeout;
-	return {
-		connect() {
-			timeout = setTimeout(() => {
-				if (connectedCallback) {
-					connectedCallback();
-				}
-			}, 100);
-		},
-		on(event, callback) {
-			if (connectedCallback) {
-				throw Error("Cannot add the handler twice.");
-			}
-			if (event !== "connected") {
-				throw Error('Only "connected" event is supported.');
-			}
-			connectedCallback = callback;
-		},
-		disconnect() {
-			clearTimeout(timeout);
-		},
-	};
-}
-```
-
-```js
-import Toastify from "toastify-js";
-import "toastify-js/src/toastify.css";
-
-export function showNotification(message, theme) {
-	Toastify({
-		text: message,
-		duration: 2000,
-		gravity: "top",
-		position: "right",
-		style: {
-			background: theme === "dark" ? "black" : "white",
-			color: theme === "dark" ? "white" : "black",
-		},
-	}).showToast();
-}
-```
-
-```css
-label {
-	display: block;
-	margin-top: 10px;
-}
-```
-
-<Solution>
-
-Inside your Effect Event, `roomId` is the value _at the time Effect Event was called._
-
-Your Effect Event is called with a two second delay. If you're quickly switching from the travel to the music room, by the time the travel room's notification shows, `roomId` is already `"music"`. This is why both notifications say "Welcome to music".
-
-To fix the issue, instead of reading the _latest_ `roomId` inside the Effect Event, make it a parameter of your Effect Event, like `connectedRoomId` below. Then pass `roomId` from your Effect by calling `onConnected(roomId)`:
-
-```json
-{
-	"dependencies": {
-		"react": "experimental",
-		"react-dom": "experimental",
-		"react-scripts": "latest",
-		"toastify-js": "1.12.0"
-	},
-	"scripts": {
-		"start": "react-scripts start",
-		"build": "react-scripts build",
-		"test": "react-scripts test --env=jsdom",
-		"eject": "react-scripts eject"
-	}
-}
-```
-
-```js
-import { useState, useEffect } from "react";
-import { experimental_useEffectEvent as useEffectEvent } from "react";
-import { createConnection, sendMessage } from "./chat.js";
-import { showNotification } from "./notifications.js";
-
-const serverUrl = "https://localhost:1234";
-
-function ChatRoom({ roomId, theme }) {
-	const onConnected = useEffectEvent((connectedRoomId) => {
-		showNotification("Welcome to " + connectedRoomId, theme);
-	});
-
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.on("connected", () => {
-			setTimeout(() => {
-				onConnected(roomId);
-			}, 2000);
-		});
-		connection.connect();
-		return () => connection.disconnect();
-	}, [roomId]);
-
-	return <h1>Welcome to the {roomId} room!</h1>;
-}
-
-export default function App() {
-	const [roomId, setRoomId] = useState("general");
-	const [isDark, setIsDark] = useState(false);
-	return (
-		<>
-			<label>
-				Choose the chat room:{" "}
-				<select
-					value={roomId}
-					onChange={(e) => setRoomId(e.target.value)}
-				>
-					<option value="general">general</option>
-					<option value="travel">travel</option>
-					<option value="music">music</option>
-				</select>
-			</label>
-			<label>
-				<input
-					type="checkbox"
-					checked={isDark}
-					onChange={(e) => setIsDark(e.target.checked)}
-				/>
-				Use dark theme
-			</label>
-			<hr />
-			<ChatRoom roomId={roomId} theme={isDark ? "dark" : "light"} />
-		</>
-	);
-}
-```
-
-```js
-export function createConnection(serverUrl, roomId) {
-	// A real implementation would actually connect to the server
-	let connectedCallback;
-	let timeout;
-	return {
-		connect() {
-			timeout = setTimeout(() => {
-				if (connectedCallback) {
-					connectedCallback();
-				}
-			}, 100);
-		},
-		on(event, callback) {
-			if (connectedCallback) {
-				throw Error("Cannot add the handler twice.");
-			}
-			if (event !== "connected") {
-				throw Error('Only "connected" event is supported.');
-			}
-			connectedCallback = callback;
-		},
-		disconnect() {
-			clearTimeout(timeout);
-		},
-	};
-}
-```
-
-```js
-import Toastify from "toastify-js";
-import "toastify-js/src/toastify.css";
-
-export function showNotification(message, theme) {
-	Toastify({
-		text: message,
-		duration: 2000,
-		gravity: "top",
-		position: "right",
-		style: {
-			background: theme === "dark" ? "black" : "white",
-			color: theme === "dark" ? "white" : "black",
-		},
-	}).showToast();
-}
-```
-
-```css
-label {
-	display: block;
-	margin-top: 10px;
-}
-```
-
-The Effect that had `roomId` set to `"travel"` (so it connected to the `"travel"` room) will show the notification for `"travel"`. The Effect that had `roomId` set to `"music"` (so it connected to the `"music"` room) will show the notification for `"music"`. In other words, `connectedRoomId` comes from your Effect (which is reactive), while `theme` always uses the latest value.
-
-To solve the additional challenge, save the notification timeout ID and clear it in the cleanup function of your Effect:
-
-```json
-{
-	"dependencies": {
-		"react": "experimental",
-		"react-dom": "experimental",
-		"react-scripts": "latest",
-		"toastify-js": "1.12.0"
-	},
-	"scripts": {
-		"start": "react-scripts start",
-		"build": "react-scripts build",
-		"test": "react-scripts test --env=jsdom",
-		"eject": "react-scripts eject"
-	}
-}
-```
-
-```js
-import { useState, useEffect } from "react";
-import { experimental_useEffectEvent as useEffectEvent } from "react";
-import { createConnection, sendMessage } from "./chat.js";
-import { showNotification } from "./notifications.js";
-
-const serverUrl = "https://localhost:1234";
-
-function ChatRoom({ roomId, theme }) {
-	const onConnected = useEffectEvent((connectedRoomId) => {
-		showNotification("Welcome to " + connectedRoomId, theme);
-	});
-
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		let notificationTimeoutId;
-		connection.on("connected", () => {
-			notificationTimeoutId = setTimeout(() => {
-				onConnected(roomId);
-			}, 2000);
-		});
-		connection.connect();
-		return () => {
-			connection.disconnect();
-			if (notificationTimeoutId !== undefined) {
-				clearTimeout(notificationTimeoutId);
-			}
-		};
-	}, [roomId]);
-
-	return <h1>Welcome to the {roomId} room!</h1>;
-}
-
-export default function App() {
-	const [roomId, setRoomId] = useState("general");
-	const [isDark, setIsDark] = useState(false);
-	return (
-		<>
-			<label>
-				Choose the chat room:{" "}
-				<select
-					value={roomId}
-					onChange={(e) => setRoomId(e.target.value)}
-				>
-					<option value="general">general</option>
-					<option value="travel">travel</option>
-					<option value="music">music</option>
-				</select>
-			</label>
-			<label>
-				<input
-					type="checkbox"
-					checked={isDark}
-					onChange={(e) => setIsDark(e.target.checked)}
-				/>
-				Use dark theme
-			</label>
-			<hr />
-			<ChatRoom roomId={roomId} theme={isDark ? "dark" : "light"} />
-		</>
-	);
-}
-```
-
-```js
-export function createConnection(serverUrl, roomId) {
-	// A real implementation would actually connect to the server
-	let connectedCallback;
-	let timeout;
-	return {
-		connect() {
-			timeout = setTimeout(() => {
-				if (connectedCallback) {
-					connectedCallback();
-				}
-			}, 100);
-		},
-		on(event, callback) {
-			if (connectedCallback) {
-				throw Error("Cannot add the handler twice.");
-			}
-			if (event !== "connected") {
-				throw Error('Only "connected" event is supported.');
-			}
-			connectedCallback = callback;
-		},
-		disconnect() {
-			clearTimeout(timeout);
-		},
-	};
-}
-```
-
-```js
-import Toastify from "toastify-js";
-import "toastify-js/src/toastify.css";
-
-export function showNotification(message, theme) {
-	Toastify({
-		text: message,
-		duration: 2000,
-		gravity: "top",
-		position: "right",
-		style: {
-			background: theme === "dark" ? "black" : "white",
-			color: theme === "dark" ? "white" : "black",
-		},
-	}).showToast();
-}
-```
-
-```css
-label {
-	display: block;
-	margin-top: 10px;
-}
-```
-
-This ensures that already scheduled (but not yet displayed) notifications get cancelled when you change rooms.
-
-</Solution>
-
-</Challenges>
+-   [Lifecycle of Reactive Effects](./lifecycle-of-reactive-effects.md) — dependency semantics, `#!python strictly_equal`, and silent Effect failures
+-   [You Might Not Need an Effect](./you-might-not-need-an-effect.md) — logic that belongs in the render
+-   [Synchronizing with Effects](./synchronizing-with-effects.md) — the patterns that genuinely need an Effect
+-   [Use Callback](../reference/use-callback.md) and [Use Ref](../reference/use-ref.md) — parameter-level reference
