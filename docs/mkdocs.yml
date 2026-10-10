@@ -39,7 +39,7 @@ nav:
                 - Sharing State Between Components: learn/sharing-state-between-components.md
                 - Preserving and Resetting State: learn/preserving-and-resetting-state.md
                 - Extracting State Logic into a Reducer: learn/extracting-state-logic-into-a-reducer.md
-                - Passing Data Deeply with Context 🚧: learn/passing-data-deeply-with-context.md
+                - Passing Data Deeply with Context: learn/passing-data-deeply-with-context.md
                 - Scaling Up with Reducer and Context 🚧: learn/scaling-up-with-reducer-and-context.md
           - Escape Hatches:
                 - Referencing Values with Refs: learn/referencing-values-with-refs.md
