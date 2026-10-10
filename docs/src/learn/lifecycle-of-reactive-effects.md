@@ -2,2247 +2,384 @@
 
 <p class="intro" markdown>
 
-Effects have a different lifecycle from components. Components may mount, update, or unmount. An Effect can only do two things: to start synchronizing something, and later to stop synchronizing it. This cycle can happen multiple times if your Effect depends on props and state that change over time. React provides a linter rule to check that you've specified your Effect's dependencies correctly. This keeps your Effect synchronized to the latest props and state.
+An Effect is a piece of synchronization code attached to a render. It runs, it may clean up after itself, and it runs again if its inputs change. Understanding that lifecycle — not a memorized list of rules — is what makes Effects predictable in ReactPy.
 
 </p>
 
 !!! summary "You will learn"
 
-    -   How an Effect's lifecycle is different from a component's lifecycle
-    -   How to think about each individual Effect in isolation
-    -   When your Effect needs to re-synchronize, and why
-    -   How your Effect's dependencies are determined
-    -   What it means for a value to be reactive
-    -   What an empty dependency array means
-    -   How React verifies your dependencies are correct with a linter
-    -   What to do when you disagree with the linter
+    -   How an Effect setup and clean-up pair forms one synchronization
+    -   Which values an Effect "reacts" to, and what happens to the ones it doesn't
+    -   Why a dependency list, not the Effect's own text, decides re-synchronization
+    -   How Effects are ordered, and what is not guaranteed
+    -   Why a broken Effect reports itself nowhere the user can see
 
 ## The lifecycle of an Effect
 
-Every React component goes through the same lifecycle:
+Think of an Effect as a synchronization process between a value your component holds and something outside ReactPy. Each Effect has a setup and, sometimes, a clean-up:
 
--   A component _mounts_ when it's added to the screen.
--   A component _updates_ when it receives new props or state, usually in response to an interaction.
--   A component _unmounts_ when it's removed from the screen.
+=== "app.py"
 
-**It's a good way to think about components, but _not_ about Effects.** Instead, try to think about each Effect independently from your component's lifecycle. An Effect describes how to [synchronize an external system](/learn/synchronizing-with-effects) to the current props and state. As your code changes, synchronization will need to happen more or less often.
+    ```python
+    {% include "../../examples/lifecycle_of_reactive_effects/setup_cleanup/app.py" start="# start" %}
+    ```
 
-To illustrate this point, consider this Effect connecting your component to a chat server:
+=== ":material-play: Run"
 
-```js
-const serverUrl = "https://localhost:1234";
+    ```python
+    # TODO
+    ```
 
-function ChatRoom({ roomId }) {
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.connect();
-		return () => {
-			connection.disconnect();
-		};
-	}, [roomId]);
-	// ...
-}
-```
+Verified against the server's own log: mount produces `#!python connect lobby`; pressing **Leave lobby** produces `#!python close lobby` then `#!python connect dev`; and the last connection closes on unmount. The open-connection count never climbs above 1.
 
-Your Effect's body specifies how to **start synchronizing:**
-
-```js
-// ...
-const connection = createConnection(serverUrl, roomId);
-connection.connect();
-return () => {
-	connection.disconnect();
-};
-// ...
-```
-
-The cleanup function returned by your Effect specifies how to **stop synchronizing:**
-
-```js
-// ...
-const connection = createConnection(serverUrl, roomId);
-connection.connect();
-return () => {
-	connection.disconnect();
-};
-// ...
-```
-
-Intuitively, you might think that React would **start synchronizing** when your component mounts and **stop synchronizing** when your component unmounts. However, this is not the end of the story! Sometimes, it may also be necessary to **start and stop synchronizing multiple times** while the component remains mounted.
-
-Let's look at _why_ this is necessary, _when_ it happens, and _how_ you can control this behavior.
-
-<Note>
-
-Some Effects don't return a cleanup function at all. [More often than not,](/learn/synchronizing-with-effects#how-to-handle-the-effect-firing-twice-in-development) you'll want to return one--but if you don't, React will behave as if you returned an empty cleanup function.
-
-</Note>
+Read the pair as a single unit — "be connected to this room". Setup and clean-up are not two independent callbacks: **ReactPy runs the clean-up of a run right before that run's successor sets up**, using the same captured state. So switching rooms means *leave the old room, join the new one*, in that order, and the process is complete no matter how many times the inputs change.
 
 ### Why synchronization may need to happen more than once
 
-Imagine this `ChatRoom` component receives a `roomId` prop that the user picks in a dropdown. Let's say that initially the user picks the `"general"` room as the `roomId`. Your app displays the `"general"` chat room:
+The value being synchronized can change while the component is on screen: `#!python room` above, a search query, an auth token. Every such change means the previous synchronization is describing the past, so ReactPy tears it down and starts a new one.
 
-```js
-const serverUrl = "https://localhost:1234";
+That is why the clean-up is not optional boilerplate. In a browser, forgetting it leaks one subscription until the tab closes. On a ReactPy server it leaks until the **process** exits — and the leaked callback still holds your component, still fires, and keeps a connection or file handle alive for a user who left hours ago.
 
-function ChatRoom({ roomId /* "general" */ }) {
-	// ...
-	return <h1>Welcome to the {roomId} room!</h1>;
-}
-```
+### How ReactPy re-synchronizes an Effect
 
-After the UI is displayed, React will run your Effect to **start synchronizing.** It connects to the `"general"` room:
+When a dependency changes, ReactPy runs this sequence:
 
-```js
-function ChatRoom({ roomId /* "general" */ }) {
-  useEffect(() => {
-    const connection = createConnection(serverUrl, roomId); // Connects to the "general" room
-    connection.connect();
-    return () => {
-      connection.disconnect(); // Disconnects from the "general" room
-    };
-  }, [roomId]);
-  // ...
-```
+1. The component renders and registers the Effect again.
+2. A new Effect task starts, and **its first act is to run the previous run's clean-up** — `core/hooks.py`, `use_effect` calls `run_effect_cleanup` before invoking your function.
+3. Your setup runs and returns the next clean-up.
 
-So far, so good.
+Two consequences worth internalizing:
 
-Later, the user picks a different room in the dropdown (for example, `"travel"`). First, React will update the UI:
-
-```js
-function ChatRoom({ roomId /* "travel" */ }) {
-	// ...
-	return <h1>Welcome to the {roomId} room!</h1>;
-}
-```
-
-Think about what should happen next. The user sees that `"travel"` is the selected chat room in the UI. However, the Effect that ran the last time is still connected to the `"general"` room. **The `roomId` prop has changed, so what your Effect did back then (connecting to the `"general"` room) no longer matches the UI.**
-
-At this point, you want React to do two things:
-
-1. Stop synchronizing with the old `roomId` (disconnect from the `"general"` room)
-2. Start synchronizing with the new `roomId` (connect to the `"travel"` room)
-
-**Luckily, you've already taught React how to do both of these things!** Your Effect's body specifies how to start synchronizing, and your cleanup function specifies how to stop synchronizing. All that React needs to do now is to call them in the correct order and with the correct props and state. Let's see how exactly that happens.
-
-### How React re-synchronizes your Effect
-
-Recall that your `ChatRoom` component has received a new value for its `roomId` prop. It used to be `"general"`, and now it is `"travel"`. React needs to re-synchronize your Effect to re-connect you to a different room.
-
-To **stop synchronizing,** React will call the cleanup function that your Effect returned after connecting to the `"general"` room. Since `roomId` was `"general"`, the cleanup function disconnects from the `"general"` room:
-
-```js
-function ChatRoom({ roomId /* "general" */ }) {
-  useEffect(() => {
-    const connection = createConnection(serverUrl, roomId); // Connects to the "general" room
-    connection.connect();
-    return () => {
-      connection.disconnect(); // Disconnects from the "general" room
-    };
-    // ...
-```
-
-Then React will run the Effect that you've provided during this render. This time, `roomId` is `"travel"` so it will **start synchronizing** to the `"travel"` chat room (until its cleanup function is eventually called too):
-
-```js
-function ChatRoom({ roomId /* "travel" */ }) {
-  useEffect(() => {
-    const connection = createConnection(serverUrl, roomId); // Connects to the "travel" room
-    connection.connect();
-    // ...
-```
-
-Thanks to this, you're now connected to the same room that the user chose in the UI. Disaster averted!
-
-Every time after your component re-renders with a different `roomId`, your Effect will re-synchronize. For example, let's say the user changes `roomId` from `"travel"` to `"music"`. React will again **stop synchronizing** your Effect by calling its cleanup function (disconnecting you from the `"travel"` room). Then it will **start synchronizing** again by running its body with the new `roomId` prop (connecting you to the `"music"` room).
-
-Finally, when the user goes to a different screen, `ChatRoom` unmounts. Now there is no need to stay connected at all. React will **stop synchronizing** your Effect one last time and disconnect you from the `"music"` chat room.
+-   The clean-up runs on the *new* task, not the old one. It sees the previous run's captured values, which is exactly what a teardown needs.
+-   The old task is not cancelled. A sync Effect's task parks on `#!python stop.wait()` and is only reaped when the component unmounts. Measured: three dependency changes leave **4** live Effect tasks where there was 1, and all 4 disappear at unmount. The clean-ups still ran in the right order; the parked tasks are simply waiting for a signal that will come at unmount. For a long-lived component re-synchronizing constantly, that is memory you are paying for.
 
 ### Thinking from the Effect's perspective
 
-Let's recap everything that's happened from the `ChatRoom` component's perspective:
+When you read an Effect, read it as the outside world would. The code above says: *"while this component is on screen and `room` is X, stay connected to X."* Everything in that sentence is checkable:
 
-1. `ChatRoom` mounted with `roomId` set to `"general"`
-1. `ChatRoom` updated with `roomId` set to `"travel"`
-1. `ChatRoom` updated with `roomId` set to `"music"`
-1. `ChatRoom` unmounted
+| Sentence part | Where it comes from |
+| --- | --- |
+| "while this component is on screen" | the component's mount/unmount |
+| "and `room` is X" | the dependency list |
+| "stay connected to X" | setup |
+| (leaving) | the returned clean-up |
 
-During each of these points in the component's lifecycle, your Effect did different things:
-
-1. Your Effect connected to the `"general"` room
-1. Your Effect disconnected from the `"general"` room and connected to the `"travel"` room
-1. Your Effect disconnected from the `"travel"` room and connected to the `"music"` room
-1. Your Effect disconnected from the `"music"` room
-
-Now let's think about what happened from the perspective of the Effect itself:
-
-```js
-useEffect(() => {
-	// Your Effect connected to the room specified with roomId...
-	const connection = createConnection(serverUrl, roomId);
-	connection.connect();
-	return () => {
-		// ...until it disconnected
-		connection.disconnect();
-	};
-}, [roomId]);
-```
-
-This code's structure might inspire you to see what happened as a sequence of non-overlapping time periods:
-
-1. Your Effect connected to the `"general"` room (until it disconnected)
-1. Your Effect connected to the `"travel"` room (until it disconnected)
-1. Your Effect connected to the `"music"` room (until it disconnected)
-
-Previously, you were thinking from the component's perspective. When you looked from the component's perspective, it was tempting to think of Effects as "callbacks" or "lifecycle events" that fire at a specific time like "after a render" or "before unmount". This way of thinking gets complicated very fast, so it's best to avoid.
-
-**Instead, always focus on a single start/stop cycle at a time. It shouldn't matter whether a component is mounting, updating, or unmounting. All you need to do is to describe how to start synchronization and how to stop it. If you do it well, your Effect will be resilient to being started and stopped as many times as it's needed.**
-
-This might remind you how you don't think whether a component is mounting or updating when you write the rendering logic that creates JSX. You describe what should be on the screen, and React [figures out the rest.](/learn/reacting-to-input-with-state)
-
-### How React verifies that your Effect can re-synchronize
-
-Here is a live example that you can play with. Press "Open chat" to mount the `ChatRoom` component:
-
-```js
-import { useState, useEffect } from "react";
-import { createConnection } from "./chat.js";
-
-const serverUrl = "https://localhost:1234";
-
-function ChatRoom({ roomId }) {
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.connect();
-		return () => connection.disconnect();
-	}, [roomId]);
-	return <h1>Welcome to the {roomId} room!</h1>;
-}
-
-export default function App() {
-	const [roomId, setRoomId] = useState("general");
-	const [show, setShow] = useState(false);
-	return (
-		<>
-			<label>
-				Choose the chat room:{" "}
-				<select
-					value={roomId}
-					onChange={(e) => setRoomId(e.target.value)}
-				>
-					<option value="general">general</option>
-					<option value="travel">travel</option>
-					<option value="music">music</option>
-				</select>
-			</label>
-			<button on_click={() => setShow(!show)}>
-				{show ? "Close chat" : "Open chat"}
-			</button>
-			{show && <hr />}
-			{show && <ChatRoom roomId={roomId} />}
-		</>
-	);
-}
-```
-
-```js
-export function createConnection(serverUrl, roomId) {
-	// A real implementation would actually connect to the server
-	return {
-		connect() {
-			console.log(
-				'✅ Connecting to "' + roomId + '" room at ' + serverUrl + "..."
-			);
-		},
-		disconnect() {
-			console.log(
-				'❌ Disconnected from "' + roomId + '" room at ' + serverUrl
-			);
-		},
-	};
-}
-```
-
-```css
-input {
-	display: block;
-	margin-bottom: 20px;
-}
-button {
-	margin-left: 10px;
-}
-```
-
-Notice that when the component mounts for the first time, you see three logs:
-
-1. `✅ Connecting to "general" room at https://localhost:1234...` _(development-only)_
-1. `❌ Disconnected from "general" room at https://localhost:1234.` _(development-only)_
-1. `✅ Connecting to "general" room at https://localhost:1234...`
-
-The first two logs are development-only. In development, React always remounts each component once.
-
-**React verifies that your Effect can re-synchronize by forcing it to do that immediately in development.** This might remind you of opening a door and closing it an extra time to check if the door lock works. React starts and stops your Effect one extra time in development to check [you've implemented its cleanup well.](/learn/synchronizing-with-effects#how-to-handle-the-effect-firing-twice-in-development)
-
-The main reason your Effect will re-synchronize in practice is if some data it uses has changed. In the sandbox above, change the selected chat room. Notice how, when the `roomId` changes, your Effect re-synchronizes.
-
-However, there are also more unusual cases in which re-synchronization is necessary. For example, try editing the `serverUrl` in the sandbox above while the chat is open. Notice how the Effect re-synchronizes in response to your edits to the code. In the future, React may add more features that rely on re-synchronization.
-
-### How React knows that it needs to re-synchronize the Effect
-
-You might be wondering how React knew that your Effect needed to re-synchronize after `roomId` changes. It's because _you told React_ that its code depends on `roomId` by including it in the [list of dependencies:](/learn/synchronizing-with-effects#step-2-specify-the-effect-dependencies)
-
-```js
-function ChatRoom({ roomId }) { // The roomId prop may change over time
-  useEffect(() => {
-    const connection = createConnection(serverUrl, roomId); // This Effect reads roomId
-    connection.connect();
-    return () => {
-      connection.disconnect();
-    };
-  }, [roomId]); // So you tell React that this Effect "depends on" roomId
-  // ...
-```
-
-Here's how this works:
-
-1. You knew `roomId` is a prop, which means it can change over time.
-2. You knew that your Effect reads `roomId` (so its logic depends on a value that may change later).
-3. This is why you specified it as your Effect's dependency (so that it re-synchronizes when `roomId` changes).
-
-Every time after your component re-renders, React will look at the array of dependencies that you have passed. If any of the values in the array is different from the value at the same spot that you passed during the previous render, React will re-synchronize your Effect.
-
-For example, if you passed `["general"]` during the initial render, and later you passed `["travel"]` during the next render, React will compare `"general"` and `"travel"`. These are different values (compared with [`Object.is`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is)), so React will re-synchronize your Effect. On the other hand, if your component re-renders but `roomId` has not changed, your Effect will remain connected to the same room.
+If part of that sentence is a lie, the Effect is wrong — not the dependency list, not the linting setup. `#!python dependencies` is how you spell "and `room` is X"; it is not a performance knob.
 
 ### Each Effect represents a separate synchronization process
 
-Resist adding unrelated logic to your Effect only because this logic needs to run at the same time as an Effect you already wrote. For example, let's say you want to send an analytics event when the user visits the room. You already have an Effect that depends on `roomId`, so you might feel tempted to add the analytics call there:
+Two Effects in one component are two processes, not one with two steps. Keep them apart when their synchronization targets differ, and let each own its own clean-up:
 
-```js
-function ChatRoom({ roomId }) {
-	useEffect(() => {
-		logVisit(roomId);
-		const connection = createConnection(serverUrl, roomId);
-		connection.connect();
-		return () => {
-			connection.disconnect();
-		};
-	}, [roomId]);
-	// ...
-}
+```python linenums="0"
+use_effect(connect_to_room, dependencies=[room])
+use_effect(subscribe_to_feed, dependencies=[user_id])
 ```
 
-But imagine you later add another dependency to this Effect that needs to re-establish the connection. If this Effect re-synchronizes, it will also call `logVisit(roomId)` for the same room, which you did not intend. Logging the visit **is a separate process** from connecting. Write them as two separate Effects:
-
-```js
-function ChatRoom({ roomId }) {
-	useEffect(() => {
-		logVisit(roomId);
-	}, [roomId]);
-
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		// ...
-	}, [roomId]);
-	// ...
-}
-```
-
-**Each Effect in your code should represent a separate and independent synchronization process.**
-
-In the above example, deleting one Effect wouldn’t break the other Effect's logic. This is a good indication that they synchronize different things, and so it made sense to split them up. On the other hand, if you split up a cohesive piece of logic into separate Effects, the code may look "cleaner" but will be [more difficult to maintain.](/learn/you-might-not-need-an-effect#chains-of-computations) This is why you should think whether the processes are same or separate, not whether the code looks cleaner.
+Do not merge them because they live in the same component: merging means a room change tears down the feed subscription too. Two Effects in the same component run in **declaration order**, so ordering within a component is available to you when one genuinely depends on the other's setup having happened.
 
 ## Effects "react" to reactive values
 
-Your Effect reads two variables (`serverUrl` and `roomId`), but you only specified `roomId` as a dependency:
+Every value in the component body — props, state, anything computed from them — belongs to one render. An Effect created by that render reads *that render's* values and never sees a later one. The dependency list is how you say which values should trigger a new Effect.
 
-```js
-const serverUrl = "https://localhost:1234";
+Here an Effect reports an error flag but leaves it out of the dependency list:
 
-function ChatRoom({ roomId }) {
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.connect();
-		return () => {
-			connection.disconnect();
-		};
-	}, [roomId]);
-	// ...
-}
-```
+=== "app.py"
 
-Why doesn't `serverUrl` need to be a dependency?
+    ```python
+    {% include "../../examples/lifecycle_of_reactive_effects/reactive_values/app.py" start="# start" %}
+    ```
 
-This is because the `serverUrl` never changes due to a re-render. It's always the same no matter how many times the component re-renders and why. Since `serverUrl` never changes, it wouldn't make sense to specify it as a dependency. After all, dependencies only do something when they change over time!
+=== ":material-play: Run"
 
-On the other hand, `roomId` may be different on a re-render. **Props, state, and other values declared inside the component are _reactive_ because they're calculated during rendering and participate in the React data flow.**
+    ```python
+    # TODO
+    ```
 
-If `serverUrl` was a state variable, it would be reactive. Reactive values must be included in dependencies:
+Verified: pressing **Toggle error** re-renders the component and runs the Effect **zero** times — the list says `#!python dependencies=[count]`, so nothing happens. Press **Add 1** and the Effect runs, and this time it reports the *new* value of the flag, because a brand-new Effect was created by that render.
 
-```js
-function ChatRoom({ roomId }) {
-	// Props change over time
-	const [serverUrl, setServerUrl] = useState("https://localhost:1234"); // State may change over time
+That is the precise meaning of "stale": the Effect reports values from the render that created it. It does not freeze at mount, and it does not read the latest — it reads whichever render it was born in. Adding the missing value to the list is the fix.
 
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId); // Your Effect reads props and state
-		connection.connect();
-		return () => {
-			connection.disconnect();
-		};
-	}, [roomId, serverUrl]); // So you tell React that this Effect "depends on" on props and state
-	// ...
-}
-```
+!!! warning "A local function as a dependency never counts as changed"
 
-By including `serverUrl` as a dependency, you ensure that the Effect re-synchronizes after it changes.
+    This one bites hard, and it contradicts the docstrings. ReactPy compares dependencies with `core/hooks.py`, `#!python strictly_equal` — **not** by `#!python id`. For two locally defined functions it compares their *code*: same `#!python co_*` attributes means same dependency. So a `#!python def` re-created on every render is never detected as changed:
 
-Try changing the selected chat room or edit the server URL in this sandbox:
+    === "app.py"
 
-```js
-import { useState, useEffect } from "react";
-import { createConnection } from "./chat.js";
+        ```python
+        {% include "../../examples/lifecycle_of_reactive_effects/frozen_body/app.py" start="# start" %}
+        ```
 
-function ChatRoom({ roomId }) {
-	const [serverUrl, setServerUrl] = useState("https://localhost:1234");
+    === ":material-play: Run"
 
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.connect();
-		return () => connection.disconnect();
-	}, [roomId, serverUrl]);
+        ```python
+        # TODO
+        ```
 
-	return (
-		<>
-			<label>
-				Server URL:{" "}
-				<input
-					value={serverUrl}
-					onChange={(e) => setServerUrl(e.target.value)}
-				/>
-			</label>
-			<h1>Welcome to the {roomId} room!</h1>
-		</>
-	);
-}
+    Verified: press **Add 1** twice and **Rename** once — the heading shows `#!python count!!: 2`, yet the Effect has run exactly once and `#!python describe()` still returns `#!python 'count=0'`. The Effect is permanently frozen on its first closure, and nothing warns you.
 
-export default function App() {
-	const [roomId, setRoomId] = useState("general");
-	return (
-		<>
-			<label>
-				Choose the chat room:{" "}
-				<select
-					value={roomId}
-					onChange={(e) => setRoomId(e.target.value)}
-				>
-					<option value="general">general</option>
-					<option value="travel">travel</option>
-					<option value="music">music</option>
-				</select>
-			</label>
-			<hr />
-			<ChatRoom roomId={roomId} />
-		</>
-	);
-}
-```
-
-```js
-export function createConnection(serverUrl, roomId) {
-	// A real implementation would actually connect to the server
-	return {
-		connect() {
-			console.log(
-				'✅ Connecting to "' + roomId + '" room at ' + serverUrl + "..."
-			);
-		},
-		disconnect() {
-			console.log(
-				'❌ Disconnected from "' + roomId + '" room at ' + serverUrl
-			);
-		},
-	};
-}
-```
-
-```css
-input {
-	display: block;
-	margin-bottom: 20px;
-}
-button {
-	margin-left: 10px;
-}
-```
-
-Whenever you change a reactive value like `roomId` or `serverUrl`, the Effect re-connects to the chat server.
+    The same rule bites the other way: a fresh `#!python [1, 2]` or `#!python {"a": 1}` that compares equal is also "unchanged", so rebuilding an options dict on every render will not re-trigger an Effect that lists it. Depend on the scalar values you actually use, not on containers or local functions.
 
 ### What an Effect with empty dependencies means
 
-What happens if you move both `serverUrl` and `roomId` outside the component?
+`#!python dependencies=[]` does not mean "run once, like a `#!python componentDidMount`". It means **create this Effect and never replace it** — including its body:
 
-```js
-const serverUrl = "https://localhost:1234";
-const roomId = "general";
+```python linenums="0"
+def effect():
+    print(f"body sees label={label}")
 
-function ChatRoom() {
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.connect();
-		return () => {
-			connection.disconnect();
-		};
-	}, []); // ✅ All dependencies declared
-	// ...
-}
+use_effect(effect, dependencies=[])
 ```
 
-Now your Effect's code does not use _any_ reactive values, so its dependencies can be empty (`[]`).
+Verified: change `#!python label` three times and the component re-renders three times; the Effect never runs again, and when something else finally forces it, it prints the **first** render's `#!python label`. An `#!python []` Effect is sealed at mount. Reach for it only when the Effect genuinely reads nothing but stable values (module constants, a setter, a ref).
 
-Thinking from the component's perspective, the empty `[]` dependency array means this Effect connects to the chat room only when the component mounts, and disconnects only when the component unmounts. (Keep in mind that React would still [re-synchronize it an extra time](#how-react-verifies-that-your-effect-can-re-synchronize) in development to stress-test your logic.)
+The four settings, restated with their lifecycle meaning:
 
-```js
-import { useState, useEffect } from "react";
-import { createConnection } from "./chat.js";
-
-const serverUrl = "https://localhost:1234";
-const roomId = "general";
-
-function ChatRoom() {
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.connect();
-		return () => connection.disconnect();
-	}, []);
-	return <h1>Welcome to the {roomId} room!</h1>;
-}
-
-export default function App() {
-	const [show, setShow] = useState(false);
-	return (
-		<>
-			<button on_click={() => setShow(!show)}>
-				{show ? "Close chat" : "Open chat"}
-			</button>
-			{show && <hr />}
-			{show && <ChatRoom />}
-		</>
-	);
-}
-```
-
-```js
-export function createConnection(serverUrl, roomId) {
-	// A real implementation would actually connect to the server
-	return {
-		connect() {
-			console.log(
-				'✅ Connecting to "' + roomId + '" room at ' + serverUrl + "..."
-			);
-		},
-		disconnect() {
-			console.log(
-				'❌ Disconnected from "' + roomId + '" room at ' + serverUrl
-			);
-		},
-	};
-}
-```
-
-```css
-input {
-	display: block;
-	margin-bottom: 20px;
-}
-button {
-	margin-left: 10px;
-}
-```
-
-However, if you [think from the Effect's perspective,](#thinking-from-the-effects-perspective) you don't need to think about mounting and unmounting at all. What's important is you've specified what your Effect does to start and stop synchronizing. Today, it has no reactive dependencies. But if you ever want the user to change `roomId` or `serverUrl` over time (and they would become reactive), your Effect's code won't change. You will only need to add them to the dependencies.
+| Value | Meaning |
+| --- | --- |
+| `#!python dependencies=[a, b]` | Re-synchronize when `#!python a` or `#!python b` changes. |
+| `#!python dependencies=[]` | Synchronize once, at mount; the body is never replaced. |
+| `#!python dependencies=None` | Re-synchronize after **every** render. |
+| omitted | **Infer** the list from the closure's free variables — then compare with `#!python ==`, so a rebuilt-but-equal value will not re-trigger. |
 
 ### All variables declared in the component body are reactive
 
-Props and state aren't the only reactive values. Values that you calculate from them are also reactive. If the props or state change, your component will re-render, and the values calculated from them will also change. This is why all variables from the component body used by the Effect should be in the Effect dependency list.
+Props, state, and anything derived from them are per-render values, so they belong in the dependency list whenever the Effect reads them. Module-level constants and imported singletons do not: they are the same object for every render and every connection.
 
-Let's say that the user can pick a chat server in the dropdown, but they can also configure a default server in settings. Suppose you've already put the settings state in a [context](/learn/scaling-up-with-reducer-and-context) so you read the `settings` from that context. Now you calculate the `serverUrl` based on the selected server from props and the default server:
+Careful with the middle case. A `#!python dict` built at module level looks like a constant and is not safe to mutate — every connection shares it ([VDOM Mutations](./vdom-mutations.md)). And a mutable default argument is shared too. Neither is a dependency, because neither *changes*; both are bugs if you write to them.
 
-```js
-function ChatRoom({ roomId, selectedServerUrl }) {
-	// roomId is reactive
-	const settings = useContext(SettingsContext); // settings is reactive
-	const serverUrl = selectedServerUrl ?? settings.defaultServerUrl; // serverUrl is reactive
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId); // Your Effect reads roomId and serverUrl
-		connection.connect();
-		return () => {
-			connection.disconnect();
-		};
-	}, [roomId, serverUrl]); // So it needs to re-synchronize when either of them changes!
-	// ...
-}
-```
+!!! danger "Hooks are unusable inside an effect body"
 
-In this example, `serverUrl` is not a prop or a state variable. It's a regular variable that you calculate during rendering. But it's calculated during rendering, so it can change due to a re-render. This is why it's reactive.
+    ```python linenums="0"
+    def effect():
+        theme = use_context(theme_context)   # RuntimeError
+    ```
 
-**All values inside the component (including props, state, and variables in your component's body) are reactive. Any reactive value can change on a re-render, so you need to include reactive values as Effect's dependencies.**
+    Effects run in their own task, after rendering, with no life cycle hook on the stack. `#!python use_context`, `#!python use_state`, and every other hook raise `#!python RuntimeError: No life cycle hook is active. Are you rendering in a layout?` — and that traceback reaches only the server log. Read what you need **during render** and let the closure carry it:
 
-In other words, Effects "react" to all values from the component body.
+    ```python linenums="0"
+    theme = use_context(theme_context)
 
-<DeepDive>
+    def effect():
+        apply(theme)
 
-#### Can global or mutable values be dependencies?
-
-Mutable values (including global variables) aren't reactive.
-
-**A mutable value like [`location.pathname`](https://developer.mozilla.org/en-US/docs/Web/API/Location/pathname) can't be a dependency.** It's mutable, so it can change at any time completely outside of the React rendering data flow. Changing it wouldn't trigger a re-render of your component. Therefore, even if you specified it in the dependencies, React _wouldn't know_ to re-synchronize the Effect when it changes. This also breaks the rules of React because reading mutable data during rendering (which is when you calculate the dependencies) breaks [purity of rendering.](/learn/keeping-components-pure) Instead, you should read and subscribe to an external mutable value with [`useSyncExternalStore`.](/learn/you-might-not-need-an-effect#subscribing-to-an-external-store)
-
-**A mutable value like [`ref.current`](/reference/react/useRef#reference) or things you read from it also can't be a dependency.** The ref object returned by `useRef` itself can be a dependency, but its `current` property is intentionally mutable. It lets you [keep track of something without triggering a re-render.](/learn/referencing-values-with-refs) But since changing it doesn't trigger a re-render, it's not a reactive value, and React won't know to re-run your Effect when it changes.
-
-As you'll learn below on this page, a linter will check for these issues automatically.
-
-</DeepDive>
-
-### React verifies that you specified every reactive value as a dependency
-
-If your linter is [configured for React,](/learn/editor-setup#linting) it will check that every reactive value used by your Effect's code is declared as its dependency. For example, this is a lint error because both `roomId` and `serverUrl` are reactive:
-
-```js
-import { useState, useEffect } from "react";
-import { createConnection } from "./chat.js";
-
-function ChatRoom({ roomId }) {
-	// roomId is reactive
-	const [serverUrl, setServerUrl] = useState("https://localhost:1234"); // serverUrl is reactive
-
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.connect();
-		return () => connection.disconnect();
-	}, []); // <-- Something's wrong here!
-
-	return (
-		<>
-			<label>
-				Server URL:{" "}
-				<input
-					value={serverUrl}
-					onChange={(e) => setServerUrl(e.target.value)}
-				/>
-			</label>
-			<h1>Welcome to the {roomId} room!</h1>
-		</>
-	);
-}
-
-export default function App() {
-	const [roomId, setRoomId] = useState("general");
-	return (
-		<>
-			<label>
-				Choose the chat room:{" "}
-				<select
-					value={roomId}
-					onChange={(e) => setRoomId(e.target.value)}
-				>
-					<option value="general">general</option>
-					<option value="travel">travel</option>
-					<option value="music">music</option>
-				</select>
-			</label>
-			<hr />
-			<ChatRoom roomId={roomId} />
-		</>
-	);
-}
-```
-
-```js
-export function createConnection(serverUrl, roomId) {
-	// A real implementation would actually connect to the server
-	return {
-		connect() {
-			console.log(
-				'✅ Connecting to "' + roomId + '" room at ' + serverUrl + "..."
-			);
-		},
-		disconnect() {
-			console.log(
-				'❌ Disconnected from "' + roomId + '" room at ' + serverUrl
-			);
-		},
-	};
-}
-```
-
-```css
-input {
-	display: block;
-	margin-bottom: 20px;
-}
-button {
-	margin-left: 10px;
-}
-```
-
-This may look like a React error, but really React is pointing out a bug in your code. Both `roomId` and `serverUrl` may change over time, but you're forgetting to re-synchronize your Effect when they change. You will remain connected to the initial `roomId` and `serverUrl` even after the user picks different values in the UI.
-
-To fix the bug, follow the linter's suggestion to specify `roomId` and `serverUrl` as dependencies of your Effect:
-
-```js
-function ChatRoom({ roomId }) {
-	// roomId is reactive
-	const [serverUrl, setServerUrl] = useState("https://localhost:1234"); // serverUrl is reactive
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.connect();
-		return () => {
-			connection.disconnect();
-		};
-	}, [serverUrl, roomId]); // ✅ All dependencies declared
-	// ...
-}
-```
-
-Try this fix in the sandbox above. Verify that the linter error is gone, and the chat re-connects when needed.
-
-<Note>
-
-In some cases, React _knows_ that a value never changes even though it's declared inside the component. For example, the [`set` function](/reference/react/useState#setstate) returned from `useState` and the ref object returned by [`useRef`](/reference/react/useRef) are _stable_--they are guaranteed to not change on a re-render. Stable values aren't reactive, so you may omit them from the list. Including them is allowed: they won't change, so it doesn't matter.
-
-</Note>
+    use_effect(effect, dependencies=[theme])
+    ```
 
 ### What to do when you don't want to re-synchronize
 
-In the previous example, you've fixed the lint error by listing `roomId` and `serverUrl` as dependencies.
+Three legitimate reasons, three different answers.
 
-**However, you could instead "prove" to the linter that these values aren't reactive values,** i.e. that they _can't_ change as a result of a re-render. For example, if `serverUrl` and `roomId` don't depend on rendering and always have the same values, you can move them outside the component. Now they don't need to be dependencies:
+**The value is genuinely constant.** Import it, define it at module level, or hoist it out of the component. Then it is not a dependency because it cannot change:
 
-```js
-const serverUrl = "https://localhost:1234"; // serverUrl is not reactive
-const roomId = "general"; // roomId is not reactive
+```python linenums="0"
+POLL_INTERVAL = 5
 
-function ChatRoom() {
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.connect();
-		return () => {
-			connection.disconnect();
-		};
-	}, []); // ✅ All dependencies declared
-	// ...
-}
+
+@component
+def poller(topic):
+    async def effect():
+        ...
+
+    use_async_effect(effect, dependencies=[topic])
 ```
 
-You can also move them _inside the Effect._ They aren't calculated during rendering, so they're not reactive:
+**You want the latest value without restarting the process.** Keep it in a ref and read `#!python .current` — the box persists across renders, so a long-lived Effect always reads the newest assignment ([Synchronizing with Effects](./synchronizing-with-effects.md#reading-the-newest-value-from-a-long-lived-effect)).
 
-```js
-function ChatRoom() {
-	useEffect(() => {
-		const serverUrl = "https://localhost:1234"; // serverUrl is not reactive
-		const roomId = "general"; // roomId is not reactive
-		const connection = createConnection(serverUrl, roomId);
-		connection.connect();
-		return () => {
-			connection.disconnect();
-		};
-	}, []); // ✅ All dependencies declared
-	// ...
-}
+**You want to switch the process off.** Do not delete the hook call — that changes the hook order and corrupts every hook after it. Pass a flag and branch *inside* the Effect:
+
+=== "app.py"
+
+    ```python
+    {% include "../../examples/lifecycle_of_reactive_effects/gating/app.py" start="# start" %}
+    ```
+
+=== ":material-play: Run"
+
+    ```python
+    # TODO
+    ```
+
+Verified: **Stop** runs `#!python unsubscribe news`; while stopped, switching topics logs **nothing** (correct — there is nothing to synchronize); and **Start** then runs `#!python subscribe sports` for the new topic. The hook call always happens; only the setup is conditional. Note the dependency list includes `#!python enabled` — leaving it out would mean toggling did nothing at all.
+
+!!! warning "Do not omit a dependency to dodge a loop"
+
+    An Effect that re-triggers itself is telling you something. Measured: an Effect that sets a piece of state it also lists as a dependency rendered **86 times** before the probe stopped. Deleting the dependency silences the symptom and leaves you with an Effect that reports the past. Fix the loop — usually by moving the value into the dependency list and making the setup idempotent, or by deriving the value during render instead ([You Might Not Need an Effect](./you-might-not-need-an-effect.md)).
+
+## ReactPy will not verify your dependencies
+
+React ships a compiler that checks each Effect against its dependency list. ReactPy has `reactpy-flake8`, and it is far narrower than people expect. Verified against the installed `reactpy_flake8.run.run_checks`:
+
+| What you wrote | Reported? |
+| --- | --- |
+| a hook called inside an `#!python if` or `#!python for` | **yes** — `#!python REACTPY102` |
+| an **inline lambda** Effect missing a variable from `#!python dependencies` | **yes** — `#!python REACTPY202`, and only with `#!python exhaustive_hook_deps=True` |
+| a **named `def`** Effect missing a variable from `#!python dependencies` | **no** |
+| a `#!python @use_effect`-decorated function missing a variable | **no** |
+| `#!python use_memo` / `#!python use_callback` missing a dependency | **no** |
+
+So the linter will catch a hook in a branch, and will catch a missing dependency only in the one form nobody writes. The stale-value class of bug is entirely on you.
+
+Two habits replace the missing compiler:
+
+1.  **Read the Effect and list the names.** Every free variable in the body should appear in `#!python dependencies`, or be provably module-level. This is mechanical — do it once per Effect at write time.
+2.  **Test the re-synchronization, not just the mount.** Render, change the input, assert the outside world changed:
+
+    ```python linenums="0"
+    async def test_switching_room_reconnects():
+        async with Layout(app()) as layout:
+            await layout.render()
+            ...  # deliver the click that changes the room
+            assert server.log == ["connect lobby", "close lobby", "connect dev"]
+    ```
+
+    A `#!python reactpy.core.layout.Layout` in pytest is enough — no browser, and it catches exactly the bugs the linter cannot see.
+
+## The order Effects run in
+
+Verified output for a parent with two children, each declaring two Effects:
+
+```text linenums="0"
+beta: first effect
+beta: second effect
+alpha: first effect
+alpha: second effect
+panel: my own effect
 ```
 
-**Effects are reactive blocks of code.** They re-synchronize when the values you read inside of them change. Unlike event handlers, which only run once per interaction, Effects run whenever synchronization is necessary.
+=== "app.py"
 
-**You can't "choose" your dependencies.** Your dependencies must include every [reactive value](#all-variables-declared-in-the-component-body-are-reactive) you read in the Effect. The linter enforces this. Sometimes this may lead to problems like infinite loops and to your Effect re-synchronizing too often. Don't fix these problems by suppressing the linter! Here's what to try instead:
+    ```python
+    {% include "../../examples/lifecycle_of_reactive_effects/ordering/app.py" start="# start" %}
+    ```
 
--   **Check that your Effect represents an independent synchronization process.** If your Effect doesn't synchronize anything, [it might be unnecessary.](/learn/you-might-not-need-an-effect) If it synchronizes several independent things, [split it up.](#each-effect-represents-a-separate-synchronization-process)
+=== ":material-play: Run"
 
--   **If you want to read the latest value of props or state without "reacting" to it and re-synchronizing the Effect,** you can split your Effect into a reactive part (which you'll keep in the Effect) and a non-reactive part (which you'll extract into something called an _Effect Event_). [Read about separating Events from Effects.](/learn/separating-events-from-effects)
+    ```python
+    # TODO
+    ```
 
--   **Avoid relying on objects and functions as dependencies.** If you create objects and functions during rendering and then read them from an Effect, they will be different on every render. This will cause your Effect to re-synchronize every time. [Read more about removing unnecessary dependencies from Effects.](/learn/removing-effect-dependencies)
+Three rules, and nothing else:
 
-<Pitfall>
+-   **Children before parent.** A parent's own Effects run after everything below it has set up.
+-   **Siblings in reverse source order.** `#!python beta` before `#!python alpha`. This surprises everyone and is worth knowing if two siblings write to the same external resource.
+-   **Within one component, declaration order.** This one you can rely on.
 
-The linter is your friend, but its powers are limited. The linter only knows when the dependencies are _wrong_. It doesn't know _the best_ way to solve each case. If the linter suggests a dependency, but adding it causes a loop, it doesn't mean the linter should be ignored. You need to change the code inside (or outside) the Effect so that that value isn't reactive and doesn't _need_ to be a dependency.
+Do not build anything on the first two. They are behaviour, not contract — the reverse-sibling rule in particular is an artifact of how effects are collected, and code that depends on a particular cross-component order is code that will break. Within a component, order Effects deliberately; across components, make each Effect self-contained.
 
-If you have an existing codebase, you might have some Effects that suppress the linter like this:
+## Async Effects: cancellation is not instant
 
-```js
-useEffect(() => {
-	// ...
-	// 🔴 Avoid suppressing the linter like this:
-	// eslint-ignore-next-line react-hooks/exhaustive-deps
-}, []);
+`#!python use_async_effect` wraps your coroutine in a task. On re-synchronization the old task is **cancelled**, which means it stops at its next `#!python await` — not before, and not necessarily in time.
+
+Two things follow, both measured.
+
+**Two runs can be alive at once.** Switch topics three times quickly, before any 0.4 s poll resolves, and the log is:
+
+```text linenums="0"
+start polling news
+cancelled news
+start polling sports
+start polling news          # the older run is still awaiting
+cancelled news
+start polling sports
+finished polling sports
+finished polling sports
 ```
 
-On the [next](/learn/separating-events-from-effects) [pages](/learn/removing-effect-dependencies), you'll learn how to fix this code without breaking the rules. It's always worth fixing!
+Verified, and identical across three repeats: two runs are simultaneously awaiting. Cancellation happens when the *successor* task starts, so a run that has already passed its awaits cannot be recalled — and notice the two `#!python finished` lines belong to the same topic.
 
-</Pitfall>
+**A superseded run can still write state.** With a 0.4 s source and four rapid switches (`#!python a → b → c → d`), the runs that actually applied their result were `#!python ['DATA FOR b', 'DATA FOR d']` — `#!python a` and `#!python c` were cancelled, `#!python b` and `#!python d` completed and called their setters. Reproducible across runs.
 
-<Recap>
+So cancellation is a *bias* toward the newest value, not a guarantee. If a stale write would be damaging, do not rely on being cancelled — tag the data with what produced it and check on write:
 
--   Components can mount, update, and unmount.
--   Each Effect has a separate lifecycle from the surrounding component.
--   Each Effect describes a separate synchronization process that can _start_ and _stop_.
--   When you write and read Effects, think from each individual Effect's perspective (how to start and stop synchronization) rather than from the component's perspective (how it mounts, updates, or unmounts).
--   Values declared inside the component body are "reactive".
--   Reactive values should re-synchronize the Effect because they can change over time.
--   The linter verifies that all reactive values used inside the Effect are specified as dependencies.
--   All errors flagged by the linter are legitimate. There's always a way to fix the code to not break the rules.
+```python linenums="0"
+loaded, set_loaded = use_state({"name": None, "data": {}})
 
-</Recap>
-
-<Challenges>
-
-#### Fix reconnecting on every keystroke
-
-In this example, the `ChatRoom` component connects to the chat room when the component mounts, disconnects when it unmounts, and reconnects when you select a different chat room. This behavior is correct, so you need to keep it working.
-
-However, there is a problem. Whenever you type into the message box input at the bottom, `ChatRoom` _also_ reconnects to the chat. (You can notice this by clearing the console and typing into the input.) Fix the issue so that this doesn't happen.
-
-<Hint>
-
-You might need to add a dependency array for this Effect. What dependencies should be there?
-
-</Hint>
-
-```js
-import { useState, useEffect } from "react";
-import { createConnection } from "./chat.js";
-
-const serverUrl = "https://localhost:1234";
-
-function ChatRoom({ roomId }) {
-	const [message, setMessage] = useState("");
-
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.connect();
-		return () => connection.disconnect();
-	});
-
-	return (
-		<>
-			<h1>Welcome to the {roomId} room!</h1>
-			<input
-				value={message}
-				onChange={(e) => setMessage(e.target.value)}
-			/>
-		</>
-	);
-}
-
-export default function App() {
-	const [roomId, setRoomId] = useState("general");
-	return (
-		<>
-			<label>
-				Choose the chat room:{" "}
-				<select
-					value={roomId}
-					onChange={(e) => setRoomId(e.target.value)}
-				>
-					<option value="general">general</option>
-					<option value="travel">travel</option>
-					<option value="music">music</option>
-				</select>
-			</label>
-			<hr />
-			<ChatRoom roomId={roomId} />
-		</>
-	);
-}
+async def effect():
+    data = await fetch(name)
+    if name == expected_name.current:   # still the value we care about?
+        set_loaded({"name": name, "data": data})
 ```
 
-```js
-export function createConnection(serverUrl, roomId) {
-	// A real implementation would actually connect to the server
-	return {
-		connect() {
-			console.log(
-				'✅ Connecting to "' + roomId + '" room at ' + serverUrl + "..."
-			);
-		},
-		disconnect() {
-			console.log(
-				'❌ Disconnected from "' + roomId + '" room at ' + serverUrl
-			);
-		},
-	};
-}
+Put teardown that must run in the cancellation branch, and re-raise:
+
+```python linenums="0"
+async def effect():
+    handle = open_connection()
+    try:
+        while True:
+            await handle.poll()
+    except asyncio.CancelledError:
+        handle.close()
+        raise
 ```
 
-```css
-input {
-	display: block;
-	margin-bottom: 20px;
-}
-button {
-	margin-left: 10px;
-}
-```
+Swallowing `#!python CancelledError` leaves the task in a state asyncio did not expect.
 
-<Solution>
+!!! warning "A sync Effect blocks the whole connection"
 
-This Effect didn't have a dependency array at all, so it re-synchronized after every re-render. First, add a dependency array. Then, make sure that every reactive value used by the Effect is specified in the array. For example, `roomId` is reactive (because it's a prop), so it should be included in the array. This ensures that when the user selects a different room, the chat reconnects. On the other hand, `serverUrl` is defined outside the component. This is why it doesn't need to be in the array.
+    `#!python use_effect` runs on the connection's event loop. Measured: an Effect calling `#!python time.sleep(0.4)` made the next click take **0.40 s** to be served, and every other handler on that connection waited behind it. Only the browser's own local typing stays responsive. Long or blocking work belongs in `#!python use_async_effect`, with blocking calls wrapped in `#!python asyncio.to_thread` ([Communicating Data Between Server and Client](./communicate-data-between-server-and-client.md)).
 
-```js
-import { useState, useEffect } from "react";
-import { createConnection } from "./chat.js";
+## When an Effect fails, nothing reports it
 
-const serverUrl = "https://localhost:1234";
+This is the section that saves the most hours. An Effect body that raises is **invisible** in three places at once:
 
-function ChatRoom({ roomId }) {
-	const [message, setMessage] = useState("");
+-   the page looks completely fine,
+-   the browser console is clean,
+-   and — the part that misleads people — **the server log stays silent too.**
 
-	useEffect(() => {
-		const connection = createConnection(serverUrl, roomId);
-		connection.connect();
-		return () => connection.disconnect();
-	}, [roomId]);
+=== "app.py"
 
-	return (
-		<>
-			<h1>Welcome to the {roomId} room!</h1>
-			<input
-				value={message}
-				onChange={(e) => setMessage(e.target.value)}
-			/>
-		</>
-	);
-}
+    ```python
+    {% include "../../examples/lifecycle_of_reactive_effects/silent_failure/app.py" start="# start" %}
+    ```
 
-export default function App() {
-	const [roomId, setRoomId] = useState("general");
-	return (
-		<>
-			<label>
-				Choose the chat room:{" "}
-				<select
-					value={roomId}
-					onChange={(e) => setRoomId(e.target.value)}
-				>
-					<option value="general">general</option>
-					<option value="travel">travel</option>
-					<option value="music">music</option>
-				</select>
-			</label>
-			<hr />
-			<ChatRoom roomId={roomId} />
-		</>
-	);
-}
-```
+=== ":material-play: Run"
 
-```js
-export function createConnection(serverUrl, roomId) {
-	// A real implementation would actually connect to the server
-	return {
-		connect() {
-			console.log(
-				'✅ Connecting to "' + roomId + '" room at ' + serverUrl + "..."
-			);
-		},
-		disconnect() {
-			console.log(
-				'❌ Disconnected from "' + roomId + '" room at ' + serverUrl
-			);
-		},
-	};
-}
-```
+    ```python
+    # TODO
+    ```
 
-```css
-input {
-	display: block;
-	margin-bottom: 20px;
-}
-button {
-	margin-left: 10px;
-}
-```
+Measured with a log handler attached to the `#!python reactpy` logger: after mount, after three dependency changes, and after half a second idle, **zero** log records. The single `#!python ERROR Error in effect` record appears only when the component unmounts — because `core/_life_cycle_hook.py`, `affect_component_will_unmount` is where the Effect tasks are finally awaited and their exceptions gathered (`core/hooks.py` parks each task on `#!python stop.wait()`, so nobody looks at its result before then).
 
-</Solution>
+Consequences to design around:
 
-#### Switch synchronization on and off
+-   **Never diagnose an Effect from the page.** Read the server log, and read it *after* navigating away — that is when failures surface.
+-   **Assert the external world in tests.** A render assertion passes happily while your Effect is throwing; assert that the connection happened, the row was written, the file exists.
+-   **Catch inside the Effect and set state** when a failure should be visible to the user. ReactPy will not do it for you:
 
-In this example, an Effect subscribes to the window [`pointermove`](https://developer.mozilla.org/en-US/docs/Web/API/Element/pointermove_event) event to move a pink dot on the screen. Try hovering over the preview area (or touching the screen if you're on a mobile device), and see how the pink dot follows your movement.
+    ```python linenums="0"
+    def effect():
+        try:
+            set_metrics(fetch_metrics())
+        except Exception as error:
+            set_error(str(error))   # now the user can see it
+    ```
 
-There is also a checkbox. Ticking the checkbox toggles the `canMove` state variable, but this state variable is not used anywhere in the code. Your task is to change the code so that when `canMove` is `false` (the checkbox is ticked off), the dot should stop moving. After you toggle the checkbox back on (and set `canMove` to `true`), the box should follow the movement again. In other words, whether the dot can move or not should stay synchronized to whether the checkbox is checked.
+Contrast with the failure modes that *are* reported, so you can tell which one you have:
 
-<Hint>
+| Symptom | Cause |
+| --- | --- |
+| Blank region, `#!python error` in the model (debug on) or a server traceback | the **component body** raised — e.g. an `#!python async def` passed to `#!python use_effect` |
+| `#!python ValueError: Cell is empty` in the model | an Effect registered **above** the state it reads |
+| Page looks fine, log silent until unmount | the **Effect body** raised |
+| Page looks fine, log clean forever, Effect never runs | wrong `#!python dependencies` |
 
-You can't declare an Effect conditionally. However, the code inside the Effect can use conditions!
+## Recap
 
-</Hint>
+-   An Effect is a synchronization process: setup, clean-up, and a dependency list that says when to redo it.
+-   The clean-up of a run executes on its successor's task, before that successor's setup — so a re-synchronization is leave-then-join, in order.
+-   An Effect reads the values of the render that **created** it. Not the latest, not necessarily the first.
+-   The dependency list, not the Effect's own text, decides re-synchronization. `#!python dependencies=[]` seals the body at mount.
+-   Dependencies compare with `#!python ==` via `#!python strictly_equal`, so local functions and rebuilt-but-equal containers never count as changed — and a frozen Effect is silent.
+-   ReactPy will not check your dependency list: `reactpy-flake8` reports hooks in branches, and missing dependencies only for inline lambdas. Write the list yourself and test the re-synchronization.
+-   Children's Effects run before the parent's, siblings in reverse, and within a component in declaration order. Only the last is safe to depend on.
+-   Async cancellation lands at the next `#!python await`: runs can overlap and a superseded run can still write. Guard the write; don't trust the cancel.
+-   A raising Effect shows nothing in the page, nothing in the browser, and nothing in the log until unmount. Verify Effects by asserting their effect on the world.
 
-```js
-import { useState, useEffect } from "react";
+## Related
 
-export default function App() {
-	const [position, setPosition] = useState({ x: 0, y: 0 });
-	const [canMove, setCanMove] = useState(true);
-
-	useEffect(() => {
-		function handleMove(e) {
-			setPosition({ x: e.clientX, y: e.clientY });
-		}
-		window.addEventListener("pointermove", handleMove);
-		return () => window.removeEventListener("pointermove", handleMove);
-	}, []);
-
-	return (
-		<>
-			<label>
-				<input
-					type="checkbox"
-					checked={canMove}
-					onChange={(e) => setCanMove(e.target.checked)}
-				/>
-				The dot is allowed to move
-			</label>
-			<hr />
-			<div
-				style={{
-					position: "absolute",
-					backgroundColor: "pink",
-					borderRadius: "50%",
-					opacity: 0.6,
-					transform: `translate(${position.x}px, ${position.y}px)`,
-					pointerEvents: "none",
-					left: -20,
-					top: -20,
-					width: 40,
-					height: 40,
-				}}
-			/>
-		</>
-	);
-}
-```
-
-```css
-body {
-	height: 200px;
-}
-```
-
-<Solution>
-
-One solution is to wrap the `setPosition` call into an `if (canMove) { ... }` condition:
-
-```js
-import { useState, useEffect } from "react";
-
-export default function App() {
-	const [position, setPosition] = useState({ x: 0, y: 0 });
-	const [canMove, setCanMove] = useState(true);
-
-	useEffect(() => {
-		function handleMove(e) {
-			if (canMove) {
-				setPosition({ x: e.clientX, y: e.clientY });
-			}
-		}
-		window.addEventListener("pointermove", handleMove);
-		return () => window.removeEventListener("pointermove", handleMove);
-	}, [canMove]);
-
-	return (
-		<>
-			<label>
-				<input
-					type="checkbox"
-					checked={canMove}
-					onChange={(e) => setCanMove(e.target.checked)}
-				/>
-				The dot is allowed to move
-			</label>
-			<hr />
-			<div
-				style={{
-					position: "absolute",
-					backgroundColor: "pink",
-					borderRadius: "50%",
-					opacity: 0.6,
-					transform: `translate(${position.x}px, ${position.y}px)`,
-					pointerEvents: "none",
-					left: -20,
-					top: -20,
-					width: 40,
-					height: 40,
-				}}
-			/>
-		</>
-	);
-}
-```
-
-```css
-body {
-	height: 200px;
-}
-```
-
-Alternatively, you could wrap the _event subscription_ logic into an `if (canMove) { ... }` condition:
-
-```js
-import { useState, useEffect } from "react";
-
-export default function App() {
-	const [position, setPosition] = useState({ x: 0, y: 0 });
-	const [canMove, setCanMove] = useState(true);
-
-	useEffect(() => {
-		function handleMove(e) {
-			setPosition({ x: e.clientX, y: e.clientY });
-		}
-		if (canMove) {
-			window.addEventListener("pointermove", handleMove);
-			return () => window.removeEventListener("pointermove", handleMove);
-		}
-	}, [canMove]);
-
-	return (
-		<>
-			<label>
-				<input
-					type="checkbox"
-					checked={canMove}
-					onChange={(e) => setCanMove(e.target.checked)}
-				/>
-				The dot is allowed to move
-			</label>
-			<hr />
-			<div
-				style={{
-					position: "absolute",
-					backgroundColor: "pink",
-					borderRadius: "50%",
-					opacity: 0.6,
-					transform: `translate(${position.x}px, ${position.y}px)`,
-					pointerEvents: "none",
-					left: -20,
-					top: -20,
-					width: 40,
-					height: 40,
-				}}
-			/>
-		</>
-	);
-}
-```
-
-```css
-body {
-	height: 200px;
-}
-```
-
-In both of these cases, `canMove` is a reactive variable that you read inside the Effect. This is why it must be specified in the list of Effect dependencies. This ensures that the Effect re-synchronizes after every change to its value.
-
-</Solution>
-
-#### Investigate a stale value bug
-
-In this example, the pink dot should move when the checkbox is on, and should stop moving when the checkbox is off. The logic for this has already been implemented: the `handleMove` event handler checks the `canMove` state variable.
-
-However, for some reason, the `canMove` state variable inside `handleMove` appears to be "stale": it's always `true`, even after you tick off the checkbox. How is this possible? Find the mistake in the code and fix it.
-
-<Hint>
-
-If you see a linter rule being suppressed, remove the suppression! That's where the mistakes usually are.
-
-</Hint>
-
-```js
-import { useState, useEffect } from "react";
-
-export default function App() {
-	const [position, setPosition] = useState({ x: 0, y: 0 });
-	const [canMove, setCanMove] = useState(true);
-
-	function handleMove(e) {
-		if (canMove) {
-			setPosition({ x: e.clientX, y: e.clientY });
-		}
-	}
-
-	useEffect(() => {
-		window.addEventListener("pointermove", handleMove);
-		return () => window.removeEventListener("pointermove", handleMove);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
-
-	return (
-		<>
-			<label>
-				<input
-					type="checkbox"
-					checked={canMove}
-					onChange={(e) => setCanMove(e.target.checked)}
-				/>
-				The dot is allowed to move
-			</label>
-			<hr />
-			<div
-				style={{
-					position: "absolute",
-					backgroundColor: "pink",
-					borderRadius: "50%",
-					opacity: 0.6,
-					transform: `translate(${position.x}px, ${position.y}px)`,
-					pointerEvents: "none",
-					left: -20,
-					top: -20,
-					width: 40,
-					height: 40,
-				}}
-			/>
-		</>
-	);
-}
-```
-
-```css
-body {
-	height: 200px;
-}
-```
-
-<Solution>
-
-The problem with the original code was suppressing the dependency linter. If you remove the suppression, you'll see that this Effect depends on the `handleMove` function. This makes sense: `handleMove` is declared inside the component body, which makes it a reactive value. Every reactive value must be specified as a dependency, or it can potentially get stale over time!
-
-The author of the original code has "lied" to React by saying that the Effect does not depend (`[]`) on any reactive values. This is why React did not re-synchronize the Effect after `canMove` has changed (and `handleMove` with it). Because React did not re-synchronize the Effect, the `handleMove` attached as a listener is the `handleMove` function created during the initial render. During the initial render, `canMove` was `true`, which is why `handleMove` from the initial render will forever see that value.
-
-**If you never suppress the linter, you will never see problems with stale values.** There are a few different ways to solve this bug, but you should always start by removing the linter suppression. Then change the code to fix the lint error.
-
-You can change the Effect dependencies to `[handleMove]`, but since it's going to be a newly defined function for every render, you might as well remove dependencies array altogether. Then the Effect _will_ re-synchronize after every re-render:
-
-```js
-import { useState, useEffect } from "react";
-
-export default function App() {
-	const [position, setPosition] = useState({ x: 0, y: 0 });
-	const [canMove, setCanMove] = useState(true);
-
-	function handleMove(e) {
-		if (canMove) {
-			setPosition({ x: e.clientX, y: e.clientY });
-		}
-	}
-
-	useEffect(() => {
-		window.addEventListener("pointermove", handleMove);
-		return () => window.removeEventListener("pointermove", handleMove);
-	});
-
-	return (
-		<>
-			<label>
-				<input
-					type="checkbox"
-					checked={canMove}
-					onChange={(e) => setCanMove(e.target.checked)}
-				/>
-				The dot is allowed to move
-			</label>
-			<hr />
-			<div
-				style={{
-					position: "absolute",
-					backgroundColor: "pink",
-					borderRadius: "50%",
-					opacity: 0.6,
-					transform: `translate(${position.x}px, ${position.y}px)`,
-					pointerEvents: "none",
-					left: -20,
-					top: -20,
-					width: 40,
-					height: 40,
-				}}
-			/>
-		</>
-	);
-}
-```
-
-```css
-body {
-	height: 200px;
-}
-```
-
-This solution works, but it's not ideal. If you put `console.log('Resubscribing')` inside the Effect, you'll notice that it resubscribes after every re-render. Resubscribing is fast, but it would still be nice to avoid doing it so often.
-
-A better fix would be to move the `handleMove` function _inside_ the Effect. Then `handleMove` won't be a reactive value, and so your Effect won't depend on a function. Instead, it will need to depend on `canMove` which your code now reads from inside the Effect. This matches the behavior you wanted, since your Effect will now stay synchronized with the value of `canMove`:
-
-```js
-import { useState, useEffect } from "react";
-
-export default function App() {
-	const [position, setPosition] = useState({ x: 0, y: 0 });
-	const [canMove, setCanMove] = useState(true);
-
-	useEffect(() => {
-		function handleMove(e) {
-			if (canMove) {
-				setPosition({ x: e.clientX, y: e.clientY });
-			}
-		}
-
-		window.addEventListener("pointermove", handleMove);
-		return () => window.removeEventListener("pointermove", handleMove);
-	}, [canMove]);
-
-	return (
-		<>
-			<label>
-				<input
-					type="checkbox"
-					checked={canMove}
-					onChange={(e) => setCanMove(e.target.checked)}
-				/>
-				The dot is allowed to move
-			</label>
-			<hr />
-			<div
-				style={{
-					position: "absolute",
-					backgroundColor: "pink",
-					borderRadius: "50%",
-					opacity: 0.6,
-					transform: `translate(${position.x}px, ${position.y}px)`,
-					pointerEvents: "none",
-					left: -20,
-					top: -20,
-					width: 40,
-					height: 40,
-				}}
-			/>
-		</>
-	);
-}
-```
-
-```css
-body {
-	height: 200px;
-}
-```
-
-Try adding `console.log('Resubscribing')` inside the Effect body and notice that now it only resubscribes when you toggle the checkbox (`canMove` changes) or edit the code. This makes it better than the previous approach that always resubscribed.
-
-You'll learn a more general approach to this type of problem in [Separating Events from Effects.](/learn/separating-events-from-effects)
-
-</Solution>
-
-#### Fix a connection switch
-
-In this example, the chat service in `chat.js` exposes two different APIs: `createEncryptedConnection` and `createUnencryptedConnection`. The root `App` component lets the user choose whether to use encryption or not, and then passes down the corresponding API method to the child `ChatRoom` component as the `createConnection` prop.
-
-Notice that initially, the console logs say the connection is not encrypted. Try toggling the checkbox on: nothing will happen. However, if you change the selected room after that, then the chat will reconnect _and_ enable encryption (as you'll see from the console messages). This is a bug. Fix the bug so that toggling the checkbox _also_ causes the chat to reconnect.
-
-<Hint>
-
-Suppressing the linter is always suspicious. Could this be a bug?
-
-</Hint>
-
-```js
-import { useState } from "react";
-import ChatRoom from "./ChatRoom.js";
-import {
-	createEncryptedConnection,
-	createUnencryptedConnection,
-} from "./chat.js";
-
-export default function App() {
-	const [roomId, setRoomId] = useState("general");
-	const [isEncrypted, setIsEncrypted] = useState(false);
-	return (
-		<>
-			<label>
-				Choose the chat room:{" "}
-				<select
-					value={roomId}
-					onChange={(e) => setRoomId(e.target.value)}
-				>
-					<option value="general">general</option>
-					<option value="travel">travel</option>
-					<option value="music">music</option>
-				</select>
-			</label>
-			<label>
-				<input
-					type="checkbox"
-					checked={isEncrypted}
-					onChange={(e) => setIsEncrypted(e.target.checked)}
-				/>
-				Enable encryption
-			</label>
-			<hr />
-			<ChatRoom
-				roomId={roomId}
-				createConnection={
-					isEncrypted
-						? createEncryptedConnection
-						: createUnencryptedConnection
-				}
-			/>
-		</>
-	);
-}
-```
-
-```js
-import { useState, useEffect } from "react";
-
-export default function ChatRoom({ roomId, createConnection }) {
-	useEffect(() => {
-		const connection = createConnection(roomId);
-		connection.connect();
-		return () => connection.disconnect();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [roomId]);
-
-	return <h1>Welcome to the {roomId} room!</h1>;
-}
-```
-
-```js
-export function createEncryptedConnection(roomId) {
-	// A real implementation would actually connect to the server
-	return {
-		connect() {
-			console.log('✅ 🔐 Connecting to "' + roomId + "... (encrypted)");
-		},
-		disconnect() {
-			console.log(
-				'❌ 🔐 Disconnected from "' + roomId + '" room (encrypted)'
-			);
-		},
-	};
-}
-
-export function createUnencryptedConnection(roomId) {
-	// A real implementation would actually connect to the server
-	return {
-		connect() {
-			console.log('✅ Connecting to "' + roomId + "... (unencrypted)");
-		},
-		disconnect() {
-			console.log(
-				'❌ Disconnected from "' + roomId + '" room (unencrypted)'
-			);
-		},
-	};
-}
-```
-
-```css
-label {
-	display: block;
-	margin-bottom: 10px;
-}
-```
-
-<Solution>
-
-If you remove the linter suppression, you will see a lint error. The problem is that `createConnection` is a prop, so it's a reactive value. It can change over time! (And indeed, it should--when the user ticks the checkbox, the parent component passes a different value of the `createConnection` prop.) This is why it should be a dependency. Include it in the list to fix the bug:
-
-```js
-import { useState } from "react";
-import ChatRoom from "./ChatRoom.js";
-import {
-	createEncryptedConnection,
-	createUnencryptedConnection,
-} from "./chat.js";
-
-export default function App() {
-	const [roomId, setRoomId] = useState("general");
-	const [isEncrypted, setIsEncrypted] = useState(false);
-	return (
-		<>
-			<label>
-				Choose the chat room:{" "}
-				<select
-					value={roomId}
-					onChange={(e) => setRoomId(e.target.value)}
-				>
-					<option value="general">general</option>
-					<option value="travel">travel</option>
-					<option value="music">music</option>
-				</select>
-			</label>
-			<label>
-				<input
-					type="checkbox"
-					checked={isEncrypted}
-					onChange={(e) => setIsEncrypted(e.target.checked)}
-				/>
-				Enable encryption
-			</label>
-			<hr />
-			<ChatRoom
-				roomId={roomId}
-				createConnection={
-					isEncrypted
-						? createEncryptedConnection
-						: createUnencryptedConnection
-				}
-			/>
-		</>
-	);
-}
-```
-
-```js
-import { useState, useEffect } from "react";
-
-export default function ChatRoom({ roomId, createConnection }) {
-	useEffect(() => {
-		const connection = createConnection(roomId);
-		connection.connect();
-		return () => connection.disconnect();
-	}, [roomId, createConnection]);
-
-	return <h1>Welcome to the {roomId} room!</h1>;
-}
-```
-
-```js
-export function createEncryptedConnection(roomId) {
-	// A real implementation would actually connect to the server
-	return {
-		connect() {
-			console.log('✅ 🔐 Connecting to "' + roomId + "... (encrypted)");
-		},
-		disconnect() {
-			console.log(
-				'❌ 🔐 Disconnected from "' + roomId + '" room (encrypted)'
-			);
-		},
-	};
-}
-
-export function createUnencryptedConnection(roomId) {
-	// A real implementation would actually connect to the server
-	return {
-		connect() {
-			console.log('✅ Connecting to "' + roomId + "... (unencrypted)");
-		},
-		disconnect() {
-			console.log(
-				'❌ Disconnected from "' + roomId + '" room (unencrypted)'
-			);
-		},
-	};
-}
-```
-
-```css
-label {
-	display: block;
-	margin-bottom: 10px;
-}
-```
-
-It is correct that `createConnection` is a dependency. However, this code is a bit fragile because someone could edit the `App` component to pass an inline function as the value of this prop. In that case, its value would be different every time the `App` component re-renders, so the Effect might re-synchronize too often. To avoid this, you can pass `isEncrypted` down instead:
-
-```js
-import { useState } from "react";
-import ChatRoom from "./ChatRoom.js";
-
-export default function App() {
-	const [roomId, setRoomId] = useState("general");
-	const [isEncrypted, setIsEncrypted] = useState(false);
-	return (
-		<>
-			<label>
-				Choose the chat room:{" "}
-				<select
-					value={roomId}
-					onChange={(e) => setRoomId(e.target.value)}
-				>
-					<option value="general">general</option>
-					<option value="travel">travel</option>
-					<option value="music">music</option>
-				</select>
-			</label>
-			<label>
-				<input
-					type="checkbox"
-					checked={isEncrypted}
-					onChange={(e) => setIsEncrypted(e.target.checked)}
-				/>
-				Enable encryption
-			</label>
-			<hr />
-			<ChatRoom roomId={roomId} isEncrypted={isEncrypted} />
-		</>
-	);
-}
-```
-
-```js
-import { useState, useEffect } from "react";
-import {
-	createEncryptedConnection,
-	createUnencryptedConnection,
-} from "./chat.js";
-
-export default function ChatRoom({ roomId, isEncrypted }) {
-	useEffect(() => {
-		const createConnection = isEncrypted
-			? createEncryptedConnection
-			: createUnencryptedConnection;
-		const connection = createConnection(roomId);
-		connection.connect();
-		return () => connection.disconnect();
-	}, [roomId, isEncrypted]);
-
-	return <h1>Welcome to the {roomId} room!</h1>;
-}
-```
-
-```js
-export function createEncryptedConnection(roomId) {
-	// A real implementation would actually connect to the server
-	return {
-		connect() {
-			console.log('✅ 🔐 Connecting to "' + roomId + "... (encrypted)");
-		},
-		disconnect() {
-			console.log(
-				'❌ 🔐 Disconnected from "' + roomId + '" room (encrypted)'
-			);
-		},
-	};
-}
-
-export function createUnencryptedConnection(roomId) {
-	// A real implementation would actually connect to the server
-	return {
-		connect() {
-			console.log('✅ Connecting to "' + roomId + "... (unencrypted)");
-		},
-		disconnect() {
-			console.log(
-				'❌ Disconnected from "' + roomId + '" room (unencrypted)'
-			);
-		},
-	};
-}
-```
-
-```css
-label {
-	display: block;
-	margin-bottom: 10px;
-}
-```
-
-In this version, the `App` component passes a boolean prop instead of a function. Inside the Effect, you decide which function to use. Since both `createEncryptedConnection` and `createUnencryptedConnection` are declared outside the component, they aren't reactive, and don't need to be dependencies. You'll learn more about this in [Removing Effect Dependencies.](/learn/removing-effect-dependencies)
-
-</Solution>
-
-#### Populate a chain of select boxes
-
-In this example, there are two select boxes. One select box lets the user pick a planet. Another select box lets the user pick a place _on that planet._ The second box doesn't work yet. Your task is to make it show the places on the chosen planet.
-
-Look at how the first select box works. It populates the `planetList` state with the result from the `"/planets"` API call. The currently selected planet's ID is kept in the `planetId` state variable. You need to find where to add some additional code so that the `placeList` state variable is populated with the result of the `"/planets/" + planetId + "/places"` API call.
-
-If you implement this right, selecting a planet should populate the place list. Changing a planet should change the place list.
-
-<Hint>
-
-If you have two independent synchronization processes, you need to write two separate Effects.
-
-</Hint>
-
-```js
-import { useState, useEffect } from "react";
-import { fetchData } from "./api.js";
-
-export default function Page() {
-	const [planetList, setPlanetList] = useState([]);
-	const [planetId, setPlanetId] = useState("");
-
-	const [placeList, setPlaceList] = useState([]);
-	const [placeId, setPlaceId] = useState("");
-
-	useEffect(() => {
-		let ignore = false;
-		fetchData("/planets").then((result) => {
-			if (!ignore) {
-				console.log("Fetched a list of planets.");
-				setPlanetList(result);
-				setPlanetId(result[0].id); // Select the first planet
-			}
-		});
-		return () => {
-			ignore = true;
-		};
-	}, []);
-
-	return (
-		<>
-			<label>
-				Pick a planet:{" "}
-				<select
-					value={planetId}
-					onChange={(e) => {
-						setPlanetId(e.target.value);
-					}}
-				>
-					{planetList.map((planet) => (
-						<option key={planet.id} value={planet.id}>
-							{planet.name}
-						</option>
-					))}
-				</select>
-			</label>
-			<label>
-				Pick a place:{" "}
-				<select
-					value={placeId}
-					onChange={(e) => {
-						setPlaceId(e.target.value);
-					}}
-				>
-					{placeList.map((place) => (
-						<option key={place.id} value={place.id}>
-							{place.name}
-						</option>
-					))}
-				</select>
-			</label>
-			<hr />
-			<p>
-				You are going to: {placeId || "???"} on {planetId || "???"}{" "}
-			</p>
-		</>
-	);
-}
-```
-
-```js
-export function fetchData(url) {
-	if (url === "/planets") {
-		return fetchPlanets();
-	} else if (url.startsWith("/planets/")) {
-		const match = url.match(/^\/planets\/([\w-]+)\/places(\/)?$/);
-		if (!match || !match[1] || !match[1].length) {
-			throw Error(
-				'Expected URL like "/planets/earth/places". Received: "' +
-					url +
-					'".'
-			);
-		}
-		return fetchPlaces(match[1]);
-	} else
-		throw Error(
-			'Expected URL like "/planets" or "/planets/earth/places". Received: "' +
-				url +
-				'".'
-		);
-}
-
-async function fetchPlanets() {
-	return new Promise((resolve) => {
-		setTimeout(() => {
-			resolve([
-				{
-					id: "earth",
-					name: "Earth",
-				},
-				{
-					id: "venus",
-					name: "Venus",
-				},
-				{
-					id: "mars",
-					name: "Mars",
-				},
-			]);
-		}, 1000);
-	});
-}
-
-async function fetchPlaces(planetId) {
-	if (typeof planetId !== "string") {
-		throw Error(
-			"fetchPlaces(planetId) expects a string argument. " +
-				"Instead received: " +
-				planetId +
-				"."
-		);
-	}
-	return new Promise((resolve) => {
-		setTimeout(() => {
-			if (planetId === "earth") {
-				resolve([
-					{
-						id: "laos",
-						name: "Laos",
-					},
-					{
-						id: "spain",
-						name: "Spain",
-					},
-					{
-						id: "vietnam",
-						name: "Vietnam",
-					},
-				]);
-			} else if (planetId === "venus") {
-				resolve([
-					{
-						id: "aurelia",
-						name: "Aurelia",
-					},
-					{
-						id: "diana-chasma",
-						name: "Diana Chasma",
-					},
-					{
-						id: "kumsong-vallis",
-						name: "Kŭmsŏng Vallis",
-					},
-				]);
-			} else if (planetId === "mars") {
-				resolve([
-					{
-						id: "aluminum-city",
-						name: "Aluminum City",
-					},
-					{
-						id: "new-new-york",
-						name: "New New York",
-					},
-					{
-						id: "vishniac",
-						name: "Vishniac",
-					},
-				]);
-			} else throw Error("Unknown planet ID: " + planetId);
-		}, 1000);
-	});
-}
-```
-
-```css
-label {
-	display: block;
-	margin-bottom: 10px;
-}
-```
-
-<Solution>
-
-There are two independent synchronization processes:
-
--   The first select box is synchronized to the remote list of planets.
--   The second select box is synchronized to the remote list of places for the current `planetId`.
-
-This is why it makes sense to describe them as two separate Effects. Here's an example of how you could do this:
-
-```js
-import { useState, useEffect } from "react";
-import { fetchData } from "./api.js";
-
-export default function Page() {
-	const [planetList, setPlanetList] = useState([]);
-	const [planetId, setPlanetId] = useState("");
-
-	const [placeList, setPlaceList] = useState([]);
-	const [placeId, setPlaceId] = useState("");
-
-	useEffect(() => {
-		let ignore = false;
-		fetchData("/planets").then((result) => {
-			if (!ignore) {
-				console.log("Fetched a list of planets.");
-				setPlanetList(result);
-				setPlanetId(result[0].id); // Select the first planet
-			}
-		});
-		return () => {
-			ignore = true;
-		};
-	}, []);
-
-	useEffect(() => {
-		if (planetId === "") {
-			// Nothing is selected in the first box yet
-			return;
-		}
-
-		let ignore = false;
-		fetchData("/planets/" + planetId + "/places").then((result) => {
-			if (!ignore) {
-				console.log('Fetched a list of places on "' + planetId + '".');
-				setPlaceList(result);
-				setPlaceId(result[0].id); // Select the first place
-			}
-		});
-		return () => {
-			ignore = true;
-		};
-	}, [planetId]);
-
-	return (
-		<>
-			<label>
-				Pick a planet:{" "}
-				<select
-					value={planetId}
-					onChange={(e) => {
-						setPlanetId(e.target.value);
-					}}
-				>
-					{planetList.map((planet) => (
-						<option key={planet.id} value={planet.id}>
-							{planet.name}
-						</option>
-					))}
-				</select>
-			</label>
-			<label>
-				Pick a place:{" "}
-				<select
-					value={placeId}
-					onChange={(e) => {
-						setPlaceId(e.target.value);
-					}}
-				>
-					{placeList.map((place) => (
-						<option key={place.id} value={place.id}>
-							{place.name}
-						</option>
-					))}
-				</select>
-			</label>
-			<hr />
-			<p>
-				You are going to: {placeId || "???"} on {planetId || "???"}{" "}
-			</p>
-		</>
-	);
-}
-```
-
-```js
-export function fetchData(url) {
-	if (url === "/planets") {
-		return fetchPlanets();
-	} else if (url.startsWith("/planets/")) {
-		const match = url.match(/^\/planets\/([\w-]+)\/places(\/)?$/);
-		if (!match || !match[1] || !match[1].length) {
-			throw Error(
-				'Expected URL like "/planets/earth/places". Received: "' +
-					url +
-					'".'
-			);
-		}
-		return fetchPlaces(match[1]);
-	} else
-		throw Error(
-			'Expected URL like "/planets" or "/planets/earth/places". Received: "' +
-				url +
-				'".'
-		);
-}
-
-async function fetchPlanets() {
-	return new Promise((resolve) => {
-		setTimeout(() => {
-			resolve([
-				{
-					id: "earth",
-					name: "Earth",
-				},
-				{
-					id: "venus",
-					name: "Venus",
-				},
-				{
-					id: "mars",
-					name: "Mars",
-				},
-			]);
-		}, 1000);
-	});
-}
-
-async function fetchPlaces(planetId) {
-	if (typeof planetId !== "string") {
-		throw Error(
-			"fetchPlaces(planetId) expects a string argument. " +
-				"Instead received: " +
-				planetId +
-				"."
-		);
-	}
-	return new Promise((resolve) => {
-		setTimeout(() => {
-			if (planetId === "earth") {
-				resolve([
-					{
-						id: "laos",
-						name: "Laos",
-					},
-					{
-						id: "spain",
-						name: "Spain",
-					},
-					{
-						id: "vietnam",
-						name: "Vietnam",
-					},
-				]);
-			} else if (planetId === "venus") {
-				resolve([
-					{
-						id: "aurelia",
-						name: "Aurelia",
-					},
-					{
-						id: "diana-chasma",
-						name: "Diana Chasma",
-					},
-					{
-						id: "kumsong-vallis",
-						name: "Kŭmsŏng Vallis",
-					},
-				]);
-			} else if (planetId === "mars") {
-				resolve([
-					{
-						id: "aluminum-city",
-						name: "Aluminum City",
-					},
-					{
-						id: "new-new-york",
-						name: "New New York",
-					},
-					{
-						id: "vishniac",
-						name: "Vishniac",
-					},
-				]);
-			} else throw Error("Unknown planet ID: " + planetId);
-		}, 1000);
-	});
-}
-```
-
-```css
-label {
-	display: block;
-	margin-bottom: 10px;
-}
-```
-
-This code is a bit repetitive. However, that's not a good reason to combine it into a single Effect! If you did this, you'd have to combine both Effect's dependencies into one list, and then changing the planet would refetch the list of all planets. Effects are not a tool for code reuse.
-
-Instead, to reduce repetition, you can extract some logic into a custom Hook like `useSelectOptions` below:
-
-```js
-import { useState } from "react";
-import { useSelectOptions } from "./useSelectOptions.js";
-
-export default function Page() {
-	const [planetList, planetId, setPlanetId] = useSelectOptions("/planets");
-
-	const [placeList, placeId, setPlaceId] = useSelectOptions(
-		planetId ? `/planets/${planetId}/places` : null
-	);
-
-	return (
-		<>
-			<label>
-				Pick a planet:{" "}
-				<select
-					value={planetId}
-					onChange={(e) => {
-						setPlanetId(e.target.value);
-					}}
-				>
-					{planetList?.map((planet) => (
-						<option key={planet.id} value={planet.id}>
-							{planet.name}
-						</option>
-					))}
-				</select>
-			</label>
-			<label>
-				Pick a place:{" "}
-				<select
-					value={placeId}
-					onChange={(e) => {
-						setPlaceId(e.target.value);
-					}}
-				>
-					{placeList?.map((place) => (
-						<option key={place.id} value={place.id}>
-							{place.name}
-						</option>
-					))}
-				</select>
-			</label>
-			<hr />
-			<p>
-				You are going to: {placeId || "..."} on {planetId || "..."}{" "}
-			</p>
-		</>
-	);
-}
-```
-
-```js
-import { useState, useEffect } from "react";
-import { fetchData } from "./api.js";
-
-export function useSelectOptions(url) {
-	const [list, setList] = useState(null);
-	const [selectedId, setSelectedId] = useState("");
-	useEffect(() => {
-		if (url === null) {
-			return;
-		}
-
-		let ignore = false;
-		fetchData(url).then((result) => {
-			if (!ignore) {
-				setList(result);
-				setSelectedId(result[0].id);
-			}
-		});
-		return () => {
-			ignore = true;
-		};
-	}, [url]);
-	return [list, selectedId, setSelectedId];
-}
-```
-
-```js
-export function fetchData(url) {
-	if (url === "/planets") {
-		return fetchPlanets();
-	} else if (url.startsWith("/planets/")) {
-		const match = url.match(/^\/planets\/([\w-]+)\/places(\/)?$/);
-		if (!match || !match[1] || !match[1].length) {
-			throw Error(
-				'Expected URL like "/planets/earth/places". Received: "' +
-					url +
-					'".'
-			);
-		}
-		return fetchPlaces(match[1]);
-	} else
-		throw Error(
-			'Expected URL like "/planets" or "/planets/earth/places". Received: "' +
-				url +
-				'".'
-		);
-}
-
-async function fetchPlanets() {
-	return new Promise((resolve) => {
-		setTimeout(() => {
-			resolve([
-				{
-					id: "earth",
-					name: "Earth",
-				},
-				{
-					id: "venus",
-					name: "Venus",
-				},
-				{
-					id: "mars",
-					name: "Mars",
-				},
-			]);
-		}, 1000);
-	});
-}
-
-async function fetchPlaces(planetId) {
-	if (typeof planetId !== "string") {
-		throw Error(
-			"fetchPlaces(planetId) expects a string argument. " +
-				"Instead received: " +
-				planetId +
-				"."
-		);
-	}
-	return new Promise((resolve) => {
-		setTimeout(() => {
-			if (planetId === "earth") {
-				resolve([
-					{
-						id: "laos",
-						name: "Laos",
-					},
-					{
-						id: "spain",
-						name: "Spain",
-					},
-					{
-						id: "vietnam",
-						name: "Vietnam",
-					},
-				]);
-			} else if (planetId === "venus") {
-				resolve([
-					{
-						id: "aurelia",
-						name: "Aurelia",
-					},
-					{
-						id: "diana-chasma",
-						name: "Diana Chasma",
-					},
-					{
-						id: "kumsong-vallis",
-						name: "Kŭmsŏng Vallis",
-					},
-				]);
-			} else if (planetId === "mars") {
-				resolve([
-					{
-						id: "aluminum-city",
-						name: "Aluminum City",
-					},
-					{
-						id: "new-new-york",
-						name: "New New York",
-					},
-					{
-						id: "vishniac",
-						name: "Vishniac",
-					},
-				]);
-			} else throw Error("Unknown planet ID: " + planetId);
-		}, 1000);
-	});
-}
-```
-
-```css
-label {
-	display: block;
-	margin-bottom: 10px;
-}
-```
-
-Check the `useSelectOptions.js` tab in the sandbox to see how it works. Ideally, most Effects in your application should eventually be replaced by custom Hooks, whether written by you or by the community. Custom Hooks hide the synchronization logic, so the calling component doesn't know about the Effect. As you keep working on your app, you'll develop a palette of Hooks to choose from, and eventually you won't need to write Effects in your components very often.
-
-</Solution>
-
-</Challenges>
+-   [Synchronizing with Effects](./synchronizing-with-effects.md) — the four-way dependency table, clean-ups, and the common patterns
+-   [You Might Not Need an Effect](./you-might-not-need-an-effect.md) — the cases that belong in the render
+-   [Separating Events from Effects](./separating-events-from-effects.md) — reading fresh values without restarting a process
+-   [Removing Effect Dependencies](./removing-effect-dependencies.md) — the legitimate ways to drop a dependency
+-   [Use Effect](../reference/use-effect.md) and [Use Async Effect](../reference/use-async-effect.md) — parameter-level reference
