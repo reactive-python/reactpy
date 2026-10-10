@@ -141,18 +141,23 @@ REACTPY_MAX_QUEUE_SIZE = Option(
 
 REACTPY_ENABLE_EVENT_PROXY = Option(
     "REACTPY_ENABLE_EVENT_PROXY",
-    default=True,
+    default=False,
     mutable=True,
     validator=boolean,
 )
 """Whether event handlers receive live client-backed event objects.
 
-When enabled (the default) the client keeps a reference to the dispatched JavaScript
-``Event`` around and lets the server read properties from, and call methods on, that
-object. Event handlers then receive a :class:`reactpy.types.SyncEvent` or
+Disabled by default. When enabled the client keeps a reference to the dispatched
+JavaScript ``Event`` around and lets the server read properties from, and call methods
+on, that object. Event handlers then receive a :class:`reactpy.types.SyncEvent` or
 :class:`reactpy.types.AsyncEvent` (both are ``dict`` subclasses holding the usual
 snapshot). When disabled, or when the client does not support live access, handlers
 receive the plain :class:`reactpy.types.Event` snapshot as they always have.
+
+Individual handlers can opt in with ``EventHandler(fn, event_proxy=True)`` without
+turning this on globally. Note that a *synchronous* handler which reads a live value
+is run in a worker thread so that it may block, and cannot safely call ``set_state``
+from there yet.
 """
 
 REACTPY_EVENT_PROXY_TIMEOUT = Option(

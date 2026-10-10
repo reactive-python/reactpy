@@ -31,6 +31,7 @@ from reactpy._event_proxy import (
     serialize_argument,
 )
 from reactpy.config import (
+    REACTPY_ENABLE_EVENT_PROXY,
     REACTPY_EVENT_PROXY_MAX_TIMEOUTS,
     REACTPY_EVENT_PROXY_TIMEOUT,
 )
@@ -450,7 +451,8 @@ def event_handlers_of(model: dict[str, Any]) -> dict[str, Any]:
     raise KeyError(msg)
 
 
-async def test_layout_hands_handlers_events_of_their_own_flavour():
+async def test_layout_hands_handlers_events_of_their_own_flavour(monkeypatch):
+    monkeypatch.setattr(REACTPY_ENABLE_EVENT_PROXY, "current", True)
     main_thread = threading.current_thread().name
     received: dict[str, tuple[Any, str, Any]] = {}
     objects = make_objects()
@@ -533,7 +535,8 @@ async def test_layout_respects_the_per_handler_kill_switch():
     assert client.requests == []
 
 
-async def test_merged_handlers_get_the_flavour_each_needs():
+async def test_merged_handlers_get_the_flavour_each_needs(monkeypatch):
+    monkeypatch.setattr(REACTPY_ENABLE_EVENT_PROXY, "current", True)
     received: dict[str, Any] = {}
 
     def sync_handler(args):

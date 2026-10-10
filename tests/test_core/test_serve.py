@@ -60,7 +60,6 @@ def make_events_and_expected_model():
                         "target": STATIC_EVENT_HANDLER.target,
                         "preventDefault": False,
                         "stopPropagation": False,
-                        "eventProxy": True,
                     }
                 },
             }
