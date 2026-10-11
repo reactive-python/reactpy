@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from time import monotonic
 from types import MappingProxyType
 from typing import Any
@@ -16,7 +16,6 @@ from reactpy._event_proxy import (
     EVENT_PROXY_REQUEST_TYPE,
     EVENT_PROXY_RESPONSE_TYPE,
     EVENT_REFERENCE_KEY,
-    EventArguments,
     Event,
     EventProxy,
     EventProxyAccessError,
@@ -32,12 +31,9 @@ from reactpy.config import (
     REACTPY_EVENT_PROXY_MAX_TIMEOUTS,
     REACTPY_EVENT_PROXY_TIMEOUT,
 )
-
 from reactpy.core.component import component
 from reactpy.core.events import EventHandler, event, merge_event_handlers
 from reactpy.core.layout import Layout
-from reactpy.testing import assert_reactpy_did_log
-from reactpy.utils import Ref
 from tests.tooling.common import event_message
 
 
@@ -714,6 +710,8 @@ async def test_a_proxy_with_nothing_behind_it_cannot_resolve():
     base = make_proxy(EventProxyBackend(), "evt", ["target"])
 
     assert dict(base) == {}
+    # with nothing behind it, the snapshot is all there is to describe
+    assert repr(base) == "{}"
     with pytest.raises(EventProxyUnavailable, match="live access"):
         await base
 
@@ -862,7 +860,7 @@ async def test_lists_inside_a_snapshot_are_wrapped_with_child_proxies():
     assert requested_paths(client) == []
 
 
-# -- the dict protocol of an asynchronous proxy -----------------------------
+# -- the dict protocol of a proxy -------------------------------------------
 
 
 async def test_async_proxies_refuse_to_be_inspected_while_unknown():
@@ -898,9 +896,18 @@ async def test_proxies_without_a_connection_are_quietly_empty():
     assert len(event_object) == 0
     assert list(event_object) == []
     assert "type" not in event_object
+    # reading through to an attribute nobody can answer for gives nothing at all
+    assert event_object.type is None
+    assert event_object.target is None
+
+    # whatever the snapshot does hold is handed back without asking anybody
+    held = make_event(
+        EventProxyBackend(), "evt", snapshot={"target": {"value": "kept"}}
+    )
+    assert held.target["value"] == "kept"
 
 
-# -- what the synchronous flavour does when it has to block -----------------
+# -- what a proxy does when it has to ask the browser -----------------------
 
 
 async def test_reads_either_use_the_snapshot_or_ask_the_browser():
@@ -948,6 +955,29 @@ async def test_a_failed_send_switches_live_access_off():
     assert len(sent) == 1, "the request was handed to the client once"
     assert backend.disabled
     assert not backend.available
+
+
+async def test_a_call_made_from_another_thread_is_sent_by_the_loop():
+    """A handler is free to think on a worker thread; the loop still does the sending
+
+    Nothing about live access is thread safe - the connection to the browser belongs
+    to the loop which accepted it - so a request conceived elsewhere is handed over
+    rather than sent from the thread which thought of it.
+    """
+    backend, client = make_canned_client(ok=True)
+
+    def call_from_a_worker() -> None:
+        backend.notify("evt", ("log",), ["written"])
+
+    await asyncio.to_thread(call_from_a_worker)
+    await poll(lambda: client.sent)
+
+    request = client.sent[0]
+    assert request["type"] == EVENT_PROXY_REQUEST_TYPE
+    assert request["path"] == ["log"]
+    assert request["call"] is True
+    assert request["args"] == ["written"]
+    assert request["reply"] is False
 
 
 async def test_closing_the_backend_fails_everything_still_in_flight():

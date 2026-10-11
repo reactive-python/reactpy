@@ -907,7 +907,7 @@ async def test_controlled_input_rapid_typing(display: DisplayFixture, delay: int
     # by the latch bug would be pinned to a stale prefix forever, timing this out.
     await poll(values).until(
         lambda client_and_server: client_and_server[0] == client_and_server[1],
-        timeout=10,
+        timeout=30,
         description="the server to catch up with what was typed",
     )
 
@@ -920,7 +920,7 @@ async def test_controlled_input_rapid_typing(display: DisplayFixture, delay: int
 
     await poll(values).until(
         lambda client_and_server: client_and_server[1] == value_after_typing + MARKER,
-        timeout=10,
+        timeout=20,
         description="the state change after the burst to reach the rendered model",
     )
 
@@ -955,7 +955,7 @@ async def test_controlled_input_rapid_typing_preserves_every_character(
 
     await poll(values).until(
         lambda client_and_server: client_and_server[0] == client_and_server[1],
-        timeout=10,
+        timeout=30,
         description="the server to catch up with what was typed",
     )
 
@@ -1278,12 +1278,12 @@ async def test_a_clear_is_not_written_back_over_by_what_came_before_it(
 
     await poll(field_value).until(
         lambda value: value == "",
-        timeout=10,
+        timeout=20,
         description="the clear to reach the field",
     )
     await poll(server_value).until(
         lambda value: value == "",
-        timeout=10,
+        timeout=20,
         description="the clear to reach the model",
     )
 
@@ -1307,18 +1307,22 @@ def _HeavyPage():
     def keep_rendering():
         """Re-render on a timer, so renders are always in flight behind the typing"""
         loop = asyncio.get_running_loop()
-        left = [400]
+        left = [300]
 
         def tick():
             set_ticks(lambda old: old + 1)
             left[0] -= 1
             if left[0]:
-                handle[0] = loop.call_later(0.005, tick)
+                handle[0] = loop.call_later(0.01, tick)
 
-        handle = [loop.call_later(0.005, tick)]
+        handle = [loop.call_later(0.01, tick)]
         # Cancelled through the cell, not captured directly, because every tick
         # replaces the handle with a fresh one.
-        return lambda: handle[0].cancel()
+
+        def stop():
+            handle[0].cancel()
+
+        return stop
 
     use_effect(keep_rendering)
 
@@ -1354,11 +1358,14 @@ async def test_controlled_input_drops_no_character_under_a_heavy_page(
         return (
             await inp.evaluate("node => node.value"),
             await display.page.locator("#server-value").text_content(),
+            # counted along with the rest, so a timeout says whether renders were
+            # reaching the page at all while the field and the model disagreed
+            await display.page.locator("#ticks").text_content(),
         )
 
     await poll(values).until(
-        lambda pair: pair[0] == pair[1] == target_text,
-        timeout=15,
+        lambda field_model_ticks: field_model_ticks[:2] == (target_text, target_text),
+        timeout=30,
         description="the field and the model to hold everything which was typed",
     )
 

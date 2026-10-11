@@ -31,7 +31,7 @@ def _handler_code(func: Callable) -> CodeType | None:
     # a callable object's own ``__call__`` is defined on its class
     try:
         call = type(func).__call__
-    except AttributeError:
+    except AttributeError:  # nocov - only a metaclass can hide this
         return None
     return getattr(call, "__code__", None)
 

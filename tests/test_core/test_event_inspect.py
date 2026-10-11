@@ -460,3 +460,19 @@ def _build_fake_instructions(items):
             )
         result.append(instr)
     return result
+
+
+def test_a_callable_whose_call_carries_no_bytecode_reports_nothing():
+    """An object made callable by a built-in ``__call__`` has no code to walk
+
+    Detection reads the bytecode of the handler, and a built-in keeps none, so the
+    inspector has to settle for having looked at all.
+    """
+
+    class Talkative:
+        __call__ = print  # a built-in, which carries no bytecode of its own
+
+    handler = Talkative()
+
+    assert inspect_event_handler(handler) == (False, False, None)
+    assert _function_arg_defaults(handler) == {}

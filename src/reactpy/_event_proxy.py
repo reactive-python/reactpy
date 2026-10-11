@@ -559,8 +559,8 @@ class EventProxy(dict, Generic[_T]):
     def _reactpy_resolve_segment(self, segment: str | int) -> Any:
         """Read something the snapshot does not know about
 
-        The asynchronous flavour stays lazy here; the synchronous one asks the browser
-        right away so that handlers always deal with real values.
+        Nothing is asked of the browser yet - the child handed back stays lazy, and
+        it is awaiting that child which sends the request.
         """
         return self._reactpy_make_child(segment)
 
