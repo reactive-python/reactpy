@@ -1281,7 +1281,7 @@ def _HeavyPage():
         handle = [loop.call_later(0.005, tick)]
         # Cancelled through the cell, not captured directly, because every tick
         # replaces the handle with a fresh one.
-        return lambda: handle[0].cancel()  # noqa: PLW0108
+        return lambda: handle[0].cancel()
 
     use_effect(keep_rendering)
 

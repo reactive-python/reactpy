@@ -5,7 +5,6 @@ import pytest
 
 import reactpy
 from reactpy.testing import DEFAULT_TYPE_DELAY, DisplayFixture, poll
-
 from tests.tooling.common import TYPE_DELAYS
 
 HERE = Path(__file__).parent

@@ -90,7 +90,14 @@ class FakeClient:
         self.sent.append(message)
         if message["type"] != EVENT_PROXY_REQUEST_TYPE or not self.respond:
             return
-        asyncio.get_running_loop().call_later(self.delay, self._answer, dict(message))
+        loop = asyncio.get_running_loop()
+        if self.delay > 0:
+            loop.call_later(self.delay, self._answer, dict(message))
+        else:
+            # Carried out within this same turn of the loop. A zero-delay timer is
+            # due "now" but is only picked up on a later turn, and a loop with a
+            # coarse clock (Windows) can let a test read ahead of that turn.
+            loop.call_soon(self._answer, dict(message))
 
     def _answer(self, message: dict[str, Any]) -> None:
         # A real client carries out the request either way - it only answers when the
@@ -371,10 +378,18 @@ async def test_prevent_default_is_scheduled_but_not_awaited():
     assert event_object.defaultPrevented
     assert event_object.propagationStopped
 
-    await asyncio.sleep(0.01)
+    # Wait on the calls themselves rather than on how many requests went out: the
+    # fake client carries a request out a turn after it records sending it, and a
+    # loop with a coarser clock (Windows) lets this test read ahead of that turn.
+    prevented, stopped = (
+        objects["evt"]["preventDefault"],
+        objects["evt"]["stopPropagation"],
+    )
+    await poll(lambda: len(prevented.calls) == 1 and len(stopped.calls) == 1)
     assert requested_paths(client) == [["preventDefault"], ["stopPropagation"]]
     assert all(not request["reply"] for request in client.requests)
-    assert objects["evt"]["preventDefault"].calls == [()]
+    assert prevented.calls == [()]
+    assert stopped.calls == [()]
 
 
 def test_snapshot_data_is_plain_json():
@@ -1246,10 +1261,11 @@ async def test_stop_immediate_propagation_is_forwarded_to_the_client():
 
     event_object.stopImmediatePropagation()
 
-    await poll(lambda: len(client.requests) == 1)
+    stop_immediately = objects["evt"]["stopImmediatePropagation"]
+    await poll(lambda: len(stop_immediately.calls) == 1)
     assert requested_paths(client) == [["stopImmediatePropagation"]]
     assert client.requests[0]["reply"] is False
-    assert objects["evt"]["stopImmediatePropagation"].calls == [()]
+    assert stop_immediately.calls == [()]
     assert event_object.propagationStopped is True
     assert event_object.defaultPrevented is False
 

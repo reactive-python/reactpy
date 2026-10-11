@@ -1486,9 +1486,7 @@ def test_a_render_is_marked_before_the_scheduler_is_handed_it():
     of its life.
     """
     seen_while_handing_off: list[bool] = []
-    hook = LifeCycleHook(
-        lambda: seen_while_handing_off.append(hook._scheduled_render)
-    )
+    hook = LifeCycleHook(lambda: seen_while_handing_off.append(hook._scheduled_render))
 
     hook.schedule_render()
 
@@ -1541,4 +1539,3 @@ def test_a_cancelled_render_does_not_swallow_later_state_changes():
 
     hook.schedule_render()
     assert scheduled == [1, 1]
-
