@@ -8,11 +8,14 @@ Switch = reactpy.web.export(mui, "Switch")
 def DayNightSwitch():
     checked, set_checked = reactpy.hooks.use_state(False)
 
+    async def handle_change(event, checked):
+        set_checked(checked)
+
     return reactpy.html.div(
         Switch(
             {
                 "checked": checked,
-                "onChange": lambda event, checked: set_checked(checked),
+                "onChange": handle_change,
             }
         ),
         "🌞" if checked else "🌚",

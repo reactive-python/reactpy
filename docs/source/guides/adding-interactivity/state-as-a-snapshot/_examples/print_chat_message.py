@@ -8,6 +8,12 @@ def App():
     recipient, set_recipient = use_state("Alice")
     message, set_message = use_state("")
 
+    async def handle_recipient_change(event):
+        set_recipient(event["target"]["value"])
+
+    async def handle_message_change(event):
+        set_message(event["target"]["value"])
+
     @event(prevent_default=True)
     async def handle_submit(event):
         set_message("")
@@ -23,7 +29,7 @@ def App():
             html.select(
                 {
                     "value": recipient,
-                    "on_change": lambda event: set_recipient(event["target"]["value"]),
+                    "on_change": handle_recipient_change,
                 },
                 html.option({"value": "Alice"}, "Alice"),
                 html.option({"value": "Bob"}, "Bob"),
@@ -34,7 +40,7 @@ def App():
                 "type": "text",
                 "placeholder": "Your message...",
                 "value": message,
-                "on_change": lambda event: set_message(event["target"]["value"]),
+                "on_change": handle_message_change,
             }
         ),
         html.button({"type": "submit"}, "Send"),

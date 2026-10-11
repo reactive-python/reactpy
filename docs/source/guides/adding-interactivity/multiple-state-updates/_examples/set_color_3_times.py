@@ -5,12 +5,12 @@ from reactpy import component, html, run, use_state
 def ColorButton():
     color, set_color = use_state("gray")
 
-    def handle_click(event):
+    async def handle_click(event):
         set_color("orange")
         set_color("pink")
         set_color("blue")
 
-    def handle_reset(event):
+    async def handle_reset(event):
         set_color("gray")
 
     return html.div(

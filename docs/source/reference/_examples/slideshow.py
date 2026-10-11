@@ -5,7 +5,7 @@ import reactpy
 def Slideshow():
     index, set_index = reactpy.hooks.use_state(0)
 
-    def next_image(event):
+    async def next_image(event):
         set_index(index + 1)
 
     return reactpy.html.img(

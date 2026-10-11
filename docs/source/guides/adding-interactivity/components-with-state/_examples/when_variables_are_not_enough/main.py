@@ -19,7 +19,7 @@ sculpture_data = json.loads(DATA_PATH.read_text())
 def Gallery():
     index = 0
 
-    def handle_click(event):
+    async def handle_click(event):
         index = index + 1
 
     bounded_index = index % len(sculpture_data)

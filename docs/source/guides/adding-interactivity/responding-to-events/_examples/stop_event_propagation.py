@@ -7,15 +7,24 @@ def DivInDiv():
     inner_count, set_inner_count = hooks.use_state(0)
     outer_count, set_outer_count = hooks.use_state(0)
 
+    async def count_outer_click(event):
+        set_outer_count(outer_count + 1)
+
+    async def count_inner_click(event):
+        set_inner_count(inner_count + 1)
+
+    async def toggle_propagation(event):
+        set_stop_propagatation(not stop_propagatation)
+
     div_in_div = html.div(
         {
-            "on_click": lambda event: set_outer_count(outer_count + 1),
+            "on_click": count_outer_click,
             "style": {"height": "100px", "width": "100px", "background_color": "red"},
         },
         html.div(
             {
                 "on_click": event(
-                    lambda event: set_inner_count(inner_count + 1),
+                    count_inner_click,
                     stop_propagation=stop_propagatation,
                 ),
                 "style": {
@@ -28,10 +37,7 @@ def DivInDiv():
     )
 
     return html.div(
-        html.button(
-            {"on_click": lambda event: set_stop_propagatation(not stop_propagatation)},
-            "Toggle Propagation",
-        ),
+        html.button({"on_click": toggle_propagation}, "Toggle Propagation"),
         html.pre(f"Will propagate: {not stop_propagatation}"),
         html.pre(f"Inner click count: {inner_count}"),
         html.pre(f"Outer click count: {outer_count}"),

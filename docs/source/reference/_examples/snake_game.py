@@ -17,12 +17,13 @@ class GameState(enum.Enum):
 def GameView():
     game_state, set_game_state = reactpy.hooks.use_state(GameState.init)
 
+    async def start_game(event):
+        set_game_state(GameState.play)
+
     if game_state == GameState.play:
         return GameLoop(grid_size=6, block_scale=50, set_game_state=set_game_state)
 
-    start_button = reactpy.html.button(
-        {"on_click": lambda event: set_game_state(GameState.play)}, "Start"
-    )
+    start_button = reactpy.html.button({"on_click": start_game}, "Start")
 
     if game_state == GameState.won:
         menu = reactpy.html.div(reactpy.html.h3("You won!"), start_button)
@@ -64,7 +65,7 @@ def GameLoop(grid_size, block_scale, set_game_state):
     grid = create_grid(grid_size, block_scale)
 
     @reactpy.event(prevent_default=True)
-    def on_direction_change(event):
+    async def on_direction_change(event):
         if hasattr(Direction, event["key"]):
             maybe_new_direction = Direction[event["key"]].value
             direction_vector_sum = tuple(

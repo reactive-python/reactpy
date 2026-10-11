@@ -12,7 +12,7 @@ def SyncedInputs():
 
 @component
 def Input(label, value, set_value):
-    def handle_change(event):
+    async def handle_change(event):
         set_value(event["target"]["value"])
 
     return html.label(

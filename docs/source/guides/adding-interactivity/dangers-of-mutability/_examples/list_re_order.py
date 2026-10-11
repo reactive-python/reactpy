@@ -7,10 +7,10 @@ def ArtistList():
         ["Marta Colvin Andrade", "Lamidi Olonade Fakeye", "Louise Nevelson"]
     )
 
-    def handle_sort_click(event):
+    async def handle_sort_click(event):
         set_artists(sorted(artists))
 
-    def handle_reverse_click(event):
+    async def handle_reverse_click(event):
         set_artists(list(reversed(artists)))
 
     return html.div(

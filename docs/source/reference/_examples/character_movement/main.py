@@ -34,6 +34,24 @@ def translate(x=0, y=0):
 def Scene():
     position, set_position = use_state(Position(100, 100, 0))
 
+    async def move_left(event):
+        set_position(translate(x=-10))
+
+    async def move_right(event):
+        set_position(translate(x=10))
+
+    async def move_up(event):
+        set_position(translate(y=-10))
+
+    async def move_down(event):
+        set_position(translate(y=10))
+
+    async def rotate_left(event):
+        set_position(rotate(-30))
+
+    async def rotate_right(event):
+        set_position(rotate(30))
+
     return html.div(
         {"style": {"width": "225px"}},
         html.div(
@@ -57,16 +75,12 @@ def Scene():
                 },
             ),
         ),
-        html.button(
-            {"on_click": lambda e: set_position(translate(x=-10))}, "Move Left"
-        ),
-        html.button(
-            {"on_click": lambda e: set_position(translate(x=10))}, "Move Right"
-        ),
-        html.button({"on_click": lambda e: set_position(translate(y=-10))}, "Move Up"),
-        html.button({"on_click": lambda e: set_position(translate(y=10))}, "Move Down"),
-        html.button({"on_click": lambda e: set_position(rotate(-30))}, "Rotate Left"),
-        html.button({"on_click": lambda e: set_position(rotate(30))}, "Rotate Right"),
+        html.button({"on_click": move_left}, "Move Left"),
+        html.button({"on_click": move_right}, "Move Right"),
+        html.button({"on_click": move_up}, "Move Up"),
+        html.button({"on_click": move_down}, "Move Down"),
+        html.button({"on_click": rotate_left}, "Rotate Left"),
+        html.button({"on_click": rotate_right}, "Rotate Right"),
     )
 
 

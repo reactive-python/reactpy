@@ -5,8 +5,8 @@ from reactpy import component, html, run, use_state
 def CounterList():
     counters, set_counters = use_state([0, 0, 0])
 
-    def make_increment_click_handler(index):
-        def handle_click(event):
+    async def make_increment_click_handler(index):
+        async def handle_click(event):
             new_value = counters[index] + 1
             set_counters([*counters[:index], new_value, *counters[index + 1 :]])
 
