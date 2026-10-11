@@ -8,16 +8,16 @@ def ArtistList():
         ["Marta Colvin Andrade", "Lamidi Olonade Fakeye", "Louise Nevelson"]
     )
 
-    async def handle_change(event):
+    def handle_change(event):
         set_artist_to_add(event["target"]["value"])
 
-    async def handle_add_click(event):
+    def handle_add_click(event):
         if artist_to_add not in artists:
             set_artists([*artists, artist_to_add])
             set_artist_to_add("")
 
-    async def make_handle_delete_click(index):
-        async def handle_click(event):
+    def make_handle_delete_click(index):
+        def handle_click(event):
             set_artists(artists[:index] + artists[index + 1 :])
 
         return handle_click

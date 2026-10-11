@@ -7,7 +7,7 @@ from reactpy import component, html, run, use_state
 def MovingDot():
     position, _ = use_state({"x": 0, "y": 0})
 
-    async def handle_pointer_move(event):
+    def handle_pointer_move(event):
         outer_div_info = event["currentTarget"]
         outer_div_bounds = outer_div_info["boundingClientRect"]
         position["x"] = event["clientX"] - outer_div_bounds["x"]

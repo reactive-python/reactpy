@@ -10,7 +10,7 @@ def increment(old_number):
 def Counter():
     number, set_number = use_state(0)
 
-    async def handle_click(event):
+    def handle_click(event):
         set_number(increment)
         set_number(increment)
         set_number(increment)

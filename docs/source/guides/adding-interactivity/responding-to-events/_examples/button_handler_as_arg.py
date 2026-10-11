@@ -8,7 +8,7 @@ def Button(display_text, on_click):
 
 @component
 def PlayButton(movie_name):
-    async def handle_click(event):
+    def handle_click(event):
         print(f"Playing {movie_name}")
 
     return Button(f"Play {movie_name}", on_click=handle_click)
@@ -16,7 +16,7 @@ def PlayButton(movie_name):
 
 @component
 def FastForwardButton():
-    async def handle_click(event):
+    def handle_click(event):
         print("Skipping ahead")
 
     return Button("Fast forward", on_click=handle_click)

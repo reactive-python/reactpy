@@ -16,21 +16,11 @@ def reducer(count, action):
 @reactpy.component
 def Counter():
     count, dispatch = reactpy.hooks.use_reducer(reducer, 0)
-
-    async def reset_count(event):
-        dispatch("reset")
-
-    async def increase_count(event):
-        dispatch("increment")
-
-    async def decrease_count(event):
-        dispatch("decrement")
-
     return reactpy.html.div(
         f"Count: {count}",
-        reactpy.html.button({"on_click": reset_count}, "Reset"),
-        reactpy.html.button({"on_click": increase_count}, "+"),
-        reactpy.html.button({"on_click": decrease_count}, "-"),
+        reactpy.html.button({"on_click": lambda event: dispatch("reset")}, "Reset"),
+        reactpy.html.button({"on_click": lambda event: dispatch("increment")}, "+"),
+        reactpy.html.button({"on_click": lambda event: dispatch("decrement")}, "-"),
     )
 
 

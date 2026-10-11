@@ -5,7 +5,7 @@ from reactpy import component, html, run, use_state
 def Counter():
     number, set_number = use_state(0)
 
-    async def handle_click(event):
+    def handle_click(event):
         set_number(number + 1)
         set_number(number + 1)
         set_number(number + 1)

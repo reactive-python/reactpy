@@ -6,10 +6,10 @@ def ArtistList():
     artist_to_add, set_artist_to_add = use_state("")
     artists, set_artists = use_state([])
 
-    async def handle_change(event):
+    def handle_change(event):
         set_artist_to_add(event["target"]["value"])
 
-    async def handle_click(event):
+    def handle_click(event):
         if artist_to_add and artist_to_add not in artists:
             set_artists([*artists, artist_to_add])
             set_artist_to_add("")

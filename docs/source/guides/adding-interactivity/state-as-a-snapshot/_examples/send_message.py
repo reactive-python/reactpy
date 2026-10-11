@@ -6,20 +6,16 @@ def App():
     is_sent, set_is_sent = use_state(False)
     message, set_message = use_state("")
 
-    async def handle_send_again(event):
-        set_is_sent(False)
-
-    async def handle_message_change(event):
-        set_message(event["target"]["value"])
-
     if is_sent:
         return html.div(
             html.h1("Message sent!"),
-            html.button({"on_click": handle_send_again}, "Send new message?"),
+            html.button(
+                {"on_click": lambda event: set_is_sent(False)}, "Send new message?"
+            ),
         )
 
     @event(prevent_default=True)
-    async def handle_submit(event):
+    def handle_submit(event):
         set_message("")
         set_is_sent(True)
 
@@ -29,7 +25,7 @@ def App():
             {
                 "placeholder": "Your message here...",
                 "value": message,
-                "on_change": handle_message_change,
+                "on_change": lambda event: set_message(event["target"]["value"]),
             }
         ),
         html.button({"type": "submit"}, "Send"),

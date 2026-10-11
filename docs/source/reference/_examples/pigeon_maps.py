@@ -8,25 +8,16 @@ Map, Marker = reactpy.web.export(pigeon_maps, ["Map", "Marker"])
 def MapWithMarkers():
     marker_anchor, add_marker_anchor, remove_marker_anchor = use_set()
 
-    def make_remove_marker_handler(anchor):
-        async def remove_marker(event):
-            remove_marker_anchor(anchor)
-
-        return remove_marker
-
     markers = [
         Marker(
             {
                 "anchor": anchor,
-                "onClick": make_remove_marker_handler(anchor),
+                "onClick": lambda event, a=anchor: remove_marker_anchor(a),
             },
             key=str(anchor),
         )
         for anchor in marker_anchor
     ]
-
-    async def add_marker_on_click(event):
-        add_marker_anchor(tuple(event["latLng"]))
 
     return Map(
         {
@@ -34,7 +25,7 @@ def MapWithMarkers():
             "defaultZoom": 12,
             "height": "300px",
             "metaWheelZoom": True,
-            "onClick": add_marker_on_click,
+            "onClick": lambda event: add_marker_anchor(tuple(event["latLng"])),
         },
         markers,
     )

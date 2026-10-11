@@ -13,10 +13,10 @@ def Gallery():
     index, set_index = hooks.use_state(0)
     show_more, set_show_more = hooks.use_state(False)
 
-    async def handle_next_click(event):
+    def handle_next_click(event):
         set_index(index + 1)
 
-    async def handle_more_click(event):
+    def handle_more_click(event):
         set_show_more(not show_more)
 
     bounded_index = index % len(sculpture_data)

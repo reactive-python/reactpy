@@ -6,8 +6,8 @@ def Grid():
     line_size = 5
     selected_indices, set_selected_indices = use_state(set())
 
-    async def make_handle_click(index):
-        async def handle_click(event):
+    def make_handle_click(index):
+        def handle_click(event):
             set_selected_indices(selected_indices | {index})
 
         return handle_click

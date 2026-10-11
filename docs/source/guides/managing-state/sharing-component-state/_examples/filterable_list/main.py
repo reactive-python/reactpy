@@ -16,7 +16,7 @@ def FilterableList():
 
 @component
 def Search(value, set_value):
-    async def handle_change(event):
+    def handle_change(event):
         set_value(event["target"]["value"])
 
     return html.label(

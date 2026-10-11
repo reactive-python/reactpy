@@ -30,17 +30,17 @@ def ExpandableNumberInputs(values, set_values):
 
         inputs.append(poly_coef_input(i + 1, set_value_at_index))
 
-    async def add_a_term(event):
+    def add_input():
         set_values([*values, 0])
 
-    async def remove_a_term(event):
+    def del_input():
         set_values(values[:-1])
 
     return reactpy.html.div(
         reactpy.html.div(
             "add/remove term:",
-            reactpy.html.button({"on_click": add_a_term}, "+"),
-            reactpy.html.button({"on_click": remove_a_term}, "-"),
+            reactpy.html.button({"on_click": lambda event: add_input()}, "+"),
+            reactpy.html.button({"on_click": lambda event: del_input()}, "-"),
         ),
         inputs,
     )

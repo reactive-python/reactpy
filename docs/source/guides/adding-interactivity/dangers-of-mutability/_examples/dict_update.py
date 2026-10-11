@@ -11,13 +11,13 @@ def Form():
         }
     )
 
-    async def handle_first_name_change(event):
+    def handle_first_name_change(event):
         set_person({**person, "first_name": event["target"]["value"]})
 
-    async def handle_last_name_change(event):
+    def handle_last_name_change(event):
         set_person({**person, "last_name": event["target"]["value"]})
 
-    async def handle_email_change(event):
+    def handle_email_change(event):
         set_person({**person, "email": event["target"]["value"]})
 
     return html.div(

@@ -14,15 +14,12 @@ Button = reactpy.web.export(mui, "Button")
 def ViewButtonEvents():
     event, set_event = reactpy.hooks.use_state(None)
 
-    async def handle_click(event):
-        set_event(event)
-
     return reactpy.html.div(
         Button(
             {
                 "color": "primary",
                 "variant": "contained",
-                "onClick": handle_click,
+                "onClick": lambda event: set_event(event),
             },
             "Click Me!",
         ),
